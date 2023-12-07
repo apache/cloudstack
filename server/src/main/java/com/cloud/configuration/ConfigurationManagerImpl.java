@@ -48,6 +48,10 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.utils.crypt.DBEncryptionUtil;
+import com.cloud.host.HostTagVO;
+import com.cloud.storage.StoragePoolTagVO;
+import com.cloud.storage.VolumeApiServiceImpl;
+import com.googlecode.ipv6.IPv6Address;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -89,6 +93,7 @@ import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
+import org.apache.cloudstack.cluster.ClusterDrsService;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
@@ -127,6 +132,7 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.utils.jsinterpreter.TagAsRuleHelper;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -292,7 +298,6 @@ import com.google.common.base.Enums;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
-import com.googlecode.ipv6.IPv6Address;
 import com.googlecode.ipv6.IPv6Network;
 
 public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, Configurable {
@@ -571,6 +576,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         weightBasedParametersForValidation.add(Config.AgentLoadThreshold.key());
         weightBasedParametersForValidation.add(Config.VmUserDispersionWeight.key());
         weightBasedParametersForValidation.add(CapacityManager.SecondaryStorageCapacityThreshold.key());
+        weightBasedParametersForValidation.add(ClusterDrsService.ClusterDrsImbalanceThreshold.key());
 
     }
 
@@ -4078,17 +4084,23 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             if (CollectionUtils.isNotEmpty(pools)) {
                 List<String> listOfTags = Arrays.asList(tags.split(","));
                 for (StoragePoolVO storagePoolVO : pools) {
-                    List<String> tagsOnPool = storagePoolTagDao.getStoragePoolTags(storagePoolVO.getId());
-                    if (CollectionUtils.isEmpty(tagsOnPool) || !tagsOnPool.containsAll(listOfTags)) {
-                        DiskOfferingVO offeringToRetrieveInfo = _diskOfferingDao.findById(diskOffering.getId());
-                        List<VolumeVO> volumes = _volumeDao.findByDiskOfferingId(diskOffering.getId());
-                        String listOfVolumesNamesAndUuid = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volumes, "name", "uuid");
-                        String diskOfferingInfo = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(offeringToRetrieveInfo, "name", "uuid");
-                        String poolInfo = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(storagePoolVO, "name", "uuid");
-                        throw new InvalidParameterValueException(String.format("There are active volumes using the disk offering %s, and the pool %s doesn't have the new tags. " +
-                                "The following volumes are using the mentioned disk offering %s. Please first add the new tags to the mentioned storage pools before adding them" +
-                                " to the disk offering.", diskOfferingInfo, poolInfo, listOfVolumesNamesAndUuid));
+                    List<StoragePoolTagVO> tagsOnPool = storagePoolTagDao.findStoragePoolTags(storagePoolVO.getId());
+                    List<String> tagsAsString = tagsOnPool.stream().map(StoragePoolTagVO::getTag).collect(Collectors.toList());
+
+                    if ((CollectionUtils.isNotEmpty(tagsAsString) && tagsAsString.containsAll(listOfTags)) ||
+                        (tagsOnPool.size() == 1 && tagsOnPool.get(0).isTagARule() &&
+                        TagAsRuleHelper.interpretTagAsRule(tagsOnPool.get(0).getTag(), tags, VolumeApiServiceImpl.storageTagRuleExecutionTimeout.value()))) {
+                        continue;
                     }
+
+                    DiskOfferingVO offeringToRetrieveInfo = _diskOfferingDao.findById(diskOffering.getId());
+                    List<VolumeVO> volumes = _volumeDao.findByDiskOfferingId(diskOffering.getId());
+                    String listOfVolumesNamesAndUuid = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volumes, "name", "uuid");
+                    String diskOfferingInfo = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(offeringToRetrieveInfo, "name", "uuid");
+                    String poolInfo = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(storagePoolVO, "name", "uuid");
+                    throw new InvalidParameterValueException(String.format("There are active volumes using the disk offering %s, and the pool %s doesn't have the new tags. " +
+                            "The following volumes are using the mentioned disk offering %s. Please first add the new tags to the mentioned storage pools before adding them" +
+                            " to the disk offering.", diskOfferingInfo, poolInfo, listOfVolumesNamesAndUuid));
                 }
             }
             diskOffering.setTags(tags);
@@ -4115,10 +4127,17 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             if (CollectionUtils.isNotEmpty(hosts)) {
                 List<String> listOfHostTags = Arrays.asList(hostTags.split(","));
                 for (HostVO host : hosts) {
-                    List<String> tagsOnHost = hostTagDao.getHostTags(host.getId());
-                    if (CollectionUtils.isEmpty(tagsOnHost) || !tagsOnHost.containsAll(listOfHostTags)) {
-                        throw new InvalidParameterValueException(String.format("There are active VMs using offering [%s], and the hosts [%s] don't have the new tags", offering.getId(), hosts));
+                    List<HostTagVO> tagsOnHost = hostTagDao.getHostTags(host.getId());
+                    List<String> tagsAsString = tagsOnHost.stream().map(HostTagVO::getTag).collect(Collectors.toList());
+
+                    if ((CollectionUtils.isNotEmpty(tagsAsString) && tagsAsString.containsAll(listOfHostTags)) ||
+                        (tagsOnHost.size() == 1 && tagsOnHost.get(0).getIsTagARule() &&
+                        TagAsRuleHelper.interpretTagAsRule(tagsOnHost.get(0).getTag(), hostTags, HostTagsDao.hostTagRuleExecutionTimeout.value()))) {
+                        continue;
                     }
+
+                    throw new InvalidParameterValueException(String.format("There are active VMs using offering [%s], and the hosts [%s] don't have the new tags",
+                        offering.getId(), hosts));
                 }
             }
             offering.setHostTag(hostTags);

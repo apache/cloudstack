@@ -71,6 +71,48 @@ export default {
       ]
     },
     {
+      name: 'oauthsetting',
+      title: 'label.oauth.configuration',
+      icon: 'login-outlined',
+      docHelp: 'adminguide/accounts.html#using-an-ldap-server-for-user-authentication',
+      permission: ['listOauthProvider'],
+      columns: ['provider', 'enabled', 'description', 'clientid', 'secretkey', 'redirecturi'],
+      details: ['provider', 'description', 'enabled', 'clientid', 'secretkey', 'redirecturi'],
+      actions: [
+        {
+          api: 'registerOauthProvider',
+          icon: 'plus-outlined',
+          label: 'label.register.oauth',
+          listView: true,
+          dataView: false,
+          args: [
+            'provider', 'description', 'clientid', 'redirecturi', 'secretkey'
+          ],
+          mapping: {
+            provider: {
+              options: ['google', 'github']
+            }
+          }
+        },
+        {
+          api: 'updateOauthProvider',
+          icon: 'edit-outlined',
+          label: 'label.edit',
+          dataView: true,
+          popup: true,
+          args: ['description', 'clientid', 'redirecturi', 'secretkey', 'enabled']
+        },
+        {
+          api: 'deleteOauthProvider',
+          icon: 'delete-outlined',
+          label: 'label.action.delete.oauth.provider',
+          message: 'message.action.delete.guest.os',
+          dataView: true,
+          popup: true
+        }
+      ]
+    },
+    {
       name: 'hypervisorcapability',
       title: 'label.hypervisor.capabilities',
       icon: 'database-outlined',

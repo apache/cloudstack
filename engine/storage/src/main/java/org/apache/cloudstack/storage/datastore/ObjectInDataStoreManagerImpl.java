@@ -102,7 +102,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
         stateMachines.addTransition(State.Destroying, Event.OperationFailed, State.Destroying);
         stateMachines.addTransition(State.Failed, Event.DestroyRequested, State.Destroying);
         // TODO: further investigate why an extra event is sent when it is
-        // alreay Ready for DownloadListener
+        // already Ready for DownloadListener
         stateMachines.addTransition(State.Ready, Event.OperationSuccessed, State.Ready);
         // State transitions for data object migration
         stateMachines.addTransition(State.Ready, Event.MigrateDataRequested, State.Migrating);
@@ -380,29 +380,6 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
 
         return vo;
 
-    }
-
-    @Override
-    public DataStore findStore(long objId, DataObjectType type, DataStoreRole role) {
-        DataStore store = null;
-        if (role == DataStoreRole.Image) {
-            DataObjectInStore vo = null;
-            switch (type) {
-                case TEMPLATE:
-                    vo = templateDataStoreDao.findByTemplate(objId, role);
-                    break;
-                case SNAPSHOT:
-                    vo = snapshotDataStoreDao.findBySnapshot(objId, role);
-                    break;
-                case VOLUME:
-                    vo = volumeDataStoreDao.findByVolume(objId);
-                    break;
-            }
-            if (vo != null) {
-                store = this.storeMgr.getDataStore(vo.getDataStoreId(), role);
-            }
-        }
-        return store;
     }
 
 }

@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.storage;
 
+import org.apache.cloudstack.api.command.admin.storage.MigrateResourcesToAnotherSecondaryStorageCmd;
 import org.apache.cloudstack.api.command.admin.storage.MigrateSecondaryStorageDataCmd;
 import org.apache.cloudstack.api.response.MigrationResponse;
 
@@ -26,4 +27,5 @@ public interface ImageStoreService {
         BALANCE, COMPLETE
     }
     MigrationResponse migrateData(MigrateSecondaryStorageDataCmd cmd);
+    MigrationResponse migrateResources(MigrateResourcesToAnotherSecondaryStorageCmd migrateResourcesToAnotherSecondaryStorageCmd);
 }

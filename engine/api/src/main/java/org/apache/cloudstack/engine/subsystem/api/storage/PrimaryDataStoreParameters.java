@@ -43,6 +43,8 @@ public class PrimaryDataStoreParameters {
     private boolean managed;
     private Long capacityIops;
 
+    private Boolean isTagARule;
+
     /**
      * @return the userInfo
      */
@@ -276,5 +278,13 @@ public class PrimaryDataStoreParameters {
 
     public void setUsedBytes(long usedBytes) {
         this.usedBytes = usedBytes;
+    }
+
+    public Boolean isTagARule() {
+        return isTagARule;
+    }
+
+    public void setIsTagARule(Boolean isTagARule) {
+        this.isTagARule = isTagARule;
     }
 }

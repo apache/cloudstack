@@ -360,6 +360,9 @@
       <a-tab-pane :tab="$t('label.virtual.routers')" key="vr" v-if="$store.getters.userInfo.roletype === 'Admin'">
         <RoutersTab :resource="resource" :loading="loading" />
       </a-tab-pane>
+      <a-tab-pane :tab="$t('label.vnf.appliances')" key="vnf" v-if="'deployVnfAppliance' in $store.getters.apis">
+        <VnfAppliancesTab :resource="resource" :loading="loading" />
+      </a-tab-pane>
       <a-tab-pane :tab="$t('label.events')" key="events" v-if="'listEvents' in $store.getters.apis">
         <events-tab :resource="resource" resourceType="Vpc" :loading="loading" />
       </a-tab-pane>
@@ -382,6 +385,7 @@ import Status from '@/components/widgets/Status'
 import IpAddressesTab from './IpAddressesTab'
 import RoutersTab from './RoutersTab'
 import VpcTiersTab from './VpcTiersTab'
+import VnfAppliancesTab from './VnfAppliancesTab'
 import EventsTab from '@/components/view/EventsTab'
 import AnnotationsTab from '@/components/view/AnnotationsTab'
 import ResourceIcon from '@/components/view/ResourceIcon'
@@ -394,6 +398,7 @@ export default {
     IpAddressesTab,
     RoutersTab,
     VpcTiersTab,
+    VnfAppliancesTab,
     EventsTab,
     AnnotationsTab,
     ResourceIcon

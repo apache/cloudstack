@@ -63,7 +63,7 @@ public class NonStrictHostAffinityProcessor extends AffinityProcessorBase implem
     private int vmCapacityReleaseInterval;
 
     @Override
-    public void process(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid) throws AffinityConflictException {
+    public void process(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, List<VirtualMachine> vmList) throws AffinityConflictException {
         VirtualMachine vm = vmProfile.getVirtualMachine();
         List<AffinityGroupVMMapVO> vmGroupMappings = affinityGroupVMMapDao.findByVmIdType(vm.getId(), getType());
 

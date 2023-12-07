@@ -63,9 +63,9 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
         }
 
         List<StoragePool> suitablePools = new ArrayList<>();
-
-        List<StoragePoolVO> storagePools = storagePoolDao.findZoneWideStoragePoolsByTags(plan.getDataCenterId(), dskCh.getTags());
-        if (storagePools == null) {
+        List<StoragePoolVO> storagePools = storagePoolDao.findZoneWideStoragePoolsByTags(plan.getDataCenterId(), dskCh.getTags(), true);
+        storagePools.addAll(storagePoolJoinDao.findStoragePoolByScopeAndRuleTags(plan.getDataCenterId(), null, null, ScopeType.ZONE, List.of(dskCh.getTags())));
+        if (storagePools.isEmpty()) {
             LOGGER.debug(String.format("Could not find any zone wide storage pool that matched with any of the following tags [%s].", Arrays.toString(dskCh.getTags())));
             storagePools = new ArrayList<>();
         }
@@ -82,7 +82,7 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
         storagePools.addAll(anyHypervisorStoragePools);
 
         // add remaining pools in zone, that did not match tags, to avoid set
-        List<StoragePoolVO> allPools = storagePoolDao.findZoneWideStoragePoolsByTags(plan.getDataCenterId(), null);
+        List<StoragePoolVO> allPools = storagePoolDao.findZoneWideStoragePoolsByTags(plan.getDataCenterId(), null, false);
         allPools.removeAll(storagePools);
         for (StoragePoolVO pool : allPools) {
             avoid.addPool(pool.getId());

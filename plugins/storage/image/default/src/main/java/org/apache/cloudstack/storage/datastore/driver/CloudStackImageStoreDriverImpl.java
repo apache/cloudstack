@@ -70,7 +70,12 @@ public class CloudStackImageStoreDriverImpl extends NfsImageStoreDriverImpl {
         EndPoint ep = _epSelector.select(store);
         // Create Symlink at ssvm
         String path = installPath;
-        String uuid = UUID.randomUUID().toString() + "." + format.getFileExtension();
+        String uuid = UUID.randomUUID().toString();
+        if (format != null) {
+            uuid = uuid + "." + format.getFileExtension();
+        } else if (path.lastIndexOf(".") != -1) {
+            uuid = uuid + "." + path.substring(path.lastIndexOf(".") + 1);
+        }
         CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(((ImageStoreEntity)store).getMountPoint(),
                                                                 path, uuid, dataObject == null ? null: dataObject.getTO());
         Answer ans = null;
@@ -82,7 +87,7 @@ public class CloudStackImageStoreDriverImpl extends NfsImageStoreDriverImpl {
             ans = ep.sendMessage(cmd);
         }
         if (ans == null || !ans.getResult()) {
-            String errorString = "Unable to create a link for entity at " + installPath + " on ssvm," + ans.getDetails();
+            String errorString = "Unable to create a link for entity at " + installPath + " on ssvm, " + ans.getDetails();
             s_logger.error(errorString);
             throw new CloudRuntimeException(errorString);
         }

@@ -1360,6 +1360,7 @@ public class TungstenApiTest {
 
         s_logger.debug("Check if policy was listed all in Tungsten-Fabric");
         List<? extends ApiObjectBase> policyList3 = tungstenApi.listTungstenPolicy(projectUuid, null);
+        policyList3.sort(comparator);
         assertEquals(policyList1, policyList3);
 
         s_logger.debug("Check if policy was listed with uuid in Tungsten-Fabric");
@@ -1383,6 +1384,7 @@ public class TungstenApiTest {
 
         s_logger.debug("Check if network was listed all in Tungsten-Fabric");
         List<? extends ApiObjectBase> networkList3 = tungstenApi.listTungstenNetwork(projectUuid, null);
+        networkList3.sort(comparator);
         assertEquals(networkList1, networkList3);
 
         s_logger.debug("Check if network policy was listed with uuid in Tungsten-Fabric");

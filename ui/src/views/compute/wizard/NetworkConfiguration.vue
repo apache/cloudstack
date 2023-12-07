@@ -16,6 +16,12 @@
 // under the License.
 
 <template>
+  <div style="margin-top: 10px;" v-if="this.vnf">
+    <label>{{ $t('message.configure.network.ip.and.mac') }}</label>
+  </div>
+  <div style="margin-top: 10px;" v-else>
+    <label>{{ $t('message.configure.network.select.default.network') }}</label>
+  </div>
   <a-form
     :ref="formRef"
     :model="form"
@@ -91,6 +97,10 @@ export default {
       type: Boolean,
       default: () => false
     },
+    vnf: {
+      type: Boolean,
+      default: () => false
+    },
     preFillContent: {
       type: Object,
       default: () => {}
@@ -103,7 +113,7 @@ export default {
         {
           key: 'name',
           dataIndex: 'name',
-          title: this.$t('label.defaultnetwork'),
+          title: this.$t('label.network'),
           width: '30%'
         },
         {
@@ -138,6 +148,9 @@ export default {
   },
   computed: {
     rowSelection () {
+      if (this.vnf) {
+        return null
+      }
       return {
         type: 'radio',
         selectedRowKeys: this.selectedRowKeys,
@@ -175,6 +188,8 @@ export default {
       const form = {}
       const rules = {}
 
+      let presetMacAddressIndex = 0
+
       this.dataItems.forEach(record => {
         const ipAddressKey = 'ipAddress' + record.id
         const macAddressKey = 'macAddress' + record.id
@@ -189,6 +204,9 @@ export default {
         rules[macAddressKey] = [{ validator: this.validatorMacAddress }]
         if (record.macAddress) {
           form[macAddressKey] = record.macAddress
+        } else if (this.preFillContent.macAddressArray && this.preFillContent.macAddressArray[presetMacAddressIndex]) {
+          form[macAddressKey] = this.preFillContent.macAddressArray[presetMacAddressIndex]
+          presetMacAddressIndex++
         }
       })
       this.form = reactive(form)

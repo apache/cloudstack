@@ -33,6 +33,8 @@ public class UnmanagedInstanceTO {
 
     private PowerState powerState;
 
+    private PowerState cloneSourcePowerState;
+
     private Integer cpuCores;
 
     private Integer cpuCoresPerSocket;
@@ -44,6 +46,10 @@ public class UnmanagedInstanceTO {
     private String operatingSystemId;
 
     private String operatingSystem;
+
+    private String clusterName;
+
+    private String hostName;
 
     private List<Disk> disks;
 
@@ -71,6 +77,14 @@ public class UnmanagedInstanceTO {
 
     public void setPowerState(PowerState powerState) {
         this.powerState = powerState;
+    }
+
+    public PowerState getCloneSourcePowerState() {
+        return cloneSourcePowerState;
+    }
+
+    public void setCloneSourcePowerState(PowerState cloneSourcePowerState) {
+        this.cloneSourcePowerState = cloneSourcePowerState;
     }
 
     public Integer getCpuCores() {
@@ -119,6 +133,22 @@ public class UnmanagedInstanceTO {
 
     public void setOperatingSystem(String operatingSystem) {
         this.operatingSystem = operatingSystem;
+    }
+
+    public String getClusterName() {
+        return clusterName;
+    }
+
+    public void setClusterName(String clusterName) {
+        this.clusterName = clusterName;
+    }
+
+    public String getHostName() {
+        return hostName;
+    }
+
+    public void setHostName(String hostName) {
+        this.hostName = hostName;
     }
 
     public List<Disk> getDisks() {

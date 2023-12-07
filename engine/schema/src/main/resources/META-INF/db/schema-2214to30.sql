@@ -702,7 +702,7 @@ UPDATE `cloud`.`configuration` SET category = 'Usage' where name in ('usage.exec
 ALTER TABLE  `cloud`.`op_dc_vnet_alloc` ADD CONSTRAINT `fk_op_dc_vnet_alloc__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`domain` ADD COLUMN `type` varchar(255) NOT NULL DEFAULT 'Normal' COMMENT 'type of the domain - can be Normal or Project';
 
-UPDATE `cloud`.`configuration` SET name='vm.destroy.forcestop' where name='vm.destory.forcestop';
+UPDATE `cloud`.`configuration` SET name='vm.destroy.forcestop' where name='vm.destroy.forcestop';
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vm.destroy.forcestop', 'false', 'On destroy, force-stop takes this value');
 DELETE FROM `cloud`.`configuration` where name='skip.steps';
 

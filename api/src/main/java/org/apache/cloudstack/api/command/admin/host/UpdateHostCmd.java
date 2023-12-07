@@ -60,6 +60,9 @@ public class UpdateHostCmd extends BaseCmd {
     @Parameter(name = ApiConstants.HOST_TAGS, type = CommandType.LIST, collectionType = CommandType.STRING, description = "list of tags to be added to the host")
     private List<String> hostTags;
 
+    @Parameter(name = ApiConstants.IS_TAG_A_RULE, type = CommandType.BOOLEAN, description = ApiConstants.PARAMETER_DESCRIPTION_IS_TAG_A_RULE)
+    private Boolean isTagARule;
+
     @Parameter(name = ApiConstants.URL, type = CommandType.STRING, description = "the new uri for the secondary storage: nfs://host/path")
     private String url;
 
@@ -88,6 +91,10 @@ public class UpdateHostCmd extends BaseCmd {
 
     public List<String> getHostTags() {
         return hostTags;
+    }
+
+    public Boolean getIsTagARule() {
+        return isTagARule;
     }
 
     public String getUrl() {

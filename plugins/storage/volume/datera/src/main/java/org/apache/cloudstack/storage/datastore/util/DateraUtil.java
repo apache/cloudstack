@@ -943,7 +943,7 @@ public class DateraUtil {
     }
 
     /**
-     * Checks wether a host initiator is present in an initiator group
+     * Checks whether a host initiator is present in an initiator group
      *
      * @param initiator      Host initiator to check
      * @param initiatorGroup the initiator group

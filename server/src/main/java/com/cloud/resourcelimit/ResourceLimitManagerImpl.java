@@ -31,6 +31,9 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.utils.db.GlobalLock;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
@@ -44,6 +47,8 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.user.ResourceReservation;
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -162,6 +167,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     private VpcDao _vpcDao;
     @Inject
     private VlanDao _vlanDao;
+    @Inject
+    private ManagementServerHostDao managementServerHostDao;
 
     protected GenericSearchBuilder<TemplateDataStoreVO, SumCount> templateSizeSearch;
     protected GenericSearchBuilder<SnapshotDataStoreVO, SumCount> snapshotSizeSearch;
@@ -1171,6 +1178,26 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
         @Override
         protected void runInContext() {
+            GlobalLock lock = GlobalLock.getInternLock("ResourceCheckTask");
+            try {
+                if (lock.lock(30)) {
+                    try {
+                        ManagementServerHostVO msHost = managementServerHostDao.findOneByLongestRuntime();
+                        if (msHost == null || (msHost.getMsid() != ManagementServerNode.getManagementServerId())) {
+                            s_logger.trace("Skipping the resource counters recalculation task on this management server");
+                            return;
+                        }
+                        runResourceCheckTaskInternal();
+                    } finally {
+                        lock.unlock();
+                    }
+                }
+            } finally {
+                lock.releaseRef();
+            }
+        }
+
+        private void runResourceCheckTaskInternal() {
             s_logger.info("Started resource counters recalculation periodic task.");
             List<DomainVO> domains;
             List<AccountVO> accounts;
@@ -1192,9 +1219,12 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             }
 
             for (ResourceType type : ResourceType.values()) {
-                recalculateDomainResourceCountInContext(Domain.ROOT_DOMAIN, type);
-                for (Domain domain : domains) {
-                    recalculateDomainResourceCount(domain.getId(), type);
+                if (CollectionUtils.isEmpty(domains)) {
+                    recalculateDomainResourceCountInContext(Domain.ROOT_DOMAIN, type);
+                } else {
+                    for (Domain domain : domains) {
+                        recalculateDomainResourceCount(domain.getId(), type);
+                    }
                 }
 
                 // run through the accounts in the root domain
@@ -1202,6 +1232,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                     recalculateAccountResourceCountInContext(account.getId(), type);
                 }
             }
+            s_logger.info("Finished resource counters recalculation periodic task.");
         }
 
         private void recalculateDomainResourceCountInContext(long domainId, ResourceType type) {

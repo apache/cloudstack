@@ -90,6 +90,9 @@ public class CreateStoragePoolCmd extends BaseCmd {
                description = "hypervisor type of the hosts in zone that will be attached to this storage pool. KVM, VMware supported as of now.")
     private String hypervisor;
 
+    @Parameter(name = ApiConstants.IS_TAG_A_RULE, type = CommandType.BOOLEAN, description = ApiConstants.PARAMETER_DESCRIPTION_IS_TAG_A_RULE)
+    private Boolean isTagARule;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -144,6 +147,10 @@ public class CreateStoragePoolCmd extends BaseCmd {
 
     public String getHypervisor() {
         return hypervisor;
+    }
+
+    public Boolean isTagARule() {
+        return this.isTagARule;
     }
 
     @Override

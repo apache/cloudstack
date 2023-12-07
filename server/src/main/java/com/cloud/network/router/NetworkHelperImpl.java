@@ -28,7 +28,6 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import com.cloud.utils.validation.ChecksumUtil;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -102,6 +101,7 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.utils.validation.ChecksumUtil;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
@@ -968,5 +968,10 @@ public class NetworkHelperImpl implements NetworkHelper {
 
     public String acquireGuestIpAddressForVrouterRedundant(Network network) {
         return _ipAddrMgr.acquireGuestIpAddressByPlacement(network, null);
+    }
+
+    @Override
+    public Map<HypervisorType, ConfigKey<String>> getHypervisorRouterTemplateConfigMap() {
+        return hypervisorsMap;
     }
 }

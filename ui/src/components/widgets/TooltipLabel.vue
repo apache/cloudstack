@@ -54,5 +54,6 @@ export default {
 <style scoped lang="scss">
   .tooltip-icon {
     color: rgba(0,0,0,.45);
+    margin-left: 2px;
   }
 </style>

@@ -19,6 +19,7 @@
 
 package com.cloud.resource;
 
+import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.NetworkInterface;
@@ -33,6 +34,7 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsAnswer;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -148,6 +150,39 @@ public abstract class ServerResourceBase implements ServerResource {
         }
 
         return true;
+    }
+
+     protected Answer listFilesAtPath(String nfsMountPoint, String relativePath, int startIndex, int pageSize) {
+        int count = 0;
+        File file = new File(nfsMountPoint, relativePath);
+        List<String> names = new ArrayList<>();
+        List<String> paths = new ArrayList<>();
+        List<String> absPaths = new ArrayList<>();
+        List<Boolean> isDirs = new ArrayList<>();
+        List<Long> sizes = new ArrayList<>();
+        List<Long> modifiedList = new ArrayList<>();
+        if (file.isFile()) {
+            count = 1;
+            names.add(file.getName());
+            paths.add(file.getPath().replace(nfsMountPoint, ""));
+            absPaths.add(file.getPath());
+            isDirs.add(file.isDirectory());
+            sizes.add(file.length());
+            modifiedList.add(file.lastModified());
+        } else if (file.isDirectory()) {
+            String[] files = file.list();
+            count = files.length;
+            for (int i = startIndex; i < startIndex + pageSize && i < count; i++) {
+                File f = new File(nfsMountPoint, relativePath + '/' + files[i]);
+                names.add(f.getName());
+                paths.add(f.getPath().replace(nfsMountPoint, ""));
+                absPaths.add(f.getPath());
+                isDirs.add(f.isDirectory());
+                sizes.add(f.length());
+                modifiedList.add(f.lastModified());
+            }
+        }
+         return new ListDataStoreObjectsAnswer(file.exists(), count, names, paths, absPaths, isDirs, sizes, modifiedList);
     }
 
     protected void fillNetworkInformation(final StartupCommand cmd) {

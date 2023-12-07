@@ -16,6 +16,52 @@
 // under the License.
 package com.cloud.storage.snapshot;
 
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.SnapshotOperation;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.snapshot.SnapshotHelper;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.BDDMockito;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
+
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
@@ -25,6 +71,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceManager;
+import com.cloud.server.ResourceTag;
 import com.cloud.server.TaggedResourceService;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
@@ -52,55 +99,11 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.SnapshotOperation;
-import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.snapshot.SnapshotHelper;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.BDDMockito;
-import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.mockito.verification.VerificationMode;
-
-import java.lang.reflect.Field;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class SnapshotManagerTest {
-    @Spy
+
+    @InjectMocks
     SnapshotManagerImpl _snapshotMgr = new SnapshotManagerImpl();
     @Mock
     SnapshotDao _snapshotDao;
@@ -189,48 +192,29 @@ public class SnapshotManagerTest {
     private static final boolean TEST_SNAPSHOT_POLICY_DISPLAY = true;
     private static final boolean TEST_SNAPSHOT_POLICY_ACTIVE = true;
 
-    private AutoCloseable closeable;
-
     @Before
     public void setup() throws ResourceAllocationException {
-        closeable = MockitoAnnotations.openMocks(this);
-        _snapshotMgr._snapshotDao = _snapshotDao;
-        _snapshotMgr._volsDao = _volumeDao;
-        _snapshotMgr._vmDao = _vmDao;
-        _snapshotMgr.volFactory = volumeFactory;
-        _snapshotMgr.snapshotFactory = snapshotFactory;
-        _snapshotMgr._storageStrategyFactory = _storageStrategyFactory;
-        _snapshotMgr._accountMgr = _accountMgr;
-        _snapshotMgr._resourceLimitMgr = _resourceLimitMgr;
-        _snapshotMgr._storagePoolDao = _storagePoolDao;
-        _snapshotMgr._resourceMgr = _resourceMgr;
-        _snapshotMgr._vmSnapshotDao = _vmSnapshotDao;
-        _snapshotMgr._snapshotStoreDao = snapshotStoreDao;
-        _snapshotMgr.snapshotHelper = snapshotHelperMock;
-        _snapshotMgr._snapshotPolicyDao = snapshotPolicyDaoMock;
-        _snapshotMgr._snapSchedMgr = snapshotSchedulerMock;
-        _snapshotMgr.taggedResourceService = taggedResourceServiceMock;
-        _snapshotMgr.dataCenterDao = dataCenterDao;
 
         when(_snapshotDao.findById(anyLong())).thenReturn(snapshotMock);
         when(snapshotMock.getVolumeId()).thenReturn(TEST_VOLUME_ID);
 
         when(_volumeDao.findById(anyLong())).thenReturn(volumeMock);
         when(volumeMock.getState()).thenReturn(Volume.State.Ready);
+        when(volumeMock.getId()).thenReturn(TEST_VOLUME_ID);
         when(volumeFactory.getVolume(anyLong())).thenReturn(volumeInfoMock);
         when(volumeInfoMock.getDataStore()).thenReturn(storeMock);
         when(volumeInfoMock.getState()).thenReturn(Volume.State.Ready);
         when(storeMock.getId()).thenReturn(TEST_STORAGE_POOL_ID);
 
-        when(snapshotFactory.getSnapshot(anyLong(), any(DataStoreRole.class))).thenReturn(snapshotInfoMock);
-        when(_storageStrategyFactory.getSnapshotStrategy(any(SnapshotVO.class), Mockito.eq(SnapshotOperation.BACKUP))).thenReturn(snapshotStrategy);
-        when(_storageStrategyFactory.getSnapshotStrategy(any(SnapshotVO.class), Mockito.eq(SnapshotOperation.REVERT))).thenReturn(snapshotStrategy);
+        when(snapshotFactory.getSnapshotWithRoleAndZone(anyLong(), Mockito.any(DataStoreRole.class), Mockito.anyLong())).thenReturn(snapshotInfoMock);
+        when(_storageStrategyFactory.getSnapshotStrategy(Mockito.any(SnapshotVO.class), Mockito.eq(SnapshotOperation.BACKUP))).thenReturn(snapshotStrategy);
+        when(_storageStrategyFactory.getSnapshotStrategy(Mockito.any(SnapshotVO.class), Mockito.eq(SnapshotOperation.REVERT))).thenReturn(snapshotStrategy);
 
-        doNothing().when(_snapshotMgr._resourceLimitMgr).checkResourceLimit(any(Account.class), any(ResourceType.class));
-        doNothing().when(_snapshotMgr._resourceLimitMgr).checkResourceLimit(any(Account.class), any(ResourceType.class), anyLong());
-        doNothing().when(_snapshotMgr._resourceLimitMgr).decrementResourceCount(anyLong(), any(ResourceType.class), anyLong());
-        doNothing().when(_snapshotMgr._resourceLimitMgr).incrementResourceCount(anyLong(), any(ResourceType.class));
-        doNothing().when(_snapshotMgr._resourceLimitMgr).incrementResourceCount(anyLong(), any(ResourceType.class), anyLong());
+        doNothing().when(_resourceLimitMgr).checkResourceLimit(any(Account.class), any(ResourceType.class));
+        doNothing().when(_resourceLimitMgr).checkResourceLimit(any(Account.class), any(ResourceType.class), anyLong());
+        doNothing().when(_resourceLimitMgr).decrementResourceCount(anyLong(), any(ResourceType.class), anyLong());
+        doNothing().when(_resourceLimitMgr).incrementResourceCount(anyLong(), any(ResourceType.class));
+        doNothing().when(_resourceLimitMgr).incrementResourceCount(anyLong(), any(ResourceType.class), anyLong());
 
         Account account = new AccountVO("testaccount", 1L, "networkdomain", Account.Type.NORMAL, "uuid");
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
@@ -249,7 +233,6 @@ public class SnapshotManagerTest {
     @After
     public void tearDown() throws Exception {
         CallContext.unregister();
-        closeable.close();
     }
 
     // vm is destroyed
@@ -312,10 +295,10 @@ public class SnapshotManagerTest {
     }
 
     @Test(expected = InvalidParameterValueException.class)
-    public void testDeleteSnapshotF1() {
+    public void testDeleteSnapshotDestroyedFailure() {
+        when(_snapshotDao.findById(TEST_SNAPSHOT_ID)).thenReturn(snapshotMock);
         when(snapshotMock.getState()).thenReturn(Snapshot.State.Destroyed);
-
-        _snapshotMgr.deleteSnapshot(TEST_SNAPSHOT_ID);
+        _snapshotMgr.deleteSnapshot(TEST_SNAPSHOT_ID, null);
     }
 
     // vm state not stopped
@@ -390,22 +373,26 @@ public class SnapshotManagerTest {
 
     @Test(expected = CloudRuntimeException.class)
     public void testArchiveSnapshotSnapshotNotOnPrimary() {
-        when(snapshotFactory.getSnapshot(anyLong(), Mockito.eq(DataStoreRole.Primary))).thenReturn(null);
+        when(snapshotFactory.getSnapshotOnPrimaryStore(anyLong())).thenReturn(null);
         _snapshotMgr.archiveSnapshot(TEST_SNAPSHOT_ID);
     }
 
     @Test(expected = CloudRuntimeException.class)
     public void testArchiveSnapshotSnapshotNotReady() {
-        when(snapshotFactory.getSnapshot(anyLong(), Mockito.eq(DataStoreRole.Primary))).thenReturn(snapshotInfoMock);
+        when(snapshotFactory.getSnapshotOnPrimaryStore(anyLong())).thenReturn(snapshotInfoMock);
         when(snapshotInfoMock.getStatus()).thenReturn(ObjectInDataStoreStateMachine.State.Destroyed);
         _snapshotMgr.archiveSnapshot(TEST_SNAPSHOT_ID);
     }
 
-    public void assertSnapshotPolicyResultAgainstPreBuiltInstance(SnapshotPolicyVO snapshotPolicyVo){
+    public void assertSnapshotPolicyResultAgainstPreBuiltInstance(SnapshotPolicyVO snapshotPolicyVo, Short interval){
         Assert.assertEquals(snapshotPolicyVoInstance.getVolumeId(), snapshotPolicyVo.getVolumeId());
         Assert.assertEquals(snapshotPolicyVoInstance.getSchedule(), snapshotPolicyVo.getSchedule());
         Assert.assertEquals(snapshotPolicyVoInstance.getTimezone(), snapshotPolicyVo.getTimezone());
-        Assert.assertEquals(snapshotPolicyVoInstance.getInterval(), snapshotPolicyVo.getInterval());
+        if (interval != null) {
+            Assert.assertEquals(interval.shortValue(), snapshotPolicyVo.getInterval());
+        } else {
+            Assert.assertEquals(snapshotPolicyVoInstance.getInterval(), snapshotPolicyVo.getInterval());
+        }
         Assert.assertEquals(snapshotPolicyVoInstance.getMaxSnaps(), snapshotPolicyVo.getMaxSnaps());
         Assert.assertEquals(snapshotPolicyVoInstance.isDisplay(), snapshotPolicyVo.isDisplay());
         Assert.assertEquals(snapshotPolicyVoInstance.isActive(), snapshotPolicyVo.isActive());
@@ -417,9 +404,9 @@ public class SnapshotManagerTest {
         Mockito.doReturn(null).when(snapshotSchedulerMock).scheduleNextSnapshotJob(any());
 
         SnapshotPolicyVO result = _snapshotMgr.createSnapshotPolicy(TEST_VOLUME_ID, TEST_SNAPSHOT_POLICY_SCHEDULE, TEST_SNAPSHOT_POLICY_TIMEZONE, TEST_SNAPSHOT_POLICY_INTERVAL,
-          TEST_SNAPSHOT_POLICY_MAX_SNAPS, TEST_SNAPSHOT_POLICY_DISPLAY);
+          TEST_SNAPSHOT_POLICY_MAX_SNAPS, TEST_SNAPSHOT_POLICY_DISPLAY, null);
 
-        assertSnapshotPolicyResultAgainstPreBuiltInstance(result);
+        assertSnapshotPolicyResultAgainstPreBuiltInstance(result, null);
     }
 
     @Test
@@ -432,9 +419,9 @@ public class SnapshotManagerTest {
           TEST_SNAPSHOT_POLICY_MAX_SNAPS, TEST_SNAPSHOT_POLICY_DISPLAY);
 
         _snapshotMgr.updateSnapshotPolicy(snapshotPolicyVo, TEST_SNAPSHOT_POLICY_SCHEDULE, TEST_SNAPSHOT_POLICY_TIMEZONE,
-          TEST_SNAPSHOT_POLICY_INTERVAL, TEST_SNAPSHOT_POLICY_MAX_SNAPS, TEST_SNAPSHOT_POLICY_DISPLAY, TEST_SNAPSHOT_POLICY_ACTIVE);
+          TEST_SNAPSHOT_POLICY_INTERVAL, TEST_SNAPSHOT_POLICY_MAX_SNAPS, TEST_SNAPSHOT_POLICY_DISPLAY, TEST_SNAPSHOT_POLICY_ACTIVE, null);
 
-        assertSnapshotPolicyResultAgainstPreBuiltInstance(snapshotPolicyVo);
+        assertSnapshotPolicyResultAgainstPreBuiltInstance(snapshotPolicyVo, null);
     }
 
     @Test
@@ -467,63 +454,50 @@ public class SnapshotManagerTest {
             Mockito.doReturn(false).when(globalLockMock).lock(Mockito.anyInt());
 
             _snapshotMgr.persistSnapshotPolicy(volumeMock, TEST_SNAPSHOT_POLICY_SCHEDULE, TEST_SNAPSHOT_POLICY_TIMEZONE, TEST_SNAPSHOT_POLICY_INTERVAL, TEST_SNAPSHOT_POLICY_MAX_SNAPS,
-                    TEST_SNAPSHOT_POLICY_DISPLAY, TEST_SNAPSHOT_POLICY_ACTIVE, mapStringStringMock);
+                    TEST_SNAPSHOT_POLICY_DISPLAY, TEST_SNAPSHOT_POLICY_ACTIVE, mapStringStringMock, null);
         }
     }
 
-    @Test
-    public void validatePersistSnapshotPolicyLockAquiredCreateSnapshotPolicy() {
+    private void testPersistSnapshotPolicyLockAcquired(boolean forUpdate) {
         try (MockedStatic<GlobalLock> ignored = Mockito.mockStatic(GlobalLock.class)) {
 
             BDDMockito.given(GlobalLock.getInternLock(Mockito.anyString())).willReturn(globalLockMock);
             Mockito.doReturn(true).when(globalLockMock).lock(Mockito.anyInt());
+            List<SnapshotPolicyVO> persistedPolicies = new ArrayList<>();
+            List<SnapshotPolicyVO> updatedPolicies = new ArrayList<>();
+            Mockito.when(snapshotPolicyDaoMock.persist(Mockito.any(SnapshotPolicyVO.class))).thenAnswer((Answer<SnapshotPolicyVO>) invocation -> {
+                SnapshotPolicyVO policy = (SnapshotPolicyVO)invocation.getArguments()[0];
+                persistedPolicies.add(policy);
+                return policy;
+            });
+            Mockito.when(snapshotPolicyDaoMock.update(Mockito.anyLong(), Mockito.any(SnapshotPolicyVO.class))).thenAnswer((Answer<Boolean>) invocation -> {
+                SnapshotPolicyVO policy = (SnapshotPolicyVO)invocation.getArguments()[1];
+                updatedPolicies.add(policy);
+                return true;
+            });
 
             for (IntervalType intervalType : listIntervalTypes) {
-
-                Mockito.doReturn(null).when(snapshotPolicyDaoMock).findOneByVolumeInterval(anyLong(), Mockito.eq(intervalType));
-                Mockito.doReturn(snapshotPolicyVoInstance).when(_snapshotMgr).createSnapshotPolicy(anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.eq(intervalType),
-                        Mockito.anyInt(), Mockito.anyBoolean());
-
+                Mockito.doReturn(forUpdate ? snapshotPolicyVoInstance : null).when(snapshotPolicyDaoMock).findOneByVolumeInterval(Mockito.anyLong(), Mockito.eq(intervalType));
                 SnapshotPolicyVO result = _snapshotMgr.persistSnapshotPolicy(volumeMock, TEST_SNAPSHOT_POLICY_SCHEDULE, TEST_SNAPSHOT_POLICY_TIMEZONE, intervalType,
-                        TEST_SNAPSHOT_POLICY_MAX_SNAPS, TEST_SNAPSHOT_POLICY_DISPLAY, TEST_SNAPSHOT_POLICY_ACTIVE, null);
+                        TEST_SNAPSHOT_POLICY_MAX_SNAPS, TEST_SNAPSHOT_POLICY_DISPLAY, TEST_SNAPSHOT_POLICY_ACTIVE, null, null);
 
-                assertSnapshotPolicyResultAgainstPreBuiltInstance(result);
+                assertSnapshotPolicyResultAgainstPreBuiltInstance(result, (short)intervalType.ordinal());
             }
 
-            VerificationMode timesVerification = Mockito.times(listIntervalTypes.size());
-            Mockito.verify(_snapshotMgr, timesVerification).createSnapshotPolicy(anyLong(), Mockito.anyString(), Mockito.anyString(), any(DateUtil.IntervalType.class),
-                    Mockito.anyInt(), Mockito.anyBoolean());
-            Mockito.verify(_snapshotMgr, Mockito.never()).updateSnapshotPolicy(any(SnapshotPolicyVO.class), Mockito.anyString(), Mockito.anyString(),
-                    any(DateUtil.IntervalType.class), Mockito.anyInt(), Mockito.anyBoolean(), Mockito.anyBoolean());
-            Mockito.verify(_snapshotMgr, timesVerification).createTagsForSnapshotPolicy(any(), any());
+            Assert.assertEquals(forUpdate ? 0 : listIntervalTypes.size(), persistedPolicies.size());
+            Assert.assertEquals(forUpdate ? listIntervalTypes.size() : 0, updatedPolicies.size());
+            Mockito.verify(taggedResourceServiceMock, Mockito.never()).createTags(Mockito.anyList(), Mockito.any(ResourceTag.ResourceObjectType.class), Mockito.anyMap(), Mockito.anyString());
         }
     }
 
     @Test
-    public void validatePersistSnapshotPolicyLockAquiredUpdateSnapshotPolicy() {
-        try (MockedStatic<GlobalLock> ignored = Mockito.mockStatic(GlobalLock.class)) {
+    public void validatePersistSnapshotPolicyLockAcquiredCreateSnapshotPolicy() {
+        testPersistSnapshotPolicyLockAcquired(false);
+    }
 
-            BDDMockito.given(GlobalLock.getInternLock(Mockito.anyString())).willReturn(globalLockMock);
-            Mockito.doReturn(true).when(globalLockMock).lock(Mockito.anyInt());
-
-            for (IntervalType intervalType : listIntervalTypes) {
-                Mockito.doReturn(snapshotPolicyVoInstance).when(snapshotPolicyDaoMock).findOneByVolumeInterval(anyLong(), Mockito.eq(intervalType));
-                Mockito.doNothing().when(_snapshotMgr).updateSnapshotPolicy(any(SnapshotPolicyVO.class), Mockito.anyString(), Mockito.anyString(),
-                        any(DateUtil.IntervalType.class), Mockito.anyInt(), Mockito.anyBoolean(), Mockito.anyBoolean());
-
-                SnapshotPolicyVO result = _snapshotMgr.persistSnapshotPolicy(volumeMock, TEST_SNAPSHOT_POLICY_SCHEDULE, TEST_SNAPSHOT_POLICY_TIMEZONE, intervalType,
-                        TEST_SNAPSHOT_POLICY_MAX_SNAPS, TEST_SNAPSHOT_POLICY_DISPLAY, TEST_SNAPSHOT_POLICY_ACTIVE, null);
-
-                assertSnapshotPolicyResultAgainstPreBuiltInstance(result);
-            }
-
-            VerificationMode timesVerification = Mockito.times(listIntervalTypes.size());
-            Mockito.verify(_snapshotMgr, Mockito.never()).createSnapshotPolicy(anyLong(), Mockito.anyString(), Mockito.anyString(), any(DateUtil.IntervalType.class),
-                    Mockito.anyInt(), Mockito.anyBoolean());
-            Mockito.verify(_snapshotMgr, timesVerification).updateSnapshotPolicy(any(SnapshotPolicyVO.class), Mockito.anyString(), Mockito.anyString(),
-                    any(DateUtil.IntervalType.class), Mockito.anyInt(), Mockito.anyBoolean(), Mockito.anyBoolean());
-            Mockito.verify(_snapshotMgr, timesVerification).createTagsForSnapshotPolicy(any(), any());
-        }
+    @Test
+    public void validatePersistSnapshotPolicyLockAcquiredUpdateSnapshotPolicy() {
+        testPersistSnapshotPolicyLockAcquired(true);
     }
 
     private void mockForBackupSnapshotToSecondaryZoneTest(final Boolean configValue, final DataCenter.Type dcType) {

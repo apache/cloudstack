@@ -22,7 +22,7 @@ import notification from 'ant-design-vue/es/notification'
 import { vueProps } from '@/vue-app'
 import router from '@/router'
 import store from '@/store'
-import { login, logout, api } from '@/api'
+import { oauthlogin, login, logout, api } from '@/api'
 import { i18n } from '@/locales'
 
 import {
@@ -36,7 +36,9 @@ import {
   HEADER_NOTICES,
   DOMAIN_STORE,
   DARK_MODE,
-  CUSTOM_COLUMNS
+  CUSTOM_COLUMNS,
+  OAUTH_DOMAIN,
+  OAUTH_PROVIDER
 } from '@/store/mutation-types'
 
 const user = {
@@ -159,6 +161,12 @@ const user = {
     },
     SET_READY_FOR_SHUTDOWN_POLLING_JOB: (state, job) => {
       state.readyForShutdownPollingJob = job
+    },
+    SET_DOMAIN_USED_TO_LOGIN: (state, domain) => {
+      vueProps.$localStorage.set(OAUTH_DOMAIN, domain)
+    },
+    SET_OAUTH_PROVIDER_USED_TO_LOGIN: (state, provider) => {
+      vueProps.$localStorage.set(OAUTH_PROVIDER, provider)
     }
   },
 
@@ -169,6 +177,53 @@ const user = {
     Login ({ commit }, userInfo) {
       return new Promise((resolve, reject) => {
         login(userInfo).then(response => {
+          const result = response.loginresponse || {}
+          Cookies.set('account', result.account, { expires: 1 })
+          Cookies.set('domainid', result.domainid, { expires: 1 })
+          Cookies.set('role', result.type, { expires: 1 })
+          Cookies.set('timezone', result.timezone, { expires: 1 })
+          Cookies.set('timezoneoffset', result.timezoneoffset, { expires: 1 })
+          Cookies.set('userfullname', result.firstname + ' ' + result.lastname, { expires: 1 })
+          Cookies.set('userid', result.userid, { expires: 1 })
+          Cookies.set('username', result.username, { expires: 1 })
+          vueProps.$localStorage.set(ACCESS_TOKEN, result.sessionkey, 24 * 60 * 60 * 1000)
+          commit('SET_TOKEN', result.sessionkey)
+          commit('SET_TIMEZONE_OFFSET', result.timezoneoffset)
+
+          const cachedUseBrowserTimezone = vueProps.$localStorage.get(USE_BROWSER_TIMEZONE, false)
+          commit('SET_USE_BROWSER_TIMEZONE', cachedUseBrowserTimezone)
+          const darkMode = vueProps.$localStorage.get(DARK_MODE, false)
+          commit('SET_DARK_MODE', darkMode)
+          const cachedCustomColumns = vueProps.$localStorage.get(CUSTOM_COLUMNS, {})
+          commit('SET_CUSTOM_COLUMNS', cachedCustomColumns)
+
+          commit('SET_APIS', {})
+          commit('SET_NAME', '')
+          commit('SET_AVATAR', '')
+          commit('SET_INFO', {})
+          commit('SET_PROJECT', {})
+          commit('SET_HEADER_NOTICES', [])
+          commit('SET_FEATURES', {})
+          commit('SET_LDAP', {})
+          commit('SET_CLOUDIAN', {})
+          commit('SET_DOMAIN_STORE', {})
+          commit('SET_LOGOUT_FLAG', false)
+          commit('SET_2FA_ENABLED', (result.is2faenabled === 'true'))
+          commit('SET_2FA_PROVIDER', result.providerfor2fa)
+          commit('SET_2FA_ISSUER', result.issuerfor2fa)
+          commit('SET_LOGIN_FLAG', false)
+          notification.destroy()
+
+          resolve()
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    },
+
+    OauthLogin ({ commit }, userInfo) {
+      return new Promise((resolve, reject) => {
+        oauthlogin(userInfo).then(response => {
           const result = response.loginresponse || {}
           Cookies.set('account', result.account, { expires: 1 })
           Cookies.set('domainid', result.domainid, { expires: 1 })

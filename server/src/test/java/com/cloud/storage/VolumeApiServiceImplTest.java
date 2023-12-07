@@ -16,6 +16,72 @@
 // under the License.
 package com.cloud.storage;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
+import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDao;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
+import org.apache.cloudstack.resourcedetail.dao.SnapshotPolicyDetailsDao;
+import org.apache.cloudstack.snapshot.SnapshotHelper;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
+import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
+import org.apache.commons.collections.CollectionUtils;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
+import org.mockito.InOrder;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
+
 import com.cloud.api.query.dao.ServiceOfferingJoinDao;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.configuration.Resource;
@@ -52,6 +118,7 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
@@ -63,69 +130,6 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
-import org.apache.cloudstack.framework.async.AsyncCallFuture;
-import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
-import org.apache.cloudstack.framework.jobs.AsyncJobManager;
-import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDao;
-import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
-import org.apache.cloudstack.snapshot.SnapshotHelper;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
-import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
-import org.apache.commons.collections.CollectionUtils;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
-import org.mockito.InOrder;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import org.mockito.Spy;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.test.util.ReflectionTestUtils;
-
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.ExecutionException;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class VolumeApiServiceImplTest {
@@ -218,6 +222,9 @@ public class VolumeApiServiceImplTest {
 
     @Mock
     private SnapshotDao snapshotDaoMock;
+
+    @Mock
+    private SnapshotPolicyDetailsDao snapshotPolicyDetailsDao;
 
     @Mock
     private Project projectMock;
@@ -531,7 +538,7 @@ public class VolumeApiServiceImplTest {
         when(volumeDataFactoryMock.getVolume(anyLong())).thenReturn(volumeInfoMock);
         when(volumeInfoMock.getState()).thenReturn(Volume.State.Allocated);
         lenient().when(volumeInfoMock.getPoolId()).thenReturn(1L);
-        volumeApiServiceImpl.takeSnapshot(5L, Snapshot.MANUAL_POLICY_ID, 3L, null, false, null, false, null);
+        volumeApiServiceImpl.takeSnapshot(5L, Snapshot.MANUAL_POLICY_ID, 3L, null, false, null, false, null, null);
     }
 
     @Test
@@ -544,7 +551,7 @@ public class VolumeApiServiceImplTest {
         final TaggedResourceService taggedResourceService = Mockito.mock(TaggedResourceService.class);
         Mockito.lenient().when(taggedResourceService.createTags(any(), any(), any(), any())).thenReturn(null);
         ReflectionTestUtils.setField(volumeApiServiceImpl, "taggedResourceService", taggedResourceService);
-        volumeApiServiceImpl.takeSnapshot(5L, Snapshot.MANUAL_POLICY_ID, 3L, null, false, null, false, null);
+        volumeApiServiceImpl.takeSnapshot(5L, Snapshot.MANUAL_POLICY_ID, 3L, null, false, null, false, null, null);
     }
 
     @Test
@@ -592,7 +599,7 @@ public class VolumeApiServiceImplTest {
     @Test
     public void testAllocSnapshotNonManagedStorageArchive() {
         try {
-            volumeApiServiceImpl.allocSnapshot(6L, 1L, "test", Snapshot.LocationType.SECONDARY);
+            volumeApiServiceImpl.allocSnapshot(6L, 1L, "test", Snapshot.LocationType.SECONDARY, null);
         } catch (InvalidParameterValueException e) {
             Assert.assertEquals(e.getMessage(), "VolumeId: 6 LocationType is supported only for managed storage");
             return;
@@ -645,29 +652,35 @@ public class VolumeApiServiceImplTest {
 
     @Test
     public void getStoragePoolTagsTestStorageWithoutTags() {
-        Mockito.when(storagePoolTagsDao.getStoragePoolTags(storagePoolMockId)).thenReturn(new ArrayList<>());
-
-        String returnedStoragePoolTags = volumeApiServiceImpl.getStoragePoolTags(storagePoolMock);
+        Pair<List<String>, Boolean> returnedStoragePoolTags = volumeApiServiceImpl.getStoragePoolTags(storagePoolMock);
 
         Assert.assertNull(returnedStoragePoolTags);
     }
 
     @Test
     public void getStoragePoolTagsTestStorageWithTags() {
-        ArrayList<String> tags = new ArrayList<>();
-        String tag1 = "tag1";
-        String tag2 = "tag2";
-        String tag3 = "tag3";
+        StoragePoolTagVO tag1 = new StoragePoolTagVO(1,"tag1", false);
+        StoragePoolTagVO tag2 = new StoragePoolTagVO(1,"tag2", false);
+        StoragePoolTagVO tag3 = new StoragePoolTagVO(1,"tag3", false);
+        List<StoragePoolTagVO> tags = Arrays.asList(tag1, tag2, tag3);
 
-        tags.add(tag1);
-        tags.add(tag2);
-        tags.add(tag3);
+        Mockito.when(storagePoolTagsDao.findStoragePoolTags(storagePoolMockId)).thenReturn(tags);
 
-        Mockito.when(storagePoolTagsDao.getStoragePoolTags(storagePoolMockId)).thenReturn(tags);
+        Pair<List<String>, Boolean> returnedStoragePoolTags = volumeApiServiceImpl.getStoragePoolTags(storagePoolMock);
 
-        String returnedStoragePoolTags = volumeApiServiceImpl.getStoragePoolTags(storagePoolMock);
+        Assert.assertEquals(new Pair<>(Arrays.asList("tag1","tag2","tag3"), false), returnedStoragePoolTags);
+    }
 
-        Assert.assertEquals("tag1,tag2,tag3", returnedStoragePoolTags);
+    @Test
+    public void getStoragePoolTagsTestStorageWithRuleTag() {
+        StoragePoolTagVO tag1 = new StoragePoolTagVO(1,"tag1", true);
+        List<StoragePoolTagVO> tags = List.of(tag1);
+
+        Mockito.when(storagePoolTagsDao.findStoragePoolTags(storagePoolMockId)).thenReturn(tags);
+
+        Pair<List<String>, Boolean> returnedStoragePoolTags = volumeApiServiceImpl.getStoragePoolTags(storagePoolMock);
+
+        Assert.assertEquals(new Pair<>(List.of("tag1"), true), returnedStoragePoolTags);
     }
 
     @Test
@@ -752,7 +765,7 @@ public class VolumeApiServiceImplTest {
 
         Mockito.when(newDiskOfferingMock.getTags()).thenReturn("tag1");
 
-        Mockito.doReturn("tag1").when(volumeApiServiceImpl).getStoragePoolTags(storagePoolMock);
+        Mockito.doReturn(new Pair<>(List.of("tag1"), false)).when(volumeApiServiceImpl).getStoragePoolTags(storagePoolMock);
 
         volumeApiServiceImpl.validateConditionsToReplaceDiskOfferingOfVolume(volumeVoMock, newDiskOfferingMock, storagePoolMock);
 
@@ -1133,7 +1146,7 @@ public class VolumeApiServiceImplTest {
         Mockito.doReturn("A,B,C").when(diskOfferingVoMock).getTags();
 
         StoragePool storagePoolMock = Mockito.mock(StoragePool.class);
-        Mockito.doReturn("A").when(volumeApiServiceImpl).getStoragePoolTags(storagePoolMock);
+        Mockito.doReturn(new Pair<>(List.of("A"), false)).when(volumeApiServiceImpl).getStoragePoolTags(storagePoolMock);
 
         boolean result = volumeApiServiceImpl.doesTargetStorageSupportDiskOffering(storagePoolMock, diskOfferingVoMock);
 
@@ -1146,7 +1159,7 @@ public class VolumeApiServiceImplTest {
         Mockito.doReturn("A,B,C").when(diskOfferingVoMock).getTags();
 
         StoragePool storagePoolMock = Mockito.mock(StoragePool.class);
-        Mockito.doReturn("A,B,C,D,X,Y").when(volumeApiServiceImpl).getStoragePoolTags(storagePoolMock);
+        Mockito.doReturn(new Pair<>(List.of("A","B","C","D","X","Y"), false)).when(volumeApiServiceImpl).getStoragePoolTags(storagePoolMock);
 
         boolean result = volumeApiServiceImpl.doesTargetStorageSupportDiskOffering(storagePoolMock, diskOfferingVoMock);
 
@@ -1159,7 +1172,7 @@ public class VolumeApiServiceImplTest {
         Mockito.doReturn("").when(diskOfferingVoMock).getTags();
 
         StoragePool storagePoolMock = Mockito.mock(StoragePool.class);
-        Mockito.lenient().doReturn("A,B,C,D,X,Y").when(volumeApiServiceImpl).getStoragePoolTags(storagePoolMock);
+        Mockito.lenient().doReturn(new Pair<>(List.of("A,B,C,D,X,Y"), false)).when(volumeApiServiceImpl).getStoragePoolTags(storagePoolMock);
 
         boolean result = volumeApiServiceImpl.doesTargetStorageSupportDiskOffering(storagePoolMock, diskOfferingVoMock);
 
@@ -1172,7 +1185,7 @@ public class VolumeApiServiceImplTest {
         Mockito.doReturn("A").when(diskOfferingVoMock).getTags();
 
         StoragePool storagePoolMock = Mockito.mock(StoragePool.class);
-        Mockito.doReturn("").when(volumeApiServiceImpl).getStoragePoolTags(storagePoolMock);
+        Mockito.doReturn(new Pair<>(List.of(""), false)).when(volumeApiServiceImpl).getStoragePoolTags(storagePoolMock);
 
         boolean result = volumeApiServiceImpl.doesTargetStorageSupportDiskOffering(storagePoolMock, diskOfferingVoMock);
 
@@ -1185,7 +1198,7 @@ public class VolumeApiServiceImplTest {
         Mockito.doReturn("").when(diskOfferingVoMock).getTags();
 
         StoragePool storagePoolMock = Mockito.mock(StoragePool.class);
-        Mockito.lenient().doReturn("").when(volumeApiServiceImpl).getStoragePoolTags(storagePoolMock);
+        Mockito.lenient().doReturn(new Pair<>(List.of(""), false)).when(volumeApiServiceImpl).getStoragePoolTags(storagePoolMock);
 
         boolean result = volumeApiServiceImpl.doesTargetStorageSupportDiskOffering(storagePoolMock, diskOfferingVoMock);
 
@@ -1198,7 +1211,7 @@ public class VolumeApiServiceImplTest {
         Mockito.doReturn("A,B").when(diskOfferingVoMock).getTags();
 
         StoragePool storagePoolMock = Mockito.mock(StoragePool.class);
-        Mockito.doReturn("C,D").when(volumeApiServiceImpl).getStoragePoolTags(storagePoolMock);
+        Mockito.doReturn(new Pair<>(List.of("C,D"), false)).when(volumeApiServiceImpl).getStoragePoolTags(storagePoolMock);
 
         boolean result = volumeApiServiceImpl.doesTargetStorageSupportDiskOffering(storagePoolMock, diskOfferingVoMock);
 
@@ -1211,11 +1224,50 @@ public class VolumeApiServiceImplTest {
         Mockito.doReturn("A").when(diskOfferingVoMock).getTags();
 
         StoragePool storagePoolMock = Mockito.mock(StoragePool.class);
-        Mockito.doReturn("A").when(volumeApiServiceImpl).getStoragePoolTags(storagePoolMock);
+        Mockito.doReturn(new Pair<>(List.of("A"), false)).when(volumeApiServiceImpl).getStoragePoolTags(storagePoolMock);
 
         boolean result = volumeApiServiceImpl.doesTargetStorageSupportDiskOffering(storagePoolMock, diskOfferingVoMock);
 
         Assert.assertTrue(result);
+    }
+
+    @Test
+    public void doesTargetStorageSupportDiskOfferingTestStorageRuleTagWithDiskOfferingTagThatMatches() {
+        DiskOfferingVO diskOfferingVoMock = Mockito.mock(DiskOfferingVO.class);
+        Mockito.doReturn("A").when(diskOfferingVoMock).getTags();
+
+        StoragePool storagePoolMock = Mockito.mock(StoragePool.class);
+        Mockito.doReturn(new Pair<>(List.of("tags[0] == 'A'"), true)).when(volumeApiServiceImpl).getStoragePoolTags(storagePoolMock);
+
+        boolean result = volumeApiServiceImpl.doesTargetStorageSupportDiskOffering(storagePoolMock, diskOfferingVoMock);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void doesTargetStorageSupportDiskOfferingTestStorageRuleTagWithDiskOfferingTagThatDoesNotMatch() {
+        DiskOfferingVO diskOfferingVoMock = Mockito.mock(DiskOfferingVO.class);
+        Mockito.doReturn("'").when(diskOfferingVoMock).getTags();
+
+        StoragePool storagePoolMock = Mockito.mock(StoragePool.class);
+        Mockito.doReturn(new Pair<>(List.of("tags[0] == 'A'"), true)).when(volumeApiServiceImpl).getStoragePoolTags(storagePoolMock);
+
+        boolean result = volumeApiServiceImpl.doesTargetStorageSupportDiskOffering(storagePoolMock, diskOfferingVoMock);
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void doesTargetStorageSupportDiskOfferingTestStorageRuleTagWithNullDiskOfferingTag() {
+        DiskOfferingVO diskOfferingVoMock = Mockito.mock(DiskOfferingVO.class);
+        Mockito.doReturn(null).when(diskOfferingVoMock).getTags();
+
+        StoragePool storagePoolMock = Mockito.mock(StoragePool.class);
+        Mockito.doReturn(new Pair<>(List.of("tags[0] == 'A'"), true)).when(volumeApiServiceImpl).getStoragePoolTags(storagePoolMock);
+
+        boolean result = volumeApiServiceImpl.doesTargetStorageSupportDiskOffering(storagePoolMock, diskOfferingVoMock);
+
+        Assert.assertFalse(result);
     }
 
     @Test

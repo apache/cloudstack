@@ -99,7 +99,6 @@ import com.cloud.vm.UserVmService;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -1495,8 +1494,6 @@ public class AutoScaleManagerImplTest {
             when(autoScaleVmGroupDao.updateState(vmGroupId, AutoScaleVmGroup.State.ENABLED, AutoScaleVmGroup.State.SCALING)).thenReturn(true);
             when(autoScaleVmGroupDao.updateState(vmGroupId, AutoScaleVmGroup.State.SCALING, AutoScaleVmGroup.State.ENABLED)).thenReturn(true);
             Mockito.doReturn(virtualMachineId).when(autoScaleManagerImplSpy).createNewVM(asVmGroupMock);
-            Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVm = Mockito.mock(Pair.class);
-            when(userVmMgr.startVirtualMachine(virtualMachineId, null, null, null)).thenReturn(startVm);
 
             when(asVmGroupMock.getLoadBalancerId()).thenReturn(loadBalancerId);
             when(lbVmMapDao.listByLoadBalancerId(loadBalancerId)).thenReturn(Arrays.asList(loadBalancerVMMapMock));

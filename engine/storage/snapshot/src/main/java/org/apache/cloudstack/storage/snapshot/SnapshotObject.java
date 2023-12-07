@@ -26,6 +26,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
@@ -64,6 +65,7 @@ public class SnapshotObject implements SnapshotInfo {
     private DataStore store;
     private Object payload;
     private Boolean fullBackup;
+    private String url;
     @Inject
     protected SnapshotDao snapshotDao;
     @Inject
@@ -80,7 +82,11 @@ public class SnapshotObject implements SnapshotInfo {
     SnapshotDataStoreDao snapshotStoreDao;
     @Inject
     StorageStrategyFactory storageStrategyFactory;
+    @Inject
+    DataStoreManager dataStoreManager;
     private String installPath; // temporarily set installPath before passing to resource for entries with empty installPath for object store migration case
+
+    private Long zoneId = null;
 
     public SnapshotObject() {
 
@@ -142,7 +148,7 @@ public class SnapshotObject implements SnapshotInfo {
         List<SnapshotInfo> children = new ArrayList<>();
         if (vos != null) {
             for (SnapshotDataStoreVO vo : vos) {
-                SnapshotInfo info = snapshotFactory.getSnapshot(vo.getSnapshotId(), DataStoreRole.Image);
+                SnapshotInfo info = snapshotFactory.getSnapshot(vo.getSnapshotId(), vo.getDataStoreId(), DataStoreRole.Image);
                 if (info != null) {
                     children.add(info);
                 }
@@ -164,7 +170,7 @@ public class SnapshotObject implements SnapshotInfo {
     @Override
     public long getPhysicalSize() {
         long physicalSize = 0;
-        SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Image);
+        SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findByStoreSnapshot(DataStoreRole.Image, store.getId(), snapshot.getId());
         if (snapshotStore != null) {
             physicalSize = snapshotStore.getPhysicalSize();
         }
@@ -194,7 +200,14 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public String getUri() {
+        if (url != null) {
+            return url;
+        }
         return snapshot.getUuid();
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
     }
 
     @Override
@@ -309,7 +322,10 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public Long getDataCenterId() {
-        return snapshot.getDataCenterId();
+        if (zoneId == null) {
+            zoneId = dataStoreManager.getStoreZoneId(store.getId(), store.getRole());
+        }
+        return zoneId;
     }
 
     public void processEvent(Snapshot.Event event) throws NoTransitionException {

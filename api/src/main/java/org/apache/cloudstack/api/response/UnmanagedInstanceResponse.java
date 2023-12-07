@@ -39,6 +39,10 @@ public class UnmanagedInstanceResponse extends BaseResponse {
     @Param(description = "the ID of the cluster to which virtual machine belongs")
     private String clusterId;
 
+    @SerializedName(ApiConstants.CLUSTER_NAME)
+    @Param(description = "the name of the cluster to which virtual machine belongs")
+    private String clusterName;
+
     @SerializedName(ApiConstants.HOST_ID)
     @Param(description = "the ID of the host to which virtual machine belongs")
     private String hostId;
@@ -102,6 +106,14 @@ public class UnmanagedInstanceResponse extends BaseResponse {
 
     public void setClusterId(String clusterId) {
         this.clusterId = clusterId;
+    }
+
+    public String getClusterName() {
+        return clusterName;
+    }
+
+    public void setClusterName(String clusterName) {
+        this.clusterName = clusterName;
     }
 
     public String getHostId() {

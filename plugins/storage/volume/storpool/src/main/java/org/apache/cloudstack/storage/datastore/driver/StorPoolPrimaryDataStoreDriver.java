@@ -18,54 +18,17 @@
  */
 package org.apache.cloudstack.storage.datastore.driver;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.storage.ResizeVolumeAnswer;
-import com.cloud.agent.api.storage.StorPoolBackupSnapshotCommand;
-import com.cloud.agent.api.storage.StorPoolBackupTemplateFromSnapshotCommand;
-import com.cloud.agent.api.storage.StorPoolCopyVolumeToSecondaryCommand;
-import com.cloud.agent.api.storage.StorPoolDownloadTemplateCommand;
-import com.cloud.agent.api.storage.StorPoolDownloadVolumeCommand;
-import com.cloud.agent.api.storage.StorPoolResizeVolumeCommand;
-import com.cloud.agent.api.storage.StorPoolSetVolumeEncryptionAnswer;
-import com.cloud.agent.api.storage.StorPoolSetVolumeEncryptionCommand;
-import com.cloud.agent.api.to.DataObjectType;
-import com.cloud.agent.api.to.DataStoreTO;
-import com.cloud.agent.api.to.DataTO;
-import com.cloud.agent.api.to.StorageFilerTO;
-import com.cloud.dc.dao.ClusterDao;
-import com.cloud.host.Host;
-import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.kvm.storage.StorPoolStorageAdaptor;
-import com.cloud.server.ResourceTag;
-import com.cloud.server.ResourceTag.ResourceObjectType;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.ResizeVolumePayload;
-import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.VMTemplateDetailVO;
-import com.cloud.storage.VMTemplateStoragePoolVO;
-import com.cloud.storage.VolumeDetailVO;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.SnapshotDetailsDao;
-import com.cloud.storage.dao.SnapshotDetailsVO;
-import com.cloud.storage.dao.StoragePoolHostDao;
-import com.cloud.storage.dao.VMTemplateDetailsDao;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.dao.VolumeDetailsDao;
-import com.cloud.tags.dao.ResourceTagDao;
-import com.cloud.utils.Pair;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine.State;
-import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.dao.VMInstanceDao;
+import java.util.List;
+import java.util.Map;
+
+import javax.inject.Inject;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
@@ -101,10 +64,50 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.log4j.Logger;
 
-import javax.inject.Inject;
-
-import java.util.List;
-import java.util.Map;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.storage.ResizeVolumeAnswer;
+import com.cloud.agent.api.storage.StorPoolBackupSnapshotCommand;
+import com.cloud.agent.api.storage.StorPoolBackupTemplateFromSnapshotCommand;
+import com.cloud.agent.api.storage.StorPoolCopyVolumeToSecondaryCommand;
+import com.cloud.agent.api.storage.StorPoolDownloadTemplateCommand;
+import com.cloud.agent.api.storage.StorPoolDownloadVolumeCommand;
+import com.cloud.agent.api.storage.StorPoolResizeVolumeCommand;
+import com.cloud.agent.api.storage.StorPoolSetVolumeEncryptionAnswer;
+import com.cloud.agent.api.storage.StorPoolSetVolumeEncryptionCommand;
+import com.cloud.agent.api.to.DataObjectType;
+import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.kvm.storage.StorPoolStorageAdaptor;
+import com.cloud.server.ResourceTag;
+import com.cloud.server.ResourceTag.ResourceObjectType;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.ResizeVolumePayload;
+import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.VMTemplateDetailVO;
+import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeDetailVO;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.SnapshotDetailsDao;
+import com.cloud.storage.dao.SnapshotDetailsVO;
+import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.storage.dao.VMTemplateDetailsDao;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.tags.dao.ResourceTagDao;
+import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.dao.VMInstanceDao;
 
 public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
@@ -142,6 +145,18 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     private StoragePoolDetailsDao storagePoolDetailsDao;
     @Inject
     private StoragePoolHostDao storagePoolHostDao;
+    @Inject
+    DataStoreManager dataStoreManager;
+
+    private SnapshotDataStoreVO getSnapshotImageStoreRef(long snapshotId, long zoneId) {
+        List<SnapshotDataStoreVO> snaps = snapshotDataStoreDao.listReadyBySnapshot(snapshotId, DataStoreRole.Image);
+        for (SnapshotDataStoreVO ref : snaps) {
+            if (zoneId == dataStoreManager.getStoreZoneId(ref.getDataStoreId(), ref.getRole())) {
+                return ref;
+            }
+        }
+        return null;
+    }
 
     @Override
     public Map<String, String> getCapabilities() {
@@ -468,7 +483,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 } else if (resp.getError().getName().equals("objectDoesNotExist")) {
                     //check if snapshot is on secondary storage
                     StorPoolUtil.spLog("Snapshot %s does not exists on StorPool, will try to create a volume from a snopshot on secondary storage", snapshotName);
-                    SnapshotDataStoreVO snap = snapshotDataStoreDao.findBySnapshot(sinfo.getId(), DataStoreRole.Image);
+                    SnapshotDataStoreVO snap = getSnapshotImageStoreRef(sinfo.getId(), vinfo.getDataCenterId());
                     if (snap != null && StorPoolStorageAdaptor.getVolumeNameFromPath(snap.getInstallPath(), false) == null) {
                         resp = StorPoolUtil.volumeCreate(srcData.getUuid(), null, size, null, "no", "snapshot", sinfo.getBaseVolume().getMaxIops(), conn);
                         if (resp.getError() == null) {
@@ -1148,6 +1163,22 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             } catch (Exception e) {
                 log.warn(String.format("Could not update Virtual machine tags due to %s", e.getMessage()));
             }
+        }
+    }
+
+    @Override
+    public boolean isStorageSupportHA(StoragePoolType type) {
+        return true;
+    }
+
+    @Override
+    public void detachVolumeFromAllStorageNodes(Volume volume) {
+        StoragePoolVO poolVO = primaryStoreDao.findById(volume.getPoolId());
+        if (poolVO != null) {
+            SpConnectionDesc conn = StorPoolUtil.getSpConnection(poolVO.getUuid(), poolVO.getId(), storagePoolDetailsDao, primaryStoreDao);
+            String volName = StorPoolStorageAdaptor.getVolumeNameFromPath(volume.getPath(), true);
+            SpApiResponse resp = StorPoolUtil.detachAllForced(volName, false, conn);
+            StorPoolUtil.spLog("The volume [%s] is detach from all clusters [%s]", volName, resp);
         }
     }
 }

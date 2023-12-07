@@ -670,7 +670,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
                 " as it's already assigned to antoher vm");
         }
 
-        //check wether the vm ip is alreday associated with any public ip address
+        //check whether the vm ip is already associated with any public ip address
         IPAddressVO oldIP = _ipAddressDao.findByAssociatedVmIdAndVmIp(vmId, vmIp);
 
         if (oldIP != null) {

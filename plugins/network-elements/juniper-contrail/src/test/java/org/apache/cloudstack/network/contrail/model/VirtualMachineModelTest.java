@@ -46,18 +46,18 @@ public class VirtualMachineModelTest extends TestCase {
     @Test
     public void testVirtualMachineDBLookup() {
         ModelDatabase db = new ModelDatabase();
-        VMInstanceVO vm  = mock(VMInstanceVO.class);
+        VMInstanceVO vm = mock(VMInstanceVO.class);
 
         // Create 3 dummy Virtual Machine model objects
         // Add these models to database.
         // Each VM is identified by unique UUId.
-        VirtualMachineModel  vm0 = new VirtualMachineModel(vm, "fbc1f8fa-4b78-45ee-bba0-b551dbf72353");
+        VirtualMachineModel vm0 = new VirtualMachineModel(vm, "fbc1f8fa-4b78-45ee-bba0-b551dbf72353");
         db.getVirtualMachines().add(vm0);
 
-        VirtualMachineModel  vm1 = new VirtualMachineModel(vm, "fbc1f8fa-4b78-45ee-bba0-b551dbf83464");
+        VirtualMachineModel vm1 = new VirtualMachineModel(vm, "fbc1f8fa-4b78-45ee-bba0-b551dbf83464");
         db.getVirtualMachines().add(vm1);
 
-        VirtualMachineModel  vm2 = new VirtualMachineModel(vm, "fbc1f8fa-4b78-45ee-bba0-b551dbf94575");
+        VirtualMachineModel vm2 = new VirtualMachineModel(vm, "fbc1f8fa-4b78-45ee-bba0-b551dbf94575");
         db.getVirtualMachines().add(vm2);
 
         s_logger.debug("No of Vitual Machines added to database : " + db.getVirtualMachines().size());
@@ -74,20 +74,13 @@ public class VirtualMachineModelTest extends TestCase {
 
         String uuid = UUID.randomUUID().toString();
         ContrailManagerImpl contrailMgr = mock(ContrailManagerImpl.class);
-        ModelController controller      = mock(ModelController.class);
+        ModelController controller = mock(ModelController.class);
         ApiConnector api = new ApiConnectorMock(null, 0);
         when(controller.getManager()).thenReturn(contrailMgr);
         when(controller.getApiAccessor()).thenReturn(api);
 
         // Create Virtual-Network (VN)
-        NetworkVO network = mock(NetworkVO.class);
-        when(network.getName()).thenReturn("testnetwork");
-        when(network.getState()).thenReturn(Network.State.Allocated);
-        when(network.getGateway()).thenReturn("10.1.1.1");
-        when(network.getCidr()).thenReturn("10.1.1.0/24");
-        when(network.getPhysicalNetworkId()).thenReturn(42L);
-        when(network.getDomainId()).thenReturn(10L);
-        when(network.getAccountId()).thenReturn(42L);
+        NetworkVO network = MockNetworkVO.getNetwork(Network.State.Allocated);
 
         when(contrailMgr.getCanonicalName(network)).thenReturn("testnetwork");
         when(contrailMgr.getProjectId(network.getDomainId(), network.getAccountId())).thenReturn("testProjectId");
@@ -99,7 +92,7 @@ public class VirtualMachineModelTest extends TestCase {
         when(vm.getDomainId()).thenReturn(10L);
         when(vm.getAccountId()).thenReturn(42L);
 
-        UserVmDao VmDao      = mock(UserVmDao.class);
+        UserVmDao VmDao = mock(UserVmDao.class);
         when(VmDao.findById(anyLong())).thenReturn(null);
         when(controller.getVmDao()).thenReturn(VmDao);
 

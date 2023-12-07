@@ -627,7 +627,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
         """
 
         # Validate the following
-        # 1. Destory the virtual machines.
+        # 1. Destroy the virtual machines.
         # 2. Rules should be still configured on virtual router.
         # 3. Recover the virtual machines.
         # 4. Vm should be in stopped state. State both the instances
@@ -1751,7 +1751,7 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
         """
 
         # Validate the following
-        # 1. Destory the virtual machines.
+        # 1. Destroy the virtual machines.
         # 2. Rules should be still configured on virtual router.
         # 3. Recover the virtual machines.
         # 4. Vm should be in stopped state. State both the instances
@@ -2466,7 +2466,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
         """
 
         # Validate the following
-        # 1. Destory the virtual machines.
+        # 1. Destroy the virtual machines.
         # 2. Rules should be still configured on virtual router.
         # 3. Recover the virtual machines.
         # 4. Vm should be in stopped state. State both the instances

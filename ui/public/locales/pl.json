@@ -651,7 +651,7 @@
 "label.level": "Poziom",
 "label.limitcpuuse": "CPU Cap",
 "label.link.domain.to.ldap": "Link Domain to LDAP",
-"label.linklocalip": "Link Local IP Address",
+"label.linklocalip": "Control IP Address",
 "label.load.balancer": "Load Balancer",
 "label.loadbalancerinstance": "Assigned VMs",
 "label.loadbalancerrule": "Load balancing rule",

@@ -87,4 +87,8 @@
   <bean id="storageStrategyFactoryImpl" class="org.apache.cloudstack.storage.helper.StorageStrategyFactoryImpl" />
   <bean id="vmsnapshotDetailsDao" class="com.cloud.vm.snapshot.dao.VMSnapshotDetailsDaoImpl" />
   <bean id="snapshotManager" class="com.cloud.storage.snapshot.SnapshotManagerImpl" />
+  <bean id="objectStoreProviderManagerImpl" class="org.apache.cloudstack.storage.object.manager.ObjectStoreProviderManagerImpl" />
+  <bean id="objectStoreDaoImpl" class="org.apache.cloudstack.storage.datastore.db.ObjectStoreDaoImpl" />
+  <bean id="objectStoreDetailsDaoImpl" class="org.apache.cloudstack.storage.datastore.db.ObjectStoreDetailsDaoImpl" />
+  <bean id="objectStoreHelper" class="org.apache.cloudstack.storage.object.datastore.ObjectStoreHelper" />
 </beans>

@@ -103,10 +103,10 @@ else
     echo "Verifying if we can at least ping the storage"
     STORAGE_ADDRESSES=`grep "secondaryStorageServerAddress" $CMDLINE | sed -E 's/.*secondaryStorageServerAddress=([^ ]*).*/\1/g'`
 
-    if [[ -z "$STORAGE_ADDRESS" ]]
+    if [[ -z "$STORAGE_ADDRESSES" ]]
     then
       STORAGE_NETWORK_GATEWAY=`grep "storagegateway" $CMDLINE | sed -E 's/.*storagegateway=([^ ]*).*/\1/g'`
-      echo "Storage address is empty, trying to ping storage network gateway instead ($STORAGE_NETWORK_GATEWAY)"
+      echo "Storage address list is empty, trying to ping storage network gateway instead ($STORAGE_NETWORK_GATEWAY)"
       ping -c 2  $STORAGE_NETWORK_GATEWAY
       if [ $? -eq 0 ]
       then
@@ -118,7 +118,7 @@ else
       fi
     else
       echo "Storage address(s): $STORAGE_ADDRESSES, trying to ping"
-      STORAGE_ADDRESS_LIST=$(echo $STORAGE_ADDRESSES | tr ",")
+      STORAGE_ADDRESS_LIST=$(echo $STORAGE_ADDRESSES | tr "," "\n")
       for STORAGE_ADDRESS in $STORAGE_ADDRESS_LIST
       do
         echo "Pinging storage address: $STORAGE_ADDRESS"

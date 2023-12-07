@@ -16,6 +16,78 @@
 // under the License.
 package com.cloud.api;
 
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Set;
+
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+
+import org.apache.cloudstack.acl.Role;
+import org.apache.cloudstack.acl.RoleService;
+import org.apache.cloudstack.affinity.AffinityGroup;
+import org.apache.cloudstack.affinity.AffinityGroupResponse;
+import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
+import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiConstants.DomainDetails;
+import org.apache.cloudstack.api.ApiConstants.HostDetails;
+import org.apache.cloudstack.api.ApiConstants.VMDetails;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.AsyncJobResponse;
+import org.apache.cloudstack.api.response.BackupOfferingResponse;
+import org.apache.cloudstack.api.response.BackupResponse;
+import org.apache.cloudstack.api.response.BackupScheduleResponse;
+import org.apache.cloudstack.api.response.DiskOfferingResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.DomainRouterResponse;
+import org.apache.cloudstack.api.response.EventResponse;
+import org.apache.cloudstack.api.response.HostForMigrationResponse;
+import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.HostTagResponse;
+import org.apache.cloudstack.api.response.ImageStoreResponse;
+import org.apache.cloudstack.api.response.InstanceGroupResponse;
+import org.apache.cloudstack.api.response.NetworkOfferingResponse;
+import org.apache.cloudstack.api.response.ProjectAccountResponse;
+import org.apache.cloudstack.api.response.ProjectInvitationResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
+import org.apache.cloudstack.api.response.ResourceIconResponse;
+import org.apache.cloudstack.api.response.ResourceTagResponse;
+import org.apache.cloudstack.api.response.SecurityGroupResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.SnapshotResponse;
+import org.apache.cloudstack.api.response.StoragePoolResponse;
+import org.apache.cloudstack.api.response.StorageTagResponse;
+import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.cloudstack.api.response.UserResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.api.response.VpcOfferingResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.backup.BackupOffering;
+import org.apache.cloudstack.backup.BackupSchedule;
+import org.apache.cloudstack.backup.dao.BackupDao;
+import org.apache.cloudstack.backup.dao.BackupOfferingDao;
+import org.apache.cloudstack.backup.dao.BackupScheduleDao;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.jobs.AsyncJob;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
+import org.apache.cloudstack.resourcedetail.SnapshotPolicyDetailVO;
+import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
+import org.apache.cloudstack.resourcedetail.dao.SnapshotPolicyDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.api.query.dao.AccountJoinDao;
 import com.cloud.api.query.dao.AffinityGroupJoinDao;
@@ -35,6 +107,7 @@ import com.cloud.api.query.dao.ProjectJoinDao;
 import com.cloud.api.query.dao.ResourceTagJoinDao;
 import com.cloud.api.query.dao.SecurityGroupJoinDao;
 import com.cloud.api.query.dao.ServiceOfferingJoinDao;
+import com.cloud.api.query.dao.SnapshotJoinDao;
 import com.cloud.api.query.dao.StoragePoolJoinDao;
 import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.api.query.dao.UserAccountJoinDao;
@@ -60,6 +133,7 @@ import com.cloud.api.query.vo.ProjectJoinVO;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
+import com.cloud.api.query.vo.SnapshotJoinVO;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
@@ -220,6 +294,7 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.BucketDao;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
@@ -274,72 +349,10 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import org.apache.cloudstack.acl.Role;
-import org.apache.cloudstack.acl.RoleService;
-import org.apache.cloudstack.affinity.AffinityGroup;
-import org.apache.cloudstack.affinity.AffinityGroupResponse;
-import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
-import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.cloudstack.api.ApiConstants.DomainDetails;
-import org.apache.cloudstack.api.ApiConstants.HostDetails;
-import org.apache.cloudstack.api.ApiConstants.VMDetails;
-import org.apache.cloudstack.api.ResponseObject.ResponseView;
-import org.apache.cloudstack.api.response.AccountResponse;
-import org.apache.cloudstack.api.response.AsyncJobResponse;
-import org.apache.cloudstack.api.response.BackupOfferingResponse;
-import org.apache.cloudstack.api.response.BackupResponse;
-import org.apache.cloudstack.api.response.BackupScheduleResponse;
-import org.apache.cloudstack.api.response.DiskOfferingResponse;
-import org.apache.cloudstack.api.response.DomainResponse;
-import org.apache.cloudstack.api.response.DomainRouterResponse;
-import org.apache.cloudstack.api.response.EventResponse;
-import org.apache.cloudstack.api.response.HostForMigrationResponse;
-import org.apache.cloudstack.api.response.HostResponse;
-import org.apache.cloudstack.api.response.HostTagResponse;
-import org.apache.cloudstack.api.response.ImageStoreResponse;
-import org.apache.cloudstack.api.response.InstanceGroupResponse;
-import org.apache.cloudstack.api.response.NetworkOfferingResponse;
-import org.apache.cloudstack.api.response.ProjectAccountResponse;
-import org.apache.cloudstack.api.response.ProjectInvitationResponse;
-import org.apache.cloudstack.api.response.ProjectResponse;
-import org.apache.cloudstack.api.response.ResourceIconResponse;
-import org.apache.cloudstack.api.response.ResourceTagResponse;
-import org.apache.cloudstack.api.response.SecurityGroupResponse;
-import org.apache.cloudstack.api.response.ServiceOfferingResponse;
-import org.apache.cloudstack.api.response.StoragePoolResponse;
-import org.apache.cloudstack.api.response.StorageTagResponse;
-import org.apache.cloudstack.api.response.TemplateResponse;
-import org.apache.cloudstack.api.response.UserResponse;
-import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.api.response.VolumeResponse;
-import org.apache.cloudstack.api.response.VpcOfferingResponse;
-import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.cloudstack.backup.Backup;
-import org.apache.cloudstack.backup.BackupOffering;
-import org.apache.cloudstack.backup.BackupSchedule;
-import org.apache.cloudstack.backup.dao.BackupDao;
-import org.apache.cloudstack.backup.dao.BackupOfferingDao;
-import org.apache.cloudstack.backup.dao.BackupScheduleDao;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.jobs.AsyncJob;
-import org.apache.cloudstack.framework.jobs.AsyncJobManager;
-import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
-import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
-import java.util.Set;
+import org.apache.cloudstack.api.response.ObjectStoreResponse;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 
 public class ApiDBUtils {
     private static ManagementServer s_ms;
@@ -441,6 +454,7 @@ public class ApiDBUtils {
     static AccountJoinDao s_accountJoinDao;
     static AsyncJobJoinDao s_jobJoinDao;
     static TemplateJoinDao s_templateJoinDao;
+    static SnapshotJoinDao s_snapshotJoinDao;
 
     static PhysicalNetworkTrafficTypeDao s_physicalNetworkTrafficTypeDao;
     static PhysicalNetworkServiceProviderDao s_physicalNetworkServiceProviderDao;
@@ -471,6 +485,10 @@ public class ApiDBUtils {
     static BackupOfferingDao s_backupOfferingDao;
     static NicDao s_nicDao;
     static ResourceManagerUtil s_resourceManagerUtil;
+    static SnapshotPolicyDetailsDao s_snapshotPolicyDetailsDao;
+    static ObjectStoreDao s_objectStoreDao;
+
+    static BucketDao s_bucketDao;
 
     @Inject
     private ManagementServer ms;
@@ -662,6 +680,8 @@ public class ApiDBUtils {
     private AsyncJobJoinDao jobJoinDao;
     @Inject
     private TemplateJoinDao templateJoinDao;
+    @Inject
+    private SnapshotJoinDao snapshotJoinDao;
 
     @Inject
     private PhysicalNetworkTrafficTypeDao physicalNetworkTrafficTypeDao;
@@ -725,6 +745,13 @@ public class ApiDBUtils {
     private ResourceIconDao resourceIconDao;
     @Inject
     private ResourceManagerUtil resourceManagerUtil;
+    @Inject
+    SnapshotPolicyDetailsDao snapshotPolicyDetailsDao;
+
+    @Inject
+    private ObjectStoreDao objectStoreDao;
+    @Inject
+    private BucketDao bucketDao;
 
     @PostConstruct
     void init() {
@@ -820,6 +847,7 @@ public class ApiDBUtils {
         s_accountJoinDao = accountJoinDao;
         s_jobJoinDao = jobJoinDao;
         s_templateJoinDao = templateJoinDao;
+        s_snapshotJoinDao = snapshotJoinDao;
 
         s_physicalNetworkTrafficTypeDao = physicalNetworkTrafficTypeDao;
         s_physicalNetworkServiceProviderDao = physicalNetworkServiceProviderDao;
@@ -832,6 +860,7 @@ public class ApiDBUtils {
         s_vpcOfferingDao = vpcOfferingDao;
         s_vpcOfferingJoinDao = vpcOfferingJoinDao;
         s_snapshotPolicyDao = snapshotPolicyDao;
+        s_snapshotPolicyDetailsDao = snapshotPolicyDetailsDao;
         s_asyncJobDao = asyncJobDao;
         s_hostDetailsDao = hostDetailsDao;
         s_clusterDetailsDao = clusterDetailsDao;
@@ -855,6 +884,8 @@ public class ApiDBUtils {
         s_backupOfferingDao = backupOfferingDao;
         s_resourceIconDao = resourceIconDao;
         s_resourceManagerUtil = resourceManagerUtil;
+        s_objectStoreDao = objectStoreDao;
+        s_bucketDao = bucketDao;
     }
 
     // ///////////////////////////////////////////////////////////
@@ -1517,6 +1548,10 @@ public class ApiDBUtils {
         return s_ipAddressDao.findByAssociatedVmId(vmId);
     }
 
+    public static IpAddress findIpByAssociatedVmIdAndNetworkId(long vmId, long networkId) {
+        return s_ipAddressDao.findByVmIdAndNetworkId(networkId, vmId);
+    }
+
     public static String getHaTag() {
         return s_haMgr.getHaTag();
     }
@@ -1647,6 +1682,20 @@ public class ApiDBUtils {
 
     public static SnapshotPolicy findSnapshotPolicyById(long policyId) {
         return s_snapshotPolicyDao.findById(policyId);
+    }
+
+    public static List<DataCenterVO> findSnapshotPolicyZones(SnapshotPolicy policy, Volume volume) {
+        List<SnapshotPolicyDetailVO> zoneDetails = s_snapshotPolicyDetailsDao.findDetails(policy.getId(), ApiConstants.ZONE_ID);
+        List<Long> zoneIds = new ArrayList<>();
+        for (SnapshotPolicyDetailVO detail : zoneDetails) {
+            try {
+                zoneIds.add(Long.valueOf(detail.getValue()));
+            } catch (NumberFormatException ignored) {}
+        }
+        if (volume != null && !zoneIds.contains(volume.getDataCenterId())) {
+            zoneIds.add(0, volume.getDataCenterId());
+        }
+        return s_zoneDao.listByIds(zoneIds);
     }
 
     public static VpcOffering findVpcOfferingById(long offeringId) {
@@ -1832,6 +1881,10 @@ public class ApiDBUtils {
 
     public static List<UserVmJoinVO> newUserVmView(UserVm... userVms) {
         return s_userVmJoinDao.newUserVmView(userVms);
+    }
+
+    public static List<UserVmJoinVO> newUserVmView(VirtualMachine... vms) {
+        return s_userVmJoinDao.newUserVmView(vms);
     }
 
     public static SecurityGroupResponse newSecurityGroupResponse(SecurityGroupJoinVO vsg, Account caller) {
@@ -2083,12 +2136,20 @@ public class ApiDBUtils {
         return s_templateJoinDao.newTemplateResponse(detailsView, view, vr);
     }
 
-    public static TemplateResponse newIsoResponse(TemplateJoinVO vr) {
-        return s_templateJoinDao.newIsoResponse(vr);
+    public static TemplateResponse newIsoResponse(TemplateJoinVO vr, ResponseView view) {
+        return s_templateJoinDao.newIsoResponse(vr, view);
+    }
+
+    public static SnapshotResponse newSnapshotResponse(ResponseView view, boolean isShowUnique, SnapshotJoinVO vr) {
+        return s_snapshotJoinDao.newSnapshotResponse(view, isShowUnique, vr);
     }
 
     public static TemplateResponse fillTemplateDetails(EnumSet<DomainDetails> detailsView, ResponseView view, TemplateResponse vrData, TemplateJoinVO vr) {
         return s_templateJoinDao.setTemplateResponse(detailsView, view, vrData, vr);
+    }
+
+    public static SnapshotResponse fillSnapshotDetails(SnapshotResponse vrData, SnapshotJoinVO vr) {
+        return s_snapshotJoinDao.setSnapshotResponse(vrData, vr);
     }
 
     public static List<TemplateJoinVO> newTemplateView(VirtualMachineTemplate vr) {
@@ -2161,5 +2222,13 @@ public class ApiDBUtils {
 
     public static NicSecondaryIpVO findSecondaryIpByIp4AddressAndNetworkId(String ip4Address, long networkId) {
         return s_nicSecondaryIpDao.findByIp4AddressAndNetworkId(ip4Address, networkId);
+    }
+
+    public static ObjectStoreResponse newObjectStoreResponse(ObjectStoreVO store) {
+        return s_objectStoreDao.newObjectStoreResponse(store);
+    }
+
+    public static ObjectStoreResponse fillObjectStoreDetails(ObjectStoreResponse storeData, ObjectStoreVO store) {
+        return s_objectStoreDao.setObjectStoreResponse(storeData, store);
     }
 }

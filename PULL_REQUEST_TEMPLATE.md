@@ -10,10 +10,10 @@ This PR...
 <!-- For addressing multiple issues/PRs, use multiple "Fixes: #<id>" -->
 <!-- Fixes: # -->
 
-<!--- ********************************************************************************* -->
-<!--- NOTE: AUTOMATATION USES THE DESCRIPTIONS TO SET LABELS AND PRODUCE DOCUMENTATION. -->
+<!--- ******************************************************************************* -->
+<!--- NOTE: AUTOMATION USES THE DESCRIPTIONS TO SET LABELS AND PRODUCE DOCUMENTATION. -->
 <!--- PLEASE PUT AN 'X' in only **ONE** box -->
-<!--- ********************************************************************************* -->
+<!--- ******************************************************************************* -->
 
 ### Types of changes
 

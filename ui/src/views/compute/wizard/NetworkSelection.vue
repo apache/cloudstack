@@ -22,7 +22,7 @@
       :placeholder="$t('label.search')"
       v-model:value="filter"
       @search="handleSearch" />
-    <a-button type="primary" @click="onCreateNetworkClick" style="float: right; margin-right: 5px; z-index: 8" v-if="showCreateButton">
+    <a-button type="primary" @click="onCreateNetworkClick" style="float: right; margin-right: 5px; z-index: 8" v-if="showCreateButton && !this.vnf">
       {{ $t('label.create.network') }}
     </a-button>
     <a-table
@@ -135,6 +135,10 @@ export default {
       default: () => ''
     },
     autoscale: {
+      type: Boolean,
+      default: () => false
+    },
+    vnf: {
       type: Boolean,
       default: () => false
     },

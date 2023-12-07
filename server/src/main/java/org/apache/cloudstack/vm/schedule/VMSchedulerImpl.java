@@ -34,6 +34,8 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.vm.RebootVMCmd;
 import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
 import org.apache.cloudstack.api.command.user.vm.StopVMCmd;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
@@ -58,7 +60,7 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
+public class VMSchedulerImpl extends ManagerBase implements VMScheduler, Configurable {
     private static Logger LOGGER = Logger.getLogger(VMSchedulerImpl.class);
     @Inject
     private VMScheduledJobDao vmScheduledJobDao;
@@ -80,6 +82,16 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
 
     public void setAsyncJobDispatcher(final AsyncJobDispatcher dispatcher) {
         asyncJobDispatcher = dispatcher;
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[]{VMScheduledJobExpireInterval};
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return VMScheduler.class.getSimpleName();
     }
 
     @Override

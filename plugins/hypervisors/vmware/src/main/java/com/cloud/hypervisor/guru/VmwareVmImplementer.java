@@ -129,15 +129,15 @@ class VmwareVmImplementer {
                 }
             }
         } else {
-            // for user-VM, use E1000 as default
             if (nicDeviceType == null) {
-                details.put(VmDetailConstants.NIC_ADAPTER, VirtualEthernetCardType.E1000.toString());
+                details.put(VmDetailConstants.NIC_ADAPTER, vmwareMgr.VmwareUserVmNicDeviceType.value());
             } else {
                 try {
                     VirtualEthernetCardType.valueOf(nicDeviceType);
                 } catch (Exception e) {
-                    LOGGER.warn("Invalid NIC device type " + nicDeviceType + " is specified in VM details, switch to default E1000");
-                    details.put(VmDetailConstants.NIC_ADAPTER, VirtualEthernetCardType.E1000.toString());
+                    LOGGER.warn(String.format("Invalid NIC device type [%s] specified in VM details, switching to value [%s] of configuration [%s].",
+                            nicDeviceType, vmwareMgr.VmwareUserVmNicDeviceType.value(), vmwareMgr.VmwareUserVmNicDeviceType.toString()));
+                    details.put(VmDetailConstants.NIC_ADAPTER, vmwareMgr.VmwareUserVmNicDeviceType.value());
                 }
             }
         }

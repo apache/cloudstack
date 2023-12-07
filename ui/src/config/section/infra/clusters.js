@@ -55,8 +55,17 @@ export default {
     name: 'settings',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/SettingsTab.vue')))
   }, {
+    name: 'drs',
+    component: shallowRef(defineAsyncComponent(() => import('@/views/infra/ClusterDRSTab.vue')))
+  }, {
     name: 'comments',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
+  },
+  {
+    name: 'events',
+    resourceType: 'Cluster',
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+    show: () => { return 'listEvents' in store.getters.apis }
   }],
   actions: [
     {
@@ -111,6 +120,16 @@ export default {
       message: 'message.action.unmanage.cluster',
       dataView: true,
       defaultArgs: { managedstate: 'Unmanaged' },
+      show: (record) => { return record.managedstate === 'Managed' }
+    },
+    {
+      api: 'executeDRS',
+      icon: 'gold-outlined',
+      label: 'label.action.drs.cluster',
+      message: 'message.action.drs.cluster',
+      dataView: true,
+      defaultArgs: { iterations: null },
+      args: ['iterations'],
       show: (record) => { return record.managedstate === 'Managed' }
     },
     {

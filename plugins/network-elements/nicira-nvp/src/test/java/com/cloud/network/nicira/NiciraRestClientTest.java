@@ -32,7 +32,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.apache.http.HttpHost;
@@ -70,7 +70,7 @@ public class NiciraRestClientTest {
     private static final StatusLine HTTP_200_STATUSLINE = new BasicStatusLine(new ProtocolVersion(HTTPS, 1, 1), 200, "OK");
     private static final StatusLine HTTP_401_STATUSLINE = new BasicStatusLine(new ProtocolVersion(HTTPS, 1, 1), 401, "Unauthorized");
 
-    private static final Map<String, String> loginParameters = new HashMap<String, String>();
+    private static final Map<String, String> loginParameters = new LinkedHashMap<String, String>();
     private static HttpUriRequest request;
     private static HttpUriRequest loginRequest;
     private final CloseableHttpClient httpClient = mock(CloseableHttpClient.class);

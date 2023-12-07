@@ -91,6 +91,7 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
         Long capacityBytes = (Long)dsInfos.get("capacityBytes");
         Long capacityIops = (Long)dsInfos.get("capacityIops");
         String tags = (String)dsInfos.get("tags");
+        Boolean isTagARule = (Boolean) dsInfos.get("isTagARule");
         @SuppressWarnings("unchecked")
         Map<String, String> details = (Map<String, String>)dsInfos.get("details");
 
@@ -142,6 +143,7 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
         }
 
         parameters.setTags(tags);
+        parameters.setIsTagARule(isTagARule);
         parameters.setDetails(details);
 
         String managementVip = SolidFireUtil.getManagementVip(url);

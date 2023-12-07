@@ -81,6 +81,7 @@ public class ResourceManagerUtilImpl implements ResourceManagerUtil {
         s_typeMap.put(ResourceTag.ResourceObjectType.UserVm, UserVmVO.class);
         s_typeMap.put(ResourceTag.ResourceObjectType.Volume, VolumeVO.class);
         s_typeMap.put(ResourceTag.ResourceObjectType.Template, VMTemplateVO.class);
+        s_typeMap.put(ResourceTag.ResourceObjectType.VnfTemplate, VMTemplateVO.class);
         s_typeMap.put(ResourceTag.ResourceObjectType.ISO, VMTemplateVO.class);
         s_typeMap.put(ResourceTag.ResourceObjectType.Snapshot, SnapshotVO.class);
         s_typeMap.put(ResourceTag.ResourceObjectType.Network, NetworkVO.class);

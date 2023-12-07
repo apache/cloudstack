@@ -54,6 +54,7 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
+import com.cloud.host.HostTagVO;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
@@ -615,7 +616,7 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
         if (CollectionUtils.isEmpty(vmsRunning)) {
             return new Pair<>(true, "OK");
         }
-        List<String> hostTags = hostTagsDao.getHostTags(host.getId());
+        List<HostTagVO> hostTags = hostTagsDao.getHostTags(host.getId());
 
         int successfullyCheckedVmMigrations = 0;
         for (VMInstanceVO runningVM : vmsRunning) {
@@ -668,14 +669,14 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
     /**
      * Check hosts tags
      */
-    private boolean checkHostTags(List<String> hostTags, List<String> hostInClusterTags, String offeringTag) {
+    private boolean checkHostTags(List<HostTagVO> hostTags, List<HostTagVO> hostInClusterTags, String offeringTag) {
         if (CollectionUtils.isEmpty(hostTags) && CollectionUtils.isEmpty(hostInClusterTags)) {
             return true;
         } else if ((CollectionUtils.isNotEmpty(hostTags) && CollectionUtils.isEmpty(hostInClusterTags)) ||
                 (CollectionUtils.isEmpty(hostTags) && CollectionUtils.isNotEmpty(hostInClusterTags))) {
             return false;
         } else {
-            return hostInClusterTags.contains(offeringTag);
+            return hostInClusterTags.parallelStream().anyMatch(hostTagVO -> offeringTag.equals(hostTagVO.getTag()));
         }
     }
 

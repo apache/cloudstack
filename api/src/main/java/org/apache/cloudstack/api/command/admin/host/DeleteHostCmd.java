@@ -64,7 +64,7 @@ public class DeleteHostCmd extends BaseCmd {
         return (forced != null) ? forced : false;
     }
 
-    public boolean isForceDestoryLocalStorage() {
+    public boolean isForceDestroyLocalStorage() {
         return (forceDestroyLocalStorage != null) ? forceDestroyLocalStorage : true;
     }
 
@@ -79,7 +79,7 @@ public class DeleteHostCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        boolean result = _resourceService.deleteHost(getId(), isForced(), isForceDestoryLocalStorage());
+        boolean result = _resourceService.deleteHost(getId(), isForced(), isForceDestroyLocalStorage());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);

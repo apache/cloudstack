@@ -107,7 +107,7 @@ public class KVMGuestOsMapper {
         s_mapper.put("Windows Server 2003 Standard Edition(32-bit)", "Windows Server 2003");
         s_mapper.put("Windows Server 2003 Standard Edition(64-bit)", "Windows Server 2003");
         s_mapper.put("Windows Server 2003 Web Edition", "Windows Server 2003");
-        s_mapper.put("Microsoft Small Bussiness Server 2003", "Windows Server 2003");
+        s_mapper.put("Microsoft Small Business Server 2003", "Windows Server 2003");
         s_mapper.put("Windows Server 2008 (32-bit)", "Windows Server 2008");
         s_mapper.put("Windows Server 2008 (64-bit)", "Windows Server 2008");
         s_mapper.put("Windows Server 2008 R2 (64-bit)", "Windows Server 2008");

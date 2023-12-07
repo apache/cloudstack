@@ -32,20 +32,6 @@
                   <template #icon><reload-outlined /></template>
                   {{ $t('label.refresh') }}
                 </a-button>
-                <a-switch
-                  v-if="!dataView && ['vm', 'volume', 'zone', 'cluster', 'host', 'storagepool', 'managementserver'].includes($route.name)"
-                  style="margin-left: 8px; margin-bottom: 3px"
-                  :checked-children="$t('label.metrics')"
-                  :un-checked-children="$t('label.metrics')"
-                  :checked="$store.getters.metrics"
-                  @change="(checked, event) => { $store.dispatch('SetMetrics', checked) }"/>
-                <a-switch
-                  v-if="!projectView && hasProjectId"
-                  style="margin-left: 8px; margin-bottom: 3px"
-                  :checked-children="$t('label.projects')"
-                  :un-checked-children="$t('label.projects')"
-                  :checked="$store.getters.listAllProjects"
-                  @change="(checked, event) => { $store.dispatch('SetListAllProjects', checked) }"/>
                 <a-tooltip placement="right">
                   <template #title>
                     {{ $t('label.filterby') }}
@@ -54,7 +40,8 @@
                     v-if="!dataView && filters && filters.length > 0"
                     :placeholder="$t('label.filterby')"
                     :value="filterValue"
-                    style="min-width: 120px; margin-left: 10px; margin-top: -4px"
+                    style="min-width: 100px; margin-left: 10px; margin-bottom: 5px"
+                    size=small
                     @change="changeFilter"
                     showSearch
                     optionFilterProp="label"
@@ -79,16 +66,30 @@
                     </a-select-option>
                   </a-select>
                 </a-tooltip>
+                <a-switch
+                  v-if="!dataView && ['vm', 'volume', 'zone', 'cluster', 'host', 'storagepool', 'managementserver'].includes($route.name)"
+                  style="margin-left: 8px; min-height: 23px; margin-bottom: 4px"
+                  :checked-children="$t('label.metrics')"
+                  :un-checked-children="$t('label.metrics')"
+                  :checked="$store.getters.metrics"
+                  @change="(checked, event) => { $store.dispatch('SetMetrics', checked) }"/>
+                <a-switch
+                  v-if="!projectView && hasProjectId"
+                  style="margin-left: 8px; min-height: 23px; margin-bottom: 4px"
+                  :checked-children="$t('label.projects')"
+                  :un-checked-children="$t('label.projects')"
+                  :checked="$store.getters.listAllProjects"
+                  @change="(checked, event) => { $store.dispatch('SetListAllProjects', checked) }"/>
               </template>
             </breadcrumb>
           </a-col>
           <a-col
             :span="device === 'mobile' ? 24 : 12"
-            :style="device === 'mobile' ? { float: 'right', 'margin-top': '12px', 'margin-bottom': '-6px', display: 'table' } : { float: 'right', display: 'table', 'margin-bottom': '-4px' }" >
+            :style="device === 'mobile' ? { float: 'right', 'margin-top': '12px', 'margin-bottom': '-6px', display: 'table' } : { float: 'right', display: 'table', 'margin-top': '6px' }" >
             <slot name="action" v-if="dataView && $route.path.startsWith('/publicip')"></slot>
             <action-button
               v-else
-              :style="dataView ? { float: device === 'mobile' ? 'left' : 'right' } : { 'margin-right': '10px', display: getStyle(), padding: '5px' }"
+              :style="dataView ? { float: device === 'mobile' ? 'left' : 'right' } : { 'margin-right': '10px', display: getStyle() }"
               :loading="loading"
               :actions="actions"
               :selectedRowKeys="selectedRowKeys"
@@ -99,7 +100,6 @@
             <search-view
               v-if="!dataView"
               :searchFilters="searchFilters"
-              style="min-width: 120px; margin-left: 10px; margin-top: 5px"
               :searchParams="searchParams"
               :apiName="apiName"
               @search="onSearch"
@@ -637,7 +637,7 @@ export default {
   },
   watch: {
     '$route' (to, from) {
-      if (to.fullPath !== from.fullPath && !to.fullPath.includes('action/')) {
+      if (to.fullPath !== from.fullPath && !to.fullPath.includes('action/') && to?.query?.tab !== 'browser') {
         if ('page' in to.query) {
           this.page = Number(to.query.page)
           this.pageSize = Number(to.query.pagesize)
@@ -681,7 +681,7 @@ export default {
         return this.$route.query.filter
       }
       const routeName = this.$route.name
-      if ((this.projectView && routeName === 'vm') || (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) && ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool'].includes(routeName)) || ['account', 'guestnetwork', 'guestvlans', 'guestos', 'guestoshypervisormapping', 'kubernetes'].includes(routeName)) {
+      if ((this.projectView && routeName === 'vm') || (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) && ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool'].includes(routeName)) || ['account', 'guestnetwork', 'guestvlans', 'oauthsetting', 'guestos', 'guestoshypervisormapping', 'kubernetes'].includes(routeName)) {
         return 'all'
       }
       if (['publicip'].includes(routeName)) {
@@ -762,7 +762,7 @@ export default {
         }
       }
       if (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) &&
-        'templatefilter' in params && this.routeName === 'template') {
+        'templatefilter' in params && (['template'].includes(this.routeName))) {
         params.templatefilter = 'all'
       }
       if (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) &&
@@ -788,8 +788,14 @@ export default {
         this.filters = this.filters()
       }
 
+      if (typeof this.searchFilters === 'function') {
+        this.searchFilters = this.searchFilters()
+      }
+
       this.projectView = Boolean(store.getters.project && store.getters.project.id)
-      this.hasProjectId = ['vm', 'vmgroup', 'ssh', 'affinitygroup', 'volume', 'snapshot', 'vmsnapshot', 'guestnetwork', 'vpc', 'securitygroups', 'publicip', 'vpncustomergateway', 'template', 'iso', 'event', 'kubernetes', 'autoscalevmgroup'].includes(this.$route.name)
+      this.hasProjectId = ['vm', 'vmgroup', 'ssh', 'affinitygroup', 'volume', 'snapshot', 'vmsnapshot', 'guestnetwork',
+        'vpc', 'securitygroups', 'publicip', 'vpncustomergateway', 'template', 'iso', 'event', 'kubernetes',
+        'autoscalevmgroup', 'vnfapp'].includes(this.$route.name)
 
       if ((this.$route && this.$route.params && this.$route.params.id) || this.$route.query.dataView) {
         this.dataView = true
@@ -891,6 +897,7 @@ export default {
 
       if (['listVirtualMachinesMetrics'].includes(this.apiName) && this.dataView) {
         delete params.details
+        delete params.isvnf
       }
 
       this.loading = true
@@ -1101,7 +1108,7 @@ export default {
       this.rules = reactive({})
       if (action.component && action.api && !action.popup) {
         const query = {}
-        if (this.$route.path.startsWith('/vm')) {
+        if (this.$route.path.startsWith('/vm') || this.$route.path.startsWith('/vnfapp')) {
           switch (true) {
             case ('templateid' in this.$route.query):
               query.templateid = this.$route.query.templateid
@@ -1776,6 +1783,8 @@ export default {
               query.hypervisor = value
             } else if (this.$route.name === 'guestos') {
               query.description = value
+            } else if (this.$route.name === 'oauthsetting') {
+              query.provider = value
             } else {
               query.keyword = value
             }
@@ -1961,6 +1970,12 @@ export default {
 
 .ant-breadcrumb {
   vertical-align: text-bottom;
+}
+
+:deep(.ant-switch-inner) {
+  display: block;
+  font-size: 14px;
+  margin: 0px 14px 0px 28px;
 }
 
 :deep(.ant-alert-message) {

@@ -2083,9 +2083,9 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
             vm4details = self.deploy_vm()
 
-            newvolumetodestoy_VM = self.browse_upload_volume()
+            newvolumetodestroy_VM = self.browse_upload_volume()
 
-            self.attach_volume(vm4details, newvolumetodestoy_VM.id)
+            self.attach_volume(vm4details, newvolumetodestroy_VM.id)
 
             self.destroy_vm(vm4details)
 
@@ -2095,7 +2095,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             self.expunge_vm(vm4details)
 
             cmd = deleteVolume.deleteVolumeCmd()
-            cmd.id = newvolumetodestoy_VM.id
+            cmd.id = newvolumetodestroy_VM.id
             self.apiclient.deleteVolume(cmd)
 
             self.debug(

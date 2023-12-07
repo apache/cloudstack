@@ -47,6 +47,7 @@ import com.cloud.network.element.NetworkElement;
 import com.cloud.network.router.CommandSetupHelper;
 import com.cloud.network.router.NetworkHelper;
 import com.cloud.network.router.VirtualRouter;
+import com.cloud.network.vpc.dao.NetworkACLDao;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
@@ -127,6 +128,8 @@ public class VpcManagerImplTest {
     @Mock
     NetworkDao networkDao;
     @Mock
+    NetworkACLDao networkACLDaoMock;
+    @Mock
     NetworkModel networkModel;
     @Mock
     NetworkOfferingServiceMapDao networkOfferingServiceMapDao;
@@ -150,6 +153,8 @@ public class VpcManagerImplTest {
     NetworkService networkServiceMock;
     @Mock
     FirewallRulesDao firewallDao;
+    @Mock
+    NetworkACLVO networkACLVOMock;
 
     public static final long ACCOUNT_ID = 1;
     private AccountVO account;
@@ -168,6 +173,9 @@ public class VpcManagerImplTest {
     final Long vpcOwnerId = 1L;
     final String vpcName = "Test-VPC";
     final String vpcDomain = "domain";
+    final Long aclId = 1L;
+    final Long differentVpcAclId = 3L;
+    final Long vpcId = 1L;
 
     private AutoCloseable closeable;
 
@@ -203,6 +211,7 @@ public class VpcManagerImplTest {
         manager._dcDao = dataCenterDao;
         manager._ntwkSvc = networkServiceMock;
         manager._firewallDao = firewallDao;
+        manager._networkAclDao = networkACLDaoMock;
         CallContext.register(Mockito.mock(User.class), Mockito.mock(Account.class));
         registerCallContext();
         overrideDefaultConfigValue(NetworkService.AllowUsersToSpecifyVRMtu, "_defaultValue", "false");
@@ -487,4 +496,18 @@ public class VpcManagerImplTest {
             Assert.fail(String.format("failure with exception: %s", e.getMessage()));
         }
     }
+
+    @Test
+    public void validateVpcPrivateGatewayAclIdTestNullAclVoThrowsInvalidParameterValueException() {
+        Mockito.doReturn(null).when(networkACLDaoMock).findById(aclId);
+        Assert.assertThrows(InvalidParameterValueException.class, () -> manager.validateVpcPrivateGatewayAclId(vpcId, aclId));
+    }
+
+    @Test
+    public void validateVpcPrivateGatewayTestAclFromDifferentVpcThrowsInvalidParameterValueException() {
+        Mockito.doReturn(2L).when(networkACLVOMock).getVpcId();
+        Mockito.doReturn(networkACLVOMock).when(networkACLDaoMock).findById(differentVpcAclId);
+        Assert.assertThrows(InvalidParameterValueException.class, () -> manager.validateVpcPrivateGatewayAclId(vpcId, differentVpcAclId));
+    }
+
 }

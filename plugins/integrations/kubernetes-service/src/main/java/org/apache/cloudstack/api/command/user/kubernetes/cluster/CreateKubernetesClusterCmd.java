@@ -145,7 +145,7 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
             description = "root disk size in GB for each node")
     private Long nodeRootDiskSize;
 
-    @Parameter(name = ApiConstants.CLUSTER_TYPE, type = CommandType.STRING, required = true, description = "type of the cluster: CloudManaged, ExternalManaged", since="4.19.0")
+    @Parameter(name = ApiConstants.CLUSTER_TYPE, type = CommandType.STRING, description = "type of the cluster: CloudManaged, ExternalManaged. The default value is CloudManaged.", since="4.19.0")
     private String clusterType;
 
     /////////////////////////////////////////////////////

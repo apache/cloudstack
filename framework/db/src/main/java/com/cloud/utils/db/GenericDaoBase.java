@@ -422,7 +422,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             return result;
         } catch (final SQLException e) {
             throw new CloudRuntimeException("DB Exception on: " + pstmt, e);
-        } catch (final Throwable e) {
+        } catch (final Exception e) {
             throw new CloudRuntimeException("Caught: " + pstmt, e);
         }
     }
@@ -499,7 +499,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             return results;
         } catch (final SQLException e) {
             throw new CloudRuntimeException("DB Exception on: " + pstmt, e);
-        } catch (final Throwable e) {
+        } catch (final Exception e) {
             throw new CloudRuntimeException("Caught: " + pstmt, e);
         }
     }
@@ -907,6 +907,15 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         return findOneIncludingRemovedBy(sc);
     }
 
+    @Override
+    @DB()
+    public T findOneBy(SearchCriteria<T> sc, final Filter filter) {
+        sc = checkAndSetRemovedIsNull(sc);
+        filter.setLimit(1L);
+        List<T> results = searchIncludingRemoved(sc, filter, null, false);
+        return results.isEmpty() ? null : results.get(0);
+    }
+
     @DB()
     protected List<T> listBy(SearchCriteria<T> sc, final Filter filter) {
         sc = checkAndSetRemovedIsNull(sc);
@@ -1145,7 +1154,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             return result;
         } catch (final SQLException e) {
             throw new CloudRuntimeException("DB Exception on: " + pstmt, e);
-        } catch (final Throwable e) {
+        } catch (final Exception e) {
             throw new CloudRuntimeException("Caught: " + pstmt, e);
         }
     }
@@ -1227,7 +1236,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             return pstmt.executeUpdate();
         } catch (final SQLException e) {
             throw new CloudRuntimeException("DB Exception on: " + pstmt, e);
-        } catch (final Throwable e) {
+        } catch (final Exception e) {
             throw new CloudRuntimeException("Caught: " + pstmt, e);
         }
     }
@@ -1264,6 +1273,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
     @DB()
     protected void addJoins(StringBuilder str, Collection<JoinBuilder<SearchCriteria<?>>> joins) {
+        addJoins(str, joins, new HashMap<>());
+    }
+
+    @DB()
+    protected void addJoins(StringBuilder str, Collection<JoinBuilder<SearchCriteria<?>>> joins, Map<String, Integer> joinedTableNames) {
         boolean hasWhereClause = true;
         int fromIndex = str.lastIndexOf("WHERE");
         if (fromIndex == -1) {
@@ -1274,18 +1288,27 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         }
 
         for (JoinBuilder<SearchCriteria<?>> join : joins) {
+            String joinTableName = join.getSecondAttribute().table;
+            String joinTableAlias = findNextJoinTableName(joinTableName, joinedTableNames);
             StringBuilder onClause = new StringBuilder();
             onClause.append(" ")
             .append(join.getType().getName())
             .append(" ")
-            .append(join.getSecondAttribute().table)
-            .append(" ON ")
+            .append(joinTableName);
+            if (!joinTableAlias.equals(joinTableName)) {
+                onClause.append(" ").append(joinTableAlias);
+            }
+            onClause.append(" ON ")
             .append(join.getFirstAttribute().table)
             .append(".")
             .append(join.getFirstAttribute().columnName)
-            .append("=")
-            .append(join.getSecondAttribute().table)
-            .append(".")
+            .append("=");
+            if(!joinTableAlias.equals(joinTableName)) {
+                onClause.append(joinTableAlias);
+            } else {
+                onClause.append(joinTableName);
+            }
+            onClause.append(".")
             .append(join.getSecondAttribute().columnName)
             .append(" ");
             str.insert(fromIndex, onClause);
@@ -1306,9 +1329,20 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
         for (JoinBuilder<SearchCriteria<?>> join : joins) {
             if (join.getT().getJoins() != null) {
-                addJoins(str, join.getT().getJoins());
+                addJoins(str, join.getT().getJoins(), joinedTableNames);
             }
         }
+    }
+
+    protected static String findNextJoinTableName(String tableName, Map<String, Integer> usedTableNames) {
+        if (usedTableNames.containsKey(tableName)) {
+            Integer tableCounter = usedTableNames.get(tableName);
+            usedTableNames.put(tableName, ++tableCounter);
+            tableName = tableName + tableCounter;
+        } else {
+            usedTableNames.put(tableName, 0);
+        }
+        return tableName;
     }
 
     private void removeAndClause(StringBuilder sql) {
@@ -2025,7 +2059,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             return 0;
         } catch (final SQLException e) {
             throw new CloudRuntimeException("DB Exception on: " + pstmt, e);
-        } catch (final Throwable e) {
+        } catch (final Exception e) {
             throw new CloudRuntimeException("Caught: " + pstmt, e);
         }
     }
@@ -2076,7 +2110,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             return 0;
         } catch (final SQLException e) {
             throw new CloudRuntimeException("DB Exception in executing: " + sql, e);
-        } catch (final Throwable e) {
+        } catch (final Exception e) {
             throw new CloudRuntimeException("Caught exception in : " + sql, e);
         }
     }
@@ -2133,7 +2167,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             return 0;
         } catch (final SQLException e) {
             throw new CloudRuntimeException("DB Exception on: " + pstmt, e);
-        } catch (final Throwable e) {
+        } catch (final Exception e) {
             throw new CloudRuntimeException("Caught: " + pstmt, e);
         }
     }

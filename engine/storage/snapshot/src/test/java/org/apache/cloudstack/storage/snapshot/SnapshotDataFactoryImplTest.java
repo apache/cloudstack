@@ -62,7 +62,7 @@ public class SnapshotDataFactoryImplTest {
     public void getSnapshotsByVolumeAndDataStoreTestNoSnapshotDataStoreVOFound() {
         Mockito.doReturn(new ArrayList<>()).when(snapshotStoreDaoMock).listAllByVolumeAndDataStore(volumeMockId, DataStoreRole.Primary);
 
-        List<SnapshotInfo> snapshots = snapshotDataFactoryImpl.getSnapshots(volumeMockId, DataStoreRole.Primary);
+        List<SnapshotInfo> snapshots = snapshotDataFactoryImpl.getSnapshotsForVolumeAndStoreRole(volumeMockId, DataStoreRole.Primary);
 
         Assert.assertTrue(snapshots.isEmpty());
     }
@@ -91,7 +91,7 @@ public class SnapshotDataFactoryImplTest {
             Mockito.doReturn(dataStoreMock).when(dataStoreManagerMock).getDataStore(dataStoreId, dataStoreRole);
             Mockito.doReturn(snapshotVoMock).when(snapshotDaoMock).findById(snapshotId);
 
-            List<SnapshotInfo> snapshots = snapshotDataFactoryImpl.getSnapshots(volumeMockId, dataStoreRole);
+            List<SnapshotInfo> snapshots = snapshotDataFactoryImpl.getSnapshotsForVolumeAndStoreRole(volumeMockId, dataStoreRole);
 
             Assert.assertEquals(1, snapshots.size());
 

@@ -20,7 +20,10 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.utils.qemu.QemuImg;
+import org.joda.time.Duration;
 
+import com.cloud.agent.api.to.HostTO;
+import com.cloud.hypervisor.kvm.resource.KVMHABase.HAStoragePool;
 import com.cloud.storage.Storage;
 
 public class LinstorStoragePool implements KVMStoragePool {
@@ -193,5 +196,36 @@ public class LinstorStoragePool implements KVMStoragePool {
 
     public String getResourceGroup() {
         return _resourceGroup;
+    }
+
+    @Override
+    public boolean isPoolSupportHA() {
+        return false;
+    }
+
+    @Override
+    public String getHearthBeatPath() {
+        return null;
+    }
+
+    @Override
+    public String createHeartBeatCommand(HAStoragePool primaryStoragePool, String hostPrivateIp,
+            boolean hostValidation) {
+        return null;
+    }
+
+    @Override
+    public String getStorageNodeId() {
+        return null;
+    }
+
+    @Override
+    public Boolean checkingHeartBeat(HAStoragePool pool, HostTO host) {
+        return null;
+    }
+
+    @Override
+    public Boolean vmActivityCheck(HAStoragePool pool, HostTO host, Duration activityScriptTimeout, String volumeUUIDListString, String vmActivityCheckPath, long duration) {
+        return null;
     }
 }

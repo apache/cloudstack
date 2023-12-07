@@ -53,7 +53,7 @@ public class GuestOSResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.IS_USER_DEFINED)
     @Param(description = "is the guest OS user defined")
-    private String isUserDefined;
+    private Boolean isUserDefined;
 
     @SerializedName(ApiConstants.FOR_DISPLAY)
     @Param(description = "is the guest OS visible for the users")
@@ -99,11 +99,11 @@ public class GuestOSResponse extends BaseResponse {
         this.description = description;
     }
 
-    public String getIsUserDefined() {
+    public Boolean getIsUserDefined() {
         return isUserDefined;
     }
 
-    public void setIsUserDefined(String isUserDefined) {
+    public void setIsUserDefined(Boolean isUserDefined) {
         this.isUserDefined = isUserDefined;
     }
 

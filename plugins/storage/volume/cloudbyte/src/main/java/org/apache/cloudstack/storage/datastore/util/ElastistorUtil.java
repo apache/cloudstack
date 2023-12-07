@@ -244,7 +244,7 @@ public class ElastistorUtil {
 
         if (listAccountResponse.getAccounts().getCount() != 0) {
             int i;
-            // check weather a account in elasticenter with given Domain name is
+            // check whether an account in elasticenter with given Domain name is
             // already present in the list of accounts
             for (i = 0; i < listAccountResponse.getAccounts().getCount(); i++) {
                 if (domainName.equals(listAccountResponse.getAccounts().getAccount(i).getName())) {

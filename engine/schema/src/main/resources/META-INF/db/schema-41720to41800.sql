@@ -402,7 +402,7 @@ GROUP BY
 ALTER TABLE `cloud`.`load_balancing_rules`
 ADD cidr_list VARCHAR(4096);
 
--- savely add resources in parallel
+-- safely add resources in parallel
 -- PR#5984 Create table to persist VM stats.
 DROP TABLE IF EXISTS `cloud`.`resource_reservation`;
 CREATE TABLE `cloud`.`resource_reservation` (

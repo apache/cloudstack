@@ -19,6 +19,7 @@ package com.cloud.api.query.dao;
 import java.util.List;
 import java.util.Set;
 
+import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.UserVmResponse;
@@ -36,6 +37,8 @@ public interface UserVmJoinDao extends GenericDao<UserVmJoinVO, Long> {
     UserVmResponse setUserVmResponse(ResponseView view, UserVmResponse userVmData, UserVmJoinVO uvo);
 
     List<UserVmJoinVO> newUserVmView(UserVm... userVms);
+
+    List<UserVmJoinVO> newUserVmView(VirtualMachine... vms);
 
     List<UserVmJoinVO> searchByIds(Long... ids);
 

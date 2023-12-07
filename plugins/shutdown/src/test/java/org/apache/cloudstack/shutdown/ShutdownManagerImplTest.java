@@ -18,12 +18,15 @@
 package org.apache.cloudstack.shutdown;
 
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -39,6 +42,12 @@ public class ShutdownManagerImplTest {
 
     @Mock
     AsyncJobManager jobManagerMock;
+    private AutoCloseable closeable;
+
+    @Before
+    public void setUp() throws Exception {
+        closeable = MockitoAnnotations.openMocks(this);
+    }
 
     private long prepareCountPendingJobs() {
         long expectedCount = 1L;
@@ -74,5 +83,10 @@ public class ShutdownManagerImplTest {
         Mockito.doNothing().when(jobManagerMock).enableAsyncJobs();
         spy.cancelShutdown();
         Mockito.verify(jobManagerMock).enableAsyncJobs();
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 }

@@ -52,6 +52,13 @@ public class StoragePoolInfo {
         this.details = details;
     }
 
+    public StoragePoolInfo(String uuid, String host, String hostPath, String localPath, StoragePoolType poolType, long capacityBytes, long availableBytes,
+            Map<String, String> details, String name) {
+        this(uuid, host, hostPath, localPath, poolType, capacityBytes, availableBytes);
+        this.details = details;
+        this.name = name;
+    }
+
     public long getCapacityBytes() {
         return capacityBytes;
     }

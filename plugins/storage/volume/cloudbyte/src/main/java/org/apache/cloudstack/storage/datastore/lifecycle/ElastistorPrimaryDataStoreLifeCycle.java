@@ -107,6 +107,7 @@ public class ElastistorPrimaryDataStoreLifeCycle implements PrimaryDataStoreLife
         Long capacityBytes = (Long) dsInfos.get("capacityBytes");
         Long capacityIops = (Long) dsInfos.get("capacityIops");
         String tags = (String) dsInfos.get("tags");
+        Boolean isTagARule = (Boolean) dsInfos.get("isTagARule");
         boolean managed = (Boolean) dsInfos.get("managed");
         Map<String, String> details = (Map<String, String>) dsInfos.get("details");
         String domainName = details.get("domainname");
@@ -196,6 +197,7 @@ public class ElastistorPrimaryDataStoreLifeCycle implements PrimaryDataStoreLife
         parameters.setCapacityIops(capacityIops);
         parameters.setHypervisorType(HypervisorType.Any);
         parameters.setTags(tags);
+        parameters.setIsTagARule(isTagARule);
         parameters.setDetails(details);
         parameters.setClusterId(clusterId);
 

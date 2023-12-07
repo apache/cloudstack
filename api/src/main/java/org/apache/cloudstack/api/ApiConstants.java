@@ -69,6 +69,8 @@ public class ApiConstants {
     public static final String CERTIFICATE_SERIALNUM = "serialnum";
     public static final String CERTIFICATE_SUBJECT = "subject";
     public static final String CERTIFICATE_VALIDITY = "validity";
+    public static final String CONVERT_INSTANCE_HOST_ID = "convertinstancehostid";
+    public static final String CONVERT_INSTANCE_STORAGE_POOL_ID = "convertinstancepoolid";
     public static final String ENABLED_REVOCATION_CHECK = "enabledrevocationcheck";
     public static final String CONTROLLER = "controller";
     public static final String CONTROLLER_UNIT = "controllerunit";
@@ -76,8 +78,10 @@ public class ApiConstants {
     public static final String CSR = "csr";
     public static final String PRIVATE_KEY = "privatekey";
     public static final String DATASTORE_HOST = "datastorehost";
+    public static final String DATASTORE_ID = "datastoreid";
     public static final String DATASTORE_NAME = "datastorename";
     public static final String DATASTORE_PATH = "datastorepath";
+    public static final String DATASTORE_STATE = "datastorestate";
     public static final String DATASTORE_TYPE = "datastoretype";
     public static final String DOMAIN_SUFFIX = "domainsuffix";
     public static final String DNS_SEARCH_ORDER = "dnssearchorder";
@@ -118,6 +122,7 @@ public class ApiConstants {
     public static final String MIN_IOPS = "miniops";
     public static final String MAX_IOPS = "maxiops";
     public static final String HYPERVISOR_SNAPSHOT_RESERVE = "hypervisorsnapshotreserve";
+    public static final String DATACENTER_NAME = "datacentername";
     public static final String DATADISK_OFFERING_LIST = "datadiskofferinglist";
     public static final String DEFAULT_VALUE = "defaultvalue";
     public static final String DESCRIPTION = "description";
@@ -205,6 +210,7 @@ public class ApiConstants {
     public static final String HIDE_IP_ADDRESS_USAGE = "hideipaddressusage";
     public static final String HOST_ID = "hostid";
     public static final String HOST_IDS = "hostids";
+    public static final String HOST_IP = "hostip";
     public static final String HOST_NAME = "hostname";
     public static final String HOST_CONTROL_STATE = "hostcontrolstate";
     public static final String HOSTS_MAP = "hostsmap";
@@ -222,6 +228,8 @@ public class ApiConstants {
     public static final String INSTANCES_STATS_USER_ONLY = "instancesstatsuseronly";
     public static final String PREFIX = "prefix";
     public static final String PREVIOUS_ACL_RULE_ID = "previousaclruleid";
+    public static final String PREVIOUS_OWNER_ID = "previousownerid";
+    public static final String PREVIOUS_OWNER_NAME = "previousownername";
     public static final String NEXT_ACL_RULE_ID = "nextaclruleid";
     public static final String MOVE_ACL_CONSISTENCY_HASH = "aclconsistencyhash";
     public static final String IMAGE_PATH = "imagepath";
@@ -290,6 +298,7 @@ public class ApiConstants {
     public static final String MIN_CPU_NUMBER = "mincpunumber";
     public static final String MIN_MEMORY = "minmemory";
     public static final String MIGRATION_TYPE = "migrationtype";
+    public static final String MIGRATIONS = "migrations";
     public static final String MEMORY = "memory";
     public static final String MODE = "mode";
     public static final String NAME = "name";
@@ -399,6 +408,7 @@ public class ApiConstants {
     public static final String SHOW_CAPACITIES = "showcapacities";
     public static final String SHOW_REMOVED = "showremoved";
     public static final String SHOW_RESOURCE_ICON = "showicon";
+    public static final String SHOW_INACTIVE = "showinactive";
     public static final String SHOW_UNIQUE = "showunique";
     public static final String SIGNATURE = "signature";
     public static final String SIGNATURE_VERSION = "signatureversion";
@@ -433,6 +443,7 @@ public class ApiConstants {
     public static final String TEMPLATE_ID = "templateid";
     public static final String TEMPLATE_IDS = "templateids";
     public static final String TEMPLATE_NAME = "templatename";
+    public static final String TEMPLATE_TYPE = "templatetype";
     public static final String TIMEOUT = "timeout";
     public static final String TIMEZONE = "timezone";
     public static final String TIMEZONEOFFSET = "timezoneoffset";
@@ -492,6 +503,7 @@ public class ApiConstants {
     public static final String ZONE = "zone";
     public static final String ZONE_ID = "zoneid";
     public static final String ZONE_NAME = "zonename";
+    public static final String ZONE_WISE = "zonewise";
     public static final String NETWORK_TYPE = "networktype";
     public static final String PAGE = "page";
     public static final String PAGE_SIZE = "pagesize";
@@ -589,6 +601,8 @@ public class ApiConstants {
     public static final String SERVICE_CAPABILITY_LIST = "servicecapabilitylist";
     public static final String CAN_CHOOSE_SERVICE_CAPABILITY = "canchooseservicecapability";
     public static final String PROVIDER = "provider";
+    public static final String OAUTH_PROVIDER = "oauthprovider";
+    public static final String OAUTH_SECRET_KEY = "secretkey";
     public static final String MANAGED = "managed";
     public static final String CAPACITY_BYTES = "capacitybytes";
     public static final String CAPACITY_IOPS = "capacityiops";
@@ -658,6 +672,7 @@ public class ApiConstants {
     public static final String SPECIFY_IP_RANGES = "specifyipranges";
     public static final String IS_SOURCE_NAT = "issourcenat";
     public static final String IS_STATIC_NAT = "isstaticnat";
+    public static final String ITERATIONS = "iterations";
     public static final String SORT_BY = "sortby";
     public static final String CHANGE_CIDR = "changecidr";
     public static final String PURPOSE = "purpose";
@@ -768,6 +783,7 @@ public class ApiConstants {
     public static final String VSM_CONFIG_STATE = "vsmconfigstate";
     public static final String VSM_DEVICE_STATE = "vsmdevicestate";
     public static final String VCENTER = "vcenter";
+    public static final String EXISTING_VCENTER_ID = "existingvcenterid";
     public static final String ADD_VSM_FLAG = "addvsmflag";
     public static final String END_POINT = "endpoint";
     public static final String REGION_ID = "regionid";
@@ -786,6 +802,7 @@ public class ApiConstants {
     public static final String IPSEC_PSK = "ipsecpsk";
     public static final String GUEST_IP = "guestip";
     public static final String REMOVED = "removed";
+    public static final String REMOVAL_REASON = "removalreason";
     public static final String COMPLETED = "completed";
     public static final String IKE_VERSION = "ikeversion";
     public static final String IKE_POLICY = "ikepolicy";
@@ -964,6 +981,7 @@ public class ApiConstants {
     public static final String TARGET_ID = "targetid";
     public static final String FILES = "files";
     public static final String SRC_POOL = "srcpool";
+    public static final String DEST_POOL = "destpool";
     public static final String DEST_POOLS = "destpools";
     public static final String VOLUME_IDS = "volumeids";
 
@@ -1008,7 +1026,6 @@ public class ApiConstants {
     public static final String DEPLOY_AS_IS = "deployasis";
     public static final String DEPLOY_AS_IS_DETAILS = "deployasisdetails";
     public static final String CROSS_ZONES = "crossZones";
-    public static final String TEMPLATETYPE = "templatetype";
     public static final String SOURCETEMPLATEID = "sourcetemplateid";
     public static final String DYNAMIC_SCALING_ENABLED = "dynamicscalingenabled";
     public static final String IOTHREADS_ENABLED = "iothreadsenabled";
@@ -1037,10 +1054,37 @@ public class ApiConstants {
     public static final String MTU = "mtu";
     public static final String AUTO_ENABLE_KVM_HOST = "autoenablekvmhost";
     public static final String LIST_APIS = "listApis";
+    public static final String OBJECT_STORAGE_ID = "objectstorageid";
+    public static final String VERSIONING = "versioning";
+    public static final String OBJECT_LOCKING = "objectlocking";
+    public static final String ENCRYPTION = "encryption";
+    public static final String QUOTA = "quota";
+    public static final String ACCESS_KEY = "accesskey";
 
     public static final String SOURCE_NAT_IP = "sourcenatipaddress";
     public static final String SOURCE_NAT_IP_ID = "sourcenatipaddressid";
     public static final String HAS_RULES = "hasrules";
+    public static final String IMPORT_SOURCE = "importsource";
+    public static final String OBJECT_STORAGE = "objectstore";
+
+    public static final String HEURISTIC_RULE = "heuristicrule";
+    public static final String HEURISTIC_TYPE_VALID_OPTIONS = "Valid options are: ISO, SNAPSHOT, TEMPLATE and VOLUME.";
+
+    public static final String MANAGEMENT = "management";
+    public static final String IS_VNF = "isvnf";
+    public static final String VNF_NICS = "vnfnics";
+    public static final String VNF_DETAILS = "vnfdetails";
+    public static final String CLEAN_UP_VNF_DETAILS = "cleanupvnfdetails";
+    public static final String CLEAN_UP_VNF_NICS = "cleanupvnfnics";
+    public static final String VNF_CONFIGURE_MANAGEMENT = "vnfconfiguremanagement";
+    public static final String VNF_CIDR_LIST = "vnfcidrlist";
+
+    public static final String CLIENT_ID = "clientid";
+    public static final String REDIRECT_URI = "redirecturi";
+
+    public static final String IS_TAG_A_RULE = "istagarule";
+
+    public static final String PARAMETER_DESCRIPTION_IS_TAG_A_RULE = "Whether the informed tag is a JS interpretable rule or not.";
 
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.
@@ -1087,7 +1131,7 @@ public class ApiConstants {
     }
 
     public enum VMDetails {
-        all, group, nics, stats, secgrp, tmpl, servoff, diskoff, backoff, iso, volume, min, affgrp;
+        all, group, nics, stats, secgrp, tmpl, servoff, diskoff, backoff, iso, volume, min, affgrp, vnfnics;
     }
 
     public enum DomainDetails {

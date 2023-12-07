@@ -33,6 +33,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.GetUploadParamsResponse;
 import org.apache.cloudstack.api.response.GuestOSResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.ResourceAllocationException;
@@ -46,7 +47,7 @@ public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
 
     private static final String s_name = "postuploadtemplateresponse";
 
-    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, required = true, description = "the display text of the template. This is usually used for display purposes.", length = 4096)
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "the display text of the template. This is usually used for display purposes.", length = 4096)
     private String displayText;
 
     @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, required = true, description = "the target hypervisor for the template")
@@ -95,7 +96,7 @@ public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
     private Boolean deployAsIs;
 
     public String getDisplayText() {
-        return displayText;
+        return StringUtils.isBlank(displayText) ? getName() : displayText;
     }
 
     public String getHypervisor() {

@@ -16,24 +16,15 @@
 // under the License.
 package com.cloud.event;
 
-import com.cloud.configuration.Config;
-import com.cloud.event.dao.EventDao;
-import com.cloud.network.IpAddress;
-import com.cloud.projects.dao.ProjectDao;
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.Volume;
-import com.cloud.user.Account;
-import com.cloud.user.AccountVO;
-import com.cloud.user.User;
-import com.cloud.user.UserVO;
-import com.cloud.user.dao.AccountDao;
-import com.cloud.user.dao.UserDao;
-import com.cloud.utils.component.ComponentContext;
-import com.cloud.utils.db.EntityManager;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.snapshot.VMSnapshot;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -51,13 +42,23 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
-import javax.inject.Inject;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import com.cloud.configuration.Config;
+import com.cloud.event.dao.EventDao;
+import com.cloud.network.IpAddress;
+import com.cloud.projects.dao.ProjectDao;
+import com.cloud.storage.Snapshot;
+import com.cloud.user.Account;
+import com.cloud.user.AccountVO;
+import com.cloud.user.User;
+import com.cloud.user.UserVO;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.UserDao;
+import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.db.EntityManager;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.snapshot.VMSnapshot;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ActionEventUtilsTest {
@@ -356,20 +357,13 @@ public class ActionEventUtilsTest {
         final Long snapshotResourceId = 100L;
         final String snapshotResourceType = ApiCommandResourceType.Snapshot.toString();
         final String snapshotResourceUuid = UUID.randomUUID().toString();
-        final Long resourceId = 1L;
-        final String resourceType = ApiCommandResourceType.Volume.toString();
-        final String resourceUuid = UUID.randomUUID().toString();
         Snapshot snapshot = Mockito.mock(Snapshot.class);
         Mockito.when(snapshot.getUuid()).thenReturn(snapshotResourceUuid);
-        Mockito.when(snapshot.getVolumeId()).thenReturn(resourceId);
-        Volume volume = Mockito.mock(Volume.class);
-        Mockito.when(volume.getUuid()).thenReturn(resourceUuid);
         Mockito.when(entityMgr.validEntityType(Snapshot.class)).thenReturn(true);
         Mockito.when(entityMgr.findByIdIncludingRemoved(Snapshot.class, snapshotResourceId)).thenReturn(snapshot);
-        Mockito.when(entityMgr.findByIdIncludingRemoved(Volume.class, resourceId)).thenReturn(volume);
         ActionEventUtils.onActionEvent(USER_ID, ACCOUNT_ID, account.getDomainId(), EventTypes.EVENT_SNAPSHOT_CREATE, "Test event", snapshotResourceId, snapshotResourceType);
 
-        checkEventResourceAndUnregisterContext(resourceId, resourceUuid, resourceType);
+        checkEventResourceAndUnregisterContext(snapshotResourceId, snapshotResourceUuid, snapshotResourceType);
     }
 
     @Test

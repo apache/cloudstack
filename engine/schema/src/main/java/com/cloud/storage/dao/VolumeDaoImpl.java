@@ -20,11 +20,13 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -63,6 +65,8 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     protected final SearchBuilder<VolumeVO> AllFieldsSearch;
     protected final SearchBuilder<VolumeVO> diskOfferingSearch;
     protected final SearchBuilder<VolumeVO> RootDiskStateSearch;
+    private final SearchBuilder<VolumeVO> storeAndInstallPathSearch;
+    private final SearchBuilder<VolumeVO> volumeIdSearch;
     protected GenericSearchBuilder<VolumeVO, Long> CountByAccount;
     protected GenericSearchBuilder<VolumeVO, SumCount> primaryStorageSearch;
     protected GenericSearchBuilder<VolumeVO, SumCount> primaryStorageSearch2;
@@ -419,7 +423,6 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         TotalVMSnapshotSizeByPoolSearch.and("poolId", TotalVMSnapshotSizeByPoolSearch.entity().getPoolId(), Op.EQ);
         TotalVMSnapshotSizeByPoolSearch.and("removed", TotalVMSnapshotSizeByPoolSearch.entity().getRemoved(), Op.NULL);
         TotalVMSnapshotSizeByPoolSearch.and("state", TotalVMSnapshotSizeByPoolSearch.entity().getState(), Op.NEQ);
-        TotalVMSnapshotSizeByPoolSearch.and("vType", TotalVMSnapshotSizeByPoolSearch.entity().getVolumeType(), Op.EQ);
         TotalVMSnapshotSizeByPoolSearch.and("instanceId", TotalVMSnapshotSizeByPoolSearch.entity().getInstanceId(), Op.NNULL);
         TotalVMSnapshotSizeByPoolSearch.done();
 
@@ -474,6 +477,16 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         secondaryStorageSearch.and("states", secondaryStorageSearch.entity().getState(), Op.NIN);
         secondaryStorageSearch.and("isRemoved", secondaryStorageSearch.entity().getRemoved(), Op.NULL);
         secondaryStorageSearch.done();
+
+        storeAndInstallPathSearch = createSearchBuilder();
+        storeAndInstallPathSearch.and("poolId", storeAndInstallPathSearch.entity().getPoolId(), Op.EQ);
+        storeAndInstallPathSearch.and("pathIN", storeAndInstallPathSearch.entity().getPath(), Op.IN);
+        storeAndInstallPathSearch.done();
+
+        volumeIdSearch = createSearchBuilder();
+        volumeIdSearch.and("idIN", volumeIdSearch.entity().getId(), Op.IN);
+        volumeIdSearch.done();
+
     }
 
     @Override
@@ -661,7 +674,6 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         SearchCriteria<SumCount> sc = TotalVMSnapshotSizeByPoolSearch.create();
         sc.setParameters("poolId", poolId);
         sc.setParameters("state", State.Destroy);
-        sc.setParameters("vType", Volume.Type.ROOT.toString());
         List<SumCount> results = customSearch(sc, null);
         if (results != null) {
             return results.get(0).sum;
@@ -776,5 +788,27 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
             update(volume.getId(), volume);
             remove(volume.getId());
         }
+    }
+
+    @Override
+    public List<VolumeVO> listByPoolIdAndPaths(long id, List<String> pathList) {
+        if (CollectionUtils.isEmpty(pathList)) {
+            return Collections.emptyList();
+        }
+
+        SearchCriteria<VolumeVO> sc = storeAndInstallPathSearch.create();
+        sc.setParameters("poolId", id);
+        sc.setParameters("pathIN", pathList.toArray());
+        return listBy(sc);
+    }
+
+    @Override
+    public List<VolumeVO> listByIds(List<Long> ids) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return Collections.emptyList();
+        }
+        SearchCriteria<VolumeVO> sc = volumeIdSearch.create();
+        sc.setParameters("idIN", ids.toArray());
+        return listBy(sc, null);
     }
 }

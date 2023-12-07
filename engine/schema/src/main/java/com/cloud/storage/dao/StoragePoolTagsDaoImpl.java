@@ -21,6 +21,9 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import org.apache.cloudstack.api.response.StorageTagResponse;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
@@ -50,7 +53,7 @@ public class StoragePoolTagsDaoImpl extends GenericDaoBase<StoragePoolTagVO, Lon
     }
 
     @Override
-    public void persist(long poolId, List<String> storagePoolTags) {
+    public void persist(long poolId, List<String> storagePoolTags, Boolean isTagARule) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
 
         txn.start();
@@ -61,11 +64,21 @@ public class StoragePoolTagsDaoImpl extends GenericDaoBase<StoragePoolTagVO, Lon
         for (String tag : storagePoolTags) {
             tag = tag.trim();
             if (tag.length() > 0) {
-                StoragePoolTagVO vo = new StoragePoolTagVO(poolId, tag);
+                StoragePoolTagVO vo = new StoragePoolTagVO(poolId, tag, isTagARule);
                 persist(vo);
             }
         }
         txn.commit();
+    }
+
+    public void persist(List<StoragePoolTagVO> storagePoolTags) {
+        Transaction.execute(TransactionLegacy.CLOUD_DB, new TransactionCallbackNoReturn() {
+            @Override public void doInTransactionWithoutResult(TransactionStatus status) {
+                for (StoragePoolTagVO storagePoolTagVO : storagePoolTags) {
+                    persist(storagePoolTagVO);
+                }
+            }
+        });
     }
 
     @Override
@@ -155,6 +168,14 @@ public class StoragePoolTagsDaoImpl extends GenericDaoBase<StoragePoolTagVO, Lon
         tagResponse.setObjectName("storagetag");
 
         return tagResponse;
+    }
+
+    @Override
+    public List<StoragePoolTagVO> findStoragePoolTags(long poolId) {
+        SearchCriteria<StoragePoolTagVO> sc = StoragePoolSearch.create();
+        sc.setParameters("poolId", poolId);
+
+        return search(sc, null);
     }
 
 }

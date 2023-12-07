@@ -871,11 +871,71 @@ class TestReleaseIP(cloudstackTestCase):
 
     @attr(tags=["advanced", "advancedns", "smoke", "dvs"], required_hardware="false")
     def test_releaseIP(self):
-        """Test for release public IP address"""
+        """Test for release public IP address using the ID"""
 
         logger.debug("Deleting Public IP : %s" % self.ip_addr.id)
 
         self.ip_address.delete(self.apiclient)
+
+        retriesCount = 10
+        isIpAddressDisassociated = False
+        while retriesCount > 0:
+            listResponse = list_publicIP(
+                self.apiclient,
+                id=self.ip_addr.id,
+                state="Allocated"
+            )
+            if listResponse is None:
+                isIpAddressDisassociated = True
+                break
+            retriesCount -= 1
+            time.sleep(60)
+        # End while
+
+        self.assertTrue(
+            isIpAddressDisassociated,
+            "Failed to disassociate IP address")
+
+        # ListPortForwardingRules should not list
+        # associated rules with Public IP address
+        try:
+            list_nat_rule = list_nat_rules(
+                self.apiclient,
+                id=self.nat_rule.id
+            )
+            logger.debug("List NAT Rule response" + str(list_nat_rule))
+        except CloudstackAPIException:
+            logger.debug("Port Forwarding Rule is deleted")
+
+        # listLoadBalancerRules should not list
+        # associated rules with Public IP address
+        try:
+            list_lb_rule = list_lb_rules(
+                self.apiclient,
+                id=self.lb_rule.id
+            )
+            logger.debug("List LB Rule response" + str(list_lb_rule))
+        except CloudstackAPIException:
+            logger.debug("Port Forwarding Rule is deleted")
+
+        # SSH Attempt though public IP should fail
+        with self.assertRaises(Exception):
+            SshClient(
+                self.ip_addr.ipaddress,
+                self.services["natrule"]["publicport"],
+                self.virtual_machine.username,
+                self.virtual_machine.password,
+                retries=2,
+                delay=0
+            )
+        return
+
+    @attr(tags=["advanced", "advancedns", "smoke", "dvs"], required_hardware="false")
+    def test_releaseIP_using_IP(self):
+        """Test for release public IP address using the address"""
+
+        logger.debug("Deleting Public IP : %s" % self.ip_addr.ipaddress)
+        self.ip_address.delete_by_ip(self.apiclient)
 
         retriesCount = 10
         isIpAddressDisassociated = False

@@ -633,7 +633,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
         try {
             final Set<VDI> vdis = VDI.getByNameLabel(conn, nameLabel);
             if (vdis.size() != 1) {
-                s_logger.warn("destoryVDIbyNameLabel failed due to there are " + vdis.size() + " VDIs with name " + nameLabel);
+                s_logger.warn("destroyVDIbyNameLabel failed due to there are " + vdis.size() + " VDIs with name " + nameLabel);
                 return;
             }
             for (final VDI vdi : vdis) {

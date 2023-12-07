@@ -17,7 +17,7 @@
 
 <template>
   <a
-    v-if="['vm', 'systemvm', 'router', 'ilbvm'].includes($route.meta.name) && 'listVirtualMachines' in $store.getters.apis && 'createConsoleEndpoint' in $store.getters.apis"
+    v-if="['vm', 'systemvm', 'router', 'ilbvm', 'vnfapp'].includes($route.meta.name) && 'listVirtualMachines' in $store.getters.apis && 'createConsoleEndpoint' in $store.getters.apis"
     @click="consoleUrl">
     <a-button style="margin-left: 5px" shape="circle" type="dashed" :size="size" :disabled="['Stopped', 'Error', 'Destroyed'].includes(resource.state) || resource.hostcontrolstate === 'Offline'" >
       <code-outlined v-if="!copyUrlToClipboard"/>

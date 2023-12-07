@@ -200,24 +200,24 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         userAccountVO.setSource(User.Source.UNKNOWN);
         userAccountVO.setState(Account.State.DISABLED.toString());
         Mockito.when(userAccountDaoMock.getUserAccount("test", 1L)).thenReturn(userAccountVO);
-        Mockito.when(userAuthenticator.authenticate("test", "fail", 1L, null)).thenReturn(failureAuthenticationPair);
-        Mockito.lenient().when(userAuthenticator.authenticate("test", null, 1L, null)).thenReturn(successAuthenticationPair);
-        Mockito.lenient().when(userAuthenticator.authenticate("test", "", 1L, null)).thenReturn(successAuthenticationPair);
+        Mockito.when(userAuthenticator.authenticate("test", "fail", 1L, new HashMap<>())).thenReturn(failureAuthenticationPair);
+        Mockito.lenient().when(userAuthenticator.authenticate("test", null, 1L, new HashMap<>())).thenReturn(successAuthenticationPair);
+        Mockito.lenient().when(userAuthenticator.authenticate("test", "", 1L, new HashMap<>())).thenReturn(successAuthenticationPair);
 
         //Test for incorrect password. authentication should fail
-        UserAccount userAccount = accountManagerImpl.authenticateUser("test", "fail", 1L, InetAddress.getByName("127.0.0.1"), null);
+        UserAccount userAccount = accountManagerImpl.authenticateUser("test", "fail", 1L, InetAddress.getByName("127.0.0.1"), new HashMap<>());
         Assert.assertNull(userAccount);
 
         //Test for null password. authentication should fail
-        userAccount = accountManagerImpl.authenticateUser("test", null, 1L, InetAddress.getByName("127.0.0.1"), null);
+        userAccount = accountManagerImpl.authenticateUser("test", null, 1L, InetAddress.getByName("127.0.0.1"), new HashMap<>());
         Assert.assertNull(userAccount);
 
         //Test for empty password. authentication should fail
-        userAccount = accountManagerImpl.authenticateUser("test", "", 1L, InetAddress.getByName("127.0.0.1"), null);
+        userAccount = accountManagerImpl.authenticateUser("test", "", 1L, InetAddress.getByName("127.0.0.1"), new HashMap<>());
         Assert.assertNull(userAccount);
 
         //Verifying that the authentication method is only called when password is specified
-        Mockito.verify(userAuthenticator, Mockito.times(1)).authenticate("test", "fail", 1L, null);
+        Mockito.verify(userAuthenticator, Mockito.times(1)).authenticate("test", "fail", 1L, new HashMap<>());
         Mockito.verify(userAuthenticator, Mockito.never()).authenticate("test", null, 1L, null);
         Mockito.verify(userAuthenticator, Mockito.never()).authenticate("test", "", 1L, null);
     }
@@ -973,5 +973,18 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         UserTwoFactorAuthenticationSetupResponse response = accountManagerImpl.setupUserTwoFactorAuthentication(cmd);
 
         Assert.assertEquals("345543", response.getSecretCode());
+    }
+
+    @Test
+    public void testGetActiveUserAccountByEmail() {
+        String email = "test@example.com";
+        Long domainId = 1L;
+        List<UserAccountVO> userAccountVOList = new ArrayList<>();
+        UserAccountVO userAccountVO = new UserAccountVO();
+        userAccountVOList.add(userAccountVO);
+        Mockito.when(userAccountDaoMock.getUserAccountByEmail(email, domainId)).thenReturn(userAccountVOList);
+        List<UserAccount> userAccounts = accountManagerImpl.getActiveUserAccountByEmail(email, domainId);
+        Assert.assertEquals(userAccountVOList.size(), userAccounts.size());
+        Assert.assertEquals(userAccountVOList.get(0), userAccounts.get(0));
     }
 }

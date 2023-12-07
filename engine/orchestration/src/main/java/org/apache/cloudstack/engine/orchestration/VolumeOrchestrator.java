@@ -558,7 +558,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         VolumeInfo vol = volFactory.getVolume(volume.getId());
         DataStore store = dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
         DataStoreRole dataStoreRole = snapshotHelper.getDataStoreRole(snapshot);
-        SnapshotInfo snapInfo = snapshotFactory.getSnapshot(snapshot.getId(), dataStoreRole);
+        SnapshotInfo snapInfo = snapshotFactory.getSnapshotWithRoleAndZone(snapshot.getId(), dataStoreRole, volume.getDataCenterId());
 
         boolean kvmSnapshotOnlyInPrimaryStorage = snapshotHelper.isKvmSnapshotOnlyInPrimaryStorage(snapshot, dataStoreRole);
 

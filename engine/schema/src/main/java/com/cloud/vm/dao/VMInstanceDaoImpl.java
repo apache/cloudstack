@@ -989,19 +989,19 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     }
 
     @Override
-    public List<VMInstanceVO> listByHostOrLastHostOrHostPod(long hostId, long podId) {
+    public List<VMInstanceVO> listByHostOrLastHostOrHostPod(List<Long> hostIds, long podId) {
         SearchBuilder<VMInstanceVO> sb = createSearchBuilder();
-        sb.or().op("hostId", sb.entity().getHostId(), Op.EQ);
-        sb.or("lastHostId", sb.entity().getLastHostId(), Op.EQ);
-        sb.and().op("hostIdNull", sb.entity().getHostId(), SearchCriteria.Op.NULL);
+        sb.and().op("hostId", sb.entity().getHostId(), Op.IN);
+        sb.or("lastHostId", sb.entity().getLastHostId(), Op.IN);
+        sb.or().op("hostIdNull", sb.entity().getHostId(), SearchCriteria.Op.NULL);
         sb.and("lastHostIdNull", sb.entity().getHostId(), SearchCriteria.Op.NULL);
         sb.and("podId", sb.entity().getPodIdToDeployIn(), Op.EQ);
         sb.cp();
         sb.cp();
         sb.done();
         SearchCriteria<VMInstanceVO> sc = sb.create();
-        sc.setParameters("hostId", String.valueOf(hostId));
-        sc.setParameters("lastHostId", String.valueOf(hostId));
+        sc.setParameters("hostId", hostIds.toArray());
+        sc.setParameters("lastHostId", hostIds.toArray());
         sc.setParameters("podId", String.valueOf(podId));
         return listBy(sc);
     }

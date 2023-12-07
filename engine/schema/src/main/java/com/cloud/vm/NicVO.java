@@ -333,6 +333,8 @@ public class NicVO implements Nic {
             .append("-")
             .append(instanceId)
             .append("-")
+            .append(deviceId)
+            .append("-")
             .append(reservationId)
             .append("-")
             .append(iPv4Address)

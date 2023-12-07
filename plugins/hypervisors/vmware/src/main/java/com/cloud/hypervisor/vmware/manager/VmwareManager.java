@@ -53,6 +53,14 @@ public interface VmwareManager {
             "VMware interval window (in seconds) to collect metrics. If this is set to less than 20, then default (300 seconds) will be used. The interval used must be enabled in vCenter for this change to work, "
             + "otherwise the collection of metrics will result in an error. Check VMWare docs to know how to enable metrics interval.", true);
 
+    static final ConfigKey<String> VmwareUserVmNicDeviceType = new ConfigKey<String>(
+            String.class,
+            "vmware.uservm.nic.device.type",
+            "Advanced",
+            "E1000",
+            "Specify the default network device type for user VMs, valid values are E1000, PCNet32, Vmxnet2, Vmxnet3",
+            true, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.Select, "E1000,PCNet32,Vmxnet2,Vmxnet3");
+
     String composeWorkerName();
 
     String getSystemVMIsoFileNameOnDatastore();

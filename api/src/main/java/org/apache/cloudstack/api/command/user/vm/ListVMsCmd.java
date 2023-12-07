@@ -189,6 +189,10 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
         return zoneId;
     }
 
+    @Parameter(name = ApiConstants.IS_VNF, type = CommandType.BOOLEAN,
+            description = "flag to list vms created from VNF templates (as known as VNF appliances) or not; true if need to list VNF appliances, false otherwise.",
+            since = "4.19.0")
+    private Boolean isVnf;
 
     public Long getNetworkId() {
         return networkId;
@@ -264,6 +268,10 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
 
     public Boolean getAccumulate() {
         return accumulate;
+    }
+
+    public Boolean getVnf() {
+        return isVnf;
     }
 
     /////////////////////////////////////////////////////

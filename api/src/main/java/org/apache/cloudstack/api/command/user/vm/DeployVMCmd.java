@@ -105,6 +105,10 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     @Parameter(name = ApiConstants.DISPLAY_NAME, type = CommandType.STRING, description = "an optional user generated name for the virtual machine")
     private String displayName;
 
+    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, description="The password of the virtual machine. If null, a random password will be generated for the VM.",
+            since="4.19.0.0")
+    protected String password;
+
     //Owner information
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for the virtual machine. Must be used with domainId.")
     private String accountName;
@@ -462,6 +466,10 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
 
     public Long getZoneId() {
         return zoneId;
+    }
+
+    public String getPassword() {
+        return password;
     }
 
     public List<Long> getNetworkIds() {

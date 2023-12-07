@@ -72,6 +72,9 @@ public interface HighAvailabilityManager extends Manager {
         + " which are registered for the HA event that were successful and are now ready to be purged.",
         true, Cluster);
 
+    public static final ConfigKey<Boolean> KvmHAFenceHostIfHeartbeatFailsOnStorage = new ConfigKey<>("Advanced", Boolean.class, "kvm.ha.fence.on.storage.heartbeat.failure", "false",
+            "Proceed fencing the host even the heartbeat failed for only one storage pool", false, ConfigKey.Scope.Zone);
+
     public enum WorkType {
         Migration,  // Migrating VMs off of a host.
         Stop,       // Stops a VM for storage pool migration purposes.  This should be obsolete now.

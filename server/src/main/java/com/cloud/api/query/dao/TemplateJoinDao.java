@@ -34,7 +34,7 @@ public interface TemplateJoinDao extends GenericDao<TemplateJoinVO, Long> {
 
     TemplateResponse newTemplateResponse(EnumSet<ApiConstants.DomainDetails> detailsView, ResponseView view, TemplateJoinVO tmpl);
 
-    TemplateResponse newIsoResponse(TemplateJoinVO tmpl);
+    TemplateResponse newIsoResponse(TemplateJoinVO tmpl, ResponseView view);
 
     TemplateResponse newUpdateResponse(TemplateJoinVO tmpl);
 
@@ -47,6 +47,8 @@ public interface TemplateJoinDao extends GenericDao<TemplateJoinVO, Long> {
     List<TemplateJoinVO> searchByTemplateZonePair( Boolean showRemoved, String... pairs);
 
     List<TemplateJoinVO> listActiveTemplates(long storeId);
+
+    List<TemplateJoinVO> listPublicTemplates();
 
     Pair<List<TemplateJoinVO>, Integer> searchIncludingRemovedAndCount(final SearchCriteria<TemplateJoinVO> sc, final Filter filter);
 

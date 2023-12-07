@@ -25,6 +25,7 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.YearMonth;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
@@ -335,5 +336,9 @@ public class DateUtil {
                 .withMinute(localDateTime.getMinute())
                 .withSecond(localDateTime.getSecond());
         return zonedDate;
+    }
+
+    public static int getHoursInCurrentMonth(Date date) {
+        return YearMonth.of(date.getYear(), date.getMonth() + 1).lengthOfMonth() * 24;
     }
 }

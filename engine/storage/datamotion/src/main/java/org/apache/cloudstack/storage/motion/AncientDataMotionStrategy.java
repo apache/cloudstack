@@ -66,10 +66,13 @@ import com.cloud.configuration.Config;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.Snapshot.Type;
+import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.DB;
@@ -97,6 +100,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
     @Inject
     StorageManager storageManager;
+    @Inject
+    SnapshotDao snapshotDao;
 
     @Override
     public StrategyPriority canHandle(DataObject srcData, DataObject destData) {
@@ -583,8 +588,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             fullSnapshot = snapshotFullBackup;
         }
         Map<String, String> options = new HashMap<String, String>();
-        options.put("fullSnapshot", fullSnapshot.toString());
-        options.put(SnapshotInfo.BackupSnapshotAfterTakingSnapshot.key(), String.valueOf(SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value()));
+
+        addCommandOptions(snapshotInfo, fullSnapshot, options);
         boolean encryptionRequired = anyVolumeRequiresEncryption(srcData, destData);
 
         Answer answer = null;
@@ -629,6 +634,15 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             throw new CloudRuntimeException(e.toString());
         }
 
+    }
+
+    private void addCommandOptions(SnapshotInfo snapshotInfo, Boolean fullSnapshot, Map<String, String> options) {
+        SnapshotVO snap = snapshotDao.findById(snapshotInfo.getSnapshotId());
+        if (snap != null && Type.FROM_GROUP.name().equals(snap.getTypeDescription())) {
+            options.put("typeDescription", snap.getTypeDescription());
+        }
+        options.put("fullSnapshot", fullSnapshot.toString());
+        options.put(SnapshotInfo.BackupSnapshotAfterTakingSnapshot.key(), String.valueOf(SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value()));
     }
 
     @Override

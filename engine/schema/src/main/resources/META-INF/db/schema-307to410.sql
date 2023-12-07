@@ -51,7 +51,7 @@ ALTER TABLE `storage_pool` ADD `user_info` VARCHAR( 255 ) NULL COMMENT 'Authoriz
 INSERT INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `description`) VALUES ('Advanced', 'DEFAULT', 'management-server', 'event.purge.interval', '86400', 'The interval (in seconds) to wait before running the event purge thread');
 -- rrq 5839
 -- Remove the unique constraint on physical_network_id, provider_name from physical_network_service_providers
--- Because the name of this contraint is not set we need this roundabout way
+-- Because the name of this constraint is not set we need this roundabout way
 -- The key is also used by the foreign key constraint so drop and recreate that one
 ALTER TABLE physical_network_service_providers DROP FOREIGN KEY fk_pnetwork_service_providers__physical_network_id;
 SET @constraintname = (select CONCAT(CONCAT('DROP INDEX ', A.CONSTRAINT_NAME), ' ON physical_network_service_providers' )

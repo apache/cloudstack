@@ -27,16 +27,16 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
 import org.apache.cloudstack.storage.datastore.driver.LinstorPrimaryDataStoreDriverImpl;
 import org.apache.cloudstack.storage.datastore.lifecycle.LinstorPrimaryDataStoreLifeCycleImpl;
+import org.apache.cloudstack.storage.datastore.util.LinstorUtil;
 
 public class LinstorPrimaryDatastoreProviderImpl implements PrimaryDataStoreProvider {
-    private final static String PROVIDER_NAME = "Linstor";
     protected PrimaryDataStoreDriver driver;
     protected HypervisorHostListener listener;
     protected DataStoreLifeCycle lifecycle;
 
     @Override
     public String getName() {
-        return PROVIDER_NAME;
+        return LinstorUtil.PROVIDER_NAME;
     }
 
     @Override

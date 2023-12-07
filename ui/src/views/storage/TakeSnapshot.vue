@@ -31,26 +31,47 @@
         layout="vertical"
         @finish="handleSubmit"
        >
-        <a-row :gutter="12">
-          <a-col :md="24" :lg="24">
-            <a-form-item :label="$t('label.name')" name="name" ref="name">
-              <a-input
-                v-model:value="form.name"
-                :placeholder="apiParams.name.description"
-                v-focus="true" />
-            </a-form-item>
-          </a-col>
-          <a-col :md="24" :lg="24" v-if="!supportsStorageSnapshot">
-            <a-form-item :label="$t('label.asyncbackup')" name="asyncbackup" ref="asyncbackup">
-              <a-switch v-model:checked="form.asyncbackup" />
-            </a-form-item>
-          </a-col>
-          <a-col :md="24" :lg="24" v-if="quiescevm" name="quiescevm" ref="quiescevm">
-            <a-form-item :label="$t('label.quiescevm')">
-              <a-switch v-model:checked="form.quiescevm" />
-            </a-form-item>
-          </a-col>
-        </a-row>
+        <a-form-item :label="$t('label.name')" name="name" ref="name">
+          <a-input
+            v-model:value="form.name"
+            :placeholder="apiParams.name.description"
+            v-focus="true" />
+        </a-form-item>
+        <a-form-item ref="zoneids" name="zoneids">
+          <template #label>
+            <tooltip-label :title="$t('label.zones')" :tooltip="''"/>
+          </template>
+          <a-alert type="info" style="margin-bottom: 2%">
+            <template #message>
+              <div v-html="formattedAdditionalZoneMessage"/>
+            </template>
+          </a-alert>
+          <a-select
+            id="zone-selection"
+            v-model:value="form.zoneids"
+            mode="multiple"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :loading="zoneLoading"
+            :placeholder="''">
+            <a-select-option v-for="opt in zones" :key="opt.id" :label="opt.name || opt.description">
+              <span>
+                <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <global-outlined v-else style="margin-right: 5px" />
+                {{ opt.name || opt.description }}
+              </span>
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item :label="$t('label.asyncbackup')" name="asyncbackup" ref="asyncbackup">
+          <a-switch v-model:checked="form.asyncbackup" />
+        </a-form-item>
+        <a-form-item :label="$t('label.quiescevm')">
+          <a-switch v-model:checked="form.quiescevm" />
+        </a-form-item>
         <a-divider/>
         <div class="tagsTitle">{{ $t('label.tags') }}</div>
         <div>
@@ -106,12 +127,16 @@ import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import TooltipButton from '@/components/widgets/TooltipButton'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'TakeSnapshot',
   mixins: [mixinForm],
   components: {
-    TooltipButton
+    TooltipButton,
+    TooltipLabel,
+    ResourceIcon
   },
   props: {
     loading: {
@@ -131,6 +156,8 @@ export default {
       inputValue: '',
       inputKey: '',
       inputVisible: '',
+      zones: [],
+      zoneLoading: false,
       tags: [],
       dataSource: []
     }
@@ -142,6 +169,12 @@ export default {
     this.initForm()
     this.quiescevm = this.resource.quiescevm
     this.supportsStorageSnapshot = this.resource.supportsstoragesnapshot
+    this.fetchZoneData()
+  },
+  computed: {
+    formattedAdditionalZoneMessage () {
+      return `${this.$t('message.snapshot.additional.zones').replace('%x', this.resource.zonename)}`
+    }
   },
   methods: {
     initForm () {
@@ -152,6 +185,20 @@ export default {
         quiescevm: false
       })
       this.rules = reactive({})
+    },
+    fetchZoneData () {
+      const params = {}
+      params.showicon = true
+      this.zoneLoading = true
+      api('listZones', params).then(json => {
+        const listZones = json.listzonesresponse.zone
+        if (listZones) {
+          this.zones = listZones
+          this.zones = this.zones.filter(zone => zone.type !== 'Edge' && zone.id !== this.resource.zoneid)
+        }
+      }).finally(() => {
+        this.zoneLoading = false
+      })
     },
     handleSubmit (e) {
       e.preventDefault()
@@ -172,6 +219,9 @@ export default {
         params.quiescevm = false
         if (values.quiescevm) {
           params.quiescevm = values.quiescevm
+        }
+        if (values.zoneids && values.zoneids.length > 0) {
+          params.zoneids = values.zoneids.join()
         }
         for (let i = 0; i < this.tags.length; i++) {
           const formattedTagData = {}

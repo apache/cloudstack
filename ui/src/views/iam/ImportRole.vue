@@ -80,6 +80,13 @@
           </a-select>
         </a-form-item>
 
+        <a-form-item name="ispublic" ref="ispublic">
+          <template #label>
+            <tooltip-label :title="$t('label.ispublic')" :tooltip="apiParams.ispublic.description"/>
+          </template>
+          <a-switch v-model:checked="form.ispublic"/>
+        </a-form-item>
+
         <a-form-item name="forced" ref="forced">
           <template #label>
             <tooltip-label :title="$t('label.forced')" :tooltip="apiParams.forced.description"/>
@@ -124,7 +131,7 @@ export default {
   methods: {
     initForm () {
       this.formRef = ref()
-      this.form = reactive({})
+      this.form = reactive({ ispublic: true })
       this.rules = reactive({
         file: [
           { required: true, message: this.$t('message.error.required.input') },

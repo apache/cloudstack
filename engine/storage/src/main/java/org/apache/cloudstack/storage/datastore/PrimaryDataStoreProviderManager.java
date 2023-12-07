@@ -30,4 +30,6 @@ public interface PrimaryDataStoreProviderManager {
     boolean registerDriver(String providerName, PrimaryDataStoreDriver driver);
 
     boolean registerHostListener(String providerName, HypervisorHostListener listener);
+
+    public long getPrimaryDataStoreZoneId(long dataStoreId);
 }

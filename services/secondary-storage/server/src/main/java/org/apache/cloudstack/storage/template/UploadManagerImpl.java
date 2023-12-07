@@ -281,6 +281,14 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
             return new CreateEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
         }
 
+        File file = new File("/mnt/SecStorage/" + cmd.getParent() + File.separator + cmd.getInstallPath());
+        // Return error if the file does not exist or is a directory
+        if (!file.exists() || file.isDirectory()) {
+            String errorString = "Error in finding the file " + file.getAbsolutePath();
+            s_logger.error(errorString);
+            return new CreateEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
+        }
+
         // Create a random file under the directory for security reasons.
         String uuid = cmd.getExtractLinkUUID();
         // Create a symbolic link from the actual directory to the template location. The entity would be directly visible under /var/www/html/userdata/cmd.getInstallPath();
@@ -302,7 +310,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
     public Answer handleDeleteEntityDownloadURLCommand(DeleteEntityDownloadURLCommand cmd) {
 
         //Delete the soft link. Example path = volumes/8/74eeb2c6-8ab1-4357-841f-2e9d06d1f360.vhd
-        s_logger.warn("handleDeleteEntityDownloadURLCommand Path:" + cmd.getPath() + " Type:" + cmd.getType().toString());
+        s_logger.warn("handleDeleteEntityDownloadURLCommand Path:" + cmd.getPath() + " Type:" + (cmd.getType() != null ? cmd.getType().toString(): ""));
         String path = cmd.getPath();
         Script command = new Script("/bin/bash", s_logger);
         command.add("-c");

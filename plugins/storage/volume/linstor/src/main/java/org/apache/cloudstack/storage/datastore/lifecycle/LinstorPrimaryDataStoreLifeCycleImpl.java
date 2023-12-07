@@ -91,6 +91,7 @@ public class LinstorPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLif
         String providerName = (String) dsInfos.get("providerName");
         Long capacityIops = (Long) dsInfos.get("capacityIops");
         String tags = (String) dsInfos.get("tags");
+        Boolean isTagARule = (Boolean) dsInfos.get("isTagARule");
         @SuppressWarnings("unchecked")
         Map<String, String> details = (Map<String, String>) dsInfos.get("details");
 
@@ -168,6 +169,7 @@ public class LinstorPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLif
         parameters.setCapacityIops(capacityIops);
         parameters.setHypervisorType(HypervisorType.KVM);
         parameters.setTags(tags);
+        parameters.setIsTagARule(isTagARule);
         parameters.setDetails(details);
         parameters.setUserInfo(resourceGroup);
 

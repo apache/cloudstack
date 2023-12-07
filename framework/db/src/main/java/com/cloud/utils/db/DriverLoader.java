@@ -38,6 +38,7 @@ public class DriverLoader {
         DRIVERS.put("jdbc:mysql", "com.mysql.cj.jdbc.Driver");
         DRIVERS.put("jdbc:postgresql", "org.postgresql.Driver");
         DRIVERS.put("jdbc:h2", "org.h2.Driver");
+        DRIVERS.put("jdbc:mariadb", "org.mariadb.jdbc.Driver");
 
         LOADED_DRIVERS = new ArrayList<String>();
     }

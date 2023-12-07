@@ -332,7 +332,7 @@ public class Upgrade224to225 implements DbUpgrade {
             pstmt.close();
         } catch (SQLException e) {
             s_logger.error("Unable to add missing foreign key; following statement was executed:" + pstmt);
-            throw new CloudRuntimeException("Unable to add missign keys due to exception", e);
+            throw new CloudRuntimeException("Unable to add missing keys due to exception", e);
         }
     }
 
@@ -348,7 +348,7 @@ public class Upgrade224to225 implements DbUpgrade {
             }
         } catch (SQLException e) {
             s_logger.error("Unable to add missing ovs tunnel account due to ", e);
-            throw new CloudRuntimeException("Unable to add missign ovs tunnel account due to ", e);
+            throw new CloudRuntimeException("Unable to add missing ovs tunnel account due to ", e);
         }
     }
 }

@@ -49,6 +49,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.naming.ConfigurationException;
 
@@ -60,10 +62,13 @@ import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.command.MoveVolumeCommand;
+import org.apache.cloudstack.storage.command.QuerySnapshotZoneCopyAnswer;
+import org.apache.cloudstack.storage.command.QuerySnapshotZoneCopyCommand;
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
 import org.apache.cloudstack.storage.command.UploadStatusAnswer;
 import org.apache.cloudstack.storage.command.UploadStatusAnswer.UploadStatus;
 import org.apache.cloudstack.storage.command.UploadStatusCommand;
+import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsCommand;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.configdrive.ConfigDriveBuilder;
 import org.apache.cloudstack.storage.template.DownloadManager;
@@ -80,6 +85,7 @@ import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -195,6 +201,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     private static final String VOLUME_ROOT_DIR = "volumes";
     private static final String POST_UPLOAD_KEY_LOCATION = "/etc/cloudstack/agent/ms-psk";
     private static final String ORIGINAL_FILE_EXTENSION = ".orig";
+
+    private static final String USE_HTTPS_TO_UPLOAD = "useHttpsToUpload";
 
     private static final Map<String, String> updatableConfigData = Maps.newHashMap();
     static {
@@ -318,9 +326,17 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return execute((CreateDatadiskTemplateCommand)cmd);
         } else if (cmd instanceof MoveVolumeCommand) {
             return execute((MoveVolumeCommand)cmd);
+        } else if (cmd instanceof ListDataStoreObjectsCommand) {
+            return execute((ListDataStoreObjectsCommand)cmd);
+        } else if (cmd instanceof QuerySnapshotZoneCopyCommand) {
+            return execute((QuerySnapshotZoneCopyCommand)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
+    }
+
+    private Answer execute(ListDataStoreObjectsCommand cmd) {
+        return listFilesAtPath(getRootDir(cmd.getStore().getUrl(), _nfsVersion), cmd.getPath(), cmd.getStartIndex(), cmd.getPageSize());
     }
 
     private Answer execute(HandleConfigDriveIsoCommand cmd) {
@@ -3524,7 +3540,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return null;
     }
 
-    private String getPostUploadPSK() {
+    protected String getPostUploadPSK() {
         if (_ssvmPSK == null) {
             try {
                 _ssvmPSK = FileUtils.readFileToString(new File(POST_UPLOAD_KEY_LOCATION), "utf-8");
@@ -3560,14 +3576,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             throw new InvalidParameterValueException("content length is not set in the request or has invalid value.");
         }
 
-        //validate signature
-        String fullUrl = "https://" + hostname + "/upload/" + uuid;
-        String computedSignature = EncryptionUtil.generateSignature(metadata + fullUrl + timeout, getPostUploadPSK());
-        boolean isSignatureValid = computedSignature.equals(signature);
-        if (!isSignatureValid) {
-            updateStateMapWithError(uuid, "signature validation failed.");
-            throw new InvalidParameterValueException("signature validation failed.");
-        }
+        validatePostUploadRequestSignature(signature, hostname, uuid, metadata, timeout);
 
         //validate timeout
         DateTime timeoutDateTime = DateTime.parse(timeout, ISODateTimeFormat.dateTime());
@@ -3575,6 +3584,48 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             updateStateMapWithError(uuid, "request not valid anymore.");
             throw new InvalidParameterValueException("request not valid anymore.");
         }
+    }
+
+    /**
+     * Validates whether the provided signature matches the signature generated from the other parameters;
+     * throws an InvalidParameterValueException if it does not.
+     */
+    protected void validatePostUploadRequestSignature(String signature, String hostname, String uuid, String metadata, String timeout) {
+        s_logger.trace(String.format("Validating signature [%s] for post upload request [%s].", signature, uuid));
+        String protocol = getUploadProtocol();
+        String fullUrl = String.format("%s://%s/upload/%s", protocol, hostname, uuid);
+        String data = String.format("%s%s%s", metadata, fullUrl, timeout);
+
+        String computedSignature = EncryptionUtil.generateSignature(data, getPostUploadPSK());
+        s_logger.debug(String.format("Computed signature for post upload request [%s] is [%s].", uuid, computedSignature));
+
+        boolean isSignatureValid = computedSignature.equals(signature);
+        if (!isSignatureValid) {
+            s_logger.debug(String.format("Signature for post upload request [%s] is invalid.", uuid));
+            String errorMsg = "signature validation failed.";
+            updateStateMapWithError(uuid, errorMsg);
+            throw new InvalidParameterValueException(errorMsg);
+        }
+        s_logger.debug(String.format("Signature for post upload request [%s] is valid.", uuid));
+    }
+
+    /**
+     * Returns the protocol used for uploads as a string.
+     */
+    protected String getUploadProtocol() {
+        if (useHttpsToUpload()) {
+            s_logger.debug(String.format("Param [%s] is set to true; therefore, HTTPS is being used.", USE_HTTPS_TO_UPLOAD));
+            return NetUtils.HTTPS_PROTO;
+        }
+        s_logger.debug(String.format("Param [%s] is set to false; therefore, HTTP is being used.", USE_HTTPS_TO_UPLOAD));
+        return NetUtils.HTTP_PROTO;
+    }
+
+    /**
+     * Retrieves the value of "useHttpsToUpload" from the params as a boolean
+     */
+    protected boolean useHttpsToUpload() {
+        return BooleanUtils.toBoolean((String) _params.get(USE_HTTPS_TO_UPLOAD));
     }
 
     private TemplateOrVolumePostUploadCommand getTemplateOrVolumePostUploadCmd(String metadata) {
@@ -3586,6 +3637,34 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             s_logger.error("exception while decoding and deserialising metadata", ex);
         }
         return cmd;
+    }
+
+    protected Answer execute(QuerySnapshotZoneCopyCommand cmd) {
+        SnapshotObjectTO snapshot = cmd.getSnapshot();
+        String parentPath = getRootDir(snapshot.getDataStore().getUrl(), _nfsVersion);
+        String path = snapshot.getPath();
+        File snapFile = new File(parentPath + File.separator + path);
+        if (snapFile.exists() && !snapFile.isDirectory()) {
+            return new QuerySnapshotZoneCopyAnswer(cmd, List.of(path));
+        }
+        int index = path.lastIndexOf(File.separator);
+        String snapDir = path.substring(0, index);
+        List<String> files = new ArrayList<>();
+        try (Stream<Path> stream = Files.list(Paths.get(parentPath + File.separator + snapDir))) {
+            List<String> fileNames = stream
+                    .filter(file -> !Files.isDirectory(file))
+                    .map(Path::getFileName)
+                    .map(Path::toString)
+                    .collect(Collectors.toList());
+            for (String file : fileNames) {
+                file = snapDir + "/" + file;
+                s_logger.debug(String.format("Found snapshot file %s", file));
+                files.add(file);
+            }
+        } catch (IOException ioe) {
+            s_logger.error("Error preparing file list for snapshot copy", ioe);
+        }
+        return new QuerySnapshotZoneCopyAnswer(cmd, files);
     }
 
 }

@@ -133,6 +133,25 @@
             </a-row>
           </router-link>
         </a-menu-item>
+        <a-menu-item style="width: 100%; padding: 12px" v-if="'deployVnfAppliance' in $store.getters.apis">
+          <router-link :to="{ path: '/action/deployVnfAppliance'}">
+            <a-row>
+              <a-col style="margin-right: 12px">
+                <a-avatar :style="{ backgroundColor: $config.theme['@primary-color'] }">
+                  <template #icon>
+                    <font-awesome-icon :icon="['fa-solid', 'fa-dharmachakra']" />
+                  </template>
+                </a-avatar>
+              </a-col>
+              <a-col>
+                <h3 style="margin-bottom: 0px;">
+                  {{ $t('label.vnf.appliance') }}
+                </h3>
+                <small>{{ $t('label.vnf.appliance.add') }}</small>
+              </a-col>
+            </a-row>
+          </router-link>
+        </a-menu-item>
       </a-menu>
     </template>
     <a-button type="primary">

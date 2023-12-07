@@ -35,9 +35,9 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.hypervisor.vmware.VmwareDatacenterVO;
+import com.cloud.dc.VmwareDatacenterVO;
 import com.cloud.hypervisor.vmware.VmwareDatacenterZoneMapVO;
-import com.cloud.hypervisor.vmware.dao.VmwareDatacenterDao;
+import com.cloud.dc.dao.VmwareDatacenterDao;
 import com.cloud.hypervisor.vmware.dao.VmwareDatacenterZoneMapDao;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineDiskInfoBuilder;
 import com.cloud.storage.Storage.StoragePoolType;

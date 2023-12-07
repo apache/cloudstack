@@ -24,7 +24,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 // C# versions of certain CloudStack types to simplify JSON serialisation.
-// Limit to the number of types, becasue they are written and maintained manually.
+// Limit to the number of types, because they are written and maintained manually.
 // JsonProperty used to identify property name when serialised, which allows
 // later adoption of C# naming conventions if requried. 
 namespace HypervResource

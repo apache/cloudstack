@@ -57,7 +57,7 @@ public class VpnUsersResponse extends BaseResponse implements ControlledEntityRe
     private String projectName;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "the state of the Vpn User")
+    @Param(description = "the state of the Vpn User, can be 'Add', 'Revoke' or 'Active'.")
     private String state;
 
     public void setId(String id) {

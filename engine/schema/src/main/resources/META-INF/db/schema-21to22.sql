@@ -646,7 +646,7 @@ INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (88, 6, 'W
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (89, 6, 'Windows Server 2003 Standard Edition(32-bit)');
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (90, 6, 'Windows Server 2003 Standard Edition(64-bit)');
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (91, 6, 'Windows Server 2003 Web Edition');
-INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (92, 6, 'Microsoft Small Bussiness Server 2003');
+INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (92, 6, 'Microsoft Small Business Server 2003');
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (93, 6, 'Windows XP (32-bit)');
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (94, 6, 'Windows XP (64-bit)');
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (95, 6, 'Windows 2000 Advanced Server');
@@ -779,7 +779,7 @@ INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Microsoft Windows Server 2003, Standard Edition (32-bit)', 89);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Microsoft Windows Server 2003, Standard Edition (64-bit)', 90);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Microsoft Windows Server 2003, Web Edition', 91);
-INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Microsoft Small Bussiness Server 2003', 92);
+INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Microsoft Small Business Server 2003', 92);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Microsoft Windows Vista (32-bit)', 56);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Microsoft Windows Vista (64-bit)', 101);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Microsoft Windows XP Professional (32-bit)', 93);
