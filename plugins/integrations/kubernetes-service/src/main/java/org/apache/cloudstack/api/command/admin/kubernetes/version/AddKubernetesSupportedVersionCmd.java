@@ -31,6 +31,7 @@ import org.apache.cloudstack.api.command.admin.AdminCmd;
 import org.apache.cloudstack.api.response.KubernetesSupportedVersionResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
@@ -38,7 +39,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.kubernetes.version.KubernetesSupportedVersion;
 import com.cloud.kubernetes.version.KubernetesVersionService;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.commons.lang3.StringUtils;
 
 @APICommand(name = "addKubernetesSupportedVersion",
         description = "Add a supported Kubernetes version",
@@ -84,6 +84,10 @@ public class AddKubernetesSupportedVersionCmd extends BaseCmd implements AdminCm
             description = "the minimum RAM size in MB to be set with the Kubernetes version")
     private Integer minimumRamSize;
 
+    @Parameter(name=ApiConstants.DIRECT_DOWNLOAD, type = CommandType.BOOLEAN, since="4.18.2",
+            description = "If set to true the Kubernetes supported version ISO will bypass Secondary Storage and be downloaded to Primary Storage on deployment. Default is false")
+    private Boolean directDownload;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -121,6 +125,10 @@ public class AddKubernetesSupportedVersionCmd extends BaseCmd implements AdminCm
 
     public Integer getMinimumRamSize() {
         return minimumRamSize;
+    }
+
+    public boolean isDirectDownload() {
+        return (directDownload != null) ? directDownload : false;
     }
 
     @Override

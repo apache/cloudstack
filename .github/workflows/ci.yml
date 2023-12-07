@@ -23,6 +23,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   build:
     if: github.repository == 'apache/cloudstack'
@@ -90,6 +93,7 @@ jobs:
                   smoke/test_nic
                   smoke/test_nic_adapter_type
                   smoke/test_non_contigiousvlan
+                  smoke/test_object_stores
                   smoke/test_outofbandmanagement
                   smoke/test_outofbandmanagement_nestedplugin
                   smoke/test_over_provisioning
@@ -108,7 +112,8 @@ jobs:
                   smoke/test_reset_configuration_settings
                   smoke/test_reset_vm_on_reboot
                   smoke/test_resource_accounting
-                  smoke/test_resource_detail",
+                  smoke/test_resource_detail
+                  smoke/test_global_acls",
                 "smoke/test_router_dhcphosts
                   smoke/test_router_dns
                   smoke/test_router_dnsservice

@@ -1396,7 +1396,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
             if (vmRequiresSharedStorage) {
                 // check shared pools
-                List<StoragePoolVO> allPoolsInCluster = _storagePoolDao.findPoolsByTags(clusterVO.getDataCenterId(), clusterVO.getPodId(), clusterVO.getId(), null);
+                List<StoragePoolVO> allPoolsInCluster = _storagePoolDao.findPoolsByTags(clusterVO.getDataCenterId(), clusterVO.getPodId(), clusterVO.getId(), null, false, 0);
                 for (StoragePoolVO pool : allPoolsInCluster) {
                     if (!allocatorAvoidOutput.shouldAvoid(pool)) {
                         // there's some pool in the cluster that is not yet in avoid set
@@ -1409,7 +1409,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             if (vmRequiresLocalStorege) {
                 // check local pools
                 List<StoragePoolVO> allLocalPoolsInCluster =
-                        _storagePoolDao.findLocalStoragePoolsByTags(clusterVO.getDataCenterId(), clusterVO.getPodId(), clusterVO.getId(), null);
+                        _storagePoolDao.findLocalStoragePoolsByTags(clusterVO.getDataCenterId(), clusterVO.getPodId(), clusterVO.getId(), null, false);
                 for (StoragePoolVO pool : allLocalPoolsInCluster) {
                     if (!allocatorAvoidOutput.shouldAvoid(pool)) {
                         // there's some pool in the cluster that is not yet
@@ -1723,6 +1723,16 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         for (VolumeVO toBeCreated : volumesTobeCreated) {
             s_logger.debug(String.format("Checking suitable pools for volume [%s, %s] of VM [%s].", toBeCreated.getUuid(), toBeCreated.getVolumeType().name(), vmProfile.getUuid()));
 
+            if (toBeCreated.getState() == Volume.State.Allocated && toBeCreated.getPoolId() != null) {
+                toBeCreated.setPoolId(null);
+                if (!_volsDao.update(toBeCreated.getId(), toBeCreated)) {
+                    throw new CloudRuntimeException(String.format("Error updating volume [%s] to clear pool Id.", toBeCreated.getId()));
+                }
+                if (s_logger.isDebugEnabled()) {
+                    String msg = String.format("Setting pool_id to NULL for volume id=%s as it is in Allocated state", toBeCreated.getId());
+                    s_logger.debug(msg);
+                }
+            }
             // If the plan specifies a poolId, it means that this VM's ROOT
             // volume is ready and the pool should be reused.
             // In this case, also check if rest of the volumes are ready and can
