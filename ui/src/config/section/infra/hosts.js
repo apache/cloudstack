@@ -291,6 +291,26 @@ export default {
       }
     },
     {
+      api: 'declareHostAsDegraded',
+      icon: 'exception-outlined',
+      label: 'label.declare.host.as.degraded',
+      message: 'label.declare.host.as.degraded',
+      dataView: true,
+      show: (record) => {
+        return record.resourcestate !== 'Degraded' && (record.state === 'Alert' || record.state === 'Disconnected')
+      }
+    },
+    {
+      api: 'cancelHostAsDegraded',
+      icon: 'file-done-outlined',
+      label: 'label.cancel.host.as.degraded',
+      message: 'label.cancel.host.as.degraded',
+      dataView: true,
+      show: (record) => {
+        return record.resourcestate === 'Degraded'
+      }
+    },
+    {
       api: 'deleteHost',
       icon: 'delete-outlined',
       label: 'label.action.remove.host',
