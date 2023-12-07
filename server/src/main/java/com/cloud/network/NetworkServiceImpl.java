@@ -3132,7 +3132,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             if (!NetUtils.isValidIp4Cidr(guestVmCidr)) {
                 throw new InvalidParameterValueException("Invalid format of Guest VM CIDR.");
             }
-            if (!NetUtils.validateGuestCidr(guestVmCidr)) {
+            if (!NetUtils.validateGuestCidr(guestVmCidr, !ConfigurationManager.AllowNonRFC1918CompliantIPs.value())) {
                 throw new InvalidParameterValueException("Invalid format of Guest VM CIDR. Make sure it is RFC1918 compliant. ");
             }
 

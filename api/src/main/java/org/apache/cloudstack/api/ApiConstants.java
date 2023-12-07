@@ -298,6 +298,7 @@ public class ApiConstants {
     public static final String MEMORY = "memory";
     public static final String MODE = "mode";
     public static final String NSX_MODE = "nsxmode";
+    public static final String NSX_ENABLED = "isnsxenabled";
     public static final String NAME = "name";
     public static final String METHOD_NAME = "methodname";
     public static final String NETWORK_DOMAIN = "networkdomain";

@@ -1,4 +1,3 @@
-
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -21,8 +20,8 @@ import org.apache.cloudstack.resource.NsxNetworkRule;
 
 import java.util.List;
 
-public class DeletedNsxDistributedFirewallRulesCommand extends CreateNsxDistributedFirewallRulesCommand {
-    public DeletedNsxDistributedFirewallRulesCommand(long domainId, long accountId, long zoneId, Long vpcId, long networkId, List<NsxNetworkRule> rules) {
+public class DeleteNsxDistributedFirewallRulesCommand extends CreateNsxDistributedFirewallRulesCommand {
+    public DeleteNsxDistributedFirewallRulesCommand(long domainId, long accountId, long zoneId, Long vpcId, long networkId, List<NsxNetworkRule> rules) {
         super(domainId, accountId, zoneId, vpcId, networkId, rules);
     }
 }

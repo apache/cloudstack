@@ -59,6 +59,7 @@ import static com.cloud.network.Network.Service.SourceNat;
 import static com.cloud.network.Network.Service.PortForwarding;
 import static com.cloud.network.Network.Service.NetworkACL;
 import static com.cloud.network.Network.Service.UserData;
+import static com.cloud.network.Network.Service.Firewall;
 
 @APICommand(name = "createNetworkOffering", description = "Creates a network offering.", responseObject = NetworkOfferingResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -251,7 +252,8 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
             ));
             if (Boolean.TRUE.equals(forVpc)) {
                 services.add(NetworkACL.getName());
-                return services;
+            } else {
+                services.add(Firewall.getName());
             }
             return services;
         }
@@ -338,10 +340,15 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     private void getServiceProviderMapForNsx(Map<String, List<String>> serviceProviderMap) {
         String routerProvider = Boolean.TRUE.equals(getForVpc()) ? VirtualRouterProvider.Type.VPCVirtualRouter.name() :
                 VirtualRouterProvider.Type.VirtualRouter.name();
-        List<String> unsupportedServices = List.of("Vpn", "SecurityGroup", "Connectivity",
-                "Gateway", "Firewall", "BaremetalPxeService");
+        List<String> unsupportedServices = new ArrayList<>(List.of("Vpn", "SecurityGroup", "Connectivity",
+                "Gateway", "BaremetalPxeService"));
         List<String> routerSupported = List.of("Dhcp", "Dns", "UserData");
         List<String> allServices = Service.listAllServices().stream().map(Service::getName).collect(Collectors.toList());
+        if (routerProvider.equals(VirtualRouterProvider.Type.VPCVirtualRouter.name())) {
+            unsupportedServices.add("Firewall");
+        } else {
+            unsupportedServices.add("NetworkACL");
+        }
         for (String service : allServices) {
             if (unsupportedServices.contains(service))
                 continue;

@@ -131,7 +131,7 @@
         </a-row>
         <a-form-item name="nsxmode" ref="nsxmode" v-if="forNsx">
           <template #label>
-            <tooltip-label :title="$t('label.nsx.mode')" :tooltip="apiParams.nsxmode.description"/>
+            <tooltip-label :title="$t('label.nsxmode')" :tooltip="apiParams.nsxmode.description"/>
           </template>
           <a-select
             v-if="showMode"
@@ -548,6 +548,7 @@ export default {
       lbType: 'publicLb',
       macLearningValue: '',
       supportedServices: [],
+      supportedSvcs: [],
       supportedServiceLoading: false,
       isVirtualRouterForAtLeastOneService: false,
       isVpcVirtualRouterForAtLeastOneService: false,
@@ -841,17 +842,16 @@ export default {
           }
         })
         setTimeout(() => {
+          self.supportedSvcs = self.supportedServices
           self.supportedServices = supportedServices
           self.supportedServiceLoading = false
         }, 50)
       } else {
+        supportedServices = this.supportedSvcs
         supportedServices = supportedServices.filter(svc => {
           return Object.keys(this.nsxSupportedServicesMap).includes(svc.name)
         })
-        supportedServices.forEach(function (svc, index) {
-          svc.provider = [self.nsxSupportedServicesMap[svc.name]]
-          supportedServices[index] = svc
-        })
+        self.supportedSvcs = self.supportedServices
         self.supportedServices = supportedServices
         self.supportedServiceLoading = false
       }
@@ -863,19 +863,29 @@ export default {
           Dhcp: this.forVpc ? this.VPCVR : this.VR,
           Dns: this.forVpc ? this.VPCVR : this.VR,
           UserData: this.forVpc ? this.VPCVR : this.VR,
-          SourceNat: this.NSX
+          SourceNat: this.NSX,
+          StaticNat: this.NSX,
+          PortForwarding: this.NSX,
+          Lb: this.NSX,
+          ...(forVpc && { NetworkACL: this.NSX }),
+          ...(!forVpc && { Firewall: this.NSX })
         }
       }
       this.updateSupportedServices()
     },
-    async handleForNsxChange (forNsx) {
+    handleForNsxChange (forNsx) {
       this.forNsx = forNsx
       this.showMode = forNsx
       this.nsxSupportedServicesMap = {
         Dhcp: this.forVpc ? this.VPCVR : this.VR,
         Dns: this.forVpc ? this.VPCVR : this.VR,
         UserData: this.forVpc ? this.VPCVR : this.VR,
-        SourceNat: this.NSX
+        SourceNat: this.NSX,
+        StaticNat: this.NSX,
+        PortForwarding: this.NSX,
+        Lb: this.NSX,
+        ...(this.forVpc && { NetworkACL: this.NSX }),
+        ...(!this.forVpc && { Firewall: this.NSX })
       }
       this.fetchSupportedServiceData()
     },

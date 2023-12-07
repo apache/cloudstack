@@ -41,6 +41,7 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.network.nsx.NsxService;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.alert.AlertService;
@@ -1158,8 +1159,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final boolean useDistributedRouter = vpcOff.isSupportsDistributedRouter();
         final VpcVO vpc = new VpcVO(zoneId, vpcName, displayText, owner.getId(), owner.getDomainId(), vpcOffId, cidr, networkDomain, useDistributedRouter, isRegionLevelVpcOff,
                 vpcOff.isRedundantRouter(), ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2);
-            vpc.setPublicMtu(publicMtu);
-            vpc.setDisplay(Boolean.TRUE.equals(displayVpc));
+        vpc.setPublicMtu(publicMtu);
+        vpc.setDisplay(Boolean.TRUE.equals(displayVpc));
 
         return createVpc(displayVpc, vpc);
     }
@@ -1220,7 +1221,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         // cidr has to be RFC 1918 complient
-        if (!NetUtils.validateGuestCidr(cidr)) {
+        if (!NetUtils.validateGuestCidr(cidr, !ConfigurationManager.AllowNonRFC1918CompliantIPs.value())) {
             throw new InvalidParameterValueException("Guest Cidr " + cidr + " is not RFC1918 compliant");
         }
 
@@ -1889,7 +1890,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         // 2) Only Isolated networks with Source nat service enabled can be
         // added to vpc
-        if (!(guestNtwkOff.getGuestType() == GuestType.Isolated && supportedSvcs.contains(Service.SourceNat))) {
+        if (!guestNtwkOff.isForNsx() && !(guestNtwkOff.getGuestType() == GuestType.Isolated && supportedSvcs.contains(Service.SourceNat))) {
 
             throw new InvalidParameterValueException("Only network offerings of type " + GuestType.Isolated + " with service " + Service.SourceNat.getName()
                     + " are valid for vpc ");
@@ -1900,12 +1901,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
          * TODO This should have never been hardcoded like this in the first
          * place if (guestNtwkOff.getRedundantRouter()) { throw new
          * InvalidParameterValueException
-         * ("No redunant router support when network belnogs to VPC"); }
+         * ("No redundant router support when network belongs to VPC"); }
          */
 
-        // 4) Conserve mode should be off
+        // 4) Conserve mode should be off in older versions ( < 4.19.0.0)
         if (guestNtwkOff.isConserveMode()) {
-            throw new InvalidParameterValueException("Only networks with conserve mode Off can belong to VPC");
+            s_logger.info("Creating a network with conserve mode in VPC");
         }
 
         // 5) If Netscaler is LB provider make sure it is in dedicated mode

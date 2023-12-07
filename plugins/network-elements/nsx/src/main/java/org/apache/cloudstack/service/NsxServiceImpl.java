@@ -32,11 +32,11 @@ import org.apache.cloudstack.agent.api.CreateNsxPortForwardRuleCommand;
 import org.apache.cloudstack.agent.api.CreateNsxStaticNatCommand;
 import org.apache.cloudstack.agent.api.CreateNsxTier1GatewayCommand;
 import org.apache.cloudstack.agent.api.CreateOrUpdateNsxTier1NatRuleCommand;
+import org.apache.cloudstack.agent.api.DeleteNsxDistributedFirewallRulesCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxLoadBalancerRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxSegmentCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxNatRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxTier1GatewayCommand;
-import org.apache.cloudstack.agent.api.DeletedNsxDistributedFirewallRulesCommand;
 import org.apache.cloudstack.resource.NsxNetworkRule;
 import org.apache.cloudstack.utils.NsxControllerUtils;
 import org.apache.cloudstack.utils.NsxHelper;
@@ -161,7 +161,7 @@ public class NsxServiceImpl implements NsxService {
         CreateNsxLoadBalancerRuleCommand command = new CreateNsxLoadBalancerRuleCommand(netRule.getDomainId(),
                 netRule.getAccountId(), netRule.getZoneId(), netRule.getNetworkResourceId(),
                 netRule.getNetworkResourceName(), netRule.isVpcResource(),  netRule.getMemberList(), netRule.getRuleId(),
-                netRule.getPublicPort(), netRule.getAlgorithm(), netRule.getProtocol());
+                netRule.getPublicPort(), netRule.getPrivatePort(), netRule.getAlgorithm(), netRule.getProtocol());
         command.setPublicIp(netRule.getPublicIp());
         NsxAnswer result = nsxControllerUtils.sendNsxCommand(command, netRule.getZoneId());
         return result.getResult();
@@ -184,7 +184,7 @@ public class NsxServiceImpl implements NsxService {
     }
 
     public boolean deleteFirewallRules(Network network, List<NsxNetworkRule> netRules) {
-        DeletedNsxDistributedFirewallRulesCommand command = new DeletedNsxDistributedFirewallRulesCommand(network.getDomainId(),
+        DeleteNsxDistributedFirewallRulesCommand command = new DeleteNsxDistributedFirewallRulesCommand(network.getDomainId(),
                 network.getAccountId(), network.getDataCenterId(), network.getVpcId(), network.getId(), netRules);
         NsxAnswer result = nsxControllerUtils.sendNsxCommand(command, network.getDataCenterId());
         return result.getResult();
