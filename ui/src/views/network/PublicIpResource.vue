@@ -146,7 +146,8 @@ export default {
         // VPC IPs don't have firewall
         let tabs = this.$route.meta.tabs.filter(tab => tab.name !== 'firewall')
 
-        if (this.resource.networkofferingconservemode) {
+        const network = await this.fetchNetwork()
+        if (network && network.networkofferingconservemode) {
           this.tabs = tabs
           return
         }
@@ -185,6 +186,20 @@ export default {
     },
     fetchAction () {
       this.actions = this.$route.meta.actions || []
+    },
+    fetchNetwork () {
+      return new Promise((resolve, reject) => {
+        api('listNetworks', {
+          listAll: true,
+          projectid: this.resource.projectid,
+          id: this.resource.associatednetworkid
+        }).then(json => {
+          const network = json.listnetworksresponse?.network?.[0] || null
+          resolve(network)
+        }).catch(e => {
+          reject(e)
+        })
+      })
     },
     fetchPortFWRule () {
       return new Promise((resolve, reject) => {
