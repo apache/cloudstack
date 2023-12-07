@@ -259,8 +259,8 @@ public class XenServer610WrapperTest {
         final Connection conn = Mockito.mock(Connection.class);
         final VirtualMachineTO vmSpec = Mockito.mock(VirtualMachineTO.class);
 
-        final VolumeTO volume1 = Mockito.mock(VolumeTO.class);
-        final VolumeTO volume2 = Mockito.mock(VolumeTO.class);
+        final VolumeTO volume1 = MockVolumeTO(path);
+        final VolumeTO volume2 = MockVolumeTO(path);
 
         final SR sr1 = Mockito.mock(SR.class);
         final SR sr2 = Mockito.mock(SR.class);
@@ -294,9 +294,6 @@ public class XenServer610WrapperTest {
 
         when(xenServer610Resource.getConnection()).thenReturn(conn);
         when(vmSpec.getName()).thenReturn(vmName);
-
-        when(volume1.getPath()).thenReturn(path);
-        when(volume2.getPath()).thenReturn(path);
 
         when(nic1.getMac()).thenReturn(mac);
         when(nic2.getMac()).thenReturn(mac);
@@ -369,8 +366,8 @@ public class XenServer610WrapperTest {
         final Connection conn = Mockito.mock(Connection.class);
         final VirtualMachineTO vmSpec = Mockito.mock(VirtualMachineTO.class);
 
-        final VolumeTO volume1 = Mockito.mock(VolumeTO.class);
-        final VolumeTO volume2 = Mockito.mock(VolumeTO.class);
+        final VolumeTO volume1 = MockVolumeTO(path);
+        final VolumeTO volume2 = MockVolumeTO(path);
 
         final SR sr1 = Mockito.mock(SR.class);
         final SR sr2 = Mockito.mock(SR.class);
@@ -398,9 +395,6 @@ public class XenServer610WrapperTest {
 
         when(xenServer610Resource.getConnection()).thenReturn(conn);
         when(vmSpec.getName()).thenReturn(vmName);
-
-        when(volume1.getPath()).thenReturn(path);
-        when(volume2.getPath()).thenReturn(path);
 
         when(xenServer610Resource.getVDIbyUuid(conn, volume1.getPath())).thenReturn(vdi1);
         when(xenServer610Resource.getVDIbyUuid(conn, volume2.getPath())).thenReturn(vdi2);
@@ -480,5 +474,11 @@ public class XenServer610WrapperTest {
         //        }
 
         assertFalse(answer.getResult());
+    }
+
+    VolumeTO MockVolumeTO(String path){
+        VolumeTO vol = Mockito.mock(VolumeTO.class);
+        when(vol.getPath()).thenReturn(path);
+        return vol;
     }
 }

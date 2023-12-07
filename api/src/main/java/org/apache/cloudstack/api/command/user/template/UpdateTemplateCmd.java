@@ -16,10 +16,11 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.template;
 
-import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -41,7 +42,8 @@ public class UpdateTemplateCmd extends BaseUpdateTemplateOrIsoCmd implements Use
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = "templatetype", type = CommandType.STRING, description = "the type of the template")
+    @Parameter(name = ApiConstants.TEMPLATE_TYPE, type = CommandType.STRING,
+            description = "the type of the template. Valid options are: USER/VNF (for all users) and SYSTEM/ROUTING/BUILTIN (for admins only).")
     private String templateType;
 
     /////////////////////////////////////////////////////

@@ -19,6 +19,7 @@ package org.apache.cloudstack.storage.datastore.db;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -65,6 +66,8 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     private SearchBuilder<SnapshotDataStoreVO> idStateNeqSearch;
     protected SearchBuilder<SnapshotVO> snapshotVOSearch;
     private SearchBuilder<SnapshotDataStoreVO> snapshotCreatedSearch;
+    private SearchBuilder<SnapshotDataStoreVO> dataStoreAndInstallPathSearch;
+    private SearchBuilder<SnapshotDataStoreVO> storeAndSnapshotIdsSearch;
     private SearchBuilder<SnapshotDataStoreVO> storeSnapshotDownloadStatusSearch;
 
     protected static final List<Hypervisor.HypervisorType> HYPERVISORS_SUPPORTING_SNAPSHOTS_CHAINING = List.of(Hypervisor.HypervisorType.XenServer);
@@ -131,6 +134,18 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         snapshotCreatedSearch.and(STORE_ID, snapshotCreatedSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
         snapshotCreatedSearch.and(CREATED,  snapshotCreatedSearch.entity().getCreated(), SearchCriteria.Op.BETWEEN);
         snapshotCreatedSearch.done();
+
+        dataStoreAndInstallPathSearch = createSearchBuilder();
+        dataStoreAndInstallPathSearch.and(STORE_ID, dataStoreAndInstallPathSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        dataStoreAndInstallPathSearch.and(STORE_ROLE, dataStoreAndInstallPathSearch.entity().getRole(), SearchCriteria.Op.EQ);
+        dataStoreAndInstallPathSearch.and("install_pathIN", dataStoreAndInstallPathSearch.entity().getInstallPath(), SearchCriteria.Op.IN);
+        dataStoreAndInstallPathSearch.done();
+
+        storeAndSnapshotIdsSearch = createSearchBuilder();
+        storeAndSnapshotIdsSearch.and(STORE_ID, storeAndSnapshotIdsSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        storeAndSnapshotIdsSearch.and(STORE_ROLE, storeAndSnapshotIdsSearch.entity().getRole(), SearchCriteria.Op.EQ);
+        storeAndSnapshotIdsSearch.and("snapshot_idIN", storeAndSnapshotIdsSearch.entity().getSnapshotId(), SearchCriteria.Op.IN);
+        storeAndSnapshotIdsSearch.done();
 
         storeSnapshotDownloadStatusSearch = createSearchBuilder();
         storeSnapshotDownloadStatusSearch.and(SNAPSHOT_ID, storeSnapshotDownloadStatusSearch.entity().getSnapshotId(), SearchCriteria.Op.EQ);
@@ -492,6 +507,32 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.create();
         sc.setParameters(VOLUME_ID, volumeId);
         sc.setParameters(STATE, State.Ready);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<SnapshotDataStoreVO> listByStoreAndInstallPaths(long storeId, DataStoreRole role, List<String> pathList) {
+        if (CollectionUtils.isEmpty(pathList)) {
+            return Collections.emptyList();
+        }
+
+        SearchCriteria<SnapshotDataStoreVO> sc = dataStoreAndInstallPathSearch.create();
+        sc.setParameters(STORE_ID, storeId);
+        sc.setParameters(STORE_ROLE, role);
+        sc.setParameters("install_pathIN", pathList.toArray());
+        return listBy(sc);
+    }
+
+    @Override
+    public List<SnapshotDataStoreVO> listByStoreAndSnapshotIds(long storeId, DataStoreRole role, List<Long> snapshotIds) {
+        if (CollectionUtils.isEmpty(snapshotIds)) {
+            return Collections.emptyList();
+        }
+
+        SearchCriteria<SnapshotDataStoreVO> sc = storeAndSnapshotIdsSearch.create();
+        sc.setParameters(STORE_ID, storeId);
+        sc.setParameters(STORE_ROLE, role);
+        sc.setParameters("snapshot_idIN", snapshotIds.toArray());
         return listBy(sc);
     }
 

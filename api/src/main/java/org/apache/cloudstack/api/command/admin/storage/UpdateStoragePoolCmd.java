@@ -61,6 +61,9 @@ public class UpdateStoragePoolCmd extends BaseCmd {
             " enable it back.")
     private Boolean enabled;
 
+    @Parameter(name = ApiConstants.IS_TAG_A_RULE, type = CommandType.BOOLEAN, description = ApiConstants.PARAMETER_DESCRIPTION_IS_TAG_A_RULE)
+    private Boolean isTagARule;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -87,6 +90,10 @@ public class UpdateStoragePoolCmd extends BaseCmd {
 
     public Boolean getEnabled() {
         return enabled;
+    }
+
+    public Boolean isTagARule() {
+        return isTagARule;
     }
 
     /////////////////////////////////////////////////////

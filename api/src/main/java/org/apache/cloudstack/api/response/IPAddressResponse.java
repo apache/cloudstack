@@ -128,7 +128,7 @@ public class IPAddressResponse extends BaseResponseWithAnnotations implements Co
     private String networkId;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "State of the ip address. Can be: Allocatin, Allocated and Releasing")
+    @Param(description = "State of the ip address. Can be: Allocating, Allocated, Releasing, Reserved and Free")
     private String state;
 
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)
