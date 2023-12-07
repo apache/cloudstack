@@ -33,7 +33,7 @@ jobs:
     name: Sonar JaCoCo Coverage
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: "refs/pull/${{ github.event.number }}/merge"
           fetch-depth: 0

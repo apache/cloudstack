@@ -190,7 +190,7 @@ def isfile(path, isISCSI):
     errMsg = ''
     exists = True
     if isISCSI:
-        exists = checkVolumeAvailablility(path)
+        exists = checkVolumeAvailability(path)
     else:
         exists = os.path.isfile(path)
         
@@ -269,7 +269,7 @@ def getParentOfSnapshot(snapshotUuid, primarySRPath, isISCSI):
 
     baseCopyUuid = ''
     if isISCSI:
-        checkVolumeAvailablility(snapshotPath)
+        checkVolumeAvailability(snapshotPath)
         baseCopyUuid = scanParent(snapshotPath)
     else:
         baseCopyUuid = getParent(snapshotPath, isISCSI)
@@ -439,7 +439,7 @@ def manageAvailability(path, value):
     return
 
 
-def checkVolumeAvailablility(path):
+def checkVolumeAvailability(path):
     try:
         if not isVolumeAvailable(path):
             # The VHD file is not available on XenSever. The volume is probably

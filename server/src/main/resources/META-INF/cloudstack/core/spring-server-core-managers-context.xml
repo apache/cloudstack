@@ -337,6 +337,8 @@
         <constructor-arg name="timeout" value="10000" />
     </bean>
 
+    <bean id="storageStorageBrowserImpl" class="org.apache.cloudstack.storage.browser.StorageBrowserImpl" />
+
     <bean id="rollingMaintenanceManager" class="com.cloud.resource.RollingMaintenanceManagerImpl">
         <property name="affinityGroupProcessors"
                   value="#{affinityProcessorsRegistry.registered}" />
@@ -350,10 +352,12 @@
           class="com.cloud.tags.ResourceManagerUtilImpl"/>
 
     <bean id="resourceIconManager" class="com.cloud.resourceicon.ResourceIconManagerImpl" />
+    <bean id="bucketApiServiceImpl" class="org.apache.cloudstack.storage.object.BucketApiServiceImpl" />
 
     <bean id="VMScheduleManagerImpl" class="org.apache.cloudstack.vm.schedule.VMScheduleManagerImpl" />
     <bean id="VMSchedulerImpl" class="org.apache.cloudstack.vm.schedule.VMSchedulerImpl">
         <property name="asyncJobDispatcher" ref="ApiAsyncJobDispatcher" />
     </bean>
 
+    <bean id="vnfTemplateManager" class="org.apache.cloudstack.storage.template.VnfTemplateManagerImpl" />
 </beans>

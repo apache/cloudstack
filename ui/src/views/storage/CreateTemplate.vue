@@ -69,6 +69,48 @@
           </a-select-option>
         </a-select>
       </a-form-item>
+      <a-form-item name="domainid" ref="domainid" v-if="'listDomains' in $store.getters.apis">
+          <template #label>
+            <tooltip-label :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
+          </template>
+          <a-select
+            v-model:value="form.domainid"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :loading="domainLoading"
+            :placeholder="apiParams.domainid.description"
+            @change="val => { handleDomainChange(val) }">
+            <a-select-option v-for="(opt, optIndex) in this.domains" :key="optIndex" :label="opt.path || opt.name || opt.description" :value="opt.id">
+              <span>
+                <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <block-outlined v-else style="margin-right: 5px" />
+                {{ opt.path || opt.name || opt.description }}
+              </span>
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item name="account" ref="account" v-if="domainid">
+          <template #label>
+            <tooltip-label :title="$t('label.account')" :tooltip="apiParams.account.description"/>
+          </template>
+          <a-select
+            v-model:value="form.account"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :placeholder="apiParams.account.description"
+            @change="val => { handleAccountChange(val) }">
+            <a-select-option v-for="(acc, index) in accounts" :value="acc.name" :key="index">
+              {{ acc.name }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+
       <a-form-item
           name="ostypeid"
           ref="ostypeid"
@@ -158,7 +200,12 @@ export default {
       snapshotZoneIds: [],
       zones: [],
       osTypes: {},
-      loading: false
+      loading: false,
+      domains: [],
+      accounts: [],
+      domainLoading: false,
+      domainid: null,
+      account: null
     }
   },
   computed: {
@@ -188,6 +235,9 @@ export default {
     fetchData () {
       this.fetchOsTypes()
       this.fetchSnapshotZones()
+      if ('listDomains' in this.$store.getters.apis) {
+        this.fetchDomains()
+      }
     },
     fetchOsTypes () {
       this.osTypes.opts = []
@@ -237,6 +287,43 @@ export default {
         }
       })
     },
+    fetchDomains () {
+      const params = {}
+      params.listAll = true
+      params.showicon = true
+      params.details = 'min'
+      this.domainLoading = true
+      api('listDomains', params).then(json => {
+        this.domains = json.listdomainsresponse.domain
+      }).finally(() => {
+        this.domainLoading = false
+        this.handleDomainChange(null)
+      })
+    },
+    handleDomainChange (domain) {
+      this.domainid = domain
+      this.form.account = null
+      this.account = null
+      if ('listAccounts' in this.$store.getters.apis) {
+        this.fetchAccounts()
+      }
+    },
+    fetchAccounts () {
+      api('listAccounts', {
+        domainid: this.domainid
+      }).then(response => {
+        this.accounts = response.listaccountsresponse.account || []
+      }).catch(error => {
+        this.$notifyError(error)
+      })
+    },
+    handleAccountChange (acc) {
+      if (acc) {
+        this.account = acc.name
+      } else {
+        this.account = acc
+      }
+    },
     handleSubmit (e) {
       if (this.loading) return
       this.formRef.value.validate().then(() => {
@@ -277,6 +364,9 @@ export default {
     },
     closeModal () {
       this.$emit('close-action')
+    },
+    isAdminOrDomainAdmin () {
+      return ['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype)
     }
   }
 }

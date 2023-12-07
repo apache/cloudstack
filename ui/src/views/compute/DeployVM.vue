@@ -522,7 +522,7 @@
                     {{ $t('label.isadvanced') }}
                     <a-switch v-model:checked="showDetails" style="margin-left: 10px"/>
                   </span>
-                  <div style="margin-top: 15px" v-show="showDetails">
+                  <div style="margin-top: 15px" v-if="showDetails">
                     <div
                       v-if="vm.templateid && ['KVM', 'VMware', 'XenServer'].includes(hypervisor) && !template.deployasis">
                       <a-form-item :label="$t('label.boottype')" name="boottype" ref="boottype">
@@ -1773,6 +1773,9 @@ export default {
           this.form.iothreadsenabled = template.details && Object.prototype.hasOwnProperty.call(template.details, 'iothreads')
           this.form.iodriverpolicy = template.details?.['io.policy']
           this.form.keyboard = template.details?.keyboard
+          if (template.details['vmware-to-kvm-mac-addresses']) {
+            this.dataPreFill.macAddressArray = JSON.parse(template.details['vmware-to-kvm-mac-addresses'])
+          }
         }
       } else if (name === 'isoid') {
         this.templateConfigurations = []
@@ -2292,6 +2295,7 @@ export default {
       args.details = 'all'
       args.showicon = 'true'
       args.id = this.templateId
+      args.isvnf = false
 
       return new Promise((resolve, reject) => {
         api('listTemplates', args).then((response) => {

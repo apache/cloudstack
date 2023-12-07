@@ -2271,7 +2271,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                         "Please re-try when virtual disk is attached to a VM using a SCSI controller.");
             }
 
-            String vmdkAbsFile = resource.getAbsoluteVmdkFile(vDisk);
+            String vmdkAbsFile = VmwareHelper.getAbsoluteVmdkFile(vDisk);
 
             if (vmdkAbsFile != null && !vmdkAbsFile.isEmpty()) {
                 vmMo.updateAdapterTypeIfRequired(vmdkAbsFile);

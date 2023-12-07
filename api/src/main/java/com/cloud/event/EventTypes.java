@@ -29,6 +29,8 @@ import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.ha.HAConfig;
+import org.apache.cloudstack.storage.object.Bucket;
+import org.apache.cloudstack.storage.object.ObjectStore;
 import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.vm.schedule.VMSchedule;
 
@@ -395,6 +397,8 @@ public class EventTypes {
     public static final String EVENT_STORAGE_IP_RANGE_UPDATE = "STORAGE.IP.RANGE.UPDATE";
 
     public static final String EVENT_IMAGE_STORE_DATA_MIGRATE = "IMAGE.STORE.MIGRATE.DATA";
+    public static final String EVENT_IMAGE_STORE_RESOURCES_MIGRATE = "IMAGE.STORE.MIGRATE.RESOURCES";
+    public static final String EVENT_IMAGE_STORE_OBJECT_DOWNLOAD = "IMAGE.STORE.OBJECT.DOWNLOAD";
 
     // Configuration Table
     public static final String EVENT_CONFIGURATION_VALUE_EDIT = "CONFIGURATION.VALUE.EDIT";
@@ -711,6 +715,16 @@ public class EventTypes {
 
     // SystemVM
     public static final String EVENT_LIVE_PATCH_SYSTEMVM = "LIVE.PATCH.SYSTEM.VM";
+
+    // OBJECT STORE
+    public static final String EVENT_OBJECT_STORE_CREATE = "OBJECT.STORE.CREATE";
+    public static final String EVENT_OBJECT_STORE_DELETE = "OBJECT.STORE.DELETE";
+    public static final String EVENT_OBJECT_STORE_UPDATE = "OBJECT.STORE.UPDATE";
+
+    // BUCKETS
+    public static final String EVENT_BUCKET_CREATE = "BUCKET.CREATE";
+    public static final String EVENT_BUCKET_DELETE = "BUCKET.DELETE";
+    public static final String EVENT_BUCKET_UPDATE = "BUCKET.UPDATE";
 
     static {
 
@@ -1147,7 +1161,18 @@ public class EventTypes {
         entityEventDetails.put(EVENT_IMPORT_VCENTER_STORAGE_POLICIES, "StoragePolicies");
 
         entityEventDetails.put(EVENT_IMAGE_STORE_DATA_MIGRATE, ImageStore.class);
+        entityEventDetails.put(EVENT_IMAGE_STORE_OBJECT_DOWNLOAD, ImageStore.class);
         entityEventDetails.put(EVENT_LIVE_PATCH_SYSTEMVM, "SystemVMs");
+
+        //Object Store
+        entityEventDetails.put(EVENT_OBJECT_STORE_CREATE, ObjectStore.class);
+        entityEventDetails.put(EVENT_OBJECT_STORE_UPDATE, ObjectStore.class);
+        entityEventDetails.put(EVENT_OBJECT_STORE_DELETE, ObjectStore.class);
+
+        //Buckets
+        entityEventDetails.put(EVENT_BUCKET_CREATE, Bucket.class);
+        entityEventDetails.put(EVENT_BUCKET_UPDATE, Bucket.class);
+        entityEventDetails.put(EVENT_BUCKET_DELETE, Bucket.class);
     }
 
     public static String getEntityForEvent(String eventName) {
