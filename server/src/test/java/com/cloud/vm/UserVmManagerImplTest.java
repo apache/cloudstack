@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.vm;
 
+import com.cloud.api.query.dao.ServiceOfferingJoinDao;
+import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.configuration.Resource;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
@@ -37,12 +39,15 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.server.ManagementService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
@@ -71,6 +76,7 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
+import org.apache.cloudstack.api.command.user.vm.DeployVnfApplianceCmd;
 import org.apache.cloudstack.api.command.user.vm.ResetVMUserDataCmd;
 import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
@@ -78,6 +84,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.template.VnfTemplateManager;
 import org.apache.cloudstack.userdata.UserDataManager;
 import org.junit.After;
 import org.junit.Assert;
@@ -109,6 +116,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -214,6 +222,12 @@ public class UserVmManagerImplTest {
     AccountVO account;
 
     @Mock
+    VMTemplateVO vmTemplateVoMock;
+
+    @Mock
+    ManagementService managementServiceMock;
+
+    @Mock
     private ServiceOfferingVO serviceOffering;
 
     @Mock
@@ -222,10 +236,20 @@ public class UserVmManagerImplTest {
     @Mock
     VirtualMachineProfile virtualMachineProfile;
 
+    @Mock
+    VirtualMachineTemplate templateMock;
+
+    @Mock
+    VnfTemplateManager vnfTemplateManager;
+
+    @Mock
+    ServiceOfferingJoinDao serviceOfferingJoinDao;
+
     private static final long vmId = 1l;
     private static final long zoneId = 2L;
     private static final long accountId = 3L;
     private static final long serviceOfferingId = 10L;
+    private static final long templateId = 11L;
 
     private static final long GiB_TO_BYTES = 1024 * 1024 * 1024;
 
@@ -934,6 +958,43 @@ public class UserVmManagerImplTest {
         userVmManagerImpl.createVirtualMachine(deployVMCmd);
     }
 
+    @Test
+    public void createVirtualMachine() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
+        DeployVMCmd deployVMCmd = new DeployVMCmd();
+        ReflectionTestUtils.setField(deployVMCmd, "zoneId", zoneId);
+        ReflectionTestUtils.setField(deployVMCmd, "templateId", templateId);
+        ReflectionTestUtils.setField(deployVMCmd, "serviceOfferingId", serviceOfferingId);
+        deployVMCmd._accountService = accountService;
+
+        when(accountService.finalyzeAccountId(nullable(String.class), nullable(Long.class), nullable(Long.class), eq(true))).thenReturn(accountId);
+        when(accountService.getActiveAccountById(accountId)).thenReturn(account);
+        when(entityManager.findById(DataCenter.class, zoneId)).thenReturn(_dcMock);
+        when(entityManager.findById(ServiceOffering.class, serviceOfferingId)).thenReturn(serviceOffering);
+        when(serviceOffering.getState()).thenReturn(ServiceOffering.State.Active);
+
+        when(entityManager.findById(VirtualMachineTemplate.class, templateId)).thenReturn(templateMock);
+        when(templateMock.getTemplateType()).thenReturn(Storage.TemplateType.VNF);
+        when(templateMock.isDeployAsIs()).thenReturn(false);
+        when(templateMock.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+        when(templateMock.getUserDataId()).thenReturn(null);
+        Mockito.doNothing().when(vnfTemplateManager).validateVnfApplianceNics(any(), nullable(List.class));
+
+        ServiceOfferingJoinVO svcOfferingMock = Mockito.mock(ServiceOfferingJoinVO.class);
+        when(serviceOfferingJoinDao.findById(anyLong())).thenReturn(svcOfferingMock);
+        when(_dcMock.isLocalStorageEnabled()).thenReturn(true);
+        when(_dcMock.getNetworkType()).thenReturn(DataCenter.NetworkType.Basic);
+        Mockito.doReturn(userVmVoMock).when(userVmManagerImpl).createBasicSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
+                any(), any(), any(), any(), eq(true), any());
+
+        UserVm result = userVmManagerImpl.createVirtualMachine(deployVMCmd);
+        assertEquals(userVmVoMock, result);
+        Mockito.verify(vnfTemplateManager).validateVnfApplianceNics(templateMock, null);
+        Mockito.verify(userVmManagerImpl).createBasicSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
+                any(), any(), any(), any(), eq(true), any());
+    }
+
     private List<VolumeVO> mockVolumesForIsAnyVmVolumeUsingLocalStorageTest(int localVolumes, int nonLocalVolumes) {
         List<VolumeVO> volumes = new ArrayList<>();
         for (int i=0; i< localVolumes + nonLocalVolumes; ++i) {
@@ -1067,5 +1128,97 @@ public class UserVmManagerImplTest {
         userVmManagerImpl.updateVncPasswordIfItHasChanged(vncPassword, newPassword, virtualMachineProfile);
         Mockito.verify(userVmDao).findById(vmId);
         Mockito.verify(userVmDao).update(vmId, userVmVoMock);
+    }
+
+    @Test
+    public void testGetSecurityGroupIdList() {
+        DeployVnfApplianceCmd cmd = Mockito.mock(DeployVnfApplianceCmd.class);
+        Mockito.doReturn(new ArrayList<Long>()).when(userVmManagerImpl).getSecurityGroupIdList(cmd);
+        SecurityGroupVO securityGroupVO = Mockito.mock(SecurityGroupVO.class);
+        long securityGroupId = 100L;
+        when(securityGroupVO.getId()).thenReturn(securityGroupId);
+        Mockito.doReturn(securityGroupVO).when(vnfTemplateManager).createSecurityGroupForVnfAppliance(any(), any(), any(), any(DeployVnfApplianceCmd.class));
+
+        List<Long> securityGroupIds = userVmManagerImpl.getSecurityGroupIdList(cmd, null, null, null);
+
+        Assert.assertEquals(1, securityGroupIds.size());
+        Assert.assertEquals(securityGroupId, securityGroupIds.get(0).longValue());
+
+        Mockito.verify(userVmManagerImpl).getSecurityGroupIdList(cmd);
+        Mockito.verify(vnfTemplateManager).createSecurityGroupForVnfAppliance(any(), any(), any(), any(DeployVnfApplianceCmd.class));
+    }
+
+    @Test
+    public void getCurrentVmPasswordOrDefineNewPasswordTestTemplateIsNotPasswordEnabledReturnPreDefinedString() {
+        String expected = "saved_password";
+
+        Mockito.doReturn(false).when(vmTemplateVoMock).isEnablePassword();
+
+        String result = userVmManagerImpl.getCurrentVmPasswordOrDefineNewPassword("", userVmVoMock, vmTemplateVoMock);
+
+        Assert.assertEquals(expected, result);
+    }
+
+    @Test
+    public void getCurrentVmPasswordOrDefineNewPasswordTestVmHasPasswordReturnCurrentPassword() {
+        String expected = "current_password";
+
+        Mockito.doReturn(true).when(vmTemplateVoMock).isEnablePassword();
+        Mockito.doReturn(expected).when(userVmVoMock).getDetail("password");
+
+        String result = userVmManagerImpl.getCurrentVmPasswordOrDefineNewPassword("", userVmVoMock, vmTemplateVoMock);
+
+        Assert.assertEquals(expected, result);
+    }
+
+    @Test
+    public void getCurrentVmPasswordOrDefineNewPasswordTestUserDefinedPasswordReturnNewPasswordAndSetVmPassword() {
+        String expected = "new_password";
+
+        Mockito.doReturn(true).when(vmTemplateVoMock).isEnablePassword();
+        Mockito.doReturn(null).when(userVmVoMock).getDetail("password");
+        Mockito.doCallRealMethod().when(userVmVoMock).setPassword(Mockito.any());
+        Mockito.doCallRealMethod().when(userVmVoMock).getPassword();
+
+        String result = userVmManagerImpl.getCurrentVmPasswordOrDefineNewPassword(expected, userVmVoMock, vmTemplateVoMock);
+
+        Assert.assertEquals(expected, result);
+        Assert.assertEquals(expected, userVmVoMock.getPassword());
+    }
+
+    @Test
+    public void getCurrentVmPasswordOrDefineNewPasswordTestUserDefinedPasswordReturnRandomPasswordAndSetVmPassword() {
+        String expected = "random_password";
+
+        Mockito.doReturn(true).when(vmTemplateVoMock).isEnablePassword();
+        Mockito.doReturn(null).when(userVmVoMock).getDetail("password");
+        Mockito.doReturn(expected).when(managementServiceMock).generateRandomPassword();
+        Mockito.doCallRealMethod().when(userVmVoMock).setPassword(Mockito.any());
+        Mockito.doCallRealMethod().when(userVmVoMock).getPassword();
+
+        String result = userVmManagerImpl.getCurrentVmPasswordOrDefineNewPassword("", userVmVoMock, vmTemplateVoMock);
+
+        Assert.assertEquals(expected, result);
+        Assert.assertEquals(expected, userVmVoMock.getPassword());
+    }
+
+    @Test
+    public void testSetVmRequiredFieldsForImportNotImport() {
+        userVmManagerImpl.setVmRequiredFieldsForImport(false, userVmVoMock, _dcMock,
+                Hypervisor.HypervisorType.VMware, Mockito.mock(HostVO.class), Mockito.mock(HostVO.class), VirtualMachine.PowerState.PowerOn);
+        Mockito.verify(userVmVoMock, never()).setDataCenterId(anyLong());
+    }
+
+    @Test
+    public void testSetVmRequiredFieldsForImportFromLastHost() {
+        HostVO lastHost = Mockito.mock(HostVO.class);
+        HostVO host = Mockito.mock(HostVO.class);
+        Mockito.when(_dcMock.getId()).thenReturn(1L);
+        Mockito.when(host.getId()).thenReturn(1L);
+        Mockito.when(lastHost.getId()).thenReturn(2L);
+        userVmManagerImpl.setVmRequiredFieldsForImport(true, userVmVoMock, _dcMock,
+                Hypervisor.HypervisorType.VMware, host, lastHost, VirtualMachine.PowerState.PowerOn);
+        Mockito.verify(userVmVoMock).setLastHostId(2L);
+        Mockito.verify(userVmVoMock).setState(VirtualMachine.State.Running);
     }
 }

@@ -43,6 +43,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.dao.PublicIpQuarantineDao;
 import com.cloud.hypervisor.HypervisorGuru;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -205,27 +206,37 @@ import org.apache.cloudstack.api.command.admin.router.StartRouterCmd;
 import org.apache.cloudstack.api.command.admin.router.StopRouterCmd;
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterTemplateCmd;
+import org.apache.cloudstack.api.command.admin.snapshot.ListSnapshotsCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.storage.AddImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.AddImageStoreS3CMD;
+import org.apache.cloudstack.api.command.admin.storage.AddObjectStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteImageStoreCmd;
+import org.apache.cloudstack.api.command.admin.storage.DeleteObjectStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeletePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.FindStoragePoolsForMigrationCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListImageStoresCmd;
+import org.apache.cloudstack.api.command.admin.storage.ListObjectStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListSecondaryStagingStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStorageProvidersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStorageTagsCmd;
 import org.apache.cloudstack.api.command.admin.storage.MigrateSecondaryStorageDataCmd;
+import org.apache.cloudstack.api.command.admin.storage.MigrateResourcesToAnotherSecondaryStorageCmd;
 import org.apache.cloudstack.api.command.admin.storage.PreparePrimaryStorageForMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.SyncStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateCloudToUseObjectStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateImageStoreCmd;
+import org.apache.cloudstack.api.command.admin.storage.UpdateObjectStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateStorageCapabilitiesCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
+import org.apache.cloudstack.api.command.admin.storage.heuristics.CreateSecondaryStorageSelectorCmd;
+import org.apache.cloudstack.api.command.admin.storage.heuristics.ListSecondaryStorageSelectorsCmd;
+import org.apache.cloudstack.api.command.admin.storage.heuristics.RemoveSecondaryStorageSelectorCmd;
+import org.apache.cloudstack.api.command.admin.storage.heuristics.UpdateSecondaryStorageSelectorCmd;
 import org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;
 import org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.DestroySystemVmCmd;
@@ -327,9 +338,12 @@ import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.address.AssociateIPAddrCmd;
 import org.apache.cloudstack.api.command.user.address.DisassociateIPAddrCmd;
 import org.apache.cloudstack.api.command.user.address.ListPublicIpAddressesCmd;
+import org.apache.cloudstack.api.command.user.address.ListQuarantinedIpsCmd;
 import org.apache.cloudstack.api.command.user.address.ReleaseIPAddrCmd;
+import org.apache.cloudstack.api.command.user.address.RemoveQuarantinedIpCmd;
 import org.apache.cloudstack.api.command.user.address.ReserveIPAddrCmd;
 import org.apache.cloudstack.api.command.user.address.UpdateIPAddrCmd;
+import org.apache.cloudstack.api.command.user.address.UpdateQuarantinedIpCmd;
 import org.apache.cloudstack.api.command.user.affinitygroup.CreateAffinityGroupCmd;
 import org.apache.cloudstack.api.command.user.affinitygroup.DeleteAffinityGroupCmd;
 import org.apache.cloudstack.api.command.user.affinitygroup.ListAffinityGroupTypesCmd;
@@ -354,6 +368,10 @@ import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScalePolicyCmd
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmGroupCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmProfileCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateConditionCmd;
+import org.apache.cloudstack.api.command.user.bucket.CreateBucketCmd;
+import org.apache.cloudstack.api.command.user.bucket.DeleteBucketCmd;
+import org.apache.cloudstack.api.command.user.bucket.ListBucketsCmd;
+import org.apache.cloudstack.api.command.user.bucket.UpdateBucketCmd;
 import org.apache.cloudstack.api.command.user.config.ListCapabilitiesCmd;
 import org.apache.cloudstack.api.command.user.consoleproxy.CreateConsoleEndpointCmd;
 import org.apache.cloudstack.api.command.user.event.ArchiveEventsCmd;
@@ -469,6 +487,7 @@ import org.apache.cloudstack.api.command.user.securitygroup.RevokeSecurityGroupE
 import org.apache.cloudstack.api.command.user.securitygroup.RevokeSecurityGroupIngressCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.UpdateSecurityGroupCmd;
 import org.apache.cloudstack.api.command.user.snapshot.ArchiveSnapshotCmd;
+import org.apache.cloudstack.api.command.user.snapshot.CopySnapshotCmd;
 import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotCmd;
 import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotFromVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotPolicyCmd;
@@ -976,6 +995,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     UserDataManager userDataManager;
 
+    @Inject
+    private PublicIpQuarantineDao publicIpQuarantineDao;
+
     private LockControllerListener _lockControllerListener;
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
     private final ScheduledExecutorService _alertExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AlertChecker"));
@@ -1329,7 +1351,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return new Pair<List<? extends Host>, Integer>(result.first(), result.second());
     }
 
-    protected Pair<Boolean, List<HostVO>> filterUefiHostsForMigration(List<HostVO> allHosts, List<HostVO> filteredHosts, VMInstanceVO vm) {
+    protected Pair<Boolean, List<HostVO>> filterUefiHostsForMigration(List<HostVO> allHosts, List<HostVO> filteredHosts, VirtualMachine vm) {
         UserVmDetailVO userVmDetailVO = _UserVmDetailsDao.findDetail(vm.getId(), ApiConstants.BootType.UEFI.toString());
         if (userVmDetailVO != null &&
                 (ApiConstants.BootMode.LEGACY.toString().equalsIgnoreCase(userVmDetailVO.getValue()) ||
@@ -1349,9 +1371,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return new Pair<>(true, filteredHosts);
     }
 
-    @Override
-    public Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> listHostsForMigrationOfVM(final Long vmId, final Long startIndex, final Long pageSize,
-            final String keyword) {
+    private void validateVmForHostMigration(VirtualMachine vm) {
         final Account caller = getCaller();
         if (!_accountMgr.isRootAdmin(caller.getId())) {
             if (s_logger.isDebugEnabled()) {
@@ -1360,10 +1380,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw new PermissionDeniedException("No permission to migrate VM, Only Root Admin can migrate a VM!");
         }
 
-        final VMInstanceVO vm = _vmInstanceDao.findById(vmId);
         if (vm == null) {
-            final InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find the VM with given id");
-            throw ex;
+            throw new InvalidParameterValueException("Unable to find the VM with given id");
         }
 
         if (vm.getState() != State.Running) {
@@ -1375,13 +1393,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw ex;
         }
 
-        if (_serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()) != null) {
-            s_logger.info(" Live Migration of GPU enabled VM : " + vm.getInstanceName() + " is not supported");
-            // Return empty list.
-            return new Ternary<>(new Pair<>(new ArrayList<HostVO>(), new Integer(0)),
-                    new ArrayList<>(), new HashMap<>());
-        }
-
         if (!LIVE_MIGRATION_SUPPORTING_HYPERVISORS.contains(vm.getHypervisorType())) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug(vm + " is not XenServer/VMware/KVM/Ovm/Hyperv/Ovm3, cannot migrate this VM.");
@@ -1391,6 +1402,27 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (VirtualMachine.Type.User.equals(vm.getType()) && HypervisorType.LXC.equals(vm.getHypervisorType())) {
             throw new InvalidParameterValueException("Unsupported Hypervisor Type for User VM migration, we support XenServer/VMware/KVM/Ovm/Hyperv/Ovm3 only");
+        }
+    }
+
+    @Override
+    public Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> listHostsForMigrationOfVM(final Long vmId, final Long startIndex, final Long pageSize,
+                                                                                                                            final String keyword) {
+        final VMInstanceVO vm = _vmInstanceDao.findById(vmId);
+        return listHostsForMigrationOfVM(vm, startIndex, pageSize, keyword, Collections.emptyList());
+    }
+
+    @Override
+    public Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> listHostsForMigrationOfVM(final VirtualMachine vm, final Long startIndex, final Long pageSize,
+            final String keyword, List<VirtualMachine> vmList) {
+
+        validateVmForHostMigration(vm);
+
+        if (_serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()) != null) {
+            s_logger.info(" Live Migration of GPU enabled VM : " + vm.getInstanceName() + " is not supported");
+            // Return empty list.
+            return new Ternary<>(new Pair<>(new ArrayList<>(), 0),
+                    new ArrayList<>(), new HashMap<>());
         }
 
         final long srcHostId = vm.getHostId();
@@ -1530,7 +1562,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (vmGroupCount > 0) {
             for (final AffinityGroupProcessor processor : _affinityProcessors) {
-                processor.process(vmProfile, plan, excludes);
+                processor.process(vmProfile, plan, excludes, vmList);
             }
         }
 
@@ -2495,10 +2527,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             final SearchBuilder<IPAddressVO> sb2 = _publicIpAddressDao.createSearchBuilder();
             buildParameters(sb2, cmd, false);
             sb2.and("ids", sb2.entity().getId(), SearchCriteria.Op.IN);
+            sb2.and("quarantinedPublicIpsIdsNIN", sb2.entity().getId(), SearchCriteria.Op.NIN);
 
             SearchCriteria<IPAddressVO> sc2 = sb2.create();
             setParameters(sc2, cmd, vlanType, isAllocated);
             sc2.setParameters("ids", freeAddrIds.toArray());
+            _publicIpAddressDao.buildQuarantineSearchCriteria(sc2);
             addrs.addAll(_publicIpAddressDao.search(sc2, searchFilter)); // Allocated + Free
         }
         Collections.sort(addrs, Comparator.comparing(IPAddressVO::getAddress));
@@ -3619,6 +3653,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(UpdateSecurityGroupCmd.class);
         cmdList.add(CreateSnapshotCmd.class);
         cmdList.add(CreateSnapshotFromVMSnapshotCmd.class);
+        cmdList.add(CopySnapshotCmd.class);
         cmdList.add(DeleteSnapshotCmd.class);
         cmdList.add(ArchiveSnapshotCmd.class);
         cmdList.add(CreateSnapshotPolicyCmd.class);
@@ -3784,6 +3819,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(UpdateRemoteAccessVpnCmd.class);
         cmdList.add(UpdateVpnConnectionCmd.class);
         cmdList.add(UpdateVpnGatewayCmd.class);
+        cmdList.add(ListQuarantinedIpsCmd.class);
+        cmdList.add(UpdateQuarantinedIpCmd.class);
+        cmdList.add(RemoveQuarantinedIpCmd.class);
         // separated admin commands
         cmdList.add(ListAccountsCmdByAdmin.class);
         cmdList.add(ListZonesCmdByAdmin.class);
@@ -3792,6 +3830,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(CopyTemplateCmdByAdmin.class);
         cmdList.add(RegisterTemplateCmdByAdmin.class);
         cmdList.add(ListTemplatePermissionsCmdByAdmin.class);
+        cmdList.add(ListSnapshotsCmdByAdmin.class);
         cmdList.add(RegisterIsoCmdByAdmin.class);
         cmdList.add(CopyIsoCmdByAdmin.class);
         cmdList.add(ListIsosCmdByAdmin.class);
@@ -3855,12 +3894,18 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(GetRouterHealthCheckResultsCmd.class);
         cmdList.add(StartRollingMaintenanceCmd.class);
         cmdList.add(MigrateSecondaryStorageDataCmd.class);
+        cmdList.add(MigrateResourcesToAnotherSecondaryStorageCmd.class);
         cmdList.add(UploadResourceIconCmd.class);
         cmdList.add(DeleteResourceIconCmd.class);
         cmdList.add(ListResourceIconCmd.class);
         cmdList.add(PatchSystemVMCmd.class);
         cmdList.add(ListGuestVlansCmd.class);
         cmdList.add(AssignVolumeCmd.class);
+        cmdList.add(ListSecondaryStorageSelectorsCmd.class);
+        cmdList.add(CreateSecondaryStorageSelectorCmd.class);
+        cmdList.add(UpdateSecondaryStorageSelectorCmd.class);
+        cmdList.add(RemoveSecondaryStorageSelectorCmd.class);
+
 
         // Out-of-band management APIs for admins
         cmdList.add(EnableOutOfBandManagementForHostCmd.class);
@@ -3880,6 +3925,16 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(DeleteUserDataCmd.class);
         cmdList.add(ListUserDataCmd.class);
         cmdList.add(LinkUserDataToTemplateCmd.class);
+
+        //object store APIs
+        cmdList.add(AddObjectStoragePoolCmd.class);
+        cmdList.add(ListObjectStoragePoolsCmd.class);
+        cmdList.add(UpdateObjectStoragePoolCmd.class);
+        cmdList.add(DeleteObjectStoragePoolCmd.class);
+        cmdList.add(CreateBucketCmd.class);
+        cmdList.add(UpdateBucketCmd.class);
+        cmdList.add(DeleteBucketCmd.class);
+        cmdList.add(ListBucketsCmd.class);
         return cmdList;
     }
 

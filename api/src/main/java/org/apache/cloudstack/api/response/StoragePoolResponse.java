@@ -101,6 +101,10 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
     @Param(description = "the tags for the storage pool")
     private String tags;
 
+    @SerializedName(ApiConstants.IS_TAG_A_RULE)
+    @Param(description = ApiConstants.PARAMETER_DESCRIPTION_IS_TAG_A_RULE)
+    private Boolean isTagARule;
+
     @SerializedName(ApiConstants.STATE)
     @Param(description = "the state of the storage pool")
     private StoragePoolStatus state;
@@ -302,6 +306,14 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
 
     public void setTags(String tags) {
         this.tags = tags;
+    }
+
+    public Boolean getIsTagARule() {
+        return isTagARule;
+    }
+
+    public void setIsTagARule(Boolean tagARule) {
+        isTagARule = tagARule;
     }
 
     public StoragePoolStatus getState() {

@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,12 +44,14 @@ import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.HostTagResponse;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
+import org.apache.cloudstack.api.response.ObjectStoreResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.StorageTagResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
@@ -57,6 +60,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
@@ -78,6 +82,7 @@ import com.cloud.api.query.vo.ProjectJoinVO;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
+import com.cloud.api.query.vo.SnapshotJoinVO;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
@@ -592,6 +597,23 @@ public class ViewResponseHelper {
         return new ArrayList<TemplateResponse>(vrDataList.values());
     }
 
+    public static List<SnapshotResponse> createSnapshotResponse(ResponseView view, boolean isShowUnique, SnapshotJoinVO... snapshots) {
+        LinkedHashMap<String, SnapshotResponse> vrDataList = new LinkedHashMap<>();
+        for (SnapshotJoinVO vr : snapshots) {
+            SnapshotResponse vrData = vrDataList.get(vr.getSnapshotStorePair());
+            if (vrData == null) {
+                // first time encountering this snapshot
+                vrData = ApiDBUtils.newSnapshotResponse(view, isShowUnique, vr);
+            }
+            else{
+                // update tags
+                vrData = ApiDBUtils.fillSnapshotDetails(vrData, vr);
+            }
+            vrDataList.put(vr.getSnapshotStorePair(), vrData);
+        }
+        return new ArrayList<SnapshotResponse>(vrDataList.values());
+    }
+
     public static List<TemplateResponse> createTemplateUpdateResponse(ResponseView view, TemplateJoinVO... templates) {
         LinkedHashMap<Long, TemplateResponse> vrDataList = new LinkedHashMap<>();
         for (TemplateJoinVO vr : templates) {
@@ -614,7 +636,7 @@ public class ViewResponseHelper {
             TemplateResponse vrData = vrDataList.get(vr.getTempZonePair());
             if (vrData == null) {
                 // first time encountering this volume
-                vrData = ApiDBUtils.newIsoResponse(vr);
+                vrData = ApiDBUtils.newIsoResponse(vr, view);
             } else {
                 // update tags
                 vrData = ApiDBUtils.fillTemplateDetails(EnumSet.of(DomainDetails.all), view, vrData, vr);
@@ -640,4 +662,20 @@ public class ViewResponseHelper {
         return new ArrayList<AffinityGroupResponse>(vrDataList.values());
     }
 
+    public static List<ObjectStoreResponse> createObjectStoreResponse(ObjectStoreVO[] stores) {
+        Hashtable<Long, ObjectStoreResponse> storeList = new Hashtable<Long, ObjectStoreResponse>();
+        // Initialise the storeList with the input data
+        for (ObjectStoreVO store : stores) {
+            ObjectStoreResponse storeData = storeList.get(store.getId());
+            if (storeData == null) {
+                // first time encountering this store
+                storeData = ApiDBUtils.newObjectStoreResponse(store);
+            } else {
+                // update tags
+                storeData = ApiDBUtils.fillObjectStoreDetails(storeData, store);
+            }
+            storeList.put(store.getId(), storeData);
+        }
+        return new ArrayList<>(storeList.values());
+    }
 }

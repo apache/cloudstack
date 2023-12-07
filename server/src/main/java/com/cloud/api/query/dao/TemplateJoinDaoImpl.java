@@ -17,23 +17,36 @@
 package com.cloud.api.query.dao;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
 import com.cloud.deployasis.DeployAsIsConstants;
 import com.cloud.deployasis.TemplateDeployAsIsDetailVO;
 import com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDao;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.dao.VMTemplatePoolDao;
+import com.cloud.storage.VnfTemplateDetailVO;
+import com.cloud.storage.VnfTemplateNicVO;
+import com.cloud.storage.dao.VnfTemplateDetailsDao;
+import com.cloud.storage.dao.VnfTemplateNicDao;
 import com.cloud.user.dao.UserDataDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.response.VnfNicResponse;
+import org.apache.cloudstack.api.response.VnfTemplateResponse;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -86,6 +99,10 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
     @Inject
     private ImageStoreDao dataStoreDao;
     @Inject
+    private PrimaryDataStoreDao primaryDataStoreDao;
+    @Inject
+    private VMTemplatePoolDao templatePoolDao;
+    @Inject
     private VMTemplateDetailsDao _templateDetailsDao;
     @Inject
     private TemplateDeployAsIsDetailsDao templateDeployAsIsDetailsDao;
@@ -93,6 +110,10 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
     private AnnotationDao annotationDao;
     @Inject
     private UserDataDao userDataDao;
+    @Inject
+    VnfTemplateDetailsDao vnfTemplateDetailsDao;
+    @Inject
+    VnfTemplateNicDao vnfTemplateNicDao;
 
     private final SearchBuilder<TemplateJoinVO> tmpltIdPairSearch;
 
@@ -103,6 +124,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
     private final SearchBuilder<TemplateJoinVO> tmpltZoneSearch;
 
     private final SearchBuilder<TemplateJoinVO> activeTmpltSearch;
+
+    private final SearchBuilder<TemplateJoinVO> publicTmpltSearch;
 
     protected TemplateJoinDaoImpl() {
 
@@ -136,6 +159,10 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         activeTmpltSearch.cp();
         activeTmpltSearch.cp();
         activeTmpltSearch.done();
+
+        publicTmpltSearch = createSearchBuilder();
+        publicTmpltSearch.and("public", publicTmpltSearch.entity().isPublicTemplate(), SearchCriteria.Op.EQ);
+        publicTmpltSearch.done();
 
         // select distinct pair (template_id, zone_id)
         _count = "select count(distinct temp_zone_pair) from template_view WHERE ";
@@ -175,16 +202,39 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         HashMap<String, String> downloadDetailInImageStores = null;
         for (TemplateDataStoreVO templateInStore : templatesInStore) {
             downloadDetailInImageStores = new HashMap<>();
-            ImageStoreVO datastore = dataStoreDao.findById(templateInStore.getDataStoreId());
-            if (datastore != null) {
-                downloadDetailInImageStores.put("datastore", datastore.getName());
+            ImageStoreVO imageStore = dataStoreDao.findById(templateInStore.getDataStoreId());
+            if (imageStore != null) {
+                downloadDetailInImageStores.put("datastore", imageStore.getName());
+                if (view.equals(ResponseView.Full)) {
+                    downloadDetailInImageStores.put("datastoreId", imageStore.getUuid());
+                    downloadDetailInImageStores.put("datastoreRole", imageStore.getRole().name());
+                }
                 downloadDetailInImageStores.put("downloadPercent", Integer.toString(templateInStore.getDownloadPercent()));
                 downloadDetailInImageStores.put("downloadState", (templateInStore.getDownloadState() != null ? templateInStore.getDownloadState().toString() : ""));
                 downloadProgressDetails.add(downloadDetailInImageStores);
             }
         }
 
-        TemplateResponse templateResponse = new TemplateResponse();
+        List<StoragePoolVO> poolsInZone = primaryDataStoreDao.listByDataCenterId(template.getDataCenterId());
+        List<Long> poolIds = poolsInZone.stream().map(StoragePoolVO::getId).collect(Collectors.toList());
+        List<VMTemplateStoragePoolVO> templatesInPool = templatePoolDao.listByTemplateId(template.getId(), poolIds);
+
+        for (VMTemplateStoragePoolVO templateInPool : templatesInPool) {
+            downloadDetailInImageStores = new HashMap<>();
+            StoragePoolVO storagePool = primaryDataStoreDao.findById(templateInPool.getDataStoreId());
+            if (storagePool != null) {
+                downloadDetailInImageStores.put("datastore", storagePool.getName());
+                if (view.equals(ResponseView.Full)) {
+                    downloadDetailInImageStores.put("datastoreId", storagePool.getUuid());
+                    downloadDetailInImageStores.put("datastoreRole", DataStoreRole.Primary.name());
+                }
+                downloadDetailInImageStores.put("downloadPercent", Integer.toString(templateInPool.getDownloadPercent()));
+                downloadDetailInImageStores.put("downloadState", (templateInPool.getDownloadState() != null ? templateInPool.getDownloadState().toString() : ""));
+                downloadProgressDetails.add(downloadDetailInImageStores);
+            }
+        }
+
+        TemplateResponse templateResponse = initTemplateResponse(template);
         templateResponse.setDownloadProgress(downloadProgressDetails);
         templateResponse.setId(template.getUuid());
         templateResponse.setName(template.getName());
@@ -299,7 +349,26 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
             templateResponse.setUserDataParams(template.getUserDataParams());
             templateResponse.setUserDataPolicy(template.getUserDataPolicy());
         }
+
         templateResponse.setObjectName("template");
+        return templateResponse;
+    }
+
+    private TemplateResponse initTemplateResponse(TemplateJoinVO template) {
+        TemplateResponse templateResponse = new TemplateResponse();
+        if (Storage.TemplateType.VNF.equals(template.getTemplateType())) {
+            VnfTemplateResponse vnfTemplateResponse = new VnfTemplateResponse();
+            List<VnfTemplateNicVO> nics = vnfTemplateNicDao.listByTemplateId(template.getId());
+            for (VnfTemplateNicVO nic : nics) {
+                vnfTemplateResponse.addVnfNic(new VnfNicResponse(nic.getDeviceId(), nic.getDeviceName(), nic.isRequired(), nic.isManagement(), nic.getDescription()));
+            }
+            List<VnfTemplateDetailVO> details = vnfTemplateDetailsDao.listDetails(template.getId());
+            Collections.sort(details, (v1, v2) -> v1.getName().compareToIgnoreCase(v2.getName()));
+            for (VnfTemplateDetailVO detail : details) {
+                vnfTemplateResponse.addVnfDetail(detail.getName(), detail.getValue());
+            }
+            templateResponse = vnfTemplateResponse;
+        }
         return templateResponse;
     }
 
@@ -320,7 +389,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
     // compared to listTemplates and listIsos.
     @Override
     public TemplateResponse newUpdateResponse(TemplateJoinVO result) {
-        TemplateResponse response = new TemplateResponse();
+        TemplateResponse response = initTemplateResponse(result);
         response.setId(result.getUuid());
         response.setName(result.getName());
         response.setDisplayText(result.getDisplayText());
@@ -392,7 +461,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
     }
 
     @Override
-    public TemplateResponse newIsoResponse(TemplateJoinVO iso) {
+    public TemplateResponse newIsoResponse(TemplateJoinVO iso, ResponseView view) {
 
         TemplateResponse isoResponse = new TemplateResponse();
         isoResponse.setId(iso.getUuid());
@@ -455,6 +524,43 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
                 isoResponse.setStatus("Successfully Installed");
             }
             isoResponse.setUrl(iso.getUrl());
+            List<TemplateDataStoreVO> isosInStore = _templateStoreDao.listByTemplateNotBypassed(iso.getId());
+            List<Map<String, String>> downloadProgressDetails = new ArrayList<>();
+            HashMap<String, String> downloadDetailInImageStores = null;
+            for (TemplateDataStoreVO isoInStore : isosInStore) {
+                downloadDetailInImageStores = new HashMap<>();
+                ImageStoreVO imageStore = dataStoreDao.findById(isoInStore.getDataStoreId());
+                if (imageStore != null) {
+                    downloadDetailInImageStores.put("datastore", imageStore.getName());
+                    if (view.equals(ResponseView.Full)) {
+                        downloadDetailInImageStores.put("datastoreId", imageStore.getUuid());
+                        downloadDetailInImageStores.put("datastoreRole", imageStore.getRole().name());
+                    }
+                    downloadDetailInImageStores.put("downloadPercent", Integer.toString(isoInStore.getDownloadPercent()));
+                    downloadDetailInImageStores.put("downloadState", (isoInStore.getDownloadState() != null ? isoInStore.getDownloadState().toString() : ""));
+                    downloadProgressDetails.add(downloadDetailInImageStores);
+                }
+            }
+
+            List<StoragePoolVO> poolsInZone = primaryDataStoreDao.listByDataCenterId(iso.getDataCenterId());
+            List<Long> poolIds = poolsInZone.stream().map(StoragePoolVO::getId).collect(Collectors.toList());
+            List<VMTemplateStoragePoolVO> isosInPool = templatePoolDao.listByTemplateId(iso.getId(), poolIds);
+
+            for (VMTemplateStoragePoolVO isoInPool : isosInPool) {
+                downloadDetailInImageStores = new HashMap<>();
+                StoragePoolVO storagePool = primaryDataStoreDao.findById(isoInPool.getDataStoreId());
+                if (storagePool != null) {
+                    downloadDetailInImageStores.put("datastore", storagePool.getName());
+                    if (view.equals(ResponseView.Full)) {
+                        downloadDetailInImageStores.put("datastoreId", storagePool.getUuid());
+                        downloadDetailInImageStores.put("datastoreRole", DataStoreRole.Primary.name());
+                    }
+                    downloadDetailInImageStores.put("downloadPercent", Integer.toString(isoInPool.getDownloadPercent()));
+                    downloadDetailInImageStores.put("downloadState", (isoInPool.getDownloadState() != null ? isoInPool.getDownloadState().toString() : ""));
+                    downloadProgressDetails.add(downloadDetailInImageStores);
+                }
+            }
+            isoResponse.setDownloadProgress(downloadProgressDetails);
         }
 
         if (iso.getDataCenterId() > 0) {
@@ -570,6 +676,13 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         sc.setParameters("public", Boolean.FALSE);
         sc.setParameters("publicNoUrl",Boolean.TRUE);
         return searchIncludingRemoved(sc, null, null, false);
+    }
+
+    @Override
+    public List<TemplateJoinVO> listPublicTemplates() {
+        SearchCriteria<TemplateJoinVO> sc = publicTmpltSearch.create();
+        sc.setParameters("public", Boolean.TRUE);
+        return listBy(sc);
     }
 
     @Override

@@ -164,5 +164,5 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
 
     void updateSystemVmTemplateId(long templateId, Hypervisor.HypervisorType hypervisorType);
 
-    List<VMInstanceVO> listByHostOrLastHostOrHostPod(long hostId, long podId);
+    List<VMInstanceVO> listByHostOrLastHostOrHostPod(List<Long> hostIds, long podId);
 }

@@ -205,6 +205,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
 
                 String hostTags = host.getTag();
                 hostResponse.setHostTags(hostTags);
+                hostResponse.setIsTagARule(host.getIsTagARule());
                 hostResponse.setHaHost(containsHostHATag(hostTags));
 
                 hostResponse.setHypervisorVersion(host.getHypervisorVersion());

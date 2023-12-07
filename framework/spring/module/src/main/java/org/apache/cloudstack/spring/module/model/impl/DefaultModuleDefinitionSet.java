@@ -97,16 +97,24 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
             @Override
             public void with(ModuleDefinition def, Stack<ModuleDefinition> parents) {
                 try {
-                    ApplicationContext context = getApplicationContext(def.getName());
+                    String moduleDefinitionName = def.getName();
+                    log.debug(String.format("Trying to obtain module [%s] context.", moduleDefinitionName));
+                    ApplicationContext context = getApplicationContext(moduleDefinitionName);
                     try {
                         Runnable runnable = context.getBean("moduleStartup", Runnable.class);
-                        log.info("Starting module [" + def.getName() + "]");
+                        log.info(String.format("Starting module [%s].", moduleDefinitionName));
                         runnable.run();
                     } catch (BeansException e) {
-                        // Ignore
+                        log.warn(String.format("Failed to start module [%s] due to: [%s].", moduleDefinitionName, e.getMessage()));
+                        if (log.isDebugEnabled()) {
+                            log.debug(String.format("module start failure of module [%s] was due to: ", moduleDefinitionName), e);
+                        }
                     }
                 } catch (EmptyStackException e) {
-                    // The root context is already loaded, so ignore the exception
+                    log.warn(String.format("Failed to obtain module context due to [%s]. Using root context instead.", e.getMessage()));
+                    if (log.isDebugEnabled()) {
+                        log.debug("Failed to obtain module context: ", e);
+                    }
                 }
             }
         });
@@ -117,10 +125,21 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
             @Override
             public void with(ModuleDefinition def, Stack<ModuleDefinition> parents) {
                 try {
+                    String moduleDefinitionName = def.getName();
+                    log.debug(String.format("Trying to obtain module [%s] context.", moduleDefinitionName));
                     ApplicationContext parent = getApplicationContext(parents.peek().getName());
+                    log.debug(String.format("Trying to load module [%s] context.", moduleDefinitionName));
                     loadContext(def, parent);
                 } catch (EmptyStackException e) {
-                    // The root context is already loaded, so ignore the exception
+                    log.warn(String.format("Failed to obtain module context due to [%s]. Using root context instead.", e.getMessage()));
+                    if (log.isDebugEnabled()) {
+                        log.debug("Failed to obtain module context: ", e);
+                    }
+                } catch (BeansException e) {
+                    log.warn(String.format("Failed to start module [%s] due to: [%s].", def.getName(), e.getMessage()));
+                    if (log.isDebugEnabled()) {
+                        log.debug(String.format("module start failure of module [%s] was due to: ", def.getName()), e);
+                    }
                 }
             }
         });

@@ -94,7 +94,7 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager,
     @Override
     public ImageStoreEntity getImageStore(String uuid) {
         ImageStoreVO dataStore = dataStoreDao.findByUuid(uuid);
-        return getImageStore(dataStore.getId());
+        return dataStore == null ? null : getImageStore(dataStore.getId());
     }
 
     @Override
@@ -249,6 +249,16 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager,
     }
 
     @Override
+    public List<DataStore> listImageStoresFilteringByZoneIds(Long... zoneIds) {
+        List<ImageStoreVO> stores = dataStoreDao.listImageStoresByZoneIds(zoneIds);
+        List<DataStore> imageStores = new ArrayList<>();
+        for (ImageStoreVO store : stores) {
+            imageStores.add(getImageStore(store.getId()));
+        }
+        return imageStores;
+    }
+
+    @Override
     public String getConfigComponentName() {
         return ImageStoreProviderManager.class.getSimpleName();
     }
@@ -256,5 +266,11 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager,
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] { ImageStoreAllocationAlgorithm };
+    }
+
+    @Override
+    public long getImageStoreZoneId(long dataStoreId) {
+        ImageStoreVO dataStore = dataStoreDao.findById(dataStoreId);
+        return dataStore.getDataCenterId();
     }
 }

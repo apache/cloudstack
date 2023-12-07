@@ -45,9 +45,9 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.hypervisor.Hypervisor;
-import com.cloud.hypervisor.vmware.VmwareDatacenter;
+import com.cloud.dc.VmwareDatacenter;
 import com.cloud.hypervisor.vmware.VmwareDatacenterZoneMap;
-import com.cloud.hypervisor.vmware.dao.VmwareDatacenterDao;
+import com.cloud.dc.dao.VmwareDatacenterDao;
 import com.cloud.hypervisor.vmware.dao.VmwareDatacenterZoneMapDao;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.VolumeVO;

@@ -56,8 +56,8 @@ public class IpTest {
 
     @Test
     public void testIsSameAddressAs() {
-        Assert.assertTrue("1 and one should be considdered the same address", new Ip(1L).isSameAddressAs("0.0.0.1"));
-        Assert.assertTrue("zero and 0L should be considdered the same address", new Ip("0.0.0.0").isSameAddressAs(0L));
+        Assert.assertTrue("1 and one should be considered the same address", new Ip(1L).isSameAddressAs("0.0.0.1"));
+        Assert.assertTrue("zero and 0L should be considered the same address", new Ip("0.0.0.0").isSameAddressAs(0L));
     }
 
 }
