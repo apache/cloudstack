@@ -81,6 +81,7 @@ import org.apache.log4j.Logger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
@@ -145,6 +146,17 @@ public class NsxApiClient {
         LARGE,
         XLARGE
     }
+
+    private enum FirewallActions {
+        ALLOW,
+        DROP,
+        REJECT,
+        JUMP_TO_APPLICATION
+    }
+
+    private Map<String,String> actionMap = Map.of(
+            "Allow", FirewallActions.ALLOW.name(),
+            "Deny", FirewallActions.DROP.name());
 
     public enum  RouteAdvertisementType { TIER1_STATIC_ROUTES, TIER1_CONNECTED, TIER1_NAT,
         TIER1_LB_VIP, TIER1_LB_SNAT, TIER1_DNS_FORWARDER_IP, TIER1_IPSEC_LOCAL_ENDPOINT
@@ -358,7 +370,7 @@ public class NsxApiClient {
     public TransportZoneListResult getTransportZones() {
         try {
             com.vmware.nsx.TransportZones transportZones = (com.vmware.nsx.TransportZones) nsxService.apply(com.vmware.nsx.TransportZones.class);
-            return transportZones.list(null, null, true, null, true, null, null, null, TransportType.OVERLAY.name(), null);
+            return transportZones.list(null, null, true, null, null, null, null, null, TransportType.OVERLAY.name(), null);
         } catch (Exception e) {
             throw new CloudRuntimeException(String.format("Failed to fetch service segment list due to %s", e.getMessage()));
         }
@@ -687,6 +699,7 @@ public class NsxApiClient {
         }
     }
 
+
     private com.vmware.nsx_policy.model.Service getInfraService(String ruleName, String port, String protocol, Integer icmpType, Integer icmpCode) {
         Services service = (Services) nsxService.apply(Services.class);
         String serviceName = getServiceName(ruleName, port, protocol, icmpType, icmpCode);
@@ -816,7 +829,7 @@ public class NsxApiClient {
     public void deleteDistributedFirewallRules(String segmentName, List<NsxNetworkRule> nsxRules) {
         for(NsxNetworkRule rule : nsxRules) {
             String ruleId = NsxControllerUtils.getNsxDistributedFirewallPolicyRuleId(segmentName, rule.getRuleId());
-            String svcName = getServiceName(ruleId, rule.getPrivatePort(), rule.getProtocol(), rule.getIcmpType(), rule.getIcmpCode());
+           String svcName = getServiceName(ruleId, rule.getPrivatePort(), rule.getProtocol(), rule.getIcmpType(), rule.getIcmpCode());
             // delete rules
             Rules rules = (Rules) nsxService.apply(Rules.class);
             rules.delete(DEFAULT_DOMAIN, segmentName, ruleId);
@@ -863,18 +876,20 @@ public class NsxApiClient {
     protected List<String> getGroupsForTraffic(NsxNetworkRule rule,
                                              String segmentName, boolean source) {
         List<String> segmentGroup = List.of(String.format("%s/%s", GROUPS_PATH_PREFIX, segmentName));
-        List<String> ruleCidrList = rule.getCidrList();
+        List<String> sourceCidrList = rule.getSourceCidrList();
+        List<String> destCidrList = rule.getDestinationCidrList();
 
         String trafficType = rule.getTrafficType();
         if (trafficType.equalsIgnoreCase("ingress")) {
-            return source ? ruleCidrList : segmentGroup;
+            return source ? sourceCidrList : (rule.getService() == Network.Service.NetworkACL ? segmentGroup : destCidrList);
         } else if (trafficType.equalsIgnoreCase("egress")) {
-            return source ? segmentGroup : ruleCidrList;
-        }
+            return source ? segmentGroup : (rule.getService() == Network.Service.NetworkACL ? sourceCidrList : destCidrList);
+       }
         String err = String.format("Unsupported traffic type %s", trafficType);
         LOGGER.error(err);
         throw new CloudRuntimeException(err);
     }
+
 
     private List<Group> listNsxGroups() {
         try {
@@ -895,5 +910,4 @@ public class NsxApiClient {
         return matchingGroup.map(Group::getPath).orElse(null);
 
     }
-
 }

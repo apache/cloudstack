@@ -144,8 +144,9 @@ export default {
       }
       if (this.resource && this.resource.vpcid) {
         // VPC IPs don't have firewall
-        let tabs = this.$route.meta.tabs.filter(tab => tab.name !== 'firewall')
+        const tabs = this.$route.meta.tabs.filter(tab => tab.name !== 'firewall')
 
+        console.log(this.resource.networkofferingconservemode)
         if (this.resource.networkofferingconservemode) {
           this.tabs = tabs
           return
@@ -153,16 +154,18 @@ export default {
 
         this.portFWRuleCount = await this.fetchPortFWRule()
         this.loadBalancerRuleCount = await this.fetchLoadBalancerRule()
+        console.log(this.portFWRuleCount)
+        console.log(this.loadBalancerRuleCount)
 
         // VPC IPs with PF only have PF
-        if (this.portFWRuleCount > 0) {
-          tabs = tabs.filter(tab => tab.name !== 'loadbalancing')
-        }
+        // if (this.portFWRuleCount > 0) {
+        //   tabs = tabs.filter(tab => tab.name !== 'loadbalancing')
+        // }
 
-        // VPC IPs with LB rules only have LB
-        if (this.loadBalancerRuleCount > 0) {
-          tabs = tabs.filter(tab => tab.name !== 'portforwarding')
-        }
+        // // VPC IPs with LB rules only have LB
+        // if (this.loadBalancerRuleCount > 0) {
+        //   tabs = tabs.filter(tab => tab.name !== 'portforwarding')
+        // }
         this.tabs = tabs
         return
       }
@@ -217,6 +220,7 @@ export default {
       })
     },
     changeResource (resource) {
+      console.log(resource)
       this.resource = resource
     },
     toggleLoading () {

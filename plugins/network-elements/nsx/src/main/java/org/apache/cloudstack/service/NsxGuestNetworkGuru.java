@@ -28,15 +28,18 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.NetworkMigrationResponder;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.Network;
 import com.cloud.network.Networks;
 import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.PublicIpAddress;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.guru.GuestNetworkGuru;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.user.Account;
 import com.cloud.user.dao.AccountDao;
@@ -50,6 +53,7 @@ import org.apache.cloudstack.NsxAnswer;
 import org.apache.cloudstack.agent.api.CreateNsxDhcpRelayConfigCommand;
 import org.apache.cloudstack.agent.api.CreateNsxSegmentCommand;
 import org.apache.cloudstack.agent.api.CreateNsxTier1GatewayCommand;
+import org.apache.cloudstack.agent.api.CreateOrUpdateNsxTier1NatRuleCommand;
 import org.apache.cloudstack.utils.NsxControllerUtils;
 
 import org.apache.cloudstack.utils.NsxHelper;
@@ -70,6 +74,10 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
     AccountDao accountDao;
     @Inject
     DomainDao domainDao;
+    @Inject
+    NetworkModel networkModel;
+    @Inject
+    NetworkOfferingDao networkOfferingDao;
 
     public NsxGuestNetworkGuru() {
         super();
@@ -80,8 +88,9 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
     public boolean canHandle(NetworkOffering offering, DataCenter.NetworkType networkType,
                              PhysicalNetwork physicalNetwork) {
         return networkType == DataCenter.NetworkType.Advanced && isMyTrafficType(offering.getTrafficType())
-                && isMyIsolationMethod(physicalNetwork) && networkOfferingServiceMapDao.isProviderForNetworkOffering(
-                offering.getId(), Network.Provider.Nsx);
+                && isMyIsolationMethod(physicalNetwork) && (NetworkOffering.NsxMode.ROUTED.name().equals(offering.getNsxMode())
+                || (networkOfferingServiceMapDao.isProviderForNetworkOffering(
+                offering.getId(), Network.Provider.Nsx) && NetworkOffering.NsxMode.NATTED.name().equals(offering.getNsxMode())));
     }
 
     @Override
@@ -218,6 +227,25 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
                 throw new CloudRuntimeException(msg);
             }
 
+            if (isNull(network.getVpcId())) {
+                long domainId = domain.getId();
+                long accountId = account.getId();
+                long dataCenterId = zone.getId();
+                long resourceId = network.getId();
+                PublicIpAddress ipAddress = networkModel.getSourceNatIpAddressForGuestNetwork(account, network);
+                String translatedIp = ipAddress.getAddress().addr();
+                String tier1GatewayName = NsxControllerUtils.getTier1GatewayName(domainId, accountId, dataCenterId, resourceId, false);
+                LOGGER.debug(String.format("Creating NSX NAT Rule for Tier1 GW %s for translated IP %s for Isolated network %s", tier1GatewayName, translatedIp, network.getName()));
+                String natRuleId = NsxControllerUtils.getNsxNatRuleId(domainId, accountId, dataCenterId, resourceId, false);
+                CreateOrUpdateNsxTier1NatRuleCommand cmd = NsxHelper.createOrUpdateNsxNatRuleCommand(domainId, accountId, dataCenterId, tier1GatewayName, "SNAT", translatedIp, natRuleId);
+                NsxAnswer nsxAnswer = nsxControllerUtils.sendNsxCommand(cmd, dataCenterId);
+                if (!nsxAnswer.getResult()) {
+                    String msg = String.format("Could not create NSX NAT Rule on Tier1 Gateway %s for IP %s  for Isolated network %s", tier1GatewayName, translatedIp, network.getName());
+                    LOGGER.error(msg);
+                    throw new CloudRuntimeException(msg);
+                }
+            }
+
             // Create the DHCP relay config for the segment
             String iPv4Address = nicProfile.getIPv4Address();
             List<String> addresses = List.of(iPv4Address);
@@ -289,7 +317,9 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
             vpcName = vpc.getName();
         } else {
             LOGGER.debug(String.format("Creating a Tier 1 Gateway for the network %s before creating the NSX segment", networkVO.getName()));
-            CreateNsxTier1GatewayCommand nsxTier1GatewayCommand = NsxHelper.createNsxTier1GatewayCommand(domain, account, zone, networkVO.getId(), networkVO.getName(), false);
+            boolean isSourceNatSupported = networkOfferingServiceMapDao.areServicesSupportedByNetworkOffering(networkVO.getNetworkOfferingId(), Network.Service.SourceNat);
+            CreateNsxTier1GatewayCommand nsxTier1GatewayCommand =  new CreateNsxTier1GatewayCommand(domain.getId(), account.getId(), zone.getId(), networkVO.getId(), networkVO.getName(), false, isSourceNatSupported);
+
             NsxAnswer nsxAnswer = nsxControllerUtils.sendNsxCommand(nsxTier1GatewayCommand, zone.getId());
             if (!nsxAnswer.getResult()) {
                 String msg = String.format("Could not create a Tier 1 Gateway for network %s: %s", networkVO.getName(), nsxAnswer.getDetails());
