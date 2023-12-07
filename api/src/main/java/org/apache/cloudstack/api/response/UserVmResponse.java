@@ -375,9 +375,14 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "VNF details", since = "4.19.0")
     private Map<String, String> vnfDetails;
 
+    @SerializedName(ApiConstants.VOLUMES)
+    @Param(description = "the list of volumes associated with vm", responseObject = VolumeResponse.class)
+    private Set<VolumeResponse> volumes;
+
     public UserVmResponse() {
         securityGroupList = new LinkedHashSet<>();
         nics = new TreeSet<>(Comparator.comparingInt(x -> Integer.parseInt(x.getDeviceId())));
+        volumes = new LinkedHashSet<>();
         tags = new LinkedHashSet<>();
         tagIds = new LinkedHashSet<>();
         affinityGroupList = new LinkedHashSet<>();
