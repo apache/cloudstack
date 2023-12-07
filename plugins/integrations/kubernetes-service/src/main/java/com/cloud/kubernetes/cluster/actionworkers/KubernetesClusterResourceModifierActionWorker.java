@@ -768,11 +768,11 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     }
 
     protected KubernetesClusterVO updateKubernetesClusterEntry(final Long cores, final Long memory,
-        final Long size, final Long serviceOfferingId, final Boolean autoscaleEnabled, final Long minSize, final Long maxSize) {
+                                                               final Long size, final Long serviceOfferingId, final Boolean autoscaleEnabled, final Long minSize, final Long maxSize, KubernetesCluster.State state) {
         return Transaction.execute(new TransactionCallback<KubernetesClusterVO>() {
                 @Override
                 public KubernetesClusterVO doInTransaction(TransactionStatus status) {
-                KubernetesClusterVO updatedCluster = kubernetesClusterDao.createForUpdate(kubernetesCluster.getId());
+                KubernetesClusterVO updatedCluster = kubernetesClusterDao.findById(kubernetesCluster.getId());
                 if (cores != null) {
                     updatedCluster.setCores(cores);
                 }
@@ -788,6 +788,9 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                 if (autoscaleEnabled != null) {
                     updatedCluster.setAutoscalingEnabled(autoscaleEnabled.booleanValue());
                 }
+                if (state != null) {
+                    updatedCluster.setState(state);
+                }
                 updatedCluster.setMinSize(minSize);
                 updatedCluster.setMaxSize(maxSize);
                 return kubernetesClusterDao.persist(updatedCluster);
@@ -796,7 +799,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     }
 
     private KubernetesClusterVO updateKubernetesClusterEntry(final Boolean autoscaleEnabled, final Long minSize, final Long maxSize) throws CloudRuntimeException {
-        KubernetesClusterVO kubernetesClusterVO = updateKubernetesClusterEntry(null, null, null, null, autoscaleEnabled, minSize, maxSize);
+        KubernetesClusterVO kubernetesClusterVO = updateKubernetesClusterEntry(null, null, null, null, autoscaleEnabled, minSize, maxSize, null);
         if (kubernetesClusterVO == null) {
             logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster %s failed, unable to update Kubernetes cluster",
                     kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
