@@ -27,7 +27,7 @@ case $1 in
         PACKAGE="Usage Server"
         ;;
     agent)
-        PACKAGE="CloudStack Agent"
+        PACKAGE="Agent"
         ;;
 esac
 
