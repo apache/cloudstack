@@ -32,11 +32,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.alert.AlertManager;
+import com.cloud.host.HostTagVO;
 import com.cloud.exception.StorageConflictException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.storage.Volume;
@@ -856,7 +858,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                                     if (s_logger.isTraceEnabled()) {
                                         s_logger.trace("Adding Host Tags for KVM host, tags:  :" + hostTags);
                                     }
-                                    _hostTagsDao.persist(host.getId(), hostTags);
+                                    _hostTagsDao.persist(host.getId(), hostTags, false);
                                 }
                                 hosts.add(host);
 
@@ -1909,7 +1911,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
     }
 
-    private void updateHostTags(HostVO host, Long hostId, List<String> hostTags) {
+    private void updateHostTags(HostVO host, Long hostId, List<String> hostTags, Boolean isTagARule) {
         List<VMInstanceVO> activeVMs =  _vmDao.listByHostId(hostId);
         s_logger.warn(String.format("The following active VMs [%s] are using the host [%s]. " +
                 "Updating the host tags will not affect them.", activeVMs, host));
@@ -1917,17 +1919,17 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Updating Host Tags to :" + hostTags);
         }
-        _hostTagsDao.persist(hostId, new ArrayList<>(new HashSet<>(hostTags)));
+        _hostTagsDao.persist(hostId, new ArrayList<>(new HashSet<>(hostTags)), isTagARule);
     }
 
     @Override
     public Host updateHost(final UpdateHostCmd cmd) throws NoTransitionException {
         return updateHost(cmd.getId(), cmd.getName(), cmd.getOsCategoryId(),
-                cmd.getAllocationState(), cmd.getUrl(), cmd.getHostTags(), cmd.getAnnotation(), false);
+                cmd.getAllocationState(), cmd.getUrl(), cmd.getHostTags(), cmd.getIsTagARule(), cmd.getAnnotation(), false);
     }
 
     private Host updateHost(Long hostId, String name, Long guestOSCategoryId, String allocationState,
-                            String url, List<String> hostTags, String annotation, boolean isUpdateFromHostHealthCheck) throws NoTransitionException {
+                            String url, List<String> hostTags, Boolean isTagARule, String annotation, boolean isUpdateFromHostHealthCheck) throws NoTransitionException {
         // Verify that the host exists
         final HostVO host = _hostDao.findById(hostId);
         if (host == null) {
@@ -1948,7 +1950,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         if (hostTags != null) {
-            updateHostTags(host, hostId, hostTags);
+            updateHostTags(host, hostId, hostTags, isTagARule);
         }
 
         if (url != null) {
@@ -2007,7 +2009,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public Host autoUpdateHostAllocationState(Long hostId, ResourceState.Event resourceEvent) throws NoTransitionException {
-        return updateHost(hostId, null, null, resourceEvent.toString(), null, null, null, true);
+        return updateHost(hostId, null, null, resourceEvent.toString(), null, null, null, null, true);
     }
 
     @Override
@@ -2339,7 +2341,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             final List<String> implicitHostTags = ssCmd.getHostTags();
             if (!implicitHostTags.isEmpty()) {
                 if (hostTags == null) {
-                    hostTags = _hostTagsDao.getHostTags(host.getId());
+                    hostTags = _hostTagsDao.getHostTags(host.getId()).parallelStream().map(HostTagVO::getTag).collect(Collectors.toList());
                 }
                 if (hostTags != null) {
                     implicitHostTags.removeAll(hostTags);
@@ -2367,7 +2369,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         host.setManagementServerId(_nodeId);
         host.setStorageUrl(startup.getIqn());
         host.setLastPinged(System.currentTimeMillis() >> 10);
-        host.setHostTags(hostTags);
+        host.setHostTags(hostTags, false);
         host.setDetails(details);
         if (startup.getStorageIpAddressDeux() != null) {
             host.setStorageIpAddressDeux(startup.getStorageIpAddressDeux());
@@ -3351,7 +3353,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public String getHostTags(final long hostId) {
-        final List<String> hostTags = _hostTagsDao.getHostTags(hostId);
+        final List<String> hostTags = _hostTagsDao.getHostTags(hostId).parallelStream().map(HostTagVO::getTag).collect(Collectors.toList());
         if (hostTags == null) {
             return null;
         } else {

@@ -1773,6 +1773,9 @@ export default {
           this.form.iothreadsenabled = template.details && Object.prototype.hasOwnProperty.call(template.details, 'iothreads')
           this.form.iodriverpolicy = template.details?.['io.policy']
           this.form.keyboard = template.details?.keyboard
+          if (template.details['vmware-to-kvm-mac-addresses']) {
+            this.dataPreFill.macAddressArray = JSON.parse(template.details['vmware-to-kvm-mac-addresses'])
+          }
         }
       } else if (name === 'isoid') {
         this.templateConfigurations = []

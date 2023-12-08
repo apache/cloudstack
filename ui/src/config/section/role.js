@@ -53,7 +53,7 @@ export default {
       icon: 'edit-outlined',
       label: 'label.edit.role',
       dataView: true,
-      args: ['name', 'description', 'type', 'ispublic'],
+      args: (record) => record.isdefault ? ['ispublic'] : ['name', 'description', 'type', 'ispublic'],
       mapping: {
         type: {
           options: ['Admin', 'DomainAdmin', 'User']

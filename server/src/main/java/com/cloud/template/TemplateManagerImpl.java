@@ -86,6 +86,8 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.secstorage.dao.SecondaryStorageHeuristicDao;
+import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
 import org.apache.cloudstack.snapshot.SnapshotHelper;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.CommandResult;
@@ -98,6 +100,7 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.cloudstack.storage.heuristics.HeuristicRuleHelper;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.template.VnfTemplateManager;
 import org.apache.cloudstack.storage.template.VnfTemplateUtils;
@@ -311,6 +314,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Inject
     VnfTemplateManager vnfTemplateManager;
 
+    @Inject
+    private SecondaryStorageHeuristicDao secondaryStorageHeuristicDao;
+
+    @Inject
+    private HeuristicRuleHelper heuristicRuleHelper;
+
     private TemplateAdapter getAdapter(HypervisorType type) {
         TemplateAdapter adapter = null;
         if (type == HypervisorType.BareMetal) {
@@ -451,15 +460,19 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     }
 
     @Override
-    public DataStore getImageStore(String storeUuid, Long zoneId) {
+    public DataStore getImageStore(String storeUuid, Long zoneId, VolumeVO volume) {
         DataStore imageStore = null;
         if (storeUuid != null) {
             imageStore = _dataStoreMgr.getDataStore(storeUuid, DataStoreRole.Image);
         } else {
-            imageStore = _dataStoreMgr.getImageStoreWithFreeCapacity(zoneId);
+            imageStore = heuristicRuleHelper.getImageStoreIfThereIsHeuristicRule(zoneId, HeuristicType.VOLUME, volume);
             if (imageStore == null) {
-                throw new CloudRuntimeException("cannot find an image store for zone " + zoneId);
+                imageStore = _dataStoreMgr.getImageStoreWithFreeCapacity(zoneId);
             }
+        }
+
+        if (imageStore == null) {
+            throw new CloudRuntimeException(String.format("Cannot find an image store for zone [%s].", zoneId));
         }
 
         return imageStore;
