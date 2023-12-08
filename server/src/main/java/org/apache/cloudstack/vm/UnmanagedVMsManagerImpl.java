@@ -267,6 +267,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     private IpAddressManager ipAddressManager;
     @Inject
     private StoragePoolHostDao storagePoolHostDao;
+    @Inject
     private HypervisorGuruManager hypervisorGuruManager;
     @Inject
     private VmwareDatacenterDao vmwareDatacenterDao;
