@@ -1000,27 +1000,27 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
     protected void validateNewParentDomainCanAccessAllDomainToBeMovedResources(DomainVO domainToBeMoved, DomainVO newParentDomain, String currentPathOfDomainToBeMoved,
                                                                                String newPathOfDomainToBeMoved) {
         Map<Long, List<String>> idsOfDomainsWithNetworksUsedByDomainToBeMoved = _networkDomainDao.listDomainsOfSharedNetworksUsedByDomainPath(currentPathOfDomainToBeMoved);
-        validateNewParentDomainCanAccessResourcesOfDomainToBeMoved(newPathOfDomainToBeMoved, domainToBeMoved, newParentDomain, idsOfDomainsWithNetworksUsedByDomainToBeMoved);
+        validateNewParentDomainCanAccessResourcesOfDomainToBeMoved(newPathOfDomainToBeMoved, domainToBeMoved, newParentDomain, idsOfDomainsWithNetworksUsedByDomainToBeMoved, "Networks");
 
         Map<Long, List<String>> idsOfDomainsOfAffinityGroupsUsedByDomainToBeMoved =
                 affinityGroupDomainMapDao.listDomainsOfAffinityGroupsUsedByDomainPath(currentPathOfDomainToBeMoved);
-        validateNewParentDomainCanAccessResourcesOfDomainToBeMoved(newPathOfDomainToBeMoved, domainToBeMoved, newParentDomain, idsOfDomainsOfAffinityGroupsUsedByDomainToBeMoved);
+        validateNewParentDomainCanAccessResourcesOfDomainToBeMoved(newPathOfDomainToBeMoved, domainToBeMoved, newParentDomain, idsOfDomainsOfAffinityGroupsUsedByDomainToBeMoved, "Affinity groups");
 
         Map<Long, List<String>> idsOfDomainsOfServiceOfferingsUsedByDomainToBeMoved =
                 serviceOfferingJoinDao.listDomainsOfServiceOfferingsUsedByDomainPath(currentPathOfDomainToBeMoved);
-        validateNewParentDomainCanAccessResourcesOfDomainToBeMoved(newPathOfDomainToBeMoved, domainToBeMoved, newParentDomain, idsOfDomainsOfServiceOfferingsUsedByDomainToBeMoved);
+        validateNewParentDomainCanAccessResourcesOfDomainToBeMoved(newPathOfDomainToBeMoved, domainToBeMoved, newParentDomain, idsOfDomainsOfServiceOfferingsUsedByDomainToBeMoved, "Service offerings");
 
         Map<Long, List<String>> idsOfDomainsOfNetworkOfferingsUsedByDomainToBeMoved =
                 networkOfferingJoinDao.listDomainsOfNetworkOfferingsUsedByDomainPath(currentPathOfDomainToBeMoved);
-        validateNewParentDomainCanAccessResourcesOfDomainToBeMoved(newPathOfDomainToBeMoved, domainToBeMoved, newParentDomain, idsOfDomainsOfNetworkOfferingsUsedByDomainToBeMoved);
+        validateNewParentDomainCanAccessResourcesOfDomainToBeMoved(newPathOfDomainToBeMoved, domainToBeMoved, newParentDomain, idsOfDomainsOfNetworkOfferingsUsedByDomainToBeMoved, "Network offerings");
 
         Map<Long, List<String>> idsOfDomainsOfDedicatedResourcesUsedByDomainToBeMoved =
                 _dedicatedDao.listDomainsOfDedicatedResourcesUsedByDomainPath(currentPathOfDomainToBeMoved);
-        validateNewParentDomainCanAccessResourcesOfDomainToBeMoved(newPathOfDomainToBeMoved, domainToBeMoved, newParentDomain, idsOfDomainsOfDedicatedResourcesUsedByDomainToBeMoved);
+        validateNewParentDomainCanAccessResourcesOfDomainToBeMoved(newPathOfDomainToBeMoved, domainToBeMoved, newParentDomain, idsOfDomainsOfDedicatedResourcesUsedByDomainToBeMoved, "Dedicated resources");
     }
 
     protected void validateNewParentDomainCanAccessResourcesOfDomainToBeMoved(String newPathOfDomainToBeMoved, DomainVO domainToBeMoved, DomainVO newParentDomain,
-                                                                              Map<Long, List<String>> idsOfDomainsWithResourcesUsedByDomainToBeMoved) {
+                                                                              Map<Long, List<String>> idsOfDomainsWithResourcesUsedByDomainToBeMoved, String resourceToLog) {
         Map<DomainVO, List<String>> domainsOfResourcesInaccessibleToNewParentDomain = new HashMap<>();
         for (Map.Entry<Long, List<String>> entry : idsOfDomainsWithResourcesUsedByDomainToBeMoved.entrySet()) {
             DomainVO domainWithResourceUsedByDomainToBeMoved = _domainDao.findById(entry.getKey());
@@ -1033,9 +1033,10 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         }
 
         if (!domainsOfResourcesInaccessibleToNewParentDomain.isEmpty()) {
-            s_logger.error(String.format("The new parent domain [%s] does not have access to the domains [%s] used by [%s] in the domain to be moved [%s].",
+            s_logger.error(String.format("The new parent domain [%s] does not have access to domains [%s] used by [%s] in the domain to be moved [%s].",
                     newParentDomain, domainsOfResourcesInaccessibleToNewParentDomain.keySet(), domainsOfResourcesInaccessibleToNewParentDomain.values(), domainToBeMoved));
-            throw new InvalidParameterValueException(String.format("The domain [%s] could not be moved to domain [%s].", domainToBeMoved, newParentDomain));
+            throw new InvalidParameterValueException(String.format("New parent domain [%s] does not have access to [%s] used by domain [%s], therefore, domain [%s] cannot be moved.",
+                    newParentDomain, resourceToLog, domainToBeMoved, domainToBeMoved));
         }
     }
 
