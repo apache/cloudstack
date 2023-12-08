@@ -368,7 +368,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         if (cluster == null) {
             return additionalNameFilter;
         }
-
         if (cluster.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
             // VMWare considers some templates as VM and they are not filtered by VirtualMachineMO.isTemplate()
             List<VMTemplateStoragePoolVO> templates = templatePoolDao.listAll();

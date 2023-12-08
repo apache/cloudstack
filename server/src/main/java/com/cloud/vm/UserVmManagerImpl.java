@@ -4472,6 +4472,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (customParameters.containsKey(VmDetailConstants.ROOT_DISK_SIZE)) {
             // already verified for positive number
             rootDiskSize = Long.parseLong(customParameters.get(VmDetailConstants.ROOT_DISK_SIZE));
+
             VMTemplateVO templateVO = _templateDao.findById(template.getId());
             if (templateVO == null) {
                 throw new InvalidParameterValueException("Unable to look up template by id " + template.getId());
@@ -8212,7 +8213,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (zone == null) {
             throw new InvalidParameterValueException("Unable to import virtual machine with invalid zone");
         }
-
         if (host == null && hypervisorType == HypervisorType.VMware) {
             throw new InvalidParameterValueException("Unable to import virtual machine with invalid host");
         }
