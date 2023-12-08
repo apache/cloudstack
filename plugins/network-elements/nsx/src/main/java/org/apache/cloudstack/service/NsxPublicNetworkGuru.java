@@ -106,6 +106,7 @@ public class NsxPublicNetworkGuru extends PublicNetworkGuru {
             throw new CloudRuntimeException(err);
         }
         Long vpcId = ipAddress.getVpcId();
+        boolean isForVpc = vpcId != null;
         if (vpcId == null) {
             // TODO: Pass network.getId() to support isolated networks
             throw new CloudRuntimeException("TODO: Add support for isolated networks public network");
@@ -133,7 +134,6 @@ public class NsxPublicNetworkGuru extends PublicNetworkGuru {
                 long accountId = vpc.getAccountId();
                 long domainId = vpc.getDomainId();
                 long dataCenterId = vpc.getZoneId();
-                boolean isForVpc = true;
                 long resourceId = isForVpc ? vpc.getId() : network.getId();
                 Network.Service[] services = { Network.Service.SourceNat };
                 boolean sourceNatEnabled = vpcOfferingServiceMapDao.areServicesSupportedByVpcOffering(vpc.getVpcOfferingId(), services);

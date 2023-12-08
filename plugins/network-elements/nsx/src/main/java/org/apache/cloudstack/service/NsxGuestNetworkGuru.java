@@ -104,10 +104,11 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
         }
 
         NetworkVO network = (NetworkVO) super.design(offering, plan, userSpecified, name, vpcId, owner);
-        network.setBroadcastDomainType(Networks.BroadcastDomainType.NSX);
         if (network == null) {
             return null;
         }
+        network.setBroadcastDomainType(Networks.BroadcastDomainType.NSX);
+
         if (userSpecified != null) {
             if ((userSpecified.getIp6Cidr() == null && userSpecified.getIp6Gateway() != null) || (
                     userSpecified.getIp6Cidr() != null && userSpecified.getIp6Gateway() == null)) {
