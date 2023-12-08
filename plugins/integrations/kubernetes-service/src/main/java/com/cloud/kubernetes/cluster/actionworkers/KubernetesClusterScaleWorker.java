@@ -182,7 +182,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         final long cores = serviceOffering.getCpu() * size;
         final long memory = serviceOffering.getRamSize() * size;
         KubernetesClusterVO kubernetesClusterVO = updateKubernetesClusterEntry(cores, memory, newSize, serviceOfferingId,
-            kubernetesCluster.getAutoscalingEnabled(), kubernetesCluster.getMinSize(), kubernetesCluster.getMaxSize(), kubernetesCluster.getState());
+            kubernetesCluster.getAutoscalingEnabled(), kubernetesCluster.getMinSize(), kubernetesCluster.getMaxSize());
         if (kubernetesClusterVO == null) {
             logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster %s failed, unable to update Kubernetes cluster",
                     kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
@@ -411,7 +411,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         } else { // upscale, same node count handled above
             scaleUpKubernetesClusterSize(newVmRequiredCount);
         }
-        kubernetesCluster = updateKubernetesClusterEntry(clusterSize, serviceOffering);
+        kubernetesCluster = updateKubernetesClusterEntry(clusterSize, null);
     }
 
     private boolean isAutoscalingChanged() {

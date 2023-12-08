@@ -768,7 +768,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     }
 
     protected KubernetesClusterVO updateKubernetesClusterEntry(final Long cores, final Long memory, final Long size,
-               final Long serviceOfferingId, final Boolean autoscaleEnabled, final Long minSize, final Long maxSize, KubernetesCluster.State state) {
+               final Long serviceOfferingId, final Boolean autoscaleEnabled, final Long minSize, final Long maxSize) {
         return Transaction.execute(new TransactionCallback<KubernetesClusterVO>() {
                 @Override
                 public KubernetesClusterVO doInTransaction(TransactionStatus status) {
@@ -788,9 +788,6 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                 if (autoscaleEnabled != null) {
                     updatedCluster.setAutoscalingEnabled(autoscaleEnabled.booleanValue());
                 }
-                if (state != null) {
-                    updatedCluster.setState(state);
-                }
                 updatedCluster.setMinSize(minSize);
                 updatedCluster.setMaxSize(maxSize);
                 return kubernetesClusterDao.persist(updatedCluster);
@@ -799,7 +796,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     }
 
     private KubernetesClusterVO updateKubernetesClusterEntry(final Boolean autoscaleEnabled, final Long minSize, final Long maxSize) throws CloudRuntimeException {
-        KubernetesClusterVO kubernetesClusterVO = updateKubernetesClusterEntry(null, null, null, null, autoscaleEnabled, minSize, maxSize, null);
+        KubernetesClusterVO kubernetesClusterVO = updateKubernetesClusterEntry(null, null, null, null, autoscaleEnabled, minSize, maxSize);
         if (kubernetesClusterVO == null) {
             logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster %s failed, unable to update Kubernetes cluster",
                     kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
