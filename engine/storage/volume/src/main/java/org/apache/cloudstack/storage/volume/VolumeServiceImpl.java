@@ -1478,8 +1478,8 @@ public class VolumeServiceImpl implements VolumeService {
                 createManagedVolumeCloneTemplateAsync(volumeInfo, templateOnPrimary, destPrimaryDataStore, future);
             } else {
                 // We have a template on PowerFlex primary storage. Create new volume and copy to it.
-                s_logger.debug("Copying the template to the volume on primary storage");
-                createManagedVolumeCopyManagedTemplateAsync(volumeInfo, destPrimaryDataStore, templateOnPrimary, destHost, future);
+                createManagedVolumeCopyManagedTemplateAsyncWithLock(volumeInfo, destPrimaryDataStore, templateOnPrimary,
+                        destHost, future, destDataStoreId, srcTemplateInfo.getId());
             }
         } else {
             s_logger.debug("Primary storage does not support cloning or no support for UUID resigning on the host side; copying the template normally");
@@ -1488,6 +1488,32 @@ public class VolumeServiceImpl implements VolumeService {
         }
 
         return future;
+    }
+
+    private void createManagedVolumeCopyManagedTemplateAsyncWithLock(VolumeInfo volumeInfo, PrimaryDataStore destPrimaryDataStore, TemplateInfo templateOnPrimary,
+                                                                     Host destHost, AsyncCallFuture<VolumeApiResult> future, long destDataStoreId, long srcTemplateId) {
+        GlobalLock lock = null;
+        try {
+            String tmplIdManagedPoolIdDestinationHostLockString = "tmplId:" + srcTemplateId + "managedPoolId:" + destDataStoreId + "destinationHostId:" + destHost.getId();
+            lock = GlobalLock.getInternLock(tmplIdManagedPoolIdDestinationHostLockString);
+            if (lock == null) {
+                throw new CloudRuntimeException("Unable to create volume from template, couldn't get global lock on " + tmplIdManagedPoolIdDestinationHostLockString);
+            }
+
+            int storagePoolMaxWaitSeconds = NumbersUtil.parseInt(configDao.getValue(Config.StoragePoolMaxWaitSeconds.key()), 3600);
+            if (!lock.lock(storagePoolMaxWaitSeconds)) {
+                s_logger.debug("Unable to create volume from template, couldn't lock on " + tmplIdManagedPoolIdDestinationHostLockString);
+                throw new CloudRuntimeException("Unable to create volume from template, couldn't lock on " + tmplIdManagedPoolIdDestinationHostLockString);
+            }
+
+            s_logger.debug("Copying the template to the volume on primary storage");
+            createManagedVolumeCopyManagedTemplateAsync(volumeInfo, destPrimaryDataStore, templateOnPrimary, destHost, future);
+        } finally {
+            if (lock != null) {
+                lock.unlock();
+                lock.releaseRef();
+            }
+        }
     }
 
     private boolean computeSupportsVolumeClone(long zoneId, HypervisorType hypervisorType) {
