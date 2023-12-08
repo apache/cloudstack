@@ -391,7 +391,7 @@ public class VeeamClientTest {
     }
 
     @Test
-    public void testProcessHttpResponseForBackupMetricsForV12() {
+    public void testGetBackupMetricsViaVeeamAPI() {
         String xmlResponse = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
                 "<BackupFiles\n" +
                 "  xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"\n" +
@@ -415,18 +415,21 @@ public class VeeamClientTest {
                 "  </BackupFile>\n" +
                 "</BackupFiles>";
 
-        InputStream inputStream = new ByteArrayInputStream(xmlResponse.getBytes());
-        Map<String, Backup.Metric> metrics = client.processHttpResponseForBackupMetrics(inputStream);
+        wireMockRule.stubFor(get(urlMatching(".*/backupFiles\\?format=Entity"))
+                .willReturn(aResponse()
+                        .withHeader("content-type", "application/xml")
+                        .withStatus(200)
+                        .withBody(xmlResponse)));
+        Map<String, Backup.Metric> metrics = client.getBackupMetricsViaVeeamAPI();
 
         Assert.assertEquals(1, metrics.size());
-
         Assert.assertTrue(metrics.containsKey("506760dc-ed77-40d6-a91d-e0914e7a1ad8"));
         Assert.assertEquals(535875584L, (long) metrics.get("506760dc-ed77-40d6-a91d-e0914e7a1ad8").getBackupSize());
         Assert.assertEquals(2147507235L, (long) metrics.get("506760dc-ed77-40d6-a91d-e0914e7a1ad8").getDataSize());
     }
 
     @Test
-    public void testProcessHttpResponseForVmRestorePoints() {
+    public void testListVmRestorePointsViaVeeamAPI() {
         String xmlResponse = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
                 "<VmRestorePoints\n" +
                 "  xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"\n" +
@@ -451,8 +454,12 @@ public class VeeamClientTest {
                 "</VmRestorePoints>\n";
         String vmName = "i-2-4-VM";
 
-        InputStream inputStream = new ByteArrayInputStream(xmlResponse.getBytes());
-        List<Backup.RestorePoint> vmRestorePointList = client.processHttpResponseForVmRestorePoints(inputStream, vmName);
+        wireMockRule.stubFor(get(urlMatching(".*/vmRestorePoints\\?format=Entity"))
+                .willReturn(aResponse()
+                        .withHeader("content-type", "application/xml")
+                        .withStatus(200)
+                        .withBody(xmlResponse)));
+        List<Backup.RestorePoint> vmRestorePointList = client.listVmRestorePointsViaVeeamAPI(vmName);
 
         Assert.assertEquals(1, vmRestorePointList.size());
         Assert.assertEquals("f6d504cf-eafe-4cd2-8dfc-e9cfe2f1e977", vmRestorePointList.get(0).getId());
