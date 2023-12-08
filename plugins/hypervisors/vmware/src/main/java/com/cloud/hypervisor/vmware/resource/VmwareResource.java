@@ -7154,6 +7154,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 }
                 UnmanagedInstanceTO instance = VmwareHelper.getUnmanagedInstance(hyperHost, vmMo);
                 if (instance != null) {
+                    instance.setCpuSpeed(vmMo.getConfigSummary().getCpuReservation());
                     unmanagedInstances.put(instance.getName(), instance);
                 }
             }
