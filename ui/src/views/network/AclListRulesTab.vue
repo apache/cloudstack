@@ -333,7 +333,17 @@ export default {
             result += columnDelimiter
           }
 
-          result += typeof item[key] === 'string' && item[key].includes(columnDelimiter) ? `"${item[key]}"` : item[key]
+          if (key === 'tags') {
+            var tags = '"'
+            if (item[key].length > 0) {
+              item[key].forEach(tag => {
+                tags += '(' + tag.key + ',' + tag.value + ')'
+              })
+            }
+            result += tags + '"'
+          } else {
+            result += typeof item[key] === 'string' && item[key].includes(columnDelimiter) ? `"${item[key]}"` : item[key]
+          }
           ctr++
         })
         result += lineDelimiter
