@@ -278,7 +278,7 @@ export default {
     initForm () {
       this.formRef = ref()
       this.form = reactive({
-        controlnodes: 2,
+        controlnodes: 3,
         size: 1,
         noderootdisksize: 8
       })
