@@ -844,29 +844,49 @@ public class NetUtilsTest {
         networkInterfaceMocked.close();
     }
 
-    private void validateIcmpTypeAndCodeInternal(Integer icmpType, Integer icmpCode, boolean expectedResult) {
-        boolean actualResult = true;
-        try {
-            NetUtils.validateIcmpTypeAndCode(icmpType, icmpCode);
-        } catch (CloudRuntimeException e) {
-            actualResult = false;
-        }
-        Assert.assertEquals(expectedResult, actualResult);
+    @Test
+    public void validateIcmpTypeAndCodesGood1() {
+        NetUtils.validateIcmpTypeAndCode(-1, -1);
+    }
+    @Test
+    public void validateIcmpTypeAndCodesGood2() {
+        NetUtils.validateIcmpTypeAndCode(3, 2);
     }
 
-    @Test
-    public void validateIcmpTypeAndCodes() {
-        validateIcmpTypeAndCodeInternal(-1, -1, true);
-        validateIcmpTypeAndCodeInternal(3, 2, true);
-        validateIcmpTypeAndCodeInternal(null, null, false);
-        validateIcmpTypeAndCodeInternal(null, -1, false);
-        validateIcmpTypeAndCodeInternal(-1, null, false);
-        validateIcmpTypeAndCodeInternal(-1, 2, false);
-        validateIcmpTypeAndCodeInternal(3, -1, false);   // need discussion
-        validateIcmpTypeAndCodeInternal(-2, 2, false);
-        validateIcmpTypeAndCodeInternal(257, 2, false);
-        validateIcmpTypeAndCodeInternal(3, -2, false);
-        validateIcmpTypeAndCodeInternal(3, -257, false);
-
+    @Test(expected=CloudRuntimeException.class)
+    public void validateIcmpTypeAndCodesThrowsException1() {
+        NetUtils.validateIcmpTypeAndCode(null, null);
+    }
+    @Test(expected=CloudRuntimeException.class)
+    public void validateIcmpTypeAndCodesThrowsException2() {
+        NetUtils.validateIcmpTypeAndCode(null, -1);
+    }
+    @Test(expected=CloudRuntimeException.class)
+    public void validateIcmpTypeAndCodesThrowsException3() {
+        NetUtils.validateIcmpTypeAndCode(-1, null);
+    }
+    @Test(expected=CloudRuntimeException.class)
+    public void validateIcmpTypeAndCodesThrowsException4() {
+        NetUtils.validateIcmpTypeAndCode(-1, 2);
+    }
+    @Test(expected=CloudRuntimeException.class)
+    public void validateIcmpTypeAndCodesThrowsException5() {
+        NetUtils.validateIcmpTypeAndCode(3, -1);
+    }
+    @Test(expected=CloudRuntimeException.class)
+    public void validateIcmpTypeAndCodesThrowsException6() {
+        NetUtils.validateIcmpTypeAndCode(-2, 2);
+    }
+    @Test(expected=CloudRuntimeException.class)
+    public void validateIcmpTypeAndCodesThrowsException7() {
+        NetUtils.validateIcmpTypeAndCode(257, 2);
+    }
+    @Test(expected=CloudRuntimeException.class)
+    public void validateIcmpTypeAndCodesThrowsException8() {
+        NetUtils.validateIcmpTypeAndCode(3, -2);
+    }
+    @Test(expected=CloudRuntimeException.class)
+    public void validateIcmpTypeAndCodesThrowsException9() {
+        NetUtils.validateIcmpTypeAndCode(3, -257);
     }
 }
