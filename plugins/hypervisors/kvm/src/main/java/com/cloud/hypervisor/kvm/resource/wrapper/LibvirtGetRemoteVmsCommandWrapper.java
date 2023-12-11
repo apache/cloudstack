@@ -31,6 +31,9 @@ import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.utils.qemu.QemuImg;
+import org.apache.cloudstack.utils.qemu.QemuImgException;
+import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
@@ -41,6 +44,7 @@ import org.libvirt.LibvirtException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @ResourceWrapper(handles = GetRemoteVmsCommand.class)
 public final class LibvirtGetRemoteVmsCommandWrapper extends CommandWrapper<GetRemoteVmsCommand, Answer, LibvirtComputingResource> {
@@ -90,7 +94,7 @@ public final class LibvirtGetRemoteVmsCommandWrapper extends CommandWrapper<GetR
                 instance.setCpuCoresPerSocket(parser.getCpuModeDef().getCoresPerSocket());
             }
             Long memory = domain.getMaxMemory();
-            instance.setMemory(memory.intValue());
+            instance.setMemory(memory.intValue()/1024);
             if (parser.getCpuTuneDef() !=null) {
                 instance.setCpuSpeed(parser.getCpuTuneDef().getShares());
             }
@@ -145,7 +149,20 @@ public final class LibvirtGetRemoteVmsCommandWrapper extends CommandWrapper<GetR
             final UnmanagedInstanceTO.Disk disk = new UnmanagedInstanceTO.Disk();
 
             disk.setPosition(counter);
-            disk.setCapacity(10L);
+
+            Long size;
+            String imagePath;
+            try {
+                QemuImgFile file = new QemuImgFile(diskDef.getSourcePath());
+                QemuImg qemu = new QemuImg(0);
+                Map<String, String> info = qemu.info(file);
+                size = Long.parseLong(info.getOrDefault("virtual_size", "0"));
+                imagePath = info.getOrDefault("image", null);
+            } catch (QemuImgException | LibvirtException e) {
+                throw new RuntimeException(e);
+            }
+
+            disk.setCapacity(size);
             disk.setDiskId(String.valueOf(counter++));
             disk.setLabel(diskDef.getDiskLabel());
             disk.setController(diskDef.getBusType().toString());
@@ -162,6 +179,8 @@ public final class LibvirtGetRemoteVmsCommandWrapper extends CommandWrapper<GetR
 
             disk.setDatastoreType(diskDef.getDiskType().toString());
             disk.setDatastorePort(diskDef.getSourceHostPort());
+            disk.setImagePath(imagePath);
+            disk.setDatastoreName(imagePath.substring(imagePath.lastIndexOf("/")));
             disks.add(disk);
         }
         return disks;
