@@ -294,16 +294,6 @@
                       v-model:value="form.diskpath"
                     ></a-input>
                   </a-form-item>
-                  <a-col v-if="showExtHost" :md="24" :lg="8">
-                    <div :span="24" class="action-button-right">
-                      <a-button
-                              shape="round"
-                              type="primary"
-                              @click="() => { fetchExtKVMInstances() }">
-                          {{ $t('label.fetch.instances') }}
-                      </a-button>
-                    </div>
-                  </a-col>
                   <a-col v-if="showDiskPath" :md="24" :lg="8">
                     <a-button
                         type="primary"
@@ -315,6 +305,18 @@
                 </a-form>
               </a-col>
             </a-card>
+          </a-row>
+          <a-row v-if="showExtHost">
+            <a-col :span="6" :offset="11">
+              <div style="text-align: center">
+                <a-button
+                        shape="round"
+                        type="primary"
+                        @click="() => { fetchExtKVMInstances() }">
+                    {{ $t('label.fetch.instances') }}
+                </a-button>
+              </div>
+            </a-col>
           </a-row>
           <a-divider />
           <a-row :gutter="12">
