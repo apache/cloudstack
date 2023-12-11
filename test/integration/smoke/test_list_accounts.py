@@ -38,6 +38,7 @@ class TestListAccounts(cloudstackTestCase):
         cls.domain = get_domain(cls.apiclient)
         cls.account = list_accounts(cls.apiclient, name="admin")[0]
         cls._cleanup = []
+        cls.accounts = list_accounts(cls.apiclient)
 
         cls.child_domain_1 = Domain.create(
             cls.apiclient,
@@ -356,7 +357,7 @@ class TestListAccounts(cloudstackTestCase):
         )
         self.assertEqual(
             4,
-            len(list_account_response),
+            len(list_account_response) - len(self.accounts),
             "List Account response has incorrect length"
         )
 
