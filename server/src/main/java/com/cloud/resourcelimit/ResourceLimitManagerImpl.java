@@ -45,6 +45,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.reservation.ReservationVO;
 import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
@@ -1273,9 +1274,11 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         if (CollectionUtils.isEmpty(offerings) && CollectionUtils.isEmpty(templates)) {
             return new ArrayList<>();
         }
-        return _userVmJoinDao.listByAccountServiceOfferingTemplateAndNotInState(accountId, states,
+
+        return  _userVmJoinDao.listByAccountServiceOfferingTemplateAndNotInState(accountId, states,
                 offerings.stream().map(ServiceOfferingVO::getId).collect(Collectors.toList()),
-                templates.stream().map(VMTemplateVO::getId).collect(Collectors.toList()));
+                templates.stream().map(VMTemplateVO::getId).collect(Collectors.toList())
+        );
     }
 
     protected List<UserVmJoinVO> getVmsWithAccount(long accountId) {
@@ -1297,8 +1300,17 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         if (StringUtils.isEmpty(tag)) {
             return _userVmDao.countAllocatedVMsForAccount(accountId, VirtualMachineManager.ResourceCountRunningVMsonly.value());
         }
+
         List<UserVmJoinVO> vms = getVmsWithAccountAndTag(accountId, tag);
-        return vms.size();
+        Set<Long> vmIds = vms.stream().map(UserVmJoinVO::getId).collect(Collectors.toSet());
+        List<ReservationVO> vmReservations = reservationDao.getReservationsForAccount(accountId, ResourceType.user_vm);
+        long reservedVMs = 0;
+        for (ReservationVO reservation : vmReservations) {
+            if (vmIds.contains(reservation.getResourceId())) {
+                reservedVMs += reservation.getReservedAmount();
+            }
+        }
+        return vms.size() - reservedVMs;
     }
 
     protected long calculateVolumeCountForAccount(long accountId, String tag) {
@@ -1316,8 +1328,16 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
         long cputotal = 0;
         List<UserVmJoinVO> vms = getVmsWithAccountAndTag(accountId, tag);
+        Set<Long> vmIds = vms.stream().map(UserVmJoinVO::getId).collect(Collectors.toSet());
+
+        List<ReservationVO> vmReservations = reservationDao.getReservationsForAccount(accountId, ResourceType.cpu);
         for (UserVmJoinVO vm : vms) {
             cputotal += vm.getCpu();
+        }
+        for (ReservationVO reservation : vmReservations) {
+            if (vmIds.contains(reservation.getResourceId())) {
+                cputotal -= reservation.getReservedAmount();
+            }
         }
         return cputotal;
     }
@@ -1328,8 +1348,15 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
         long memory = 0;
         List<UserVmJoinVO> vms = getVmsWithAccountAndTag(accountId, tag);
+        Set<Long> vmIds = vms.stream().map(UserVmJoinVO::getId).collect(Collectors.toSet());
+        List<ReservationVO> vmReservations = reservationDao.getReservationsForAccount(accountId, ResourceType.memory);
         for (UserVmJoinVO vm : vms) {
             memory += vm.getRamSize();
+        }
+        for (ReservationVO reservation : vmReservations) {
+            if (vmIds.contains(reservation.getResourceId())) {
+                memory -= reservation.getReservedAmount();
+            }
         }
         return memory;
     }
@@ -1337,8 +1364,15 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     public long countCpusForAccount(long accountId) {
         long cputotal = 0;
         List<UserVmJoinVO> userVms = getVmsWithAccount(accountId);
+        Set<Long> vmIds = userVms.stream().map(UserVmJoinVO::getId).collect(Collectors.toSet());
+        List<ReservationVO> vmReservations = reservationDao.getReservationsForAccount(accountId, ResourceType.cpu);
         for (UserVmJoinVO vm : userVms) {
             cputotal += vm.getCpu();
+        }
+        for (ReservationVO reservation : vmReservations) {
+            if (vmIds.contains(reservation.getResourceId())) {
+                cputotal -= reservation.getReservedAmount();
+            }
         }
         return cputotal;
     }
@@ -1346,8 +1380,15 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     public long calculateMemoryForAccount(long accountId) {
         long ramtotal = 0;
         List<UserVmJoinVO> userVms = getVmsWithAccount(accountId);
+        Set<Long> vmIds = userVms.stream().map(UserVmJoinVO::getId).collect(Collectors.toSet());
+        List<ReservationVO> vmReservations = reservationDao.getReservationsForAccount(accountId, ResourceType.memory);
         for (UserVmJoinVO vm : userVms) {
             ramtotal += vm.getRamSize();
+        }
+        for (ReservationVO reservation : vmReservations) {
+            if (vmIds.contains(reservation.getResourceId())) {
+                ramtotal -= reservation.getReservedAmount();
+            }
         }
         return ramtotal;
     }
@@ -1625,32 +1666,44 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
     }
 
+    @DB
     @Override
     public void incrementVolumeResourceCount(long accountId, Boolean display, Long size, DiskOffering diskOffering) {
-        List<String> tags = getResourceLimitStorageTagsForResourceCountOperation(display, diskOffering);
-        if (CollectionUtils.isEmpty(tags)) {
-            return;
-        }
-        for (String tag : tags) {
-            incrementResourceCountWithTag(accountId, ResourceType.volume, tag);
-            if (size != null) {
-                incrementResourceCountWithTag(accountId, ResourceType.primary_storage, tag, size);
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                List<String> tags = getResourceLimitStorageTagsForResourceCountOperation(display, diskOffering);
+                if (CollectionUtils.isEmpty(tags)) {
+                    return;
+                }
+                for (String tag : tags) {
+                    incrementResourceCountWithTag(accountId, ResourceType.volume, tag);
+                    if (size != null) {
+                        incrementResourceCountWithTag(accountId, ResourceType.primary_storage, tag, size);
+                    }
+                }
             }
-        }
+        });
     }
 
+    @DB
     @Override
     public void decrementVolumeResourceCount(long accountId, Boolean display, Long size, DiskOffering diskOffering) {
-        List<String> tags = getResourceLimitStorageTagsForResourceCountOperation(display, diskOffering);
-        if (CollectionUtils.isEmpty(tags)) {
-            return;
-        }
-        for (String tag : tags) {
-            decrementResourceCountWithTag(accountId, ResourceType.volume, tag);
-            if (size != null) {
-                decrementResourceCountWithTag(accountId, ResourceType.primary_storage, tag, size);
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                List<String> tags = getResourceLimitStorageTagsForResourceCountOperation(display, diskOffering);
+                if (CollectionUtils.isEmpty(tags)) {
+                    return;
+                }
+                for (String tag : tags) {
+                    decrementResourceCountWithTag(accountId, ResourceType.volume, tag);
+                    if (size != null) {
+                        decrementResourceCountWithTag(accountId, ResourceType.primary_storage, tag, size);
+                    }
+                }
             }
-        }
+        });
     }
 
     @Override
@@ -1711,32 +1764,43 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
     @Override
     public void incrementVmResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template) {
-        List<String> tags = getResourceLimitHostTagsForResourceCountOperation(display, serviceOffering, template);
-        if (CollectionUtils.isEmpty(tags)) {
-            return;
-        }
-        Long cpu = serviceOffering.getCpu() != null ? Long.valueOf(serviceOffering.getCpu()) : 0L;
-        Long ram = serviceOffering.getRamSize() != null ? Long.valueOf(serviceOffering.getRamSize()) : 0L;
-        for (String tag : tags) {
-            incrementResourceCountWithTag(accountId, ResourceType.user_vm, tag);
-            incrementResourceCountWithTag(accountId, ResourceType.cpu, tag, cpu);
-            incrementResourceCountWithTag(accountId, ResourceType.memory, tag, ram);
-        }
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                List<String> tags = getResourceLimitHostTagsForResourceCountOperation(display, serviceOffering, template);
+                if (CollectionUtils.isEmpty(tags)) {
+                    return;
+                }
+                Long cpu = serviceOffering.getCpu() != null ? Long.valueOf(serviceOffering.getCpu()) : 0L;
+                Long ram = serviceOffering.getRamSize() != null ? Long.valueOf(serviceOffering.getRamSize()) : 0L;
+                for (String tag : tags) {
+                    incrementResourceCountWithTag(accountId, ResourceType.user_vm, tag);
+                    incrementResourceCountWithTag(accountId, ResourceType.cpu, tag, cpu);
+                    incrementResourceCountWithTag(accountId, ResourceType.memory, tag, ram);
+                }
+            }
+        });
     }
 
     @Override
-    public void decrementVmResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template) {
-        List<String> tags = getResourceLimitHostTagsForResourceCountOperation(display, serviceOffering, template);
-        if (CollectionUtils.isEmpty(tags)) {
-            return;
-        }
-        Long cpu = serviceOffering.getCpu() != null ? Long.valueOf(serviceOffering.getCpu()) : 0L;
-        Long ram = serviceOffering.getRamSize() != null ? Long.valueOf(serviceOffering.getRamSize()) : 0L;
-        for (String tag : tags) {
-            decrementResourceCountWithTag(accountId, ResourceType.user_vm, tag);
-            decrementResourceCountWithTag(accountId, ResourceType.cpu, tag, cpu);
-            decrementResourceCountWithTag(accountId, ResourceType.memory, tag, ram);
-        }
+    public void decrementVmResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering,
+            VirtualMachineTemplate template) {
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                List<String> tags = getResourceLimitHostTagsForResourceCountOperation(display, serviceOffering, template);
+                if (CollectionUtils.isEmpty(tags)) {
+                    return;
+                }
+                Long cpu = serviceOffering.getCpu() != null ? Long.valueOf(serviceOffering.getCpu()) : 0L;
+                Long ram = serviceOffering.getRamSize() != null ? Long.valueOf(serviceOffering.getRamSize()) : 0L;
+                for (String tag : tags) {
+                    decrementResourceCountWithTag(accountId, ResourceType.user_vm, tag);
+                    decrementResourceCountWithTag(accountId, ResourceType.cpu, tag, cpu);
+                    decrementResourceCountWithTag(accountId, ResourceType.memory, tag, ram);
+                }
+            }
+        });
     }
 
     @Override

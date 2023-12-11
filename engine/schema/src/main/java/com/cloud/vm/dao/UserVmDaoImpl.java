@@ -30,6 +30,10 @@ import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.configuration.Resource;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.network.Network;
@@ -91,6 +95,8 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     NetworkDao networkDao;
     @Inject
     NetworkOfferingServiceMapDao networkOfferingServiceMapDao;
+    @Inject
+    ReservationDao reservationDao;
 
     private static final String LIST_PODS_HAVING_VMS_FOR_ACCOUNT =
             "SELECT pod_id FROM cloud.vm_instance WHERE data_center_id = ? AND account_id = ? AND pod_id IS NOT NULL AND (state = 'Running' OR state = 'Stopped') "
@@ -198,6 +204,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         CountByAccount.and("type", CountByAccount.entity().getType(), SearchCriteria.Op.EQ);
         CountByAccount.and("state", CountByAccount.entity().getState(), SearchCriteria.Op.NIN);
         CountByAccount.and("displayVm", CountByAccount.entity().isDisplayVm(), SearchCriteria.Op.EQ);
+        CountByAccount.and("idNIN", CountByAccount.entity().getId(), SearchCriteria.Op.NIN);
         CountByAccount.done();
 
         CountActiveAccount = createSearchBuilder(Long.class);
@@ -697,6 +704,8 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
 
     @Override
     public Long countAllocatedVMsForAccount(long accountId, boolean runningVMsonly) {
+        List<Long> resourceIds = reservationDao.getResourceIds(accountId, Resource.ResourceType.user_vm);
+
         SearchCriteria<Long> sc = CountByAccount.create();
         sc.setParameters("account", accountId);
         sc.setParameters("type", VirtualMachine.Type.User);
@@ -705,6 +714,11 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         else
             sc.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging});
         sc.setParameters("displayVm", 1);
+
+        if (CollectionUtils.isNotEmpty(resourceIds)) {
+            sc.setParameters("idNIN", resourceIds.toArray());
+        }
+
         return customSearch(sc, null).get(0);
     }
 
@@ -792,4 +806,15 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         sc.setParameters("ids", ids.toArray());
         return listBy(sc);
     }
+
+    @Override
+    public UserVmVO persist(UserVmVO entity) {
+        return Transaction.execute((TransactionCallback<UserVmVO>) status -> {
+                UserVmVO userVM = super.persist(entity);
+                reservationDao.setResourceId(Resource.ResourceType.user_vm, userVM.getId());
+                reservationDao.setResourceId(Resource.ResourceType.cpu, userVM.getId());
+                reservationDao.setResourceId(Resource.ResourceType.memory, userVM.getId());
+                return userVM;
+            });
+        }
 }

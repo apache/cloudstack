@@ -51,6 +51,9 @@ public class ReservationVO implements ResourceReservation {
     @Column(name = "tag")
     String tag;
 
+    @Column(name = "resource_id")
+    Long resourceId;
+
     @Column(name = "amount")
     long amount;
 
@@ -101,4 +104,14 @@ public class ReservationVO implements ResourceReservation {
     public Long getReservedAmount() {
         return amount;
     }
+
+    @Override
+    public Long getResourceId() {
+        return resourceId;
+    }
+
+    public void setResourceId(long resourceId) {
+        this.resourceId = resourceId;
+    }
+
 }

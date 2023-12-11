@@ -19,6 +19,7 @@ package com.cloud.resourcelimit;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,7 @@ import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.TaggedResourceLimitAndCountResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -105,6 +107,8 @@ public class ResourceLimitManagerImplTest extends TestCase {
     ProjectDao projectDao;
     @Mock
     ResourceCountDao resourceCountDao;
+    @Mock
+    private ReservationDao reservationDao;
     @Mock
     UserVmJoinDao userVmJoinDao;
     @Mock
@@ -632,6 +636,7 @@ public class ResourceLimitManagerImplTest extends TestCase {
         Mockito.when(vmTemplateDao.listByTemplateTag(tag)).thenReturn(List.of(templateVO));
         List<UserVmJoinVO> vmList = List.of(Mockito.mock(UserVmJoinVO.class));
         Mockito.when(userVmJoinDao.listByAccountServiceOfferingTemplateAndNotInState(Mockito.anyLong(), Mockito.anyList(), Mockito.anyList(), Mockito.anyList())).thenReturn(vmList);
+        Mockito.when(reservationDao.getResourceIds(1L, Resource.ResourceType.cpu)).thenReturn(Collections.emptyList());
         List<UserVmJoinVO> result = resourceLimitManager.getVmsWithAccountAndTag(1L, tag);
         Assert.assertEquals(vmList.size(), result.size());
     }

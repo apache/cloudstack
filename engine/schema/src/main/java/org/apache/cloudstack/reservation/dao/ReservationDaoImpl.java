@@ -19,20 +19,27 @@
 package org.apache.cloudstack.reservation.dao;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.reservation.ReservationVO;
 
 import com.cloud.configuration.Resource;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import org.apache.cloudstack.user.ResourceReservation;
+import org.apache.log4j.Logger;
 
 public class ReservationDaoImpl extends GenericDaoBase<ReservationVO, Long> implements ReservationDao {
 
+    public static final Logger logger = Logger.getLogger(ReservationDaoImpl.class);
     private static final String RESOURCE_TYPE = "resourceType";
     private static final String RESOURCE_TAG = "resourceTag";
+    private static final String RESOURCE_ID = "resourceId";
     private static final String ACCOUNT_ID = "accountId";
     private static final String DOMAIN_ID = "domainId";
+    private final SearchBuilder<ReservationVO> listResourceByAccountAndTypeSearch;
     private final SearchBuilder<ReservationVO> listAccountAndTypeSearch;
     private final SearchBuilder<ReservationVO> listAccountAndTypeAndNoTagSearch;
 
@@ -40,6 +47,13 @@ public class ReservationDaoImpl extends GenericDaoBase<ReservationVO, Long> impl
     private final SearchBuilder<ReservationVO> listDomainAndTypeAndNoTagSearch;
 
     public ReservationDaoImpl() {
+
+        listResourceByAccountAndTypeSearch = createSearchBuilder();
+        listResourceByAccountAndTypeSearch.and(ACCOUNT_ID, listResourceByAccountAndTypeSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        listResourceByAccountAndTypeSearch.and(RESOURCE_TYPE, listResourceByAccountAndTypeSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
+        listResourceByAccountAndTypeSearch.and(RESOURCE_ID, listResourceByAccountAndTypeSearch.entity().getResourceId(), SearchCriteria.Op.NNULL);
+        listResourceByAccountAndTypeSearch.done();
+
         listAccountAndTypeSearch = createSearchBuilder();
         listAccountAndTypeSearch.and(ACCOUNT_ID, listAccountAndTypeSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         listAccountAndTypeSearch.and(RESOURCE_TYPE, listAccountAndTypeSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
@@ -97,5 +111,40 @@ public class ReservationDaoImpl extends GenericDaoBase<ReservationVO, Long> impl
             total += reservation.getReservedAmount();
         }
         return total;
+    }
+
+    @Override
+    public void setResourceId(Resource.ResourceType type, long resourceId) {
+        Object obj = CallContext.current().getContextParameter(String.format("%s-%s", ResourceReservation.class.getSimpleName(), type.getName()));
+        if (obj instanceof List) {
+            try {
+                List<Long> reservationIds = (List<Long>)obj;
+                for (Long reservationId : reservationIds) {
+                    ReservationVO reservation = findById(reservationId);
+                    if (reservation != null) {
+                        reservation.setResourceId(resourceId);
+                        persist(reservation);
+                    }
+                }
+            } catch (Exception e) {
+                logger.warn("Failed to persist reservation for resource type " + type.getName() + " for resource id " + resourceId, e);
+            }
+        }
+    }
+
+    @Override
+    public List<Long> getResourceIds(long accountId, Resource.ResourceType type) {
+        SearchCriteria<ReservationVO> sc = listResourceByAccountAndTypeSearch.create();
+        sc.setParameters(ACCOUNT_ID, accountId);
+        sc.setParameters(RESOURCE_TYPE, type);
+        return listBy(sc).stream().map(ReservationVO::getResourceId).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ReservationVO> getReservationsForAccount(long accountId, Resource.ResourceType type) {
+        SearchCriteria<ReservationVO> sc = listResourceByAccountAndTypeSearch.create();
+        sc.setParameters(ACCOUNT_ID, accountId);
+        sc.setParameters(RESOURCE_TYPE, type);
+        return listBy(sc);
     }
 }
