@@ -23,6 +23,7 @@ from marvin.lib.base import (Account,
                              Domain,
                              Volume,
                              ServiceOffering,
+                             Tag,
                              DiskOffering,
                              VirtualMachine)
 from marvin.lib.common import (get_domain, list_accounts,
@@ -113,6 +114,8 @@ class TestListVolumes(cloudstackTestCase):
         )
         cls._cleanup.append(cls.virtual_machine)
 
+        Tag.create(cls.apiclient, cls.vol_1.id, "Volume", {"abc": "xyz"})
+
         cls.vol_2 = Volume.create(cls.apiclient,
                                   cls.services["volume"],
                                   zoneid=cls.zone.id,
@@ -144,9 +147,8 @@ class TestListVolumes(cloudstackTestCase):
             account=self.account.name,
             domainid=self.account.domainid
         )
-        self.assertEqual(
+        self.assertTrue(
             isinstance(list_volume_response, list),
-            True,
             "List Volume response is not a valid list"
         )
         self.assertEqual(
@@ -162,9 +164,8 @@ class TestListVolumes(cloudstackTestCase):
             domainid=self.child_account.domainid
         )
 
-        self.assertEqual(
+        self.assertTrue(
             isinstance(list_volume_response, list),
-            True,
             "List Volume response is not a valid list"
         )
         self.assertEqual(
@@ -184,9 +185,8 @@ class TestListVolumes(cloudstackTestCase):
             domainid=self.account.domainid,
             diskofferingid=self.disk_offering.id
         )
-        self.assertEqual(
+        self.assertTrue(
             isinstance(list_volume_response, list),
-            True,
             "List Volume response is not a valid list"
         )
         self.assertEqual(
@@ -204,9 +204,8 @@ class TestListVolumes(cloudstackTestCase):
             zoneid=self.zone.id,
             id=self.vol_1.id
         )
-        self.assertEqual(
+        self.assertTrue(
             isinstance(list_volume_response, list),
-            True,
             "List Volume response is not a valid list"
         )
         self.assertEqual(
@@ -229,9 +228,8 @@ class TestListVolumes(cloudstackTestCase):
             zoneid=self.zone.id,
             ids=[self.vol_1.id, self.vol_2.id, self.vol_3.id]
         )
-        self.assertEqual(
+        self.assertTrue(
             isinstance(list_volume_response, list),
-            True,
             "List Volume response is not a valid list"
         )
         self.assertEqual(
@@ -254,9 +252,8 @@ class TestListVolumes(cloudstackTestCase):
             isrecursive=True,
             domainid=self.account.domainid
         )
-        self.assertEqual(
+        self.assertTrue(
             isinstance(list_volume_response, list),
-            True,
             "List Volume response is not a valid list"
         )
         self.assertEqual(
@@ -271,9 +268,8 @@ class TestListVolumes(cloudstackTestCase):
             isrecursive=False,
             domainid=self.account.domainid
         )
-        self.assertEqual(
+        self.assertTrue(
             isinstance(list_volume_response, list),
-            True,
             "List Volume response is not a valid list"
         )
         self.assertEqual(
@@ -291,9 +287,8 @@ class TestListVolumes(cloudstackTestCase):
             zoneid=self.zone.id,
             keyword=self.services["volume"]["diskname"]
         )
-        self.assertEqual(
+        self.assertTrue(
             isinstance(list_volume_response, list),
-            True,
             "List Volume response is not a valid list"
         )
         self.assertEqual(
@@ -316,9 +311,8 @@ class TestListVolumes(cloudstackTestCase):
             zoneid=self.zone.id,
             listall=True
         )
-        self.assertEqual(
+        self.assertTrue(
             isinstance(list_volume_response, list),
-            True,
             "List Volume response is not a valid list"
         )
         self.assertEqual(
@@ -332,9 +326,8 @@ class TestListVolumes(cloudstackTestCase):
             zoneid=self.zone.id,
             listall=False
         )
-        self.assertEqual(
+        self.assertTrue(
             isinstance(list_volume_response, list),
-            True,
             "List Volume response is not a valid list"
         )
         self.assertEqual(
@@ -370,9 +363,8 @@ class TestListVolumes(cloudstackTestCase):
             zoneid=self.zone.id,
             name=self.vol_1.name
         )
-        self.assertEqual(
+        self.assertTrue(
             isinstance(list_volume_response, list),
-            True,
             "List Volume response is not a valid list"
         )
         self.assertEqual(
@@ -401,9 +393,8 @@ class TestListVolumes(cloudstackTestCase):
             zoneid=self.zone.id,
             podid=self.vol_1.podid
         )
-        self.assertEqual(
+        self.assertTrue(
             isinstance(list_volume_response, list),
-            True,
             "List Volume response is not a valid list"
         )
         self.assertGreater(
@@ -423,9 +414,8 @@ class TestListVolumes(cloudstackTestCase):
             zoneid=self.zone.id,
             state="Ready"
         )
-        self.assertEqual(
+        self.assertTrue(
             isinstance(list_volume_response, list),
-            True,
             "List Volume response is not a valid list"
         )
         self.assertEqual(
@@ -441,9 +431,8 @@ class TestListVolumes(cloudstackTestCase):
             zoneid=self.zone.id,
             state="Allocated"
         )
-        self.assertEqual(
+        self.assertTrue(
             isinstance(list_volume_response, list),
-            True,
             "List Volume response is not a valid list"
         )
         self.assertEqual(
@@ -463,9 +452,8 @@ class TestListVolumes(cloudstackTestCase):
             zoneid=self.zone.id,
             storageid=self.vol_1.storageid
         )
-        self.assertEqual(
+        self.assertTrue(
             isinstance(list_volume_response, list),
-            True,
             "List Volume response is not a valid list"
         )
         self.assertGreaterEqual(
@@ -485,9 +473,8 @@ class TestListVolumes(cloudstackTestCase):
             zoneid=self.zone.id,
             type="DATADISK"
         )
-        self.assertEqual(
+        self.assertTrue(
             isinstance(list_volume_response, list),
-            True,
             "List Volume response is not a valid list"
         )
         self.assertEqual(
@@ -503,9 +490,8 @@ class TestListVolumes(cloudstackTestCase):
             zoneid=self.zone.id,
             type="ROOT"
         )
-        self.assertEqual(
+        self.assertTrue(
             isinstance(list_volume_response, list),
-            True,
             "List Volume response is not a valid list"
         )
         self.assertEqual(
@@ -525,9 +511,8 @@ class TestListVolumes(cloudstackTestCase):
             zoneid=self.zone.id,
             virtualmachineid=self.vol_1.virtualmachineid
         )
-        self.assertEqual(
+        self.assertTrue(
             isinstance(list_volume_response, list),
-            True,
             "List Volume response is not a valid list"
         )
         self.assertEqual(
@@ -546,9 +531,8 @@ class TestListVolumes(cloudstackTestCase):
             self.apiclient,
             zoneid=self.zones[0].id
         )
-        self.assertEqual(
+        self.assertTrue(
             isinstance(list_volume_response, list),
-            True,
             "List Volume response is not a valid list"
         )
         self.assertEqual(
@@ -565,16 +549,61 @@ class TestListVolumes(cloudstackTestCase):
             self.assertIsNone(list_volume_response, "List Volume response is not None")
 
     @attr(tags=["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
-    def test_16_list_volumes_no_filter(self):
+    def test_16_list_volumes_tags_filter(self):
+        """Test listing Volumes with tags filter
+        """
+        list_volume_response = Volume.list(
+            self.apiclient,
+            tags=[{"key": "abc", "value": "xyz"}]
+        )
+
+        self.assertTrue(
+            isinstance(list_volume_response, list),
+            "List Volume response is not a valid list"
+        )
+        self.assertEqual(
+            len(list_volume_response),
+            1,
+            "ListVolumes response expected 1 or more Volumes, received %s" % len(list_volume_response)
+        )
+        self.assertEqual(
+            list_volume_response[0].id,
+            self.vol_1.id,
+            "ListVolumes response expected Volume with id %s, received %s" % (self.vol_1.id, list_volume_response[0].id)
+        )
+        self.assertEqual(
+            list_volume_response[0].tags[0]["key"],
+            "abc",
+            "ListVolumes response expected Volume with tag key abc, received %s" % list_volume_response[0].tags[0]["key"]
+        )
+        self.assertEqual(
+            list_volume_response[0].tags[0]["value"],
+            "xyz",
+            "ListVolumes response expected Volume with tag value xyz, received %s" % list_volume_response[0].tags[0]["value"]
+        )
+
+        list_volume_response = Volume.list(
+            self.apiclient,
+            tags=[{"key": "abc", "value": "xyz1"}]
+        )
+        self.assertIsNone(list_volume_response, "List Volume response is not None")
+        with self.assertRaises(Exception):
+            list_volume_response = Volume.list(
+                self.apiclient,
+                tags=[{"key": None, "value": None}]
+            )
+
+
+    @attr(tags=["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
+    def test_17_list_volumes_no_filter(self):
         """Test listing Volumes with no filter
         """
         list_volume_response = Volume.list(
             self.apiclient,
             zoneid=self.zone.id
         )
-        self.assertEqual(
+        self.assertTrue(
             isinstance(list_volume_response, list),
-            True,
             "List Volume response is not a valid list"
         )
         self.assertGreaterEqual(
