@@ -106,7 +106,7 @@ public class SearchCriteria<K> {
             for (Map.Entry<String, JoinBuilder<SearchBase<?, ?, ?>>> entry : sb._joins.entrySet()) {
                 JoinBuilder<SearchBase<?, ?, ?>> value = entry.getValue();
                 _joins.put(entry.getKey(),
-                    new JoinBuilder<SearchCriteria<?>>(entry.getKey(), value.getT().create(), value.getFirstAttribute(), value.getSecondAttribute(), value.getType()));
+                    new JoinBuilder<SearchCriteria<?>>(entry.getKey(), value.getT().create(), value.getFirstAttributes(), value.getSecondAttribute(), value.getType(), value.getCondition()));
             }
         }
         _selects = sb._selects;

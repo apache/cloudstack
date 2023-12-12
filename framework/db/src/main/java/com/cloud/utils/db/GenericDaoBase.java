@@ -1288,7 +1288,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         }
 
         for (JoinBuilder<SearchCriteria<?>> join : joins) {
-            String joinTableName = join.getSecondAttribute().table;
+            String joinTableName = join.getSecondAttribute()[0].table;
             String joinTableAlias = StringUtils.isNotEmpty(join.getName()) ? join.getName() : findNextJoinTableName(joinTableName, joinedTableNames);
             StringBuilder onClause = new StringBuilder();
             onClause.append(" ")
@@ -1298,19 +1298,32 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             if (!joinTableAlias.equals(joinTableName)) {
                 onClause.append(" ").append(joinTableAlias);
             }
-            onClause.append(" ON ")
-            .append(join.getFirstAttribute().table)
-            .append(".")
-            .append(join.getFirstAttribute().columnName)
-            .append("=");
-            if(!joinTableAlias.equals(joinTableName)) {
-                onClause.append(joinTableAlias);
-            } else {
-                onClause.append(joinTableName);
+            onClause.append(" ON ");
+            for (int i = 0; i < join.getFirstAttributes().length; i++) {
+                if (i > 0) {
+                    onClause.append(join.getCondition().getName());
+                }
+                if (join.getFirstAttributes()[i].getValue() != null) {
+                    onClause.append(join.getFirstAttributes()[i].getValueToSql());
+                } else {
+                    onClause.append(join.getFirstAttributes()[i].table)
+                    .append(".")
+                    .append(join.getFirstAttributes()[i].columnName);
+                }
+                onClause.append("=");
+                if (join.getSecondAttribute()[i].getValue() != null) {
+                    onClause.append(join.getSecondAttribute()[i].getValueToSql());
+                } else {
+                    if(!joinTableAlias.equals(joinTableName)) {
+                        onClause.append(joinTableAlias);
+                    } else {
+                        onClause.append(joinTableName);
+                    }
+                    onClause.append(".")
+                    .append(join.getSecondAttribute()[i].columnName);
+                }
             }
-            onClause.append(".")
-            .append(join.getSecondAttribute().columnName)
-            .append(" ");
+            onClause.append(" ");
             str.insert(fromIndex, onClause);
             String whereClause = join.getT().getWhereClause(joinTableAlias);
             if (StringUtils.isNotEmpty(whereClause)) {

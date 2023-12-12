@@ -2480,7 +2480,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             serviceOfferingSearch.or("serviceOfferingSearchNulltype", serviceOfferingSearch.entity().isSystemUse(), SearchCriteria.Op.NULL);
             serviceOfferingSearch.cp();
 
-            vmSearch.join("vmSearch", "serviceOfferingSearch", serviceOfferingSearch, serviceOfferingSearch.entity().getId(), vmSearch.entity().getServiceOfferingId(), JoinBuilder.JoinType.LEFT);
+            vmSearch.join("vmSearch", "serviceOfferingSearch", serviceOfferingSearch, JoinBuilder.JoinType.LEFT, null, serviceOfferingSearch.entity().getId(), vmSearch.entity().getServiceOfferingId());
 
             volumeSearchBuilder.join("vmSearch", vmSearch, vmSearch.entity().getId(), volumeSearchBuilder.entity().getInstanceId(), JoinBuilder.JoinType.LEFT);
 
@@ -3339,6 +3339,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         diskOfferingSearch.select(null, Func.DISTINCT, diskOfferingSearch.entity().getId()); // select distinct
 
         diskOfferingSearch.and("computeOnly", diskOfferingSearch.entity().isComputeOnly(), Op.EQ);
+        diskOfferingSearch.and("activeState", diskOfferingSearch.entity().getState(), Op.EQ);
 
         // Keeping this logic consistent with domain specific zones
         // if a domainId is provided, we just return the disk offering
@@ -3348,10 +3349,11 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 // check if the user's domain == do's domain || user's domain is
                 // a child of so's domain for non-root users
                 SearchBuilder<DiskOfferingDetailVO> domainDetailsSearch = _diskOfferingDetailsDao.createSearchBuilder();
-                domainDetailsSearch.and("name", domainDetailsSearch.entity().getName(), Op.EQ);
                 domainDetailsSearch.and("domainId", domainDetailsSearch.entity().getValue(), Op.EQ);
 
-                diskOfferingSearch.join("domainDetailsSearch", domainDetailsSearch, diskOfferingSearch.entity().getId(), domainDetailsSearch.entity().getResourceId(), JoinBuilder.JoinType.LEFT);
+                diskOfferingSearch.join("domainDetailsSearch", domainDetailsSearch, JoinBuilder.JoinType.LEFT, JoinBuilder.JoinCondition.AND,
+                        diskOfferingSearch.entity().getId(), domainDetailsSearch.entity().getResourceId(),
+                        domainDetailsSearch.entity().getName(), diskOfferingSearch.entity().setString("domainid"));
 
                 if (!isRootAdmin) {
                     diskOfferingSearch.and("displayOffering", diskOfferingSearch.entity().getDisplayOffering(), Op.EQ);
@@ -3359,8 +3361,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
                 SearchCriteria<DiskOfferingVO> sc = diskOfferingSearch.create();
                 sc.setParameters("computeOnly", false);
+                sc.setParameters("activeState", DiskOffering.State.Active);
 
-                sc.setJoinParameters("domainDetailsSearch", "name", "domainid");
                 sc.setJoinParameters("domainDetailsSearch", "domainId", domainId);
 
                 Pair<List<DiskOfferingVO>, Integer> uniquePairs = _diskOfferingDao.searchAndCount(sc, searchFilter);
@@ -3409,14 +3411,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (zoneId != null) {
             SearchBuilder<DiskOfferingDetailVO> zoneDetailSearch = _diskOfferingDetailsDao.createSearchBuilder();
-            zoneDetailSearch.and().op("name", zoneDetailSearch.entity().getName(), Op.EQ);
-            zoneDetailSearch.or("nameNull", zoneDetailSearch.entity().getName(), Op.NULL).cp();
-
             zoneDetailSearch.and().op("zoneId", zoneDetailSearch.entity().getValue(), Op.EQ);
-            zoneDetailSearch.or("zoneIdNull", zoneDetailSearch.entity().getValue(), Op.NULL);
+            zoneDetailSearch.or("zoneIdNull", zoneDetailSearch.entity().getId(), Op.NULL);
             zoneDetailSearch.cp();
 
-            diskOfferingSearch.join("zoneDetailSearch", zoneDetailSearch, diskOfferingSearch.entity().getId(), zoneDetailSearch.entity().getResourceId(), JoinBuilder.JoinType.LEFT);
+            diskOfferingSearch.join("zoneDetailSearch", zoneDetailSearch, JoinBuilder.JoinType.LEFT, JoinBuilder.JoinCondition.AND,
+                    diskOfferingSearch.entity().getId(), zoneDetailSearch.entity().getResourceId(),
+                    zoneDetailSearch.entity().getName(), diskOfferingSearch.entity().setString("zoneid"));
         }
 
         DiskOffering currentDiskOffering = null;
@@ -3436,24 +3437,22 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             diskOfferingSearch.and("diskSizeStrictness", diskOfferingSearch.entity().getDiskSizeStrictness(), Op.EQ);
         }
 
-        // Filter offerings that are not associated with caller's domain
-        // Fetch the offering ids from the details table since theres no smart way to filter them in the join ... yet!
         account = accountMgr.finalizeOwner(account, accountName, domainId, projectId);
         if (!Account.Type.ADMIN.equals(account.getType())) {
             SearchBuilder<DiskOfferingDetailVO> domainDetailsSearch = _diskOfferingDetailsDao.createSearchBuilder();
-            domainDetailsSearch.and().op("name", domainDetailsSearch.entity().getName(), Op.EQ);
-            domainDetailsSearch.or("nameNull", domainDetailsSearch.entity().getName(), Op.NULL);
-            domainDetailsSearch.cp();
-            domainDetailsSearch.and().op("valueIn", domainDetailsSearch.entity().getValue(), Op.IN);
-            domainDetailsSearch.or("valueNull", domainDetailsSearch.entity().getValue(), Op.NULL);
+            domainDetailsSearch.and().op("domainIdIN", domainDetailsSearch.entity().getValue(), Op.IN);
+            domainDetailsSearch.or("domainIdNull", domainDetailsSearch.entity().getId(), Op.NULL);
             domainDetailsSearch.cp();
 
-            diskOfferingSearch.join("domainDetailsSearch", domainDetailsSearch, diskOfferingSearch.entity().getId(), domainDetailsSearch.entity().getResourceId(), JoinBuilder.JoinType.LEFT);
+            diskOfferingSearch.join("domainDetailsSearch", domainDetailsSearch, JoinBuilder.JoinType.LEFT, JoinBuilder.JoinCondition.AND,
+                    diskOfferingSearch.entity().getId(), domainDetailsSearch.entity().getResourceId(),
+                    domainDetailsSearch.entity().getName(), diskOfferingSearch.entity().setString("domainid"));
         }
 
         SearchCriteria<DiskOfferingVO> sc = diskOfferingSearch.create();
 
         sc.setParameters("computeOnly", false);
+        sc.setParameters("activeState", DiskOffering.State.Active);
 
         if (keyword != null) {
             sc.setParameters("keywordDisplayText", "%" + keyword + "%");
@@ -3482,7 +3481,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (zoneId != null) {
-            sc.setJoinParameters("zoneDetailSearch", "name", "zoneid");
             sc.setJoinParameters("zoneDetailSearch", "zoneId", zoneId);
 
             DataCenterJoinVO zone = _dcJoinDao.findById(zoneId);
@@ -3505,8 +3503,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             Domain callerDomain = _domainDao.findById(account.getDomainId());
             List<Long> domainIds = findRelatedDomainIds(callerDomain, isRecursive);
 
-            sc.setJoinParameters("domainDetailsSearch", "name", "domainid");
-            sc.setJoinParameters("domainDetailsSearch", "valueIn", domainIds.toArray());
+            sc.setJoinParameters("domainDetailsSearch", "domainIdIN", domainIds.toArray());
         }
 
         Pair<List<DiskOfferingVO>, Integer> uniquePairs = _diskOfferingDao.searchAndCount(sc, searchFilter);
@@ -3671,13 +3668,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                                 )
                             )
                      */
+                    // TODO: Fix this
                     SearchBuilder<ServiceOfferingDetailsVO> maxComputeDetailsSearch = _srvOfferingDetailsDao.createSearchBuilder();
-                    maxComputeDetailsSearch.and().op("name", maxComputeDetailsSearch.entity().getName(), Op.EQ);
-                    maxComputeDetailsSearch.or("idNull", maxComputeDetailsSearch.entity().getId(), Op.NULL);
-                    maxComputeDetailsSearch.cp();
 
-                    serviceOfferingSearch.join("maxComputeDetailsSearch", maxComputeDetailsSearch,
-                            serviceOfferingSearch.entity().getId(), maxComputeDetailsSearch.entity().getResourceId(), JoinBuilder.JoinType.LEFT);
+                    serviceOfferingSearch.join("maxComputeDetailsSearch", maxComputeDetailsSearch, JoinBuilder.JoinType.LEFT, JoinBuilder.JoinCondition.AND,
+                            serviceOfferingSearch.entity().getId(), maxComputeDetailsSearch.entity().getResourceId(),
+                            maxComputeDetailsSearch.entity().getName(), serviceOfferingSearch.entity().setString("maxcpunumber"));
 
                     serviceOfferingSearch.and().op("vmCpu", serviceOfferingSearch.entity().getCpu(), Op.GTEQ);
                     serviceOfferingSearch.or().op("vmCpuNull", serviceOfferingSearch.entity().getCpu(), Op.NULL);
@@ -3701,12 +3697,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                         )
                      */
                     SearchBuilder<ServiceOfferingDetailsVO> maxMemoryDetailsSearch = _srvOfferingDetailsDao.createSearchBuilder();
-                    maxMemoryDetailsSearch.and().op("name", maxMemoryDetailsSearch.entity().getName(), Op.EQ);
-                    maxMemoryDetailsSearch.or("idNull", maxMemoryDetailsSearch.entity().getId(), Op.NULL);
-                    maxMemoryDetailsSearch.cp();
 
-                    serviceOfferingSearch.join("maxMemoryDetailsSearch", maxMemoryDetailsSearch,
-                            serviceOfferingSearch.entity().getId(), maxMemoryDetailsSearch.entity().getResourceId(), JoinBuilder.JoinType.LEFT);
+                    serviceOfferingSearch.join("maxMemoryDetailsSearch", maxMemoryDetailsSearch, JoinBuilder.JoinType.LEFT, JoinBuilder.JoinCondition.AND,
+                            serviceOfferingSearch.entity().getId(), maxMemoryDetailsSearch.entity().getResourceId(),
+                            maxMemoryDetailsSearch.entity().getName(), serviceOfferingSearch.entity().setString("maxmemory"));
 
                     serviceOfferingSearch.and().op("vmMemory", serviceOfferingSearch.entity().getRamSize(), Op.GTEQ);
                     serviceOfferingSearch.or().op("vmMemoryNull", serviceOfferingSearch.entity().getRamSize(), Op.NULL);
@@ -3736,9 +3730,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
             if (domainId != null && accountName == null) {
                 SearchBuilder<ServiceOfferingDetailsVO> srvOffrDomainDetailSearch = _srvOfferingDetailsDao.createSearchBuilder();
-                srvOffrDomainDetailSearch.and("name", srvOffrDomainDetailSearch.entity().getName(), Op.EQ);
-                srvOffrDomainDetailSearch.and("value", srvOffrDomainDetailSearch.entity().getValue(), Op.EQ);
-                serviceOfferingSearch.join("domainDetailSearch", srvOffrDomainDetailSearch, serviceOfferingSearch.entity().getId(), srvOffrDomainDetailSearch.entity().getResourceId(), JoinBuilder.JoinType.LEFT);
+                srvOffrDomainDetailSearch.and("domainId", srvOffrDomainDetailSearch.entity().getValue(), Op.EQ);
+                serviceOfferingSearch.join("domainDetailSearch", srvOffrDomainDetailSearch, JoinBuilder.JoinType.LEFT, JoinBuilder.JoinCondition.AND,
+                        serviceOfferingSearch.entity().getId(), srvOffrDomainDetailSearch.entity().getResourceId(),
+                        srvOffrDomainDetailSearch.entity().getName(), serviceOfferingSearch.entity().setString("domainid"));
             }
         }
 
@@ -3763,17 +3758,18 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (vmTypeStr != null) {
-            serviceOfferingSearch.and("vmType", serviceOfferingSearch.entity().getSystemVmType(), SearchCriteria.Op.EQ);
+            serviceOfferingSearch.and("svmType", serviceOfferingSearch.entity().getSystemVmType(), SearchCriteria.Op.EQ);
         }
         DataCenterJoinVO zone = null;
         if (zoneId != null) {
             SearchBuilder<ServiceOfferingDetailsVO> srvOffrZoneDetailSearch = _srvOfferingDetailsDao.createSearchBuilder();
-            srvOffrZoneDetailSearch.and().op("name", srvOffrZoneDetailSearch.entity().getName(), Op.EQ);
-            srvOffrZoneDetailSearch.or("nameNull", srvOffrZoneDetailSearch.entity().getName(), Op.NULL).cp();
-            srvOffrZoneDetailSearch.and().op("value", srvOffrZoneDetailSearch.entity().getValue(), Op.EQ);
-            srvOffrZoneDetailSearch.and().or("valueNull", srvOffrZoneDetailSearch.entity().getValue(), Op.NULL);
+            srvOffrZoneDetailSearch.and().op("zoneId", srvOffrZoneDetailSearch.entity().getValue(), Op.EQ);
+            srvOffrZoneDetailSearch.or("idNull", srvOffrZoneDetailSearch.entity().getId(), Op.NULL);
             srvOffrZoneDetailSearch.cp();
-            serviceOfferingSearch.join("ZoneDetailSearch", srvOffrZoneDetailSearch, serviceOfferingSearch.entity().getId(), srvOffrZoneDetailSearch.entity().getResourceId(), JoinBuilder.JoinType.LEFT);
+
+            serviceOfferingSearch.join("ZoneDetailSearch", srvOffrZoneDetailSearch, JoinBuilder.JoinType.LEFT, JoinBuilder.JoinCondition.AND,
+                    serviceOfferingSearch.entity().getId(), srvOffrZoneDetailSearch.entity().getResourceId(),
+                    srvOffrZoneDetailSearch.entity().getName(), serviceOfferingSearch.entity().setString("zoneid"));
             zone = _dcJoinDao.findById(zoneId);
         }
 
@@ -3799,70 +3795,85 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             SearchBuilder<ServiceOfferingDetailsVO> maxComputeDetailsSearch = (SearchBuilder<ServiceOfferingDetailsVO>) serviceOfferingSearch.getJoinSB("maxComputeDetailsSearch");
             if (maxComputeDetailsSearch == null) {
                 maxComputeDetailsSearch = _srvOfferingDetailsDao.createSearchBuilder();
-                maxComputeDetailsSearch.and().op("name", maxComputeDetailsSearch.entity().getName(), Op.EQ);
-                maxComputeDetailsSearch.or("idNull", maxComputeDetailsSearch.entity().getId(), Op.NULL);
-                maxComputeDetailsSearch.cp();
-                serviceOfferingSearch.join("maxComputeDetailsSearch", maxComputeDetailsSearch,
-                        serviceOfferingSearch.entity().getId(), maxComputeDetailsSearch.entity().getResourceId(), JoinBuilder.JoinType.LEFT);
+                serviceOfferingSearch.join("maxComputeDetailsSearch", maxComputeDetailsSearch, JoinBuilder.JoinType.LEFT, JoinBuilder.JoinCondition.AND,
+                        serviceOfferingSearch.entity().getId(), maxComputeDetailsSearch.entity().getResourceId(),
+                        maxComputeDetailsSearch.entity().getName(), serviceOfferingSearch.entity().setString("maxcpunumber"));
             }
 
             SearchBuilder<ServiceOfferingDetailsVO> minComputeDetailsSearch = _srvOfferingDetailsDao.createSearchBuilder();
-            minComputeDetailsSearch.and().op("name", minComputeDetailsSearch.entity().getName(), Op.EQ);
-            minComputeDetailsSearch.or("idNull", minComputeDetailsSearch.entity().getId(), Op.NULL);
-            minComputeDetailsSearch.cp();
 
-            serviceOfferingSearch.join("minComputeDetailsSearch", minComputeDetailsSearch,
-                    serviceOfferingSearch.entity().getId(), minComputeDetailsSearch.entity().getResourceId(), JoinBuilder.JoinType.LEFT);
+            serviceOfferingSearch.join("minComputeDetailsSearch", minComputeDetailsSearch, JoinBuilder.JoinType.LEFT, JoinBuilder.JoinCondition.AND,
+                    serviceOfferingSearch.entity().getId(), minComputeDetailsSearch.entity().getResourceId(),
+                    minComputeDetailsSearch.entity().getName(), serviceOfferingSearch.entity().setString("mincpunumber"));
 
             /*
                 (min_cpu IS NULL AND cpu IS NULL AND max_cpu IS NULL)
                 OR (cpu = X)
                 OR (min_cpu <= X AND max_cpu >= X)
+
+                AND (
+                    (min_compute_details.value is NULL AND cpu is NULL)
+                    OR (min_compute_details.value is NULL AND cpu >= X)
+                    OR min_compute_details.value >= X
+                    OR (
+                        ((min_compute_details.value is NULL AND cpu <= X) OR min_compute_details.value <= X)
+                        AND ((max_compute_details.value is NULL AND cpu >= X) OR max_compute_details.value >= X)
+                    )
+                )
              */
             serviceOfferingSearch.and().op().op("minComputeDetailsSearch", "cpuConstraintMinComputeNull", minComputeDetailsSearch.entity().getValue(), Op.NULL);
-            serviceOfferingSearch.and("maxComputeDetailsSearch", "cpuConstraintMaxComputeNull", maxComputeDetailsSearch.entity().getValue(), Op.NULL);
             serviceOfferingSearch.and("cpuConstraintNull", serviceOfferingSearch.entity().getCpu(), Op.NULL).cp();
 
-            serviceOfferingSearch.or("cpuConstraintEQ", serviceOfferingSearch.entity().getCpu(), Op.EQ);
+            serviceOfferingSearch.or().op("minComputeDetailsSearch", "cpuConstraintMinComputeNull", minComputeDetailsSearch.entity().getValue(), Op.NULL);
+            serviceOfferingSearch.and("cpuNumber", serviceOfferingSearch.entity().getCpu(), Op.GTEQ).cp();
+            serviceOfferingSearch.or("cpuNumber", serviceOfferingSearch.entity().getCpu(), Op.GTEQ);
 
-            serviceOfferingSearch.or().op("minComputeDetailsSearch", "cpuConstraintMinComputeLTEQ", minComputeDetailsSearch.entity().getValue(), Op.LTEQ);
-            serviceOfferingSearch.and("maxComputeDetailsSearch", "cpuConstraintMaxComputeGTEQ", maxComputeDetailsSearch.entity().getValue(), Op.GTEQ).cp();
-            serviceOfferingSearch.cp();
+            serviceOfferingSearch.or().op().op();
+            serviceOfferingSearch.op("minComputeDetailsSearch", "cpuConstraintMinComputeNull", minComputeDetailsSearch.entity().getValue(), Op.NULL);
+            serviceOfferingSearch.and("cpuNumber", serviceOfferingSearch.entity().getCpu(), Op.LTEQ).cp();
+            serviceOfferingSearch.or("minComputeDetailsSearch", "cpuNumber", minComputeDetailsSearch.entity().getValue(), Op.LTEQ).cp();
+            serviceOfferingSearch.and().op().op("maxComputeDetailsSearch", "cpuConstraintMaxComputeNull", maxComputeDetailsSearch.entity().getValue(), Op.NULL);
+            serviceOfferingSearch.and("cpuNumber", serviceOfferingSearch.entity().getCpu(), Op.GTEQ).cp();
+            serviceOfferingSearch.or("maxComputeDetailsSearch", "cpuNumber", maxComputeDetailsSearch.entity().getValue(), Op.GTEQ).cp();
+            serviceOfferingSearch.cp().cp();
         }
 
         if (memory != null) {
             SearchBuilder<ServiceOfferingDetailsVO> maxMemoryDetailsSearch = (SearchBuilder<ServiceOfferingDetailsVO>) serviceOfferingSearch.getJoinSB("maxMemoryDetailsSearch");
             if (maxMemoryDetailsSearch == null) {
                 maxMemoryDetailsSearch = _srvOfferingDetailsDao.createSearchBuilder();
-                maxMemoryDetailsSearch.and().op("name", maxMemoryDetailsSearch.entity().getName(), Op.EQ);
-                maxMemoryDetailsSearch.or("idNull", maxMemoryDetailsSearch.entity().getId(), Op.NULL);
-                maxMemoryDetailsSearch.cp();
-                serviceOfferingSearch.join("maxMemoryDetailsSearch", maxMemoryDetailsSearch,
-                        serviceOfferingSearch.entity().getId(), maxMemoryDetailsSearch.entity().getResourceId(), JoinBuilder.JoinType.LEFT);
+                serviceOfferingSearch.join("maxMemoryDetailsSearch", maxMemoryDetailsSearch, JoinBuilder.JoinType.LEFT, JoinBuilder.JoinCondition.AND,
+                        serviceOfferingSearch.entity().getId(), maxMemoryDetailsSearch.entity().getResourceId(),
+                        maxMemoryDetailsSearch.entity().getName(), serviceOfferingSearch.entity().setString("maxmemory"));
             }
 
             SearchBuilder<ServiceOfferingDetailsVO> minMemoryDetailsSearch = _srvOfferingDetailsDao.createSearchBuilder();
-            minMemoryDetailsSearch.and().op("name", minMemoryDetailsSearch.entity().getName(), Op.EQ);
-            minMemoryDetailsSearch.or("idNull", minMemoryDetailsSearch.entity().getId(), Op.NULL);
-            minMemoryDetailsSearch.cp();
 
-            serviceOfferingSearch.join("minMemoryDetailsSearch", minMemoryDetailsSearch,
-                    serviceOfferingSearch.entity().getId(), minMemoryDetailsSearch.entity().getResourceId(), JoinBuilder.JoinType.LEFT);
+            serviceOfferingSearch.join("minMemoryDetailsSearch", minMemoryDetailsSearch, JoinBuilder.JoinType.LEFT, JoinBuilder.JoinCondition.AND,
+                    serviceOfferingSearch.entity().getId(), minMemoryDetailsSearch.entity().getResourceId(),
+                    minMemoryDetailsSearch.entity().getName(), serviceOfferingSearch.entity().setString("minmemory"));
 
             /*
                 (min_ram_size IS NULL AND ram_size IS NULL AND max_ram_size IS NULL)
                 OR (ram_size = X)
                 OR (min_ram_size <= X AND max_ram_size >= X)
              */
+
             serviceOfferingSearch.and().op().op("minMemoryDetailsSearch", "memoryConstraintMinMemoryNull", minMemoryDetailsSearch.entity().getValue(), Op.NULL);
-            serviceOfferingSearch.and("maxMemoryDetailsSearch", "memoryConstraintMaxMemoryNull", maxMemoryDetailsSearch.entity().getValue(), Op.NULL);
             serviceOfferingSearch.and("memoryConstraintNull", serviceOfferingSearch.entity().getRamSize(), Op.NULL).cp();
 
-            serviceOfferingSearch.or("memoryConstraintEQ", serviceOfferingSearch.entity().getRamSize(), Op.EQ);
+            serviceOfferingSearch.or().op("minMemoryDetailsSearch", "memoryConstraintMinMemoryNull", minMemoryDetailsSearch.entity().getValue(), Op.NULL);
+            serviceOfferingSearch.and("memory", serviceOfferingSearch.entity().getRamSize(), Op.GTEQ).cp();
+            serviceOfferingSearch.or("memory", serviceOfferingSearch.entity().getRamSize(), Op.GTEQ);
 
-            serviceOfferingSearch.or().op("minMemoryDetailsSearch", "memoryConstraintMinMemoryLTEQ", minMemoryDetailsSearch.entity().getValue(), Op.LTEQ);
-            serviceOfferingSearch.and("maxMemoryDetailsSearch", "memoryConstraintMaxMemoryGTEQ", maxMemoryDetailsSearch.entity().getValue(), Op.GTEQ).cp();
-            serviceOfferingSearch.cp();
+            serviceOfferingSearch.or().op().op();
+            serviceOfferingSearch.op("minMemoryDetailsSearch", "memoryConstraintMinMemoryNull", minMemoryDetailsSearch.entity().getValue(), Op.NULL);
+            serviceOfferingSearch.and("memory", serviceOfferingSearch.entity().getRamSize(), Op.LTEQ).cp();
+            serviceOfferingSearch.or("minMemoryDetailsSearch", "memory", minMemoryDetailsSearch.entity().getValue(), Op.LTEQ).cp();
+            serviceOfferingSearch.and().op().op("maxMemoryDetailsSearch", "memoryConstraintMaxMemoryNull", maxMemoryDetailsSearch.entity().getValue(), Op.NULL);
+            serviceOfferingSearch.and("memory", serviceOfferingSearch.entity().getRamSize(), Op.GTEQ).cp();
+            serviceOfferingSearch.or("maxMemoryDetailsSearch", "memory", maxMemoryDetailsSearch.entity().getValue(), Op.GTEQ).cp();
+            serviceOfferingSearch.cp().cp();
         }
 
         if (cpuSpeed != null) {
@@ -3875,12 +3886,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         // Fetch the offering ids from the details table since theres no smart way to filter them in the join ... yet!
         if (owner.getType() != Account.Type.ADMIN) {
             SearchBuilder<ServiceOfferingDetailsVO> srvOffrDomainDetailSearch = _srvOfferingDetailsDao.createSearchBuilder();
-            srvOffrDomainDetailSearch.and().op("name", srvOffrDomainDetailSearch.entity().getName(), Op.EQ);
-            srvOffrDomainDetailSearch.or("nameNull", srvOffrDomainDetailSearch.entity().getName(), Op.NULL).cp();
-            srvOffrDomainDetailSearch.and().op("value", srvOffrDomainDetailSearch.entity().getValue(), Op.IN);
-            srvOffrDomainDetailSearch.or("value", srvOffrDomainDetailSearch.entity().getValue(), Op.NULL);
-            srvOffrDomainDetailSearch.cp().done();
-            serviceOfferingSearch.join("domainDetailSearchNormalUser", srvOffrDomainDetailSearch, serviceOfferingSearch.entity().getId(), srvOffrDomainDetailSearch.entity().getResourceId(), JoinBuilder.JoinType.LEFT);
+            srvOffrDomainDetailSearch.and().op("domainIdIN", srvOffrDomainDetailSearch.entity().getValue(), Op.IN);
+            srvOffrDomainDetailSearch.or("idNull", srvOffrDomainDetailSearch.entity().getValue(), Op.NULL);
+            srvOffrDomainDetailSearch.cp();
+            serviceOfferingSearch.join("domainDetailSearchNormalUser", srvOffrDomainDetailSearch, JoinBuilder.JoinType.LEFT, JoinBuilder.JoinCondition.AND,
+                    serviceOfferingSearch.entity().getId(), srvOffrDomainDetailSearch.entity().getResourceId(),
+                    srvOffrDomainDetailSearch.entity().getName(), serviceOfferingSearch.entity().setString("domainid"));
         }
 
         if (currentVmOffering != null) {
@@ -3933,7 +3944,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                     vmMemory = NumbersUtil.parseInt(details.get(ApiConstants.MEMORY), 0);
                 }
                 if (vmCpu != null && vmCpu > 0) {
-                    sc.setJoinParameters("maxComputeDetailsSearch", "name", "maxcpunumber");
                     sc.setParameters("vmCpu", vmCpu);
                     sc.setParameters("vmMaxComputeGTEQ", vmCpu);
                 }
@@ -3941,7 +3951,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                     sc.setParameters("speedGTEQ", vmSpeed);
                 }
                 if (vmMemory != null && vmMemory > 0) {
-                    sc.setJoinParameters("maxMemoryDetailsSearch", "name", "maxmemory");
                     sc.setParameters("vmMemory", vmMemory);
                     sc.setParameters("vmMaxMemoryGTEQ", vmMemory);
                 }
@@ -3951,8 +3960,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if ((!accountMgr.isNormalUser(caller.getId()) && !accountMgr.isDomainAdmin(caller.getId())) && caller.getType() != Account.Type.RESOURCE_DOMAIN_ADMIN) {
             if (domainId != null && accountName == null) {
-                sc.setParameters("domainDetailSearch", "name", "domainid");
-                sc.setParameters("domainDetailSearch", "value", domainId);
+                sc.setJoinParameters("domainDetailSearch", "domainId", domainId);
             }
         }
 
@@ -3980,14 +3988,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (vmTypeStr != null) {
-            sc.setParameters("vmType", vmTypeStr);
+            sc.setParameters("svmType", vmTypeStr);
         }
 
         useStorageType(sc, storageType);
 
         if (zoneId != null) {
-            sc.setJoinParameters("ZoneDetailSearch", "name", "zoneid");
-            sc.setJoinParameters("ZoneDetailSearch", "value", zoneId);
+            sc.setJoinParameters("ZoneDetailSearch", "zoneId", zoneId);
 
             if (DataCenter.Type.Edge.equals(zone.getType())) {
                 sc.setJoinParameters("diskOfferingSearch", "useLocalStorage", true);
@@ -3995,35 +4002,35 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (cpuNumber != null) {
-            sc.setJoinParameters("maxComputeDetailsSearch", "name", "maxcpunumber");
-            sc.setJoinParameters("minComputeDetailsSearch", "name", "mincpunumber");
-            sc.setParameters("cpuConstraintEQ", cpuNumber);
-            sc.setParameters("cpuConstraintMinComputeLTEQ", cpuNumber);
-            sc.setParameters("cpuConstraintMaxComputeGTEQ", cpuNumber);
+            /*
+            and("cpuConstraintMinComputeGTEQ", entity().getCpu(), Op.GTEQ).cp();
+            or("cpuConstraintGTEQ", entity().getCpu(), Op.GTEQ);
+
+            or().op().op();
+
+            and("cpuConstraintMinComputeLTEQ", entity().getCpu(), Op.LTEQ).cp();
+            or("minComputeDetailsSearch", "cpuConstraintMinComputeLTEQ", minComputeDetailsSearch.entity().getValue(), Op.LTEQ).cp();
+
+            and("cpuConstraintMaxComputeGTEQ", entity().getCpu(), Op.GTEQ).cp();
+            or("maxComputeDetailsSearch", "cpuConstraintMaxComputeGTEQ", maxComputeDetailsSearch.entity().getValue(), Op.GTEQ).cp();
+            cp().cp();
+             */
+            sc.setParameters("cpuNumber", cpuNumber);
         }
 
         if (memory != null) {
-            sc.setJoinParameters("maxMemoryDetailsSearch", "name", "maxmemory");
-            sc.setJoinParameters("minMemoryDetailsSearch", "name", "minmemory");
-            sc.setParameters("memoryConstraintEQ", memory);
-            sc.setParameters("memoryConstraintMinMemoryLTEQ", memory);
-            sc.setParameters("memoryConstraintMaxMemoryGTEQ", memory);
+            sc.setParameters("memory", memory);
         }
 
         if (cpuSpeed != null) {
             sc.setParameters("speedGTEQ", cpuSpeed);
         }
 
-        // Filter offerings that are not associated with caller's domain
-        // Fetch the offering ids from the details table since theres no smart way to filter them in the join ... yet!
         if (owner.getType() != Account.Type.ADMIN) {
             Domain callerDomain = _domainDao.findById(owner.getDomainId());
             List<Long> domainIds = findRelatedDomainIds(callerDomain, isRecursive);
 
-            List<Long> ids = _srvOfferingDetailsDao.findOfferingIdsByDomainIds(domainIds);
-
-            sc.setJoinParameters("domainDetailSearchNormalUser", "name", "domainid");
-            sc.setJoinParameters("domainDetailSearchNormalUser", "value", ids.toArray());
+            sc.setJoinParameters("domainDetailSearchNormalUser", "domainIdIN", domainIds.toArray());
         }
 
         if (currentVmOffering != null) {

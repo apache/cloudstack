@@ -251,10 +251,12 @@ public class GenericDaoBaseTest {
 
         joins.add(new JoinBuilder<>("", dbTestDao.createSearchCriteria(), tBc2, tAc1, JoinBuilder.JoinType.INNER));
         joins.add(new JoinBuilder<>("", dbTestDao.createSearchCriteria(), tCc3, tAc2, JoinBuilder.JoinType.INNER));
-        joins.add(new JoinBuilder<>("", dbTestDao.createSearchCriteria(), tDc4, tAc3, JoinBuilder.JoinType.INNER));
+        joins.add(new JoinBuilder<>("tableAlias", dbTestDao.createSearchCriteria(), tDc4, tAc3, JoinBuilder.JoinType.INNER));
         dbTestDao.addJoins(joinString, joins);
 
-        Assert.assertEquals(" INNER JOIN tableA ON tableB.column2=tableA.column1  INNER JOIN tableA tableA1 ON tableC.column3=tableA1.column2  INNER JOIN tableA tableA2 ON tableD.column4=tableA2.column3 ", joinString.toString());
+        Assert.assertEquals(" INNER JOIN tableA ON tableB.column2=tableA.column1 " +
+                " INNER JOIN tableA tableA1 ON tableC.column3=tableA1.column2 " +
+                " INNER JOIN tableA tableAlias ON tableD.column4=tableAlias.column3 ", joinString.toString());
     }
 
     @Test

@@ -211,7 +211,7 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
         assert builder._specifiedAttrs.size() == 1 : "You didn't select the attribute.";
         assert builder != this : "You can't add yourself, can you?  Really think about it!";
 
-        final JoinBuilder<SearchBase<?, ?, ?>> t = new JoinBuilder<SearchBase<?, ?, ?>>(name, builder, _specifiedAttrs.get(0), builder._specifiedAttrs.get(0), joinType);
+        final JoinBuilder<SearchBase<?, ?, ?>> t = new JoinBuilder<SearchBase<?, ?, ?>>(name, builder, new Attribute[]{_specifiedAttrs.get(0)}, new Attribute[]{builder._specifiedAttrs.get(0)}, joinType);
         if (_joins == null) {
             _joins = new HashMap<String, JoinBuilder<SearchBase<?, ?, ?>>>();
         }
@@ -223,16 +223,57 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
     }
 
 
+    public J join(final String name, final SearchBase<?, ?, ?> builder, final JoinBuilder.JoinType joinType, final
+            JoinBuilder.JoinCondition condition, final Object... joinFields) {
+        assert _entity != null : "SearchBuilder cannot be modified once it has been setup";
+        assert !_specifiedAttrs.isEmpty() : "You didn't select the attribute.";
+        assert builder._entity != null : "SearchBuilder cannot be modified once it has been setup";
+        assert !builder._specifiedAttrs.isEmpty() : "You didn't select the attribute.";
+        assert builder != this : "You can't add yourself, can you?  Really think about it!";
+        assert _specifiedAttrs.size() == builder._specifiedAttrs.size() : "You didn't select the same number of attributes.";
+
+        final JoinBuilder<SearchBase<?, ?, ?>> t = new JoinBuilder<>(name, builder, _specifiedAttrs.toArray(new Attribute[0]),
+                builder._specifiedAttrs.toArray(new Attribute[0]), joinType, condition);
+        if (_joins == null) {
+            _joins = new HashMap<String, JoinBuilder<SearchBase<?, ?, ?>>>();
+        }
+        _joins.put(name, t);
+
+        builder._specifiedAttrs.clear();
+        _specifiedAttrs.clear();
+        return (J)this;
+    }
+
+
+    /**
+     * This method is used to set alias for the table name when joining with another table.
+     * Allows to set alias for the table name which is further used to generate the condition for nested join.
+     * e.g. vmSearch.join("vmSearch", "serviceOfferingSearch", serviceOfferingSearch, serviceOfferingSearch.entity().getId(), vmSearch.entity().getServiceOfferingId(), JoinBuilder.JoinType.LEFT);
+     *
+     *  volumeSearchBuilder.join("vmSearch", vmSearch, vmSearch.entity().getId(), volumeSearchBuilder.entity().getInstanceId(), JoinBuilder.JoinType.LEFT);
+     *
+     *  In the above example, vmSearch is the alias for the table name vm_instance and the query generated is
+     *  FROM volume
+     *  LEFT JOIN vm_instance vmSearch ON vmSearch.id = volume.instance_id
+     *  LEFT JOIN service_offering serviceOfferingSearch ON serviceOfferingSearch.id = vmSearch.service_offering_id
+     */
     @SuppressWarnings("unchecked")
-    public J join(final String tableAliasName, final String name, final SearchBase<?, ?, ?> builder, final Object joinField1, final Object joinField2, final JoinBuilder.JoinType joinType) {
+    public J join(
+            final String tableAliasName, final String name, final SearchBase<?, ?, ?> builder,
+            final JoinBuilder.JoinType joinType, final JoinBuilder.JoinCondition condition, final Object... joinFields
+    ) {
         assert _entity != null : "SearchBuilder cannot be modified once it has been setup";
         assert _specifiedAttrs.size() == 1 : "You didn't select the attribute.";
         assert builder._entity != null : "SearchBuilder cannot be modified once it has been setup";
         assert builder._specifiedAttrs.size() == 1 : "You didn't select the attribute.";
         assert builder != this : "You can't add yourself, can you?  Really think about it!";
 
-        _specifiedAttrs.get(0).table = tableAliasName;
-        return join(name, builder, joinField1, joinField2, joinType);
+        for (final Attribute attr : _specifiedAttrs) {
+            if (attr.table != null) {
+                attr.table = tableAliasName;
+            }
+        }
+        return join(name, builder, joinType, condition, joinFields);
     }
 
     public SelectType getSelectType() {
@@ -242,6 +283,16 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
     protected void set(final String name) {
         final Attribute attr = _attrs.get(name);
         assert (attr != null) : "Searching for a field that's not there: " + name;
+        _specifiedAttrs.add(attr);
+    }
+
+    /*
+        Allows to set conditions in join where one entity is equivalent to a string or a long
+        e.g. join("vm", vmSearch, VmDetailVO.class, entity.getName(), "vm.id", SearchCriteria.Op.EQ);
+        will create a condition 'vm.name = "vm.id"'
+     */
+    protected void setAttr(final Object obj) {
+        final Attribute attr = new Attribute(obj);
         _specifiedAttrs.add(attr);
     }
 
@@ -531,6 +582,8 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
                     final String fieldName = Character.toLowerCase(name.charAt(2)) + name.substring(3);
                     set(fieldName);
                     return null;
+                } else if (name.equals("setLong") || name.equals("setString")) {
+                    setAttr(args[0]);
                 } else {
                     final Column ann = method.getAnnotation(Column.class);
                     if (ann != null) {
