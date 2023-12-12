@@ -31,20 +31,17 @@ import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
-import org.apache.cloudstack.utils.qemu.QemuImg;
-import org.apache.cloudstack.utils.qemu.QemuImgException;
-import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
+import org.libvirt.DomainBlockInfo;
 import org.libvirt.DomainInfo;
 import org.libvirt.LibvirtException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @ResourceWrapper(handles = GetRemoteVmsCommand.class)
 public final class LibvirtGetRemoteVmsCommandWrapper extends CommandWrapper<GetRemoteVmsCommand, Answer, LibvirtComputingResource> {
@@ -104,7 +101,7 @@ public final class LibvirtGetRemoteVmsCommandWrapper extends CommandWrapper<GetR
             }
             instance.setPowerState(getPowerState(libvirtComputingResource.getVmState(conn,domain.getName())));
             instance.setNics(getUnmanagedInstanceNics(parser.getInterfaces()));
-            instance.setDisks(getUnmanagedInstanceDisks(parser.getDisks(),libvirtComputingResource));
+            instance.setDisks(getUnmanagedInstanceDisks(parser.getDisks(),libvirtComputingResource, domain));
             instance.setVncPassword(parser.getVncPasswd() + "aaaaaaaaaaaaaa"); // Suffix back extra characters for DB compatibility
 
             return instance;
@@ -142,7 +139,9 @@ public final class LibvirtGetRemoteVmsCommandWrapper extends CommandWrapper<GetR
         return nics;
     }
 
-    private List<UnmanagedInstanceTO.Disk> getUnmanagedInstanceDisks(List<LibvirtVMDef.DiskDef> disksInfo, LibvirtComputingResource libvirtComputingResource){
+    private List<UnmanagedInstanceTO.Disk> getUnmanagedInstanceDisks(List<LibvirtVMDef.DiskDef> disksInfo,
+                                                                     LibvirtComputingResource libvirtComputingResource,
+                                                                     Domain dm){
         final ArrayList<UnmanagedInstanceTO.Disk> disks = new ArrayList<>(disksInfo.size());
         int counter = 0;
         for (LibvirtVMDef.DiskDef diskDef : disksInfo) {
@@ -155,14 +154,10 @@ public final class LibvirtGetRemoteVmsCommandWrapper extends CommandWrapper<GetR
             disk.setPosition(counter);
 
             Long size;
-            String imagePath;
             try {
-                QemuImgFile file = new QemuImgFile(diskDef.getSourcePath());
-                QemuImg qemu = new QemuImg(0);
-                Map<String, String> info = qemu.info(file);
-                size = Long.parseLong(info.getOrDefault("virtual_size", "0"));
-                imagePath = info.getOrDefault("image", null);
-            } catch (QemuImgException | LibvirtException e) {
+                DomainBlockInfo blockInfo = dm.blockInfo(diskDef.getSourcePath());
+                size = blockInfo.getCapacity();
+            } catch (LibvirtException e) {
                 throw new RuntimeException(e);
             }
 
@@ -183,8 +178,6 @@ public final class LibvirtGetRemoteVmsCommandWrapper extends CommandWrapper<GetR
 
             disk.setDatastoreType(diskDef.getDiskType().toString());
             disk.setDatastorePort(diskDef.getSourceHostPort());
-            disk.setImagePath(imagePath);
-            disk.setDatastoreName(imagePath.substring(imagePath.lastIndexOf("/")));
             disks.add(disk);
         }
         return disks;
