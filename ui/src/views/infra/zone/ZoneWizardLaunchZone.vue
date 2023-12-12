@@ -124,6 +124,7 @@ export default {
         waiting: 'message.launch.zone',
         launching: 'message.please.wait.while.zone.is.being.created'
       },
+      nsx: false,
       isLaunchZone: false,
       processStatus: null,
       messageError: '',
@@ -212,10 +213,13 @@ export default {
         status: STATUS_PROCESS
       })
       this.setStepStatus(STATUS_PROCESS)
+      console.log('steps:')
+      console.log(this.steps)
     },
     setStepStatus (status) {
       const index = this.steps.findIndex(step => step.index === this.currentStep)
       this.steps[index].status = status
+      this.nsx = false
     },
     handleBack (e) {
       this.$emit('backPressed')
@@ -231,6 +235,8 @@ export default {
     },
     handleFixesError () {
       const stepError = this.steps.filter(step => step.index === this.currentStep)
+      console.log(this.currentStep)
+      console.log(stepError)
       if (stepError && stepError.length > 0) {
         const step = stepError[0].step
         this.$emit('stepError', step, this.stepData)
@@ -855,8 +861,13 @@ export default {
         if (!this.stepData.stepMove.includes('createPod')) {
           this.stepData.podReturned = await this.createPod(params)
           this.stepData.stepMove.push('createPod')
+          // await this.stepConfigurePublicTraffic('message.configuring.public.traffic', 'publicTraffic', 0)
+          // if (this.stepData.isNsxZone) {
+          //   console.log('continue')
+          //   await this.stepConfigurePublicTraffic('message.configuring.nsx.public.traffic', 'nsxPublicTraffic', 1)
+          // }
         }
-        await this.stepConfigurePublicTraffic()
+        await this.stepConfigurePublicTraffic('message.configuring.public.traffic', 'publicTraffic', 0)
       } catch (e) {
         this.messageError = e
         this.processStatus = STATUS_FAILED
@@ -894,14 +905,18 @@ export default {
         this.setStepStatus(STATUS_FAILED)
       }
     },
-    async stepConfigurePublicTraffic () {
+    async stepConfigurePublicTraffic (message, trafficType, idx) {
+      console.log(trafficType)
       if (
         (this.isBasicZone &&
           (this.havingSG && this.havingEIP && this.havingELB)) ||
         (this.isAdvancedZone && !this.sgEnabled && !this.isEdgeZone)) {
         this.setStepStatus(STATUS_FINISH)
         this.currentStep++
-        this.addStep('message.configuring.public.traffic', 'publicTraffic')
+        this.addStep(message, trafficType)
+        if (trafficType === 'nsxPublicTraffic') {
+          this.nsx = false
+        }
 
         let stopNow = false
         this.stepData.returnedPublicTraffic = this.stepData?.returnedPublicTraffic || []
@@ -950,12 +965,16 @@ export default {
           }
 
           try {
-            if (!this.stepData.stepMove.includes('createPublicVlanIpRange' + index)) {
+            if (!this.stepData.stepMove.includes('createPublicVlanIpRange' + idx + index)) {
               const vlanIpRangeItem = await this.createVlanIpRange(params)
+              console.log(vlanIpRangeItem)
               this.stepData.returnedPublicTraffic.push(vlanIpRangeItem)
-              this.stepData.stepMove.push('createPublicVlanIpRange' + index)
+              this.stepData.stepMove.push('createPublicVlanIpRange' + idx + index)
+              console.log(this.stepData)
             }
           } catch (e) {
+            console.log('error')
+            console.log(this.stepData)
             this.messageError = e
             this.processStatus = STATUS_FAILED
             this.setStepStatus(STATUS_FAILED)
@@ -977,6 +996,10 @@ export default {
         } else {
           await this.stepConfigureStorageTraffic()
         }
+        if (this.stepData.isNsxZone && this.nsx) {
+          console.log(this.nsx)
+          await this.stepConfigurePublicTraffic('message.configuring.nsx.public.traffic', 'nsxPublicTraffic', 1)
+        }
       } else if (this.isAdvancedZone && this.sgEnabled) {
         if (this.stepData.isTungstenZone) {
           await this.stepCreateTungstenFabricPublicNetwork()
@@ -993,6 +1016,7 @@ export default {
           }
         }
       }
+      console.log(this.nsx)
     },
     async stepCreateTungstenFabricPublicNetwork () {
       this.setStepStatus(STATUS_FINISH)
