@@ -43,3 +43,5 @@ CREATE TABLE IF NOT EXISTS `cloud_usage`.`usage_vpc` (
   `removed` datetime DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB CHARSET=utf8;
+
+ALTER TABLE `cloud_usage`.`cloud_usage` ADD state VARCHAR(100) DEFAULT NULL;
