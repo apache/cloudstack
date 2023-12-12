@@ -343,6 +343,9 @@ export default {
       },
       columns: () => {
         const fields = ['name', 'state', 'ipaddress']
+        if (store.getters.listAllProjects) {
+          fields.push('project')
+        }
         if (store.getters.userInfo.roletype === 'Admin') {
           fields.splice(2, 0, 'instancename')
           fields.push('account')

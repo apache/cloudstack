@@ -49,18 +49,14 @@ export default {
         if (store.getters.metrics) {
           fields.push(...metricsFields)
         }
-
+        if (store.getters.listAllProjects) {
+          fields.push('project')
+        }
         if (store.getters.userInfo.roletype === 'Admin') {
           fields.push('account')
-          if (store.getters.listAllProjects) {
-            fields.push('project')
-          }
           fields.push('storage')
         } else if (store.getters.userInfo.roletype === 'DomainAdmin') {
           fields.push('account')
-          if (store.getters.listAllProjects) {
-            fields.push('project')
-          }
         }
         fields.push('zonename')
 
@@ -317,11 +313,11 @@ export default {
       resourceType: 'Snapshot',
       columns: () => {
         var fields = ['name', 'state', 'volumename', 'intervaltype', 'physicalsize', 'created']
+        if (store.getters.listAllProjects) {
+          fields.push('project')
+        }
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('account')
-          if (store.getters.listAllProjects) {
-            fields.push('project')
-          }
           fields.push('domain')
         }
         fields.push('zonename')

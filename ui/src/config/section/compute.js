@@ -61,19 +61,15 @@ export default {
         if (store.getters.metrics) {
           fields.push(...metricsFields)
         }
-
+        if (store.getters.listAllProjects) {
+          fields.push('project')
+        }
         if (store.getters.userInfo.roletype === 'Admin') {
           fields.splice(2, 0, 'instancename')
           fields.push('account')
-          if (store.getters.listAllProjects) {
-            fields.push('project')
-          }
           fields.push('hostname')
         } else if (store.getters.userInfo.roletype === 'DomainAdmin') {
           fields.push('account')
-          if (store.getters.listAllProjects) {
-            fields.push('project')
-          }
         } else {
           fields.push('serviceofferingname')
         }
@@ -469,9 +465,12 @@ export default {
       resourceType: 'VMSnapshot',
       columns: () => {
         const fields = ['displayname', 'state', 'name', 'type', 'current', 'parentName', 'created']
+        if (store.getters.listAllProjects) {
+          fields.push('project')
+        }
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
-          fields.push('domain')
           fields.push('account')
+          fields.push('domain')
         }
         return fields
       },
@@ -539,11 +538,11 @@ export default {
       permission: ['listKubernetesClusters'],
       columns: (store) => {
         var fields = ['name', 'state', 'clustertype', 'size', 'cpunumber', 'memory', 'kubernetesversionname']
+        if (store.listAllProjects) {
+          fields.push('project')
+        }
         if (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype)) {
           fields.push('account')
-          if (store.listAllProjects) {
-            fields.push('project')
-          }
         }
         if (store.apis.scaleKubernetesCluster.params.filter(x => x.name === 'autoscalingenabled').length > 0) {
           fields.splice(2, 0, 'autoscalingenabled')
@@ -812,11 +811,11 @@ export default {
       permission: ['listSSHKeyPairs'],
       columns: () => {
         var fields = ['name', 'fingerprint']
+        if (store.getters.listAllProjects) {
+          fields.push('project')
+        }
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('account')
-          if (store.getters.listAllProjects) {
-            fields.push('project')
-          }
           fields.push('domain')
         }
         return fields
@@ -892,7 +891,7 @@ export default {
       docHelp: 'adminguide/virtual_machines.html#user-data-and-meta-data',
       permission: ['listUserData'],
       columns: () => {
-        var fields = ['name', 'id']
+        var fields = ['name', 'id', 'project']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('account')
           fields.push('domain')
@@ -965,11 +964,12 @@ export default {
       permission: ['listAffinityGroups'],
       columns: () => {
         var fields = ['name', 'type', 'description']
+        console.log(store.getters)
+        if (store.getters.listAllProjects) {
+          fields.push('project')
+        }
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('account')
-          if (store.getters.listAllProjects) {
-            fields.push('project')
-          }
           fields.push('domain')
         }
         return fields
