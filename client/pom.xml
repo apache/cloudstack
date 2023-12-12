@@ -73,6 +73,56 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-agent</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-framework-cluster</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-framework-config</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-framework-db</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-framework-events</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-framework-jobs</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-framework-managed-context</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-framework-security</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-framework-spring-module</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -602,6 +652,16 @@
             <artifactId>cloud-plugin-storage-object-simulator</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+           <groupId>org.apache.cloudstack</groupId>
+           <artifactId>cloud-usage</artifactId>
+           <version>${project.version}</version>
+       </dependency>
+        <dependency>
+           <groupId>org.apache.cloudstack</groupId>
+           <artifactId>cloud-utils</artifactId>
+           <version>${project.version}</version>
+       </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -911,6 +971,7 @@
                                     <exclude>mysql:mysql-connector-java</exclude>
                                     <exclude>org.apache.cloudstack:cloud-plugin-storage-volume-storpool</exclude>
                                     <exclude>org.apache.cloudstack:cloud-plugin-storage-volume-linstor</exclude>
+                                    <exclude>org.apache.cloudstack:cloud-usage</exclude>
                                     <exclude>com.linbit.linstor.api:java-linstor</exclude>
                                 </excludes>
                             </artifactSet>
