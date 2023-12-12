@@ -49,7 +49,7 @@ class TestListDiskOfferings(cloudstackTestCase):
         cls.hosts = list_hosts(cls.apiclient)
         cls.account = list_accounts(cls.apiclient, name="admin")[0]
         cls._cleanup = []
-        cls.disk_offerings = DiskOffering.list(cls.apiclient)
+        cls.disk_offerings = DiskOffering.list(cls.apiclient, listall=True)
 
         cls.disk_offering = DiskOffering.create(cls.apiclient,
                                                 cls.services["disk_offering"],
@@ -168,7 +168,7 @@ class TestListDiskOfferings(cloudstackTestCase):
             )
             for disk_offering in disk_offerings_zone_2:
                 self.assertTrue(
-                    disk_offering.zoneid is None,
+                    disk_offering.zoneid is None or disk_offering.zoneid == self.zones[1].id,
                     "List disk offerings should return the disk offering requested"
                 )
 
