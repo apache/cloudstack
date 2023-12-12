@@ -258,7 +258,7 @@
                         <span>{{ record.displaytext || record.name }}</span>
                         <div v-if="record.meta">
                           <div v-for="meta in record.meta" :key="meta.key">
-                            <a-tag v-if="(isKVMUnmanage && meta.key !== 'datastore') || !isKVMUnmanage" style="margin-top: 5px" :key="meta.key">{{ meta.key + ': ' + meta.value }}</a-tag>
+                            <a-tag style="margin-top: 5px" :key="meta.key">{{ meta.key + ': ' + meta.value }}</a-tag>
                           </div>
                         </div>
                       </template>
@@ -488,7 +488,16 @@ export default {
       ],
       storagePoolsForConversion: [],
       selectedStorageOptionForConversion: null,
-      selectedStoragePoolForConversion: null
+      selectedStoragePoolForConversion: null,
+      showStoragePoolsForConversion: false,
+      selectedRootDiskColumns: [
+        {
+          key: 'name',
+          dataIndex: 'name',
+          title: this.$t('label.rootdisk')
+        }
+      ],
+      selectedRootDiskSources: []
     }
   },
   beforeCreate () {
@@ -694,6 +703,9 @@ export default {
         page: 1
       })
       this.fetchKvmHostsForConversion()
+      if (this.resource.disk.length > 1) {
+        this.updateSelectedRootDisk()
+      }
     },
     getMeta (obj, metaKeys) {
       var meta = []
@@ -941,6 +953,17 @@ export default {
           name: 'Primary Storage'
         }
       ]
+    },
+    onSelectRootDisk (val) {
+      this.selectedRootDiskIndex = val
+      this.updateSelectedRootDisk()
+    },
+    updateSelectedRootDisk () {
+      var rootDisk = this.resource.disk[this.selectedRootDiskIndex]
+      rootDisk.size = rootDisk.capacity / (1024 * 1024 * 1024)
+      rootDisk.name = `${rootDisk.label} (${rootDisk.size} GB)`
+      rootDisk.meta = this.getMeta(rootDisk, { controller: 'controller', datastorename: 'datastore', position: 'position' })
+      this.selectedRootDiskSources = [rootDisk]
     },
     handleSubmit (e) {
       e.preventDefault()
