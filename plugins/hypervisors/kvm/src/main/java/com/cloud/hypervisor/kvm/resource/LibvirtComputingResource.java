@@ -75,6 +75,8 @@ import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.apache.log4j.Logger;
 import org.apache.xerces.impl.xpath.regex.Match;
 import org.joda.time.Duration;
@@ -437,7 +439,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected WatchDogModel watchDogModel = WatchDogModel.I6300ESB;
 
     private final Map <String, String> pifs = new HashMap<String, String>();
-    private final Map<String, VmStats> vmStats = new ConcurrentHashMap<String, VmStats>();
+    private final Map<String, LibvirtExtendedVmStatsEntry> vmStats = new ConcurrentHashMap<>();
 
     private final Map<String, DomainBlockStats> vmDiskStats = new ConcurrentHashMap<>();
 
@@ -2309,7 +2311,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 final PowerState s = convertToPowerState(vms.getInfo().state);
                 return s;
             } catch (final LibvirtException e) {
-                s_logger.warn("Can't get vm state " + vmName + e.getMessage() + "retry:" + retry);
+                s_logger.error(String.format("Can't get state for VM [%s] (retry=%s).", vmName, retry), e);
             } finally {
                 try {
                     if (vms != null) {
@@ -4401,127 +4403,193 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return null;
     }
 
-    private class VmStats {
-        long usedTime;
-        long tx;
-        long rx;
-        long ioRead;
-        long ioWrote;
-        long bytesRead;
-        long bytesWrote;
-        Calendar timestamp;
+    private String vmToString(Domain dm) throws LibvirtException {
+        return String.format("{\"name\":\"%s\",\"uuid\":\"%s\"}", dm.getName(), dm.getUUIDString());
     }
 
+    /**
+     * Returns metrics for the period since this function was last called for the specified VM.
+     * @param conn the Libvirt connection.
+     * @param vmName name of the VM.
+     * @return metrics for the period since last time this function was called for the VM.
+     * @throws LibvirtException
+     */
     public VmStatsEntry getVmStat(final Connect conn, final String vmName) throws LibvirtException {
         Domain dm = null;
         try {
+            s_logger.debug(String.format("Trying to get VM with name [%s].", vmName));
             dm = getDomain(conn, vmName);
             if (dm == null) {
+                s_logger.warn(String.format("Could not get VM with name [%s].", vmName));
                 return null;
             }
-            DomainInfo info = dm.getInfo();
-            final VmStatsEntry stats = new VmStatsEntry();
 
-            stats.setNumCPUs(info.nrVirtCpu);
-            stats.setEntityType("vm");
+            LibvirtExtendedVmStatsEntry newStats = getVmCurrentStats(dm);
+            LibvirtExtendedVmStatsEntry oldStats = vmStats.get(vmName);
 
-            stats.setMemoryKBs(info.maxMem);
-            stats.setTargetMemoryKBs(info.memory);
-            stats.setIntFreeMemoryKBs(getMemoryFreeInKBs(dm));
+            VmStatsEntry metrics = calculateVmMetrics(dm, oldStats, newStats);
 
-            /* get cpu utilization */
-            VmStats oldStats = null;
+            String vmAsString = vmToString(dm);
+            s_logger.info(String.format("Saving stats for VM [%s].", vmAsString));
+            vmStats.put(vmName, newStats);
+            s_logger.debug(String.format("Saved stats for VM [%s]: [%s].", vmAsString, newStats));
 
-            final Calendar now = Calendar.getInstance();
-
-            oldStats = vmStats.get(vmName);
-
-            long elapsedTime = 0;
-            if (oldStats != null) {
-                elapsedTime = now.getTimeInMillis() - oldStats.timestamp.getTimeInMillis();
-                double utilization = (info.cpuTime - oldStats.usedTime) / ((double)elapsedTime * 1000000);
-
-                utilization = utilization / info.nrVirtCpu;
-                if (utilization > 0) {
-                    stats.setCPUUtilization(utilization * 100);
-                }
-            }
-
-            /* get network stats */
-
-            final List<InterfaceDef> vifs = getInterfaces(conn, vmName);
-            long rx = 0;
-            long tx = 0;
-            for (final InterfaceDef vif : vifs) {
-                final DomainInterfaceStats ifStats = dm.interfaceStats(vif.getDevName());
-                rx += ifStats.rx_bytes;
-                tx += ifStats.tx_bytes;
-            }
-
-            if (oldStats != null) {
-                final double deltarx = rx - oldStats.rx;
-                if (deltarx > 0) {
-                    stats.setNetworkReadKBs(deltarx / 1024);
-                }
-                final double deltatx = tx - oldStats.tx;
-                if (deltatx > 0) {
-                    stats.setNetworkWriteKBs(deltatx / 1024);
-                }
-            }
-
-            /* get disk stats */
-            final List<DiskDef> disks = getDisks(conn, vmName);
-            long io_rd = 0;
-            long io_wr = 0;
-            long bytes_rd = 0;
-            long bytes_wr = 0;
-            for (final DiskDef disk : disks) {
-                if (disk.getDeviceType() == DeviceType.CDROM || disk.getDeviceType() == DeviceType.FLOPPY) {
-                    continue;
-                }
-                final DomainBlockStats blockStats = dm.blockStats(disk.getDiskLabel());
-                io_rd += blockStats.rd_req;
-                io_wr += blockStats.wr_req;
-                bytes_rd += blockStats.rd_bytes;
-                bytes_wr += blockStats.wr_bytes;
-            }
-
-            if (oldStats != null) {
-                final long deltaiord = io_rd - oldStats.ioRead;
-                if (deltaiord > 0) {
-                    stats.setDiskReadIOs(deltaiord);
-                }
-                final long deltaiowr = io_wr - oldStats.ioWrote;
-                if (deltaiowr > 0) {
-                    stats.setDiskWriteIOs(deltaiowr);
-                }
-                final double deltabytesrd = bytes_rd - oldStats.bytesRead;
-                if (deltabytesrd > 0) {
-                    stats.setDiskReadKBs(deltabytesrd / 1024);
-                }
-                final double deltabyteswr = bytes_wr - oldStats.bytesWrote;
-                if (deltabyteswr > 0) {
-                    stats.setDiskWriteKBs(deltabyteswr / 1024);
-                }
-            }
-
-            /* save to Hashmap */
-            final VmStats newStat = new VmStats();
-            newStat.usedTime = info.cpuTime;
-            newStat.rx = rx;
-            newStat.tx = tx;
-            newStat.ioRead = io_rd;
-            newStat.ioWrote = io_wr;
-            newStat.bytesRead = bytes_rd;
-            newStat.bytesWrote = bytes_wr;
-            newStat.timestamp = now;
-            vmStats.put(vmName, newStat);
-            return stats;
+            return metrics;
         } finally {
             if (dm != null) {
                 dm.free();
             }
         }
+    }
+
+    /**
+     * Returns a VM's current statistics.
+     * @param dm domain of the VM.
+     * @return current statistics of the VM.
+     * @throws LibvirtException
+     */
+    protected LibvirtExtendedVmStatsEntry getVmCurrentStats(final Domain dm) throws LibvirtException {
+        final LibvirtExtendedVmStatsEntry stats = new LibvirtExtendedVmStatsEntry();
+
+        getVmCurrentCpuStats(dm, stats);
+        getVmCurrentNetworkStats(dm, stats);
+        getVmCurrentDiskStats(dm, stats);
+
+        s_logger.debug(String.format("Retrieved statistics for VM [%s]: [%s].", vmToString(dm), stats));
+        stats.setTimestamp(Calendar.getInstance());
+        return stats;
+    }
+
+    /**
+     * Passes a VM's current CPU statistics into the provided LibvirtExtendedVmStatsEntry.
+     * @param dm domain of the VM.
+     * @param stats LibvirtExtendedVmStatsEntry that will receive the current CPU statistics.
+     * @throws LibvirtException
+     */
+    protected void getVmCurrentCpuStats(final Domain dm, final LibvirtExtendedVmStatsEntry stats) throws LibvirtException {
+        s_logger.debug(String.format("Getting CPU stats for VM [%s].", vmToString(dm)));
+        stats.setCpuTime(dm.getInfo().cpuTime);
+    }
+
+    /**
+     * Passes a VM's current network statistics into the provided LibvirtExtendedVmStatsEntry.
+     * @param dm domain of the VM.
+     * @param stats LibvirtExtendedVmStatsEntry that will receive the current network statistics.
+     * @throws LibvirtException
+     */
+    protected void getVmCurrentNetworkStats(final Domain dm, final LibvirtExtendedVmStatsEntry stats) throws LibvirtException {
+        final String vmAsString = vmToString(dm);
+        s_logger.debug(String.format("Getting network stats for VM [%s].", vmAsString));
+        final List<InterfaceDef> vifs = getInterfaces(dm.getConnect(), dm.getName());
+        s_logger.debug(String.format("Found [%d] network interface(s) for VM [%s].", vifs.size(), vmAsString));
+        double rx = 0;
+        double tx = 0;
+        for (final InterfaceDef vif : vifs) {
+            final DomainInterfaceStats ifStats = dm.interfaceStats(vif.getDevName());
+            rx += ifStats.rx_bytes;
+            tx += ifStats.tx_bytes;
+        }
+        stats.setNetworkReadKBs(rx / 1024);
+        stats.setNetworkWriteKBs(tx / 1024);
+    }
+
+    /**
+     * Passes a VM's current disk statistics into the provided LibvirtExtendedVmStatsEntry.
+     * @param dm domain of the VM.
+     * @param stats LibvirtExtendedVmStatsEntry that will receive the current disk statistics.
+     * @throws LibvirtException
+     */
+    protected void getVmCurrentDiskStats(final Domain dm, final LibvirtExtendedVmStatsEntry stats) throws LibvirtException {
+        final String vmAsString = vmToString(dm);
+        s_logger.debug(String.format("Getting disk stats for VM [%s].", vmAsString));
+        final List<DiskDef> disks = getDisks(dm.getConnect(), dm.getName());
+        s_logger.debug(String.format("Found [%d] disk(s) for VM [%s].", disks.size(), vmAsString));
+        long io_rd = 0;
+        long io_wr = 0;
+        double bytes_rd = 0;
+        double bytes_wr = 0;
+        for (final DiskDef disk : disks) {
+            if (disk.getDeviceType() == DeviceType.CDROM || disk.getDeviceType() == DeviceType.FLOPPY) {
+                s_logger.debug(String.format("Ignoring disk [%s] in VM [%s]'s stats since its deviceType is [%s].", disk.toString().replace("\n", ""), vmAsString, disk.getDeviceType()));
+                continue;
+            }
+            final DomainBlockStats blockStats = dm.blockStats(disk.getDiskLabel());
+            io_rd += blockStats.rd_req;
+            io_wr += blockStats.wr_req;
+            bytes_rd += blockStats.rd_bytes;
+            bytes_wr += blockStats.wr_bytes;
+        }
+        stats.setDiskReadIOs(io_rd);
+        stats.setDiskWriteIOs(io_wr);
+        stats.setDiskReadKBs(bytes_rd / 1024);
+        stats.setDiskWriteKBs(bytes_wr / 1024);
+    }
+
+    /**
+     * Calculates a VM's metrics for the period between the two statistics given as parameters.
+     * @param dm domain of the VM.
+     * @param oldStats old statistics. If null, the CPU, network and disk utilization won't be calculated.
+     * @param newStats new statistics.
+     * @return metrics for the period between the two statistics.
+     * @throws LibvirtException
+     */
+    protected VmStatsEntry calculateVmMetrics(final Domain dm, final LibvirtExtendedVmStatsEntry oldStats, final LibvirtExtendedVmStatsEntry newStats) throws LibvirtException {
+        final VmStatsEntry metrics = new VmStatsEntry();
+        final DomainInfo info = dm.getInfo();
+        final String vmAsString = vmToString(dm);
+
+        metrics.setEntityType("vm");
+        s_logger.debug(String.format("Writing VM [%s]'s CPU and memory information into the metrics.", vmAsString));
+        metrics.setNumCPUs(info.nrVirtCpu);
+        metrics.setMemoryKBs(info.maxMem);
+        metrics.setTargetMemoryKBs(info.memory);
+        s_logger.debug(String.format("Trying to get free memory for VM [%s].", vmAsString));
+        metrics.setIntFreeMemoryKBs(getMemoryFreeInKBs(dm));
+
+        if (oldStats != null) {
+            s_logger.debug(String.format("Old stats exist for VM [%s]; thefore, the utilization will be calculated.", vmAsString));
+
+            s_logger.debug(String.format("Calculating CPU utilization for VM [%s].", vmAsString));
+            final Calendar now = Calendar.getInstance();
+            long elapsedTime = now.getTimeInMillis() - oldStats.getTimestamp().getTimeInMillis();
+            double utilization = (info.cpuTime - oldStats.getCpuTime()) / ((double) elapsedTime * 1000000 * info.nrVirtCpu);
+            if (utilization > 0) {
+                metrics.setCPUUtilization(utilization * 100);
+            }
+
+            s_logger.debug(String.format("Calculating network utilization for VM [%s].", vmAsString));
+            final double deltarx = newStats.getNetworkReadKBs() - oldStats.getNetworkReadKBs();
+            if (deltarx > 0) {
+                metrics.setNetworkReadKBs(deltarx);
+            }
+            final double deltatx = newStats.getNetworkWriteKBs() - oldStats.getNetworkWriteKBs();
+            if (deltatx > 0) {
+                metrics.setNetworkWriteKBs(deltatx);
+            }
+
+            s_logger.debug(String.format("Calculating disk utilization for VM [%s].", vmAsString));
+            final double deltaiord = newStats.getDiskReadIOs() - oldStats.getDiskReadIOs();
+            if (deltaiord > 0) {
+                metrics.setDiskReadIOs(deltaiord);
+            }
+            final double deltaiowr = newStats.getDiskWriteIOs() - oldStats.getDiskWriteIOs();
+            if (deltaiowr > 0) {
+                metrics.setDiskWriteIOs(deltaiowr);
+            }
+            final double deltabytesrd = newStats.getDiskReadKBs() - oldStats.getDiskReadKBs();
+            if (deltabytesrd > 0) {
+                metrics.setDiskReadKBs(deltabytesrd);
+            }
+            final double deltabyteswr = newStats.getDiskWriteKBs() - oldStats.getDiskWriteKBs();
+            if (deltabyteswr > 0) {
+                metrics.setDiskWriteKBs(deltabyteswr);
+            }
+        }
+
+        String metricsAsString = new ReflectionToStringBuilder(metrics, ToStringStyle.JSON_STYLE).setExcludeFieldNames("vmId", "vmUuid").toString();
+        s_logger.debug(String.format("Calculated metrics for VM [%s]: [%s].", vmAsString, metricsAsString));
+
+        return metrics;
     }
 
     /**
@@ -4535,7 +4603,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         MemoryStatistic[] memoryStats = dm.memoryStats(NUMMEMSTATS);
 
         if(s_logger.isTraceEnabled()){
-            s_logger.trace(String.format("Retrieved memory statistics (information about tags can be found on the libvirt documentation):", ArrayUtils.toString(memoryStats)));
+            s_logger.trace(String.format("Retrieved memory statistics (information about tags can be found on the libvirt documentation): [%s].", ArrayUtils.toString(memoryStats)));
         }
 
         long freeMemory = NumberUtils.LONG_MINUS_ONE;
