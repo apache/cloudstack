@@ -213,7 +213,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
         // add all hosts that we are not considering to the avoid list
         List<HostVO> allhostsInCluster = _hostDao.listAllUpAndEnabledNonHAHosts(type, clusterId, podId, dcId, null);
         allhostsInCluster.removeAll(clusterHosts);
-        s_logger.debug(String.format("Adding hosts [%s] to the avoid set because these hosts does not support HA.",
+        s_logger.debug(String.format("Adding hosts [%s] to the avoid set because these hosts do not support HA.",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(allhostsInCluster, "uuid", "name")));
         for (HostVO host : allhostsInCluster) {
             avoid.addHost(host.getId());

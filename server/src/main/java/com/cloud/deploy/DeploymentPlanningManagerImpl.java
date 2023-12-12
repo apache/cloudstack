@@ -645,7 +645,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 return dest;
             }
         }
-        s_logger.debug(String.format("Cannot deploy VM [%s] under host [%s], because there are no suitable pools found.", vmProfile.getUuid(), host.getUuid()));
+        s_logger.debug(String.format("Cannot deploy VM [%s] under host [%s], because no suitable pools were found.", vmProfile.getUuid(), host.getUuid()));
         return null;
     }
 
@@ -940,7 +940,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
     private void findAvoidSetForNonExplicitUserVM(ExcludeList avoids, boolean isExplicit, VirtualMachine vm, List<Long> allPodsInDc, List<Long> allClustersInDc, List<Long> allHostsInDc) {
         s_logger.debug(LogUtils.logGsonWithoutException(
                 "Adding pods [%s], clusters [%s] and hosts [%s] to the avoid list in the deploy process of user VM [%s], "
-                        + "because this VM is not explicit dedicated to this components.",
+                        + "because this VM is not explicitly dedicated to these components.",
                 allPodsInDc, allClustersInDc, allHostsInDc, vm.getUuid()));
         avoids.addPodList(allPodsInDc);
         avoids.addClusterList(allClustersInDc);
