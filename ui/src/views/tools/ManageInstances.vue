@@ -148,7 +148,6 @@
                             ></a-input>
                         </a-form-item>
                     </a-col>
-
                 </a-form>
               </a-col>
             </a-card>
@@ -307,13 +306,13 @@
             </a-card>
           </a-row>
           <a-row v-if="showExtHost">
-            <a-col :span="6" :offset="11">
-              <div style="text-align: center">
+            <a-col class="fetch-instances-column">
+              <div>
                 <a-button
-                        shape="round"
-                        type="primary"
-                        @click="() => { fetchExtKVMInstances() }">
-                    {{ $t('label.fetch.instances') }}
+                  shape="round"
+                  type="primary"
+                  @click="() => { fetchExtKVMInstances() }">
+                  {{ $t('label.fetch.instances') }}
                 </a-button>
               </div>
             </a-col>
@@ -1452,6 +1451,11 @@ export default {
 }
 .action-button-right {
   text-align: right;
+}
+.fetch-instances-column {
+  width: 50%;
+  margin-left: 50%;
+  padding-left: 24px;
 }
 
 .breadcrumb-card {
