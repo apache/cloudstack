@@ -891,7 +891,7 @@ export default {
       docHelp: 'adminguide/virtual_machines.html#user-data-and-meta-data',
       permission: ['listUserData'],
       columns: () => {
-        var fields = ['name', 'id', 'project']
+        var fields = ['name', 'id']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('account')
           fields.push('domain')
