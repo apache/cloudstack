@@ -964,7 +964,6 @@ export default {
       permission: ['listAffinityGroups'],
       columns: () => {
         var fields = ['name', 'type', 'description']
-        console.log(store.getters)
         if (store.getters.listAllProjects) {
           fields.push('project')
         }
