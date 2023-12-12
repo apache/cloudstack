@@ -493,39 +493,8 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     }
 
     public long getCapacity(LinstorStoragePool pool) {
-        DevelopersApi linstorApi = getLinstorAPI(pool);
         final String rscGroupName = pool.getResourceGroup();
-        try {
-            List<ResourceGroup> rscGrps = linstorApi.resourceGroupList(
-                Collections.singletonList(rscGroupName),
-                null,
-                null,
-                null);
-
-            if (rscGrps.isEmpty()) {
-                final String errMsg = String.format("Linstor: Resource group '%s' not found", rscGroupName);
-                s_logger.error(errMsg);
-                throw new CloudRuntimeException(errMsg);
-            }
-
-            List<StoragePool> storagePools = linstorApi.viewStoragePools(
-                Collections.emptyList(),
-                rscGrps.get(0).getSelectFilter().getStoragePoolList(),
-                null,
-                null,
-                null
-            );
-
-            final long capacity = storagePools.stream()
-                .filter(sp -> sp.getProviderKind() != ProviderKind.DISKLESS)
-                .mapToLong(sp -> sp.getTotalCapacity() != null ? sp.getTotalCapacity() : 0)
-                .sum() * 1024;  // linstor uses kiB
-            s_logger.debug("Linstor: GetCapacity() -> " + capacity);
-            return capacity;
-        } catch (ApiException apiEx) {
-            s_logger.error(apiEx.getMessage());
-            throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
-        }
+        return LinstorUtil.getCapacityBytes(pool.getSourceHost(), rscGroupName);
     }
 
     public long getAvailable(LinstorStoragePool pool) {
@@ -554,7 +523,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
 
             final long free = storagePools.stream()
                 .filter(sp -> sp.getProviderKind() != ProviderKind.DISKLESS)
-                .mapToLong(StoragePool::getFreeCapacity).sum() * 1024;  // linstor uses KiB
+                .mapToLong(sp -> sp.getFreeCapacity() != null ? sp.getFreeCapacity() : 0L).sum() * 1024;  // linstor uses KiB
 
             s_logger.debug("Linstor: getAvailable() -> " + free);
             return free;
@@ -590,7 +559,9 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
 
             final long used = storagePools.stream()
                 .filter(sp -> sp.getProviderKind() != ProviderKind.DISKLESS)
-                .mapToLong(sp -> sp.getTotalCapacity() - sp.getFreeCapacity()).sum() * 1024; // linstor uses Kib
+                .mapToLong(sp -> sp.getTotalCapacity() != null && sp.getFreeCapacity() != null ?
+                        sp.getTotalCapacity() - sp.getFreeCapacity() : 0L)
+                    .sum() * 1024; // linstor uses Kib
             s_logger.debug("Linstor: getUsed() -> " + used);
             return used;
         } catch (ApiException apiEx) {

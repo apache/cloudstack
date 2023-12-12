@@ -17,6 +17,7 @@
 package org.apache.cloudstack.affinity.dao;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 
@@ -27,5 +28,7 @@ public interface AffinityGroupDomainMapDao extends GenericDao<AffinityGroupDomai
     AffinityGroupDomainMapVO findByAffinityGroup(long affinityGroupId);
 
     List<AffinityGroupDomainMapVO> listByDomain(Object... domainId);
+
+    Map<Long, List<String>> listDomainsOfAffinityGroupsUsedByDomainPath(String domainPath);
 
 }

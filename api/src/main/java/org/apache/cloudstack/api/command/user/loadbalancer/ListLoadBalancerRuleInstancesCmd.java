@@ -97,52 +97,44 @@ public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd implements Use
     public void execute() {
         Pair<List<? extends UserVm>, List<String>> vmServiceMap =  _lbService.listLoadBalancerInstances(this);
         List<? extends UserVm> result = vmServiceMap.first();
+        s_logger.debug(String.format("A total of [%s] user VMs were obtained when listing the load balancer instances: [%s].", result.size(), result));
+
         List<String> serviceStates  = vmServiceMap.second();
+        s_logger.debug(String.format("A total of [%s] service states were obtained when listing the load balancer instances: [%s].", serviceStates.size(), serviceStates));
 
         if (!isListLbVmip()) {
-            // list lb instances
-            ListResponse<UserVmResponse> response = new ListResponse<UserVmResponse>();
-            List<UserVmResponse> vmResponses = new ArrayList<UserVmResponse>();
-            if (result != null) {
-                vmResponses = _responseGenerator.createUserVmResponse(ResponseView.Restricted, "loadbalancerruleinstance", result.toArray(new UserVm[result.size()]));
+            ListResponse<UserVmResponse> response = new ListResponse<>();
+            List<UserVmResponse> vmResponses = _responseGenerator.createUserVmResponse(ResponseView.Restricted, "loadbalancerruleinstance", result.toArray(new UserVm[0]));
 
-
-                for (int i = 0; i < result.size(); i++) {
-                    vmResponses.get(i).setServiceState(serviceStates.get(i));
-                }
+            for (int i = 0; i < result.size(); i++) {
+                vmResponses.get(i).setServiceState(serviceStates.get(i));
             }
+
             response.setResponses(vmResponses);
             response.setResponseName(getCommandName());
             setResponseObject(response);
-
-
-        } else {
-            ListResponse<LoadBalancerRuleVmMapResponse> lbRes = new ListResponse<LoadBalancerRuleVmMapResponse>();
-
-            List<UserVmResponse> vmResponses = new ArrayList<UserVmResponse>();
-            List<LoadBalancerRuleVmMapResponse> listlbVmRes = new ArrayList<LoadBalancerRuleVmMapResponse>();
-
-            if (result != null) {
-                vmResponses = _responseGenerator.createUserVmResponse(getResponseView(), "loadbalancerruleinstance", result.toArray(new UserVm[result.size()]));
-
-
-                List<String> ipaddr = null;
-
-                for (int i=0;i<result.size(); i++) {
-                    LoadBalancerRuleVmMapResponse lbRuleVmIpResponse = new LoadBalancerRuleVmMapResponse();
-                    vmResponses.get(i).setServiceState(serviceStates.get(i));
-                    lbRuleVmIpResponse.setUserVmResponse(vmResponses.get(i));
-                    //get vm id from the uuid
-                    VirtualMachine lbvm = _entityMgr.findByUuid(VirtualMachine.class, vmResponses.get(i).getId());
-                    lbRuleVmIpResponse.setIpAddr(_lbService.listLbVmIpAddress(getId(), lbvm.getId()));
-                    lbRuleVmIpResponse.setObjectName("lbrulevmidip");
-                    listlbVmRes.add(lbRuleVmIpResponse);
-                }
-            }
-
-            lbRes.setResponseName(getCommandName());
-            lbRes.setResponses(listlbVmRes);
-            setResponseObject(lbRes);
+            return;
         }
+
+        ListResponse<LoadBalancerRuleVmMapResponse> lbRes = new ListResponse<>();
+
+        List<UserVmResponse> vmResponses = _responseGenerator.createUserVmResponse(getResponseView(), "loadbalancerruleinstance", result.toArray(new UserVm[0]));
+        List<LoadBalancerRuleVmMapResponse> lbRuleVmMapList = new ArrayList<>();
+
+        for (int i=0; i<result.size(); i++) {
+            LoadBalancerRuleVmMapResponse lbRuleVmIpResponse = new LoadBalancerRuleVmMapResponse();
+            UserVmResponse userVmResponse = vmResponses.get(i);
+            userVmResponse.setServiceState(serviceStates.get(i));
+            lbRuleVmIpResponse.setUserVmResponse(userVmResponse);
+
+            VirtualMachine lbVm = _entityMgr.findByUuid(VirtualMachine.class, userVmResponse.getId());
+            lbRuleVmIpResponse.setIpAddr(_lbService.listLbVmIpAddress(getId(), lbVm.getId()));
+            lbRuleVmIpResponse.setObjectName("lbrulevmidip");
+            lbRuleVmMapList.add(lbRuleVmIpResponse);
+        }
+
+        lbRes.setResponseName(getCommandName());
+        lbRes.setResponses(lbRuleVmMapList);
+        setResponseObject(lbRes);
     }
 }

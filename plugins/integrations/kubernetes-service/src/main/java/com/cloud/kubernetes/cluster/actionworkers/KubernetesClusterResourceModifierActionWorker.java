@@ -767,12 +767,12 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         return prefix;
     }
 
-    protected KubernetesClusterVO updateKubernetesClusterEntry(final Long cores, final Long memory,
-        final Long size, final Long serviceOfferingId, final Boolean autoscaleEnabled, final Long minSize, final Long maxSize) {
+    protected KubernetesClusterVO updateKubernetesClusterEntry(final Long cores, final Long memory, final Long size,
+               final Long serviceOfferingId, final Boolean autoscaleEnabled, final Long minSize, final Long maxSize) {
         return Transaction.execute(new TransactionCallback<KubernetesClusterVO>() {
                 @Override
                 public KubernetesClusterVO doInTransaction(TransactionStatus status) {
-                KubernetesClusterVO updatedCluster = kubernetesClusterDao.createForUpdate(kubernetesCluster.getId());
+                KubernetesClusterVO updatedCluster = kubernetesClusterDao.findById(kubernetesCluster.getId());
                 if (cores != null) {
                     updatedCluster.setCores(cores);
                 }

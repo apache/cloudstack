@@ -1044,7 +1044,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
         }
 
-        enableSSLForKvmAgent(params);
+        enableSSLForKvmAgent();
         configureLocalStorage();
 
         /* Directory to use for Qemu sockets like for the Qemu Guest Agent */
@@ -1353,13 +1353,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
-    private void enableSSLForKvmAgent(final Map<String, Object> params) {
+    private void enableSSLForKvmAgent() {
         final File keyStoreFile = PropertiesUtil.findConfigFile(KeyStoreUtils.KS_FILENAME);
         if (keyStoreFile == null) {
             s_logger.info("Failed to find keystore file: " + KeyStoreUtils.KS_FILENAME);
             return;
         }
-        String keystorePass = (String)params.get(KeyStoreUtils.KS_PASSPHRASE_PROPERTY);
+        String keystorePass = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KEYSTORE_PASSPHRASE);
         if (StringUtils.isBlank(keystorePass)) {
             s_logger.info("Failed to find passphrase for keystore: " + KeyStoreUtils.KS_FILENAME);
             return;

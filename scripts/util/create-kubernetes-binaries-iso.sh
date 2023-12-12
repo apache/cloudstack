@@ -145,6 +145,9 @@ if [ -z "${kubeadm_file_permissions}" ]; then
 fi
 chmod ${kubeadm_file_permissions} "${working_dir}/k8s/kubeadm"
 
+echo "Updating imagePullPolicy to IfNotPresent in yaml files..."
+sed -i "s/imagePullPolicy:.*/imagePullPolicy: IfNotPresent/g" ${working_dir}/*.yaml
+
 mkisofs -o "${output_dir}/${build_name}" -J -R -l "${iso_dir}"
 
 rm -rf "${iso_dir}"

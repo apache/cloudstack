@@ -55,4 +55,8 @@ public interface AutoScaleManager extends AutoScaleService {
     void checkIfVmActionAllowed(Long vmId);
 
     void removeVmFromVmGroup(Long vmId);
+
+    String getNextVmHostName(AutoScaleVmGroupVO asGroup);
+
+    void checkAutoScaleVmGroupName(String groupName);
 }
