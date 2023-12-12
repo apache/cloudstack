@@ -77,6 +77,7 @@ public class RestoreVolumeFromBackupAndAttachToVMCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.START_VM,
             type = CommandType.BOOLEAN,
             required = false,
+            since = "4.19.0.0",
             description = "start VM after the restore is finished")
     private Boolean startVm;
 
