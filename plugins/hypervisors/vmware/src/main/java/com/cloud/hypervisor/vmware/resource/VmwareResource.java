@@ -4389,7 +4389,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                             for (String diskPath : disks) {
                                 DatastoreFile file = new DatastoreFile(diskPath);
                                 VirtualMachineMO vmMo = dcMo.findVm(file.getDir());
-                                Pair<VirtualDisk, String> vds = vmMo.getDiskDevice(file.getFileName(), true);
+                                Pair<VirtualDisk, String> vds = vmMo.getDiskDevice(file.getFileName(), true, false);
                                 long virtualsize = vds.first().getCapacityInKB() * 1024;
                                 long physicalsize = primaryStorageDatastoreMo.fileDiskSize(file.getPath());
                                 if (statEntry.containsKey(chainInfo)) {
@@ -5121,7 +5121,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             if (cmd.getNewIops() != null) {
                 String vmwareDocumentation = "https://kb.vmware.com/s/article/68164";
                 Long newIops = cmd.getNewIops();
-                VirtualDisk disk = vmMo.getDiskDevice(volumePath, true).first();
+                VirtualDisk disk = vmMo.getDiskDevice(volumePath, true, true).first();
                 try {
                     s_logger.debug(LogUtils.logGsonWithoutException("Trying to change disk [%s] IOPS to [%s].", disk, newIops));
                     VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
