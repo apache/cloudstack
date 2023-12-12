@@ -138,6 +138,17 @@ public class Storage {
         ISODISK /* Template corresponding to a iso (non root disk) present in an OVA */
     }
 
+    /**
+     * StoragePoolTypes carry some details about the format and capabilities of a storage pool. While not necessarily a
+     * 1:1 with PrimaryDataStoreDriver (and for KVM agent, KVMStoragePool and StorageAdaptor) implementations, it is
+     * often used to decide which storage plugin or storage command to call, so it may be necessary for new storage
+     * plugins to add a StoragePoolType.  This can be done by adding it below, or by creating a new public static final
+     * instance of StoragePoolType in the plugin itself, which registers it with the map.
+     *
+     * Note that if the StoragePoolType is for KVM and defined in plugin code rather than below, care must be taken to
+     * ensure this is available on the agent side as well. This is best done by defining the StoragePoolType in a common
+     * package available on both management server and agent plugin jars.
+     */
     public static class StoragePoolType {
         private static final Map<String, StoragePoolType> map = new LinkedHashMap<>();
 
@@ -169,6 +180,13 @@ public class Storage {
         private final boolean overprovisioning;
         private final boolean encryption;
 
+        /**
+         * Define a new StoragePoolType, and register it into the map of pool types known to the management server.
+         * @param name Simple unique name of the StoragePoolType.
+         * @param shared Storage pool is shared/accessible to multiple hypervisors
+         * @param overprovisioning Storage pool supports overprovisioning
+         * @param encryption Storage pool supports encrypted volumes
+         */
         public StoragePoolType(String name, boolean shared, boolean overprovisioning, boolean encryption) {
             this.name = name;
             this.shared = shared;
