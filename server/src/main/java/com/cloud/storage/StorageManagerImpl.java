@@ -824,7 +824,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         Long zoneId = cmd.getZoneId();
 
         ScopeType scopeType = ScopeType.CLUSTER;
-        if ("file".equalsIgnoreCase(uriParams.get("scheme"))) {
+        if ("file".equals(uriParams.get("scheme"))) {
             scopeType = ScopeType.HOST;
         }
         String scope = cmd.getScope();
@@ -900,7 +900,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         DataStoreLifeCycle lifeCycle = storeProvider.getDataStoreLifeCycle();
         DataStore store = null;
         try {
-            if (params.get("scheme").toString().equals("file")) {
+            if ("file".equals(uriParams.get("scheme"))) {
                 store = createLocalStorage(params);
             } else {
                 store = lifeCycle.initialize(params);
