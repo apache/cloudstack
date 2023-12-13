@@ -132,6 +132,7 @@ import org.apache.cloudstack.storage.object.ObjectStore;
 import org.apache.cloudstack.storage.object.ObjectStoreEntity;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -808,7 +809,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @Override
     public PrimaryDataStoreInfo createPool(CreateStoragePoolCmd cmd) throws ResourceInUseException, IllegalArgumentException, UnknownHostException, ResourceUnavailableException {
         String providerName = cmd.getStorageProviderName();
-        Map<String,String> uriParams = extractUriParamsAsMap(cmd.getUrl());
+        Map<String,String> uriParams = extractUriParamsAsMap(cmd.getUrl(), cmd.isManaged());
         DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(providerName);
 
         if (storeProvider == null) {
@@ -923,42 +924,47 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return (PrimaryDataStoreInfo)_dataStoreMgr.getDataStore(store.getId(), DataStoreRole.Primary);
     }
 
-    private Map<String,String> extractUriParamsAsMap(String url){
+    protected Map<String,String> extractUriParamsAsMap(String url, boolean managed) {
         Map<String,String> uriParams = new HashMap<>();
         UriUtils.UriInfo uriInfo = UriUtils.getUriInfo(url);
 
         String scheme = uriInfo.getScheme();
         String storageHost = uriInfo.getStorageHost();
         String storagePath = uriInfo.getStoragePath();
-        try {
-            if (scheme == null) {
-                throw new InvalidParameterValueException("scheme is null " + url + ", add nfs:// (or cifs://) as a prefix");
-            } else if (scheme.equalsIgnoreCase("nfs")) {
-                if (storageHost == null || storagePath == null || storageHost.trim().isEmpty() || storagePath.trim().isEmpty()) {
-                    throw new InvalidParameterValueException("host or path is null, should be nfs://hostname/path");
-                }
-            } else if (scheme.equalsIgnoreCase("cifs")) {
-                // Don't validate against a URI encoded URI.
+        if (scheme == null) {
+            if (managed) {
+                return uriParams;
+            }
+            throw new InvalidParameterValueException("scheme is null " + url + ", add nfs:// (or cifs://) as a prefix");
+        }
+        boolean isHostOrPathBlank = StringUtils.isAnyBlank(storagePath, storageHost);
+        if (scheme.equalsIgnoreCase("nfs")) {
+            if (isHostOrPathBlank) {
+                throw new InvalidParameterValueException("host or path is null, should be nfs://hostname/path");
+            }
+        } else if (scheme.equalsIgnoreCase("cifs")) {
+            // Don't validate against a URI encoded URI.
+            try {
                 URI cifsUri = new URI(url);
                 String warnMsg = UriUtils.getCifsUriParametersProblems(cifsUri);
                 if (warnMsg != null) {
                     throw new InvalidParameterValueException(warnMsg);
                 }
-            } else if (scheme.equalsIgnoreCase("sharedMountPoint")) {
-                if (storagePath == null) {
-                    throw new InvalidParameterValueException("host or path is null, should be sharedmountpoint://localhost/path");
-                }
-            } else if (scheme.equalsIgnoreCase("rbd")) {
-                if (storagePath == null) {
-                    throw new InvalidParameterValueException("host or path is null, should be rbd://hostname/pool");
-                }
-            } else if (scheme.equalsIgnoreCase("gluster")) {
-                if (storageHost == null || storagePath == null || storageHost.trim().isEmpty() || storagePath.trim().isEmpty()) {
-                    throw new InvalidParameterValueException("host or path is null, should be gluster://hostname/volume");
-                }
+            } catch (URISyntaxException e) {
+                throw new InvalidParameterValueException(url + " is not a valid uri");
             }
-        } catch (URISyntaxException e) {
-            throw new InvalidParameterValueException(url + " is not a valid uri");
+        } else if (scheme.equalsIgnoreCase("sharedMountPoint")) {
+            if (storagePath == null) {
+                throw new InvalidParameterValueException("host or path is null, should be sharedmountpoint://localhost/path");
+            }
+        } else if (scheme.equalsIgnoreCase("rbd")) {
+            if (storagePath == null) {
+                throw new InvalidParameterValueException("host or path is null, should be rbd://hostname/pool");
+            }
+        } else if (scheme.equalsIgnoreCase("gluster")) {
+            if (isHostOrPathBlank) {
+                throw new InvalidParameterValueException("host or path is null, should be gluster://hostname/volume");
+            }
         }
 
         String hostPath = null;
@@ -975,7 +981,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         uriParams.put("host", storageHost);
         uriParams.put("hostPath", hostPath);
         uriParams.put("userInfo", uriInfo.getUserInfo());
-        uriParams.put("port", uriInfo.getPort() + "");
+        if (uriInfo.getPort() > 0) {
+            uriParams.put("port", uriInfo.getPort() + "");
+        }
         return uriParams;
     }
 

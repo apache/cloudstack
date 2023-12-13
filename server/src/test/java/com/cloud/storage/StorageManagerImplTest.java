@@ -23,6 +23,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.collections.MapUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -34,6 +35,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @RunWith(MockitoJUnitRunner.class)
 public class StorageManagerImplTest {
@@ -157,4 +159,25 @@ public class StorageManagerImplTest {
 
     }
 
+    @Test
+    public void testExtractUriParamsAsMapWithSolidFireUrl() {
+        String sfUrl = "MVIP=1.2.3.4;SVIP=6.7.8.9;clusterAdminUsername=admin;" +
+                "clusterAdminPassword=password;clusterDefaultMinIops=1000;" +
+                "clusterDefaultMaxIops=2000;clusterDefaultBurstIopsPercentOfMaxIops=2";
+        Map<String,String> uriParams = storageManagerImpl.extractUriParamsAsMap(sfUrl, true);
+        Assert.assertTrue(MapUtils.isEmpty(uriParams));
+    }
+
+    @Test
+    public void testExtractUriParamsAsMapWithNFSUrl() {
+        String scheme = "nfs";
+        String host = "HOST";
+        String path = "/PATH";
+        String sfUrl = String.format("%s://%s%s", scheme, host, path);
+        Map<String,String> uriParams = storageManagerImpl.extractUriParamsAsMap(sfUrl, false);
+        Assert.assertTrue(MapUtils.isNotEmpty(uriParams));
+        Assert.assertEquals(scheme, uriParams.get("scheme"));
+        Assert.assertEquals(host, uriParams.get("host"));
+        Assert.assertEquals(path, uriParams.get("hostPath"));
+    }
 }
