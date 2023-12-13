@@ -316,6 +316,4 @@ CREATE TABLE `cloud_usage`.`bucket_statistics` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- Add remover account ID to quarantined IPs table.
-ALTER TABLE `cloud`.`quarantined_ips`
-    ADD COLUMN `remover_account_id` bigint(20) unsigned DEFAULT NULL COMMENT 'ID of the account that removed the IP from quarantine, foreign key to `account` table',
-    ADD CONSTRAINT `fk_quarantined_ips__remover_account_id` FOREIGN KEY(`remover_account_id`) REFERENCES `cloud`.`account`(`id`);
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.quarantined_ips', 'remover_account_id', 'bigint(20) unsigned DEFAULT NULL COMMENT "ID of the account that removed the IP from quarantine, foreign key to `account` table"');

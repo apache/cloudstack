@@ -76,6 +76,7 @@ public class Upgrade41810to41900 implements DbUpgrade, DbUpgradeSystemVmTemplate
     public void performDataMigration(Connection conn) {
         decryptConfigurationValuesFromAccountAndDomainScopesNotInSecureHiddenCategories(conn);
         migrateBackupDates(conn);
+        addRemoverAccountIdForeignKeyToQuarantinedIps(conn);
     }
 
     @Override
@@ -254,4 +255,7 @@ public class Upgrade41810to41900 implements DbUpgrade, DbUpgradeSystemVmTemplate
         }
     }
 
+    private void addRemoverAccountIdForeignKeyToQuarantinedIps(Connection conn) {
+        DbUpgradeUtils.addForeignKey(conn, "quarantined_ips", "remover_account_id", "account", "id");
+    }
 }
