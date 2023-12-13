@@ -3353,7 +3353,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
                 diskOfferingSearch.join("domainDetailsSearch", domainDetailsSearch, JoinBuilder.JoinType.LEFT, JoinBuilder.JoinCondition.AND,
                         diskOfferingSearch.entity().getId(), domainDetailsSearch.entity().getResourceId(),
-                        domainDetailsSearch.entity().getName(), diskOfferingSearch.entity().setString("domainid"));
+                        domainDetailsSearch.entity().getName(), diskOfferingSearch.entity().setString(ApiConstants.DOMAIN_ID));
 
                 if (!isRootAdmin) {
                     diskOfferingSearch.and("displayOffering", diskOfferingSearch.entity().getDisplayOffering(), Op.EQ);
@@ -3417,7 +3417,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
             diskOfferingSearch.join("zoneDetailSearch", zoneDetailSearch, JoinBuilder.JoinType.LEFT, JoinBuilder.JoinCondition.AND,
                     diskOfferingSearch.entity().getId(), zoneDetailSearch.entity().getResourceId(),
-                    zoneDetailSearch.entity().getName(), diskOfferingSearch.entity().setString("zoneid"));
+                    zoneDetailSearch.entity().getName(), diskOfferingSearch.entity().setString(ApiConstants.ZONE_ID));
         }
 
         DiskOffering currentDiskOffering = null;
@@ -3446,7 +3446,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
             diskOfferingSearch.join("domainDetailsSearch", domainDetailsSearch, JoinBuilder.JoinType.LEFT, JoinBuilder.JoinCondition.AND,
                     diskOfferingSearch.entity().getId(), domainDetailsSearch.entity().getResourceId(),
-                    domainDetailsSearch.entity().getName(), diskOfferingSearch.entity().setString("domainid"));
+                    domainDetailsSearch.entity().getName(), diskOfferingSearch.entity().setString(ApiConstants.DOMAIN_ID));
         }
 
         SearchCriteria<DiskOfferingVO> sc = diskOfferingSearch.create();
@@ -3673,7 +3673,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
                     serviceOfferingSearch.join("maxComputeDetailsSearch", maxComputeDetailsSearch, JoinBuilder.JoinType.LEFT, JoinBuilder.JoinCondition.AND,
                             serviceOfferingSearch.entity().getId(), maxComputeDetailsSearch.entity().getResourceId(),
-                            maxComputeDetailsSearch.entity().getName(), serviceOfferingSearch.entity().setString("maxcpunumber"));
+                            maxComputeDetailsSearch.entity().getName(), serviceOfferingSearch.entity().setString(ApiConstants.MAX_CPU_NUMBER));
 
                     serviceOfferingSearch.and().op("vmCpu", serviceOfferingSearch.entity().getCpu(), Op.GTEQ);
                     serviceOfferingSearch.or().op("vmCpuNull", serviceOfferingSearch.entity().getCpu(), Op.NULL);
@@ -3733,7 +3733,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 srvOffrDomainDetailSearch.and("domainId", srvOffrDomainDetailSearch.entity().getValue(), Op.EQ);
                 serviceOfferingSearch.join("domainDetailSearch", srvOffrDomainDetailSearch, JoinBuilder.JoinType.LEFT, JoinBuilder.JoinCondition.AND,
                         serviceOfferingSearch.entity().getId(), srvOffrDomainDetailSearch.entity().getResourceId(),
-                        srvOffrDomainDetailSearch.entity().getName(), serviceOfferingSearch.entity().setString("domainid"));
+                        srvOffrDomainDetailSearch.entity().getName(), serviceOfferingSearch.entity().setString(ApiConstants.DOMAIN_ID));
             }
         }
 
@@ -3769,7 +3769,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
             serviceOfferingSearch.join("ZoneDetailSearch", srvOffrZoneDetailSearch, JoinBuilder.JoinType.LEFT, JoinBuilder.JoinCondition.AND,
                     serviceOfferingSearch.entity().getId(), srvOffrZoneDetailSearch.entity().getResourceId(),
-                    srvOffrZoneDetailSearch.entity().getName(), serviceOfferingSearch.entity().setString("zoneid"));
+                    srvOffrZoneDetailSearch.entity().getName(), serviceOfferingSearch.entity().setString(ApiConstants.ZONE_ID));
             zone = _dcJoinDao.findById(zoneId);
         }
 
@@ -3797,14 +3797,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 maxComputeDetailsSearch = _srvOfferingDetailsDao.createSearchBuilder();
                 serviceOfferingSearch.join("maxComputeDetailsSearch", maxComputeDetailsSearch, JoinBuilder.JoinType.LEFT, JoinBuilder.JoinCondition.AND,
                         serviceOfferingSearch.entity().getId(), maxComputeDetailsSearch.entity().getResourceId(),
-                        maxComputeDetailsSearch.entity().getName(), serviceOfferingSearch.entity().setString("maxcpunumber"));
+                        maxComputeDetailsSearch.entity().getName(), serviceOfferingSearch.entity().setString(ApiConstants.MAX_CPU_NUMBER));
             }
 
             SearchBuilder<ServiceOfferingDetailsVO> minComputeDetailsSearch = _srvOfferingDetailsDao.createSearchBuilder();
 
             serviceOfferingSearch.join("minComputeDetailsSearch", minComputeDetailsSearch, JoinBuilder.JoinType.LEFT, JoinBuilder.JoinCondition.AND,
                     serviceOfferingSearch.entity().getId(), minComputeDetailsSearch.entity().getResourceId(),
-                    minComputeDetailsSearch.entity().getName(), serviceOfferingSearch.entity().setString("mincpunumber"));
+                    minComputeDetailsSearch.entity().getName(), serviceOfferingSearch.entity().setString(ApiConstants.MIN_CPU_NUMBER));
 
             /*
                 (min_cpu IS NULL AND cpu IS NULL AND max_cpu IS NULL)
@@ -3891,7 +3891,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             srvOffrDomainDetailSearch.cp();
             serviceOfferingSearch.join("domainDetailSearchNormalUser", srvOffrDomainDetailSearch, JoinBuilder.JoinType.LEFT, JoinBuilder.JoinCondition.AND,
                     serviceOfferingSearch.entity().getId(), srvOffrDomainDetailSearch.entity().getResourceId(),
-                    srvOffrDomainDetailSearch.entity().getName(), serviceOfferingSearch.entity().setString("domainid"));
+                    srvOffrDomainDetailSearch.entity().getName(), serviceOfferingSearch.entity().setString(ApiConstants.DOMAIN_ID));
         }
 
         if (currentVmOffering != null) {
