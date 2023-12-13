@@ -266,12 +266,12 @@
                   </template>
                   <span>{{ $t('message.ip.address.changes.effect.after.vm.restart') }}</span>
                 </a-form-item>
-                <a-row :gutter="12" justify="end">
+                <a-row v-if="selectedVmwareVcenter" :gutter="12" justify="end">
                   <a-col style="text-align: right">
                     <a-form-item name="forced" ref="forced">
                       <template #label>
                         <tooltip-label
-                          :title="selectedVmwareVcenter ? $t('label.allow.duplicate.macaddresses') : $t('label.forced')"
+                          :title="$t('label.allow.duplicate.macaddresses')"
                           :tooltip="apiParams.forced.description"/>
                       </template>
                       <a-switch v-model:checked="form.forced" @change="val => { switches.forced = val }" />
@@ -294,13 +294,23 @@
                   </template>
                 </a-alert>
               </a-row>
-              <a-row :gutter="12">
+              <a-row v-if="!selectedVmwareVcenter" :gutter="12">
                 <a-col :md="24" :lg="12">
-                  <a-form-item name="migrateallowed" ref="migrateallowed" v-if="!selectedVmwareVcenter">
+                  <a-form-item name="migrateallowed" ref="migrateallowed">
                     <template #label>
                       <tooltip-label :title="$t('label.migrate.allowed')" :tooltip="apiParams.migrateallowed.description"/>
                     </template>
                     <a-switch v-model:checked="form.migrateallowed" @change="val => { switches.migrateAllowed = val }" />
+                  </a-form-item>
+                </a-col>
+                <a-col>
+                  <a-form-item name="forced" ref="forced">
+                    <template #label>
+                      <tooltip-label
+                        :title="$t('label.forced')"
+                        :tooltip="apiParams.forced.description"/>
+                    </template>
+                    <a-switch v-model:checked="form.forced" @change="val => { switches.forced = val }" />
                   </a-form-item>
                 </a-col>
               </a-row>
