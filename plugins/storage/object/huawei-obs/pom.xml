@@ -1,0 +1,38 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>cloud-plugin-storage-object-huawei-obs</artifactId>
+    <name>Apache CloudStack Plugin - Huawei OBS object storage provider</name>
+    <parent>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloudstack-plugins</artifactId>
+        <version>4.19.0.0-SNAPSHOT</version>
+        <relativePath>../../../pom.xml</relativePath>
+    </parent>
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-engine-storage</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-engine-storage-object</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-engine-schema</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+	<dependency>
+	    <groupId>com.huaweicloud</groupId>
+	    <artifactId>esdk-obs-java-bundle</artifactId>
+	    <version>3.23.9.1</version>
+	</dependency>
+	<dependency>
+	    <groupId>com.huaweicloud.sdk</groupId>
+	    <artifactId>huaweicloud-sdk-iam</artifactId>
+	    <version>3.1.69</version>
+	</dependency>
+    </dependencies>
+</project>
