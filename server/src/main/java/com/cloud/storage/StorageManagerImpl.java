@@ -134,6 +134,7 @@ import org.apache.cloudstack.storage.object.ObjectStore;
 import org.apache.cloudstack.storage.object.ObjectStoreEntity;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -808,7 +809,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @Override
     public PrimaryDataStoreInfo createPool(CreateStoragePoolCmd cmd) throws ResourceInUseException, IllegalArgumentException, UnknownHostException, ResourceUnavailableException {
         String providerName = cmd.getStorageProviderName();
-        Map<String,String> uriParams = extractUriParamsAsMap(cmd.getUrl(), cmd.isManaged());
+        Map<String,String> uriParams = extractUriParamsAsMap(cmd.getUrl());
         DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(providerName);
 
         if (storeProvider == null) {
@@ -822,7 +823,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         Long podId = cmd.getPodId();
         Long zoneId = cmd.getZoneId();
 
-        ScopeType scopeType = uriParams.get("scheme").toString().equals("file") ? ScopeType.HOST : ScopeType.CLUSTER;
+        ScopeType scopeType = ScopeType.CLUSTER;
+        if ("file".equalsIgnoreCase(uriParams.get("scheme"))) {
+            scopeType = ScopeType.HOST;
+        }
         String scope = cmd.getScope();
         if (scope != null) {
             try {
@@ -889,7 +893,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         params.put("managed", cmd.isManaged());
         params.put("capacityBytes", cmd.getCapacityBytes());
         params.put("capacityIops", cmd.getCapacityIops());
-        params.putAll(uriParams);
+        if (MapUtils.isNotEmpty(uriParams)) {
+            params.putAll(uriParams);
+        }
 
         DataStoreLifeCycle lifeCycle = storeProvider.getDataStoreLifeCycle();
         DataStore store = null;
@@ -923,18 +929,22 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return (PrimaryDataStoreInfo)_dataStoreMgr.getDataStore(store.getId(), DataStoreRole.Primary);
     }
 
-    protected Map<String,String> extractUriParamsAsMap(String url, boolean managed) {
+    protected Map<String,String> extractUriParamsAsMap(String url) {
         Map<String,String> uriParams = new HashMap<>();
-        UriUtils.UriInfo uriInfo = UriUtils.getUriInfo(url);
+        UriUtils.UriInfo uriInfo;
+        try {
+            uriInfo = UriUtils.getUriInfo(url);
+        } catch (CloudRuntimeException cre) {
+            s_logger.debug(String.format("URI validation for url: %s failed, returning empty uri params", url));
+            return uriParams;
+        }
 
         String scheme = uriInfo.getScheme();
         String storageHost = uriInfo.getStorageHost();
         String storagePath = uriInfo.getStoragePath();
         if (scheme == null) {
-            if (managed) {
-                return uriParams;
-            }
-            throw new InvalidParameterValueException("scheme is null " + url + ", add nfs:// (or cifs://) as a prefix");
+            s_logger.debug(String.format("Scheme for url: %s is not found, returning empty uri params", url));
+            return uriParams;
         }
         boolean isHostOrPathBlank = StringUtils.isAnyBlank(storagePath, storageHost);
         if (scheme.equalsIgnoreCase("nfs")) {

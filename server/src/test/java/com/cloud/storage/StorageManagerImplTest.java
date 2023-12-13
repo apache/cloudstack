@@ -164,7 +164,7 @@ public class StorageManagerImplTest {
         String sfUrl = "MVIP=1.2.3.4;SVIP=6.7.8.9;clusterAdminUsername=admin;" +
                 "clusterAdminPassword=password;clusterDefaultMinIops=1000;" +
                 "clusterDefaultMaxIops=2000;clusterDefaultBurstIopsPercentOfMaxIops=2";
-        Map<String,String> uriParams = storageManagerImpl.extractUriParamsAsMap(sfUrl, true);
+        Map<String,String> uriParams = storageManagerImpl.extractUriParamsAsMap(sfUrl);
         Assert.assertTrue(MapUtils.isEmpty(uriParams));
     }
 
@@ -174,7 +174,7 @@ public class StorageManagerImplTest {
         String host = "HOST";
         String path = "/PATH";
         String sfUrl = String.format("%s://%s%s", scheme, host, path);
-        Map<String,String> uriParams = storageManagerImpl.extractUriParamsAsMap(sfUrl, false);
+        Map<String,String> uriParams = storageManagerImpl.extractUriParamsAsMap(sfUrl);
         Assert.assertTrue(MapUtils.isNotEmpty(uriParams));
         Assert.assertEquals(scheme, uriParams.get("scheme"));
         Assert.assertEquals(host, uriParams.get("host"));
