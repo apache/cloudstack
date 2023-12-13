@@ -56,6 +56,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 
+import com.amazonaws.util.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.DateUtil;
@@ -373,10 +374,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         }
 
         Collection<JoinBuilder<SearchCriteria<?>>> joins = null;
+        List<Attribute> joinAttrList = null;
         if (sc != null) {
             joins = sc.getJoins();
             if (joins != null) {
-                addJoins(str, joins);
+                joinAttrList = addJoins(str, joins);
             }
         }
 
@@ -396,6 +398,13 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         try {
             pstmt = txn.prepareAutoCloseStatement(sql);
             int i = 1;
+
+            if (!CollectionUtils.isNullOrEmpty(joinAttrList)) {
+                for (Attribute attr : joinAttrList) {
+                    prepareAttribute(i++, pstmt, attr, null);
+                }
+            }
+
             if (clause != null) {
                 for (final Pair<Attribute, Object> value : sc.getValues()) {
                     prepareAttribute(i++, pstmt, value.first(), value.second());
@@ -448,8 +457,9 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
         Collection<JoinBuilder<SearchCriteria<?>>> joins = null;
         joins = sc.getJoins();
+        List<Attribute> joinAttrList = null;
         if (joins != null) {
-            addJoins(str, joins);
+            joinAttrList = addJoins(str, joins);
         }
 
         List<Object> groupByValues = addGroupBy(str, sc);
@@ -462,6 +472,13 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         try {
             pstmt = txn.prepareAutoCloseStatement(sql);
             int i = 1;
+
+            if (!CollectionUtils.isNullOrEmpty(joinAttrList)) {
+                for (Attribute attr : joinAttrList) {
+                    prepareAttribute(i++, pstmt, attr, null);
+                }
+            }
+
             if (clause != null) {
                 for (final Pair<Attribute, Object> value : sc.getValues()) {
                     prepareAttribute(i++, pstmt, value.first(), value.second());
@@ -1272,12 +1289,13 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     }
 
     @DB()
-    protected void addJoins(StringBuilder str, Collection<JoinBuilder<SearchCriteria<?>>> joins) {
-        addJoins(str, joins, new HashMap<>());
+    protected List<Attribute> addJoins(StringBuilder str, Collection<JoinBuilder<SearchCriteria<?>>> joins) {
+        return addJoins(str, joins, new HashMap<>());
     }
 
     @DB()
-    protected void addJoins(StringBuilder str, Collection<JoinBuilder<SearchCriteria<?>>> joins, Map<String, Integer> joinedTableNames) {
+    protected List<Attribute> addJoins(StringBuilder str, Collection<JoinBuilder<SearchCriteria<?>>> joins, Map<String, Integer> joinedTableNames) {
+        List<Attribute> joinAttrList = new ArrayList<>();
         boolean hasWhereClause = true;
         int fromIndex = str.lastIndexOf("WHERE");
         if (fromIndex == -1) {
@@ -1304,7 +1322,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                     onClause.append(join.getCondition().getName());
                 }
                 if (join.getFirstAttributes()[i].getValue() != null) {
-                    onClause.append(join.getFirstAttributes()[i].getValueToSql());
+                    onClause.append("?");
+                    joinAttrList.add(join.getFirstAttributes()[i]);
                 } else {
                     onClause.append(join.getFirstAttributes()[i].table)
                     .append(".")
@@ -1312,7 +1331,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                 }
                 onClause.append("=");
                 if (join.getSecondAttribute()[i].getValue() != null) {
-                    onClause.append(join.getSecondAttribute()[i].getValueToSql());
+                    onClause.append("?");
+                    joinAttrList.add(join.getSecondAttribute()[i]);
                 } else {
                     if(!joinTableAlias.equals(joinTableName)) {
                         onClause.append(joinTableAlias);
@@ -1342,9 +1362,10 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
         for (JoinBuilder<SearchCriteria<?>> join : joins) {
             if (join.getT().getJoins() != null) {
-                addJoins(str, join.getT().getJoins(), joinedTableNames);
+                joinAttrList.addAll(addJoins(str, join.getT().getJoins(), joinedTableNames));
             }
         }
+        return joinAttrList;
     }
 
     protected static String findNextJoinTableName(String tableName, Map<String, Integer> usedTableNames) {
@@ -1608,7 +1629,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                 return;
             }
         }
-        if (attr.field.getType() == String.class) {
+        if (attr.getValue() != null && attr.getValue() instanceof String) {
+            pstmt.setString(j, (String)attr.getValue());
+        } else if (attr.getValue() != null && attr.getValue() instanceof Long) {
+            pstmt.setLong(j, (Long)attr.getValue());
+        } else if (attr.field.getType() == String.class) {
             final String str;
             try {
                 str = (String) value;
@@ -2041,10 +2066,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         }
 
         Collection<JoinBuilder<SearchCriteria<?>>> joins = null;
+        List<Attribute> joinAttrList = null;
         if (sc != null) {
             joins = sc.getJoins();
             if (joins != null) {
-                addJoins(str, joins);
+                joinAttrList = addJoins(str, joins);
             }
         }
 
@@ -2057,6 +2083,13 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         try {
             pstmt = txn.prepareAutoCloseStatement(sql);
             int i = 1;
+
+            if (!CollectionUtils.isNullOrEmpty(joinAttrList)) {
+                for (Attribute attr : joinAttrList) {
+                    prepareAttribute(i++, pstmt, attr, null);
+                }
+            }
+
             if (clause != null) {
                 for (final Pair<Attribute, Object> value : sc.getValues()) {
                     prepareAttribute(i++, pstmt, value.first(), value.second());
@@ -2104,10 +2137,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         }
 
         Collection<JoinBuilder<SearchCriteria<?>>> joins = null;
+        List<Attribute> joinAttrList = null;
         if (sc != null) {
             joins = sc.getJoins();
             if (joins != null) {
-                addJoins(str, joins);
+                joinAttrList = addJoins(str, joins);
             }
         }
 
@@ -2116,6 +2150,13 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
         try (PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql)) {
             int i = 1;
+
+            if (!CollectionUtils.isNullOrEmpty(joinAttrList)) {
+                for (Attribute attr : joinAttrList) {
+                    prepareAttribute(i++, pstmt, attr, null);
+                }
+            }
+
             if (clause != null) {
                 for (final Pair<Attribute, Object> value : sc.getValues()) {
                     prepareAttribute(i++, pstmt, value.first(), value.second());
@@ -2159,10 +2200,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         }
 
         Collection<JoinBuilder<SearchCriteria<?>>> joins = null;
+        List<Attribute> joinAttrList = null;
         if (sc != null) {
             joins = sc.getJoins();
             if (joins != null) {
-                addJoins(str, joins);
+                joinAttrList = addJoins(str, joins);
             }
         }
 
@@ -2173,6 +2215,13 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         try {
             pstmt = txn.prepareAutoCloseStatement(sql);
             int i = 1;
+
+            if (!CollectionUtils.isNullOrEmpty(joinAttrList)) {
+                for (Attribute attr : joinAttrList) {
+                    prepareAttribute(i++, pstmt, attr, null);
+                }
+            }
+
             if (clause != null) {
                 for (final Pair<Attribute, Object> value : sc.getValues()) {
                     prepareAttribute(i++, pstmt, value.first(), value.second());

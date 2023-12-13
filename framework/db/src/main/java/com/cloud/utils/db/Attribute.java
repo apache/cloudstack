@@ -223,15 +223,6 @@ public class Attribute {
         return value;
     }
 
-    public String getValueToSql() {
-        if (value instanceof String) {
-            return "'" + value + "'";
-        } else if (value instanceof Long) {
-            return value.toString();
-        }
-        throw new IllegalArgumentException("Unsupported type " + value.getClass());
-    }
-
     public Object get(Object entity) {
         try {
             return field.get(entity);
