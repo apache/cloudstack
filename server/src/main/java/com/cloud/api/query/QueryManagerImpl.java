@@ -4002,19 +4002,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (cpuNumber != null) {
-            /*
-            and("cpuConstraintMinComputeGTEQ", entity().getCpu(), Op.GTEQ).cp();
-            or("cpuConstraintGTEQ", entity().getCpu(), Op.GTEQ);
-
-            or().op().op();
-
-            and("cpuConstraintMinComputeLTEQ", entity().getCpu(), Op.LTEQ).cp();
-            or("minComputeDetailsSearch", "cpuConstraintMinComputeLTEQ", minComputeDetailsSearch.entity().getValue(), Op.LTEQ).cp();
-
-            and("cpuConstraintMaxComputeGTEQ", entity().getCpu(), Op.GTEQ).cp();
-            or("maxComputeDetailsSearch", "cpuConstraintMaxComputeGTEQ", maxComputeDetailsSearch.entity().getValue(), Op.GTEQ).cp();
-            cp().cp();
-             */
             sc.setParameters("cpuNumber", cpuNumber);
         }
 
