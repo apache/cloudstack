@@ -172,6 +172,12 @@ public class StorPoolUtil {
         private String templateName;
 
         public SpConnectionDesc(String url) {
+            try {
+                extractUriParams(url);
+                return;
+            } catch (URISyntaxException e) {
+                log.debug("[ignore] the uri is not valid");
+            }
             String[] urlSplit = url.split(";");
             if (urlSplit.length == 1 && !urlSplit[0].contains("=")) {
                 this.templateName = url;
@@ -238,6 +244,13 @@ public class StorPoolUtil {
                     }
                 }
             }
+        }
+
+        private void extractUriParams(String url) throws URISyntaxException {
+            URI uri = new URI(url);
+            hostPort = uri.getHost() + ":" + uri.getPort();
+            authToken = uri.getUserInfo();
+            templateName = uri.getPath().replace("/", "");
         }
 
         public SpConnectionDesc(String host, String authToken2, String templateName2) {
