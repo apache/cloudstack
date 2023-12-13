@@ -18,10 +18,12 @@ package com.cloud.storage;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
+import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLDecoder;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.sql.PreparedStatement;
@@ -132,9 +134,8 @@ import org.apache.cloudstack.storage.object.ObjectStore;
 import org.apache.cloudstack.storage.object.ObjectStoreEntity;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.ObjectUtils;
-import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -255,8 +256,6 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.collect.Sets;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 
 
 @Component
