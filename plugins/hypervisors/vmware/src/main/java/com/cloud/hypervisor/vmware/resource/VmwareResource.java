@@ -54,6 +54,7 @@ import com.vmware.vim25.FileQueryFlags;
 import com.vmware.vim25.FolderFileInfo;
 import com.vmware.vim25.HostDatastoreBrowserSearchResults;
 import com.vmware.vim25.HostDatastoreBrowserSearchSpec;
+import com.vmware.vim25.VirtualMachineConfigSummary;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
@@ -7154,6 +7155,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 }
                 UnmanagedInstanceTO instance = VmwareHelper.getUnmanagedInstance(hyperHost, vmMo);
                 if (instance != null) {
+                    VirtualMachineConfigSummary configSummary = vmMo.getConfigSummary();
+                    instance.setCpuSpeed(configSummary != null ? configSummary.getCpuReservation() : 0);
                     unmanagedInstances.put(instance.getName(), instance);
                 }
             }
