@@ -279,6 +279,10 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
 
         Map<String, String> srcDetails = command.getSrcDetails();
         String srcPath = srcDetails != null ? srcDetails.get(DiskTO.IQN) : srcVolumeObjectTO.getPath();
+        // its possible a volume has details but is not using IQN addressing...
+        if (srcPath == null) {
+            srcPath = srcVolumeObjectTO.getPath();
+        }
 
         VolumeObjectTO destVolumeObjectTO = (VolumeObjectTO)command.getDestData();
         PrimaryDataStoreTO destPrimaryDataStore = (PrimaryDataStoreTO)destVolumeObjectTO.getDataStore();
