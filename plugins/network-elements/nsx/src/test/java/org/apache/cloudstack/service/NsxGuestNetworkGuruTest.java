@@ -23,6 +23,9 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
+import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
@@ -30,16 +33,24 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.guru.GuestNetworkGuru;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.Pair;
+import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineProfile;
 import org.apache.cloudstack.NsxAnswer;
+import org.apache.cloudstack.agent.api.CreateNsxDhcpRelayConfigCommand;
 import org.apache.cloudstack.agent.api.CreateNsxSegmentCommand;
+import org.apache.cloudstack.agent.api.CreateNsxTier1GatewayCommand;
 import org.apache.cloudstack.agent.api.NsxCommand;
 import org.apache.cloudstack.utils.NsxControllerUtils;
 import org.junit.After;
@@ -60,8 +71,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.mock;
@@ -103,19 +113,27 @@ public class NsxGuestNetworkGuruTest {
     DomainDao domainDao;
     @Mock
     NetworkDao networkDao;
+    @Mock
+    IpAddressManager ipAddressManager;
+    @Mock
+    NetworkOfferingDao networkOfferingDao;
 
     NsxGuestNetworkGuru guru;
+    GuestNetworkGuru guestNetworkGuru;
     AutoCloseable closeable;
 
     @Before
-    public void setUp() {
+    public void setUp() throws IllegalAccessException, NoSuchFieldException {
         closeable = MockitoAnnotations.openMocks(this);
         guru = new NsxGuestNetworkGuru();
-        ReflectionTestUtils.setField(guru, "_physicalNetworkDao", physicalNetworkDao);
+
         ReflectionTestUtils.setField(guru, "_dcDao", dcDao);
         ReflectionTestUtils.setField(guru, "_networkDao", networkDao);
         ReflectionTestUtils.setField(guru, "_networkModel", networkModel);
         ReflectionTestUtils.setField(guru, "_vpcDao", vpcDao);
+        ReflectionTestUtils.setField((GuestNetworkGuru) guru, "_ipAddrMgr", ipAddressManager);
+        ReflectionTestUtils.setField((GuestNetworkGuru) guru, "_networkModel", networkModel);
+        ReflectionTestUtils.setField((GuestNetworkGuru) guru, "networkOfferingDao", networkOfferingDao);
 
         guru.networkOfferingServiceMapDao = networkOfferingServiceMapDao;
         guru.nsxControllerUtils = nsxControllerUtils;
@@ -214,5 +232,98 @@ public class NsxGuestNetworkGuruTest {
         assertEquals(3L, implemented.getPhysicalNetworkId().longValue());
         assertEquals(4L, implemented.getVpcId().longValue());
         assertFalse(implemented.isRedundant());
+    }
+
+    @Test
+    public void testAllocateForUserVM() throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
+        Network network = Mockito.mock(Network.class);
+        NicProfile nicProfile = Mockito.mock(NicProfile.class);
+        VirtualMachineProfile vmProfile = Mockito.mock(VirtualMachineProfile.class);
+        VirtualMachine virtualMachine = Mockito.mock(VirtualMachine.class);
+        Pair<String, String> dns = new Pair<>("10.1.5.1", "8.8.8.8");
+        String macAddress = "00:00:00:11:1D:1E:CD";
+
+        when(network.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+        when(vmProfile.getVirtualMachine()).thenReturn(virtualMachine);
+        when(virtualMachine.getType()).thenReturn(VirtualMachine.Type.User);
+        when(network.getId()).thenReturn(2L);
+        when(offering.getId()).thenReturn(11L);
+        when(networkModel.getNetworkIp4Dns(any(Network.class), nullable(DataCenter.class))).thenReturn(dns);
+        when(networkModel.getNextAvailableMacAddressInNetwork(anyLong())).thenReturn(macAddress);
+        when(nicProfile.getMacAddress()).thenReturn(macAddress);
+        when(networkOfferingDao.isIpv6Supported(anyLong())).thenReturn(false);
+
+        NicProfile profile = guru.allocate(network, nicProfile, vmProfile);
+        assertNotNull(profile);
+    }
+
+    @Test
+    public void testAllocateForDomainRouter() throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
+        Network network = Mockito.mock(Network.class);
+        NicProfile nicProfile = Mockito.mock(NicProfile.class);
+        VirtualMachineProfile vmProfile = Mockito.mock(VirtualMachineProfile.class);
+        VirtualMachine virtualMachine = Mockito.mock(VirtualMachine.class);
+        Pair<String, String> dns = new Pair<>("10.1.5.1", "8.8.8.8");
+        String macAddress = "00:00:00:11:1D:1E:CD";
+
+        when(network.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+        when(vmProfile.getType()).thenReturn(VirtualMachine.Type.DomainRouter);
+        when(vmProfile.getVirtualMachine()).thenReturn(virtualMachine);
+        when(virtualMachine.getType()).thenReturn(VirtualMachine.Type.DomainRouter);
+        when(network.getId()).thenReturn(2L);
+        when(offering.getId()).thenReturn(11L);
+        when(networkModel.getNetworkIp4Dns(any(Network.class), nullable(DataCenter.class))).thenReturn(dns);
+        when(networkModel.getNextAvailableMacAddressInNetwork(anyLong())).thenReturn(macAddress);
+        when(nicProfile.getMacAddress()).thenReturn(macAddress);
+        when(networkOfferingDao.isIpv6Supported(anyLong())).thenReturn(false);
+        when(network.getDataCenterId()).thenReturn(1L);
+        when(network.getAccountId()).thenReturn(5L);
+        when(network.getVpcId()).thenReturn(51L);
+        when(account.getDomainId()).thenReturn(2L);
+        when(dcDao.findById(anyLong())).thenReturn(Mockito.mock(DataCenterVO.class));
+        when(accountDao.findById(anyLong())).thenReturn(Mockito.mock(AccountVO.class));
+        when(vpcDao.findById(anyLong())).thenReturn(Mockito.mock(VpcVO.class));
+        when(domainDao.findById(anyLong())).thenReturn(Mockito.mock(DomainVO.class));
+        when(nicProfile.getIPv4Address()).thenReturn("10.1.13.10");
+        when(nsxControllerUtils.sendNsxCommand(any(CreateNsxDhcpRelayConfigCommand.class),
+                anyLong())).thenReturn(new NsxAnswer(new NsxCommand(), true, ""));
+
+        NicProfile profile = guru.allocate(network, nicProfile, vmProfile);
+
+        assertNotNull(profile);
+        verify(nsxControllerUtils, times(1)).sendNsxCommand(any(CreateNsxDhcpRelayConfigCommand.class),
+                anyLong());
+    }
+
+    @Test
+    public void testCreateNsxSegmentForVpc() {
+        NetworkVO networkVO = Mockito.mock(NetworkVO.class);
+        DataCenter dataCenter = Mockito.mock(DataCenter.class);
+
+        when(networkVO.getAccountId()).thenReturn(1L);
+        when(nsxControllerUtils.sendNsxCommand(any(CreateNsxSegmentCommand.class),
+                anyLong())).thenReturn(new NsxAnswer(new NsxCommand(), true, ""));
+        guru.createNsxSegment(networkVO, dataCenter);
+        verify(nsxControllerUtils, times(1)).sendNsxCommand(any(CreateNsxSegmentCommand.class),
+                anyLong());
+    }
+
+
+    @Test
+    public void testCreateNsxSegmentForIsolatedNetwork() {
+        NetworkVO networkVO = Mockito.mock(NetworkVO.class);
+        DataCenter dataCenter = Mockito.mock(DataCenter.class);
+
+        when(networkVO.getAccountId()).thenReturn(1L);
+        when(networkVO.getVpcId()).thenReturn(null);
+        when(nsxControllerUtils.sendNsxCommand(any(CreateNsxTier1GatewayCommand.class),
+                anyLong())).thenReturn(new NsxAnswer(new NsxCommand(), true, ""));
+        when(nsxControllerUtils.sendNsxCommand(any(CreateNsxSegmentCommand.class),
+                anyLong())).thenReturn(new NsxAnswer(new NsxCommand(), true, ""));
+        guru.createNsxSegment(networkVO, dataCenter);
+        verify(nsxControllerUtils, times(1)).sendNsxCommand(any(CreateNsxTier1GatewayCommand.class),
+                anyLong());
+        verify(nsxControllerUtils, times(1)).sendNsxCommand(any(CreateNsxSegmentCommand.class),
+                anyLong());
     }
 }

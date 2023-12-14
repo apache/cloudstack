@@ -118,7 +118,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     @Inject
     protected IpAddressManager _ipAddrMgr;
     @Inject
-    NetworkOfferingDao networkOfferingDao;
+    protected NetworkOfferingDao networkOfferingDao;
     @Inject
     Ipv6AddressManager ipv6AddressManager;
     @Inject

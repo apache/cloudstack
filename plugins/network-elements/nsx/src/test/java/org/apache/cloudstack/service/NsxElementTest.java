@@ -31,7 +31,6 @@ import com.cloud.network.Networks;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
-import com.cloud.network.dao.LoadBalancerVMMapVO;
 import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
@@ -230,14 +229,14 @@ public class NsxElementTest {
         2L, 5L, 6L, false, false);
 
         NicVO nic = Mockito.mock(NicVO.class);
-        VpcVO vpc = new VpcVO();
-        vpc.setId(1L);
-        vpc.setName("vpc1");
+        VpcVO vpc = Mockito.mock(VpcVO.class);
 
         when(ipAddressDao.findByIdIncludingRemoved(anyLong())).thenReturn(ipAddress);
         when(vmInstanceDao.findByIdIncludingRemoved(anyLong())).thenReturn(vm);
         when(networkModel.getNicInNetworkIncludingRemoved(anyLong(), anyLong())).thenReturn(nic);
         when(vpcDao.findById(anyLong())).thenReturn(vpc);
+        when(vpc.getId()).thenReturn(1L);
+        when(vpc.getName()).thenReturn("vpc1");
         when(nsxService.createStaticNatRule(anyLong(), anyLong(), anyLong(), anyLong(), anyString(), anyBoolean(), anyLong(), anyString(), anyString())).thenReturn(true);
 
         assertTrue(nsxElement.applyStaticNats(networkVO, List.of(rule)));
@@ -367,14 +366,12 @@ public class NsxElementTest {
         LoadBalancingRule.LbDestination destination = new LoadBalancingRule.LbDestination(6443, 6443, "172.30.110.11", false);
         LoadBalancingRule rule = new LoadBalancingRule(lb, List.of(destination), null, null, new Ip("10.1.13.10"));
 
-        LoadBalancerVMMapVO lbVmMap = new LoadBalancerVMMapVO(1L, 21L);
-
-        VpcVO vpc = new VpcVO();
-        vpc.setDomainId(2L);
-        vpc.setAccountId(5L);
+        VpcVO vpc = Mockito.mock(VpcVO.class);
 
         IPAddressVO ipAddress = new IPAddressVO(new Ip("10.1.13.10"), 1L, 1L, 1L,false);
         when(vpcDao.findById(anyLong())).thenReturn(vpc);
+        when(vpc.getDomainId()).thenReturn(2L);
+        when(vpc.getAccountId()).thenReturn(5L);
         when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddress);
 
         assertTrue(nsxElement.applyLBRules(networkVO, List.of(rule)));

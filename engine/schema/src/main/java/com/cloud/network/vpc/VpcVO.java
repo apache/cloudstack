@@ -139,10 +139,6 @@ public class VpcVO implements Vpc {
         return id;
     }
 
-    public void setId(long id) {
-        this.id = id;
-    }
-
     @Override
     public String getUuid() {
         return uuid;
@@ -168,17 +164,9 @@ public class VpcVO implements Vpc {
         return domainId;
     }
 
-    public void setDomainId(long domainId) {
-        this.domainId = domainId;
-    }
-
     @Override
     public long getAccountId() {
         return accountId;
-    }
-
-    public void setAccountId(long accountId) {
-        this.accountId = accountId;
     }
 
     @Override
