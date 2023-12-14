@@ -65,6 +65,10 @@ public class SshHelper {
     }
 
     public static void scpFrom(String host, int port, String user, File permKeyFile, String localTargetDirectory, String remoteTargetFile) throws Exception {
+        scpFrom(host, port, user, permKeyFile, null,  localTargetDirectory, remoteTargetFile);
+    }
+
+    public static void scpFrom(String host, int port, String user, File permKeyFile, String password, String localTargetDirectory, String remoteTargetFile) throws Exception {
         com.trilead.ssh2.Connection conn = null;
         com.trilead.ssh2.SCPClient scpClient = null;
 
@@ -72,11 +76,20 @@ public class SshHelper {
             conn = new com.trilead.ssh2.Connection(host, port);
             conn.connect(null, DEFAULT_CONNECT_TIMEOUT, DEFAULT_KEX_TIMEOUT);
 
-            if (!conn.authenticateWithPublicKey(user, permKeyFile, null)) {
-                String msg = "Failed to authentication SSH user " + user + " on host " + host;
-                s_logger.error(msg);
-                throw new Exception(msg);
+            if (permKeyFile == null) {
+                if (!conn.authenticateWithPassword(user, password)) {
+                    String msg = "Failed to authentication SSH user " + user + " on host " + host;
+                    s_logger.error(msg);
+                    throw new Exception(msg);
+                }
+            } else {
+                if (!conn.authenticateWithPublicKey(user, permKeyFile, password)) {
+                    String msg = "Failed to authentication SSH user " + user + " on host " + host;
+                    s_logger.error(msg);
+                    throw new Exception(msg);
+                }
             }
+
             scpClient = conn.createSCPClient();
 
             scpClient.get(remoteTargetFile, localTargetDirectory);

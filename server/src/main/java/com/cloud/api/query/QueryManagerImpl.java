@@ -34,7 +34,10 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.host.Host;
 import com.cloud.host.dao.HostDao;
@@ -571,6 +574,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private PublicIpQuarantineDao publicIpQuarantineDao;
+
+    @Inject
+    private StoragePoolHostDao storagePoolHostDao;
 
     private SearchCriteria<ServiceOfferingJoinVO> getMinimumCpuServiceOfferingJoinSearchCriteria(int cpu) {
         SearchCriteria<ServiceOfferingJoinVO> sc = _srvOfferingJoinDao.createSearchCriteria();
@@ -2816,23 +2822,24 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Override
     public ListResponse<StoragePoolResponse> searchForStoragePools(ListStoragePoolsCmd cmd) {
-        Pair<List<StoragePoolJoinVO>, Integer> result = cmd.getHostId() != null ? searchForLocalStorages(cmd) : searchForStoragePoolsInternal(cmd);
+        Pair<List<StoragePoolJoinVO>, Integer> result = (ScopeType.HOST.name().equalsIgnoreCase(cmd.getScope()) && cmd.getHostId() != null) ?
+                searchForLocalStorages(cmd) : searchForStoragePoolsInternal(cmd);
         return createStoragesPoolResponse(result);
     }
 
     private Pair<List<StoragePoolJoinVO>, Integer> searchForLocalStorages(ListStoragePoolsCmd cmd) {
         long id = cmd.getHostId();
-        String scope = ScopeType.HOST.toString();
-        Pair<List<StoragePoolJoinVO>, Integer> localStorages;
-
-        ListHostsCmd listHostsCmd = new ListHostsCmd();
-        listHostsCmd.setId(id);
-        Pair<List<HostJoinVO>, Integer> hosts = searchForServersInternal(listHostsCmd);
-
-        cmd.setScope(scope);
-        localStorages = searchForStoragePoolsInternal(cmd);
-
-        return localStorages;
+        List<StoragePoolHostVO> localstoragePools = storagePoolHostDao.listByHostId(id);
+        Long[] poolIds = new Long[localstoragePools.size()];
+        int i = 0;
+        for(StoragePoolHostVO localstoragePool : localstoragePools) {
+            StoragePool storagePool = storagePoolDao.findById(localstoragePool.getPoolId());
+            if (storagePool != null && storagePool.isLocal()) {
+                poolIds[i++] = localstoragePool.getPoolId();
+            }
+        }
+        List<StoragePoolJoinVO> pools = _poolJoinDao.searchByIds(poolIds);
+        return new Pair<>(pools, pools.size());
     }
 
     private ListResponse<StoragePoolResponse> createStoragesPoolResponse(Pair<List<StoragePoolJoinVO>, Integer> storagePools) {
