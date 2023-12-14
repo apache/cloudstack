@@ -78,7 +78,6 @@ import org.apache.cloudstack.utils.NsxControllerUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -98,6 +97,7 @@ import static org.apache.cloudstack.utils.NsxControllerUtils.getLoadBalancerAlgo
 
 public class NsxApiClient {
 
+    protected ApiClient apiClient;
     protected Function<Class<? extends Service>, Service> nsxService;
 
     public static final int RESPONSE_TIMEOUT_SECONDS = 60;
@@ -188,13 +188,8 @@ public class NsxApiClient {
                 .register(Configuration.STUB_CONFIG_CFG, stubConfig)
                 .register(RestProtocol.REST_REQUEST_AUTHENTICATOR_CFG, new BasicAuthenticationAppender());
         Configuration config = configBuilder.build();
-        try (ApiClient apiClient = ApiClients.newRestClient(controllerUrl, config)) {
-            nsxService = apiClient::createStub;
-        } catch (IOException e) {
-            String err = String.format("Error creating NSX API client: %s", e.getMessage());
-            LOGGER.error(err, e);
-            throw new CloudRuntimeException(err);
-        }
+        apiClient = ApiClients.newRestClient(controllerUrl, config);
+        nsxService = apiClient::createStub;
     }
 
     public void createTier1NatRule(String tier1GatewayName, String natId, String natRuleId,
