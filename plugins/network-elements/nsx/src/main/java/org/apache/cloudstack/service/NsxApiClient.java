@@ -97,6 +97,7 @@ import static org.apache.cloudstack.utils.NsxControllerUtils.getLoadBalancerAlgo
 
 public class NsxApiClient {
 
+    protected ApiClient apiClient;
     protected Function<Class<? extends Service>, Service> nsxService;
 
     public static final int RESPONSE_TIMEOUT_SECONDS = 60;
@@ -187,7 +188,7 @@ public class NsxApiClient {
                 .register(Configuration.STUB_CONFIG_CFG, stubConfig)
                 .register(RestProtocol.REST_REQUEST_AUTHENTICATOR_CFG, new BasicAuthenticationAppender());
         Configuration config = configBuilder.build();
-        ApiClient apiClient = ApiClients.newRestClient(controllerUrl, config);
+        apiClient = ApiClients.newRestClient(controllerUrl, config);
         nsxService = apiClient::createStub;
     }
 

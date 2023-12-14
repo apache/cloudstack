@@ -18,8 +18,8 @@ package org.apache.cloudstack.api.command.user.address;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -182,7 +182,7 @@ public class ListPublicIpAddressesCmd extends BaseListRetrieveOnlyResourceCountC
     }
 
     public boolean getForSystemVMs() {
-        return !Objects.isNull(forSystemVMs) && forSystemVMs;
+        return BooleanUtils.isTrue(forSystemVMs);
     }
 
     /////////////////////////////////////////////////////

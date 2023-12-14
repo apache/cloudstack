@@ -371,8 +371,12 @@ public class NsxResource implements ServerResource {
         String segmentName = NsxControllerUtils.getNsxSegmentId(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(),
                 cmd.getVpcId(), cmd.getNetworkId());
         try {
-            Thread.sleep(30*1000);
+            Thread.sleep(30 * 1000L);
             nsxApiClient.deleteSegment(cmd.getZoneId(), cmd.getDomainId(), cmd.getAccountId(), cmd.getVpcId(), cmd.getNetworkId(), segmentName);
+        } catch (InterruptedException | ThreadDeath e) {
+            LOGGER.error("Thread interrupted", e);
+            Thread.currentThread().interrupt();
+            return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
         } catch (Exception e) {
             LOGGER.error(String.format("Failed to delete NSX segment: %s", segmentName));
             return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
