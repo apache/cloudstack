@@ -134,6 +134,9 @@
         <module>storage/volume/scaleio</module>
         <module>storage/volume/linstor</module>
         <module>storage/volume/storpool</module>
+        <module>storage/volume/adaptive</module>
+        <module>storage/volume/flasharray</module>
+        <module>storage/volume/primera</module>
         <module>storage/object/minio</module>
         <module>storage/object/simulator</module>
 

@@ -48,126 +48,278 @@
           </a-alert>
           <br />
           <a-row :gutter="12">
-            <a-col :md="24" :lg="12">
-              <a-form
-                style="min-width: 170px"
-                :ref="formRef"
-                :model="form"
-                :rules="rules"
-                layout="vertical"
-              >
-                <a-col :md="24" :lg="24">
-                  <a-form-item name="sourcehypervisor" ref="sourcehypervisor" :label="$t('label.source')">
-                    <a-radio-group
-                      style="text-align: center; width: 100%"
-                      v-model:value="form.sourceHypervisor"
-                      @change="selected => { onSelectHypervisor(selected.target.value) }"
-                      buttonStyle="solid">
-                      <a-radio-button value="vmware" style="width: 50%; text-align: center">
-                        VMware
-                      </a-radio-button>
-                      <a-radio-button value="kvm" style="width: 50%; text-align: center">
-                        KVM
-                      </a-radio-button>
-                    </a-radio-group>
-                  </a-form-item>
-                  <a-form-item name="sourceaction" ref="sourceaction" :label="$t('label.action')" v-if="sourceActions">
+            <a-card class="source-dest-card">
+              <a-col :md="24" :lg="48">
+                <a-form
+                  style="min-width: 170px"
+                  :ref="formRef"
+                  :model="form"
+                  :rules="rules"
+                  layout="vertical"
+                >
+                  <a-col :md="24" :lg="24">
+                    <a-form-item name="sourcehypervisor" ref="sourcehypervisor" :label="$t('label.source')">
+                      <a-radio-group
+                        style="text-align: center; width: 100%"
+                        v-model:value="form.sourceHypervisor"
+                        @change="selected => { onSelectHypervisor(selected.target.value) }"
+                        buttonStyle="solid">
+                        <a-radio-button value="vmware" style="width: 50%; text-align: center">
+                          VMware
+                        </a-radio-button>
+                        <a-radio-button value="kvm" style="width: 50%; text-align: center">
+                          KVM
+                        </a-radio-button>
+                      </a-radio-group>
+                    </a-form-item>
+                    <a-form-item name="sourceaction" ref="sourceaction" :label="$t('label.action')" v-if="sourceActions">
+                      <a-select
+                        v-model:value="form.sourceAction"
+                        showSearch
+                        optionFilterProp="label"
+                        :filterOption="(input, option) => {
+                          return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                        }"
+                        @change="onSelectSourceAction"
+                        :loading="optionLoading.sourcehypervisor"
+                        v-focus="true"
+                      >
+                        <a-select-option v-for="opt in sourceActions" :key="opt.name" :label="opt.label">
+                          <span>
+                            {{ opt.label }}
+                          </span>
+                        </a-select-option>
+                      </a-select>
+                    </a-form-item>
+                  </a-col>
+                    <a-col v-if="showExtHost" :md="24" :lg="12">
+                        <a-form-item
+                                name="hostname"
+                                ref="hostname">
+                          <template #label>
+                            <tooltip-label
+                              :title="$t('label.hostname')"
+                              :tooltip="$t('label.ext.hostname.tooltip')"/>
+                          </template>
+                            <a-input
+                                    v-model:value="form.hostname"
+                            ></a-input>
+                        </a-form-item>
+                    </a-col>
+                    <a-col v-if="showExtHost" :md="24" :lg="12">
+                        <a-form-item
+                                name="username"
+                                ref="username">
+                          <template #label>
+                            <tooltip-label
+                              :title="$t('label.username')"
+                              :tooltip="$t('label.username.tooltip')"/>
+                          </template>
+                            <a-input
+                                    v-model:value="form.username"
+                            ></a-input>
+                        </a-form-item>
+                    </a-col>
+                    <a-col v-if="showExtHost" :md="24" :lg="12">
+                        <a-form-item
+                                name="password"
+                                ref="password">
+                          <template #label>
+                            <tooltip-label
+                              :title="$t('label.password')"
+                              :tooltip="$t('label.password.tooltip')"/>
+                          </template>
+                            <a-input-password
+                                    v-model:value="form.password"
+                            ></a-input-password>
+                        </a-form-item>
+                    </a-col>
+                    <a-col v-if="showExtHost" :md="24" :lg="12">
+                        <a-form-item
+                                name="tmppath"
+                                ref="tmppath">
+                          <template #label>
+                            <tooltip-label
+                              :title="$t('label.tmppath')"
+                              :tooltip="$t('label.tmppath.tooltip')"/>
+                          </template>
+                            <a-input
+                                    v-model:value="form.tmppath"
+                            ></a-input>
+                        </a-form-item>
+                    </a-col>
+                </a-form>
+              </a-col>
+            </a-card>
+            <!-- ------------ -->
+            <!-- RIGHT COLUMN -->
+            <!-- ------------ -->
+            <a-card class="source-dest-card">
+              <template #title>
+                Destination
+              </template>
+              <a-col :md="24" :lg="48">
+                <a-form
+                  style="min-width: 170px"
+                  :ref="formRef"
+                  :model="form"
+                  :rules="rules"
+                  layout="vertical"
+                >
+                <a-form-item v-if="showPool" name="scope" ref="scope">
+                  <template #label>
+                    <tooltip-label :title="$t('label.scope')" :tooltip="$t('label.scope.tooltip')"/>
+                  </template>
+                  <a-select
+                    v-model:value="this.poolscope"
+                    @change="onSelectPoolScope"
+                    showSearch
+                    optionFilterProp="label"
+                    :filterOption="(input, option) => {
+                      return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    }" >
+                    <a-select-option :value="'cluster'" :label="$t('label.clusterid')"> {{ $t('label.clusterid') }} </a-select-option>
+                    <a-select-option :value="'zone'" :label="$t('label.zoneid')"> {{ $t('label.zoneid') }} </a-select-option>
+                  </a-select>
+                </a-form-item>
+                  <a-form-item
+                    name="zoneid"
+                    ref="zoneid"
+                    :label="isMigrateFromVmware ? $t('label.destination.zone') : $t('label.zoneid')"
+                  >
                     <a-select
-                      v-model:value="form.sourceAction"
+                      v-model:value="form.zoneid"
                       showSearch
                       optionFilterProp="label"
                       :filterOption="(input, option) => {
                         return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                       }"
-                      @change="onSelectSourceAction"
-                      :loading="optionLoading.sourcehypervisor"
-                      v-focus="true"
+                      @change="onSelectZoneId"
+                      :loading="optionLoading.zones"
                     >
-                      <a-select-option v-for="opt in sourceActions" :key="opt.name" :label="opt.label">
+                      <a-select-option v-for="zoneitem in zoneSelectOptions" :key="zoneitem.value" :label="zoneitem.label">
                         <span>
-                          {{ opt.label }}
+                          <resource-icon v-if="zoneitem.icon" :image="zoneitem.icon" size="1x" style="margin-right: 5px"/>
+                          <global-outlined v-else style="margin-right: 5px" />
+                          {{ zoneitem.label }}
                         </span>
                       </a-select-option>
                     </a-select>
                   </a-form-item>
-                </a-col>
-              </a-form>
-            </a-col>
-            <!-- ------------ -->
-            <!-- RIGHT COLUMN -->
-            <!-- ------------ -->
-            <a-col :md="24" :lg="12">
-              <a-form
-                style="min-width: 170px"
-                :ref="formRef"
-                :model="form"
-                :rules="rules"
-                layout="vertical"
-              >
-                <a-form-item
-                  name="zoneid"
-                  ref="zoneid"
-                  :label="isMigrateFromVmware ? $t('label.destination.zone') : $t('label.zoneid')"
-                >
-                  <a-select
-                    v-model:value="form.zoneid"
-                    showSearch
-                    optionFilterProp="label"
-                    :filterOption="(input, option) => {
-                      return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                    }"
-                    @change="onSelectZoneId"
-                    :loading="optionLoading.zones"
-                  >
-                    <a-select-option v-for="zoneitem in zoneSelectOptions" :key="zoneitem.value" :label="zoneitem.label">
-                      <span>
-                        <resource-icon v-if="zoneitem.icon" :image="zoneitem.icon" size="1x" style="margin-right: 5px"/>
-                        <global-outlined v-else style="margin-right: 5px" />
-                        {{ zoneitem.label }}
-                      </span>
-                    </a-select-option>
-                  </a-select>
-                </a-form-item>
-                <a-form-item
-                  name="podid"
-                  ref="podid"
-                  :label="isMigrateFromVmware ? $t('label.destination.pod') : $t('label.podid')">
-                  <a-select
-                    v-model:value="form.podid"
-                    showSearch
-                    optionFilterProp="label"
-                    :filterOption="filterOption"
-                    :options="podSelectOptions"
-                    :loading="optionLoading.pods"
-                    @change="onSelectPodId"
-                  ></a-select>
-                </a-form-item>
-                <a-form-item
-                  name="clusterid"
-                  ref="clusterid"
-                  :label="isMigrateFromVmware ? $t('label.destination.cluster') : $t('label.clusterid')">
-                  <a-select
-                    v-model:value="form.clusterid"
-                    showSearch
-                    optionFilterProp="label"
-                    :filterOption="filterOption"
-                    :options="clusterSelectOptions"
-                    :loading="optionLoading.clusters"
-                    @change="onSelectClusterId"
-                  ></a-select>
-                </a-form-item>
-                <a-form-item v-if="isDestinationKVM && isMigrateFromVmware && clusterId != undefined">
-                  <SelectVmwareVcenter
-                    @loadingVmwareUnmanagedInstances="() => this.unmanagedInstancesLoading = true"
-                    @listedVmwareUnmanagedInstances="($e) => onListUnmanagedInstancesFromVmware($e)"
-                  />
-                </a-form-item>
-              </a-form>
+                  <a-form-item
+                    v-if="showPod"
+                    name="podid"
+                    ref="podid"
+                    :label="isMigrateFromVmware ? $t('label.destination.pod') : $t('label.podid')">
+                    <a-select
+                      v-model:value="form.podid"
+                      showSearch
+                      optionFilterProp="label"
+                      :filterOption="filterOption"
+                      :options="podSelectOptions"
+                      :loading="optionLoading.pods"
+                      @change="onSelectPodId"
+                    ></a-select>
+                  </a-form-item>
+                  <a-form-item
+                    v-if="showCluster"
+                    name="clusterid"
+                    ref="clusterid"
+                    :label="isMigrateFromVmware ? $t('label.destination.cluster') : $t('label.clusterid')">
+                    <a-select
+                      v-model:value="form.clusterid"
+                      showSearch
+                      optionFilterProp="label"
+                      :filterOption="filterOption"
+                      :options="clusterSelectOptions"
+                      :loading="optionLoading.clusters"
+                      @change="onSelectClusterId"
+                    ></a-select>
+                  </a-form-item>
+                  <a-form-item v-if="isDestinationKVM && isMigrateFromVmware && clusterId != undefined">
+                    <SelectVmwareVcenter
+                      @loadingVmwareUnmanagedInstances="() => this.unmanagedInstancesLoading = true"
+                      @listedVmwareUnmanagedInstances="($e) => onListUnmanagedInstancesFromVmware($e)"
+                    />
+                  </a-form-item>
+                  <a-form-item
+                    v-if="showHost"
+                    name="hostid"
+                    ref="hostid">
+                    <template #label>
+                      <tooltip-label
+                        :title="$t('label.hostname')"
+                        :tooltip="$t('label.hostname.tooltip')"/>
+                    </template>
+                      <a-select
+                        v-model:value="form.hostid"
+                        showSearch
+                        optionFilterProp="label"
+                        :filterOption="filterOption"
+                        :options="hostSelectOptions"
+                        :loading="optionLoading.hosts"
+                        @change="onSelectHostId"
+                      ></a-select>
+                  </a-form-item>
+                  <a-form-item
+                    v-if="isDiskImport"
+                    name="poolid"
+                    ref="poolid">
+                    <template #label>
+                      <tooltip-label
+                        :title="$t('label.storagepool')"
+                        :tooltip="$t('label.storagepool.tooltip')"/>
+                    </template>
+                      <a-select
+                        v-model:value="form.poolid"
+                        showSearch
+                        optionFilterProp="label"
+                        :filterOption="filterOption"
+                        :options="poolSelectOptions"
+                        :loading="optionLoading.pools"
+                        @change="onSelectPoolId"
+                      ></a-select>
+                  </a-form-item>
+                  <a-form-item
+                    v-if="showDiskPath"
+                    name="diskpath"
+                    ref="diskpath">
+                    <template #label>
+                          <tooltip-label
+                            :title="$t('label.disk')"
+                            :tooltip="$t('label.disk.tooltip')"/>
+                    </template>
+                    <a-input
+                      v-model:value="form.diskpath"
+                    ></a-input>
+                  </a-form-item>
+                  <a-col v-if="showDiskPath" :md="24" :lg="8">
+                    <a-button
+                        type="primary"
+                        @click="onImportInstanceAction">
+                      <template #icon><import-outlined /></template>
+                      {{ $t('label.import.instance') }}
+                    </a-button>
+                  </a-col>
+                </a-form>
+              </a-col>
+            </a-card>
+          </a-row>
+          <a-row v-if="showExtHost">
+            <a-col class="fetch-instances-column">
+              <div>
+                <a-button
+                  shape="round"
+                  type="primary"
+                  @click="() => { fetchExtKVMInstances() }">
+                  {{ $t('label.fetch.instances') }}
+                </a-button>
+              </div>
             </a-col>
           </a-row>
           <a-divider />
           <a-row :gutter="12">
-            <a-col :md="24" :lg="!isMigrateFromVmware ? 12 : 24">
+            <a-col v-if="!isDiskImport" :md="24" :lg="(!isMigrateFromVmware && showManagedInstances) ? 12 : 24">
               <a-card class="instances-card">
                 <template #title>
                   {{ $t('label.unmanaged.instances') }}
@@ -192,6 +344,7 @@
                   </span>
                 </template>
                 <a-table
+                  v-if="!isExternal"
                   class="instances-card-table"
                   :loading="unmanagedInstancesLoading"
                   :rowSelection="unmanagedInstanceSelection"
@@ -206,6 +359,24 @@
                     <template v-if="column.key === 'state'">
                       <status :text="text ? text : ''" displayText />
                     </template>
+                  </template>
+                </a-table>
+                <a-table
+                  v-if="isExternal"
+                  class="instances-card-table"
+                  :loading="unmanagedInstancesLoading"
+                  :rowSelection="unmanagedInstanceSelection"
+                  :rowKey="(record, index) => index"
+                  :columns="externalInstancesColumns"
+                  :data-source="unmanagedInstances"
+                  :pagination="false"
+                  size="middle"
+                  :rowClassName="getRowClassName"
+                >
+                  <template #bodyCell="{ column, text }">
+                      <template v-if="column.key === 'state'">
+                          <status :text="text ? text : ''" displayText />
+                      </template>
                   </template>
                 </a-table>
                 <div class="instances-card-footer">
@@ -235,7 +406,7 @@
                 </div>
               </a-card>
             </a-col>
-            <a-col :md="24" :lg="12" v-if="!isMigrateFromVmware">
+            <a-col :md="24" :lg="12" v-if="!isMigrateFromVmware && showManagedInstances">
               <a-card class="instances-card">
                 <template #title>
                   {{ $t('label.managed.instances') }}
@@ -295,6 +466,7 @@
                   </a-pagination>
                   <div :span="24" class="action-button-right">
                     <a-button
+
                       :disabled="!(('unmanageVirtualMachine' in $store.getters.apis) && managedInstancesSelectedRowKeys.length > 0)"
                       type="primary"
                       @click="onUnmanageInstanceAction">
@@ -324,13 +496,22 @@
             class="importform"
             :resource="selectedUnmanagedInstance"
             :cluster="selectedCluster"
+            :host="selectedHost"
+            :pool="selectedPool"
             :importsource="selectedSourceAction"
+            :zoneid="this.zoneId"
             :hypervisor="this.destinationHypervisor"
+            :exthost="this.values?.hostname || ''"
+            :username="this.values?.username || ''"
+            :password="this.values?.password || ''"
+            :tmppath="this.values?.tmppath || ''"
+            :diskpath="this.values?.diskpath || ''"
             :isOpen="showUnmanageForm"
             :selectedVmwareVcenter="selectedVmwareVcenter"
             @refresh-data="fetchInstances"
             @close-action="closeImportUnmanagedInstanceForm"
             @loading-changed="updateManageInstanceActionLoading"
+            @track-import-jobid="trackImportJobId"
           />
         </a-modal>
       </div>
@@ -340,7 +521,7 @@
 
 <script>
 import { message } from 'ant-design-vue'
-import { ref, reactive } from 'vue'
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import _ from 'lodash'
 import Breadcrumb from '@/components/widgets/Breadcrumb'
@@ -349,9 +530,11 @@ import SearchView from '@/components/view/SearchView'
 import ImportUnmanagedInstances from '@/views/tools/ImportUnmanagedInstance'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import SelectVmwareVcenter from '@/views/tools/SelectVmwareVcenter'
+import TooltipLabel from '@/components/widgets/TooltipLabel.vue'
 
 export default {
   components: {
+    TooltipLabel,
     Breadcrumb,
     Status,
     SearchView,
@@ -387,8 +570,8 @@ export default {
         sourceDestHypervisors: {
           kvm: 'kvm'
         },
-        wizardTitle: 'Import libvirt domain from KVM Host',
-        wizardDescription: 'Import libvirt domain from KVM Host'
+        wizardTitle: this.$t('label.desc.import.ext.kvm.wizard'),
+        wizardDescription: this.$t('message.desc.import.ext.kvm.wizard')
       },
       {
         name: 'local',
@@ -396,8 +579,8 @@ export default {
         sourceDestHypervisors: {
           kvm: 'kvm'
         },
-        wizardTitle: 'Import QCOW image from Local Storage',
-        wizardDescription: 'Import QCOW image from Local Storage'
+        wizardTitle: this.$t('label.desc.import.local.kvm.wizard'),
+        wizardDescription: this.$t('message.desc.import.local.kvm.wizard')
       },
       {
         name: 'shared',
@@ -405,8 +588,8 @@ export default {
         sourceDestHypervisors: {
           kvm: 'kvm'
         },
-        wizardTitle: 'Import QCOW image from Shared Storage',
-        wizardDescription: 'Import QCOW image from Shared Storage'
+        wizardTitle: this.$t('label.desc.import.shared.kvm.wizard'),
+        wizardDescription: this.$t('message.desc.import.shared.kvm.wizard')
       }
     ]
     const unmanagedInstancesColumns = [
@@ -431,6 +614,18 @@ export default {
       {
         title: this.$t('label.ostypename'),
         dataIndex: 'osdisplayname'
+      }
+    ]
+    const externalInstancesColumns = [
+      {
+        title: this.$t('label.name'),
+        dataIndex: 'name',
+        width: 200
+      },
+      {
+        key: 'state',
+        title: this.$t('label.state'),
+        dataIndex: 'powerstate'
       }
     ]
     const managedInstancesColumns = [
@@ -463,7 +658,9 @@ export default {
         hypervisors: [],
         zones: [],
         pods: [],
-        clusters: []
+        clusters: [],
+        hosts: [],
+        pools: []
       },
       rowCount: {},
       optionLoading: {
@@ -471,7 +668,9 @@ export default {
         hypervisors: false,
         zones: false,
         pods: false,
-        clusters: false
+        clusters: false,
+        hosts: false,
+        pools: false
       },
       page: {
         unmanaged: 1,
@@ -498,15 +697,28 @@ export default {
       wizardTitle: this.$t('label.desc.importexportinstancewizard'),
       wizardDescription: this.$t('message.desc.importexportinstancewizard'),
       zone: {},
+      pod: {},
+      cluster: {},
+      values: undefined,
       zoneId: undefined,
       podId: undefined,
       clusterId: undefined,
+      hostname: undefined,
+      username: undefined,
+      password: undefined,
+      hostId: undefined,
+      poolId: undefined,
+      diskpath: undefined,
+      tmppath: undefined,
+      poolscope: 'cluster',
       listInstancesApi: {
         unmanaged: 'listUnmanagedInstances',
         managed: 'listVirtualMachines',
-        migratefromvmware: 'listVmwareDcVms'
+        migratefromvmware: 'listVmwareDcVms',
+        external: 'listVmsForImport'
       },
       unmanagedInstancesColumns,
+      externalInstancesColumns,
       AllSourceActions,
       unmanagedInstancesLoading: false,
       unmanagedInstances: [],
@@ -542,14 +754,51 @@ export default {
     isUnmanaged () {
       return this.selectedSourceAction === 'unmanaged'
     },
-    isUnmanagedOrExternal () {
-      return ((this.isUnmanaged) || this.selectedSourceAction === 'external')
+    isExternal () {
+      return this.selectedSourceAction === 'external'
     },
     isMigrateFromVmware () {
       return this.selectedSourceAction === 'vmware'
     },
     isDestinationKVM () {
       return this.destinationHypervisor === 'kvm'
+    },
+    showPod () {
+      if (this.selectedSourceAction === 'shared') {
+        return this.poolscope !== 'zone'
+      }
+      return (this.selectedSourceAction !== 'external')
+    },
+    showCluster () {
+      if (this.selectedSourceAction === 'shared') {
+        return this.poolscope !== 'zone'
+      }
+      return (this.selectedSourceAction !== 'external')
+    },
+    showHost () {
+      return (this.selectedSourceAction === 'local')
+    },
+    showPool () {
+      return (this.selectedSourceAction === 'shared')
+    },
+    showExtHost () {
+      return (this.selectedSourceAction === 'external')
+    },
+    showDiskPath () {
+      return ((this.selectedSourceAction === 'local') || (this.selectedSourceAction === 'shared'))
+    },
+    showManagedInstances () {
+      return ((this.selectedSourceAction !== 'local') && (this.selectedSourceAction !== 'shared') && (this.selectedSourceAction !== 'external'))
+    },
+    isDiskImport () {
+      return ((this.selectedSourceAction === 'local') || (this.selectedSourceAction === 'shared'))
+    },
+    getPoolScope () {
+      if (this.selectedSourceAction === 'local') {
+        return 'host'
+      } else {
+        return this.poolscope
+      }
     },
     params () {
       return {
@@ -578,6 +827,28 @@ export default {
             hypervisor: this.destinationHypervisor
           },
           field: 'clusterid'
+        },
+        hosts: {
+          list: 'listHosts',
+          isLoad: false,
+          options: {
+            zoneid: _.get(this.zone, 'id'),
+            podid: this.podId,
+            clusterid: this.clusterId
+          },
+          field: 'hostid'
+        },
+        pools: {
+          list: 'listStoragePools',
+          isLoad: false,
+          options: {
+            zoneid: _.get(this.zone, 'id'),
+            podid: this.podId,
+            clusterid: this.clusterId,
+            hostid: this.hostId,
+            scope: this.getPoolScope
+          },
+          field: 'poolid'
         }
       }
     },
@@ -616,6 +887,24 @@ export default {
       })
       return options
     },
+    hostSelectOptions () {
+      const options = this.options.hosts.map((host) => {
+        return {
+          label: host.name,
+          value: host.id
+        }
+      })
+      return options
+    },
+    poolSelectOptions () {
+      const options = this.options.pools.map((pool) => {
+        return {
+          label: pool.name,
+          value: pool.id
+        }
+      })
+      return options
+    },
     unmanagedInstanceSelection () {
       return {
         type: 'radio',
@@ -637,6 +926,22 @@ export default {
         return _.find(this.options.clusters, (option) => option.id === this.clusterId)
       }
       return {}
+    },
+    selectedHost () {
+      if (this.options.hosts &&
+          this.options.hosts.length > 0 &&
+          this.hostId) {
+        return _.find(this.options.hosts, (option) => option.id === this.hostId)
+      }
+      return {}
+    },
+    selectedPool () {
+      if (this.options.pools &&
+          this.options.pools.length > 0 &&
+          this.poolId) {
+        return _.find(this.options.pools, (option) => option.id === this.poolId)
+      }
+      return {}
     }
   },
   methods: {
@@ -645,7 +950,11 @@ export default {
       this.form = reactive({
         sourceHypervisor: this.sourceHypervisor
       })
-      this.rules = reactive({})
+      this.rules = reactive({
+        hostname: [{ required: true, message: this.$t('message.error.input.value') }],
+        username: [{ required: true, message: this.$t('message.error.input.value') }],
+        password: [{ required: true, message: this.$t('message.error.input.value') }]
+      })
     },
     fetchData () {
       this.unmanagedInstances = []
@@ -672,7 +981,7 @@ export default {
       param.loading = true
       param.opts = []
       const options = param.options || {}
-      if (!('listall' in options) && !['zones', 'pods', 'clusters'].includes(name)) {
+      if (!('listall' in options) && !['zones', 'pods', 'clusters', 'hosts', 'pools'].includes(name)) {
         options.listall = true
       }
       api(param.list, options).then((response) => {
@@ -710,13 +1019,13 @@ export default {
       return 'dark-row'
     },
     handleFetchOptionsSuccess (name, param) {
-      if (['zones', 'pods', 'clusters'].includes(name)) {
+      if (['zones', 'pods', 'clusters', 'hosts', 'pools'].includes(name)) {
         let paramid = ''
         const query = Object.assign({}, this.$route.query)
         if (query[param.field] && _.find(this.options[name], (option) => option.id === query[param.field])) {
           paramid = query[param.field]
         }
-        if (!paramid && this.options[name].length === 1) {
+        if (!paramid && this.options[name].length > 0) {
           paramid = (this.options[name])[0].id
         }
         if (paramid) {
@@ -729,6 +1038,12 @@ export default {
           } else if (name === 'clusters') {
             this.form.clusterid = paramid
             this.onSelectClusterId(paramid)
+          } else if (name === 'hosts') {
+            this.form.hostid = paramid
+            this.onSelectHostId(paramid)
+          } else if (name === 'pools') {
+            this.form.poolid = paramid
+            this.onSelectPoolId(paramid)
           }
         }
       }
@@ -775,15 +1090,19 @@ export default {
       this.zoneId = value
       this.podId = null
       this.clusterId = null
+      this.hostId = null
+      this.poolId = null
       this.zone = _.find(this.options.zones, (option) => option.id === value)
       this.resetLists()
       this.form.clusterid = undefined
       this.form.podid = undefined
+      this.form.poolid = undefined
       this.updateQuery('zoneid', value)
       this.fetchOptions(this.params.pods, 'pods')
     },
     onSelectPodId (value) {
       this.podId = value
+      this.pod = _.find(this.options.pods, (option) => option.id === value)
       this.resetLists()
       this.clusterId = null
       this.form.clusterid = undefined
@@ -792,17 +1111,44 @@ export default {
     },
     onSelectClusterId (value) {
       this.clusterId = value
+      this.cluster = _.find(this.options.clusters, (option) => option.id === value)
       this.resetLists()
       this.updateQuery('clusterid', value)
-      this.fetchInstances()
+      if (this.isUnmanaged) {
+        this.fetchInstances()
+      } else if (this.showHost) {
+        this.fetchOptions(this.params.hosts, 'hosts', value)
+      } else if (this.showPool) {
+        this.fetchOptions(this.params.pools, 'pools', value)
+      }
+    },
+    onSelectHostId (value) {
+      this.hostId = value
+      this.updateQuery('scope', 'local')
+      this.fetchOptions(this.params.pools, 'pools', value)
+    },
+    onSelectPoolId (value) {
+      this.poolId = value
+    },
+    onSelectPoolScope (value) {
+      this.poolscope = value
+      this.poolId = null
+      this.updateQuery('scope', value)
+      this.fetchOptions(this.params.pools, 'pools', value)
     },
     fetchInstances () {
       this.fetchUnmanagedInstances()
       if (this.isUnmanaged) {
         this.fetchManagedInstances()
+      } else if (this.kvmOption === 'external') {
+        this.fetchExternalInstances()
       }
     },
     fetchUnmanagedInstances (page, pageSize) {
+      if (this.isExternal) {
+        this.fetchExtKVMInstances(page, pageSize)
+        return
+      }
       const params = {
         clusterid: this.clusterId
       }
@@ -843,6 +1189,51 @@ export default {
           this.unmanagedInstances = this.unmanagedInstances.concat(listUnmanagedInstances)
         }
         this.itemCount.unmanaged = response.count
+      }).finally(() => {
+        this.unmanagedInstancesLoading = false
+      })
+    },
+    fetchExtKVMInstances (page, pageSize) {
+      const params = {
+        zoneid: this.zoneid
+      }
+      const query = Object.assign({}, this.$route.query)
+      this.page.unmanaged = page || parseInt(query.unmanagedpage) || this.page.unmanaged
+      this.updateQuery('unmanagedpage', this.page.unmanaged)
+      params.page = this.page.unmanaged
+      this.pageSize.unmanaged = pageSize || this.pageSize.unmanaged
+      params.pagesize = this.pageSize.unmanaged
+      this.unmanagedInstances = []
+      this.unmanagedInstancesSelectedRowKeys = []
+      if (this.searchParams.unmanaged.keyword) {
+        params.keyword = this.searchParams.unmanaged.keyword
+      }
+      this.values = toRaw(this.form)
+      this.unmanagedInstancesLoading = true
+      params.zoneid = this.zoneId
+      params.host = this.values.hostname
+      params.username = this.values.username
+      params.password = this.values.password
+      params.hypervisor = this.destinationHypervisor
+      var details = ['host', 'username', 'password']
+      for (var detail of details) {
+        if (!params[detail]) {
+          this.$notification.error({
+            message: this.$t('message.request.failed'),
+            description: this.$t('message.please.enter.valid.value') + ': ' + this.$t('label.' + detail.toLowerCase())
+          })
+          return
+        }
+      }
+      this.searchParams.unmanaged = params
+      api(this.listInstancesApi.external, params).then(json => {
+        const listUnmanagedInstances = json.listvmsforimportresponse.unmanagedinstance
+        if (this.arrayHasItems(listUnmanagedInstances)) {
+          this.unmanagedInstances = this.unmanagedInstances.concat(listUnmanagedInstances)
+        }
+        this.itemCount.unmanaged = json.listvmsforimportresponse.count
+      }).catch(error => {
+        this.$notifyError(error)
       }).finally(() => {
         this.unmanagedInstancesLoading = false
       })
@@ -903,6 +1294,9 @@ export default {
     },
     updateManageInstanceActionLoading (value) {
       this.importUnmanagedInstanceLoading = value
+      if (!value) {
+        this.fetchInstances()
+      }
     },
     onManageInstanceAction () {
       this.selectedUnmanagedInstance = {}
@@ -924,6 +1318,25 @@ export default {
       } else {
         this.showUnmanageForm = true
       }
+    },
+    onImportInstanceAction () {
+      this.selectedUnmanagedInstance = {}
+      this.values = toRaw(this.form)
+      if (!this.values.diskpath) {
+        this.$notification.error({
+          message: this.$t('message.request.failed'),
+          description: this.$t('message.please.enter.valid.value') + ': ' + this.$t('label.disk.path')
+        })
+        return
+      }
+      if (this.showPool && !this.values.poolid) {
+        this.$notification.error({
+          message: this.$t('message.request.failed'),
+          description: this.$t('message.please.enter.valid.value') + ': ' + this.$t('label.storagepool')
+        })
+        return
+      }
+      this.showUnmanageForm = true
     },
     closeImportUnmanagedInstanceForm () {
       this.selectedUnmanagedInstance = {}
@@ -947,6 +1360,21 @@ export default {
         cancelText: this.$t('label.cancel'),
         onOk () {
           self.unmanageInstances()
+        }
+      })
+    },
+    trackImportJobId (details) {
+      const jobId = details[0]
+      const name = details[1]
+      this.$pollJob({
+        jobId,
+        title: this.$t('label.import.instance'),
+        description: this.$t('label.import.instance'),
+        loadingMessage: `${this.$t('label.import.instance')} ${name} ${this.$t('label.in.progress')}`,
+        catchMessage: this.$t('error.fetching.async.job.result'),
+        successMessage: this.$t('message.success.import.instance') + ' ' + name,
+        successMethod: (result) => {
+          this.fetchInstances()
         }
       })
     },
@@ -987,41 +1415,50 @@ export default {
 </script>
 
 <style scoped lang="less">
-  :deep(.ant-table-small) > .ant-table-content > .ant-table-body {
-    margin: 0;
-  }
+:deep(.ant-table-small) > .ant-table-content > .ant-table-body {
+  margin: 0;
+}
 
-  .importform {
-    width: 80vw;
-  }
-  .instances-card {
-    height: 100%;
-  }
-  .instances-card-table {
-    overflow-y: auto;
-    margin-bottom: 100px;
-  }
-  .instances-card-footer {
-    height: 100px;
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    margin-left: 10px;
-    right: 0;
-    margin-right: 10px;
-  }
-  .row-element {
-    margin-top: 10px;
-    margin-bottom: 10px;
-  }
-  .action-button-left {
-    text-align: left;
-  }
-  .action-button-right {
-    text-align: right;
-  }
+.importform {
+  width: 80vw;
+}
+.instances-card {
+  height: 100%;
+}
+.source-dest-card {
+  width: 50%;
+  height: 100%;
+}
+.instances-card-table {
+  overflow-y: auto;
+  margin-bottom: 100px;
+}
+.instances-card-footer {
+  height: 100px;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  margin-left: 10px;
+  right: 0;
+  margin-right: 10px;
+}
+.row-element {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+.action-button-left {
+  text-align: left;
+}
+.action-button-right {
+  text-align: right;
+}
+.fetch-instances-column {
+  width: 50%;
+  margin-left: 50%;
+  padding-left: 24px;
+}
 
-  .breadcrumb-card {
+.breadcrumb-card {
   margin-left: -24px;
   margin-right: -24px;
   margin-top: -16px;
