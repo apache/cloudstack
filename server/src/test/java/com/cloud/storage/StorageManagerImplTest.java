@@ -17,6 +17,8 @@
 package com.cloud.storage;
 
 import com.cloud.agent.api.StoragePoolInfo;
+import com.cloud.exception.ConnectionException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.vm.VMInstanceVO;
@@ -34,6 +36,7 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -179,5 +182,28 @@ public class StorageManagerImplTest {
         Assert.assertEquals(scheme, uriParams.get("scheme"));
         Assert.assertEquals(host, uriParams.get("host"));
         Assert.assertEquals(path, uriParams.get("hostPath"));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateLocalStorageHostFailure() {
+        Map<String, Object> test = new HashMap<>();
+        test.put("host", null);
+        try {
+            storageManagerImpl.createLocalStorage(test);
+        } catch (ConnectionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateLocalStoragePathFailure() {
+        Map<String, Object> test = new HashMap<>();
+        test.put("host", "HOST");
+        test.put("hostPath", "");
+        try {
+            storageManagerImpl.createLocalStorage(test);
+        } catch (ConnectionException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

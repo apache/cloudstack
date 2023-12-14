@@ -685,12 +685,19 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return true;
     }
 
-    private DataStore createLocalStorage(Map<String, Object> poolInfos) throws ConnectionException{
+    protected DataStore createLocalStorage(Map<String, Object> poolInfos) throws ConnectionException{
         Object existingUuid = poolInfos.get("uuid");
         if( existingUuid == null ){
             poolInfos.put("uuid", UUID.randomUUID().toString());
         }
-        String hostAddress = poolInfos.get("host").toString();
+        String hostAddress = poolInfos.get("host") == null ? null : poolInfos.get("host").toString();
+        if (StringUtils.isEmpty(hostAddress)) {
+            throw new InvalidParameterValueException("Invalid host provided");
+        }
+        String hostPath = poolInfos.get("hostPath") == null ? null : poolInfos.get("hostPath").toString();
+        if (StringUtils.isEmpty(hostPath)) {
+            throw new InvalidParameterValueException("Invalid path provided");
+        }
         Host host = _hostDao.findByName(hostAddress);
 
         if( host == null ) {
@@ -709,8 +716,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         StoragePoolInfo pInfo = new StoragePoolInfo(poolInfos.get("uuid").toString(),
                                                     host.getPrivateIpAddress(),
-                                                    poolInfos.get("hostPath").toString(),
-                                                    poolInfos.get("hostPath").toString(),
+                                                    hostPath,
+                                                    hostPath,
                                                     StoragePoolType.Filesystem,
                                                     capacityBytes,
                                                     0,
@@ -810,6 +817,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     public PrimaryDataStoreInfo createPool(CreateStoragePoolCmd cmd) throws ResourceInUseException, IllegalArgumentException, UnknownHostException, ResourceUnavailableException {
         String providerName = cmd.getStorageProviderName();
         Map<String,String> uriParams = extractUriParamsAsMap(cmd.getUrl());
+        boolean isFileScheme = "file".equals(uriParams.get("scheme"));
         DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(providerName);
 
         if (storeProvider == null) {
@@ -824,7 +832,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         Long zoneId = cmd.getZoneId();
 
         ScopeType scopeType = ScopeType.CLUSTER;
-        if ("file".equals(uriParams.get("scheme"))) {
+        if (isFileScheme) {
             scopeType = ScopeType.HOST;
         }
         String scope = cmd.getScope();
@@ -900,7 +908,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         DataStoreLifeCycle lifeCycle = storeProvider.getDataStoreLifeCycle();
         DataStore store = null;
         try {
-            if ("file".equals(uriParams.get("scheme"))) {
+            if (isFileScheme) {
                 store = createLocalStorage(params);
             } else {
                 store = lifeCycle.initialize(params);
@@ -935,7 +943,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         try {
             uriInfo = UriUtils.getUriInfo(url);
         } catch (CloudRuntimeException cre) {
-            s_logger.debug(String.format("URI validation for url: %s failed, returning empty uri params", url));
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("URI validation for url: %s failed, returning empty uri params", url));
+            }
             return uriParams;
         }
 
@@ -943,7 +953,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         String storageHost = uriInfo.getStorageHost();
         String storagePath = uriInfo.getStoragePath();
         if (scheme == null) {
-            s_logger.debug(String.format("Scheme for url: %s is not found, returning empty uri params", url));
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("Scheme for url: %s is not found, returning empty uri params", url));
+            }
             return uriParams;
         }
         boolean isHostOrPathBlank = StringUtils.isAnyBlank(storagePath, storageHost);
