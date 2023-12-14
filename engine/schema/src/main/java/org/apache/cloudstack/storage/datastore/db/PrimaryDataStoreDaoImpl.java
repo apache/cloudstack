@@ -20,6 +20,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -29,6 +30,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.GenericQueryBuilder;
 import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.host.Status;
@@ -60,6 +62,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     private final SearchBuilder<StoragePoolVO> DcLocalStorageSearch;
     private final GenericSearchBuilder<StoragePoolVO, Long> StatusCountSearch;
     private final SearchBuilder<StoragePoolVO> ClustersSearch;
+    private final SearchBuilder<StoragePoolVO> IdsSearch;
 
     @Inject
     private StoragePoolDetailsDao _detailsDao;
@@ -146,6 +149,11 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         ClustersSearch = createSearchBuilder();
         ClustersSearch.and("clusterIds", ClustersSearch.entity().getClusterId(), Op.IN);
         ClustersSearch.and("status", ClustersSearch.entity().getStatus(), Op.EQ);
+        ClustersSearch.done();
+
+        IdsSearch = createSearchBuilder();
+        IdsSearch.and("ids", IdsSearch.entity().getId(), SearchCriteria.Op.IN);
+        IdsSearch.done();
 
     }
 
@@ -657,6 +665,16 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         Pair<List<StoragePoolVO>, Integer> uniquePair = searchAndCount(sc, searchFilter);
         List<Long> idList = uniquePair.first().stream().map(StoragePoolVO::getId).collect(Collectors.toList());
         return new Pair<>(idList, uniquePair.second());
+    }
+
+    @Override
+    public List<StoragePoolVO> listByIds(List<Long> ids) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return Collections.emptyList();
+        }
+        SearchCriteria<StoragePoolVO> sc = IdsSearch.create();
+        sc.setParameters("ids", ids.toArray());
+        return listBy(sc);
     }
 
     private SearchCriteria<StoragePoolVO> createStoragePoolSearchCriteria(Long storagePoolId, String storagePoolName,
