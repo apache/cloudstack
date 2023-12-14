@@ -685,19 +685,21 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return true;
     }
 
+    protected String getValidatedPareForLocalStorage(Object obj, String paramName) {
+        String result = obj == null ? null : obj.toString();
+        if (StringUtils.isEmpty(result)) {
+            throw new InvalidParameterValueException(String.format("Invalid %s provided", paramName));
+        }
+        return result;
+    }
+
     protected DataStore createLocalStorage(Map<String, Object> poolInfos) throws ConnectionException{
         Object existingUuid = poolInfos.get("uuid");
         if( existingUuid == null ){
             poolInfos.put("uuid", UUID.randomUUID().toString());
         }
-        String hostAddress = poolInfos.get("host") == null ? null : poolInfos.get("host").toString();
-        if (StringUtils.isEmpty(hostAddress)) {
-            throw new InvalidParameterValueException("Invalid host provided");
-        }
-        String hostPath = poolInfos.get("hostPath") == null ? null : poolInfos.get("hostPath").toString();
-        if (StringUtils.isEmpty(hostPath)) {
-            throw new InvalidParameterValueException("Invalid path provided");
-        }
+        String hostAddress = getValidatedPareForLocalStorage(poolInfos.get("host"), "host");
+        String hostPath = getValidatedPareForLocalStorage(poolInfos.get("hostPath"), "path");
         Host host = _hostDao.findByName(hostAddress);
 
         if( host == null ) {
