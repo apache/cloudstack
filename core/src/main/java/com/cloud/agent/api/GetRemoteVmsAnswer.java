@@ -17,35 +17,40 @@
 
 package com.cloud.agent.api;
 
-import java.util.HashMap;
-
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 
-@LogLevel(LogLevel.Log4jLevel.Trace)
-public class GetUnmanagedInstancesAnswer extends Answer {
+import java.util.HashMap;
+import java.util.List;
 
-    private String instanceName;
+@LogLevel(LogLevel.Log4jLevel.Trace)
+public class GetRemoteVmsAnswer extends Answer {
+
+    private String remoteIp;
     private HashMap<String, UnmanagedInstanceTO> unmanagedInstances;
 
-    GetUnmanagedInstancesAnswer() {
+    List<String> vmNames;
+
+    GetRemoteVmsAnswer() {
     }
 
-    public GetUnmanagedInstancesAnswer(GetUnmanagedInstancesCommand cmd, String details) {
-        super(cmd, false, details);
-    }
-
-    public GetUnmanagedInstancesAnswer(GetUnmanagedInstancesCommand cmd, String details, HashMap<String, UnmanagedInstanceTO> unmanagedInstances) {
+    public GetRemoteVmsAnswer(GetRemoteVmsCommand cmd, String details, HashMap<String, UnmanagedInstanceTO> unmanagedInstances) {
         super(cmd, true, details);
-        this.instanceName = cmd.getInstanceName();
+        this.remoteIp = cmd.getRemoteIp();
         this.unmanagedInstances = unmanagedInstances;
     }
 
-    public String getInstanceName() {
-        return instanceName;
+    public GetRemoteVmsAnswer(GetRemoteVmsCommand cmd, String details, List<String> vmNames) {
+        super(cmd, true, details);
+        this.remoteIp = cmd.getRemoteIp();
+        this.vmNames = vmNames;
     }
 
-    public void setInstanceName(String instanceName) {
-        this.instanceName = instanceName;
+    public String getRemoteIp() {
+        return remoteIp;
+    }
+
+    public void setRemoteIp(String remoteIp) {
+        this.remoteIp = remoteIp;
     }
 
     public HashMap<String, UnmanagedInstanceTO> getUnmanagedInstances() {
@@ -56,7 +61,15 @@ public class GetUnmanagedInstancesAnswer extends Answer {
         this.unmanagedInstances = unmanagedInstances;
     }
 
+    public List<String> getVmNames() {
+        return vmNames;
+    }
+
+    public void setVmNames(List<String> vmNames) {
+        this.vmNames = vmNames;
+    }
+
     public String getString() {
-        return "GetUnmanagedInstancesAnswer [instanceName=" + instanceName + "]";
+        return "GetRemoteVmsAnswer [remoteIp=" + remoteIp + "]";
     }
 }

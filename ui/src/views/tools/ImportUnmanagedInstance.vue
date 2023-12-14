@@ -19,7 +19,7 @@
   <div>
     <a-spin :spinning="loading" v-ctrl-enter="handleSubmit">
       <a-row :gutter="12">
-        <a-col :md="24" :lg="7">
+        <a-col :md="24" :lg="7" v-if="!isDiskImport">
           <info-card
             class="vm-info-card"
             :isStatic="true"
@@ -111,7 +111,7 @@
                   </a-select-option>
                 </a-select>
               </a-form-item>
-              <a-form-item name="templateid" ref="templateid" v-if="cluster.hypervisortype === 'KVM' && !selectedVmwareVcenter">
+              <a-form-item name="templateid" ref="templateid" v-if="cluster.hypervisortype === 'KVM' && !selectedVmwareVcenter && !isDiskImport && !isExternalImport">
                 <template #label>
                   <tooltip-label :title="$t('label.templatename')" :tooltip="apiParams.templateid.description + '. ' + $t('message.template.import.vm.temporary')"/>
                 </template>
@@ -120,7 +120,7 @@
                   :value="templateType"
                   @change="changeTemplateType">
                   <a-row :gutter="12">
-                    <a-col :md="24" :lg="12">
+                    <a-col :md="24" :lg="12" v-if="this.cluster.hypervisortype === 'VMWare'">
                       <a-radio value="auto">
                         {{ $t('label.template.temporary.import') }}
                       </a-radio>
@@ -235,7 +235,7 @@
                     <tooltip-label :title="$t('label.disk.selection')" :tooltip="apiParams.datadiskofferinglist.description"/>
                   </template>
                 </a-form-item>
-                <a-form-item name="rootdiskid" ref="rootdiskid" :label="$t('label.rootdisk')">
+                <a-form-item name="rootdiskid" ref="rootdiskid" :label="$t('label.select.root.disk')">
                   <a-select
                     v-model:value="form.rootdiskid"
                     defaultActiveFirstOption
@@ -244,11 +244,26 @@
                     :filterOption="(input, option) => {
                       return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                     }"
-                    @change="val => { selectedRootDiskIndex = val }">
+                    @change="onSelectRootDisk">
                     <a-select-option v-for="(opt, optIndex) in resource.disk" :key="optIndex" :label="opt.label || opt.id">
                       {{ opt.label || opt.id }}
                     </a-select-option>
                   </a-select>
+                  <a-table
+                    :columns="selectedRootDiskColumns"
+                    :dataSource="selectedRootDiskSources"
+                    :pagination="false">
+                    <template #bodyCell="{ column, record }">
+                      <template v-if="column.key === 'name'">
+                        <span>{{ record.displaytext || record.name }}</span>
+                        <div v-if="record.meta">
+                          <div v-for="meta in record.meta" :key="meta.key">
+                            <a-tag style="margin-top: 5px" :key="meta.key">{{ meta.key + ': ' + meta.value }}</a-tag>
+                          </div>
+                        </div>
+                      </template>
+                    </template>
+                  </a-table>
                 </a-form-item>
                 <multi-disk-selection
                   :items="dataDisks"
@@ -256,6 +271,7 @@
                   :selectionEnabled="false"
                   :customOfferingsAllowed="true"
                   :autoSelectCustomOffering="true"
+                  :isKVMUnmanage="isKVMUnmanage"
                   :autoSelectLabel="$t('label.auto.assign.diskoffering.disk.size')"
                   @select-multi-disk-offering="updateMultiDiskOffering" />
               </div>
@@ -283,17 +299,40 @@
                   :zoneId="cluster.zoneid"
                   :selectionEnabled="false"
                   :filterUnimplementedNetworks="true"
-                  filterMatchKey="broadcasturi"
                   :hypervisor="this.cluster.hypervisortype"
+                  :filterMatchKey="isKVMUnmanage ? undefined : 'broadcasturi'"
                   @select-multi-network="updateMultiNetworkOffering" />
               </div>
-              <a-row v-else style="margin: 12px 0">
-                <a-alert type="warning">
-                  <template #message>
-                    <div v-html="$t('message.warn.importing.instance.without.nic')"></div>
-                  </template>
-                </a-alert>
+              <a-row v-else style="margin: 12px 0" >
+                <div v-if="!isExternalImport && !isDiskImport">
+                  <a-alert type="warning">
+                    <template #message>
+                      <div v-html="$t('message.warn.importing.instance.without.nic')"></div>
+                    </template>
+                  </a-alert>
+                </div>
               </a-row>
+              <div v-if="isDiskImport">
+                <a-form-item name="networkid" ref="networkid">
+                  <template #label>
+                    <tooltip-label :title="$t('label.network')"/>
+                  </template>
+                  <a-select
+                    v-model:value="form.networkid"
+                    showSearch
+                    optionFilterProp="label"
+                    :filterOption="(input, option) => {
+                      return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    }"
+                    :loading="optionsLoading.networks">
+                    <a-select-option v-for="network in networkSelectOptions" :key="network.value" :label="network.label">
+                      <span>
+                        {{ network.label }}
+                      </span>
+                    </a-select-option>
+                  </a-select>
+                </a-form-item>
+              </div>
               <a-row v-if="!selectedVmwareVcenter" :gutter="12">
                 <a-col :md="24" :lg="12">
                   <a-form-item name="migrateallowed" ref="migrateallowed">
@@ -358,6 +397,26 @@ export default {
       type: Object,
       required: true
     },
+    host: {
+      type: Object,
+      required: true
+    },
+    pool: {
+      type: Object,
+      required: true
+    },
+    resource: {
+      type: Object,
+      required: true
+    },
+    isOpen: {
+      type: Boolean,
+      required: false
+    },
+    zoneid: {
+      type: String,
+      required: false
+    },
     importsource: {
       type: String,
       required: false
@@ -366,12 +425,24 @@ export default {
       type: String,
       required: false
     },
-    resource: {
-      type: Object,
-      required: true
+    exthost: {
+      type: String,
+      required: false
     },
-    isOpen: {
-      type: Boolean,
+    username: {
+      type: String,
+      required: false
+    },
+    password: {
+      type: String,
+      required: false
+    },
+    tmppath: {
+      type: String,
+      required: false
+    },
+    diskpath: {
+      type: String,
       required: false
     },
     selectedVmwareVcenter: {
@@ -384,12 +455,14 @@ export default {
       options: {
         domains: [],
         projects: [],
+        networks: [],
         templates: []
       },
       rowCount: {},
       optionsLoading: {
         domains: false,
         projects: false,
+        networks: false,
         templates: false
       },
       domains: [],
@@ -397,7 +470,7 @@ export default {
       selectedDomainId: null,
       templates: [],
       templateLoading: false,
-      templateType: 'auto',
+      templateType: this.defaultTemplateType(),
       totalComputeOfferings: 0,
       computeOfferings: [],
       computeOfferingLoading: false,
@@ -426,7 +499,15 @@ export default {
       storagePoolsForConversion: [],
       selectedStorageOptionForConversion: null,
       selectedStoragePoolForConversion: null,
-      showStoragePoolsForConversion: false
+      showStoragePoolsForConversion: false,
+      selectedRootDiskColumns: [
+        {
+          key: 'name',
+          dataIndex: 'name',
+          title: this.$t('label.rootdisk')
+        }
+      ],
+      selectedRootDiskSources: []
     }
   },
   beforeCreate () {
@@ -461,6 +542,15 @@ export default {
             showicon: true
           }
         },
+        networks: {
+          list: 'listNetworks',
+          isLoad: true,
+          field: 'networkid',
+          options: {
+            zoneid: this.zoneid,
+            details: 'min'
+          }
+        },
         templates: {
           list: 'listTemplates',
           isLoad: true,
@@ -478,6 +568,21 @@ export default {
         return true
       }
       return false
+    },
+    isDiskImport () {
+      if (this.importsource === 'local' || this.importsource === 'shared') {
+        return true
+      }
+      return false
+    },
+    isExternalImport () {
+      if (this.importsource === 'external') {
+        return true
+      }
+      return false
+    },
+    isKVMUnmanage () {
+      return this.hypervisor && this.hypervisor === 'kvm' && (this.importsource === 'unmanaged' || this.importsource === 'external')
     },
     domainSelectOptions () {
       var domains = this.options.domains.map((domain) => {
@@ -506,6 +611,19 @@ export default {
         value: null
       })
       return projects
+    },
+    networkSelectOptions () {
+      var networks = this.options.networks.map((network) => {
+        return {
+          label: network.name + ' (' + network.displaytext + ')',
+          value: network.id
+        }
+      })
+      networks.unshift({
+        label: '',
+        value: null
+      })
+      return networks
     },
     templateSelectOptions () {
       return this.options.templates.map((template) => {
@@ -540,6 +658,9 @@ export default {
           var nic = { ...nicEntry }
           nic.name = nic.name || nic.id
           nic.displaytext = nic.name
+          if (this.isExternalImport && nic.vlanid === -1) {
+            delete nic.vlanid
+          }
           if (nic.vlanid) {
             nic.broadcasturi = 'vlan://' + nic.vlanid
             if (nic.isolatedpvlan) {
@@ -592,6 +713,9 @@ export default {
         page: 1
       })
       this.fetchKvmHostsForConversion()
+      if (this.resource.disk.length > 1) {
+        this.updateSelectedRootDisk()
+      }
     },
     getMeta (obj, metaKeys) {
       var meta = []
@@ -724,6 +848,12 @@ export default {
     updateMultiNetworkOffering (data) {
       this.nicsNetworksMapping = data
     },
+    defaultTemplateType () {
+      if (this.cluster.hypervisortype === 'VMWare') {
+        return 'auto'
+      }
+      return 'custom'
+    },
     changeTemplateType (e) {
       this.templateType = e.target.value
       if (this.templateType === 'auto') {
@@ -834,6 +964,17 @@ export default {
         }
       ]
     },
+    onSelectRootDisk (val) {
+      this.selectedRootDiskIndex = val
+      this.updateSelectedRootDisk()
+    },
+    updateSelectedRootDisk () {
+      var rootDisk = this.resource.disk[this.selectedRootDiskIndex]
+      rootDisk.size = rootDisk.capacity / (1024 * 1024 * 1024)
+      rootDisk.name = `${rootDisk.label} (${rootDisk.size} GB)`
+      rootDisk.meta = this.getMeta(rootDisk, { controller: 'controller', datastorename: 'datastore', position: 'position' })
+      this.selectedRootDiskSources = [rootDisk]
+    },
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
@@ -843,12 +984,32 @@ export default {
           name: this.resource.name,
           clusterid: this.cluster.id,
           displayname: values.displayname,
+          zoneid: this.zoneid,
           importsource: this.importsource,
-          hypervisor: this.hypervisor
+          hypervisor: this.hypervisor,
+          host: this.exthost,
+          hostname: values.hostname,
+          username: this.username,
+          password: this.password,
+          hostid: this.host.id,
+          storageid: this.pool.id,
+          diskpath: this.diskpath,
+          temppath: this.tmppath
         }
         var importapi = 'importUnmanagedInstance'
         if (this.isExternalImport || this.isDiskImport || this.selectedVmwareVcenter) {
           importapi = 'importVm'
+          if (this.isDiskImport) {
+            if (!values.networkid) {
+              this.$notification.error({
+                message: this.$t('message.request.failed'),
+                description: this.$t('message.please.enter.valid.value') + ': ' + this.$t('label.network')
+              })
+              return
+            }
+            params.name = values.displayname
+            params.networkid = values.networkid
+          }
         }
         if (!this.computeOffering || !this.computeOffering.id) {
           this.$notification.error({
@@ -890,6 +1051,16 @@ export default {
               message: this.$t('message.request.failed'),
               description: this.$t('error.form.message')
             })
+          }
+        }
+        if (this.isDiskImport) {
+          var storageType = this.computeOffering.storagetype
+          if (this.importsource !== storageType) {
+            this.$notification.error({
+              message: this.$t('message.request.failed'),
+              description: 'Incompatible Storage. Import Source is: ' + this.importsource + '. Storage Type in service offering is: ' + storageType
+            })
+            return
           }
         }
         if (this.selectedVmwareVcenter) {
@@ -934,6 +1105,7 @@ export default {
         }
         var nicNetworkIndex = 0
         var nicIpIndex = 0
+        var networkcheck = new Set()
         for (var nicId in this.nicsNetworksMapping) {
           if (!this.nicsNetworksMapping[nicId].network) {
             this.$notification.error({
@@ -944,6 +1116,16 @@ export default {
           }
           params['nicnetworklist[' + nicNetworkIndex + '].nic'] = nicId
           params['nicnetworklist[' + nicNetworkIndex + '].network'] = this.nicsNetworksMapping[nicId].network
+          var netId = this.nicsNetworksMapping[nicId].network
+          if (!networkcheck.has(netId)) {
+            networkcheck.add(netId)
+          } else {
+            this.$notification.error({
+              message: this.$t('message.request.failed'),
+              description: 'Same network cannot be assigned to multiple Nics'
+            })
+            return
+          }
           nicNetworkIndex++
           if ('ipAddress' in this.nicsNetworksMapping[nicId]) {
             if (!this.nicsNetworksMapping[nicId].ipAddress) {
@@ -1010,7 +1192,7 @@ export default {
       for (var field of fields) {
         this.updateFieldValue(field, undefined)
       }
-      this.templateType = 'auto'
+      this.templateType = this.defaultTemplateType()
       this.updateComputeOffering(undefined)
       this.switches = {}
     },
@@ -1022,33 +1204,33 @@ export default {
 </script>
 
 <style lang="less">
-  @import url('../../style/index');
-  .ant-table-selection-column {
-    // Fix for the table header if the row selection use radio buttons instead of checkboxes
-    > div:empty {
-      width: 16px;
-    }
+@import url('../../style/index');
+.ant-table-selection-column {
+  // Fix for the table header if the row selection use radio buttons instead of checkboxes
+  > div:empty {
+    width: 16px;
   }
+}
 
-  .ant-collapse-borderless > .ant-collapse-item {
-    border: 1px solid @border-color-split;
-    border-radius: @border-radius-base !important;
-    margin: 0 0 1.2rem;
+.ant-collapse-borderless > .ant-collapse-item {
+  border: 1px solid @border-color-split;
+  border-radius: @border-radius-base !important;
+  margin: 0 0 1.2rem;
+}
+
+.form-layout {
+  width: 120vw;
+
+  @media (min-width: 1000px) {
+    width: 550px;
   }
+}
 
-  .form-layout {
-    width: 120vw;
+.action-button {
+  text-align: right;
 
-    @media (min-width: 1000px) {
-      width: 550px;
-    }
+  button {
+    margin-right: 5px;
   }
-
-  .action-button {
-    text-align: right;
-
-    button {
-      margin-right: 5px;
-    }
-  }
+}
 </style>
