@@ -3758,7 +3758,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (vmTypeStr != null) {
-            serviceOfferingSearch.and("svmType", serviceOfferingSearch.entity().getSystemVmType(), SearchCriteria.Op.EQ);
+            serviceOfferingSearch.and("svmType", serviceOfferingSearch.entity().getVmType(), SearchCriteria.Op.EQ);
         }
         DataCenterJoinVO zone = null;
         if (zoneId != null) {

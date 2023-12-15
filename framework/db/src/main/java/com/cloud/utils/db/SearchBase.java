@@ -205,32 +205,29 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
      */
     @SuppressWarnings("unchecked")
     public J join(final String name, final SearchBase<?, ?, ?> builder, final Object joinField1, final Object joinField2, final JoinBuilder.JoinType joinType) {
-        assert _entity != null : "SearchBuilder cannot be modified once it has been setup";
-        assert _specifiedAttrs.size() == 1 : "You didn't select the attribute.";
-        assert builder._entity != null : "SearchBuilder cannot be modified once it has been setup";
-        assert builder._specifiedAttrs.size() == 1 : "You didn't select the attribute.";
-        assert builder != this : "You can't add yourself, can you?  Really think about it!";
+        if (_specifiedAttrs.size() != 1)
+            throw new CloudRuntimeException("You didn't select the attribute.");
+        if (builder._specifiedAttrs.size() != 1)
+            throw new CloudRuntimeException("You didn't select the attribute.");
 
-        final JoinBuilder<SearchBase<?, ?, ?>> t = new JoinBuilder<SearchBase<?, ?, ?>>(name, builder, new Attribute[]{_specifiedAttrs.get(0)}, new Attribute[]{builder._specifiedAttrs.get(0)}, joinType);
-        if (_joins == null) {
-            _joins = new HashMap<String, JoinBuilder<SearchBase<?, ?, ?>>>();
-        }
-        _joins.put(name, t);
-
-        builder._specifiedAttrs.clear();
-        _specifiedAttrs.clear();
-        return (J)this;
+        return join(name, builder, joinType, null, joinField1, joinField2);
     }
 
 
     public J join(final String name, final SearchBase<?, ?, ?> builder, final JoinBuilder.JoinType joinType, final
             JoinBuilder.JoinCondition condition, final Object... joinFields) {
-        assert _entity != null : "SearchBuilder cannot be modified once it has been setup";
-        assert !_specifiedAttrs.isEmpty() : "You didn't select the attribute.";
-        assert builder._entity != null : "SearchBuilder cannot be modified once it has been setup";
-        assert !builder._specifiedAttrs.isEmpty() : "You didn't select the attribute.";
-        assert builder != this : "You can't add yourself, can you?  Really think about it!";
-        assert _specifiedAttrs.size() == builder._specifiedAttrs.size() : "You didn't select the same number of attributes.";
+        if (_entity == null)
+            throw new CloudRuntimeException("SearchBuilder cannot be modified once it has been setup");
+        if (_specifiedAttrs.isEmpty())
+            throw new CloudRuntimeException("Attribute not specified.");
+        if (builder._entity == null)
+            throw new CloudRuntimeException("SearchBuilder cannot be modified once it has been setup");
+        if (builder._specifiedAttrs.isEmpty())
+            throw new CloudRuntimeException("Attribute not specified.");
+        if (builder == this)
+            throw new CloudRuntimeException("Can't join with itself. Create a new SearchBuilder for the same entity and use that.");
+        if (_specifiedAttrs.size() != builder._specifiedAttrs.size())
+            throw new CloudRuntimeException("Number of attributes to join on must be the same.");
 
         final JoinBuilder<SearchBase<?, ?, ?>> t = new JoinBuilder<>(name, builder, _specifiedAttrs.toArray(new Attribute[0]),
                 builder._specifiedAttrs.toArray(new Attribute[0]), joinType, condition);
@@ -248,13 +245,14 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
     /**
      * This method is used to set alias for the table name when joining with another table.
      * Allows to set alias for the table name which is further used to generate the condition for nested join.
+     * <br/>
      * e.g. vmSearch.join("vmSearch", "serviceOfferingSearch", serviceOfferingSearch, serviceOfferingSearch.entity().getId(), vmSearch.entity().getServiceOfferingId(), JoinBuilder.JoinType.LEFT);
-     *
+     * <br/>
      *  volumeSearchBuilder.join("vmSearch", vmSearch, vmSearch.entity().getId(), volumeSearchBuilder.entity().getInstanceId(), JoinBuilder.JoinType.LEFT);
-     *
-     *  In the above example, vmSearch is the alias for the table name vm_instance and the query generated is
-     *  FROM volume
-     *  LEFT JOIN vm_instance vmSearch ON vmSearch.id = volume.instance_id
+     * <br/>
+     *  In the above example, vmSearch is the alias for the table name vm_instance and the query generated is <br/>
+     *  FROM volume <br/>
+     *  LEFT JOIN vm_instance vmSearch ON vmSearch.id = volume.instance_id <br/>
      *  LEFT JOIN service_offering serviceOfferingSearch ON serviceOfferingSearch.id = vmSearch.service_offering_id
      */
     @SuppressWarnings("unchecked")
@@ -262,11 +260,16 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
             final String tableAliasName, final String name, final SearchBase<?, ?, ?> builder,
             final JoinBuilder.JoinType joinType, final JoinBuilder.JoinCondition condition, final Object... joinFields
     ) {
-        assert _entity != null : "SearchBuilder cannot be modified once it has been setup";
-        assert _specifiedAttrs.size() == 1 : "You didn't select the attribute.";
-        assert builder._entity != null : "SearchBuilder cannot be modified once it has been setup";
-        assert builder._specifiedAttrs.size() == 1 : "You didn't select the attribute.";
-        assert builder != this : "You can't add yourself, can you?  Really think about it!";
+        if (_entity == null)
+            throw new CloudRuntimeException("SearchBuilder cannot be modified once it has been setup");
+        if (_specifiedAttrs.size() != 1)
+            throw new CloudRuntimeException("Attribute not specified.");
+        if (builder._entity == null)
+            throw new CloudRuntimeException("SearchBuilder cannot be modified once it has been setup");
+        if (builder._specifiedAttrs.size() != 1)
+            throw new CloudRuntimeException("Attribute not specified.");
+        if (builder == this)
+            throw new CloudRuntimeException("Can't join with itself. Create a new SearchBuilder for the same entity and use that.");
 
         for (final Attribute attr : _specifiedAttrs) {
             if (attr.table != null) {
@@ -479,17 +482,7 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
             return presets;
         }
 
-        public void toSql(final StringBuilder sql, final Object[] params, final int count) {
-            String tableAlias = null;
-            if (joinName != null) {
-                tableAlias = joinName;
-            } else if (attr != null) {
-                tableAlias = attr.table;
-            }
-            toSql(sql, tableAlias, params, count);
-        }
-
-        public void toSql(final StringBuilder sql, final String tableAlias, final Object[] params, final int count) {
+        public void toSql(final StringBuilder sql, String tableAlias, final Object[] params, final int count) {
             if (count > 0) {
                 sql.append(cond);
             }
@@ -509,6 +502,14 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
 
             if (op == Op.FIND_IN_SET) {
                 sql.append(" FIND_IN_SET(?, ");
+            }
+
+            if (tableAlias == null) {
+                if (joinName != null) {
+                    tableAlias = joinName;
+                } else {
+                    tableAlias = attr.table;
+                }
             }
 
             sql.append(tableAlias).append(".").append(attr.columnName).append(op.toString());

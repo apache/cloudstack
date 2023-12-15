@@ -110,7 +110,7 @@ public class ServiceOfferingVO implements ServiceOffering {
     private boolean defaultUse;
 
     @Column(name = "vm_type")
-    private String systemVmType;
+    private String vmType;
 
     @Column(name = "sort_key")
     int sortKey;
@@ -140,7 +140,7 @@ public class ServiceOfferingVO implements ServiceOffering {
     }
 
     public ServiceOfferingVO(String name, Integer cpu, Integer ramSize, Integer speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA, String displayText,
-                             boolean systemUse, VirtualMachine.Type systemVmType, boolean defaultUse) {
+                             boolean systemUse, VirtualMachine.Type vmType, boolean defaultUse) {
         this.cpu = cpu;
         this.ramSize = ramSize;
         this.speed = speed;
@@ -150,7 +150,7 @@ public class ServiceOfferingVO implements ServiceOffering {
         limitCpuUse = false;
         volatileVm = false;
         this.defaultUse = defaultUse;
-        this.systemVmType = systemVmType == null ? null : systemVmType.toString().toLowerCase();
+        this.vmType = vmType == null ? null : vmType.toString().toLowerCase();
         uuid = UUID.randomUUID().toString();
         this.systemUse = systemUse;
         this.name = name;
@@ -159,7 +159,7 @@ public class ServiceOfferingVO implements ServiceOffering {
 
     public ServiceOfferingVO(String name, Integer cpu, Integer ramSize, Integer speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA,
                              boolean limitResourceUse, boolean volatileVm, String displayText, boolean systemUse,
-                             VirtualMachine.Type systemVmType, String hostTag, String deploymentPlanner, boolean dynamicScalingEnabled, boolean isCustomized) {
+                             VirtualMachine.Type vmType, String hostTag, String deploymentPlanner, boolean dynamicScalingEnabled, boolean isCustomized) {
         this.cpu = cpu;
         this.ramSize = ramSize;
         this.speed = speed;
@@ -168,7 +168,7 @@ public class ServiceOfferingVO implements ServiceOffering {
         this.offerHA = offerHA;
         this.limitCpuUse = limitResourceUse;
         this.volatileVm = volatileVm;
-        this.systemVmType = systemVmType == null ? null : systemVmType.toString().toLowerCase();
+        this.vmType = vmType == null ? null : vmType.toString().toLowerCase();
         this.hostTag = hostTag;
         this.deploymentPlanner = deploymentPlanner;
         uuid = UUID.randomUUID().toString();
@@ -194,7 +194,7 @@ public class ServiceOfferingVO implements ServiceOffering {
         limitCpuUse = offering.getLimitCpuUse();
         volatileVm = offering.isVolatileVm();
         hostTag = offering.getHostTag();
-        systemVmType = offering.getSystemVmType();
+        vmType = offering.getVmType();
         systemUse = offering.isSystemUse();
         dynamicScalingEnabled = offering.isDynamicScalingEnabled();
         diskOfferingStrictness = offering.diskOfferingStrictness;
@@ -278,8 +278,8 @@ public class ServiceOfferingVO implements ServiceOffering {
     }
 
     @Override
-    public String getSystemVmType() {
-        return systemVmType;
+    public String getVmType() {
+        return vmType;
     }
 
     @Override

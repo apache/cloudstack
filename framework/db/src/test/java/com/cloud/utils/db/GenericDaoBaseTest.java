@@ -229,12 +229,16 @@ public class GenericDaoBaseTest {
         Attribute attr2 = new Attribute("table2", "column2");
         Attribute attr3 = new Attribute("table3", "column1");
         Attribute attr4 = new Attribute("table4", "column2");
+        Attribute attr5 = new Attribute("table3", "column1");
+        Attribute attr6 = new Attribute("XYZ");
 
         joins.add(new JoinBuilder<>("", dbTestDao.createSearchCriteria(), attr1, attr2, JoinBuilder.JoinType.INNER));
-        joins.add(new JoinBuilder<>("", dbTestDao.createSearchCriteria(), attr3, attr4, JoinBuilder.JoinType.INNER));
+        joins.add(new JoinBuilder<>("", dbTestDao.createSearchCriteria(),
+                new Attribute[]{attr3, attr5}, new Attribute[]{attr4, attr6}, JoinBuilder.JoinType.INNER, JoinBuilder.JoinCondition.OR));
         dbTestDao.addJoins(joinString, joins);
 
-        Assert.assertEquals(" INNER JOIN table2 ON table1.column1=table2.column2  INNER JOIN table4 ON table3.column1=table4.column2 ", joinString.toString());
+        Assert.assertEquals(" INNER JOIN table2 ON table1.column1=table2.column2 " +
+                " INNER JOIN table4 ON table3.column1=table4.column2 OR table3.column1=? ", joinString.toString());
     }
 
     @Test
@@ -248,15 +252,18 @@ public class GenericDaoBaseTest {
         Attribute tBc2 = new Attribute("tableB", "column2");
         Attribute tCc3 = new Attribute("tableC", "column3");
         Attribute tDc4 = new Attribute("tableD", "column4");
+        Attribute tDc5 = new Attribute("tableD", "column5");
+        Attribute attr = new Attribute(123);
 
         joins.add(new JoinBuilder<>("", dbTestDao.createSearchCriteria(), tBc2, tAc1, JoinBuilder.JoinType.INNER));
         joins.add(new JoinBuilder<>("", dbTestDao.createSearchCriteria(), tCc3, tAc2, JoinBuilder.JoinType.INNER));
-        joins.add(new JoinBuilder<>("tableAlias", dbTestDao.createSearchCriteria(), tDc4, tAc3, JoinBuilder.JoinType.INNER));
+        joins.add(new JoinBuilder<>("tableAlias", dbTestDao.createSearchCriteria(),
+                new Attribute[]{tDc4, tDc5}, new Attribute[]{tAc3, attr}, JoinBuilder.JoinType.INNER, JoinBuilder.JoinCondition.AND));
         dbTestDao.addJoins(joinString, joins);
 
         Assert.assertEquals(" INNER JOIN tableA ON tableB.column2=tableA.column1 " +
                 " INNER JOIN tableA tableA1 ON tableC.column3=tableA1.column2 " +
-                " INNER JOIN tableA tableAlias ON tableD.column4=tableAlias.column3 ", joinString.toString());
+                " INNER JOIN tableA tableAlias ON tableD.column4=tableAlias.column3 AND tableD.column5=? ", joinString.toString());
     }
 
     @Test
