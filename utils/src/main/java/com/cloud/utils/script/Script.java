@@ -56,6 +56,7 @@ public class Script implements Callable<String> {
     private volatile boolean _isTimeOut = false;
 
     private boolean _passwordCommand = false;
+    private boolean avoidLoggingCommand = false;
 
     private static final ScheduledExecutorService s_executors = Executors.newScheduledThreadPool(10, new NamedThreadFactory("Script"));
 
@@ -71,6 +72,10 @@ public class Script implements Callable<String> {
 
     public int getExitValue() {
         return _process.exitValue();
+    }
+
+    public void setAvoidLoggingCommand(boolean avoid) {
+        avoidLoggingCommand = avoid;
     }
 
     public Script(String command, Duration timeout, Logger logger) {
@@ -204,9 +209,10 @@ public class Script implements Callable<String> {
 
     public String execute(OutputInterpreter interpreter) {
         String[] command = _command.toArray(new String[_command.size()]);
-
         String commandLine = buildCommandLine(command);
-        _logger.debug(String.format("Executing command [%s].", commandLine.split(KeyStoreUtils.KS_FILENAME)[0]));
+        if (_logger.isDebugEnabled() && !avoidLoggingCommand) {
+            _logger.debug(String.format("Executing command [%s].", commandLine.split(KeyStoreUtils.KS_FILENAME)[0]));
+        }
 
         try {
             _logger.trace(String.format("Creating process for command [%s].", commandLine));
@@ -518,14 +524,19 @@ public class Script implements Callable<String> {
     }
 
     public static int runSimpleBashScriptForExitValue(String command) {
-        return runSimpleBashScriptForExitValue(command, 0);
+        return runSimpleBashScriptForExitValue(command, 0, false);
     }
 
-    public static int runSimpleBashScriptForExitValue(String command, int timeout) {
+    public static int runSimpleBashScriptForExitValueAvoidLogging(String command) {
+        return runSimpleBashScriptForExitValue(command, 0, true);
+    }
+
+    public static int runSimpleBashScriptForExitValue(String command, int timeout, boolean avoidLogging) {
 
         Script s = new Script("/bin/bash", timeout);
         s.add("-c");
         s.add(command);
+        s.setAvoidLoggingCommand(avoidLogging);
 
         String result = s.execute(null);
         if (result == null || result.trim().isEmpty())

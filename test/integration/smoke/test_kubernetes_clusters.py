@@ -531,7 +531,7 @@ class TestKubernetesCluster(cloudstackTestCase):
     @attr(tags=["advanced", "smoke"], required_hardware="true")
     @skipTestIf("hypervisorNotSupported")
     def test_07_deploy_kubernetes_ha_cluster(self):
-        """Test to deploy a new Kubernetes cluster
+        """Test to deploy a new HA Kubernetes cluster
 
         # Validate the following:
         # 1. createKubernetesCluster should return valid info for new cluster
@@ -542,14 +542,14 @@ class TestKubernetesCluster(cloudstackTestCase):
         if self.default_network:
             self.skipTest("HA cluster on shared network requires external ip address, skipping it")
         global k8s_cluster
-        k8s_cluster = self.getValidKubernetesCluster(1, 2)
+        k8s_cluster = self.getValidKubernetesCluster(1, 3)
         self.debug("HA Kubernetes cluster with ID: %s successfully deployed" % k8s_cluster.id)
         return
 
     @attr(tags=["advanced", "smoke"], required_hardware="true")
     @skipTestIf("hypervisorNotSupported")
     def test_08_upgrade_kubernetes_ha_cluster(self):
-        """Test to upgrade a Kubernetes cluster to newer version
+        """Test to upgrade a HA Kubernetes cluster to newer version
 
         # Validate the following:
         # 1. upgradeKubernetesCluster should return valid info for the cluster
@@ -559,7 +559,7 @@ class TestKubernetesCluster(cloudstackTestCase):
         if self.default_network:
             self.skipTest("HA cluster on shared network requires external ip address, skipping it")
         global k8s_cluster
-        k8s_cluster = self.getValidKubernetesCluster(1, 2, version=self.kubernetes_version_v1)
+        k8s_cluster = self.getValidKubernetesCluster(1, 3, version=self.kubernetes_version_v1)
         time.sleep(self.services["sleep"])
 
         self.debug("Upgrading HA Kubernetes cluster with ID: %s" % k8s_cluster.id)
@@ -586,7 +586,7 @@ class TestKubernetesCluster(cloudstackTestCase):
         if self.default_network:
             self.skipTest("HA cluster on shared network requires external ip address, skipping it")
         global k8s_cluster
-        k8s_cluster = self.getValidKubernetesCluster(1, 2)
+        k8s_cluster = self.getValidKubernetesCluster(1, 3)
 
         self.debug("Deleting Kubernetes cluster with ID: %s" % k8s_cluster.id)
         return

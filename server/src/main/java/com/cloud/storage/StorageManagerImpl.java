@@ -27,6 +27,7 @@ import java.nio.file.Files;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -54,10 +55,15 @@ import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaint
 import org.apache.cloudstack.api.command.admin.storage.CreateSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteImageStoreCmd;
+import org.apache.cloudstack.api.command.admin.storage.DeleteObjectStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeletePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.SyncStoragePoolCmd;
+import org.apache.cloudstack.api.command.admin.storage.UpdateObjectStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
+import org.apache.cloudstack.api.command.admin.storage.heuristics.CreateSecondaryStorageSelectorCmd;
+import org.apache.cloudstack.api.command.admin.storage.heuristics.RemoveSecondaryStorageSelectorCmd;
+import org.apache.cloudstack.api.command.admin.storage.heuristics.UpdateSecondaryStorageSelectorCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -95,6 +101,10 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
+import org.apache.cloudstack.secstorage.HeuristicVO;
+import org.apache.cloudstack.secstorage.dao.SecondaryStorageHeuristicDao;
+import org.apache.cloudstack.secstorage.heuristics.Heuristic;
+import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
 import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.SyncVolumePathAnswer;
@@ -104,6 +114,9 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreObjectDownloadDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreObjectDownloadVO;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
@@ -115,8 +128,11 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
+import org.apache.cloudstack.storage.object.ObjectStore;
+import org.apache.cloudstack.storage.object.ObjectStoreEntity;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -192,6 +208,7 @@ import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume.Type;
+import com.cloud.storage.dao.BucketDao;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
@@ -352,7 +369,18 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     private AnnotationDao annotationDao;
 
     @Inject
+    private SecondaryStorageHeuristicDao secondaryStorageHeuristicDao;
+
+    @Inject
     protected UserVmManager userVmManager;
+    @Inject
+    protected ObjectStoreDao _objectStoreDao;
+
+    @Inject
+    protected ObjectStoreDetailsDao _objectStoreDetailsDao;
+
+    @Inject
+    protected BucketDao _bucketDao;
     protected List<StoragePoolDiscoverer> _discoverers;
 
     public List<StoragePoolDiscoverer> getDiscoverers() {
@@ -854,6 +882,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         params.put("hypervisorType", hypervisorType);
         params.put("url", cmd.getUrl());
         params.put("tags", cmd.getTags());
+        params.put("isTagARule", cmd.isTagARule());
         params.put("name", cmd.getStoragePoolName());
         params.put("details", details);
         params.put("providerName", storeProvider.getName());
@@ -1017,42 +1046,62 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             if (pool.getPoolType() == StoragePoolType.DatastoreCluster) {
                 List<StoragePoolVO> childStoragePools = _storagePoolDao.listChildStoragePoolsInDatastoreCluster(pool.getId());
                 for (StoragePoolVO childPool : childStoragePools) {
-                    _storagePoolTagsDao.persist(childPool.getId(), storagePoolTags);
+                    _storagePoolTagsDao.persist(childPool.getId(), storagePoolTags, cmd.isTagARule());
                 }
             }
-            _storagePoolTagsDao.persist(pool.getId(), storagePoolTags);
+            _storagePoolTagsDao.persist(pool.getId(), storagePoolTags, cmd.isTagARule());
         }
 
+        boolean changes = false;
         Long updatedCapacityBytes = null;
         Long capacityBytes = cmd.getCapacityBytes();
 
         if (capacityBytes != null) {
             if (capacityBytes != pool.getCapacityBytes()) {
                 updatedCapacityBytes = capacityBytes;
+                changes = true;
             }
         }
 
         Long updatedCapacityIops = null;
         Long capacityIops = cmd.getCapacityIops();
-
         if (capacityIops != null) {
             if (!capacityIops.equals(pool.getCapacityIops())) {
                 updatedCapacityIops = capacityIops;
+                changes = true;
             }
         }
 
-        if (updatedCapacityBytes != null || updatedCapacityIops != null) {
+        // retrieve current details and merge/overlay input to capture changes
+        Map<String, String> inputDetails = extractApiParamAsMap(cmd.getDetails());
+        Map<String, String> details = null;
+        if (inputDetails == null) {
+            details = _storagePoolDetailsDao.listDetailsKeyPairs(id);
+        } else {
+            details = _storagePoolDetailsDao.listDetailsKeyPairs(id);
+            details.putAll(inputDetails);
+            changes = true;
+        }
+
+        if (changes) {
             StoragePoolVO storagePool = _storagePoolDao.findById(id);
             DataStoreProvider dataStoreProvider = _dataStoreProviderMgr.getDataStoreProvider(storagePool.getStorageProviderName());
             DataStoreLifeCycle dataStoreLifeCycle = dataStoreProvider.getDataStoreLifeCycle();
 
             if (dataStoreLifeCycle instanceof PrimaryDataStoreLifeCycle) {
-                Map<String, String> details = new HashMap<String, String>();
-
-                details.put(PrimaryDataStoreLifeCycle.CAPACITY_BYTES, updatedCapacityBytes != null ? String.valueOf(updatedCapacityBytes) : null);
-                details.put(PrimaryDataStoreLifeCycle.CAPACITY_IOPS, updatedCapacityIops != null ? String.valueOf(updatedCapacityIops) : null);
-
-                ((PrimaryDataStoreLifeCycle)dataStoreLifeCycle).updateStoragePool(storagePool, details);
+                if (updatedCapacityBytes != null) {
+                    details.put(PrimaryDataStoreLifeCycle.CAPACITY_BYTES, updatedCapacityBytes != null ? String.valueOf(updatedCapacityBytes) : null);
+                    _storagePoolDao.updateCapacityBytes(id, updatedCapacityBytes);
+                }
+                if (updatedCapacityIops != null) {
+                    details.put(PrimaryDataStoreLifeCycle.CAPACITY_IOPS, updatedCapacityIops != null ? String.valueOf(updatedCapacityIops) : null);
+                    _storagePoolDao.updateCapacityIops(id, updatedCapacityIops);
+                }
+                if (cmd.getUrl() != null) {
+                    details.put("url", cmd.getUrl());
+                }
+                _storagePoolDao.update(id, storagePool);
+                _storagePoolDao.updateDetails(id, details);
             }
         }
 
@@ -1063,14 +1112,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             } else {
                 disablePrimaryStoragePool(pool);
             }
-        }
-
-        if (updatedCapacityBytes != null) {
-            _storagePoolDao.updateCapacityBytes(id, capacityBytes);
-        }
-
-        if (updatedCapacityIops != null) {
-            _storagePoolDao.updateCapacityIops(id, capacityIops);
         }
 
         return (PrimaryDataStoreInfo)_dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
@@ -1989,9 +2030,68 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return (PrimaryDataStoreInfo) _dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
     }
 
+
+    @Override
+    public Heuristic createSecondaryStorageHeuristic(CreateSecondaryStorageSelectorCmd cmd) {
+        String name = cmd.getName();
+        String description = cmd.getDescription();
+        long zoneId = cmd.getZoneId();
+        String heuristicRule = cmd.getHeuristicRule();
+        String type = cmd.getType();
+        HeuristicType formattedType = EnumUtils.getEnumIgnoreCase(HeuristicType.class, type);
+
+        if (formattedType == null) {
+            throw new IllegalArgumentException(String.format("The given heuristic type [%s] is not valid for creating a new secondary storage selector." +
+                    " The valid options are %s.", type, Arrays.asList(HeuristicType.values())));
+        }
+
+        HeuristicVO heuristic = secondaryStorageHeuristicDao.findByZoneIdAndType(zoneId, formattedType);
+
+        if (heuristic != null) {
+            DataCenterVO dataCenter = _dcDao.findById(zoneId);
+            throw new CloudRuntimeException(String.format("There is already a heuristic rule in the specified %s with the type [%s].",
+                    dataCenter, type));
+        }
+
+        validateHeuristicRule(heuristicRule);
+
+        HeuristicVO heuristicVO = new HeuristicVO(name, description, zoneId, formattedType.toString(), heuristicRule);
+        return secondaryStorageHeuristicDao.persist(heuristicVO);
+    }
+
+    @Override
+    public Heuristic updateSecondaryStorageHeuristic(UpdateSecondaryStorageSelectorCmd cmd) {
+        long heuristicId = cmd.getId();
+        String heuristicRule = cmd.getHeuristicRule();
+
+        HeuristicVO heuristicVO = secondaryStorageHeuristicDao.findById(heuristicId);
+        validateHeuristicRule(heuristicRule);
+        heuristicVO.setHeuristicRule(heuristicRule);
+
+        return secondaryStorageHeuristicDao.persist(heuristicVO);
+    }
+
+    @Override
+    public void removeSecondaryStorageHeuristic(RemoveSecondaryStorageSelectorCmd cmd) {
+        Long heuristicId = cmd.getId();
+        HeuristicVO heuristicVO = secondaryStorageHeuristicDao.findById(heuristicId);
+
+        if (heuristicVO != null) {
+            secondaryStorageHeuristicDao.remove(heuristicId);
+        } else {
+            throw new CloudRuntimeException("Unable to find an active heuristic with the specified UUID.");
+        }
+    }
+
+    protected void validateHeuristicRule(String heuristicRule) {
+        if (StringUtils.isBlank(heuristicRule)) {
+            throw new IllegalArgumentException("Unable to create a new secondary storage selector as the given heuristic rule is blank.");
+        }
+    }
+
     public void syncDatastoreClusterStoragePool(long datastoreClusterPoolId, List<ModifyStoragePoolAnswer> childDatastoreAnswerList, long hostId) {
         StoragePoolVO datastoreClusterPool = _storagePoolDao.findById(datastoreClusterPoolId);
-        List<String> storageTags = _storagePoolTagsDao.getStoragePoolTags(datastoreClusterPoolId);
+        List<StoragePoolTagVO> storageTags = _storagePoolTagsDao.findStoragePoolTags(datastoreClusterPoolId);
         List<StoragePoolVO> childDatastores = _storagePoolDao.listChildStoragePoolsInDatastoreCluster(datastoreClusterPoolId);
         Set<String> childDatastoreUUIDs = new HashSet<>();
         for (StoragePoolVO childDatastore : childDatastores) {
@@ -2019,18 +2119,18 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     dataStoreVO.setParent(datastoreClusterPoolId);
                     _storagePoolDao.update(dataStoreVO.getId(), dataStoreVO);
                     if (CollectionUtils.isNotEmpty(storageTags)) {
-                        storageTags.addAll(_storagePoolTagsDao.getStoragePoolTags(dataStoreVO.getId()));
+                        storageTags.addAll(_storagePoolTagsDao.findStoragePoolTags(dataStoreVO.getId()));
                     } else {
-                        storageTags = _storagePoolTagsDao.getStoragePoolTags(dataStoreVO.getId());
+                        storageTags = _storagePoolTagsDao.findStoragePoolTags(dataStoreVO.getId());
                     }
                     if (CollectionUtils.isNotEmpty(storageTags)) {
-                        Set<String> set = new LinkedHashSet<>(storageTags);
+                        Set<StoragePoolTagVO> set = new LinkedHashSet<>(storageTags);
                         storageTags.clear();
                         storageTags.addAll(set);
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Updating Storage Pool Tags to :" + storageTags);
                         }
-                        _storagePoolTagsDao.persist(dataStoreVO.getId(), storageTags);
+                        _storagePoolTagsDao.persist(storageTags);
                     }
                 } else {
                     // This is to find datastores which are removed from datastore cluster.
@@ -2038,7 +2138,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     childDatastoreUUIDs.remove(dataStoreVO.getUuid());
                 }
             } else {
-                dataStoreVO = createChildDatastoreVO(datastoreClusterPool, childDataStoreAnswer);
+                dataStoreVO = createChildDatastoreVO(datastoreClusterPool, childDataStoreAnswer, storageTags);
             }
             updateStoragePoolHostVOAndBytes(dataStoreVO, hostId, childDataStoreAnswer);
         }
@@ -2079,9 +2179,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
     }
 
-    private StoragePoolVO createChildDatastoreVO(StoragePoolVO datastoreClusterPool, ModifyStoragePoolAnswer childDataStoreAnswer) {
+    private StoragePoolVO createChildDatastoreVO(StoragePoolVO datastoreClusterPool, ModifyStoragePoolAnswer childDataStoreAnswer, List<StoragePoolTagVO> storagePoolTagVOList) {
         StoragePoolInfo childStoragePoolInfo = childDataStoreAnswer.getPoolInfo();
-        List<String> storageTags = _storagePoolTagsDao.getStoragePoolTags(datastoreClusterPool.getId());
 
         StoragePoolVO dataStoreVO = new StoragePoolVO();
         dataStoreVO.setStorageProviderName(datastoreClusterPool.getStorageProviderName());
@@ -2108,7 +2207,15 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if(StringUtils.isNotEmpty(childDataStoreAnswer.getPoolType())) {
             details.put("pool_type", childDataStoreAnswer.getPoolType());
         }
-        _storagePoolDao.persist(dataStoreVO, details, storageTags);
+
+        List<String> storagePoolTags = new ArrayList<>();
+        boolean isTagARule = false;
+        if (CollectionUtils.isNotEmpty(storagePoolTagVOList)) {
+            storagePoolTags = storagePoolTagVOList.parallelStream().map(StoragePoolTagVO::getTag).collect(Collectors.toList());
+            isTagARule = storagePoolTagVOList.get(0).isTagARule();
+        }
+
+        _storagePoolDao.persist(dataStoreVO, details, storagePoolTags, isTagARule);
         return dataStoreVO;
     }
 
@@ -3578,7 +3685,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 SecStorageVMAutoScaleDown,
                 MountDisabledStoragePool,
                 VmwareCreateCloneFull,
-                VmwareAllowParallelExecution
+                VmwareAllowParallelExecution,
+                ConvertVmwareInstanceToKvmTimeout
         };
     }
 
@@ -3625,4 +3733,124 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         volumeTO.setIopsWriteRate(getDiskIopsWriteRate(offering, diskOffering));
     }
 
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_OBJECT_STORE_CREATE, eventDescription = "creating object storage")
+    public ObjectStore discoverObjectStore(String name, String url, String providerName, Map details)
+            throws IllegalArgumentException, InvalidParameterValueException {
+        DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(providerName);
+
+        if (storeProvider == null) {
+            throw new InvalidParameterValueException("can't find object store provider: " + providerName);
+        }
+
+        // Check Unique object store name
+        ObjectStoreVO objectStore = _objectStoreDao.findByName(name);
+        if (objectStore != null) {
+            throw new InvalidParameterValueException("The object store with name " + name + " already exists, try creating with another name");
+        }
+
+        try {
+            // Check URL
+            UriUtils.validateUrl(url);
+        } catch (final Exception e) {
+            throw new InvalidParameterValueException(url + " is not a valid URL");
+        }
+
+        // Check Unique object store url
+        ObjectStoreVO objectStoreUrl = _objectStoreDao.findByUrl(url);
+        if (objectStoreUrl != null) {
+            throw new InvalidParameterValueException("The object store with url " + url + " already exists");
+        }
+
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("url", url);
+        params.put("name", name);
+        params.put("providerName", storeProvider.getName());
+        params.put("role", DataStoreRole.Object);
+        params.put("details", details);
+
+        DataStoreLifeCycle lifeCycle = storeProvider.getDataStoreLifeCycle();
+
+        DataStore store;
+        try {
+            store = lifeCycle.initialize(params);
+        } catch (Exception e) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Failed to add object store: " + e.getMessage(), e);
+            }
+            throw new CloudRuntimeException("Failed to add object store: " + e.getMessage(), e);
+        }
+
+        return (ObjectStore)_dataStoreMgr.getDataStore(store.getId(), DataStoreRole.Object);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_OBJECT_STORE_DELETE, eventDescription = "deleting object storage")
+    public boolean deleteObjectStore(DeleteObjectStoragePoolCmd cmd) {
+        final long storeId = cmd.getId();
+        // Verify that object store exists
+        ObjectStoreVO store = _objectStoreDao.findById(storeId);
+        if (store == null) {
+            throw new InvalidParameterValueException("Object store with id " + storeId + " doesn't exist");
+        }
+
+        // Verify that there are no buckets in the store
+        List<BucketVO> buckets = _bucketDao.listByObjectStoreId(storeId);
+        if(buckets != null && buckets.size() > 0) {
+            throw new InvalidParameterValueException("Cannot delete object store with buckets");
+        }
+
+        // ready to delete
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                _objectStoreDetailsDao.deleteDetails(storeId);
+                _objectStoreDao.remove(storeId);
+            }
+        });
+        s_logger.debug("Successfully deleted object store with Id: "+storeId);
+        return true;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_OBJECT_STORE_UPDATE, eventDescription = "update object storage")
+    public ObjectStore updateObjectStore(Long id, UpdateObjectStoragePoolCmd cmd) {
+
+        // Input validation
+        ObjectStoreVO objectStoreVO = _objectStoreDao.findById(id);
+        if (objectStoreVO == null) {
+            throw new IllegalArgumentException("Unable to find object store with ID: " + id);
+        }
+
+        if(cmd.getUrl() != null ) {
+            String url = cmd.getUrl();
+            try {
+                // Check URL
+                UriUtils.validateUrl(url);
+            } catch (final Exception e) {
+                throw new InvalidParameterValueException(url + " is not a valid URL");
+            }
+            ObjectStoreEntity objectStore = (ObjectStoreEntity)_dataStoreMgr.getDataStore(objectStoreVO.getId(), DataStoreRole.Object);
+            String oldUrl = objectStoreVO.getUrl();
+            objectStoreVO.setUrl(url);
+            _objectStoreDao.update(id, objectStoreVO);
+            //Update URL and check access
+            try {
+                objectStore.listBuckets();
+            } catch (Exception e) {
+                //Revert to old URL on failure
+                objectStoreVO.setUrl(oldUrl);
+                _objectStoreDao.update(id, objectStoreVO);
+                throw new IllegalArgumentException("Unable to access Object Storage with URL: " + cmd.getUrl());
+            }
+        }
+
+        if(cmd.getName() != null ) {
+            objectStoreVO.setName(cmd.getName());
+        }
+        _objectStoreDao.update(id, objectStoreVO);
+        s_logger.debug("Successfully updated object store with Id: "+id);
+        return objectStoreVO;
+    }
 }

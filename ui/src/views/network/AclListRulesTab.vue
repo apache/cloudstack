@@ -211,7 +211,7 @@
           <a-input v-model:value="form.protocolnumber" />
         </a-form-item>
 
-        <div v-if="['icmp', 'protocolnumber'].includes(form.protocol)">
+        <div v-if="form.protocol === 'icmp'">
           <a-form-item :label="$t('label.icmptype')" ref="icmptype" name="icmptype">
             <a-input v-model:value="form.icmptype" :placeholder="$t('icmp.type.desc')" />
           </a-form-item>
@@ -333,7 +333,17 @@ export default {
             result += columnDelimiter
           }
 
-          result += typeof item[key] === 'string' && item[key].includes(columnDelimiter) ? `"${item[key]}"` : item[key]
+          if (key === 'tags') {
+            var tags = '"'
+            if (item[key].length > 0) {
+              item[key].forEach(tag => {
+                tags += '(' + tag.key + ',' + tag.value + ')'
+              })
+            }
+            result += tags + '"'
+          } else {
+            result += typeof item[key] === 'string' && item[key].includes(columnDelimiter) ? `"${item[key]}"` : item[key]
+          }
           ctr++
         })
         result += lineDelimiter

@@ -39,6 +39,7 @@ public interface VmDetailConstants {
     // KVM specific (internal)
     String KVM_VNC_PORT = "kvm.vnc.port";
     String KVM_VNC_ADDRESS = "kvm.vnc.address";
+    String KVM_VNC_PASSWORD = "kvm.vnc.password";
 
     // KVM specific, custom virtual GPU hardware
     String VIDEO_HARDWARE = "video.hardware";
@@ -86,4 +87,16 @@ public interface VmDetailConstants {
     String DEPLOY_AS_IS_CONFIGURATION = "configurationId";
     String KEY_PAIR_NAMES = "keypairnames";
     String CKS_CONTROL_NODE_LOGIN_USER = "controlNodeLoginUser";
+
+    // VMware to KVM VM migrations specific
+    String VMWARE_TO_KVM_PREFIX = "vmware-to-kvm";
+    String VMWARE_VCENTER_HOST = String.format("%s-vcenter", VMWARE_TO_KVM_PREFIX);
+    String VMWARE_DATACENTER_NAME = String.format("%s-datacenter", VMWARE_TO_KVM_PREFIX);
+    String VMWARE_CLUSTER_NAME = String.format("%s-cluster", VMWARE_TO_KVM_PREFIX);
+    String VMWARE_VCENTER_USERNAME = String.format("%s-username", VMWARE_TO_KVM_PREFIX);
+    String VMWARE_VCENTER_PASSWORD = String.format("%s-password", VMWARE_TO_KVM_PREFIX);
+    String VMWARE_VM_NAME = String.format("%s-vmname", VMWARE_TO_KVM_PREFIX);
+    String VMWARE_HOST_NAME = String.format("%s-host", VMWARE_TO_KVM_PREFIX);
+    String VMWARE_DISK = String.format("%s-disk", VMWARE_TO_KVM_PREFIX);
+    String VMWARE_MAC_ADDRESSES = String.format("%s-mac-addresses", VMWARE_TO_KVM_PREFIX);
 }

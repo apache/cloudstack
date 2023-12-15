@@ -294,6 +294,7 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.BucketDao;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
@@ -348,6 +349,10 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+
+import org.apache.cloudstack.api.response.ObjectStoreResponse;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 
 public class ApiDBUtils {
     private static ManagementServer s_ms;
@@ -481,6 +486,9 @@ public class ApiDBUtils {
     static NicDao s_nicDao;
     static ResourceManagerUtil s_resourceManagerUtil;
     static SnapshotPolicyDetailsDao s_snapshotPolicyDetailsDao;
+    static ObjectStoreDao s_objectStoreDao;
+
+    static BucketDao s_bucketDao;
 
     @Inject
     private ManagementServer ms;
@@ -740,6 +748,11 @@ public class ApiDBUtils {
     @Inject
     SnapshotPolicyDetailsDao snapshotPolicyDetailsDao;
 
+    @Inject
+    private ObjectStoreDao objectStoreDao;
+    @Inject
+    private BucketDao bucketDao;
+
     @PostConstruct
     void init() {
         s_ms = ms;
@@ -871,6 +884,8 @@ public class ApiDBUtils {
         s_backupOfferingDao = backupOfferingDao;
         s_resourceIconDao = resourceIconDao;
         s_resourceManagerUtil = resourceManagerUtil;
+        s_objectStoreDao = objectStoreDao;
+        s_bucketDao = bucketDao;
     }
 
     // ///////////////////////////////////////////////////////////
@@ -1279,7 +1294,7 @@ public class ApiDBUtils {
                 type = HypervisorType.Hyperv;
             }
         } if (format == ImageFormat.RAW) {
-            // Currently, KVM only supports RBD and PowerFlex images of type RAW.
+            // Currently, KVM only supports RBD, PowerFlex, and FiberChannel images of type RAW.
             // This results in a weird collision with OVM volumes which
             // can only be raw, thus making KVM RBD volumes show up as OVM
             // rather than RBD. This block of code can (hopefully) by checking to
@@ -1291,10 +1306,12 @@ public class ApiDBUtils {
             ListIterator<StoragePoolVO> itr = pools.listIterator();
             while(itr.hasNext()) {
                 StoragePoolVO pool = itr.next();
-                if(pool.getPoolType() == StoragePoolType.RBD ||
-                    pool.getPoolType() == StoragePoolType.PowerFlex ||
-                    pool.getPoolType() == StoragePoolType.CLVM ||
-                    pool.getPoolType() == StoragePoolType.Linstor) {
+
+                if(List.of(StoragePoolType.RBD,
+                           StoragePoolType.PowerFlex,
+                           StoragePoolType.CLVM,
+                           StoragePoolType.Linstor,
+                           StoragePoolType.FiberChannel).contains(pool.getPoolType())) {
                   // This case will note the presence of non-qcow2 primary stores, suggesting KVM without NFS. Otherwse,
                   // If this check is not passed, the hypervisor type will remain OVM.
                   type = HypervisorType.KVM;
@@ -2207,5 +2224,13 @@ public class ApiDBUtils {
 
     public static NicSecondaryIpVO findSecondaryIpByIp4AddressAndNetworkId(String ip4Address, long networkId) {
         return s_nicSecondaryIpDao.findByIp4AddressAndNetworkId(ip4Address, networkId);
+    }
+
+    public static ObjectStoreResponse newObjectStoreResponse(ObjectStoreVO store) {
+        return s_objectStoreDao.newObjectStoreResponse(store);
+    }
+
+    public static ObjectStoreResponse fillObjectStoreDetails(ObjectStoreResponse storeData, ObjectStoreVO store) {
+        return s_objectStoreDao.setObjectStoreResponse(storeData, store);
     }
 }

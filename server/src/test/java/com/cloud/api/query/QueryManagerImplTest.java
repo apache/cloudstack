@@ -27,6 +27,8 @@ import com.cloud.network.Network;
 import com.cloud.network.VNF;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.server.ResourceTag;
+import com.cloud.storage.BucketVO;
+import com.cloud.storage.dao.BucketDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -40,12 +42,17 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.api.command.admin.storage.ListObjectStoragePoolsCmd;
+import org.apache.cloudstack.api.command.user.bucket.ListBucketsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.api.command.user.resource.ListDetailOptionsCmd;
 import org.apache.cloudstack.api.response.DetailOptionsResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ObjectStoreResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -66,6 +73,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -94,6 +103,12 @@ public class QueryManagerImplTest {
 
     @Mock
     SearchCriteria searchCriteriaMock;
+
+    @Mock
+    ObjectStoreDao objectStoreDao;
+
+    @Mock
+    BucketDao bucketDao;
 
     private AccountVO account;
     private UserVO user;
@@ -287,5 +302,42 @@ public class QueryManagerImplTest {
         queryManagerImplSpy.addDomainIdToSetIfDomainDoesNotShareTemplates(domainId, accountMock, set);
 
         Assert.assertTrue(set.contains(domainId));
+    }
+
+    @Test
+    public void testSearchForObjectStores() {
+        ListObjectStoragePoolsCmd cmd = new ListObjectStoragePoolsCmd();
+        List<ObjectStoreVO> objectStores = new ArrayList<>();
+        ObjectStoreVO os1 = new ObjectStoreVO();
+        os1.setName("MinIOStore");
+        ObjectStoreVO os2 = new ObjectStoreVO();
+        os1.setName("Simulator");
+        objectStores.add(os1);
+        objectStores.add(os2);
+        SearchBuilder<ObjectStoreVO> sb = Mockito.mock(SearchBuilder.class);
+        ObjectStoreVO objectStoreVO = Mockito.mock(ObjectStoreVO.class);
+        when(sb.entity()).thenReturn(objectStoreVO);
+        when(objectStoreDao.createSearchBuilder()).thenReturn(sb);
+        when(objectStoreDao.searchAndCount(any(), any())).thenReturn(new Pair<>(objectStores, 2));
+        ListResponse<ObjectStoreResponse> result = queryManagerImplSpy.searchForObjectStores(cmd);
+        assertEquals(2, result.getCount().intValue());
+    }
+
+    @Test
+    public void testSearchForBuckets() {
+        ListBucketsCmd listBucketsCmd = new ListBucketsCmd();
+        List<BucketVO> buckets = new ArrayList<>();
+        BucketVO b1 = new BucketVO();
+        b1.setName("test-bucket-1");
+        BucketVO b2 = new BucketVO();
+        b2.setName("test-bucket-1");
+        buckets.add(b1);
+        buckets.add(b2);
+        SearchBuilder<BucketVO> sb = Mockito.mock(SearchBuilder.class);
+        BucketVO bucketVO = Mockito.mock(BucketVO.class);
+        when(sb.entity()).thenReturn(bucketVO);
+        when(bucketDao.createSearchBuilder()).thenReturn(sb);
+        when(bucketDao.searchAndCount(any(), any())).thenReturn(new Pair<>(buckets, 2));
+        queryManagerImplSpy.searchForBuckets(listBucketsCmd);
     }
 }
