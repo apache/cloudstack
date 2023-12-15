@@ -71,7 +71,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.mock;
@@ -134,6 +136,7 @@ public class NsxGuestNetworkGuruTest {
         ReflectionTestUtils.setField((GuestNetworkGuru) guru, "_ipAddrMgr", ipAddressManager);
         ReflectionTestUtils.setField((GuestNetworkGuru) guru, "_networkModel", networkModel);
         ReflectionTestUtils.setField((GuestNetworkGuru) guru, "networkOfferingDao", networkOfferingDao);
+        ReflectionTestUtils.setField((GuestNetworkGuru) guru, "_physicalNetworkDao", physicalNetworkDao);
 
         guru.networkOfferingServiceMapDao = networkOfferingServiceMapDao;
         guru.nsxControllerUtils = nsxControllerUtils;
@@ -246,10 +249,10 @@ public class NsxGuestNetworkGuruTest {
         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
         when(vmProfile.getVirtualMachine()).thenReturn(virtualMachine);
         when(virtualMachine.getType()).thenReturn(VirtualMachine.Type.User);
-        when(network.getId()).thenReturn(2L);
-        when(offering.getId()).thenReturn(11L);
+//        when(network.getId()).thenReturn(2L);
+//        when(offering.getId()).thenReturn(11L);
         when(networkModel.getNetworkIp4Dns(any(Network.class), nullable(DataCenter.class))).thenReturn(dns);
-        when(networkModel.getNextAvailableMacAddressInNetwork(anyLong())).thenReturn(macAddress);
+//        when(networkModel.getNextAvailableMacAddressInNetwork(anyLong())).thenReturn(macAddress);
         when(nicProfile.getMacAddress()).thenReturn(macAddress);
         when(networkOfferingDao.isIpv6Supported(anyLong())).thenReturn(false);
 
@@ -271,15 +274,15 @@ public class NsxGuestNetworkGuruTest {
         when(vmProfile.getVirtualMachine()).thenReturn(virtualMachine);
         when(virtualMachine.getType()).thenReturn(VirtualMachine.Type.DomainRouter);
         when(network.getId()).thenReturn(2L);
-        when(offering.getId()).thenReturn(11L);
-        when(networkModel.getNetworkIp4Dns(any(Network.class), nullable(DataCenter.class))).thenReturn(dns);
-        when(networkModel.getNextAvailableMacAddressInNetwork(anyLong())).thenReturn(macAddress);
+//        when(offering.getId()).thenReturn(11L);
+//        when(networkModel.getNetworkIp4Dns(any(Network.class), nullable(DataCenter.class))).thenReturn(dns);
+//        when(networkModel.getNextAvailableMacAddressInNetwork(anyLong())).thenReturn(macAddress);
         when(nicProfile.getMacAddress()).thenReturn(macAddress);
         when(networkOfferingDao.isIpv6Supported(anyLong())).thenReturn(false);
         when(network.getDataCenterId()).thenReturn(1L);
         when(network.getAccountId()).thenReturn(5L);
         when(network.getVpcId()).thenReturn(51L);
-        when(account.getDomainId()).thenReturn(2L);
+//        when(account.getDomainId()).thenReturn(2L);
         when(dcDao.findById(anyLong())).thenReturn(Mockito.mock(DataCenterVO.class));
         when(accountDao.findById(anyLong())).thenReturn(Mockito.mock(AccountVO.class));
         when(vpcDao.findById(anyLong())).thenReturn(Mockito.mock(VpcVO.class));

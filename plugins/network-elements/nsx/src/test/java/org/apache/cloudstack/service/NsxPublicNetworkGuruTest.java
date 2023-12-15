@@ -37,7 +37,6 @@ import com.cloud.utils.net.Ip;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineProfile;
 import org.apache.cloudstack.NsxAnswer;
-import org.apache.cloudstack.agent.api.CreateNsxSegmentCommand;
 import org.apache.cloudstack.agent.api.CreateOrUpdateNsxTier1NatRuleCommand;
 import org.apache.cloudstack.agent.api.NsxCommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -53,8 +52,13 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.times;
 
 @RunWith(MockitoJUnitRunner.class)
 public class NsxPublicNetworkGuruTest {
@@ -115,7 +119,7 @@ public class NsxPublicNetworkGuruTest {
         Network network = Mockito.mock(Network.class);
         Account account = Mockito.mock(Account.class);
 
-        when(network.getTrafficType()).thenReturn(Networks.TrafficType.Public);
+//        when(network.getTrafficType()).thenReturn(Networks.TrafficType.Public);
 
         Network designedNetwork = guru.design(offering, plan, network, "net1", 1L, account);
         Assert.assertEquals(Networks.TrafficType.Public, designedNetwork.getTrafficType());
