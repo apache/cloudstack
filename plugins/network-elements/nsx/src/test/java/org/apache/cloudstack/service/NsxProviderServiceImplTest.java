@@ -163,12 +163,12 @@ public class NsxProviderServiceImplTest {
     @Test
     public void testNetworkStateValidation() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         NetworkVO networkVO = Mockito.mock(NetworkVO.class);
-
+        List<NetworkVO> networkVOList = List.of(networkVO);
         when(networkVO.getBroadcastDomainType()).thenReturn(Networks.BroadcastDomainType.NSX);
         when(networkVO.getState()).thenReturn(Network.State.Allocated);
 
         NsxProviderServiceImpl nsxProviderService = new NsxProviderServiceImpl();
 
-        assertThrows(CloudRuntimeException.class, () -> nsxProviderService.validateNetworkState(List.of(networkVO)));
+        assertThrows(CloudRuntimeException.class, () -> nsxProviderService.validateNetworkState(networkVOList));
     }
 }
