@@ -30,7 +30,6 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.GenericQueryBuilder;
 import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.host.Status;

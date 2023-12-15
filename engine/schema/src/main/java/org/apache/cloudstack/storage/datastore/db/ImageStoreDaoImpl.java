@@ -25,7 +25,6 @@ import java.util.Map;
 import javax.naming.ConfigurationException;
 
 import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.SearchBase;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
