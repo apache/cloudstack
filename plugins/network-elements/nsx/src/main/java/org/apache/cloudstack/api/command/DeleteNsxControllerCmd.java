@@ -35,7 +35,7 @@ import static org.apache.cloudstack.api.command.DeleteNsxControllerCmd.APINAME;
 
 @APICommand(name = APINAME, description = "delete NSX Controller to CloudStack",
         responseObject = NsxControllerResponse.class, requestHasSensitiveInfo = false,
-        responseHasSensitiveInfo = false, since = "4.19.0.0")
+        responseHasSensitiveInfo = false, since = "4.19.0")
 public class DeleteNsxControllerCmd extends BaseCmd {
     public static final String APINAME = "deleteNsxController";
 

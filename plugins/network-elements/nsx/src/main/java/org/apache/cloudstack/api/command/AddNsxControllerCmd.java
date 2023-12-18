@@ -35,7 +35,7 @@ import javax.inject.Inject;
 
 @APICommand(name = AddNsxControllerCmd.APINAME, description = "Add NSX Controller to CloudStack",
         responseObject = NsxControllerResponse.class, requestHasSensitiveInfo = false,
-        responseHasSensitiveInfo = false, since = "4.19.0.0")
+        responseHasSensitiveInfo = false, since = "4.19.0")
 public class AddNsxControllerCmd extends BaseCmd {
     public static final String APINAME = "addNsxController";
     public static final Logger LOGGER = LoggerFactory.getLogger(AddNsxControllerCmd.class.getName());

@@ -39,7 +39,7 @@ import static org.apache.cloudstack.api.command.ListNsxControllersCmd.APINAME;
 
 @APICommand(name = APINAME, description = "list all NSX controllers added to CloudStack",
         responseObject = NsxControllerResponse.class, requestHasSensitiveInfo = false,
-        responseHasSensitiveInfo = false, since = "4.19.0.0")
+        responseHasSensitiveInfo = false, since = "4.19.0")
 public class ListNsxControllersCmd extends BaseListCmd {
     public static final String APINAME = "listNsxControllers";
     public static final Logger LOGGER = LoggerFactory.getLogger(ListNsxControllersCmd.class.getName());
