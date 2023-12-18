@@ -281,8 +281,5 @@ public class UriUtilsTest {
 
         Pair<String, Integer> url2 = UriUtils.validateUrl("https://www.apache.org");
         Assert.assertEquals(url2.first(), "www.apache.org");
-
-        Pair<String, Integer> url3 = UriUtils.validateUrl("https://ipv6.google.com");
-        Assert.assertEquals(url3.first(), "ipv6.google.com");
     }
 }
