@@ -36,6 +36,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.cloudstack.api.command.DeleteNsxControllerCmd;
 import org.apache.cloudstack.api.command.ListNsxControllersCmd;
 import org.apache.cloudstack.api.BaseResponse;
@@ -197,7 +198,8 @@ public class NsxProviderServiceImpl implements NsxProviderService {
         return cmdList;
     }
 
-    private void validateNetworkState(List<NetworkVO> networkList) {
+    @VisibleForTesting
+    void validateNetworkState(List<NetworkVO> networkList) {
         for (NetworkVO network : networkList) {
             if (network.getBroadcastDomainType() == Networks.BroadcastDomainType.NSX) {
                 if ((network.getState() != Network.State.Shutdown) && (network.getState() != Network.State.Destroy)) {

@@ -39,7 +39,6 @@ import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.guru.GuestNetworkGuru;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.user.Account;
 import com.cloud.user.dao.AccountDao;
@@ -76,8 +75,6 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
     DomainDao domainDao;
     @Inject
     NetworkModel networkModel;
-    @Inject
-    NetworkOfferingDao networkOfferingDao;
 
     public NsxGuestNetworkGuru() {
         super();
@@ -298,7 +295,7 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
         // Do nothing
     }
 
-    private void createNsxSegment(NetworkVO networkVO, DataCenter zone) {
+    public void createNsxSegment(NetworkVO networkVO, DataCenter zone) {
         Account account = accountDao.findById(networkVO.getAccountId());
         if (isNull(account)) {
             throw new CloudRuntimeException(String.format("Unable to find account with id: %s", networkVO.getAccountId()));

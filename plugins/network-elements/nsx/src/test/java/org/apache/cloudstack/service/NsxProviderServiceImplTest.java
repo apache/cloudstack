@@ -20,6 +20,8 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.host.Host;
 import com.cloud.host.dao.HostDetailsDao;
+import com.cloud.network.Network;
+import com.cloud.network.Networks;
 import com.cloud.network.nsx.NsxProvider;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
@@ -41,12 +43,14 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyMap;
@@ -154,5 +158,17 @@ public class NsxProviderServiceImplTest {
         when(networkDao.listByPhysicalNetwork(anyLong())).thenReturn(networkVOList);
 
         assertTrue(nsxProviderService.deleteNsxController(1L));
+    }
+
+    @Test
+    public void testNetworkStateValidation() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        NetworkVO networkVO = Mockito.mock(NetworkVO.class);
+        List<NetworkVO> networkVOList = List.of(networkVO);
+        when(networkVO.getBroadcastDomainType()).thenReturn(Networks.BroadcastDomainType.NSX);
+        when(networkVO.getState()).thenReturn(Network.State.Allocated);
+
+        NsxProviderServiceImpl nsxProviderService = new NsxProviderServiceImpl();
+
+        assertThrows(CloudRuntimeException.class, () -> nsxProviderService.validateNetworkState(networkVOList));
     }
 }

@@ -25,8 +25,14 @@ import com.vmware.nsx_policy.model.Site;
 import com.vmware.nsx_policy.model.SiteListResult;
 import junit.framework.Assert;
 import org.apache.cloudstack.NsxAnswer;
+import org.apache.cloudstack.agent.api.CreateNsxDistributedFirewallRulesCommand;
+import org.apache.cloudstack.agent.api.CreateNsxLoadBalancerRuleCommand;
+import org.apache.cloudstack.agent.api.CreateNsxPortForwardRuleCommand;
 import org.apache.cloudstack.agent.api.CreateNsxSegmentCommand;
+import org.apache.cloudstack.agent.api.CreateNsxStaticNatCommand;
 import org.apache.cloudstack.agent.api.CreateNsxTier1GatewayCommand;
+import org.apache.cloudstack.agent.api.DeleteNsxDistributedFirewallRulesCommand;
+import org.apache.cloudstack.agent.api.DeleteNsxNatRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxSegmentCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxTier1GatewayCommand;
 import org.apache.cloudstack.agent.api.NsxCommand;
@@ -160,4 +166,57 @@ public class NsxResourceTest {
         NsxAnswer answer = (NsxAnswer) nsxResource.executeRequest(command);
         assertTrue(answer.getResult());
     }
+
+    @Test
+    public void testCreateStaticNat() {
+        CreateNsxStaticNatCommand cmd = new CreateNsxStaticNatCommand(1L, 1L, 1L, 3L, "VPC01", true, 2L, "10.1.12.10", "172.30.20.12");
+        NsxAnswer answer = (NsxAnswer) nsxResource.executeRequest(cmd);
+        assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testCreatePortForwardRule() {
+        CreateNsxPortForwardRuleCommand cmd = new CreateNsxPortForwardRuleCommand(1L, 1L, 1L, 3L, "VPC01", true, 2L, 5L, "10.1.12.10", "172.30.20.12", "2222", "22", "tcp");
+        NsxAnswer answer = (NsxAnswer) nsxResource.executeRequest(cmd);
+        assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testDeleteNsxNatRule() {
+        DeleteNsxNatRuleCommand cmd = new DeleteNsxNatRuleCommand(1L, 1L, 1L, 3L, "VPC01", true, 2L, 5L, "22", "tcp");
+        NsxAnswer answer = (NsxAnswer) nsxResource.executeRequest(cmd);
+        assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testCreateNsxLoadBalancerRule() {
+        List<NsxLoadBalancerMember> loadBalancerMembers = List.of(new NsxLoadBalancerMember(
+                1L, "172.30.20.12", 6443
+        ));
+        CreateNsxLoadBalancerRuleCommand cmd = new CreateNsxLoadBalancerRuleCommand(1L, 1L, 1L,
+                3L, "VPC01", true, loadBalancerMembers, 1L, "6443", "6443", "RoundRobin", "TCP");
+        NsxAnswer answer = (NsxAnswer) nsxResource.executeRequest(cmd);
+        assertTrue(answer.getResult());
+    }
+
+
+    @Test
+    public void testCreateNsxDistributedFirewallRule() {
+        List<NsxNetworkRule> networkRules = List.of(new NsxNetworkRule());
+        CreateNsxDistributedFirewallRulesCommand cmd = new CreateNsxDistributedFirewallRulesCommand(1L, 1L, 1L,
+                3L, 1L, networkRules);
+        NsxAnswer answer = (NsxAnswer) nsxResource.executeRequest(cmd);
+        assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testDeleteNsxDistributedFirewallRule() {
+        List<NsxNetworkRule> networkRules = List.of(new NsxNetworkRule());
+        DeleteNsxDistributedFirewallRulesCommand cmd = new DeleteNsxDistributedFirewallRulesCommand(1L, 1L, 1L,
+                3L, 1L, networkRules);
+        NsxAnswer answer = (NsxAnswer) nsxResource.executeRequest(cmd);
+        assertTrue(answer.getResult());
+    }
+
+
 }
