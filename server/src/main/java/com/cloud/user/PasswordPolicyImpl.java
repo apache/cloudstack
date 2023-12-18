@@ -188,12 +188,12 @@ public class PasswordPolicyImpl implements PasswordPolicy, Configurable {
         logger.trace(String.format("Validating if the new password for user [%s] matches regex [%s] defined in the configuration [%s].",
                 username, passwordPolicyRegex, PasswordPolicyRegex.key()));
 
-        if (passwordPolicyRegex == null){
+        if (StringUtils.isBlank(passwordPolicyRegex)) {
             logger.trace(String.format("Regex is null; therefore, we will not validate if the new password matches with regex for user [%s].", username));
             return;
         }
 
-        if (!password.matches(passwordPolicyRegex)){
+        if (!password.matches(passwordPolicyRegex)) {
             logger.error(String.format("User [%s] informed a new password that does not match with regex [%s]. Refusing the user's new password.", username, passwordPolicyRegex));
             throw new InvalidParameterValueException("User password does not match with password policy regex.");
         }

@@ -78,8 +78,8 @@ public interface PasswordPolicy {
             "Advanced",
             String.class,
             "password.policy.regex",
-            ".+",
-            "A regular expression that the user's password must match. The default expression '.+' will match with any password.",
+            "",
+            "A regular expression that the user's password must match. By default no expression is used.",
             true,
             ConfigKey.Scope.Domain);
 
