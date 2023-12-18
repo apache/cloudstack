@@ -121,9 +121,9 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.router.NetworkHelper;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRuleVO;
+import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.SecurityGroupService;
-import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.SecurityRule;
 import com.cloud.network.vpc.NetworkACL;
 import com.cloud.offering.NetworkOffering;
@@ -1068,7 +1068,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             logAndThrow(Level.ERROR, String.format("Creating Kubernetes cluster failed due to error while finding suitable deployment plan for cluster in zone : %s", zone.getName()));
         }
 
-        SecurityGroupVO securityGroupVO = null;
+        SecurityGroup securityGroupVO = null;
         if (zone.isSecurityGroupEnabled()) {
             String securityGroupName = String.format("%s-%s", KubernetesClusterActionWorker.CKS_CLUSTER_SECURITY_GROUP_NAME, owner.getUuid());
             String securityGroupDesc = String.format("%s and account %s", KubernetesClusterActionWorker.CKS_SECURITY_GROUP_DESCRIPTION, owner.getName());
@@ -1096,7 +1096,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         final long cores = serviceOffering.getCpu() * (controlNodeCount + clusterSize);
         final long memory = serviceOffering.getRamSize() * (controlNodeCount + clusterSize);
 
-        SecurityGroupVO finalSecurityGroupVO = securityGroupVO;
+        SecurityGroup finalSecurityGroupVO = securityGroupVO;
         final KubernetesClusterVO cluster = Transaction.execute(new TransactionCallback<KubernetesClusterVO>() {
             @Override
             public KubernetesClusterVO doInTransaction(TransactionStatus status) {

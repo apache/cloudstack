@@ -1402,12 +1402,12 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
     }
 
     @Override
-    public SecurityGroupVO getDefaultSecurityGroup(long accountId) {
+    public SecurityGroup getDefaultSecurityGroup(long accountId) {
         return _securityGroupDao.findByAccountAndName(accountId, DEFAULT_GROUP_NAME);
     }
 
     @Override
-    public SecurityGroupVO getSecurityGroup(String name, long accountId) {
+    public SecurityGroup getSecurityGroup(String name, long accountId) {
         return _securityGroupDao.findByAccountAndName(accountId, name);
     }
 
