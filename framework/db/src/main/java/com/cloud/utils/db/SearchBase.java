@@ -203,7 +203,6 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
      * @param joinType type of join
      * @return itself
      */
-    @SuppressWarnings("unchecked")
     public J join(final String name, final SearchBase<?, ?, ?> builder, final Object joinField1, final Object joinField2, final JoinBuilder.JoinType joinType) {
         if (_specifiedAttrs.size() != 1)
             throw new CloudRuntimeException("You didn't select the attribute.");
@@ -214,6 +213,18 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
     }
 
 
+    /**
+     * joins this search with another search with multiple conditions in the join clause
+     *
+     * @param name name given to the other search.  used for setJoinParameters.
+     * @param builder The other search
+     * @param joinType type of join
+     * @param condition condition to be used for multiple conditions in the join clause
+     * @param joinFields fields the first and second table used to perform the join.
+     *                   The fields should be in the order of the checks between the two tables.
+     *
+     * @return
+     */
     public J join(final String name, final SearchBase<?, ?, ?> builder, final JoinBuilder.JoinType joinType, final
             JoinBuilder.JoinCondition condition, final Object... joinFields) {
         if (_entity == null)
@@ -255,7 +266,6 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
      *  LEFT JOIN vm_instance vmSearch ON vmSearch.id = volume.instance_id <br/>
      *  LEFT JOIN service_offering serviceOfferingSearch ON serviceOfferingSearch.id = vmSearch.service_offering_id
      */
-    @SuppressWarnings("unchecked")
     public J join(
             final String tableAliasName, final String name, final SearchBase<?, ?, ?> builder,
             final JoinBuilder.JoinType joinType, final JoinBuilder.JoinCondition condition, final Object... joinFields

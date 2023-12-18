@@ -3788,7 +3788,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 }
             }
 
-            serviceOfferingSearch.join("diskOfferingSearch", diskOfferingSearch, serviceOfferingSearch.entity().getDiskOfferingId(), diskOfferingSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+            serviceOfferingSearch.join("diskOfferingSearch", diskOfferingSearch, JoinBuilder.JoinType.INNER, JoinBuilder.JoinCondition.AND,
+                    serviceOfferingSearch.entity().getDiskOfferingId(), diskOfferingSearch.entity().getId(),
+                    serviceOfferingSearch.entity().setString("Active"), diskOfferingSearch.entity().getState());
         }
 
         if (cpuNumber != null) {
