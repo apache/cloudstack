@@ -2027,7 +2027,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             Integer newVmCpuShares = ((PrepareForMigrationAnswer) pfma).getNewVmCpuShares();
             if (newVmCpuShares != null) {
-                LOGGER.debug(String.format("Setting CPU shares to [%d] as part of migrate VM with volumes command for VM [%s].", newVmCpuShares, vmTO));
+                logger.debug(String.format("Setting CPU shares to [%d] as part of migrate VM with volumes command for VM [%s].", newVmCpuShares, vmTO));
                 migrateCommand.setNewVmCpuShares(newVmCpuShares);
             }
 
@@ -2879,8 +2879,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 handleQualityOfServiceForVolumeMigration(destVolumeInfo, PrimaryDataStoreDriver.QualityOfServiceState.NO_MIGRATION);
             } catch (Throwable e) {
                 logger.warn("During cleanup post-migration and exception occured: " + e);
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Exception during post-migration cleanup.", e);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Exception during post-migration cleanup.", e);
                 }
             }
         }

@@ -1232,10 +1232,10 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
 
     private void relocateClonedVMToSourceHost(VirtualMachineMO clonedVM, HostMO sourceHost) throws Exception {
         if (!clonedVM.getRunningHost().getMor().equals(sourceHost.getMor())) {
-            s_logger.debug(String.format("Relocating VM to the same host as the source VM: %s", sourceHost.getHostName()));
+            logger.debug(String.format("Relocating VM to the same host as the source VM: %s", sourceHost.getHostName()));
             if (!clonedVM.relocate(sourceHost.getMor())) {
                 String err = String.format("Cannot relocate cloned VM %s to the source host %s", clonedVM.getVmName(), sourceHost.getHostName());
-                s_logger.error(err);
+                logger.error(err);
                 throw new CloudRuntimeException(err);
             }
         }
@@ -1251,7 +1251,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         VirtualMachineMO clonedVM = dataCenterMO.findVm(cloneName);
         if (!result || clonedVM == null) {
             String err = String.format("Could not clone VM %s before migration from VMware", vmName);
-            s_logger.error(err);
+            logger.error(err);
             throw new CloudRuntimeException(err);
         }
         relocateClonedVMToSourceHost(clonedVM, sourceHost);
@@ -1261,7 +1261,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     @Override
     public UnmanagedInstanceTO cloneHypervisorVMOutOfBand(String hostIp, String vmName,
                                                                  Map<String, String> params) {
-        s_logger.debug(String.format("Cloning VM %s on external vCenter %s", vmName, hostIp));
+        logger.debug(String.format("Cloning VM %s on external vCenter %s", vmName, hostIp));
         String vcenter = params.get(VmDetailConstants.VMWARE_VCENTER_HOST);
         String datacenter = params.get(VmDetailConstants.VMWARE_DATACENTER_NAME);
         String username = params.get(VmDetailConstants.VMWARE_VCENTER_USERNAME);
@@ -1273,25 +1273,25 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             VirtualMachineMO vmMo = dataCenterMO.findVm(vmName);
             if (vmMo == null) {
                 String err = String.format("Cannot find VM with name %s on %s/%s", vmName, vcenter, datacenter);
-                s_logger.error(err);
+                logger.error(err);
                 throw new CloudRuntimeException(err);
             }
             VirtualMachinePowerState sourceVmPowerState = vmMo.getPowerState();
             if (sourceVmPowerState == VirtualMachinePowerState.POWERED_ON && isWindowsVm(vmMo)) {
-                s_logger.debug(String.format("VM %s is a Windows VM and its Running, cannot be imported." +
+                logger.debug(String.format("VM %s is a Windows VM and its Running, cannot be imported." +
                                 "Please gracefully shut it down before attempting the import",
                         vmName));
             }
 
             VirtualMachineMO clonedVM = createCloneFromSourceVM(vmName, vmMo, dataCenterMO);
-            s_logger.debug(String.format("VM %s cloned successfully", vmName));
+            logger.debug(String.format("VM %s cloned successfully", vmName));
             UnmanagedInstanceTO clonedInstance = VmwareHelper.getUnmanagedInstance(vmMo.getRunningHost(), clonedVM);
             setNicsFromSourceVM(clonedInstance, vmMo);
             clonedInstance.setCloneSourcePowerState(sourceVmPowerState == VirtualMachinePowerState.POWERED_ON ? UnmanagedInstanceTO.PowerState.PowerOn : UnmanagedInstanceTO.PowerState.PowerOff);
             return clonedInstance;
         } catch (Exception e) {
             String err = String.format("Error cloning VM: %s from external vCenter %s: %s", vmName, vcenter, e.getMessage());
-            s_logger.error(err, e);
+            logger.error(err, e);
             throw new CloudRuntimeException(err, e);
         }
     }
@@ -1314,7 +1314,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
 
     @Override
     public boolean removeClonedHypervisorVMOutOfBand(String hostIp, String vmName, Map<String, String> params) {
-        s_logger.debug(String.format("Removing VM %s on external vCenter %s", vmName, hostIp));
+        logger.debug(String.format("Removing VM %s on external vCenter %s", vmName, hostIp));
         String vcenter = params.get(VmDetailConstants.VMWARE_VCENTER_HOST);
         String datacenter = params.get(VmDetailConstants.VMWARE_DATACENTER_NAME);
         String username = params.get(VmDetailConstants.VMWARE_VCENTER_USERNAME);
@@ -1326,13 +1326,13 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             if (vmMo == null) {
                 String err = String.format("Cannot find VM %s on datacenter %s, not possible to remove VM out of band",
                         vmName, datacenter);
-                s_logger.error(err);
+                logger.error(err);
                 return false;
             }
             return vmMo.destroy();
         } catch (Exception e) {
             String err = String.format("Error destroying external VM %s: %s", vmName, e.getMessage());
-            s_logger.error(err, e);
+            logger.error(err, e);
             return false;
         }
     }

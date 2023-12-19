@@ -145,12 +145,12 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
         PrepareForMigrationAnswer answer = new PrepareForMigrationAnswer(command);
 
         if (MapUtils.isNotEmpty(dpdkInterfaceMapping)) {
-            s_logger.debug(String.format("Setting DPDK interface for the migration of VM [%s].", vm));
+            logger.debug(String.format("Setting DPDK interface for the migration of VM [%s].", vm));
             answer.setDpdkInterfaceMapping(dpdkInterfaceMapping);
         }
 
         int newCpuShares = libvirtComputingResource.calculateCpuShares(vm);
-        s_logger.debug(String.format("Setting CPU shares to [%s] for the migration of VM [%s].", newCpuShares, vm));
+        logger.debug(String.format("Setting CPU shares to [%s] for the migration of VM [%s].", newCpuShares, vm));
         answer.setNewVmCpuShares(newCpuShares);
 
         return answer;

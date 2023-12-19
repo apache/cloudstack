@@ -2874,7 +2874,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         Map<String, Boolean> vlanToPersistenceMap = getVlanToPersistenceMapForVM(vmInstance.getId());
         if (MapUtils.isNotEmpty(vlanToPersistenceMap)) {
-            s_logger.debug(String.format("Setting VLAN persistence to [%s] as part of migrate command for VM [%s].", new Gson().toJson(vlanToPersistenceMap), virtualMachineTO));
+            logger.debug(String.format("Setting VLAN persistence to [%s] as part of migrate command for VM [%s].", new Gson().toJson(vlanToPersistenceMap), virtualMachineTO));
             migrateCommand.setVlanToPersistenceMap(vlanToPersistenceMap);
         }
 
@@ -2885,7 +2885,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         Map<String, DpdkTO> answerDpdkInterfaceMapping = prepareForMigrationAnswer.getDpdkInterfaceMapping();
         if (MapUtils.isNotEmpty(answerDpdkInterfaceMapping) && dpdkInterfaceMapping != null) {
-            s_logger.debug(String.format("Setting DPDK interface mapping to [%s] as part of migrate command for VM [%s].", new Gson().toJson(vlanToPersistenceMap),
+            logger.debug(String.format("Setting DPDK interface mapping to [%s] as part of migrate command for VM [%s].", new Gson().toJson(vlanToPersistenceMap),
                     virtualMachineTO));
             dpdkInterfaceMapping.putAll(answerDpdkInterfaceMapping);
             migrateCommand.setDpdkInterfaceMapping(dpdkInterfaceMapping);
@@ -2893,7 +2893,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         Integer newVmCpuShares = prepareForMigrationAnswer.getNewVmCpuShares();
         if (newVmCpuShares != null) {
-            s_logger.debug(String.format("Setting CPU shares to [%d] as part of migrate command for VM [%s].", newVmCpuShares, virtualMachineTO));
+            logger.debug(String.format("Setting CPU shares to [%d] as part of migrate command for VM [%s].", newVmCpuShares, virtualMachineTO));
             migrateCommand.setNewVmCpuShares(newVmCpuShares);
         }
 

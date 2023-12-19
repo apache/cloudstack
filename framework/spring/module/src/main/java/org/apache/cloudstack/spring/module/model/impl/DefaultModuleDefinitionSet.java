@@ -107,14 +107,14 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
                         runnable.run();
                     } catch (BeansException e) {
                         logger.warn(String.format("Failed to start module [%s] due to: [%s].", moduleDefinitionName, e.getMessage()));
-                        if (log.isDebugEnabled()) {
-                            log.debug(String.format("module start failure of module [%s] was due to: ", moduleDefinitionName), e);
+                        if (logger.isDebugEnabled()) {
+                            logger.debug(String.format("module start failure of module [%s] was due to: ", moduleDefinitionName), e);
                         }
                     }
                 } catch (EmptyStackException e) {
                     logger.warn(String.format("Failed to obtain module context due to [%s]. Using root context instead.", e.getMessage()));
-                    if (log.isDebugEnabled()) {
-                        log.debug("Failed to obtain module context: ", e);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Failed to obtain module context: ", e);
                     }
                 }
             }
@@ -133,13 +133,13 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
                     loadContext(def, parent);
                 } catch (EmptyStackException e) {
                     logger.warn(String.format("Failed to obtain module context due to [%s]. Using root context instead.", e.getMessage()));
-                    if (log.isDebugEnabled()) {
-                        log.debug("Failed to obtain module context: ", e);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Failed to obtain module context: ", e);
                     }
                 } catch (BeansException e) {
                     logger.warn(String.format("Failed to start module [%s] due to: [%s].", def.getName(), e.getMessage()));
-                    if (log.isDebugEnabled()) {
-                        log.debug(String.format("module start failure of module [%s] was due to: ", def.getName()), e);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug(String.format("module start failure of module [%s] was due to: ", def.getName()), e);
                     }
                 }
             }

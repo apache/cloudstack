@@ -4640,13 +4640,13 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     " and forced flag is disabled");
         }
         try {
-            s_logger.debug(String.format("Generating a new mac address on network %s as the mac address %s already exists", network.getName(), macAddress));
+            logger.debug(String.format("Generating a new mac address on network %s as the mac address %s already exists", network.getName(), macAddress));
             String newMacAddress = _networkModel.getNextAvailableMacAddressInNetwork(network.getId());
-            s_logger.debug(String.format("Successfully generated the mac address %s, using it instead of the conflicting address %s", newMacAddress, macAddress));
+            logger.debug(String.format("Successfully generated the mac address %s, using it instead of the conflicting address %s", newMacAddress, macAddress));
             return newMacAddress;
         } catch (InsufficientAddressCapacityException e) {
             String msg = String.format("Could not generate a new mac address on network %s", network.getName());
-            s_logger.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
     }

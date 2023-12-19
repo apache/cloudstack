@@ -80,7 +80,7 @@ public class SshHelper {
             if (permKeyFile == null) {
                 if (!conn.authenticateWithPassword(user, password)) {
                     String msg = "Failed to authentication SSH user " + user + " on host " + host;
-                    s_logger.error(msg);
+                    LOGGER.error(msg);
                     throw new Exception(msg);
                 }
             } else {

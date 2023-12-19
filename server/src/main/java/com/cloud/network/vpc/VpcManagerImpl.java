@@ -1809,7 +1809,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         // 4) Conserve mode should be off in older versions
         if (guestNtwkOff.isConserveMode()) {
-            s_logger.info("Creating a network with conserve mode in VPC");
+            logger.info("Creating a network with conserve mode in VPC");
         }
 
         // 5) If Netscaler is LB provider make sure it is in dedicated mode

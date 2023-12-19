@@ -1618,7 +1618,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
 
         try {
-            s_logger.debug(String.format("Connecting to the VMware datacenter %s at vCenter %s to retrieve VMs",
+            logger.debug(String.format("Connecting to the VMware datacenter %s at vCenter %s to retrieve VMs",
                     datacenterName, vcenter));
             String serviceUrl = String.format("https://%s/sdk/vimService", vcenter);
             VmwareClient vimClient = new VmwareClient(vcenter);
@@ -1630,7 +1630,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             if (dcMor == null) {
                 String msg = String.format("Unable to find VMware datacenter %s in vCenter %s",
                         datacenterName, vcenter);
-                s_logger.error(msg);
+                logger.error(msg);
                 throw new InvalidParameterValueException(msg);
             }
             List<UnmanagedInstanceTO> instances = dcMo.getAllVmsOnDatacenter();
@@ -1639,7 +1639,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         } catch (Exception e) {
             String errorMsg = String.format("Error retrieving stopped VMs from the VMware VC %s datacenter %s: %s",
                     vcenter, datacenterName, e.getMessage());
-            s_logger.error(errorMsg, e);
+            logger.error(errorMsg, e);
             throw new CloudRuntimeException(errorMsg);
         }
     }

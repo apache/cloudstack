@@ -174,7 +174,7 @@ public class DatacenterMO extends BaseMO {
                             vms.add(unmanagedInstance);
                         }
                     } catch (Exception e) {
-                        s_logger.debug(String.format("Unexpected error checking unmanaged instance %s, excluding it: %s", vmMo.getVmName(), e.getMessage()), e);
+                        logger.debug(String.format("Unexpected error checking unmanaged instance %s, excluding it: %s", vmMo.getVmName(), e.getMessage()), e);
                     }
                 }
             }

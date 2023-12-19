@@ -34,15 +34,12 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
-import org.apache.log4j.Logger;
 import org.libvirt.LibvirtException;
 
 import java.util.Map;
 
 @ResourceWrapper(handles = CopyRemoteVolumeCommand.class)
 public final class LibvirtCopyRemoteVolumeCommandWrapper extends CommandWrapper<CopyRemoteVolumeCommand, Answer, LibvirtComputingResource> {
-
-    private static final Logger s_logger = Logger.getLogger(LibvirtCopyRemoteVolumeCommandWrapper.class);
 
     @Override
     public Answer execute(final CopyRemoteVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
@@ -61,7 +58,7 @@ public final class LibvirtCopyRemoteVolumeCommandWrapper extends CommandWrapper<
             if (storageFilerTO.getType() == Storage.StoragePoolType.Filesystem ||
                     storageFilerTO.getType() == Storage.StoragePoolType.NetworkFilesystem) {
                 String filename = libvirtComputingResource.copyVolume(srcIp, username, password, dstPath, srcFile, tmpPath);
-                s_logger.debug("Volume Copy Successful");
+                logger.debug("Volume Copy Successful");
                 final KVMPhysicalDisk vol = pool.getPhysicalDisk(filename);
                 final String path = vol.getPath();
                 long size = getVirtualSizeFromFile(path);
@@ -71,7 +68,7 @@ public final class LibvirtCopyRemoteVolumeCommandWrapper extends CommandWrapper<
             }
 
         } catch (final Exception e) {
-            s_logger.error("Error while copying file from remote host: "+ e.getMessage());
+            logger.error("Error while copying file from remote host: "+ e.getMessage());
             return new Answer(command, false, result);
         }
     }

@@ -2755,11 +2755,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         if (hostCpuMaxCapacity > 0) {
             int updatedCpuShares = (int) Math.ceil((requestedCpuShares * CGROUP_V2_UPPER_LIMIT) / (double) hostCpuMaxCapacity);
-            s_logger.debug(String.format("This host utilizes cgroupv2 (as the max shares value is [%s]), thus, the VM requested shares of [%s] will be converted to " +
+            logger.debug(String.format("This host utilizes cgroupv2 (as the max shares value is [%s]), thus, the VM requested shares of [%s] will be converted to " +
                     "consider the host limits; the new CPU shares value is [%s].", hostCpuMaxCapacity, requestedCpuShares, updatedCpuShares));
             return updatedCpuShares;
         }
-        s_logger.debug(String.format("This host does not have a maximum CPU shares set; therefore, this host utilizes cgroupv1 and the VM requested CPU shares [%s] will not be " +
+        logger.debug(String.format("This host does not have a maximum CPU shares set; therefore, this host utilizes cgroupv1 and the VM requested CPU shares [%s] will not be " +
                 "converted.", requestedCpuShares));
         return requestedCpuShares;
     }
@@ -3661,17 +3661,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      */
     protected void calculateHostCpuMaxCapacity(int cpuCores, Long cpuSpeed) {
         String output = Script.runSimpleBashScript(COMMAND_GET_CGROUP_HOST_VERSION);
-        s_logger.info(String.format("Host uses control group [%s].", output));
+        logger.info(String.format("Host uses control group [%s].", output));
 
         if (!CGROUP_V2.equals(output)) {
-            s_logger.info(String.format("Setting host CPU max capacity to 0, as it uses cgroup v1.", getHostCpuMaxCapacity()));
+            logger.info(String.format("Setting host CPU max capacity to 0, as it uses cgroup v1.", getHostCpuMaxCapacity()));
             setHostCpuMaxCapacity(0);
             return;
         }
 
-        s_logger.info(String.format("Calculating the max shares of the host."));
+        logger.info(String.format("Calculating the max shares of the host."));
         setHostCpuMaxCapacity(cpuCores * cpuSpeed.intValue());
-        s_logger.info(String.format("The max shares of the host is [%d].", getHostCpuMaxCapacity()));
+        logger.info(String.format("The max shares of the host is [%d].", getHostCpuMaxCapacity()));
     }
 
     private StartupStorageCommand createLocalStoragePool(String localStoragePath, String localStorageUUID, StartupRoutingCommand cmd) {
@@ -3788,7 +3788,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         String sourcePath = null;
         try {
             String mountResult = Script.runSimpleBashScript("mount | grep \"" + diskPath + "\"");
-            s_logger.debug("Got mount result for " + diskPath + "\n\n" + mountResult);
+            logger.debug("Got mount result for " + diskPath + "\n\n" + mountResult);
             if (StringUtils.isNotEmpty(mountResult)) {
                 String[] res = mountResult.strip().split(" ");
                 if (res[0].contains(":")) {
@@ -3805,7 +3805,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 return new Pair<>(sourceHostIp, sourcePath);
             }
         } catch (Exception ex) {
-            s_logger.warn("Failed to list source host and IP for " + diskPath + ex.toString());
+            logger.warn("Failed to list source host and IP for " + diskPath + ex.toString());
         }
         return null;
     }
@@ -5383,11 +5383,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             command.append(remoteFile);
             command.append(" "+tmpPath);
             command.append(outputFile);
-            s_logger.debug("Converting remoteFile: "+remoteFile);
+            logger.debug("Converting remoteFile: "+remoteFile);
             SshHelper.sshExecute(srcIp, 22, username, null, password, command.toString());
-            s_logger.debug("Copying remoteFile to: "+localDir);
+            logger.debug("Copying remoteFile to: "+localDir);
             SshHelper.scpFrom(srcIp, 22, username, null, password, localDir, tmpPath+outputFile);
-            s_logger.debug("Successfully copyied remoteFile to: "+localDir+"/"+outputFile);
+            logger.debug("Successfully copyied remoteFile to: "+localDir+"/"+outputFile);
             return outputFile;
         } catch (Exception e) {
             throw new RuntimeException(e);

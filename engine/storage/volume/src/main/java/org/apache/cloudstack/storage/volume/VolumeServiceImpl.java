@@ -1480,7 +1480,7 @@ public class VolumeServiceImpl implements VolumeService {
                 result.setResult(e.getLocalizedMessage());
                 result.setSuccess(false);
                 future.complete(result);
-                s_logger.warn("Failed to create template on primary storage", e);
+                logger.warn("Failed to create template on primary storage", e);
                 return future;
             } finally {
                 if (lock != null) {
@@ -1520,11 +1520,11 @@ public class VolumeServiceImpl implements VolumeService {
 
             int storagePoolMaxWaitSeconds = NumbersUtil.parseInt(configDao.getValue(Config.StoragePoolMaxWaitSeconds.key()), 3600);
             if (!lock.lock(storagePoolMaxWaitSeconds)) {
-                s_logger.debug("Unable to create volume from template, couldn't lock on " + tmplIdManagedPoolIdDestinationHostLockString);
+                logger.debug("Unable to create volume from template, couldn't lock on " + tmplIdManagedPoolIdDestinationHostLockString);
                 throw new CloudRuntimeException("Unable to create volume from template, couldn't lock on " + tmplIdManagedPoolIdDestinationHostLockString);
             }
 
-            s_logger.debug("Copying the template to the volume on primary storage");
+            logger.debug("Copying the template to the volume on primary storage");
             createManagedVolumeCopyManagedTemplateAsync(volumeInfo, destPrimaryDataStore, templateOnPrimary, destHost, future);
         } finally {
             if (lock != null) {

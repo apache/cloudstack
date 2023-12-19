@@ -185,7 +185,7 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
 
     @Override
     public Map<Long, List<String>> listDomainsOfServiceOfferingsUsedByDomainPath(String domainPath) {
-        s_logger.debug(String.format("Retrieving the domains of the service offerings used by domain with path [%s].", domainPath));
+        logger.debug(String.format("Retrieving the domains of the service offerings used by domain with path [%s].", domainPath));
 
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         try (PreparedStatement pstmt = txn.prepareStatement(LIST_DOMAINS_OF_SERVICE_OFFERINGS_USED_BY_DOMAIN_PATH)) {
@@ -206,10 +206,10 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
 
             return domainsOfServiceOfferingsUsedByDomainPath;
         } catch (SQLException e) {
-            s_logger.error(String.format("Failed to retrieve the domains of the service offerings used by domain with path [%s] due to [%s]. Returning an empty "
+            logger.error(String.format("Failed to retrieve the domains of the service offerings used by domain with path [%s] due to [%s]. Returning an empty "
                     + "list of domains.", domainPath, e.getMessage()));
 
-            s_logger.debug(String.format("Failed to retrieve the domains of the service offerings used by domain with path [%s]. Returning an empty "
+            logger.debug(String.format("Failed to retrieve the domains of the service offerings used by domain with path [%s]. Returning an empty "
                     + "list of domains.", domainPath), e);
 
             return new HashMap<>();

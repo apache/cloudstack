@@ -943,8 +943,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         try {
             uriInfo = UriUtils.getUriInfo(url);
         } catch (CloudRuntimeException cre) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(String.format("URI validation for url: %s failed, returning empty uri params", url));
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("URI validation for url: %s failed, returning empty uri params", url));
             }
             return uriParams;
         }
@@ -953,8 +953,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         String storageHost = uriInfo.getStorageHost();
         String storagePath = uriInfo.getStoragePath();
         if (scheme == null) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(String.format("Scheme for url: %s is not found, returning empty uri params", url));
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("Scheme for url: %s is not found, returning empty uri params", url));
             }
             return uriParams;
         }

@@ -381,7 +381,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         int currentCpuShares = libvirtComputingResource.calculateCpuShares(migrateCommand.getVirtualMachine());
 
         if (newVmCpuShares == currentCpuShares) {
-            s_logger.info(String.format("Current CPU shares [%s] is equal in both hosts; therefore, there is no need to update the CPU shares for the new host.",
+            logger.info(String.format("Current CPU shares [%s] is equal in both hosts; therefore, there is no need to update the CPU shares for the new host.",
                     currentCpuShares));
             return xmlDesc;
         }
@@ -395,7 +395,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         Node sharesNode = root.getElementsByTagName("shares").item(0);
         String currentShares = sharesNode.getTextContent();
 
-        s_logger.info(String.format("VM [%s] will have CPU shares altered from [%s] to [%s] as part of migration because the cgroups version differs between hosts.",
+        logger.info(String.format("VM [%s] will have CPU shares altered from [%s] to [%s] as part of migration because the cgroups version differs between hosts.",
                 migrateCommand.getVmName(), currentShares, newVmCpuShares));
         sharesNode.setTextContent(String.valueOf(newVmCpuShares));
         return getXml(document);

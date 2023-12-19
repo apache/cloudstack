@@ -936,10 +936,10 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         }
 
         DomainVO domainToBeMoved = returnDomainIfExistsAndIsActive(idOfDomainToBeMoved);
-        s_logger.debug(String.format("Found the domain [%s] as the domain to be moved.", domainToBeMoved));
+        logger.debug(String.format("Found the domain [%s] as the domain to be moved.", domainToBeMoved));
 
         DomainVO newParentDomain = returnDomainIfExistsAndIsActive(idOfNewParentDomain);
-        s_logger.debug(String.format("Found the domain [%s] as the new parent domain of the domain to be moved [%s].", newParentDomain, domainToBeMoved));
+        logger.debug(String.format("Found the domain [%s] as the new parent domain of the domain to be moved [%s].", newParentDomain, domainToBeMoved));
 
         Account caller = getCaller();
         _accountMgr.checkAccess(caller, domainToBeMoved);
@@ -968,7 +968,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-                s_logger.debug(String.format("Setting the new parent of the domain to be moved [%s] as [%s].", domainToBeMoved, newParentDomain));
+                logger.debug(String.format("Setting the new parent of the domain to be moved [%s] as [%s].", domainToBeMoved, newParentDomain));
                 domainToBeMoved.setParent(idOfNewParentDomain);
 
                 updateDomainAndChildrenPathAndLevel(domainToBeMoved, newParentDomain, currentPathOfDomainToBeMoved, newPathOfDomainToBeMoved);
@@ -999,7 +999,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
                         + "count for domain [%s] is [%s], the resource count for the new parent domain [%s] is [%s], and the limit is [%s].", domainToBeMoved.getUuid(),
                         newParentDomain.getUuid(), resourceType, domainToBeMoved.getUuid(), currentDomainResourceCount, newParentDomain.getUuid(), newParentDomainResourceCount,
                         newParentDomainResourceLimit);
-                s_logger.error(message);
+                logger.error(message);
                 throw new ResourceAllocationException(message, resourceType);
             }
         }
@@ -1041,7 +1041,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         }
 
         if (!domainsOfResourcesInaccessibleToNewParentDomain.isEmpty()) {
-            s_logger.error(String.format("The new parent domain [%s] does not have access to domains [%s] used by [%s] in the domain to be moved [%s].",
+            logger.error(String.format("The new parent domain [%s] does not have access to domains [%s] used by [%s] in the domain to be moved [%s].",
                     newParentDomain, domainsOfResourcesInaccessibleToNewParentDomain.keySet(), domainsOfResourcesInaccessibleToNewParentDomain.values(), domainToBeMoved));
             throw new InvalidParameterValueException(String.format("New parent domain [%s] does not have access to [%s] used by domain [%s], therefore, domain [%s] cannot be moved.",
                     newParentDomain, resourceToLog, domainToBeMoved, domainToBeMoved));
@@ -1049,7 +1049,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
     }
 
     protected DomainVO returnDomainIfExistsAndIsActive(Long idOfDomain) {
-        s_logger.debug(String.format("Checking if domain with ID [%s] exists and is active.", idOfDomain));
+        logger.debug(String.format("Checking if domain with ID [%s] exists and is active.", idOfDomain));
         DomainVO domain = _domainDao.findById(idOfDomain);
 
         if (domain == null) {
@@ -1081,12 +1081,12 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         int finalLevel = newLevel + currentLevel - oldRootLevel;
         domain.setLevel(finalLevel);
 
-        s_logger.debug(String.format("Updating the path to [%s] and the level to [%s] of the domain [%s].", finalPath, finalLevel, domain));
+        logger.debug(String.format("Updating the path to [%s] and the level to [%s] of the domain [%s].", finalPath, finalLevel, domain));
         _domainDao.update(domain.getId(), domain);
     }
 
     protected void updateResourceCounts(Long idOfOldParentDomain, Long idOfNewParentDomain) {
-        s_logger.debug(String.format("Updating the resource counts of the old parent domain [%s] and of the new parent domain [%s].", idOfOldParentDomain, idOfNewParentDomain));
+        logger.debug(String.format("Updating the resource counts of the old parent domain [%s] and of the new parent domain [%s].", idOfOldParentDomain, idOfNewParentDomain));
         resourceLimitService.recalculateResourceCount(null, idOfOldParentDomain, null);
         resourceLimitService.recalculateResourceCount(null, idOfNewParentDomain, null);
     }
@@ -1097,7 +1097,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         oldParentDomain.setChildCount(finalOldParentChildCount);
         oldParentDomain.setNextChildSeq(finalOldParentChildCount + 1);
 
-        s_logger.debug(String.format("Updating the child count of the old parent domain [%s] to [%s].", oldParentDomain, finalOldParentChildCount));
+        logger.debug(String.format("Updating the child count of the old parent domain [%s] to [%s].", oldParentDomain, finalOldParentChildCount));
         _domainDao.update(oldParentDomain.getId(), oldParentDomain);
 
         int finalNewParentChildCount = newParentDomain.getChildCount() + 1;
@@ -1105,7 +1105,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         newParentDomain.setChildCount(finalNewParentChildCount);
         newParentDomain.setNextChildSeq(finalNewParentChildCount + 1);
 
-        s_logger.debug(String.format("Updating the child count of the new parent domain [%s] to [%s].", newParentDomain, finalNewParentChildCount));
+        logger.debug(String.format("Updating the child count of the new parent domain [%s] to [%s].", newParentDomain, finalNewParentChildCount));
         _domainDao.update(newParentDomain.getId(), newParentDomain);
     }
 }
