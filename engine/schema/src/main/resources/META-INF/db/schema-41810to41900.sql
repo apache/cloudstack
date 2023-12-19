@@ -21,6 +21,8 @@
 
 ALTER TABLE `cloud`.`mshost` MODIFY COLUMN `state` varchar(25);
 
+UPDATE `cloud`.`network_offerings` SET conserve_mode=1 WHERE name='DefaultIsolatedNetworkOfferingForVpcNetworks';
+
 -- Invalidate existing console_session records
 UPDATE `cloud`.`console_session` SET removed=now();
 -- Modify acquired column in console_session to datetime type
@@ -43,6 +45,21 @@ CREATE TABLE IF NOT EXISTS `cloud`.`quarantined_ips` (
 
 -- create_public_parameter_on_roles. #6960
 ALTER TABLE `cloud`.`roles` ADD COLUMN `public_role` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'Indicates whether the role will be visible to all users (public) or only to root admins (private). If this parameter is not specified during the creation of the role its value will be defaulted to true (public).';
+
+-- Create heuristic table for dynamic allocating resources to the secondary storage
+CREATE TABLE IF NOT EXISTS `cloud`.`heuristics` (
+    `id` bigint(20) unsigned NOT NULL auto_increment,
+    `uuid` varchar(255) UNIQUE NOT NULL,
+    `name` text NOT NULL,
+    `description` text DEFAULT NULL,
+    `zone_id` bigint(20) unsigned NOT NULL COMMENT 'ID of the zone to apply the heuristic, foreign key to `data_center` table',
+    `type` varchar(255) NOT NULL,
+    `heuristic_rule` text NOT NULL COMMENT 'JS script that defines to which secondary storage the resource will be allocated.',
+    `created` datetime NOT NULL,
+    `removed` datetime DEFAULT NULL,
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_heuristics__zone_id` FOREIGN KEY(`zone_id`) REFERENCES `cloud`.`data_center`(`id`)
+);
 
 -- Add tables for VM Scheduler
 DROP TABLE IF EXISTS `cloud`.`vm_schedule`;
@@ -299,6 +316,9 @@ CREATE TABLE `cloud_usage`.`bucket_statistics` (
   `size` bigint unsigned COMMENT 'total size of bucket objects',
    PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Add remover account ID to quarantined IPs table.
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.quarantined_ips', 'remover_account_id', 'bigint(20) unsigned DEFAULT NULL COMMENT "ID of the account that removed the IP from quarantine, foreign key to `account` table"');
 
 -- Create table to persist quota email template configurations
 CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_email_configuration`(

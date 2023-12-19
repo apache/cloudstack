@@ -18,15 +18,18 @@ package com.cloud.storage;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
+import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLDecoder;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -60,6 +63,9 @@ import org.apache.cloudstack.api.command.admin.storage.DeleteSecondaryStagingSto
 import org.apache.cloudstack.api.command.admin.storage.SyncStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateObjectStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
+import org.apache.cloudstack.api.command.admin.storage.heuristics.CreateSecondaryStorageSelectorCmd;
+import org.apache.cloudstack.api.command.admin.storage.heuristics.RemoveSecondaryStorageSelectorCmd;
+import org.apache.cloudstack.api.command.admin.storage.heuristics.UpdateSecondaryStorageSelectorCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -97,6 +103,10 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
+import org.apache.cloudstack.secstorage.HeuristicVO;
+import org.apache.cloudstack.secstorage.dao.SecondaryStorageHeuristicDao;
+import org.apache.cloudstack.secstorage.heuristics.Heuristic;
+import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
 import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.SyncVolumePathAnswer;
@@ -124,7 +134,9 @@ import org.apache.cloudstack.storage.object.ObjectStore;
 import org.apache.cloudstack.storage.object.ObjectStoreEntity;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -245,8 +257,6 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.collect.Sets;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 
 
 @Component
@@ -358,6 +368,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     VsphereStoragePolicyDao _vsphereStoragePolicyDao;
     @Inject
     private AnnotationDao annotationDao;
+
+    @Inject
+    private SecondaryStorageHeuristicDao secondaryStorageHeuristicDao;
 
     @Inject
     protected UserVmManager userVmManager;
@@ -672,12 +685,21 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return true;
     }
 
-    private DataStore createLocalStorage(Map<String, Object> poolInfos) throws ConnectionException{
+    protected String getValidatedPareForLocalStorage(Object obj, String paramName) {
+        String result = obj == null ? null : obj.toString();
+        if (StringUtils.isEmpty(result)) {
+            throw new InvalidParameterValueException(String.format("Invalid %s provided", paramName));
+        }
+        return result;
+    }
+
+    protected DataStore createLocalStorage(Map<String, Object> poolInfos) throws ConnectionException{
         Object existingUuid = poolInfos.get("uuid");
         if( existingUuid == null ){
             poolInfos.put("uuid", UUID.randomUUID().toString());
         }
-        String hostAddress = poolInfos.get("host").toString();
+        String hostAddress = getValidatedPareForLocalStorage(poolInfos.get("host"), "host");
+        String hostPath = getValidatedPareForLocalStorage(poolInfos.get("hostPath"), "path");
         Host host = _hostDao.findByName(hostAddress);
 
         if( host == null ) {
@@ -696,8 +718,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         StoragePoolInfo pInfo = new StoragePoolInfo(poolInfos.get("uuid").toString(),
                                                     host.getPrivateIpAddress(),
-                                                    poolInfos.get("hostPath").toString(),
-                                                    poolInfos.get("hostPath").toString(),
+                                                    hostPath,
+                                                    hostPath,
                                                     StoragePoolType.Filesystem,
                                                     capacityBytes,
                                                     0,
@@ -797,6 +819,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     public PrimaryDataStoreInfo createPool(CreateStoragePoolCmd cmd) throws ResourceInUseException, IllegalArgumentException, UnknownHostException, ResourceUnavailableException {
         String providerName = cmd.getStorageProviderName();
         Map<String,String> uriParams = extractUriParamsAsMap(cmd.getUrl());
+        boolean isFileScheme = "file".equals(uriParams.get("scheme"));
         DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(providerName);
 
         if (storeProvider == null) {
@@ -810,7 +833,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         Long podId = cmd.getPodId();
         Long zoneId = cmd.getZoneId();
 
-        ScopeType scopeType = uriParams.get("scheme").toString().equals("file") ? ScopeType.HOST : ScopeType.CLUSTER;
+        ScopeType scopeType = ScopeType.CLUSTER;
+        if (isFileScheme) {
+            scopeType = ScopeType.HOST;
+        }
         String scope = cmd.getScope();
         if (scope != null) {
             try {
@@ -877,12 +903,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         params.put("managed", cmd.isManaged());
         params.put("capacityBytes", cmd.getCapacityBytes());
         params.put("capacityIops", cmd.getCapacityIops());
-        params.putAll(uriParams);
+        if (MapUtils.isNotEmpty(uriParams)) {
+            params.putAll(uriParams);
+        }
 
         DataStoreLifeCycle lifeCycle = storeProvider.getDataStoreLifeCycle();
         DataStore store = null;
         try {
-            if (params.get("scheme").toString().equals("file")) {
+            if (isFileScheme) {
                 store = createLocalStorage(params);
             } else {
                 store = lifeCycle.initialize(params);
@@ -911,42 +939,55 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return (PrimaryDataStoreInfo)_dataStoreMgr.getDataStore(store.getId(), DataStoreRole.Primary);
     }
 
-    private Map<String,String> extractUriParamsAsMap(String url){
+    protected Map<String,String> extractUriParamsAsMap(String url) {
         Map<String,String> uriParams = new HashMap<>();
-        UriUtils.UriInfo uriInfo = UriUtils.getUriInfo(url);
+        UriUtils.UriInfo uriInfo;
+        try {
+            uriInfo = UriUtils.getUriInfo(url);
+        } catch (CloudRuntimeException cre) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("URI validation for url: %s failed, returning empty uri params", url));
+            }
+            return uriParams;
+        }
 
         String scheme = uriInfo.getScheme();
         String storageHost = uriInfo.getStorageHost();
         String storagePath = uriInfo.getStoragePath();
-        try {
-            if (scheme == null) {
-                throw new InvalidParameterValueException("scheme is null " + url + ", add nfs:// (or cifs://) as a prefix");
-            } else if (scheme.equalsIgnoreCase("nfs")) {
-                if (storageHost == null || storagePath == null || storageHost.trim().isEmpty() || storagePath.trim().isEmpty()) {
-                    throw new InvalidParameterValueException("host or path is null, should be nfs://hostname/path");
-                }
-            } else if (scheme.equalsIgnoreCase("cifs")) {
-                // Don't validate against a URI encoded URI.
+        if (scheme == null) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("Scheme for url: %s is not found, returning empty uri params", url));
+            }
+            return uriParams;
+        }
+        boolean isHostOrPathBlank = StringUtils.isAnyBlank(storagePath, storageHost);
+        if (scheme.equalsIgnoreCase("nfs")) {
+            if (isHostOrPathBlank) {
+                throw new InvalidParameterValueException("host or path is null, should be nfs://hostname/path");
+            }
+        } else if (scheme.equalsIgnoreCase("cifs")) {
+            // Don't validate against a URI encoded URI.
+            try {
                 URI cifsUri = new URI(url);
                 String warnMsg = UriUtils.getCifsUriParametersProblems(cifsUri);
                 if (warnMsg != null) {
                     throw new InvalidParameterValueException(warnMsg);
                 }
-            } else if (scheme.equalsIgnoreCase("sharedMountPoint")) {
-                if (storagePath == null) {
-                    throw new InvalidParameterValueException("host or path is null, should be sharedmountpoint://localhost/path");
-                }
-            } else if (scheme.equalsIgnoreCase("rbd")) {
-                if (storagePath == null) {
-                    throw new InvalidParameterValueException("host or path is null, should be rbd://hostname/pool");
-                }
-            } else if (scheme.equalsIgnoreCase("gluster")) {
-                if (storageHost == null || storagePath == null || storageHost.trim().isEmpty() || storagePath.trim().isEmpty()) {
-                    throw new InvalidParameterValueException("host or path is null, should be gluster://hostname/volume");
-                }
+            } catch (URISyntaxException e) {
+                throw new InvalidParameterValueException(url + " is not a valid uri");
             }
-        } catch (URISyntaxException e) {
-            throw new InvalidParameterValueException(url + " is not a valid uri");
+        } else if (scheme.equalsIgnoreCase("sharedMountPoint")) {
+            if (storagePath == null) {
+                throw new InvalidParameterValueException("host or path is null, should be sharedmountpoint://localhost/path");
+            }
+        } else if (scheme.equalsIgnoreCase("rbd")) {
+            if (storagePath == null) {
+                throw new InvalidParameterValueException("host or path is null, should be rbd://hostname/pool");
+            }
+        } else if (scheme.equalsIgnoreCase("gluster")) {
+            if (isHostOrPathBlank) {
+                throw new InvalidParameterValueException("host or path is null, should be gluster://hostname/volume");
+            }
         }
 
         String hostPath = null;
@@ -963,7 +1004,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         uriParams.put("host", storageHost);
         uriParams.put("hostPath", hostPath);
         uriParams.put("userInfo", uriInfo.getUserInfo());
-        uriParams.put("port", uriInfo.getPort() + "");
+        if (uriInfo.getPort() > 0) {
+            uriParams.put("port", uriInfo.getPort() + "");
+        }
         return uriParams;
     }
 
@@ -1040,36 +1083,56 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             _storagePoolTagsDao.persist(pool.getId(), storagePoolTags, cmd.isTagARule());
         }
 
+        boolean changes = false;
         Long updatedCapacityBytes = null;
         Long capacityBytes = cmd.getCapacityBytes();
 
         if (capacityBytes != null) {
             if (capacityBytes != pool.getCapacityBytes()) {
                 updatedCapacityBytes = capacityBytes;
+                changes = true;
             }
         }
 
         Long updatedCapacityIops = null;
         Long capacityIops = cmd.getCapacityIops();
-
         if (capacityIops != null) {
             if (!capacityIops.equals(pool.getCapacityIops())) {
                 updatedCapacityIops = capacityIops;
+                changes = true;
             }
         }
 
-        if (updatedCapacityBytes != null || updatedCapacityIops != null) {
+        // retrieve current details and merge/overlay input to capture changes
+        Map<String, String> inputDetails = extractApiParamAsMap(cmd.getDetails());
+        Map<String, String> details = null;
+        if (inputDetails == null) {
+            details = _storagePoolDetailsDao.listDetailsKeyPairs(id);
+        } else {
+            details = _storagePoolDetailsDao.listDetailsKeyPairs(id);
+            details.putAll(inputDetails);
+            changes = true;
+        }
+
+        if (changes) {
             StoragePoolVO storagePool = _storagePoolDao.findById(id);
             DataStoreProvider dataStoreProvider = _dataStoreProviderMgr.getDataStoreProvider(storagePool.getStorageProviderName());
             DataStoreLifeCycle dataStoreLifeCycle = dataStoreProvider.getDataStoreLifeCycle();
 
             if (dataStoreLifeCycle instanceof PrimaryDataStoreLifeCycle) {
-                Map<String, String> details = new HashMap<String, String>();
-
-                details.put(PrimaryDataStoreLifeCycle.CAPACITY_BYTES, updatedCapacityBytes != null ? String.valueOf(updatedCapacityBytes) : null);
-                details.put(PrimaryDataStoreLifeCycle.CAPACITY_IOPS, updatedCapacityIops != null ? String.valueOf(updatedCapacityIops) : null);
-
-                ((PrimaryDataStoreLifeCycle)dataStoreLifeCycle).updateStoragePool(storagePool, details);
+                if (updatedCapacityBytes != null) {
+                    details.put(PrimaryDataStoreLifeCycle.CAPACITY_BYTES, updatedCapacityBytes != null ? String.valueOf(updatedCapacityBytes) : null);
+                    _storagePoolDao.updateCapacityBytes(id, updatedCapacityBytes);
+                }
+                if (updatedCapacityIops != null) {
+                    details.put(PrimaryDataStoreLifeCycle.CAPACITY_IOPS, updatedCapacityIops != null ? String.valueOf(updatedCapacityIops) : null);
+                    _storagePoolDao.updateCapacityIops(id, updatedCapacityIops);
+                }
+                if (cmd.getUrl() != null) {
+                    details.put("url", cmd.getUrl());
+                }
+                _storagePoolDao.update(id, storagePool);
+                _storagePoolDao.updateDetails(id, details);
             }
         }
 
@@ -1080,14 +1143,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             } else {
                 disablePrimaryStoragePool(pool);
             }
-        }
-
-        if (updatedCapacityBytes != null) {
-            _storagePoolDao.updateCapacityBytes(id, capacityBytes);
-        }
-
-        if (updatedCapacityIops != null) {
-            _storagePoolDao.updateCapacityIops(id, capacityIops);
         }
 
         return (PrimaryDataStoreInfo)_dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
@@ -2004,6 +2059,65 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             throw new CloudRuntimeException(String.format("Unable to sync storage pool [%s] as there no connected hosts to the storage pool", pool.getUuid()));
         }
         return (PrimaryDataStoreInfo) _dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
+    }
+
+
+    @Override
+    public Heuristic createSecondaryStorageHeuristic(CreateSecondaryStorageSelectorCmd cmd) {
+        String name = cmd.getName();
+        String description = cmd.getDescription();
+        long zoneId = cmd.getZoneId();
+        String heuristicRule = cmd.getHeuristicRule();
+        String type = cmd.getType();
+        HeuristicType formattedType = EnumUtils.getEnumIgnoreCase(HeuristicType.class, type);
+
+        if (formattedType == null) {
+            throw new IllegalArgumentException(String.format("The given heuristic type [%s] is not valid for creating a new secondary storage selector." +
+                    " The valid options are %s.", type, Arrays.asList(HeuristicType.values())));
+        }
+
+        HeuristicVO heuristic = secondaryStorageHeuristicDao.findByZoneIdAndType(zoneId, formattedType);
+
+        if (heuristic != null) {
+            DataCenterVO dataCenter = _dcDao.findById(zoneId);
+            throw new CloudRuntimeException(String.format("There is already a heuristic rule in the specified %s with the type [%s].",
+                    dataCenter, type));
+        }
+
+        validateHeuristicRule(heuristicRule);
+
+        HeuristicVO heuristicVO = new HeuristicVO(name, description, zoneId, formattedType.toString(), heuristicRule);
+        return secondaryStorageHeuristicDao.persist(heuristicVO);
+    }
+
+    @Override
+    public Heuristic updateSecondaryStorageHeuristic(UpdateSecondaryStorageSelectorCmd cmd) {
+        long heuristicId = cmd.getId();
+        String heuristicRule = cmd.getHeuristicRule();
+
+        HeuristicVO heuristicVO = secondaryStorageHeuristicDao.findById(heuristicId);
+        validateHeuristicRule(heuristicRule);
+        heuristicVO.setHeuristicRule(heuristicRule);
+
+        return secondaryStorageHeuristicDao.persist(heuristicVO);
+    }
+
+    @Override
+    public void removeSecondaryStorageHeuristic(RemoveSecondaryStorageSelectorCmd cmd) {
+        Long heuristicId = cmd.getId();
+        HeuristicVO heuristicVO = secondaryStorageHeuristicDao.findById(heuristicId);
+
+        if (heuristicVO != null) {
+            secondaryStorageHeuristicDao.remove(heuristicId);
+        } else {
+            throw new CloudRuntimeException("Unable to find an active heuristic with the specified UUID.");
+        }
+    }
+
+    protected void validateHeuristicRule(String heuristicRule) {
+        if (StringUtils.isBlank(heuristicRule)) {
+            throw new IllegalArgumentException("Unable to create a new secondary storage selector as the given heuristic rule is blank.");
+        }
     }
 
     public void syncDatastoreClusterStoragePool(long datastoreClusterPoolId, List<ModifyStoragePoolAnswer> childDatastoreAnswerList, long hostId) {
@@ -3602,7 +3716,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 SecStorageVMAutoScaleDown,
                 MountDisabledStoragePool,
                 VmwareCreateCloneFull,
-                VmwareAllowParallelExecution
+                VmwareAllowParallelExecution,
+                ConvertVmwareInstanceToKvmTimeout
         };
     }
 

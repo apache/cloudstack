@@ -527,6 +527,16 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         }
     }
 
+    private ResourceDefinitionCreate createResourceDefinitionCreate(String rscName, String rscGrpName)
+            throws ApiException {
+        ResourceDefinitionCreate rdCreate = new ResourceDefinitionCreate();
+        ResourceDefinition rd = new ResourceDefinition();
+        rd.setName(rscName);
+        rd.setResourceGroupName(rscGrpName);
+        rdCreate.setResourceDefinition(rd);
+        return rdCreate;
+    }
+
     private String createResourceFromSnapshot(long csSnapshotId, String rscName, StoragePoolVO storagePoolVO) {
         final String rscGrp = getRscGrp(storagePoolVO);
         final DevelopersApi linstorApi = LinstorUtil.getLinstorAPI(storagePoolVO.getHostAddress());
@@ -539,11 +549,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         try
         {
             s_logger.debug("Create new resource definition: " + rscName);
-            ResourceDefinitionCreate rdCreate = new ResourceDefinitionCreate();
-            ResourceDefinition rd = new ResourceDefinition();
-            rd.setName(rscName);
-            rd.setResourceGroupName(rscGrp);
-            rdCreate.setResourceDefinition(rd);
+            ResourceDefinitionCreate rdCreate = createResourceDefinitionCreate(rscName, rscGrp);
             ApiCallRcList answers = linstorApi.resourceDefinitionCreate(rdCreate);
             checkLinstorAnswersThrow(answers);
 
@@ -712,6 +718,10 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             VirtualMachineManager.ExecuteInSequence.value());
 
         Optional<RemoteHostEndPoint> optEP = getDiskfullEP(linstorApi, rscName);
+        if (optEP.isEmpty()) {
+            optEP = getLinstorEP(linstorApi, rscName);
+        }
+
         if (optEP.isPresent()) {
             Answer answer = optEP.get().sendMessage(cmd);
             if (!answer.getResult()) {
@@ -840,6 +850,14 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         callback.complete(res);
     }
 
+    /**
+     * Tries to get a Linstor cloudstack end point, that is at least diskless.
+     *
+     * @param api Linstor java api object
+     * @param rscName resource name to make available on node
+     * @return Optional RemoteHostEndPoint if one could get found.
+     * @throws ApiException
+     */
     private Optional<RemoteHostEndPoint> getLinstorEP(DevelopersApi api, String rscName) throws ApiException {
         List<String> linstorNodeNames = LinstorUtil.getLinstorNodeNames(api);
         Collections.shuffle(linstorNodeNames);  // do not always pick the first linstor node
@@ -892,6 +910,25 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         return Optional.empty();
     }
 
+    private String restoreResourceFromSnapshot(
+            DevelopersApi api,
+            StoragePoolVO storagePoolVO,
+            String rscName,
+            String snapshotName,
+            String restoredName) throws ApiException {
+        final String rscGrp = getRscGrp(storagePoolVO);
+        ResourceDefinitionCreate rdc = createResourceDefinitionCreate(restoredName, rscGrp);
+        api.resourceDefinitionCreate(rdc);
+
+        SnapshotRestore sr = new SnapshotRestore();
+        sr.toResource(restoredName);
+        api.resourceSnapshotsRestoreVolumeDefinition(rscName, snapshotName, sr);
+
+        api.resourceSnapshotRestore(rscName, snapshotName, sr);
+
+        return getDeviceName(api, restoredName);
+    }
+
     private Answer copyTemplate(DataObject srcData, DataObject dstData) {
         TemplateInfo tInfo = (TemplateInfo) dstData;
         final StoragePoolVO pool = _storagePoolDao.findById(dstData.getDataStore().getId());
@@ -929,6 +966,39 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         return answer;
     }
 
+    /**
+     * Create a temporary resource from the snapshot to backup, so we can copy the data on a diskless agent
+     * @param api Linstor Developer api object
+     * @param pool StoragePool this resource resides on
+     * @param rscName rscName of the snapshotted resource
+     * @param snapshotInfo snapshot info of the snapshot
+     * @param origCmd original LinstorBackupSnapshotCommand that needs to have a patched path
+     * @return answer from agent operation
+     * @throws ApiException if any Linstor api operation fails
+     */
+    private Answer copyFromTemporaryResource(
+            DevelopersApi api, StoragePoolVO pool, String rscName, SnapshotInfo snapshotInfo, CopyCommand origCmd)
+            throws ApiException {
+        Answer answer;
+        String restoreName = rscName + "-rst";
+        String snapshotName = LinstorUtil.RSC_PREFIX + snapshotInfo.getUuid();
+        String devName = restoreResourceFromSnapshot(api, pool, rscName, snapshotName, restoreName);
+
+        Optional<RemoteHostEndPoint> optEPAny = getLinstorEP(api, restoreName);
+        if (optEPAny.isPresent()) {
+            // patch the src device path to the temporary linstor resource
+            SnapshotObjectTO soTO = (SnapshotObjectTO)snapshotInfo.getTO();
+            soTO.setPath(devName);
+            origCmd.setSrcTO(soTO);
+            answer = optEPAny.get().sendMessage(origCmd);
+        } else{
+            answer = new Answer(origCmd, false, "Unable to get matching Linstor endpoint.");
+        }
+        // delete the temporary resource, noop if already gone
+        api.resourceDefinitionDelete(restoreName);
+        return answer;
+    }
+
     protected Answer copySnapshot(DataObject srcData, DataObject destData) {
         String value = _configDao.getValue(Config.BackupSnapshotWait.toString());
         int _backupsnapshotwait = NumbersUtil.parseInt(
@@ -956,13 +1026,14 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                 VirtualMachineManager.ExecuteInSequence.value());
             cmd.setOptions(options);
 
-            Optional<RemoteHostEndPoint> optEP = getDiskfullEP(
-                api, LinstorUtil.RSC_PREFIX + snapshotInfo.getBaseVolume().getUuid());
+            String rscName = LinstorUtil.RSC_PREFIX + snapshotInfo.getBaseVolume().getUuid();
+            Optional<RemoteHostEndPoint> optEP = getDiskfullEP(api, rscName);
             Answer answer;
             if (optEP.isPresent()) {
                 answer = optEP.get().sendMessage(cmd);
             } else {
-                answer = new Answer(cmd, false, "Unable to get matching Linstor endpoint.");
+                s_logger.debug("No diskfull endpoint found to copy image, creating diskless endpoint");
+                answer = copyFromTemporaryResource(api, pool, rscName, snapshotInfo, cmd);
             }
             return answer;
         } catch (Exception e) {

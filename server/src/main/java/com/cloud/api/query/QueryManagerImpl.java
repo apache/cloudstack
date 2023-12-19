@@ -34,7 +34,10 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.host.Host;
 import com.cloud.host.dao.HostDao;
@@ -87,6 +90,7 @@ import org.apache.cloudstack.api.command.admin.storage.ListObjectStoragePoolsCmd
 import org.apache.cloudstack.api.command.admin.storage.ListSecondaryStagingStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStorageTagsCmd;
+import org.apache.cloudstack.api.command.admin.storage.heuristics.ListSecondaryStorageSelectorsCmd;
 import org.apache.cloudstack.api.command.admin.template.ListTemplatesCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import org.apache.cloudstack.api.command.admin.zone.ListZonesCmdByAdmin;
@@ -135,6 +139,7 @@ import org.apache.cloudstack.api.response.ResourceDetailResponse;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.RouterHealthCheckResultResponse;
+import org.apache.cloudstack.api.response.SecondaryStorageHeuristicsResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.SnapshotResponse;
@@ -158,6 +163,9 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
+import org.apache.cloudstack.secstorage.HeuristicVO;
+import org.apache.cloudstack.secstorage.dao.SecondaryStorageHeuristicDao;
+import org.apache.cloudstack.secstorage.heuristics.Heuristic;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -509,6 +517,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private VirtualMachineManager virtualMachineManager;
+
     @Inject
     private VolumeDao volumeDao;
 
@@ -517,6 +526,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private ManagementServerHostDao msHostDao;
+
+    @Inject
+    private SecondaryStorageHeuristicDao secondaryStorageHeuristicDao;
 
     @Inject
     private NetworkDao networkDao;
@@ -562,6 +574,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private PublicIpQuarantineDao publicIpQuarantineDao;
+
+    @Inject
+    private StoragePoolHostDao storagePoolHostDao;
 
     private SearchCriteria<ServiceOfferingJoinVO> getMinimumCpuServiceOfferingJoinSearchCriteria(int cpu) {
         SearchCriteria<ServiceOfferingJoinVO> sc = _srvOfferingJoinDao.createSearchCriteria();
@@ -2807,23 +2822,24 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Override
     public ListResponse<StoragePoolResponse> searchForStoragePools(ListStoragePoolsCmd cmd) {
-        Pair<List<StoragePoolJoinVO>, Integer> result = cmd.getHostId() != null ? searchForLocalStorages(cmd) : searchForStoragePoolsInternal(cmd);
+        Pair<List<StoragePoolJoinVO>, Integer> result = (ScopeType.HOST.name().equalsIgnoreCase(cmd.getScope()) && cmd.getHostId() != null) ?
+                searchForLocalStorages(cmd) : searchForStoragePoolsInternal(cmd);
         return createStoragesPoolResponse(result);
     }
 
     private Pair<List<StoragePoolJoinVO>, Integer> searchForLocalStorages(ListStoragePoolsCmd cmd) {
         long id = cmd.getHostId();
-        String scope = ScopeType.HOST.toString();
-        Pair<List<StoragePoolJoinVO>, Integer> localStorages;
-
-        ListHostsCmd listHostsCmd = new ListHostsCmd();
-        listHostsCmd.setId(id);
-        Pair<List<HostJoinVO>, Integer> hosts = searchForServersInternal(listHostsCmd);
-
-        cmd.setScope(scope);
-        localStorages = searchForStoragePoolsInternal(cmd);
-
-        return localStorages;
+        List<StoragePoolHostVO> localstoragePools = storagePoolHostDao.listByHostId(id);
+        Long[] poolIds = new Long[localstoragePools.size()];
+        int i = 0;
+        for(StoragePoolHostVO localstoragePool : localstoragePools) {
+            StoragePool storagePool = storagePoolDao.findById(localstoragePool.getPoolId());
+            if (storagePool != null && storagePool.isLocal()) {
+                poolIds[i++] = localstoragePool.getPoolId();
+            }
+        }
+        List<StoragePoolJoinVO> pools = _poolJoinDao.searchByIds(poolIds);
+        return new Pair<>(pools, pools.size());
     }
 
     private ListResponse<StoragePoolResponse> createStoragesPoolResponse(Pair<List<StoragePoolJoinVO>, Integer> storagePools) {
@@ -4797,6 +4813,36 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         return responseGenerator.createHealthCheckResponse(_routerDao.findById(routerId), result);
+    }
+
+    @Override
+    public ListResponse<SecondaryStorageHeuristicsResponse> listSecondaryStorageSelectors(ListSecondaryStorageSelectorsCmd cmd) {
+        ListResponse<SecondaryStorageHeuristicsResponse> response = new ListResponse<>();
+        Pair<List<HeuristicVO>, Integer> result = listSecondaryStorageSelectorsInternal(cmd.getZoneId(), cmd.getType(), cmd.isShowRemoved());
+        List<SecondaryStorageHeuristicsResponse> listOfSecondaryStorageHeuristicsResponses = new ArrayList<>();
+
+        for (Heuristic heuristic : result.first()) {
+            SecondaryStorageHeuristicsResponse secondaryStorageHeuristicsResponse = responseGenerator.createSecondaryStorageSelectorResponse(heuristic);
+            listOfSecondaryStorageHeuristicsResponses.add(secondaryStorageHeuristicsResponse);
+        }
+
+        response.setResponses(listOfSecondaryStorageHeuristicsResponses);
+        return response;
+    }
+
+    private Pair<List<HeuristicVO>, Integer> listSecondaryStorageSelectorsInternal(Long zoneId, String type, boolean showRemoved) {
+        SearchBuilder<HeuristicVO> searchBuilder = secondaryStorageHeuristicDao.createSearchBuilder();
+
+        searchBuilder.and("zoneId", searchBuilder.entity().getZoneId(), SearchCriteria.Op.EQ);
+        searchBuilder.and("type", searchBuilder.entity().getType(), SearchCriteria.Op.EQ);
+
+        searchBuilder.done();
+
+        SearchCriteria<HeuristicVO> searchCriteria = searchBuilder.create();
+        searchCriteria.setParameters("zoneId", zoneId);
+        searchCriteria.setParametersIfNotNull("type", type);
+
+        return secondaryStorageHeuristicDao.searchAndCount(searchCriteria, null, showRemoved);
     }
 
     @Override

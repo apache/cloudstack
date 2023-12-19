@@ -256,6 +256,8 @@ known_categories = {
     'importVsphereStoragePolicies' : 'vSphere storage policies',
     'listVsphereStoragePolicies' : 'vSphere storage policies',
     'ConsoleEndpoint': 'Console Endpoint',
+    'Shutdown': 'Shutdown',
+    'importVm': 'Virtual Machine',
     'listQuarantinedIp': 'IP Quarantine',
     'updateQuarantinedIp': 'IP Quarantine',
     'removeQuarantinedIp': 'IP Quarantine',
@@ -267,7 +269,9 @@ known_categories = {
     'createBucket': 'Object Store',
     'updateBucket': 'Object Store',
     'deleteBucket': 'Object Store',
-    'listBuckets': 'Object Store'
+    'listBuckets': 'Object Store',
+    'listVmsForImport': 'Virtual Machine',
+    'importVm': 'Virtual Machine'
 }
 
 
