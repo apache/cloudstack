@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.offering;
 
-import static org.junit.Assert.*;
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
