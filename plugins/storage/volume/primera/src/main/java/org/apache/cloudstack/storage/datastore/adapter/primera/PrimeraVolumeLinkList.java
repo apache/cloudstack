@@ -14,24 +14,24 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+package org.apache.cloudstack.storage.datastore.adapter.primera;
 
-package com.cloud.hypervisor.vmware;
+import java.util.List;
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
-public interface VmwareDatacenter extends Identity, InternalIdentity {
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class PrimeraVolumeLinkList {
+    private List<PrimeraVolumeLink> list;
 
-    String getVmwareDatacenterName();
+    public List<PrimeraVolumeLink> getList() {
+        return list;
+    }
 
-    String getGuid();
+    public void setList(List<PrimeraVolumeLink> list) {
+        this.list = list;
+    }
 
-    String getVcenterHost();
-
-    @Override
-    long getId();
-
-    String getPassword();
-
-    String getUser();
 }

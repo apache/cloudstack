@@ -1899,7 +1899,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         if (usageVpnUsers.size() > 0) {
             s_logger.debug(String.format("We do not need to create the usage VPN user [%s] assigned to account [%s] because it already exists.", userId, accountId));
         } else {
-            s_logger.debug(String.format("Creating VPN user user [%s] assigned to account [%s] domain [%s], zone [%s], and created at [%s]", userId, accountId, domainId, zoneId,
+            s_logger.debug(String.format("Creating VPN user [%s] assigned to account [%s] domain [%s], zone [%s], and created at [%s]", userId, accountId, domainId, zoneId,
                     event.getCreateDate()));
             UsageVPNUserVO vpnUser = new UsageVPNUserVO(zoneId, accountId, domainId, userId, event.getResourceName(), event.getCreateDate(), null);
             _usageVPNUserDao.persist(vpnUser);
