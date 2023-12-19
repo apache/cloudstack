@@ -67,14 +67,19 @@ public class CheckedReservationTest {
     GlobalLock quotaLimitLock;
 
     private AutoCloseable closeable;
+    private MockedStatic<GlobalLock> globalLockMocked;
 
     @Before
-    public void setup() {
+    public void setup() throws Exception {
         closeable = MockitoAnnotations.openMocks(this);
+        globalLockMocked = Mockito.mockStatic(GlobalLock.class);
+        Mockito.when(quotaLimitLock.lock(Mockito.anyInt())).thenReturn(true);
+        globalLockMocked.when(() -> GlobalLock.getInternLock(Mockito.anyString())).thenReturn(quotaLimitLock);
     }
 
     @After
     public void tearDown() throws Exception {
+        globalLockMocked.close();
         closeable.close();
     }
 
@@ -117,30 +122,25 @@ public class CheckedReservationTest {
 
     @Test
     public void testReservationPersistAndCallContextParam() {
-        try (MockedStatic<GlobalLock> lock = Mockito.mockStatic(GlobalLock.class)) {
-            GlobalLock mockedLock = Mockito.mock(GlobalLock.class);
-            Mockito.when(mockedLock.lock(Mockito.anyInt())).thenReturn(true);
-            lock.when(() -> GlobalLock.getInternLock(Mockito.anyString())).thenReturn(mockedLock);
-            List<String> tags = List.of("abc", "xyz");
-            when(account.getAccountId()).thenReturn(1L);
-            when(account.getDomainId()).thenReturn(4L);
-            List<ReservationVO> persistedReservations = new ArrayList<>();
-            Mockito.when(reservationDao.persist(Mockito.any(ReservationVO.class))).thenAnswer((Answer<ReservationVO>) invocation -> {
-                ReservationVO reservationVO = (ReservationVO) invocation.getArguments()[0];
-                ReflectionTestUtils.setField(reservationVO, "id", (long) (persistedReservations.size() + 1));
-                persistedReservations.add(reservationVO);
-                return reservationVO;
-            });
-            Resource.ResourceType type = Resource.ResourceType.cpu;
-            try (CheckedReservation cr = new CheckedReservation(account, type, tags, 2L, reservationDao, resourceLimitService);) {
-                Assert.assertEquals(tags.size() + 1, persistedReservations.size()); // An extra for no tag
-                Object obj = CallContext.current().getContextParameter(CheckedReservation.getResourceReservationContextParameterKey(type));
-                Assert.assertTrue(obj instanceof List);
-                List<Long> list = (List<Long>) obj;
-                Assert.assertEquals(tags.size() + 1, list.size()); // An extra for no tag
-            } catch (Exception e) {
-                Assert.fail("Exception faced: " + e.getMessage());
-            }
+        List<String> tags = List.of("abc", "xyz");
+        when(account.getAccountId()).thenReturn(1L);
+        when(account.getDomainId()).thenReturn(4L);
+        List<ReservationVO> persistedReservations = new ArrayList<>();
+        Mockito.when(reservationDao.persist(Mockito.any(ReservationVO.class))).thenAnswer((Answer<ReservationVO>) invocation -> {
+            ReservationVO reservationVO = (ReservationVO) invocation.getArguments()[0];
+            ReflectionTestUtils.setField(reservationVO, "id", (long) (persistedReservations.size() + 1));
+            persistedReservations.add(reservationVO);
+            return reservationVO;
+        });
+        Resource.ResourceType type = Resource.ResourceType.cpu;
+        try (CheckedReservation cr = new CheckedReservation(account, type, tags, 2L, reservationDao, resourceLimitService);) {
+            Assert.assertEquals(tags.size() + 1, persistedReservations.size()); // An extra for no tag
+            Object obj = CallContext.current().getContextParameter(CheckedReservation.getResourceReservationContextParameterKey(type));
+            Assert.assertTrue(obj instanceof List);
+            List<Long> list = (List<Long>) obj;
+            Assert.assertEquals(tags.size() + 1, list.size()); // An extra for no tag
+        } catch (Exception e) {
+            Assert.fail("Exception faced: " + e.getMessage());
         }
     }
 }
