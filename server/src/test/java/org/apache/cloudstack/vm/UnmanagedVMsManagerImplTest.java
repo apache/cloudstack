@@ -17,6 +17,57 @@
 
 package org.apache.cloudstack.vm;
 
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import org.apache.cloudstack.api.ResponseGenerator;
+import org.apache.cloudstack.api.ResponseObject;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.admin.vm.ImportUnmanagedInstanceCmd;
+import org.apache.cloudstack.api.command.admin.vm.ImportVmCmd;
+import org.apache.cloudstack.api.command.admin.vm.ListUnmanagedInstancesCmd;
+import org.apache.cloudstack.api.command.admin.vm.ListVmsForImportCmd;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.BDDMockito;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckVolumeAnswer;
@@ -47,6 +98,7 @@ import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -105,56 +157,6 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import org.apache.cloudstack.api.ResponseGenerator;
-import org.apache.cloudstack.api.ResponseObject;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.admin.vm.ImportUnmanagedInstanceCmd;
-import org.apache.cloudstack.api.command.admin.vm.ImportVmCmd;
-import org.apache.cloudstack.api.command.admin.vm.ListUnmanagedInstancesCmd;
-import org.apache.cloudstack.api.command.admin.vm.ListVmsForImportCmd;
-import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.BDDMockito;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.mockito.junit.MockitoJUnitRunner;
-
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class UnmanagedVMsManagerImplTest {
@@ -839,5 +841,41 @@ public class UnmanagedVMsManagerImplTest {
         ClusterVO cluster = getClusterForTests();
         Mockito.when(imageStoreDao.findOneByZoneAndProtocol(anyLong(), anyString())).thenReturn(null);
         unmanagedVMsManager.selectInstanceConversionTemporaryLocation(cluster, null, null);
+    }
+
+    @Test
+    public void testCheckUnmanagedDiskLimits() {
+        Account owner = Mockito.mock(Account.class);
+        UnmanagedInstanceTO.Disk disk = Mockito.mock(UnmanagedInstanceTO.Disk.class);
+        Mockito.when(disk.getDiskId()).thenReturn("disk1");
+        Mockito.when(disk.getCapacity()).thenReturn(100L);
+        ServiceOffering serviceOffering = Mockito.mock(ServiceOffering.class);
+        Mockito.when(serviceOffering.getDiskOfferingId()).thenReturn(1L);
+        UnmanagedInstanceTO.Disk dataDisk = Mockito.mock(UnmanagedInstanceTO.Disk.class);
+        Mockito.when(dataDisk.getDiskId()).thenReturn("disk2");
+        Mockito.when(dataDisk.getCapacity()).thenReturn(1000L);
+        Map<String, Long> dataDiskMap = new HashMap<>();
+        dataDiskMap.put("disk2", 2L);
+        DiskOfferingVO offering1 = Mockito.mock(DiskOfferingVO.class);
+        Mockito.when(diskOfferingDao.findById(1L)).thenReturn(offering1);
+        String tag1 = "tag1";
+        Mockito.when(resourceLimitService.getResourceLimitStorageTags(offering1)).thenReturn(List.of(tag1));
+        DiskOfferingVO offering2 = Mockito.mock(DiskOfferingVO.class);
+        Mockito.when(diskOfferingDao.findById(2L)).thenReturn(offering2);
+        String tag2 = "tag2";
+        Mockito.when(resourceLimitService.getResourceLimitStorageTags(offering2)).thenReturn(List.of(tag2));
+        try {
+            Mockito.doNothing().when(resourceLimitService).checkResourceLimit(Mockito.any(), Mockito.any(), Mockito.any());
+            Mockito.doNothing().when(resourceLimitService).checkResourceLimitWithTag(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+            unmanagedVMsManager.checkUnmanagedDiskLimits(owner, disk, serviceOffering, List.of(dataDisk), dataDiskMap);
+            Mockito.verify(resourceLimitService, Mockito.times(1)).checkResourceLimit(owner, Resource.ResourceType.volume, 2);
+            Mockito.verify(resourceLimitService, Mockito.times(1)).checkResourceLimit(owner, Resource.ResourceType.primary_storage, 1100L);
+            Mockito.verify(resourceLimitService, Mockito.times(1)).checkResourceLimitWithTag(owner, Resource.ResourceType.volume, tag1,1);
+            Mockito.verify(resourceLimitService, Mockito.times(1)).checkResourceLimitWithTag(owner, Resource.ResourceType.volume, tag2,1);
+            Mockito.verify(resourceLimitService, Mockito.times(1)).checkResourceLimitWithTag(owner, Resource.ResourceType.primary_storage, tag1,100L);
+            Mockito.verify(resourceLimitService, Mockito.times(1)).checkResourceLimitWithTag(owner, Resource.ResourceType.primary_storage, tag2,1000L);
+        } catch (ResourceAllocationException e) {
+            Assert.fail("Exception encountered: " + e.getMessage());
+        }
     }
 }

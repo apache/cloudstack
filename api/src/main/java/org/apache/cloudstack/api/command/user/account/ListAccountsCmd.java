@@ -147,7 +147,7 @@ public class ListAccountsCmd extends BaseListDomainResourcesCmd implements UserC
         updateAccountResponse(response.getResponses());
     }
 
-    private void updateAccountResponse(List<AccountResponse> response) {
+    protected void updateAccountResponse(List<AccountResponse> response) {
         if (CollectionUtils.isEmpty(response)) {
             return;
         }

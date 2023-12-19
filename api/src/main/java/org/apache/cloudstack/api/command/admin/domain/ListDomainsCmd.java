@@ -141,7 +141,7 @@ public class ListDomainsCmd extends BaseListCmd implements UserCmd {
         updateDomainResponse(response.getResponses());
     }
 
-    private void updateDomainResponse(List<DomainResponse> response) {
+    protected void updateDomainResponse(List<DomainResponse> response) {
         if (CollectionUtils.isEmpty(response)) {
             return;
         }
