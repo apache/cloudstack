@@ -2798,13 +2798,23 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             final VirtualMachine vm = profile.getVirtualMachine();
             final DomainRouterVO domR = _routerDao.findById(vm.getId());
             processStopOrRebootAnswer(domR, answer);
+            if (Boolean.TRUE.equals(RemoveNicsOnStop.value())) {
+                removeNics(vm, domR);
+            }
         }
     }
 
     @Override
     public void finalizeExpunge(final VirtualMachine vm) {
-        final List<? extends Nic> routerNics = _nicDao.listByVmId(vm.getId());
         final DomainRouterVO domR = _routerDao.findById(vm.getId());
+        // not sure if it would hurt to do it in any case, but
+        if (Boolean.FALSE.equals(RemoveNicsOnStop.value())) {
+            removeNics(vm, domR);
+        }
+    }
+
+    private void removeNics(VirtualMachine vm, DomainRouterVO domR) {
+        final List<? extends Nic> routerNics = _nicDao.listByVmId(vm.getId());
         for (final Nic nic : routerNics) {
             final Network network = _networkModel.getNetwork(nic.getNetworkId());
             final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
@@ -3341,7 +3351,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 RouterHealthChecksMaxCpuUsageThreshold,
                 RouterHealthChecksMaxMemoryUsageThreshold,
                 ExposeDnsAndBootpServer,
-                RouterLogrotateFrequency
+                RouterLogrotateFrequency,
+                RemoveNicsOnStop
         };
     }
 
