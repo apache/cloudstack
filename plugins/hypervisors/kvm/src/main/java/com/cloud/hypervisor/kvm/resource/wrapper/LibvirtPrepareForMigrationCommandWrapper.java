@@ -123,11 +123,7 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
                 return new PrepareForMigrationAnswer(command, "failed to connect physical disks to host");
             }
 
-            PrepareForMigrationAnswer answer = new PrepareForMigrationAnswer(command);
-            if (MapUtils.isNotEmpty(dpdkInterfaceMapping)) {
-                answer.setDpdkInterfaceMapping(dpdkInterfaceMapping);
-            }
-            return answer;
+            return createPrepareForMigrationAnswer(command, dpdkInterfaceMapping, libvirtComputingResource, vm);
         } catch (final LibvirtException | CloudRuntimeException | InternalErrorException | URISyntaxException e) {
             if (MapUtils.isNotEmpty(dpdkInterfaceMapping)) {
                 for (DpdkTO to : dpdkInterfaceMapping.values()) {
@@ -142,6 +138,22 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
                 storagePoolMgr.disconnectPhysicalDisksViaVmSpec(vm);
             }
         }
+    }
+
+    protected PrepareForMigrationAnswer createPrepareForMigrationAnswer(PrepareForMigrationCommand command, Map<String, DpdkTO> dpdkInterfaceMapping,
+                                                                        LibvirtComputingResource libvirtComputingResource, VirtualMachineTO vm) {
+        PrepareForMigrationAnswer answer = new PrepareForMigrationAnswer(command);
+
+        if (MapUtils.isNotEmpty(dpdkInterfaceMapping)) {
+            s_logger.debug(String.format("Setting DPDK interface for the migration of VM [%s].", vm));
+            answer.setDpdkInterfaceMapping(dpdkInterfaceMapping);
+        }
+
+        int newCpuShares = libvirtComputingResource.calculateCpuShares(vm);
+        s_logger.debug(String.format("Setting CPU shares to [%s] for the migration of VM [%s].", newCpuShares, vm));
+        answer.setNewVmCpuShares(newCpuShares);
+
+        return answer;
     }
 
     private Answer handleRollback(PrepareForMigrationCommand command, LibvirtComputingResource libvirtComputingResource) {

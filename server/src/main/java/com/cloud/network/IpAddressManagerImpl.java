@@ -2469,9 +2469,11 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         PublicIpQuarantineVO publicIpQuarantineVO = publicIpQuarantineDao.findById(quarantineProcessId);
         Ip ipAddress = _ipAddressDao.findById(publicIpQuarantineVO.getPublicIpAddressId()).getAddress();
         Date removedDate = new Date();
+        Long removerAccountId = CallContext.current().getCallingAccountId();
 
         publicIpQuarantineVO.setRemoved(removedDate);
         publicIpQuarantineVO.setRemovalReason(removalReason);
+        publicIpQuarantineVO.setRemoverAccountId(removerAccountId);
 
         logger.debug(String.format("Removing public IP Address [%s] from quarantine by updating the removed date to [%s].", ipAddress, removedDate));
         publicIpQuarantineDao.persist(publicIpQuarantineVO);

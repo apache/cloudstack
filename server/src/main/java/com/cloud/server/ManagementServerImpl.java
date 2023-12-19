@@ -88,6 +88,7 @@ import org.apache.cloudstack.api.command.admin.domain.DeleteDomainCmd;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainChildrenCmd;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.domain.MoveDomainCmd;
 import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
 import org.apache.cloudstack.api.command.admin.guest.AddGuestOsCmd;
 import org.apache.cloudstack.api.command.admin.guest.AddGuestOsMappingCmd;
@@ -3404,6 +3405,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListDomainsCmd.class);
         cmdList.add(ListDomainsCmdByAdmin.class);
         cmdList.add(UpdateDomainCmd.class);
+        cmdList.add(MoveDomainCmd.class);
         cmdList.add(AddHostCmd.class);
         cmdList.add(AddSecondaryStorageCmd.class);
         cmdList.add(CancelMaintenanceCmd.class);

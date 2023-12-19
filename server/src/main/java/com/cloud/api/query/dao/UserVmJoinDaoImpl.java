@@ -28,7 +28,6 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -45,6 +44,8 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
@@ -61,6 +62,7 @@ import com.cloud.storage.GuestOS;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VnfTemplateDetailVO;
 import com.cloud.storage.VnfTemplateNicVO;
+import com.cloud.storage.Volume;
 import com.cloud.storage.dao.VnfTemplateDetailsDao;
 import com.cloud.storage.dao.VnfTemplateNicDao;
 import com.cloud.user.Account;
@@ -76,6 +78,7 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.net.Dhcp;
 import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmManager;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.NicExtraDhcpOptionDao;
@@ -587,6 +590,11 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             resp.setObjectName("affinitygroup");
             resp.setAccountName(uvo.getAccountName());
             userVmData.addAffinityGroup(resp);
+        }
+
+        if (StringUtils.isEmpty(userVmData.getDiskOfferingId()) && !Volume.Type.ROOT.equals(uvo.getVolumeType())) {
+            userVmData.setDiskOfferingId(uvo.getDiskOfferingUuid());
+            userVmData.setDiskOfferingName(uvo.getDiskOfferingName());
         }
 
         return userVmData;

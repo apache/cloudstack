@@ -19,6 +19,8 @@ package com.cloud.hypervisor.kvm.resource;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.cloud.agent.properties.AgentProperties;
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.libvirt.Connect;
@@ -89,10 +91,15 @@ public class LibvirtConnection {
     }
 
     static String getHypervisorURI(String hypervisorType) {
+        String uri = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HYPERVISOR_URI);
+        if (uri != null) {
+            return uri;
+        }
+
         if ("LXC".equalsIgnoreCase(hypervisorType)) {
             return "lxc:///";
-        } else {
-            return "qemu:///system";
         }
+
+        return "qemu:///system";
     }
 }

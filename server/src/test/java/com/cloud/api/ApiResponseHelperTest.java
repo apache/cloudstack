@@ -17,10 +17,12 @@
 package com.cloud.api;
 
 import com.cloud.domain.DomainVO;
+import com.cloud.network.PublicIpQuarantine;
 import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.network.as.AutoScaleVmGroupVO;
 import com.cloud.network.as.AutoScaleVmProfileVO;
 import com.cloud.network.as.dao.AutoScaleVmGroupVmMapDao;
+import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.NetworkServiceMapDao;
@@ -41,11 +43,15 @@ import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
 import org.apache.cloudstack.api.response.DirectDownloadCertificateResponse;
+import org.apache.cloudstack.api.response.IpQuarantineResponse;
 import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
+import org.apache.cloudstack.api.response.UnmanagedInstanceResponse;
 import org.apache.cloudstack.api.response.UsageRecordResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.usage.UsageService;
+import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -60,6 +66,7 @@ import java.lang.reflect.Field;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.TimeZone;
 import java.util.UUID;
 
@@ -92,6 +99,9 @@ public class ApiResponseHelperTest {
 
     @Mock
     UserDataDao userDataDaoMock;
+
+    @Mock
+    IPAddressDao ipAddressDaoMock;
 
     @Spy
     @InjectMocks
@@ -366,5 +376,80 @@ public class ApiResponseHelperTest {
             assertNull(response.getUserDataName());
             assertNull(response.getUserDataDetails());
         }
+    }
+
+    private UnmanagedInstanceTO getUnmanagedInstaceForTests() {
+        UnmanagedInstanceTO instance = Mockito.mock(UnmanagedInstanceTO.class);
+        Mockito.when(instance.getPowerState()).thenReturn(UnmanagedInstanceTO.PowerState.PowerOff);
+        Mockito.when(instance.getClusterName()).thenReturn("CL1");
+        UnmanagedInstanceTO.Disk disk = Mockito.mock(UnmanagedInstanceTO.Disk.class);
+        Mockito.when(disk.getDiskId()).thenReturn("0");
+        Mockito.when(disk.getLabel()).thenReturn("Hard disk 1");
+        Mockito.when(disk.getCapacity()).thenReturn(17179869184L);
+        Mockito.when(disk.getPosition()).thenReturn(0);
+        Mockito.when(instance.getDisks()).thenReturn(List.of(disk));
+        UnmanagedInstanceTO.Nic nic = Mockito.mock(UnmanagedInstanceTO.Nic.class);
+        Mockito.when(nic.getNicId()).thenReturn("Network adapter 1");
+        Mockito.when(nic.getMacAddress()).thenReturn("aa:bb:cc:dd:ee:ff");
+        Mockito.when(instance.getNics()).thenReturn(List.of(nic));
+        return instance;
+    }
+
+    @Test
+    public void testCreateUnmanagedInstanceResponseVmwareDcVms() {
+        UnmanagedInstanceTO instance = getUnmanagedInstaceForTests();
+        UnmanagedInstanceResponse response = apiResponseHelper.createUnmanagedInstanceResponse(instance, null, null);
+        Assert.assertEquals(1, response.getDisks().size());
+        Assert.assertEquals(1, response.getNics().size());
+    }
+
+    @Test
+    public void createQuarantinedIpsResponseTestReturnsObject() {
+        String quarantinedIpUuid = "quarantined_ip_uuid";
+        Long previousOwnerId = 300L;
+        String previousOwnerUuid = "previous_owner_uuid";
+        String previousOwnerName = "previous_owner_name";
+        Long removerAccountId = 400L;
+        String removerAccountUuid = "remover_account_uuid";
+        Long publicIpAddressId = 500L;
+        String publicIpAddress = "1.2.3.4";
+        Date created = new Date(599L);
+        Date removed = new Date(600L);
+        Date endDate = new Date(601L);
+        String removalReason = "removalReason";
+
+        PublicIpQuarantine quarantinedIpMock = Mockito.mock(PublicIpQuarantine.class);
+        IPAddressVO ipAddressVoMock = Mockito.mock(IPAddressVO.class);
+        Account previousOwner = Mockito.mock(Account.class);
+        Account removerAccount = Mockito.mock(Account.class);
+
+        Mockito.when(quarantinedIpMock.getUuid()).thenReturn(quarantinedIpUuid);
+        Mockito.when(quarantinedIpMock.getPreviousOwnerId()).thenReturn(previousOwnerId);
+        Mockito.when(quarantinedIpMock.getPublicIpAddressId()).thenReturn(publicIpAddressId);
+        Mockito.doReturn(ipAddressVoMock).when(ipAddressDaoMock).findById(publicIpAddressId);
+        Mockito.when(ipAddressVoMock.getAddress()).thenReturn(new Ip(publicIpAddress));
+        Mockito.doReturn(previousOwner).when(accountManagerMock).getAccount(previousOwnerId);
+        Mockito.when(previousOwner.getUuid()).thenReturn(previousOwnerUuid);
+        Mockito.when(previousOwner.getName()).thenReturn(previousOwnerName);
+        Mockito.when(quarantinedIpMock.getCreated()).thenReturn(created);
+        Mockito.when(quarantinedIpMock.getRemoved()).thenReturn(removed);
+        Mockito.when(quarantinedIpMock.getEndDate()).thenReturn(endDate);
+        Mockito.when(quarantinedIpMock.getRemovalReason()).thenReturn(removalReason);
+        Mockito.when(quarantinedIpMock.getRemoverAccountId()).thenReturn(removerAccountId);
+        Mockito.when(removerAccount.getUuid()).thenReturn(removerAccountUuid);
+        Mockito.doReturn(removerAccount).when(accountManagerMock).getAccount(removerAccountId);
+
+        IpQuarantineResponse result = apiResponseHelper.createQuarantinedIpsResponse(quarantinedIpMock);
+
+        Assert.assertEquals(quarantinedIpUuid, result.getId());
+        Assert.assertEquals(publicIpAddress, result.getPublicIpAddress());
+        Assert.assertEquals(previousOwnerUuid, result.getPreviousOwnerId());
+        Assert.assertEquals(previousOwnerName, result.getPreviousOwnerName());
+        Assert.assertEquals(created, result.getCreated());
+        Assert.assertEquals(removed, result.getRemoved());
+        Assert.assertEquals(endDate, result.getEndDate());
+        Assert.assertEquals(removalReason, result.getRemovalReason());
+        Assert.assertEquals(removerAccountUuid, result.getRemoverAccountId());
+        Assert.assertEquals("quarantinedip", result.getResponseName());
     }
 }

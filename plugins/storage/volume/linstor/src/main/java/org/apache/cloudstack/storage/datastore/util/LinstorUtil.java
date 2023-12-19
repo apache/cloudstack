@@ -162,7 +162,8 @@ public class LinstorUtil {
 
             return storagePools.stream()
                 .filter(sp -> sp.getProviderKind() != ProviderKind.DISKLESS)
-                .mapToLong(StoragePool::getTotalCapacity).sum() * 1024;  // linstor uses kiB
+                .mapToLong(sp -> sp.getTotalCapacity() != null ? sp.getTotalCapacity() : 0L)
+                .sum() * 1024;  // linstor uses kiB
         } catch (ApiException apiEx) {
             LOGGER.error(apiEx.getMessage());
             throw new CloudRuntimeException(apiEx);

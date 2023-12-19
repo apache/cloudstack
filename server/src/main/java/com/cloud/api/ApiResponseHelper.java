@@ -164,6 +164,8 @@ import org.apache.cloudstack.api.response.TemplatePermissionsResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.TrafficMonitorResponse;
 import org.apache.cloudstack.api.response.TrafficTypeResponse;
+import org.apache.cloudstack.api.response.UnmanagedInstanceDiskResponse;
+import org.apache.cloudstack.api.response.UnmanagedInstanceResponse;
 import org.apache.cloudstack.api.response.UpgradeRouterTemplateResponse;
 import org.apache.cloudstack.api.response.UsageRecordResponse;
 import org.apache.cloudstack.api.response.UserDataResponse;
@@ -213,6 +215,7 @@ import org.apache.cloudstack.storage.object.ObjectStore;
 import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
+import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -5109,6 +5112,72 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
+    public UnmanagedInstanceResponse createUnmanagedInstanceResponse(UnmanagedInstanceTO instance, Cluster cluster, Host host) {
+        UnmanagedInstanceResponse response = new UnmanagedInstanceResponse();
+        response.setName(instance.getName());
+        if (cluster != null) {
+            response.setClusterId(cluster.getUuid());
+            response.setClusterName(cluster.getName());
+        } else if (instance.getClusterName() != null) {
+            response.setClusterName(instance.getClusterName());
+        }
+        if (host != null) {
+            response.setHostId(host.getUuid());
+            response.setHostName(host.getName());
+        } else if (instance.getHostName() != null) {
+            response.setHostName(instance.getHostName());
+        }
+        response.setPowerState(instance.getPowerState().toString());
+        response.setCpuCores(instance.getCpuCores());
+        response.setCpuSpeed(instance.getCpuSpeed());
+        response.setCpuCoresPerSocket(instance.getCpuCoresPerSocket());
+        response.setMemory(instance.getMemory());
+        response.setOperatingSystemId(instance.getOperatingSystemId());
+        response.setOperatingSystem(instance.getOperatingSystem());
+        response.setObjectName("unmanagedinstance");
+
+        if (instance.getDisks() != null) {
+            for (UnmanagedInstanceTO.Disk disk : instance.getDisks()) {
+                UnmanagedInstanceDiskResponse diskResponse = new UnmanagedInstanceDiskResponse();
+                diskResponse.setDiskId(disk.getDiskId());
+                if (StringUtils.isNotEmpty(disk.getLabel())) {
+                    diskResponse.setLabel(disk.getLabel());
+                }
+                diskResponse.setCapacity(disk.getCapacity());
+                diskResponse.setController(disk.getController());
+                diskResponse.setControllerUnit(disk.getControllerUnit());
+                diskResponse.setPosition(disk.getPosition());
+                diskResponse.setImagePath(disk.getImagePath());
+                diskResponse.setDatastoreName(disk.getDatastoreName());
+                diskResponse.setDatastoreHost(disk.getDatastoreHost());
+                diskResponse.setDatastorePath(disk.getDatastorePath());
+                diskResponse.setDatastoreType(disk.getDatastoreType());
+                response.addDisk(diskResponse);
+            }
+        }
+
+        if (instance.getNics() != null) {
+            for (UnmanagedInstanceTO.Nic nic : instance.getNics()) {
+                NicResponse nicResponse = new NicResponse();
+                nicResponse.setId(nic.getNicId());
+                nicResponse.setNetworkName(nic.getNetwork());
+                nicResponse.setMacAddress(nic.getMacAddress());
+                if (StringUtils.isNotEmpty(nic.getAdapterType())) {
+                    nicResponse.setAdapterType(nic.getAdapterType());
+                }
+                if (!CollectionUtils.isEmpty(nic.getIpAddress())) {
+                    nicResponse.setIpAddresses(nic.getIpAddress());
+                }
+                nicResponse.setVlanId(nic.getVlan());
+                nicResponse.setIsolatedPvlanId(nic.getPvlan());
+                nicResponse.setIsolatedPvlanType(nic.getPvlanType());
+                response.addNic(nicResponse);
+            }
+        }
+        return response;
+    }
+
+    @Override
     public SecondaryStorageHeuristicsResponse createSecondaryStorageSelectorResponse(Heuristic heuristic) {
         String zoneUuid = ApiDBUtils.findZoneById(heuristic.getZoneId()).getUuid();
         SecondaryStorageHeuristicsResponse secondaryStorageHeuristicsResponse = new SecondaryStorageHeuristicsResponse(heuristic.getUuid(), heuristic.getName(),
@@ -5132,6 +5201,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         quarantinedIpsResponse.setRemoved(quarantinedIp.getRemoved());
         quarantinedIpsResponse.setEndDate(quarantinedIp.getEndDate());
         quarantinedIpsResponse.setRemovalReason(quarantinedIp.getRemovalReason());
+        if (quarantinedIp.getRemoverAccountId() != null) {
+            Account removerAccount = _accountMgr.getAccount(quarantinedIp.getRemoverAccountId());
+            quarantinedIpsResponse.setRemoverAccountId(removerAccount.getUuid());
+        }
         quarantinedIpsResponse.setResponseName("quarantinedip");
 
         return quarantinedIpsResponse;
