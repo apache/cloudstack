@@ -21,6 +21,8 @@
 
 ALTER TABLE `cloud`.`mshost` MODIFY COLUMN `state` varchar(25);
 
+UPDATE `cloud`.`network_offerings` SET conserve_mode=1 WHERE name='DefaultIsolatedNetworkOfferingForVpcNetworks';
+
 -- Invalidate existing console_session records
 UPDATE `cloud`.`console_session` SET removed=now();
 -- Modify acquired column in console_session to datetime type
@@ -314,6 +316,9 @@ CREATE TABLE `cloud_usage`.`bucket_statistics` (
   `size` bigint unsigned COMMENT 'total size of bucket objects',
    PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Add remover account ID to quarantined IPs table.
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.quarantined_ips', 'remover_account_id', 'bigint(20) unsigned DEFAULT NULL COMMENT "ID of the account that removed the IP from quarantine, foreign key to `account` table"');
 
 -- Add tag column to tables
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.resource_limit', 'tag', 'varchar(64) DEFAULT NULL COMMENT "tag for the limit" ');

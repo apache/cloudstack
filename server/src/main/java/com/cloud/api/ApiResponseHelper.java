@@ -5204,6 +5204,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         quarantinedIpsResponse.setRemoved(quarantinedIp.getRemoved());
         quarantinedIpsResponse.setEndDate(quarantinedIp.getEndDate());
         quarantinedIpsResponse.setRemovalReason(quarantinedIp.getRemovalReason());
+        if (quarantinedIp.getRemoverAccountId() != null) {
+            Account removerAccount = _accountMgr.getAccount(quarantinedIp.getRemoverAccountId());
+            quarantinedIpsResponse.setRemoverAccountId(removerAccount.getUuid());
+        }
         quarantinedIpsResponse.setResponseName("quarantinedip");
 
         return quarantinedIpsResponse;

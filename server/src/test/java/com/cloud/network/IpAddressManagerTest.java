@@ -36,12 +36,14 @@ import com.cloud.network.dao.PublicIpQuarantineDao;
 import com.cloud.network.vo.PublicIpQuarantineVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import org.apache.cloudstack.context.CallContext;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
@@ -395,6 +397,31 @@ public class IpAddressManagerTest {
         boolean result = ipAddressManager.canPublicIpAddressBeAllocated(ipAddressMock, newOwnerMock);
 
         Assert.assertFalse(result);
+    }
+
+    @Test
+    public void removePublicIpAddressFromQuarantineTestPersistsObject() {
+        Long quarantineProcessId = 100L;
+        Long publicAddressId = 200L;
+        Long callingAccountId = 300L;
+        String removalReason = "removalReason";
+
+        try (MockedStatic<CallContext> callContextMockedStatic = Mockito.mockStatic(CallContext.class)) {
+            Mockito.doReturn(publicIpQuarantineVOMock).when(publicIpQuarantineDaoMock).findById(quarantineProcessId);
+            Mockito.when(publicIpQuarantineVOMock.getPublicIpAddressId()).thenReturn(publicAddressId);
+            Mockito.doReturn(ipAddressVO).when(ipAddressDao).findById(publicAddressId);
+
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            Mockito.when(callContextMock.getCallingAccountId()).thenReturn(callingAccountId);
+            callContextMockedStatic.when(CallContext::current).thenReturn(callContextMock);
+
+            ipAddressManager.removePublicIpAddressFromQuarantine(quarantineProcessId, removalReason);
+
+            Mockito.verify(publicIpQuarantineVOMock).setRemoved(Mockito.any());
+            Mockito.verify(publicIpQuarantineVOMock).setRemovalReason(removalReason);
+            Mockito.verify(publicIpQuarantineVOMock).setRemoverAccountId(callingAccountId);
+            Mockito.verify(publicIpQuarantineDaoMock).persist(publicIpQuarantineVOMock);
+        }
     }
 
     @Test
