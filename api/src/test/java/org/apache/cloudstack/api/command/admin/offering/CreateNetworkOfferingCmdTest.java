@@ -17,20 +17,36 @@
 
 package org.apache.cloudstack.api.command.admin.offering;
 
+import com.cloud.configuration.ConfigurationService;
+import com.cloud.host.Host;
+import com.cloud.offering.NetworkOffering;
+import junit.framework.TestCase;
+import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
+import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
-public class CreateNetworkOfferingCmdTest {
+import java.util.Arrays;
+import java.util.List;
+
+
+public class CreateNetworkOfferingCmdTest extends TestCase {
 
     @InjectMocks
     private CreateNetworkOfferingCmd createNetworkOfferingCmd = new CreateNetworkOfferingCmd();
 
+    String netName = "network";
+
     @Test
     public void createVpcNtwkOffWithEmptyDisplayText() {
-        String netName = "network";
         ReflectionTestUtils.setField(createNetworkOfferingCmd, "networkOfferingName", netName);
         Assert.assertEquals(createNetworkOfferingCmd.getDisplayText(), netName);
     }
