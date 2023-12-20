@@ -25,6 +25,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.network.PublicIpQuarantine;
+import com.cloud.utils.fsm.NoTransitionException;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.command.admin.address.ReleasePodIpCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
@@ -821,6 +822,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     public Map<String, String> finalizeServicesAndProvidersForNetwork(NetworkOffering offering, Long physicalNetworkId) {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public boolean stateTransitTo(Network network, Network.Event e) throws NoTransitionException {
+        return true;
     }
 
     @Override

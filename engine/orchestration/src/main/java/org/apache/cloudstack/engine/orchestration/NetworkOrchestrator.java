@@ -4424,7 +4424,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return accessDetails;
     }
 
-    protected boolean stateTransitTo(final NetworkVO network, final Network.Event e) throws NoTransitionException {
+    @Override
+    public boolean stateTransitTo(final Network network, final Network.Event e) throws NoTransitionException {
         return _stateMachine.transitTo(network, e, null, _networksDao);
     }
 

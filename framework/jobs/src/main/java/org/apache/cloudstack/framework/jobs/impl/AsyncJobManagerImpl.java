@@ -35,12 +35,22 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.Network;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.storage.Volume;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
@@ -147,6 +157,15 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     private SnapshotDataFactory snapshotFactory;
     @Inject
     private SnapshotDetailsDao _snapshotDetailsDao;
+
+    @Inject
+    private VolumeDataFactory volFactory;
+    @Inject
+    private VirtualMachineManager virtualMachineManager;
+    @Inject
+    private NetworkDao networkDao;
+    @Inject
+    private NetworkOrchestrationService networkOrchestrationService;
 
     private volatile long _executionRunNumber = 1;
 
@@ -1089,6 +1108,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Cancel left-over job-" + job.getId());
                         }
+                        cleanupResources(job);
                         job.setStatus(JobInfo.Status.FAILED);
                         job.setResultCode(ApiErrorCode.INTERNAL_ERROR.getHttpCode());
                         job.setResult("job cancelled because of management server restart or shutdown");
@@ -1101,15 +1121,6 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                             s_logger.debug("Purge queue item for cancelled job-" + job.getId());
                         }
                         _queueMgr.purgeAsyncJobQueueItemId(job.getId());
-                        if (ApiCommandResourceType.Volume.toString().equals(job.getInstanceType())) {
-
-                            try {
-                                _volumeDetailsDao.removeDetail(job.getInstanceId(), "SNAPSHOT_ID");
-                                _volsDao.remove(job.getInstanceId());
-                            } catch (Exception e) {
-                                s_logger.error("Unexpected exception while removing concurrent request meta data :" + e.getLocalizedMessage());
-                            }
-                        }
                     }
                     final List<SnapshotDetailsVO> snapshotList = _snapshotDetailsDao.findDetails(AsyncJob.Constants.MS_ID, Long.toString(msid), false);
                     for (final SnapshotDetailsVO snapshotDetailsVO : snapshotList) {
@@ -1126,6 +1137,65 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         } catch (Throwable e) {
             s_logger.warn("Unexpected exception in cleaning up left over jobs for mamagement server node " + msid, e);
         }
+    }
+
+    /*
+    Cleanup Resources in transition state and move them to appropriate state
+    This will allow other operation on the resource, instead of being stuck in transition state
+     */
+    protected boolean cleanupResources(AsyncJobVO job) {
+        try {
+            ApiCommandResourceType resourceType = ApiCommandResourceType.fromString(job.getInstanceType());
+            if (resourceType == null) {
+                s_logger.warn("Unknown ResourceType. Skip Cleanup: " + job.getInstanceType());
+                return true;
+            }
+            switch (resourceType) {
+                case Volume:
+                    VolumeInfo vol = volFactory.getVolume(job.getInstanceId());
+                    if (vol == null) {
+                        s_logger.warn("Volume not found. Skip Cleanup. VolumeId: " + job.getInstanceId());
+                        return true;
+                    }
+                    if (vol.isVolumeInTransitionState()) {
+                        s_logger.debug("Cleaning up volume with Id: " + job.getInstanceId());
+                        return vol.stateTransit(Volume.Event.OperationFailed);
+                    } else {
+                        s_logger.debug("Volume not in transition state. Skip cleanup. VolumeId: " + job.getInstanceId());
+                    }
+                    break;
+                case VirtualMachine:
+                    VMInstanceVO vmInstanceVO = _vmInstanceDao.findById(job.getInstanceId());
+                    if(vmInstanceVO == null) {
+                        s_logger.warn("Instance not found. Skip Cleanup. InstanceId: " + job.getInstanceId());
+                        return true;
+                    }
+                    if(vmInstanceVO.getState().isTransitional()) {
+                        s_logger.debug("Cleaning up Instance with Id: " + job.getInstanceId());
+                        return virtualMachineManager.stateTransitTo(vmInstanceVO, VirtualMachine.Event.OperationFailed, vmInstanceVO.getHostId());
+                    } else {
+                        s_logger.debug("Instance not in transition state. Skip cleanup. InstanceId: " + job.getInstanceId());
+                    }
+                    break;
+                case Network:
+                    NetworkVO networkVO = networkDao.findById(job.getInstanceId());
+                    if (networkVO == null) {
+                        s_logger.warn("Network not found. Skip Cleanup. NetworkId: " + job.getInstanceId());
+                        return true;
+                    }
+                    if (Network.State.Implementing.equals(networkVO.getState())) {
+                        s_logger.debug("Cleaning up Network with Id: " + job.getInstanceId());
+                        networkOrchestrationService.stateTransitTo(networkVO, Network.Event.DestroyNetwork);
+                    } else {
+                        s_logger.debug("Network not in transition state. Skip cleanup. NetworkId: " + job.getInstanceId());
+                    }
+                    break;
+            }
+        } catch (Exception e) {
+            s_logger.warn("Error while cleaning up resource: [" + job.getInstanceType().toString()  + "] with Id: " + job.getInstanceId(), e);
+            return false;
+        }
+        return true;
     }
 
     @Override

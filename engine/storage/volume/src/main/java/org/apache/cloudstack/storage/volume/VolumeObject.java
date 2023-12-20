@@ -930,4 +930,12 @@ public class VolumeObject implements VolumeInfo {
     public void setEncryptFormat(String encryptFormat) {
         volumeVO.setEncryptFormat(encryptFormat);
     }
+
+    @Override
+    public boolean isVolumeInTransitionState() {
+        List transitionStates = Arrays.asList(State.Creating, State.Attaching, State.Resizing,
+                State.Copying, State.Expunging, State.Snapshotting, State.Migrating,
+                State.UploadOp, State.NotUploaded, State.UploadInProgress, State.RevertSnapshotting);
+        return transitionStates.contains(getState());
+    }
 }
