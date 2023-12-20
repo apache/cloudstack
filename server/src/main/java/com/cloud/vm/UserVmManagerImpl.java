@@ -130,6 +130,7 @@ import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.cloudstack.vm.schedule.VMScheduleManager;
+import org.apache.cloudstack.vm.UnmanagedVMsManager;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -236,7 +237,6 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
@@ -4514,6 +4514,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         setVmRequiredFieldsForImport(isImport, vm, zone, hypervisorType, host, lastHost, powerState);
 
+        setVncPasswordForKvmIfAvailable(customParameters, vm);
+
         vm.setUserVmType(vmType);
         _vmDao.persist(vm);
         for (String key : customParameters.keySet()) {
@@ -4916,7 +4918,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Long hostId = cmd.getHostId();
         Map<VirtualMachineProfile.Param, Object> additionalParams =  new HashMap<>();
         Map<Long, DiskOffering> diskOfferingMap = cmd.getDataDiskTemplateToDiskOfferingMap();
-        Map<String, String> details = cmd.getDetails();
         if (cmd instanceof DeployVMCmdByAdmin) {
             DeployVMCmdByAdmin adminCmd = (DeployVMCmdByAdmin)cmd;
             podId = adminCmd.getPodId();
@@ -8232,7 +8233,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     public UserVm importVM(final DataCenter zone, final Host host, final VirtualMachineTemplate template, final String instanceName, final String displayName,
                            final Account owner, final String userData, final Account caller, final Boolean isDisplayVm, final String keyboard,
                            final long accountId, final long userId, final ServiceOffering serviceOffering, final String sshPublicKeys,
-                           final String hostName, final HypervisorType hypervisorType, final Map<String, String> customParameters, final VirtualMachine.PowerState powerState) throws InsufficientCapacityException {
+                           final String hostName, final HypervisorType hypervisorType, final Map<String, String> customParameters,
+                           final VirtualMachine.PowerState powerState, final LinkedHashMap<String, List<NicProfile>> networkNicMap) throws InsufficientCapacityException {
         if (zone == null) {
             throw new InvalidParameterValueException("Unable to import virtual machine with invalid zone");
         }
@@ -8252,7 +8254,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         final Boolean dynamicScalingEnabled = checkIfDynamicScalingCanBeEnabled(null, serviceOffering, template, zone.getId());
         return commitUserVm(true, zone, host, lastHost, template, hostName, displayName, owner,
                 null, null, userData, null, null, isDisplayVm, keyboard,
-                accountId, userId, serviceOffering, template.getFormat().equals(ImageFormat.ISO), sshPublicKeys, null,
+                accountId, userId, serviceOffering, template.getFormat().equals(ImageFormat.ISO), sshPublicKeys, networkNicMap,
                 id, instanceName, uuidName, hypervisorType, customParameters,
                 null, null, null, powerState, dynamicScalingEnabled, null, serviceOffering.getDiskOfferingId(), null);
     }
@@ -8272,8 +8274,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 return false;
             }
 
-            if (vm.getHypervisorType() != Hypervisor.HypervisorType.VMware) {
-                throw new UnsupportedServiceException("Unmanaging a VM is currently allowed for VMware VMs only");
+            if (!UnmanagedVMsManager.isSupported(vm.getHypervisorType())) {
+                throw new UnsupportedServiceException("Unmanaging a VM is currently not supported on hypervisor " +
+                        vm.getHypervisorType().toString());
             }
 
             List<VolumeVO> volumes = _volsDao.findByInstance(vm.getId());
@@ -8451,5 +8454,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     public Boolean getDestroyRootVolumeOnVmDestruction(Long domainId){
         return DestroyRootVolumeOnVmDestruction.valueIn(domainId);
+    }
+
+    private void setVncPasswordForKvmIfAvailable(Map<String, String> customParameters, UserVmVO vm){
+        if (customParameters.containsKey(VmDetailConstants.KVM_VNC_PASSWORD)
+                && StringUtils.isNotEmpty(customParameters.get(VmDetailConstants.KVM_VNC_PASSWORD))) {
+            vm.setVncPassword(customParameters.get(VmDetailConstants.KVM_VNC_PASSWORD));
+        }
     }
 }

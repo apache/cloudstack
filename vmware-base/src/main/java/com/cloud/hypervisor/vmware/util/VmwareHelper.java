@@ -56,6 +56,7 @@ import com.vmware.vim25.NasDatastoreInfo;
 import com.vmware.vim25.VMwareDVSPortSetting;
 import com.vmware.vim25.VirtualDeviceFileBackingInfo;
 import com.vmware.vim25.VirtualIDEController;
+import com.vmware.vim25.VirtualMachineConfigSummary;
 import com.vmware.vim25.VirtualMachineGuestOsIdentifier;
 import com.vmware.vim25.VirtualMachineToolsStatus;
 import com.vmware.vim25.VirtualSCSIController;
@@ -797,18 +798,21 @@ public class VmwareHelper {
             instance = new UnmanagedInstanceTO();
             instance.setName(vmMo.getVmName());
             instance.setInternalCSName(vmMo.getInternalCSName());
-            instance.setCpuCores(vmMo.getConfigSummary().getNumCpu());
             instance.setCpuCoresPerSocket(vmMo.getCoresPerSocket());
-            instance.setCpuSpeed(vmMo.getConfigSummary().getCpuReservation());
-            instance.setMemory(vmMo.getConfigSummary().getMemorySizeMB());
             instance.setOperatingSystemId(vmMo.getVmGuestInfo().getGuestId());
+            VirtualMachineConfigSummary configSummary = vmMo.getConfigSummary();
+            if (configSummary != null) {
+                instance.setCpuCores(configSummary.getNumCpu());
+                instance.setCpuSpeed(configSummary.getCpuReservation());
+                instance.setMemory(configSummary.getMemorySizeMB());
+            }
 
             ClusterMO clusterMo = new ClusterMO(hyperHost.getContext(), hyperHost.getHyperHostCluster());
             instance.setClusterName(clusterMo.getName());
             instance.setHostName(hyperHost.getHyperHostName());
 
-            if (StringUtils.isEmpty(instance.getOperatingSystemId())) {
-                instance.setOperatingSystemId(vmMo.getConfigSummary().getGuestId());
+            if (StringUtils.isEmpty(instance.getOperatingSystemId()) && configSummary != null) {
+                instance.setOperatingSystemId(configSummary.getGuestId());
             }
             VirtualMachineGuestOsIdentifier osIdentifier = VirtualMachineGuestOsIdentifier.OTHER_GUEST;
             try {
@@ -819,8 +823,8 @@ public class VmwareHelper {
                 }
             }
             instance.setOperatingSystem(vmMo.getGuestInfo().getGuestFullName());
-            if (StringUtils.isEmpty(instance.getOperatingSystem())) {
-                instance.setOperatingSystem(vmMo.getConfigSummary().getGuestFullName());
+            if (StringUtils.isEmpty(instance.getOperatingSystem()) && configSummary != null) {
+                instance.setOperatingSystem(configSummary.getGuestFullName());
             }
             UnmanagedInstanceTO.PowerState powerState = UnmanagedInstanceTO.PowerState.PowerUnknown;
             if (vmMo.getPowerState().toString().equalsIgnoreCase("POWERED_ON")) {
