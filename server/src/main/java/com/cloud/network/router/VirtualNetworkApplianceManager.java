@@ -49,7 +49,7 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     String RouterHealthChecksConfigRefreshIntervalCK = "router.health.checks.config.refresh.interval";
     String RouterHealthChecksResultFetchIntervalCK = "router.health.checks.results.fetch.interval";
     String RouterHealthChecksFailuresToRecreateVrCK = "router.health.checks.failures.to.recreate.vr";
-    String RemoveNicsOnStopCK = "router.release.nics.on.stop";
+    String RemoveNicsOnStopCK = "ssvm.release.control.ip.on.stop";
 
     ConfigKey<String> RouterTemplateXen = new ConfigKey<>(String.class, RouterTemplateXenCK, "Advanced", "SystemVM Template (XenServer)",
             "Name of the default router template on Xenserver.", true, ConfigKey.Scope.Zone, null);
@@ -123,7 +123,7 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
             true, ConfigKey.Scope.Zone, null);
 
     ConfigKey<Boolean> RemoveNicsOnStop = new ConfigKey<>(Boolean.class, RemoveNicsOnStopCK, "Advanced", "true",
-            "on stopping routers the IP will be released to preserve IPv4 space.", true, ConfigKey.Scope.Global, null);
+            "on stopping routers and system VMs the IP will be released to preserve IPv4 space.", true, ConfigKey.Scope.Zone, null);
 
     int DEFAULT_ROUTER_VM_RAMSIZE = 256;            // 256M
     int DEFAULT_ROUTER_CPU_MHZ = 500;                // 500 MHz

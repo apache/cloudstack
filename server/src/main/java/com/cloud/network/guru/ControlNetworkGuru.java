@@ -21,6 +21,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.router.VirtualNetworkApplianceManager;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.log4j.Logger;
 
@@ -166,6 +167,13 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         assert nic.getTrafficType() == TrafficType.Control;
         HypervisorType hType = vm.getHypervisorType();
         if ( ( (hType == HypervisorType.VMware) || (hType == HypervisorType.Hyperv) )&& isRouterVm(vm)) {
+            // for now place this in the vmware specific part, but it miught be more generic and move up two or three lines
+            if (!VirtualNetworkApplianceManager.RemoveNicsOnStop.valueIn(vm.getVirtualMachine().getDataCenterId())) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(String.format("not releasing %s\n\t from %s\n\t with reservationId %s.", nic, vm, reservationId));
+                }
+                return true;
+            }
             long dcId = vm.getVirtualMachine().getDataCenterId();
             DataCenterVO dcVo = _dcDao.findById(dcId);
             if (dcVo.getNetworkType() != NetworkType.Basic) {

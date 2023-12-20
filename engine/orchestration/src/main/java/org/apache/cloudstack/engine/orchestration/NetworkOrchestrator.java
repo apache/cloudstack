@@ -38,7 +38,6 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.network.guru.ControlNetworkGuru;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -2329,10 +2328,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         _nicDao.update(nic.getId(), nic);
                         final NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), null, _networkModel
                                 .isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(vmProfile.getHypervisorType(), network));
-                        if ((!ControlNetworkGuru.class.getSimpleName().equals(guru.getClass().getSimpleName()))
-                                && guru.release(profile, vmProfile, nic.getReservationId())) {
+                        if (guru.release(profile, vmProfile, nic.getReservationId())) {
                             if (s_logger.isDebugEnabled()) {
-                                s_logger.debug(String.format("released nic %s\n\t on %s\n\t by guru %s, now updating record.", nic, profile, guru));
+                                s_logger.debug(String.format("released nic %s\n\t on %s\n\t according to %s\n\t by guru %s, now updating record.", nic, profile, vmProfile, guru));
                             }
                             applyProfileToNicForRelease(nic, profile);
                             nic.setState(Nic.State.Allocated);
