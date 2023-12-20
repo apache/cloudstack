@@ -196,7 +196,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 StorPoolUtil.spLog("Removing tags from detached volume=%s", volume.toString());
                 Map<String, String> tags = StorPoolHelper.addStorPoolTags(null, "", null, "");
                 SpConnectionDesc conn = StorPoolUtil.getSpConnection(dataStore.getUuid(), dataStore.getId(), storagePoolDetailsDao, primaryStoreDao);
-                StorPoolUtil.volumeUpadateTags(StorPoolStorageAdaptor.getVolumeNameFromPath(volume.getPath(), true), tags, conn);
+                StorPoolUtil.volumeRemoveTags(StorPoolStorageAdaptor.getVolumeNameFromPath(volume.getPath(), true), tags, conn);
             }
         }
 
