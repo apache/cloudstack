@@ -523,7 +523,7 @@ public class StorPoolUtil {
         return POST("MultiCluster/VolumeUpdate/" + name, json, conn);
     }
 
-    public static SpApiResponse volumeUpdateTags(final String name, final String uuid, Long iops,
+    public static SpApiResponse volumeUpdateIopsAndTags(final String name, final String uuid, Long iops,
             SpConnectionDesc conn, String vcPolicy) {
         Map<String, Object> json = new HashMap<>();
         Map<String, String> tags = StorPoolHelper.addStorPoolTags(null, uuid, null, vcPolicy);

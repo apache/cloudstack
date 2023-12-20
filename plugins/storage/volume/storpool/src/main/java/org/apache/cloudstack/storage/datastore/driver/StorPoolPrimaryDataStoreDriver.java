@@ -1048,7 +1048,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
 
         if (vinfo.getMaxIops() != null) {
-            response = StorPoolUtil.volumeUpdateTags(volumeName, null, vinfo.getMaxIops(), conn, null);
+            response = StorPoolUtil.volumeUpdateIopsAndTags(volumeName, null, vinfo.getMaxIops(), conn, null);
             if (response.getError() != null) {
                 StorPoolUtil.spLog("Volume was reverted successfully but max iops could not be set due to %s", response.getError().getDescr());
             }
@@ -1146,7 +1146,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 SpConnectionDesc conn = StorPoolUtil.getSpConnection(poolVO.getUuid(), poolVO.getId(), storagePoolDetailsDao, primaryStoreDao);
                 String volName = StorPoolStorageAdaptor.getVolumeNameFromPath(volume.getPath(), true);
                 VMInstanceVO userVM = vmInstanceDao.findById(vmId);
-                SpApiResponse resp = StorPoolUtil.volumeUpdateTags(volName, volume.getInstanceId() != null ? userVM.getUuid() : "", null, conn, getVcPolicyTag(vmId));
+                SpApiResponse resp = StorPoolUtil.volumeUpdateIopsAndTags(volName, volume.getInstanceId() != null ? userVM.getUuid() : "", null, conn, getVcPolicyTag(vmId));
                 if (resp.getError() != null) {
                     log.warn(String.format("Could not update VC policy tags of a volume with id [%s]", volume.getUuid()));
                 }
