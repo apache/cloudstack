@@ -1037,7 +1037,7 @@ class TestSecuredVmMigration(cloudstackTestCase):
                         hostid=host.id,
                         type='Routing'
                     )[0]
-                    if restarted_host.state == state:
+                    if restarted_host.state == 'Up':
                         break
                     retries = retries - 1
 
