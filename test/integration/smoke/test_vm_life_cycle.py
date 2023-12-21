@@ -1011,7 +1011,8 @@ class TestSecuredVmMigration(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.ensure_all_hosts_are_up()
+        if cls.hypervisor.lower() in ["kvm"]:
+            cls.ensure_all_hosts_are_up()
         super(TestSecuredVmMigration, cls).tearDownClass()
 
     @classmethod
