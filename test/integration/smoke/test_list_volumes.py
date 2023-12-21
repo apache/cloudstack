@@ -28,7 +28,6 @@ from marvin.lib.base import (Account,
                              VirtualMachine)
 from marvin.lib.common import (get_domain, list_accounts,
                                list_zones, list_clusters, list_hosts, get_suitable_test_template)
-from marvin.lib.utils import wait_until
 # Import System modules
 from nose.plugins.attrib import attr
 
@@ -45,9 +44,6 @@ class TestListVolumes(cloudstackTestCase):
         cls.hypervisor = testClient.getHypervisorInfo()
         cls.domain = get_domain(cls.apiclient)
         cls.zones = list_zones(cls.apiclient)
-        import ipdb; ipdb.set_trace()
-        cls.wait_for_volume_cleanup()
-        import ipdb; ipdb.set_trace()
         cls.zone = cls.zones[0]
         cls.clusters = list_clusters(cls.apiclient)
         cls.cluster = cls.clusters[0]
@@ -140,26 +136,6 @@ class TestListVolumes(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         super(TestListVolumes, cls).tearDownClass()
-
-    @classmethod
-    def wait_for_volume_cleanup(cls):
-        """Wait for volumes to clean up that were left by previous tests
-        """
-        def check_volumes_status():
-            result = False
-            volumes = Volume.list(
-                cls.apiclient,
-                listall=True
-            )
-            if volumes is None or len(volumes) == 0:
-                return True, None
-
-            for volume in volumes:
-                if volume.state not in ['Ready', 'Allocated']:
-                    result = False
-            return result, None
-
-        wait_until(10, 30, check_volumes_status)
 
     @attr(tags=["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
     def test_01_list_volumes_account_domain_filter(self):
