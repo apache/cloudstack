@@ -2183,6 +2183,13 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         return getCount(null);
     }
 
+    @Override
+    public List<T> findByUuids(String... uuidArray) {
+        SearchCriteria<T> sc = createSearchCriteria();
+        sc.addAnd("uuid", SearchCriteria.Op.IN, uuidArray);
+        return search(sc, null);
+    }
+
     public Integer getCount(SearchCriteria<T> sc) {
         sc = checkAndSetRemovedIsNull(sc);
         return getCountIncludingRemoved(sc);

@@ -2977,6 +2977,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         ListResponse<StoragePoolResponse> response = new ListResponse<>();
 
         List<StoragePoolResponse> poolResponses = ViewResponseHelper.createStoragePoolResponse(storagePools.first().toArray(new StoragePoolJoinVO[storagePools.first().size()]));
+        Map<String, Long> poolUuidToIdMap = storagePools.first().stream().collect(Collectors.toMap(StoragePoolJoinVO::getUuid, StoragePoolJoinVO::getId));
         for (StoragePoolResponse poolResponse : poolResponses) {
             DataStore store = dataStoreManager.getPrimaryDataStore(poolResponse.getId());
             if (store != null) {
@@ -2985,8 +2986,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                     Map<String, String> caps = driver.getCapabilities();
                     if (Storage.StoragePoolType.NetworkFilesystem.toString().equals(poolResponse.getType()) &&
                         HypervisorType.VMware.toString().equals(poolResponse.getHypervisor())) {
-                        StoragePoolVO pool = storagePoolDao.findPoolByUUID(poolResponse.getId());
-                        StoragePoolDetailVO detail = _storagePoolDetailsDao.findDetail(pool.getId(), Storage.Capability.HARDWARE_ACCELERATION.toString());
+                        StoragePoolDetailVO detail = _storagePoolDetailsDao.findDetail(poolUuidToIdMap.get(poolResponse.getId()), Storage.Capability.HARDWARE_ACCELERATION.toString());
                         if (detail != null) {
                             caps.put(Storage.Capability.HARDWARE_ACCELERATION.toString(), detail.getValue());
                         }
