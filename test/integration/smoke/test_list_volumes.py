@@ -45,6 +45,9 @@ class TestListVolumes(cloudstackTestCase):
         cls.hypervisor = testClient.getHypervisorInfo()
         cls.domain = get_domain(cls.apiclient)
         cls.zones = list_zones(cls.apiclient)
+        import ipdb; ipdb.set_trace()
+        cls.wait_for_volume_cleanup()
+        import ipdb; ipdb.set_trace()
         cls.zone = cls.zones[0]
         cls.clusters = list_clusters(cls.apiclient)
         cls.cluster = cls.clusters[0]
@@ -76,8 +79,6 @@ class TestListVolumes(cloudstackTestCase):
         cls.disk_offering = DiskOffering.create(cls.apiclient,
                                                 cls.services["disk_offering"])
         cls._cleanup.append(cls.disk_offering)
-
-        cls.wait_for_volume_cleanup()
 
         # Create VM
         cls.virtual_machine = VirtualMachine.create(
@@ -151,12 +152,12 @@ class TestListVolumes(cloudstackTestCase):
                 listall=True
             )
             if volumes is None or len(volumes) == 0:
-                return True
+                return True, None
 
             for volume in volumes:
                 if volume.state not in ['Ready', 'Allocated']:
                     result = False
-            return result
+            return result, None
 
         wait_until(10, 30, check_volumes_status)
 
