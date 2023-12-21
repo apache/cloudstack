@@ -28,6 +28,7 @@ from marvin.lib.base import (Account,
                              VirtualMachine)
 from marvin.lib.common import (get_domain, list_accounts,
                                list_zones, list_clusters, list_hosts, get_suitable_test_template)
+from marvin.lib.utils import wait_until
 # Import System modules
 from nose.plugins.attrib import attr
 
@@ -76,8 +77,7 @@ class TestListVolumes(cloudstackTestCase):
                                                 cls.services["disk_offering"])
         cls._cleanup.append(cls.disk_offering)
 
-        # Get already existing volumes in the env for assertions
-        cls.volumes = Volume.list(cls.apiclient, zoneid=cls.zone.id) or []
+        cls.wait_for_volume_cleanup()
 
         # Create VM
         cls.virtual_machine = VirtualMachine.create(
@@ -139,6 +139,26 @@ class TestListVolumes(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         super(TestListVolumes, cls).tearDownClass()
+
+    @classmethod
+    def wait_for_volume_cleanup(cls):
+        """Clean up volumes that were left by previous tests
+        """
+        def check_volumes_status():
+            result = False
+            volumes = Volume.list(
+                cls.apiclient,
+                listall=True
+            )
+            if volumes is None or len(volumes) == 0:
+                return True
+
+            for volume in volumes:
+                if volume.state not in ['Ready', 'Allocated']:
+                    result = False
+            return result
+
+        wait_until(10, 30, check_volumes_status)
 
     @attr(tags=["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
     def test_01_list_volumes_account_domain_filter(self):
@@ -260,7 +280,7 @@ class TestListVolumes(cloudstackTestCase):
             "List Volume response is not a valid list"
         )
         self.assertEqual(
-            len(list_volume_response) - len(self.volumes),
+            len(list_volume_response),
             4,
             "ListVolumes response expected 4 Volumes, received %s" % len(list_volume_response)
         )
@@ -276,7 +296,7 @@ class TestListVolumes(cloudstackTestCase):
             "List Volume response is not a valid list"
         )
         self.assertEqual(
-            len(list_volume_response) - len(self.volumes),
+            len(list_volume_response),
             3,
             "ListVolumes response expected 3 Volumes, received %s" % len(list_volume_response)
         )
@@ -319,7 +339,7 @@ class TestListVolumes(cloudstackTestCase):
             "List Volume response is not a valid list"
         )
         self.assertEqual(
-            len(list_volume_response) - len(self.volumes),
+            len(list_volume_response),
             4,
             "ListVolumes response expected 4 Volumes, received %s" % len(list_volume_response)
         )
@@ -334,7 +354,7 @@ class TestListVolumes(cloudstackTestCase):
             "List Volume response is not a valid list"
         )
         self.assertEqual(
-            len(list_volume_response) - len(self.volumes),
+            len(list_volume_response),
             3,
             "ListVolumes response expected 3 Volumes, received %s" % len(list_volume_response)
         )
