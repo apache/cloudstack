@@ -489,12 +489,12 @@ public class SystemVmTemplateRegistration {
         return templateZoneVO;
     }
 
-    private void createCrossZonesTemplateZoneRefEntries(VMTemplateVO template) {
+    private void createCrossZonesTemplateZoneRefEntries(Long templateId) {
         List<DataCenterVO> dcs = dataCenterDao.listAll();
         for (DataCenterVO dc : dcs) {
-            VMTemplateZoneVO templateZoneVO = createOrUpdateTemplateZoneEntry(dc.getId(), template.getId());
+            VMTemplateZoneVO templateZoneVO = createOrUpdateTemplateZoneEntry(dc.getId(), templateId);
             if (templateZoneVO == null) {
-                throw new CloudRuntimeException(String.format("Failed to create template_zone_ref record for the systemVM template for hypervisor: %s and zone: %s", template.getHypervisorType().name(), dc));
+                throw new CloudRuntimeException(String.format("Failed to create template_zone_ref record for the systemVM template (id: %s) and zone: %s", templateId, dc));
             }
         }
     }
@@ -624,8 +624,9 @@ public class SystemVmTemplateRegistration {
                 throw new CloudRuntimeException(String.format("Failed to register template for hypervisor: %s", hypervisor.name()));
             }
             templateId = template.getId();
-            createCrossZonesTemplateZoneRefEntries(template);
         }
+        createCrossZonesTemplateZoneRefEntries(templateId);
+
         details.setId(templateId);
         String destTempFolderName = String.valueOf(templateId);
         String destTempFolder = filePath + PARTIAL_TEMPLATE_FOLDER + destTempFolderName;
