@@ -248,6 +248,9 @@ public class StorPoolUtil {
 
         private void extractUriParams(String url) throws URISyntaxException {
             URI uri = new URI(url);
+            if (!StringUtils.equalsIgnoreCase(uri.getScheme(), "storpool")) {
+                throw new CloudRuntimeException("The scheme is invalid. The URL should be with a format storpool://{SP_AUTH_TOKEN}@{SP_API_HTTP}:{SP_API_HTTP_PORT}/{SP_TEMPLATE}");
+            }
             hostPort = uri.getHost() + ":" + uri.getPort();
             authToken = uri.getUserInfo();
             templateName = uri.getPath().replace("/", "");
