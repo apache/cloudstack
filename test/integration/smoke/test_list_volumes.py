@@ -142,7 +142,7 @@ class TestListVolumes(cloudstackTestCase):
 
     @classmethod
     def wait_for_volume_cleanup(cls):
-        """Clean up volumes that were left by previous tests
+        """Wait for volumes to clean up that were left by previous tests
         """
         def check_volumes_status():
             result = False
