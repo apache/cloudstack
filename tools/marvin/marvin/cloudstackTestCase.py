@@ -23,7 +23,8 @@ from marvin.lib.base import (
     Network,
     NetworkACL,
     NetworkOffering,
-    VirtualMachine
+    VirtualMachine,
+    Volume
 )
 
 
