@@ -648,7 +648,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 SearchCriteria<HostVO> sc = createSearchCriteriaForHostTypeRoutingStateUpAndNotInMaintenance();
                 List<HostVO> hosts = _hostDao.search(sc, null);
 
-                LOGGER.debug(String.format("HostStatsCollector is running to process %d UP hosts", hosts.size()));
+                logger.debug(String.format("HostStatsCollector is running to process %d UP hosts", hosts.size()));
 
                 Map<Object, Object> metrics = new HashMap<>();
                 for (HostVO host : hosts) {
@@ -1195,7 +1195,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 SearchCriteria<HostVO> sc = createSearchCriteriaForHostTypeRoutingStateUpAndNotInMaintenance();
                 List<HostVO> hosts = _hostDao.search(sc, null);
 
-                LOGGER.debug(String.format("VmStatsCollector is running to process VMs across %d UP hosts", hosts.size()));
+                logger.debug(String.format("VmStatsCollector is running to process VMs across %d UP hosts", hosts.size()));
 
                 Map<Object, Object> metrics = new HashMap<>();
                 for (HostVO host : hosts) {
