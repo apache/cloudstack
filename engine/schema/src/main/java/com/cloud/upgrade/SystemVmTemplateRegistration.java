@@ -482,7 +482,7 @@ public class SystemVmTemplateRegistration {
             templateZoneVO = vmTemplateZoneDao.persist(templateZoneVO);
         } else {
             templateZoneVO.setLastUpdated(new java.util.Date());
-            if (vmTemplateZoneDao.update(templateZoneVO.getId(), templateZoneVO)) {
+            if (!vmTemplateZoneDao.update(templateZoneVO.getId(), templateZoneVO)) {
                 templateZoneVO = null;
             }
         }
