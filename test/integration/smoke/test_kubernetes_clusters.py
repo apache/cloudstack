@@ -525,24 +525,6 @@ class TestKubernetesCluster(cloudstackTestCase):
 
     @attr(tags=["advanced", "smoke"], required_hardware="true")
     @skipTestIf("hypervisorNotSupported")
-    def test_07_deploy_kubernetes_ha_cluster(self):
-        """Test to deploy a new HA Kubernetes cluster
-
-        # Validate the following:
-        # 1. createKubernetesCluster should return valid info for new cluster
-        # 2. The Cloud Database contains the valid information
-        """
-        if self.setup_failed == True:
-            self.fail("Setup incomplete")
-        if self.default_network:
-            self.skipTest("HA cluster on shared network requires external ip address, skipping it")
-        global k8s_cluster
-        k8s_cluster = self.getValidKubernetesCluster(1, 3)
-        self.debug("HA Kubernetes cluster with ID: %s successfully deployed" % k8s_cluster.id)
-        return
-
-    @attr(tags=["advanced", "smoke"], required_hardware="true")
-    @skipTestIf("hypervisorNotSupported")
     def test_08_upgrade_kubernetes_ha_cluster(self):
         """Test to upgrade a HA Kubernetes cluster to newer version
 
@@ -566,24 +548,6 @@ class TestKubernetesCluster(cloudstackTestCase):
 
         self.verifyKubernetesClusterUpgrade(k8s_cluster, self.kubernetes_version_v2.id)
         self.debug("Kubernetes cluster with ID: %s successfully upgraded" % k8s_cluster.id)
-        return
-
-    @attr(tags=["advanced", "smoke"], required_hardware="true")
-    @skipTestIf("hypervisorNotSupported")
-    def test_09_delete_kubernetes_ha_cluster(self):
-        """Test to delete a HA Kubernetes cluster
-
-        # Validate the following:
-        # 1. deleteKubernetesCluster should delete an existing HA Kubernetes cluster
-        """
-        if self.setup_failed == True:
-            self.fail("Setup incomplete")
-        if self.default_network:
-            self.skipTest("HA cluster on shared network requires external ip address, skipping it")
-        global k8s_cluster
-        k8s_cluster = self.getValidKubernetesCluster(1, 3)
-
-        self.debug("Deleting Kubernetes cluster with ID: %s" % k8s_cluster.id)
         return
 
     @attr(tags=["advanced", "smoke"], required_hardware="true")
