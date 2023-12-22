@@ -289,6 +289,7 @@ class TestMetrics(cloudstackTestCase):
         self.assertTrue(hasattr(li, 'hosts'))
 
         self.assertEqual(li.hosts, len(list_hosts(self.apiclient,
+            zoneid=self.zone.id,
             type='Routing')))
 
         self.assertTrue(hasattr(li, 'imagestores'))

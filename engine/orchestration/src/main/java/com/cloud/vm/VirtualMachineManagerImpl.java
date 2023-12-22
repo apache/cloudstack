@@ -600,7 +600,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     protected void advanceExpunge(VMInstanceVO vm) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException {
         if (vm == null || vm.getRemoved() != null) {
             if (logger.isDebugEnabled()) {
-                logger.debug("Unable to find vm or vm is destroyed: " + vm);
+                logger.debug("Unable to find vm or vm is expunged: " + vm);
             }
             return;
         }
@@ -610,17 +610,17 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         try {
             if (!stateTransitTo(vm, VirtualMachine.Event.ExpungeOperation, vm.getHostId())) {
-                logger.debug("Unable to destroy the vm because it is not in the correct state: " + vm);
-                throw new CloudRuntimeException("Unable to destroy " + vm);
+                logger.debug("Unable to expunge the vm because it is not in the correct state: " + vm);
+                throw new CloudRuntimeException("Unable to expunge " + vm);
 
             }
         } catch (final NoTransitionException e) {
-            logger.debug("Unable to destroy the vm because it is not in the correct state: " + vm);
-            throw new CloudRuntimeException("Unable to destroy " + vm, e);
+            logger.debug("Unable to expunge the vm because it is not in the correct state: " + vm);
+            throw new CloudRuntimeException("Unable to expunge " + vm, e);
         }
 
         if (logger.isDebugEnabled()) {
-            logger.debug("Destroying vm " + vm);
+            logger.debug("Expunging vm " + vm);
         }
 
         final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
