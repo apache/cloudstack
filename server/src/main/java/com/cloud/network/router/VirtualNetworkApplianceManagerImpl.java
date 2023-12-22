@@ -2342,6 +2342,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         final Provider provider = getVrProvider(router);
 
         final List<Long> routerGuestNtwkIds = _routerDao.getRouterNetworks(router.getId());
+        Map <String, String> routerHealthChecksConfig = getRouterHealthChecksConfig(router);
         for (final Long guestNetworkId : routerGuestNtwkIds) {
             final AggregationControlCommand startCmd = new AggregationControlCommand(Action.Start, router.getInstanceName(), controlNic.getIPv4Address(), _routerControlHelper.getRouterIpInNetwork(
                     guestNetworkId, router.getId()));
@@ -2350,7 +2351,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             if (reprogramGuestNtwks) {
                 finalizeIpAssocForNetwork(cmds, router, provider, guestNetworkId, null);
                 finalizeNetworkRulesForNetwork(cmds, router, provider, guestNetworkId);
-                finalizeMonitorService(cmds, profile, router, provider, guestNetworkId, true, getRouterHealthChecksConfig(router));
+                finalizeMonitorService(cmds, profile, router, provider, guestNetworkId, true, routerHealthChecksConfig);
             }
 
             finalizeUserDataAndDhcpOnStart(cmds, router, provider, guestNetworkId);
