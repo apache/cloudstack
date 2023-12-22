@@ -17,7 +17,6 @@
 
 package org.apache.cloudstack.api.command.admin.offering;
 
-import junit.framework.TestCase;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
 import org.junit.Assert;
 import org.junit.Test;
