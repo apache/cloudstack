@@ -777,7 +777,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
     public QuotaPresetVariablesItemResponse createPresetVariablesItemResponse(Pair<String, String> variable) {
         QuotaPresetVariablesItemResponse response = new QuotaPresetVariablesItemResponse();
-        response.setVariables(variable.first());
+        response.setVariable(variable.first());
         response.setDescription(variable.second());
         return response;
     }

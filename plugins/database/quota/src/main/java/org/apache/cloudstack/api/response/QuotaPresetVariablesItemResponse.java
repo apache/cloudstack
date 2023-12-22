@@ -33,7 +33,7 @@ public class QuotaPresetVariablesItemResponse extends BaseResponse {
         super("variables");
     }
 
-    public void setVariables(String variable) {
+    public void setVariable(String variable) {
         this.variable = variable;
     }
 
