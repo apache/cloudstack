@@ -2766,7 +2766,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             final VirtualMachine vm = profile.getVirtualMachine();
             final DomainRouterVO domR = _routerDao.findById(vm.getId());
             processStopOrRebootAnswer(domR, answer);
-            if (Boolean.TRUE.equals(RemoveNicsOnStop.valueIn(profile.getVirtualMachine().getDataCenterId()))) {
+            if (Boolean.TRUE.equals(RemoveControlIpOnStop.valueIn(profile.getVirtualMachine().getDataCenterId()))) {
                 removeNics(vm, domR);
             }
         }
@@ -2776,7 +2776,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     public void finalizeExpunge(final VirtualMachine vm) {
         final DomainRouterVO domR = _routerDao.findById(vm.getId());
         // not sure if it would hurt to do it in any case, but
-        if (Boolean.FALSE.equals(RemoveNicsOnStop.valueIn(vm.getDataCenterId()))) {
+        if (Boolean.FALSE.equals(RemoveControlIpOnStop.valueIn(vm.getDataCenterId()))) {
             removeNics(vm, domR);
         }
     }
@@ -3320,7 +3320,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 RouterHealthChecksMaxMemoryUsageThreshold,
                 ExposeDnsAndBootpServer,
                 RouterLogrotateFrequency,
-                RemoveNicsOnStop
+                RemoveControlIpOnStop
         };
     }
 

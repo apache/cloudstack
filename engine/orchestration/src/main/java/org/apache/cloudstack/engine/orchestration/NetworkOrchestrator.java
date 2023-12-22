@@ -2315,7 +2315,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             public Pair<Network, NicProfile> doInTransaction(final TransactionStatus status) {
                 final NicVO nic = _nicDao.lockRow(nicId, true);
                 if (nic == null) {
-                    throw new ConcurrentOperationException(String.format("Unable to acquire lock on nic id==%d", nicId));
+                    throw new ConcurrentOperationException(String.format("Unable to acquire lock on nic id=%d", nicId));
                 }
 
                 final Nic.State originalState = nic.getState();
@@ -2330,7 +2330,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                                 .isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(vmProfile.getHypervisorType(), network));
                         if (guru.release(profile, vmProfile, nic.getReservationId())) {
                             if (s_logger.isDebugEnabled()) {
-                                s_logger.debug(String.format("released nic %s\n\t on %s\n\t according to %s\n\t by guru %s, now updating record.", nic, profile, vmProfile, guru));
+                                s_logger.debug(String.format("released nic %s on %s according to %s by guru %s, now updating record.", nic, profile, vmProfile, guru));
                             }
                             applyProfileToNicForRelease(nic, profile);
                             nic.setState(Nic.State.Allocated);
