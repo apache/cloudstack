@@ -25,8 +25,13 @@ import org.joda.time.Duration;
 import com.cloud.agent.api.to.HostTO;
 import com.cloud.hypervisor.kvm.resource.KVMHABase.HAStoragePool;
 import com.cloud.storage.Storage;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.OutputInterpreter;
+import com.cloud.utils.script.Script;
+import org.apache.log4j.Logger;
 
 public class LinstorStoragePool implements KVMStoragePool {
+    private static final Logger s_logger = Logger.getLogger(LinstorStoragePool.class);
     private final String _uuid;
     private final String _sourceHost;
     private final int _sourcePort;
@@ -217,6 +222,17 @@ public class LinstorStoragePool implements KVMStoragePool {
     @Override
     public String getStorageNodeId() {
         return null;
+    }
+
+    static String getHostname() {
+        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+        Script sc = new Script("hostname", Duration.millis(10000L), s_logger);
+        String res = sc.execute(parser);
+        if (res != null) {
+            throw new CloudRuntimeException(String.format("Unable to run 'hostname' command: %s", res));
+        }
+        String response = parser.getLines();
+        return response.trim();
     }
 
     @Override

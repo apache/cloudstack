@@ -16,18 +16,16 @@
 // under the License.
 package com.cloud.hypervisor.kvm.storage;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.StringJoiner;
 
 import javax.annotation.Nonnull;
 
+import com.cloud.storage.Storage;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.storage.datastore.util.LinstorUtil;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
@@ -35,8 +33,6 @@ import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.log4j.Logger;
 import org.libvirt.LibvirtException;
 
-import com.cloud.storage.Storage;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.linbit.linstor.api.ApiClient;
 import com.linbit.linstor.api.ApiException;
 import com.linbit.linstor.api.Configuration;
@@ -69,28 +65,6 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         return LinstorUtil.RSC_PREFIX + name;
     }
 
-    private String getHostname() {
-        // either there is already some function for that in the agent or a better way.
-        ProcessBuilder pb = new ProcessBuilder("hostname");
-        try
-        {
-            String result;
-            Process p = pb.start();
-            final BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-
-            StringJoiner sj = new StringJoiner(System.getProperty("line.separator"));
-            reader.lines().iterator().forEachRemaining(sj::add);
-            result = sj.toString();
-
-            p.waitFor();
-            p.destroy();
-            return result.trim();
-        } catch (IOException | InterruptedException exc) {
-            Thread.currentThread().interrupt();
-            throw new CloudRuntimeException("Unable to run 'hostname' command.");
-        }
-    }
-
     private void logLinstorAnswer(@Nonnull ApiCallRc answer) {
         if (answer.isError()) {
             s_logger.error(answer.getMessage());
@@ -121,7 +95,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     }
 
     public LinstorStorageAdaptor() {
-        localNodeName = getHostname();
+        localNodeName = LinstorStoragePool.getHostname();
     }
 
     @Override
