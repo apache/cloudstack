@@ -18,6 +18,7 @@ package org.apache.cloudstack.config;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import com.cloud.exception.InvalidParameterValueException;
 
 public class ApiServiceConfiguration implements Configurable {
     public static final ConfigKey<String> ManagementServerAddresses = new ConfigKey<>(String.class, "host", "Advanced", "localhost", "The ip address of management server. This can also accept comma separated addresses.", true, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.CSV, null);
@@ -29,6 +30,19 @@ public class ApiServiceConfiguration implements Configurable {
             "true", "Are the source checks on API calls enabled (true) or not (false)? See api.allowed.source.cidr.list", true, ConfigKey.Scope.Global);
     public static final ConfigKey<String> ApiAllowedSourceCidrList = new ConfigKey<>(String.class, "api.allowed.source.cidr.list", "Advanced",
             "0.0.0.0/0,::/0", "Comma separated list of IPv4/IPv6 CIDRs from which API calls can be performed. Can be set on Global and Account levels.", true, ConfigKey.Scope.Account, null, null, null, null, null, ConfigKey.Kind.CSV, null);
+
+
+    public static void validateEndpointUrl() {
+        String csUrl = getApiServletPathValue();
+        if (csUrl == null || csUrl.contains("localhost")) {
+            throw new InvalidParameterValueException(String.format("Global setting %s cannot be null or localhost", ApiServletPath.key()));
+        }
+    }
+
+    public static String getApiServletPathValue() {
+        return ApiServletPath.value();
+    }
+
     @Override
     public String getConfigComponentName() {
         return ApiServiceConfiguration.class.getSimpleName();
