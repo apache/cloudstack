@@ -343,7 +343,7 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item ref="templatetag" name="name" v-if="isAdminRole">
+        <a-form-item ref="templatetag" name="templatetag" v-if="isAdminRole">
           <template #label>
             <tooltip-label :title="$t('label.templatetag')" :tooltip="apiParams.templatetag.description"/>
           </template>
