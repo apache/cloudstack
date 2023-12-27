@@ -353,19 +353,21 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
                     ApiCallRcList answers = api.resourceDefinitionModify(rsc.get().getName(), rdm);
                     if (answers.hasError())
                     {
-                        s_logger.error("Failed to remove 'allow-two-primaries' on " + rsc.get().getName());
-                        throw new CloudRuntimeException(answers.get(0).getMessage());
+                        s_logger.error(
+                                String.format("Failed to remove 'allow-two-primaries' on %s: %s",
+                                        rsc.get().getName(), LinstorUtil.getBestErrorMessage(answers)));
+                        // do not fail here as removing allow-two-primaries property isn't fatal
                     }
 
                     return true;
                 }
                 s_logger.warn("Linstor: Couldn't find resource for this path: " + localPath);
             } catch (ApiException apiEx) {
-                s_logger.error(apiEx);
-                throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
+                s_logger.error(apiEx.getBestMessage());
+                // do not fail here as removing allow-two-primaries property isn't fatal
             }
         }
-        return false;
+        return true;
     }
 
     @Override
