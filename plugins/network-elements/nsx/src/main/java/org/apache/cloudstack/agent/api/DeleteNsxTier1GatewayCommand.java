@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.agent.api;
 
+import java.util.Objects;
+
 public class DeleteNsxTier1GatewayCommand extends NsxCommand {
 
     private Long networkResourceId;
@@ -40,5 +42,19 @@ public class DeleteNsxTier1GatewayCommand extends NsxCommand {
 
     public boolean isResourceVpc() {
         return isResourceVpc;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        DeleteNsxTier1GatewayCommand that = (DeleteNsxTier1GatewayCommand) o;
+        return isResourceVpc == that.isResourceVpc && Objects.equals(networkResourceId, that.networkResourceId) && Objects.equals(networkResourceName, that.networkResourceName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), networkResourceId, networkResourceName, isResourceVpc);
     }
 }

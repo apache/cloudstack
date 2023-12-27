@@ -125,10 +125,10 @@ public class NsxProviderServiceImplTest {
 
         NsxControllerResponse response = nsxProviderService.createNsxControllerResponse(nsxProvider);
 
-        assertEquals(response.getEdgeCluster(), "EdgeCluster");
-        assertEquals(response.getTier0Gateway(), "Tier0Gw");
-        assertEquals(response.getTransportZone(), "Overlay");
-        assertEquals(response.getZoneName(), "ZoneNSX");
+        assertEquals("EdgeCluster", response.getEdgeCluster());
+        assertEquals("Tier0Gw", response.getTier0Gateway());
+        assertEquals("Overlay", response.getTransportZone());
+        assertEquals("ZoneNSX", response.getZoneName());
     }
 
     @Test

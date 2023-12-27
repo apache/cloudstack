@@ -197,63 +197,64 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
     @Override
     public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
         NicProfile nicProfile = super.allocate(network, nic, vm);
+        if (vm.getType() != VirtualMachine.Type.DomainRouter) {
+            return nicProfile;
+        }
 
-        if (vm.getType() == VirtualMachine.Type.DomainRouter) {
-            final DataCenter zone = _dcDao.findById(network.getDataCenterId());
-            long zoneId = network.getDataCenterId();
-            if (Objects.isNull(zone)) {
-                String msg = String.format("Unable to find zone with id: %s", zoneId);
+        final DataCenter zone = _dcDao.findById(network.getDataCenterId());
+        long zoneId = network.getDataCenterId();
+        if (Objects.isNull(zone)) {
+            String msg = String.format("Unable to find zone with id: %s", zoneId);
+            LOGGER.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+        Account account = accountDao.findById(network.getAccountId());
+        if (Objects.isNull(account)) {
+            String msg = String.format("Unable to find account with id: %s", network.getAccountId());
+            LOGGER.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+        VpcVO vpc = _vpcDao.findById(network.getVpcId());
+        if (Objects.isNull(vpc)) {
+            String msg = String.format("Unable to find VPC with id: %s, allocating for network %s", network.getVpcId(), network.getName());
+            LOGGER.debug(msg);
+        }
+
+        DomainVO domain = domainDao.findById(account.getDomainId());
+        if (Objects.isNull(domain)) {
+            String msg = String.format("Unable to find domain with id: %s", account.getDomainId());
+            LOGGER.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+
+        if (isNull(network.getVpcId())) {
+            long domainId = domain.getId();
+            long accountId = account.getId();
+            long dataCenterId = zone.getId();
+            long resourceId = network.getId();
+            PublicIpAddress ipAddress = networkModel.getSourceNatIpAddressForGuestNetwork(account, network);
+            String translatedIp = ipAddress.getAddress().addr();
+            String tier1GatewayName = NsxControllerUtils.getTier1GatewayName(domainId, accountId, dataCenterId, resourceId, false);
+            LOGGER.debug(String.format("Creating NSX NAT Rule for Tier1 GW %s for translated IP %s for Isolated network %s", tier1GatewayName, translatedIp, network.getName()));
+            String natRuleId = NsxControllerUtils.getNsxNatRuleId(domainId, accountId, dataCenterId, resourceId, false);
+            CreateOrUpdateNsxTier1NatRuleCommand cmd = NsxHelper.createOrUpdateNsxNatRuleCommand(domainId, accountId, dataCenterId, tier1GatewayName, "SNAT", translatedIp, natRuleId);
+            NsxAnswer nsxAnswer = nsxControllerUtils.sendNsxCommand(cmd, dataCenterId);
+            if (!nsxAnswer.getResult()) {
+                String msg = String.format("Could not create NSX NAT Rule on Tier1 Gateway %s for IP %s  for Isolated network %s", tier1GatewayName, translatedIp, network.getName());
                 LOGGER.error(msg);
                 throw new CloudRuntimeException(msg);
             }
-            Account account = accountDao.findById(network.getAccountId());
-            if (Objects.isNull(account)) {
-                String msg = String.format("Unable to find account with id: %s", network.getAccountId());
-                LOGGER.error(msg);
-                throw new CloudRuntimeException(msg);
-            }
-            VpcVO vpc = _vpcDao.findById(network.getVpcId());
-            if (Objects.isNull(vpc)) {
-                String msg = String.format("Unable to find VPC with id: %s, allocating for network %s", network.getVpcId(), network.getName());
-                LOGGER.debug(msg);
-            }
+        }
 
-            DomainVO domain = domainDao.findById(account.getDomainId());
-            if (Objects.isNull(domain)) {
-                String msg = String.format("Unable to find domain with id: %s", account.getDomainId());
-                LOGGER.error(msg);
-                throw new CloudRuntimeException(msg);
-            }
-
-            if (isNull(network.getVpcId())) {
-                long domainId = domain.getId();
-                long accountId = account.getId();
-                long dataCenterId = zone.getId();
-                long resourceId = network.getId();
-                PublicIpAddress ipAddress = networkModel.getSourceNatIpAddressForGuestNetwork(account, network);
-                String translatedIp = ipAddress.getAddress().addr();
-                String tier1GatewayName = NsxControllerUtils.getTier1GatewayName(domainId, accountId, dataCenterId, resourceId, false);
-                LOGGER.debug(String.format("Creating NSX NAT Rule for Tier1 GW %s for translated IP %s for Isolated network %s", tier1GatewayName, translatedIp, network.getName()));
-                String natRuleId = NsxControllerUtils.getNsxNatRuleId(domainId, accountId, dataCenterId, resourceId, false);
-                CreateOrUpdateNsxTier1NatRuleCommand cmd = NsxHelper.createOrUpdateNsxNatRuleCommand(domainId, accountId, dataCenterId, tier1GatewayName, "SNAT", translatedIp, natRuleId);
-                NsxAnswer nsxAnswer = nsxControllerUtils.sendNsxCommand(cmd, dataCenterId);
-                if (!nsxAnswer.getResult()) {
-                    String msg = String.format("Could not create NSX NAT Rule on Tier1 Gateway %s for IP %s  for Isolated network %s", tier1GatewayName, translatedIp, network.getName());
-                    LOGGER.error(msg);
-                    throw new CloudRuntimeException(msg);
-                }
-            }
-
-            // Create the DHCP relay config for the segment
-            String iPv4Address = nicProfile.getIPv4Address();
-            List<String> addresses = List.of(iPv4Address);
-            CreateNsxDhcpRelayConfigCommand command = NsxHelper.createNsxDhcpRelayConfigCommand(domain, account, zone, vpc, network, addresses);
-            NsxAnswer answer = nsxControllerUtils.sendNsxCommand(command, zone.getId());
-            if (!answer.getResult()) {
-                String msg = String.format("Error creating DHCP relay config for network %s and nic %s: %s", network.getName(), nic.getName(), answer.getDetails());
-                LOGGER.error(msg);
-                throw new CloudRuntimeException(msg);
-            }
+        // Create the DHCP relay config for the segment
+        String iPv4Address = nicProfile.getIPv4Address();
+        List<String> addresses = List.of(iPv4Address);
+        CreateNsxDhcpRelayConfigCommand command = NsxHelper.createNsxDhcpRelayConfigCommand(domain, account, zone, vpc, network, addresses);
+        NsxAnswer answer = nsxControllerUtils.sendNsxCommand(command, zone.getId());
+        if (!answer.getResult()) {
+            String msg = String.format("Error creating DHCP relay config for network %s and nic %s: %s", network.getName(), nic.getName(), answer.getDetails());
+            LOGGER.error(msg);
+            throw new CloudRuntimeException(msg);
         }
         return nicProfile;
     }

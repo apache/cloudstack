@@ -252,6 +252,7 @@ public class NsxNetworkRule {
         private Network.Service service;
 
         public Builder() {
+            // Default constructor
         }
 
         public Builder setDomainId(long domainId) {

@@ -992,10 +992,11 @@ public class VirtualMachineManagerImplTest {
         Mockito.when(vpcVO.getId()).thenReturn(4L);
         Mockito.when(networkVO.getId()).thenReturn(5L);
         virtualMachineManagerImpl.setVmNetworkDetails(vm, vmTO);
-        assertEquals(vmTO.getNetworkIdToNetworkNameMap().size(), 1);
-        assertEquals(vmTO.getNetworkIdToNetworkNameMap().get(5L), "D3-A2-Z1-V4-S5");
+        assertEquals(1, vmTO.getNetworkIdToNetworkNameMap().size());
+        assertEquals("D3-A2-Z1-V4-S5", vmTO.getNetworkIdToNetworkNameMap().get(5L));
     }
 
+    @Test
     public void testOrchestrateStartNonNullPodId() throws Exception {
         VMInstanceVO vmInstance = new VMInstanceVO();
         ReflectionTestUtils.setField(vmInstance, "id", 1L);

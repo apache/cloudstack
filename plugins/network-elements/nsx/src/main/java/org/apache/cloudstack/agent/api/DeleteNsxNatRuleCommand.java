@@ -18,6 +18,8 @@ package org.apache.cloudstack.agent.api;
 
 import com.cloud.network.Network;
 
+import java.util.Objects;
+
 public class DeleteNsxNatRuleCommand extends NsxNetworkCommand {
     private Long ruleId;
     private Network.Service service;
@@ -50,5 +52,19 @@ public class DeleteNsxNatRuleCommand extends NsxNetworkCommand {
 
     public String getProtocol() {
         return protocol;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        DeleteNsxNatRuleCommand that = (DeleteNsxNatRuleCommand) o;
+        return Objects.equals(ruleId, that.ruleId) && Objects.equals(service, that.service) && Objects.equals(privatePort, that.privatePort) && Objects.equals(protocol, that.protocol);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), ruleId, service, privatePort, protocol);
     }
 }

@@ -31,6 +31,9 @@ import java.util.List;
 
 public class NsxHelper {
 
+    private NsxHelper() {
+    }
+
     public static CreateNsxDhcpRelayConfigCommand createNsxDhcpRelayConfigCommand(DomainVO domain, Account account, DataCenter zone, VpcVO vpc, Network network, List<String> addresses) {
         Long vpcId = vpc != null ? vpc.getId() : null;
         String vpcName = vpc != null ? vpc.getName() : null;

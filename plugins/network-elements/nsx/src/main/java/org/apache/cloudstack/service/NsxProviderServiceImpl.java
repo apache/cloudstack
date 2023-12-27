@@ -17,6 +17,7 @@
 package org.apache.cloudstack.service;
 
 import com.amazonaws.util.CollectionUtils;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.InvalidParameterValueException;
@@ -42,6 +43,7 @@ import org.apache.cloudstack.api.command.ListNsxControllersCmd;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.command.AddNsxControllerCmd;
 import org.apache.cloudstack.api.response.NsxControllerResponse;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.resource.NsxResource;
 import org.apache.commons.lang3.StringUtils;
 
@@ -191,20 +193,21 @@ public class NsxProviderServiceImpl implements NsxProviderService {
 
     @Override
     public List<Class<?>> getCommands() {
-        List<Class<?>> cmdList = new ArrayList<Class<?>>();
-        cmdList.add(AddNsxControllerCmd.class);
-        cmdList.add(ListNsxControllersCmd.class);
-        cmdList.add(DeleteNsxControllerCmd.class);
+        List<Class<?>> cmdList = new ArrayList<>();
+        if (Boolean.TRUE.equals(NetworkOrchestrationService.NSX_ENABLED.value())) {
+            cmdList.add(AddNsxControllerCmd.class);
+            cmdList.add(ListNsxControllersCmd.class);
+            cmdList.add(DeleteNsxControllerCmd.class);
+        }
         return cmdList;
     }
 
     @VisibleForTesting
     void validateNetworkState(List<NetworkVO> networkList) {
         for (NetworkVO network : networkList) {
-            if (network.getBroadcastDomainType() == Networks.BroadcastDomainType.NSX) {
-                if ((network.getState() != Network.State.Shutdown) && (network.getState() != Network.State.Destroy)) {
+            if (network.getBroadcastDomainType() == Networks.BroadcastDomainType.NSX &&
+                ((network.getState() != Network.State.Shutdown) && (network.getState() != Network.State.Destroy))) {
                     throw new CloudRuntimeException("This NSX Controller cannot be deleted as there are one or more logical networks provisioned by CloudStack on it.");
-                }
             }
         }
     }

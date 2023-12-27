@@ -61,9 +61,9 @@ public class NsxApiClientTest {
         ) {
             String segmentName = "segment1";
             client.createGroupForSegment(segmentName);
-            Mockito.verify(groupService).patch(Mockito.eq(NsxApiClient.DEFAULT_DOMAIN), Mockito.eq(segmentName), Mockito.eq(groups[0]));
+            Mockito.verify(groupService).patch(NsxApiClient.DEFAULT_DOMAIN, segmentName, groups[0]);
             String segmentPath = String.format("%s/%s", NsxApiClient.SEGMENTS_PATH, segmentName);
-            Mockito.verify(groups[0]).setExpression(Mockito.eq(List.of(pathExpressions[0])));
+            Mockito.verify(groups[0]).setExpression(List.of(pathExpressions[0]));
             Mockito.verify(pathExpressions[0]).setPaths(List.of(segmentPath));
         }
     }

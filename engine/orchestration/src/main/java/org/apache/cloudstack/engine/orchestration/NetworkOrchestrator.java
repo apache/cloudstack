@@ -1036,7 +1036,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         if (profile == null) {
             return null;
         }
-        // TODO: Fix with the public network PR
+
         if (isNicAllocatedForNsxPublicNetworkOnVR(network, profile, vm)) {
             String guruName = "NsxPublicNetworkGuru";
             NetworkGuru nsxGuru = AdapterBase.getAdapterByName(networkGurus, guruName);
@@ -1090,7 +1090,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         Long vpcId = _ipAddressDao.findByIp(requested.getIPv4Address()).getVpcId();
-        // TODO: Need to fix isolated network
         List<IPAddressVO> ips = _ipAddressDao.listByAssociatedVpc(vpcId, true);
 
         if (CollectionUtils.isEmpty(ips)) {
@@ -2860,10 +2859,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         // Check if cidr is RFC1918 compliant if the network is Guest Isolated for IPv4
-        if (cidr != null && ntwkOff.getGuestType() == Network.GuestType.Isolated && ntwkOff.getTrafficType() == TrafficType.Guest) {
-            if (!NetUtils.validateGuestCidr(cidr, !ConfigurationManager.AllowNonRFC1918CompliantIPs.value())) {
+        if (cidr != null && (ntwkOff.getGuestType() == Network.GuestType.Isolated && ntwkOff.getTrafficType() == TrafficType.Guest) &&
+                !NetUtils.validateGuestCidr(cidr, !ConfigurationManager.AllowNonRFC1918CompliantIPs.value())) {
                 throw new InvalidParameterValueException("Virtual Guest Cidr " + cidr + " is not RFC 1918 or 6598 compliant");
-            }
         }
 
         final String networkDomainFinal = networkDomain;

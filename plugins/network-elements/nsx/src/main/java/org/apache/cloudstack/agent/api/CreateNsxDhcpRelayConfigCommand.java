@@ -17,6 +17,7 @@
 package org.apache.cloudstack.agent.api;
 
 import java.util.List;
+import java.util.Objects;
 
 public class CreateNsxDhcpRelayConfigCommand extends NsxCommand {
 
@@ -55,5 +56,19 @@ public class CreateNsxDhcpRelayConfigCommand extends NsxCommand {
 
     public List<String> getAddresses() {
         return addresses;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        CreateNsxDhcpRelayConfigCommand that = (CreateNsxDhcpRelayConfigCommand) o;
+        return networkId == that.networkId && Objects.equals(vpcId, that.vpcId) && Objects.equals(vpcName, that.vpcName) && Objects.equals(networkName, that.networkName) && Objects.equals(addresses, that.addresses);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), vpcId, vpcName, networkId, networkName, addresses);
     }
 }

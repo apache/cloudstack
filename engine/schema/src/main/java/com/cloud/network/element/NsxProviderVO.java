@@ -213,6 +213,7 @@ public class NsxProviderVO implements NsxProvider {
 
 
         public Builder() {
+            // Default constructor
         }
 
         public Builder setZoneId(long zoneId) {

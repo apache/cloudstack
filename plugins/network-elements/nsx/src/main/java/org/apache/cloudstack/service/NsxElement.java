@@ -234,9 +234,6 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
 
     @Override
     public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-//        Account account = accountMgr.getAccount(network.getAccountId());
-//        DomainVO domain = domainDao.findById(network.getDomainId());
-//        return nsxService.createNetwork(network.getDataCenterId(), account.getId(), domain.getId(), network.getId(), network.getName());
         // TODO: Check if the network is NSX based (was already implemented as part of the guru.setup()
         return true;
     }
@@ -485,8 +482,6 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
             if (vm == null || networkModel.getNicInNetworkIncludingRemoved(vm.getId(), config.getId()) == null) {
                 continue;
             }
-            Nic nic = networkModel.getNicInNetworkIncludingRemoved(vm.getId(), config.getId());
-            Network publicNetwork = networkModel.getSystemNetworkByZoneAndTrafficType(config.getDataCenterId(), Networks.TrafficType.Public);
             Pair<VpcVO, NetworkVO> vpcOrNetwork = getVpcOrNetwork(config.getVpcId(), config.getId());
             VpcVO vpc = vpcOrNetwork.first();
             NetworkVO network = vpcOrNetwork.second();
@@ -544,14 +539,10 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
                     .setRuleId(rule.getId())
                     .setProtocol(rule.getProtocol().toUpperCase(Locale.ROOT))
                     .build();
-            if (rule.getState() == FirewallRule.State.Add) {
-                if (!nsxService.createPortForwardRule(networkRule)) {
-                    return false;
-                }
-            } else if (rule.getState() == FirewallRule.State.Revoke) {
-                if (!nsxService.deletePortForwardRule(networkRule)) {
-                    return false;
-                }
+            if (rule.getState() == FirewallRule.State.Add && !nsxService.createPortForwardRule(networkRule)) {
+                return false;
+            } else if (rule.getState() == FirewallRule.State.Revoke && !nsxService.deletePortForwardRule(networkRule)) {
+                return false;
             }
         }
         return true;
@@ -632,14 +623,10 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
                     .setProtocol(loadBalancingRule.getProtocol().toUpperCase(Locale.ROOT))
                     .setAlgorithm(loadBalancingRule.getAlgorithm())
                     .build();
-            if (loadBalancingRule.getState() == FirewallRule.State.Add) {
-                if (!nsxService.createLbRule(networkRule)) {
-                    return false;
-                }
-            } else if (loadBalancingRule.getState() == FirewallRule.State.Revoke) {
-                if (!nsxService.deleteLbRule(networkRule)) {
-                    return false;
-                }
+            if (loadBalancingRule.getState() == FirewallRule.State.Add && !nsxService.createLbRule(networkRule)) {
+                return false;
+            } else if (loadBalancingRule.getState() == FirewallRule.State.Revoke && !nsxService.deleteLbRule(networkRule)) {
+                return false;
             }
         }
         return true;
