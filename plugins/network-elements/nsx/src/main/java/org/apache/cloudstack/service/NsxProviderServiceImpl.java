@@ -17,7 +17,6 @@
 package org.apache.cloudstack.service;
 
 import com.amazonaws.util.CollectionUtils;
-import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.InvalidParameterValueException;
