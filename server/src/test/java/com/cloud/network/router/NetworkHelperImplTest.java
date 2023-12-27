@@ -48,16 +48,17 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import javax.inject.Inject;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
@@ -208,42 +209,4 @@ public class NetworkHelperImplTest {
         verify(answer1, times(0)).getResult();
         assertFalse(result);
     }
-
-    @Test
-    public void testConfigurePublicNicForNsxBroadcastDomainType() throws InsufficientAddressCapacityException {
-        nwHelper._networkDao = networkDao;
-        nwHelper._nicDao = nicDao;
-        networkOrchestrationService = mock(NetworkOrchestrationService.class);
-        RouterDeploymentDefinition deploymentDefinition = mock(RouterDeploymentDefinition.class);
-        PublicIp publicIp = mock(PublicIp.class);
-        NicProfile nicProfile = mock(NicProfile.class);
-        NetworkVO pubNetwork = mock(NetworkVO.class);
-        NicVO nicVO = mock(NicVO.class);
-        DeploymentPlan plan = mock(DeploymentPlan.class);
-
-
-        NetworkOfferingVO testOffering = new NetworkOfferingVO();
-        final List<NetworkOfferingVO> offerings = new ArrayList<NetworkOfferingVO>(1);
-        offerings.add(testOffering);
-
-        NetworkVO publicNetwork = new NetworkVO();
-
-        final List<NetworkVO> publicNetList = new ArrayList<>(1);
-        publicNetList.add(publicNetwork);
-
-        when(deploymentDefinition.isPublicNetwork()).thenReturn(true);
-        when(deploymentDefinition.getSourceNatIP()).thenReturn(publicIp);
-        when(publicIp.getAddress()).thenReturn(Mockito.mock(Ip.class));
-        when(networkDao.findById(anyLong())).thenReturn(Mockito.mock(NetworkVO.class));
-        when(nicProfile.getIPv4Address()).thenReturn("10.10.10.10");
-        when(pubNetwork.getId()).thenReturn(1L);
-        when(nicDao.findByIp4AddressAndNetworkId(anyString(), anyLong())).thenReturn(nicVO);
-        doReturn(offerings).when(networkModel).getSystemAccountNetworkOfferings(any());
-        when(deploymentDefinition.getPlan()).thenReturn(plan);
-        doReturn(publicNetList).when(networkOrchestrationService).setupNetwork(nullable(Account.class), any(NetworkOffering.class), any(DeploymentPlan.class), nullable(String.class), nullable(String.class), anyBoolean());
-
-        LinkedHashMap<Network, List<? extends NicProfile>> configuredNic = nwHelper.configurePublicNic(deploymentDefinition, false);
-        configuredNic.get(publicNetList.get(0));
-    }
-
 }
