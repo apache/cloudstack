@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network.router;
 
+import com.cloud.agent.api.Command;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.manager.Commands;
 import com.cloud.configuration.ConfigurationManager;
@@ -25,6 +26,7 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.Networks;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressDao;
@@ -54,9 +56,14 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class CommandSetupHelperTest {
@@ -161,7 +168,7 @@ public class CommandSetupHelperTest {
         PublicIpAddress publicIpAddress = new PublicIp(ipAddressVO, vlanVO, 0x0ac00000L);
         List<PublicIpAddress> pubIpList = new ArrayList<>(1);
         pubIpList.add(publicIpAddress);
-        Commands commands = Mockito.mock(Commands.class);
+        Commands commands = new Commands(Command.OnError.Stop);
         Map<String, String> vlanMacAddress = new HashMap<>();
         NicVO nicVO = new NicVO("nic", 1L, 2L, VirtualMachine.Type.User);
         NetworkVO networkVO = new NetworkVO();
@@ -190,5 +197,6 @@ public class CommandSetupHelperTest {
         Mockito.when(dcDao.findById(ArgumentMatchers.anyLong())).thenReturn(dc);
 
         commandSetupHelper.createVpcAssociatePublicIPCommands(router, pubIpList, commands, vlanMacAddress);
+        Assert.assertEquals(2, commands.size());
     }
 }
