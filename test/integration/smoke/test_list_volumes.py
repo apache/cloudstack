@@ -76,9 +76,6 @@ class TestListVolumes(cloudstackTestCase):
                                                 cls.services["disk_offering"])
         cls._cleanup.append(cls.disk_offering)
 
-        # Get already existing volumes in the env for assertions
-        cls.volumes = Volume.list(cls.apiclient, zoneid=cls.zone.id) or []
-
         # Create VM
         cls.virtual_machine = VirtualMachine.create(
             cls.apiclient,
@@ -260,7 +257,7 @@ class TestListVolumes(cloudstackTestCase):
             "List Volume response is not a valid list"
         )
         self.assertEqual(
-            len(list_volume_response) - len(self.volumes),
+            len(list_volume_response),
             4,
             "ListVolumes response expected 4 Volumes, received %s" % len(list_volume_response)
         )
@@ -276,7 +273,7 @@ class TestListVolumes(cloudstackTestCase):
             "List Volume response is not a valid list"
         )
         self.assertEqual(
-            len(list_volume_response) - len(self.volumes),
+            len(list_volume_response),
             3,
             "ListVolumes response expected 3 Volumes, received %s" % len(list_volume_response)
         )
@@ -319,7 +316,7 @@ class TestListVolumes(cloudstackTestCase):
             "List Volume response is not a valid list"
         )
         self.assertEqual(
-            len(list_volume_response) - len(self.volumes),
+            len(list_volume_response),
             4,
             "ListVolumes response expected 4 Volumes, received %s" % len(list_volume_response)
         )
@@ -334,7 +331,7 @@ class TestListVolumes(cloudstackTestCase):
             "List Volume response is not a valid list"
         )
         self.assertEqual(
-            len(list_volume_response) - len(self.volumes),
+            len(list_volume_response),
             3,
             "ListVolumes response expected 3 Volumes, received %s" % len(list_volume_response)
         )
