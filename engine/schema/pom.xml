@@ -61,9 +61,9 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.codehaus.gmaven</groupId>
-                <artifactId>gmaven-plugin</artifactId>
-                <version>1.5</version>
+                <groupId>org.codehaus.gmavenplus</groupId>
+                <artifactId>gmavenplus-plugin</artifactId>
+                <version>3.0.2</version>
                 <executions>
                     <execution>
                         <id>setproperty</id>
@@ -72,12 +72,14 @@
                             <goal>execute</goal>
                         </goals>
                         <configuration>
-                            <source>
-                                def projectVersion = project.properties['project.systemvm.template.version']
-                                String[] versionParts =  projectVersion.tokenize('.')
-                                pom.properties['cs.version'] = versionParts[0] + "." + versionParts[1]
-                                pom.properties['patch.version'] = versionParts[2]
-                            </source>
+                            <scripts>
+                                <script><![CDATA[
+                                    def projectVersion = project.properties['project.systemvm.template.version']
+                                    String[] versionParts =  projectVersion.tokenize('.')
+                                    project.properties.setProperty('cs.version', versionParts[0] + "." + versionParts[1])
+                                    project.properties.setProperty('patch.version', versionParts[2])
+                                ]]></script>
+                            </scripts>
                         </configuration>
                     </execution>
                     <execution>
@@ -87,28 +89,38 @@
                             <goal>execute</goal>
                         </goals>
                         <configuration>
-                            <source>
-                                def csVersion = pom.properties['cs.version']
-                                def patch = pom.properties['patch.version']
-                                def templateList = []
-                                templateList.add("systemvmtemplate-${csVersion}.${patch}-kvm")
-                                templateList.add("systemvmtemplate-${csVersion}.${patch}-vmware")
-                                templateList.add("systemvmtemplate-${csVersion}.${patch}-xen")
-                                templateList.add("systemvmtemplate-${csVersion}.${patch}-ovm")
-                                templateList.add("systemvmtemplate-${csVersion}.${patch}-hyperv")
-                                File file = new File("./engine/schema/dist/systemvm-templates/md5sum.txt")
-                                def lines = file.readLines()
-                                for (template in templateList) {
-                                    def data = lines.findAll { it.contains(template) }
-                                    if (data != null) {
-                                        def hypervisor =  template.tokenize('-')[-1]
-                                        pom.properties["$hypervisor" + ".checksum"] = data[0].tokenize(' ')[0]
+                            <scripts>
+                                <script><![CDATA[
+                                    def csVersion = project.properties['cs.version']
+                                    def patch = project.properties['patch.version']
+                                    def templateList = []
+                                    templateList.add("systemvmtemplate-${csVersion}.${patch}-kvm")
+                                    templateList.add("systemvmtemplate-${csVersion}.${patch}-vmware")
+                                    templateList.add("systemvmtemplate-${csVersion}.${patch}-xen")
+                                    templateList.add("systemvmtemplate-${csVersion}.${patch}-ovm")
+                                    templateList.add("systemvmtemplate-${csVersion}.${patch}-hyperv")
+                                    File file = new File("./engine/schema/dist/systemvm-templates/md5sum.txt")
+                                    def lines = file.readLines()
+                                    for (template in templateList) {
+                                        def data = lines.findAll { it.contains(template) }
+                                        if (data != null) {
+                                            def hypervisor =  template.tokenize('-')[-1]
+                                            project.properties["$hypervisor" + ".checksum"] = data[0].tokenize(' ')[0]
+                                        }
                                     }
-                                }
-                            </source>
+                            ]]></script>
+                            </scripts>
                         </configuration>
                     </execution>
                 </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.apache.groovy</groupId>
+                        <artifactId>groovy</artifactId>
+                        <version>4.0.15</version>
+                        <scope>runtime</scope>
+                    </dependency>
+                </dependencies>
             </plugin>
             <plugin>
                 <groupId>com.googlecode.maven-download-plugin</groupId>
