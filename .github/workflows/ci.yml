@@ -205,7 +205,7 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
-          java-version: '11'
+          java-version: '21'
           distribution: 'adopt'
           architecture: x64
           cache: maven

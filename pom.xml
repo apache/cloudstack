@@ -55,7 +55,7 @@
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
 
         <!-- Build properties -->
-        <cs.jdk.version>17</cs.jdk.version>
+        <cs.jdk.version>21</cs.jdk.version>
         <cs.target.dir>target</cs.target.dir>
         <cs.replace.properties>build/replace.properties</cs.replace.properties>
         <argLine>-Djava.security.egd=file:/dev/./urandom -noverify</argLine>
@@ -153,8 +153,8 @@
         <cs.jaxb.version>2.3.0</cs.jaxb.version>
         <cs.jaxws.version>2.3.2-1</cs.jaxws.version>
         <cs.jersey-client.version>2.26</cs.jersey-client.version>
-        <cs.jetty.version>9.4.51.v20230217</cs.jetty.version>
-        <cs.jetty-maven-plugin.version>9.4.27.v20200227</cs.jetty-maven-plugin.version>
+        <cs.jetty.version>9.4.53.v20231009</cs.jetty.version>
+        <cs.jetty-maven-plugin.version>9.4.53.v20231009</cs.jetty-maven-plugin.version>
         <cs.jna.version>5.5.0</cs.jna.version>
         <cs.joda-time.version>2.12.5</cs.joda-time.version>
         <cs.jpa.version>2.2.1</cs.jpa.version>
@@ -181,7 +181,7 @@
         <cs.xapi.version>6.2.0-3.1</cs.xapi.version>
         <cs.xmlrpc.version>3.1.3</cs.xmlrpc.version>
         <cs.xstream.version>1.4.20</cs.xstream.version>
-        <org.springframework.version>5.3.26</org.springframework.version>
+        <org.springframework.version>5.3.31</org.springframework.version>
         <cs.ini.version>0.5.4</cs.ini.version>
     </properties>
 
