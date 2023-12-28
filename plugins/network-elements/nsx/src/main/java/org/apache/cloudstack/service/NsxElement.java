@@ -92,6 +92,7 @@ import net.sf.ehcache.config.InvalidConfigurationException;
 import org.apache.cloudstack.StartupNsxCommand;
 import org.apache.cloudstack.resource.NsxLoadBalancerMember;
 import org.apache.cloudstack.resource.NsxNetworkRule;
+import org.apache.cloudstack.resource.NsxOpObject;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -510,26 +511,18 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
             if (vm == null || networkModel.getNicInNetwork(vm.getId(), network.getId()) == null) {
                 continue;
             }
-            Pair<VpcVO, NetworkVO> vpcOrNetwork = getVpcOrNetwork(network.getVpcId(), network.getId());
-            VpcVO vpc = vpcOrNetwork.first();
-            NetworkVO networkVO = vpcOrNetwork.second();
-            Long networkResourceId = Objects.nonNull(vpc) ? vpc.getId() : networkVO.getId();
-            String networkResourceName = Objects.nonNull(vpc) ? vpc.getName() : networkVO.getName();
-            boolean isVpcResource = Objects.nonNull(vpc);
-            long domainId = Objects.nonNull(vpc) ? vpc.getDomainId() : networkVO.getDomainId();
-            long accountId = Objects.nonNull(vpc) ? vpc.getAccountId() : networkVO.getAccountId();
-            long zoneId = Objects.nonNull(vpc) ? vpc.getZoneId() : networkVO.getDataCenterId();
+            NsxOpObject nsxObject = getNsxOpObject(network);
             String publicPort = getPublicPortRange(rule);
 
             String privatePort = getPrivatePFPortRange(rule);
 
             NsxNetworkRule networkRule = new NsxNetworkRule.Builder()
-                    .setDomainId(domainId)
-                    .setAccountId(accountId)
-                    .setZoneId(zoneId)
-                    .setNetworkResourceId(networkResourceId)
-                    .setNetworkResourceName(networkResourceName)
-                    .setVpcResource(isVpcResource)
+                    .setDomainId(nsxObject.getDomainId())
+                    .setAccountId(nsxObject.getAccountId())
+                    .setZoneId(nsxObject.getZoneId())
+                    .setNetworkResourceId(nsxObject.getNetworkResourceId())
+                    .setNetworkResourceName(nsxObject.getNetworkResourceName())
+                    .setVpcResource(nsxObject.isVpcResource())
                     .setVmId(vm.getId())
                     .setVmIp(vm.getPrivateIpAddress())
                     .setPublicIp(publicIp.getAddress().addr())
@@ -588,6 +581,35 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
                 String.valueOf(rule.getSourcePortStart()).concat("-").concat(String.valueOf(rule.getSourcePortEnd()));
     }
 
+    private long getResourceId(String resource, VpcVO vpc, NetworkVO network) {
+        switch (resource) {
+            case "domain":
+                return Objects.nonNull(vpc) ? vpc.getDomainId() : network.getDomainId();
+            case "account":
+                return Objects.nonNull(vpc) ? vpc.getAccountId() : network.getAccountId();
+            case "zone":
+                return Objects.nonNull(vpc) ? vpc.getZoneId() : network.getDataCenterId();
+        }
+        return 0;
+    }
+
+    private NsxOpObject getNsxOpObject(Network network) {
+        Pair<VpcVO, NetworkVO> vpcOrNetwork = getVpcOrNetwork(network.getVpcId(), network.getId());
+        VpcVO vpc = vpcOrNetwork.first();
+        NetworkVO networkVO = vpcOrNetwork.second();
+        long domainId = getResourceId("domain", vpc, networkVO);
+        long accountId = getResourceId("account", vpc, networkVO);
+        long zoneId = getResourceId("zone", vpc, networkVO);
+
+        return new NsxOpObject.Builder()
+                .vpcVO(vpc)
+                .networkVO(networkVO)
+                .domainId(domainId)
+                .accountId(accountId)
+                .zoneId(zoneId)
+                .build();
+    }
+
     @Override
     public boolean applyLBRules(Network network, List<LoadBalancingRule> rules) throws ResourceUnavailableException {
         for (LoadBalancingRule loadBalancingRule : rules) {
@@ -596,24 +618,16 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
             }
             IPAddressVO publicIp = ipAddressDao.findByIpAndDcId(network.getDataCenterId(),
                     loadBalancingRule.getSourceIp().addr());
+            NsxOpObject nsxObject = getNsxOpObject(network);
 
-            Pair<VpcVO, NetworkVO> vpcOrNetwork = getVpcOrNetwork(network.getVpcId(), network.getId());
-            VpcVO vpc = vpcOrNetwork.first();
-            NetworkVO networkVO = vpcOrNetwork.second();
-            Long networkResourceId = Objects.nonNull(vpc) ? vpc.getId() : networkVO.getId();
-            String networkResourceName = Objects.nonNull(vpc) ? vpc.getName() : networkVO.getName();
-            boolean isVpcResource = Objects.nonNull(vpc);
-            long domainId = Objects.nonNull(vpc) ? vpc.getDomainId() : networkVO.getDomainId();
-            long accountId = Objects.nonNull(vpc) ? vpc.getAccountId() : networkVO.getAccountId();
-            long zoneId = Objects.nonNull(vpc) ? vpc.getZoneId() : networkVO.getDataCenterId();
             List<NsxLoadBalancerMember> lbMembers = getLoadBalancerMembers(loadBalancingRule);
             NsxNetworkRule networkRule = new NsxNetworkRule.Builder()
-                    .setDomainId(domainId)
-                    .setAccountId(accountId)
-                    .setZoneId(zoneId)
-                    .setNetworkResourceId(networkResourceId)
-                    .setNetworkResourceName(networkResourceName)
-                    .setVpcResource(isVpcResource)
+                    .setDomainId(nsxObject.getDomainId())
+                    .setAccountId(nsxObject.getAccountId())
+                    .setZoneId(nsxObject.getZoneId())
+                    .setNetworkResourceId(nsxObject.getNetworkResourceId())
+                    .setNetworkResourceName(nsxObject.getNetworkResourceName())
+                    .setVpcResource(nsxObject.isVpcResource())
                     .setMemberList(lbMembers)
                     .setPublicIp(publicIp.getAddress().addr())
                     .setPublicPort(String.valueOf(loadBalancingRule.getSourcePortStart()))
