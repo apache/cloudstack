@@ -2774,9 +2774,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
     @Override
     public void finalizeExpunge(final VirtualMachine vm) {
-        final DomainRouterVO domR = _routerDao.findById(vm.getId());
         // not sure if it would hurt to do it in any case, but
         if (Boolean.FALSE.equals(RemoveControlIpOnStop.valueIn(vm.getDataCenterId()))) {
+            final DomainRouterVO domR = _routerDao.findById(vm.getId());
             removeNics(vm, domR);
         }
     }
