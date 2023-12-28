@@ -531,11 +531,8 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
                     .setRuleId(rule.getId())
                     .setProtocol(rule.getProtocol().toUpperCase(Locale.ROOT))
                     .build();
-            if (rule.getState() == FirewallRule.State.Add && !nsxService.createPortForwardRule(networkRule)) {
-                return false;
-            } else if (rule.getState() == FirewallRule.State.Revoke && !nsxService.deletePortForwardRule(networkRule)) {
-                return false;
-            }
+            return ((rule.getState() == FirewallRule.State.Add && !nsxService.createPortForwardRule(networkRule)) ||
+                    (rule.getState() == FirewallRule.State.Revoke && !nsxService.deletePortForwardRule(networkRule)));
         }
         return true;
     }
@@ -589,8 +586,9 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
                 return Objects.nonNull(vpc) ? vpc.getAccountId() : network.getAccountId();
             case "zone":
                 return Objects.nonNull(vpc) ? vpc.getZoneId() : network.getDataCenterId();
+            default:
+                return 0;
         }
-        return 0;
     }
 
     private NsxOpObject getNsxOpObject(Network network) {
@@ -636,11 +634,8 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
                     .setProtocol(loadBalancingRule.getProtocol().toUpperCase(Locale.ROOT))
                     .setAlgorithm(loadBalancingRule.getAlgorithm())
                     .build();
-            if (loadBalancingRule.getState() == FirewallRule.State.Add && !nsxService.createLbRule(networkRule)) {
-                return false;
-            } else if (loadBalancingRule.getState() == FirewallRule.State.Revoke && !nsxService.deleteLbRule(networkRule)) {
-                return false;
-            }
+            return  ((loadBalancingRule.getState() == FirewallRule.State.Add && !nsxService.createLbRule(networkRule)) ||
+                    (loadBalancingRule.getState() == FirewallRule.State.Revoke && !nsxService.deleteLbRule(networkRule)));
         }
         return true;
     }
