@@ -121,7 +121,6 @@ public class NsxGuestNetworkGuruTest {
     NetworkOfferingDao networkOfferingDao;
 
     NsxGuestNetworkGuru guru;
-    GuestNetworkGuru guestNetworkGuru;
     AutoCloseable closeable;
 
     @Before
@@ -249,10 +248,7 @@ public class NsxGuestNetworkGuruTest {
         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
         when(vmProfile.getVirtualMachine()).thenReturn(virtualMachine);
         when(virtualMachine.getType()).thenReturn(VirtualMachine.Type.User);
-//        when(network.getId()).thenReturn(2L);
-//        when(offering.getId()).thenReturn(11L);
         when(networkModel.getNetworkIp4Dns(any(Network.class), nullable(DataCenter.class))).thenReturn(dns);
-//        when(networkModel.getNextAvailableMacAddressInNetwork(anyLong())).thenReturn(macAddress);
         when(nicProfile.getMacAddress()).thenReturn(macAddress);
         when(networkOfferingDao.isIpv6Supported(anyLong())).thenReturn(false);
 

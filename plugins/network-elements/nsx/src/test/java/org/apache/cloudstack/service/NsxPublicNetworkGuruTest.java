@@ -160,6 +160,7 @@ public class NsxPublicNetworkGuruTest {
         when(ipAddressDao.listByAssociatedVpc(12L, true)).thenReturn(sourceNatList);
         when(vlanDetailsDao.findDetail(anyLong(), anyString())).thenReturn(vlanDetailVO);
         when(vpcVO.getVpcOfferingId()).thenReturn(12L);
+        when(vpcVO.getId()).thenReturn(12L);
         when(vpcVO.getName()).thenReturn("nsxVPCNet");
         when(vpcOfferingServiceMapDao.areServicesSupportedByVpcOffering(anyLong(), any())).thenReturn(true);
         when(nsxService.createVpcNetwork(anyLong(), anyLong(), anyLong(), anyLong(), anyString(), anyBoolean())).thenReturn(true);
