@@ -90,49 +90,50 @@ public class UserDataManagerImpl extends ManagerBase implements UserDataManager 
 
     @Override
     public String validateUserData(String userData, BaseCmd.HTTPMethod httpmethod) {
-        byte[] decodedUserData = null;
-        if (userData != null) {
-
-            if (userData.contains("%")) {
-                try {
-                    userData = URLDecoder.decode(userData, "UTF-8");
-                } catch (UnsupportedEncodingException e) {
-                    throw new InvalidParameterValueException("Url decoding of userdata failed.");
-                }
-            }
-
-            if (!Base64.isBase64(userData)) {
-                throw new InvalidParameterValueException("User data is not base64 encoded");
-            }
-            // If GET, use 4K. If POST, support up to 1M.
-            if (httpmethod.equals(BaseCmd.HTTPMethod.GET)) {
-                decodedUserData = validateAndDecodeByHTTPMethod(userData, MAX_HTTP_GET_LENGTH, BaseCmd.HTTPMethod.GET);
-            } else if (httpmethod.equals(BaseCmd.HTTPMethod.POST)) {
-                decodedUserData = validateAndDecodeByHTTPMethod(userData, MAX_HTTP_POST_LENGTH, BaseCmd.HTTPMethod.POST);
-            }
-
-            if (decodedUserData == null || decodedUserData.length < 1) {
-                throw new InvalidParameterValueException("User data is too short");
-            }
-            // Re-encode so that the '=' paddings are added if necessary since 'isBase64' does not require it, but python does on the VR.
-            return Base64.encodeBase64String(decodedUserData);
+        if (StringUtils.isBlank(userData)) {
+            throw new InvalidParameterValueException("User data is empty");
         }
-        return null;
+
+        if (userData.contains("%")) {
+            try {
+                userData = URLDecoder.decode(userData, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                throw new InvalidParameterValueException("Url decoding of userdata failed.");
+            }
+        }
+
+        if (!Base64.isBase64(userData)) {
+            throw new InvalidParameterValueException("User data is not base64 encoded");
+        }
+
+        byte[] decodedUserData = null;
+
+        // If GET, use 4K. If POST, support up to 1M.
+        if (httpmethod.equals(BaseCmd.HTTPMethod.GET)) {
+            decodedUserData = validateAndDecodeByHTTPMethod(userData, MAX_HTTP_GET_LENGTH, BaseCmd.HTTPMethod.GET);
+        } else if (httpmethod.equals(BaseCmd.HTTPMethod.POST)) {
+            decodedUserData = validateAndDecodeByHTTPMethod(userData, MAX_HTTP_POST_LENGTH, BaseCmd.HTTPMethod.POST);
+        }
+
+        // Re-encode so that the '=' paddings are added if necessary since 'isBase64' does not require it, but python does on the VR.
+        return Base64.encodeBase64String(decodedUserData);
     }
 
     private byte[] validateAndDecodeByHTTPMethod(String userData, int maxHTTPLength, BaseCmd.HTTPMethod httpMethod) {
-        byte[] decodedUserData = null;
+        byte[] decodedUserData = Base64.decodeBase64(userData.getBytes());
+        if (decodedUserData == null || decodedUserData.length < 1) {
+            throw new InvalidParameterValueException("User data is too short");
+        }
 
-        if (userData.length() >= maxHTTPLength) {
-            throw new InvalidParameterValueException(String.format("User data is too long for an http %s request", httpMethod.toString()));
-        }
-        if (userData.length() > ConfigurationManager.VM_USERDATA_MAX_LENGTH.value()) {
-            throw new InvalidParameterValueException("User data has exceeded configurable max length : " + ConfigurationManager.VM_USERDATA_MAX_LENGTH.value());
-        }
-        decodedUserData = Base64.decodeBase64(userData.getBytes());
-        if (decodedUserData.length > maxHTTPLength) {
+        int userDataLength = decodedUserData.length;
+
+        if (userDataLength > maxHTTPLength) {
             throw new InvalidParameterValueException(String.format("User data is too long for http %s request", httpMethod.toString()));
         }
+        if (userDataLength > ConfigurationManager.VM_USERDATA_MAX_LENGTH.value()) {
+            throw new InvalidParameterValueException("User data has exceeded configurable max length : " + ConfigurationManager.VM_USERDATA_MAX_LENGTH.value());
+        }
+
         return decodedUserData;
     }
 }
