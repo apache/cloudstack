@@ -531,8 +531,11 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
                     .setRuleId(rule.getId())
                     .setProtocol(rule.getProtocol().toUpperCase(Locale.ROOT))
                     .build();
-            return ((rule.getState() == FirewallRule.State.Add && !nsxService.createPortForwardRule(networkRule)) ||
-                    (rule.getState() == FirewallRule.State.Revoke && !nsxService.deletePortForwardRule(networkRule)));
+            if (rule.getState() == FirewallRule.State.Add) {
+                return nsxService.createPortForwardRule(networkRule);
+            } else if (rule.getState() == FirewallRule.State.Revoke) {
+                return nsxService.deletePortForwardRule(networkRule);
+            }
         }
         return true;
     }
@@ -634,8 +637,11 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
                     .setProtocol(loadBalancingRule.getProtocol().toUpperCase(Locale.ROOT))
                     .setAlgorithm(loadBalancingRule.getAlgorithm())
                     .build();
-            return  ((loadBalancingRule.getState() == FirewallRule.State.Add && !nsxService.createLbRule(networkRule)) ||
-                    (loadBalancingRule.getState() == FirewallRule.State.Revoke && !nsxService.deleteLbRule(networkRule)));
+            if (loadBalancingRule.getState() == FirewallRule.State.Add) {
+                return nsxService.createLbRule(networkRule);
+            } else if (loadBalancingRule.getState() == FirewallRule.State.Revoke) {
+                return nsxService.deleteLbRule(networkRule);
+            }
         }
         return true;
     }
