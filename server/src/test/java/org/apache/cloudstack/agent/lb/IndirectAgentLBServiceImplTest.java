@@ -26,6 +26,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -69,6 +70,7 @@ public class IndirectAgentLBServiceImplTest {
 
     private static final long DC_1_ID = 1L;
     private static final long DC_2_ID = 2L;
+    private AutoCloseable closeable;
 
     private void overrideDefaultConfigValue(final ConfigKey configKey, final String name, final Object o) throws IllegalAccessException, NoSuchFieldException {
         final Field f = ConfigKey.class.getDeclaredField(name);
@@ -101,10 +103,15 @@ public class IndirectAgentLBServiceImplTest {
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         configureMocks();
         agentMSLB.configure("someName", null);
         overrideDefaultConfigValue(ApiServiceConfiguration.ManagementServerAddresses, "_defaultValue", msCSVList);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test

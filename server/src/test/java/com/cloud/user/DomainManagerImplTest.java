@@ -55,7 +55,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -233,10 +233,10 @@ public class DomainManagerImplTest {
     @Test
     public void testPublishRemoveEventsAndRemoveDomainSuccessfulDelete() {
         domainManager.publishRemoveEventsAndRemoveDomain(domain);
-        Mockito.verify(_messageBus).publish(Mockito.anyString(), Matchers.eq(DomainManager.MESSAGE_PRE_REMOVE_DOMAIN_EVENT),
-                Matchers.eq(PublishScope.LOCAL), Matchers.eq(domain));
-        Mockito.verify(_messageBus).publish(Mockito.anyString(), Matchers.eq(DomainManager.MESSAGE_REMOVE_DOMAIN_EVENT),
-                Matchers.eq(PublishScope.LOCAL), Matchers.eq(domain));
+        Mockito.verify(_messageBus).publish(Mockito.anyString(), ArgumentMatchers.eq(DomainManager.MESSAGE_PRE_REMOVE_DOMAIN_EVENT),
+                ArgumentMatchers.eq(PublishScope.LOCAL), ArgumentMatchers.eq(domain));
+        Mockito.verify(_messageBus).publish(Mockito.anyString(), ArgumentMatchers.eq(DomainManager.MESSAGE_REMOVE_DOMAIN_EVENT),
+                ArgumentMatchers.eq(PublishScope.LOCAL), ArgumentMatchers.eq(domain));
         Mockito.verify(domainDaoMock).remove(DOMAIN_ID);
     }
 
@@ -244,10 +244,10 @@ public class DomainManagerImplTest {
     public void testPublishRemoveEventsAndRemoveDomainExceptionDelete() {
         Mockito.when(domainDaoMock.remove(DOMAIN_ID)).thenReturn(false);
         domainManager.publishRemoveEventsAndRemoveDomain(domain);
-        Mockito.verify(_messageBus).publish(Mockito.anyString(), Matchers.eq(DomainManager.MESSAGE_PRE_REMOVE_DOMAIN_EVENT),
-                Matchers.eq(PublishScope.LOCAL), Matchers.eq(domain));
-        Mockito.verify(_messageBus, Mockito.never()).publish(Mockito.anyString(), Matchers.eq(DomainManager.MESSAGE_REMOVE_DOMAIN_EVENT),
-                Matchers.eq(PublishScope.LOCAL), Matchers.eq(domain));
+        Mockito.verify(_messageBus).publish(Mockito.anyString(), ArgumentMatchers.eq(DomainManager.MESSAGE_PRE_REMOVE_DOMAIN_EVENT),
+                ArgumentMatchers.eq(PublishScope.LOCAL), ArgumentMatchers.eq(domain));
+        Mockito.verify(_messageBus, Mockito.never()).publish(Mockito.anyString(), ArgumentMatchers.eq(DomainManager.MESSAGE_REMOVE_DOMAIN_EVENT),
+                ArgumentMatchers.eq(PublishScope.LOCAL), ArgumentMatchers.eq(domain));
         Mockito.verify(domainDaoMock).remove(DOMAIN_ID);
     }
 
@@ -268,7 +268,7 @@ public class DomainManagerImplTest {
         Mockito.when(domainDaoMock.findById(20l)).thenReturn(domain);
         Mockito.doNothing().when(_accountMgr).checkAccess(Mockito.any(Account.class), Mockito.any(Domain.class));
         Mockito.when(domainDaoMock.update(Mockito.eq(20l), Mockito.any(DomainVO.class))).thenReturn(true);
-        Mockito.lenient().when(_accountDao.search(Mockito.any(SearchCriteria.class), (Filter)org.mockito.Matchers.isNull())).thenReturn(new ArrayList<AccountVO>());
+        Mockito.lenient().when(_accountDao.search(Mockito.any(SearchCriteria.class), (Filter) org.mockito.ArgumentMatchers.isNull())).thenReturn(new ArrayList<AccountVO>());
         Mockito.when(_networkDomainDao.listNetworkIdsByDomain(Mockito.anyLong())).thenReturn(new ArrayList<Long>());
         Mockito.when(_accountDao.findCleanupsForRemovedAccounts(Mockito.anyLong())).thenReturn(new ArrayList<AccountVO>());
         Mockito.when(_dedicatedDao.listByDomainId(Mockito.anyLong())).thenReturn(new ArrayList<DedicatedResourceVO>());
@@ -295,9 +295,9 @@ public class DomainManagerImplTest {
         Mockito.doNothing().when(_accountMgr).checkAccess(Mockito.any(Account.class), Mockito.any(Domain.class));
         Mockito.when(domainDaoMock.update(Mockito.eq(20l), Mockito.any(DomainVO.class))).thenReturn(true);
         Mockito.when(domainDaoMock.createSearchCriteria()).thenReturn(Mockito.mock(SearchCriteria.class));
-        Mockito.when(domainDaoMock.search(Mockito.any(SearchCriteria.class), (Filter)org.mockito.Matchers.isNull())).thenReturn(new ArrayList<DomainVO>());
+        Mockito.when(domainDaoMock.search(Mockito.any(SearchCriteria.class), (Filter) org.mockito.ArgumentMatchers.isNull())).thenReturn(new ArrayList<DomainVO>());
         Mockito.when(_accountDao.createSearchCriteria()).thenReturn(Mockito.mock(SearchCriteria.class));
-        Mockito.when(_accountDao.search(Mockito.any(SearchCriteria.class), (Filter)org.mockito.Matchers.isNull())).thenReturn(new ArrayList<AccountVO>());
+        Mockito.when(_accountDao.search(Mockito.any(SearchCriteria.class), (Filter) org.mockito.ArgumentMatchers.isNull())).thenReturn(new ArrayList<AccountVO>());
         Mockito.when(_networkDomainDao.listNetworkIdsByDomain(Mockito.anyLong())).thenReturn(new ArrayList<Long>());
         Mockito.when(_accountDao.findCleanupsForRemovedAccounts(Mockito.anyLong())).thenReturn(new ArrayList<AccountVO>());
         Mockito.when(_dedicatedDao.listByDomainId(Mockito.anyLong())).thenReturn(new ArrayList<DedicatedResourceVO>());

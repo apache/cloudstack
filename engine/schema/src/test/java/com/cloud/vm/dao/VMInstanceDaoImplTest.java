@@ -20,6 +20,7 @@ package com.cloud.vm.dao;
 import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine;
 import org.joda.time.DateTime;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.Assert;
@@ -45,13 +46,20 @@ public class VMInstanceDaoImplTest {
     @Mock
     VMInstanceVO vm;
 
+    private AutoCloseable closeable;
+
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         Long hostId = null;
         when(vm.getHostId()).thenReturn(hostId);
         when(vm.getUpdated()).thenReturn(5L);
         when(vm.getUpdateTime()).thenReturn(DateTime.now().toDate());
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test
