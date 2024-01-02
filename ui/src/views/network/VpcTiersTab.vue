@@ -364,7 +364,6 @@ export default {
   },
   inject: ['parentFetchData'],
   data () {
-    console.log(this.resource)
     return {
       networks: [],
       networkid: '',
@@ -485,7 +484,6 @@ export default {
       }
       this.publicLBNetworkExists()
       this.getVpcNetworkOffering()
-      console.log(this.isOfferingNatMode)
     },
     fetchMtuForZone () {
       api('listZones', {
@@ -562,8 +560,6 @@ export default {
         guestiptype: 'Isolated',
         state: 'Enabled'
       }
-      console.log(this.isNsxEnabled)
-      console.log(this.isOfferingNatMode)
       if (!this.isNsxEnabled) {
         params.supportedServices = 'SourceNat'
       }
