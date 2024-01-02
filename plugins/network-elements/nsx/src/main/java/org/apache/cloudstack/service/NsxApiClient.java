@@ -81,7 +81,6 @@ import org.apache.log4j.Logger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
@@ -105,7 +104,7 @@ public class NsxApiClient {
 
     // Constants
     private static final String TIER_1_RESOURCE_TYPE = "Tier1";
-    private static final String Tier_1_LOCALE_SERVICE_ID = "default";
+    private static final String TIER_1_LOCALE_SERVICE_ID = "default";
     private static final String SEGMENT_RESOURCE_TYPE = "Segment";
     private static final String TIER_0_GATEWAY_PATH_PREFIX = "/infra/tier-0s/";
     private static final String TIER_1_GATEWAY_PATH_PREFIX = "/infra/tier-1s/";
@@ -114,8 +113,6 @@ public class NsxApiClient {
     protected static final String GROUPS_PATH_PREFIX = "/infra/domains/default/groups";
 
     private enum PoolAllocation { ROUTING, LB_SMALL, LB_MEDIUM, LB_LARGE, LB_XLARGE }
-
-    private enum TYPE { ROUTED, NATTED }
 
     private enum HAMode { ACTIVE_STANDBY, ACTIVE_ACTIVE }
 
@@ -154,10 +151,6 @@ public class NsxApiClient {
         REJECT,
         JUMP_TO_APPLICATION
     }
-
-    private Map<String,String> actionMap = Map.of(
-            "Allow", FirewallActions.ALLOW.name(),
-            "Deny", FirewallActions.DROP.name());
 
     public enum  RouteAdvertisementType { TIER1_STATIC_ROUTES, TIER1_CONNECTED, TIER1_NAT,
         TIER1_LB_VIP, TIER1_LB_SNAT, TIER1_DNS_FORWARDER_IP, TIER1_IPSEC_LOCAL_ENDPOINT
@@ -272,7 +265,7 @@ public class NsxApiClient {
             com.vmware.nsx_policy.infra.tier_1s.LocaleServices tier1LocalService = (com.vmware.nsx_policy.infra.tier_1s.LocaleServices) nsxService.apply(com.vmware.nsx_policy.infra.tier_1s.LocaleServices.class);
             com.vmware.nsx_policy.model.LocaleServices localeService = new com.vmware.nsx_policy.model.LocaleServices.Builder()
                     .setEdgeClusterPath(localeServices.get(0).getEdgeClusterPath()).build();
-            tier1LocalService.patch(tier1Id, Tier_1_LOCALE_SERVICE_ID, localeService);
+            tier1LocalService.patch(tier1Id, TIER_1_LOCALE_SERVICE_ID, localeService);
         } catch (Error error) {
             throw new CloudRuntimeException(String.format("Failed to instantiate tier-1 gateway %s in edge cluster %s", tier1Id, edgeCluster));
         }
@@ -329,7 +322,7 @@ public class NsxApiClient {
             return;
         }
         removeTier1GatewayNatRules(tier1Id);
-        localeService.delete(tier1Id, Tier_1_LOCALE_SERVICE_ID);
+        localeService.delete(tier1Id, TIER_1_LOCALE_SERVICE_ID);
         Tier1s tier1service = (Tier1s) nsxService.apply(Tier1s.class);
         tier1service.delete(tier1Id);
     }
@@ -355,7 +348,7 @@ public class NsxApiClient {
             Sites sites = (Sites) nsxService.apply(Sites.class);
             return sites.list(null, false, null, null, null, null);
         } catch (Exception e) {
-            throw new CloudRuntimeException(String.format("Failed to fetch service segment list due to %s", e.getMessage()));
+            throw new CloudRuntimeException(String.format("Failed to fetch sites list due to %s", e.getMessage()));
         }
     }
 
@@ -364,7 +357,7 @@ public class NsxApiClient {
             EnforcementPoints enforcementPoints = (EnforcementPoints) nsxService.apply(EnforcementPoints.class);
             return enforcementPoints.list(siteId, null, false, null, null, null, null);
         } catch (Exception e) {
-            throw new CloudRuntimeException(String.format("Failed to fetch service segment list due to %s", e.getMessage()));
+            throw new CloudRuntimeException(String.format("Failed to fetch enforcement points due to %s", e.getMessage()));
         }
     }
 
@@ -373,7 +366,7 @@ public class NsxApiClient {
             com.vmware.nsx.TransportZones transportZones = (com.vmware.nsx.TransportZones) nsxService.apply(com.vmware.nsx.TransportZones.class);
             return transportZones.list(null, null, true, null, null, null, null, null, TransportType.OVERLAY.name(), null);
         } catch (Exception e) {
-            throw new CloudRuntimeException(String.format("Failed to fetch service segment list due to %s", e.getMessage()));
+            throw new CloudRuntimeException(String.format("Failed to fetch transport zones due to %s", e.getMessage()));
         }
     }
 
@@ -532,7 +525,7 @@ public class NsxApiClient {
         }
     }
 
-    public void createNsxLoadBalancer(String tier1GatewayName, long lbId) {
+    public void createNsxLoadBalancer(String tier1GatewayName) {
         try {
             String lbName = getLoadBalancerName(tier1GatewayName);
             LbServices lbServices = (LbServices) nsxService.apply(LbServices.class);
@@ -561,7 +554,7 @@ public class NsxApiClient {
         try {
             String lbServerPoolName = getServerPoolName(tier1GatewayName, lbId);
             createNsxLbServerPool(memberList, tier1GatewayName, lbServerPoolName, algorithm);
-            createNsxLoadBalancer(tier1GatewayName, lbId);
+            createNsxLoadBalancer(tier1GatewayName);
 
             String lbVirtualServerName = getVirtualServerName(tier1GatewayName, lbId);
             String lbServiceName = getLoadBalancerName(tier1GatewayName);
@@ -584,7 +577,7 @@ public class NsxApiClient {
         }
     }
 
-    public void deleteNsxLbResources(String tier1GatewayName, long lbId, long vmId) {
+    public void deleteNsxLbResources(String tier1GatewayName, long lbId) {
         try {
             // Delete associated Virtual servers
             LbVirtualServers lbVirtualServers = (LbVirtualServers) nsxService.apply(LbVirtualServers.class);
@@ -879,12 +872,14 @@ public class NsxApiClient {
         List<String> segmentGroup = List.of(String.format("%s/%s", GROUPS_PATH_PREFIX, segmentName));
         List<String> sourceCidrList = rule.getSourceCidrList();
         List<String> destCidrList = rule.getDestinationCidrList();
+        List<String> ingressSource = (rule.getService() == Network.Service.NetworkACL ? segmentGroup : destCidrList);
+        List<String> egressSource = (rule.getService() == Network.Service.NetworkACL ? sourceCidrList : destCidrList);
 
         String trafficType = rule.getTrafficType();
         if (trafficType.equalsIgnoreCase("ingress")) {
-            return source ? sourceCidrList : (rule.getService() == Network.Service.NetworkACL ? segmentGroup : destCidrList);
+            return source ? sourceCidrList : ingressSource;
         } else if (trafficType.equalsIgnoreCase("egress")) {
-            return source ? segmentGroup : (rule.getService() == Network.Service.NetworkACL ? sourceCidrList : destCidrList);
+            return source ? segmentGroup : egressSource;
        }
         String err = String.format("Unsupported traffic type %s", trafficType);
         LOGGER.error(err);

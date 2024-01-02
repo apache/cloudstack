@@ -74,6 +74,7 @@ public class NsxPublicNetworkGuru extends PublicNetworkGuru {
         super();
     }
 
+    @Override
     protected boolean canHandle(NetworkOffering offering) {
         return isMyTrafficType(offering.getTrafficType()) && offering.isSystemOnly() && offering.isForNsx();
     }
@@ -85,19 +86,15 @@ public class NsxPublicNetworkGuru extends PublicNetworkGuru {
         }
 
         if (offering.getTrafficType() == Networks.TrafficType.Public) {
-            NetworkVO ntwk =
-                    new NetworkVO(offering.getTrafficType(), Networks.Mode.Static, network.getBroadcastDomainType(), offering.getId(), Network.State.Setup, plan.getDataCenterId(),
+            return new NetworkVO(offering.getTrafficType(), Networks.Mode.Static, network.getBroadcastDomainType(), offering.getId(), Network.State.Setup, plan.getDataCenterId(),
                             plan.getPhysicalNetworkId(), offering.isRedundantRouter());
-            return ntwk;
-        } else {
-            return null;
         }
+        return null;
     }
 
     @Override
     public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException, ConcurrentOperationException {
         s_logger.debug("NSX Public network guru: allocate");
-        // NicProfile createdProfile = super.allocate(network, nic, vm);
 
         IPAddressVO ipAddress = _ipAddressDao.findByIp(nic.getIPv4Address());
         if (ipAddress == null) {
@@ -107,10 +104,6 @@ public class NsxPublicNetworkGuru extends PublicNetworkGuru {
         }
         Long vpcId = ipAddress.getVpcId();
         boolean isForVpc = vpcId != null;
-        if (vpcId == null) {
-            // TODO: Pass network.getId() to support isolated networks
-            throw new CloudRuntimeException("TODO: Add support for isolated networks public network");
-        }
         VpcVO vpc = vpcDao.findById(vpcId);
         if (vpc == null) {
             String err = String.format("Cannot find a VPC with ID %s", vpcId);
@@ -119,7 +112,7 @@ public class NsxPublicNetworkGuru extends PublicNetworkGuru {
         }
 
         // For NSX, use VR Public IP != Source NAT
-        List<IPAddressVO> ips = _ipAddressDao.listByAssociatedVpc(vpcId, true);
+        List<IPAddressVO> ips = _ipAddressDao.listByAssociatedVpc(vpc.getId(), true);
         if (CollectionUtils.isEmpty(ips)) {
             String err = String.format("Cannot find a source NAT IP for the VPC %s", vpc.getName());
             s_logger.error(err);
@@ -134,7 +127,7 @@ public class NsxPublicNetworkGuru extends PublicNetworkGuru {
                 long accountId = vpc.getAccountId();
                 long domainId = vpc.getDomainId();
                 long dataCenterId = vpc.getZoneId();
-                long resourceId = isForVpc ? vpc.getId() : network.getId();
+                long resourceId = vpc.getId();
                 Network.Service[] services = { Network.Service.SourceNat };
                 boolean sourceNatEnabled = vpcOfferingServiceMapDao.areServicesSupportedByVpcOffering(vpc.getVpcOfferingId(), services);
 
@@ -147,13 +140,8 @@ public class NsxPublicNetworkGuru extends PublicNetworkGuru {
                 }
 
                 boolean hasNatSupport = false;
-                if (vpc == null) {
-                    NetworkOffering offering = offeringDao.findById(network.getNetworkOfferingId());
-                    hasNatSupport = NetworkOffering.NsxMode.NATTED.name().equals(offering.getNsxMode());
-                } else {
-                    VpcOffering vpcOffering = vpcOfferingDao.findById(vpc.getVpcOfferingId());
-                    hasNatSupport = NetworkOffering.NsxMode.NATTED.name().equals(vpcOffering.getNsxMode());
-                }
+                VpcOffering vpcOffering = vpcOfferingDao.findById(vpc.getVpcOfferingId());
+                hasNatSupport = NetworkOffering.NsxMode.NATTED.name().equals(vpcOffering.getNsxMode());
 
                 if (!hasNatSupport) {
                     return nic;

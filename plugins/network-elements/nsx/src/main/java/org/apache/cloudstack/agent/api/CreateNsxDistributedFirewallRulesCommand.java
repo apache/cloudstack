@@ -19,6 +19,7 @@ package org.apache.cloudstack.agent.api;
 import org.apache.cloudstack.resource.NsxNetworkRule;
 
 import java.util.List;
+import java.util.Objects;
 
 public class CreateNsxDistributedFirewallRulesCommand extends NsxCommand {
 
@@ -45,5 +46,22 @@ public class CreateNsxDistributedFirewallRulesCommand extends NsxCommand {
 
     public List<NsxNetworkRule> getRules() {
         return rules;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass() || !super.equals(o)) {
+            return false;
+        }
+        CreateNsxDistributedFirewallRulesCommand that = (CreateNsxDistributedFirewallRulesCommand) o;
+        return networkId == that.networkId && Objects.equals(vpcId, that.vpcId) && Objects.equals(rules, that.rules);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), vpcId, networkId, rules);
     }
 }

@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.agent.api;
 
+import java.util.Objects;
+
 public class DeleteNsxSegmentCommand extends NsxCommand {
 
     private Long vpcId;
@@ -47,5 +49,22 @@ public class DeleteNsxSegmentCommand extends NsxCommand {
 
     public String getNetworkName() {
         return networkName;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass() || !super.equals(o)) {
+            return false;
+        }
+        DeleteNsxSegmentCommand command = (DeleteNsxSegmentCommand) o;
+        return networkId == command.networkId && Objects.equals(vpcId, command.vpcId) && Objects.equals(vpcName, command.vpcName) && Objects.equals(networkName, command.networkName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), vpcId, vpcName, networkId, networkName);
     }
 }

@@ -19,6 +19,7 @@ package org.apache.cloudstack.agent.api;
 import org.apache.cloudstack.resource.NsxLoadBalancerMember;
 
 import java.util.List;
+import java.util.Objects;
 
 public class DeleteNsxLoadBalancerRuleCommand extends NsxNetworkCommand {
     private long lbId;
@@ -37,4 +38,21 @@ public class DeleteNsxLoadBalancerRuleCommand extends NsxNetworkCommand {
     }
 
     public List<NsxLoadBalancerMember> getMemberList() { return memberList; }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass() || !super.equals(o)) {
+            return false;
+        }
+        DeleteNsxLoadBalancerRuleCommand that = (DeleteNsxLoadBalancerRuleCommand) o;
+        return lbId == that.lbId && Objects.equals(memberList, that.memberList);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), lbId, memberList);
+    }
 }

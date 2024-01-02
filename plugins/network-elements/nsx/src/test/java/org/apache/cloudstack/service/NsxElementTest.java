@@ -249,13 +249,29 @@ public class NsxElementTest {
     }
 
     @Test
-    public void testApplyPFRules() throws ResourceUnavailableException {
+    public void testApplyPFRules_add() throws ResourceUnavailableException {
         NetworkVO networkVO = new NetworkVO(1L, Networks.TrafficType.Public, Networks.Mode.Static,
                 Networks.BroadcastDomainType.NSX, 12L, 2L, 5L, 1L, "network1",
                 "network1", null, Network.GuestType.Isolated, 2L, 2L,
                 ControlledEntity.ACLType.Domain, false, 1L, false );
-        PortForwardingRule rule = new PortForwardingRuleVO("1", 11L, 80, 90, new Ip("172.30.10.11"), 8080, 8090, "tcp", 12L,
+        PortForwardingRuleVO rule = new PortForwardingRuleVO("1", 11L, 80, 90, new Ip("172.30.10.11"), 8080, 8090, "tcp", 12L,
         5L, 2L, 15L);
+        rule.setState(FirewallRule.State.Add);
+        Network.Service service = new Network.Service("service1", new Network.Capability("capability"));
+
+        when(nsxElement.canHandle(networkVO, service)).thenReturn(true);
+        assertTrue(nsxElement.applyPFRules(networkVO, List.of(rule)));
+    }
+
+    @Test
+    public void testApplyPFRules_delete() throws ResourceUnavailableException {
+        NetworkVO networkVO = new NetworkVO(1L, Networks.TrafficType.Public, Networks.Mode.Static,
+                Networks.BroadcastDomainType.NSX, 12L, 2L, 5L, 1L, "network1",
+                "network1", null, Network.GuestType.Isolated, 2L, 2L,
+                ControlledEntity.ACLType.Domain, false, 1L, false );
+        PortForwardingRuleVO rule = new PortForwardingRuleVO("1", 11L, 80, 90, new Ip("172.30.10.11"), 8080, 8090, "tcp", 12L,
+                5L, 2L, 15L);
+        rule.setState(FirewallRule.State.Revoke);
         Network.Service service = new Network.Service("service1", new Network.Capability("capability"));
 
         when(nsxElement.canHandle(networkVO, service)).thenReturn(true);
@@ -363,12 +379,13 @@ public class NsxElementTest {
     }
 
     @Test
-    public void testApplyLBRules() throws ResourceUnavailableException {
+    public void testApplyLBRules_add() throws ResourceUnavailableException {
         NetworkVO networkVO = new NetworkVO(1L, Networks.TrafficType.Public, Networks.Mode.Static,
                 Networks.BroadcastDomainType.NSX, 12L, 2L, 5L, 1L, "network1",
                 "network1", null, Network.GuestType.Isolated, 2L, 2L,
                 ControlledEntity.ACLType.Domain, false, 1L, false );
         LoadBalancerVO lb = new LoadBalancerVO(null, null, null, 0L, 8080, 8081, null, 0L, 0L, 1L, null, null);
+        lb.setState(FirewallRule.State.Add);
         LoadBalancingRule.LbDestination destination = new LoadBalancingRule.LbDestination(6443, 6443, "172.30.110.11", false);
         LoadBalancingRule rule = new LoadBalancingRule(lb, List.of(destination), null, null, new Ip("10.1.13.10"));
 
@@ -379,6 +396,30 @@ public class NsxElementTest {
         when(vpc.getDomainId()).thenReturn(2L);
         when(vpc.getAccountId()).thenReturn(5L);
         when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddress);
+        when(nsxService.createLbRule(any(NsxNetworkRule.class))).thenReturn(true);
+
+        assertTrue(nsxElement.applyLBRules(networkVO, List.of(rule)));
+    }
+
+    @Test
+    public void testApplyLBRules_delete() throws ResourceUnavailableException {
+        NetworkVO networkVO = new NetworkVO(1L, Networks.TrafficType.Public, Networks.Mode.Static,
+                Networks.BroadcastDomainType.NSX, 12L, 2L, 5L, 1L, "network1",
+                "network1", null, Network.GuestType.Isolated, 2L, 2L,
+                ControlledEntity.ACLType.Domain, false, 1L, false );
+        LoadBalancerVO lb = new LoadBalancerVO(null, null, null, 0L, 8080, 8081, null, 0L, 0L, 1L, null, null);
+        lb.setState(FirewallRule.State.Revoke);
+        LoadBalancingRule.LbDestination destination = new LoadBalancingRule.LbDestination(6443, 6443, "172.30.110.11", false);
+        LoadBalancingRule rule = new LoadBalancingRule(lb, List.of(destination), null, null, new Ip("10.1.13.10"));
+
+        VpcVO vpc = Mockito.mock(VpcVO.class);
+
+        IPAddressVO ipAddress = new IPAddressVO(new Ip("10.1.13.10"), 1L, 1L, 1L,false);
+        when(vpcDao.findById(anyLong())).thenReturn(vpc);
+        when(vpc.getDomainId()).thenReturn(2L);
+        when(vpc.getAccountId()).thenReturn(5L);
+        when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddress);
+        when(nsxService.deleteLbRule(any(NsxNetworkRule.class))).thenReturn(true);
 
         assertTrue(nsxElement.applyLBRules(networkVO, List.of(rule)));
     }

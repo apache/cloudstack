@@ -121,7 +121,6 @@ public class NsxGuestNetworkGuruTest {
     NetworkOfferingDao networkOfferingDao;
 
     NsxGuestNetworkGuru guru;
-    GuestNetworkGuru guestNetworkGuru;
     AutoCloseable closeable;
 
     @Before

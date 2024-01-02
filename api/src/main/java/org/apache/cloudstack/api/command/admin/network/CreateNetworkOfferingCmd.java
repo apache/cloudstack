@@ -286,7 +286,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
         return forVpc;
     }
 
-    public Boolean isForNsx() {
+    public boolean isForNsx() {
         return BooleanUtils.isTrue(forNsx);
     }
 
@@ -314,7 +314,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     }
 
     public Map<String, List<String>> getServiceProviders() {
-        Map<String, List<String>> serviceProviderMap = new HashMap<String, List<String>>();
+        Map<String, List<String>> serviceProviderMap = new HashMap<>();
         if (serviceProviderList != null && !serviceProviderList.isEmpty() && !isForNsx()) {
             Collection servicesCollection = serviceProviderList.values();
             Iterator iter = servicesCollection.iterator();

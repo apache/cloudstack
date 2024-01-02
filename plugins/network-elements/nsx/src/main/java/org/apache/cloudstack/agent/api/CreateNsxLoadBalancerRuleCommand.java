@@ -19,6 +19,7 @@ package org.apache.cloudstack.agent.api;
 import org.apache.cloudstack.resource.NsxLoadBalancerMember;
 
 import java.util.List;
+import java.util.Objects;
 
 public class CreateNsxLoadBalancerRuleCommand extends NsxNetworkCommand {
 
@@ -65,5 +66,22 @@ public class CreateNsxLoadBalancerRuleCommand extends NsxNetworkCommand {
 
     public String getProtocol() {
         return protocol;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass() || !super.equals(o)) {
+            return false;
+        }
+        CreateNsxLoadBalancerRuleCommand command = (CreateNsxLoadBalancerRuleCommand) o;
+        return lbId == command.lbId && Objects.equals(publicPort, command.publicPort) && Objects.equals(privatePort, command.privatePort) && Objects.equals(algorithm, command.algorithm) && Objects.equals(protocol, command.protocol) && Objects.equals(memberList, command.memberList);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), publicPort, privatePort, algorithm, protocol, memberList, lbId);
     }
 }

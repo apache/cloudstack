@@ -182,7 +182,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
             throw new CloudRuntimeException(String.format("Failed to find domain with ID: %s", network.getDomainId()));
         }
         VpcVO vpc = null;
-        if (Objects.nonNull(network) && Objects.nonNull(network.getVpcId())) {
+        if (Objects.nonNull(network.getVpcId())) {
             vpc = vpcDao.findById(network.getVpcId());
         }
         to.setNetworkSegmentName(getNetworkName(zone.getId(), domain.getId(), account.getId(), vpc, network.getId()));

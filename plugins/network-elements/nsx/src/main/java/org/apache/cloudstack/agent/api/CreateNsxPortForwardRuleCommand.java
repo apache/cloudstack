@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.agent.api;
 
+import java.util.Objects;
+
 public class CreateNsxPortForwardRuleCommand extends NsxNetworkCommand {
     private final String publicPort;
     private final String privatePort;
@@ -48,5 +50,22 @@ public class CreateNsxPortForwardRuleCommand extends NsxNetworkCommand {
 
     public String getProtocol() {
         return protocol;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass() || !super.equals(o)) {
+            return false;
+        }
+        CreateNsxPortForwardRuleCommand that = (CreateNsxPortForwardRuleCommand) o;
+        return ruleId == that.ruleId && Objects.equals(publicPort, that.publicPort) && Objects.equals(privatePort, that.privatePort) && Objects.equals(protocol, that.protocol);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), publicPort, privatePort, protocol, ruleId);
     }
 }

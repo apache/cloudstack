@@ -252,7 +252,7 @@ public class NsxResource implements ServerResource {
     }
 
     private Answer executeRequest(CreateNsxDhcpRelayConfigCommand cmd) {
-        long zoneId = cmd.getZoneId();
+        long datacenterId = cmd.getZoneId();
         long domainId = cmd.getDomainId();
         long accountId = cmd.getAccountId();
         Long vpcId = cmd.getVpcId();
@@ -261,7 +261,7 @@ public class NsxResource implements ServerResource {
         String networkName = cmd.getNetworkName();
         List<String> addresses = cmd.getAddresses();
 
-        String dhcpRelayConfigName = NsxControllerUtils.getNsxDhcpRelayConfigId(zoneId, domainId, accountId, vpcId, networkId);
+        String dhcpRelayConfigName = NsxControllerUtils.getNsxDhcpRelayConfigId(datacenterId, domainId, accountId, vpcId, networkId);
 
         String msg = String.format("Creating DHCP relay config with name %s on network %s of VPC %s",
                 dhcpRelayConfigName, networkName, vpcName);
@@ -275,7 +275,7 @@ public class NsxResource implements ServerResource {
             return new NsxAnswer(cmd, e);
         }
 
-        String segmentName = NsxControllerUtils.getNsxSegmentId(domainId, accountId, zoneId, vpcId, networkId);
+        String segmentName = NsxControllerUtils.getNsxSegmentId(domainId, accountId, datacenterId, vpcId, networkId);
         String dhcpConfigPath = String.format("%s/%s", DHCP_RELAY_CONFIGS_PATH_PREFIX, dhcpRelayConfigName);
         try {
             Segment segment = nsxApiClient.getSegmentById(segmentName);
@@ -295,13 +295,13 @@ public class NsxResource implements ServerResource {
     }
 
     private Answer executeRequest(CreateNsxTier1GatewayCommand cmd) {
-        String name = NsxControllerUtils.getTier1GatewayName(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(), cmd.getNetworkResourceId(), cmd.isResourceVpc());
+        String tier1GatewayName = NsxControllerUtils.getTier1GatewayName(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(), cmd.getNetworkResourceId(), cmd.isResourceVpc());
         boolean sourceNatEnabled = cmd.isSourceNatEnabled();
         try {
-            nsxApiClient.createTier1Gateway(name, tier0Gateway, edgeCluster, sourceNatEnabled);
+            nsxApiClient.createTier1Gateway(tier1GatewayName, tier0Gateway, edgeCluster, sourceNatEnabled);
             return new NsxAnswer(cmd, true, "");
         } catch (CloudRuntimeException e) {
-            String msg = String.format("Cannot create tier 1 gateway %s (%s: %s): %s", name,
+            String msg = String.format("Cannot create tier 1 gateway %s (%s: %s): %s", tier1GatewayName,
                     (cmd.isResourceVpc() ? "VPC" : "NETWORK"), cmd.getNetworkResourceName(), e.getMessage());
             LOGGER.error(msg);
             return new NsxAnswer(cmd, e);
@@ -457,7 +457,7 @@ public class NsxResource implements ServerResource {
                 cmd.getZoneId(), cmd.getNetworkResourceId(), cmd.isResourceVpc());
         String ruleName = NsxControllerUtils.getLoadBalancerRuleName(tier1GatewayName, cmd.getLbId());
         try {
-            nsxApiClient.deleteNsxLbResources(tier1GatewayName, cmd.getLbId(), cmd.getVmId());
+            nsxApiClient.deleteNsxLbResources(tier1GatewayName, cmd.getLbId());
         } catch (Exception e) {
             LOGGER.error(String.format("Failed to add NSX load balancer rule %s for network: %s", ruleName, cmd.getNetworkResourceName()));
             return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));

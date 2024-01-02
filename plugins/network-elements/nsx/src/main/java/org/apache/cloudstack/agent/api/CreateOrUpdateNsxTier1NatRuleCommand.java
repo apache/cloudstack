@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.agent.api;
 
+import java.util.Objects;
+
 public class CreateOrUpdateNsxTier1NatRuleCommand extends NsxCommand {
 
     private String tier1GatewayName;
@@ -46,5 +48,22 @@ public class CreateOrUpdateNsxTier1NatRuleCommand extends NsxCommand {
 
     public String getNatRuleId() {
         return natRuleId;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass() || !super.equals(o)) {
+            return false;
+        }
+        CreateOrUpdateNsxTier1NatRuleCommand that = (CreateOrUpdateNsxTier1NatRuleCommand) o;
+        return Objects.equals(tier1GatewayName, that.tier1GatewayName) && Objects.equals(action, that.action) && Objects.equals(translatedIpAddress, that.translatedIpAddress) && Objects.equals(natRuleId, that.natRuleId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), tier1GatewayName, action, translatedIpAddress, natRuleId);
     }
 }

@@ -163,7 +163,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
         return supportedServices;
     }
 
-    public Boolean isForNsx() {
+    public boolean isForNsx() {
         return BooleanUtils.isTrue(forNsx);
     }
 
@@ -172,7 +172,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
     }
 
     public Map<String, List<String>> getServiceProviders() {
-        Map<String, List<String>> serviceProviderMap = new HashMap<String, List<String>>();;
+        Map<String, List<String>> serviceProviderMap = new HashMap<>();
         if (serviceProviderList != null && !serviceProviderList.isEmpty() && !isForNsx()) {
             Collection<? extends Map<String, String>> servicesCollection = serviceProviderList.values();
             Iterator<? extends Map<String, String>> iter = servicesCollection.iterator();
