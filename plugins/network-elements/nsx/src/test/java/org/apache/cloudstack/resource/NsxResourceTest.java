@@ -220,11 +220,6 @@ public class NsxResourceTest {
         when(nsxApi.getSites()).thenReturn(siteListResult);
         when(siteListResult.getResults()).thenReturn(siteList);
         when(siteList.get(0).getId()).thenReturn("site1");
-        EnforcementPoint enforcementPoint = mock(EnforcementPoint.class);
-        List<EnforcementPoint> enforcementPointList = List.of(enforcementPoint);
-        when(enforcementPointListResult.getResults()).thenReturn(enforcementPointList);
-        when(enforcementPointList.get(0).getPath()).thenReturn("enforcementPointPath");
-        when(nsxApi.getTransportZones()).thenReturn(null);
         CreateNsxSegmentCommand command = Mockito.mock(CreateNsxSegmentCommand.class);
         NsxAnswer answer = (NsxAnswer) nsxResource.executeRequest(command);
         assertFalse(answer.getResult());
