@@ -35,10 +35,18 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>${cs.jacoco-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>default-prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                </executions>
                 <configuration>
                     <excludes>
-                        <exclude>**/org/apache/cloudstack/agent/api/**</exclude>
-                        <exclude>**/org/apache/cloudstack/api/response/**</exclude>
+                        <exclude>**/org/apache/cloudstack/agent/api/*</exclude>
+                        <exclude>**/org/apache/cloudstack/api/response/*</exclude>
                     </excludes>
                 </configuration>
             </plugin>
