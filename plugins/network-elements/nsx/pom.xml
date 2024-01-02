@@ -45,8 +45,8 @@
                 </executions>
                 <configuration>
                     <excludes>
-                        <exclude>**/org/apache/cloudstack/agent/api/</exclude>
-                        <exclude>**/org/apache/cloudstack/api/response/*</exclude>
+                        <exclude>org/apache/cloudstack/agent/api/*</exclude>
+                        <exclude>org/apache/cloudstack/api/response/*</exclude>
                     </excludes>
                 </configuration>
             </plugin>
