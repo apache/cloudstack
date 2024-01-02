@@ -60,9 +60,12 @@ public class CreateNsxDhcpRelayConfigCommand extends NsxCommand {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass() || !super.equals(o)) {
+            return false;
+        }
         CreateNsxDhcpRelayConfigCommand that = (CreateNsxDhcpRelayConfigCommand) o;
         return networkId == that.networkId && Objects.equals(vpcId, that.vpcId) && Objects.equals(vpcName, that.vpcName) && Objects.equals(networkName, that.networkName) && Objects.equals(addresses, that.addresses);
     }

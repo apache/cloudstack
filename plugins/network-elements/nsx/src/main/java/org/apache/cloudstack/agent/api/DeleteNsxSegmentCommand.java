@@ -53,9 +53,12 @@ public class DeleteNsxSegmentCommand extends NsxCommand {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass() || !super.equals(o)) {
+            return false;
+        }
         DeleteNsxSegmentCommand command = (DeleteNsxSegmentCommand) o;
         return networkId == command.networkId && Objects.equals(vpcId, command.vpcId) && Objects.equals(vpcName, command.vpcName) && Objects.equals(networkName, command.networkName);
     }

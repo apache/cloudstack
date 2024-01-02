@@ -56,9 +56,12 @@ public class DeleteNsxNatRuleCommand extends NsxNetworkCommand {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass() || !super.equals(o)) {
+            return false;
+        }
         DeleteNsxNatRuleCommand that = (DeleteNsxNatRuleCommand) o;
         return Objects.equals(ruleId, that.ruleId) && Objects.equals(service, that.service) && Objects.equals(privatePort, that.privatePort) && Objects.equals(protocol, that.protocol);
     }

@@ -54,9 +54,12 @@ public class CreateNsxPortForwardRuleCommand extends NsxNetworkCommand {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass() || !super.equals(o)) {
+            return false;
+        }
         CreateNsxPortForwardRuleCommand that = (CreateNsxPortForwardRuleCommand) o;
         return ruleId == that.ruleId && Objects.equals(publicPort, that.publicPort) && Objects.equals(privatePort, that.privatePort) && Objects.equals(protocol, that.protocol);
     }

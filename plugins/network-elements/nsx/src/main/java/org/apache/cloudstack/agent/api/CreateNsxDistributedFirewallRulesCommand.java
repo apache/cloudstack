@@ -50,9 +50,12 @@ public class CreateNsxDistributedFirewallRulesCommand extends NsxCommand {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass() || !super.equals(o)) {
+            return false;
+        }
         CreateNsxDistributedFirewallRulesCommand that = (CreateNsxDistributedFirewallRulesCommand) o;
         return networkId == that.networkId && Objects.equals(vpcId, that.vpcId) && Objects.equals(rules, that.rules);
     }

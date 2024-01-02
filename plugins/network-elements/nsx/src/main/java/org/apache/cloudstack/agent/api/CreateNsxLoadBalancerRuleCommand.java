@@ -70,9 +70,12 @@ public class CreateNsxLoadBalancerRuleCommand extends NsxNetworkCommand {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass() || !super.equals(o)) {
+            return false;
+        }
         CreateNsxLoadBalancerRuleCommand command = (CreateNsxLoadBalancerRuleCommand) o;
         return lbId == command.lbId && Objects.equals(publicPort, command.publicPort) && Objects.equals(privatePort, command.privatePort) && Objects.equals(algorithm, command.algorithm) && Objects.equals(protocol, command.protocol) && Objects.equals(memberList, command.memberList);
     }
