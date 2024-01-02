@@ -124,6 +124,7 @@ export default {
         waiting: 'message.launch.zone',
         launching: 'message.please.wait.while.zone.is.being.created'
       },
+      nsx: false,
       isLaunchZone: false,
       processStatus: null,
       messageError: '',
@@ -216,6 +217,7 @@ export default {
     setStepStatus (status) {
       const index = this.steps.findIndex(step => step.index === this.currentStep)
       this.steps[index].status = status
+      this.nsx = false
     },
     handleBack (e) {
       this.$emit('backPressed')
@@ -856,7 +858,7 @@ export default {
           this.stepData.podReturned = await this.createPod(params)
           this.stepData.stepMove.push('createPod')
         }
-        await this.stepConfigurePublicTraffic()
+        await this.stepConfigurePublicTraffic('message.configuring.public.traffic', 'publicTraffic', 0)
       } catch (e) {
         this.messageError = e
         this.processStatus = STATUS_FAILED
@@ -894,19 +896,24 @@ export default {
         this.setStepStatus(STATUS_FAILED)
       }
     },
-    async stepConfigurePublicTraffic () {
+    async stepConfigurePublicTraffic (message, trafficType, idx) {
       if (
         (this.isBasicZone &&
           (this.havingSG && this.havingEIP && this.havingELB)) ||
         (this.isAdvancedZone && !this.sgEnabled && !this.isEdgeZone)) {
         this.setStepStatus(STATUS_FINISH)
         this.currentStep++
-        this.addStep('message.configuring.public.traffic', 'publicTraffic')
+        this.addStep(message, trafficType)
+        if (trafficType === 'nsxPublicTraffic') {
+          this.nsx = false
+        }
 
         let stopNow = false
         this.stepData.returnedPublicTraffic = this.stepData?.returnedPublicTraffic || []
-        for (let index = 0; index < this.prefillContent['public-ipranges'].length; index++) {
-          const publicVlanIpRange = this.prefillContent['public-ipranges'][index]
+        let publicIpRanges = this.prefillContent['public-ipranges']
+        publicIpRanges = publicIpRanges.filter(item => item.fornsx === (idx === 1))
+        for (let index = 0; index < publicIpRanges.length; index++) {
+          const publicVlanIpRange = publicIpRanges[index]
           let isExisting = false
 
           this.stepData.returnedPublicTraffic.forEach(publicVlan => {
@@ -950,10 +957,10 @@ export default {
           }
 
           try {
-            if (!this.stepData.stepMove.includes('createPublicVlanIpRange' + index)) {
+            if (!this.stepData.stepMove.includes('createPublicVlanIpRange' + idx + index)) {
               const vlanIpRangeItem = await this.createVlanIpRange(params)
               this.stepData.returnedPublicTraffic.push(vlanIpRangeItem)
-              this.stepData.stepMove.push('createPublicVlanIpRange' + index)
+              this.stepData.stepMove.push('createPublicVlanIpRange' + idx + index)
             }
           } catch (e) {
             this.messageError = e
@@ -970,12 +977,16 @@ export default {
           return
         }
 
-        if (this.stepData.isTungstenZone) {
-          await this.stepCreateTungstenFabricPublicNetwork()
-        } else if (this.stepData.isNsxZone) {
-          await this.stepAddNsxController()
+        if (idx === 0) {
+          await this.stepConfigurePublicTraffic('message.configuring.nsx.public.traffic', 'nsxPublicTraffic', 1)
         } else {
-          await this.stepConfigureStorageTraffic()
+          if (this.stepData.isTungstenZone) {
+            await this.stepCreateTungstenFabricPublicNetwork()
+          } else if (this.stepData.isNsxZone) {
+            await this.stepAddNsxController()
+          } else {
+            await this.stepConfigureStorageTraffic()
+          }
         }
       } else if (this.isAdvancedZone && this.sgEnabled) {
         if (this.stepData.isTungstenZone) {

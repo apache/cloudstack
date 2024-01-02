@@ -261,8 +261,10 @@ export default {
     handleAddRange () {
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
+        const len = this.isValidSetup() ? this.ipRanges.length - 1 : 0
+        const key = this.isValidSetup() ? this.ipRanges[len].key : 0
         this.ipRanges.push({
-          key: this.ipRanges.length.toString(),
+          key: key + 1,
           gateway: values.gateway,
           netmask: values.netmask,
           vlan: values.vlan,
