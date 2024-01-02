@@ -65,7 +65,7 @@ import io.minio.messages.VersioningConfiguration;
 
 public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     private static final Logger s_logger = Logger.getLogger(MinIOObjectStoreDriverImpl.class);
-    private static final String ACS_PREFIX = "acs";
+    protected static final String ACS_PREFIX = "acs";
 
     @Inject
     AccountDao _accountDao;
@@ -85,8 +85,8 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     private static final String ACCESS_KEY = "accesskey";
     private static final String SECRET_KEY = "secretkey";
 
-    private static final String MINIO_ACCESS_KEY = "minio-accesskey";
-    private static final String MINIO_SECRET_KEY = "minio-secretkey";
+    protected static final String MINIO_ACCESS_KEY = "minio-accesskey";
+    protected static final String MINIO_SECRET_KEY = "minio-secretkey";
 
     @Override
     public DataStoreTO getStoreTO(DataStore store) {
