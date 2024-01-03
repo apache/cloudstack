@@ -1335,7 +1335,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                         details, importVmCmd, forced);
             }
         } else {
-            if (cluster.getHypervisorType() == Hypervisor.HypervisorType.VMware || cluster.getHypervisorType() == Hypervisor.HypervisorType.KVM) {
+            if (List.of(Hypervisor.HypervisorType.VMware, Hypervisor.HypervisorType.KVM).contains(cluster.getHypervisorType())) {
                 userVm = importUnmanagedInstanceFromHypervisor(zone, cluster, hosts, additionalNameFilters,
                         template, instanceName, displayName, hostName, caller, owner, userId,
                         serviceOffering, dataDiskOfferingMap,
