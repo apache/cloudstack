@@ -258,6 +258,7 @@ import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.googlecode.ipv6.IPv6Address;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * NetworkManagerImpl implements NetworkManager.
@@ -749,20 +750,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     .getBroadcastDomainType() == BroadcastDomainType.Vlan || predefined.getBroadcastDomainType() == BroadcastDomainType.Lswitch || predefined
                     .getBroadcastDomainType() == BroadcastDomainType.Vxlan)) {
                 final List<NetworkVO> configs = _networksDao.listBy(owner.getId(), offering.getId(), plan.getDataCenterId());
-                if (configs.size() > 0) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Found existing network configuration for offering " + offering + ": " + configs.get(0));
-                    }
-
-                    if (errorIfAlreadySetup) {
-                        final InvalidParameterValueException ex = new InvalidParameterValueException(
-                                "Found existing network configuration (with specified id) for offering (with specified id)");
-                        ex.addProxyObject(offering.getUuid(), "offeringId");
-                        ex.addProxyObject(configs.get(0).getUuid(), "networkConfigId");
-                        throw ex;
-                    } else {
-                        return configs;
-                    }
+                if (!configs.isEmpty()) {
+                    return existingConfiguration(offering, configs, errorIfAlreadySetup);
                 }
             }
 
@@ -794,11 +783,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 Transaction.execute(new TransactionCallbackNoReturn() {
                     @Override
                     public void doInTransactionWithoutResult(final TransactionStatus status) {
-                        final NetworkVO vo = new NetworkVO(id, network, offering.getId(), guru.getName(), owner.getDomainId(), owner.getId(), relatedFile, name, displayText, predefined
-                                .getNetworkDomain(), offering.getGuestType(), plan.getDataCenterId(), plan.getPhysicalNetworkId(), aclType, offering.isSpecifyIpRanges(),
-                                vpcId, offering.isRedundantRouter(), predefined.getExternalId());
-                        vo.setDisplayNetwork(isDisplayNetworkEnabled == null ? true : isDisplayNetworkEnabled);
-                        vo.setStrechedL2Network(offering.isSupportingStrechedL2());
+                        final NetworkVO vo = getNetworkVO(id, offering, plan, predefined,
+                                network, guru, owner, name, displayText,relatedFile, aclType,vpcId, isDisplayNetworkEnabled);
                         final NetworkVO networkPersisted = _networksDao.persist(vo, vo.getGuestType() == Network.GuestType.Isolated,
                                 finalizeServicesAndProvidersForNetwork(offering, plan.getPhysicalNetworkId()));
                         networks.add(networkPersisted);
@@ -815,14 +801,14 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         }
 
                         if (domainId != null && aclType == ACLType.Domain) {
-                            _networksDao.addDomainToNetwork(id, domainId, subdomainAccess == null ? true : subdomainAccess);
+                            _networksDao.addDomainToNetwork(id, domainId, subdomainAccess == null || subdomainAccess);
                         }
                     }
                 });
                 guru.setup(network, relatedFile);
             }
 
-            if (networks.size() < 1) {
+            if (networks.isEmpty()) {
                 // see networkOfferingVO.java
                 final CloudRuntimeException ex = new CloudRuntimeException("Unable to convert network offering with specified id to network profile");
                 ex.addProxyObject(offering.getUuid(), "offeringId");
@@ -833,6 +819,37 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         } finally {
             s_logger.debug("Releasing lock for " + locked);
             _accountDao.releaseFromLockTable(locked.getId());
+        }
+    }
+
+    @NotNull
+    private static NetworkVO getNetworkVO(long id, final NetworkOffering offering, final DeploymentPlan plan, final Network predefined,
+                                          Network network, final NetworkGuru guru, final Account owner,
+                                          final String name, final String displayText, long relatedFile, final ACLType aclType,
+                                          final Long vpcId, final Boolean isDisplayNetworkEnabled) {
+        final NetworkVO vo = new NetworkVO(id, network, offering.getId(), guru.getName(), owner.getDomainId(), owner.getId(),
+                relatedFile, name, displayText, predefined.getNetworkDomain(), offering.getGuestType(),
+                plan.getDataCenterId(), plan.getPhysicalNetworkId(), aclType, offering.isSpecifyIpRanges(),
+                vpcId, offering.isRedundantRouter(), predefined.getExternalId());
+        vo.setDisplayNetwork(isDisplayNetworkEnabled == null || isDisplayNetworkEnabled);
+        vo.setStrechedL2Network(offering.isSupportingStrechedL2());
+        return vo;
+    }
+
+    private List<? extends Network> existingConfiguration(final NetworkOffering offering, List<NetworkVO> configs,
+                                                          final boolean errorIfAlreadySetup) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Found existing network configuration for offering " + offering + ": " + configs.get(0));
+        }
+
+        if (errorIfAlreadySetup) {
+            final InvalidParameterValueException ex = new InvalidParameterValueException(
+                    "Found existing network configuration (with specified id) for offering (with specified id)");
+            ex.addProxyObject(offering.getUuid(), "offeringId");
+            ex.addProxyObject(configs.get(0).getUuid(), "networkConfigId");
+            throw ex;
+        } else {
+            return configs;
         }
     }
 
@@ -3929,9 +3946,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         //revoke all network ACLs for network
-        // TODO: Change this when ACLs are supported for NSX
         try {
-            if (networkOffering.isForNsx() || _networkACLMgr.revokeACLItemsForNetwork(networkId)) {
+            if (_networkACLMgr.revokeACLItemsForNetwork(networkId)) {
                 s_logger.debug("Successfully cleaned up NetworkACLs for network id=" + networkId);
             } else {
                 success = false;

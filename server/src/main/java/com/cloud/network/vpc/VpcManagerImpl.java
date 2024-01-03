@@ -397,7 +397,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 // configure default vpc offering with NSX as network service provider in Route mode
                 if (_vpcOffDao.findByUniqueName(VpcOffering.DEFAULT_VPC_ROUTE_NSX_OFFERING_NAME) == null) {
                     s_logger.debug("Creating default VPC offering with NSX as network service provider" + VpcOffering.DEFAULT_VPC_ROUTE_NSX_OFFERING_NAME);
-                    final Map<Service, Set<Provider>> svcProviderMap = new HashMap<Service, Set<Provider>>();
+                    final Map<Service, Set<Provider>> svcProviderMap = new HashMap<>();
                     final Set<Provider> defaultProviders = Set.of(Provider.Nsx);
                     for (final Service svc : getSupportedServices()) {
                         if (List.of(Service.UserData, Service.Dhcp, Service.Dns).contains(svc)) {
@@ -471,22 +471,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final Boolean forNsx = cmd.isForNsx();
         String nsxMode = cmd.getNsxMode();
         final boolean enable = cmd.getEnable();
+        nsxMode = validateNsxMode(forNsx, nsxMode);
 
-        if (Boolean.TRUE.equals(forNsx)) {
-            if (Objects.isNull(nsxMode)) {
-                throw new InvalidParameterValueException("Mode for an NSX offering needs to be specified.Valid values: " + Arrays.toString(NetworkOffering.NsxMode.values()));
-            }
-            if (!EnumUtils.isValidEnum(NetworkOffering.NsxMode.class, nsxMode)) {
-                throw new InvalidParameterValueException("Invalid mode passed. Valid values: " + Arrays.toString(NetworkOffering.NsxMode.values()));
-            }
-        } else {
-            if (Objects.nonNull(nsxMode)) {
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("nsxMode has is ignored for non-NSX enabled zones");
-                }
-                nsxMode = null;
-            }
-        }
         // check if valid domain
         if (CollectionUtils.isNotEmpty(cmd.getDomainIds())) {
             for (final Long domainId: cmd.getDomainIds()) {
@@ -511,6 +497,25 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         return createVpcOffering(vpcOfferingName, displayText, supportedServices,
                 serviceProviderList, serviceCapabilityList, internetProtocol, serviceOfferingId, forNsx, nsxMode,
                 domainIds, zoneIds, (enable ? State.Enabled : State.Disabled));
+    }
+
+    private String validateNsxMode(Boolean forNsx, String nsxMode) {
+        if (Boolean.TRUE.equals(forNsx)) {
+            if (Objects.isNull(nsxMode)) {
+                throw new InvalidParameterValueException("Mode for an NSX offering needs to be specified.Valid values: " + Arrays.toString(NetworkOffering.NsxMode.values()));
+            }
+            if (!EnumUtils.isValidEnum(NetworkOffering.NsxMode.class, nsxMode)) {
+                throw new InvalidParameterValueException("Invalid mode passed. Valid values: " + Arrays.toString(NetworkOffering.NsxMode.values()));
+            }
+        } else {
+            if (Objects.nonNull(nsxMode)) {
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace("nsxMode has is ignored for non-NSX enabled zones");
+                }
+                nsxMode = null;
+            }
+        }
+        return nsxMode;
     }
 
     @Override
@@ -1198,7 +1203,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         try {
             if (isVpcForNsx(vpc) && org.apache.commons.lang3.StringUtils.isBlank(sourceNatIP)) {
                 s_logger.debug(String.format("Reserving a source NAT IP for NSX VPC %s", vpc.getName()));
-                sourceNatIP = reserveSourceNatIpForNsxVpc(account, zone, vpc);
+                sourceNatIP = reserveSourceNatIpForNsxVpc(account, zone);
             }
             IpAddress ip = _ipAddrMgr.allocateIp(account, false, CallContext.current().getCallingAccount(), CallContext.current().getCallingUserId(), zone, null, sourceNatIP);
             this.associateIPToVpc(ip.getId(), vpc.getId());
@@ -1207,7 +1212,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
     }
 
-    private String reserveSourceNatIpForNsxVpc(Account account, DataCenter zone, Vpc vpc) throws ResourceAllocationException {
+    private String reserveSourceNatIpForNsxVpc(Account account, DataCenter zone) throws ResourceAllocationException {
         IpAddress ipAddress = _ntwkSvc.reserveIpAddressWithVlanDetail(account, zone, true, ApiConstants.NSX_DETAIL_KEY);
         return ipAddress.getAddress().addr();
     }
