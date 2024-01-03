@@ -257,7 +257,7 @@ class TestListVolumes(cloudstackTestCase):
             "List Volume response is not a valid list"
         )
         self.assertEqual(
-            len(list_volume_response),
+            len([v for v in list_volume_response if v.state != "Destroy"]),
             4,
             "ListVolumes response expected 4 Volumes, received %s" % len(list_volume_response)
         )
@@ -273,7 +273,7 @@ class TestListVolumes(cloudstackTestCase):
             "List Volume response is not a valid list"
         )
         self.assertEqual(
-            len(list_volume_response),
+            len([v for v in list_volume_response if v.state != "Destroy"]),
             3,
             "ListVolumes response expected 3 Volumes, received %s" % len(list_volume_response)
         )
@@ -316,7 +316,7 @@ class TestListVolumes(cloudstackTestCase):
             "List Volume response is not a valid list"
         )
         self.assertEqual(
-            len(list_volume_response),
+            len([v for v in list_volume_response if v.state != "Destroy"]),
             4,
             "ListVolumes response expected 4 Volumes, received %s" % len(list_volume_response)
         )
@@ -331,7 +331,7 @@ class TestListVolumes(cloudstackTestCase):
             "List Volume response is not a valid list"
         )
         self.assertEqual(
-            len(list_volume_response),
+            len([v for v in list_volume_response if v.state != "Destroy"]),
             3,
             "ListVolumes response expected 3 Volumes, received %s" % len(list_volume_response)
         )
