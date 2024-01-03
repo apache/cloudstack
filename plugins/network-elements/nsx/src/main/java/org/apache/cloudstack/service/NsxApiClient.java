@@ -282,7 +282,7 @@ public class NsxApiClient {
         return types;
     }
 
-    public void createTier1Gateway(String name, String tier0Gateway, String edgeCluster, boolean sourceNatEnabled) {
+    public void createTier1Gateway(String name, String tier0Gateway, String edgeCluster, boolean sourceNatEnabled) throws CloudRuntimeException {
         String tier0GatewayPath = TIER_0_GATEWAY_PATH_PREFIX + tier0Gateway;
         Tier1 tier1 = getTier1Gateway(name);
         if (tier1 != null) {

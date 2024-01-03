@@ -36,9 +36,9 @@ public class NsxControllerUtils {
     private static final Logger s_logger = Logger.getLogger(NsxControllerUtils.class);
 
     @Inject
-    AgentManager agentMgr;
+    private AgentManager agentMgr;
     @Inject
-    NsxProviderDao nsxProviderDao;
+    private NsxProviderDao nsxProviderDao;
 
     public static String getNsxNatRuleId(long domainId, long accountId, long dataCenterId, long resourceId, boolean isForVpc) {
         String resourcePrefix = isForVpc ? "V" : "N";
@@ -50,7 +50,6 @@ public class NsxControllerUtils {
     }
 
     public NsxAnswer sendNsxCommand(NsxCommand cmd, long zoneId) throws IllegalArgumentException {
-
         NsxProviderVO nsxProviderVO = nsxProviderDao.findByZoneId(zoneId);
         if (nsxProviderVO == null) {
             s_logger.error("No NSX controller was found!");
