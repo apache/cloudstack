@@ -3663,12 +3663,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                             (service_offering.cpu >= ?)
                              OR (
                                 service_offering.cpu IS NULL
-                                AND (
-                                    maxComputeDetailsSearch.value IS NULL OR  maxComputeDetailsSearch.value >= ?
-                                )
+                                AND (maxComputeDetailsSearch.value IS NULL OR  maxComputeDetailsSearch.value >= ?)
                             )
                      */
-                    // TODO: Fix this
                     SearchBuilder<ServiceOfferingDetailsVO> maxComputeDetailsSearch = _srvOfferingDetailsDao.createSearchBuilder();
 
                     serviceOfferingSearch.join("maxComputeDetailsSearch", maxComputeDetailsSearch, JoinBuilder.JoinType.LEFT, JoinBuilder.JoinCondition.AND,
