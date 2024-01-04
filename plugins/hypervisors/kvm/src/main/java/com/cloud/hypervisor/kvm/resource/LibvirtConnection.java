@@ -114,8 +114,12 @@ public class LibvirtConnection {
         return "qemu:///system";
     }
 
-    // stand up libvirt event handling and polling. This is not specific to a connection object instance, but needs to
-    // exist prior to creating connections.
+    /**
+     * Set up Libvirt event handling and polling. This is not specific to a connection object instance, but needs
+     * to be done prior to creating connections. See the Libvirt documentation for virEventRegisterDefaultImpl and
+     * virEventRunDefaultImpl or the libvirt-java Library Javadoc for more information.
+     * @throws LibvirtException
+     */
     private static synchronized void setupEventListener() throws LibvirtException {
         if (libvirtEventThread == null || !libvirtEventThread.isAlive()) {
             // Registers a default event loop, must be called before connecting to hypervisor
