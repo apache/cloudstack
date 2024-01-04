@@ -279,7 +279,7 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
                 return true;
             }
         } catch (Exception e) {
-            s_logger.debug("User does not exist. Creating user: " + accessKey);
+            s_logger.debug(String.format("User does not exist. Creating user: %s", accessKey));
         }
 
         KeyGenerator generator = null;
