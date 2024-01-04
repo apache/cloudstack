@@ -33,8 +33,6 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class UserDataManagerImpl extends ManagerBase implements UserDataManager {
-
-
     private static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
     private static final int MAX_HTTP_GET_LENGTH = 2 * MAX_USER_DATA_LENGTH_BYTES;
     private static final int NUM_OF_2K_BLOCKS = 512;
@@ -91,7 +89,7 @@ public class UserDataManagerImpl extends ManagerBase implements UserDataManager 
     @Override
     public String validateUserData(String userData, BaseCmd.HTTPMethod httpmethod) {
         if (StringUtils.isBlank(userData)) {
-            throw new InvalidParameterValueException("User data is empty");
+            return null;
         }
 
         if (userData.contains("%")) {
