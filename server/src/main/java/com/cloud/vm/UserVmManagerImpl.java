@@ -2785,6 +2785,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             userDataDetails = cmd.getUserdataDetails().toString();
         }
         userData = finalizeUserData(userData, userDataId, template);
+        userData = userDataManager.validateUserData(userData, cmd.getHttpMethod());
 
         long accountId = vmInstance.getAccountId();
 
@@ -5943,13 +5944,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         String userData = cmd.getUserData();
-        userData = userDataManager.validateUserData(userData, cmd.getHttpMethod());
         Long userDataId = cmd.getUserdataId();
         String userDataDetails = null;
         if (MapUtils.isNotEmpty(cmd.getUserdataDetails())) {
             userDataDetails = cmd.getUserdataDetails().toString();
         }
         userData = finalizeUserData(userData, userDataId, template);
+        userData = userDataManager.validateUserData(userData, cmd.getHttpMethod());
 
         Account caller = CallContext.current().getCallingAccount();
         Long callerId = caller.getId();
