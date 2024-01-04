@@ -102,9 +102,13 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
                     logger.debug(String.format("Trying to obtain module [%s] context.", moduleDefinitionName));
                     ApplicationContext context = getApplicationContext(moduleDefinitionName);
                     try {
-                        Runnable runnable = context.getBean("moduleStartup", Runnable.class);
-                        logger.info(String.format("Starting module [%s].", moduleDefinitionName));
-                        runnable.run();
+                        if (context.containsBean("moduleStartup")) {
+                            Runnable runnable = context.getBean("moduleStartup", Runnable.class);
+                            logger.info(String.format("Starting module [%s].", moduleDefinitionName));
+                            runnable.run();
+                        } else {
+                            log.debug(String.format("Could not get module [%s] context bean.", moduleDefinitionName));
+                        }
                     } catch (BeansException e) {
                         logger.warn(String.format("Failed to start module [%s] due to: [%s].", moduleDefinitionName, e.getMessage()));
                         if (logger.isDebugEnabled()) {
@@ -127,7 +131,11 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
             public void with(ModuleDefinition def, Stack<ModuleDefinition> parents) {
                 try {
                     String moduleDefinitionName = def.getName();
-                    logger.debug(String.format("Trying to obtain module [%s] context.", moduleDefinitionName));
+                    if (parents.isEmpty()) {
+                        log.debug(String.format("Could not find module [%s] context as they have no parents.", moduleDefinitionName));
+                        return;
+                    }
+                    log.debug(String.format("Trying to obtain module [%s] context.", moduleDefinitionName));
                     ApplicationContext parent = getApplicationContext(parents.peek().getName());
                     logger.debug(String.format("Trying to load module [%s] context.", moduleDefinitionName));
                     loadContext(def, parent);
