@@ -107,7 +107,7 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
                             logger.info(String.format("Starting module [%s].", moduleDefinitionName));
                             runnable.run();
                         } else {
-                            log.debug(String.format("Could not get module [%s] context bean.", moduleDefinitionName));
+                            logger.debug(String.format("Could not get module [%s] context bean.", moduleDefinitionName));
                         }
                     } catch (BeansException e) {
                         logger.warn(String.format("Failed to start module [%s] due to: [%s].", moduleDefinitionName, e.getMessage()));
@@ -132,10 +132,10 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
                 try {
                     String moduleDefinitionName = def.getName();
                     if (parents.isEmpty()) {
-                        log.debug(String.format("Could not find module [%s] context as they have no parents.", moduleDefinitionName));
+                        logger.debug(String.format("Could not find module [%s] context as they have no parents.", moduleDefinitionName));
                         return;
                     }
-                    log.debug(String.format("Trying to obtain module [%s] context.", moduleDefinitionName));
+                    logger.debug(String.format("Trying to obtain module [%s] context.", moduleDefinitionName));
                     ApplicationContext parent = getApplicationContext(parents.peek().getName());
                     logger.debug(String.format("Trying to load module [%s] context.", moduleDefinitionName));
                     loadContext(def, parent);
