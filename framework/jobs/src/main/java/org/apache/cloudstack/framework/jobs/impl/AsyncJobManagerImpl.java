@@ -1168,9 +1168,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         if (vol.getState().isTransitional()) {
             s_logger.debug("Cleaning up volume with Id: " + volumeId);
             boolean status = vol.stateTransit(Volume.Event.OperationFailed);
-            if (Volume.State.Creating.equals(vol.getState())) {
-                cleanupFailedVolumesCreatedFromSnapshots(volumeId);
-            }
+            cleanupFailedVolumesCreatedFromSnapshots(volumeId);
             return status;
         }
         s_logger.debug("Volume not in transition state. Skip cleanup. VolumeId: " + volumeId);
