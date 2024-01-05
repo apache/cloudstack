@@ -1157,7 +1157,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                         s_logger.warn("Volume not found. Skip Cleanup. VolumeId: " + job.getInstanceId());
                         return true;
                     }
-                    if (vol.isVolumeInTransitionState()) {
+                    if (vol.getState().isTransitional()) {
                         s_logger.debug("Cleaning up volume with Id: " + job.getInstanceId());
                         return vol.stateTransit(Volume.Event.OperationFailed);
                     } else {

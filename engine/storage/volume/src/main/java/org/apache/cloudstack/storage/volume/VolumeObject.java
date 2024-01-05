@@ -851,7 +851,7 @@ public class VolumeObject implements VolumeInfo {
 
     @Override
     public boolean delete() {
-        return dataStore == null ? true : dataStore.delete(this);
+        return dataStore == null || dataStore.delete(this);
     }
 
     @Override
@@ -929,13 +929,5 @@ public class VolumeObject implements VolumeInfo {
     @Override
     public void setEncryptFormat(String encryptFormat) {
         volumeVO.setEncryptFormat(encryptFormat);
-    }
-
-    @Override
-    public boolean isVolumeInTransitionState() {
-        List transitionStates = Arrays.asList(State.Creating, State.Attaching, State.Resizing,
-                State.Copying, State.Expunging, State.Snapshotting, State.Migrating,
-                State.UploadOp, State.NotUploaded, State.UploadInProgress, State.RevertSnapshotting);
-        return transitionStates.contains(getState());
     }
 }

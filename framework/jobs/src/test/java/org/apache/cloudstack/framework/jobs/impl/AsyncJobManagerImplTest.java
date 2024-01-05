@@ -63,7 +63,7 @@ public class AsyncJobManagerImplTest {
         job.setInstanceId(1L);
         VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
         when(volFactory.getVolume(Mockito.anyLong())).thenReturn(volumeInfo);
-        when(volumeInfo.isVolumeInTransitionState()).thenReturn(true);
+        when(volumeInfo.getState()).thenReturn(Volume.State.Attaching);
         asyncJobManager.cleanupResources(job);
         Mockito.verify(volumeInfo, Mockito.times(1)).stateTransit(Volume.Event.OperationFailed);
     }

@@ -96,6 +96,4 @@ public interface VolumeInfo extends DataObject, Volume {
     public byte[] getPassphrase();
 
     Volume getVolume();
-
-    boolean isVolumeInTransitionState();
 }
