@@ -64,6 +64,11 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
 
         String _description;
 
+        /**
+         * Volume State
+         * @param transitional true for transition/non-final state, otherwise false
+         * @param description description of the state
+         */
         private State(boolean transitional, String description) {
             _transitional = transitional;
             _description = description;
