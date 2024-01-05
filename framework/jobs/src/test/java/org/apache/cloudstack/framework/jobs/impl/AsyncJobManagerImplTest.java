@@ -91,6 +91,6 @@ public class AsyncJobManagerImplTest {
         when(networkVO.getState()).thenReturn(Network.State.Implementing);
         asyncJobManager.cleanupResources(job);
         Mockito.verify(networkOrchestrationService, Mockito.times(1)).stateTransitTo(networkVO,
-                Network.Event.DestroyNetwork);
+                Network.Event.OperationFailed);
     }
 }
