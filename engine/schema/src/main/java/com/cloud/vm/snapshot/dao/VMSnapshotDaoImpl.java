@@ -126,6 +126,13 @@ public class VMSnapshotDaoImpl extends GenericDaoBase<VMSnapshotVO, Long> implem
     }
 
     @Override
+    public List<VMSnapshotVO> listAllByStatus(VMSnapshot.State... status) {
+        SearchCriteria<VMSnapshotVO> sc = SnapshotStatusSearch.create();
+        sc.setParameters("status", (Object[])status);
+        return listBy(sc, null);
+    }
+
+    @Override
     public boolean updateState(State currentState, Event event, State nextState, VMSnapshot vo, Object data) {
 
         Long oldUpdated = vo.getUpdatedCount();

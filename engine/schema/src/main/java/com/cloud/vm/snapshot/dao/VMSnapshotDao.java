@@ -39,5 +39,8 @@ public interface VMSnapshotDao extends GenericDao<VMSnapshotVO, Long>, StateDao<
 
     List<VMSnapshotVO> listByAccountId(Long accountId);
     List<VMSnapshotVO> searchByVms(List<Long> vmIds);
+
     List<VMSnapshotVO> searchRemovedByVms(List<Long> vmIds, Long batchSize);
+
+    List<VMSnapshotVO> listAllByStatus(VMSnapshot.State... status);
 }
