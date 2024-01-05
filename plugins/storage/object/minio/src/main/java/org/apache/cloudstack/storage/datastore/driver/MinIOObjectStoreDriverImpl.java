@@ -18,9 +18,10 @@
  */
 package org.apache.cloudstack.storage.datastore.driver;
 
+import java.io.IOException;
+import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -36,6 +37,7 @@ import org.apache.cloudstack.storage.object.BaseObjectStoreDriverImpl;
 import org.apache.cloudstack.storage.object.Bucket;
 import org.apache.cloudstack.storage.object.BucketObject;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.amazonaws.services.s3.model.AccessControlList;
@@ -258,10 +260,23 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
 
     }
 
-    protected void updateAccountCredentials(final long accountId, final String accessKey, final String secretKey) {
-        Map<String, String> details = new HashMap<>();
-        details.put(MINIO_ACCESS_KEY, accessKey);
-        details.put(MINIO_SECRET_KEY, secretKey);
+    protected void updateAccountCredentials(final long accountId, final String accessKey, final String secretKey, final boolean checkIfNotPresent) {
+        Map<String, String> details = _accountDetailsDao.findDetails(accountId);
+        boolean updateNeeded = false;
+        if (!checkIfNotPresent || StringUtils.isBlank(details.get(MINIO_ACCESS_KEY))) {
+            details.put(MINIO_ACCESS_KEY, accessKey);
+            updateNeeded = true;
+        }
+        if (StringUtils.isAllBlank(secretKey, details.get(MINIO_SECRET_KEY))) {
+            s_logger.error(String.format("Failed to retrieve secret key for MinIO user: %s from store and account details", accessKey));
+        }
+        if (StringUtils.isNotBlank(secretKey) && (!checkIfNotPresent || StringUtils.isBlank(details.get(MINIO_SECRET_KEY)))) {
+            details.put(MINIO_SECRET_KEY, secretKey);
+            updateNeeded = true;
+        }
+        if (!updateNeeded) {
+            return;
+        }
         _accountDetailsDao.persist(accountId, details);
     }
 
@@ -274,14 +289,19 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         try {
             UserInfo userInfo = minioAdminClient.getUserInfo(accessKey);
             if(userInfo != null) {
-                s_logger.info(String.format("User already exists in MinIO store: %s, updating credentials", accessKey));
-                updateAccountCredentials(accountId, accessKey, userInfo.secretKey());
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(String.format("Skipping user creation as the user already exists in MinIO store: %s", accessKey));
+                }
+                updateAccountCredentials(accountId, accessKey, userInfo.secretKey(), true);
                 return true;
             }
-        } catch (Exception e) {
-            s_logger.debug(String.format("User does not exist. Creating user: %s", accessKey));
+        } catch (NoSuchAlgorithmException | IOException | InvalidKeyException e) {
+            s_logger.error(String.format("Error encountered while retrieving user: %s for existing MinIO store user check", accessKey), e);
+            return false;
         }
-
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(String.format("MinIO store user does not exist. Creating user: %s", accessKey));
+        }
         KeyGenerator generator = null;
         try {
             generator = KeyGenerator.getInstance("HmacSHA1");
@@ -296,7 +316,7 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             throw new CloudRuntimeException(e);
         }
         // Store user credentials
-        updateAccountCredentials(accountId, accessKey, secretKey);
+        updateAccountCredentials(accountId, accessKey, secretKey, false);
         return true;
     }
 
