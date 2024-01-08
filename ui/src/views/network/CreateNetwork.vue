@@ -66,7 +66,6 @@ export default {
     }
   },
   data () {
-    console.log(this.resource)
     return {
       isAdvancedZoneWithoutSGAvailable: false,
       defaultNetworkTypeTabKey: '1',
@@ -88,7 +87,6 @@ export default {
   },
   methods: {
     fetchData () {
-      console.log('here')
       const promises = []
       promises.push(this.fetchActionZoneData())
       Promise.all(promises).then(() => {
