@@ -573,6 +573,9 @@ export default {
       this.selectedNetworkOffering = {}
       api('listNetworkOfferings', params).then(json => {
         this.networkOfferings = json.listnetworkofferingsresponse.networkoffering
+        if (this.selectedZone.isnsxenabled) {
+          this.networkOfferings = this.networkOfferings.filter(offering => offering.fornsx)
+        }
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
