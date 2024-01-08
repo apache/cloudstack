@@ -298,6 +298,11 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         } catch (NoSuchAlgorithmException | IOException | InvalidKeyException e) {
             s_logger.error(String.format("Error encountered while retrieving user: %s for existing MinIO store user check", accessKey), e);
             return false;
+        } catch (RuntimeException e) { // MinIO lib may throw RuntimeException with code: XMinioAdminNoSuchUser
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("Ignoring error encountered while retrieving user: %s for existing MinIO store user check", accessKey));
+            }
+            s_logger.trace("Exception during MinIO user check", e);
         }
         if (s_logger.isDebugEnabled()) {
             s_logger.debug(String.format("MinIO store user does not exist. Creating user: %s", accessKey));
