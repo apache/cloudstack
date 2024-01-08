@@ -5108,7 +5108,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             return hpvCapabilities;
         }
         if (StringUtils.isNotBlank(hypervisorVersion) && !hpvCapabilities.getHypervisorVersion().equals(hypervisorVersion)) {
-            s_logger.debug("Hypervisor capabilities for hypervisor: %s and version: %s does not exist, creating a copy from the parent version: %s for update");
+            s_logger.debug(String.format("Hypervisor capabilities for hypervisor: %s and version: %s does not exist, creating a copy from the parent version: %s for update", hpvCapabilities.getHypervisorType(), hypervisorVersion, hpvCapabilities.getHypervisorVersion()));
             HypervisorCapabilitiesVO copy = new HypervisorCapabilitiesVO(hpvCapabilities);
             copy.setHypervisorVersion(hypervisorVersion);
             hpvCapabilities = _hypervisorCapabilitiesDao.persist(copy);
@@ -5140,8 +5140,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             hpvCapabilities.setVmSnapshotEnabled(vmSnapshotEnabled);
         }
 
-        if (_hypervisorCapabilitiesDao.update(id, hpvCapabilities)) {
-            hpvCapabilities = _hypervisorCapabilitiesDao.findById(id);
+        if (_hypervisorCapabilitiesDao.update(hpvCapabilities.getId(), hpvCapabilities)) {
+            hpvCapabilities = _hypervisorCapabilitiesDao.findById(hpvCapabilities.getId());
             CallContext.current().setEventDetails("Hypervisor Capabilities id=" + hpvCapabilities.getId());
             return hpvCapabilities;
         } else {
