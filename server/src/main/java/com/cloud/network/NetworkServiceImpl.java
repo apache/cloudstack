@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -43,7 +44,9 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.dc.VlanDetailsVO;
 import com.cloud.dc.dao.VlanDetailsDao;
+import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.dao.PublicIpQuarantineDao;
+import com.cloud.network.element.NsxProviderVO;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.dao.ServiceOfferingDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -410,6 +413,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     ServiceOfferingDao serviceOfferingDao;
     @Inject
     PublicIpQuarantineDao publicIpQuarantineDao;
+    @Inject
+    NsxProviderDao nsxProviderDao;
 
     @Autowired
     @Qualifier("networkHelper")
@@ -1472,6 +1477,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         _accountMgr.checkAccess(owner, ntwkOff, zone);
 
         validateZoneAvailability(caller, zone);
+        validateNetworkCreationSupported(zone.getId(), zone.getName(), ntwkOff.getGuestType());
 
         ACLType aclType = getAclType(caller, cmd.getAclType(), ntwkOff);
 
@@ -1726,6 +1732,15 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             return implementedNetworkInCreation(caller, zone, network);
         }
         return network;
+    }
+
+    private void validateNetworkCreationSupported(long zoneId, String zoneName, GuestType guestType) {
+        NsxProviderVO nsxProviderVO = nsxProviderDao.findByZoneId(zoneId);
+        if (Objects.nonNull(nsxProviderVO) && List.of(GuestType.L2, GuestType.Shared).contains(guestType)) {
+            throw new InvalidParameterValueException(
+                    String.format("Creation of %s networks is not supported in NSX enabled zone %s", guestType.name(), zoneName)
+            );
+        }
     }
 
     void checkAndSetRouterSourceNatIp(Account owner, CreateNetworkCmd cmd, Network network) throws InsufficientAddressCapacityException, ResourceAllocationException {
