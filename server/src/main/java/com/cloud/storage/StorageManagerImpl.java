@@ -3261,6 +3261,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_UPDATE_IMAGE_STORE_ACCESS_STATE,
+            eventDescription = "image store access updated")
     public ImageStore updateImageStoreStatus(Long id, Boolean readonly) {
         // Input validation
         ImageStoreVO imageStoreVO = _imageStoreDao.findById(id);
