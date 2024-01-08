@@ -66,7 +66,7 @@ function install_packages() {
     xenstore-utils libxenstore3.0 \
     ipvsadm conntrackd libnetfilter-conntrack3 \
     keepalived irqbalance \
-    openjdk-11-jre-headless \
+    openjdk-17-jre-headless \
     ipcalc ipset \
     iptables-persistent \
     libtcnative-1 libssl-dev libapr1-dev \
