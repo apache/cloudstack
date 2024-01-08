@@ -29,6 +29,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.dc.DataCenter;
+import com.cloud.utils.Pair;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
@@ -707,5 +709,43 @@ public class NetworkOrchestratorTest extends TestCase {
         Assert.assertEquals(ip4Dns[1], profile.getIPv4Dns2());
         Assert.assertEquals(ip6Dns[0], profile.getIPv6Dns1());
         Assert.assertEquals(ip6Dns[1], profile.getIPv6Dns2());
+    }
+
+    @Test
+    public void testGetNetworkGatewayAndNetmaskForNicImportAdvancedZone() {
+        Network network = Mockito.mock(Network.class);
+        DataCenter dataCenter = Mockito.mock(DataCenter.class);
+        IPAddressVO ipAddressVO = Mockito.mock(IPAddressVO.class);
+
+        String networkGateway = "10.1.1.1";
+        String networkNetmask = "255.255.255.0";
+        String networkCidr = "10.1.1.0/24";
+        Mockito.when(dataCenter.getNetworkType()).thenReturn(DataCenter.NetworkType.Advanced);
+        Mockito.when(network.getGateway()).thenReturn(networkGateway);
+        Mockito.when(network.getCidr()).thenReturn(networkCidr);
+        Pair<String, String> pair = testOrchastrator.getNetworkGatewayAndNetmaskForNicImport(network, dataCenter, ipAddressVO);
+        Assert.assertNotNull(pair);
+        Assert.assertEquals(networkGateway, pair.first());
+        Assert.assertEquals(networkNetmask, pair.second());
+    }
+
+    @Test
+    public void testGetNetworkGatewayAndNetmaskForNicImportBasicZone() {
+        Network network = Mockito.mock(Network.class);
+        DataCenter dataCenter = Mockito.mock(DataCenter.class);
+        IPAddressVO ipAddressVO = Mockito.mock(IPAddressVO.class);
+
+        String defaultNetworkGateway = "10.1.1.1";
+        String defaultNetworkNetmask = "255.255.255.0";
+        VlanVO vlan = Mockito.mock(VlanVO.class);
+        Mockito.when(vlan.getVlanGateway()).thenReturn(defaultNetworkGateway);
+        Mockito.when(vlan.getVlanNetmask()).thenReturn(defaultNetworkNetmask);
+        Mockito.when(dataCenter.getNetworkType()).thenReturn(DataCenter.NetworkType.Basic);
+        Mockito.when(ipAddressVO.getVlanId()).thenReturn(1L);
+        Mockito.when(testOrchastrator._vlanDao.findById(1L)).thenReturn(vlan);
+        Pair<String, String> pair = testOrchastrator.getNetworkGatewayAndNetmaskForNicImport(network, dataCenter, ipAddressVO);
+        Assert.assertNotNull(pair);
+        Assert.assertEquals(defaultNetworkGateway, pair.first());
+        Assert.assertEquals(defaultNetworkNetmask, pair.second());
     }
 }

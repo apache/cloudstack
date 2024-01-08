@@ -4603,15 +4603,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 NicVO vo = new NicVO(network.getGuruName(), vm.getId(), network.getId(), vm.getType());
                 vo.setMacAddress(macAddressToPersist);
                 vo.setAddressFormat(Networks.AddressFormat.Ip4);
-                String gateway = network.getGateway();
-                String netmask = StringUtils.isNotEmpty(network.getCidr()) ? NetUtils.cidr2Netmask(network.getCidr()) : null;
-                if (dataCenter.getNetworkType() == NetworkType.Basic && freeIp != null) {
-                    VlanVO vlan = _vlanDao.findById(freeIp.getVlanId());
-                    if (vlan != null) {
-                        gateway = vlan.getVlanGateway();
-                        netmask = vlan.getVlanNetmask();
-                    }
-                }
+                Pair<String, String> pair = getNetworkGatewayAndNetmaskForNicImport(network, dataCenter, freeIp);
+                String gateway = pair.first();
+                String netmask = pair.second();
                 if (NetUtils.isValidIp4(finalGuestIp) && StringUtils.isNotEmpty(gateway)) {
                     vo.setIPv4Address(finalGuestIp);
                     vo.setIPv4Gateway(gateway);
@@ -4650,6 +4644,19 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 _networkModel.getNetworkTag(vm.getHypervisorType(), network));
 
         return new Pair<NicProfile, Integer>(vmNic, Integer.valueOf(deviceId));
+    }
+
+    /**
+     * Obtain the gateway and netmask for a VM NIC to import
+     * If the VM to import is on a Basic Zone, then obtain the information from the vlan table instead of the network
+     */
+    protected Pair<String, String> getNetworkGatewayAndNetmaskForNicImport(Network network, DataCenter dataCenter, IPAddressVO freeIp) {
+        VlanVO vlan = dataCenter.getNetworkType() == NetworkType.Basic && freeIp != null ?
+                _vlanDao.findById(freeIp.getVlanId()) : null;
+        String gateway = vlan != null ? vlan.getVlanGateway() : network.getGateway();
+        String netmask = vlan != null ? vlan.getVlanNetmask() :
+                (StringUtils.isNotEmpty(network.getCidr()) ? NetUtils.cidr2Netmask(network.getCidr()) : null);
+        return new Pair<>(gateway, netmask);
     }
 
     private String generateNewMacAddressIfForced(Network network, String macAddress, boolean forced) {
