@@ -475,6 +475,7 @@ export default {
     fetchData () {
       this.networks = this.resource.network
       this.fetchMtuForZone()
+      this.getVpcNetworkOffering()
       if (!this.networks || this.networks.length === 0) {
         return
       }
@@ -483,7 +484,6 @@ export default {
         this.fetchVMs(network.id)
       }
       this.publicLBNetworkExists()
-      this.getVpcNetworkOffering()
     },
     fetchMtuForZone () {
       api('listZones', {
@@ -524,9 +524,9 @@ export default {
         api('listVPCOfferings', {
           id: this.resource.vpcofferingid
         }).then(json => {
-          var vpcOffering = json?.listvpcofferingsresponse?.vpcoffering[0]
-          this.isOfferingNatMode = vpcOffering?.nsxmode === 'NATTED' || false
+          const vpcOffering = json?.listvpcofferingsresponse?.vpcoffering[0]
           resolve(vpcOffering)
+          this.isOfferingNatMode = vpcOffering?.nsxmode === 'NATTED' || false
         }).catch(e => {
           reject(e)
         })

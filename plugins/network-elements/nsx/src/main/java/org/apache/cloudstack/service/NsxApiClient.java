@@ -668,10 +668,10 @@ public class NsxApiClient {
 
             List<com.vmware.nsx_policy.model.Service> services = serviceList.getResults();
             List<String> matchedDefaultSvc = services.parallelStream().filter(svc ->
-                            (svc.getServiceEntries().get(0) instanceof L4PortSetServiceEntry) &&
-                                    ((L4PortSetServiceEntry) svc.getServiceEntries().get(0)).getDestinationPorts().get(0).equals(port)
-                    && (((L4PortSetServiceEntry) svc.getServiceEntries().get(0)).getL4Protocol().equals(protocol)))
-                    .map(svc -> ((L4PortSetServiceEntry) svc.getServiceEntries().get(0)).getDestinationPorts().get(0))
+                            (svc.getServiceEntries().get(0)._getDataValue().getField("resource_type").toString().equals("L4PortSetServiceEntry")) &&
+                                    svc.getServiceEntries().get(0)._getDataValue().getField("destination_ports").toString().equals("["+port+"]")
+                                    && svc.getServiceEntries().get(0)._getDataValue().getField("l4_protocol").toString().equals(protocol))
+                    .map(svc -> svc.getServiceEntries().get(0)._getDataValue().getField("parent_path").toString())
                     .collect(Collectors.toList());
             if (!CollectionUtils.isEmpty(matchedDefaultSvc)) {
                 return matchedDefaultSvc.get(0);
