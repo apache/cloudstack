@@ -94,7 +94,7 @@ export default {
       label: 'label.action.force.reconnect',
       message: 'message.confirm.action.force.reconnect',
       dataView: true,
-      show: (record) => { return ['Disconnected', 'Up'].includes(record.state) }
+      show: (record) => { return ['Disconnected', 'Up', 'Alert'].includes(record.state) }
     },
     {
       api: 'updateHost',
