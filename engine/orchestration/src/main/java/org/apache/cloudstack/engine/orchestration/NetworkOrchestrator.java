@@ -4568,6 +4568,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             throws ConcurrentOperationException, InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
         s_logger.debug("Allocating nic for vm " + vm.getUuid() + " in network " + network + " during import");
         String guestIp = null;
+        IPAddressVO freeIpAddress = null;
         if (ipAddresses != null && StringUtils.isNotEmpty(ipAddresses.getIp4Address())) {
             if (ipAddresses.getIp4Address().equals("auto")) {
                 ipAddresses.setIp4Address(null);
@@ -4576,7 +4577,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 if (dataCenter.getNetworkType() == NetworkType.Advanced) {
                     guestIp = _ipAddrMgr.acquireGuestIpAddress(network, ipAddresses.getIp4Address());
                 } else {
-                    IPAddressVO freeIpAddress = _ipAddressDao.findBySourceNetworkIdAndDatacenterIdAndState(network.getId(), dataCenter.getId(), IpAddress.State.Free);
+                    freeIpAddress = _ipAddressDao.findBySourceNetworkIdAndDatacenterIdAndState(network.getId(), dataCenter.getId(), IpAddress.State.Free);
                     if (freeIpAddress != null && freeIpAddress.getAddress() != null) {
                         guestIp = freeIpAddress.getAddress().addr();
                     }
@@ -4590,6 +4591,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
         }
         final String finalGuestIp = guestIp;
+        final IPAddressVO freeIp = freeIpAddress;
         final NicVO vo = Transaction.execute(new TransactionCallback<NicVO>() {
             @Override
             public NicVO doInTransaction(TransactionStatus status) {
@@ -4601,12 +4603,19 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 NicVO vo = new NicVO(network.getGuruName(), vm.getId(), network.getId(), vm.getType());
                 vo.setMacAddress(macAddressToPersist);
                 vo.setAddressFormat(Networks.AddressFormat.Ip4);
-                if (NetUtils.isValidIp4(finalGuestIp) && StringUtils.isNotEmpty(network.getGateway())) {
-                    vo.setIPv4Address(finalGuestIp);
-                    vo.setIPv4Gateway(network.getGateway());
-                    if (StringUtils.isNotEmpty(network.getCidr())) {
-                        vo.setIPv4Netmask(NetUtils.cidr2Netmask(network.getCidr()));
+                String gateway = network.getGateway();
+                String netmask = StringUtils.isNotEmpty(network.getCidr()) ? NetUtils.cidr2Netmask(network.getCidr()) : null;
+                if (dataCenter.getNetworkType() == NetworkType.Basic && freeIp != null) {
+                    VlanVO vlan = _vlanDao.findById(freeIp.getVlanId());
+                    if (vlan != null) {
+                        gateway = vlan.getVlanGateway();
+                        netmask = vlan.getVlanNetmask();
                     }
+                }
+                if (NetUtils.isValidIp4(finalGuestIp) && StringUtils.isNotEmpty(gateway)) {
+                    vo.setIPv4Address(finalGuestIp);
+                    vo.setIPv4Gateway(gateway);
+                    vo.setIPv4Netmask(netmask);
                 }
                 vo.setBroadcastUri(network.getBroadcastUri());
                 vo.setMode(network.getMode());
