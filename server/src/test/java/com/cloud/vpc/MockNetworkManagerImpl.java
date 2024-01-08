@@ -24,6 +24,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.network.PublicIpQuarantine;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.command.admin.address.ReleasePodIpCmdByAdmin;
@@ -1030,7 +1031,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
-    public Pair<NicProfile, Integer> importNic(String macAddress, int deviceId, Network network, Boolean isDefaultNic, VirtualMachine vm, IpAddresses ipAddresses, boolean forced) {
+    public Pair<NicProfile, Integer> importNic(String macAddress, int deviceId, Network network, Boolean isDefaultNic, VirtualMachine vm, IpAddresses ipAddresses, DataCenter dataCenter, boolean forced) {
         return null;
     }
 

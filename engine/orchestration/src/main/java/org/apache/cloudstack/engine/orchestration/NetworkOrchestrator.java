@@ -4564,7 +4564,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     @DB
     @Override
-    public Pair<NicProfile, Integer> importNic(final String macAddress, int deviceId, final Network network, final Boolean isDefaultNic, final VirtualMachine vm, final Network.IpAddresses ipAddresses, final boolean forced)
+    public Pair<NicProfile, Integer> importNic(final String macAddress, int deviceId, final Network network, final Boolean isDefaultNic, final VirtualMachine vm, final Network.IpAddresses ipAddresses, final DataCenter dataCenter, final boolean forced)
             throws ConcurrentOperationException, InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
         s_logger.debug("Allocating nic for vm " + vm.getUuid() + " in network " + network + " during import");
         String guestIp = null;
@@ -4573,7 +4573,14 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 ipAddresses.setIp4Address(null);
             }
             if (network.getGuestType() != GuestType.L2) {
-                guestIp = _ipAddrMgr.acquireGuestIpAddress(network, ipAddresses.getIp4Address());
+                if (dataCenter.getNetworkType() == NetworkType.Advanced) {
+                    guestIp = _ipAddrMgr.acquireGuestIpAddress(network, ipAddresses.getIp4Address());
+                } else {
+                    IPAddressVO freeIpAddress = _ipAddressDao.findBySourceNetworkIdAndDatacenterIdAndState(network.getId(), dataCenter.getId(), IpAddress.State.Free);
+                    if (freeIpAddress != null && freeIpAddress.getAddress() != null) {
+                        guestIp = freeIpAddress.getAddress().addr();
+                    }
+                }
             } else {
                 guestIp = null;
             }
