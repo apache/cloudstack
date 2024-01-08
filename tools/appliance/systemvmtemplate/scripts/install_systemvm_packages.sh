@@ -63,7 +63,7 @@ function install_packages() {
     nfs-common \
     samba-common cifs-utils \
     xl2tpd bcrelay ppp tdb-tools \
-    xenstore-utils libxenstore3.0 \
+    xenstore-utils libxenstore4 \
     ipvsadm conntrackd libnetfilter-conntrack3 \
     keepalived irqbalance \
     openjdk-17-jre-headless \
@@ -100,9 +100,9 @@ function install_packages() {
 
   install_vhd_util
   # Install xenserver guest utilities as debian repos don't have it
-  wget https://mirrors.kernel.org/ubuntu/pool/main/x/xe-guest-utilities/xe-guest-utilities_7.10.0-0ubuntu1_amd64.deb
-  dpkg -i xe-guest-utilities_7.10.0-0ubuntu1_amd64.deb
-  rm -f xe-guest-utilities_7.10.0-0ubuntu1_amd64.deb
+  wget http://archive.ubuntu.com/ubuntu/pool/universe/x/xe-guest-utilities/xe-guest-utilities_7.20.2-0ubuntu1_amd64.deb
+  dpkg -i xe-guest-utilities_7.20.2-0ubuntu1_amd64.deb
+  rm -f xe-guest-utilities_7.20.2-0ubuntu1_amd64.deb
 }
 
 return 2>/dev/null || install_packages
