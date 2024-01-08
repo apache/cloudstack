@@ -53,7 +53,7 @@ function install_packages() {
   ${apt_get} install grub-legacy \
     rsyslog logrotate cron net-tools ifupdown tmux vim-tiny htop netbase iptables nftables \
     openssh-server e2fsprogs tcpdump iftop socat wget coreutils systemd \
-    python python3 python3-flask ieee-data \
+    python-is-python3 python3 python3-flask python3-netaddr ieee-data \
     bzip2 sed gawk diffutils grep gzip less tar telnet ftp rsync traceroute psmisc lsof procps \
     inetutils-ping iputils-arping httping curl \
     dnsutils zip unzip ethtool uuid file iproute2 acpid sudo \
@@ -79,10 +79,6 @@ function install_packages() {
     conntrack apt-transport-https ca-certificates curl gnupg  gnupg-agent software-properties-common
 
   apt-get install -y python3-json-pointer python3-jsonschema cloud-init
-
-  # python2-netaddr workaround
-  wget https://github.com/shapeblue/cloudstack-nonoss/raw/main/python-netaddr_0.7.19-1_all.deb
-  dpkg -i python-netaddr_0.7.19-1_all.deb
 
   apt_clean
 
