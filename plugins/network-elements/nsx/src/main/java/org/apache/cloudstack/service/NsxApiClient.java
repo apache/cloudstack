@@ -72,6 +72,7 @@ import com.vmware.vapi.internal.protocol.RestProtocol;
 import com.vmware.vapi.internal.protocol.client.rest.authn.BasicAuthenticationAppender;
 import com.vmware.vapi.protocol.HttpConfiguration;
 import com.vmware.vapi.std.errors.Error;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.resource.NsxLoadBalancerMember;
 import org.apache.cloudstack.resource.NsxNetworkRule;
 import org.apache.cloudstack.utils.NsxControllerUtils;
@@ -533,11 +534,12 @@ public class NsxApiClient {
             if (Objects.nonNull(lbService)) {
                 return;
             }
+            String lbSize = LBSize.valueOf(NetworkOrchestrationService.NSX_LB_SIZE.value()).name();
             lbService = new LBService.Builder()
                     .setId(lbName)
                     .setDisplayName(lbName)
                     .setEnabled(true)
-                    .setSize(LBSize.SMALL.name())
+                    .setSize(lbSize)
                     .setConnectivityPath(TIER_1_GATEWAY_PATH_PREFIX + tier1GatewayName)
                     .build();
             lbServices.patch(lbName, lbService);

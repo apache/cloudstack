@@ -106,6 +106,9 @@ public interface NetworkOrchestrationService {
     static final ConfigKey<Boolean> NSX_ENABLED = new ConfigKey<>(Boolean.class, "nsx.plugin.enable", "Advanced", "false",
             "Indicates whether to enable the NSX plugin", false, ConfigKey.Scope.Zone, null);
 
+    static final ConfigKey<String> NSX_LB_SIZE = new ConfigKey<>(String.class, "nsx.lb.size", "Advanced", "SMALL",
+            "Indicates the NSX load balancer service size", true, Scope.Global, null, null, null, null, null, ConfigKey.Kind.Select, "SMALL, MEDIUM, LARGE, XLARGE");
+
     List<? extends Network> setupNetwork(Account owner, NetworkOffering offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
         throws ConcurrentOperationException;
 
