@@ -4573,17 +4573,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             if (ipAddresses.getIp4Address().equals("auto")) {
                 ipAddresses.setIp4Address(null);
             }
-            if (network.getGuestType() != GuestType.L2) {
-                if (dataCenter.getNetworkType() == NetworkType.Advanced) {
-                    guestIp = _ipAddrMgr.acquireGuestIpAddress(network, ipAddresses.getIp4Address());
-                } else {
-                    freeIpAddress = _ipAddressDao.findBySourceNetworkIdAndDatacenterIdAndState(network.getId(), dataCenter.getId(), IpAddress.State.Free);
-                    if (freeIpAddress != null && freeIpAddress.getAddress() != null) {
-                        guestIp = freeIpAddress.getAddress().addr();
-                    }
-                }
-            } else {
-                guestIp = null;
+            freeIpAddress = getGuestIpForNicImport(network, dataCenter, ipAddresses);
+            if (freeIpAddress != null && freeIpAddress.getAddress() != null) {
+                guestIp = freeIpAddress.getAddress().addr();
             }
             if (guestIp == null && network.getGuestType() != GuestType.L2 && !_networkModel.listNetworkOfferingServices(network.getNetworkOfferingId()).isEmpty()) {
                 throw new InsufficientVirtualNetworkCapacityException("Unable to acquire Guest IP  address for network " + network, DataCenter.class,
@@ -4644,6 +4636,17 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 _networkModel.getNetworkTag(vm.getHypervisorType(), network));
 
         return new Pair<NicProfile, Integer>(vmNic, Integer.valueOf(deviceId));
+    }
+
+    protected IPAddressVO getGuestIpForNicImport(Network network, DataCenter dataCenter, Network.IpAddresses ipAddresses) {
+        if (network.getGuestType() == GuestType.L2) {
+            return null;
+        }
+        if (dataCenter.getNetworkType() == NetworkType.Advanced) {
+            String guestIpAddress = _ipAddrMgr.acquireGuestIpAddress(network, ipAddresses.getIp4Address());
+            return _ipAddressDao.findByIp(guestIpAddress);
+        }
+        return _ipAddressDao.findBySourceNetworkIdAndDatacenterIdAndState(network.getId(), dataCenter.getId(), IpAddress.State.Free);
     }
 
     /**
