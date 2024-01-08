@@ -361,7 +361,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         }
 
         LbAutoScaleVmProfile lbAutoScaleVmProfile =
-            new LbAutoScaleVmProfile(autoScaleVmProfile, apiKey, secretKey, ApiServiceConfiguration.ApiServletPath.value(), zoneId, domainId, serviceOfferingId, templateId,
+            new LbAutoScaleVmProfile(autoScaleVmProfile, apiKey, secretKey, ApiServiceConfiguration.getApiServletPathValue(), zoneId, domainId, serviceOfferingId, templateId,
                     vmName, lbNetworkUuid);
         return new LbAutoScaleVmGroup(vmGroup, autoScalePolicies, lbAutoScaleVmProfile, currentState);
     }
