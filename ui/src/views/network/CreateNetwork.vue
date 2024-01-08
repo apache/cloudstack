@@ -66,6 +66,7 @@ export default {
     }
   },
   data () {
+    console.log(this.resource)
     return {
       isAdvancedZoneWithoutSGAvailable: false,
       defaultNetworkTypeTabKey: '1',
@@ -87,6 +88,7 @@ export default {
   },
   methods: {
     fetchData () {
+      console.log('here')
       const promises = []
       promises.push(this.fetchActionZoneData())
       Promise.all(promises).then(() => {
@@ -106,7 +108,6 @@ export default {
     fetchActionZoneData () {
       this.loading = true
       const params = {}
-      console.log(this.resource)
       if (this.$route.name === 'deployVirtualMachine' && this.resource.zoneid) {
         params.id = this.resource.zoneid
       }
