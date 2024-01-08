@@ -111,7 +111,7 @@
                   </a-select-option>
                 </a-select>
               </a-form-item>
-              <a-form-item name="templateid" ref="templateid" v-if="cluster.hypervisortype === 'KVM' && !selectedVmwareVcenter && !isDiskImport && !isExternalImport">
+              <a-form-item name="templateid" ref="templateid" v-if="cluster.hypervisortype === 'VMware' || (cluster.hypervisortype === 'KVM' && !selectedVmwareVcenter && !isDiskImport && !isExternalImport)">
                 <template #label>
                   <tooltip-label :title="$t('label.templatename')" :tooltip="apiParams.templateid.description + '. ' + $t('message.template.import.vm.temporary')"/>
                 </template>
@@ -120,7 +120,7 @@
                   :value="templateType"
                   @change="changeTemplateType">
                   <a-row :gutter="12">
-                    <a-col :md="24" :lg="12" v-if="this.cluster.hypervisortype === 'VMWare'">
+                    <a-col :md="24" :lg="12" v-if="this.cluster.hypervisortype === 'VMware'">
                       <a-radio value="auto">
                         {{ $t('label.template.temporary.import') }}
                       </a-radio>
@@ -667,7 +667,7 @@ export default {
               nic.broadcasturi = 'pvlan://' + nic.vlanid + '-i' + nic.isolatedpvlan
             }
           }
-          if (this.cluster.hypervisortype === 'VMWare') {
+          if (this.cluster.hypervisortype === 'VMware') {
             nic.meta = this.getMeta(nic, { macaddress: 'mac', vlanid: 'vlan', networkname: 'network' })
           } else {
             nic.meta = this.getMeta(nic, { macaddress: 'mac', vlanid: 'vlan' })
@@ -849,7 +849,7 @@ export default {
       this.nicsNetworksMapping = data
     },
     defaultTemplateType () {
-      if (this.cluster.hypervisortype === 'VMWare') {
+      if (this.cluster.hypervisortype === 'VMware') {
         return 'auto'
       }
       return 'custom'

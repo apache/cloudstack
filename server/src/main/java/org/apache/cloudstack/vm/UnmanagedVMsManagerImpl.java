@@ -1111,7 +1111,9 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             }
         }
         allDetails.put(VmDetailConstants.ROOT_DISK_CONTROLLER, rootDisk.getController());
-        allDetails.put(VmDetailConstants.ROOT_DISK_SIZE, String.valueOf(rootDisk.getCapacity() / Resource.ResourceType.bytesToGiB));
+        if (cluster.getHypervisorType() != Hypervisor.HypervisorType.VMware) {
+            allDetails.put(VmDetailConstants.ROOT_DISK_SIZE, String.valueOf(rootDisk.getCapacity() / Resource.ResourceType.bytesToGiB));
+        }
 
         try {
             checkUnmanagedDiskAndOfferingForImport(unmanagedInstance.getName(), rootDisk, null, validatedServiceOffering, owner, zone, cluster, migrateAllowed);
