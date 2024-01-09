@@ -104,7 +104,7 @@ public class VeeamClient {
     private static final String REPOSITORY_REFERENCE = "RepositoryReference";
     private static final String RESTORE_POINT_REFERENCE = "RestorePointReference";
     private static final String BACKUP_FILE_REFERENCE = "BackupFileReference";
-    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
+    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
     private static final SimpleDateFormat newDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
 
@@ -888,7 +888,7 @@ public class VeeamClient {
     }
 
     private String formatDate(String date) throws ParseException {
-        return newDateFormat.format(dateFormat.parse(StringUtils.substring(date, 0, 23)));
+        return newDateFormat.format(dateFormat.parse(StringUtils.substring(date, 0, 19)));
     }
 
     public Pair<Boolean, String> restoreVMToDifferentLocation(String restorePointId, String hostIp, String dataStoreUuid) {
