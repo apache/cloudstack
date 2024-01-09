@@ -198,7 +198,7 @@ def execute(command):
         returncode = 0
 
         logging.debug("Command [%s] has the result [%s]" % (command, result))
-        return result.splitlines()
+        return result.decode().splitlines()
     except subprocess.CalledProcessError as e:
         logging.error(e)
         returncode = e.returncode
