@@ -52,7 +52,7 @@ public class StorageTest {
     }
 
     @Test
-    public void supportsOverprovisioningStoragePool() {
+    public void supportsOverProvisioningTestAllStoragePoolTypes() {
         Assert.assertTrue(StoragePoolType.Filesystem.supportsOverProvisioning());
         Assert.assertTrue(StoragePoolType.NetworkFilesystem.supportsOverProvisioning());
         Assert.assertFalse(StoragePoolType.IscsiLUN.supportsOverProvisioning());

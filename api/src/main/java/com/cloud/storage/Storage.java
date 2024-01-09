@@ -152,12 +152,12 @@ public class Storage {
         StorPool(true, true, true);
 
         private final boolean shared;
-        private final boolean overprovisioning;
+        private final boolean overProvisioning;
         private final boolean encryption;
 
-        StoragePoolType(boolean shared, boolean overprovisioning, boolean encryption) {
+        StoragePoolType(boolean shared, boolean overProvisioning, boolean encryption) {
             this.shared = shared;
-            this.overprovisioning = overprovisioning;
+            this.overProvisioning = overProvisioning;
             this.encryption = encryption;
         }
 
@@ -166,14 +166,16 @@ public class Storage {
         }
 
         public boolean supportsOverProvisioning() {
-            return overprovisioning;
+            return overProvisioning;
         }
 
-        public boolean supportsEncryption() { return encryption; }
+        public boolean supportsEncryption() {
+            return encryption;
+        }
     }
 
     public static List<StoragePoolType> getNonSharedStoragePoolTypes() {
-        List<StoragePoolType> nonSharedStoragePoolTypes = new ArrayList<StoragePoolType>();
+        List<StoragePoolType> nonSharedStoragePoolTypes = new ArrayList<>();
         for (StoragePoolType storagePoolType : StoragePoolType.values()) {
             if (!storagePoolType.isShared()) {
                 nonSharedStoragePoolTypes.add(storagePoolType);
