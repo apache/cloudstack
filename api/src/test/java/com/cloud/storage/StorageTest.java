@@ -63,7 +63,7 @@ public class StorageTest {
         Assert.assertFalse(StoragePoolType.CLVM.supportsOverProvisioning());
         Assert.assertTrue(StoragePoolType.RBD.supportsOverProvisioning());
         Assert.assertTrue(StoragePoolType.PowerFlex.supportsOverProvisioning());
-        Assert.assertFalse(StoragePoolType.SharedMountPoint.supportsOverProvisioning());
+        Assert.assertTrue(StoragePoolType.SharedMountPoint.supportsOverProvisioning());
         Assert.assertTrue(StoragePoolType.VMFS.supportsOverProvisioning());
         Assert.assertTrue(StoragePoolType.PreSetup.supportsOverProvisioning());
         Assert.assertTrue(StoragePoolType.EXT.supportsOverProvisioning());
