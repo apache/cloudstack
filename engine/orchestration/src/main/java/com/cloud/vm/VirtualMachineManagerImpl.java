@@ -934,7 +934,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     s_logger.debug("Unable to transition into Starting state due to " + e.getMessage());
                 }
             }
-
             final VMInstanceVO instance = _vmDao.findById(vmId);
             if (instance == null) {
                 throw new ConcurrentOperationException("Unable to acquire lock on " + vm);

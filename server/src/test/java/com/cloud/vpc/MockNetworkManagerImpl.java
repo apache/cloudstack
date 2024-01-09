@@ -83,6 +83,7 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.user.Account;
 import com.cloud.user.User;
+import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -809,6 +810,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     public Map<String, String> finalizeServicesAndProvidersForNetwork(NetworkOffering offering, Long physicalNetworkId) {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public boolean stateTransitTo(Network network, Network.Event e) throws NoTransitionException {
+        return true;
     }
 
     @Override
