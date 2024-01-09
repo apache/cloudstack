@@ -656,7 +656,7 @@ class CsVmMetadata(CsDataBag):
                     print("failed to make directories " + metamanifestdir + " due to :" + e.strerror)
                     sys.exit(1)
             if os.path.exists(metamanifest):
-                fh = open(metamanifest, "r+a")
+                fh = open(metamanifest, "a+")
                 self.__exflock(fh)
                 if file not in fh.read():
                     fh.write(file + '\n')
@@ -680,7 +680,7 @@ class CsVmMetadata(CsDataBag):
         CsHelper.mkdir(htaccessFolder, 0o755, True)
 
         if os.path.exists(htaccessFile):
-            fh = open(htaccessFile, "r+a")
+            fh = open(htaccessFile, "a+")
             self.__exflock(fh)
             if entry not in fh.read():
                 fh.write(entry + '\n')
@@ -717,7 +717,7 @@ class CsVmMetadata(CsDataBag):
             htaccessFolder = "/var/www/html/latest"
             htaccessFile = htaccessFolder + "/.htaccess"
 
-            fh = open(htaccessFile, "r+a")
+            fh = open(htaccessFile, "a+")
             self.__exflock(fh)
             if entry not in fh.read():
                 fh.write(entry + '\n')
