@@ -18,13 +18,13 @@
 
 from os import sys, path
 from subprocess import *
-from utility import getHealthChecksData, formatPort
+from .utility import getHealthChecksData, formatPort
 
 
 def main():
     portForwards = getHealthChecksData("portForwarding")
     if portForwards is None or len(portForwards) == 0:
-        print "No portforwarding rules provided to check, skipping"
+        print("No portforwarding rules provided to check, skipping")
         exit(0)
 
     failedCheck = False
@@ -68,10 +68,10 @@ def main():
                 failureMessage = failureMessage + str(pfEntryListExpected) + "\n"
 
     if failedCheck:
-        print failureMessage
+        print(failureMessage)
         exit(1)
     else:
-        print "Found all entries (count " + str(len(portForwards)) + ") in iptables"
+        print("Found all entries (count " + str(len(portForwards)) + ") in iptables")
         exit(0)
 
 

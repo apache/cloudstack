@@ -18,13 +18,13 @@
 
 from os import sys, path
 from subprocess import *
-from utility import getHealthChecksData
+from .utility import getHealthChecksData
 
 
 def main():
     gws = getHealthChecksData("gateways")
     if gws is None and len(gws) == 0:
-        print "No gateways data available, skipping"
+        print("No gateways data available, skipping")
         exit(0)
 
     unreachableGateWays = []
@@ -44,11 +44,11 @@ def main():
             unreachableGateWays.append(gw)
 
     if len(unreachableGateWays) == 0:
-        print "All " + str(len(gwsList)) + " gateways are reachable via ping"
+        print("All " + str(len(gwsList)) + " gateways are reachable via ping")
         exit(0)
     else:
-        print "Unreachable gateways found-"
-        print unreachableGateWays
+        print("Unreachable gateways found-")
+        print(unreachableGateWays)
         exit(1)
 
 

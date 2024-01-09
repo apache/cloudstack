@@ -32,13 +32,13 @@
 # -------------------------------------------------------------------- #
 import os
 import logging
-import CsHelper
-from CsFile import CsFile
-from CsProcess import CsProcess
-from CsApp import CsPasswdSvc
-from CsAddress import CsDevice
-from CsRoute import CsRoute
-from CsStaticRoutes import CsStaticRoutes
+from . import CsHelper
+from .CsFile import CsFile
+from .CsProcess import CsProcess
+from .CsApp import CsPasswdSvc
+from .CsAddress import CsDevice
+from .CsRoute import CsRoute
+from .CsStaticRoutes import CsStaticRoutes
 import socket
 from time import sleep
 

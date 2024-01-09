@@ -33,7 +33,7 @@ class CsDataBag(object):
             self.config = config
 
     def dump(self):
-        print self.dbag
+        print(self.dbag)
 
     def get_bag(self):
         return self.dbag
@@ -217,7 +217,7 @@ class CsGuestNetwork(CsDataBag):
         if devname:
             return self.__get_device_router_ip6prelen(devname)
         else:
-            for key in self.dbag.keys():
+            for key in list(self.dbag.keys()):
                 ip6prelen = self.__get_device_router_ip6prelen(key)
                 if ip6prelen:
                     return ip6prelen
@@ -234,7 +234,7 @@ class CsGuestNetwork(CsDataBag):
         if devname:
             return self.__get_device_router_ip6gateway(devname)
         else:
-            for key in self.dbag.keys():
+            for key in list(self.dbag.keys()):
                 ip6gateway = self.__get_device_router_ip6gateway(key)
                 if ip6gateway:
                     return ip6gateway

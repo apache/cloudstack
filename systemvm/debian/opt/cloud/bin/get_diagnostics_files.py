@@ -65,7 +65,7 @@ def zip_files(files):
         cleanup(files_from_shell_commands)
         generate_retrieved_files_txt(zf, files_found_list, files_not_found_list)
         zf.close()
-        print zf_name
+        print(zf_name)
 
 
 def get_cmd(script):

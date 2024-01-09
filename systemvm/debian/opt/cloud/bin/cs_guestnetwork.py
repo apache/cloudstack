@@ -28,8 +28,8 @@ def merge(dbag, gn):
             device_to_die = dbag[device][0]
             try:
                 dbag[device].remove(device_to_die)
-            except ValueError, e:
-                print "[WARN] cs_guestnetwork.py :: Error occurred removing item from databag. => %s" % device_to_die
+            except ValueError as e:
+                print("[WARN] cs_guestnetwork.py :: Error occurred removing item from databag. => %s" % device_to_die)
                 del(dbag[device])
         else:
             del(dbag[device])
