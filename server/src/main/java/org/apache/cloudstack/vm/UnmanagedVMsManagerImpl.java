@@ -1063,7 +1063,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                                                 final VirtualMachineTemplate template, final String displayName, final String hostName, final Account caller, final Account owner, final Long userId,
                                                 final ServiceOfferingVO serviceOffering, final Map<String, Long> dataDiskOfferingMap,
                                                 final Map<String, Long> nicNetworkMap, final Map<String, Network.IpAddresses> callerNicIpAddressMap,
-                                                final Map<String, String> details, final boolean migrateAllowed, final boolean forced) {
+                                                final Map<String, String> details, final boolean migrateAllowed, final boolean forced, final boolean isImportUnmanagedFromSameHypervisor) {
         LOGGER.debug(LogUtils.logGsonWithoutException("Trying to import VM [%s] with name [%s], in zone [%s], cluster [%s], and host [%s], using template [%s], service offering [%s], disks map [%s], NICs map [%s] and details [%s].",
                 unmanagedInstance, instanceName, zone, cluster, host, template, serviceOffering, dataDiskOfferingMap, nicNetworkMap, details));
         UserVm userVm = null;
@@ -1111,7 +1111,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             }
         }
         allDetails.put(VmDetailConstants.ROOT_DISK_CONTROLLER, rootDisk.getController());
-        if (cluster.getHypervisorType() != Hypervisor.HypervisorType.VMware) {
+        if (cluster.getHypervisorType() == Hypervisor.HypervisorType.KVM && isImportUnmanagedFromSameHypervisor) {
             allDetails.put(VmDetailConstants.ROOT_DISK_SIZE, String.valueOf(rootDisk.getCapacity() / Resource.ResourceType.bytesToGiB));
         }
 
@@ -1511,7 +1511,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                         template, displayName, hostName, CallContext.current().getCallingAccount(), owner, userId,
                         serviceOffering, dataDiskOfferingMap,
                         nicNetworkMap, nicIpAddressMap,
-                        details, migrateAllowed, forced);
+                        details, migrateAllowed, forced, true);
                 break;
             }
             if (userVm != null) {
@@ -1581,7 +1581,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                     template, displayName, hostName, caller, owner, userId,
                     serviceOffering, dataDiskOfferingMap,
                     nicNetworkMap, nicIpAddressMap,
-                    details, false, forced);
+                    details, false, forced, false);
             LOGGER.debug(String.format("VM %s imported successfully", sourceVM));
             return userVm;
         } catch (CloudRuntimeException e) {
