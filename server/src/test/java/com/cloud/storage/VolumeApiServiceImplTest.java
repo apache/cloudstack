@@ -1682,7 +1682,7 @@ public class VolumeApiServiceImplTest {
         when(volume.getId()).thenReturn(1L);
         when(volumeDaoMock.getHypervisorType(1L)).thenReturn(HypervisorType.KVM);
 
-        volumeApiServiceImpl.validationsForCheckVolumeOperation(1L);
+        volumeApiServiceImpl.validationsForCheckVolumeOperation(volume);
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -1701,7 +1701,7 @@ public class VolumeApiServiceImplTest {
         when(userVmDaoMock.findById(1L)).thenReturn(vm);
         when(vm.getState()).thenReturn(State.Running);
 
-        volumeApiServiceImpl.validationsForCheckVolumeOperation(1L);
+        volumeApiServiceImpl.validationsForCheckVolumeOperation(volume);
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -1718,7 +1718,7 @@ public class VolumeApiServiceImplTest {
         when(volume.getInstanceId()).thenReturn(1L);
         when(userVmDaoMock.findById(1L)).thenReturn(null);
 
-        volumeApiServiceImpl.validationsForCheckVolumeOperation(1L);
+        volumeApiServiceImpl.validationsForCheckVolumeOperation(volume);
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -1738,7 +1738,7 @@ public class VolumeApiServiceImplTest {
         when(vm.getState()).thenReturn(State.Stopped);
         when(volume.getState()).thenReturn(Volume.State.Allocated);
 
-        volumeApiServiceImpl.validationsForCheckVolumeOperation(1L);
+        volumeApiServiceImpl.validationsForCheckVolumeOperation(volume);
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -1760,7 +1760,7 @@ public class VolumeApiServiceImplTest {
         when(volume.getId()).thenReturn(1L);
         when(volumeDaoMock.getHypervisorType(1L)).thenReturn(HypervisorType.VMware);
 
-        volumeApiServiceImpl.validationsForCheckVolumeOperation(1L);
+        volumeApiServiceImpl.validationsForCheckVolumeOperation(volume);
     }
 
     @Test

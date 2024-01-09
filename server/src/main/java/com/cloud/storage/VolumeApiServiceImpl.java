@@ -1825,23 +1825,18 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         long volumeId = cmd.getId();
         boolean repair = cmd.getRepair();
 
-        validationsForCheckVolumeOperation(volumeId);
-
         final VolumeVO volume = _volsDao.findById(volumeId);
-        Long vmId = volume.getInstanceId();
-        UserVmVO vm = null;
-        if (vmId != null) {
-            vm = _userVmDao.findById(vmId);
-        }
+        validationsForCheckVolumeOperation(volume);
 
-        if (vm != null) {
+        Long vmId = volume.getInstanceId();
+        if (vmId != null) {
             // serialize VM operation
             AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
             if (jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
                 // avoid re-entrance
 
                 VmWorkJobVO placeHolder = null;
-                placeHolder = createPlaceHolderWork(vm.getId());
+                placeHolder = createPlaceHolderWork(vmId);
                 try {
                     Pair<String, String> result = orchestrateCheckVolumeAndRepair(volumeId, repair);
                     return result;
@@ -1849,7 +1844,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     _workJobDao.expunge(placeHolder.getId());
                 }
             } else {
-                Outcome<Pair> outcome = checkVolumeAndRepairThroughJobQueue(vm.getId(), volumeId, repair);
+                Outcome<Pair> outcome = checkVolumeAndRepairThroughJobQueue(vmId, volumeId, repair);
 
                 try {
                     outcome.get();
@@ -1887,15 +1882,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
     }
 
-    protected void validationsForCheckVolumeOperation(long volumeId) {
-        final VolumeVO volume = _volsDao.findById(volumeId);
+    protected void validationsForCheckVolumeOperation(VolumeVO volume) {
         Account caller = CallContext.current().getCallingAccount();
         _accountMgr.checkAccess(caller, null, true, volume);
 
+        Long volumeId = volume.getId();
         Long vmId = volume.getInstanceId();
-        UserVmVO vm = null;
         if (vmId != null) {
-            vm = _userVmDao.findById(vmId);
+            UserVmVO vm = _userVmDao.findById(vmId);
             if (vm == null) {
                 throw new InvalidParameterValueException(String.format("VM not found, please check the VM to which this volume %d is attached", volumeId));
             }

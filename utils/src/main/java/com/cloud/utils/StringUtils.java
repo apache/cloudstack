@@ -291,7 +291,7 @@ public class StringUtils {
         ObjectMapper objectMapper = new ObjectMapper();
         Map<String, String> mapResult = new HashMap<>();
 
-        if (org.apache.commons.lang3.StringUtils.isNotEmpty(jsonString)) {
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(jsonString)) {
             try {
                 JsonNode jsonNode = objectMapper.readTree(jsonString);
                 jsonNode.fields().forEachRemaining(entry -> {

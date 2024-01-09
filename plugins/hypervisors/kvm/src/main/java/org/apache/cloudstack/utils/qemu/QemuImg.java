@@ -826,7 +826,9 @@ public class QemuImg {
     public String checkAndRepair(final QemuImgFile file, final QemuImageOptions imageOptions, final List<QemuObject> qemuObjects, final boolean repair) throws QemuImgException {
         final Script s = new Script(_qemuImgPath);
         s.add("check");
-        s.add(file.getFileName());
+        if (imageOptions == null) {
+            s.add(file.getFileName());
+        }
 
         for (QemuObject o : qemuObjects) {
             s.add(o.toCommandFlag());

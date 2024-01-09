@@ -52,7 +52,7 @@ public class CheckVolumeAndRepairCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VolumeResponse.class, required = true, description = "The ID of the volume")
     private Long id;
 
-    @Parameter(name = ApiConstants.REPAIR, type = CommandType.BOOLEAN, required = false, description = "true if the volume has leaks and repair the volume")
+    @Parameter(name = ApiConstants.REPAIR, type = CommandType.BOOLEAN, required = false, description = "true to repair the volume, repairs if it has any leaks")
     private Boolean repair;
 
     /////////////////////////////////////////////////////
