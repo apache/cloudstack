@@ -20,6 +20,7 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.domain.DomainVO;
@@ -37,6 +38,7 @@ import com.cloud.network.PublicIpAddress;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.guru.GuestNetworkGuru;
+import com.cloud.network.nsx.NsxService;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
@@ -75,6 +77,8 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
     DomainDao domainDao;
     @Inject
     NetworkModel networkModel;
+    @Inject
+    private NsxService nsxService;
 
     public NsxGuestNetworkGuru() {
         super();
@@ -278,7 +282,16 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
 
     @Override
     public boolean trash(Network network, NetworkOffering offering) {
-        return true;
+        Account account = accountDao.findById(network.getAccountId());
+        NetworkVO networkVO = _networkDao.findById(network.getId());
+        DataCenterVO zone = _dcDao.findById(network.getDataCenterId());
+        DomainVO domain = domainDao.findById(account.getDomainId());
+        if (Objects.isNull(zone)) {
+            String msg = String.format("Cannot find zone with ID %s", network.getDataCenterId());
+            LOGGER.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+        return nsxService.deleteNetwork(zone.getId(), account.getId(), domain.getId(), networkVO);
     }
 
     @Override

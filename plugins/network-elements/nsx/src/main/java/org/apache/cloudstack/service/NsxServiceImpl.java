@@ -19,8 +19,6 @@ package org.apache.cloudstack.service;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.nsx.NsxService;
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
@@ -37,7 +35,7 @@ import org.apache.cloudstack.agent.api.DeleteNsxLoadBalancerRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxSegmentCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxNatRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxTier1GatewayCommand;
-import org.apache.cloudstack.resource.NsxNetworkRule;
+import com.cloud.network.nsx.NsxNetworkRule;
 import org.apache.cloudstack.utils.NsxControllerUtils;
 import org.apache.cloudstack.utils.NsxHelper;
 import org.apache.log4j.Logger;
@@ -51,8 +49,6 @@ public class NsxServiceImpl implements NsxService {
     NsxControllerUtils nsxControllerUtils;
     @Inject
     VpcDao vpcDao;
-    @Inject
-    NetworkDao networkDao;
 
     private static final Logger LOGGER = Logger.getLogger(NsxServiceImpl.class);
 
@@ -99,7 +95,7 @@ public class NsxServiceImpl implements NsxService {
         return result.getResult();
     }
 
-    public boolean deleteNetwork(long zoneId, long accountId, long domainId, NetworkVO network) {
+    public boolean deleteNetwork(long zoneId, long accountId, long domainId, Network network) {
         String vpcName = null;
         if (Objects.nonNull(network.getVpcId())) {
             VpcVO vpc = vpcDao.findById(network.getVpcId());

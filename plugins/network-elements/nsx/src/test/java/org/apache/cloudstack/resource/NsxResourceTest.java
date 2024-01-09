@@ -17,6 +17,8 @@
 package org.apache.cloudstack.resource;
 
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.nsx.NsxLoadBalancerMember;
+import com.cloud.network.nsx.NsxNetworkRule;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.vmware.nsx.model.TransportZone;
 import com.vmware.nsx.model.TransportZoneListResult;

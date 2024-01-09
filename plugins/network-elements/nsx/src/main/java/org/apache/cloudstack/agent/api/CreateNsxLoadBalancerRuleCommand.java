@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.agent.api;
 
-import org.apache.cloudstack.resource.NsxLoadBalancerMember;
+import com.cloud.network.nsx.NsxLoadBalancerMember;
 
 import java.util.List;
 import java.util.Objects;

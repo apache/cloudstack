@@ -25,6 +25,7 @@ import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.host.Host;
 import com.cloud.network.Network;
+import com.cloud.network.nsx.NsxNetworkRule;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -371,12 +372,7 @@ public class NsxResource implements ServerResource {
         String segmentName = NsxControllerUtils.getNsxSegmentId(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(),
                 cmd.getVpcId(), cmd.getNetworkId());
         try {
-            Thread.sleep(30 * 1000L);
             nsxApiClient.deleteSegment(cmd.getZoneId(), cmd.getDomainId(), cmd.getAccountId(), cmd.getVpcId(), cmd.getNetworkId(), segmentName);
-        } catch (InterruptedException | ThreadDeath e) {
-            LOGGER.error("Thread interrupted", e);
-            Thread.currentThread().interrupt();
-            return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
         } catch (Exception e) {
             LOGGER.error(String.format("Failed to delete NSX segment: %s", segmentName));
             return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));

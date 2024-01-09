@@ -62,6 +62,7 @@ import com.cloud.network.element.PortForwardingServiceProvider;
 import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.VpcProvider;
 import com.cloud.network.lb.LoadBalancingRule;
+import com.cloud.network.nsx.NsxService;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.StaticNat;
@@ -90,8 +91,8 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.VMInstanceDao;
 import net.sf.ehcache.config.InvalidConfigurationException;
 import org.apache.cloudstack.StartupNsxCommand;
-import org.apache.cloudstack.resource.NsxLoadBalancerMember;
-import org.apache.cloudstack.resource.NsxNetworkRule;
+import com.cloud.network.nsx.NsxLoadBalancerMember;
+import com.cloud.network.nsx.NsxNetworkRule;
 import org.apache.cloudstack.resource.NsxOpObject;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -117,7 +118,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
     @Inject
     AccountManager accountMgr;
     @Inject
-    NsxServiceImpl nsxService;
+    NsxService nsxService;
     @Inject
     DataCenterDao dataCenterDao;
     @Inject
@@ -255,16 +256,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
 
     @Override
     public boolean destroy(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
-        Account account = accountMgr.getAccount(network.getAccountId());
-        NetworkVO networkVO = networkDao.findById(network.getId());
-        DataCenterVO zone = dataCenterDao.findById(network.getDataCenterId());
-        DomainVO domain = domainDao.findById(account.getDomainId());
-        if (Objects.isNull(zone)) {
-            String msg = String.format("Cannot find zone with ID %s", network.getDataCenterId());
-            LOGGER.error(msg);
-            throw new CloudRuntimeException(msg);
-        }
-        return nsxService.deleteNetwork(zone.getId(), account.getId(), domain.getId(), networkVO);
+        return true;
     }
 
     @Override

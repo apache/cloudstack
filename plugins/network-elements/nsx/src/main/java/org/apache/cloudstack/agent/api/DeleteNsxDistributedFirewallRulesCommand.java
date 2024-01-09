@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.agent.api;
 
-import org.apache.cloudstack.resource.NsxNetworkRule;
+import com.cloud.network.nsx.NsxNetworkRule;
 
 import java.util.List;
 

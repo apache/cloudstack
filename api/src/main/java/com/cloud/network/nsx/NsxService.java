@@ -17,10 +17,26 @@
 package com.cloud.network.nsx;
 
 import com.cloud.network.IpAddress;
+import com.cloud.network.Network;
 import com.cloud.network.vpc.Vpc;
+
+import java.util.List;
 
 public interface NsxService {
 
     boolean createVpcNetwork(Long zoneId, long accountId, long domainId, Long vpcId, String vpcName, boolean sourceNatEnabled);
     boolean updateVpcSourceNatIp(Vpc vpc, IpAddress address);
+    boolean createNetwork(Long zoneId, long accountId, long domainId, Long networkId, String networkName);
+    boolean deleteVpcNetwork(Long zoneId, long accountId, long domainId, Long vpcId, String vpcName);
+    boolean deleteNetwork(long zoneId, long accountId, long domainId, Network network);
+    boolean createStaticNatRule(long zoneId, long domainId, long accountId, Long networkResourceId, String networkResourceName,
+                                boolean isVpcResource, long vmId, String publicIp, String vmIp);
+    boolean deleteStaticNatRule(long zoneId, long domainId, long accountId, Long networkResourceId, String networkResourceName,
+                                boolean isVpcResource);
+    boolean createPortForwardRule(NsxNetworkRule nsxNetworkRule);
+    boolean deletePortForwardRule(NsxNetworkRule nsxNetworkRule);
+    boolean createLbRule(NsxNetworkRule nsxNetworkRule);
+    boolean deleteLbRule(NsxNetworkRule nsxNetworkRule);
+    boolean addFirewallRules(Network network, List<NsxNetworkRule> netRules);
+    boolean deleteFirewallRules(Network network, List<NsxNetworkRule> netRules);
 }

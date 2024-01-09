@@ -21,7 +21,7 @@ import com.vmware.nsx_policy.infra.domains.Groups;
 import com.vmware.nsx_policy.model.Group;
 import com.vmware.nsx_policy.model.PathExpression;
 import com.vmware.vapi.bindings.Service;
-import org.apache.cloudstack.resource.NsxNetworkRule;
+import com.cloud.network.nsx.NsxNetworkRule;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

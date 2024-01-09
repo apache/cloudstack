@@ -60,7 +60,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.resource.NsxNetworkRule;
+import com.cloud.network.nsx.NsxNetworkRule;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
