@@ -200,6 +200,8 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
                 int pathEnd = diskDef.getSourcePath().lastIndexOf("/");
                 if (pathEnd >= 0) {
                     disk.setDatastorePath(diskDef.getSourcePath().substring(0, pathEnd));
+                } else {
+                    disk.setDatastorePath(diskDef.getSourcePath());
                 }
                 disk.setDatastoreHost(diskDef.getSourceHost());
             }
