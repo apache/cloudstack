@@ -353,6 +353,7 @@ import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.db.UUIDManager;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.exception.ExceptionProxyObject;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.net.Ip;
@@ -4454,7 +4455,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             VMTemplateVO templateVO = _templateDao.findById(template.getId());
             if (templateVO == null) {
-                throw new InvalidParameterValueException("Unable to look up template by id " + template.getId());
+                InvalidParameterValueException ipve = new InvalidParameterValueException("Unable to look up template by id " + template.getId());
+                ipve.add(VirtualMachine.class, vm.getUuid());
+                throw ipve;
             }
 
             validateRootDiskResize(hypervisorType, rootDiskSize, templateVO, vm, customParameters);
@@ -4533,18 +4536,32 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             DiskOfferingVO rootDiskOfferingVO = _diskOfferingDao.findById(rootDiskOfferingId);
             rootDiskTags.add(rootDiskOfferingVO.getTags());
 
-            if (isIso) {
-                _orchSrvc.createVirtualMachineFromScratch(vm.getUuid(), Long.toString(owner.getAccountId()), vm.getIsoId().toString(), hostName, displayName,
-                        hypervisorType.name(), guestOSCategory.getName(), offering.getCpu(), offering.getSpeed(), offering.getRamSize(), diskSize, computeTags, rootDiskTags,
-                        networkNicMap, plan, extraDhcpOptionMap, rootDiskOfferingId);
-            } else {
-                _orchSrvc.createVirtualMachine(vm.getUuid(), Long.toString(owner.getAccountId()), Long.toString(template.getId()), hostName, displayName, hypervisorType.name(),
-                        offering.getCpu(), offering.getSpeed(), offering.getRamSize(), diskSize, computeTags, rootDiskTags, networkNicMap, plan, rootDiskSize, extraDhcpOptionMap,
-                        dataDiskTemplateToDiskOfferingMap, diskOfferingId, rootDiskOfferingId);
-            }
+            try {
+                if (isIso) {
+                    _orchSrvc.createVirtualMachineFromScratch(vm.getUuid(), Long.toString(owner.getAccountId()), vm.getIsoId().toString(), hostName, displayName,
+                            hypervisorType.name(), guestOSCategory.getName(), offering.getCpu(), offering.getSpeed(), offering.getRamSize(), diskSize, computeTags, rootDiskTags,
+                            networkNicMap, plan, extraDhcpOptionMap, rootDiskOfferingId);
+                } else {
+                    _orchSrvc.createVirtualMachine(vm.getUuid(), Long.toString(owner.getAccountId()), Long.toString(template.getId()), hostName, displayName, hypervisorType.name(),
+                            offering.getCpu(), offering.getSpeed(), offering.getRamSize(), diskSize, computeTags, rootDiskTags, networkNicMap, plan, rootDiskSize, extraDhcpOptionMap,
+                            dataDiskTemplateToDiskOfferingMap, diskOfferingId, rootDiskOfferingId);
+                }
 
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Successfully allocated DB entry for " + vm);
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Successfully allocated DB entry for " + vm);
+                }
+            } catch (CloudRuntimeException cre) {
+                ArrayList<ExceptionProxyObject> epoList = cre.getIdProxyList();
+                if (epoList == null || !epoList.stream().anyMatch(e -> e.getUuid().equals(vm.getUuid()))) {
+                    cre.addProxyObject(vm.getUuid(), "vmId");
+
+                }
+            } catch (InsufficientCapacityException ice) {
+                ArrayList idList = ice.getIdProxyList();
+                if (idList == null || !idList.stream().anyMatch(i -> i.equals(vm.getUuid()))) {
+                    ice.addProxyObject(vm.getUuid());
+                }
+                throw ice;
             }
         }
         CallContext.current().setEventDetails("Vm Id: " + vm.getUuid());
@@ -4558,8 +4575,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         hypervisorType.toString(), VirtualMachine.class.getName(), vm.getUuid(), customParameters, vm.isDisplayVm());
             }
 
-            //Update Resource Count for the given account
-            resourceCountIncrement(accountId, isDisplayVm, new Long(offering.getCpu()), new Long(offering.getRamSize()));
+            try {
+                //Update Resource Count for the given account
+                resourceCountIncrement(accountId, isDisplayVm, new Long(offering.getCpu()), new Long(offering.getRamSize()));
+            }
+            catch (CloudRuntimeException cre) {
+                ArrayList<ExceptionProxyObject> epoList =  cre.getIdProxyList();
+                if (epoList == null || !epoList.stream().anyMatch( e -> e.getUuid().equals(vm.getUuid()))) {
+                    cre.addProxyObject(vm.getUuid(), "vmId");
+                }
+                throw cre;
+            }
         }
         return vm;
     }
@@ -8318,3 +8344,4 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return DestroyRootVolumeOnVmDestruction.valueIn(domainId);
     }
 }
+
