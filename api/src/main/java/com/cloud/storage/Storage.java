@@ -138,7 +138,7 @@ public class Storage {
         LVM(false, false, false), // XenServer local LVM SR
         CLVM(true, false, false),
         RBD(true, true, false), // http://libvirt.org/storage.html#StorageBackendRBD
-        SharedMountPoint(true, false, true),
+        SharedMountPoint(true, true, true),
         VMFS(true, true, false), // VMware VMFS storage
         PreSetup(true, true, false), // for XenServer, Storage Pool is set up by customers.
         EXT(false, true, false), // XenServer local EXT SR
