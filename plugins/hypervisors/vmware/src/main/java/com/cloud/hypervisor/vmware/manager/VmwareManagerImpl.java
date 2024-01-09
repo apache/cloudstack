@@ -29,6 +29,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -167,6 +168,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.UserVmCloneSettingDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.vmware.pbm.PbmProfile;
@@ -1590,6 +1592,36 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         return compatiblePools;
     }
 
+    protected List<UnmanagedInstanceTO> filterManagedInstances(List<UnmanagedInstanceTO> instances, String keyword) {
+        List<UnmanagedInstanceTO> result = new ArrayList<>(instances);
+        Iterator<UnmanagedInstanceTO> iterator = result.iterator();
+        Map<String, List<String>> hostManagedInstancesMap = new HashMap<>();
+        String keywordFilter = keyword != null ? keyword.toLowerCase() : null;
+        while(iterator.hasNext()) {
+            UnmanagedInstanceTO instance = iterator.next();
+            String hostName = instance.getHostName();
+            if (StringUtils.isNotBlank(keywordFilter) && !instance.getName().toLowerCase().contains(keywordFilter)) {
+                iterator.remove();
+            }
+            List<String> managedInstanceNames = new ArrayList<>();
+            if (!hostManagedInstancesMap.containsKey(hostName)) {
+                HostVO host = hostDao.findByName(hostName);
+                if (host != null) {
+                    List<VMInstanceVO> managedInstances = vmInstanceDao.listByHostOrLastHostOrHostPod(List.of(host.getId()), host.getPodId());
+                    managedInstanceNames = managedInstances.stream().map(VMInstanceVO::getInstanceName).collect(Collectors.toList());
+                    hostManagedInstancesMap.put(hostName, managedInstanceNames);
+                }
+            } else {
+                managedInstanceNames = hostManagedInstancesMap.get(hostName);
+            }
+            if (org.apache.commons.collections.CollectionUtils.isNotEmpty(managedInstanceNames) &&
+                    managedInstanceNames.contains(instance.getName())) {
+                iterator.remove();
+            }
+        }
+        return result;
+    }
+
     @Override
     public List<UnmanagedInstanceTO> listVMsInDatacenter(ListVmwareDcVmsCmd cmd) {
         String vcenter = cmd.getVcenter();
@@ -1636,6 +1668,9 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                 throw new InvalidParameterValueException(msg);
             }
             List<UnmanagedInstanceTO> instances = dcMo.getAllVmsOnDatacenter();
+            if (existingVcenterId != null) {
+                return filterManagedInstances(instances, keyword);
+            }
             return StringUtils.isBlank(keyword) ? instances :
                     instances.stream().filter(x -> x.getName().toLowerCase().contains(keyword.toLowerCase())).collect(Collectors.toList());
         } catch (Exception e) {
