@@ -101,7 +101,7 @@ public class UserDataManagerImpl extends ManagerBase implements UserDataManager 
         }
 
         if (!Base64.isBase64(userData)) {
-            throw new InvalidParameterValueException("User data is not base64 encoded");
+            throw new InvalidParameterValueException("User data is not base64 encoded.");
         }
 
         byte[] decodedUserData = null;
@@ -120,7 +120,7 @@ public class UserDataManagerImpl extends ManagerBase implements UserDataManager 
     private byte[] validateAndDecodeByHTTPMethod(String userData, int maxHTTPLength, BaseCmd.HTTPMethod httpMethod) {
         byte[] decodedUserData = Base64.decodeBase64(userData.getBytes());
         if (decodedUserData == null || decodedUserData.length < 1) {
-            throw new InvalidParameterValueException("User data is too short");
+            throw new InvalidParameterValueException("User data is too short.");
         }
 
         int userDataLength = decodedUserData.length;
