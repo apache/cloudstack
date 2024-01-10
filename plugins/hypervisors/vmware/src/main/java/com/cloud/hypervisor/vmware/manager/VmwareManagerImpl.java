@@ -1602,6 +1602,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             String hostName = instance.getHostName();
             if (StringUtils.isNotBlank(keywordFilter) && !instance.getName().toLowerCase().contains(keywordFilter)) {
                 iterator.remove();
+                continue;
             }
             List<String> managedInstanceNames = new ArrayList<>();
             if (!hostManagedInstancesMap.containsKey(hostName)) {
