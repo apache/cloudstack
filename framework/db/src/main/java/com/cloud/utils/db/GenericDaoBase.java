@@ -1294,7 +1294,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     }
 
     @DB()
-    protected List<Attribute> addJoins(StringBuilder str, Collection<JoinBuilder<SearchCriteria<?>>> joins, Map<String, Integer> joinedTableNames) {
+    protected List<Attribute> addJoins(StringBuilder str, Collection<JoinBuilder<SearchCriteria<?>>> joins, Map<String, String> joinedTableNames) {
         List<Attribute> joinAttrList = new ArrayList<>();
         boolean hasWhereClause = true;
         int fromIndex = str.lastIndexOf("WHERE");
@@ -1307,7 +1307,13 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
         for (JoinBuilder<SearchCriteria<?>> join : joins) {
             String joinTableName = join.getSecondAttribute()[0].table;
-            String joinTableAlias = StringUtils.isNotEmpty(join.getName()) ? join.getName() : findNextJoinTableName(joinTableName, joinedTableNames);
+            String joinTableAlias;
+            if (StringUtils.isNotEmpty(join.getName())) {
+                joinTableAlias = join.getName();
+                joinedTableNames.put(joinTableName, joinTableAlias);
+            } else {
+                joinTableAlias = joinedTableNames.getOrDefault(joinTableName, joinTableName);
+            }
             StringBuilder onClause = new StringBuilder();
             onClause.append(" ")
             .append(join.getType().getName())
@@ -1325,7 +1331,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                     onClause.append("?");
                     joinAttrList.add(join.getFirstAttributes()[i]);
                 } else {
-                    onClause.append(join.getFirstAttributes()[i].table)
+                    onClause.append(joinedTableNames.getOrDefault(join.getFirstAttributes()[i].table, join.getFirstAttributes()[i].table))
                     .append(".")
                     .append(join.getFirstAttributes()[i].columnName);
                 }
@@ -1366,17 +1372,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             }
         }
         return joinAttrList;
-    }
-
-    protected static String findNextJoinTableName(String tableName, Map<String, Integer> usedTableNames) {
-        if (usedTableNames.containsKey(tableName)) {
-            Integer tableCounter = usedTableNames.get(tableName);
-            usedTableNames.put(tableName, ++tableCounter);
-            tableName = tableName + tableCounter;
-        } else {
-            usedTableNames.put(tableName, 0);
-        }
-        return tableName;
     }
 
     private void removeAndClause(StringBuilder sql) {

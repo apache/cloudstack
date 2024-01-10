@@ -20,8 +20,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -255,24 +253,14 @@ public class GenericDaoBaseTest {
         Attribute tDc5 = new Attribute("tableD", "column5");
         Attribute attr = new Attribute(123);
 
-        joins.add(new JoinBuilder<>("", dbTestDao.createSearchCriteria(), tBc2, tAc1, JoinBuilder.JoinType.INNER));
-        joins.add(new JoinBuilder<>("", dbTestDao.createSearchCriteria(), tCc3, tAc2, JoinBuilder.JoinType.INNER));
-        joins.add(new JoinBuilder<>("tableAlias", dbTestDao.createSearchCriteria(),
+        joins.add(new JoinBuilder<>("tableA1Alias", dbTestDao.createSearchCriteria(), tBc2, tAc1, JoinBuilder.JoinType.INNER));
+        joins.add(new JoinBuilder<>("tableA2Alias", dbTestDao.createSearchCriteria(), tCc3, tAc2, JoinBuilder.JoinType.INNER));
+        joins.add(new JoinBuilder<>("tableA3Alias", dbTestDao.createSearchCriteria(),
                 new Attribute[]{tDc4, tDc5}, new Attribute[]{tAc3, attr}, JoinBuilder.JoinType.INNER, JoinBuilder.JoinCondition.AND));
         dbTestDao.addJoins(joinString, joins);
 
-        Assert.assertEquals(" INNER JOIN tableA ON tableB.column2=tableA.column1 " +
-                " INNER JOIN tableA tableA1 ON tableC.column3=tableA1.column2 " +
-                " INNER JOIN tableA tableAlias ON tableD.column4=tableAlias.column3 AND tableD.column5=? ", joinString.toString());
-    }
-
-    @Test
-    public void findNextTableNameTest() {
-        Map<String, Integer> usedTables = new HashMap<>();
-
-        Assert.assertEquals("tableA", GenericDaoBase.findNextJoinTableName("tableA", usedTables));
-        Assert.assertEquals("tableA1", GenericDaoBase.findNextJoinTableName("tableA", usedTables));
-        Assert.assertEquals("tableA2", GenericDaoBase.findNextJoinTableName("tableA", usedTables));
-        Assert.assertEquals("tableA3", GenericDaoBase.findNextJoinTableName("tableA", usedTables));
+        Assert.assertEquals(" INNER JOIN tableA tableA1Alias ON tableB.column2=tableA1Alias.column1 " +
+                " INNER JOIN tableA tableA2Alias ON tableC.column3=tableA2Alias.column2 " +
+                " INNER JOIN tableA tableA3Alias ON tableD.column4=tableA3Alias.column3 AND tableD.column5=? ", joinString.toString());
     }
 }
