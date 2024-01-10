@@ -4604,7 +4604,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                                                 Host host, Host lastHost, VirtualMachine.PowerState powerState) {
         if (isImport) {
             vm.setDataCenterId(zone.getId());
-            if (hypervisorType == HypervisorType.VMware) {
+            if (List.of(HypervisorType.VMware, HypervisorType.KVM).contains(hypervisorType)) {
                 vm.setHostId(host.getId());
             }
             if (lastHost != null) {

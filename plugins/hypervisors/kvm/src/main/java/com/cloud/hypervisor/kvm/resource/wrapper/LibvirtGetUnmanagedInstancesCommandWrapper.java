@@ -27,20 +27,17 @@ import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
-import org.apache.cloudstack.utils.qemu.QemuImg;
-import org.apache.cloudstack.utils.qemu.QemuImgException;
-import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
+import org.libvirt.DomainBlockInfo;
 import org.libvirt.LibvirtException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @ResourceWrapper(handles=GetUnmanagedInstancesCommand.class)
 public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWrapper<GetUnmanagedInstancesCommand, GetUnmanagedInstancesAnswer, LibvirtComputingResource> {
@@ -132,7 +129,7 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
             instance.setPowerState(getPowerState(libvirtComputingResource.getVmState(conn,domain.getName())));
             instance.setMemory((int) LibvirtComputingResource.getDomainMemory(domain) / 1024);
             instance.setNics(getUnmanagedInstanceNics(parser.getInterfaces()));
-            instance.setDisks(getUnmanagedInstanceDisks(parser.getDisks(),libvirtComputingResource));
+            instance.setDisks(getUnmanagedInstanceDisks(parser.getDisks(),libvirtComputingResource, conn, domain.getName()));
             instance.setVncPassword(parser.getVncPasswd() + "aaaaaaaaaaaaaa"); // Suffix back extra characters for DB compatibility
 
             return instance;
@@ -170,7 +167,7 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
         return nics;
     }
 
-    private List<UnmanagedInstanceTO.Disk> getUnmanagedInstanceDisks(List<LibvirtVMDef.DiskDef> disksInfo, LibvirtComputingResource libvirtComputingResource){
+    private List<UnmanagedInstanceTO.Disk> getUnmanagedInstanceDisks(List<LibvirtVMDef.DiskDef> disksInfo, LibvirtComputingResource libvirtComputingResource, Connect conn, String domainName) {
         final ArrayList<UnmanagedInstanceTO.Disk> disks = new ArrayList<>(disksInfo.size());
         int counter = 0;
         for (LibvirtVMDef.DiskDef diskDef : disksInfo) {
@@ -180,14 +177,11 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
 
             final UnmanagedInstanceTO.Disk disk = new UnmanagedInstanceTO.Disk();
             Long size = null;
-            String imagePath = null;
             try {
-                QemuImgFile file = new QemuImgFile(diskDef.getSourcePath());
-                QemuImg qemu = new QemuImg(0);
-                Map<String, String> info = qemu.info(file);
-                size = Long.parseLong(info.getOrDefault("virtual_size", "0"));
-                imagePath = info.getOrDefault("image", null);
-            } catch (QemuImgException | LibvirtException e) {
+                Domain dm = conn.domainLookupByName(domainName);
+                DomainBlockInfo blockInfo = dm.blockInfo(diskDef.getDiskLabel());
+                size = blockInfo.getCapacity();
+            } catch (LibvirtException e) {
                 throw new RuntimeException(e);
             }
 
@@ -203,14 +197,19 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
                 disk.setDatastoreHost(sourceHostPath.first());
                 disk.setDatastorePath(sourceHostPath.second());
             } else {
-                disk.setDatastorePath(diskDef.getSourcePath());
+                int pathEnd = diskDef.getSourcePath().lastIndexOf("/");
+                if (pathEnd >= 0) {
+                    disk.setDatastorePath(diskDef.getSourcePath().substring(0, pathEnd));
+                } else {
+                    disk.setDatastorePath(diskDef.getSourcePath());
+                }
                 disk.setDatastoreHost(diskDef.getSourceHost());
             }
 
             disk.setDatastoreType(diskDef.getDiskType().toString());
             disk.setDatastorePort(diskDef.getSourceHostPort());
-            disk.setImagePath(imagePath);
-            disk.setDatastoreName(imagePath.substring(imagePath.lastIndexOf("/")));
+            disk.setImagePath(diskDef.getSourcePath());
+            disk.setDatastoreName(disk.getDatastorePath());
             disks.add(disk);
         }
         return disks;

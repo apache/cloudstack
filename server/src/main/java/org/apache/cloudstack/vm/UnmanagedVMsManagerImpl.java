@@ -552,7 +552,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             List<StoragePoolVO> pools = primaryDataStoreDao.listPoolsByCluster(cluster.getId());
             pools.addAll(primaryDataStoreDao.listByDataCenterId(zone.getId()));
             for (StoragePool pool : pools) {
-                if (pool.getPath().endsWith(dsName)) {
+                if (StringUtils.contains(pool.getPath(), dsPath)) {
                     storagePool = pool;
                     break;
                 }
@@ -856,7 +856,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     }
 
     private NicProfile importNic(UnmanagedInstanceTO.Nic nic, VirtualMachine vm, Network network, Network.IpAddresses ipAddresses, int deviceId, boolean isDefaultNic, boolean forced) throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
-        Pair<NicProfile, Integer> result = networkOrchestrationService.importNic(nic.getMacAddress(), deviceId, network, isDefaultNic, vm, ipAddresses, forced);
+        DataCenterVO dataCenterVO = dataCenterDao.findById(network.getDataCenterId());
+        Pair<NicProfile, Integer> result = networkOrchestrationService.importNic(nic.getMacAddress(), deviceId, network, isDefaultNic, vm, ipAddresses, dataCenterVO, forced);
         if (result == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("NIC ID: %s import failed", nic.getNicId()));
         }
@@ -1354,7 +1355,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         ActionEventUtils.onStartedActionEvent(userId, owner.getId(), EventTypes.EVENT_VM_IMPORT,
                 cmd.getEventDescription(), null, null, true, 0);
 
-        //TODO: Placeholder for integration with KVM ingestion and KVM extend unmanage/manage VMs
         if (cmd instanceof ImportVmCmd) {
             ImportVmCmd importVmCmd = (ImportVmCmd) cmd;
             if (StringUtils.isBlank(importVmCmd.getImportSource())) {
@@ -1370,8 +1370,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                         details, importVmCmd, forced);
             }
         } else {
-            if (cluster.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
-                userVm = importUnmanagedInstanceFromVmwareToVmware(zone, cluster, hosts, additionalNameFilters,
+            if (List.of(Hypervisor.HypervisorType.VMware, Hypervisor.HypervisorType.KVM).contains(cluster.getHypervisorType())) {
+                userVm = importUnmanagedInstanceFromHypervisor(zone, cluster, hosts, additionalNameFilters,
                         template, instanceName, displayName, hostName, caller, owner, userId,
                         serviceOffering, dataDiskOfferingMap,
                         nicNetworkMap, nicIpAddressMap,
@@ -1490,13 +1490,13 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
     }
 
-    private UserVm importUnmanagedInstanceFromVmwareToVmware(DataCenter zone, Cluster cluster,
-                                                             List<HostVO> hosts, List<String> additionalNameFilters,
-                                                             VMTemplateVO template, String instanceName, String displayName,
-                                                             String hostName, Account caller, Account owner, long userId,
-                                                             ServiceOfferingVO serviceOffering, Map<String, Long> dataDiskOfferingMap,
-                                                             Map<String, Long> nicNetworkMap, Map<String, Network.IpAddresses> nicIpAddressMap,
-                                                             Map<String, String> details, Boolean migrateAllowed, List<String> managedVms, boolean forced) {
+    private UserVm importUnmanagedInstanceFromHypervisor(DataCenter zone, Cluster cluster,
+                                                         List<HostVO> hosts, List<String> additionalNameFilters,
+                                                         VMTemplateVO template, String instanceName, String displayName,
+                                                         String hostName, Account caller, Account owner, long userId,
+                                                         ServiceOfferingVO serviceOffering, Map<String, Long> dataDiskOfferingMap,
+                                                         Map<String, Long> nicNetworkMap, Map<String, Network.IpAddresses> nicIpAddressMap,
+                                                         Map<String, String> details, Boolean migrateAllowed, List<String> managedVms, boolean forced) {
         UserVm userVm = null;
         for (HostVO host : hosts) {
             HashMap<String, UnmanagedInstanceTO> unmanagedInstances = getUnmanagedInstancesForHost(host, instanceName, managedVms);
@@ -2404,7 +2404,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             cleanupFailedImportVM(userVm);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import volumes while importing vm: %s. %s", instanceName, StringUtils.defaultString(e.getMessage())));
         }
-        networkOrchestrationService.importNic(macAddress,0,network, true, userVm, requestedIpPair, true);
+        networkOrchestrationService.importNic(macAddress, 0, network, true, userVm, requestedIpPair, zone, true);
         publishVMUsageUpdateResourceCount(userVm, serviceOffering, template);
         return userVm;
     }
