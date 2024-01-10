@@ -842,7 +842,7 @@ public class QemuImg {
 
         if (repair) {
             s.add("-r");
-            s.add("leaks");
+            s.add("all");
         }
 
         OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
