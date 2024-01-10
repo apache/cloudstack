@@ -363,6 +363,10 @@ public class VeeamClient {
             if (session.getResult().equals("Success")) {
                 return true;
             }
+            if (session.getResult().equalsIgnoreCase("Failed")) {
+                String sessionUid = session.getUid();
+                throw new CloudRuntimeException(String.format("Restore job [%s] failed.", sessionUid));
+            }
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException ignored) {
