@@ -39,7 +39,7 @@ import com.cloud.user.User;
 import com.google.common.base.Preconditions;
 
 @APICommand(name = "moveUser",
-        description = "Moves a user to another account from the same domain",
+        description = "Moves a user to another account from the same domain.",
         responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
