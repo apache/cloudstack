@@ -146,7 +146,7 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
         if (StringUtils.isBlank(vncPasswd)) {
             return null;
         }
-        String randomChars = RandomStringUtils.random(requiredVncPasswordLength - vncPasswd.length());
+        String randomChars = RandomStringUtils.random(requiredVncPasswordLength - vncPasswd.length(), true, false);
         return String.format("%s%s", vncPasswd, randomChars);
     }
 
