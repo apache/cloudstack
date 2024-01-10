@@ -64,7 +64,7 @@ def checkToken(token):
 
 def loadPasswordFile():
     try:
-        with file(getPasswordFile()) as f:
+        with open(getPasswordFile()) as f:
             for line in f:
                 if '=' not in line: continue
                 key, value = line.strip().split('=', 1)
@@ -75,7 +75,7 @@ def loadPasswordFile():
 def savePasswordFile():
     with lock:
         try:
-            with file(getPasswordFile(), 'w') as f:
+            with open(getPasswordFile(), 'w') as f:
                 for ip in passMap:
                     f.write('%s=%s\n' % (ip, passMap[ip]))
             f.close()
