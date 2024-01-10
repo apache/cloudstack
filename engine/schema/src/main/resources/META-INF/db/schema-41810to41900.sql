@@ -319,3 +319,7 @@ CREATE TABLE `cloud_usage`.`bucket_statistics` (
 
 -- Add remover account ID to quarantined IPs table.
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.quarantined_ips', 'remover_account_id', 'bigint(20) unsigned DEFAULT NULL COMMENT "ID of the account that removed the IP from quarantine, foreign key to `account` table"');
+
+-- Explicitly add support for VMware 8.0b (8.0.0.2), 8.0c (8.0.0.3)
+INSERT IGNORE INTO `cloud`.`hypervisor_capabilities` (uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_data_volumes_limit, max_hosts_per_cluster, storage_motion_supported, vm_snapshot_enabled) values (UUID(), 'VMware', '8.0.0.2', 1024, 0, 59, 64, 1, 1);
+INSERT IGNORE INTO `cloud`.`hypervisor_capabilities` (uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_data_volumes_limit, max_hosts_per_cluster, storage_motion_supported, vm_snapshot_enabled) values (UUID(), 'VMware', '8.0.0.3', 1024, 0, 59, 64, 1, 1);

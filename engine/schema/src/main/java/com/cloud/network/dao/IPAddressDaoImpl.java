@@ -554,4 +554,13 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
 
         sc.setParametersIfNotNull("quarantinedPublicIpsIdsNIN", quarantinedIpsIdsAllowedToUser);
     }
+
+    @Override
+    public IPAddressVO findBySourceNetworkIdAndDatacenterIdAndState(long sourceNetworkId, long dataCenterId, State state) {
+        SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
+        sc.setParameters("sourcenetwork", sourceNetworkId);
+        sc.setParameters("dataCenterId", dataCenterId);
+        sc.setParameters("state", State.Free);
+        return findOneBy(sc);
+    }
 }

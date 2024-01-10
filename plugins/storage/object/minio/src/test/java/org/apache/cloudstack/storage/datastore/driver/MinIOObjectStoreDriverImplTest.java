@@ -16,16 +16,23 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.driver;
 
-import com.cloud.storage.BucketVO;
-import com.cloud.storage.dao.BucketDao;
-import com.cloud.user.AccountDetailVO;
-import com.cloud.user.AccountDetailsDao;
-import com.cloud.user.AccountVO;
-import com.cloud.user.dao.AccountDao;
-import io.minio.BucketExistsArgs;
-import io.minio.MinioClient;
-import io.minio.RemoveBucketArgs;
-import io.minio.admin.MinioAdminClient;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
@@ -34,22 +41,24 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
 
-import java.util.ArrayList;
+import com.cloud.storage.BucketVO;
+import com.cloud.storage.dao.BucketDao;
+import com.cloud.user.AccountDetailVO;
+import com.cloud.user.AccountDetailsDao;
+import com.cloud.user.AccountVO;
+import com.cloud.user.dao.AccountDao;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyLong;
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import io.minio.BucketExistsArgs;
+import io.minio.MinioClient;
+import io.minio.RemoveBucketArgs;
+import io.minio.admin.MinioAdminClient;
+import io.minio.admin.UserInfo;
 
 @RunWith(MockitoJUnitRunner.class)
 public class MinIOObjectStoreDriverImplTest {
@@ -97,7 +106,7 @@ public class MinIOObjectStoreDriverImplTest {
         doReturn(minioClient).when(minioObjectStoreDriverImpl).getMinIOClient(anyLong());
         doReturn(minioAdminClient).when(minioObjectStoreDriverImpl).getMinIOAdminClient(anyLong());
         when(bucketDao.listByObjectStoreIdAndAccountId(anyLong(), anyLong())).thenReturn(new ArrayList<BucketVO>());
-        when(account.getAccountName()).thenReturn("admin");
+        when(account.getUuid()).thenReturn(UUID.randomUUID().toString());
         when(accountDao.findById(anyLong())).thenReturn(account);
         when(accountDetailsDao.findDetail(anyLong(),anyString())).
                 thenReturn(new AccountDetailVO(1L, "abc","def"));
@@ -118,5 +127,28 @@ public class MinIOObjectStoreDriverImplTest {
         assertTrue(success);
         verify(minioClient, times(1)).bucketExists(any());
         verify(minioClient, times(1)).removeBucket(any());
+    }
+
+    @Test
+    public void testCreateUserExisting() throws Exception {
+        String uuid = "uuid";
+        String accessKey = MinIOObjectStoreDriverImpl.ACS_PREFIX + "-" + uuid;
+        String secretKey = "secret";
+
+        doReturn(minioAdminClient).when(minioObjectStoreDriverImpl).getMinIOAdminClient(anyLong());
+        when(accountDao.findById(anyLong())).thenReturn(account);
+        when(account.getUuid()).thenReturn(uuid);
+        UserInfo info = mock(UserInfo.class);
+        when(info.secretKey()).thenReturn(secretKey);
+        when(minioAdminClient.getUserInfo(accessKey)).thenReturn(info);
+        final Map<String, String> persistedMap = new HashMap<>();
+        Mockito.doAnswer((Answer<Void>) invocation -> {
+            persistedMap.putAll((Map<String, String>)invocation.getArguments()[1]);
+            return null;
+        }).when(accountDetailsDao).persist(Mockito.anyLong(), Mockito.anyMap());
+        boolean result = minioObjectStoreDriverImpl.createUser(1L, 1L);
+        assertTrue(result);
+        assertEquals(accessKey, persistedMap.get(MinIOObjectStoreDriverImpl.MINIO_ACCESS_KEY));
+        assertEquals(secretKey, persistedMap.get(MinIOObjectStoreDriverImpl.MINIO_SECRET_KEY));
     }
 }

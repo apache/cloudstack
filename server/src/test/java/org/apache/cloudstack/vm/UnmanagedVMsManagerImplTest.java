@@ -367,7 +367,7 @@ public class UnmanagedVMsManagerImplTest {
         NicProfile profile = Mockito.mock(NicProfile.class);
         Integer deviceId = 100;
         Pair<NicProfile, Integer> pair = new Pair<NicProfile, Integer>(profile, deviceId);
-        when(networkOrchestrationService.importNic(nullable(String.class), nullable(Integer.class), nullable(Network.class), nullable(Boolean.class), nullable(VirtualMachine.class), nullable(Network.IpAddresses.class), Mockito.anyBoolean())).thenReturn(pair);
+        when(networkOrchestrationService.importNic(nullable(String.class), nullable(Integer.class), nullable(Network.class), nullable(Boolean.class), nullable(VirtualMachine.class), nullable(Network.IpAddresses.class), nullable(DataCenter.class), Mockito.anyBoolean())).thenReturn(pair);
         when(volumeDao.findByInstance(Mockito.anyLong())).thenReturn(volumes);
         List<UserVmResponse> userVmResponses = new ArrayList<>();
         UserVmResponse userVmResponse = new UserVmResponse();

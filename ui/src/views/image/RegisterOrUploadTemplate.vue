@@ -429,8 +429,10 @@
             </a-form-item>
           </a-col>
         </a-row>
-        <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-        <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+        <div :span="24" class="action-button">
+          <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+        </div>
       </a-form>
     </a-spin>
   </div>

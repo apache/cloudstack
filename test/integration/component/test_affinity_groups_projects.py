@@ -1065,7 +1065,7 @@ class TestDeployVMAffinityGroups(cloudstackTestCase):
         """
         test DeployVM in anti-affinity groups with more vms than hosts.
         """
-        hosts = list_hosts(self.api_client, type="routing", zoneid=self.zone.id)
+        hosts = list_hosts(self.api_client, type="routing")
         aff_grp = self.create_aff_grp(self.account_api_client)
         vms = []
         for host in hosts:
