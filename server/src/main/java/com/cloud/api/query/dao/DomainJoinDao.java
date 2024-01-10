@@ -36,5 +36,5 @@ public interface DomainJoinDao extends GenericDao<DomainJoinVO, Long> {
 
     void setResourceLimits(DomainJoinVO domain, boolean isRootDomain, ResourceLimitAndCountResponse response);
 
-    List<DomainJoinVO> searchByIds(Long[] domainIds);
+    List<DomainJoinVO> searchByIds(Long... domainIds);
 }

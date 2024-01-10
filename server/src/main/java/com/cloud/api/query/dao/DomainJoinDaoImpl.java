@@ -217,7 +217,7 @@ public class DomainJoinDaoImpl extends GenericDaoBase<DomainJoinVO, Long> implem
     }
 
     @Override
-    public List<DomainJoinVO> searchByIds(Long[] domainIds) {
+    public List<DomainJoinVO> searchByIds(Long... domainIds) {
         // set detail batch query size
         int DETAILS_BATCH_SIZE = 2000;
         String batchCfg = configDao.getValue("detail.batch.query.size");
