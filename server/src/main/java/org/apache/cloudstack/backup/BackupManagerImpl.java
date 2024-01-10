@@ -477,6 +477,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException("The assigned backup offering does not allow ad-hoc user backup");
         }
 
+        ActionEventUtils.onStartedActionEvent(User.UID_SYSTEM, vm.getAccountId(),
+                EventTypes.EVENT_VM_BACKUP_CREATE, "creating backup for VM ID:" + vm.getUuid(),
+                vmId, ApiCommandResourceType.VirtualMachine.toString(),
+                true, 0);
+
         final BackupProvider backupProvider = getBackupProvider(offering.getProvider());
         if (backupProvider != null && backupProvider.takeBackup(vm)) {
             return true;
