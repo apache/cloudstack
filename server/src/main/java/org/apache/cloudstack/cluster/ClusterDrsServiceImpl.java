@@ -354,9 +354,9 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
                 hostList.stream().map(HostVO::getId).toArray(Long[]::new));
 
         Map<Long, Long> hostCpuMap = hostJoinList.stream().collect(Collectors.toMap(HostJoinVO::getId,
-                hostJoin -> hostJoin.getCpuUsedCapacity() + hostJoin.getCpuReservedCapacity()));
+                hostJoin -> hostJoin.getCpus() * hostJoin.getSpeed() - hostJoin.getCpuReservedCapacity() - hostJoin.getCpuUsedCapacity()));
         Map<Long, Long> hostMemoryMap = hostJoinList.stream().collect(Collectors.toMap(HostJoinVO::getId,
-                hostJoin -> hostJoin.getMemUsedCapacity() + hostJoin.getMemReservedCapacity()));
+                hostJoin -> hostJoin.getTotalMemory() - hostJoin.getMemUsedCapacity() - hostJoin.getMemReservedCapacity()));
 
         Map<Long, ServiceOffering> vmIdServiceOfferingMap = new HashMap<>();
 
@@ -387,10 +387,10 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
             long vmCpu = (long) serviceOffering.getCpu() * serviceOffering.getSpeed();
             long vmMemory = serviceOffering.getRamSize() * 1024L * 1024L;
 
-            hostCpuMap.put(vm.getHostId(), hostCpuMap.get(vm.getHostId()) - vmCpu);
-            hostCpuMap.put(destHost.getId(), hostCpuMap.get(destHost.getId()) + vmCpu);
-            hostMemoryMap.put(vm.getHostId(), hostMemoryMap.get(vm.getHostId()) - vmMemory);
-            hostMemoryMap.put(destHost.getId(), hostMemoryMap.get(destHost.getId()) + vmMemory);
+            hostCpuMap.put(vm.getHostId(), hostCpuMap.get(vm.getHostId()) + vmCpu);
+            hostCpuMap.put(destHost.getId(), hostCpuMap.get(destHost.getId()) - vmCpu);
+            hostMemoryMap.put(vm.getHostId(), hostMemoryMap.get(vm.getHostId()) + vmMemory);
+            hostMemoryMap.put(destHost.getId(), hostMemoryMap.get(destHost.getId()) - vmMemory);
             vm.setHostId(destHost.getId());
             iteration++;
         }
