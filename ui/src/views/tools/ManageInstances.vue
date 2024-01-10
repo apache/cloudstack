@@ -322,8 +322,8 @@
             <a-col v-if="!isDiskImport" :md="24" :lg="(!isMigrateFromVmware && showManagedInstances) ? 12 : 24">
               <a-card class="instances-card">
                 <template #title>
-                  {{ isMigrateFromVmware ? $t('label.instances') : $t('label.unmanaged.instances') }}
-                  <a-tooltip :title="isMigrateFromVmware ? $t('message.instances.migrate.vmware') : $t('message.instances.unmanaged')">
+                  {{ (isMigrateFromVmware && !isExternal) ? $t('label.instances') : $t('label.unmanaged.instances') }}
+                  <a-tooltip :title="(isMigrateFromVmware && !isExternal) ? $t('message.instances.migrate.vmware') : $t('message.instances.unmanaged')">
                     <info-circle-outlined />
                   </a-tooltip>
                   <a-button
