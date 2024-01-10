@@ -252,6 +252,13 @@ public class VolumeServiceImpl implements VolumeService {
             return ((PrimaryDataStoreDriver)dataStoreDriver).grantAccess(dataObject, host, dataStore);
         }
 
+        if (HypervisorType.KVM.equals(host.getHypervisorType()) && DataObjectType.VOLUME.equals(dataObject.getType())) {
+            CheckAndRepairVolumePayload payload = new CheckAndRepairVolumePayload(true);
+            VolumeInfo volumeInfo = volFactory.getVolume(dataObject.getId());
+            volumeInfo.addPayload(payload);
+            checkAndRepairVolume(volumeInfo);
+        }
+
         return false;
     }
 

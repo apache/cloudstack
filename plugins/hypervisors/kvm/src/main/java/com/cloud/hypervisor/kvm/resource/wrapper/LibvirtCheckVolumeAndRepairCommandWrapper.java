@@ -27,7 +27,6 @@ import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
-import com.cloud.storage.Storage;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -60,20 +59,17 @@ public class LibvirtCheckVolumeAndRepairCommandWrapper extends CommandWrapper<Ch
         final KVMStoragePoolManager storagePoolMgr = serverResource.getStoragePoolMgr();
         KVMStoragePool pool = storagePoolMgr.getStoragePool(spool.getType(), spool.getUuid());
 
-        if (spool.getType().equals(Storage.StoragePoolType.PowerFlex)) {
-            pool.connectPhysicalDisk(volumeId, null);
-        }
-
         final KVMPhysicalDisk vol = pool.getPhysicalDisk(volumeId);
         QemuObject.EncryptFormat encryptFormat = QemuObject.EncryptFormat.enumValue(command.getEncryptFormat());
+        byte[] passphrase = command.getPassphrase();
         try {
-            String checkVolumeResult = checkVolumeAndRepair(vol, false, encryptFormat, command.getPassphrase(), serverResource);
-            s_logger.info(String.format("Check Volume result is %s", checkVolumeResult));
+            String checkVolumeResult = checkVolumeAndRepair(vol, false, encryptFormat, passphrase, serverResource);
+            s_logger.info(String.format("Check Volume result for the volume %s is %s", vol.getName(), checkVolumeResult));
             CheckVolumeAndRepairAnswer answer = new CheckVolumeAndRepairAnswer(command, true, checkVolumeResult);
             answer.setVolumeCheckExecutionResult(checkVolumeResult);
 
             if (repair) {
-                String repairVolumeResult = checkVolumeAndRepair(vol, true, encryptFormat, command.getPassphrase(), serverResource);
+                String repairVolumeResult = checkVolumeAndRepair(vol, true, encryptFormat, passphrase, serverResource);
                 String finalResult = (checkVolumeResult != null ? checkVolumeResult.concat(",") : "") + repairVolumeResult;
                 s_logger.info(String.format("Repair Volume result for the volume %s is %s", vol.getName(), repairVolumeResult));
 
@@ -84,6 +80,10 @@ public class LibvirtCheckVolumeAndRepairCommandWrapper extends CommandWrapper<Ch
             return answer;
         } catch (Exception e) {
             return new CheckVolumeAndRepairAnswer(command, false, e.toString());
+        } finally {
+            if (passphrase != null) {
+                Arrays.fill(passphrase, (byte) 0);
+            }
         }
     }
 
@@ -107,10 +107,6 @@ public class LibvirtCheckVolumeAndRepairCommandWrapper extends CommandWrapper<Ch
             throw new CloudRuntimeException("Failed to run qemu-img for check volume", ex);
         } catch (IOException ex) {
             throw new CloudRuntimeException("Failed to create keyfile for encrypted volume for check volume operation", ex);
-        } finally {
-            if (passphrase != null) {
-                Arrays.fill(passphrase, (byte) 0);
-            }
         }
     }
 }
