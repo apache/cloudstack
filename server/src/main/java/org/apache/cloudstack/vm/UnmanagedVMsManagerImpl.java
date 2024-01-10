@@ -1113,7 +1113,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
         allDetails.put(VmDetailConstants.ROOT_DISK_CONTROLLER, rootDisk.getController());
         if (cluster.getHypervisorType() == Hypervisor.HypervisorType.KVM && isImportUnmanagedFromSameHypervisor) {
-            allDetails.put(VmDetailConstants.ROOT_DISK_SIZE, String.valueOf(rootDisk.getCapacity() / Resource.ResourceType.bytesToGiB));
+            long size = Double.valueOf(Math.ceil((double)rootDisk.getCapacity() / Resource.ResourceType.bytesToGiB)).longValue();
+            allDetails.put(VmDetailConstants.ROOT_DISK_SIZE, String.valueOf(size));
         }
 
         try {
@@ -1172,7 +1173,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             }
             DiskOfferingVO diskOffering = diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
             diskProfileStoragePoolList.add(importDisk(rootDisk, userVm, cluster, diskOffering, Volume.Type.ROOT, String.format("ROOT-%d", userVm.getId()),
-                    (rootDisk.getCapacity() / Resource.ResourceType.bytesToGiB), minIops, maxIops,
+                    Double.valueOf(Math.ceil((double)rootDisk.getCapacity() / Resource.ResourceType.bytesToGiB)).longValue(), minIops, maxIops,
                     template, owner, null));
             long deviceId = 1L;
             for (UnmanagedInstanceTO.Disk disk : dataDisks) {
