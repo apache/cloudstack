@@ -4637,11 +4637,19 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         if (network.getGuestType() == GuestType.L2) {
             return null;
         }
+        String requestedIp = ipAddresses.getIp4Address();
         if (dataCenter.getNetworkType() == NetworkType.Basic) {
-            IPAddressVO ipAddressVO = _ipAddressDao.findBySourceNetworkIdAndDatacenterIdAndState(network.getId(), dataCenter.getId(), IpAddress.State.Free);
-            return ipAddressVO != null && ipAddressVO.getAddress() != null ? ipAddressVO.getAddress().addr() : null;
+            IPAddressVO ipAddressVO = StringUtils.isBlank(requestedIp) ?
+                    _ipAddressDao.findBySourceNetworkIdAndDatacenterIdAndState(network.getId(), dataCenter.getId(), IpAddress.State.Free):
+                    _ipAddressDao.findByIp(requestedIp);
+            if (ipAddressVO == null || ipAddressVO.getState() != IpAddress.State.Free) {
+                String msg = String.format("Cannot find a free IP to assign to VM NIC on network %s", network.getName());
+                s_logger.error(msg);
+                throw new CloudRuntimeException(msg);
+            }
+            return ipAddressVO.getAddress() != null ? ipAddressVO.getAddress().addr() : null;
         }
-        return _ipAddrMgr.acquireGuestIpAddress(network, ipAddresses.getIp4Address());
+        return _ipAddrMgr.acquireGuestIpAddress(network, requestedIp);
     }
 
     /**
