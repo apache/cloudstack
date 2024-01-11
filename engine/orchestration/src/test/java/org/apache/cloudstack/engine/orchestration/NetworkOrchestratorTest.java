@@ -847,29 +847,15 @@ public class NetworkOrchestratorTest extends TestCase {
     }
 
     @Test
-    public void testShutdownNetworkNoNetwork() {
-        ReservationContext reservationContext = Mockito.mock(ReservationContext.class);
-        long networkId = 1;
-        when(testOrchestrator._networksDao.findById(networkId)).thenReturn(null);
-
-        boolean shutdownNetworkStatus = testOrchestrator.shutdownNetwork(networkId, reservationContext, false);
-        Assert.assertFalse(shutdownNetworkStatus);
-
-        verify(testOrchestrator._networksDao, times(1)).findById(networkId);
-    }
-
-    @Test
     public void testShutdownNetworkAcquireLockFailed() {
         ReservationContext reservationContext = Mockito.mock(ReservationContext.class);
         NetworkVO network = mock(NetworkVO.class);
         long networkId = 1;
-        when(testOrchestrator._networksDao.findById(networkId)).thenReturn(network);
         when(testOrchestrator._networksDao.acquireInLockTable(Mockito.anyLong(), Mockito.anyInt())).thenReturn(null);
 
         boolean shutdownNetworkStatus = testOrchestrator.shutdownNetwork(networkId, reservationContext, false);
         Assert.assertFalse(shutdownNetworkStatus);
 
-        verify(testOrchestrator._networksDao, times(1)).findById(networkId);
         verify(testOrchestrator._networksDao, times(1)).acquireInLockTable(networkId, NetworkLockTimeout.value());
     }
 
@@ -878,7 +864,6 @@ public class NetworkOrchestratorTest extends TestCase {
         ReservationContext reservationContext = Mockito.mock(ReservationContext.class);
         NetworkVO network = mock(NetworkVO.class);
         long networkId = 1;
-        when(testOrchestrator._networksDao.findById(networkId)).thenReturn(network);
         when(testOrchestrator._networksDao.acquireInLockTable(Mockito.anyLong(), Mockito.anyInt())).thenReturn(network);
         when(network.getId()).thenReturn(networkId);
         when(network.getState()).thenReturn(Network.State.Allocated);
@@ -886,7 +871,6 @@ public class NetworkOrchestratorTest extends TestCase {
         boolean shutdownNetworkStatus = testOrchestrator.shutdownNetwork(networkId, reservationContext, false);
         Assert.assertTrue(shutdownNetworkStatus);
 
-        verify(testOrchestrator._networksDao, times(1)).findById(networkId);
         verify(network, times(1)).getState();
         verify(testOrchestrator._networksDao, times(1)).acquireInLockTable(networkId, NetworkLockTimeout.value());
         verify(testOrchestrator._networksDao, times(1)).releaseFromLockTable(networkId);
@@ -897,7 +881,6 @@ public class NetworkOrchestratorTest extends TestCase {
         ReservationContext reservationContext = Mockito.mock(ReservationContext.class);
         NetworkVO network = mock(NetworkVO.class);
         long networkId = 1;
-        when(testOrchestrator._networksDao.findById(networkId)).thenReturn(network);
         when(testOrchestrator._networksDao.acquireInLockTable(Mockito.anyLong(), Mockito.anyInt())).thenReturn(network);
         when(network.getId()).thenReturn(networkId);
         when(network.getState()).thenReturn(Network.State.Implementing);
@@ -905,7 +888,6 @@ public class NetworkOrchestratorTest extends TestCase {
         boolean shutdownNetworkStatus = testOrchestrator.shutdownNetwork(networkId, reservationContext, false);
         Assert.assertFalse(shutdownNetworkStatus);
 
-        verify(testOrchestrator._networksDao, times(1)).findById(networkId);
         verify(network, times(3)).getState();
         verify(testOrchestrator._networksDao, times(1)).acquireInLockTable(networkId, NetworkLockTimeout.value());
         verify(testOrchestrator._networksDao, times(1)).releaseFromLockTable(networkId);

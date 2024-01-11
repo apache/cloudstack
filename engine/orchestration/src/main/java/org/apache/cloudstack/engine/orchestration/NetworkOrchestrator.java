@@ -3026,19 +3026,15 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     @Override
     @DB
     public boolean shutdownNetwork(final long networkId, final ReservationContext context, final boolean cleanupElements) {
-        NetworkVO network = _networksDao.findById(networkId);
-        if (network == null) {
-            s_logger.debug("Network with id: " + networkId + " doesn't exists");
-            return false;
-        }
-
+        NetworkVO network = null;
         try {
             //do global lock for the network
             network = _networksDao.acquireInLockTable(networkId, NetworkLockTimeout.value());
             if (network == null) {
-                s_logger.warn("Unable to acquire lock for the network " + network + " as a part of network shutdown");
+                s_logger.warn("Network with id: " + networkId + " doesn't exists, or unable to acquire lock as a part of network shutdown");
                 return false;
             }
+
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Lock is acquired for network " + network + " as a part of network shutdown");
             }
