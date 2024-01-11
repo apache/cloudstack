@@ -1271,5 +1271,3 @@ public class UserVmManagerImplTest {
     }
 
 }
-
-
