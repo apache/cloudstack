@@ -4549,34 +4549,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             DiskOfferingVO rootDiskOfferingVO = _diskOfferingDao.findById(rootDiskOfferingId);
             rootDiskTags.add(rootDiskOfferingVO.getTags());
 
-            try {
-                if (isIso) {
-                    _orchSrvc.createVirtualMachineFromScratch(vm.getUuid(), Long.toString(owner.getAccountId()), vm.getIsoId().toString(), hostName, displayName,
-                            hypervisorType.name(), guestOSCategory.getName(), offering.getCpu(), offering.getSpeed(), offering.getRamSize(), diskSize, computeTags, rootDiskTags,
-                            networkNicMap, plan, extraDhcpOptionMap, rootDiskOfferingId);
-                } else {
-                    _orchSrvc.createVirtualMachine(vm.getUuid(), Long.toString(owner.getAccountId()), Long.toString(template.getId()), hostName, displayName, hypervisorType.name(),
-                            offering.getCpu(), offering.getSpeed(), offering.getRamSize(), diskSize, computeTags, rootDiskTags, networkNicMap, plan, rootDiskSize, extraDhcpOptionMap,
-                            dataDiskTemplateToDiskOfferingMap, diskOfferingId, rootDiskOfferingId);
-                }
+            OrchestrateVirtualMachineCreate(vm, guestOSCategory, computeTags, rootDiskTags, plan, rootDiskSize, template, hostName, displayName, owner,
+                    diskOfferingId, diskSize, offering, isIso,networkNicMap, hypervisorType, extraDhcpOptionMap, dataDiskTemplateToDiskOfferingMap,
+                    rootDiskOfferingId);
 
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Successfully allocated DB entry for " + vm);
-                }
-            } catch (CloudRuntimeException cre) {
-                ArrayList<ExceptionProxyObject> epoList = cre.getIdProxyList();
-                if (epoList == null || !epoList.stream().anyMatch(e -> e.getUuid().equals(vm.getUuid()))) {
-                    cre.addProxyObject(vm.getUuid(), "vmId");
-
-                }
-                throw cre;
-            } catch (InsufficientCapacityException ice) {
-                ArrayList idList = ice.getIdProxyList();
-                if (idList == null || !idList.stream().anyMatch(i -> i.equals(vm.getUuid()))) {
-                    ice.addProxyObject(vm.getUuid());
-                }
-                throw ice;
-            }
         }
         CallContext.current().setEventDetails("Vm Id: " + vm.getUuid());
 
@@ -4601,6 +4577,42 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
         return vm;
+    }
+
+    private void OrchestrateVirtualMachineCreate(UserVmVO vm, GuestOSCategoryVO guestOSCategory, List<String> computeTags, List<String> rootDiskTags, DataCenterDeployment plan, Long rootDiskSize, VirtualMachineTemplate template, String hostName, String displayName, Account owner,
+                                        Long diskOfferingId, Long diskSize,
+                                        ServiceOffering offering, boolean isIso, LinkedHashMap<String, List<NicProfile>> networkNicMap,
+                                        HypervisorType hypervisorType,
+                                        Map<String, Map<Integer, String>> extraDhcpOptionMap, Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap,
+                                        Long rootDiskOfferingId) throws InsufficientCapacityException{
+        try {
+            if (isIso) {
+                _orchSrvc.createVirtualMachineFromScratch(vm.getUuid(), Long.toString(owner.getAccountId()), vm.getIsoId().toString(), hostName, displayName,
+                        hypervisorType.name(), guestOSCategory.getName(), offering.getCpu(), offering.getSpeed(), offering.getRamSize(), diskSize, computeTags, rootDiskTags,
+                        networkNicMap, plan, extraDhcpOptionMap, rootDiskOfferingId);
+            } else {
+                _orchSrvc.createVirtualMachine(vm.getUuid(), Long.toString(owner.getAccountId()), Long.toString(template.getId()), hostName, displayName, hypervisorType.name(),
+                        offering.getCpu(), offering.getSpeed(), offering.getRamSize(), diskSize, computeTags, rootDiskTags, networkNicMap, plan, rootDiskSize, extraDhcpOptionMap,
+                        dataDiskTemplateToDiskOfferingMap, diskOfferingId, rootDiskOfferingId);
+            }
+
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Successfully allocated DB entry for " + vm);
+            }
+        } catch (CloudRuntimeException cre) {
+            ArrayList<ExceptionProxyObject> epoList = cre.getIdProxyList();
+            if (epoList == null || !epoList.stream().anyMatch(e -> e.getUuid().equals(vm.getUuid()))) {
+                cre.addProxyObject(vm.getUuid(), "vmId");
+
+            }
+            throw cre;
+        } catch (InsufficientCapacityException ice) {
+            ArrayList idList = ice.getIdProxyList();
+            if (idList == null || !idList.stream().anyMatch(i -> i.equals(vm.getUuid()))) {
+                ice.addProxyObject(vm.getUuid());
+            }
+            throw ice;
+        }
     }
 
     protected void setVmRequiredFieldsForImport(boolean isImport, UserVmVO vm, DataCenter zone, HypervisorType hypervisorType,
