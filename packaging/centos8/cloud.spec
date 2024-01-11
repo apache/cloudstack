@@ -552,8 +552,8 @@ if [ -f "/usr/share/cloudstack-common/scripts/installer/cloudstack-help-text" ];
 fi
 
 %post marvin
-pip install --upgrade https://files.pythonhosted.org/packages/08/1f/42d74bae9dd6dcfec67c9ed0f3fa482b1ae5ac5f117ca82ab589ecb3ca19/mysql_connector_python-8.0.31-py2.py3-none-any.whl
-pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
+pip3 install --upgrade https://files.pythonhosted.org/packages/08/1f/42d74bae9dd6dcfec67c9ed0f3fa482b1ae5ac5f117ca82ab589ecb3ca19/mysql_connector_python-8.0.31-py2.py3-none-any.whl
+pip3 install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 
 #No default permission as the permission setup is complex
 %files management
