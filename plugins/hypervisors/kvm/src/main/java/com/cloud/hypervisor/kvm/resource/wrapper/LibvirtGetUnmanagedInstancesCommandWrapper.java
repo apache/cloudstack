@@ -191,7 +191,6 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
             disk.setLabel(diskDef.getDiskLabel());
             disk.setController(diskDef.getBusType().toString());
 
-
             Pair<String, String> sourceHostPath = getSourceHostPath(libvirtComputingResource, diskDef.getSourcePath());
             if (sourceHostPath != null) {
                 disk.setDatastoreHost(sourceHostPath.first());
@@ -210,9 +209,24 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
             disk.setDatastorePort(diskDef.getSourceHostPort());
             disk.setImagePath(diskDef.getSourcePath());
             disk.setDatastoreName(disk.getDatastorePath());
+            disk.setFileBaseName(getDiskRelativePath(diskDef));
             disks.add(disk);
         }
         return disks;
+    }
+
+    protected String getDiskRelativePath(LibvirtVMDef.DiskDef diskDef) {
+        if (diskDef == null || diskDef.getDiskType() == null || diskDef.getDiskType() == LibvirtVMDef.DiskDef.DiskType.BLOCK) {
+            return null;
+        }
+        String sourcePath = diskDef.getSourcePath();
+        if (StringUtils.isBlank(sourcePath)) {
+            return null;
+        }
+        if (!sourcePath.contains("/")) {
+            return sourcePath;
+        }
+        return sourcePath.substring(sourcePath.lastIndexOf("/") + 1);
     }
 
     private Pair<String, String> getSourceHostPath(LibvirtComputingResource libvirtComputingResource, String diskPath) {
