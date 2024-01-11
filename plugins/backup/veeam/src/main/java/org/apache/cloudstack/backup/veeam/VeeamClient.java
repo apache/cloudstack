@@ -143,7 +143,7 @@ public class VeeamClient {
 
         authenticate(username, password);
         setVeeamSshCredentials(this.apiURI.getHost(), username, password);
-        this.veeamServerVersion = version != null ? version : getVeeamServerVersion();
+        this.veeamServerVersion = (version != null && version != 0) ? version : getVeeamServerVersion();
     }
 
     protected void setVeeamSshCredentials(String hostIp, String username, String password) {
