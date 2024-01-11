@@ -640,7 +640,10 @@ class CsVmMetadata(CsDataBag):
         fh = open(dest, "w")
         self.__exflock(fh)
         if data is not None:
-            fh.write(data)
+            if type(data) == str:
+                fh.write(data)
+            elif type(data) == bytes:
+                fh.write(data.decode())
         else:
             fh.write("")
         self.__unflock(fh)
