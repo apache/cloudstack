@@ -153,7 +153,7 @@ public interface VolumeOrchestrationService {
      * @param type Type of the volume - ROOT, DATADISK, etc
      * @param name Name of the volume
      * @param offering DiskOffering for the volume
-     * @param size DiskOffering for the volume
+     * @param sizeInBytes size of the volume in bytes
      * @param minIops minimum IOPS for the disk, if not passed DiskOffering value will be used
      * @param maxIops maximum IOPS for the disk, if not passed DiskOffering value will be used
      * @param vm VirtualMachine this volume is attached to
@@ -165,7 +165,7 @@ public interface VolumeOrchestrationService {
      * @param chainInfo chain info for the volume. Hypervisor specific.
      * @return  DiskProfile of imported volume
      */
-    DiskProfile importVolume(Type type, String name, DiskOffering offering, Long size, Long minIops, Long maxIops, VirtualMachine vm, VirtualMachineTemplate template,
+    DiskProfile importVolume(Type type, String name, DiskOffering offering, Long sizeInBytes, Long minIops, Long maxIops, VirtualMachine vm, VirtualMachineTemplate template,
                              Account owner, Long deviceId, Long poolId, String path, String chainInfo);
 
     DiskProfile updateImportedVolume(Type type, DiskOffering offering, VirtualMachine vm, VirtualMachineTemplate template,

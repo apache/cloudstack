@@ -28,6 +28,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
@@ -42,6 +43,8 @@ import java.util.List;
 @ResourceWrapper(handles=GetUnmanagedInstancesCommand.class)
 public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWrapper<GetUnmanagedInstancesCommand, GetUnmanagedInstancesAnswer, LibvirtComputingResource> {
     private static final Logger LOGGER = Logger.getLogger(LibvirtGetUnmanagedInstancesCommandWrapper.class);
+
+    private static final int requiredVncPasswordLength = 22;
 
     @Override
     public GetUnmanagedInstancesAnswer execute(GetUnmanagedInstancesCommand command, LibvirtComputingResource libvirtComputingResource) {
@@ -130,13 +133,21 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
             instance.setMemory((int) LibvirtComputingResource.getDomainMemory(domain) / 1024);
             instance.setNics(getUnmanagedInstanceNics(parser.getInterfaces()));
             instance.setDisks(getUnmanagedInstanceDisks(parser.getDisks(),libvirtComputingResource, conn, domain.getName()));
-            instance.setVncPassword(parser.getVncPasswd() + "aaaaaaaaaaaaaa"); // Suffix back extra characters for DB compatibility
+            instance.setVncPassword(getFormattedVncPassword(parser.getVncPasswd()));
 
             return instance;
         } catch (Exception e) {
             LOGGER.info("Unable to retrieve unmanaged instance info. " + e.getMessage(), e);
             return null;
         }
+    }
+
+    protected String getFormattedVncPassword(String vncPasswd) {
+        if (StringUtils.isBlank(vncPasswd)) {
+            return null;
+        }
+        String randomChars = RandomStringUtils.random(requiredVncPasswordLength - vncPasswd.length(), true, false);
+        return String.format("%s%s", vncPasswd, randomChars);
     }
 
     private UnmanagedInstanceTO.PowerState getPowerState(VirtualMachine.PowerState vmPowerState) {
@@ -191,7 +202,6 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
             disk.setLabel(diskDef.getDiskLabel());
             disk.setController(diskDef.getBusType().toString());
 
-
             Pair<String, String> sourceHostPath = getSourceHostPath(libvirtComputingResource, diskDef.getSourcePath());
             if (sourceHostPath != null) {
                 disk.setDatastoreHost(sourceHostPath.first());
@@ -210,9 +220,24 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
             disk.setDatastorePort(diskDef.getSourceHostPort());
             disk.setImagePath(diskDef.getSourcePath());
             disk.setDatastoreName(disk.getDatastorePath());
+            disk.setFileBaseName(getDiskRelativePath(diskDef));
             disks.add(disk);
         }
         return disks;
+    }
+
+    protected String getDiskRelativePath(LibvirtVMDef.DiskDef diskDef) {
+        if (diskDef == null || diskDef.getDiskType() == null || diskDef.getDiskType() == LibvirtVMDef.DiskDef.DiskType.BLOCK) {
+            return null;
+        }
+        String sourcePath = diskDef.getSourcePath();
+        if (StringUtils.isBlank(sourcePath)) {
+            return null;
+        }
+        if (!sourcePath.contains("/")) {
+            return sourcePath;
+        }
+        return sourcePath.substring(sourcePath.lastIndexOf("/") + 1);
     }
 
     private Pair<String, String> getSourceHostPath(LibvirtComputingResource libvirtComputingResource, String diskPath) {

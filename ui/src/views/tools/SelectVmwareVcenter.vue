@@ -28,7 +28,8 @@
           <a-radio-group
             style="text-align: center; width: 100%"
             v-model:value="vcenterSelectedOption"
-            buttonStyle="solid">
+            buttonStyle="solid"
+            @change="onVcenterTypeChange">
             <a-radio-button value="existing" style="width: 50%; text-align: center">
               {{ $t('label.existing') }}
             </a-radio-button>
@@ -256,6 +257,9 @@ export default {
     },
     onSelectExistingVmwareDatacenter (value) {
       this.selectedExistingVcenterId = value
+    },
+    onVcenterTypeChange () {
+      this.$emit('onVcenterTypeChanged', this.vcenterSelectedOption)
     }
   }
 }

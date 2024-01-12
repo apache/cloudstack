@@ -65,18 +65,18 @@ public interface ClusterDrsAlgorithm extends Adapter {
      *         the service offering for the virtual machine
      * @param destHost
      *         the destination host for the virtual machine
-     * @param hostCpuUsedMap
-     *         a map of host IDs to the amount of CPU used on each host
-     * @param hostMemoryUsedMap
-     *         a map of host IDs to the amount of memory used on each host
+     * @param hostCpuFreeMap
+     *         a map of host IDs to the amount of CPU free on each host
+     * @param hostMemoryFreeMap
+     *         a map of host IDs to the amount of memory free on each host
      * @param requiresStorageMotion
      *         whether storage motion is required for the virtual machine
      *
      * @return a ternary containing improvement, cost, benefit
      */
     Ternary<Double, Double, Double> getMetrics(long clusterId, VirtualMachine vm, ServiceOffering serviceOffering,
-                                               Host destHost, Map<Long, Long> hostCpuUsedMap,
-                                               Map<Long, Long> hostMemoryUsedMap, Boolean requiresStorageMotion);
+                                               Host destHost, Map<Long, Long> hostCpuFreeMap,
+                                               Map<Long, Long> hostMemoryFreeMap, Boolean requiresStorageMotion);
 
     /**
      * Calculates the imbalance of the cluster after a virtual machine migration.
@@ -87,30 +87,30 @@ public interface ClusterDrsAlgorithm extends Adapter {
      *         the virtual machine being migrated
      * @param destHost
      *         the destination host for the virtual machine
-     * @param hostCpuUsedMap
-     *         a map of host IDs to the amount of CPU used on each host
-     * @param hostMemoryUsedMap
-     *         a map of host IDs to the amount of memory used on each host
+     * @param hostCpuFreeMap
+     *         a map of host IDs to the amount of CPU free on each host
+     * @param hostMemoryFreeMap
+     *         a map of host IDs to the amount of memory free on each host
      *
      * @return a pair containing the CPU and memory imbalance of the cluster after the migration
      */
     default Pair<Double, Double> getImbalancePostMigration(ServiceOffering serviceOffering, VirtualMachine vm,
-                                                           Host destHost, Map<Long, Long> hostCpuUsedMap,
-                                                           Map<Long, Long> hostMemoryUsedMap) {
+                                                           Host destHost, Map<Long, Long> hostCpuFreeMap,
+                                                           Map<Long, Long> hostMemoryFreeMap) {
         List<Long> postCpuList = new ArrayList<>();
         List<Long> postMemoryList = new ArrayList<>();
         final int vmCpu = serviceOffering.getCpu() * serviceOffering.getSpeed();
         final long vmRam = serviceOffering.getRamSize() * 1024L * 1024L;
 
-        for (Long hostId : hostCpuUsedMap.keySet()) {
-            long cpu = hostCpuUsedMap.get(hostId);
-            long memory = hostMemoryUsedMap.get(hostId);
+        for (Long hostId : hostCpuFreeMap.keySet()) {
+            long cpu = hostCpuFreeMap.get(hostId);
+            long memory = hostMemoryFreeMap.get(hostId);
             if (hostId == destHost.getId()) {
-                postCpuList.add(cpu + vmCpu);
-                postMemoryList.add(memory + vmRam);
-            } else if (hostId.equals(vm.getHostId())) {
                 postCpuList.add(cpu - vmCpu);
                 postMemoryList.add(memory - vmRam);
+            } else if (hostId.equals(vm.getHostId())) {
+                postCpuList.add(cpu + vmCpu);
+                postMemoryList.add(memory + vmRam);
             } else {
                 postCpuList.add(cpu);
                 postMemoryList.add(memory);

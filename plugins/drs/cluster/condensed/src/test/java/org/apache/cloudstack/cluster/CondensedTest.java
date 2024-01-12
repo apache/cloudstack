@@ -66,7 +66,7 @@ public class CondensedTest {
 
     List<Long> cpuList, memoryList;
 
-    Map<Long, Long> hostCpuUsedMap, hostMemoryUsedMap;
+    Map<Long, Long> hostCpuFreeMap, hostMemoryFreeMap;
 
 
     private AutoCloseable closeable;
@@ -98,13 +98,13 @@ public class CondensedTest {
         cpuList = Arrays.asList(1L, 2L);
         memoryList = Arrays.asList(512L, 2048L);
 
-        hostCpuUsedMap = new HashMap<>();
-        hostCpuUsedMap.put(1L, 1000L);
-        hostCpuUsedMap.put(2L, 2000L);
+        hostCpuFreeMap = new HashMap<>();
+        hostCpuFreeMap.put(1L, 2000L);
+        hostCpuFreeMap.put(2L, 1000L);
 
-        hostMemoryUsedMap = new HashMap<>();
-        hostMemoryUsedMap.put(1L, 512L * 1024L * 1024L);
-        hostMemoryUsedMap.put(2L, 2048L * 1024L * 1024L);
+        hostMemoryFreeMap = new HashMap<>();
+        hostMemoryFreeMap.put(1L, 2048L * 1024L * 1024L);
+        hostMemoryFreeMap.put(2L, 512L * 1024L * 1024L);
     }
 
     private void overrideDefaultConfigValue(final ConfigKey configKey,
@@ -185,7 +185,7 @@ public class CondensedTest {
     public void getMetricsWithCpu() throws NoSuchFieldException, IllegalAccessException {
         overrideDefaultConfigValue(ClusterDrsMetric, "_defaultValue", "cpu");
         Ternary<Double, Double, Double> result = condensed.getMetrics(clusterId, vm3, serviceOffering, destHost,
-                hostCpuUsedMap, hostMemoryUsedMap, false);
+                hostCpuFreeMap, hostMemoryFreeMap, false);
         assertEquals(0.0, result.first(), 0.0);
         assertEquals(0, result.second(), 0.0);
         assertEquals(1, result.third(), 0.0);
@@ -199,7 +199,7 @@ public class CondensedTest {
     public void getMetricsWithMemory() throws NoSuchFieldException, IllegalAccessException {
         overrideDefaultConfigValue(ClusterDrsMetric, "_defaultValue", "memory");
         Ternary<Double, Double, Double> result = condensed.getMetrics(clusterId, vm3, serviceOffering, destHost,
-                hostCpuUsedMap, hostMemoryUsedMap, false);
+                hostCpuFreeMap, hostMemoryFreeMap, false);
         assertEquals(-0.4, result.first(), 0.01);
         assertEquals(0, result.second(), 0.0);
         assertEquals(1, result.third(), 0.0);
@@ -213,7 +213,7 @@ public class CondensedTest {
     public void getMetricsWithDefault() throws NoSuchFieldException, IllegalAccessException {
         overrideDefaultConfigValue(ClusterDrsMetric, "_defaultValue", "both");
         Ternary<Double, Double, Double> result = condensed.getMetrics(clusterId, vm3, serviceOffering, destHost,
-                hostCpuUsedMap, hostMemoryUsedMap, false);
+                hostCpuFreeMap, hostMemoryFreeMap, false);
         assertEquals(-0.4, result.first(), 0.0001);
         assertEquals(0, result.second(), 0.0);
         assertEquals(1, result.third(), 0.0);
