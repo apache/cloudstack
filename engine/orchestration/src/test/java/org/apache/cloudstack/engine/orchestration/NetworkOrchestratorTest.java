@@ -762,7 +762,7 @@ public class NetworkOrchestratorTest extends TestCase {
         DataCenter dataCenter = Mockito.mock(DataCenter.class);
         Network.IpAddresses ipAddresses = Mockito.mock(Network.IpAddresses.class);
         Mockito.when(network.getGuestType()).thenReturn(GuestType.L2);
-        Assert.assertNull(testOrchastrator.getSelectedIpForNicImport(network, dataCenter, ipAddresses));
+        Assert.assertNull(testOrchestrator.getSelectedIpForNicImport(network, dataCenter, ipAddresses));
     }
 
     @Test
@@ -796,8 +796,8 @@ public class NetworkOrchestratorTest extends TestCase {
         Mockito.when(ipAddressVO.getState()).thenReturn(State.Free);
         Mockito.when(network.getId()).thenReturn(networkId);
         Mockito.when(dataCenter.getId()).thenReturn(dataCenterId);
-        Mockito.when(testOrchastrator._ipAddressDao.findBySourceNetworkIdAndDatacenterIdAndState(networkId, dataCenterId, State.Free)).thenReturn(ipAddressVO);
-        String ipAddress = testOrchastrator.getSelectedIpForNicImport(network, dataCenter, ipAddresses);
+        Mockito.when(testOrchestrator._ipAddressDao.findBySourceNetworkIdAndDatacenterIdAndState(networkId, dataCenterId, State.Free)).thenReturn(ipAddressVO);
+        String ipAddress = testOrchestrator.getSelectedIpForNicImport(network, dataCenter, ipAddresses);
         Assert.assertEquals(freeIp, ipAddress);
     }
 
@@ -819,8 +819,8 @@ public class NetworkOrchestratorTest extends TestCase {
         Mockito.when(network.getId()).thenReturn(networkId);
         Mockito.when(dataCenter.getId()).thenReturn(dataCenterId);
         Mockito.when(ipAddresses.getIp4Address()).thenReturn(requestedIp);
-        Mockito.when(testOrchastrator._ipAddressDao.findByIp(requestedIp)).thenReturn(ipAddressVO);
-        String ipAddress = testOrchastrator.getSelectedIpForNicImport(network, dataCenter, ipAddresses);
+        Mockito.when(testOrchestrator._ipAddressDao.findByIp(requestedIp)).thenReturn(ipAddressVO);
+        String ipAddress = testOrchestrator.getSelectedIpForNicImport(network, dataCenter, ipAddresses);
         Assert.assertEquals(requestedIp, ipAddress);
     }
 
@@ -842,8 +842,8 @@ public class NetworkOrchestratorTest extends TestCase {
         Mockito.when(network.getId()).thenReturn(networkId);
         Mockito.when(dataCenter.getId()).thenReturn(dataCenterId);
         Mockito.when(ipAddresses.getIp4Address()).thenReturn(requestedIp);
-        Mockito.when(testOrchastrator._ipAddressDao.findByIp(requestedIp)).thenReturn(ipAddressVO);
-        testOrchastrator.getSelectedIpForNicImport(network, dataCenter, ipAddresses);
+        Mockito.when(testOrchestrator._ipAddressDao.findByIp(requestedIp)).thenReturn(ipAddressVO);
+        testOrchestrator.getSelectedIpForNicImport(network, dataCenter, ipAddresses);
     }
 
     @Test

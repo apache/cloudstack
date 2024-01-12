@@ -3031,7 +3031,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             //do global lock for the network
             network = _networksDao.acquireInLockTable(networkId, NetworkLockTimeout.value());
             if (network == null) {
-                s_logger.warn("Network with id: " + networkId + " doesn't exists, or unable to acquire lock as a part of network shutdown");
+                s_logger.warn("Network with id: " + networkId + " doesn't exist, or unable to acquire lock for it as a part of network shutdown");
                 return false;
             }
 
@@ -3040,7 +3040,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
 
             if (network.getState() == Network.State.Allocated) {
-                s_logger.debug("Network is already shutdown: " + network);
+                s_logger.debug(String.format("Network [%s] is in Allocated state, no need to shutdown.", network));
                 return true;
             }
 
