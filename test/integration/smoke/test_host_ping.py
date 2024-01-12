@@ -40,9 +40,14 @@ class TestHostPing(cloudstackTestCase):
         self.services = self.testClient.getParsedTestDataConfig()
         self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
         self.pod = get_pod(self.apiclient, self.zone.id)
+        self.original_host_state_map = {}
         self.cleanup = []
 
     def tearDown(self):
+        for host_id in self.original_host_state_map:
+            state = self.original_host_state_map[host_id]
+            sql_query = "UPDATE host SET status = '" + state + "' WHERE uuid = '" + host_id + "'"
+            self.dbConnection.execute(sql_query)
         super(TestHostPing, self).tearDown()
 
     def checkHostStateInCloudstack(self, state, host_id):
@@ -92,6 +97,7 @@ class TestHostPing(cloudstackTestCase):
             self.logger.debug('Hypervisor = {}'.format(host.id))
 
         hostToTest = listHost[0]
+        self.original_host_state_map[hostToTest.id] = hostToTest.state
         sql_query = "UPDATE host SET status = 'Alert' WHERE uuid = '" + hostToTest.id + "'"
         self.dbConnection.execute(sql_query)
 

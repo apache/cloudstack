@@ -647,13 +647,12 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         @Override
         protected void runInContext() {
             try {
-                LOGGER.debug("HostStatsCollector is running...");
-
                 SearchCriteria<HostVO> sc = createSearchCriteriaForHostTypeRoutingStateUpAndNotInMaintenance();
-
-                Map<Object, Object> metrics = new HashMap<>();
                 List<HostVO> hosts = _hostDao.search(sc, null);
 
+                LOGGER.debug(String.format("HostStatsCollector is running to process %d UP hosts", hosts.size()));
+
+                Map<Object, Object> metrics = new HashMap<>();
                 for (HostVO host : hosts) {
                     HostStatsEntry hostStatsEntry = (HostStatsEntry) _resourceMgr.getHostStatistics(host.getId());
                     if (hostStatsEntry != null) {
@@ -1195,13 +1194,12 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         @Override
         protected void runInContext() {
             try {
-                LOGGER.trace("VmStatsCollector is running...");
-
                 SearchCriteria<HostVO> sc = createSearchCriteriaForHostTypeRoutingStateUpAndNotInMaintenance();
                 List<HostVO> hosts = _hostDao.search(sc, null);
 
-                Map<Object, Object> metrics = new HashMap<>();
+                LOGGER.debug(String.format("VmStatsCollector is running to process VMs across %d UP hosts", hosts.size()));
 
+                Map<Object, Object> metrics = new HashMap<>();
                 for (HostVO host : hosts) {
                     Date timestamp = new Date();
                     Map<Long, VMInstanceVO> vmMap = getVmMapForStatsForHost(host);
