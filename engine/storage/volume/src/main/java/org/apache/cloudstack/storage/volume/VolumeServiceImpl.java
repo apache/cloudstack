@@ -251,20 +251,7 @@ public class VolumeServiceImpl implements VolumeService {
         DataStoreDriver dataStoreDriver = dataStore != null ? dataStore.getDriver() : null;
 
         if (dataStoreDriver instanceof PrimaryDataStoreDriver) {
-            boolean result = ((PrimaryDataStoreDriver)dataStoreDriver).grantAccess(dataObject, host, dataStore);
-
-            if (HypervisorType.KVM.equals(host.getHypervisorType()) && DataObjectType.VOLUME.equals(dataObject.getType())) {
-                if (com.cloud.storage.VolumeApiServiceImpl.AllowVolumeCheckAndRepair.value()) {
-                    s_logger.info(String.format("Trying to check and repair the volume %d", dataObject.getId()));
-                    String repair = CheckVolumeAndRepairCmd.RepairValues.leaks.name();
-                    CheckAndRepairVolumePayload payload = new CheckAndRepairVolumePayload(repair);
-                    VolumeInfo volumeInfo = volFactory.getVolume(dataObject.getId());
-                    volumeInfo.addPayload(payload);
-                    checkAndRepairVolume(volumeInfo);
-                }
-            }
-
-            return result;
+            return ((PrimaryDataStoreDriver)dataStoreDriver).grantAccess(dataObject, host, dataStore);
         }
 
         return false;
@@ -2776,6 +2763,20 @@ public class VolumeServiceImpl implements VolumeService {
         }
 
         return snapshot;
+    }
+
+    @Override
+    public void checkAndRepairVolumeBasedOnConfig(DataObject dataObject, Host host) {
+        if (HypervisorType.KVM.equals(host.getHypervisorType()) && DataObjectType.VOLUME.equals(dataObject.getType())) {
+            if (com.cloud.storage.VolumeApiServiceImpl.AllowVolumeCheckAndRepair.value()) {
+                s_logger.info(String.format("Trying to check and repair the volume %d", dataObject.getId()));
+                String repair = CheckVolumeAndRepairCmd.RepairValues.leaks.name();
+                CheckAndRepairVolumePayload payload = new CheckAndRepairVolumePayload(repair);
+                VolumeInfo volumeInfo = volFactory.getVolume(dataObject.getId());
+                volumeInfo.addPayload(payload);
+                checkAndRepairVolume(volumeInfo);
+            }
+        }
     }
 
     @Override

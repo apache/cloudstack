@@ -4397,6 +4397,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             // if we don't have a host, the VM we are attaching the disk to has never been started before
             if (host != null) {
                 try {
+                    volService.checkAndRepairVolumeBasedOnConfig(volFactory.getVolume(volumeToAttach.getId()), host);
+                } catch (Exception e) {
+                    s_logger.debug(String.format("Unable to check and repair volume [%s] on host [%s], due to %s.", volumeToAttach.getName(), host, e.getMessage()));
+                }
+
+                try {
                     volService.grantAccess(volFactory.getVolume(volumeToAttach.getId()), host, dataStore);
                 } catch (Exception e) {
                     volService.revokeAccess(volFactory.getVolume(volumeToAttach.getId()), host, dataStore);
