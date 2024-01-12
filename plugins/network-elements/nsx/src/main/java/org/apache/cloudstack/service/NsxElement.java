@@ -720,6 +720,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
         for (FirewallRule rule : rules) {
             NsxNetworkRule networkRule = new NsxNetworkRule.Builder()
                     .setRuleId(rule.getId())
+                    .setAclAction(NsxNetworkRule.NsxRuleAction.ALLOW)
                     .setSourceCidrList(Objects.nonNull(rule.getSourceCidrList()) ?
                             transformCidrListValues(rule.getSourceCidrList()) : List.of("ANY"))
                     .setDestinationCidrList(Objects.nonNull(rule.getDestinationCidrList()) ?
