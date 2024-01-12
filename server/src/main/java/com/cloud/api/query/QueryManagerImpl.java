@@ -2480,7 +2480,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             serviceOfferingSearch.or("serviceOfferingSearchNulltype", serviceOfferingSearch.entity().isSystemUse(), SearchCriteria.Op.NULL);
             serviceOfferingSearch.cp();
 
-            vmSearch.join("vmSearch", "serviceOfferingSearch", serviceOfferingSearch, JoinBuilder.JoinType.LEFT, null, serviceOfferingSearch.entity().getId(), vmSearch.entity().getServiceOfferingId());
+            vmSearch.join("serviceOfferingSearch", serviceOfferingSearch, serviceOfferingSearch.entity().getId(), vmSearch.entity().getServiceOfferingId(), JoinBuilder.JoinType.LEFT);
 
             volumeSearchBuilder.join("vmSearch", vmSearch, vmSearch.entity().getId(), volumeSearchBuilder.entity().getInstanceId(), JoinBuilder.JoinType.LEFT);
 
@@ -2526,7 +2526,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (!shouldListSystemVms) {
             sc.setJoinParameters("vmSearch", "svmType", VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.DomainRouter);
-            sc.setJoinParameters("serviceOfferingSearch", "systemUse", 1);
+            sc.getJoin("vmSearch").setJoinParameters("serviceOfferingSearch", "systemUse", 1);
         }
 
         if (MapUtils.isNotEmpty(tags)) {

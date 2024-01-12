@@ -252,43 +252,6 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
         return (J)this;
     }
 
-
-    /**
-     * This method is used to set alias for the table name when joining with another table.
-     * Allows to set alias for the table name which is further used to generate the condition for nested join.
-     * <br/>
-     * e.g. vmSearch.join("vmSearch", "serviceOfferingSearch", serviceOfferingSearch, serviceOfferingSearch.entity().getId(), vmSearch.entity().getServiceOfferingId(), JoinBuilder.JoinType.LEFT);
-     * <br/>
-     *  volumeSearchBuilder.join("vmSearch", vmSearch, vmSearch.entity().getId(), volumeSearchBuilder.entity().getInstanceId(), JoinBuilder.JoinType.LEFT);
-     * <br/>
-     *  In the above example, vmSearch is the alias for the table name vm_instance and the query generated is <br/>
-     *  FROM volume <br/>
-     *  LEFT JOIN vm_instance vmSearch ON vmSearch.id = volume.instance_id <br/>
-     *  LEFT JOIN service_offering serviceOfferingSearch ON serviceOfferingSearch.id = vmSearch.service_offering_id
-     */
-    public J join(
-            final String tableAliasName, final String name, final SearchBase<?, ?, ?> builder,
-            final JoinBuilder.JoinType joinType, final JoinBuilder.JoinCondition condition, final Object... joinFields
-    ) {
-        if (_entity == null)
-            throw new CloudRuntimeException("SearchBuilder cannot be modified once it has been setup");
-        if (_specifiedAttrs.size() != 1)
-            throw new CloudRuntimeException("Attribute not specified.");
-        if (builder._entity == null)
-            throw new CloudRuntimeException("SearchBuilder cannot be modified once it has been setup");
-        if (builder._specifiedAttrs.size() != 1)
-            throw new CloudRuntimeException("Attribute not specified.");
-        if (builder == this)
-            throw new CloudRuntimeException("Can't join with itself. Create a new SearchBuilder for the same entity and use that.");
-
-        for (final Attribute attr : _specifiedAttrs) {
-            if (attr.table != null) {
-                attr.table = tableAliasName;
-            }
-        }
-        return join(name, builder, joinType, condition, joinFields);
-    }
-
     public SelectType getSelectType() {
         return _selectType;
     }
