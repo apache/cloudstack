@@ -2172,19 +2172,17 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     @Override
-    public DiskProfile importVolume(Type type, String name, DiskOffering offering, Long size, Long minIops, Long maxIops,
+    public DiskProfile importVolume(Type type, String name, DiskOffering offering, Long sizeInBytes, Long minIops, Long maxIops,
                                     VirtualMachine vm, VirtualMachineTemplate template, Account owner,
                                     Long deviceId, Long poolId, String path, String chainInfo) {
-        if (size == null) {
-            size = offering.getDiskSize();
-        } else {
-            size = (size * 1024 * 1024 * 1024);
+        if (sizeInBytes == null) {
+            sizeInBytes = offering.getDiskSize();
         }
 
         minIops = minIops != null ? minIops : offering.getMinIops();
         maxIops = maxIops != null ? maxIops : offering.getMaxIops();
 
-        VolumeVO vol = new VolumeVO(type, name, vm.getDataCenterId(), owner.getDomainId(), owner.getId(), offering.getId(), offering.getProvisioningType(), size, minIops, maxIops, null);
+        VolumeVO vol = new VolumeVO(type, name, vm.getDataCenterId(), owner.getDomainId(), owner.getId(), offering.getId(), offering.getProvisioningType(), sizeInBytes, minIops, maxIops, null);
         if (vm != null) {
             vol.setInstanceId(vm.getId());
         }
