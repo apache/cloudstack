@@ -601,6 +601,23 @@ class TestVMLifeCycle(cloudstackTestCase):
 
         return
 
+    def waitForHost(self, host, timeout):
+        while True:
+            resp = list_hosts(
+                self.apiclient,
+                id=host.id,
+                listall=True
+            )
+
+            if resp and resp[0].state == 'Up' and resp[0].resourcestate == 'Enabled':
+                break
+
+            if timeout == 0:
+                raise Exception("Timed out waiting for host to be Up and Enabled")
+
+            time.sleep(timeout)
+            timeout = timeout - 1
+
     @attr(tags=["advanced", "advancedns", "smoke", "basic", "sg", "multihost"], required_hardware="false")
     def test_08_migrate_vm(self):
         """Test migrate VM
@@ -647,6 +664,8 @@ class TestVMLifeCycle(cloudstackTestCase):
 
         target_host = suitable_hosts[0]
         migrate_host = suitable_hosts[1]
+        self.waitForHost(target_host, 30)
+        self.waitForHost(migrate_host, 30)
 
         # deploy VM on target host
         vm_to_migrate = VirtualMachine.create(
