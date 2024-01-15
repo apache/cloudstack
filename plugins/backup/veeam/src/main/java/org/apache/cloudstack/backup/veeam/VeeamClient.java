@@ -115,11 +115,15 @@ public class VeeamClient {
     private String veeamSessionId = null;
     private final int restoreTimeout;
     private final int veeamServerPort = 22;
+    private final int taskPollInterval;
+    private final int taskPollMaxRetry;
 
     public VeeamClient(final String url, final Integer version, final String username, final String password, final boolean validateCertificate, final int timeout,
-            final int restoreTimeout) throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException {
+            final int restoreTimeout, final int taskPollInterval, final int taskPollMaxRetry) throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException {
         this.apiURI = new URI(url);
         this.restoreTimeout = restoreTimeout;
+        this.taskPollInterval = taskPollInterval;
+        this.taskPollMaxRetry = taskPollMaxRetry;
 
         final RequestConfig config = RequestConfig.custom()
                 .setConnectTimeout(timeout * 1000)
@@ -325,7 +329,7 @@ public class VeeamClient {
 
     private boolean checkTaskStatus(final HttpResponse response) throws IOException {
         final Task task = parseTaskResponse(response);
-        for (int i = 0; i < 120; i++) {
+        for (int i = 0; i < this.taskPollMaxRetry; i++) {
             final HttpResponse taskResponse = get("/tasks/" + task.getTaskId());
             final Task polledTask = parseTaskResponse(taskResponse);
             if (polledTask.getState().equals("Finished")) {
@@ -348,7 +352,7 @@ public class VeeamClient {
                 throw new CloudRuntimeException("Failed to assign VM to backup offering due to: " + polledTask.getResult().getMessage());
             }
             try {
-                Thread.sleep(5000);
+                Thread.sleep(this.taskPollInterval);
             } catch (InterruptedException e) {
                 LOG.debug("Failed to sleep while polling for Veeam task status due to: ", e);
             }

@@ -90,6 +90,12 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     private static ConfigKey<Integer> VeeamRestoreTimeout = new ConfigKey<>("Advanced", Integer.class, "backup.plugin.veeam.restore.timeout", "600",
             "The Veeam B&R API restore backup timeout in seconds.", true, ConfigKey.Scope.Zone);
 
+    private static ConfigKey<Integer> VeeamTaskPollInterval = new ConfigKey<>("Advanced", Integer.class, "backup.plugin.veeam.task.poll.interval", "5",
+            "The time interval in seconds when the management server polls for Veeam task status.", true, ConfigKey.Scope.Zone);
+
+    private static ConfigKey<Integer> VeeamTaskPollMaxRetry = new ConfigKey<>("Advanced", Integer.class, "backup.plugin.veeam.task.poll.max.retry", "120",
+            "The max number of retrying times when the management server polls for Veeam task status.", true, ConfigKey.Scope.Zone);
+
     @Inject
     private VmwareDatacenterZoneMapDao vmwareDatacenterZoneMapDao;
     @Inject
@@ -102,7 +108,8 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     protected VeeamClient getClient(final Long zoneId) {
         try {
             return new VeeamClient(VeeamUrl.valueIn(zoneId), VeeamVersion.valueIn(zoneId), VeeamUsername.valueIn(zoneId), VeeamPassword.valueIn(zoneId),
-                    VeeamValidateSSLSecurity.valueIn(zoneId), VeeamApiRequestTimeout.valueIn(zoneId), VeeamRestoreTimeout.valueIn(zoneId));
+                    VeeamValidateSSLSecurity.valueIn(zoneId), VeeamApiRequestTimeout.valueIn(zoneId), VeeamRestoreTimeout.valueIn(zoneId),
+                    VeeamTaskPollInterval.valueIn(zoneId), VeeamTaskPollMaxRetry.valueIn(zoneId));
         } catch (URISyntaxException e) {
             throw new CloudRuntimeException("Failed to parse Veeam API URL: " + e.getMessage());
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
@@ -367,7 +374,9 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
                 VeeamPassword,
                 VeeamValidateSSLSecurity,
                 VeeamApiRequestTimeout,
-                VeeamRestoreTimeout
+                VeeamRestoreTimeout,
+                VeeamTaskPollInterval,
+                VeeamTaskPollMaxRetry
         };
     }
 

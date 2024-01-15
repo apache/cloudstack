@@ -66,7 +66,7 @@ public class VeeamClientTest {
                         .withStatus(201)
                         .withHeader("X-RestSvcSessionId", "some-session-auth-id")
                         .withBody("")));
-        client = new VeeamClient("http://localhost:9399/api/", 12, adminUsername, adminPassword, true, 60, 600);
+        client = new VeeamClient("http://localhost:9399/api/", 12, adminUsername, adminPassword, true, 60, 600, 5, 120);
         mockClient = Mockito.mock(VeeamClient.class);
         Mockito.when(mockClient.getRepositoryNameFromJob(Mockito.anyString())).thenCallRealMethod();
         Mockito.when(mockClient.getVeeamServerVersion()).thenCallRealMethod();
