@@ -352,7 +352,7 @@ public class VeeamClient {
                 throw new CloudRuntimeException("Failed to assign VM to backup offering due to: " + polledTask.getResult().getMessage());
             }
             try {
-                Thread.sleep(this.taskPollInterval);
+                Thread.sleep(this.taskPollInterval * 1000);
             } catch (InterruptedException e) {
                 LOG.debug("Failed to sleep while polling for Veeam task status due to: ", e);
             }

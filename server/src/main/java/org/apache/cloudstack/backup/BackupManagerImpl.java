@@ -615,7 +615,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_BACKUP_RESTORE,
                     String.format("Failed to restore VM %s from backup %s", vm.getInstanceName(), backup.getUuid()),
                     vm.getId(), ApiCommandResourceType.VirtualMachine.toString(),0);
-            throw new CloudRuntimeException("Error restoring VM from backup ID " + backup.getId());
+            throw new CloudRuntimeException("Error restoring VM from backup with uuid " + backup.getUuid());
         }
         return importRestoredVM(vm.getDataCenterId(), vm.getDomainId(), vm.getAccountId(), vm.getUserId(),
                 vm.getInstanceName(), vm.getHypervisorType(), backup);
