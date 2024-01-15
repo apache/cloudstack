@@ -37,7 +37,7 @@ def main():
     pout = Popen(cmd, shell=True, stdout=PIPE)
 
     if pout.wait() == 0:
-        currentUsage = float(pout.communicate()[0].strip())
+        currentUsage = float(pout.communicate()[0].decode().strip())
         if currentUsage > maxMemoryUsage:
             print("Memory Usage " + str(currentUsage) + \
                   "% has crossed threshold of " + str(maxMemoryUsage) + "%")

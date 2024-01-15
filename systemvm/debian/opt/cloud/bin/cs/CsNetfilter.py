@@ -179,7 +179,7 @@ class CsNetfilters(object):
                 # For now raising the log.
                 # TODO: Need to fix in the framework.
                 if ret.returncode != 0:
-                    error = ret.communicate()[0]
+                    error = ret.communicate()[0].decode()
                     logging.debug("iptables command got failed ... continuing")
                 ruleSet.add(tupledFw)
                 self.chain.add_rule(rule_chain)

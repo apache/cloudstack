@@ -47,7 +47,7 @@ def main():
                                               "for fetching rules by " + fetchIpTableEntriesCmd + "\n"
             continue
 
-        ipTablesMatchingEntries = pout.communicate()[0].strip().split('\n')
+        ipTablesMatchingEntries = pout.communicate()[0].decode().strip().split('\n')
         for pfEntryListExpected in entriesExpected:
             foundPfEntryList = False
             for ipTableEntry in ipTablesMatchingEntries:

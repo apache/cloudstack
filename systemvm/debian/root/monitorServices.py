@@ -148,7 +148,7 @@ def checkProcessRunningStatus(process_name, pidFile):
     #cmd = 'service ' + process_name + ' status'
     pout = Popen(cmd, shell=True, stdout=PIPE)
     exitStatus = pout.wait()
-    temp_out = pout.communicate()[0]
+    temp_out = pout.communicate()[0].decode()
 
     #check there is only one pid or not
     if exitStatus == 0:
@@ -296,7 +296,7 @@ def execute(script, checkType = "basic"):
 
     pout = Popen(cmd, shell=True, stdout=PIPE)
     exitStatus = pout.wait()
-    output = pout.communicate()[0].strip()
+    output = pout.communicate()[0].decode().strip()
     checkEndTime = time.time()
 
     if exitStatus == 0:
