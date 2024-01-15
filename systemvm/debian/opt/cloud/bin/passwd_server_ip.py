@@ -55,9 +55,9 @@ def initToken():
         with open(getTokenFile(), 'r') as f:
             secureToken = f.read()
     if not secureToken:
-        secureToken = binascii.hexlify(os.urandom(16))
+        secureToken = binascii.hexlify(os.urandom(16)).decode()
         with open(getTokenFile(), 'w') as f:
-            f.write(secureToken.decode())
+            f.write(secureToken)
 
 def checkToken(token):
     return token == secureToken
