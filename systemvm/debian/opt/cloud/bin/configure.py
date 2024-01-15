@@ -107,7 +107,7 @@ class CsPassword(CsDataBag):
             if proc.find():
                 url = "http://%s:8080/" % server_ip
                 payload = {"ip": vm_ip, "password": password, "token": token}
-                data = urllib.parse.urlencode(payload)
+                data = urllib.parse.urlencode(payload).encode()
                 request = urllib.request.Request(url, data=data, headers={"DomU_Request": "save_password"})
                 try:
                     resp = urllib.request.urlopen(request, data)
