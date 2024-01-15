@@ -841,9 +841,9 @@ class CsSite2SiteVpn(CsDataBag):
         file.addeq(" authby=secret")
         file.addeq(" keyexchange=%s" % ikeversion)
         file.addeq(" ike=%s" % ikepolicy)
-        file.addeq(" ikelifetime=%s" % self.convert_sec_to_h(obj['ike_lifetime']))
+        file.addeq(" ikelifetime=%s" % self.convert_sec_to_min(obj['ike_lifetime']))
         file.addeq(" esp=%s" % esppolicy)
-        file.addeq(" lifetime=%s" % self.convert_sec_to_h(obj['esp_lifetime']))
+        file.addeq(" lifetime=%s" % self.convert_sec_to_min(obj['esp_lifetime']))
         file.addeq(" keyingtries=2")
         file.addeq(" auto=route")
         if 'encap' not in obj:
@@ -894,9 +894,9 @@ class CsSite2SiteVpn(CsDataBag):
             ipinsubnet = '.'.join(octets)
             CsHelper.execute("timeout 5 ping -c 3 %s" % ipinsubnet)
 
-    def convert_sec_to_h(self, val):
-        hrs = int(val) / 3600
-        return "%sh" % hrs
+    def convert_sec_to_min(self, val):
+        mins = int(val / 60)
+        return "%sm" % mins
 
 
 class CsVpnUser(CsDataBag):
