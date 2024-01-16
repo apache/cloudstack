@@ -154,6 +154,12 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
             since = "4.20.0")
     private String nsxMode;
 
+    @Parameter(name = ApiConstants.NSX_SUPPORT_LB,
+            type = CommandType.BOOLEAN,
+            description = "true if network offering for NSX network offering supports Load balancer service.",
+            since = "4.20.0")
+    private Boolean nsxSupportsLbService;
+
     @Parameter(name = ApiConstants.FOR_TUNGSTEN,
             type = CommandType.BOOLEAN,
             description = "true if network offering is meant to be used for Tungsten-Fabric, false otherwise.")
@@ -247,9 +253,11 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
                     StaticNat.getName(),
                     SourceNat.getName(),
                     PortForwarding.getName(),
-                    UserData.getName(),
-                    Lb.getName()
+                    UserData.getName()
             ));
+            if (Boolean.TRUE.equals(getNsxSupportsLbService())) {
+                services.add(Lb.getName());
+            }
             if (Boolean.TRUE.equals(forVpc)) {
                 services.add(NetworkACL.getName());
             } else {
@@ -292,6 +300,10 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
 
     public String getNsxMode() {
         return nsxMode;
+    }
+
+    public Boolean getNsxSupportsLbService() {
+        return BooleanUtils.isTrue(nsxSupportsLbService);
     }
 
     public Boolean getForTungsten() {
@@ -356,6 +368,9 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
                 serviceProviderMap.put(service, List.of(routerProvider));
             else
                 serviceProviderMap.put(service, List.of(Network.Provider.Nsx.getName()));
+            if (Boolean.FALSE.equals(getNsxSupportsLbService())) {
+                serviceProviderMap.remove(Lb.getName());
+            }
         }
     }
 

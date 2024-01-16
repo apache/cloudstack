@@ -126,6 +126,12 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
             since = "4.20.0")
     private String nsxMode;
 
+    @Parameter(name = ApiConstants.NSX_SUPPORT_LB,
+            type = CommandType.BOOLEAN,
+            description = "true if network offering for NSX VPC offering supports Load balancer service.",
+            since = "4.20.0")
+    private Boolean nsxSupportsLbService;
+
     @Parameter(name = ApiConstants.ENABLE,
             type = CommandType.BOOLEAN,
             description = "set to true if the offering is to be enabled during creation. Default is false",
@@ -149,16 +155,18 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
             throw new InvalidParameterValueException("Supported services needs to be provided");
         }
         if (isForNsx()) {
-            return List.of(
+            supportedServices = new ArrayList<>(List.of(
                     Dhcp.getName(),
                     Dns.getName(),
-                    Lb.getName(),
                     StaticNat.getName(),
                     SourceNat.getName(),
                     NetworkACL.getName(),
                     PortForwarding.getName(),
                     UserData.getName()
-                    );
+                    ));
+            if (Boolean.TRUE.equals(getNsxSupportsLbService())) {
+                supportedServices.add(Lb.getName());
+            }
         }
         return supportedServices;
     }
@@ -169,6 +177,10 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
 
     public String getNsxMode() {
         return nsxMode;
+    }
+
+    public Boolean getNsxSupportsLbService() {
+        return org.apache.commons.lang3.BooleanUtils.isTrue(nsxSupportsLbService);
     }
 
     public Map<String, List<String>> getServiceProviders() {
@@ -212,6 +224,9 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
                 serviceProviderMap.put(service, List.of(VirtualRouterProvider.Type.VPCVirtualRouter.name()));
             else
                 serviceProviderMap.put(service, List.of(Network.Provider.Nsx.getName()));
+        }
+        if (Boolean.FALSE.equals(getNsxSupportsLbService())) {
+            serviceProviderMap.remove(Lb.getName());
         }
     }
 
