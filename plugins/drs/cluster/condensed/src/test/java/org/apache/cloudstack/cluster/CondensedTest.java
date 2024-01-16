@@ -21,6 +21,7 @@ package org.apache.cloudstack.cluster;
 
 import com.cloud.host.Host;
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -35,6 +36,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import javax.naming.ConfigurationException;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -64,9 +66,7 @@ public class CondensedTest {
 
     Map<Long, List<VirtualMachine>> hostVmMap;
 
-    List<Long> cpuList, memoryList;
-
-    Map<Long, Long> hostCpuFreeMap, hostMemoryFreeMap;
+    Map<Long, Pair<Long, Long>> hostCpuFreeMap, hostMemoryFreeMap;
 
 
     private AutoCloseable closeable;
@@ -95,16 +95,13 @@ public class CondensedTest {
 
         overrideDefaultConfigValue(ClusterDrsImbalanceThreshold, "_defaultValue", "0.5");
 
-        cpuList = Arrays.asList(1L, 2L);
-        memoryList = Arrays.asList(512L, 2048L);
-
         hostCpuFreeMap = new HashMap<>();
-        hostCpuFreeMap.put(1L, 2000L);
-        hostCpuFreeMap.put(2L, 1000L);
+        hostCpuFreeMap.put(1L, new Pair<>(2000L, 10000L));
+        hostCpuFreeMap.put(2L, new Pair<>(1000L, 10000L));
 
         hostMemoryFreeMap = new HashMap<>();
-        hostMemoryFreeMap.put(1L, 2048L * 1024L * 1024L);
-        hostMemoryFreeMap.put(2L, 512L * 1024L * 1024L);
+        hostMemoryFreeMap.put(1L, new Pair<>(2048L * 1024L * 1024L, 8192L * 1024L * 1024L));
+        hostMemoryFreeMap.put(2L, new Pair<>(512L * 1024L * 1024L, 8192L * 1024L * 1024L));
     }
 
     private void overrideDefaultConfigValue(final ConfigKey configKey,
@@ -138,7 +135,7 @@ public class CondensedTest {
     @Test
     public void needsDrsWithCpu() throws ConfigurationException, NoSuchFieldException, IllegalAccessException {
         overrideDefaultConfigValue(ClusterDrsMetric, "_defaultValue", "cpu");
-        assertTrue(condensed.needsDrs(clusterId, cpuList, memoryList));
+        assertTrue(condensed.needsDrs(clusterId, new ArrayList<>(hostCpuFreeMap.values()), new ArrayList<>(hostMemoryFreeMap.values())));
     }
 
     /*
@@ -148,14 +145,14 @@ public class CondensedTest {
     @Test
     public void needsDrsWithMemory() throws ConfigurationException, NoSuchFieldException, IllegalAccessException {
         overrideDefaultConfigValue(ClusterDrsMetric, "_defaultValue", "memory");
-        assertFalse(condensed.needsDrs(clusterId, cpuList, memoryList));
+        assertFalse(condensed.needsDrs(clusterId, new ArrayList<>(hostCpuFreeMap.values()), new ArrayList<>(hostMemoryFreeMap.values())));
     }
 
     /* 3. cluster with "unknown" metric */
     @Test
     public void needsDrsWithUnknown() throws ConfigurationException, NoSuchFieldException, IllegalAccessException {
         overrideDefaultConfigValue(ClusterDrsMetric, "_defaultValue", "unknown");
-        assertThrows(ConfigurationException.class, () -> condensed.needsDrs(clusterId, cpuList, memoryList));
+        assertThrows(ConfigurationException.class, () -> condensed.needsDrs(clusterId, new ArrayList<>(hostCpuFreeMap.values()), new ArrayList<>(hostMemoryFreeMap.values())));
     }
 
     /**

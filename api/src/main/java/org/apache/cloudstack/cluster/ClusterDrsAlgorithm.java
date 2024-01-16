@@ -42,16 +42,16 @@ public interface ClusterDrsAlgorithm extends Adapter {
      * @param clusterId
      *         the ID of the cluster to check
      * @param cpuList
-     *         a list of CPU allocated values for each host in the cluster
+     *         a list of pair of free CPU & total CPU for each host in the cluster
      * @param memoryList
-     *         a list of memory allocated values for each host in the cluster
+     *         a list of pair of free memory & total memory values for each host in the cluster
      *
      * @return true if a DRS operation is needed, false otherwise
      *
      * @throws ConfigurationException
      *         if there is an error in the configuration
      */
-    boolean needsDrs(long clusterId, List<Long> cpuList, List<Long> memoryList) throws ConfigurationException;
+    boolean needsDrs(long clusterId, List<Pair<Long, Long>> cpuList, List<Pair<Long, Long>> memoryList) throws ConfigurationException;
 
 
     /**
@@ -66,17 +66,17 @@ public interface ClusterDrsAlgorithm extends Adapter {
      * @param destHost
      *         the destination host for the virtual machine
      * @param hostCpuFreeMap
-     *         a map of host IDs to the amount of CPU free on each host
+     *         a map of host IDs to the pair of amount of free CPU and total CPU on each host
      * @param hostMemoryFreeMap
-     *         a map of host IDs to the amount of memory free on each host
+     *         a map of host IDs to the pair of amount of free memory free and total memory on each host
      * @param requiresStorageMotion
      *         whether storage motion is required for the virtual machine
      *
      * @return a ternary containing improvement, cost, benefit
      */
     Ternary<Double, Double, Double> getMetrics(long clusterId, VirtualMachine vm, ServiceOffering serviceOffering,
-                                               Host destHost, Map<Long, Long> hostCpuFreeMap,
-                                               Map<Long, Long> hostMemoryFreeMap, Boolean requiresStorageMotion);
+                                               Host destHost, Map<Long, Pair<Long, Long>> hostCpuFreeMap,
+                                               Map<Long, Pair<Long, Long>> hostMemoryFreeMap, Boolean requiresStorageMotion);
 
     /**
      * Calculates the imbalance of the cluster after a virtual machine migration.
@@ -95,25 +95,25 @@ public interface ClusterDrsAlgorithm extends Adapter {
      * @return a pair containing the CPU and memory imbalance of the cluster after the migration
      */
     default Pair<Double, Double> getImbalancePostMigration(ServiceOffering serviceOffering, VirtualMachine vm,
-                                                           Host destHost, Map<Long, Long> hostCpuFreeMap,
-                                                           Map<Long, Long> hostMemoryFreeMap) {
-        List<Long> postCpuList = new ArrayList<>();
-        List<Long> postMemoryList = new ArrayList<>();
+                                                           Host destHost, Map<Long, Pair<Long, Long>> hostCpuFreeMap,
+                                                           Map<Long, Pair<Long, Long>> hostMemoryFreeMap) {
+        List<Double> postCpuList = new ArrayList<>();
+        List<Double> postMemoryList = new ArrayList<>();
         final int vmCpu = serviceOffering.getCpu() * serviceOffering.getSpeed();
         final long vmRam = serviceOffering.getRamSize() * 1024L * 1024L;
 
         for (Long hostId : hostCpuFreeMap.keySet()) {
-            long cpu = hostCpuFreeMap.get(hostId);
-            long memory = hostMemoryFreeMap.get(hostId);
+            long cpu = hostCpuFreeMap.get(hostId).first();
+            long memory = hostMemoryFreeMap.get(hostId).first();
             if (hostId == destHost.getId()) {
-                postCpuList.add(cpu - vmCpu);
-                postMemoryList.add(memory - vmRam);
+                postCpuList.add((double)(cpu - vmCpu)/hostCpuFreeMap.get(hostId).second());
+                postMemoryList.add((double)(memory - vmRam)/hostMemoryFreeMap.get(hostId).second());
             } else if (hostId.equals(vm.getHostId())) {
-                postCpuList.add(cpu + vmCpu);
-                postMemoryList.add(memory + vmRam);
+                postCpuList.add((double)(cpu + vmCpu)/hostCpuFreeMap.get(hostId).second());
+                postMemoryList.add((double)(memory + vmRam)/hostMemoryFreeMap.get(hostId).second());
             } else {
-                postCpuList.add(cpu);
-                postMemoryList.add(memory);
+                postCpuList.add((double)cpu/hostCpuFreeMap.get(hostId).second());
+                postMemoryList.add((double)memory/hostMemoryFreeMap.get(hostId).second());
             }
         }
         return new Pair<>(getClusterImbalance(postCpuList), getClusterImbalance(postMemoryList));
@@ -129,7 +129,7 @@ public interface ClusterDrsAlgorithm extends Adapter {
      * Cluster Imbalance, Ic = σc / mavg , where σc is the standard deviation and
      * mavg is the mean metric value for the cluster.
      */
-    default Double getClusterImbalance(List<Long> metricList) {
+    default Double getClusterImbalance(List<Double> metricList) {
         Double clusterMeanMetric = getClusterMeanMetric(metricList);
         Double clusterStandardDeviation = getClusterStandardDeviation(metricList, clusterMeanMetric);
         return clusterStandardDeviation / clusterMeanMetric;
@@ -142,7 +142,7 @@ public interface ClusterDrsAlgorithm extends Adapter {
      * Cluster Mean Metric, mavg = (∑mi) / N, where mi is a measurable metric for a
      * resource ‘i’ in a cluster with total N number of resources.
      */
-    default Double getClusterMeanMetric(List<Long> metricList) {
+    default Double getClusterMeanMetric(List<Double> metricList) {
         return new Mean().evaluate(metricList.stream().mapToDouble(i -> i).toArray());
     }
 
@@ -157,7 +157,7 @@ public interface ClusterDrsAlgorithm extends Adapter {
      * mean metric value and mi is a measurable metric for some resource ‘i’ in the
      * cluster with total N number of resources.
      */
-    default Double getClusterStandardDeviation(List<Long> metricList, Double mean) {
+    default Double getClusterStandardDeviation(List<Double> metricList, Double mean) {
         if (mean != null) {
             return new StandardDeviation(false).evaluate(metricList.stream().mapToDouble(i -> i).toArray(), mean);
         } else {

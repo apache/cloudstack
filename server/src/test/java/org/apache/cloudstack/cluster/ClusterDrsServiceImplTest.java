@@ -180,14 +180,12 @@ public class ClusterDrsServiceImplTest {
         Mockito.when(hostJoin1.getCpuUsedCapacity()).thenReturn(1000L);
         Mockito.when(hostJoin1.getCpuReservedCapacity()).thenReturn(0L);
         Mockito.when(hostJoin1.getMemUsedCapacity()).thenReturn(1024L);
-        Mockito.when(hostJoin1.getMemReservedCapacity()).thenReturn(512L);
 
         HostJoinVO hostJoin2 = Mockito.mock(HostJoinVO.class);
         Mockito.when(hostJoin2.getId()).thenReturn(2L);
         Mockito.when(hostJoin2.getCpuUsedCapacity()).thenReturn(1000L);
         Mockito.when(hostJoin2.getCpuReservedCapacity()).thenReturn(0L);
         Mockito.when(hostJoin2.getMemUsedCapacity()).thenReturn(1024L);
-        Mockito.when(hostJoin2.getMemReservedCapacity()).thenReturn(512L);
 
         List<VMInstanceVO> vmList = new ArrayList<>();
         vmList.add(vm1);

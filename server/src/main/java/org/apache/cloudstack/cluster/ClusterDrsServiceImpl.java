@@ -353,10 +353,16 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
         List<HostJoinVO> hostJoinList = hostJoinDao.searchByIds(
                 hostList.stream().map(HostVO::getId).toArray(Long[]::new));
 
-        Map<Long, Long> hostCpuMap = hostJoinList.stream().collect(Collectors.toMap(HostJoinVO::getId,
-                hostJoin -> hostJoin.getCpus() * hostJoin.getSpeed() - hostJoin.getCpuReservedCapacity() - hostJoin.getCpuUsedCapacity()));
-        Map<Long, Long> hostMemoryMap = hostJoinList.stream().collect(Collectors.toMap(HostJoinVO::getId,
-                hostJoin -> hostJoin.getTotalMemory() - hostJoin.getMemUsedCapacity() - hostJoin.getMemReservedCapacity()));
+        Map<Long, Pair<Long, Long>> hostCpuMap = hostJoinList.stream().collect(Collectors.toMap(HostJoinVO::getId,
+                hostJoin -> {
+                    long totalCpu = hostJoin.getCpus() * hostJoin.getSpeed() - hostJoin.getCpuReservedCapacity();
+                    return new Pair<>(totalCpu - hostJoin.getCpuUsedCapacity(), totalCpu);
+                }));
+        Map<Long, Pair<Long, Long>> hostMemoryMap = hostJoinList.stream().collect(Collectors.toMap(HostJoinVO::getId,
+                hostJoin -> {
+                    long totalMemory = hostJoin.getTotalMemory() - hostJoin.getMemUsedCapacity();
+                    return new Pair<>(totalMemory - hostJoin.getMemUsedCapacity(), totalMemory);
+                }));
 
         Map<Long, ServiceOffering> vmIdServiceOfferingMap = new HashMap<>();
 
@@ -387,10 +393,10 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
             long vmCpu = (long) serviceOffering.getCpu() * serviceOffering.getSpeed();
             long vmMemory = serviceOffering.getRamSize() * 1024L * 1024L;
 
-            hostCpuMap.put(vm.getHostId(), hostCpuMap.get(vm.getHostId()) + vmCpu);
-            hostCpuMap.put(destHost.getId(), hostCpuMap.get(destHost.getId()) - vmCpu);
-            hostMemoryMap.put(vm.getHostId(), hostMemoryMap.get(vm.getHostId()) + vmMemory);
-            hostMemoryMap.put(destHost.getId(), hostMemoryMap.get(destHost.getId()) - vmMemory);
+            hostCpuMap.get(vm.getHostId()).set(hostCpuMap.get(vm.getHostId()).first() + vmCpu, hostCpuMap.get(vm.getHostId()).second());
+            hostCpuMap.get(destHost.getId()).set(hostCpuMap.get(destHost.getId()).first() - vmCpu, hostCpuMap.get(destHost.getId()).second());
+            hostMemoryMap.get(vm.getHostId()).set(hostMemoryMap.get(vm.getHostId()).first() + vmMemory, hostMemoryMap.get(vm.getHostId()).second());
+            hostMemoryMap.get(destHost.getId()).set(hostMemoryMap.get(destHost.getId()).first() - vmMemory, hostMemoryMap.get(destHost.getId()).second());
             vm.setHostId(destHost.getId());
             iteration++;
         }
@@ -443,8 +449,8 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
     Pair<VirtualMachine, Host> getBestMigration(Cluster cluster, ClusterDrsAlgorithm algorithm,
             List<VirtualMachine> vmList,
             Map<Long, ServiceOffering> vmIdServiceOfferingMap,
-            Map<Long, Long> hostCpuCapacityMap,
-            Map<Long, Long> hostMemoryCapacityMap) {
+            Map<Long, Pair<Long, Long>> hostCpuCapacityMap,
+            Map<Long, Pair<Long, Long>> hostMemoryCapacityMap) {
         double improvement = 0;
         Pair<VirtualMachine, Host> bestMigration = new Pair<>(null, null);
 

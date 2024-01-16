@@ -27,9 +27,9 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 
 import javax.naming.ConfigurationException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsImbalanceThreshold;
 import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsMetric;
@@ -42,15 +42,17 @@ public class Balanced extends AdapterBase implements ClusterDrsAlgorithm {
     }
 
     @Override
-    public boolean needsDrs(long clusterId, List<Long> cpuList, List<Long> memoryList) throws ConfigurationException {
-        Double cpuImbalance = getClusterImbalance(cpuList);
-        Double memoryImbalance = getClusterImbalance(memoryList);
+    public boolean needsDrs(long clusterId, List<Pair<Long, Long>> cpuList, List<Pair<Long, Long>> memoryList) throws ConfigurationException {
         double threshold = getThreshold(clusterId);
         String metric = ClusterDrsMetric.valueIn(clusterId);
         switch (metric) {
             case "cpu":
+                List<Double> cpuRatioList = cpuList.stream().map(pair -> (double) pair.first()/ pair.second()).collect(Collectors.toList());
+                Double cpuImbalance = getClusterImbalance(cpuRatioList);
                 return cpuImbalance > threshold;
             case "memory":
+                List<Double> memoryRatioList = memoryList.stream().map(pair -> (double) pair.first()/ pair.second()).collect(Collectors.toList());
+                Double memoryImbalance = getClusterImbalance(memoryRatioList);
                 return memoryImbalance > threshold;
             default:
                 throw new ConfigurationException(
@@ -65,13 +67,14 @@ public class Balanced extends AdapterBase implements ClusterDrsAlgorithm {
     @Override
     public Ternary<Double, Double, Double> getMetrics(long clusterId, VirtualMachine vm,
                                                       ServiceOffering serviceOffering, Host destHost,
-                                                      Map<Long, Long> hostCpuUsedMap, Map<Long, Long> hostMemoryUsedMap,
+                                                      Map<Long, Pair<Long, Long>> hostCpuFreeMap, Map<Long, Pair<Long, Long>> hostMemoryFreeMap,
                                                       Boolean requiresStorageMotion) {
-        Double preCpuImbalance = getClusterImbalance(new ArrayList<>(hostCpuUsedMap.values()));
-        Double preMemoryImbalance = getClusterImbalance(new ArrayList<>(hostMemoryUsedMap.values()));
-
-        Pair<Double, Double> imbalancePair = getImbalancePostMigration(serviceOffering, vm, destHost, hostCpuUsedMap,
-                hostMemoryUsedMap);
+        List<Double> cpuList = hostCpuFreeMap.values().stream().map(pair -> (double) pair.first() / pair.second()).collect(Collectors.toList());
+        Double preCpuImbalance = getClusterImbalance(cpuList);
+        List<Double> memoryList = hostMemoryFreeMap.values().stream().map(pair -> (double) pair.first() / pair.second()).collect(Collectors.toList());
+        Double preMemoryImbalance = getClusterImbalance(memoryList);
+        Pair<Double, Double> imbalancePair = getImbalancePostMigration(serviceOffering, vm, destHost, hostCpuFreeMap,
+                hostMemoryFreeMap);
         Double postCpuImbalance = imbalancePair.first();
         Double postMemoryImbalance = imbalancePair.second();
 
