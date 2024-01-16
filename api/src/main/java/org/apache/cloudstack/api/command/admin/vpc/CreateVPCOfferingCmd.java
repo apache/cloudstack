@@ -164,7 +164,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
                     PortForwarding.getName(),
                     UserData.getName()
                     ));
-            if (Boolean.TRUE.equals(getNsxSupportsLbService())) {
+            if (getNsxSupportsLbService()) {
                 supportedServices.add(Lb.getName());
             }
         }
@@ -225,7 +225,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
             else
                 serviceProviderMap.put(service, List.of(Network.Provider.Nsx.getName()));
         }
-        if (Boolean.FALSE.equals(getNsxSupportsLbService())) {
+        if (!getNsxSupportsLbService()) {
             serviceProviderMap.remove(Lb.getName());
         }
     }

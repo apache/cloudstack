@@ -255,7 +255,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
                     PortForwarding.getName(),
                     UserData.getName()
             ));
-            if (Boolean.TRUE.equals(getNsxSupportsLbService())) {
+            if (getNsxSupportsLbService()) {
                 services.add(Lb.getName());
             }
             if (Boolean.TRUE.equals(forVpc)) {
@@ -368,7 +368,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
                 serviceProviderMap.put(service, List.of(routerProvider));
             else
                 serviceProviderMap.put(service, List.of(Network.Provider.Nsx.getName()));
-            if (Boolean.FALSE.equals(getNsxSupportsLbService())) {
+            if (!getNsxSupportsLbService()) {
                 serviceProviderMap.remove(Lb.getName());
             }
         }
