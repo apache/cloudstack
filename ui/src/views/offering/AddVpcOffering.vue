@@ -76,7 +76,6 @@
               <a-switch v-model:checked="form.fornsx" @change="val => { handleForNsxChange(val) }" />
             </a-form-item>
           </a-col>
-          <!-- <a-row :gutter="1" v-if="forNsx"> -->
           <a-col :md="12" :lg="12" v-if="forNsx">
             <a-form-item name="nsxsupportlb" ref="nsxsupportlb">
               <template #label>
@@ -85,7 +84,6 @@
               <a-switch v-model:checked="form.nsxsupportlb" @change="val => { handleNsxLbService(val) }" />
             </a-form-item>
           </a-col>
-        <!-- </a-row> -->
         </a-row>
         <a-form-item name="nsxmode" ref="nsxmode" v-if="forNsx">
           <template #label>

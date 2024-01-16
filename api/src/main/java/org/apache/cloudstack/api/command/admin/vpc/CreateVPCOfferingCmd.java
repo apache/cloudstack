@@ -179,7 +179,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
         return nsxMode;
     }
 
-    public Boolean getNsxSupportsLbService() {
+    public boolean getNsxSupportsLbService() {
         return org.apache.commons.lang3.BooleanUtils.isTrue(nsxSupportsLbService);
     }
 

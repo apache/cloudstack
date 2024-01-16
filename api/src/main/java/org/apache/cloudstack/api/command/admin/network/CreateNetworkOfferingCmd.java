@@ -302,7 +302,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
         return nsxMode;
     }
 
-    public Boolean getNsxSupportsLbService() {
+    public boolean getNsxSupportsLbService() {
         return BooleanUtils.isTrue(nsxSupportsLbService);
     }
 
