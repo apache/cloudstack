@@ -27,6 +27,7 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 
 import javax.naming.ConfigurationException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -47,11 +48,27 @@ public class Condensed extends AdapterBase implements ClusterDrsAlgorithm {
         String metric = ClusterDrsMetric.valueIn(clusterId);
         switch (metric) {
             case "cpu":
-                List<Double> cpuRatioList = cpuList.stream().map(pair -> (double) pair.first() / pair.second()).collect(Collectors.toList());
+                List<Double> cpuRatioList = new ArrayList<>();
+                for (Pair<Long, Long> pair : cpuList) {
+                    Double ratio = (double) pair.first() / pair.second();
+                    // To ensure that we calculate imbalance in cases where a few hosts are already condensed
+                    // but other hosts aren't. This is to prevent the case where we don't migrate VMs because
+                    // imbalance > 1 but the cluster is not condensed.
+                    if (pair.first() < 0.05 * pair.second()) continue;
+                    cpuRatioList.add(ratio);
+                }
                 Double cpuImbalance = getClusterImbalance(cpuRatioList);
                 return cpuImbalance < threshold;
             case "memory":
-                List<Double> memoryRatioList = memoryList.stream().map(pair -> (double) pair.first() / pair.second()).collect(Collectors.toList());
+                List<Double> memoryRatioList = new ArrayList<>();
+                for (Pair<Long, Long> pair : memoryList) {
+                    Double ratio = (double) pair.first() / pair.second();
+                    // To ensure that we calculate imbalance in cases where a few hosts are already condensed
+                    // but other hosts aren't. This is to prevent the case where we don't migrate VMs because
+                    // imbalance > 1 but the cluster is not condensed.
+                    if (pair.first() < 0.05 * pair.second()) continue;
+                    memoryRatioList.add(ratio);
+                }
                 Double memoryImbalance = getClusterImbalance(memoryRatioList);
                 return memoryImbalance < threshold;
             default:
