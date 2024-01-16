@@ -421,7 +421,8 @@ export default {
         var listNetworks = json.listnetworksresponse.network
         if (this.arrayHasItems(listNetworks)) {
           listNetworks = listNetworks.filter(n => n.type !== 'L2')
-          this.networks = this.networks.concat(listNetworks)
+          var ids = new Set(this.networks.map(n => n.id))
+          this.networks = [...this.networks, ...listNetworks.filter(n => !ids.has(n.id))]
         }
       }).finally(() => {
         this.networkLoading = false
