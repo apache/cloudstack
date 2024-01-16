@@ -151,7 +151,7 @@ class CsCmdLine(CsDataBag):
         else:
             passwd = "%s-%s" % (self.get_vpccidr(), self.get_router_id())
         md5 = hashlib.md5()
-        md5.update(passwd)
+        md5.update(passwd.encode())
         return md5.hexdigest()
 
     def get_gateway(self):
