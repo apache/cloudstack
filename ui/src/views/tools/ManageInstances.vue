@@ -567,7 +567,7 @@ export default {
       },
       {
         name: 'external',
-        label: 'Import libvirt domain from KVM Host',
+        label: 'Import Instance from remote KVM host',
         sourceDestHypervisors: {
           kvm: 'kvm'
         },
