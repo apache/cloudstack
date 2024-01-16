@@ -89,7 +89,7 @@
         </a-row>
         <a-form-item name="nsxmode" ref="nsxmode" v-if="forNsx">
           <template #label>
-            <tooltip-label :title="$t('label.nsx.mode')" :tooltip="apiParams.nsxmode.description"/>
+            <tooltip-label :title="$t('label.nsxmode')" :tooltip="apiParams.nsxmode.description"/>
           </template>
           <a-select
             v-if="showMode"
