@@ -675,7 +675,7 @@
 "label.deploymentplanner": "Deployment planner",
 "label.desc.db.stats": "Database Statistics",
 "label.desc.importexportinstancewizard": "Import and export Instances to/from an existing VMware or KVM cluster.",
-"label.desc.import.ext.kvm.wizard": "Import libvirt domain from KVM Host",
+"label.desc.import.ext.kvm.wizard": "Import Instance from remote KVM host",
 "label.desc.import.local.kvm.wizard": "Import QCOW2 image from Local Storage",
 "label.desc.import.shared.kvm.wizard": "Import QCOW2 image from Shared Storage",
 "label.desc.ingesttinstancewizard": "Ingest instances from an external KVM host",
