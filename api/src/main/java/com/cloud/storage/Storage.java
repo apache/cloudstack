@@ -77,12 +77,17 @@ public class Storage {
     }
 
     public static enum Capability {
-        HARDWARE_ACCELERATION("HARDWARE_ACCELERATION");
+        HARDWARE_ACCELERATION("HARDWARE_ACCELERATION"),
+        ALLOW_MIGRATE_OTHER_POOLS("ALLOW_MIGRATE_OTHER_POOLS");
 
         private final String capability;
 
         private Capability(String capability) {
             this.capability = capability;
+        }
+
+        public String toString() {
+            return this.capability;
         }
     }
 
@@ -125,6 +130,7 @@ public class Storage {
         BUILTIN, /* buildin template */
         PERHOST, /* every host has this template, don't need to install it in secondary storage */
         USER, /* User supplied template/iso */
+        VNF,    /* VNFs (virtual network functions) template */
         DATADISK, /* Template corresponding to a datadisk(non root disk) present in an OVA */
         ISODISK /* Template corresponding to a iso (non root disk) present in an OVA */
     }
@@ -149,7 +155,8 @@ public class Storage {
         ManagedNFS(true, false, false),
         Linstor(true, true, false),
         DatastoreCluster(true, true, false), // for VMware, to abstract pool of clusters
-        StorPool(true, true, true);
+        StorPool(true, true, true),
+        FiberChannel(true, true, false); // Fiber Channel Pool for KVM hypervisors is used to find the volume by WWN value (/dev/disk/by-id/wwn-<wwnvalue>)
 
         private final boolean shared;
         private final boolean overprovisioning;

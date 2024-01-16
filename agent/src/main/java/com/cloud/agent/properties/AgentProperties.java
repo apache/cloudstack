@@ -14,6 +14,8 @@
  */
 package com.cloud.agent.properties;
 
+import org.apache.cloudstack.utils.security.KeyStoreUtils;
+
 /**
  * Class of constant agent's properties available to configure on
  * "agent.properties".
@@ -539,10 +541,10 @@ public class AgentProperties{
     /**
      * Heartbeat update timeout (in ms).<br>
      * Depending on the use case, this timeout might need increasing/decreasing.<br>
-     * Data type: Integer.<br>
-     * Default value: <code>60000</code>
+     * Data type: Long.<br>
+     * Default value: <code>60000L</code>
      */
-    public static final Property<Integer> HEARTBEAT_UPDATE_TIMEOUT = new Property<>("heartbeat.update.timeout", 60000);
+    public static final Property<Long> HEARTBEAT_UPDATE_TIMEOUT = new Property<>("heartbeat.update.timeout", 60000L);
 
     /**
      * The timeout (in seconds) to retrieve the target's domain ID when migrating a VM with KVM. <br>
@@ -734,11 +736,57 @@ public class AgentProperties{
     public static final Property<Integer> IOTHREADS = new Property<>("iothreads", 1);
 
     /**
+     * Enable verbose mode for virt-v2v Instance Conversion from Vmware to KVM
+     * Data type: Boolean.<br>
+     * Default value: <code>false</code>
+     */
+    public static final Property<Boolean> VIRTV2V_VERBOSE_ENABLED = new Property<>("virtv2v.verbose.enabled", false);
+
+    /**
      * BGP controll CIDR
      * Data type: String.<br>
      * Default value: <code>169.254.0.0/16</code>
      */
     public static final Property<String> CONTROL_CIDR = new Property<>("control.cidr", "169.254.0.0/16");
+
+    /**
+     * Time interval (in milliseconds) between KVM heartbeats. <br>
+     * This property is for KVM only.
+     * Data type: Long.<br>
+     * Default value: <code>60000l</code>
+     */
+    public static final Property<Long> KVM_HEARTBEAT_UPDATE_FREQUENCY = new Property<>("kvm.heartbeat.update.frequency", 60000L);
+
+    /**
+     * Number of maximum tries to KVM heartbeats. <br>
+     * This property is for KVM only.
+     * Data type: Long.<br>
+     * Default value: <code>5l</code>
+     */
+    public static final Property<Long> KVM_HEARTBEAT_UPDATE_MAX_TRIES = new Property<>("kvm.heartbeat.update.max.tries", 5L);
+
+    /**
+     * Time amount (in milliseconds) for the KVM heartbeat retry sleep. <br>
+     * This property is for KVM only.
+     * Data type: Long.<br>
+     * Default value: <code>10000l</code>
+     */
+    public static final Property<Long> KVM_HEARTBEAT_UPDATE_RETRY_SLEEP = new Property<>("kvm.heartbeat.update.retry.sleep", 10000L);
+
+    /**
+     * Timeout (in milliseconds) of the KVM heartbeat checker. <br>
+     * This property is for KVM only.
+     * Data type: Long.<br>
+     * Default value: <code>360000l</code>
+     */
+    public static final Property<Long> KVM_HEARTBEAT_CHECKER_TIMEOUT = new Property<>("kvm.heartbeat.checker.timeout", 360000L);
+
+    /**
+     * Keystore passphrase
+     * Data type: String.<br>
+     * Default value: <code>null</code>
+     */
+    public static final Property<String> KEYSTORE_PASSPHRASE = new Property<>(KeyStoreUtils.KS_PASSPHRASE_PROPERTY, null, String.class);
 
     public static class Property <T>{
         private String name;

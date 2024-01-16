@@ -278,7 +278,7 @@ export default {
     initForm () {
       this.formRef = ref()
       this.form = reactive({
-        controlnodes: 2,
+        controlnodes: 3,
         size: 1,
         noderootdisksize: 8
       })
@@ -342,7 +342,6 @@ export default {
         const listZones = json.listzonesresponse.zone
         if (listZones) {
           this.zones = this.zones.concat(listZones)
-          this.zones = this.zones.filter(zone => zone.type !== 'Edge')
         }
       }).finally(() => {
         this.zoneLoading = false
@@ -355,6 +354,7 @@ export default {
     handleZoneChange (zone) {
       this.selectedZone = zone
       this.fetchKubernetesVersionData()
+      this.fetchNetworkData()
     },
     fetchKubernetesVersionData () {
       this.kubernetesVersions = []
@@ -413,10 +413,14 @@ export default {
     },
     fetchNetworkData () {
       const params = {}
+      if (!this.isObjectEmpty(this.selectedZone)) {
+        params.zoneid = this.selectedZone.id
+      }
       this.networkLoading = true
       api('listNetworks', params).then(json => {
-        const listNetworks = json.listnetworksresponse.network
+        var listNetworks = json.listnetworksresponse.network
         if (this.arrayHasItems(listNetworks)) {
+          listNetworks = listNetworks.filter(n => n.type !== 'L2')
           this.networks = this.networks.concat(listNetworks)
         }
       }).finally(() => {

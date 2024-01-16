@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -3249,7 +3248,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         // get updated state for the network
         network = _networksDao.findById(networkId);
         if (network.getState() != Network.State.Allocated && network.getState() != Network.State.Setup && !forced) {
-            s_logger.debug("Network is not not in the correct state to be destroyed: " + network.getState());
+            s_logger.debug("Network is not in the correct state to be destroyed: " + network.getState());
             return false;
         }
 
@@ -4565,48 +4564,39 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     @DB
     @Override
-    public Pair<NicProfile, Integer> importNic(final String macAddress, int deviceId, final Network network, final Boolean isDefaultNic, final VirtualMachine vm, final Network.IpAddresses ipAddresses, final boolean forced)
+    public Pair<NicProfile, Integer> importNic(final String macAddress, int deviceId, final Network network, final Boolean isDefaultNic, final VirtualMachine vm, final Network.IpAddresses ipAddresses, final DataCenter dataCenter, final boolean forced)
             throws ConcurrentOperationException, InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
         s_logger.debug("Allocating nic for vm " + vm.getUuid() + " in network " + network + " during import");
-        String guestIp = null;
+        String selectedIp = null;
         if (ipAddresses != null && StringUtils.isNotEmpty(ipAddresses.getIp4Address())) {
             if (ipAddresses.getIp4Address().equals("auto")) {
                 ipAddresses.setIp4Address(null);
             }
-            if (network.getGuestType() != GuestType.L2) {
-                guestIp = _ipAddrMgr.acquireGuestIpAddress(network, ipAddresses.getIp4Address());
-            } else {
-                guestIp = null;
-            }
-            if (guestIp == null && network.getGuestType() != GuestType.L2 && !_networkModel.listNetworkOfferingServices(network.getNetworkOfferingId()).isEmpty()) {
+            selectedIp = getSelectedIpForNicImport(network, dataCenter, ipAddresses);
+            if (selectedIp == null && network.getGuestType() != GuestType.L2 && !_networkModel.listNetworkOfferingServices(network.getNetworkOfferingId()).isEmpty()) {
                 throw new InsufficientVirtualNetworkCapacityException("Unable to acquire Guest IP  address for network " + network, DataCenter.class,
                         network.getDataCenterId());
             }
         }
-        final String finalGuestIp = guestIp;
+        final String finalSelectedIp = selectedIp;
         final NicVO vo = Transaction.execute(new TransactionCallback<NicVO>() {
             @Override
             public NicVO doInTransaction(TransactionStatus status) {
                 NicVO existingNic = _nicDao.findByNetworkIdAndMacAddress(network.getId(), macAddress);
+                String macAddressToPersist = macAddress;
                 if (existingNic != null) {
-                    if (!forced) {
-                        throw new CloudRuntimeException("NIC with MAC address = " + macAddress + " exists on network with ID = " + network.getId() +
-                                " and forced flag is disabled");
-                    }
-                    s_logger.debug("Removing existing NIC with MAC address = " + macAddress + " on network with ID = " + network.getId());
-                    existingNic.setState(Nic.State.Deallocating);
-                    existingNic.setRemoved(new Date());
-                    _nicDao.update(existingNic.getId(), existingNic);
+                    macAddressToPersist = generateNewMacAddressIfForced(network, macAddress, forced);
                 }
                 NicVO vo = new NicVO(network.getGuruName(), vm.getId(), network.getId(), vm.getType());
-                vo.setMacAddress(macAddress);
+                vo.setMacAddress(macAddressToPersist);
                 vo.setAddressFormat(Networks.AddressFormat.Ip4);
-                if (NetUtils.isValidIp4(finalGuestIp) && StringUtils.isNotEmpty(network.getGateway())) {
-                    vo.setIPv4Address(finalGuestIp);
-                    vo.setIPv4Gateway(network.getGateway());
-                    if (StringUtils.isNotEmpty(network.getCidr())) {
-                        vo.setIPv4Netmask(NetUtils.cidr2Netmask(network.getCidr()));
-                    }
+                Pair<String, String> pair = getNetworkGatewayAndNetmaskForNicImport(network, dataCenter, finalSelectedIp);
+                String gateway = pair.first();
+                String netmask = pair.second();
+                if (NetUtils.isValidIp4(finalSelectedIp) && StringUtils.isNotEmpty(gateway)) {
+                    vo.setIPv4Address(finalSelectedIp);
+                    vo.setIPv4Gateway(gateway);
+                    vo.setIPv4Netmask(netmask);
                 }
                 vo.setBroadcastUri(network.getBroadcastUri());
                 vo.setMode(network.getMode());
@@ -4641,6 +4631,62 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 _networkModel.getNetworkTag(vm.getHypervisorType(), network));
 
         return new Pair<NicProfile, Integer>(vmNic, Integer.valueOf(deviceId));
+    }
+
+    protected String getSelectedIpForNicImport(Network network, DataCenter dataCenter, Network.IpAddresses ipAddresses) {
+        if (network.getGuestType() == GuestType.L2) {
+            return null;
+        }
+        return dataCenter.getNetworkType() == NetworkType.Basic ?
+                getSelectedIpForNicImportOnBasicZone(ipAddresses.getIp4Address(), network, dataCenter):
+                _ipAddrMgr.acquireGuestIpAddress(network, ipAddresses.getIp4Address());
+    }
+
+    protected String getSelectedIpForNicImportOnBasicZone(String requestedIp, Network network, DataCenter dataCenter) {
+        IPAddressVO ipAddressVO = StringUtils.isBlank(requestedIp) ?
+                _ipAddressDao.findBySourceNetworkIdAndDatacenterIdAndState(network.getId(), dataCenter.getId(), IpAddress.State.Free):
+                _ipAddressDao.findByIp(requestedIp);
+        if (ipAddressVO == null || ipAddressVO.getState() != IpAddress.State.Free) {
+            String msg = String.format("Cannot find a free IP to assign to VM NIC on network %s", network.getName());
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+        return ipAddressVO.getAddress() != null ? ipAddressVO.getAddress().addr() : null;
+    }
+
+    /**
+     * Obtain the gateway and netmask for a VM NIC to import
+     * If the VM to import is on a Basic Zone, then obtain the information from the vlan table instead of the network
+     */
+    protected Pair<String, String> getNetworkGatewayAndNetmaskForNicImport(Network network, DataCenter dataCenter, String selectedIp) {
+        String gateway = network.getGateway();
+        String netmask = StringUtils.isNotEmpty(network.getCidr()) ? NetUtils.cidr2Netmask(network.getCidr()) : null;
+        if (dataCenter.getNetworkType() == NetworkType.Basic) {
+            IPAddressVO freeIp = _ipAddressDao.findByIp(selectedIp);
+            if (freeIp != null) {
+                VlanVO vlan = _vlanDao.findById(freeIp.getVlanId());
+                gateway = vlan != null ? vlan.getVlanGateway() : null;
+                netmask = vlan != null ? vlan.getVlanNetmask() : null;
+            }
+        }
+        return new Pair<>(gateway, netmask);
+    }
+
+    private String generateNewMacAddressIfForced(Network network, String macAddress, boolean forced) {
+        if (!forced) {
+            throw new CloudRuntimeException("NIC with MAC address = " + macAddress + " exists on network with ID = " + network.getId() +
+                    " and forced flag is disabled");
+        }
+        try {
+            s_logger.debug(String.format("Generating a new mac address on network %s as the mac address %s already exists", network.getName(), macAddress));
+            String newMacAddress = _networkModel.getNextAvailableMacAddressInNetwork(network.getId());
+            s_logger.debug(String.format("Successfully generated the mac address %s, using it instead of the conflicting address %s", newMacAddress, macAddress));
+            return newMacAddress;
+        } catch (InsufficientAddressCapacityException e) {
+            String msg = String.format("Could not generate a new mac address on network %s", network.getName());
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
     }
 
     @Override

@@ -29,6 +29,10 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -67,8 +71,11 @@ import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.component.ManagerBase;
@@ -133,6 +140,10 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
     private ConsoleProxyManager consoleProxyManager;
     @Inject
     private SecondaryStorageVmManager secondaryStorageVmManager;
+    @Inject
+    VolumeDao volumeDao;
+    @Inject
+    DataStoreProviderManager dataStoreProviderMgr;
 
     long _serverId;
 
@@ -314,6 +325,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
     }
 
     protected void wakeupWorkers() {
+        s_logger.debug("Wakeup workers HA");
         for (WorkerThread worker : _workers) {
             worker.wakup();
         }
@@ -332,6 +344,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
 
     @Override
     public void scheduleRestart(VMInstanceVO vm, boolean investigate) {
+        s_logger.debug("HA schedule restart");
         Long hostId = vm.getHostId();
         if (hostId == null) {
             try {
@@ -425,6 +438,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
     }
 
     protected Long restart(final HaWorkVO work) {
+        s_logger.debug("RESTART with HAWORK");
         List<HaWorkVO> items = _haDao.listFutureHaWorkForVm(work.getInstanceId(), work.getId());
         if (items.size() > 0) {
             StringBuilder str = new StringBuilder("Cancelling this work item because newer ones have been scheduled.  Work Ids = [");
@@ -599,6 +613,20 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             }
 
             try{
+                if (HypervisorType.KVM == host.getHypervisorType()) {
+                    List<VolumeVO> volumes = volumeDao.findByInstance(vmId);
+                    for (VolumeVO volumeVO : volumes) {
+                        //detach the volumes from all clusters before starting the VM on another host.
+                        if (volumeVO.getPoolType() == StoragePoolType.StorPool) {
+                            DataStoreProvider storeProvider = dataStoreProviderMgr.getDataStoreProvider(volumeVO.getPoolType().name());
+                            DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
+                            if (storeDriver instanceof PrimaryDataStoreDriver) {
+                                PrimaryDataStoreDriver primaryStoreDriver = (PrimaryDataStoreDriver)storeDriver;
+                                primaryStoreDriver.detachVolumeFromAllStorageNodes(volumeVO);
+                            }
+                        }
+                    }
+                }
                 // First try starting the vm with its original planner, if it doesn't succeed send HAPlanner as its an emergency.
                 _itMgr.advanceStart(vm.getUuid(), params, null);
             }catch (InsufficientCapacityException e){
@@ -1064,6 +1092,6 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey[] {TimeBetweenCleanup, MigrationMaxRetries, TimeToSleep, TimeBetweenFailures,
             StopRetryInterval, RestartRetryInterval, MigrateRetryInterval, InvestigateRetryInterval,
-            HAWorkers, ForceHA};
+            HAWorkers, ForceHA, KvmHAFenceHostIfHeartbeatFailsOnStorage};
     }
 }

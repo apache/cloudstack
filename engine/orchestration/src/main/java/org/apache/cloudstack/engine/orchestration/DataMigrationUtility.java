@@ -91,25 +91,29 @@ public class DataMigrationUtility {
      *  "Ready" "Allocated", "Destroying", "Destroyed", "Failed". If this is the case, and if the migration policy is complete,
      *  the migration is terminated.
      */
-    private boolean filesReadyToMigrate(Long srcDataStoreId) {
+    public boolean filesReadyToMigrate(Long srcDataStoreId, List<TemplateDataStoreVO> templates, List<SnapshotDataStoreVO> snapshots, List<VolumeDataStoreVO> volumes) {
         State[] validStates = {State.Ready, State.Allocated, State.Destroying, State.Destroyed, State.Failed};
         boolean isReady = true;
-        List<TemplateDataStoreVO> templates = templateDataStoreDao.listByStoreId(srcDataStoreId);
         for (TemplateDataStoreVO template : templates) {
             isReady &= (Arrays.asList(validStates).contains(template.getState()));
             LOGGER.trace(String.format("template state: %s", template.getState()));
         }
-        List<SnapshotDataStoreVO> snapshots = snapshotDataStoreDao.listByStoreId(srcDataStoreId, DataStoreRole.Image);
         for (SnapshotDataStoreVO snapshot : snapshots) {
             isReady &= (Arrays.asList(validStates).contains(snapshot.getState()));
             LOGGER.trace(String.format("snapshot state: %s", snapshot.getState()));
         }
-        List<VolumeDataStoreVO> volumes = volumeDataStoreDao.listByStoreId(srcDataStoreId);
         for (VolumeDataStoreVO volume : volumes) {
             isReady &= (Arrays.asList(validStates).contains(volume.getState()));
             LOGGER.trace(String.format("volume state: %s", volume.getState()));
         }
         return isReady;
+    }
+
+    private boolean filesReadyToMigrate(Long srcDataStoreId) {
+        List<TemplateDataStoreVO> templates = templateDataStoreDao.listByStoreId(srcDataStoreId);
+        List<SnapshotDataStoreVO> snapshots = snapshotDataStoreDao.listByStoreId(srcDataStoreId, DataStoreRole.Image);
+        List<VolumeDataStoreVO> volumes = volumeDataStoreDao.listByStoreId(srcDataStoreId);
+        return filesReadyToMigrate(srcDataStoreId, templates, snapshots, volumes);
     }
 
     protected void checkIfCompleteMigrationPossible(ImageStoreService.MigrationPolicy policy, Long srcDataStoreId) {
@@ -158,7 +162,19 @@ public class DataMigrationUtility {
     }
 
     protected List<DataObject> getSortedValidSourcesList(DataStore srcDataStore, Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains,
-                                                         Map<DataObject, Pair<List<TemplateInfo>, Long>> childTemplates) {
+            Map<DataObject, Pair<List<TemplateInfo>, Long>> childTemplates, List<TemplateDataStoreVO> templates, List<SnapshotDataStoreVO> snapshots) {
+        List<DataObject> files = new ArrayList<>();
+
+        files.addAll(getAllReadyTemplates(srcDataStore, childTemplates, templates));
+        files.addAll(getAllReadySnapshotsAndChains(srcDataStore, snapshotChains, snapshots));
+
+        files = sortFilesOnSize(files, snapshotChains);
+
+        return files;
+    }
+
+    protected List<DataObject> getSortedValidSourcesList(DataStore srcDataStore, Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains,
+            Map<DataObject, Pair<List<TemplateInfo>, Long>> childTemplates) {
         List<DataObject> files = new ArrayList<>();
         files.addAll(getAllReadyTemplates(srcDataStore, childTemplates));
         files.addAll(getAllReadySnapshotsAndChains(srcDataStore, snapshotChains));
@@ -187,10 +203,8 @@ public class DataMigrationUtility {
         return files;
     }
 
-    protected List<DataObject> getAllReadyTemplates(DataStore srcDataStore, Map<DataObject, Pair<List<TemplateInfo>, Long>> childTemplates) {
-
+    protected List<DataObject> getAllReadyTemplates(DataStore srcDataStore, Map<DataObject, Pair<List<TemplateInfo>, Long>> childTemplates, List<TemplateDataStoreVO> templates) {
         List<TemplateInfo> files = new LinkedList<>();
-        List<TemplateDataStoreVO> templates = templateDataStoreDao.listByStoreId(srcDataStore.getId());
         for (TemplateDataStoreVO template : templates) {
             VMTemplateVO templateVO = templateDao.findById(template.getTemplateId());
             if (template.getState() == ObjectInDataStoreStateMachine.State.Ready && templateVO != null &&
@@ -211,13 +225,17 @@ public class DataMigrationUtility {
         return (List<DataObject>) (List<?>) files;
     }
 
+    protected List<DataObject> getAllReadyTemplates(DataStore srcDataStore, Map<DataObject, Pair<List<TemplateInfo>, Long>> childTemplates) {
+        List<TemplateDataStoreVO> templates = templateDataStoreDao.listByStoreId(srcDataStore.getId());
+        return getAllReadyTemplates(srcDataStore, childTemplates, templates);
+    }
+
     /** Returns parent snapshots and snapshots that do not have any children; snapshotChains comprises of the snapshot chain info
      * for each parent snapshot and the cumulative size of the chain - this is done to ensure that all the snapshots in a chain
      * are migrated to the same datastore
      */
-    protected List<DataObject> getAllReadySnapshotsAndChains(DataStore srcDataStore, Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains) {
+    protected List<DataObject> getAllReadySnapshotsAndChains(DataStore srcDataStore, Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains, List<SnapshotDataStoreVO> snapshots) {
         List<SnapshotInfo> files = new LinkedList<>();
-        List<SnapshotDataStoreVO> snapshots = snapshotDataStoreDao.listByStoreId(srcDataStore.getId(), DataStoreRole.Image);
         for (SnapshotDataStoreVO snapshot : snapshots) {
             SnapshotVO snapshotVO = snapshotDao.findById(snapshot.getSnapshotId());
             if (snapshot.getState() == ObjectInDataStoreStateMachine.State.Ready &&
@@ -246,6 +264,11 @@ public class DataMigrationUtility {
         return (List<DataObject>) (List<?>) files;
     }
 
+    protected List<DataObject> getAllReadySnapshotsAndChains(DataStore srcDataStore, Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains) {
+        List<SnapshotDataStoreVO> snapshots = snapshotDataStoreDao.listByStoreId(srcDataStore.getId(), DataStoreRole.Image);
+        return getAllReadySnapshotsAndChains(srcDataStore, snapshotChains, snapshots);
+    }
+
     protected Long getTotalChainSize(List<? extends DataObject> chain) {
         Long size = 0L;
         for (DataObject dataObject : chain) {
@@ -254,9 +277,8 @@ public class DataMigrationUtility {
         return size;
     }
 
-    protected List<DataObject> getAllReadyVolumes(DataStore srcDataStore) {
+    protected List<DataObject> getAllReadyVolumes(DataStore srcDataStore, List<VolumeDataStoreVO> volumes) {
         List<DataObject> files = new LinkedList<>();
-        List<VolumeDataStoreVO> volumes = volumeDataStoreDao.listByStoreId(srcDataStore.getId());
         for (VolumeDataStoreVO volume : volumes) {
             if (volume.getState() == ObjectInDataStoreStateMachine.State.Ready) {
                 VolumeInfo volumeInfo = volumeFactory.getVolume(volume.getVolumeId(), srcDataStore);
@@ -266,6 +288,11 @@ public class DataMigrationUtility {
             }
         }
         return files;
+    }
+
+    protected List<DataObject> getAllReadyVolumes(DataStore srcDataStore) {
+        List<VolumeDataStoreVO> volumes = volumeDataStoreDao.listByStoreId(srcDataStore.getId());
+        return getAllReadyVolumes(srcDataStore, volumes);
     }
 
     /** Returns the count of active SSVMs - SSVM with agents in connected state, so as to dynamically increase the thread pool

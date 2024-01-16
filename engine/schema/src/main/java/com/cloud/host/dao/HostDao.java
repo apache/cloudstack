@@ -108,6 +108,8 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     List<HostVO> listAllHostsByZoneAndHypervisorType(long zoneId, HypervisorType hypervisorType);
 
+    List<HostVO> listAllHostsThatHaveNoRuleTag(Host.Type type, Long clusterId, Long podId, Long dcId);
+
     List<HostVO> listAllHostsByType(Host.Type type);
 
     HostVO findByPublicIp(String publicIp);
@@ -161,4 +163,8 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
      * @return ordered list of hypervisor versions
      */
     List<String> listOrderedHostsHypervisorVersionsInDatacenter(long datacenterId, HypervisorType hypervisorType);
+
+    List<HostVO> findHostsWithTagRuleThatMatchComputeOferringTags(String computeOfferingTags);
+
+    List<Long> findClustersThatMatchHostTagRule(String computeOfferingTags);
 }

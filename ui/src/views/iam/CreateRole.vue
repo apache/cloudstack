@@ -99,6 +99,13 @@
           </a-select>
         </a-form-item>
 
+        <a-form-item name="ispublic" ref="ispublic">
+          <template #label>
+            <tooltip-label :title="$t('label.ispublic')" :tooltip="apiParams.ispublic.description"/>
+          </template>
+          <a-switch v-model:checked="form.ispublic"/>
+        </a-form-item>
+
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
           <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -150,7 +157,8 @@ export default {
     initForm () {
       this.formRef = ref()
       this.form = reactive({
-        using: 'type'
+        using: 'type',
+        ispublic: true
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.required.input') }],

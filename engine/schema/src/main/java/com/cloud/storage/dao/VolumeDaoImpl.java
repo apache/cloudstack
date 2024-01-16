@@ -20,11 +20,13 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -63,10 +65,13 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     protected final SearchBuilder<VolumeVO> AllFieldsSearch;
     protected final SearchBuilder<VolumeVO> diskOfferingSearch;
     protected final SearchBuilder<VolumeVO> RootDiskStateSearch;
+    private final SearchBuilder<VolumeVO> storeAndInstallPathSearch;
+    private final SearchBuilder<VolumeVO> volumeIdSearch;
     protected GenericSearchBuilder<VolumeVO, Long> CountByAccount;
     protected GenericSearchBuilder<VolumeVO, SumCount> primaryStorageSearch;
     protected GenericSearchBuilder<VolumeVO, SumCount> primaryStorageSearch2;
     protected GenericSearchBuilder<VolumeVO, SumCount> secondaryStorageSearch;
+    private final SearchBuilder<VolumeVO> poolAndPathSearch;
     @Inject
     ResourceTagDao _tagsDao;
 
@@ -78,8 +83,9 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     protected static final String SELECT_HYPERTYPE_FROM_ZONE_VOLUME = "SELECT s.hypervisor from volumes v, storage_pool s where v.pool_id = s.id and v.id = ?";
     protected static final String SELECT_POOLSCOPE = "SELECT s.scope from storage_pool s, volumes v where s.id = v.pool_id and v.id = ?";
 
-    private static final String ORDER_POOLS_NUMBER_OF_VOLUMES_FOR_ACCOUNT = "SELECT pool.id, SUM(IF(vol.state='Ready' AND vol.account_id = ?, 1, 0)) FROM `cloud`.`storage_pool` pool LEFT JOIN `cloud`.`volumes` vol ON pool.id = vol.pool_id WHERE pool.data_center_id = ? "
-            + " AND pool.pod_id = ? AND pool.cluster_id = ? " + " GROUP BY pool.id ORDER BY 2 ASC ";
+    private static final String ORDER_POOLS_NUMBER_OF_VOLUMES_FOR_ACCOUNT_PART1 = "SELECT pool.id, SUM(IF(vol.state='Ready' AND vol.account_id = ?, 1, 0)) FROM `cloud`.`storage_pool` pool LEFT JOIN `cloud`.`volumes` vol ON pool.id = vol.pool_id WHERE pool.data_center_id = ? ";
+    private static final String ORDER_POOLS_NUMBER_OF_VOLUMES_FOR_ACCOUNT_PART2 = " GROUP BY pool.id ORDER BY 2 ASC ";
+
     private static final String ORDER_ZONE_WIDE_POOLS_NUMBER_OF_VOLUMES_FOR_ACCOUNT = "SELECT pool.id, SUM(IF(vol.state='Ready' AND vol.account_id = ?, 1, 0)) FROM `cloud`.`storage_pool` pool LEFT JOIN `cloud`.`volumes` vol ON pool.id = vol.pool_id WHERE pool.data_center_id = ? "
             + " AND pool.scope = 'ZONE' AND pool.status='Up' " + " GROUP BY pool.id ORDER BY 2 ASC ";
 
@@ -473,6 +479,21 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         secondaryStorageSearch.and("states", secondaryStorageSearch.entity().getState(), Op.NIN);
         secondaryStorageSearch.and("isRemoved", secondaryStorageSearch.entity().getRemoved(), Op.NULL);
         secondaryStorageSearch.done();
+
+        storeAndInstallPathSearch = createSearchBuilder();
+        storeAndInstallPathSearch.and("poolId", storeAndInstallPathSearch.entity().getPoolId(), Op.EQ);
+        storeAndInstallPathSearch.and("pathIN", storeAndInstallPathSearch.entity().getPath(), Op.IN);
+        storeAndInstallPathSearch.done();
+
+        volumeIdSearch = createSearchBuilder();
+        volumeIdSearch.and("idIN", volumeIdSearch.entity().getId(), Op.IN);
+        volumeIdSearch.done();
+
+        poolAndPathSearch = createSearchBuilder();
+        poolAndPathSearch.and("poolId", poolAndPathSearch.entity().getPoolId(), Op.EQ);
+        poolAndPathSearch.and("path", poolAndPathSearch.entity().getPath(), Op.EQ);
+        poolAndPathSearch.done();
+
     }
 
     @Override
@@ -592,14 +613,27 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     public List<Long> listPoolIdsByVolumeCount(long dcId, Long podId, Long clusterId, long accountId) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
-        List<Long> result = new ArrayList<Long>();
+        List<Long> result = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(ORDER_POOLS_NUMBER_OF_VOLUMES_FOR_ACCOUNT_PART1);
         try {
-            String sql = ORDER_POOLS_NUMBER_OF_VOLUMES_FOR_ACCOUNT;
-            pstmt = txn.prepareAutoCloseStatement(sql);
-            pstmt.setLong(1, accountId);
-            pstmt.setLong(2, dcId);
-            pstmt.setLong(3, podId);
-            pstmt.setLong(4, clusterId);
+            List<Long> resourceIdList = new ArrayList<>();
+            resourceIdList.add(accountId);
+            resourceIdList.add(dcId);
+
+            if (podId != null) {
+                sql.append(" AND pool.pod_id = ?");
+                resourceIdList.add(podId);
+            }
+            if (clusterId != null) {
+                sql.append(" AND pool.cluster_id = ?");
+                resourceIdList.add(clusterId);
+            }
+            sql.append(ORDER_POOLS_NUMBER_OF_VOLUMES_FOR_ACCOUNT_PART2);
+
+            pstmt = txn.prepareAutoCloseStatement(sql.toString());
+            for (int i = 0; i < resourceIdList.size(); i++) {
+                pstmt.setLong(i + 1, resourceIdList.get(i));
+            }
 
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
@@ -607,9 +641,11 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
             }
             return result;
         } catch (SQLException e) {
-            throw new CloudRuntimeException("DB Exception on: " + ORDER_POOLS_NUMBER_OF_VOLUMES_FOR_ACCOUNT, e);
+            s_logger.debug("DB Exception on: " + sql.toString(), e);
+            throw new CloudRuntimeException(e);
         } catch (Throwable e) {
-            throw new CloudRuntimeException("Caught: " + ORDER_POOLS_NUMBER_OF_VOLUMES_FOR_ACCOUNT, e);
+            s_logger.debug("Caught: " + sql.toString(), e);
+            throw new CloudRuntimeException(e);
         }
     }
 
@@ -774,5 +810,35 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
             update(volume.getId(), volume);
             remove(volume.getId());
         }
+    }
+
+    @Override
+    public List<VolumeVO> listByPoolIdAndPaths(long id, List<String> pathList) {
+        if (CollectionUtils.isEmpty(pathList)) {
+            return Collections.emptyList();
+        }
+
+        SearchCriteria<VolumeVO> sc = storeAndInstallPathSearch.create();
+        sc.setParameters("poolId", id);
+        sc.setParameters("pathIN", pathList.toArray());
+        return listBy(sc);
+    }
+
+    @Override
+    public VolumeVO findByPoolIdAndPath(long id, String path) {
+        SearchCriteria<VolumeVO> sc = poolAndPathSearch.create();
+        sc.setParameters("poolId", id);
+        sc.setParameters("path", path);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public List<VolumeVO> listByIds(List<Long> ids) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return Collections.emptyList();
+        }
+        SearchCriteria<VolumeVO> sc = volumeIdSearch.create();
+        sc.setParameters("idIN", ids.toArray());
+        return listBy(sc, null);
     }
 }
