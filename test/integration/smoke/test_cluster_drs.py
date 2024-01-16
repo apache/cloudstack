@@ -114,15 +114,17 @@ class TestClusterDRS(cloudstackTestCase):
         systemVmIds = []
         cmds = listSystemVms.listSystemVmsCmd()
         responseS = cls.apiclient.listSystemVms(cmds)
-        for svm in responseS:
-            if svm.hostid != cls.hosts[0].id:
-                systemVmIds.append(svm.id)
+        if isinstance(responseS, Iterable):
+            for svm in responseS:
+                if svm.hostid != cls.hosts[0].id:
+                    systemVmIds.append(svm.id)
         numS = len(responseS)
         cmdv = listRouters.listRoutersCmd()
         responseR = cls.apiclient.listRouters(cmdv)
-        for svm in responseR:
-            if svm.hostid != cls.hosts[0].id:
-                systemVmIds.append(svm.id)
+        if isinstance(responseR, Iterable):
+            for svm in responseR:
+                if svm.hostid != cls.hosts[0].id:
+                    systemVmIds.append(svm.id)
         numR = len(responseR)
         numToMigrate = len(systemVmIds)
         cls.logger.debug(f'system vms and routers -- {numS} + {numR}')
