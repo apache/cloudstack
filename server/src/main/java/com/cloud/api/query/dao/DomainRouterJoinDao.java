@@ -37,4 +37,6 @@ public interface DomainRouterJoinDao extends GenericDao<DomainRouterJoinVO, Long
     List<DomainRouterJoinVO> searchByIds(Long... ids);
 
     List<DomainRouterJoinVO> getRouterByIdAndTrafficType(Long id, Networks.TrafficType... trafficType);
+
+    List<DomainRouterJoinVO> listByVpcId(long vpcId);
 }
