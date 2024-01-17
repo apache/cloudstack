@@ -2171,7 +2171,7 @@ public class LibvirtVMDef {
         }
 
         enum WatchDogAction {
-            RESET("reset"), SHUTDOWN("shutdown"), POWEROFF("poweroff"), PAUSE("pause"), NONE("none"), DUMP("dump");
+            RESET("reset"), SHUTDOWN("shutdown"), POWEROFF("poweroff"), PAUSE("pause"), NONE("none"), DUMP("dump"), INJECT_NMI("inject-nmi");
             String action;
 
             WatchDogAction(String action) {
