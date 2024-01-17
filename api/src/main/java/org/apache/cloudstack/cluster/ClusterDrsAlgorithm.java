@@ -21,7 +21,6 @@ package org.apache.cloudstack.cluster;
 
 import com.cloud.host.Host;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Adapter;
 import com.cloud.vm.VirtualMachine;
@@ -33,6 +32,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsMetricType;
+import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsMetricUseRatio;
+import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsMetric;
+
 public interface ClusterDrsAlgorithm extends Adapter {
 
     /**
@@ -42,16 +45,16 @@ public interface ClusterDrsAlgorithm extends Adapter {
      * @param clusterId
      *         the ID of the cluster to check
      * @param cpuList
-     *         a list of pair of free CPU & total CPU for each host in the cluster
+     *         a list of Ternary of used, reserved & total CPU for each host in the cluster
      * @param memoryList
-     *         a list of pair of free memory & total memory values for each host in the cluster
+     *         a list of Ternary of used, reserved & total memory values for each host in the cluster
      *
      * @return true if a DRS operation is needed, false otherwise
      *
      * @throws ConfigurationException
      *         if there is an error in the configuration
      */
-    boolean needsDrs(long clusterId, List<Pair<Long, Long>> cpuList, List<Pair<Long, Long>> memoryList) throws ConfigurationException;
+    boolean needsDrs(long clusterId, List<Ternary<Long, Long, Long>> cpuList, List<Ternary<Long, Long, Long>> memoryList) throws ConfigurationException;
 
 
     /**
@@ -65,18 +68,18 @@ public interface ClusterDrsAlgorithm extends Adapter {
      *         the service offering for the virtual machine
      * @param destHost
      *         the destination host for the virtual machine
-     * @param hostCpuFreeMap
-     *         a map of host IDs to the pair of amount of free CPU and total CPU on each host
-     * @param hostMemoryFreeMap
-     *         a map of host IDs to the pair of amount of free memory free and total memory on each host
+     * @param hostCpuMap
+     *         a map of host IDs to the Ternary of used, reserved and total CPU on each host
+     * @param hostMemoryMap
+     *         a map of host IDs to the Ternary of used, reserved and total memory on each host
      * @param requiresStorageMotion
      *         whether storage motion is required for the virtual machine
      *
      * @return a ternary containing improvement, cost, benefit
      */
     Ternary<Double, Double, Double> getMetrics(long clusterId, VirtualMachine vm, ServiceOffering serviceOffering,
-                                               Host destHost, Map<Long, Pair<Long, Long>> hostCpuFreeMap,
-                                               Map<Long, Pair<Long, Long>> hostMemoryFreeMap, Boolean requiresStorageMotion);
+                                               Host destHost, Map<Long, Ternary<Long, Long, Long>> hostCpuMap,
+                                               Map<Long, Ternary<Long, Long, Long>> hostMemoryMap, Boolean requiresStorageMotion) throws ConfigurationException;
 
     /**
      * Calculates the imbalance of the cluster after a virtual machine migration.
@@ -87,36 +90,65 @@ public interface ClusterDrsAlgorithm extends Adapter {
      *         the virtual machine being migrated
      * @param destHost
      *         the destination host for the virtual machine
-     * @param hostCpuFreeMap
-     *         a map of host IDs to the amount of CPU free on each host
-     * @param hostMemoryFreeMap
-     *         a map of host IDs to the amount of memory free on each host
+     * @param hostCpuMap
+     *         a map of host IDs to the Ternary of used, reserved and total CPU on each host
+     * @param hostMemoryMap
+     *         a map of host IDs to the Ternary of used, reserved and total memory on each host
      *
      * @return a pair containing the CPU and memory imbalance of the cluster after the migration
      */
-    default Pair<Double, Double> getImbalancePostMigration(ServiceOffering serviceOffering, VirtualMachine vm,
-                                                           Host destHost, Map<Long, Pair<Long, Long>> hostCpuFreeMap,
-                                                           Map<Long, Pair<Long, Long>> hostMemoryFreeMap) {
-        List<Double> postCpuList = new ArrayList<>();
-        List<Double> postMemoryList = new ArrayList<>();
-        final int vmCpu = serviceOffering.getCpu() * serviceOffering.getSpeed();
-        final long vmRam = serviceOffering.getRamSize() * 1024L * 1024L;
+    default Double getImbalancePostMigration(ServiceOffering serviceOffering, VirtualMachine vm,
+                                                           Host destHost, Map<Long, Ternary<Long, Long, Long>> hostCpuMap,
+                                                           Map<Long, Ternary<Long, Long, Long>> hostMemoryMap) throws ConfigurationException {
+        String metric = ClusterDrsMetric.valueIn(destHost.getClusterId());
+        long vmMetric;
+        Map<Long, Ternary<Long, Long, Long>> hostMetricsMap;
+        switch (metric) {
+            case "cpu":
+                hostMetricsMap = hostCpuMap;
+                vmMetric = (long) serviceOffering.getCpu() * serviceOffering.getSpeed();
+                break;
+            case "memory":
+                hostMetricsMap = hostMemoryMap;
+                vmMetric = serviceOffering.getRamSize() * 1024L * 1024L;
+                break;
+            default:
+                throw new ConfigurationException(
+                        String.format("Invalid metric: %s for cluster: %d", metric, destHost.getClusterId()));
+        }
 
-        for (Long hostId : hostCpuFreeMap.keySet()) {
-            long cpu = hostCpuFreeMap.get(hostId).first();
-            long memory = hostMemoryFreeMap.get(hostId).first();
+        boolean useRatio = ClusterDrsMetricUseRatio.valueIn(destHost.getClusterId());
+        List<Double> list = new ArrayList<>();
+        for (Long hostId : hostMetricsMap.keySet()) {
+            Ternary<Long, Long, Long> ternary = hostMetricsMap.get(hostId);
+            long used = ternary.first();
+            long actualTotal = ternary.third() - ternary.second();
+            long free = actualTotal - ternary.first();
+
             if (hostId == destHost.getId()) {
-                postCpuList.add((double)(cpu - vmCpu)/hostCpuFreeMap.get(hostId).second());
-                postMemoryList.add((double)(memory - vmRam)/hostMemoryFreeMap.get(hostId).second());
+                used += vmMetric;
+                free -= vmMetric;
             } else if (hostId.equals(vm.getHostId())) {
-                postCpuList.add((double)(cpu + vmCpu)/hostCpuFreeMap.get(hostId).second());
-                postMemoryList.add((double)(memory + vmRam)/hostMemoryFreeMap.get(hostId).second());
-            } else {
-                postCpuList.add((double)cpu/hostCpuFreeMap.get(hostId).second());
-                postMemoryList.add((double)memory/hostMemoryFreeMap.get(hostId).second());
+                used -= vmMetric;
+                free += vmMetric;
+            }
+
+            switch (ClusterDrsMetricType.valueIn(destHost.getClusterId())) {
+                case "free":
+                    if (useRatio) {
+                        list.add((double) free / actualTotal);
+                    } else {
+                        list.add((double) free);
+                    }
+                case "used":
+                    if (useRatio) {
+                        list.add((double) used / actualTotal);
+                    } else {
+                        list.add((double) used);
+                    }
             }
         }
-        return new Pair<>(getClusterImbalance(postCpuList), getClusterImbalance(postMemoryList));
+        return getImbalance(list);
     }
 
     /**
@@ -129,7 +161,24 @@ public interface ClusterDrsAlgorithm extends Adapter {
      * Cluster Imbalance, Ic = σc / mavg , where σc is the standard deviation and
      * mavg is the mean metric value for the cluster.
      */
-    default Double getClusterImbalance(List<Double> metricList) {
+    default Double getClusterImbalance(Long clusterId, List<Ternary<Long, Long, Long>> cpuList, List<Ternary<Long, Long, Long>> memoryList, Float skipThreshold) throws ConfigurationException {
+        String metric = ClusterDrsMetric.valueIn(clusterId);
+        List<Double> list;
+        switch (metric) {
+            case "cpu":
+                list = getMetricList(clusterId, cpuList, skipThreshold);
+                break;
+            case "memory":
+                list = getMetricList(clusterId, memoryList, skipThreshold);
+                break;
+            default:
+                throw new ConfigurationException(
+                        String.format("Invalid metric: %s for cluster: %d", metric, clusterId));
+        }
+        return getImbalance(list);
+    }
+
+    private Double getImbalance(List<Double> metricList) {
         Double clusterMeanMetric = getClusterMeanMetric(metricList);
         Double clusterStandardDeviation = getClusterStandardDeviation(metricList, clusterMeanMetric);
         return clusterStandardDeviation / clusterMeanMetric;
@@ -163,5 +212,32 @@ public interface ClusterDrsAlgorithm extends Adapter {
         } else {
             return new StandardDeviation(false).evaluate(metricList.stream().mapToDouble(i -> i).toArray());
         }
+    }
+
+    default List<Double> getMetricList(Long clusterId, List<Ternary<Long, Long, Long>> hostMetricsList, Float skipThreshold) {
+        boolean useRatio = ClusterDrsMetricUseRatio.valueIn(clusterId);
+        List<Double> list = new ArrayList<>();
+        for (Ternary<Long, Long, Long> ternary : hostMetricsList) {
+            long used = ternary.first();
+            long actualTotal = ternary.third() - ternary.second();
+            long free = actualTotal - ternary.first();
+            switch (ClusterDrsMetricType.valueIn(clusterId)) {
+                case "free":
+                    if (skipThreshold != null && free < skipThreshold * actualTotal) continue;
+                    if (useRatio) {
+                        list.add((double) free / actualTotal);
+                    } else {
+                        list.add((double) free);
+                    }
+                case "used":
+                    if (skipThreshold != null && used > skipThreshold * actualTotal) continue;
+                    if (useRatio) {
+                        list.add((double) used / actualTotal);
+                    } else {
+                        list.add((double) used);
+                    }
+            }
+        }
+        return list;
     }
 }

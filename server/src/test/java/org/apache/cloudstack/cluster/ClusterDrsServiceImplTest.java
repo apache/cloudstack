@@ -297,7 +297,7 @@ public class ClusterDrsServiceImplTest {
         Mockito.when(clusterDrsService.getResponseObjectForMigrations(Mockito.anyList())).thenReturn(
                 List.of(migrationResponse));
 
-        try(MockedStatic<ActionEventUtils> ignored = Mockito.mockStatic(ActionEventUtils.class)) {
+        try (MockedStatic<ActionEventUtils> ignored = Mockito.mockStatic(ActionEventUtils.class)) {
             Mockito.when(ActionEventUtils.onActionEvent(Mockito.anyLong(), Mockito.anyLong(),
                     Mockito.anyLong(),
                     Mockito.anyString(), Mockito.anyString(),
@@ -348,7 +348,7 @@ public class ClusterDrsServiceImplTest {
     }
 
     @Test
-    public void testGetBestMigration() {
+    public void testGetBestMigration() throws ConfigurationException {
         ClusterVO cluster = Mockito.mock(ClusterVO.class);
         Mockito.when(cluster.getId()).thenReturn(1L);
 

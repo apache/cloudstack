@@ -21,21 +21,29 @@ package org.apache.cloudstack.cluster;
 
 import com.cloud.host.Host;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 import javax.naming.ConfigurationException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsImbalanceThreshold;
-import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsMetric;
+import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsMetricType;
 
 public class Condensed extends AdapterBase implements ClusterDrsAlgorithm {
+
+    ConfigKey<Float> ClusterDrsImbalanceSkipThreshold = new ConfigKey<>(Float.class,
+            "drs.imbalance.condensed.skip.threshold", ConfigKey.CATEGORY_ADVANCED, "0.95",
+            "Threshold to ignore the metric for a host while calculating the imbalance to decide " +
+                    "whether DRS is required for a cluster.This is to avoid cases when the calculated imbalance" +
+                    " gets skewed due to a single host having a very high/low metric  value resulting in imbalance" +
+                    " being higher than 1. If " + ClusterDrsMetricType.key() + " is 'free', set a lower value and if it is 'used' " +
+                    "set a higher value. The value should be between 0.0 and 1.0",
+            true, ConfigKey.Scope.Cluster, null, "DRS imbalance", null, null, null);
 
     @Override
     public String getName() {
@@ -43,77 +51,31 @@ public class Condensed extends AdapterBase implements ClusterDrsAlgorithm {
     }
 
     @Override
-    public boolean needsDrs(long clusterId, List<Pair<Long, Long>> cpuList, List<Pair<Long, Long>> memoryList) throws ConfigurationException {
+    public boolean needsDrs(long clusterId, List<Ternary<Long, Long, Long>> cpuList,
+            List<Ternary<Long, Long, Long>> memoryList) throws ConfigurationException {
         double threshold = getThreshold(clusterId);
-        String metric = ClusterDrsMetric.valueIn(clusterId);
-        switch (metric) {
-            case "cpu":
-                List<Double> cpuRatioList = new ArrayList<>();
-                for (Pair<Long, Long> pair : cpuList) {
-                    Double ratio = (double) pair.first() / pair.second();
-                    // To ensure that we calculate imbalance in cases where a few hosts are already condensed
-                    // but other hosts aren't. This is to prevent the case where we don't migrate VMs because
-                    // imbalance > 1 but the cluster is not condensed.
-                    if (pair.first() < 0.05 * pair.second()) continue;
-                    cpuRatioList.add(ratio);
-                }
-                Double cpuImbalance = getClusterImbalance(cpuRatioList);
-                return cpuImbalance < threshold;
-            case "memory":
-                List<Double> memoryRatioList = new ArrayList<>();
-                for (Pair<Long, Long> pair : memoryList) {
-                    Double ratio = (double) pair.first() / pair.second();
-                    // To ensure that we calculate imbalance in cases where a few hosts are already condensed
-                    // but other hosts aren't. This is to prevent the case where we don't migrate VMs because
-                    // imbalance > 1 but the cluster is not condensed.
-                    if (pair.first() < 0.05 * pair.second()) continue;
-                    memoryRatioList.add(ratio);
-                }
-                Double memoryImbalance = getClusterImbalance(memoryRatioList);
-                return memoryImbalance < threshold;
-            default:
-                throw new ConfigurationException(
-                        String.format("Invalid metric: %s for cluster: %d", metric, clusterId));
-        }
+        Double imbalance = getClusterImbalance(clusterId, cpuList, memoryList, ClusterDrsImbalanceSkipThreshold.valueIn(clusterId));
+        return imbalance < threshold;
     }
 
-    private double getThreshold(long clusterId) throws ConfigurationException {
+    private double getThreshold(long clusterId) {
         return ClusterDrsImbalanceThreshold.valueIn(clusterId);
     }
 
     @Override
     public Ternary<Double, Double, Double> getMetrics(long clusterId, VirtualMachine vm,
-                                                      ServiceOffering serviceOffering, Host destHost,
-                                                      Map<Long, Pair<Long, Long>> hostCpuUsedMap, Map<Long, Pair<Long, Long>> hostMemoryUsedMap,
-                                                      Boolean requiresStorageMotion) {
-        List<Double> cpuList = hostCpuUsedMap.values().stream().map(pair -> (double) pair.first() / pair.second()).collect(Collectors.toList());
-        Double preCpuImbalance = getClusterImbalance(cpuList);
-        List<Double> memoryList = hostMemoryUsedMap.values().stream().map(pair -> (double) pair.first() / pair.second()).collect(Collectors.toList());
-        Double preMemoryImbalance = getClusterImbalance(memoryList);
-
-        Pair<Double, Double> imbalancePair = getImbalancePostMigration(serviceOffering, vm, destHost, hostCpuUsedMap,
-                hostMemoryUsedMap);
-        Double postCpuImbalance = imbalancePair.first();
-        Double postMemoryImbalance = imbalancePair.second();
+            ServiceOffering serviceOffering, Host destHost,
+            Map<Long, Ternary<Long, Long, Long>> hostCpuMap, Map<Long, Ternary<Long, Long, Long>> hostMemoryMap,
+            Boolean requiresStorageMotion) throws ConfigurationException {
+        Double preImbalance = getClusterImbalance(clusterId, new ArrayList<>(hostCpuMap.values()), new ArrayList<>(hostMemoryMap.values()), null);
+        Double postImbalance = getImbalancePostMigration(serviceOffering, vm, destHost, hostCpuMap, hostMemoryMap);
 
         // This needs more research to determine the cost and benefit of a migration
         // TODO: Cost should be a factor of the VM size and the host capacity
         // TODO: Benefit should be a factor of the VM size and the host capacity and the number of VMs on the host
-        double cost = 0;
-        double benefit = 1;
-
-        String metric = ClusterDrsMetric.valueIn(clusterId);
-        double improvement;
-        switch (metric) {
-            case "cpu":
-                improvement = postCpuImbalance - preCpuImbalance;
-                break;
-            case "memory":
-                improvement = postMemoryImbalance - preMemoryImbalance;
-                break;
-            default:
-                improvement = postCpuImbalance + postMemoryImbalance - preCpuImbalance - preMemoryImbalance;
-        }
+        final double improvement = postImbalance - preImbalance;
+        final double cost = 0;
+        final double benefit = 1;
         return new Ternary<>(improvement, cost, benefit);
     }
 }

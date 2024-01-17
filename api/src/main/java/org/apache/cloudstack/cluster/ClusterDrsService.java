@@ -66,6 +66,19 @@ public interface ClusterDrsService extends Manager, Configurable, Scheduler {
             true, ConfigKey.Scope.Cluster, null, "DRS metric", null, null, null, ConfigKey.Kind.Select,
             "memory,cpu");
 
+    ConfigKey<String> ClusterDrsMetricType = new ConfigKey<>(String.class, "drs.metric.type", ConfigKey.CATEGORY_ADVANCED,
+            "used",
+            "The metric type used to measure imbalance in a cluster. This can completely change the imbalance value. Possible values are free, used.",
+            true, ConfigKey.Scope.Cluster, null, "DRS metric", null, null, null, ConfigKey.Kind.Select,
+            "free,used");
+
+    ConfigKey<Boolean> ClusterDrsMetricUseRatio = new ConfigKey<>(Boolean.class, "drs.metric.use.ratio", ConfigKey.CATEGORY_ADVANCED,
+            "true",
+            "Whether to use ratio of selected metric & total. Useful when the cluster has hosts with different capacities",
+            true, ConfigKey.Scope.Cluster, null, "DRS metric", null, null, null, ConfigKey.Kind.Select,
+            "true,false");
+
+
     /**
      * Generate a DRS plan for a cluster and save it as per the parameters
      *
