@@ -21,6 +21,7 @@ Tests DRS on a cluster
 
 import logging
 import time
+from collections.abc import Iterable
 
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.cloudstackAPI import (migrateSystemVm, listRouters, listSystemVms)
