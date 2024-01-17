@@ -76,10 +76,18 @@
               <a-switch v-model:checked="form.fornsx" @change="val => { handleForNsxChange(val) }" />
             </a-form-item>
           </a-col>
+          <a-col :md="12" :lg="12" v-if="forNsx">
+            <a-form-item name="nsxsupportlb" ref="nsxsupportlb">
+              <template #label>
+                <tooltip-label :title="$t('label.nsx.supports.lb')" :tooltip="apiParams.nsxsupportlb.description"/>
+              </template>
+              <a-switch v-model:checked="form.nsxsupportlb" @change="val => { handleNsxLbService(val) }" />
+            </a-form-item>
+          </a-col>
         </a-row>
         <a-form-item name="nsxmode" ref="nsxmode" v-if="forNsx">
           <template #label>
-            <tooltip-label :title="$t('label.nsx.mode')" :tooltip="apiParams.nsxmode.description"/>
+            <tooltip-label :title="$t('label.nsxmode')" :tooltip="apiParams.nsxmode.description"/>
           </template>
           <a-select
             v-if="showMode"
@@ -293,7 +301,8 @@ export default {
         regionlevelvpc: true,
         distributedrouter: true,
         ispublic: true,
-        internetprotocol: this.internetProtocolValue
+        internetprotocol: this.internetProtocolValue,
+        nsxsupportlb: true
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.name') }],
@@ -482,7 +491,23 @@ export default {
     async handleForNsxChange (forNsx) {
       this.forNsx = forNsx
       this.showMode = forNsx
+      if (forNsx) {
+        this.form.nsxsupportlb = true
+        this.handleNsxLbService(true)
+      }
       this.fetchSupportedServiceData()
+    },
+    handleNsxLbService (supportLb) {
+      if (!supportLb) {
+        this.supportedServices = this.supportedServices.filter(svc => svc.name !== 'Lb')
+      }
+      if (supportLb) {
+        this.supportedServices.push({
+          name: 'Lb',
+          enabled: true,
+          provider: [{ name: 'Nsx' }]
+        })
+      }
     },
     handleSupportedServiceChange (service, checked, provider) {
       if (service === 'Connectivity') {
@@ -561,6 +586,7 @@ export default {
         if (values.fornsx === true) {
           params.fornsx = true
           params.nsxmode = values.nsxmode
+          params.nsxsupportlb = values.nsxsupportlb
         }
         if (this.selectedServiceProviderMap != null) {
           var supportedServices = Object.keys(this.selectedServiceProviderMap)

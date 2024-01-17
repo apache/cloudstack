@@ -129,6 +129,16 @@
             </a-form-item>
           </a-col>
         </a-row>
+        <a-row :gutter="12" v-if="forNsx">
+          <a-col :md="12" :lg="12">
+            <a-form-item name="nsxsupportlb" ref="nsxsupportlb" v-if="guestType === 'isolated'">
+              <template #label>
+                <tooltip-label :title="$t('label.nsx.supports.lb')" :tooltip="apiParams.nsxsupportlb.description"/>
+              </template>
+              <a-switch v-model:checked="form.nsxsupportlb" @change="val => { handleNsxLbService(val) }" />
+            </a-form-item>
+          </a-col>
+        </a-row>
         <a-form-item name="nsxmode" ref="nsxmode" v-if="forNsx">
           <template #label>
             <tooltip-label :title="$t('label.nsxmode')" :tooltip="apiParams.nsxmode.description"/>
@@ -633,7 +643,8 @@ export default {
         conservemode: true,
         availability: 'optional',
         egressdefaultpolicy: 'deny',
-        ispublic: this.isPublic
+        ispublic: this.isPublic,
+        nsxsupportlb: true
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.name') }],
@@ -851,6 +862,12 @@ export default {
         supportedServices = supportedServices.filter(svc => {
           return Object.keys(this.nsxSupportedServicesMap).includes(svc.name)
         })
+        supportedServices = supportedServices.map(svc => {
+          if (!['Dhcp', 'Dns', 'UserData'].includes(svc.name)) {
+            svc.provider = [this.NSX]
+          }
+          return svc
+        })
         self.supportedSvcs = self.supportedServices
         self.supportedServices = supportedServices
         self.supportedServiceLoading = false
@@ -886,6 +903,15 @@ export default {
         Lb: this.NSX,
         ...(this.forVpc && { NetworkACL: this.NSX }),
         ...(!this.forVpc && { Firewall: this.NSX })
+      }
+      this.fetchSupportedServiceData()
+    },
+    handleNsxLbService (supportLb) {
+      if (!supportLb && 'Lb' in this.nsxSupportedServicesMap) {
+        delete this.nsxSupportedServicesMap.Lb
+      }
+      if (supportLb && !('Lb' in this.nsxSupportedServicesMap)) {
+        this.nsxSupportedServicesMap.Lb = this.NSX
       }
       this.fetchSupportedServiceData()
     },
@@ -998,6 +1024,7 @@ export default {
         if (values.fornsx === true) {
           params.fornsx = true
           params.nsxmode = values.nsxmode
+          params.nsxsupportlb = values.nsxsupportlb
         }
         if (values.guestiptype === 'shared' || values.guestiptype === 'isolated') {
           if (values.conservemode !== true) {

@@ -824,6 +824,7 @@ public class ApiConstants {
     public static final String SPLIT_CONNECTIONS = "splitconnections";
     public static final String FOR_VPC = "forvpc";
     public static final String FOR_NSX = "fornsx";
+    public static final String NSX_SUPPORT_LB = "nsxsupportlb";
     public static final String FOR_TUNGSTEN = "fortungsten";
     public static final String SHRINK_OK = "shrinkok";
     public static final String NICIRA_NVP_DEVICE_ID = "nvpdeviceid";
