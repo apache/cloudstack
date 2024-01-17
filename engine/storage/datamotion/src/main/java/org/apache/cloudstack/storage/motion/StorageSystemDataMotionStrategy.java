@@ -2414,9 +2414,11 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             CheckStorageAvailabilityCommand cmd = new CheckStorageAvailabilityCommand(sourcePools);
             try {
                 Answer answer = agentManager.send(destHost.getId(), cmd);
-                if (answer == null || !answer.getResult()) {
-                    throw new CloudRuntimeException("Storage verification failed on host "
-                            + destHost.getUuid() +": " + answer.getDetails());
+                if (answer == null) {
+                    throw new CloudRuntimeException(String.format("Storage verification failed on host %s: no answer received", destHost.getUuid()));
+                }
+                if (!answer.getResult()) {
+                    throw new CloudRuntimeException(String.format("Storage verification failed on host %s: %s", destHost.getUuid(), answer.getDetails()));
                 }
             } catch (AgentUnavailableException | OperationTimedoutException e) {
                 e.printStackTrace();
