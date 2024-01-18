@@ -17,7 +17,12 @@
 
 package com.cloud.network.vpc;
 
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.eq;
+
 import static org.mockito.Mockito.times;
 
 import java.util.ArrayList;
