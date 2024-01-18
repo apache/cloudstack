@@ -105,8 +105,6 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
     private VpcService _vpcSvc;
     @Inject
     private NsxProviderDao nsxProviderDao;
-    @Inject
-    private NetworkACLDao networkACLDao;
 
     private String supportedProtocolsForAclRules = "tcp,udp,icmp,all";
 
@@ -445,7 +443,9 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             return;
         }
         if (icpmType == -1) {
-            throw new InvalidParameterValueException("Passing -1 for ICMP type is not supported for NSX enabled zones");
+            String errorMsg = "Passing -1 for ICMP type is not supported for NSX enabled zones";
+            s_logger.error(errorMsg);
+            throw new InvalidParameterValueException(errorMsg);
         }
     }
 
