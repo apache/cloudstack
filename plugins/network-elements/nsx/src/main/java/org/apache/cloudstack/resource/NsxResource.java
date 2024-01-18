@@ -485,7 +485,7 @@ public class NsxResource implements ServerResource {
         try {
             nsxApiClient.deleteDistributedFirewallRules(segmentName, rules);
         } catch (Exception e) {
-            LOGGER.error(String.format("Failed to create NSX distributed firewall %s: %s", segmentName, e.getMessage()), e);
+            LOGGER.error(String.format("Failed to delete NSX distributed firewall %s: %s", segmentName, e.getMessage()), e);
             return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
         }
         return new NsxAnswer(cmd, true, null);

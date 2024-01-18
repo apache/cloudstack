@@ -111,6 +111,8 @@ public class NsxApiClient {
     protected static final String SEGMENTS_PATH = "/infra/segments";
     protected static final String DEFAULT_DOMAIN = "default";
     protected static final String GROUPS_PATH_PREFIX = "/infra/domains/default/groups";
+    // TODO: Pass as global / zone-level setting?
+    protected static final String NSX_LB_PASSIVE_MONITOR = "/infra/lb-monitor-profiles/default-passive-lb-monitor";
 
     private enum PoolAllocation { ROUTING, LB_SMALL, LB_MEDIUM, LB_LARGE, LB_XLARGE }
 
@@ -515,6 +517,7 @@ public class NsxApiClient {
                     .setDisplayName(lbServerPoolName)
                     .setAlgorithm(getLoadBalancerAlgorithm(algorithm))
                     .setMembers(members)
+                    .setPassiveMonitorPath(NSX_LB_PASSIVE_MONITOR)
                     .build();
             lbPools.patch(lbServerPoolName, lbPool);
         } catch (Error error) {
