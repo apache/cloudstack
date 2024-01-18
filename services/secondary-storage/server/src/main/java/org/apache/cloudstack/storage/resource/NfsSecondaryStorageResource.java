@@ -2287,20 +2287,37 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         if (!_inSystemVM) {
             return null;
         }
-        Script command = new Script("/bin/bash", s_logger);
         String intf = "eth1";
-        command.add("-c");
-        command.add("iptables -I OUTPUT -o " + intf + " -d " + destCidr + " -p tcp -m state --state NEW -m tcp  -j ACCEPT");
+        String rule =  String.format("OUTPUT -o %s -d %s -p tcp -m state --state NEW -m tcp  -j ACCEPT", intf, destCidr);
 
-        String result = command.execute();
-        if (result != null) {
-            s_logger.warn("Error in allowing outgoing to " + destCidr + ", err=" + result);
-            return "Error in allowing outgoing to " + destCidr + ", err=" + result;
+        if (ruleNeedsAdding(rule)) {
+            Script command = new Script("/bin/bash", s_logger);
+            command.add("-c");
+            command.add("iptables -I");
+            command.add(rule);
+
+            String result = command.execute();
+            if (result != null) {
+                s_logger.warn("Error in allowing outgoing to " + destCidr + ", err=" + result);
+                return "Error in allowing outgoing to " + destCidr + ", err=" + result;
+            }
+        } else {
+            s_logger.warn("Rule already defined in SVM: Error in allowing outgoing to " + destCidr);
         }
 
         addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, destCidr);
 
         return null;
+    }
+
+    private boolean ruleNeedsAdding(String rule) {
+        Script command = new Script("/bin/bash", s_logger);
+        command.add("-c");
+        command.add("iptables -C");
+        command.add(rule);
+
+        String r1 = command.execute();
+        return (r1 != null && r1.contains("iptables: Bad rule (does a matching rule exist in that chain?)."));
     }
 
     private Answer execute(SecStorageFirewallCfgCommand cmd) {
@@ -2832,12 +2849,16 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         if (result != null) {
             s_logger.warn("Error in starting sshd service err=" + result);
         }
-        command = new Script("/bin/bash", s_logger);
-        command.add("-c");
-        command.add("iptables -I INPUT -i eth1 -p tcp -m state --state NEW -m tcp --dport 3922 -j ACCEPT");
-        result = command.execute();
-        if (result != null) {
-            s_logger.warn("Error in opening up ssh port err=" + result);
+        String rule = "INPUT -i eth1 -p tcp -m state --state NEW -m tcp --dport 3922 -j ACCEPT";
+        if (ruleNeedsAdding(rule)) {
+            command = new Script("/bin/bash", s_logger);
+            command.add("-c");
+            command.add("iptables -I");
+            command.add(rule);
+            result = command.execute();
+            if (result != null) {
+                s_logger.warn("Error in opening up ssh port err=" + result);
+            }
         }
     }
 

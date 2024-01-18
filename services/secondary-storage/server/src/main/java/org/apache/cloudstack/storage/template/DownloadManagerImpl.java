@@ -1092,6 +1092,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     }
 
     private void blockOutgoingOnPrivate() {
+        // TODO add a check if rule exists
         Script command = new Script("/bin/bash", LOGGER);
         String intf = "eth1";
         command.add("-c");
@@ -1131,6 +1132,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         String port = Integer.toString(TemplateConstants.DEFAULT_TMPLT_COPY_PORT);
         String intf = TemplateConstants.DEFAULT_TMPLT_COPY_INTF;
 
+        // TODO add a check if rule exists
         command = new Script("/bin/bash", LOGGER);
         command.add("-c");
         command.add("iptables -I INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + port + " -j ACCEPT;" + "iptables -I INPUT -i " + intf +
