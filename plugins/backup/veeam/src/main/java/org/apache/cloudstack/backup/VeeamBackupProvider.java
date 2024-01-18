@@ -41,6 +41,8 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
@@ -58,6 +60,7 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class VeeamBackupProvider extends AdapterBase implements BackupProvider, Configurable {
@@ -104,6 +107,10 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     private BackupDao backupDao;
     @Inject
     private VMInstanceDao vmInstanceDao;
+    @Inject
+    private AgentManager agentMgr;
+    @Inject
+    private VirtualMachineManager virtualMachineManager;
 
     protected VeeamClient getClient(final Long zoneId) {
         try {
@@ -249,8 +256,32 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
 
     @Override
     public boolean restoreVMFromBackup(VirtualMachine vm, Backup backup) {
+        prepareForBackupRestoration(vm);
         final String restorePointId = backup.getExternalId();
         return getClient(vm.getDataCenterId()).restoreFullVM(vm.getInstanceName(), restorePointId);
+    }
+
+    private void prepareForBackupRestoration(VirtualMachine vm) {
+        if (!Hypervisor.HypervisorType.VMware.equals(vm.getHypervisorType())) {
+            return;
+        }
+        LOG.info("Preparing for restoring VM " + vm);
+        PrepareForBackupRestorationCommand command = new PrepareForBackupRestorationCommand(vm.getInstanceName());
+        Long hostId = virtualMachineManager.findClusterAndHostIdForVm(vm.getId()).second();
+        if (hostId == null) {
+            throw new CloudRuntimeException("Cannot find a host to prepare for restoring VM " + vm);
+        }
+        try {
+            Answer answer = agentMgr.easySend(hostId, command);
+            if (answer != null && answer.getResult()) {
+                LOG.info("Succeeded to prepare for restoring VM " + vm);
+            } else {
+                throw new CloudRuntimeException(String.format("Failed to prepare for restoring VM %s. details: %s", vm,
+                        (answer != null ? answer.getDetails() : null)));
+            }
+        } catch (Exception e) {
+            throw new CloudRuntimeException(String.format("Failed to prepare for restoring VM %s due to exception %s", vm, e));
+        }
     }
 
     @Override

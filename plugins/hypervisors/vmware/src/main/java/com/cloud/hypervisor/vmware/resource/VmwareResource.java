@@ -49,6 +49,7 @@ import javax.naming.ConfigurationException;
 import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.backup.PrepareForBackupRestorationCommand;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
@@ -606,6 +607,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 answer = execute((GetVmVncTicketCommand) cmd);
             } else if (clz == GetAutoScaleMetricsCommand.class) {
                 answer = execute((GetAutoScaleMetricsCommand) cmd);
+            } else if (clz == PrepareForBackupRestorationCommand.class) {
+                answer = execute((PrepareForBackupRestorationCommand) cmd);
             } else {
                 answer = Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -7748,6 +7751,35 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         } catch (Exception e) {
             s_logger.error("Error getting VNC ticket for VM " + vmInternalName, e);
             return new GetVmVncTicketAnswer(null, false, e.getLocalizedMessage());
+        }
+    }
+
+    private Answer execute(PrepareForBackupRestorationCommand command) {
+        try {
+            VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
+
+            String vmName = command.getVmName();
+            VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmName);
+
+            if (vmMo == null) {
+                if (hyperHost instanceof HostMO) {
+                    ClusterMO clusterMo = new ClusterMO(hyperHost.getContext(), ((HostMO) hyperHost).getParentMor());
+                    vmMo = clusterMo.findVmOnHyperHost(vmName);
+                }
+            }
+
+            if (vmMo == null) {
+                String msg = "VM " + vmName + " no longer exists to execute PrepareForBackupRestorationCommand command";
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
+
+            vmMo.removeChangeTrackPathFromVmdkForExtraDisks();
+
+            return new Answer(command, true, "success");
+        } catch (Exception e) {
+            s_logger.error("Unexpected exception: ", e);
+            return new Answer(command, false, "Unable to execute PrepareForBackupRestorationCommand due to " + e.toString());
         }
     }
 

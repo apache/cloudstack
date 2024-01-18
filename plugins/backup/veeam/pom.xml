@@ -30,6 +30,21 @@
   <dependencies>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-engine-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-engine-components-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-hypervisor-vmware</artifactId>
       <version>${project.version}</version>
     </dependency>

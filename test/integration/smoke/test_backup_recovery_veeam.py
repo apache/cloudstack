@@ -160,7 +160,8 @@ class TestVeeamBackupAndRecovery(cloudstackTestCase):
             self.cleanup.insert(0, self.offering)
 
         self.vm = VirtualMachine.create(self.user_apiclient, self.services["small"], accountid=self.account.name,
-                                       domainid=self.account.domainid, serviceofferingid=self.service_offering.id)
+                                       domainid=self.account.domainid, serviceofferingid=self.service_offering.id,
+                                       diskofferingid=self.disk_offering.id)
 
         # Verify there are no backups for the VM
         backups = Backup.list(self.user_apiclient, self.vm.id)
