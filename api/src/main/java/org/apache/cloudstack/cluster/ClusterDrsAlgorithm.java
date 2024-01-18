@@ -21,6 +21,7 @@ package org.apache.cloudstack.cluster;
 
 import com.cloud.host.Host;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Adapter;
 import com.cloud.vm.VirtualMachine;
@@ -32,9 +33,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsMetric;
 import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsMetricType;
 import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsMetricUseRatio;
-import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsMetric;
 
 public interface ClusterDrsAlgorithm extends Adapter {
 
@@ -54,7 +55,8 @@ public interface ClusterDrsAlgorithm extends Adapter {
      * @throws ConfigurationException
      *         if there is an error in the configuration
      */
-    boolean needsDrs(long clusterId, List<Ternary<Long, Long, Long>> cpuList, List<Ternary<Long, Long, Long>> memoryList) throws ConfigurationException;
+    boolean needsDrs(long clusterId, List<Ternary<Long, Long, Long>> cpuList,
+            List<Ternary<Long, Long, Long>> memoryList) throws ConfigurationException;
 
 
     /**
@@ -78,8 +80,9 @@ public interface ClusterDrsAlgorithm extends Adapter {
      * @return a ternary containing improvement, cost, benefit
      */
     Ternary<Double, Double, Double> getMetrics(long clusterId, VirtualMachine vm, ServiceOffering serviceOffering,
-                                               Host destHost, Map<Long, Ternary<Long, Long, Long>> hostCpuMap,
-                                               Map<Long, Ternary<Long, Long, Long>> hostMemoryMap, Boolean requiresStorageMotion) throws ConfigurationException;
+            Host destHost, Map<Long, Ternary<Long, Long, Long>> hostCpuMap,
+            Map<Long, Ternary<Long, Long, Long>> hostMemoryMap,
+            Boolean requiresStorageMotion) throws ConfigurationException;
 
     /**
      * Calculates the imbalance of the cluster after a virtual machine migration.
@@ -98,90 +101,79 @@ public interface ClusterDrsAlgorithm extends Adapter {
      * @return a pair containing the CPU and memory imbalance of the cluster after the migration
      */
     default Double getImbalancePostMigration(ServiceOffering serviceOffering, VirtualMachine vm,
-                                                           Host destHost, Map<Long, Ternary<Long, Long, Long>> hostCpuMap,
-                                                           Map<Long, Ternary<Long, Long, Long>> hostMemoryMap) throws ConfigurationException {
-        String metric = ClusterDrsMetric.valueIn(destHost.getClusterId());
-        long vmMetric;
-        Map<Long, Ternary<Long, Long, Long>> hostMetricsMap;
-        switch (metric) {
-            case "cpu":
-                hostMetricsMap = hostCpuMap;
-                vmMetric = (long) serviceOffering.getCpu() * serviceOffering.getSpeed();
-                break;
-            case "memory":
-                hostMetricsMap = hostMemoryMap;
-                vmMetric = serviceOffering.getRamSize() * 1024L * 1024L;
-                break;
-            default:
-                throw new ConfigurationException(
-                        String.format("Invalid metric: %s for cluster: %d", metric, destHost.getClusterId()));
-        }
+            Host destHost, Map<Long, Ternary<Long, Long, Long>> hostCpuMap,
+            Map<Long, Ternary<Long, Long, Long>> hostMemoryMap) throws ConfigurationException {
+        Pair<Long, Map<Long, Ternary<Long, Long, Long>>> pair = getHostMetricsMapAndType(destHost.getClusterId(), serviceOffering, hostCpuMap, hostMemoryMap);
+        long vmMetric = pair.first();
+        Map<Long, Ternary<Long, Long, Long>> hostMetricsMap = pair.second();
 
-        boolean useRatio = ClusterDrsMetricUseRatio.valueIn(destHost.getClusterId());
         List<Double> list = new ArrayList<>();
         for (Long hostId : hostMetricsMap.keySet()) {
-            Ternary<Long, Long, Long> ternary = hostMetricsMap.get(hostId);
-            long used = ternary.first();
-            long actualTotal = ternary.third() - ternary.second();
-            long free = actualTotal - ternary.first();
-
-            if (hostId == destHost.getId()) {
-                used += vmMetric;
-                free -= vmMetric;
-            } else if (hostId.equals(vm.getHostId())) {
-                used -= vmMetric;
-                free += vmMetric;
-            }
-
-            switch (ClusterDrsMetricType.valueIn(destHost.getClusterId())) {
-                case "free":
-                    if (useRatio) {
-                        list.add((double) free / actualTotal);
-                    } else {
-                        list.add((double) free);
-                    }
-                case "used":
-                    if (useRatio) {
-                        list.add((double) used / actualTotal);
-                    } else {
-                        list.add((double) used);
-                    }
-            }
+            list.add(getMetricValuePostMigration(destHost.getClusterId(), hostMetricsMap.get(hostId), vmMetric, hostId, destHost.getId(), vm.getHostId()));
         }
         return getImbalance(list);
     }
 
-    /**
-     * The cluster imbalance is defined as the percentage deviation from the mean
-     * for a configured metric of the cluster. The standard deviation is used as a
-     * mathematical tool to normalize the metric data for all the resource and the
-     * percentage deviation provides an easy tool to compare a cluster’s current
-     * state against the defined imbalance threshold. Because this is essentially a
-     * percentage, the value is a number between 0.0 and 1.0.
-     * Cluster Imbalance, Ic = σc / mavg , where σc is the standard deviation and
-     * mavg is the mean metric value for the cluster.
-     */
-    default Double getClusterImbalance(Long clusterId, List<Ternary<Long, Long, Long>> cpuList, List<Ternary<Long, Long, Long>> memoryList, Float skipThreshold) throws ConfigurationException {
+    private Pair<Long, Map<Long, Ternary<Long, Long, Long>>> getHostMetricsMapAndType(Long clusterId,
+            ServiceOffering serviceOffering, Map<Long, Ternary<Long, Long, Long>> hostCpuMap,
+            Map<Long, Ternary<Long, Long, Long>> hostMemoryMap) throws ConfigurationException {
         String metric = ClusterDrsMetric.valueIn(clusterId);
-        List<Double> list;
+        Pair<Long, Map<Long, Ternary<Long, Long, Long>>> pair;
         switch (metric) {
             case "cpu":
-                list = getMetricList(clusterId, cpuList, skipThreshold);
+                pair = new Pair<>((long) serviceOffering.getCpu() * serviceOffering.getSpeed(), hostCpuMap);
                 break;
             case "memory":
-                list = getMetricList(clusterId, memoryList, skipThreshold);
+                pair = new Pair<>(serviceOffering.getRamSize() * 1024L * 1024L, hostMemoryMap);
                 break;
             default:
                 throw new ConfigurationException(
                         String.format("Invalid metric: %s for cluster: %d", metric, clusterId));
         }
-        return getImbalance(list);
+        return pair;
+    }
+
+    private Double getMetricValuePostMigration(Long clusterId, Ternary<Long, Long, Long> metrics, long vmMetric,
+            long hostId, long destHostId, long vmHostId) {
+        long used = metrics.first();
+        long actualTotal = metrics.third() - metrics.second();
+        long free = actualTotal - metrics.first();
+
+        if (hostId == destHostId) {
+            used += vmMetric;
+            free -= vmMetric;
+        } else if (hostId == vmHostId) {
+            used -= vmMetric;
+            free += vmMetric;
+        }
+        return getMetricValue(clusterId, used, free, actualTotal, null);
     }
 
     private Double getImbalance(List<Double> metricList) {
         Double clusterMeanMetric = getClusterMeanMetric(metricList);
         Double clusterStandardDeviation = getClusterStandardDeviation(metricList, clusterMeanMetric);
         return clusterStandardDeviation / clusterMeanMetric;
+    }
+
+    private Double getMetricValue(Long clusterId, double used, double free, double total, Float skipThreshold) {
+        boolean useRatio = ClusterDrsMetricUseRatio.valueIn(clusterId);
+        switch (ClusterDrsMetricType.valueIn(clusterId)) {
+            case "free":
+                if (skipThreshold != null && free < skipThreshold * total) return null;
+                if (useRatio) {
+                    return free / total;
+                } else {
+                    return free;
+                }
+            case "used":
+                if (skipThreshold != null && used > skipThreshold * total) return null;
+                if (useRatio) {
+                    return used / total;
+                } else {
+                    return used;
+                }
+        }
+        return null;
     }
 
     /**
@@ -214,28 +206,44 @@ public interface ClusterDrsAlgorithm extends Adapter {
         }
     }
 
-    default List<Double> getMetricList(Long clusterId, List<Ternary<Long, Long, Long>> hostMetricsList, Float skipThreshold) {
-        boolean useRatio = ClusterDrsMetricUseRatio.valueIn(clusterId);
+    /**
+     * The cluster imbalance is defined as the percentage deviation from the mean
+     * for a configured metric of the cluster. The standard deviation is used as a
+     * mathematical tool to normalize the metric data for all the resource and the
+     * percentage deviation provides an easy tool to compare a cluster’s current
+     * state against the defined imbalance threshold. Because this is essentially a
+     * percentage, the value is a number between 0.0 and 1.0.
+     * Cluster Imbalance, Ic = σc / mavg , where σc is the standard deviation and
+     * mavg is the mean metric value for the cluster.
+     */
+    default Double getClusterImbalance(Long clusterId, List<Ternary<Long, Long, Long>> cpuList,
+            List<Ternary<Long, Long, Long>> memoryList, Float skipThreshold) throws ConfigurationException {
+        String metric = ClusterDrsMetric.valueIn(clusterId);
+        List<Double> list;
+        switch (metric) {
+            case "cpu":
+                list = getMetricList(clusterId, cpuList, skipThreshold);
+                break;
+            case "memory":
+                list = getMetricList(clusterId, memoryList, skipThreshold);
+                break;
+            default:
+                throw new ConfigurationException(
+                        String.format("Invalid metric: %s for cluster: %d", metric, clusterId));
+        }
+        return getImbalance(list);
+    }
+
+    default List<Double> getMetricList(Long clusterId, List<Ternary<Long, Long, Long>> hostMetricsList,
+            Float skipThreshold) {
         List<Double> list = new ArrayList<>();
         for (Ternary<Long, Long, Long> ternary : hostMetricsList) {
             long used = ternary.first();
             long actualTotal = ternary.third() - ternary.second();
             long free = actualTotal - ternary.first();
-            switch (ClusterDrsMetricType.valueIn(clusterId)) {
-                case "free":
-                    if (skipThreshold != null && free < skipThreshold * actualTotal) continue;
-                    if (useRatio) {
-                        list.add((double) free / actualTotal);
-                    } else {
-                        list.add((double) free);
-                    }
-                case "used":
-                    if (skipThreshold != null && used > skipThreshold * actualTotal) continue;
-                    if (useRatio) {
-                        list.add((double) used / actualTotal);
-                    } else {
-                        list.add((double) used);
-                    }
+            Double metricValue = getMetricValue(clusterId, used, free, actualTotal, skipThreshold);
+            if (metricValue != null) {
+                list.add(metricValue);
             }
         }
         return list;
