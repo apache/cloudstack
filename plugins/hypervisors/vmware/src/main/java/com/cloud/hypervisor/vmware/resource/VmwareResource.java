@@ -7774,7 +7774,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 throw new Exception(msg);
             }
 
-            vmMo.removeChangeTrackPathFromVmdkForExtraDisks();
+            vmMo.removeChangeTrackPathFromVmdkForDisks();
 
             return new Answer(command, true, "success");
         } catch (Exception e) {

@@ -3737,9 +3737,9 @@ public class VirtualMachineMO extends BaseMO {
         setCustomFieldValue(CustomFieldConstants.CLOUD_WORKER_TAG, workerTag);
     }
 
-    public void removeChangeTrackPathFromVmdkForExtraDisks() throws Exception {
+    public void removeChangeTrackPathFromVmdkForDisks() throws Exception {
         VirtualDisk[] disks = getAllDiskDevice();
-        for (int i = 1; i < disks.length; i++) {
+        for (int i = 0; i < disks.length; i++) {
             VirtualDisk disk = disks[i];
             VirtualDeviceBackingInfo backingInfo = disk.getBacking();
             if (!(backingInfo instanceof VirtualDiskFlatVer2BackingInfo)) {
