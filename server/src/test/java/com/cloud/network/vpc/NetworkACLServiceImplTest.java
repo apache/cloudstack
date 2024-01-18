@@ -17,10 +17,7 @@
 
 package com.cloud.network.vpc;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.times;
 
 import java.util.ArrayList;
@@ -29,7 +26,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.network.dao.NsxProviderDao;
+import com.cloud.network.element.NsxProviderVO;
 import com.cloud.network.vpc.dao.VpcDao;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ServerApiException;
@@ -103,6 +103,8 @@ public class NetworkACLServiceImplTest {
     private NetworkACLVO networkACLVOMock;
     @Mock
     private UpdateNetworkACLListCmd updateNetworkACLListCmdMock;
+    @Mock
+    private NsxProviderDao nsxProviderDao;
 
     private Long networkAclMockId = 5L;
     private Long networkOfferingMockId = 2L;
@@ -129,6 +131,10 @@ public class NetworkACLServiceImplTest {
 
     @Mock
     private VpcVO vpcVOMock;
+    @Mock
+    DataCenter dataCenterVO;
+    @Mock
+    NsxProviderVO nsxProviderVO;
 
     @Mock
     private Account accountMock;
@@ -173,7 +179,9 @@ public class NetworkACLServiceImplTest {
 
     private void createNetworkACLItemTestForNumberAndExecuteTest(Integer number) {
         Mockito.when(createNetworkAclCmdMock.getNumber()).thenReturn(number);
-
+        Mockito.when(vpcDaoMock.findById(anyLong())).thenReturn(vpcVOMock);
+        Mockito.when(entityManagerMock.findById(any(), anyLong())).thenReturn(dataCenterVO);
+        Mockito.when(nsxProviderDao.findByZoneId(anyLong())).thenReturn(null);
         Mockito.doReturn(networkAclMockId).when(networkAclServiceImpl).createAclListIfNeeded(createNetworkAclCmdMock);
         Mockito.when(networkAclManagerMock.getNetworkACL(networkAclMockId)).thenReturn(networkAclMock);
 
@@ -710,6 +718,9 @@ public class NetworkACLServiceImplTest {
     @Test
     public void updateNetworkACLItemTest() throws ResourceUnavailableException {
         Mockito.when(networkAclItemVoMock.getAclId()).thenReturn(networkAclMockId);
+        Mockito.when(vpcDaoMock.findById(anyLong())).thenReturn(vpcVOMock);
+        Mockito.when(entityManagerMock.findById(any(), anyLong())).thenReturn(dataCenterVO);
+        Mockito.when(nsxProviderDao.findByZoneId(anyLong())).thenReturn(null);
         Mockito.doReturn(networkAclItemVoMock).when(networkAclServiceImpl).validateNetworkAclRuleIdAndRetrieveIt(updateNetworkACLItemCmdMock);
         Mockito.doReturn(networkAclMock).when(networkAclManagerMock).getNetworkACL(networkAclMockId);
         Mockito.doNothing().when(networkAclServiceImpl).validateNetworkAcl(Mockito.eq(networkAclMock));
