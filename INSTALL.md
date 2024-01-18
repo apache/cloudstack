@@ -15,7 +15,7 @@ was tested against a CentOS 7 x86_64 setup.
 
 Install tools and dependencies used for development:
 
-    # yum -y install git java-11-openjdk java-11-openjdk-devel \
+    # yum -y install git java-17-openjdk java-17-openjdk-devel \
       mysql mysql-server mkisofs git gcc python MySQL-python openssh-clients wget
 
 Set up Maven (3.6.0):
