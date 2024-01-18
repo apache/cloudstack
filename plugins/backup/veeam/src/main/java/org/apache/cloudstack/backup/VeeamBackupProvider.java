@@ -256,9 +256,14 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
 
     @Override
     public boolean restoreVMFromBackup(VirtualMachine vm, Backup backup) {
-        prepareForBackupRestoration(vm);
         final String restorePointId = backup.getExternalId();
-        return getClient(vm.getDataCenterId()).restoreFullVM(vm.getInstanceName(), restorePointId);
+        try {
+            return getClient(vm.getDataCenterId()).restoreFullVM(vm.getInstanceName(), restorePointId);
+        } catch (Exception ex) {
+            LOG.error(String.format("Failed to restore Full VM due to: %s. Retrying after some preparation", ex.getMessage()));
+            prepareForBackupRestoration(vm);
+            return getClient(vm.getDataCenterId()).restoreFullVM(vm.getInstanceName(), restorePointId);
+        }
     }
 
     private void prepareForBackupRestoration(VirtualMachine vm) {
