@@ -2290,6 +2290,12 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         Script command = new Script("/bin/bash", s_logger);
         String intf = "eth1";
         command.add("-c");
+        command.add("iptables -D OUTPUT -o " + intf + " -d " + destCidr + " -p tcp -m state --state NEW -m tcp  -j ACCEPT");
+
+        /* ignore the String result =*/ command.execute();
+
+        command = new Script("/bin/bash", s_logger);
+        command.add("-c");
         command.add("iptables -I OUTPUT -o " + intf + " -d " + destCidr + " -p tcp -m state --state NEW -m tcp  -j ACCEPT");
 
         String result = command.execute();
@@ -2832,6 +2838,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         if (result != null) {
             s_logger.warn("Error in starting sshd service err=" + result);
         }
+        command = new Script("/bin/bash", s_logger);
+        command.add("-c");
+        command.add("iptables -D INPUT -i eth1 -p tcp -m state --state NEW -m tcp --dport 3922 -j ACCEPT");
+        /* ignore result = */ command.execute();
         command = new Script("/bin/bash", s_logger);
         command.add("-c");
         command.add("iptables -I INPUT -i eth1 -p tcp -m state --state NEW -m tcp --dport 3922 -j ACCEPT");
