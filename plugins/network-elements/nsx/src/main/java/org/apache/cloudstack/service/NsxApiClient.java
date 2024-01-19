@@ -22,6 +22,7 @@ import com.vmware.nsx.model.TransportZone;
 import com.vmware.nsx.model.TransportZoneListResult;
 import com.vmware.nsx_policy.infra.DhcpRelayConfigs;
 import com.vmware.nsx_policy.infra.LbAppProfiles;
+import com.vmware.nsx_policy.infra.LbMonitorProfiles;
 import com.vmware.nsx_policy.infra.LbPools;
 import com.vmware.nsx_policy.infra.LbServices;
 import com.vmware.nsx_policy.infra.LbVirtualServers;
@@ -43,10 +44,13 @@ import com.vmware.nsx_policy.model.GroupListResult;
 import com.vmware.nsx_policy.model.ICMPTypeServiceEntry;
 import com.vmware.nsx_policy.model.L4PortSetServiceEntry;
 import com.vmware.nsx_policy.model.LBAppProfileListResult;
+import com.vmware.nsx_policy.model.LBMonitorProfileListResult;
 import com.vmware.nsx_policy.model.LBPool;
 import com.vmware.nsx_policy.model.LBPoolListResult;
 import com.vmware.nsx_policy.model.LBPoolMember;
 import com.vmware.nsx_policy.model.LBService;
+import com.vmware.nsx_policy.model.LBTcpMonitorProfile;
+import com.vmware.nsx_policy.model.LBUdpMonitorProfile;
 import com.vmware.nsx_policy.model.LBVirtualServer;
 import com.vmware.nsx_policy.model.LBVirtualServerListResult;
 import com.vmware.nsx_policy.model.LocaleServicesListResult;
@@ -93,6 +97,7 @@ import static org.apache.cloudstack.utils.NsxControllerUtils.getVirtualServerNam
 import static org.apache.cloudstack.utils.NsxControllerUtils.getServiceEntryName;
 import static org.apache.cloudstack.utils.NsxControllerUtils.getLoadBalancerName;
 import static org.apache.cloudstack.utils.NsxControllerUtils.getLoadBalancerAlgorithm;
+import static org.apache.cloudstack.utils.NsxControllerUtils.getActiveMonitorProfileName;
 
 public class NsxApiClient {
 
@@ -113,6 +118,8 @@ public class NsxApiClient {
     protected static final String GROUPS_PATH_PREFIX = "/infra/domains/default/groups";
     // TODO: Pass as global / zone-level setting?
     protected static final String NSX_LB_PASSIVE_MONITOR = "/infra/lb-monitor-profiles/default-passive-lb-monitor";
+    protected static final String TCP_MONITOR_PROFILE = "LBTcpMonitorProfile";
+    protected static final String UDP_MONITOR_PROFILE = "LBUdpMonitorProfile";
 
     private enum PoolAllocation { ROUTING, LB_SMALL, LB_MEDIUM, LB_LARGE, LB_XLARGE }
 
@@ -508,8 +515,10 @@ public class NsxApiClient {
         }
         return members;
     }
-    public void createNsxLbServerPool(List<NsxLoadBalancerMember> memberList, String tier1GatewayName, String lbServerPoolName, String algorithm) {
+    public void createNsxLbServerPool(List<NsxLoadBalancerMember> memberList, String tier1GatewayName, String lbServerPoolName,
+                                      String algorithm, String privatePort, String protocol) {
         try {
+            String activeMonitorPath = getLbActiveMonitorPath(lbServerPoolName, privatePort, protocol);
             List<LBPoolMember> members = getLbPoolMembers(memberList, tier1GatewayName);
             LbPools lbPools = (LbPools) nsxService.apply(LbPools.class);
             LBPool lbPool = new LBPool.Builder()
@@ -518,6 +527,7 @@ public class NsxApiClient {
                     .setAlgorithm(getLoadBalancerAlgorithm(algorithm))
                     .setMembers(members)
                     .setPassiveMonitorPath(NSX_LB_PASSIVE_MONITOR)
+                    .setActiveMonitorPaths(List.of(activeMonitorPath))
                     .build();
             lbPools.patch(lbServerPoolName, lbPool);
         } catch (Error error) {
@@ -526,6 +536,32 @@ public class NsxApiClient {
             LOGGER.error(msg);
             throw new CloudRuntimeException(msg);
         }
+    }
+
+    private String getLbActiveMonitorPath(String lbServerPoolName, String port, String protocol) {
+        LbMonitorProfiles lbActiveMonitor = (LbMonitorProfiles) nsxService.apply(LbMonitorProfiles.class);
+        String lbMonitorProfileId = getActiveMonitorProfileName(lbServerPoolName, port, protocol);
+        if ("TCP".equals(protocol.toUpperCase(Locale.ROOT))) {
+            LBTcpMonitorProfile lbTcpMonitorProfile = new LBTcpMonitorProfile.Builder(TCP_MONITOR_PROFILE)
+                    .setDisplayName(lbMonitorProfileId)
+                    .setMonitorPort(Long.parseLong(port))
+                    .build();
+            lbActiveMonitor.patch(lbMonitorProfileId, lbTcpMonitorProfile);
+        } else if ("UDP".equals(protocol.toUpperCase(Locale.ROOT))) {
+            LBUdpMonitorProfile lbUdpMonitorProfile = new LBUdpMonitorProfile.Builder(UDP_MONITOR_PROFILE)
+                    .setDisplayName(lbMonitorProfileId)
+                    .setMonitorPort(Long.parseLong(port))
+                    .build();
+            lbActiveMonitor.patch(lbMonitorProfileId, lbUdpMonitorProfile);
+        }
+
+        LBMonitorProfileListResult listResult = listLBActiveMonitors(lbActiveMonitor);
+        Optional<Structure> monitorProfile = listResult.getResults().stream().filter(profile -> profile._getDataValue().getField("id").toString().equals(lbMonitorProfileId)).findFirst();
+        return monitorProfile.map(structure -> structure._getDataValue().getField("path").toString()).orElse(null);
+    }
+
+    LBMonitorProfileListResult listLBActiveMonitors(LbMonitorProfiles lbActiveMonitor) {
+        return lbActiveMonitor.list(null, false, null, null, null, null);
     }
 
     public void createNsxLoadBalancer(String tier1GatewayName) {
@@ -553,10 +589,10 @@ public class NsxApiClient {
     }
 
     public void createAndAddNsxLbVirtualServer(String tier1GatewayName, long lbId, String publicIp, String publicPort,
-                                               List<NsxLoadBalancerMember> memberList, String algorithm, String protocol) {
+                                               List<NsxLoadBalancerMember> memberList, String algorithm, String protocol, String privatePort) {
         try {
             String lbServerPoolName = getServerPoolName(tier1GatewayName, lbId);
-            createNsxLbServerPool(memberList, tier1GatewayName, lbServerPoolName, algorithm);
+            createNsxLbServerPool(memberList, tier1GatewayName, lbServerPoolName, algorithm, privatePort, protocol);
             createNsxLoadBalancer(tier1GatewayName);
 
             String lbVirtualServerName = getVirtualServerName(tier1GatewayName, lbId);
@@ -591,7 +627,15 @@ public class NsxApiClient {
             LbPools lbPools = (LbPools) nsxService.apply(LbPools.class);
             String lbServerPoolName = getServerPoolName(tier1GatewayName, lbId);
             lbPools.delete(lbServerPoolName, false);
-
+            
+            // delete associated LB Active monitor profile
+            LbMonitorProfiles lbActiveMonitor = (LbMonitorProfiles) nsxService.apply(LbMonitorProfiles.class);
+            LBMonitorProfileListResult listResult = listLBActiveMonitors(lbActiveMonitor);
+            List<String> profileIds = listResult.getResults().stream().filter(profile -> profile._getDataValue().getField("id").toString().contains(lbServerPoolName))
+                    .map(profile -> profile._getDataValue().getField("id").toString()).collect(Collectors.toList());
+            for(String profileId : profileIds) {
+                lbActiveMonitor.delete(profileId, true);
+            }
             // Delete load balancer
             LBVirtualServerListResult lbVsListResult = lbVirtualServers.list(null, null, null, null, null, null);
             LBPoolListResult lbPoolListResult = lbPools.list(null, null, null, null, null, null);
