@@ -505,10 +505,12 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
         if (!canHandle(network, Network.Service.PortForwarding)) {
             return false;
         }
+        boolean result = true;
         for (PortForwardingRule rule : rules) {
             IPAddressVO publicIp = ApiDBUtils.findIpAddressById(rule.getSourceIpAddressId());
             UserVm vm = ApiDBUtils.findUserVmById(rule.getVirtualMachineId());
-            if (vm == null || networkModel.getNicInNetwork(vm.getId(), network.getId()) == null) {
+            if ((vm == null && (rule.getState() != FirewallRule.State.Revoke)) ||
+                    (vm != null && networkModel.getNicInNetwork(vm.getId(), network.getId()) == null)) {
                 continue;
             }
             NsxOpObject nsxObject = getNsxOpObject(network);
@@ -523,8 +525,8 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
                     .setNetworkResourceId(nsxObject.getNetworkResourceId())
                     .setNetworkResourceName(nsxObject.getNetworkResourceName())
                     .setVpcResource(nsxObject.isVpcResource())
-                    .setVmId(vm.getId())
-                    .setVmIp(vm.getPrivateIpAddress())
+                    .setVmId(Objects.nonNull(vm) ? vm.getId() : 0)
+                    .setVmIp(Objects.nonNull(vm) ? vm.getPrivateIpAddress() : null)
                     .setPublicIp(publicIp.getAddress().addr())
                     .setPrivatePort(privatePort)
                     .setPublicPort(publicPort)
@@ -532,12 +534,12 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
                     .setProtocol(rule.getProtocol().toUpperCase(Locale.ROOT))
                     .build();
             if (rule.getState() == FirewallRule.State.Add) {
-                return nsxService.createPortForwardRule(networkRule);
+                result &= nsxService.createPortForwardRule(networkRule);
             } else if (rule.getState() == FirewallRule.State.Revoke) {
-                return nsxService.deletePortForwardRule(networkRule);
+                result &= nsxService.deletePortForwardRule(networkRule);
             }
         }
-        return true;
+        return result;
     }
 
     public Pair<VpcVO, NetworkVO> getVpcOrNetwork(Long vpcId, long networkId) {
@@ -613,6 +615,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
 
     @Override
     public boolean applyLBRules(Network network, List<LoadBalancingRule> rules) throws ResourceUnavailableException {
+        boolean result = true;
         for (LoadBalancingRule loadBalancingRule : rules) {
             if (loadBalancingRule.getState() == FirewallRule.State.Active) {
                 continue;
@@ -638,12 +641,12 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
                     .setAlgorithm(loadBalancingRule.getAlgorithm())
                     .build();
             if (loadBalancingRule.getState() == FirewallRule.State.Add) {
-                return nsxService.createLbRule(networkRule);
+                result &= nsxService.createLbRule(networkRule);
             } else if (loadBalancingRule.getState() == FirewallRule.State.Revoke) {
-                return nsxService.deleteLbRule(networkRule);
+                result &= nsxService.deleteLbRule(networkRule);
             }
         }
-        return true;
+        return result;
     }
 
     @Override
