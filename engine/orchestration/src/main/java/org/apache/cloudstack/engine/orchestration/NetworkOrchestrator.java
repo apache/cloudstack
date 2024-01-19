@@ -41,6 +41,7 @@ import javax.naming.ConfigurationException;
 import com.cloud.dc.VlanDetailsVO;
 import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.network.dao.NsxProviderDao;
+import com.cloud.network.element.NsxProviderVO;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -1750,10 +1751,15 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         //apply network ACLs
+        NsxProviderVO nsxProviderVO = nsxProviderDao.findByZoneId(zone.getId());
+        // Objects.isNull(nsxProviderVO) &&
         if (!_networkACLMgr.applyACLToNetwork(networkId)) {
             s_logger.warn("Failed to reapply network ACLs as a part of  of network id=" + networkId + " restart");
             success = false;
         }
+//        else if (Objects.nonNull(nsxProviderVO)) {
+//            success = true;
+//        }
 
         return success;
     }

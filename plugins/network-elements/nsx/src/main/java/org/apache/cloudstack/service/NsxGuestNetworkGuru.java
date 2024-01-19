@@ -39,6 +39,7 @@ import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.guru.GuestNetworkGuru;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.user.Account;
 import com.cloud.user.dao.AccountDao;
@@ -227,7 +228,9 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
             throw new CloudRuntimeException(msg);
         }
 
-        if (isNull(network.getVpcId())) {
+        NetworkOfferingVO networkOfferingVO = networkOfferingDao.findById(network.getNetworkOfferingId());
+
+        if (isNull(network.getVpcId()) && networkOfferingVO.getNsxMode().equals(NetworkOffering.NsxMode.NATTED.name())) {
             long domainId = domain.getId();
             long accountId = account.getId();
             long dataCenterId = zone.getId();
