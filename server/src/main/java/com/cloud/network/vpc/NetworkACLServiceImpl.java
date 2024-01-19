@@ -21,10 +21,14 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.inject.Inject;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.network.dao.NsxProviderDao;
+import com.cloud.network.element.NsxProviderVO;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
@@ -99,6 +103,8 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
     private VpcDao _vpcDao;
     @Inject
     private VpcService _vpcSvc;
+    @Inject
+    private NsxProviderDao nsxProviderDao;
 
     private String supportedProtocolsForAclRules = "tcp,udp,icmp,all";
 
@@ -338,6 +344,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         if (isGlobalAcl(acl.getVpcId()) && !Account.Type.ADMIN.equals(caller.getType())) {
             throw new PermissionDeniedException("Only Root Admins can create rules for a global ACL.");
         }
+        validateNsxConstraints(acl.getVpcId(), icmpType);
         validateAclRuleNumber(createNetworkACLCmd, acl);
 
         NetworkACLItem.Action ruleAction = validateAndCreateNetworkAclRuleAction(action);
@@ -425,6 +432,20 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         Long aclVpcId = acl.getVpcId();
         if (!isGlobalAcl(aclVpcId)) {
             validateAclAssociatedToVpc(aclVpcId, CallContext.current().getCallingAccount(), acl.getUuid());
+        }
+    }
+
+    private void validateNsxConstraints(Long vpcId, Integer icpmType) {
+        VpcVO vpc = _vpcDao.findById(vpcId);
+        final DataCenter dc = _entityMgr.findById(DataCenter.class, vpc.getZoneId());
+        final NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(dc.getId());
+        if (Objects.isNull(nsxProvider)) {
+            return;
+        }
+        if (icpmType == -1) {
+            String errorMsg = "Passing -1 for ICMP type is not supported for NSX enabled zones";
+            s_logger.error(errorMsg);
+            throw new InvalidParameterValueException(errorMsg);
         }
     }
 
@@ -817,7 +838,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
         NetworkACL acl = _networkAclMgr.getNetworkACL(networkACLItemVo.getAclId());
         validateNetworkAcl(acl);
-
+        validateNsxConstraints(acl.getVpcId(), networkACLItemVo.getIcmpType());
         Account account = CallContext.current().getCallingAccount();
         validateGlobalAclPermissionAndAclAssociatedToVpc(acl, account, "Only Root Admins can update global ACLs.");
 
