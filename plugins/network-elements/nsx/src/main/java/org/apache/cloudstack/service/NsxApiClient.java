@@ -627,7 +627,7 @@ public class NsxApiClient {
             LbPools lbPools = (LbPools) nsxService.apply(LbPools.class);
             String lbServerPoolName = getServerPoolName(tier1GatewayName, lbId);
             lbPools.delete(lbServerPoolName, false);
-            
+
             // delete associated LB Active monitor profile
             LbMonitorProfiles lbActiveMonitor = (LbMonitorProfiles) nsxService.apply(LbMonitorProfiles.class);
             LBMonitorProfileListResult listResult = listLBActiveMonitors(lbActiveMonitor);
