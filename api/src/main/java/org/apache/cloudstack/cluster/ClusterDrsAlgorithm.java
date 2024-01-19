@@ -117,7 +117,7 @@ public interface ClusterDrsAlgorithm extends Adapter {
     private Pair<Long, Map<Long, Ternary<Long, Long, Long>>> getHostMetricsMapAndType(Long clusterId,
             ServiceOffering serviceOffering, Map<Long, Ternary<Long, Long, Long>> hostCpuMap,
             Map<Long, Ternary<Long, Long, Long>> hostMemoryMap) throws ConfigurationException {
-        String metric = ClusterDrsMetric.valueIn(clusterId);
+        String metric = getClusterDrsMetric(clusterId);
         Pair<Long, Map<Long, Ternary<Long, Long, Long>>> pair;
         switch (metric) {
             case "cpu":
@@ -155,22 +155,26 @@ public interface ClusterDrsAlgorithm extends Adapter {
         return clusterStandardDeviation / clusterMeanMetric;
     }
 
-    private Double getMetricValue(Long clusterId, double used, double free, double total, Float skipThreshold) {
-        boolean useRatio = ClusterDrsMetricUseRatio.valueIn(clusterId);
-        switch (ClusterDrsMetricType.valueIn(clusterId)) {
+    default String getClusterDrsMetric(long clusterId) {
+        return ClusterDrsMetric.valueIn(clusterId);
+    }
+
+    default Double getMetricValue(long clusterId, long used, long free, long total, Float skipThreshold) {
+        boolean useRatio = getDrsMetricUseRatio(clusterId);
+        switch (getDrsMetricType(clusterId)) {
             case "free":
                 if (skipThreshold != null && free < skipThreshold * total) return null;
                 if (useRatio) {
-                    return free / total;
+                    return (double) free / total;
                 } else {
-                    return free;
+                    return (double) free;
                 }
             case "used":
                 if (skipThreshold != null && used > skipThreshold * total) return null;
                 if (useRatio) {
-                    return used / total;
+                    return (double) used / total;
                 } else {
-                    return used;
+                    return (double) used;
                 }
         }
         return null;
@@ -206,6 +210,14 @@ public interface ClusterDrsAlgorithm extends Adapter {
         }
     }
 
+    default boolean getDrsMetricUseRatio(long clusterId) {
+        return ClusterDrsMetricUseRatio.valueIn(clusterId);
+    }
+
+    default String getDrsMetricType(long clusterId) {
+        return ClusterDrsMetricType.valueIn(clusterId);
+    }
+
     /**
      * The cluster imbalance is defined as the percentage deviation from the mean
      * for a configured metric of the cluster. The standard deviation is used as a
@@ -218,7 +230,7 @@ public interface ClusterDrsAlgorithm extends Adapter {
      */
     default Double getClusterImbalance(Long clusterId, List<Ternary<Long, Long, Long>> cpuList,
             List<Ternary<Long, Long, Long>> memoryList, Float skipThreshold) throws ConfigurationException {
-        String metric = ClusterDrsMetric.valueIn(clusterId);
+        String metric = getClusterDrsMetric(clusterId);
         List<Double> list;
         switch (metric) {
             case "cpu":
