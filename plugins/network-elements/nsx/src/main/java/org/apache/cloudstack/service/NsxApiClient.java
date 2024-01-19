@@ -31,6 +31,7 @@ import com.vmware.nsx_policy.infra.Sites;
 import com.vmware.nsx_policy.infra.Tier1s;
 import com.vmware.nsx_policy.infra.domains.Groups;
 import com.vmware.nsx_policy.infra.domains.SecurityPolicies;
+import com.vmware.nsx_policy.infra.domains.groups.members.SegmentPorts;
 import com.vmware.nsx_policy.infra.domains.security_policies.Rules;
 import com.vmware.nsx_policy.infra.sites.EnforcementPoints;
 import com.vmware.nsx_policy.infra.tier_0s.LocaleServices;
@@ -51,6 +52,7 @@ import com.vmware.nsx_policy.model.LBVirtualServer;
 import com.vmware.nsx_policy.model.LBVirtualServerListResult;
 import com.vmware.nsx_policy.model.LocaleServicesListResult;
 import com.vmware.nsx_policy.model.PathExpression;
+import com.vmware.nsx_policy.model.PolicyGroupMembersListResult;
 import com.vmware.nsx_policy.model.PolicyNatRule;
 import com.vmware.nsx_policy.model.PolicyNatRuleListResult;
 import com.vmware.nsx_policy.model.Rule;
@@ -343,7 +345,17 @@ public class NsxApiClient {
 
     }
 
-    public SiteListResult getSites() {
+    public String getDefaultSiteId() {
+        SiteListResult sites = getSites();
+        if (CollectionUtils.isEmpty(sites.getResults())) {
+            String errorMsg = "No sites are found in the linked NSX infrastructure";
+            LOGGER.error(errorMsg);
+            throw new CloudRuntimeException(errorMsg);
+        }
+        return sites.getResults().get(0).getId();
+    }
+
+    protected SiteListResult getSites() {
         try {
             Sites sites = (Sites) nsxService.apply(Sites.class);
             return sites.list(null, false, null, null, null, null);
@@ -352,7 +364,17 @@ public class NsxApiClient {
         }
     }
 
-    public EnforcementPointListResult getEnforcementPoints(String siteId) {
+    public String getDefaultEnforcementPointPath(String siteId) {
+        EnforcementPointListResult epList = getEnforcementPoints(siteId);
+        if (CollectionUtils.isEmpty(epList.getResults())) {
+            String errorMsg = String.format("No enforcement points are found in the linked NSX infrastructure for site ID %s", siteId);
+            LOGGER.error(errorMsg);
+            throw new CloudRuntimeException(errorMsg);
+        }
+        return epList.getResults().get(0).getPath();
+    }
+
+    protected EnforcementPointListResult getEnforcementPoints(String siteId) {
         try {
             EnforcementPoints enforcementPoints = (EnforcementPoints) nsxService.apply(EnforcementPoints.class);
             return enforcementPoints.list(siteId, null, false, null, null, null, null);
@@ -397,11 +419,8 @@ public class NsxApiClient {
 
     public void deleteSegment(long zoneId, long domainId, long accountId, Long vpcId, long networkId, String segmentName) {
         try {
-            Segments segmentService = (Segments) nsxService.apply(Segments.class);
             removeSegmentDistributedFirewallRules(segmentName);
-            removeGroupForSegment(segmentName);
-            LOGGER.debug(String.format("Removing the segment with ID %s", segmentName));
-            segmentService.delete(segmentName);
+            removeSegment(segmentName);
             DhcpRelayConfigs dhcpRelayConfig = (DhcpRelayConfigs) nsxService.apply(DhcpRelayConfigs.class);
             String dhcpRelayConfigId = NsxControllerUtils.getNsxDhcpRelayConfigId(zoneId, domainId, accountId, vpcId, networkId);
             LOGGER.debug(String.format("Removing the DHCP relay config with ID %s", dhcpRelayConfigId));
@@ -410,6 +429,30 @@ public class NsxApiClient {
             ApiError ae = error.getData()._convertTo(ApiError.class);
             String msg = String.format("Error deleting segment %s: %s", segmentName, ae.getErrorMessage());
             LOGGER.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+    }
+
+    protected void removeSegment(String segmentName) {
+        LOGGER.debug(String.format("Removing the segment with ID %s", segmentName));
+        Segments segmentService = (Segments) nsxService.apply(Segments.class);
+        Segment segment = segmentService.get(segmentName);
+        if (segment == null) {
+            LOGGER.error(String.format("The segment with ID %s is not found, skipping removal", segmentName));
+            return;
+        }
+        String siteId = getDefaultSiteId();
+        String enforcementPointPath = getDefaultEnforcementPointPath(siteId);
+        SegmentPorts segmentPortsService = (SegmentPorts) nsxService.apply(SegmentPorts.class);
+        PolicyGroupMembersListResult segmentPortsList = segmentPortsService.list(DEFAULT_DOMAIN, segmentName, null, enforcementPointPath,
+                false, null, 50L, false, null);
+        if (segmentPortsList.getResultCount() == 0L) {
+            LOGGER.debug(String.format("Removing the segment with ID %s", segmentName));
+            removeGroupForSegment(segmentName);
+            segmentService.delete(segmentName);
+        } else {
+            String msg = String.format("Cannot remove the NSX segment %s because there are still %s port group(s) attached to it", segmentName, segmentPortsList.getResultCount());
+            LOGGER.debug(msg);
             throw new CloudRuntimeException(msg);
         }
     }

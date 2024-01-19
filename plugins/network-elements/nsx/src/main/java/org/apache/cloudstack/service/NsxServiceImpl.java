@@ -109,7 +109,7 @@ public class NsxServiceImpl implements NsxService {
                 network.getVpcId(), vpcName, network.getId(), network.getName());
         NsxAnswer result = nsxControllerUtils.sendNsxCommand(deleteNsxSegmentCommand, network.getDataCenterId());
         if (!result.getResult()) {
-            String msg = String.format("Could not remove the NSX segment for network %s", network.getName());
+            String msg = String.format("Could not remove the NSX segment for network %s: %s", network.getName(), result.getDetails());
             LOGGER.error(msg);
             throw new CloudRuntimeException(msg);
         }
