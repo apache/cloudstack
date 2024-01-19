@@ -2314,7 +2314,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         Script command = new Script("/bin/bash", s_logger);
         command.add("-c");
         command.add("iptables -C");
-        command.add("rule");
+        command.add(rule);
 
         String r1 = command.execute();
         return (r1 != null && r1.contains("iptables: Bad rule (does a matching rule exist in that chain?)."));
