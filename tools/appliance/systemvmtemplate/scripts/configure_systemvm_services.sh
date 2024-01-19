@@ -122,9 +122,6 @@ function configure_services() {
   # Disable guest services which will selectively be started based on hypervisor
   systemctl disable open-vm-tools
   systemctl disable xe-daemon
-  systemctl disable hyperv-daemons.hv-fcopy-daemon.service
-  systemctl disable hyperv-daemons.hv-kvp-daemon.service
-  systemctl disable hyperv-daemons.hv-vss-daemon.service
   systemctl disable qemu-guest-agent
 
   # Disable container services
