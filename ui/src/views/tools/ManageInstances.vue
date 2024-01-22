@@ -567,7 +567,7 @@ export default {
       },
       {
         name: 'external',
-        label: 'Import libvirt domain from KVM Host',
+        label: 'Import Instance from remote KVM host',
         sourceDestHypervisors: {
           kvm: 'kvm'
         },
@@ -576,7 +576,7 @@ export default {
       },
       {
         name: 'local',
-        label: 'Import QCOW image from Local Storage',
+        label: 'Import QCOW2 image from Local Storage',
         sourceDestHypervisors: {
           kvm: 'kvm'
         },
@@ -585,7 +585,7 @@ export default {
       },
       {
         name: 'shared',
-        label: 'Import QCOW image from Shared Storage',
+        label: 'Import QCOW2 image from Shared Storage',
         sourceDestHypervisors: {
           kvm: 'kvm'
         },
