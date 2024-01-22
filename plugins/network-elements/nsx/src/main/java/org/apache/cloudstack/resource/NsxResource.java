@@ -421,7 +421,7 @@ public class NsxResource implements ServerResource {
         String ruleName = NsxControllerUtils.getLoadBalancerRuleName(tier1GatewayName, cmd.getLbId());
         try {
             nsxApiClient.createAndAddNsxLbVirtualServer(tier1GatewayName, cmd.getLbId(), cmd.getPublicIp(), cmd.getPublicPort(),
-                    cmd.getMemberList(), cmd.getAlgorithm(), cmd.getProtocol());
+                    cmd.getMemberList(), cmd.getAlgorithm(), cmd.getProtocol(), cmd.getPrivatePort());
         } catch (Exception e) {
             LOGGER.error(String.format("Failed to add NSX load balancer rule %s for network: %s", ruleName, cmd.getNetworkResourceName()));
             return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));

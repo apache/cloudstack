@@ -122,6 +122,10 @@ public class NsxControllerUtils {
         return  getLoadBalancerRuleName(tier1GatewayName, lbId) + "-SP";
     }
 
+    public static String getActiveMonitorProfileName(String lbServerPoolName, String port, String protocol) {
+        return lbServerPoolName + "-" + protocol + "-" + port + "-AM";
+    }
+
     public static String  getVirtualServerName(String tier1GatewayName, long lbId) {
         return getLoadBalancerRuleName(tier1GatewayName, lbId) + "-VS";
     }
