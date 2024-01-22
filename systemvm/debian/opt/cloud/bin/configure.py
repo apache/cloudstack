@@ -22,7 +22,6 @@ import os
 import re
 import sys
 import urllib.request, urllib.parse, urllib.error
-import urllib.request, urllib.error, urllib.parse
 import time
 import copy
 
