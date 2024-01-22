@@ -66,7 +66,7 @@ import com.cloud.vm.VirtualMachine.Type;
 public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implements VMInstanceDao {
 
     public static final Logger s_logger = Logger.getLogger(VMInstanceDaoImpl.class);
-    private static final int MAX_CONSECUTIVE_SAME_STATE_UPDATE_COUNT = 3;
+    static final int MAX_CONSECUTIVE_SAME_STATE_UPDATE_COUNT = 3;
 
     protected SearchBuilder<VMInstanceVO> VMClusterSearch;
     protected SearchBuilder<VMInstanceVO> LHVMClusterSearch;
@@ -897,17 +897,17 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
 
     @Override
     public boolean updatePowerState(final long instanceId, final long powerHostId, final VirtualMachine.PowerState powerState, Date wisdomEra) {
-        return Transaction.execute(new TransactionCallback<Boolean>() {
+        return Transaction.execute(new TransactionCallback<>() {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
                 boolean needToUpdate = false;
                 VMInstanceVO instance = findById(instanceId);
                 if (instance != null
-                &&  (null == instance.getPowerStateUpdateTime()
+                        && (null == instance.getPowerStateUpdateTime()
                         || instance.getPowerStateUpdateTime().before(wisdomEra))) {
                     Long savedPowerHostId = instance.getPowerHostId();
                     if (instance.getPowerState() != powerState || savedPowerHostId == null
-                            || savedPowerHostId.longValue() != powerHostId) {
+                            || savedPowerHostId != powerHostId) {
                         instance.setPowerState(powerState);
                         instance.setPowerHostId(powerHostId);
                         instance.setPowerStateUpdateCount(1);
