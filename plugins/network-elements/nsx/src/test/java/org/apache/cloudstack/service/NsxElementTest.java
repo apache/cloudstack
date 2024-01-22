@@ -273,8 +273,13 @@ public class NsxElementTest {
                 5L, 2L, 15L);
         rule.setState(FirewallRule.State.Revoke);
         Network.Service service = new Network.Service("service1", new Network.Capability("capability"));
-
+        VpcVO vpcVO = Mockito.mock(VpcVO.class);
+        when(vpcDao.findById(1L)).thenReturn(vpcVO);
+        when(vpcVO.getDomainId()).thenReturn(2L);
+        IPAddressVO ipAddress = new IPAddressVO(new Ip("10.1.13.10"), 1L, 1L, 1L,false);
+        when(ApiDBUtils.findIpAddressById(anyLong())).thenReturn(ipAddress);
         when(nsxElement.canHandle(networkVO, service)).thenReturn(true);
+        when(nsxService.deletePortForwardRule(any(NsxNetworkRule.class))).thenReturn(true);
         assertTrue(nsxElement.applyPFRules(networkVO, List.of(rule)));
     }
 

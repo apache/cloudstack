@@ -21,9 +21,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.vmware.nsx.model.TransportZone;
 import com.vmware.nsx.model.TransportZoneListResult;
 import com.vmware.nsx_policy.model.EnforcementPoint;
-import com.vmware.nsx_policy.model.EnforcementPointListResult;
 import com.vmware.nsx_policy.model.Site;
-import com.vmware.nsx_policy.model.SiteListResult;
 import junit.framework.Assert;
 import org.apache.cloudstack.NsxAnswer;
 import org.apache.cloudstack.agent.api.CreateNsxDistributedFirewallRulesCommand;
@@ -73,10 +71,6 @@ public class NsxResourceTest {
 
     NsxResource nsxResource;
     AutoCloseable closeable;
-    @Mock
-    EnforcementPointListResult enforcementPointListResult;
-    @Mock
-    SiteListResult siteListResult;
     @Mock
     TransportZoneListResult transportZoneListResult;
 
@@ -177,13 +171,9 @@ public class NsxResourceTest {
         NsxCommand command = new CreateNsxSegmentCommand(domainId, accountId, zoneId,
                 2L, "VPC01", 3L, "Web", "10.10.10.1", "10.10.10.0/24");
 
-        when(nsxApi.getSites()).thenReturn(siteListResult);
-        when(siteListResult.getResults()).thenReturn(siteList);
-        when(siteList.get(0).getId()).thenReturn("site1");
+        when(nsxApi.getDefaultSiteId()).thenReturn("site1");
 
-        when(nsxApi.getEnforcementPoints(anyString())).thenReturn(enforcementPointListResult);
-        when(enforcementPointListResult.getResults()).thenReturn(enforcementPointList);
-        when(enforcementPointList.get(0).getPath()).thenReturn("enforcementPointPath");
+        when(nsxApi.getDefaultEnforcementPointPath(anyString())).thenReturn("enforcementPointPath");
 
         when(nsxApi.getTransportZones()).thenReturn(transportZoneListResult);
         when(transportZoneListResult.getResults()).thenReturn(transportZoneList);
@@ -194,7 +184,7 @@ public class NsxResourceTest {
 
     @Test
     public void testCreateNsxSegmentEmptySites() {
-        when(nsxApi.getSites()).thenReturn(null);
+        when(nsxApi.getDefaultSiteId()).thenReturn(null);
         CreateNsxSegmentCommand command = Mockito.mock(CreateNsxSegmentCommand.class);
         NsxAnswer answer = (NsxAnswer) nsxResource.executeRequest(command);
         assertFalse(answer.getResult());
@@ -203,11 +193,8 @@ public class NsxResourceTest {
     @Test
     public void testCreateNsxSegmentEmptyEnforcementPoints() {
         Site site = mock(Site.class);
-        List<Site> siteList = List.of(site);
-        when(nsxApi.getSites()).thenReturn(siteListResult);
-        when(siteListResult.getResults()).thenReturn(siteList);
-        when(siteList.get(0).getId()).thenReturn("site1");
-        when(nsxApi.getEnforcementPoints(anyString())).thenReturn(null);
+        when(nsxApi.getDefaultSiteId()).thenReturn("site1");
+        when(nsxApi.getDefaultEnforcementPointPath(anyString())).thenReturn(null);
         CreateNsxSegmentCommand command = Mockito.mock(CreateNsxSegmentCommand.class);
         NsxAnswer answer = (NsxAnswer) nsxResource.executeRequest(command);
         assertFalse(answer.getResult());
@@ -216,10 +203,7 @@ public class NsxResourceTest {
     @Test
     public void testCreateNsxSegmentEmptyTransportZones() {
         Site site = mock(Site.class);
-        List<Site> siteList = List.of(site);
-        when(nsxApi.getSites()).thenReturn(siteListResult);
-        when(siteListResult.getResults()).thenReturn(siteList);
-        when(siteList.get(0).getId()).thenReturn("site1");
+        when(nsxApi.getDefaultSiteId()).thenReturn("site1");
         CreateNsxSegmentCommand command = Mockito.mock(CreateNsxSegmentCommand.class);
         NsxAnswer answer = (NsxAnswer) nsxResource.executeRequest(command);
         assertFalse(answer.getResult());

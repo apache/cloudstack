@@ -143,6 +143,10 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     NetworkDao _networkDao;
     @Inject
     VpcManager _vpcMgr;
+    @Inject
+    EntityManager entityManager;
+    @Inject
+    NsxProviderDao nsxProviderDao;
     List<FirewallServiceProvider> _firewallElements;
 
     List<PortForwardingServiceProvider> _pfElements;
@@ -152,10 +156,6 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     List<NetworkACLServiceProvider> _networkAclElements;
     @Inject
     IpAddressManager _ipAddrMgr;
-    @Inject
-    EntityManager entityManager;
-    @Inject
-    NsxProviderDao nsxProviderDao;
 
     private boolean _elbEnabled = false;
     static Boolean rulesContinueOnErrFlag = true;
@@ -699,9 +699,10 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         }
 
         for (FirewallRuleVO rule : rules) {
-            // load cidrs if any
+            // validate rule - for NSX
             long networkId = rule.getNetworkId();
-            validateNsxConstraints(networkId, rule.getProtocol(), rule);
+            validateNsxConstraints(networkId, rule);
+            // load cidrs if any
             rule.setSourceCidrList(_firewallCidrsDao.getSourceCidrs(rule.getId()));
             rule.setDestinationCidrsList(_firewallDcidrsDao.getDestCidrs(rule.getId()));
         }
@@ -722,13 +723,15 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         return true;
     }
 
-    private void validateNsxConstraints(long networkId, String protocol, FirewallRuleVO rule) {
+    private void validateNsxConstraints(long networkId, FirewallRuleVO rule) {
+        String protocol = rule.getProtocol();
         final Network network = entityManager.findById(Network.class, networkId);
         final DataCenter dc = entityManager.findById(DataCenter.class, network.getDataCenterId());
         final NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(dc.getId());
         if (Objects.isNull(nsxProvider)) {
             return;
         }
+
         if (NetUtils.ICMP_PROTO.equals(protocol.toLowerCase(Locale.ROOT)) && (rule.getIcmpType() == -1 || rule.getIcmpCode() == -1)) {
             String errorMsg = "Passing -1 for ICMP type is not supported for NSX enabled zones";
             s_logger.error(errorMsg);
