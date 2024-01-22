@@ -4424,7 +4424,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return accessDetails;
     }
 
-    protected boolean stateTransitTo(final NetworkVO network, final Network.Event e) throws NoTransitionException {
+    @Override
+    public boolean stateTransitTo(final Network network, final Network.Event e) throws NoTransitionException {
         return _stateMachine.transitTo(network, e, null, _networksDao);
     }
 
@@ -4567,23 +4568,18 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     public Pair<NicProfile, Integer> importNic(final String macAddress, int deviceId, final Network network, final Boolean isDefaultNic, final VirtualMachine vm, final Network.IpAddresses ipAddresses, final DataCenter dataCenter, final boolean forced)
             throws ConcurrentOperationException, InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
         s_logger.debug("Allocating nic for vm " + vm.getUuid() + " in network " + network + " during import");
-        String guestIp = null;
-        IPAddressVO freeIpAddress = null;
+        String selectedIp = null;
         if (ipAddresses != null && StringUtils.isNotEmpty(ipAddresses.getIp4Address())) {
             if (ipAddresses.getIp4Address().equals("auto")) {
                 ipAddresses.setIp4Address(null);
             }
-            freeIpAddress = getGuestIpForNicImport(network, dataCenter, ipAddresses);
-            if (freeIpAddress != null && freeIpAddress.getAddress() != null) {
-                guestIp = freeIpAddress.getAddress().addr();
-            }
-            if (guestIp == null && network.getGuestType() != GuestType.L2 && !_networkModel.listNetworkOfferingServices(network.getNetworkOfferingId()).isEmpty()) {
+            selectedIp = getSelectedIpForNicImport(network, dataCenter, ipAddresses);
+            if (selectedIp == null && network.getGuestType() != GuestType.L2 && !_networkModel.listNetworkOfferingServices(network.getNetworkOfferingId()).isEmpty()) {
                 throw new InsufficientVirtualNetworkCapacityException("Unable to acquire Guest IP  address for network " + network, DataCenter.class,
                         network.getDataCenterId());
             }
         }
-        final String finalGuestIp = guestIp;
-        final IPAddressVO freeIp = freeIpAddress;
+        final String finalSelectedIp = selectedIp;
         final NicVO vo = Transaction.execute(new TransactionCallback<NicVO>() {
             @Override
             public NicVO doInTransaction(TransactionStatus status) {
@@ -4595,11 +4591,11 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 NicVO vo = new NicVO(network.getGuruName(), vm.getId(), network.getId(), vm.getType());
                 vo.setMacAddress(macAddressToPersist);
                 vo.setAddressFormat(Networks.AddressFormat.Ip4);
-                Pair<String, String> pair = getNetworkGatewayAndNetmaskForNicImport(network, dataCenter, freeIp);
+                Pair<String, String> pair = getNetworkGatewayAndNetmaskForNicImport(network, dataCenter, finalSelectedIp);
                 String gateway = pair.first();
                 String netmask = pair.second();
-                if (NetUtils.isValidIp4(finalGuestIp) && StringUtils.isNotEmpty(gateway)) {
-                    vo.setIPv4Address(finalGuestIp);
+                if (NetUtils.isValidIp4(finalSelectedIp) && StringUtils.isNotEmpty(gateway)) {
+                    vo.setIPv4Address(finalSelectedIp);
                     vo.setIPv4Gateway(gateway);
                     vo.setIPv4Netmask(netmask);
                 }
@@ -4638,27 +4634,42 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return new Pair<NicProfile, Integer>(vmNic, Integer.valueOf(deviceId));
     }
 
-    protected IPAddressVO getGuestIpForNicImport(Network network, DataCenter dataCenter, Network.IpAddresses ipAddresses) {
+    protected String getSelectedIpForNicImport(Network network, DataCenter dataCenter, Network.IpAddresses ipAddresses) {
         if (network.getGuestType() == GuestType.L2) {
             return null;
         }
-        if (dataCenter.getNetworkType() == NetworkType.Advanced) {
-            String guestIpAddress = _ipAddrMgr.acquireGuestIpAddress(network, ipAddresses.getIp4Address());
-            return _ipAddressDao.findByIp(guestIpAddress);
+        return dataCenter.getNetworkType() == NetworkType.Basic ?
+                getSelectedIpForNicImportOnBasicZone(ipAddresses.getIp4Address(), network, dataCenter):
+                _ipAddrMgr.acquireGuestIpAddress(network, ipAddresses.getIp4Address());
+    }
+
+    protected String getSelectedIpForNicImportOnBasicZone(String requestedIp, Network network, DataCenter dataCenter) {
+        IPAddressVO ipAddressVO = StringUtils.isBlank(requestedIp) ?
+                _ipAddressDao.findBySourceNetworkIdAndDatacenterIdAndState(network.getId(), dataCenter.getId(), IpAddress.State.Free):
+                _ipAddressDao.findByIp(requestedIp);
+        if (ipAddressVO == null || ipAddressVO.getState() != IpAddress.State.Free) {
+            String msg = String.format("Cannot find a free IP to assign to VM NIC on network %s", network.getName());
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg);
         }
-        return _ipAddressDao.findBySourceNetworkIdAndDatacenterIdAndState(network.getId(), dataCenter.getId(), IpAddress.State.Free);
+        return ipAddressVO.getAddress() != null ? ipAddressVO.getAddress().addr() : null;
     }
 
     /**
      * Obtain the gateway and netmask for a VM NIC to import
      * If the VM to import is on a Basic Zone, then obtain the information from the vlan table instead of the network
      */
-    protected Pair<String, String> getNetworkGatewayAndNetmaskForNicImport(Network network, DataCenter dataCenter, IPAddressVO freeIp) {
-        VlanVO vlan = dataCenter.getNetworkType() == NetworkType.Basic && freeIp != null ?
-                _vlanDao.findById(freeIp.getVlanId()) : null;
-        String gateway = vlan != null ? vlan.getVlanGateway() : network.getGateway();
-        String netmask = vlan != null ? vlan.getVlanNetmask() :
-                (StringUtils.isNotEmpty(network.getCidr()) ? NetUtils.cidr2Netmask(network.getCidr()) : null);
+    protected Pair<String, String> getNetworkGatewayAndNetmaskForNicImport(Network network, DataCenter dataCenter, String selectedIp) {
+        String gateway = network.getGateway();
+        String netmask = StringUtils.isNotEmpty(network.getCidr()) ? NetUtils.cidr2Netmask(network.getCidr()) : null;
+        if (dataCenter.getNetworkType() == NetworkType.Basic) {
+            IPAddressVO freeIp = _ipAddressDao.findByIp(selectedIp);
+            if (freeIp != null) {
+                VlanVO vlan = _vlanDao.findById(freeIp.getVlanId());
+                gateway = vlan != null ? vlan.getVlanGateway() : null;
+                netmask = vlan != null ? vlan.getVlanNetmask() : null;
+            }
+        }
         return new Pair<>(gateway, netmask);
     }
 
