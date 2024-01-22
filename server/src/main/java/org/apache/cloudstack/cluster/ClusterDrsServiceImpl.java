@@ -628,8 +628,8 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[]{ClusterDrsPlanExpireInterval, ClusterDrsEnabled, ClusterDrsInterval,
-                ClusterDrsMaxMigrations, ClusterDrsAlgorithm, ClusterDrsImbalanceThreshold, ClusterDrsMetric};
+        return new ConfigKey<?>[]{ClusterDrsPlanExpireInterval, ClusterDrsEnabled, ClusterDrsInterval, ClusterDrsMaxMigrations,
+                ClusterDrsAlgorithm, ClusterDrsImbalanceThreshold, ClusterDrsMetric, ClusterDrsMetricType, ClusterDrsMetricUseRatio};
     }
 
     @Override

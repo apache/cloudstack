@@ -25,6 +25,7 @@ import com.cloud.utils.Ternary;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 
 import javax.naming.ConfigurationException;
 import java.util.ArrayList;
@@ -34,7 +35,7 @@ import java.util.Map;
 import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsImbalanceThreshold;
 import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsMetricType;
 
-public class Condensed extends AdapterBase implements ClusterDrsAlgorithm {
+public class Condensed extends AdapterBase implements ClusterDrsAlgorithm, Configurable {
 
     ConfigKey<Float> ClusterDrsImbalanceSkipThreshold = new ConfigKey<>(Float.class,
             "drs.imbalance.condensed.skip.threshold", ConfigKey.CATEGORY_ADVANCED, "0.95",
@@ -43,11 +44,22 @@ public class Condensed extends AdapterBase implements ClusterDrsAlgorithm {
                     " gets skewed due to a single host having a very high/low metric  value resulting in imbalance" +
                     " being higher than 1. If " + ClusterDrsMetricType.key() + " is 'free', set a lower value and if it is 'used' " +
                     "set a higher value. The value should be between 0.0 and 1.0",
-            true, ConfigKey.Scope.Cluster, null, "DRS imbalance", null, null, null);
+            true, ConfigKey.Scope.Cluster, null, "DRS imbalance skip threshold for Condensed algorithm",
+            null, null, null);
 
     @Override
     public String getName() {
         return "condensed";
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return Condensed.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[]{ClusterDrsImbalanceSkipThreshold};
     }
 
     @Override
