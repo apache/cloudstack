@@ -1751,15 +1751,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         //apply network ACLs
-        NsxProviderVO nsxProviderVO = nsxProviderDao.findByZoneId(zone.getId());
-        // Objects.isNull(nsxProviderVO) &&
         if (!_networkACLMgr.applyACLToNetwork(networkId)) {
             s_logger.warn("Failed to reapply network ACLs as a part of  of network id=" + networkId + " restart");
             success = false;
         }
-//        else if (Objects.nonNull(nsxProviderVO)) {
-//            success = true;
-//        }
 
         return success;
     }
