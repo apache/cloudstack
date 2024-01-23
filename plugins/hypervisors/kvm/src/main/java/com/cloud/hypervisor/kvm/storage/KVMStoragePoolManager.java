@@ -17,6 +17,7 @@
 package com.cloud.hypervisor.kvm.storage;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Modifier;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
@@ -106,6 +107,10 @@ public class KVMStoragePoolManager {
         Set<Class<? extends StorageAdaptor>> storageAdaptorClasses = reflections.getSubTypesOf(StorageAdaptor.class);
         for (Class<? extends StorageAdaptor> storageAdaptorClass : storageAdaptorClasses) {
             s_logger.debug("Checking pool type for adaptor " + storageAdaptorClass.getName());
+            if (Modifier.isAbstract(storageAdaptorClass.getModifiers()) || storageAdaptorClass.isInterface()) {
+                s_logger.debug("Skipping registration of abstract class / interface " + storageAdaptorClass.getName());
+                continue;
+            }
             if (storageAdaptorClass.isAssignableFrom(LibvirtStorageAdaptor.class)) {
                 s_logger.debug("Skipping re-registration of LibvirtStorageAdaptor");
                 continue;
@@ -128,7 +133,7 @@ public class KVMStoragePoolManager {
                     if (this._storageMapper.containsKey(storagePoolType.toString())) {
                         s_logger.warn(String.format("Duplicate StorageAdaptor type %s, not loading %s", storagePoolType, storageAdaptorClass.getName()));
                     } else {
-                        s_logger.info(String.format("adding storage adaptor for %s", storageAdaptorClass.getName()));
+                        s_logger.info(String.format("Adding storage adaptor for %s", storageAdaptorClass.getName()));
                         this._storageMapper.put(storagePoolType.toString(), adaptor);
                     }
                 }
