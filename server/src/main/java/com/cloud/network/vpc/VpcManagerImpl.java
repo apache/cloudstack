@@ -403,7 +403,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         if (List.of(Service.UserData, Service.Dhcp, Service.Dns).contains(svc)) {
                             final Set<Provider> userDataProvider = Set.of(Provider.VPCVirtualRouter);
                             svcProviderMap.put(svc, userDataProvider);
-                        } else {
+                        } else if (Service.NetworkACL.equals(svc)){
                             svcProviderMap.put(svc, defaultProviders);
                         }
                     }
@@ -3189,8 +3189,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Override
     public boolean isSrcNatIpRequired(long vpcOfferingId) {
         final Map<Network.Service, Set<Network.Provider>> vpcOffSvcProvidersMap = getVpcOffSvcProvidersMap(vpcOfferingId);
-        return vpcOffSvcProvidersMap.get(Network.Service.SourceNat).contains(Network.Provider.VPCVirtualRouter) ||
-                vpcOffSvcProvidersMap.get(Service.SourceNat).contains(Provider.Nsx);
+        return Objects.nonNull(vpcOffSvcProvidersMap.get(Network.Service.SourceNat)) && (vpcOffSvcProvidersMap.get(Network.Service.SourceNat).contains(Network.Provider.VPCVirtualRouter) ||
+                vpcOffSvcProvidersMap.get(Service.SourceNat).contains(Provider.Nsx));
     }
 
     /**
