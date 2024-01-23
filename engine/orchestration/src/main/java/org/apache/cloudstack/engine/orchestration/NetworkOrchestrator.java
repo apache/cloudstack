@@ -941,7 +941,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
      * @return ordered list of Network and NicProfile pair
      * @param networks the map od networks to nic profiles list
      */
-    private List<Pair<Network, NicProfile>> getOrderedNetworkNicProfileMapping(final LinkedHashMap<? extends Network, List<? extends NicProfile>> networks) {
+    private List<Pair<Network, NicProfile>>     getOrderedNetworkNicProfileMapping(final LinkedHashMap<? extends Network, List<? extends NicProfile>> networks) {
         List<Pair<Network, NicProfile>> profilesList = new ArrayList<>();
         for (final Map.Entry<? extends Network, List<? extends NicProfile>> network : networks.entrySet()) {
             List<? extends NicProfile> requestedProfiles = network.getValue();
