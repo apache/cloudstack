@@ -57,7 +57,7 @@ public final class LibvirtReadyCommandWrapper extends CommandWrapper<ReadyComman
         if (isUbuntuHost) {
             cmd = "dpkg -l ovmf";
         }
-        s_logger.debug("Running command : " + cmd);
+        s_logger.debug("Running command : [" + cmd + "] with timeout : " + timeout + " ms");
         int result = Script.runSimpleBashScriptForExitValue(cmd, timeout, false);
         s_logger.debug("Got result : " + result);
         return result == 0;
