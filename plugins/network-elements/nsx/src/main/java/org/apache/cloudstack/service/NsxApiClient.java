@@ -456,12 +456,13 @@ public class NsxApiClient {
         PolicyGroupMembersListResult segmentPortsList = getSegmentPortList(segmentPortsService, segmentName, enforcementPointPath);
         Long portCount = segmentPortsList.getResultCount();
         portCount = retrySegmentDeletion(segmentPortsService, portCount, segmentName, enforcementPointPath);
-        if (segmentPortsList.getResultCount() == 0L) {
+        LOGGER.info("Port count: " + portCount);
+        if (portCount == 0L) {
             LOGGER.debug(String.format("Removing the segment with ID %s", segmentName));
             removeGroupForSegment(segmentName);
             segmentService.delete(segmentName);
         } else {
-            String msg = String.format("Cannot remove the NSX segment %s because there are still %s port group(s) attached to it", segmentName, segmentPortsList.getResultCount());
+            String msg = String.format("Cannot remove the NSX segment %s because there are still %s port group(s) attached to it", segmentName, portCount);
             LOGGER.debug(msg);
             throw new CloudRuntimeException(msg);
         }
@@ -473,9 +474,11 @@ public class NsxApiClient {
     }
 
     private Long retrySegmentDeletion(SegmentPorts segmentPortsService, Long portCount, String segmentName, String enforcementPointPath) {
-        int retries = 5;
+        int retries = 20;
+        int count = 1;
         do {
             try {
+                LOGGER.info("Waiting for all port groups to be unlinked from the segment - Attempt: " + count++ + " Waiting for 5 secs");
                 Thread.sleep(5000);
                 portCount = getSegmentPortList(segmentPortsService, segmentName, enforcementPointPath).getResultCount();
                 retries--;
