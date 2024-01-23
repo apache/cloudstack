@@ -41,7 +41,6 @@ import javax.naming.ConfigurationException;
 import com.cloud.dc.VlanDetailsVO;
 import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.network.dao.NsxProviderDao;
-import com.cloud.network.element.NsxProviderVO;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
