@@ -45,6 +45,8 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
@@ -55,8 +57,12 @@ import org.apache.log4j.Logger;
 import javax.inject.Inject;
 import java.util.List;
 
-public class DefaultHostListener implements HypervisorHostListener {
+public class DefaultHostListener implements HypervisorHostListener, Configurable {
     private static final Logger s_logger = Logger.getLogger(DefaultHostListener.class);
+    ConfigKey<Integer> ModifyStoragePoolCommandWait = new ConfigKey<Integer>("Advanced", Integer.class,
+            "modify.storage.pool.command.wait", "60",
+            "Time in seconds to wait for ModifyStoragePoolCommand command to return", true);
+
     @Inject
     AgentManager agentMgr;
     @Inject
@@ -84,6 +90,14 @@ public class DefaultHostListener implements HypervisorHostListener {
     @Inject
     NetworkDao networkDao;
 
+    @Override
+    public String getConfigComponentName() {
+        return DefaultHostListener.class.getSimpleName();
+    }
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {ModifyStoragePoolCommandWait};
+    }
 
     @Override
     public boolean hostAdded(long hostId) {
@@ -121,7 +135,7 @@ public class DefaultHostListener implements HypervisorHostListener {
     public boolean hostConnect(long hostId, long poolId) throws StorageConflictException {
         StoragePool pool = (StoragePool) this.dataStoreMgr.getDataStore(poolId, DataStoreRole.Primary);
         ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, pool);
-        cmd.setWait(60);
+        cmd.setWait(ModifyStoragePoolCommandWait.value());
         final Answer answer = agentMgr.easySend(hostId, cmd);
 
         if (answer == null) {
