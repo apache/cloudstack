@@ -701,7 +701,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         for (FirewallRuleVO rule : rules) {
             // validate rule - for NSX
             long networkId = rule.getNetworkId();
-            validateNsxConstraints(networkId, rule.getProtocol(), rule.getIcmpType(), rule.getIcmpCode());
+            validateNsxConstraints(networkId, rule);
             // load cidrs if any
             rule.setSourceCidrList(_firewallCidrsDao.getSourceCidrs(rule.getId()));
             rule.setDestinationCidrsList(_firewallDcidrsDao.getDestCidrs(rule.getId()));
@@ -723,15 +723,25 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         return true;
     }
 
-    private void validateNsxConstraints(long networkId, String protocol, Integer icpmType, Integer icmpCode) {
+    private void validateNsxConstraints(long networkId, FirewallRuleVO rule) {
+        String protocol = rule.getProtocol();
         final Network network = entityManager.findById(Network.class, networkId);
         final DataCenter dc = entityManager.findById(DataCenter.class, network.getDataCenterId());
         final NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(dc.getId());
         if (Objects.isNull(nsxProvider)) {
             return;
         }
-        if (NetUtils.ICMP_PROTO.equals(protocol.toLowerCase(Locale.ROOT)) && (icpmType == -1 || icmpCode == -1)) {
+
+        if (NetUtils.ICMP_PROTO.equals(protocol.toLowerCase(Locale.ROOT)) && (rule.getIcmpType() == -1 || rule.getIcmpCode() == -1)) {
             String errorMsg = "Passing -1 for ICMP type is not supported for NSX enabled zones";
+            s_logger.error(errorMsg);
+            throw new InvalidParameterValueException(errorMsg);
+        }
+
+        if (List.of(NetUtils.TCP_PROTO, NetUtils.UDP_PROTO).contains(protocol.toLowerCase(Locale.ROOT)) &&
+                (Objects.isNull(rule.getSourcePortStart()) || Objects.isNull(rule.getSourcePortEnd())) &&
+            State.Add.equals(rule.getState())) {
+            String errorMsg = "Source start and end ports are required to be passed";
             s_logger.error(errorMsg);
             throw new InvalidParameterValueException(errorMsg);
         }
