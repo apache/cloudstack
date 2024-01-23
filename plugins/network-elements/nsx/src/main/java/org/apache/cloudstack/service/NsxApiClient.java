@@ -453,8 +453,9 @@ public class NsxApiClient {
         String siteId = getDefaultSiteId();
         String enforcementPointPath = getDefaultEnforcementPointPath(siteId);
         SegmentPorts segmentPortsService = (SegmentPorts) nsxService.apply(SegmentPorts.class);
-        PolicyGroupMembersListResult segmentPortsList = segmentPortsService.list(DEFAULT_DOMAIN, segmentName, null, enforcementPointPath,
-                false, null, 50L, false, null);
+        PolicyGroupMembersListResult segmentPortsList = getSegmentPortList(segmentPortsService, segmentName, enforcementPointPath);
+        Long portCount = segmentPortsList.getResultCount();
+        portCount = retrySegmentDeletion(segmentPortsService, portCount, segmentName, enforcementPointPath);
         if (segmentPortsList.getResultCount() == 0L) {
             LOGGER.debug(String.format("Removing the segment with ID %s", segmentName));
             removeGroupForSegment(segmentName);
@@ -464,6 +465,25 @@ public class NsxApiClient {
             LOGGER.debug(msg);
             throw new CloudRuntimeException(msg);
         }
+    }
+
+    private PolicyGroupMembersListResult getSegmentPortList(SegmentPorts segmentPortsService, String segmentName, String enforcementPointPath) {
+        return segmentPortsService.list(DEFAULT_DOMAIN, segmentName, null, enforcementPointPath,
+                false, null, 50L, false, null);
+    }
+
+    private Long retrySegmentDeletion(SegmentPorts segmentPortsService, Long portCount, String segmentName, String enforcementPointPath) {
+        int retries = 5;
+        do {
+            try {
+                Thread.sleep(5000);
+                portCount = getSegmentPortList(segmentPortsService, segmentName, enforcementPointPath).getResultCount();
+                retries--;
+            } catch (InterruptedException e) {
+                throw new CloudRuntimeException(String.format("Unable to delete segment %s due to: %s", segmentName, e.getLocalizedMessage()));
+            }
+        } while (retries > 0 && portCount > 0);
+        return portCount;
     }
 
     public void createStaticNatRule(String vpcName, String tier1GatewayName,
