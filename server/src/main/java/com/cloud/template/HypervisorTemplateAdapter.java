@@ -748,9 +748,6 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     public TemplateProfile prepareDelete(DeleteTemplateCmd cmd) {
         TemplateProfile profile = super.prepareDelete(cmd);
         VMTemplateVO template = profile.getTemplate();
-        if (template.getTemplateType() == TemplateType.SYSTEM) {
-            throw new InvalidParameterValueException("The DomR template cannot be deleted.");
-        }
         checkZoneImageStores(profile.getTemplate(), profile.getZoneIdList());
         return profile;
     }
