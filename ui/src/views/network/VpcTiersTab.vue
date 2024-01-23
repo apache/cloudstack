@@ -112,7 +112,7 @@
                 </template>
               </a-pagination>
             </a-collapse-panel>
-            <a-collapse-panel :header="$t('label.internal.lb')" key="ilb" :style="customStyle" :collapsible="!showIlb(network) ? 'disabled' : null" >
+            <a-collapse-panel :header="$t('label.internal.lb')" key="ilb" :style="customStyle" :collapsible="showIlb(network) ? null: 'disabled'" >
               <a-button
                 type="dashed"
                 style="margin-bottom: 15px; width: 100%"
@@ -461,8 +461,9 @@ export default {
       this.form = reactive({})
       this.rules = reactive({})
     },
-    showIlb (network) {
-      return network.service.filter(s => (s.name === 'Lb') && (s.capability.filter(c => c.name === 'LbSchemes' && c.value === 'Internal').length > 0)).length > 0 || false
+    async showIlb (network) {
+      const networkOffering = await this.getNetworkOffering(network.networkofferingid)
+      return ((networkOffering.supportsinternallb && network.service.filter(s => (s.name === 'Lb') && (s.capability.filter(c => c.name === 'LbSchemes' && c.value.split(',').includes('Internal')).length > 0)).length > 0)) 
     },
     updateMtu () {
       if (this.form.privatemtu > this.privateMtuMax) {

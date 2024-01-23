@@ -135,6 +135,10 @@ public class NetworkOfferingResponse extends BaseResponseWithAnnotations {
     @Param(description = "true if network offering supports public access for guest networks", since = "4.10.0")
     private Boolean supportsPublicAccess;
 
+    @SerializedName(ApiConstants.SUPPORTS_INTERNAL_LB)
+    @Param(description = "true if network offering supports public access for guest networks", since = "4.20.0")
+    private Boolean supportsInternalLb;
+
     @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "the domain ID(s) this disk offering belongs to. Ignore this information as it is not currently applicable.")
     private String domainId;
@@ -257,6 +261,10 @@ public class NetworkOfferingResponse extends BaseResponseWithAnnotations {
 
     public void setSupportsPublicAccess(Boolean supportsPublicAccess) {
         this.supportsPublicAccess = supportsPublicAccess;
+    }
+
+    public void setSupportsInternalLb(Boolean supportsInternalLb) {
+        this.supportsInternalLb = supportsInternalLb;
     }
 
     public String getDomainId() {
