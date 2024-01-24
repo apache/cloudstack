@@ -3542,7 +3542,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                     if (diskInfo == null) {
                         diskInfo = diskInfoBuilder.getDiskInfoByDeviceBusName(infoInChain.getDiskDeviceBusName());
                         if (diskInfo != null) {
-                            s_logger.info("Found existing disk from from chain device bus information: " + infoInChain.getDiskDeviceBusName());
+                            s_logger.info("Found existing disk from chain device bus information: " + infoInChain.getDiskDeviceBusName());
                             return diskInfo;
                         }
                     }

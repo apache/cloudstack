@@ -75,11 +75,17 @@ public class HypervisorCapabilitiesDaoImpl extends GenericDaoBase<HypervisorCapa
         sc.setParameters("hypervisorType", hypervisorType);
         sc.setParameters("hypervisorVersion", hypervisorVersion);
         HypervisorCapabilitiesVO result = findOneBy(sc);
+        String parentVersion = CloudStackVersion.getVMwareParentVersion(hypervisorVersion);
         if (result != null || !HypervisorType.VMware.equals(hypervisorType) ||
-                CloudStackVersion.getVMwareParentVersion(hypervisorVersion) == null) {
+                parentVersion == null) {
             return result;
         }
-        sc.setParameters("hypervisorVersion", CloudStackVersion.getVMwareParentVersion(hypervisorVersion));
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(String.format("Hypervisor capabilities for hypervisor: %s, version: %s can not be found. " +
+                            "Trying to find capabilities for the parent version: %s",
+                    hypervisorType, hypervisorVersion, parentVersion));
+        }
+        sc.setParameters("hypervisorVersion", parentVersion);
         return findOneBy(sc);
     }
 
