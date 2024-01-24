@@ -1082,7 +1082,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         s_logger.debug("Restored disk size=" + toHumanReadableSize(restoredDisk.getCapacityInKB()) + " path=" + diskPath);
 
         // Detach restored VM disks
-        vmRestored.detachAllDisks();
+        vmRestored.detachDisk(String.format("%s/%s.vmdk", location, diskPath), false);
 
         String srcPath = getVolumeFullPath(restoredDisk);
         String destPath = getDestVolumeFullPath(restoredDisk, vmRestored, vmMo);
