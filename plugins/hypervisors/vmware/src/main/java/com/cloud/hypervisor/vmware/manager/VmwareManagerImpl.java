@@ -464,7 +464,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                 }
             }
             HypervisorHostHelper.prepareNetwork(vSwitchName, "cloud.private", hostMo, vlanId, null, null, null, 180000,
-                    vsType, portsPerDvPortGroup, null, false, BroadcastDomainType.Vlan, null, null);
+                    vsType, portsPerDvPortGroup, null, false, BroadcastDomainType.Vlan, null, null, null);
         }
     }
 

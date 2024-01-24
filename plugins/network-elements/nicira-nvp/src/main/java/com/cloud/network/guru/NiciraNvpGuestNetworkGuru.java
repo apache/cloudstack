@@ -138,7 +138,7 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru implements Netwo
     }
 
     @Override
-    public Network design(final NetworkOffering offering, final DeploymentPlan plan, final Network userSpecified, final Account owner) {
+    public Network design(final NetworkOffering offering, final DeploymentPlan plan, final Network userSpecified, String name, Long vpcId, final Account owner) {
         // Check of the isolation type of the related physical network is supported
         final PhysicalNetworkVO physnet = physicalNetworkDao.findById(plan.getPhysicalNetworkId());
         final DataCenter dc = _dcDao.findById(plan.getDataCenterId());
@@ -155,7 +155,7 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru implements Netwo
         s_logger.debug("Nicira Nvp " + devices.get(0).getUuid() + " found on physical network " + physnet.getId());
 
         s_logger.debug("Physical isolation type is supported, asking GuestNetworkGuru to design this network");
-        final NetworkVO networkObject = (NetworkVO) super.design(offering, plan, userSpecified, owner);
+        final NetworkVO networkObject = (NetworkVO) super.design(offering, plan, userSpecified, name, vpcId, owner);
         if (networkObject == null) {
             return null;
         }

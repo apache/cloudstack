@@ -70,7 +70,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     @Inject
     NetworkOrchestrationService _networkMgr;
     @Inject
-    IPAddressDao _ipAddressDao;
+    protected IPAddressDao _ipAddressDao;
     @Inject
     IpAddressManager _ipAddrMgr;
     @Inject
@@ -100,7 +100,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public Network design(NetworkOffering offering, DeploymentPlan plan, Network network, Account owner) {
+    public Network design(NetworkOffering offering, DeploymentPlan plan, Network network, String name, Long vpcId, Account owner) {
         if (!canHandle(offering)) {
             return null;
         }
@@ -113,6 +113,11 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
         } else {
             return null;
         }
+    }
+
+    @Override
+    public void setup(Network network, long networkId) {
+        // do nothing
     }
 
     protected PublicNetworkGuru() {

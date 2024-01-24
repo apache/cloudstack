@@ -106,8 +106,9 @@
 
     <bean id="configurationServerImpl" class="com.cloud.server.ConfigurationServerImpl" />
 
-
-    <bean id="userVmManagerImpl" class="com.cloud.vm.UserVmManagerImpl" />
+    <bean id="userVmManagerImpl" class="com.cloud.vm.UserVmManagerImpl">
+        <property name="kubernetesClusterHelpers" value="#{kubernetesClusterHelperRegistry.registered}" />
+    </bean>
 
     <bean id="consoleProxyManagerImpl" class="com.cloud.consoleproxy.ConsoleProxyManagerImpl">
         <property name="consoleProxyAllocators"

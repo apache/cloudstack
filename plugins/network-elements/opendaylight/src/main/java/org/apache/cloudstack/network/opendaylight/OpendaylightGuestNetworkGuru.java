@@ -99,7 +99,7 @@ public class OpendaylightGuestNetworkGuru extends GuestNetworkGuru {
     }
 
     @Override
-    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
+    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, String name, Long vpcId, Account owner) {
         PhysicalNetworkVO physnet = physicalNetworkDao.findById(plan.getPhysicalNetworkId());
         DataCenter dc = _dcDao.findById(plan.getDataCenterId());
         if (!canHandle(offering, dc.getNetworkType(), physnet)) {
@@ -115,7 +115,7 @@ public class OpendaylightGuestNetworkGuru extends GuestNetworkGuru {
         s_logger.debug("Controller " + devices.get(0).getUuid() + " found on physical network " + physnet.getId());
         s_logger.debug("Physical isolation type is ODL, asking GuestNetworkGuru to design this network");
 
-        NetworkVO networkObject = (NetworkVO)super.design(offering, plan, userSpecified, owner);
+        NetworkVO networkObject = (NetworkVO)super.design(offering, plan, userSpecified, name, vpcId, owner);
         if (networkObject == null) {
             return null;
         }

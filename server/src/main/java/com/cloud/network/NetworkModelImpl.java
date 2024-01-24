@@ -491,7 +491,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     @Override
     public Map<Provider, ArrayList<PublicIpAddress>> getProviderToIpList(Network network, Map<PublicIpAddress, Set<Service>> ipToServices) {
         NetworkOffering offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-        if (!offering.isConserveMode()) {
+        if (!offering.isConserveMode() && !offering.isForNsx()) {
             for (PublicIpAddress ip : ipToServices.keySet()) {
                 Set<Service> services = new HashSet<Service>();
                 services.addAll(ipToServices.get(ip));
@@ -1617,7 +1617,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         if (!canIpUsedForService(publicIp, service, networkId)) {
             return false;
         }
-        if (!offering.isConserveMode()) {
+        if (!offering.isConserveMode() && !offering.isForNsx()) {
             return canIpUsedForNonConserveService(publicIp, service);
         }
         return true;

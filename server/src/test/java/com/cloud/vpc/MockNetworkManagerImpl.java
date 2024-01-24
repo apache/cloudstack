@@ -184,6 +184,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
+    public IpAddress reserveIpAddressWithVlanDetail(Account account, DataCenter zone, Boolean displayIp, String vlanDetailKey) throws ResourceAllocationException {
+        return null;
+    }
+
+    @Override
     public boolean releaseReservedIpAddress(long ipAddressId) throws InsufficientAddressCapacityException {
         return false;
     }

@@ -19,6 +19,7 @@ package com.cloud.network;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.dc.DataCenter;
 import org.apache.cloudstack.api.command.admin.address.ReleasePodIpCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
@@ -86,6 +87,8 @@ public interface NetworkService {
         ConcurrentOperationException;
 
     IpAddress reserveIpAddress(Account account, Boolean displayIp, Long ipAddressId) throws ResourceAllocationException;
+
+    IpAddress reserveIpAddressWithVlanDetail(Account account, DataCenter zone, Boolean displayIp, String vlanDetailKey) throws ResourceAllocationException;
 
     boolean releaseReservedIpAddress(long ipAddressId) throws InsufficientAddressCapacityException;
 

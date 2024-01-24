@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -41,7 +42,11 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.VlanDetailsVO;
+import com.cloud.dc.dao.VlanDetailsDao;
+import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.dao.PublicIpQuarantineDao;
+import com.cloud.network.element.NsxProviderVO;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.dao.ServiceOfferingDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -284,6 +289,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     @Inject
     VlanDao _vlanDao = null;
     @Inject
+    private VlanDetailsDao vlanDetailsDao;
+    @Inject
     IPAddressDao _ipAddressDao = null;
     @Inject
     AccountDao _accountDao = null;
@@ -406,6 +413,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     ServiceOfferingDao serviceOfferingDao;
     @Inject
     PublicIpQuarantineDao publicIpQuarantineDao;
+    @Inject
+    NsxProviderDao nsxProviderDao;
 
     @Autowired
     @Qualifier("networkHelper")
@@ -1139,6 +1148,58 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         return ipVO;
     }
 
+    @Override
+    public IpAddress reserveIpAddressWithVlanDetail(Account account, DataCenter zone, Boolean displayIp, String vlanDetailKey) throws ResourceAllocationException {
+        // verify permissions
+        Account caller = CallContext.current().getCallingAccount();
+        _accountMgr.checkAccess(caller, null, true, account);
+
+        VlanVO vlan = findOneVlanRangeMatchingVlanDetailKey(zone, vlanDetailKey);
+        if (vlan == null) {
+            String msg = String.format("Cannot find any vlan matching the detail key %s on zone %s", vlanDetailKey, zone.getName());
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+
+        List<IPAddressVO> freeIps = _ipAddressDao.listByVlanIdAndState(vlan.getId(), State.Free);
+        if (CollectionUtils.isEmpty(freeIps)) {
+            String msg = String.format("Cannot find any free IP matching on the VLAN range %s on zone %s", vlan.getIpRange(), zone.getName());
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+
+        Collections.shuffle(freeIps);
+        IPAddressVO selectedIp = freeIps.get(0);
+
+        selectedIp.setAllocatedTime(new Date());
+        selectedIp.setAllocatedToAccountId(account.getAccountId());
+        selectedIp.setAllocatedInDomainId(account.getDomainId());
+        selectedIp.setState(State.Reserved);
+        if (displayIp != null) {
+            selectedIp.setDisplay(displayIp);
+        }
+        selectedIp = _ipAddressDao.persist(selectedIp);
+
+        Long ipDedicatedAccountId = getIpDedicatedAccountId(selectedIp.getVlanId());
+        if (ipDedicatedAccountId == null) {
+            _resourceLimitMgr.incrementResourceCount(account.getId(), Resource.ResourceType.public_ip);
+        }
+
+        return selectedIp;
+    }
+
+    private VlanVO findOneVlanRangeMatchingVlanDetailKey(DataCenter zone, String vlanDetailKey) {
+        List<VlanVO> zoneVlans = _vlanDao.listByZone(zone.getId());
+        for (VlanVO zoneVlan : zoneVlans) {
+            VlanDetailsVO detail = vlanDetailsDao.findDetail(zoneVlan.getId(), vlanDetailKey);
+            if (detail != null && detail.getValue().equalsIgnoreCase("true")) {
+                s_logger.debug(String.format("Found the VLAN range %s is set for NSX on zone %s", zoneVlan.getIpRange(), zone.getName()));
+                return zoneVlan;
+            }
+        }
+        return null;
+    }
+
     private Long getIpDedicatedAccountId(Long vlanId) {
         List<AccountVlanMapVO> accountVlanMaps = _accountVlanMapDao.listAccountVlanMapsByVlan(vlanId);
         if (CollectionUtils.isNotEmpty(accountVlanMaps)) {
@@ -1416,6 +1477,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         _accountMgr.checkAccess(owner, ntwkOff, zone);
 
         validateZoneAvailability(caller, zone);
+        validateNetworkCreationSupported(zone.getId(), zone.getName(), ntwkOff.getGuestType());
 
         ACLType aclType = getAclType(caller, cmd.getAclType(), ntwkOff);
 
@@ -1670,6 +1732,15 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             return implementedNetworkInCreation(caller, zone, network);
         }
         return network;
+    }
+
+    private void validateNetworkCreationSupported(long zoneId, String zoneName, GuestType guestType) {
+        NsxProviderVO nsxProviderVO = nsxProviderDao.findByZoneId(zoneId);
+        if (Objects.nonNull(nsxProviderVO) && List.of(GuestType.L2, GuestType.Shared).contains(guestType)) {
+            throw new InvalidParameterValueException(
+                    String.format("Creation of %s networks is not supported in NSX enabled zone %s", guestType.name(), zoneName)
+            );
+        }
     }
 
     void checkAndSetRouterSourceNatIp(Account owner, CreateNetworkCmd cmd, Network network) throws InsufficientAddressCapacityException, ResourceAllocationException {
@@ -2121,7 +2192,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                     if (createVlan && network != null) {
                         // Create vlan ip range
                         _configMgr.createVlanAndPublicIpRange(pNtwk.getDataCenterId(), network.getId(), physicalNetworkId, false, false, null, startIP, endIP, gateway, netmask, vlanId,
-                                bypassVlanOverlapCheck, null, null, startIPv6, endIPv6, ip6Gateway, ip6Cidr);
+                                bypassVlanOverlapCheck, null, null, startIPv6, endIPv6, ip6Gateway, ip6Cidr, ntwkOff.isForNsx());
                     }
                     if (associatedNetwork != null) {
                         _networkDetailsDao.persist(new NetworkDetailVO(network.getId(), Network.AssociatedNetworkId, String.valueOf(associatedNetwork.getId()), true));
@@ -3076,7 +3147,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             if (!NetUtils.isValidIp4Cidr(guestVmCidr)) {
                 throw new InvalidParameterValueException("Invalid format of Guest VM CIDR.");
             }
-            if (!NetUtils.validateGuestCidr(guestVmCidr)) {
+            if (!NetUtils.validateGuestCidr(guestVmCidr, !ConfigurationManager.AllowNonRFC1918CompliantIPs.value())) {
                 throw new InvalidParameterValueException("Invalid format of Guest VM CIDR. Make sure it is RFC1918 compliant. ");
             }
 
@@ -4025,6 +4096,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
                     // Add the config drive provider
                     addConfigDriveToPhysicalNetwork(pNetwork.getId());
+                    addNSXProviderToPhysicalNetwork(pNetwork.getId());
 
                     CallContext.current().putContextParameter(PhysicalNetwork.class, pNetwork.getUuid());
 
@@ -5417,6 +5489,22 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
         return null;
 
+    }
+
+    private PhysicalNetworkServiceProvider addNSXProviderToPhysicalNetwork(long physicalNetworkId) {
+        PhysicalNetworkVO pvo = _physicalNetworkDao.findById(physicalNetworkId);
+        DataCenterVO dvo = _dcDao.findById(pvo.getDataCenterId());
+        if (dvo.getNetworkType() == NetworkType.Advanced) {
+
+            Provider provider = Network.Provider.getProvider("Nsx");
+            if (provider == null) {
+                return null;
+            }
+
+            addProviderToPhysicalNetwork(physicalNetworkId, Provider.Nsx.getName(), null, null);
+            enableProvider(Provider.Nsx.getName());
+        }
+        return null;
     }
 
     protected boolean isNetworkSystem(Network network) {

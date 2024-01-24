@@ -23,10 +23,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.vpc.dao.VpcDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -128,6 +131,10 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     private EntityManager _entityMgr;
     @Inject
     protected HypervisorGuruManager _hvGuruMgr;
+    @Inject
+    protected NetworkDao networkDao;
+    @Inject
+    protected VpcDao vpcDao;
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
@@ -345,7 +352,12 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 } else if (network.getTrafficType() == TrafficType.Public) {
                     final Pair<Nic, Network> publicNic = new Pair<Nic, Network>(routerNic, network);
                     publicNics.add(publicNic);
-                    final String vlanTag = BroadcastDomainType.getValue(routerNic.getBroadcastUri());
+                    String vlanTag = null;
+                    if (Objects.nonNull(routerNic.getBroadcastUri())) {
+                        vlanTag = BroadcastDomainType.getValue(routerNic.getBroadcastUri());
+                    } else {
+                        vlanTag = "nsx-"+routerNic.getIPv4Address();
+                    }
                     vlanMacAddress.put(vlanTag, routerNic.getMacAddress());
                 }
             }
@@ -375,7 +387,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                             _routerDao.update(routerVO.getId(), routerVO);
                         }
                     }
-                    final PlugNicCommand plugNicCmd = new PlugNicCommand(_nwHelper.getNicTO(domainRouterVO, publicNic.getNetworkId(), publicNic.getBroadcastUri().toString()),
+                    String broadcastURI = publicNic.getBroadcastUri() != null ? publicNic.getBroadcastUri().toString() : null;
+                    final PlugNicCommand plugNicCmd = new PlugNicCommand(_nwHelper.getNicTO(domainRouterVO, publicNic.getNetworkId(), broadcastURI),
                             domainRouterVO.getInstanceName(), domainRouterVO.getType(), details);
                     cmds.addCommand(plugNicCmd);
                     final VpcVO vpc = _vpcDao.findById(domainRouterVO.getVpcId());

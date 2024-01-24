@@ -302,6 +302,8 @@ public class ApiConstants {
     public static final String MIGRATIONS = "migrations";
     public static final String MEMORY = "memory";
     public static final String MODE = "mode";
+    public static final String NSX_MODE = "nsxmode";
+    public static final String NSX_ENABLED = "isnsxenabled";
     public static final String NAME = "name";
     public static final String METHOD_NAME = "methodname";
     public static final String NETWORK_DOMAIN = "networkdomain";
@@ -695,6 +697,12 @@ public class ApiConstants {
     public static final String VSWITCH_TYPE_PUBLIC_TRAFFIC = "publicvswitchtype";
     public static final String VSWITCH_NAME_GUEST_TRAFFIC = "guestvswitchname";
     public static final String VSWITCH_NAME_PUBLIC_TRAFFIC = "publicvswitchname";
+
+    // NSX
+    public static final String EDGE_CLUSTER = "edgecluster";
+    public static final String TIER0_GATEWAY = "tier0gateway";
+
+    public static final String TRANSPORT_ZONE = "transportzone";
     // Tungsten-Fabric
     public static final String TUNGSTEN_VIRTUAL_ROUTER_UUID = "tungstenvirtualrouteruuid";
     public static final String TUNGSTEN_PROVIDER_HOSTNAME = "tungstenproviderhostname";
@@ -815,6 +823,8 @@ public class ApiConstants {
     public static final String FORCE_ENCAP = "forceencap";
     public static final String SPLIT_CONNECTIONS = "splitconnections";
     public static final String FOR_VPC = "forvpc";
+    public static final String FOR_NSX = "fornsx";
+    public static final String NSX_SUPPORT_LB = "nsxsupportlb";
     public static final String FOR_TUNGSTEN = "fortungsten";
     public static final String SHRINK_OK = "shrinkok";
     public static final String NICIRA_NVP_DEVICE_ID = "nvpdeviceid";
@@ -824,6 +834,11 @@ public class ApiConstants {
     public static final String NICIRA_NVP_L2_GATEWAYSERVICE_UUID = "l2gatewayserviceuuid";
     public static final String NSX_LOGICAL_SWITCH = "nsxlogicalswitch";
     public static final String NSX_LOGICAL_SWITCH_PORT = "nsxlogicalswitchport";
+    public static final String NSX_PROVIDER_UUID = "nsxprovideruuid";
+    public static final String NSX_PROVIDER_HOSTNAME = "nsxproviderhostname";
+
+    public static final String NSX_PROVIDER_PORT = "nsxproviderport";
+    public static final String NSX_CONTROLLER_ID = "nsxcontrollerid";
     public static final String S3_ACCESS_KEY = "accesskey";
     public static final String S3_SECRET_KEY = "secretkey";
     public static final String S3_END_POINT = "endpoint";
@@ -1066,14 +1081,13 @@ public class ApiConstants {
     public static final String SOURCE_NAT_IP = "sourcenatipaddress";
     public static final String SOURCE_NAT_IP_ID = "sourcenatipaddressid";
     public static final String HAS_RULES = "hasrules";
+    public static final String NSX_DETAIL_KEY = "forNsx";
     public static final String DISK_PATH = "diskpath";
     public static final String IMPORT_SOURCE = "importsource";
     public static final String TEMP_PATH = "temppath";
     public static final String OBJECT_STORAGE = "objectstore";
-
     public static final String HEURISTIC_RULE = "heuristicrule";
     public static final String HEURISTIC_TYPE_VALID_OPTIONS = "Valid options are: ISO, SNAPSHOT, TEMPLATE and VOLUME.";
-
     public static final String MANAGEMENT = "management";
     public static final String IS_VNF = "isvnf";
     public static final String VNF_NICS = "vnfnics";

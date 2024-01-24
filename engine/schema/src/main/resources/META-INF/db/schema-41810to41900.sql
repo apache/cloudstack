@@ -103,6 +103,43 @@ CREATE TABLE `cloud`.`vm_scheduled_job` (
 ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `cluster_type` varchar(64) DEFAULT 'CloudManaged' COMMENT 'type of cluster';
 ALTER TABLE `cloud`.`kubernetes_cluster` MODIFY COLUMN `kubernetes_version_id` bigint unsigned NULL COMMENT 'the ID of the Kubernetes version of this Kubernetes cluster';
 
+CREATE TABLE `cloud`.`nsx_providers` (
+    `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+    `uuid` varchar(40),
+    `zone_id` bigint unsigned NOT NULL COMMENT 'Zone ID',
+    `host_id` bigint unsigned NOT NULL COMMENT 'Host ID',
+    `provider_name` varchar(40),
+    `hostname` varchar(255) NOT NULL,
+    `port` varchar(255),
+    `username` varchar(255) NOT NULL,
+    `password` varchar(255) NOT NULL,
+    `tier0_gateway` varchar(255),
+    `edge_cluster` varchar(255),
+    `transport_zone` varchar(255),
+    `created` datetime NOT NULL COMMENT 'date created',
+    `removed` datetime COMMENT 'date removed if not null',
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_nsx_providers__zone_id` FOREIGN KEY `fk_nsx_providers__zone_id` (`zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
+    INDEX `i_nsx_providers__zone_id`(`zone_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+-- Idempotent ADD COLUMN
+DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_ADD_COLUMN`;
+CREATE PROCEDURE `cloud`.`IDEMPOTENT_ADD_COLUMN` (
+    IN in_table_name VARCHAR(200)
+, IN in_column_name VARCHAR(200)
+, IN in_column_definition VARCHAR(1000)
+)
+BEGIN
+    DECLARE CONTINUE HANDLER FOR 1060 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', 'ADD COLUMN') ; SET @ddl = CONCAT(@ddl, ' ', in_column_name); SET @ddl = CONCAT(@ddl, ' ', in_column_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
+
+-- NSX Plugin --
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.network_offerings','for_nsx', 'int(1) unsigned DEFAULT "0" COMMENT "is nsx enabled for the resource"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.network_offerings','nsx_mode', 'varchar(32) COMMENT "mode in which the network would route traffic"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vpc_offerings','for_nsx', 'int(1) unsigned DEFAULT "0" COMMENT "is nsx enabled for the resource"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vpc_offerings','nsx_mode', 'varchar(32) COMMENT "mode in which the network would route traffic"');
+
 -- Add indexes for data store browser
 ALTER TABLE `cloud`.`template_spool_ref` ADD INDEX `i_template_spool_ref__install_path`(`install_path`);
 ALTER TABLE `cloud`.`volumes` ADD INDEX `i_volumes__path`(`path`);

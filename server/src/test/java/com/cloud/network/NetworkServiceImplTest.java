@@ -40,6 +40,7 @@ import java.util.UUID;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.dao.PublicIpQuarantineDao;
 import com.cloud.network.vo.PublicIpQuarantineVO;
 import com.cloud.user.dao.AccountDao;
@@ -212,6 +213,8 @@ public class NetworkServiceImplTest {
 
     @Mock
     private Ip ipMock;
+    @Mock
+    private NsxProviderDao nsxProviderDao;
 
     private static Date beforeDate;
 
@@ -295,6 +298,7 @@ public class NetworkServiceImplTest {
         service.commandSetupHelper = commandSetupHelper;
         service.networkHelper = networkHelper;
         service._ipAddrMgr = ipAddressManagerMock;
+        service.nsxProviderDao = nsxProviderDao;
         callContextMocked = Mockito.mockStatic(CallContext.class);
         CallContext callContextMock = Mockito.mock(CallContext.class);
         callContextMocked.when(CallContext::current).thenReturn(callContextMock);

@@ -97,7 +97,7 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
 
     @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan,
-        Network userSpecified, Account owner) {
+                          Network userSpecified, String name, Long vpcId, Account owner) {
 
         PhysicalNetworkVO physnet = _physicalNetworkDao.findById(plan
             .getPhysicalNetworkId());
@@ -107,7 +107,7 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
             return null;
         }
         NetworkVO config = (NetworkVO)super.design(offering, plan,
-            userSpecified, owner);
+            userSpecified, name, vpcId, owner);
         if (config == null) {
             return null;
         }
