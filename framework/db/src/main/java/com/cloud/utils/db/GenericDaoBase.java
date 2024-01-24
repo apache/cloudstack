@@ -654,8 +654,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                 }
             } else if (type == byte[].class) {
                 field.set(entity, rs.getBytes(index));
+            } else if (field.getDeclaredAnnotation(Convert.class) != null) {
+                Object val = _conversionSupport.convertToEntityAttribute(field, rs.getObject(index));
+                field.set(entity, val);
             } else {
-                field.set(entity, _conversionSupport.convertToEntityAttribute(field, rs.getObject(index)));
+                field.set(entity, rs.getObject(index));
             }
         } catch (final IllegalAccessException e) {
             throw new CloudRuntimeException("Yikes! ", e);
