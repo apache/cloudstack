@@ -43,7 +43,6 @@ import org.apache.cloudstack.storage.image.datastore.ImageStoreProviderManager;
 import org.apache.cloudstack.storage.image.store.ImageStoreImpl;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
-import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.server.StatsCollector;
@@ -180,14 +179,16 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager,
 
     @Override
     public DataStore getImageStoreWithFreeCapacity(List<DataStore> imageStores) {
-        List<DataStore> orderedImageStores  = orderImageStoresOnFreeCapacity(imageStores);
-        if (CollectionUtils.isEmpty(orderedImageStores)) {
-            logger.error(String.format("Could not find an image storage in zone with less than %d usage",
-                    Math.round(_statsCollector.getImageStoreCapacityThreshold() * 100)));
-            return null;
+        imageStores.sort((store1, store2) -> Long.compare(_statsCollector.imageStoreCurrentFreeCapacity(store2),
+                _statsCollector.imageStoreCurrentFreeCapacity(store1)));
+        for (DataStore imageStore : imageStores) {
+            if (_statsCollector.imageStoreHasEnoughCapacity(imageStore)) {
+                return imageStore;
+            }
         }
-
-        return orderedImageStores.get(0);
+        logger.error(String.format("Could not find an image storage in zone with less than %d usage",
+                Math.round(_statsCollector.getImageStoreCapacityThreshold() * 100)));
+        return null;
     }
 
     @Override
