@@ -660,12 +660,12 @@ public class AgentProperties{
     public static final Property<Integer> STOP_SCRIPT_TIMEOUT = new Property<>("stop.script.timeout", 120);
 
     /**
-     * Time (in seconds) to wait for libvirt script to check host uefi status.<br>
-     * If the time is exceeded, uefi will be disabled on the host.<br>
+     * Time (in seconds) to wait for scripts to complete.<br>
+     * This is not used for every script execution.<br>
      * Data type: Integer.<br>
      * Default value: <code>60</code>
      */
-    public static final Property<Integer> LIBVIRT_HOST_UEFI_SCRIPT_TIMEOUT = new Property<>("libvirt.host.uefi.script.timeout", 60);
+    public static final Property<Integer> AGENT_SCRIPT_TIMEOUT = new Property<>("agent.script.timeout", 60);
 
     /**
      * Definition of VMs video model type.<br>

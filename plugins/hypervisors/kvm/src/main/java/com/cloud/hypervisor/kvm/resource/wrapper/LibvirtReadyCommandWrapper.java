@@ -53,7 +53,7 @@ public final class LibvirtReadyCommandWrapper extends CommandWrapper<ReadyComman
 
     private boolean hostSupportsUefi(boolean isUbuntuHost) {
         String cmd = "rpm -qa | grep -i ovmf";
-        int timeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LIBVIRT_HOST_UEFI_SCRIPT_TIMEOUT) * 1000; // Get property value & convert to milliseconds
+        int timeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.AGENT_SCRIPT_TIMEOUT) * 1000; // Get property value & convert to milliseconds
         if (isUbuntuHost) {
             cmd = "dpkg -l ovmf";
         }
