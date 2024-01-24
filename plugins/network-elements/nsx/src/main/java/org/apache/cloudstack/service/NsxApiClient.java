@@ -707,8 +707,7 @@ public class NsxApiClient {
             LBPoolListResult lbPoolListResult = lbPools.list(null, null, null, null, null, null);
             if (CollectionUtils.isEmpty(lbVsListResult.getResults()) && CollectionUtils.isEmpty(lbPoolListResult.getResults())) {
                 String lbName = getLoadBalancerName(tier1GatewayName);
-                LbServices lbServices = (LbServices) nsxService.apply(LbServices.class);
-                lbServices.delete(lbName, true);
+                deleteLoadBalancer(lbName);
             }
 
         } catch (Error error) {
@@ -717,6 +716,11 @@ public class NsxApiClient {
             LOGGER.error(msg);
             throw new CloudRuntimeException(msg);
         }
+    }
+
+    public void deleteLoadBalancer(String lbName) {
+        LbServices lbServices = (LbServices) nsxService.apply(LbServices.class);
+        lbServices.delete(lbName, true);
     }
 
     private String getLbPoolPath(String lbPoolName) {

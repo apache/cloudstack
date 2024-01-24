@@ -463,7 +463,8 @@ export default {
     },
     async showIlb (network) {
       const networkOffering = await this.getNetworkOffering(network.networkofferingid)
-      return ((networkOffering.supportsinternallb && network.service.filter(s => (s.name === 'Lb') && (s.capability.filter(c => c.name === 'LbSchemes' && c.value.split(',').includes('Internal')).length > 0)).length > 0)) 
+      console.log((networkOffering.supportsinternallb && network.service.filter(s => (s.name === 'Lb') && (s.capability.filter(c => c.name === 'LbSchemes' && c.value.split(',').includes('Internal')).length > 0)).length > 0))
+      return ((networkOffering.supportsinternallb && network.service.filter(s => (s.name === 'Lb') && (s.capability.filter(c => c.name === 'LbSchemes' && c.value.split(',').includes('Internal')).length > 0)).length > 0)) || false
     },
     updateMtu () {
       if (this.form.privatemtu > this.privateMtuMax) {
