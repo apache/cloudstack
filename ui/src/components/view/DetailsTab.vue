@@ -37,7 +37,7 @@
     size="small"
     :dataSource="fetchDetails()">
     <template #renderItem="{item}">
-      <a-list-item v-if="item in dataResource && !customDisplayItems.includes(item)">
+      <a-list-item v-if="item in dataResource && !customDisplayItems.includes(item) || offeringDetails.includes(item)">
         <div>
           <strong>{{ item === 'service' ? $t('label.supportedservices') : $t('label.' + String(item).toLowerCase()) }}</strong>
           <br/>
@@ -90,6 +90,18 @@
                 {{ securityGroup.name }} &nbsp;
               </span>
             </div>
+          </div>
+          <div v-else-if="$route.meta.name === 'computeoffering' && item === 'mincpunumber' && dataResource.serviceofferingdetails">
+            {{ dataResource.serviceofferingdetails.mincpunumber }}
+          </div>
+          <div v-else-if="$route.meta.name === 'computeoffering' && item === 'maxcpunumber' && dataResource.serviceofferingdetails">
+            {{ dataResource.serviceofferingdetails.maxcpunumber }}
+          </div>
+          <div v-else-if="$route.meta.name === 'computeoffering' && item === 'minmemory' && dataResource.serviceofferingdetails">
+            {{ dataResource.serviceofferingdetails.minmemory }}
+          </div>
+          <div v-else-if="$route.meta.name === 'computeoffering' && item === 'maxmemory' && dataResource.serviceofferingdetails">
+            {{ dataResource.serviceofferingdetails.maxmemory }}
           </div>
           <div v-else>{{ dataResource[item] }}</div>
         </div>
@@ -254,6 +266,9 @@ export default {
         return accessMethodsDescription.join('<br>')
       }
       return null
+    },
+    offeringDetails () {
+      return ['maxcpunumber', 'mincpunumber', 'minmemory', 'maxmemory']
     },
     ipV6Address () {
       if (this.dataResource.nic && this.dataResource.nic.length > 0) {
