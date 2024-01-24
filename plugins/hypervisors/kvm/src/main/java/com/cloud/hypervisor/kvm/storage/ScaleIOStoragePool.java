@@ -28,6 +28,7 @@ import org.joda.time.Duration;
 import com.cloud.agent.api.to.HostTO;
 import com.cloud.hypervisor.kvm.resource.KVMHABase.HAStoragePool;
 import com.cloud.storage.Storage;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class ScaleIOStoragePool implements KVMStoragePool {
     private String uuid;
@@ -52,24 +53,30 @@ public class ScaleIOStoragePool implements KVMStoragePool {
         used = 0;
         available = 0;
         details = poolDetails;
-        addSDCDetails();
+        if (!addSDCDetails()) {
+            throw new CloudRuntimeException("Failed to connect to PowerFlex storage pool host: " + host + ", path: " + path);
+        }
     }
 
-    private void addSDCDetails() {
+    private boolean addSDCDetails() {
         if (details == null || !details.containsKey(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID))  {
-            return;
+            return false;
         }
 
         String storageSystemId = details.get(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID);
         String sdcId = ScaleIOUtil.getSdcId(storageSystemId);
         if (sdcId != null) {
             details.put(ScaleIOGatewayClient.SDC_ID, sdcId);
+            return true;
         } else {
             String sdcGuId = ScaleIOUtil.getSdcGuid();
             if (sdcGuId != null) {
                 details.put(ScaleIOGatewayClient.SDC_GUID, sdcGuId);
+                return true;
             }
         }
+
+        return false;
     }
 
     @Override
