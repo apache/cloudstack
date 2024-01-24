@@ -37,7 +37,7 @@
     size="small"
     :dataSource="fetchDetails()">
     <template #renderItem="{item}">
-      <a-list-item v-if="item in dataResource && !customDisplayItems.includes(item) || offeringDetails.includes(item)">
+      <a-list-item v-if="(item in dataResource && !customDisplayItems.includes(item)) || (offeringDetails.includes(item) && dataResource.serviceofferingdetails)">
         <div>
           <strong>{{ item === 'service' ? $t('label.supportedservices') : $t('label.' + String(item).toLowerCase()) }}</strong>
           <br/>
@@ -91,17 +91,8 @@
               </span>
             </div>
           </div>
-          <div v-else-if="$route.meta.name === 'computeoffering' && item === 'mincpunumber' && dataResource.serviceofferingdetails">
-            {{ dataResource.serviceofferingdetails.mincpunumber }}
-          </div>
-          <div v-else-if="$route.meta.name === 'computeoffering' && item === 'maxcpunumber' && dataResource.serviceofferingdetails">
-            {{ dataResource.serviceofferingdetails.maxcpunumber }}
-          </div>
-          <div v-else-if="$route.meta.name === 'computeoffering' && item === 'minmemory' && dataResource.serviceofferingdetails">
-            {{ dataResource.serviceofferingdetails.minmemory }}
-          </div>
-          <div v-else-if="$route.meta.name === 'computeoffering' && item === 'maxmemory' && dataResource.serviceofferingdetails">
-            {{ dataResource.serviceofferingdetails.maxmemory }}
+          <div v-else-if="$route.meta.name === 'computeoffering' && offeringDetails.includes(item)">
+            {{ dataResource.serviceofferingdetails[item] }}
           </div>
           <div v-else>{{ dataResource[item] }}</div>
         </div>
