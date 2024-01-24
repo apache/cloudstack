@@ -124,7 +124,7 @@ public class DefaultHostListener implements HypervisorHostListener {
         ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, pool);
         cmd.setWait(Wait.value() / 5);
         s_logger.debug(String.format("Sending modify storage pool command to agent: %d for storage pool: %d with timeout %d seconds",
-                hostId, poolId, cmd.getWait() / 5));
+                hostId, poolId, cmd.getWait()));
         final Answer answer = agentMgr.easySend(hostId, cmd);
 
         if (answer == null) {
