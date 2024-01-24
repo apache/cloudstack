@@ -78,6 +78,16 @@ public interface ClusterDrsService extends Manager, Configurable, Scheduler {
             true, ConfigKey.Scope.Cluster, null, "DRS metric use ratio", null, null, null, ConfigKey.Kind.Select,
             "true,false");
 
+    ConfigKey<Float> ClusterDrsImbalanceSkipThreshold = new ConfigKey<>(Float.class,
+            "drs.imbalance.condensed.skip.threshold", ConfigKey.CATEGORY_ADVANCED, "0.95",
+            "Threshold to ignore the metric for a host while calculating the imbalance to decide " +
+                    "whether DRS is required for a cluster.This is to avoid cases when the calculated imbalance" +
+                    " gets skewed due to a single host having a very high/low metric  value resulting in imbalance" +
+                    " being higher than 1. If " + ClusterDrsMetricType.key() + " is 'free', set a lower value and if it is 'used' " +
+                    "set a higher value. The value should be between 0.0 and 1.0",
+            true, ConfigKey.Scope.Cluster, null, "DRS imbalance skip threshold for Condensed algorithm",
+            null, null, null);
+
 
     /**
      * Generate a DRS plan for a cluster and save it as per the parameters
