@@ -2351,6 +2351,7 @@
 "message.adding.netscaler.provider": "Adding Netscaler provider",
 "message.advanced.security.group": "Choose this if you wish to use security groups to provide guest VM isolation.",
 "message.allowed": "Allowed",
+"message.alert.show.all.stats.data": "This may return a lot of data depending on VM statistics and retention settings",
 "message.apply.success": "Apply Successfully",
 "message.assign.instance.another": "Please specify the account type, domain, account name and network (optional) of the new account. <br> If the default nic of the vm is on a shared network, CloudStack will check if the network can be used by the new account if you do not specify one network. <br> If the default nic of the vm is on a isolated network, and the new account has more one isolated networks, you should specify one.",
 "message.assign.vm.failed": "Failed to assign VM",
