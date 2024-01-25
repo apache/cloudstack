@@ -776,6 +776,7 @@ import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
+import com.cloud.user.ResourceLimitService;
 import com.cloud.user.SSHKeyPair;
 import com.cloud.user.SSHKeyPairVO;
 import com.cloud.user.User;
@@ -1002,6 +1003,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private PublicIpQuarantineDao publicIpQuarantineDao;
 
+    @Inject
+    ClusterManager _clusterMgr;
+
+    @Inject
+    protected AffinityGroupVMMapDao _affinityGroupVMMapDao;
+    @Inject
+    ResourceLimitService resourceLimitService;
+
     private LockControllerListener _lockControllerListener;
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
     private final ScheduledExecutorService _alertExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AlertChecker"));
@@ -1027,12 +1036,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public void setPlanners(final List<DeploymentPlanner> planners) {
         _planners = planners;
     }
-
-    @Inject
-    ClusterManager _clusterMgr;
-
-    @Inject
-    protected AffinityGroupVMMapDao _affinityGroupVMMapDao;
 
     protected List<AffinityGroupProcessor> _affinityProcessors;
 
@@ -3231,6 +3234,48 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return new Pair<>(CollectionUtils.isNotEmpty(storagePoolIds), storagePoolIds);
     }
 
+    List<SummedCapacity> getCapacitiesWithDetails(final Long zoneId,
+                                                  final Long podId,
+                                                      Long clusterId,
+                                                      final Integer capacityType,
+                                                      final String tag, int level,
+                                                      Long pageSize) {
+        List<String> tags = new ArrayList<>();
+        if (StringUtils.isNotEmpty(tag)) {
+            tags.add(tag);
+        } else {
+            tags.add(null);
+            final List<String> hostTags = resourceLimitService.getResourceLimitHostTags();
+            final List<String> storageTags = resourceLimitService.getResourceLimitStorageTags();
+            tags.addAll(hostTags);
+            tags.addAll(storageTags);
+        }
+        List<SummedCapacity> summedCapacities = new ArrayList<>();
+        for (String t : tags) {
+            List<SummedCapacity> taggedSummedCapacities = new ArrayList<>();
+            Pair<Boolean, List<Long>> hostIdsForCapacity = getHostIdsForCapacityListing(zoneId, podId, clusterId, capacityType, t);
+            Pair<Boolean, List<Long>> storagePoolIdsForCapacity = getStoragePoolIdsForCapacityListing(capacityType, t);
+            if (hostIdsForCapacity.first() || storagePoolIdsForCapacity.first()) {
+                final List<SummedCapacity> summedHostCapacities = _capacityDao.listCapacitiesGroupedByLevelAndType(
+                        capacityType, zoneId, podId, clusterId, level, hostIdsForCapacity.second(),
+                        storagePoolIdsForCapacity.second(), pageSize);
+                if (summedHostCapacities != null) {
+                    taggedSummedCapacities.addAll(summedHostCapacities);
+                }
+            }
+            if (storagePoolIdsForCapacity.first()) {
+                List<SummedCapacity> summedStorageCapacities = getStorageCapacities(clusterId, podId, zoneId,
+                        storagePoolIdsForCapacity.second(), capacityType == null ? null : capacityType.shortValue());
+                if (summedStorageCapacities != null) {
+                    taggedSummedCapacities.addAll(summedStorageCapacities);
+                }
+            }
+            taggedSummedCapacities.forEach(x -> x.setTag(t));
+            summedCapacities.addAll(taggedSummedCapacities);
+        }
+        return summedCapacities;
+    }
+
     @Override
     public List<CapacityVO> listTopConsumedResources(final ListCapacityCmd cmd) {
 
@@ -3249,7 +3294,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         if (fetchLatest != null && fetchLatest) {
             _alertMgr.recalculateCapacity();
         }
-        List<SummedCapacity> summedCapacities = new ArrayList<SummedCapacity>();
 
         int level = 3;
         if (zoneId == null && podId == null) {// Group by Zone, capacity type
@@ -3259,29 +3303,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         final List<CapacityVO> capacities = new ArrayList<>();
-        Pair<Boolean, List<Long>> hostIdsForCapacity = getHostIdsForCapacityListing(zoneId, podId, clusterId, capacityType, tag);
-        Pair<Boolean, List<Long>> storagePoolIdsForCapacity = getStoragePoolIdsForCapacityListing(capacityType, tag);
-        if (StringUtils.isNotEmpty(tag) && !hostIdsForCapacity.first() && !storagePoolIdsForCapacity.first()) {
-            return capacities;
-        }
-
-        if (hostIdsForCapacity.first() || storagePoolIdsForCapacity.first()) {
-            final List<SummedCapacity> summedHostCapacities = _capacityDao.listCapacitiesGroupedByLevelAndType(
-                    capacityType, zoneId, podId, clusterId, level, hostIdsForCapacity.second(),
-                    storagePoolIdsForCapacity.second(), cmd.getPageSizeVal());
-            if (summedHostCapacities != null) {
-                summedCapacities.addAll(summedHostCapacities);
-            }
-        }
-
-
-        if (storagePoolIdsForCapacity.first()) {
-            List<SummedCapacity> summedStorageCapacities = getStorageCapacities(clusterId, podId, zoneId,
-                    storagePoolIdsForCapacity.second(), capacityType == null ? null : capacityType.shortValue());
-            if (summedStorageCapacities != null) {
-                summedCapacities.addAll(summedStorageCapacities);
-            }
-        }
+        List<SummedCapacity> summedCapacities = getCapacitiesWithDetails(zoneId, podId, clusterId, capacityType, tag, level, cmd.getPageSizeVal());
 
         // Sort Capacities
         summedCapacities.sort((arg0, arg1) -> {
@@ -3307,6 +3329,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                     summedCapacity.getPercentUsed());
             capacity.setUsedCapacity(summedCapacity.getUsedCapacity() + summedCapacity.getReservedCapacity());
             capacity.setTotalCapacity(summedCapacity.getTotalCapacity());
+            capacity.setTag(summedCapacity.getTag());
             capacities.add(capacity);
         }
         return capacities;
@@ -3361,6 +3384,57 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return list;
     }
 
+
+    protected List<CapacityVO> listCapacitiesWithDetails(final Long zoneId,
+                                                         final Long podId,
+                                                         Long clusterId,
+                                                         final Integer capacityType,
+                                                         final String tag,
+                                                         List<Long> dcList) {
+        List<String> tags = new ArrayList<>();
+        if (StringUtils.isNotEmpty(tag)) {
+            tags.add(tag);
+        } else {
+            tags.add(null);
+            tags.addAll(resourceLimitService.getResourceLimitHostTags());
+            tags.addAll(resourceLimitService.getResourceLimitStorageTags());
+        }
+        List<CapacityVO> capacities = new ArrayList<>();
+        for (String t : tags) {
+            List<CapacityVO> taggedCapacities = new ArrayList<>();
+            Pair<Boolean, List<Long>> hostIdsForCapacity = getHostIdsForCapacityListing(zoneId, podId, clusterId, capacityType, t);
+            Pair<Boolean, List<Long>> storagePoolIdsForCapacity = getStoragePoolIdsForCapacityListing(capacityType, t);
+            if (hostIdsForCapacity.first() || storagePoolIdsForCapacity.first()) {
+                final List<SummedCapacity> summedCapacities = _capacityDao.findFilteredCapacityBy(capacityType,
+                        zoneId, podId, clusterId, hostIdsForCapacity.second(), storagePoolIdsForCapacity.second());
+
+                for (final SummedCapacity summedCapacity : summedCapacities) {
+                    final CapacityVO capacity = new CapacityVO(null, summedCapacity.getDataCenterId(), summedCapacity.getPodId(), summedCapacity.getClusterId(),
+                            summedCapacity.getUsedCapacity() + summedCapacity.getReservedCapacity(), summedCapacity.getTotalCapacity(), summedCapacity.getCapacityType());
+                    capacity.setAllocatedCapacity(summedCapacity.getAllocatedCapacity());
+                    taggedCapacities.add(capacity);
+                }
+            }
+            for (final Long zId : dcList) {
+                // op_host_Capacity contains only allocated stats and the real time
+                // stats are stored "in memory".
+                // List secondary storage capacity only when the api is invoked for the zone layer.
+                if ((capacityType == null || capacityType == Capacity.CAPACITY_TYPE_SECONDARY_STORAGE) &&
+                        podId == null && clusterId == null &&
+                        StringUtils.isEmpty(t)) {
+                    taggedCapacities.add(_storageMgr.getSecondaryStorageUsedStats(null, zId));
+                }
+                if ((capacityType == null || capacityType == Capacity.CAPACITY_TYPE_STORAGE) && storagePoolIdsForCapacity.first()) {
+                    taggedCapacities.add(_storageMgr.getStoragePoolUsedStats(zId, podId, clusterId, storagePoolIdsForCapacity.second()));
+                }
+            }
+            taggedCapacities.forEach(x -> x.setTag(t));
+            capacities.addAll(taggedCapacities);
+        }
+        return capacities;
+
+    }
+
     @Override
     public List<CapacityVO> listCapacities(final ListCapacityCmd cmd) {
 
@@ -3375,53 +3449,19 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         if (fetchLatest != null && fetchLatest) {
             _alertMgr.recalculateCapacity();
         }
-        final List<CapacityVO> capacities = new ArrayList<>();
-        Pair<Boolean, List<Long>> hostIdsForCapacity = getHostIdsForCapacityListing(zoneId, podId, clusterId, capacityType, tag);
-        Pair<Boolean, List<Long>> storagePoolIdsForCapacity = getStoragePoolIdsForCapacityListing(capacityType, tag);
-        if (StringUtils.isNotEmpty(tag) && !hostIdsForCapacity.first() && !storagePoolIdsForCapacity.first()) {
-            return capacities;
-        }
-        if (hostIdsForCapacity.first() || storagePoolIdsForCapacity.first()) {
-            final List<SummedCapacity> summedCapacities = _capacityDao.findFilteredCapacityBy(capacityType,
-                    zoneId, podId, clusterId, hostIdsForCapacity.second(), storagePoolIdsForCapacity.second());
-
-            for (final SummedCapacity summedCapacity : summedCapacities) {
-                final CapacityVO capacity = new CapacityVO(null, summedCapacity.getDataCenterId(), summedCapacity.getPodId(), summedCapacity.getClusterId(),
-                        summedCapacity.getUsedCapacity() + summedCapacity.getReservedCapacity(), summedCapacity.getTotalCapacity(), summedCapacity.getCapacityType());
-                capacity.setAllocatedCapacity(summedCapacity.getAllocatedCapacity());
-                capacities.add(capacity);
-            }
-        }
-
-        // op_host_Capacity contains only allocated stats and the real time
-        // stats are stored "in memory".
-        // Show Sec. Storage only when the api is invoked for the zone layer.
-        List<DataCenterVO> dcList = new ArrayList<>();
-        if (zoneId == null && podId == null && clusterId == null) {
-            dcList = ApiDBUtils.listZones();
-        } else if (zoneId != null) {
-            dcList.add(ApiDBUtils.findZoneById(zoneId));
+        List<Long> dcList = new ArrayList<>();
+        if (zoneId != null) {
+            dcList.add(zoneId);
         } else {
-            if (clusterId != null) {
-                zoneId = ApiDBUtils.findClusterById(clusterId).getDataCenterId();
-            } else {
-                zoneId = ApiDBUtils.findPodById(podId).getDataCenterId();
-            }
-            if ((capacityType == null || capacityType == Capacity.CAPACITY_TYPE_STORAGE) && storagePoolIdsForCapacity.first()) {
-                capacities.add(_storageMgr.getStoragePoolUsedStats(zoneId, podId, clusterId, storagePoolIdsForCapacity.second()));
-            }
-        }
-
-        for (final DataCenterVO zone : dcList) {
-            zoneId = zone.getId();
-            if ((capacityType == null || capacityType == Capacity.CAPACITY_TYPE_SECONDARY_STORAGE) && podId == null && clusterId == null && StringUtils.isEmpty(tag)) {
-                capacities.add(_storageMgr.getSecondaryStorageUsedStats(null, zoneId));
-            }
-            if ((capacityType == null || capacityType == Capacity.CAPACITY_TYPE_STORAGE) && storagePoolIdsForCapacity.first()) {
-                capacities.add(_storageMgr.getStoragePoolUsedStats(zoneId, podId, clusterId, storagePoolIdsForCapacity.second()));
+            if (podId == null && clusterId == null) {
+                dcList.addAll(ApiDBUtils.listZones().stream().map(DataCenterVO::getId).collect(Collectors.toList()));
+            } if (clusterId != null) {
+                dcList.add(ApiDBUtils.findClusterById(clusterId).getDataCenterId());
+            } else if (podId != null) {
+                dcList.add(ApiDBUtils.findPodById(podId).getDataCenterId());
             }
         }
-        return capacities;
+        return listCapacitiesWithDetails(zoneId, podId, clusterId, capacityType, tag, dcList);
     }
 
     @Override

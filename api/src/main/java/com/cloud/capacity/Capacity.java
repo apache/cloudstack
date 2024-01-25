@@ -61,4 +61,6 @@ public interface Capacity extends InternalIdentity, Identity {
     public Float getUsedPercentage();
 
     public Long getAllocatedCapacity();
+
+    public String getTag();
 }

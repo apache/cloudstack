@@ -735,6 +735,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         public Long clusterId;
         public Long podId;
         public Long dcId;
+        public String tag;
 
         public SummedCapacity() {
         }
@@ -822,6 +823,14 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         }
         public void setAllocatedCapacity(Long sumAllocated) {
             this.sumAllocated = sumAllocated;
+        }
+
+        public String getTag() {
+            return tag;
+        }
+
+        public void setTag(String tag) {
+            this.tag = tag;
         }
     }
 

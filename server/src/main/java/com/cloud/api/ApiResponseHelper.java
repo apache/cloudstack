@@ -2055,6 +2055,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             } else {
                 capacityResponse.setPercentUsed(format.format(0L));
             }
+            capacityResponse.setTag(summedCapacity.getTag());
 
             capacityResponse.setObjectName("capacity");
             capacityResponses.add(capacityResponse);
