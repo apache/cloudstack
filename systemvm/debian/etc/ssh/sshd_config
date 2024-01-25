@@ -44,6 +44,7 @@ PermitRootLogin yes
 
 #RSAAuthentication yes
 PubkeyAuthentication yes
+PubkeyAcceptedAlgorithms=+ssh-rsa
 AuthorizedKeysFile .ssh/authorized_keys
 
 # For this to work you will also need host keys in /etc/ssh/ssh_known_hosts
