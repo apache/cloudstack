@@ -21,7 +21,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
@@ -43,29 +42,47 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.StorageLayer;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ScaleIOStoragePoolTest {
 
-    ScaleIOStoragePool pool;
-
     StorageAdaptor adapter;
 
+    Map<String,String> details;
+
+    final String uuid = "345fc603-2d7e-47d2-b719-a0110b3732e6";
+    final String systemId = "218ce1797566a00f";
+    final String sdcId = "301b852c00000003";
+    final StoragePoolType type = StoragePoolType.PowerFlex;
+
+    @Mock
+    StorageLayer storageLayer;
+
     @Before
-    public void setUp() throws Exception {
-        final String uuid = "345fc603-2d7e-47d2-b719-a0110b3732e6";
-        final String systemId = "218ce1797566a00f";
-        final StoragePoolType type = StoragePoolType.PowerFlex;
-        Map<String,String> details = new HashMap<String, String>();
+    public void setUp() {
+        PowerMockito.mockStatic(Script.class);
+        details = new HashMap<>();
         details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemId);
 
-        adapter = spy(new ScaleIOStorageAdaptor());
-        pool = new ScaleIOStoragePool(uuid, "192.168.1.19", 443, "a519be2f00000000", type, details, adapter);
+        adapter = spy(new ScaleIOStorageAdaptor(storageLayer));
+    }
+
+    @After
+    public void tearDown() {
+    }
+
+    @Test (expected = CloudRuntimeException.class)
+    public void testAddSDCDetailsFailure() {
+        new ScaleIOStoragePool(uuid, "192.168.1.19", 443, "a519be2f00000000", type, details, adapter);
     }
 
     @Test
     public void testAttributes() {
+        PowerMockito.when(Script.runSimpleBashScript("/opt/emc/scaleio/sdc/bin/drv_cfg --query_mdms|grep " + systemId + "|awk '{print $5}'")).thenReturn(sdcId);
+        ScaleIOStoragePool pool = new ScaleIOStoragePool(uuid, "192.168.1.19", 443, "a519be2f00000000", type, details, adapter);
         assertEquals(0, pool.getCapacity());
         assertEquals(0, pool.getUsed());
         assertEquals(0, pool.getAvailable());
@@ -74,7 +91,7 @@ public class ScaleIOStoragePoolTest {
         assertEquals(443, pool.getSourcePort());
         assertEquals("a519be2f00000000", pool.getSourceDir());
         assertEquals(StoragePoolType.PowerFlex, pool.getType());
-        assertEquals("218ce1797566a00f", pool.getDetails().get(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID));
+        assertEquals(systemId, pool.getDetails().get(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID));
 
         pool.setCapacity(131072);
         pool.setUsed(24576);
@@ -108,12 +125,7 @@ public class ScaleIOStoragePoolTest {
 
     @Test
     public void testSdcGuidAttribute() {
-        final String uuid = "345fc603-2d7e-47d2-b719-a0110b3732e6";
-        final String systemId = "218ce1797566a00f";
         final String sdcGuid = "B0E3BFB8-C20B-43BF-93C8-13339E85AA50";
-        final StoragePoolType type = StoragePoolType.PowerFlex;
-        Map<String,String> details = new HashMap<String, String>();
-        details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemId);
 
         try (MockedStatic<Script> ignored = Mockito.mockStatic(Script.class)) {
             when(Script.runSimpleBashScript(
@@ -130,6 +142,8 @@ public class ScaleIOStoragePoolTest {
 
     @Test
     public void testDefaults() {
+        PowerMockito.when(Script.runSimpleBashScript("/opt/emc/scaleio/sdc/bin/drv_cfg --query_mdms|grep " + systemId + "|awk '{print $5}'")).thenReturn(sdcId);
+        ScaleIOStoragePool pool = new ScaleIOStoragePool(uuid, "192.168.1.19", 443, "a519be2f00000000", type, details, adapter);
         assertEquals(PhysicalDiskFormat.RAW, pool.getDefaultFormat());
         assertEquals(StoragePoolType.PowerFlex, pool.getType());
 
@@ -141,6 +155,8 @@ public class ScaleIOStoragePoolTest {
     }
 
     public void testGetPhysicalDiskWithWildcardFileFilter() throws Exception {
+        PowerMockito.when(Script.runSimpleBashScript("/opt/emc/scaleio/sdc/bin/drv_cfg --query_mdms|grep " + systemId + "|awk '{print $5}'")).thenReturn(sdcId);
+        ScaleIOStoragePool pool = new ScaleIOStoragePool(uuid, "192.168.1.19", 443, "a519be2f00000000", type, details, adapter);
         final String volumePath = "6c3362b500000001:vol-139-3d2c-12f0";
         final String systemId = "218ce1797566a00f";
 
@@ -162,6 +178,8 @@ public class ScaleIOStoragePoolTest {
 
     @Test
     public void testGetPhysicalDiskWithSystemId() throws Exception {
+        PowerMockito.when(Script.runSimpleBashScript("/opt/emc/scaleio/sdc/bin/drv_cfg --query_mdms|grep " + systemId + "|awk '{print $5}'")).thenReturn(sdcId);
+        ScaleIOStoragePool pool = new ScaleIOStoragePool(uuid, "192.168.1.19", 443, "a519be2f00000000", type, details, adapter);
         final String volumePath = "6c3362b500000001:vol-139-3d2c-12f0";
         final String volumeId = ScaleIOUtil.getVolumePath(volumePath);
         final String systemId = "218ce1797566a00f";
@@ -177,9 +195,10 @@ public class ScaleIOStoragePoolTest {
 
     @Test
     public void testConnectPhysicalDisk() {
+        PowerMockito.when(Script.runSimpleBashScript("/opt/emc/scaleio/sdc/bin/drv_cfg --query_mdms|grep " + systemId + "|awk '{print $5}'")).thenReturn(sdcId);
+        ScaleIOStoragePool pool = new ScaleIOStoragePool(uuid, "192.168.1.19", 443, "a519be2f00000000", type, details, adapter);
         final String volumePath = "6c3362b500000001:vol-139-3d2c-12f0";
         final String volumeId = ScaleIOUtil.getVolumePath(volumePath);
-        final String systemId = "218ce1797566a00f";
         final String diskFilePath = ScaleIOUtil.DISK_PATH + File.separator + ScaleIOUtil.DISK_NAME_PREFIX + systemId + "-" + volumeId;
         KVMPhysicalDisk disk = new KVMPhysicalDisk(diskFilePath, volumePath, pool);
         disk.setFormat(QemuImg.PhysicalDiskFormat.RAW);
@@ -188,7 +207,7 @@ public class ScaleIOStoragePoolTest {
 
         assertEquals("/dev/disk/by-id/emc-vol-218ce1797566a00f-6c3362b500000001", disk.getPath());
 
-        when(adapter.getPhysicalDisk(volumeId, pool)).thenReturn(disk);
+        Mockito.doReturn(disk).when(adapter).getPhysicalDisk(volumeId, pool);
 
         final boolean result = adapter.connectPhysicalDisk(volumePath, pool, null);
         assertTrue(result);
