@@ -661,7 +661,7 @@ public class AgentProperties{
 
     /**
      * Time (in seconds) to wait for scripts to complete.<br>
-     * This is not used for every script execution.<br>
+     * This is currently used only while checking if the host supports UEFI.<br>
      * Data type: Integer.<br>
      * Default value: <code>60</code>
      */
