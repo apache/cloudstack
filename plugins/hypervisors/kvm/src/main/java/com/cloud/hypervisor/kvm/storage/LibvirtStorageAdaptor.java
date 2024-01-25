@@ -459,6 +459,12 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
+    public StoragePoolType getStoragePoolType() {
+        // This is mapped manually in KVMStoragePoolManager
+        return  null;
+    }
+
+    @Override
     public KVMStoragePool getStoragePool(String uuid) {
         return this.getStoragePool(uuid, false);
     }
@@ -774,23 +780,22 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         s_logger.info("Attempting to create volume " + name + " (" + pool.getType().toString() + ") in pool "
                 + pool.getUuid() + " with size " + toHumanReadableSize(size));
 
-        switch (pool.getType()) {
-            case RBD:
-                return createPhysicalDiskByLibVirt(name, pool, PhysicalDiskFormat.RAW, provisioningType, size);
-            case NetworkFilesystem:
-            case Filesystem:
-                switch (format) {
-                    case QCOW2:
-                    case RAW:
-                        return createPhysicalDiskByQemuImg(name, pool, format, provisioningType, size, passphrase);
-                    case DIR:
-                    case TAR:
-                        return createPhysicalDiskByLibVirt(name, pool, format, provisioningType, size);
-                    default:
-                        throw new CloudRuntimeException("Unexpected disk format is specified.");
-                }
-            default:
-                return createPhysicalDiskByLibVirt(name, pool, format, provisioningType, size);
+        StoragePoolType poolType = pool.getType();
+        if (poolType.equals(StoragePoolType.RBD)) {
+            return createPhysicalDiskByLibVirt(name, pool, PhysicalDiskFormat.RAW, provisioningType, size);
+        } else if (poolType.equals(StoragePoolType.NetworkFilesystem) || poolType.equals(StoragePoolType.Filesystem)) {
+            switch (format) {
+                case QCOW2:
+                case RAW:
+                    return createPhysicalDiskByQemuImg(name, pool, format, provisioningType, size, passphrase);
+                case DIR:
+                case TAR:
+                    return createPhysicalDiskByLibVirt(name, pool, format, provisioningType, size);
+                default:
+                    throw new CloudRuntimeException("Unexpected disk format is specified.");
+            }
+        } else {
+            return createPhysicalDiskByLibVirt(name, pool, format, provisioningType, size);
         }
     }
 

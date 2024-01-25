@@ -41,22 +41,19 @@ import org.apache.log4j.Logger;
 import org.libvirt.LibvirtException;
 
 import com.cloud.storage.Storage;
-import com.cloud.storage.StorageLayer;
 import com.cloud.storage.StorageManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import org.apache.commons.lang3.StringUtils;
 
-@StorageAdaptorInfo(storagePoolType= Storage.StoragePoolType.PowerFlex)
 public class ScaleIOStorageAdaptor implements StorageAdaptor {
     private static final Logger LOGGER = Logger.getLogger(ScaleIOStorageAdaptor.class);
     private static final Map<String, KVMStoragePool> MapStorageUuidToStoragePool = new HashMap<>();
     private static final int DEFAULT_DISK_WAIT_TIME_IN_SECS = 60;
-    private StorageLayer storageLayer;
 
-    public ScaleIOStorageAdaptor(StorageLayer storagelayer) {
-        storageLayer = storagelayer;
+    public ScaleIOStorageAdaptor() {
+
     }
 
     @Override
@@ -68,6 +65,11 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
         }
 
         return pool;
+    }
+
+    @Override
+    public Storage.StoragePoolType getStoragePoolType() {
+        return Storage.StoragePoolType.PowerFlex;
     }
 
     @Override

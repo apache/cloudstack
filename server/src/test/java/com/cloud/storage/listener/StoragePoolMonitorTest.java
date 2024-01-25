@@ -20,6 +20,7 @@ import static org.mockito.ArgumentMatchers.nullable;
 
 import java.util.Collections;
 
+import com.cloud.storage.Storage;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.junit.Before;
@@ -54,6 +55,7 @@ public class StoragePoolMonitorTest {
         pool.setScope(ScopeType.CLUSTER);
         pool.setStatus(StoragePoolStatus.Up);
         pool.setId(123L);
+        pool.setPoolType(Storage.StoragePoolType.Filesystem);
         cmd = new StartupRoutingCommand();
         cmd.setHypervisorType(Hypervisor.HypervisorType.KVM);
     }

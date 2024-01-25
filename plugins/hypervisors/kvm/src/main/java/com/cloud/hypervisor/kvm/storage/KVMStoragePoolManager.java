@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.hypervisor.kvm.storage;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Modifier;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
@@ -98,33 +100,58 @@ public class KVMStoragePoolManager {
     public KVMStoragePoolManager(StorageLayer storagelayer, KVMHAMonitor monitor) {
         this._haMonitor = monitor;
         this._storageMapper.put("libvirt", new LibvirtStorageAdaptor(storagelayer));
-        // add other storage adaptors here
-        // this._storageMapper.put("newadaptor", new NewStorageAdaptor(storagelayer));
-        this._storageMapper.put(StoragePoolType.ManagedNFS.toString(), new ManagedNfsStorageAdaptor(storagelayer));
-        this._storageMapper.put(StoragePoolType.PowerFlex.toString(), new ScaleIOStorageAdaptor(storagelayer));
+        // add other storage adaptors manually here
 
-        // add any adaptors that wish to register themselves via annotation
+        // add any adaptors that wish to register themselves via call to adaptor.getStoragePoolType()
         Reflections reflections = new Reflections("com.cloud.hypervisor.kvm.storage");
-        Set<Class<? extends StorageAdaptor>> storageAdaptors = reflections.getSubTypesOf(StorageAdaptor.class);
-        for (Class<? extends StorageAdaptor> storageAdaptor : storageAdaptors) {
-            StorageAdaptorInfo info = storageAdaptor.getAnnotation(StorageAdaptorInfo.class);
-            if (info != null && info.storagePoolType() != null) {
-                if (this._storageMapper.containsKey(info.storagePoolType().toString())) {
-                    s_logger.warn(String.format("Duplicate StorageAdaptor type %s, not loading %s", info.storagePoolType().toString(), storageAdaptor.getName()));
+        Set<Class<? extends StorageAdaptor>> storageAdaptorClasses = reflections.getSubTypesOf(StorageAdaptor.class);
+        for (Class<? extends StorageAdaptor> storageAdaptorClass : storageAdaptorClasses) {
+            s_logger.debug("Checking pool type for adaptor " + storageAdaptorClass.getName());
+            if (Modifier.isAbstract(storageAdaptorClass.getModifiers()) || storageAdaptorClass.isInterface()) {
+                s_logger.debug("Skipping registration of abstract class / interface " + storageAdaptorClass.getName());
+                continue;
+            }
+            if (storageAdaptorClass.isAssignableFrom(LibvirtStorageAdaptor.class)) {
+                s_logger.debug("Skipping re-registration of LibvirtStorageAdaptor");
+                continue;
+            }
+            try {
+                Constructor<?> storageLayerConstructor = Arrays.stream(storageAdaptorClass.getConstructors())
+                        .filter(c -> c.getParameterCount() == 1)
+                        .filter(c -> c.getParameterTypes()[0].isAssignableFrom(StorageLayer.class))
+                        .findFirst().orElse(null);
+                StorageAdaptor adaptor;
+
+                if (storageLayerConstructor == null) {
+                    adaptor = storageAdaptorClass.getDeclaredConstructor().newInstance();
                 } else {
-                    try {
-                        s_logger.info(String.format("adding storage adaptor for %s", storageAdaptor.getName()));
-                        this._storageMapper.put(info.storagePoolType().toString(), storageAdaptor.getDeclaredConstructor().newInstance());
-                    } catch (Exception ex) {
-                       throw new CloudRuntimeException(ex.toString());
+                    adaptor = (StorageAdaptor) storageLayerConstructor.newInstance(storagelayer);
+                }
+
+                StoragePoolType storagePoolType = adaptor.getStoragePoolType();
+                if (storagePoolType != null) {
+                    if (this._storageMapper.containsKey(storagePoolType.toString())) {
+                        s_logger.warn(String.format("Duplicate StorageAdaptor type %s, not loading %s", storagePoolType, storageAdaptorClass.getName()));
+                    } else {
+                        s_logger.info(String.format("Adding storage adaptor for %s", storageAdaptorClass.getName()));
+                        this._storageMapper.put(storagePoolType.toString(), adaptor);
                     }
                 }
+            } catch (Exception ex) {
+                throw new CloudRuntimeException("Failed to set up storage adaptors", ex);
             }
         }
 
         for (Map.Entry<String, StorageAdaptor> adaptors : this._storageMapper.entrySet()) {
             s_logger.debug("Registered a StorageAdaptor for " + adaptors.getKey());
         }
+    }
+
+    /**
+     * Returns true if physical disk copy functionality supported.
+     */
+    public boolean supportsPhysicalDiskCopy(StoragePoolType type) {
+        return getStorageAdaptor(type).supportsPhysicalDiskCopy(type);
     }
 
     public boolean connectPhysicalDisk(StoragePoolType type, String poolUuid, String volPath, Map<String, String> details) {

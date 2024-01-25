@@ -38,13 +38,11 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.StorageLayer;
 import com.cloud.utils.script.Script;
 
 @PrepareForTest({ScaleIOUtil.class, Script.class})
@@ -55,9 +53,6 @@ public class ScaleIOStoragePoolTest {
 
     StorageAdaptor adapter;
 
-    @Mock
-    StorageLayer storageLayer;
-
     @Before
     public void setUp() throws Exception {
         final String uuid = "345fc603-2d7e-47d2-b719-a0110b3732e6";
@@ -66,7 +61,7 @@ public class ScaleIOStoragePoolTest {
         Map<String,String> details = new HashMap<String, String>();
         details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemId);
 
-        adapter = spy(new ScaleIOStorageAdaptor(storageLayer));
+        adapter = spy(new ScaleIOStorageAdaptor());
         pool = new ScaleIOStoragePool(uuid, "192.168.1.19", 443, "a519be2f00000000", type, details, adapter);
     }
 
