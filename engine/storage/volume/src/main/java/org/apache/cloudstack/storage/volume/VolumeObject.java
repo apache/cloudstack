@@ -852,7 +852,7 @@ public class VolumeObject implements VolumeInfo {
 
     @Override
     public boolean delete() {
-        return dataStore == null ? true : dataStore.delete(this);
+        return dataStore == null || dataStore.delete(this);
     }
 
     @Override

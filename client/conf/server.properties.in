@@ -29,6 +29,9 @@ http.port=8080
 # Max inactivity time in minutes for the session
 session.timeout=30
 
+# Max allowed API request payload / content size in bytes
+request.content.size=1048576
+
 # Options to configure and enable HTTPS on management server
 #
 # For management server to pickup these configuration settings, the configured

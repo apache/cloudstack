@@ -122,6 +122,7 @@ public class DefaultHostListener implements HypervisorHostListener {
     public boolean hostConnect(long hostId, long poolId) throws StorageConflictException {
         StoragePool pool = (StoragePool) this.dataStoreMgr.getDataStore(poolId, DataStoreRole.Primary);
         ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, pool);
+        cmd.setWait(60);
         final Answer answer = agentMgr.easySend(hostId, cmd);
 
         if (answer == null) {

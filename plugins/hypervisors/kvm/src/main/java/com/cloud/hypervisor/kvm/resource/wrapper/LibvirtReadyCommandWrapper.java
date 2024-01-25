@@ -53,7 +53,7 @@ public final class LibvirtReadyCommandWrapper extends CommandWrapper<ReadyComman
             cmd = "dpkg -l ovmf";
         }
         logger.debug("Running command : " + cmd);
-        int result = Script.runSimpleBashScriptForExitValue(cmd);
+        int result = Script.runSimpleBashScriptForExitValue(cmd, 60, false);
         logger.debug("Got result : " + result);
         return result == 0;
     }
