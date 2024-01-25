@@ -78,8 +78,8 @@ public class HypervisorCapabilitiesDaoImpl extends GenericDaoBase<HypervisorCapa
                 parentVersion == null) {
             return result;
         }
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug(String.format("Hypervisor capabilities for hypervisor: %s, version: %s can not be found. " +
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Hypervisor capabilities for hypervisor: %s, version: %s can not be found. " +
                             "Trying to find capabilities for the parent version: %s",
                     hypervisorType, hypervisorVersion, parentVersion));
         }

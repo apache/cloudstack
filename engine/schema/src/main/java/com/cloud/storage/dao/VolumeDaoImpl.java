@@ -639,10 +639,10 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
             }
             return result;
         } catch (SQLException e) {
-            s_logger.debug("DB Exception on: " + sql.toString(), e);
+            logger.debug("DB Exception on: " + sql.toString(), e);
             throw new CloudRuntimeException(e);
         } catch (Throwable e) {
-            s_logger.debug("Caught: " + sql.toString(), e);
+            logger.debug("Caught: " + sql.toString(), e);
             throw new CloudRuntimeException(e);
         }
     }

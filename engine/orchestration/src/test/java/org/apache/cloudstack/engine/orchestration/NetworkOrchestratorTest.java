@@ -32,7 +32,6 @@ import java.util.Map;
 import com.cloud.dc.DataCenter;
 import com.cloud.network.IpAddressManager;
 import com.cloud.utils.Pair;
-import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

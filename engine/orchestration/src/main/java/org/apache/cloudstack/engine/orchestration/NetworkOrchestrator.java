@@ -4647,7 +4647,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 _ipAddressDao.findByIp(requestedIp);
         if (ipAddressVO == null || ipAddressVO.getState() != IpAddress.State.Free) {
             String msg = String.format("Cannot find a free IP to assign to VM NIC on network %s", network.getName());
-            s_logger.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
         return ipAddressVO.getAddress() != null ? ipAddressVO.getAddress().addr() : null;

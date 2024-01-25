@@ -1127,7 +1127,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 }
             });
         } catch (Throwable e) {
-            s_logger.warn("Unexpected exception in cleaning up left over jobs for mamagement server node " + msid, e);
+            logger.warn("Unexpected exception in cleaning up left over jobs for mamagement server node " + msid, e);
         }
     }
 
@@ -1139,7 +1139,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         try {
             ApiCommandResourceType resourceType = ApiCommandResourceType.fromString(job.getInstanceType());
             if (resourceType == null) {
-                s_logger.warn("Unknown ResourceType. Skip Cleanup: " + job.getInstanceType());
+                logger.warn("Unknown ResourceType. Skip Cleanup: " + job.getInstanceType());
                 return true;
             }
             switch (resourceType) {
@@ -1151,7 +1151,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     return cleanupNetwork(job.getInstanceId());
             }
         } catch (Exception e) {
-            s_logger.warn("Error while cleaning up resource: [" + job.getInstanceType().toString()  + "] with Id: " + job.getInstanceId(), e);
+            logger.warn("Error while cleaning up resource: [" + job.getInstanceType().toString()  + "] with Id: " + job.getInstanceId(), e);
             return false;
         }
         return true;
@@ -1160,49 +1160,49 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     private boolean cleanupVolume(final long volumeId) {
         VolumeInfo vol = volFactory.getVolume(volumeId);
         if (vol == null) {
-            s_logger.warn("Volume not found. Skip Cleanup. VolumeId: " + volumeId);
+            logger.warn("Volume not found. Skip Cleanup. VolumeId: " + volumeId);
             return true;
         }
         if (vol.getState().isTransitional()) {
-            s_logger.debug("Cleaning up volume with Id: " + volumeId);
+            logger.debug("Cleaning up volume with Id: " + volumeId);
             boolean status = vol.stateTransit(Volume.Event.OperationFailed);
             cleanupFailedVolumesCreatedFromSnapshots(volumeId);
             return status;
         }
-        s_logger.debug("Volume not in transition state. Skip cleanup. VolumeId: " + volumeId);
+        logger.debug("Volume not in transition state. Skip cleanup. VolumeId: " + volumeId);
         return true;
     }
 
     private boolean cleanupVirtualMachine(final long vmId) throws Exception {
         VMInstanceVO vmInstanceVO = _vmInstanceDao.findById(vmId);
         if (vmInstanceVO == null) {
-            s_logger.warn("Instance not found. Skip Cleanup. InstanceId: " + vmId);
+            logger.warn("Instance not found. Skip Cleanup. InstanceId: " + vmId);
             return true;
         }
         if (vmInstanceVO.getState().isTransitional()) {
-            s_logger.debug("Cleaning up Instance with Id: " + vmId);
+            logger.debug("Cleaning up Instance with Id: " + vmId);
             return virtualMachineManager.stateTransitTo(vmInstanceVO, VirtualMachine.Event.OperationFailed, vmInstanceVO.getHostId());
         }
-        s_logger.debug("Instance not in transition state. Skip cleanup. InstanceId: " + vmId);
+        logger.debug("Instance not in transition state. Skip cleanup. InstanceId: " + vmId);
         return true;
     }
 
     private boolean cleanupNetwork(final long networkId) throws Exception {
         NetworkVO networkVO = networkDao.findById(networkId);
         if (networkVO == null) {
-            s_logger.warn("Network not found. Skip Cleanup. NetworkId: " + networkId);
+            logger.warn("Network not found. Skip Cleanup. NetworkId: " + networkId);
             return true;
         }
         if (Network.State.Implementing.equals(networkVO.getState())) {
             try {
-                s_logger.debug("Cleaning up Network with Id: " + networkId);
+                logger.debug("Cleaning up Network with Id: " + networkId);
                 return networkOrchestrationService.stateTransitTo(networkVO, Network.Event.OperationFailed);
             } catch (final NoTransitionException e) {
                 networkVO.setState(Network.State.Shutdown);
                 networkDao.update(networkVO.getId(), networkVO);
             }
         }
-        s_logger.debug("Network not in transition state. Skip cleanup. NetworkId: " + networkId);
+        logger.debug("Network not in transition state. Skip cleanup. NetworkId: " + networkId);
         return true;
     }
 
@@ -1214,7 +1214,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 _volsDao.remove(volumeId);
             }
         } catch (Exception e) {
-            s_logger.error("Unexpected exception while removing concurrent request meta data :" + e.getLocalizedMessage());
+            logger.error("Unexpected exception while removing concurrent request meta data :" + e.getLocalizedMessage());
         }
     }
 
