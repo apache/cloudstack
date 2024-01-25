@@ -88,8 +88,8 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
                 LOGGER.info(String.format("Upgrading node on VM %s in Kubernetes cluster %s with Kubernetes version(%s) ID: %s",
                         vm.getDisplayName(), kubernetesCluster.getName(), upgradeVersion.getSemanticVersion(), upgradeVersion.getUuid()));
             }
+            String errorMessage = String.format("Failed to upgrade Kubernetes cluster : %s, unable to drain Kubernetes node on VM : %s", kubernetesCluster.getName(), vm.getDisplayName());
             for (int retry = KubernetesClusterService.KubernetesClusterUpgradeRetries.value(); retry >= 0; retry--) {
-                String errorMessage = String.format("Failed to upgrade Kubernetes cluster : %s, unable to drain Kubernetes node on VM : %s", kubernetesCluster.getName(), vm.getDisplayName());
                 try {
                     result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(), sshKeyFile, null,
                             String.format("sudo /opt/bin/kubectl drain %s --ignore-daemonsets --delete-emptydir-data", hostName),
@@ -113,8 +113,8 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
             if (System.currentTimeMillis() > upgradeTimeoutTime) {
                 logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster : %s, upgrade action timed out", kubernetesCluster.getName()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, null);
             }
+            errorMessage = String.format("Failed to upgrade Kubernetes cluster : %s, unable to upgrade Kubernetes node on VM : %s", kubernetesCluster.getName(), vm.getDisplayName());
             for (int retry = KubernetesClusterService.KubernetesClusterUpgradeRetries.value(); retry >= 0; retry--) {
-                String errorMessage = String.format("Failed to upgrade Kubernetes cluster : %s, unable to upgrade Kubernetes node on VM : %s", kubernetesCluster.getName(), vm.getDisplayName());
                 try {
                     deployProvider();
                     result = runInstallScriptOnVM(vm, i);
