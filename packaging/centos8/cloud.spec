@@ -636,6 +636,10 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 
 %files ui
 %config(noreplace) %attr(0640,root,cloud) %{_sysconfdir}/%{name}/ui/config.json
+%dir %attr(0755,root,root) %{_datadir}/%{name}-ui/assets
+%dir %attr(0755,root,root) %{_datadir}/%{name}-ui/css
+%dir %attr(0755,root,root) %{_datadir}/%{name}-ui/js
+%dir %attr(0755,root,root) %{_datadir}/%{name}-ui/locales
 %attr(0644,root,root) %{_datadir}/%{name}-ui/*
 %{_defaultdocdir}/%{name}-ui-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-ui-%{version}/NOTICE
