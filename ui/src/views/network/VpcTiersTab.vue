@@ -462,7 +462,7 @@ export default {
       this.rules = reactive({})
     },
     showIlb (network) {
-      return network.service.filter(s => (s.name === 'Lb') && (s.capability.filter(c => c.name === 'LbSchemes' && c.value.split(',').includes('Internal')).length > 0)).length > 0 || false
+      return network.service.filter(s => (s.name === 'Lb') && (s.capability.filter(c => c.name === 'LbSchemes' && c.value === 'Internal').length > 0)).length > 0 || false
     },
     updateMtu () {
       if (this.form.privatemtu > this.privateMtuMax) {
