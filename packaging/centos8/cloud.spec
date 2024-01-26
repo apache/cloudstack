@@ -302,6 +302,7 @@ rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/templates/systemvm/md5sum
 # UI
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/ui
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-ui/
+cp -r client/target/classes/META-INF/webapp ${RPM_BUILD_ROOT}%{_datadir}/%{name}-ui
 cp ui/dist/config.json ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/ui/
 cp -r ui/dist/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-ui/
 rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{name}-ui/config.json
@@ -636,11 +637,7 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 
 %files ui
 %config(noreplace) %attr(0640,root,cloud) %{_sysconfdir}/%{name}/ui/config.json
-%dir %attr(0755,root,root) %{_datadir}/%{name}-ui/assets
-%dir %attr(0755,root,root) %{_datadir}/%{name}-ui/css
-%dir %attr(0755,root,root) %{_datadir}/%{name}-ui/js
-%dir %attr(0755,root,root) %{_datadir}/%{name}-ui/locales
-%attr(0644,root,root) %{_datadir}/%{name}-ui/*
+%{_datadir}/%{name}-ui/*
 %{_defaultdocdir}/%{name}-ui-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-ui-%{version}/NOTICE
 
