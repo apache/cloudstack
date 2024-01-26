@@ -57,8 +57,10 @@ public class LibvirtDomainXMLParser {
     private final List<ChannelDef> channels = new ArrayList<ChannelDef>();
     private final List<WatchDogDef> watchDogDefs = new ArrayList<WatchDogDef>();
     private Integer vncPort;
+    private  String vncPasswd;
     private String desc;
-
+    private LibvirtVMDef.CpuTuneDef cpuTuneDef;
+    private LibvirtVMDef.CpuModeDef cpuModeDef;
     private String name;
 
     public boolean parseDomainXML(String domXML) {
@@ -278,6 +280,14 @@ public class LibvirtDomainXMLParser {
                 String name = getAttrValue("target", "name", channel);
                 String state = getAttrValue("target", "state", channel);
 
+                if (ChannelDef.ChannelType.valueOf(type.toUpperCase()).equals(ChannelDef.ChannelType.SPICEVMC)) {
+                    continue;
+                }
+
+                if (path == null) {
+                    path = "";
+                }
+
                 ChannelDef def = null;
                 if (StringUtils.isBlank(state)) {
                     def = new ChannelDef(name, ChannelDef.ChannelType.valueOf(type.toUpperCase()), new File(path));
@@ -305,6 +315,12 @@ public class LibvirtDomainXMLParser {
                         vncPort = null;
                     }
                 }
+
+                String passwd = graphic.getAttribute("passwd");
+                if (passwd != null) {
+                    vncPasswd = passwd;
+                }
+
             }
 
             NodeList rngs = devices.getElementsByTagName("rng");
@@ -317,6 +333,26 @@ public class LibvirtDomainXMLParser {
                 String period = getAttrValue("rate", "period", rng);
                 if (StringUtils.isAnyEmpty(bytes, period)) {
                     s_logger.debug(String.format("Bytes and period in the rng section should not be null, please check the VM %s", name));
+                }
+
+                if (bytes == null) {
+                    bytes = "0";
+                }
+
+                if (period == null) {
+                    period = "0";
+                }
+
+                if (bytes == null) {
+                    bytes = "0";
+                }
+
+                if (period == null) {
+                    period = "0";
+                }
+
+                if (StringUtils.isEmpty(backendModel)) {
+                    def = new RngDef(path, Integer.parseInt(bytes), Integer.parseInt(period));
                 } else {
                     if (StringUtils.isEmpty(backendModel)) {
                         def = new RngDef(path, Integer.parseInt(bytes), Integer.parseInt(period));
@@ -350,7 +386,8 @@ public class LibvirtDomainXMLParser {
 
                 watchDogDefs.add(def);
             }
-
+            extractCpuTuneDef(rootElement);
+            extractCpuModeDef(rootElement);
             return true;
         } catch (ParserConfigurationException e) {
             s_logger.debug(e.toString());
@@ -411,6 +448,10 @@ public class LibvirtDomainXMLParser {
         return interfaces;
     }
 
+    public String getVncPasswd() {
+        return vncPasswd;
+    }
+
     public MemBalloonDef getMemBalloon() {
         return memBalloonDef;
     }
@@ -437,5 +478,66 @@ public class LibvirtDomainXMLParser {
 
     public String getName() {
         return name;
+    }
+
+    public LibvirtVMDef.CpuTuneDef getCpuTuneDef() {
+        return cpuTuneDef;
+    }
+
+    public LibvirtVMDef.CpuModeDef getCpuModeDef() {
+        return cpuModeDef;
+    }
+
+    private void extractCpuTuneDef(final Element rootElement) {
+        NodeList cpuTunesList = rootElement.getElementsByTagName("cputune");
+        if (cpuTunesList.getLength() > 0) {
+            cpuTuneDef = new LibvirtVMDef.CpuTuneDef();
+            final Element cpuTuneDefElement = (Element) cpuTunesList.item(0);
+            final String cpuShares = getTagValue("shares", cpuTuneDefElement);
+            if (StringUtils.isNotBlank(cpuShares)) {
+                cpuTuneDef.setShares((Integer.parseInt(cpuShares)));
+            }
+
+            final String quota = getTagValue("quota", cpuTuneDefElement);
+            if (StringUtils.isNotBlank(quota)) {
+                cpuTuneDef.setQuota((Integer.parseInt(quota)));
+            }
+
+            final String period = getTagValue("period", cpuTuneDefElement);
+            if (StringUtils.isNotBlank(period)) {
+                cpuTuneDef.setPeriod((Integer.parseInt(period)));
+            }
+        }
+    }
+
+    private void extractCpuModeDef(final Element rootElement){
+        NodeList cpuModeList = rootElement.getElementsByTagName("cpu");
+        if (cpuModeList.getLength() > 0){
+            cpuModeDef = new LibvirtVMDef.CpuModeDef();
+            final Element cpuModeDefElement = (Element) cpuModeList.item(0);
+            final String cpuModel = getTagValue("model", cpuModeDefElement);
+            if (StringUtils.isNotBlank(cpuModel)){
+                cpuModeDef.setModel(cpuModel);
+            }
+            NodeList cpuFeatures = cpuModeDefElement.getElementsByTagName("features");
+            if (cpuFeatures.getLength() > 0) {
+                final ArrayList<String> features = new ArrayList<>(cpuFeatures.getLength());
+                for (int i = 0; i < cpuFeatures.getLength(); i++) {
+                    final Element feature = (Element)cpuFeatures.item(i);
+                    final String policy = feature.getAttribute("policy");
+                    String featureName = feature.getAttribute("name");
+                    if ("disable".equals(policy)) {
+                        featureName = "-" + featureName;
+                    }
+                    features.add(featureName);
+                }
+                cpuModeDef.setFeatures(features);
+            }
+            final String sockets = getAttrValue("topology", "sockets", cpuModeDefElement);
+            final String cores = getAttrValue("topology", "cores", cpuModeDefElement);
+            if (StringUtils.isNotBlank(sockets) && StringUtils.isNotBlank(cores)) {
+                cpuModeDef.setTopology(Integer.parseInt(cores), Integer.parseInt(sockets));
+            }
+        }
     }
 }

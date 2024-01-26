@@ -212,6 +212,7 @@ public class ApiConstants {
     public static final String HOST_IDS = "hostids";
     public static final String HOST_IP = "hostip";
     public static final String HOST_NAME = "hostname";
+    public static final String HOST = "host";
     public static final String HOST_CONTROL_STATE = "hostcontrolstate";
     public static final String HOSTS_MAP = "hostsmap";
     public static final String HYPERVISOR = "hypervisor";
@@ -802,6 +803,7 @@ public class ApiConstants {
     public static final String IPSEC_PSK = "ipsecpsk";
     public static final String GUEST_IP = "guestip";
     public static final String REMOVED = "removed";
+    public static final String REMOVER_ACCOUNT_ID = "removeraccountid";
     public static final String REMOVAL_REASON = "removalreason";
     public static final String COMPLETED = "completed";
     public static final String IKE_VERSION = "ikeversion";
@@ -1064,7 +1066,9 @@ public class ApiConstants {
     public static final String SOURCE_NAT_IP = "sourcenatipaddress";
     public static final String SOURCE_NAT_IP_ID = "sourcenatipaddressid";
     public static final String HAS_RULES = "hasrules";
+    public static final String DISK_PATH = "diskpath";
     public static final String IMPORT_SOURCE = "importsource";
+    public static final String TEMP_PATH = "temppath";
     public static final String OBJECT_STORAGE = "objectstore";
 
     public static final String HEURISTIC_RULE = "heuristicrule";
