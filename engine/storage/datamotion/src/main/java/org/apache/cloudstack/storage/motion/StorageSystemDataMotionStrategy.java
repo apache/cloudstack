@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
+import com.cloud.agent.api.PrepareForMigrationAnswer;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -1996,9 +1997,10 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             }
 
             PrepareForMigrationCommand pfmc = new PrepareForMigrationCommand(vmTO);
+            Answer pfma;
 
             try {
-                Answer pfma = agentManager.send(destHost.getId(), pfmc);
+                pfma = agentManager.send(destHost.getId(), pfmc);
 
                 if (pfma == null || !pfma.getResult()) {
                     String details = pfma != null ? pfma.getDetails() : "null answer returned";
@@ -2006,8 +2008,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
                     throw new AgentUnavailableException(msg, destHost.getId());
                 }
-            }
-            catch (final OperationTimedoutException e) {
+            } catch (final OperationTimedoutException e) {
                 throw new AgentUnavailableException("Operation timed out", destHost.getId());
             }
 
@@ -2022,6 +2023,12 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             migrateCommand.setMigrateDiskInfoList(migrateDiskInfoList);
             migrateCommand.setMigrateStorageManaged(managedStorageDestination);
             migrateCommand.setMigrateNonSharedInc(migrateNonSharedInc);
+
+            Integer newVmCpuShares = ((PrepareForMigrationAnswer) pfma).getNewVmCpuShares();
+            if (newVmCpuShares != null) {
+                LOGGER.debug(String.format("Setting CPU shares to [%d] as part of migrate VM with volumes command for VM [%s].", newVmCpuShares, vmTO));
+                migrateCommand.setNewVmCpuShares(newVmCpuShares);
+            }
 
             boolean kvmAutoConvergence = StorageManager.KvmAutoConvergence.value();
             migrateCommand.setAutoConvergence(kvmAutoConvergence);

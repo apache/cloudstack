@@ -6200,4 +6200,99 @@ public class LibvirtComputingResourceTest {
         Mockito.verify(loggerMock).debug("Skipping the memory balloon stats period setting for the VM (Libvirt Domain) with ID [1] and name [fake-VM-name] because this"
                 + " VM has no memory balloon.");
     }
+
+    @Test
+    public void calculateCpuSharesTestMinSpeedNullAndHostCgroupV1ShouldNotConsiderCgroupLimit() {
+        int cpuCores = 2;
+        int cpuSpeed = 2000;
+        int maxCpuShares = 0;
+        int expectedCpuShares = 4000;
+
+        Mockito.doReturn(cpuCores).when(vmTO).getCpus();
+        Mockito.doReturn(null).when(vmTO).getMinSpeed();
+        Mockito.doReturn(cpuSpeed).when(vmTO).getSpeed();
+        Mockito.doReturn(maxCpuShares).when(libvirtComputingResourceSpy).getHostCpuMaxCapacity();
+        int calculatedCpuShares = libvirtComputingResourceSpy.calculateCpuShares(vmTO);
+
+        Assert.assertEquals(expectedCpuShares, calculatedCpuShares);
+    }
+
+    @Test
+    public void calculateCpuSharesTestMinSpeedNotNullAndHostCgroupV1ShouldNotConsiderCgroupLimit() {
+        int cpuCores = 2;
+        int cpuSpeed = 2000;
+        int maxCpuShares = 0;
+        int expectedCpuShares = 4000;
+
+        Mockito.doReturn(cpuCores).when(vmTO).getCpus();
+        Mockito.doReturn(cpuSpeed).when(vmTO).getMinSpeed();
+        Mockito.doReturn(maxCpuShares).when(libvirtComputingResourceSpy).getHostCpuMaxCapacity();
+        int calculatedCpuShares = libvirtComputingResourceSpy.calculateCpuShares(vmTO);
+
+        Assert.assertEquals(expectedCpuShares, calculatedCpuShares);
+    }
+
+
+    @Test
+    public void calculateCpuSharesTestMinSpeedNullAndHostCgroupV2ShouldConsiderCgroupLimit() {
+        int cpuCores = 2;
+        int cpuSpeed = 2000;
+        int maxCpuShares = 5000;
+        int expectedCpuShares = 8000;
+
+        Mockito.doReturn(cpuCores).when(vmTO).getCpus();
+        Mockito.doReturn(null).when(vmTO).getMinSpeed();
+        Mockito.doReturn(cpuSpeed).when(vmTO).getSpeed();
+        Mockito.doReturn(maxCpuShares).when(libvirtComputingResourceSpy).getHostCpuMaxCapacity();
+        int calculatedCpuShares = libvirtComputingResourceSpy.calculateCpuShares(vmTO);
+
+        Assert.assertEquals(expectedCpuShares, calculatedCpuShares);
+    }
+
+    @Test
+    public void calculateCpuSharesTestMinSpeedNotNullAndHostCgroupV2ShouldConsiderCgroupLimit() {
+        int cpuCores = 2;
+        int cpuSpeed = 2000;
+        int maxCpuShares = 5000;
+        int expectedCpuShares = 8000;
+
+        Mockito.doReturn(cpuCores).when(vmTO).getCpus();
+        Mockito.doReturn(cpuSpeed).when(vmTO).getMinSpeed();
+        Mockito.doReturn(maxCpuShares).when(libvirtComputingResourceSpy).getHostCpuMaxCapacity();
+        int calculatedCpuShares = libvirtComputingResourceSpy.calculateCpuShares(vmTO);
+
+        Assert.assertEquals(expectedCpuShares, calculatedCpuShares);
+    }
+
+    @Test
+    public void setMaxHostCpuSharesIfCGroupV2TestShouldCalculateMaxCpuCapacityIfHostUtilizesCgroupV2() {
+        int cpuCores = 2;
+        long cpuSpeed = 2500L;
+        int expectedShares = 5000;
+
+        String hostCgroupVersion = LibvirtComputingResource.CGROUP_V2;
+        try (MockedStatic<Script> ignored = Mockito.mockStatic(Script.class)) {
+            Mockito.when(Script.runSimpleBashScript(Mockito.anyString())).thenReturn(hostCgroupVersion);
+
+            libvirtComputingResourceSpy.calculateHostCpuMaxCapacity(cpuCores, cpuSpeed);
+
+            Assert.assertEquals(expectedShares, libvirtComputingResourceSpy.getHostCpuMaxCapacity());
+        }
+    }
+
+    @Test
+    public void setMaxHostCpuSharesIfCGroupV2TestShouldNotCalculateMaxCpuCapacityIfHostDoesNotUtilizesCgroupV2() {
+        int cpuCores = 2;
+        long cpuSpeed = 2500L;
+        int expectedShares = 0;
+
+        String hostCgroupVersion = "tmpfs";
+        try (MockedStatic<Script> ignored = Mockito.mockStatic(Script.class)) {
+            Mockito.when(Script.runSimpleBashScript(Mockito.anyString())).thenReturn(hostCgroupVersion);
+
+            libvirtComputingResourceSpy.calculateHostCpuMaxCapacity(cpuCores, cpuSpeed);
+
+            Assert.assertEquals(expectedShares, libvirtComputingResourceSpy.getHostCpuMaxCapacity());
+        }
+    }
 }

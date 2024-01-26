@@ -23,6 +23,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -211,6 +212,8 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 }
             }
 
+            xmlDesc = updateVmSharesIfNeeded(command, xmlDesc, libvirtComputingResource);
+
             dconn = libvirtUtilitiesHelper.retrieveQemuConnection(destinationUri);
 
             if (to.getType() == VirtualMachine.Type.User) {
@@ -360,6 +363,44 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         }
 
         return new MigrateAnswer(command, result == null, result, null);
+    }
+
+    /**
+     * Checks if the CPU shares are equal in the source host and destination host.
+     *  <ul>
+     *      <li>
+     *          If both hosts utilize cgroup v1; then, the shares value of the VM is equal in both hosts, and there is no need to update the VM CPU shares value for the
+     *          migration.</li>
+     *      <li>
+     *          If, at least, one of the hosts utilize cgroup v2, the VM CPU shares must be recalculated for the migration, accordingly to
+     *          method {@link LibvirtComputingResource#calculateCpuShares(VirtualMachineTO)}.
+     *      </li>
+     *  </ul>
+     */
+    protected String updateVmSharesIfNeeded(MigrateCommand migrateCommand, String xmlDesc, LibvirtComputingResource libvirtComputingResource)
+            throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        Integer newVmCpuShares = migrateCommand.getNewVmCpuShares();
+        int currentCpuShares = libvirtComputingResource.calculateCpuShares(migrateCommand.getVirtualMachine());
+
+        if (newVmCpuShares == currentCpuShares) {
+            s_logger.info(String.format("Current CPU shares [%s] is equal in both hosts; therefore, there is no need to update the CPU shares for the new host.",
+                    currentCpuShares));
+            return xmlDesc;
+        }
+
+        InputStream inputStream = IOUtils.toInputStream(xmlDesc, StandardCharsets.UTF_8);
+        DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
+        DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+        Document document = docBuilder.parse(inputStream);
+
+        Element root = document.getDocumentElement();
+        Node sharesNode = root.getElementsByTagName("shares").item(0);
+        String currentShares = sharesNode.getTextContent();
+
+        s_logger.info(String.format("VM [%s] will have CPU shares altered from [%s] to [%s] as part of migration because the cgroups version differs between hosts.",
+                migrateCommand.getVmName(), currentShares, newVmCpuShares));
+        sharesNode.setTextContent(String.valueOf(newVmCpuShares));
+        return getXml(document);
     }
 
     /**

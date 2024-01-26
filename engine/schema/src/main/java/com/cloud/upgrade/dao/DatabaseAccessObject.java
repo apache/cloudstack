@@ -21,6 +21,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 public class DatabaseAccessObject {
@@ -85,8 +86,8 @@ public class DatabaseAccessObject {
         return columnExists;
     }
 
-    public String generateIndexName(String tableName, String columnName) {
-        return String.format("i_%s__%s", tableName, columnName);
+    public String generateIndexName(String tableName, String... columnName) {
+        return String.format("i_%s__%s", tableName, StringUtils.join(columnName, "__"));
     }
 
     public boolean indexExists(Connection conn, String tableName, String indexName) {
@@ -101,8 +102,8 @@ public class DatabaseAccessObject {
         return false;
     }
 
-    public void createIndex(Connection conn, String tableName, String columnName, String indexName) {
-        String stmt = String.format("CREATE INDEX %s on %s (%s)", indexName, tableName, columnName);
+    public void createIndex(Connection conn, String tableName, String indexName, String... columnNames) {
+        String stmt = String.format("CREATE INDEX %s ON %s (%s)", indexName, tableName, StringUtils.join(columnNames, ", "));
         s_logger.debug("Statement: " + stmt);
         try (PreparedStatement pstmt = conn.prepareStatement(stmt)) {
             pstmt.execute();

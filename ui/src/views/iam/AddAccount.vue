@@ -303,7 +303,6 @@ export default {
         } else {
           this.loadMore(apiToCall, page + 1, sema)
         }
-        this.form.domainid = 0
       })
     },
     fetchRoles () {

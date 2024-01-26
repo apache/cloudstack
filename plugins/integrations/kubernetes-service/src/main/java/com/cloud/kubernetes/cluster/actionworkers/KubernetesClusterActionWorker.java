@@ -106,6 +106,7 @@ public class KubernetesClusterActionWorker {
     public static final int CLUSTER_NODES_DEFAULT_SSH_PORT_SG = DEFAULT_SSH_PORT;
 
     public static final String CKS_CLUSTER_SECURITY_GROUP_NAME = "CKSSecurityGroup";
+    public static final String CKS_SECURITY_GROUP_DESCRIPTION = "Security group for CKS nodes";
 
     protected static final Logger LOGGER = Logger.getLogger(KubernetesClusterActionWorker.class);
 

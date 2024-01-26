@@ -30,6 +30,10 @@ public class GetUnmanagedInstancesAnswer extends Answer {
     GetUnmanagedInstancesAnswer() {
     }
 
+    public GetUnmanagedInstancesAnswer(GetUnmanagedInstancesCommand cmd, String details) {
+        super(cmd, false, details);
+    }
+
     public GetUnmanagedInstancesAnswer(GetUnmanagedInstancesCommand cmd, String details, HashMap<String, UnmanagedInstanceTO> unmanagedInstances) {
         super(cmd, true, details);
         this.instanceName = cmd.getInstanceName();

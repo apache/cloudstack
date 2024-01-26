@@ -269,7 +269,9 @@ known_categories = {
     'createBucket': 'Object Store',
     'updateBucket': 'Object Store',
     'deleteBucket': 'Object Store',
-    'listBuckets': 'Object Store'
+    'listBuckets': 'Object Store',
+    'listVmsForImport': 'Virtual Machine',
+    'importVm': 'Virtual Machine'
 }
 
 

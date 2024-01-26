@@ -28,6 +28,8 @@ public class PrepareForMigrationAnswer extends Answer {
 
     private Map<String, DpdkTO> dpdkInterfaceMapping = new HashMap<>();
 
+    private Integer newVmCpuShares = null;
+
     protected PrepareForMigrationAnswer() {
     }
 
@@ -49,5 +51,13 @@ public class PrepareForMigrationAnswer extends Answer {
 
     public Map<String, DpdkTO> getDpdkInterfaceMapping() {
         return this.dpdkInterfaceMapping;
+    }
+
+    public Integer getNewVmCpuShares() {
+        return newVmCpuShares;
+    }
+
+    public void setNewVmCpuShares(Integer newVmCpuShares) {
+        this.newVmCpuShares = newVmCpuShares;
     }
 }

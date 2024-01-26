@@ -1072,6 +1072,18 @@ public class LibvirtVMDef {
 
         public LibvirtDiskEncryptDetails getLibvirtDiskEncryptDetails() { return this.encryptDetails; }
 
+        public String getSourceHost() {
+            return _sourceHost;
+        }
+
+        public int getSourceHostPort() {
+            return _sourcePort;
+        }
+
+        public String getSourcePath() {
+            return _sourcePath;
+        }
+
         @Override
         public String toString() {
             StringBuilder diskBuilder = new StringBuilder();
@@ -1737,6 +1749,10 @@ public class LibvirtVMDef {
             modeBuilder.append("</cpu>");
             return modeBuilder.toString();
         }
+
+        public int getCoresPerSocket() {
+            return _coresPerSocket;
+        }
     }
 
     public static class SerialDef {
@@ -1793,7 +1809,7 @@ public class LibvirtVMDef {
 
     public final static class ChannelDef {
         enum ChannelType {
-            UNIX("unix"), SERIAL("serial");
+            UNIX("unix"), SERIAL("serial"), SPICEVMC("spicevmc");
             String type;
 
             ChannelType(String type) {

@@ -64,7 +64,7 @@
         <cs.antrun-plugin.version>1.8</cs.antrun-plugin.version>
         <cs.builder-helper-plugin.version>3.0.0</cs.builder-helper-plugin.version>
         <cs.checkstyle-plugin.version>3.1.0</cs.checkstyle-plugin.version>
-        <cs.jacoco-plugin.version>0.8.8</cs.jacoco-plugin.version>
+        <cs.jacoco-plugin.version>0.8.11</cs.jacoco-plugin.version>
         <cs.compiler-plugin.version>3.8.1</cs.compiler-plugin.version>
         <cs.dependency-plugin.version>3.1.1</cs.dependency-plugin.version>
         <cs.failsafe-plugin.version>2.22.2</cs.failsafe-plugin.version>

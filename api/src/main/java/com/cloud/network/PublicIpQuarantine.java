@@ -30,6 +30,8 @@ public interface PublicIpQuarantine extends InternalIdentity, Identity {
 
     String getRemovalReason();
 
+    Long getRemoverAccountId();
+
     Date getRemoved();
 
     Date getCreated();
