@@ -278,13 +278,15 @@ class TestKubernetesCluster(cloudstackTestCase):
         cls.apiclient.deleteKubernetesSupportedVersion(deleteKubernetesSupportedVersionCmd)
 
     @classmethod
-    def listKubernetesCluster(cls, cluster_id = None):
+    def listKubernetesCluster(cls, cluster_id = None, cluster_name = None):
         listKubernetesClustersCmd = listKubernetesClusters.listKubernetesClustersCmd()
         listKubernetesClustersCmd.listall = True
         if cluster_id != None:
             listKubernetesClustersCmd.id = cluster_id
+        if cluster_name != None:
+            listKubernetesClustersCmd.name = cluster_name
         clusterResponse = cls.apiclient.listKubernetesClusters(listKubernetesClustersCmd)
-        if cluster_id != None and clusterResponse != None:
+        if (cluster_id != None or cluster_name != None) and clusterResponse != None:
             return clusterResponse[0]
         return clusterResponse
 
@@ -1189,8 +1191,14 @@ class TestKubernetesCluster(cloudstackTestCase):
             cluster = self.createKubernetesCluster(name, version.id, size, control_nodes)
             self.verifyKubernetesCluster(cluster, name, version.id, size, control_nodes)
         except Exception as ex:
+            cluster = self.listKubernetesCluster(cluster_name = name)
+            if cluster != None:
+                self.deleteKubernetesClusterAndVerify(cluster.id, False, True)
             self.fail("Kubernetes cluster deployment failed: %s" % ex)
         except AssertionError as err:
+            cluster = self.listKubernetesCluster(cluster_name = name)
+            if cluster != None:
+                self.deleteKubernetesClusterAndVerify(cluster.id, False, True)
             self.fail("Kubernetes cluster deployment failed during cluster verification: %s" % err)
         return cluster
 
