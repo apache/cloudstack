@@ -199,8 +199,10 @@ export default {
   created () {
     this.menus = this.mainMenu.find((item) => item.path === '/').children
     this.collapsed = !this.sidebarOpened
-    const readyForShutdownPollingJob = setInterval(this.checkShutdown, 5000)
-    this.$store.commit('SET_READY_FOR_SHUTDOWN_POLLING_JOB', readyForShutdownPollingJob)
+    if ('readyForShutdown' in this.$store.getters.apis) {
+      const readyForShutdownPollingJob = setInterval(this.checkShutdown, 5000)
+      this.$store.commit('SET_READY_FOR_SHUTDOWN_POLLING_JOB', readyForShutdownPollingJob)
+    }
   },
   mounted () {
     const layoutMode = this.$config.theme['@layout-mode'] || 'light'

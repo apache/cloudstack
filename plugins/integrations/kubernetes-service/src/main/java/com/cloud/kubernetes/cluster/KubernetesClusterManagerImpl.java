@@ -131,9 +131,9 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.router.NetworkHelper;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRuleVO;
+import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.SecurityGroupService;
-import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.SecurityRule;
 import com.cloud.network.vpc.NetworkACL;
 import com.cloud.offering.NetworkOffering;
@@ -1213,22 +1213,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             logAndThrow(Level.ERROR, String.format("Creating Kubernetes cluster failed due to error while finding suitable deployment plan for cluster in zone : %s", zone.getName()));
         }
 
-        SecurityGroupVO securityGroupVO = null;
+        SecurityGroup securityGroup = null;
         if (zone.isSecurityGroupEnabled()) {
-            securityGroupVO = securityGroupManager.createSecurityGroup(KubernetesClusterActionWorker.CKS_CLUSTER_SECURITY_GROUP_NAME.concat(Long.toHexString(System.currentTimeMillis())), "Security group for CKS nodes", owner.getDomainId(), owner.getId(), owner.getAccountName());
-            if (securityGroupVO == null) {
-                throw new CloudRuntimeException(String.format("Failed to create security group: %s", KubernetesClusterActionWorker.CKS_CLUSTER_SECURITY_GROUP_NAME));
-            }
-            List<String> cidrList = new ArrayList<>();
-            cidrList.add(NetUtils.ALL_IP4_CIDRS);
-            securityGroupService.authorizeSecurityGroupRule(securityGroupVO.getId(), NetUtils.TCP_PROTO,
-                    KubernetesClusterActionWorker.CLUSTER_NODES_DEFAULT_SSH_PORT_SG, KubernetesClusterActionWorker.CLUSTER_NODES_DEFAULT_SSH_PORT_SG,
-                    null, null, cidrList, null, SecurityRule.SecurityRuleType.IngressRule);
-            securityGroupService.authorizeSecurityGroupRule(securityGroupVO.getId(), NetUtils.TCP_PROTO,
-                    KubernetesClusterActionWorker.CLUSTER_API_PORT, KubernetesClusterActionWorker.CLUSTER_API_PORT,
-                    null, null, cidrList, null, SecurityRule.SecurityRuleType.IngressRule);
-            securityGroupService.authorizeSecurityGroupRule(securityGroupVO.getId(), NetUtils.ALL_PROTO,
-                    null, null, null, null, cidrList, null, SecurityRule.SecurityRuleType.EgressRule);
+            securityGroup = getOrCreateSecurityGroupForAccount(owner);
         }
 
         final Network defaultNetwork = getKubernetesClusterNetworkIfMissing(cmd.getName(), zone, owner, (int)controlNodeCount, (int)clusterSize, cmd.getExternalLoadBalancerIpAddress(), cmd.getNetworkId());
@@ -1236,7 +1223,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         final long cores = serviceOffering.getCpu() * (controlNodeCount + clusterSize);
         final long memory = serviceOffering.getRamSize() * (controlNodeCount + clusterSize);
 
-        SecurityGroupVO finalSecurityGroupVO = securityGroupVO;
+        final SecurityGroup finalSecurityGroup = securityGroup;
         final KubernetesClusterVO cluster = Transaction.execute(new TransactionCallback<KubernetesClusterVO>() {
             @Override
             public KubernetesClusterVO doInTransaction(TransactionStatus status) {
@@ -1245,7 +1232,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                         owner.getAccountId(), controlNodeCount, clusterSize, KubernetesCluster.State.Created, cmd.getSSHKeyPairName(), cores, memory,
                         cmd.getNodeRootDiskSize(), "", KubernetesCluster.ClusterType.CloudManaged);
                 if (zone.isSecurityGroupEnabled()) {
-                    newCluster.setSecurityGroupId(finalSecurityGroupVO.getId());
+                    newCluster.setSecurityGroupId(finalSecurityGroup.getId());
                 }
                 kubernetesClusterDao.persist(newCluster);
                 return newCluster;
@@ -1258,6 +1245,29 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             LOGGER.info(String.format("Kubernetes cluster name: %s and ID: %s has been created", cluster.getName(), cluster.getUuid()));
         }
         return cluster;
+    }
+
+    private SecurityGroup getOrCreateSecurityGroupForAccount(Account owner) {
+        String securityGroupName = String.format("%s-%s", KubernetesClusterActionWorker.CKS_CLUSTER_SECURITY_GROUP_NAME, owner.getUuid());
+        String securityGroupDesc = String.format("%s and account %s", KubernetesClusterActionWorker.CKS_SECURITY_GROUP_DESCRIPTION, owner.getName());
+        SecurityGroup securityGroup = securityGroupManager.getSecurityGroup(securityGroupName, owner.getId());
+        if (securityGroup == null) {
+            securityGroup = securityGroupManager.createSecurityGroup(securityGroupName, securityGroupDesc, owner.getDomainId(), owner.getId(), owner.getAccountName());
+            if (securityGroup == null) {
+                throw new CloudRuntimeException(String.format("Failed to create security group: %s", KubernetesClusterActionWorker.CKS_CLUSTER_SECURITY_GROUP_NAME));
+            }
+            List<String> cidrList = new ArrayList<>();
+            cidrList.add(NetUtils.ALL_IP4_CIDRS);
+            securityGroupService.authorizeSecurityGroupRule(securityGroup.getId(), NetUtils.TCP_PROTO,
+                    KubernetesClusterActionWorker.CLUSTER_NODES_DEFAULT_SSH_PORT_SG, KubernetesClusterActionWorker.CLUSTER_NODES_DEFAULT_SSH_PORT_SG,
+                    null, null, cidrList, null, SecurityRule.SecurityRuleType.IngressRule);
+            securityGroupService.authorizeSecurityGroupRule(securityGroup.getId(), NetUtils.TCP_PROTO,
+                    KubernetesClusterActionWorker.CLUSTER_API_PORT, KubernetesClusterActionWorker.CLUSTER_API_PORT,
+                    null, null, cidrList, null, SecurityRule.SecurityRuleType.IngressRule);
+            securityGroupService.authorizeSecurityGroupRule(securityGroup.getId(), NetUtils.ALL_PROTO,
+                    null, null, null, null, cidrList, null, SecurityRule.SecurityRuleType.EgressRule);
+        }
+        return securityGroup;
     }
 
     /**

@@ -24,7 +24,9 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.network.PublicIpQuarantine;
+import com.cloud.utils.fsm.NoTransitionException;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.command.admin.address.ReleasePodIpCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
@@ -824,6 +826,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
+    public boolean stateTransitTo(Network network, Network.Event e) throws NoTransitionException {
+        return true;
+    }
+
+    @Override
     public boolean isNetworkInlineMode(Network network) {
         // TODO Auto-generated method stub
         return false;
@@ -1030,7 +1037,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
-    public Pair<NicProfile, Integer> importNic(String macAddress, int deviceId, Network network, Boolean isDefaultNic, VirtualMachine vm, IpAddresses ipAddresses, boolean forced) {
+    public Pair<NicProfile, Integer> importNic(String macAddress, int deviceId, Network network, Boolean isDefaultNic, VirtualMachine vm, IpAddresses ipAddresses, DataCenter dataCenter, boolean forced) {
         return null;
     }
 

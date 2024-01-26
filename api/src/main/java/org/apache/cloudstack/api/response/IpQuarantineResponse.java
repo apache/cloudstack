@@ -60,6 +60,10 @@ public class IpQuarantineResponse extends BaseResponse {
     @Param(description = "The reason for removing the IP from quarantine prematurely.")
     private String removalReason;
 
+    @SerializedName(ApiConstants.REMOVER_ACCOUNT_ID)
+    @Param(description = "ID of the account that removed the IP from quarantine.")
+    private String removerAccountId;
+
     public IpQuarantineResponse() {
         super("quarantinedips");
     }
@@ -126,5 +130,13 @@ public class IpQuarantineResponse extends BaseResponse {
 
     public void setRemovalReason(String removalReason) {
         this.removalReason = removalReason;
+    }
+
+    public String getRemoverAccountId() {
+        return removerAccountId;
+    }
+
+    public void setRemoverAccountId(String removerAccountId) {
+        this.removerAccountId = removerAccountId;
     }
 }

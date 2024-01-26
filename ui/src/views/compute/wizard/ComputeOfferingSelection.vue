@@ -173,7 +173,7 @@ export default {
           disabled = true
         }
         if (disabled === false && maxMemory && this.minimumMemory > 0 &&
-          ((item.iscustomized === false && maxMemory < this.minimumMemory) ||
+          ((item.iscustomized === false && ((maxMemory < this.minimumMemory) || this.exactMatch && maxMemory !== this.minimumMemory)) ||
             (item.iscustomized === true && maxMemory < this.minimumMemory))) {
           disabled = true
         }

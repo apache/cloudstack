@@ -31,12 +31,17 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VmwareDatacenterResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.vm.VmImportService;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+
+import javax.inject.Inject;
 
 @APICommand(name = "importVm",
         description = "Import virtual machine from a unmanaged host into CloudStack",
@@ -47,8 +52,37 @@ import org.apache.log4j.Logger;
         authorized = {RoleType.Admin},
         since = "4.19.0")
 public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
-
     public static final Logger LOGGER = Logger.getLogger(ImportVmCmd.class);
+
+    @Inject
+    public VmImportService vmImportService;
+
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+
+    @Parameter(name = ApiConstants.ZONE_ID,
+            type = CommandType.UUID,
+            entityType = ZoneResponse.class,
+            required = true,
+            description = "the zone ID")
+    private Long zoneId;
+
+    @Parameter(name = ApiConstants.USERNAME,
+            type = CommandType.STRING,
+            description = "the username for the host")
+    private String username;
+
+    @Parameter(name = ApiConstants.PASSWORD,
+            type = CommandType.STRING,
+            description = "the password for the host")
+    private String password;
+
+    @Parameter(name = ApiConstants.HOST,
+            type = CommandType.STRING,
+            description = "the host name or IP address")
+    private String host;
 
     @Parameter(name = ApiConstants.HYPERVISOR,
             type = CommandType.STRING,
@@ -56,11 +90,33 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
             description = "hypervisor type of the host")
     private String hypervisor;
 
+    @Parameter(name = ApiConstants.DISK_PATH,
+            type = CommandType.STRING,
+            description = "path of the disk image")
+    private String diskPath;
+
     @Parameter(name = ApiConstants.IMPORT_SOURCE,
             type = CommandType.STRING,
             required = true,
             description = "Source location for Import" )
     private String importSource;
+
+    @Parameter(name = ApiConstants.NETWORK_ID,
+            type = CommandType.UUID,
+            entityType = NetworkResponse.class,
+            description = "the network ID")
+    private Long networkId;
+
+    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, description = "Host where local disk is located")
+    private Long hostId;
+
+    @Parameter(name = ApiConstants.STORAGE_ID, type = CommandType.UUID, entityType = StoragePoolResponse.class, description = "Shared storage pool where disk is located")
+    private Long storagePoolId;
+
+    @Parameter(name = ApiConstants.TEMP_PATH,
+            type = CommandType.STRING,
+            description = "Temp Path on external host for disk image copy" )
+    private String tmpPath;
 
     // Import from Vmware to KVM migration parameters
 
@@ -73,7 +129,7 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
     @Parameter(name = ApiConstants.HOST_IP,
             type = BaseCmd.CommandType.STRING,
             description = "(only for importing migrated VMs from Vmware to KVM) VMware ESXi host IP/Name.")
-    private String host;
+    private String hostip;
 
     @Parameter(name = ApiConstants.VCENTER,
             type = CommandType.STRING,
@@ -88,14 +144,6 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
             description = "(only for importing migrated VMs from Vmware to KVM) Name of VMware cluster.")
     private String clusterName;
 
-    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING,
-            description = "(only for importing migrated VMs from Vmware to KVM) The Username required to connect to resource.")
-    private String username;
-
-    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING,
-            description = "(only for importing migrated VMs from Vmware to KVM) The password for the specified username.")
-    private String password;
-
     @Parameter(name = ApiConstants.CONVERT_INSTANCE_HOST_ID, type = CommandType.UUID, entityType = HostResponse.class,
             description = "(only for importing migrated VMs from Vmware to KVM) optional - the host to perform the virt-v2v migration from VMware to KVM.")
     private Long convertInstanceHostId;
@@ -104,30 +152,20 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
             description = "(only for importing migrated VMs from Vmware to KVM) optional - the temporary storage pool to perform the virt-v2v migration from VMware to KVM.")
     private Long convertStoragePoolId;
 
-    @Override
-    public String getEventType() {
-        return EventTypes.EVENT_VM_IMPORT;
-    }
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
 
-    @Override
-    public String getEventDescription() {
-        String vmName = getName();
-        if (ObjectUtils.anyNotNull(vcenter, existingVcenterId)) {
-            String msg = StringUtils.isNotBlank(vcenter) ?
-                    String.format("external vCenter: %s - datacenter: %s", vcenter, datacenterName) :
-                    String.format("existing vCenter Datacenter with ID: %s", existingVcenterId);
-            return String.format("Importing unmanaged VM: %s from %s - VM: %s", getDisplayName(), msg, vmName);
-        }
-        return String.format("Importing unmanaged VM: %s", vmName);
+    public Long getZoneId() {
+        return zoneId;
     }
-
 
     public Long getExistingVcenterId() {
         return existingVcenterId;
     }
 
-    public String getHost() {
-        return host;
+    public String getHostIp() {
+        return hostip;
     }
 
     public String getVcenter() {
@@ -150,6 +188,10 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
         return password;
     }
 
+    public String getHost() {
+        return host;
+    }
+
     public Long getConvertInstanceHostId() {
         return convertInstanceHostId;
     }
@@ -162,8 +204,45 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
         return hypervisor;
     }
 
+    public String getDiskPath() {
+        return diskPath;
+    }
+
     public String getImportSource() {
         return importSource;
+    }
+
+    public Long getHostId() {
+        return hostId;
+    }
+
+    public Long getStoragePoolId() {
+        return storagePoolId;
+    }
+
+    public String getTmpPath() {
+        return tmpPath;
+    }
+
+    public Long getNetworkId() {
+        return networkId;
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_VM_IMPORT;
+    }
+
+    @Override
+    public String getEventDescription() {
+        String vmName = getName();
+        if (ObjectUtils.anyNotNull(vcenter, existingVcenterId)) {
+            String msg = StringUtils.isNotBlank(vcenter) ?
+                    String.format("external vCenter: %s - datacenter: %s", vcenter, datacenterName) :
+                    String.format("existing vCenter Datacenter with ID: %s", existingVcenterId);
+            return String.format("Importing unmanaged VM: %s from %s - VM: %s", getDisplayName(), msg, vmName);
+        }
+        return String.format("Importing unmanaged VM: %s", vmName);
     }
 
     /////////////////////////////////////////////////////
@@ -176,5 +255,4 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }
-
 }
