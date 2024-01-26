@@ -403,7 +403,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         if (List.of(Service.UserData, Service.Dhcp, Service.Dns).contains(svc)) {
                             final Set<Provider> userDataProvider = Set.of(Provider.VPCVirtualRouter);
                             svcProviderMap.put(svc, userDataProvider);
-                        } else if (Service.NetworkACL.equals(svc)){
+                        } else if (List.of(Service.SourceNat, Service.NetworkACL).contains(svc)) {
                             svcProviderMap.put(svc, defaultProviders);
                         }
                     }
