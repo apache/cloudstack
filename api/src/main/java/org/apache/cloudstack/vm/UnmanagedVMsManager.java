@@ -17,13 +17,20 @@
 
 package org.apache.cloudstack.vm;
 
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.component.PluggableService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import static com.cloud.hypervisor.Hypervisor.HypervisorType.KVM;
+import static com.cloud.hypervisor.Hypervisor.HypervisorType.VMware;
 
 public interface UnmanagedVMsManager extends VmImportService, UnmanageVMService, PluggableService, Configurable {
 
     ConfigKey<Boolean> UnmanageVMPreserveNic = new ConfigKey<>("Advanced", Boolean.class, "unmanage.vm.preserve.nics", "false",
             "If set to true, do not remove VM nics (and its MAC addresses) when unmanaging a VM, leaving them allocated but not reserved. " +
                     "If set to false, nics are removed and MAC addresses can be reassigned", true, ConfigKey.Scope.Zone);
+
+    static boolean isSupported(Hypervisor.HypervisorType hypervisorType) {
+        return hypervisorType == VMware || hypervisorType == KVM;
+    }
 }

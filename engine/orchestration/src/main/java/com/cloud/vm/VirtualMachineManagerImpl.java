@@ -48,6 +48,7 @@ import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
 import com.cloud.event.ActionEventUtils;
+import com.google.gson.Gson;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -603,7 +604,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     protected void advanceExpunge(VMInstanceVO vm) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException {
         if (vm == null || vm.getRemoved() != null) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Unable to find vm or vm is destroyed: " + vm);
+                s_logger.debug("Unable to find vm or vm is expunged: " + vm);
             }
             return;
         }
@@ -613,17 +614,17 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         try {
             if (!stateTransitTo(vm, VirtualMachine.Event.ExpungeOperation, vm.getHostId())) {
-                s_logger.debug("Unable to destroy the vm because it is not in the correct state: " + vm);
-                throw new CloudRuntimeException("Unable to destroy " + vm);
+                s_logger.debug("Unable to expunge the vm because it is not in the correct state: " + vm);
+                throw new CloudRuntimeException("Unable to expunge " + vm);
 
             }
         } catch (final NoTransitionException e) {
-            s_logger.debug("Unable to destroy the vm because it is not in the correct state: " + vm);
-            throw new CloudRuntimeException("Unable to destroy " + vm, e);
+            s_logger.debug("Unable to expunge the vm because it is not in the correct state: " + vm);
+            throw new CloudRuntimeException("Unable to expunge " + vm, e);
         }
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Destroying vm " + vm);
+            s_logger.debug("Expunging vm " + vm);
         }
 
         final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
@@ -2788,23 +2789,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         boolean migrated = false;
-        Map<String, DpdkTO> dpdkInterfaceMapping = null;
+        Map<String, DpdkTO> dpdkInterfaceMapping = new HashMap<>();
         try {
-            final boolean isWindows = _guestOsCategoryDao.findById(_guestOsDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
-            Map<String, Boolean> vlanToPersistenceMap = getVlanToPersistenceMapForVM(vm.getId());
-            final MigrateCommand mc = new MigrateCommand(vm.getInstanceName(), dest.getHost().getPrivateIpAddress(), isWindows, to, getExecuteInSequence(vm.getHypervisorType()));
-            if (MapUtils.isNotEmpty(vlanToPersistenceMap)) {
-                mc.setVlanToPersistenceMap(vlanToPersistenceMap);
-            }
-
-            boolean kvmAutoConvergence = StorageManager.KvmAutoConvergence.value();
-            mc.setAutoConvergence(kvmAutoConvergence);
-            mc.setHostGuid(dest.getHost().getGuid());
-
-            dpdkInterfaceMapping = ((PrepareForMigrationAnswer) pfma).getDpdkInterfaceMapping();
-            if (MapUtils.isNotEmpty(dpdkInterfaceMapping)) {
-                mc.setDpdkInterfaceMapping(dpdkInterfaceMapping);
-            }
+            final MigrateCommand mc = buildMigrateCommand(vm, to, dest, pfma, dpdkInterfaceMapping);
 
             try {
                 final Answer ma = _agentMgr.send(vm.getLastHostId(), mc);
@@ -2874,6 +2861,43 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             work.setStep(Step.Done);
             _workDao.update(work.getId(), work);
         }
+    }
+
+    /**
+     * Create and set parameters for the {@link MigrateCommand} used in the migration and scaling of VMs.
+     */
+    protected MigrateCommand buildMigrateCommand(VMInstanceVO vmInstance, VirtualMachineTO virtualMachineTO, DeployDestination destination, Answer answer,
+                                                 Map<String, DpdkTO> dpdkInterfaceMapping) {
+        final boolean isWindows = _guestOsCategoryDao.findById(_guestOsDao.findById(vmInstance.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
+        final MigrateCommand migrateCommand = new MigrateCommand(vmInstance.getInstanceName(), destination.getHost().getPrivateIpAddress(), isWindows, virtualMachineTO,
+                getExecuteInSequence(vmInstance.getHypervisorType()));
+
+        Map<String, Boolean> vlanToPersistenceMap = getVlanToPersistenceMapForVM(vmInstance.getId());
+        if (MapUtils.isNotEmpty(vlanToPersistenceMap)) {
+            s_logger.debug(String.format("Setting VLAN persistence to [%s] as part of migrate command for VM [%s].", new Gson().toJson(vlanToPersistenceMap), virtualMachineTO));
+            migrateCommand.setVlanToPersistenceMap(vlanToPersistenceMap);
+        }
+
+        migrateCommand.setAutoConvergence(StorageManager.KvmAutoConvergence.value());
+        migrateCommand.setHostGuid(destination.getHost().getGuid());
+
+        PrepareForMigrationAnswer prepareForMigrationAnswer = (PrepareForMigrationAnswer) answer;
+
+        Map<String, DpdkTO> answerDpdkInterfaceMapping = prepareForMigrationAnswer.getDpdkInterfaceMapping();
+        if (MapUtils.isNotEmpty(answerDpdkInterfaceMapping) && dpdkInterfaceMapping != null) {
+            s_logger.debug(String.format("Setting DPDK interface mapping to [%s] as part of migrate command for VM [%s].", new Gson().toJson(vlanToPersistenceMap),
+                    virtualMachineTO));
+            dpdkInterfaceMapping.putAll(answerDpdkInterfaceMapping);
+            migrateCommand.setDpdkInterfaceMapping(dpdkInterfaceMapping);
+        }
+
+        Integer newVmCpuShares = prepareForMigrationAnswer.getNewVmCpuShares();
+        if (newVmCpuShares != null) {
+            s_logger.debug(String.format("Setting CPU shares to [%d] as part of migrate command for VM [%s].", newVmCpuShares, virtualMachineTO));
+            migrateCommand.setNewVmCpuShares(newVmCpuShares);
+        }
+
+        return migrateCommand;
     }
 
     private void updateVmPod(VMInstanceVO vm, long dstHostId) {
@@ -4399,16 +4423,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         boolean migrated = false;
         try {
-            Map<String, Boolean> vlanToPersistenceMap = getVlanToPersistenceMapForVM(vm.getId());
-            final boolean isWindows = _guestOsCategoryDao.findById(_guestOsDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
-            final MigrateCommand mc = new MigrateCommand(vm.getInstanceName(), dest.getHost().getPrivateIpAddress(), isWindows, to, getExecuteInSequence(vm.getHypervisorType()));
-            if (MapUtils.isNotEmpty(vlanToPersistenceMap)) {
-                mc.setVlanToPersistenceMap(vlanToPersistenceMap);
-            }
-
-            boolean kvmAutoConvergence = StorageManager.KvmAutoConvergence.value();
-            mc.setAutoConvergence(kvmAutoConvergence);
-            mc.setHostGuid(dest.getHost().getGuid());
+            final MigrateCommand mc = buildMigrateCommand(vm, to, dest, pfma, null);
 
             try {
                 final Answer ma = _agentMgr.send(vm.getLastHostId(), mc);
