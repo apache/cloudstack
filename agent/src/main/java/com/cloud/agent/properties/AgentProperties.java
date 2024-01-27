@@ -660,6 +660,14 @@ public class AgentProperties{
     public static final Property<Integer> STOP_SCRIPT_TIMEOUT = new Property<>("stop.script.timeout", 120);
 
     /**
+     * Time (in seconds) to wait for scripts to complete.<br>
+     * This is currently used only while checking if the host supports UEFI.<br>
+     * Data type: Integer.<br>
+     * Default value: <code>60</code>
+     */
+    public static final Property<Integer> AGENT_SCRIPT_TIMEOUT = new Property<>("agent.script.timeout", 60);
+
+    /**
      * Definition of VMs video model type.<br>
      * Data type: String.<br>
      * Default value: <code>null</code>
