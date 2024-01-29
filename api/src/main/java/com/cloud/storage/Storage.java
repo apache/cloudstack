@@ -16,14 +16,14 @@
 // under the License.
 package com.cloud.storage;
 
-import org.apache.commons.lang.NotImplementedException;
-import org.apache.commons.lang3.StringUtils;
-
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+
+import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.StringUtils;
 
 public class Storage {
     public static enum ImageFormat {
@@ -180,6 +180,17 @@ public class Storage {
         private final boolean shared;
         private final boolean overprovisioning;
         private final boolean encryption;
+
+        /**
+         * New StoragePoolType, set the name to check with it in Dao (Note: Do not register it into the map of pool types).
+         * @param name name of the StoragePoolType.
+         */
+        public StoragePoolType(String name) {
+            this.name = name;
+            this.shared = false;
+            this.overprovisioning = false;
+            this.encryption = false;
+        }
 
         /**
          * Define a new StoragePoolType, and register it into the map of pool types known to the management server.
