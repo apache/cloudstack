@@ -235,12 +235,12 @@ class TestVeeamBackupAndRecovery(cloudstackTestCase):
         if self.offering:
             self.cleanup.insert(0, self.offering)
 
-        self.vm = VirtualMachine.create(self.user_apiclient, self.services["small"], accountid=self.account.name,
-                                                      domainid=self.account.domainid, serviceofferingid=self.service_offering.id)
-
         self.vm_with_datadisk = VirtualMachine.create(self.user_apiclient, self.services["small"], accountid=self.account.name,
                                                       domainid=self.account.domainid, serviceofferingid=self.service_offering.id,
                                                       diskofferingid=self.disk_offering.id)
+
+        self.vm = VirtualMachine.create(self.user_apiclient, self.services["small"], accountid=self.account.name,
+                                                      domainid=self.account.domainid, serviceofferingid=self.service_offering.id)
 
         # Assign VM to offering and create ad-hoc backup
         self.offering.assignOffering(self.user_apiclient, self.vm_with_datadisk.id)
@@ -296,7 +296,13 @@ class TestVeeamBackupAndRecovery(cloudstackTestCase):
                     listall=True
                 )
                 self.assertTrue(isinstance(vm_volumes, list), "List volumes should return a valid list")
-                self.assertEqual(3, len(vm_volumes), "The number of volumes should be 2")
+                self.assertEqual(3, len(vm_volumes), "The number of volumes should be 3")
         finally:
             # Delete backup
             Backup.delete(self.user_apiclient, backup.id, forced=True)
+            # Remove VM from offering
+            self.offering.removeOffering(self.user_apiclient, self.vm_with_datadisk.id)
+            # Delete vm
+            self.vm.delete(self.apiclient)
+            # Delete vm with datadisk
+            self.vm_with_datadisk.delete(self.apiclient)
