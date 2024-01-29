@@ -2770,7 +2770,7 @@ public class VolumeServiceImpl implements VolumeService {
         if (HypervisorType.KVM.equals(host.getHypervisorType()) && DataObjectType.VOLUME.equals(dataObject.getType())) {
             if (com.cloud.storage.VolumeApiServiceImpl.AllowCheckAndRepairVolume.value()) {
                 s_logger.info(String.format("Trying to check and repair the volume %d", dataObject.getId()));
-                String repair = CheckAndRepairVolumeCmd.RepairValues.leaks.name();
+                String repair = CheckAndRepairVolumeCmd.RepairValues.Leaks.name();
                 CheckAndRepairVolumePayload payload = new CheckAndRepairVolumePayload(repair);
                 VolumeInfo volumeInfo = volFactory.getVolume(dataObject.getId());
                 volumeInfo.addPayload(payload);

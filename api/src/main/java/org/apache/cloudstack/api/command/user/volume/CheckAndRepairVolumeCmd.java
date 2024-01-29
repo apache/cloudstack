@@ -36,11 +36,11 @@ import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 
+import java.util.Arrays;
+
 @APICommand(name = "checkVolume", description = "Check the volume for any errors or leaks and also repairs when repair parameter is passed, this is currently supported for KVM only", responseObject = VolumeResponse.class, entityType = {Volume.class},
         since = "4.18.1",
-        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
-        requestHasSensitiveInfo = false,
-        responseHasSensitiveInfo = true)
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class CheckAndRepairVolumeCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CheckAndRepairVolumeCmd.class.getName());
 
@@ -61,7 +61,7 @@ public class CheckAndRepairVolumeCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     public enum RepairValues {
-        leaks, all
+        Leaks, All
     }
 
     public Long getId() {
@@ -72,7 +72,7 @@ public class CheckAndRepairVolumeCmd extends BaseCmd {
         if (org.apache.commons.lang3.StringUtils.isNotEmpty(repair)) {
             RepairValues repairType = Enum.valueOf(RepairValues.class, repair);
             if (repairType == null) {
-                throw new InvalidParameterValueException("repair parameter only takes either leaks or all as value");
+                throw new InvalidParameterValueException(String.format("Repair parameter can only take the following values: %s" + Arrays.toString(RepairValues.values())));
             }
         }
         return repair;
