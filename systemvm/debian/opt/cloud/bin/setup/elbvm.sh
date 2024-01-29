@@ -41,4 +41,3 @@ then
   exit 1
 fi
 setup_elbvm
-. /opt/cloud/bin/setup/packages.sh && patch_router && install_packages

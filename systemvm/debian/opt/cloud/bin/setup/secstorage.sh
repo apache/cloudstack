@@ -87,5 +87,3 @@ HTTP
 }
 
 setup_secstorage
-# System VMs are patched during bootstrap
-. /opt/cloud/bin/setup/packages.sh && install_packages

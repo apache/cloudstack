@@ -126,8 +126,8 @@ patch_systemvm() {
 
   update_checksum $newpath/cloud-scripts.tgz
 
-  if [ -f /opt/cloud/bin/setup/packages.sh ];then
-    . /opt/cloud/bin/setup/packages.sh && install_packages
+  if [ -f /opt/cloud/bin/setup/patch.sh ];then
+    . /opt/cloud/bin/setup/patch.sh && patch_system_vm
   fi
 
   if [ "$TYPE" == "consoleproxy" ] || [ "$TYPE" == "secstorage" ] || [[ "$TYPE" == *router ]]; then
