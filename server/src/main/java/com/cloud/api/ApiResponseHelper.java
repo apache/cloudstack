@@ -2010,6 +2010,21 @@ public class ApiResponseHelper implements ResponseGenerator {
         return ApiDBUtils.newEventResponse(vEvent);
     }
 
+    protected boolean capacityListingForSingleTag(List<? extends Capacity> capacities) {
+        String tag = capacities.get(0).getTag();
+        if (tag == null) {
+            return false;
+        }
+        List<? extends Capacity> taggedCapacities = capacities.stream().filter(x -> tag.equals(x.getTag())).collect(Collectors.toList());
+        return taggedCapacities.size() == capacities.size();
+    }
+
+    protected boolean capacityListingForSingleNonGpuType(List<? extends Capacity> capacities) {
+        short type = capacities.get(0).getCapacityType();
+        List<? extends Capacity> typeCapacities = capacities.stream().filter(x -> x.getCapacityType() == type).collect(Collectors.toList());
+        return typeCapacities.size() == capacities.size();
+    }
+
     @Override
     public List<CapacityResponse> createCapacityResponse(List<? extends Capacity> result, DecimalFormat format) {
         List<CapacityResponse> capacityResponses = new ArrayList<CapacityResponse>();
@@ -2062,7 +2077,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         List<VgpuTypesInfo> gpuCapacities;
-        if (result.size() > 1 && (gpuCapacities = ApiDBUtils.getGpuCapacites(result.get(0).getDataCenterId(), result.get(0).getPodId(), result.get(0).getClusterId())) != null) {
+        if (result.size() > 1 &&
+                !capacityListingForSingleTag(result) &&
+                !capacityListingForSingleNonGpuType(result) &&
+                (gpuCapacities = ApiDBUtils.getGpuCapacites(result.get(0).getDataCenterId(),
+                        result.get(0).getPodId(), result.get(0).getClusterId())) != null) {
             HashMap<String, Long> vgpuVMs = ApiDBUtils.getVgpuVmsCount(result.get(0).getDataCenterId(), result.get(0).getPodId(), result.get(0).getClusterId());
 
             float capacityUsed = 0;
