@@ -37,6 +37,7 @@ import com.cloud.network.guru.GuestNetworkGuru;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.user.Account;
@@ -307,6 +308,7 @@ public class NsxGuestNetworkGuruTest {
     @Test
     public void testCreateNsxSegmentForIsolatedNetwork() {
         NetworkVO networkVO = Mockito.mock(NetworkVO.class);
+        NetworkOfferingVO offeringVO = Mockito.mock(NetworkOfferingVO.class);
         DataCenter dataCenter = Mockito.mock(DataCenter.class);
 
         when(networkVO.getAccountId()).thenReturn(1L);
@@ -315,6 +317,9 @@ public class NsxGuestNetworkGuruTest {
                 anyLong())).thenReturn(new NsxAnswer(new NsxCommand(), true, ""));
         when(nsxControllerUtils.sendNsxCommand(any(CreateNsxSegmentCommand.class),
                 anyLong())).thenReturn(new NsxAnswer(new NsxCommand(), true, ""));
+        when(networkVO.getNetworkOfferingId()).thenReturn(1L);
+        when(networkOfferingDao.findById(1L)).thenReturn(offeringVO);
+        when(offeringVO.getNsxMode()).thenReturn(NetworkOffering.NsxMode.NATTED.name());
         guru.createNsxSegment(networkVO, dataCenter);
         verify(nsxControllerUtils, times(1)).sendNsxCommand(any(CreateNsxTier1GatewayCommand.class),
                 anyLong());
