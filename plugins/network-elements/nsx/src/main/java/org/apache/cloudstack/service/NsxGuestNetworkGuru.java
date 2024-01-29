@@ -319,7 +319,10 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
             vpcName = vpc.getName();
         } else {
             LOGGER.debug(String.format("Creating a Tier 1 Gateway for the network %s before creating the NSX segment", networkVO.getName()));
-            boolean isSourceNatSupported = networkOfferingServiceMapDao.areServicesSupportedByNetworkOffering(networkVO.getNetworkOfferingId(), Network.Service.SourceNat);
+            long networkOfferingId = networkVO.getNetworkOfferingId();
+            NetworkOfferingVO networkOfferingVO = networkOfferingDao.findById(networkOfferingId);
+            boolean isSourceNatSupported = !NetworkOffering.NsxMode.ROUTED.name().equals(networkOfferingVO.getNsxMode()) &&
+                    networkOfferingServiceMapDao.areServicesSupportedByNetworkOffering(networkVO.getNetworkOfferingId(), Network.Service.SourceNat);
             CreateNsxTier1GatewayCommand nsxTier1GatewayCommand =  new CreateNsxTier1GatewayCommand(domain.getId(), account.getId(), zone.getId(), networkVO.getId(), networkVO.getName(), false, isSourceNatSupported);
 
             NsxAnswer nsxAnswer = nsxControllerUtils.sendNsxCommand(nsxTier1GatewayCommand, zone.getId());
