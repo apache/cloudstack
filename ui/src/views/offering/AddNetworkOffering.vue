@@ -138,6 +138,14 @@
               <a-switch v-model:checked="form.nsxsupportlb" @change="val => { handleNsxLbService(val) }" />
             </a-form-item>
           </a-col>
+          <a-col :md="12" :lg="12" v-if="form.nsxsupportlb && form.forvpc">
+            <a-form-item name="nsxsupportsinternallb" ref="nsxsupportsinternallb" v-if="guestType === 'isolated'">
+              <template #label>
+                <tooltip-label :title="$t('label.nsx.supports.internal.lb')" :tooltip="apiParams.nsxsupportsinternallb.description"/>
+              </template>
+              <a-switch v-model:checked="form.nsxsupportsinternallb"/>
+            </a-form-item>
+          </a-col>
         </a-row>
         <a-form-item name="nsxmode" ref="nsxmode" v-if="forNsx">
           <template #label>
@@ -1025,6 +1033,7 @@ export default {
           params.fornsx = true
           params.nsxmode = values.nsxmode
           params.nsxsupportlb = values.nsxsupportlb
+          params.nsxsupportsinternallb = values.nsxsupportsinternallb
         }
         if (values.guestiptype === 'shared' || values.guestiptype === 'isolated') {
           if (values.conservemode !== true) {

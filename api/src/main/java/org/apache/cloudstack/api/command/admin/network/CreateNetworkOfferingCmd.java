@@ -160,6 +160,12 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
             since = "4.20.0")
     private Boolean nsxSupportsLbService;
 
+    @Parameter(name = ApiConstants.NSX_SUPPORTS_INTERNAL_LB,
+            type = CommandType.BOOLEAN,
+            description = "true if network offering for NSX network offering supports Internal Load balancer service.",
+            since = "4.20.0")
+    private Boolean nsxSupportsInternalLbService;
+
     @Parameter(name = ApiConstants.FOR_TUNGSTEN,
             type = CommandType.BOOLEAN,
             description = "true if network offering is meant to be used for Tungsten-Fabric, false otherwise.")
@@ -304,6 +310,10 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
 
     public boolean getNsxSupportsLbService() {
         return BooleanUtils.isTrue(nsxSupportsLbService);
+    }
+
+    public boolean getNsxSupportsInternalLbService() {
+        return BooleanUtils.isTrue(nsxSupportsInternalLbService);
     }
 
     public Boolean getForTungsten() {
