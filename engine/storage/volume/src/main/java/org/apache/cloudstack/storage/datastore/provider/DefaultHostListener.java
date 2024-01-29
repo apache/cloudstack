@@ -58,6 +58,12 @@ import java.util.List;
 
 public class DefaultHostListener implements HypervisorHostListener {
     protected Logger logger = LogManager.getLogger(getClass());
+
+    /**
+     * Wait time for modify storage pool command to complete. We should wait for 5 minutes for the command to complete.
+     * This should ideally be externalised as a global configuration parameter in the future (See #8506).
+     **/
+    private final int modifyStoragePoolCommandWait = 300; // 5 minutes
     @Inject
     AgentManager agentMgr;
     @Inject
@@ -84,7 +90,6 @@ public class DefaultHostListener implements HypervisorHostListener {
     ConfigurationManager configManager;
     @Inject
     NetworkDao networkDao;
-
 
     @Override
     public boolean hostAdded(long hostId) {
@@ -122,7 +127,9 @@ public class DefaultHostListener implements HypervisorHostListener {
     public boolean hostConnect(long hostId, long poolId) throws StorageConflictException {
         StoragePool pool = (StoragePool) this.dataStoreMgr.getDataStore(poolId, DataStoreRole.Primary);
         ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, pool);
-        cmd.setWait(60);
+        cmd.setWait(modifyStoragePoolCommandWait);
+        s_logger.debug(String.format("Sending modify storage pool command to agent: %d for storage pool: %d with timeout %d seconds",
+                hostId, poolId, cmd.getWait()));
         final Answer answer = agentMgr.easySend(hostId, cmd);
 
         if (answer == null) {
