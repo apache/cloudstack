@@ -308,7 +308,9 @@ public class NsxResource implements ServerResource {
 
     private Answer executeRequest(DeleteNsxTier1GatewayCommand cmd) {
         String tier1Id = NsxControllerUtils.getTier1GatewayName(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(), cmd.getNetworkResourceId(), cmd.isResourceVpc());
+        String lbName = NsxControllerUtils.getLoadBalancerName(tier1Id);
         try {
+            nsxApiClient.deleteLoadBalancer(lbName);
             nsxApiClient.deleteTier1Gateway(tier1Id);
         } catch (Exception e) {
             return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));

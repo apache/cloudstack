@@ -5956,6 +5956,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Boolean forNsx = cmd.isForNsx();
         Boolean forTungsten = cmd.getForTungsten();
         String nsxMode = cmd.getNsxMode();
+        boolean nsxSupportInternalLbSvc = cmd.getNsxSupportsInternalLbService();
         Integer maxconn = null;
         boolean enableKeepAlive = false;
         String servicePackageuuid = cmd.getServicePackageId();
@@ -6274,6 +6275,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         final NetworkOfferingVO offering = createNetworkOffering(name, displayText, trafficType, tags, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType, false,
                 serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive, forVpc, forTungsten, forNsx, nsxMode, domainIds, zoneIds, enable, internetProtocol);
+        if (Boolean.TRUE.equals(forNsx) && nsxSupportInternalLbSvc) {
+            offering.setInternalLb(true);
+            offering.setPublicLb(false);
+            _networkOfferingDao.update(offering.getId(), offering);
+        }
         CallContext.current().setEventDetails(" Id: " + offering.getId() + " Name: " + name);
         CallContext.current().putContextParameter(NetworkOffering.class, offering.getId());
         return offering;
