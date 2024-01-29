@@ -38,8 +38,6 @@ import org.apache.cloudstack.storage.object.Bucket;
 import org.apache.cloudstack.storage.object.BucketObject;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import com.amazonaws.services.s3.model.AccessControlList;
 import com.amazonaws.services.s3.model.BucketPolicy;
@@ -67,7 +65,6 @@ import io.minio.messages.SseConfiguration;
 import io.minio.messages.VersioningConfiguration;
 
 public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
-    protected Logger logger = LogManager.getLogger(getClass());
     protected static final String ACS_PREFIX = "acs";
 
     @Inject
