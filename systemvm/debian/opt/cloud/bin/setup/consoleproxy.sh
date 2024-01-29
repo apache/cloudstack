@@ -45,3 +45,5 @@ setup_console_proxy() {
 }
 
 setup_console_proxy
+# System VMs are patched during bootstrap
+. /opt/cloud/bin/setup/patch.sh && patch_system_vm
