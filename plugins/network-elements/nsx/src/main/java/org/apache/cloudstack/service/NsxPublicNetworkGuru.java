@@ -29,6 +29,7 @@ import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.guru.PublicNetworkGuru;
 import com.cloud.network.vpc.VpcOffering;
+import com.cloud.network.vpc.VpcOfferingVO;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
@@ -129,7 +130,10 @@ public class NsxPublicNetworkGuru extends PublicNetworkGuru {
                 long dataCenterId = vpc.getZoneId();
                 long resourceId = vpc.getId();
                 Network.Service[] services = { Network.Service.SourceNat };
-                boolean sourceNatEnabled = vpcOfferingServiceMapDao.areServicesSupportedByVpcOffering(vpc.getVpcOfferingId(), services);
+                long networkOfferingId = vpc.getVpcOfferingId();
+                VpcOfferingVO vpcVO = vpcOfferingDao.findById(networkOfferingId);
+                boolean sourceNatEnabled = !NetworkOffering.NsxMode.ROUTED.name().equals(vpcVO.getNsxMode()) &&
+                        vpcOfferingServiceMapDao.areServicesSupportedByVpcOffering(vpc.getVpcOfferingId(), services);
 
                 s_logger.info(String.format("Creating Tier 1 Gateway for VPC %s", vpc.getName()));
                 boolean result = nsxService.createVpcNetwork(dataCenterId, accountId, domainId, resourceId, vpc.getName(), sourceNatEnabled);
