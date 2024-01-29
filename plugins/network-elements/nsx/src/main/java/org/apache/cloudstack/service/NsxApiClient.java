@@ -100,6 +100,7 @@ import static org.apache.cloudstack.utils.NsxControllerUtils.getServiceEntryName
 import static org.apache.cloudstack.utils.NsxControllerUtils.getLoadBalancerName;
 import static org.apache.cloudstack.utils.NsxControllerUtils.getLoadBalancerAlgorithm;
 import static org.apache.cloudstack.utils.NsxControllerUtils.getActiveMonitorProfileName;
+import static org.apache.cloudstack.utils.NsxControllerUtils.getTier1GatewayName;
 
 public class NsxApiClient {
 
@@ -429,6 +430,10 @@ public class NsxApiClient {
     public void deleteSegment(long zoneId, long domainId, long accountId, Long vpcId, long networkId, String segmentName) {
         try {
             removeSegmentDistributedFirewallRules(segmentName);
+            if (Objects.isNull(vpcId)) {
+                String t1GatewayName = getTier1GatewayName(domainId, accountId, zoneId, networkId, false);
+                deleteLoadBalancer(getLoadBalancerName(t1GatewayName));
+            }
             removeSegment(segmentName);
             DhcpRelayConfigs dhcpRelayConfig = (DhcpRelayConfigs) nsxService.apply(DhcpRelayConfigs.class);
             String dhcpRelayConfigId = NsxControllerUtils.getNsxDhcpRelayConfigId(zoneId, domainId, accountId, vpcId, networkId);
@@ -445,9 +450,15 @@ public class NsxApiClient {
     protected void removeSegment(String segmentName) {
         LOGGER.debug(String.format("Removing the segment with ID %s", segmentName));
         Segments segmentService = (Segments) nsxService.apply(Segments.class);
-        Segment segment = segmentService.get(segmentName);
-        if (segment == null) {
-            LOGGER.error(String.format("The segment with ID %s is not found, skipping removal", segmentName));
+        String errMsg = String.format("The segment with ID %s is not found, skipping removal", segmentName);
+        try {
+            Segment segment = segmentService.get(segmentName);
+            if (segment == null) {
+                LOGGER.warn(errMsg);
+                return;
+            }
+        } catch (Exception e) {
+            LOGGER.warn(errMsg);
             return;
         }
         String siteId = getDefaultSiteId();
