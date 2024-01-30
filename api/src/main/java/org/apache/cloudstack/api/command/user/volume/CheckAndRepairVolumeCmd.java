@@ -39,7 +39,7 @@ import com.cloud.utils.StringUtils;
 import java.util.Arrays;
 
 @APICommand(name = "checkVolume", description = "Check the volume for any errors or leaks and also repairs when repair parameter is passed, this is currently supported for KVM only", responseObject = VolumeResponse.class, entityType = {Volume.class},
-        since = "4.18.1",
+        since = "4.19.1",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class CheckAndRepairVolumeCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CheckAndRepairVolumeCmd.class.getName());
