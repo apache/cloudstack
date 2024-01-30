@@ -234,7 +234,7 @@ public class VolumeServiceTest extends TestCase{
         Mockito.when(volume.getPoolId()).thenReturn(1L);
         StoragePool pool = Mockito.mock(StoragePool.class);
         Mockito.when(storageManagerMock.getStoragePool(1L)).thenReturn(pool);
-        CheckAndRepairVolumePayload payload = new CheckAndRepairVolumePayload(false);
+        CheckAndRepairVolumePayload payload = new CheckAndRepairVolumePayload(null);
         Mockito.when(volume.getpayload()).thenReturn(payload);
         Mockito.when(volume.getPath()).thenReturn("cbac516a-0f1f-4559-921c-1a7c6c408ccf");
         Mockito.when(volume.getPassphrase()).thenReturn(new byte[] {3, 1, 2, 3});
@@ -251,7 +251,7 @@ public class VolumeServiceTest extends TestCase{
                 "    \"fragmented-clusters\": 96135\n" +
                 "}";
 
-        CheckVolumeAndRepairCommand command = new CheckVolumeAndRepairCommand(volume.getPath(), new StorageFilerTO(pool), payload.isRepair(),
+        CheckVolumeAndRepairCommand command = new CheckVolumeAndRepairCommand(volume.getPath(), new StorageFilerTO(pool), payload.getRepair(),
                 volume.getPassphrase(), volume.getEncryptFormat());
 
         CheckVolumeAndRepairAnswer answer = new CheckVolumeAndRepairAnswer(command, true, checkResult);
@@ -270,13 +270,13 @@ public class VolumeServiceTest extends TestCase{
         Mockito.when(volume.getPoolId()).thenReturn(1L);
         StoragePool pool = Mockito.mock(StoragePool.class);
         Mockito.when(storageManagerMock.getStoragePool(1L)).thenReturn(pool);
-        CheckAndRepairVolumePayload payload = new CheckAndRepairVolumePayload(false);
+        CheckAndRepairVolumePayload payload = new CheckAndRepairVolumePayload(null);
         Mockito.when(volume.getpayload()).thenReturn(payload);
         Mockito.when(volume.getPath()).thenReturn("cbac516a-0f1f-4559-921c-1a7c6c408ccf");
         Mockito.when(volume.getPassphrase()).thenReturn(new byte[] {3, 1, 2, 3});
         Mockito.when(volume.getEncryptFormat()).thenReturn("LUKS");
 
-        CheckVolumeAndRepairCommand command = new CheckVolumeAndRepairCommand(volume.getPath(), new StorageFilerTO(pool), payload.isRepair(),
+        CheckVolumeAndRepairCommand command = new CheckVolumeAndRepairCommand(volume.getPath(), new StorageFilerTO(pool), payload.getRepair(),
                 volume.getPassphrase(), volume.getEncryptFormat());
 
         CheckVolumeAndRepairAnswer answer = new CheckVolumeAndRepairAnswer(command, false, "Unable to execute qemu command");

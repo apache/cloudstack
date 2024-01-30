@@ -1768,7 +1768,7 @@ public class VolumeApiServiceImplTest {
 
         CheckVolumeAndRepairCmd cmd  = mock(CheckVolumeAndRepairCmd.class);
         when(cmd.getId()).thenReturn(1L);
-        when(cmd.getRepair()).thenReturn(false);
+        when(cmd.getRepair()).thenReturn(null);
 
         VolumeVO volume = mock(VolumeVO.class);
         when(volumeDaoMock.findById(1L)).thenReturn(volume);

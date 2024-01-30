@@ -381,6 +381,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     public static ConfigKey<Long> storageTagRuleExecutionTimeout = new ConfigKey<>("Advanced", Long.class, "storage.tag.rule.execution.timeout", "2000", "The maximum runtime,"
             + " in milliseconds, to execute a storage tag rule; if it is reached, a timeout will happen.", true);
 
+    public static final ConfigKey<Boolean> AllowVolumeCheckAndRepair = new ConfigKey<Boolean>("Hidden", Boolean.class, "volume.check.and.repair.before.instance.use", "true",
+            "To check and repair the volume if it has any leaks before performing any volume operation", true);
+
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
 
     private static final Set<Volume.State> STATES_VOLUME_CANNOT_BE_DESTROYED = new HashSet<>(Arrays.asList(Volume.State.Destroy, Volume.State.Expunging, Volume.State.Expunged, Volume.State.Allocated));
@@ -1823,7 +1826,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_CHECK, eventDescription = "checking volume and repair if needed", async = true)
     public Pair<String, String> checkAndRepairVolume(CheckVolumeAndRepairCmd cmd) throws ResourceAllocationException {
         long volumeId = cmd.getId();
-        boolean repair = cmd.getRepair();
+        String repair = cmd.getRepair();
 
         final VolumeVO volume = _volsDao.findById(volumeId);
         validationsForCheckVolumeOperation(volume);
@@ -1911,7 +1914,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
     }
 
-    private Pair<String, String> orchestrateCheckVolumeAndRepair(Long volumeId, boolean repair) {
+    private Pair<String, String> orchestrateCheckVolumeAndRepair(Long volumeId, String repair) {
 
         VolumeInfo volume = volFactory.getVolume(volumeId);
 
@@ -1929,7 +1932,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return volService.checkAndRepairVolume(volume);
     }
 
-    public Outcome<Pair> checkVolumeAndRepairThroughJobQueue(final Long vmId, final Long volumeId, boolean repair) {
+    public Outcome<Pair> checkVolumeAndRepairThroughJobQueue(final Long vmId, final Long volumeId, String repair) {
 
         final CallContext context = CallContext.current();
         final User callingUser = context.getCallingUser();
@@ -4996,7 +4999,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @ReflectionUse
     private Pair<JobInfo.Status, String> orchestrateCheckVolumeAndRepair(VmWorkCheckAndRepairVolume work) throws Exception {
         Account account = _accountDao.findById(work.getAccountId());
-        Pair<String, String> result = orchestrateCheckVolumeAndRepair(work.getVolumeId(), work.needRepair());
+        Pair<String, String> result = orchestrateCheckVolumeAndRepair(work.getVolumeId(), work.getRepair());
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, _jobMgr.marshallResultObject(result));
     }
 
@@ -5036,7 +5039,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 AllowUserExpungeRecoverVolume,
                 MatchStoragePoolTagsWithDiskOffering,
                 UseHttpsToUpload,
-                WaitDetachDevice
+                WaitDetachDevice,
+                AllowVolumeCheckAndRepair
         };
     }
 }

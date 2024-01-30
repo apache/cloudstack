@@ -34,6 +34,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.api.command.user.volume.CheckVolumeAndRepairCmd;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
@@ -92,6 +93,7 @@ import com.cloud.agent.api.storage.CheckVolumeAndRepairCommand;
 import com.cloud.agent.api.storage.ListVolumeAnswer;
 import com.cloud.agent.api.storage.ListVolumeCommand;
 import com.cloud.agent.api.storage.ResizeVolumeCommand;
+import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.alert.AlertManager;
@@ -252,11 +254,15 @@ public class VolumeServiceImpl implements VolumeService {
             return ((PrimaryDataStoreDriver)dataStoreDriver).grantAccess(dataObject, host, dataStore);
         }
 
-        if (HypervisorType.KVM.equals(host.getHypervisorType()) && DataObjectType.VOLUME.equals(dataObject.getType())) {
-            CheckAndRepairVolumePayload payload = new CheckAndRepairVolumePayload(true);
-            VolumeInfo volumeInfo = volFactory.getVolume(dataObject.getId());
-            volumeInfo.addPayload(payload);
-            checkAndRepairVolume(volumeInfo);
+        if (com.cloud.storage.VolumeApiServiceImpl.AllowVolumeCheckAndRepair.value()) {
+            if (HypervisorType.KVM.equals(host.getHypervisorType()) && DataObjectType.VOLUME.equals(dataObject.getType())) {
+                s_logger.info(String.format("Trying to check and repair the volume %d", dataObject.getId()));
+                String repair = CheckVolumeAndRepairCmd.RepairValues.leaks.name();
+                CheckAndRepairVolumePayload payload = new CheckAndRepairVolumePayload(repair);
+                VolumeInfo volumeInfo = volFactory.getVolume(dataObject.getId());
+                volumeInfo.addPayload(payload);
+                checkAndRepairVolume(volumeInfo);
+            }
         }
 
         return false;
@@ -2775,7 +2781,7 @@ public class VolumeServiceImpl implements VolumeService {
         Long poolId = volume.getPoolId();
         StoragePool pool = _storageMgr.getStoragePool(poolId);
         CheckAndRepairVolumePayload payload = (CheckAndRepairVolumePayload) volume.getpayload();
-        CheckVolumeAndRepairCommand command = new CheckVolumeAndRepairCommand(volume.getPath(), new StorageFilerTO(pool), payload.isRepair(),
+        CheckVolumeAndRepairCommand command = new CheckVolumeAndRepairCommand(volume.getPath(), new StorageFilerTO(pool), payload.getRepair(),
                  volume.getPassphrase(), volume.getEncryptFormat());
 
         try {
@@ -2783,7 +2789,7 @@ public class VolumeServiceImpl implements VolumeService {
             if (answer != null && answer.getResult()) {
                 s_logger.debug("Check volume response result: " + answer.getDetails());
                 payload.setVolumeCheckExecutionResult(answer.getVolumeCheckExecutionResult());
-                if (payload.isRepair()) {
+                if (StringUtils.isNotEmpty(payload.getRepair())) {
                     payload.setVolumeRepairedExecutionResult(answer.getVolumeRepairExecutionResult());
                 }
                 return new Pair<>(answer.getVolumeCheckExecutionResult(), answer.getVolumeRepairExecutionResult());

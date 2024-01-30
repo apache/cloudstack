@@ -19,16 +19,16 @@ package com.cloud.storage;
 
 public class CheckAndRepairVolumePayload {
 
-    public final boolean repair;
+    public final String repair;
     public String result;
     private String volumeCheckExecutionResult;
     private String volumeRepairedExecutionResult;
 
-    public CheckAndRepairVolumePayload(boolean repair) {
+    public CheckAndRepairVolumePayload(String repair) {
         this.repair = repair;
     }
 
-    public boolean isRepair() {
+    public String getRepair() {
         return repair;
     }
 

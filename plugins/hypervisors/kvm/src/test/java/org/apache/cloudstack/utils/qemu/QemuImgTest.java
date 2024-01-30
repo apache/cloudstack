@@ -377,7 +377,7 @@ public class QemuImgTest {
 
         try {
             QemuImg qemu = new QemuImg(0);
-            qemu.checkAndRepair(file, null, null, false);
+            qemu.checkAndRepair(file, null, null, null);
         } catch (QemuImgException e) {
             fail(e.getMessage());
         }

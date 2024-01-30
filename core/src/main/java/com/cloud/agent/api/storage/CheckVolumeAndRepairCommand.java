@@ -28,12 +28,12 @@ import java.util.Arrays;
 public class CheckVolumeAndRepairCommand extends Command {
     private String path;
     private StorageFilerTO pool;
-    private boolean repair;
+    private String repair;
     @LogLevel(LogLevel.Log4jLevel.Off)
     private byte[] passphrase;
     private String encryptFormat;
 
-    public CheckVolumeAndRepairCommand(String path, StorageFilerTO pool, boolean repair, byte[] passphrase, String encryptFormat) {
+    public CheckVolumeAndRepairCommand(String path, StorageFilerTO pool, String repair, byte[] passphrase, String encryptFormat) {
         this.path = path;
         this.pool = pool;
         this.repair = repair;
@@ -53,7 +53,7 @@ public class CheckVolumeAndRepairCommand extends Command {
         return pool;
     }
 
-    public boolean needRepair() {
+    public String getRepair() {
         return repair;
     }
 
