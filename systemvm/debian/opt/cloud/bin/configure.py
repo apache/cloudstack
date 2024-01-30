@@ -21,7 +21,9 @@ import logging
 import os
 import re
 import sys
-import urllib.request, urllib.parse, urllib.error
+import urllib.request
+import urllib.parse
+import urllib.error
 import time
 import copy
 
@@ -40,8 +42,11 @@ from cs.CsProcess import CsProcess
 from cs.CsStaticRoutes import CsStaticRoutes
 from cs.CsVpcGuestNetwork import CsVpcGuestNetwork
 
-ICMPV6_TYPE_ANY = "{ destination-unreachable, packet-too-big, time-exceeded, parameter-problem, echo-request, echo-reply, mld-listener-query, mld-listener-report, mld-listener-done, nd-router-solicit, nd-router-advert, nd-neighbor-solicit, nd-neighbor-advert, nd-redirect, router-renumbering }"
+ICMPV6_TYPE_ANY = "{ destination-unreachable, packet-too-big, time-exceeded, parameter-problem, \
+    echo-request, echo-reply, mld-listener-query, mld-listener-report, mld-listener-done, \
+    nd-router-solicit, nd-router-advert, nd-neighbor-solicit, nd-neighbor-advert, nd-redirect, router-renumbering }"
 TCP_UDP_PORT_ANY = "{ 0-65535 }"
+
 
 def removeUndesiredCidrs(cidrs, version):
     version_char = ":"
@@ -60,14 +65,16 @@ def removeUndesiredCidrs(cidrs, version):
             return cidrs
     return None
 
+
 def appendStringIfNotEmpty(s1, s2):
     if s2:
-        if type(s2) != str:
+        if not isinstance(s2, str):
             s2 = str(s2)
         if s1:
             return s1 + " " + s2
         return s2
     return s1
+
 
 class CsPassword(CsDataBag):
 
@@ -307,9 +314,9 @@ class CsAcl(CsDataBag):
             self.ipv6_acl.insert(0, {'type': "chain", 'chain': chain})
             for rule in rule_list:
                 cidr = rule['cidr']
-                if cidr != None and cidr != "":
+                if cidr is not None and cidr != "":
                     cidr = removeUndesiredCidrs(cidr, 4)
-                    if cidr == None or cidr == "":
+                    if cidr is None or cidr == "":
                         continue
                 addr = ""
                 if cidr:
@@ -375,9 +382,9 @@ class CsAcl(CsDataBag):
             for i in rule_list:
                 ruleData = copy.copy(i)
                 cidr = ruleData['cidr']
-                if cidr != None and cidr != "":
+                if cidr is not None and cidr != "":
                     cidr = removeUndesiredCidrs(cidr, 6)
-                    if cidr == None or cidr == "":
+                    if cidr is None or cidr == "":
                         continue
                 ruleData['cidr'] = cidr
                 r = self.AclRule(direction, self, ruleData, self.config, count)
@@ -487,7 +494,7 @@ class CsIpv6Firewall(CsDataBag):
                 continue
             rule = self.dbag[item]
 
-            if chains_added == False:
+            if chains_added is False:
                 guest_cidr = rule['guest_ip6_cidr']
                 parent_chain = "fw_forward"
                 chain = "fw_chain_egress"
@@ -639,9 +646,9 @@ class CsVmMetadata(CsDataBag):
         fh = open(dest, "w")
         self.__exflock(fh)
         if data is not None:
-            if type(data) == str:
+            if isinstance(data, str):
                 fh.write(data)
-            elif type(data) == bytes:
+            elif isinstance(data, bytes):
                 fh.write(data.decode())
         else:
             fh.write("")
@@ -1412,6 +1419,7 @@ def main(argv):
     red = CsRedundant(config)
     red.set()
     return 0
+
 
 if __name__ == "__main__":
     main(sys.argv)
