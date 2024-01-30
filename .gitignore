@@ -104,3 +104,4 @@ scripts/.pydevproject
 venv
 node_modules
 .vscode
+!/plugins/storage/object/huawei-obs/local-huawei-sdk/com/huawei/storage/esdk-obs-java/3.23.9/esdk-obs-java-3.23.9.jar
