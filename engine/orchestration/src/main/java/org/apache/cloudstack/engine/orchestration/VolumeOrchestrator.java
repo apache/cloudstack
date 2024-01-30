@@ -1915,6 +1915,15 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                             }
                         }
                     }
+                } else {
+                    // For unmanaged storage this is not a mandatory step but this is kept here so that volume can be checked and repaired if needed based on the
+                    // global setting volume.check.and.repair.before.use
+                    Host host = _hostDao.findById(vm.getVirtualMachine().getHostId());
+                    try {
+                        volService.grantAccess(volFactory.getVolume(vol.getId()), host, (DataStore)pool);
+                    } catch (Exception e) {
+                        s_logger.debug(String.format("Unable to grant access to volume [%s] on host [%s], due to %s.", volToString, host, e.getMessage()));
+                    }
                 }
             } else if (task.type == VolumeTaskType.MIGRATE) {
                 pool = (StoragePool)dataStoreMgr.getDataStore(task.pool.getId(), DataStoreRole.Primary);
