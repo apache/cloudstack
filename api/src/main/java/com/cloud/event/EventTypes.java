@@ -303,6 +303,7 @@ public class EventTypes {
     public static final String EVENT_VOLUME_CREATE = "VOLUME.CREATE";
     public static final String EVENT_VOLUME_DELETE = "VOLUME.DELETE";
     public static final String EVENT_VOLUME_ATTACH = "VOLUME.ATTACH";
+    public static final String EVENT_VOLUME_CHECK = "VOLUME.CHECK";
     public static final String EVENT_VOLUME_DETACH = "VOLUME.DETACH";
     public static final String EVENT_VOLUME_EXTRACT = "VOLUME.EXTRACT";
     public static final String EVENT_VOLUME_UPLOAD = "VOLUME.UPLOAD";

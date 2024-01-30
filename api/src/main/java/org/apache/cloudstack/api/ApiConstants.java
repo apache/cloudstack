@@ -379,6 +379,8 @@ public class ApiConstants {
     public static final String RECEIVED_BYTES = "receivedbytes";
     public static final String RECONNECT = "reconnect";
     public static final String RECOVER = "recover";
+
+    public static final String REPAIR = "repair";
     public static final String REQUIRES_HVM = "requireshvm";
     public static final String RESOURCE_NAME = "resourcename";
     public static final String RESOURCE_TYPE = "resourcetype";
@@ -502,6 +504,9 @@ public class ApiConstants {
     public static final String IS_VOLATILE = "isvolatile";
     public static final String VOLUME_ID = "volumeid";
     public static final String VOLUMES = "volumes";
+    public static final String VOLUME_CHECK_RESULT = "volumecheckresult";
+    public static final String VOLUME_REPAIR_RESULT = "volumerepairresult";
+
     public static final String ZONE = "zone";
     public static final String ZONE_ID = "zoneid";
     public static final String ZONE_NAME = "zonename";
