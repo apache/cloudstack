@@ -24,15 +24,21 @@
             <artifactId>cloud-engine-schema</artifactId>
             <version>${project.version}</version>
         </dependency>
-	<dependency>
-	    <groupId>com.huaweicloud</groupId>
-	    <artifactId>esdk-obs-java-bundle</artifactId>
-	    <version>3.23.9.1</version>
-	</dependency>
+        <dependency>
+            <groupId>com.huawei.storage</groupId>
+            <artifactId>esdk-obs-java</artifactId>
+            <version>3.23.9</version>
+        </dependency>
 	<dependency>
 	    <groupId>com.huaweicloud.sdk</groupId>
 	    <artifactId>huaweicloud-sdk-iam</artifactId>
 	    <version>3.1.69</version>
+	    <exclusions>
+	     <exclusion>
+	      <groupId>org.bouncycastle</groupId>
+	      <artifactId>bcprov-jdk18on</artifactId>
+	     </exclusion>
+	    </exclusions>
 	</dependency>
     </dependencies>
 </project>

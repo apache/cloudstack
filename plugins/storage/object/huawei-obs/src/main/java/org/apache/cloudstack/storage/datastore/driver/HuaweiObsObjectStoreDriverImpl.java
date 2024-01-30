@@ -15,9 +15,14 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountDetailsDao;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.huaweicloud.sdk.core.HttpListener;
 import com.huaweicloud.sdk.core.auth.BasicCredentials;
-import com.huaweicloud.sdk.core.auth.ICredential;
+import com.huaweicloud.sdk.core.http.HttpConfig;
 import com.huaweicloud.sdk.iam.v3.IamClient;
+import com.huaweicloud.sdk.iam.v3.model.CreateCredentialOption;
+import com.huaweicloud.sdk.iam.v3.model.CreatePermanentAccessKeyRequest;
+import com.huaweicloud.sdk.iam.v3.model.CreatePermanentAccessKeyRequestBody;
+import com.huaweicloud.sdk.iam.v3.model.CreatePermanentAccessKeyResponse;
 import com.huaweicloud.sdk.iam.v3.model.CreateUserOption;
 import com.huaweicloud.sdk.iam.v3.model.CreateUserRequest;
 import com.huaweicloud.sdk.iam.v3.model.CreateUserRequestBody;
@@ -28,7 +33,6 @@ import com.huaweicloud.sdk.iam.v3.model.UpdateUserRequest;
 import com.huaweicloud.sdk.iam.v3.model.UpdateUserRequestBody;
 import com.obs.services.ObsClient;
 import com.obs.services.model.BucketEncryption;
-import com.obs.services.model.BucketPolicyResponse;
 import com.obs.services.model.BucketQuota;
 import com.obs.services.model.BucketStorageInfo;
 import com.obs.services.model.BucketVersioningConfiguration;
@@ -36,7 +40,6 @@ import com.obs.services.model.CreateBucketRequest;
 import com.obs.services.model.GrantAndPermission;
 import com.obs.services.model.GranteeInterface;
 import com.obs.services.model.ListBucketsRequest;
-import com.obs.services.model.ListBucketsResult;
 import com.obs.services.model.ObjectListing;
 import com.obs.services.model.ObsBucket;
 import com.obs.services.model.SSEAlgorithmEnum;
@@ -53,6 +56,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.inject.Inject;
@@ -123,9 +127,7 @@ public class HuaweiObsObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         List<Bucket> bucketsList = new ArrayList<>();
         try (ObsClient obsClient = getObsClient(storeId)) {
             ListBucketsRequest request = new ListBucketsRequest();
-            request.setQueryLocation(true);
-            ListBucketsResult buckets = obsClient.listBucketsV2(request);
-            for (ObsBucket obsBucket : buckets.getBuckets()) {
+            for (ObsBucket obsBucket : obsClient.listBuckets(request)) {
                 Bucket bucket = new BucketObject();
                 bucket.setName(obsBucket.getBucketName());
                 bucketsList.add(bucket);
@@ -251,36 +253,27 @@ public class HuaweiObsObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
 
     @Override
     public void setBucketPolicy(String bucketName, String policy, long storeId) {
-        String privatePolicy = "{\"Version\":\"2012-10-17\",\"Statement\":[]}";
-
-        StringBuilder builder = new StringBuilder();
-        builder.append("{\n");
-        builder.append("    \"Statement\": [\n");
-        builder.append("        {\n");
-        builder.append("            \"Action\": [\n");
-        builder.append("                \"s3:GetBucketLocation\",\n");
-        builder.append("                \"s3:ListBucket\"\n");
-        builder.append("            ],\n");
-        builder.append("            \"Effect\": \"Allow\",\n");
-        builder.append("            \"Principal\": \"*\",\n");
-        builder.append("            \"Resource\": \"arn:aws:s3:::").append(bucketName).append("\"\n");
-        builder.append("        },\n");
-        builder.append("        {\n");
-        builder.append("            \"Action\": \"s3:GetObject\",\n");
-        builder.append("            \"Effect\": \"Allow\",\n");
-        builder.append("            \"Principal\": \"*\",\n");
-        builder.append("            \"Resource\": \"arn:aws:s3:::").append(bucketName).append("/*\"\n");
-        builder.append("        }\n");
-        builder.append("    ],\n");
-        builder.append("    \"Version\": \"2012-10-17\"\n");
-        builder.append("}\n");
-        String publicPolicy = builder.toString();
-
-        //ToDo Support custom policy
-        String policyConfig = (policy.equalsIgnoreCase("public")) ? publicPolicy : privatePolicy;
+        if (policy.equalsIgnoreCase("public") || policy.equalsIgnoreCase("private")) {
+            StringBuilder publicPolicyBuilder = new StringBuilder();
+            publicPolicyBuilder.append("{\n");
+            publicPolicyBuilder.append("    \"Statement\": [\n");
+            publicPolicyBuilder.append("        {\n");
+            if (policy.equalsIgnoreCase("public")) {
+                publicPolicyBuilder.append("            \"Effect\": \"Allow\",\n");
+            } else if (policy.equalsIgnoreCase("private")) {
+                publicPolicyBuilder.append("            \"Effect\": \"Deny\",\n");
+            }
+            publicPolicyBuilder.append("            \"Action\": \"*\",\n");
+            publicPolicyBuilder.append("            \"Principal\": \"*\",\n");
+            publicPolicyBuilder.append("            \"Resource\": [\"arn:aws:s3:::").append(bucketName).append("/*\"]\n");
+            publicPolicyBuilder.append("        }\n");
+            publicPolicyBuilder.append("    ]\n");
+            publicPolicyBuilder.append("}\n");
+            policy = publicPolicyBuilder.toString();
+        }
 
         try (ObsClient obsClient = getObsClient(storeId)) {
-            obsClient.setBucketPolicy(bucketName, policyConfig);
+            obsClient.setBucketPolicy(bucketName, policy);
         } catch (Exception ex) {
             throw new CloudRuntimeException(ex);
         }
@@ -289,9 +282,9 @@ public class HuaweiObsObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     @Override
     public BucketPolicy getBucketPolicy(String bucketName, long storeId) {
         try (ObsClient obsClient = getObsClient(storeId)) {
-            BucketPolicyResponse bucketPolicyResponse = obsClient.getBucketPolicyV2(bucketName);
+            String policy = obsClient.getBucketPolicy(bucketName);
             BucketPolicy bucketPolicy = new BucketPolicy();
-            bucketPolicy.setPolicyText(bucketPolicyResponse.getPolicy());
+            bucketPolicy.setPolicyText(policy);
             return bucketPolicy;
         } catch (Exception ex) {
             throw new CloudRuntimeException(ex);
@@ -304,46 +297,6 @@ public class HuaweiObsObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             obsClient.deleteBucketPolicy(bucketName);
         } catch (Exception ex) {
             throw new CloudRuntimeException(ex);
-        }
-    }
-
-    @Override
-    public boolean createUser(long accountId, long storeId) {
-        Account account = _accountDao.findById(accountId);
-        String accessKey = account.getAccountName();
-        Map<String, String> storeDetails = _storeDetailsDao.getDetails(storeId);
-        String endpoint = _storeDao.findById(storeId).getUrl();
-        String clientAccessKey = storeDetails.get(ACCESS_KEY);
-        String clientSecretKey = storeDetails.get(SECRET_KEY);
-
-        try {
-            ICredential credentials = new BasicCredentials().withAk(clientAccessKey).withSk(clientSecretKey).withIamEndpoint(endpoint);
-            IamClient iamClient = IamClient.newBuilder().withCredential(credentials).build();
-            ShowUserRequest showUserRequest = new ShowUserRequest().withUserId(accessKey);
-            ShowUserResult showUserResult = iamClient.showUser(showUserRequest).getUser();
-            if (showUserResult == null || showUserResult.getPwdStatus()) {
-                KeyGenerator generator = KeyGenerator.getInstance("HmacSHA1");
-                SecretKey key = generator.generateKey();
-                String secretKey = Base64.encodeBase64URLSafeString(key.getEncoded());
-                CreateUserOption createUserOption = new CreateUserOption().withName(accessKey).withPassword(secretKey).withEnabled(Boolean.TRUE);
-                CreateUserRequestBody createUserRequestBody = new CreateUserRequestBody().withUser(createUserOption);
-                CreateUserRequest createUserRequest = new CreateUserRequest().withBody(createUserRequestBody);
-                iamClient.createUser(createUserRequest);
-
-                // Store user credentials
-                Map<String, String> details = new HashMap<>();
-                details.put(OBS_ACCESS_KEY, accessKey);
-                details.put(OBS_SECRET_KEY, secretKey);
-                _accountDetailsDao.persist(accountId, details);
-            } else if (!showUserResult.getEnabled()) {
-                UpdateUserOption updateUserOption = new UpdateUserOption().withName(accessKey).withEnabled(Boolean.TRUE);
-                UpdateUserRequestBody updateUserRequestBody = new UpdateUserRequestBody().withUser(updateUserOption);
-                UpdateUserRequest updateUserRequest = new UpdateUserRequest().withBody(updateUserRequestBody);
-                iamClient.updateUser(updateUserRequest);
-            }
-            return true;
-        } catch (Exception e) {
-            throw new CloudRuntimeException(e);
         }
     }
 
@@ -414,6 +367,79 @@ public class HuaweiObsObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             throw new CloudRuntimeException(ex);
         }
         return allBucketsUsage;
+    }
+
+    @Override
+    public boolean createUser(long accountId, long storeId) {
+        Account account = _accountDao.findById(accountId);
+        String username = account.getAccountName();
+        Map<String, String> storeDetails = _storeDetailsDao.getDetails(storeId);
+        String endpoint = _storeDao.findById(storeId).getUrl();
+        String clientAccessKey = storeDetails.get(ACCESS_KEY);
+        String clientSecretKey = storeDetails.get(SECRET_KEY);
+
+        try {
+            HttpConfig httpConfig = HttpConfig.getDefaultHttpConfig();
+            httpConfig.setIgnoreSSLVerification(true);
+            HttpListener requestListener = HttpListener.forRequestListener(listener
+                    -> System.out.printf("> Request %s %s\n> Headers:\n%s\n> Body: %s\n",
+                            listener.httpMethod(),
+                            listener.uri(),
+                            listener.headers().entrySet().stream()
+                                    .flatMap(entry -> entry.getValue().stream().map(
+                                    value -> "\t" + entry.getKey() + ": " + value))
+                                    .collect(Collectors.joining("\n")),
+                            listener.body().orElse("")));
+            httpConfig.addHttpListener(requestListener);
+            HttpListener responseListener = HttpListener.forResponseListener(listener
+                    -> System.out.printf("< Response %s %s %s\n< Headers:\n%s\n< Body: %s\n",
+                            listener.httpMethod(),
+                            listener.uri(),
+                            listener.statusCode(),
+                            listener.headers().entrySet().stream()
+                                    .flatMap(entry -> entry.getValue().stream().map(
+                                    value -> "\t" + entry.getKey() + ": " + value))
+                                    .collect(Collectors.joining("\n")),
+                            listener.body().orElse("")));
+            httpConfig.addHttpListener(responseListener);
+
+            BasicCredentials basicCredentials = new BasicCredentials().withAk(clientAccessKey).withSk(clientSecretKey).withIamEndpoint(endpoint);
+            List<String> endpoints = new ArrayList<>();
+            endpoints.add(basicCredentials.getIamEndpoint());
+            IamClient iamClient = IamClient.newBuilder().withEndpoints(endpoints).withCredential(basicCredentials).withHttpConfig(httpConfig).build();
+            ShowUserRequest showUserRequest = new ShowUserRequest().withUserId(username);
+            ShowUserResult showUserResult = iamClient.showUser(showUserRequest).getUser();
+            if (showUserResult == null || showUserResult.getPwdStatus()) {
+                KeyGenerator generator = KeyGenerator.getInstance("HmacSHA1");
+                SecretKey key = generator.generateKey();
+                String secretKey = Base64.encodeBase64URLSafeString(key.getEncoded());
+                CreateUserOption createUserOption = new CreateUserOption().withName(username).withPassword(secretKey).withEnabled(Boolean.TRUE);
+                CreateUserRequestBody createUserRequestBody = new CreateUserRequestBody().withUser(createUserOption);
+                CreateUserRequest createUserRequest = new CreateUserRequest().withBody(createUserRequestBody);
+                iamClient.createUser(createUserRequest);
+                CreateCredentialOption createCredentialOption = new CreateCredentialOption().withUserId(username);
+                CreatePermanentAccessKeyRequestBody createPermanentAccessKeyRequestBody = new CreatePermanentAccessKeyRequestBody().withCredential(createCredentialOption);
+                CreatePermanentAccessKeyRequest createPermanentAccessKeyRequest = new CreatePermanentAccessKeyRequest().withBody(createPermanentAccessKeyRequestBody);
+                CreatePermanentAccessKeyResponse createPermanentAccessKeyResponse = iamClient.createPermanentAccessKey(createPermanentAccessKeyRequest);
+                String accessKey = createPermanentAccessKeyResponse.getCredential().getAccess();
+                String secret = createPermanentAccessKeyResponse.getCredential().getSecret();
+                String status = createPermanentAccessKeyResponse.getCredential().getStatus();
+
+                // Store user credentials
+                Map<String, String> details = new HashMap<>();
+                details.put(OBS_ACCESS_KEY, accessKey);
+                details.put(OBS_SECRET_KEY, secretKey);
+                _accountDetailsDao.persist(accountId, details);
+            } else if (!showUserResult.getEnabled()) {
+                UpdateUserOption updateUserOption = new UpdateUserOption().withName(clientAccessKey).withEnabled(Boolean.TRUE);
+                UpdateUserRequestBody updateUserRequestBody = new UpdateUserRequestBody().withUser(updateUserOption);
+                UpdateUserRequest updateUserRequest = new UpdateUserRequest().withBody(updateUserRequestBody);
+                iamClient.updateUser(updateUserRequest);
+            }
+        } catch (Exception ex) {
+            throw new CloudRuntimeException(ex);
+        }
+        return true;
     }
 
     protected ObsClient getObsClient(long storeId) {
