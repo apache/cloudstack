@@ -47,7 +47,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @ResourceWrapper(handles =  CheckVolumeAndRepairCommand.class)
-public final class LibvirtCheckVolumeAndRepairCommandWrapper extends CommandWrapper<CheckVolumeAndRepairCommand, Answer, LibvirtComputingResource> {
+public class LibvirtCheckVolumeAndRepairCommandWrapper extends CommandWrapper<CheckVolumeAndRepairCommand, Answer, LibvirtComputingResource> {
 
     private static final Logger s_logger = Logger.getLogger(LibvirtCheckVolumeAndRepairCommandWrapper.class);
 
@@ -87,7 +87,7 @@ public final class LibvirtCheckVolumeAndRepairCommandWrapper extends CommandWrap
         }
     }
 
-    private String checkVolumeAndRepair(final KVMPhysicalDisk vol, final boolean repair, final QemuObject.EncryptFormat encryptFormat, byte[] passphrase, final LibvirtComputingResource libvirtComputingResource) throws CloudRuntimeException {
+    protected String checkVolumeAndRepair(final KVMPhysicalDisk vol, final boolean repair, final QemuObject.EncryptFormat encryptFormat, byte[] passphrase, final LibvirtComputingResource libvirtComputingResource) throws CloudRuntimeException {
         List<QemuObject> passphraseObjects = new ArrayList<>();
         QemuImageOptions imgOptions = null;
         if (ArrayUtils.isEmpty(passphrase)) {

@@ -19,14 +19,24 @@
 
 package org.apache.cloudstack.storage.volume;
 
+import com.cloud.agent.api.storage.CheckVolumeAndRepairAnswer;
+import com.cloud.agent.api.storage.CheckVolumeAndRepairCommand;
+import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.exception.StorageUnavailableException;
+import com.cloud.storage.CheckAndRepairVolumePayload;
+import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotManager;
+import com.cloud.utils.Pair;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+
 import junit.framework.TestCase;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
@@ -67,6 +77,9 @@ public class VolumeServiceTest extends TestCase{
     SnapshotManager snapshotManagerMock;
 
     @Mock
+    StorageManager storageManagerMock;
+
+    @Mock
     VolumeVO volumeVoMock;
 
     @Before
@@ -75,6 +88,7 @@ public class VolumeServiceTest extends TestCase{
         volumeServiceImplSpy.volFactory = volumeDataFactoryMock;
         volumeServiceImplSpy.volDao = volumeDaoMock;
         volumeServiceImplSpy.snapshotMgr = snapshotManagerMock;
+        volumeServiceImplSpy._storageMgr = storageManagerMock;
     }
 
     @Test(expected = InterruptedException.class)
@@ -212,5 +226,64 @@ public class VolumeServiceTest extends TestCase{
 
         volumeServiceImplSpy.destroySourceVolumeAfterMigration(ObjectInDataStoreStateMachine.Event.DestroyRequested, null, volumeObject,
           volumeObject, true);
+    }
+
+    @Test
+    public void testCheckAndRepairVolume() throws StorageUnavailableException {
+        VolumeInfo volume = Mockito.mock(VolumeInfo.class);
+        Mockito.when(volume.getPoolId()).thenReturn(1L);
+        StoragePool pool = Mockito.mock(StoragePool.class);
+        Mockito.when(storageManagerMock.getStoragePool(1L)).thenReturn(pool);
+        CheckAndRepairVolumePayload payload = new CheckAndRepairVolumePayload(false);
+        Mockito.when(volume.getpayload()).thenReturn(payload);
+        Mockito.when(volume.getPath()).thenReturn("cbac516a-0f1f-4559-921c-1a7c6c408ccf");
+        Mockito.when(volume.getPassphrase()).thenReturn(new byte[] {3, 1, 2, 3});
+        Mockito.when(volume.getEncryptFormat()).thenReturn("LUKS");
+
+        String checkResult = "{\n" +
+                "    \"image-end-offset\": 6442582016,\n" +
+                "    \"total-clusters\": 163840,\n" +
+                "    \"check-errors\": 0,\n" +
+                "    \"leaks\": 124,\n" +
+                "    \"allocated-clusters\": 98154,\n" +
+                "    \"filename\": \"/var/lib/libvirt/images/26be20c7-b9d0-43f6-a76e-16c70737a0e0\",\n" +
+                "    \"format\": \"qcow2\",\n" +
+                "    \"fragmented-clusters\": 96135\n" +
+                "}";
+
+        CheckVolumeAndRepairCommand command = new CheckVolumeAndRepairCommand(volume.getPath(), new StorageFilerTO(pool), payload.isRepair(),
+                volume.getPassphrase(), volume.getEncryptFormat());
+
+        CheckVolumeAndRepairAnswer answer = new CheckVolumeAndRepairAnswer(command, true, checkResult);
+        answer.setVolumeCheckExecutionResult(checkResult);
+        Mockito.when(storageManagerMock.sendToPool(pool, null, command)).thenReturn(answer);
+
+        Pair<String, String> result = volumeServiceImplSpy.checkAndRepairVolume(volume);
+
+        Assert.assertEquals(result.first(), checkResult);
+        Assert.assertEquals(result.second(), null);
+    }
+
+    @Test
+    public void testCheckAndRepairVolumeWhenFailure() throws StorageUnavailableException {
+        VolumeInfo volume = Mockito.mock(VolumeInfo.class);
+        Mockito.when(volume.getPoolId()).thenReturn(1L);
+        StoragePool pool = Mockito.mock(StoragePool.class);
+        Mockito.when(storageManagerMock.getStoragePool(1L)).thenReturn(pool);
+        CheckAndRepairVolumePayload payload = new CheckAndRepairVolumePayload(false);
+        Mockito.when(volume.getpayload()).thenReturn(payload);
+        Mockito.when(volume.getPath()).thenReturn("cbac516a-0f1f-4559-921c-1a7c6c408ccf");
+        Mockito.when(volume.getPassphrase()).thenReturn(new byte[] {3, 1, 2, 3});
+        Mockito.when(volume.getEncryptFormat()).thenReturn("LUKS");
+
+        CheckVolumeAndRepairCommand command = new CheckVolumeAndRepairCommand(volume.getPath(), new StorageFilerTO(pool), payload.isRepair(),
+                volume.getPassphrase(), volume.getEncryptFormat());
+
+        CheckVolumeAndRepairAnswer answer = new CheckVolumeAndRepairAnswer(command, false, "Unable to execute qemu command");
+        Mockito.when(storageManagerMock.sendToPool(pool, null, command)).thenReturn(answer);
+
+        Pair<String, String> result = volumeServiceImplSpy.checkAndRepairVolume(volume);
+
+        Assert.assertEquals(null, result);
     }
 }
