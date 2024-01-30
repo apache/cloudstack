@@ -19,8 +19,8 @@
 
 package org.apache.cloudstack.storage.volume;
 
-import com.cloud.agent.api.storage.CheckVolumeAndRepairAnswer;
-import com.cloud.agent.api.storage.CheckVolumeAndRepairCommand;
+import com.cloud.agent.api.storage.CheckAndRepairVolumeAnswer;
+import com.cloud.agent.api.storage.CheckAndRepairVolumeCommand;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.storage.CheckAndRepairVolumePayload;
@@ -251,10 +251,10 @@ public class VolumeServiceTest extends TestCase{
                 "    \"fragmented-clusters\": 96135\n" +
                 "}";
 
-        CheckVolumeAndRepairCommand command = new CheckVolumeAndRepairCommand(volume.getPath(), new StorageFilerTO(pool), payload.getRepair(),
+        CheckAndRepairVolumeCommand command = new CheckAndRepairVolumeCommand(volume.getPath(), new StorageFilerTO(pool), payload.getRepair(),
                 volume.getPassphrase(), volume.getEncryptFormat());
 
-        CheckVolumeAndRepairAnswer answer = new CheckVolumeAndRepairAnswer(command, true, checkResult);
+        CheckAndRepairVolumeAnswer answer = new CheckAndRepairVolumeAnswer(command, true, checkResult);
         answer.setVolumeCheckExecutionResult(checkResult);
         Mockito.when(storageManagerMock.sendToPool(pool, null, command)).thenReturn(answer);
 
@@ -276,10 +276,10 @@ public class VolumeServiceTest extends TestCase{
         Mockito.when(volume.getPassphrase()).thenReturn(new byte[] {3, 1, 2, 3});
         Mockito.when(volume.getEncryptFormat()).thenReturn("LUKS");
 
-        CheckVolumeAndRepairCommand command = new CheckVolumeAndRepairCommand(volume.getPath(), new StorageFilerTO(pool), payload.getRepair(),
+        CheckAndRepairVolumeCommand command = new CheckAndRepairVolumeCommand(volume.getPath(), new StorageFilerTO(pool), payload.getRepair(),
                 volume.getPassphrase(), volume.getEncryptFormat());
 
-        CheckVolumeAndRepairAnswer answer = new CheckVolumeAndRepairAnswer(command, false, "Unable to execute qemu command");
+        CheckAndRepairVolumeAnswer answer = new CheckAndRepairVolumeAnswer(command, false, "Unable to execute qemu command");
         Mockito.when(storageManagerMock.sendToPool(pool, null, command)).thenReturn(answer);
 
         Pair<String, String> result = volumeServiceImplSpy.checkAndRepairVolume(volume);

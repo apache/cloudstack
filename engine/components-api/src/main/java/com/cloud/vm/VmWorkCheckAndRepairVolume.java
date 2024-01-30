@@ -19,7 +19,7 @@ package com.cloud.vm;
 
 public class VmWorkCheckAndRepairVolume extends VmWork {
 
-    private static final long serialVersionUID = 341816293003023823L;
+    private static final long serialVersionUID = 341816293003023824L;
 
     private Long volumeId;
 

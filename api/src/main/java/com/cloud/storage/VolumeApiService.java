@@ -26,7 +26,7 @@ import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.command.user.volume.AssignVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ChangeOfferingForVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.CheckVolumeAndRepairCmd;
+import org.apache.cloudstack.api.command.user.volume.CheckAndRepairVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ExtractVolumeCmd;
@@ -181,5 +181,5 @@ public interface VolumeApiService {
 
     boolean stateTransitTo(Volume vol, Volume.Event event) throws NoTransitionException;
 
-    Pair<String, String> checkAndRepairVolume(CheckVolumeAndRepairCmd cmd) throws ResourceAllocationException;
+    Pair<String, String> checkAndRepairVolume(CheckAndRepairVolumeCmd cmd) throws ResourceAllocationException;
 }

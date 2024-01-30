@@ -36,15 +36,15 @@ import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 
-@APICommand(name = "checkVolumeAndRepair", description = "Check the volume and repair if needed, this is currently supported for KVM only", responseObject = VolumeResponse.class, entityType = {Volume.class},
+@APICommand(name = "checkVolume", description = "Check the volume for any errors or leaks and also repairs when repair parameter is passed, this is currently supported for KVM only", responseObject = VolumeResponse.class, entityType = {Volume.class},
         since = "4.18.1",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = true)
-public class CheckVolumeAndRepairCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(CheckVolumeAndRepairCmd.class.getName());
+public class CheckAndRepairVolumeCmd extends BaseCmd {
+    public static final Logger s_logger = Logger.getLogger(CheckAndRepairVolumeCmd.class.getName());
 
-    private static final String s_name = "checkvolumeandrepairresponse";
+    private static final String s_name = "checkandrepairvolumeresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

@@ -14,8 +14,8 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import com.cloud.agent.api.storage.CheckVolumeAndRepairAnswer;
-import com.cloud.agent.api.storage.CheckVolumeAndRepairCommand;
+import com.cloud.agent.api.storage.CheckAndRepairVolumeAnswer;
+import com.cloud.agent.api.storage.CheckAndRepairVolumeCommand;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
@@ -37,16 +37,16 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 @RunWith(PowerMockRunner.class)
-public class LibvirtCheckVolumeAndRepairCommandWrapperTest {
+public class LibvirtCheckAndRepairVolumeCommandWrapperTest {
 
     @Spy
-    LibvirtCheckVolumeAndRepairCommandWrapper libvirtCheckVolumeAndRepairCommandWrapperSpy = Mockito.spy(LibvirtCheckVolumeAndRepairCommandWrapper.class);
+    LibvirtCheckAndRepairVolumeCommandWrapper libvirtCheckAndRepairVolumeCommandWrapperSpy = Mockito.spy(LibvirtCheckAndRepairVolumeCommandWrapper.class);
 
     @Mock
     LibvirtComputingResource libvirtComputingResourceMock;
 
     @Mock
-    CheckVolumeAndRepairCommand checkVolumeAndRepairCommand;
+    CheckAndRepairVolumeCommand checkAndRepairVolumeCommand;
 
     @Mock
     QemuImg qemuImgMock;
@@ -57,10 +57,10 @@ public class LibvirtCheckVolumeAndRepairCommandWrapperTest {
     }
 
     @Test
-    @PrepareForTest(LibvirtCheckVolumeAndRepairCommandWrapper.class)
+    @PrepareForTest(LibvirtCheckAndRepairVolumeCommandWrapper.class)
     public void testCheckAndRepairVolume() throws Exception {
 
-        CheckVolumeAndRepairCommand cmd = Mockito.mock(CheckVolumeAndRepairCommand.class);
+        CheckAndRepairVolumeCommand cmd = Mockito.mock(CheckAndRepairVolumeCommand.class);
         Mockito.when(cmd.getPath()).thenReturn("cbac516a-0f1f-4559-921c-1a7c6c408ccf");
         Mockito.when(cmd.getRepair()).thenReturn(null);
         StorageFilerTO spool = Mockito.mock(StorageFilerTO.class);
@@ -94,7 +94,7 @@ public class LibvirtCheckVolumeAndRepairCommandWrapperTest {
         PowerMockito.whenNew(QemuImg.class).withArguments(Mockito.anyInt()).thenReturn(qemuImgMock);
         Mockito.when(qemuImgMock.checkAndRepair(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(checkResult);
 
-        CheckVolumeAndRepairAnswer result = (CheckVolumeAndRepairAnswer) libvirtCheckVolumeAndRepairCommandWrapperSpy.execute(cmd, libvirtComputingResourceMock);
+        CheckAndRepairVolumeAnswer result = (CheckAndRepairVolumeAnswer) libvirtCheckAndRepairVolumeCommandWrapperSpy.execute(cmd, libvirtComputingResourceMock);
 
         Assert.assertEquals(checkResult, result.getVolumeCheckExecutionResult());
     }
