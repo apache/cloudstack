@@ -251,18 +251,20 @@ public class VolumeServiceImpl implements VolumeService {
         DataStoreDriver dataStoreDriver = dataStore != null ? dataStore.getDriver() : null;
 
         if (dataStoreDriver instanceof PrimaryDataStoreDriver) {
-            return ((PrimaryDataStoreDriver)dataStoreDriver).grantAccess(dataObject, host, dataStore);
-        }
+            boolean result = ((PrimaryDataStoreDriver)dataStoreDriver).grantAccess(dataObject, host, dataStore);
 
-        if (com.cloud.storage.VolumeApiServiceImpl.AllowVolumeCheckAndRepair.value()) {
             if (HypervisorType.KVM.equals(host.getHypervisorType()) && DataObjectType.VOLUME.equals(dataObject.getType())) {
-                s_logger.info(String.format("Trying to check and repair the volume %d", dataObject.getId()));
-                String repair = CheckVolumeAndRepairCmd.RepairValues.leaks.name();
-                CheckAndRepairVolumePayload payload = new CheckAndRepairVolumePayload(repair);
-                VolumeInfo volumeInfo = volFactory.getVolume(dataObject.getId());
-                volumeInfo.addPayload(payload);
-                checkAndRepairVolume(volumeInfo);
+                if (com.cloud.storage.VolumeApiServiceImpl.AllowVolumeCheckAndRepair.value()) {
+                    s_logger.info(String.format("Trying to check and repair the volume %d", dataObject.getId()));
+                    String repair = CheckVolumeAndRepairCmd.RepairValues.leaks.name();
+                    CheckAndRepairVolumePayload payload = new CheckAndRepairVolumePayload(repair);
+                    VolumeInfo volumeInfo = volFactory.getVolume(dataObject.getId());
+                    volumeInfo.addPayload(payload);
+                    checkAndRepairVolume(volumeInfo);
+                }
             }
+
+            return result;
         }
 
         return false;
