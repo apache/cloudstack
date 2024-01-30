@@ -290,11 +290,11 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
     private String externalUuid;
 
     @SerializedName(ApiConstants.VOLUME_CHECK_RESULT)
-    @Param(description = "details for the volume check result, they may vary for different hypervisors, since = 4.18.1")
+    @Param(description = "details for the volume check result, they may vary for different hypervisors, since = 4.19.1")
     private Map<String, String> volumeCheckResult;
 
     @SerializedName(ApiConstants.VOLUME_REPAIR_RESULT)
-    @Param(description = "details for the volume repair result, they may vary for different hypervisors, since = 4.18.1")
+    @Param(description = "details for the volume repair result, they may vary for different hypervisors, since = 4.19.1")
     private Map<String, String> volumeRepairResult;
 
     public String getPath() {
