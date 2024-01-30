@@ -61,7 +61,7 @@ public class CheckAndRepairVolumeCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     public enum RepairValues {
-        Leaks, All
+        LEAKS, ALL
     }
 
     public Long getId() {
@@ -70,12 +70,12 @@ public class CheckAndRepairVolumeCmd extends BaseCmd {
 
     public String getRepair() {
         if (org.apache.commons.lang3.StringUtils.isNotEmpty(repair)) {
-            RepairValues repairType = Enum.valueOf(RepairValues.class, repair);
+            RepairValues repairType = Enum.valueOf(RepairValues.class, repair.toUpperCase());
             if (repairType == null) {
                 throw new InvalidParameterValueException(String.format("Repair parameter can only take the following values: %s" + Arrays.toString(RepairValues.values())));
             }
         }
-        return repair;
+        return repair.toLowerCase();
     }
 
     /////////////////////////////////////////////////////
