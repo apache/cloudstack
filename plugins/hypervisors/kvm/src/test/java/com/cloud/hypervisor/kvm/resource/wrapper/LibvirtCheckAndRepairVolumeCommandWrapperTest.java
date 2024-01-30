@@ -30,13 +30,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
+import static org.mockito.Mockito.when;
+
+@RunWith(MockitoJUnitRunner.class)
 public class LibvirtCheckAndRepairVolumeCommandWrapperTest {
 
     @Spy
@@ -53,32 +54,29 @@ public class LibvirtCheckAndRepairVolumeCommandWrapperTest {
 
     @Before
     public void init() {
-        Mockito.when(libvirtComputingResourceMock.getCmdsTimeout()).thenReturn(60);
+        when(libvirtComputingResourceMock.getCmdsTimeout()).thenReturn(60);
     }
 
     @Test
-    @PrepareForTest(LibvirtCheckAndRepairVolumeCommandWrapper.class)
     public void testCheckAndRepairVolume() throws Exception {
 
         CheckAndRepairVolumeCommand cmd = Mockito.mock(CheckAndRepairVolumeCommand.class);
-        Mockito.when(cmd.getPath()).thenReturn("cbac516a-0f1f-4559-921c-1a7c6c408ccf");
-        Mockito.when(cmd.getRepair()).thenReturn(null);
+        when(cmd.getPath()).thenReturn("cbac516a-0f1f-4559-921c-1a7c6c408ccf");
+        when(cmd.getRepair()).thenReturn(null);
         StorageFilerTO spool = Mockito.mock(StorageFilerTO.class);
-        Mockito.when(cmd.getPool()).thenReturn(spool);
+        when(cmd.getPool()).thenReturn(spool);
 
         KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
-        Mockito.when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+        when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(storagePoolMgr);
         KVMStoragePool pool = Mockito.mock(KVMStoragePool.class);
-        Mockito.when(spool.getType()).thenReturn(Storage.StoragePoolType.PowerFlex);
-        Mockito.when(spool.getUuid()).thenReturn("b6be258b-42b8-49a4-ad51-3634ef8ff76a");
-        Mockito.when(storagePoolMgr.getStoragePool(Storage.StoragePoolType.PowerFlex, "b6be258b-42b8-49a4-ad51-3634ef8ff76a")).thenReturn(pool);
+        when(spool.getType()).thenReturn(Storage.StoragePoolType.PowerFlex);
+        when(spool.getUuid()).thenReturn("b6be258b-42b8-49a4-ad51-3634ef8ff76a");
+        when(storagePoolMgr.getStoragePool(Storage.StoragePoolType.PowerFlex, "b6be258b-42b8-49a4-ad51-3634ef8ff76a")).thenReturn(pool);
 
         KVMPhysicalDisk vol = Mockito.mock(KVMPhysicalDisk.class);
-        Mockito.when(pool.getPhysicalDisk("cbac516a-0f1f-4559-921c-1a7c6c408ccf")).thenReturn(vol);
+        when(pool.getPhysicalDisk("cbac516a-0f1f-4559-921c-1a7c6c408ccf")).thenReturn(vol);
 
         VolumeInfo volume = Mockito.mock(VolumeInfo.class);
-        Mockito.when(volume.getPoolId()).thenReturn(1L);
-        Mockito.when(volume.getPath()).thenReturn("cbac516a-0f1f-4559-921c-1a7c6c408ccf");
 
         String checkResult = "{\n" +
                 "    \"image-end-offset\": 6442582016,\n" +
@@ -91,12 +89,12 @@ public class LibvirtCheckAndRepairVolumeCommandWrapperTest {
                 "    \"fragmented-clusters\": 96135\n" +
                 "}";
 
-        PowerMockito.whenNew(QemuImg.class).withArguments(Mockito.anyInt()).thenReturn(qemuImgMock);
-        Mockito.when(qemuImgMock.checkAndRepair(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(checkResult);
-
-        CheckAndRepairVolumeAnswer result = (CheckAndRepairVolumeAnswer) libvirtCheckAndRepairVolumeCommandWrapperSpy.execute(cmd, libvirtComputingResourceMock);
-
-        Assert.assertEquals(checkResult, result.getVolumeCheckExecutionResult());
+        try (MockedConstruction<QemuImg> ignored = Mockito.mockConstruction(QemuImg.class, (mock, context) -> {
+            when(mock.checkAndRepair(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(checkResult);
+        })) {
+            CheckAndRepairVolumeAnswer result = (CheckAndRepairVolumeAnswer) libvirtCheckAndRepairVolumeCommandWrapperSpy.execute(cmd, libvirtComputingResourceMock);
+            Assert.assertEquals(checkResult, result.getVolumeCheckExecutionResult());
+        }
     }
 
 }
