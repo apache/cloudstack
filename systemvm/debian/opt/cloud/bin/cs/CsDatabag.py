@@ -181,11 +181,12 @@ class CsCmdLine(CsDataBag):
             return False
         return "%s/%s" % (self.idata()[ipkey], self.idata()[prelenkey])
 
+
 class CsGuestNetwork(CsDataBag):
     """ Get guestnetwork config parameters """
 
     def get_dev_data(self, devname):
-        if devname in self.dbag and type(self.dbag[devname]) == list and len(self.dbag[devname]) > 0:
+        if devname in self.dbag and isinstance(self.dbag[devname], list) and len(self.dbag[devname]) > 0:
             return self.dbag[devname][0]
         return {}
 

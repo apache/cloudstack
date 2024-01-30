@@ -94,9 +94,9 @@ def createfile(ip, folder, file, data):
     fh = open(dest, "w")
     exflock(fh)
     if data is not None:
-        if type(data) == str:
+        if isinstance(data, str):
             fh.write(data)
-        elif type(data) == bytes:
+        elif isinstance(data, bytes):
             fh.write(data.decode())
     else:
         fh.write("")

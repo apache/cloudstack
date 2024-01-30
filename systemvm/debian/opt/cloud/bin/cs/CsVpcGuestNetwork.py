@@ -25,6 +25,7 @@ VPC_PUBLIC_INTERFACE = "eth1"
 RADVD_CONF = "/etc/radvd.conf"
 RADVD_CONF_NEW = "/etc/radvd.conf.new"
 
+
 class CsVpcGuestNetwork(CsDataBag):
     """ Manage Vpc Guest Networks """
 
