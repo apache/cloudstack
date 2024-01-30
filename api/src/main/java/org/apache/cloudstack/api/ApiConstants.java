@@ -379,7 +379,6 @@ public class ApiConstants {
     public static final String RECEIVED_BYTES = "receivedbytes";
     public static final String RECONNECT = "reconnect";
     public static final String RECOVER = "recover";
-
     public static final String REPAIR = "repair";
     public static final String REQUIRES_HVM = "requireshvm";
     public static final String RESOURCE_NAME = "resourcename";

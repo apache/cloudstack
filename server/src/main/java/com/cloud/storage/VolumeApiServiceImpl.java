@@ -1822,38 +1822,19 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_CHECK, eventDescription = "checking volume and repair if needed", async = true)
     public Pair<String, String> checkAndRepairVolume(CheckVolumeAndRepairCmd cmd) throws ResourceAllocationException {
-        Account caller = CallContext.current().getCallingAccount();
-
-        // Verify input parameters
         long volumeId = cmd.getId();
         boolean repair = cmd.getRepair();
+
+        validationsForCheckVolumeOperation(volumeId);
+
         final VolumeVO volume = _volsDao.findById(volumeId);
-
-        _accountMgr.checkAccess(caller, null, true, volume);
-
         Long vmId = volume.getInstanceId();
         UserVmVO vm = null;
         if (vmId != null) {
             vm = _userVmDao.findById(vmId);
-            if (vm == null) {
-                throw new InvalidParameterValueException(String.format("VM not found, please check the VM to which this volume %d is attached", volumeId));
-            }
-            if (vm.getState() != State.Stopped) {
-                throw new InvalidParameterValueException(String.format("VM to which the volume %d is attached should be in stopped state", volumeId));
-            }
-        }
-
-        if (volume.getState() != Volume.State.Ready) {
-            throw new InvalidParameterValueException(String.format("VolumeId: %d is not in Ready state", volumeId));
-        }
-
-        HypervisorType hypervisorType = _volsDao.getHypervisorType(volume.getId());
-        if (!HypervisorType.KVM.equals(hypervisorType)) {
-            throw new InvalidParameterValueException(String.format("Check and Repair volumes is supported only for KVM hypervisor"));
         }
 
         if (vm != null) {
-            _accountMgr.checkAccess(caller, null, true, vm);
             // serialize VM operation
             AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
             if (jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
@@ -1903,6 +1884,36 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             Pair<String, String> result = volService.checkAndRepairVolume(volumeInfo);
             return result;
+        }
+    }
+
+    private void validationsForCheckVolumeOperation(long volumeId) {
+        final VolumeVO volume = _volsDao.findById(volumeId);
+        Account caller = CallContext.current().getCallingAccount();
+        _accountMgr.checkAccess(caller, null, true, volume);
+
+        Long vmId = volume.getInstanceId();
+        UserVmVO vm = null;
+        if (vmId != null) {
+            vm = _userVmDao.findById(vmId);
+            if (vm == null) {
+                throw new InvalidParameterValueException(String.format("VM not found, please check the VM to which this volume %d is attached", volumeId));
+            }
+
+            _accountMgr.checkAccess(caller, null, true, vm);
+
+            if (vm.getState() != State.Stopped) {
+                throw new InvalidParameterValueException(String.format("VM to which the volume %d is attached should be in stopped state", volumeId));
+            }
+        }
+
+        if (volume.getState() != Volume.State.Ready) {
+            throw new InvalidParameterValueException(String.format("VolumeId: %d is not in Ready state", volumeId));
+        }
+
+        HypervisorType hypervisorType = _volsDao.getHypervisorType(volume.getId());
+        if (!HypervisorType.KVM.equals(hypervisorType)) {
+            throw new InvalidParameterValueException(String.format("Check and Repair volumes is supported only for KVM hypervisor"));
         }
     }
 
