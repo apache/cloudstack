@@ -21,8 +21,6 @@ public class CheckAndRepairVolumePayload {
 
     public final String repair;
     public String result;
-    private String volumeCheckExecutionResult;
-    private String volumeRepairedExecutionResult;
 
     public CheckAndRepairVolumePayload(String repair) {
         this.repair = repair;
@@ -40,19 +38,4 @@ public class CheckAndRepairVolumePayload {
         this.result = result;
     }
 
-    public String getVolumeCheckExecutionResult() {
-        return volumeCheckExecutionResult;
-    }
-
-    public String getVolumeRepairedExecutionResult() {
-        return volumeRepairedExecutionResult;
-    }
-
-    public void setVolumeCheckExecutionResult(String volumeCheckExecutionResult) {
-        this.volumeCheckExecutionResult = volumeCheckExecutionResult;
-    }
-
-    public void setVolumeRepairedExecutionResult(String volumeRepairedExecutionResult) {
-        this.volumeRepairedExecutionResult = volumeRepairedExecutionResult;
-    }
 }

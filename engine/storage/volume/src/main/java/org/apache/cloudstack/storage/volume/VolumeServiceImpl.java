@@ -2791,10 +2791,6 @@ public class VolumeServiceImpl implements VolumeService {
             CheckAndRepairVolumeAnswer answer = (CheckAndRepairVolumeAnswer) _storageMgr.sendToPool(pool, null, command);
             if (answer != null && answer.getResult()) {
                 s_logger.debug("Check volume response result: " + answer.getDetails());
-                payload.setVolumeCheckExecutionResult(answer.getVolumeCheckExecutionResult());
-                if (StringUtils.isNotEmpty(payload.getRepair())) {
-                    payload.setVolumeRepairedExecutionResult(answer.getVolumeRepairExecutionResult());
-                }
                 return new Pair<>(answer.getVolumeCheckExecutionResult(), answer.getVolumeRepairExecutionResult());
             } else {
                 String errMsg = (answer == null) ? null : answer.getDetails();
