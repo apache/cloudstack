@@ -227,7 +227,7 @@ class updateDataBag:
     def processCLItem(self, num, nw_type):
         key = 'eth' + num + 'ip'
         dp = {}
-        if(key in self.qFile.data['cmd_line']):
+        if key in self.qFile.data['cmd_line']:
             dp['public_ip'] = self.qFile.data['cmd_line'][key]
             dp['netmask'] = self.qFile.data['cmd_line']['eth' + num + 'mask']
             dp['source_nat'] = False
@@ -236,7 +236,7 @@ class updateDataBag:
             if nw_type == "public":
                 dp['gateway'] = self.qFile.data['cmd_line']['gateway']
             else:
-                if('localgw' in self.qFile.data['cmd_line']):
+                if 'localgw' in self.qFile.data['cmd_line']:
                     dp['gateway'] = self.qFile.data['cmd_line']['localgw']
                 else:
                     dp['gateway'] = ''

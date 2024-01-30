@@ -24,7 +24,7 @@ def merge(dbag, data):
     # This seems desirable ....
     if "add" in data and data['add'] is False and "ipv4_address" in data:
         if data['ipv4_address'] in dbag:
-            del(dbag[data['ipv4_address']])
+            del dbag[data['ipv4_address']]
     else:
         remove_keys = set()
         for key, entry in dbag.items():
@@ -33,7 +33,7 @@ def merge(dbag, data):
                 break
 
         for remove_key in remove_keys:
-            del(dbag[remove_key])
+            del dbag[remove_key]
 
         dbag[data['ipv4_address']] = data
 

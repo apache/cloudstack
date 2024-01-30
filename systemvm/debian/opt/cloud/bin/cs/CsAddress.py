@@ -364,7 +364,7 @@ class CsIP:
         else:
             # once we start processing public ip's we need to verify there
             # is a default route and add if needed
-            if(self.cl.get_gateway()):
+            if self.cl.get_gateway():
                 route.add_defaultroute(self.cl.get_gateway())
 
         if self.config.is_router() and self.cl.get_ip6gateway():

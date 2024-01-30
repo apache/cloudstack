@@ -34,7 +34,7 @@ def merge(dbag, data):
         userrec = dbagc[user]
         add = userrec['add']
         if not add:
-            del(dbagc[user])
+            del dbagc[user]
 
     for user in data['vpn_users']:
         username = user['user']
