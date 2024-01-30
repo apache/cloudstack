@@ -25,7 +25,7 @@ import com.cloud.agent.api.to.StorageFilerTO;
 
 import java.util.Arrays;
 
-public class CheckVolumeAndRepairCommand extends Command {
+public class CheckAndRepairVolumeCommand extends Command {
     private String path;
     private StorageFilerTO pool;
     private String repair;
@@ -33,7 +33,7 @@ public class CheckVolumeAndRepairCommand extends Command {
     private byte[] passphrase;
     private String encryptFormat;
 
-    public CheckVolumeAndRepairCommand(String path, StorageFilerTO pool, String repair, byte[] passphrase, String encryptFormat) {
+    public CheckAndRepairVolumeCommand(String path, StorageFilerTO pool, String repair, byte[] passphrase, String encryptFormat) {
         this.path = path;
         this.pool = pool;
         this.repair = repair;

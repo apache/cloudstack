@@ -40,7 +40,7 @@ import java.util.concurrent.ExecutionException;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-import org.apache.cloudstack.api.command.user.volume.CheckVolumeAndRepairCmd;
+import org.apache.cloudstack.api.command.user.volume.CheckAndRepairVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
@@ -1766,7 +1766,7 @@ public class VolumeApiServiceImplTest {
     @Test
     public void testCheckAndRepairVolume() throws ResourceAllocationException {
 
-        CheckVolumeAndRepairCmd cmd  = mock(CheckVolumeAndRepairCmd.class);
+        CheckAndRepairVolumeCmd cmd  = mock(CheckAndRepairVolumeCmd.class);
         when(cmd.getId()).thenReturn(1L);
         when(cmd.getRepair()).thenReturn(null);
 

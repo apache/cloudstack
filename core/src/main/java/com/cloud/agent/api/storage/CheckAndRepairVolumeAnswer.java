@@ -21,21 +21,21 @@ package com.cloud.agent.api.storage;
 
 import com.cloud.agent.api.Answer;
 
-public class CheckVolumeAndRepairAnswer extends Answer {
+public class CheckAndRepairVolumeAnswer extends Answer {
     private String volumeCheckExecutionResult;
     private String volumeRepairExecutionResult;
 
-    protected CheckVolumeAndRepairAnswer() {
+    protected CheckAndRepairVolumeAnswer() {
         super();
     }
 
-    public CheckVolumeAndRepairAnswer(CheckVolumeAndRepairCommand cmd, boolean result, String details, String volumeCheckExecutionResult, String volumeRepairedExecutionResult) {
+    public CheckAndRepairVolumeAnswer(CheckAndRepairVolumeCommand cmd, boolean result, String details, String volumeCheckExecutionResult, String volumeRepairedExecutionResult) {
         super(cmd, result, details);
         this.volumeCheckExecutionResult = volumeCheckExecutionResult;
         this.volumeRepairExecutionResult = volumeRepairedExecutionResult;
     }
 
-    public CheckVolumeAndRepairAnswer(CheckVolumeAndRepairCommand cmd, boolean result, String details) {
+    public CheckAndRepairVolumeAnswer(CheckAndRepairVolumeCommand cmd, boolean result, String details) {
         super(cmd, result, details);
     }
 

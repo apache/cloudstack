@@ -20,8 +20,8 @@
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.storage.CheckVolumeAndRepairCommand;
-import com.cloud.agent.api.storage.CheckVolumeAndRepairAnswer;
+import com.cloud.agent.api.storage.CheckAndRepairVolumeCommand;
+import com.cloud.agent.api.storage.CheckAndRepairVolumeAnswer;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
@@ -48,13 +48,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-@ResourceWrapper(handles =  CheckVolumeAndRepairCommand.class)
-public class LibvirtCheckVolumeAndRepairCommandWrapper extends CommandWrapper<CheckVolumeAndRepairCommand, Answer, LibvirtComputingResource> {
+@ResourceWrapper(handles =  CheckAndRepairVolumeCommand.class)
+public class LibvirtCheckAndRepairVolumeCommandWrapper extends CommandWrapper<CheckAndRepairVolumeCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtCheckVolumeAndRepairCommandWrapper.class);
+    private static final Logger s_logger = Logger.getLogger(LibvirtCheckAndRepairVolumeCommandWrapper.class);
 
     @Override
-    public Answer execute(CheckVolumeAndRepairCommand command, LibvirtComputingResource serverResource) {
+    public Answer execute(CheckAndRepairVolumeCommand command, LibvirtComputingResource serverResource) {
         final String volumeId = command.getPath();
         final String repair = command.getRepair();
         final StorageFilerTO spool = command.getPool();
@@ -66,9 +66,9 @@ public class LibvirtCheckVolumeAndRepairCommandWrapper extends CommandWrapper<Ch
         QemuObject.EncryptFormat encryptFormat = QemuObject.EncryptFormat.enumValue(command.getEncryptFormat());
         byte[] passphrase = command.getPassphrase();
         try {
-            String checkVolumeResult = checkVolumeAndRepair(vol, repair, encryptFormat, passphrase, serverResource);
+            String checkVolumeResult = checkAndRepairVolume(vol, repair, encryptFormat, passphrase, serverResource);
             s_logger.info(String.format("Check Volume result for the volume %s is %s", vol.getName(), checkVolumeResult));
-            CheckVolumeAndRepairAnswer answer = new CheckVolumeAndRepairAnswer(command, true, checkVolumeResult);
+            CheckAndRepairVolumeAnswer answer = new CheckAndRepairVolumeAnswer(command, true, checkVolumeResult);
             answer.setVolumeCheckExecutionResult(checkVolumeResult);
 
             int leaks = 0;
@@ -85,7 +85,7 @@ public class LibvirtCheckVolumeAndRepairCommandWrapper extends CommandWrapper<Ch
                     s_logger.info(msg);
                     String jsonStringFormat = String.format("{ \"message\": \"%s\" }", msg);
                     String finalResult = (checkVolumeResult != null ? checkVolumeResult.concat(",") : "") + jsonStringFormat;
-                    answer = new CheckVolumeAndRepairAnswer(command, true, finalResult);
+                    answer = new CheckAndRepairVolumeAnswer(command, true, finalResult);
                     answer.setVolumeRepairExecutionResult(jsonStringFormat);
                     answer.setVolumeCheckExecutionResult(checkVolumeResult);
 
@@ -94,17 +94,17 @@ public class LibvirtCheckVolumeAndRepairCommandWrapper extends CommandWrapper<Ch
             }
 
             if (StringUtils.isNotEmpty(repair)) {
-                String repairVolumeResult = checkVolumeAndRepair(vol, repair, encryptFormat, passphrase, serverResource);
+                String repairVolumeResult = checkAndRepairVolume(vol, repair, encryptFormat, passphrase, serverResource);
                 String finalResult = (checkVolumeResult != null ? checkVolumeResult.concat(",") : "") + repairVolumeResult;
                 s_logger.info(String.format("Repair Volume result for the volume %s is %s", vol.getName(), repairVolumeResult));
 
-                answer = new CheckVolumeAndRepairAnswer(command, true, finalResult);
+                answer = new CheckAndRepairVolumeAnswer(command, true, finalResult);
                 answer.setVolumeRepairExecutionResult(repairVolumeResult);
                 answer.setVolumeCheckExecutionResult(checkVolumeResult);
             }
             return answer;
         } catch (Exception e) {
-            return new CheckVolumeAndRepairAnswer(command, false, e.toString());
+            return new CheckAndRepairVolumeAnswer(command, false, e.toString());
         } finally {
             if (passphrase != null) {
                 Arrays.fill(passphrase, (byte) 0);
@@ -112,7 +112,7 @@ public class LibvirtCheckVolumeAndRepairCommandWrapper extends CommandWrapper<Ch
         }
     }
 
-    protected String checkVolumeAndRepair(final KVMPhysicalDisk vol, final String repair, final QemuObject.EncryptFormat encryptFormat, byte[] passphrase, final LibvirtComputingResource libvirtComputingResource) throws CloudRuntimeException {
+    protected String checkAndRepairVolume(final KVMPhysicalDisk vol, final String repair, final QemuObject.EncryptFormat encryptFormat, byte[] passphrase, final LibvirtComputingResource libvirtComputingResource) throws CloudRuntimeException {
         List<QemuObject> passphraseObjects = new ArrayList<>();
         QemuImageOptions imgOptions = null;
         if (ArrayUtils.isEmpty(passphrase)) {
