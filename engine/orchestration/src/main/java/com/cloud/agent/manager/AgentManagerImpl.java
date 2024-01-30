@@ -596,7 +596,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
         final Long dcId = host.getDataCenterId();
         final ReadyCommand ready = new ReadyCommand(dcId, host.getId(), NumbersUtil.enableHumanReadableSizes);
-        ready.setWait(60);
+        ready.setWait(ReadyCommandWait.value());
         final Answer answer = easySend(hostId, ready);
         if (answer == null || !answer.getResult()) {
             // this is tricky part for secondary storage
@@ -1838,7 +1838,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] { CheckTxnBeforeSending, Workers, Port, Wait, AlertWait, DirectAgentLoadSize,
-                DirectAgentPoolSize, DirectAgentThreadCap, EnableKVMAutoEnableDisable };
+                DirectAgentPoolSize, DirectAgentThreadCap, EnableKVMAutoEnableDisable, ReadyCommandWait };
     }
 
     protected class SetHostParamsListener implements Listener {
