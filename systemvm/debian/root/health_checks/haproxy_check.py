@@ -44,8 +44,8 @@ def checkLoadBalance(haproxyData, haCfgSections):
             cfgSection = haCfgSections[secName]
             if "server" in cfgSection:
                 if lbSec["algorithm"] != cfgSection["balance"][0]:
-                    print("Incorrect balance method for " + secName + \
-                          "Expected : " + lbSec["algorithm"] + \
+                    print("Incorrect balance method for " + secName +
+                          "Expected : " + lbSec["algorithm"] +
                           " but found " + cfgSection["balance"][0] + "\n")
                     correct = False
 
