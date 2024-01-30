@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
+import com.cloud.exception.InvalidParameterValueException;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -52,19 +53,29 @@ public class CheckVolumeAndRepairCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VolumeResponse.class, required = true, description = "The ID of the volume")
     private Long id;
 
-    @Parameter(name = ApiConstants.REPAIR, type = CommandType.BOOLEAN, required = false, description = "true to repair the volume, repairs if it has any leaks")
-    private Boolean repair;
+    @Parameter(name = ApiConstants.REPAIR, type = CommandType.STRING, required = false, description = "parameter to repair the volume, leaks or all are the possible values")
+    private String repair;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
+    public enum RepairValues {
+        leaks, all
+    }
+
     public Long getId() {
         return id;
     }
 
-    public boolean getRepair() {
-        return repair == null ? false : repair;
+    public String getRepair() {
+        if (org.apache.commons.lang3.StringUtils.isNotEmpty(repair)) {
+            RepairValues repairType = Enum.valueOf(RepairValues.class, repair);
+            if (repairType == null) {
+                throw new InvalidParameterValueException("repair parameter only takes either leaks or all as value");
+            }
+        }
+        return repair;
     }
 
     /////////////////////////////////////////////////////
@@ -104,7 +115,7 @@ public class CheckVolumeAndRepairCmd extends BaseCmd {
         if (result != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Full, volume);
             response.setVolumeCheckResult(StringUtils.parseJsonToMap(result.first()));
-            if (getRepair()) {
+            if (getRepair() != null) {
                 response.setVolumeRepairResult(StringUtils.parseJsonToMap(result.second()));
             }
             response.setResponseName(getCommandName());

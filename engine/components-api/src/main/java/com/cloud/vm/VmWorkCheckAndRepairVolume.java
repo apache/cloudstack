@@ -23,10 +23,10 @@ public class VmWorkCheckAndRepairVolume extends VmWork {
 
     private Long volumeId;
 
-    private boolean repair;
+    private String repair;
 
     public VmWorkCheckAndRepairVolume(long userId, long accountId, long vmId, String handlerName,
-                                    Long volumeId, boolean repair) {
+                                      Long volumeId, String repair) {
         super(userId, accountId, vmId, handlerName);
         this.repair = repair;
         this.volumeId = volumeId;
@@ -36,7 +36,7 @@ public class VmWorkCheckAndRepairVolume extends VmWork {
         return volumeId;
     }
 
-    public boolean needRepair() {
+    public String getRepair() {
         return repair;
     }
 }

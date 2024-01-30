@@ -62,7 +62,7 @@ public class LibvirtCheckVolumeAndRepairCommandWrapperTest {
 
         CheckVolumeAndRepairCommand cmd = Mockito.mock(CheckVolumeAndRepairCommand.class);
         Mockito.when(cmd.getPath()).thenReturn("cbac516a-0f1f-4559-921c-1a7c6c408ccf");
-        Mockito.when(cmd.needRepair()).thenReturn(false);
+        Mockito.when(cmd.getRepair()).thenReturn(null);
         StorageFilerTO spool = Mockito.mock(StorageFilerTO.class);
         Mockito.when(cmd.getPool()).thenReturn(spool);
 
@@ -72,7 +72,6 @@ public class LibvirtCheckVolumeAndRepairCommandWrapperTest {
         Mockito.when(spool.getType()).thenReturn(Storage.StoragePoolType.PowerFlex);
         Mockito.when(spool.getUuid()).thenReturn("b6be258b-42b8-49a4-ad51-3634ef8ff76a");
         Mockito.when(storagePoolMgr.getStoragePool(Storage.StoragePoolType.PowerFlex, "b6be258b-42b8-49a4-ad51-3634ef8ff76a")).thenReturn(pool);
-        Mockito.when(pool.connectPhysicalDisk("cbac516a-0f1f-4559-921c-1a7c6c408ccf", null)).thenReturn(true);
 
         KVMPhysicalDisk vol = Mockito.mock(KVMPhysicalDisk.class);
         Mockito.when(pool.getPhysicalDisk("cbac516a-0f1f-4559-921c-1a7c6c408ccf")).thenReturn(vol);
@@ -93,7 +92,7 @@ public class LibvirtCheckVolumeAndRepairCommandWrapperTest {
                 "}";
 
         PowerMockito.whenNew(QemuImg.class).withArguments(Mockito.anyInt()).thenReturn(qemuImgMock);
-        Mockito.when(qemuImgMock.checkAndRepair(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyBoolean())).thenReturn(checkResult); // Replace with the desired result
+        Mockito.when(qemuImgMock.checkAndRepair(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(checkResult);
 
         CheckVolumeAndRepairAnswer result = (CheckVolumeAndRepairAnswer) libvirtCheckVolumeAndRepairCommandWrapperSpy.execute(cmd, libvirtComputingResourceMock);
 

@@ -823,7 +823,7 @@ public class QemuImg {
      * @param repair
      *         Boolean option whether to repair any leaks
      */
-    public String checkAndRepair(final QemuImgFile file, final QemuImageOptions imageOptions, final List<QemuObject> qemuObjects, final boolean repair) throws QemuImgException {
+    public String checkAndRepair(final QemuImgFile file, final QemuImageOptions imageOptions, final List<QemuObject> qemuObjects, final String repair) throws QemuImgException {
         final Script s = new Script(_qemuImgPath);
         s.add("check");
         if (imageOptions == null) {
@@ -840,9 +840,9 @@ public class QemuImg {
 
         s.add("--output=json");
 
-        if (repair) {
+        if (StringUtils.isNotEmpty(repair)) {
             s.add("-r");
-            s.add("all");
+            s.add(repair);
         }
 
         OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
