@@ -1666,7 +1666,6 @@ public class VolumeApiServiceImplTest {
     @Test
     public void testValidationsForCheckVolumeAPI() {
         VolumeVO volume = mock(VolumeVO.class);
-        when(volumeDaoMock.findById(1L)).thenReturn(volume);
 
         AccountVO account = new AccountVO("admin", 1L, "networkDomain", Account.Type.NORMAL, "uuid");
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
@@ -1688,7 +1687,6 @@ public class VolumeApiServiceImplTest {
     @Test(expected = InvalidParameterValueException.class)
     public void testValidationsForCheckVolumeAPIWithRunningVM() {
         VolumeVO volume = mock(VolumeVO.class);
-        when(volumeDaoMock.findById(1L)).thenReturn(volume);
 
         AccountVO account = new AccountVO("admin", 1L, "networkDomain", Account.Type.NORMAL, "uuid");
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
@@ -1707,7 +1705,6 @@ public class VolumeApiServiceImplTest {
     @Test(expected = InvalidParameterValueException.class)
     public void testValidationsForCheckVolumeAPIWithNonexistedVM() {
         VolumeVO volume = mock(VolumeVO.class);
-        when(volumeDaoMock.findById(1L)).thenReturn(volume);
 
         AccountVO account = new AccountVO("admin", 1L, "networkDomain", Account.Type.NORMAL, "uuid");
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
@@ -1724,7 +1721,6 @@ public class VolumeApiServiceImplTest {
     @Test(expected = InvalidParameterValueException.class)
     public void testValidationsForCheckVolumeAPIWithAllocatedVolume() {
         VolumeVO volume = mock(VolumeVO.class);
-        when(volumeDaoMock.findById(1L)).thenReturn(volume);
 
         AccountVO account = new AccountVO("admin", 1L, "networkDomain", Account.Type.NORMAL, "uuid");
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
@@ -1744,7 +1740,6 @@ public class VolumeApiServiceImplTest {
     @Test(expected = InvalidParameterValueException.class)
     public void testValidationsForCheckVolumeAPIWithNonKVMhypervisor() {
         VolumeVO volume = mock(VolumeVO.class);
-        when(volumeDaoMock.findById(1L)).thenReturn(volume);
 
         AccountVO account = new AccountVO("admin", 1L, "networkDomain", Account.Type.NORMAL, "uuid");
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
