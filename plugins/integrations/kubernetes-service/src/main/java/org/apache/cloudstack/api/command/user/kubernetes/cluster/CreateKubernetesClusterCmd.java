@@ -17,7 +17,9 @@
 package org.apache.cloudstack.api.command.user.kubernetes.cluster;
 
 import java.security.InvalidParameterException;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
@@ -94,12 +96,18 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     @ACL(accessType = AccessType.UseEntry)
     @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class,
             description = "the ID of the service offering for the virtual machines in the cluster.")
-    private Long serviceOfferingId;
+    protected Long serviceOfferingId;
 
     @ACL(accessType = AccessType.UseEntry)
     @Parameter(name = ApiConstants.NODE_TYPE_OFFERING_MAP, type = CommandType.MAP,
             description = "(Optional) Node Type to Service Offering ID mapping. If provided, it overrides the serviceofferingid parameter")
     protected Map<String, Map<String, String>> nodeTypeOfferingMap;
+
+    @ACL(accessType = AccessType.UseEntry)
+    @Parameter(name = ApiConstants.ETCD_NODES, type = CommandType.LONG,
+            description = "(Optional) Number of Kubernetes cluster etcd nodes, default is 0." +
+                    "In case the number is greater than 0, etcd nodes are separate from master nodes and are provisioned accordingly")
+    protected Long etcdNodes;
 
     @ACL(accessType = AccessType.UseEntry)
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for the" +
@@ -220,6 +228,10 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
         return controlNodes;
     }
 
+    public Long getEtcdNodes() {
+        return etcdNodes == null ? 0L : etcdNodes;
+    }
+
     public String getExternalLoadBalancerIpAddress() {
         return externalLoadBalancerIpAddress;
     }
@@ -307,8 +319,36 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
             for (Map<String, String> entry : nodeTypeOfferingMap.values()) {
                 processNodeTypeOfferingEntryAndAddToMappingIfValid(entry, mapping);
             }
+            addMissingNodeTypeDefaultOffering(mapping, serviceOfferingId, etcdNodes);
+        } else {
+            addDefaultNodeTypeOfferingEntries(serviceOfferingId, etcdNodes, mapping);
         }
         return mapping;
+    }
+
+    private void addMissingNodeTypeDefaultOffering(Map<String, Long> mapping, Long serviceOfferingId, Long etcdNodes) {
+        if (MapUtils.isEmpty(mapping)) {
+            return;
+        }
+        boolean addEtcdOffering = etcdNodes != null && etcdNodes > 0;
+        List<String> keys = Arrays.asList(KubernetesClusterNodeType.CONTROL.name(), KubernetesClusterNodeType.WORKER.name(), KubernetesClusterNodeType.ETCD.name());
+        for (String key : keys) {
+            if (mapping.containsKey(key)) {
+                continue;
+            }
+            if (!key.equalsIgnoreCase(KubernetesClusterNodeType.ETCD.name()) ||
+                    (addEtcdOffering && key.equalsIgnoreCase(KubernetesClusterNodeType.ETCD.name()))) {
+                mapping.put(key, serviceOfferingId);
+            }
+        }
+    }
+
+    protected void addDefaultNodeTypeOfferingEntries(Long serviceOfferingId, Long etcdNodes, Map<String, Long> mapping) {
+        mapping.put(KubernetesClusterNodeType.CONTROL.name(), serviceOfferingId);
+        mapping.put(KubernetesClusterNodeType.WORKER.name(), serviceOfferingId);
+        if (etcdNodes != null && etcdNodes > 0) {
+            mapping.put(KubernetesClusterNodeType.ETCD.name(), serviceOfferingId);
+        }
     }
 
     /////////////////////////////////////////////////////

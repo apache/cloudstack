@@ -180,6 +180,81 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+
+        <!-- Advanced configurations -->
+        <a-form-item name="advancedmode" ref="advancedmode">
+          <template #label>
+            <tooltip-label :title="$t('label.isadvanced')" />
+          </template>
+          <a-switch v-model:checked="form.advancedmode" />
+        </a-form-item>
+        <a-form-item v-if="form.advancedmode" name="controlofferingid" ref="controlofferingid">
+          <template #label>
+            <tooltip-label :title="$t('label.cks.cluster.control.nodes.offeringid')" :tooltip="$t('label.cks.cluster.control.nodes.offeringid')"/>
+          </template>
+          <a-select
+            id="control-offering-selection"
+            v-model:value="form.controlofferingid"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :loading="serviceOfferingLoading"
+            :placeholder="$t('label.cks.cluster.control.nodes.offeringid')">
+            <a-select-option v-for="(opt, optIndex) in serviceOfferings" :key="optIndex" :label="opt.name || opt.description">
+              {{ opt.name || opt.description }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item v-if="form.advancedmode" name="workerofferingid" ref="workerofferingid">
+          <template #label>
+            <tooltip-label :title="$t('label.cks.cluster.worker.nodes.offeringid')" :tooltip="$t('label.cks.cluster.worker.nodes.offeringid')"/>
+          </template>
+          <a-select
+            id="worker-offering-selection"
+            v-model:value="form.workerofferingid"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :loading="serviceOfferingLoading"
+            :placeholder="$t('label.cks.cluster.worker.nodes.offeringid')">
+            <a-select-option v-for="(opt, optIndex) in serviceOfferings" :key="optIndex" :label="opt.name || opt.description">
+              {{ opt.name || opt.description }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item v-if="form.advancedmode" name="etcdnodes" ref="etcdnodes">
+          <template #label>
+            <tooltip-label :title="$t('label.cks.cluster.etcd.nodes')" :tooltip="apiParams.controlnodes.description"/>
+          </template>
+          <a-input
+            v-model:value="form.etcdnodes"
+            :placeholder="apiParams.controlnodes.description"/>
+        </a-form-item>
+        <a-form-item v-if="form.advancedmode && form.etcdnodes && form.etcdnodes > 0" name="etcdofferingid" ref="etcdofferingid">
+          <template #label>
+            <tooltip-label :title="$t('label.cks.cluster.etcd.nodes.offeringid')" :tooltip="$t('label.cks.cluster.etcd.nodes.offeringid')"/>
+          </template>
+          <a-select
+            id="etcd-offering-selection"
+            v-model:value="form.etcdofferingid"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :loading="serviceOfferingLoading"
+            :placeholder="$t('label.cks.cluster.etcd.nodes.offeringid')">
+            <a-select-option v-for="(opt, optIndex) in serviceOfferings" :key="optIndex" :label="opt.name || opt.description">
+              {{ opt.name || opt.description }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+
+        <!-- Experimentation Features -->
         <div v-if="$store.getters.features.kubernetesclusterexperimentalfeaturesenabled">
           <a-form-item name="privateregistry" ref="privateregistry" :label="$t('label.private.registry')">
             <template #label>
@@ -401,6 +476,9 @@ export default {
         this.serviceOfferingLoading = false
         if (this.arrayHasItems(this.serviceOfferings)) {
           this.form.serviceofferingid = 0
+          this.form.controlofferingid = undefined
+          this.form.workerofferingid = undefined
+          this.form.etcdofferingid = undefined
         }
       })
     },
@@ -460,6 +538,25 @@ export default {
           serviceofferingid: this.serviceOfferings[values.serviceofferingid].id,
           size: values.size,
           clustertype: 'CloudManaged'
+        }
+        var advancedOfferings = 0
+        if (this.isValidValueForKey(values, 'advancedmode') && values.advancedmode && this.isValidValueForKey(values, 'controlofferingid') && this.arrayHasItems(this.serviceOfferings) && this.serviceOfferings[values.controlofferingid].id != null) {
+          params['nodeofferings[' + advancedOfferings + '].node'] = 'control'
+          params['nodeofferings[' + advancedOfferings + '].offering'] = this.serviceOfferings[values.controlofferingid].id
+          advancedOfferings++
+        }
+        if (this.isValidValueForKey(values, 'advancedmode') && values.advancedmode && this.isValidValueForKey(values, 'workerofferingid') && this.arrayHasItems(this.serviceOfferings) && this.serviceOfferings[values.workerofferingid].id != null) {
+          params['nodeofferings[' + advancedOfferings + '].node'] = 'worker'
+          params['nodeofferings[' + advancedOfferings + '].offering'] = this.serviceOfferings[values.workerofferingid].id
+          advancedOfferings++
+        }
+        if (this.isValidValueForKey(values, 'advancedmode') && values.advancedmode && this.isValidValueForKey(values, 'etcdnodes') && values.etcdnodes > 0) {
+          params.etcdnodes = values.etcdnodes
+          if (this.isValidValueForKey(values, 'etcdofferingid') && this.arrayHasItems(this.serviceOfferings) && this.serviceOfferings[values.etcdofferingid].id != null) {
+            params['nodeofferings[' + advancedOfferings + '].node'] = 'etcd'
+            params['nodeofferings[' + advancedOfferings + '].offering'] = this.serviceOfferings[values.etcdofferingid].id
+            advancedOfferings++
+          }
         }
         if (this.isValidValueForKey(values, 'noderootdisksize') && values.noderootdisksize > 0) {
           params.noderootdisksize = values.noderootdisksize

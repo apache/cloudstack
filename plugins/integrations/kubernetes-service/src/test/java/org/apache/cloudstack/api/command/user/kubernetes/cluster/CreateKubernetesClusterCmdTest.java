@@ -34,7 +34,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import static com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType.MASTER;
+import static com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType.CONTROL;
+import static com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType.ETCD;
 import static com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType.WORKER;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -47,23 +48,29 @@ public class CreateKubernetesClusterCmdTest {
     @Mock
     ServiceOffering workerServiceOffering;
     @Mock
-    ServiceOffering masterServiceOffering;
+    ServiceOffering controlServiceOffering;
+    @Mock
+    ServiceOffering etcdServiceOffering;
 
     private final CreateKubernetesClusterCmd cmd = new CreateKubernetesClusterCmd();
 
     private static final String workerNodesOfferingId = UUID.randomUUID().toString();
-    private static final String masterNodesOfferingId = UUID.randomUUID().toString();
+    private static final String controlNodesOfferingId = UUID.randomUUID().toString();
+    private static final String etcdNodesOfferingId = UUID.randomUUID().toString();
     private static final Long workerOfferingId = 1L;
-    private static final Long masterOfferingId = 2L;
+    private static final Long controlOfferingId = 2L;
+    private static final Long etcdOfferingId = 3L;
 
     @Before
     public void setUp() {
         cmd._entityMgr = entityManager;
         cmd.kubernetesClusterHelper = helper;
         Mockito.when(entityManager.findByUuid(ServiceOffering.class, workerNodesOfferingId)).thenReturn(workerServiceOffering);
-        Mockito.when(entityManager.findByUuid(ServiceOffering.class, masterNodesOfferingId)).thenReturn(masterServiceOffering);
+        Mockito.when(entityManager.findByUuid(ServiceOffering.class, controlNodesOfferingId)).thenReturn(controlServiceOffering);
+        Mockito.when(entityManager.findByUuid(ServiceOffering.class, etcdNodesOfferingId)).thenReturn(etcdServiceOffering);
         Mockito.when(workerServiceOffering.getId()).thenReturn(workerOfferingId);
-        Mockito.when(masterServiceOffering.getId()).thenReturn(masterOfferingId);
+        Mockito.when(controlServiceOffering.getId()).thenReturn(controlOfferingId);
+        Mockito.when(etcdServiceOffering.getId()).thenReturn(etcdOfferingId);
     }
 
     private Map<String, String> createMapEntry(KubernetesClusterHelper.KubernetesClusterNodeType nodeType,
@@ -75,18 +82,46 @@ public class CreateKubernetesClusterCmdTest {
     }
 
     @Test
-    public void testNodeOfferingMap() {
+    public void testNodeOfferingMapMissingEtcd() {
         cmd.nodeTypeOfferingMap = new HashMap<>();
         Map<String, String> firstMap = createMapEntry(WORKER, workerNodesOfferingId);
-        Map<String, String> secondMap = createMapEntry(MASTER, masterNodesOfferingId);
+        Map<String, String> secondMap = createMapEntry(CONTROL, controlNodesOfferingId);
         cmd.nodeTypeOfferingMap.put("map1", firstMap);
         cmd.nodeTypeOfferingMap.put("map2", secondMap);
         Map<String, Long> map = cmd.getNodeTypeOfferingMap();
         Assert.assertNotNull(map);
         Assert.assertEquals(2, map.size());
-        Assert.assertTrue(map.containsKey(WORKER.name()) && map.containsKey(MASTER.name()));
+        Assert.assertTrue(map.containsKey(WORKER.name()) && map.containsKey(CONTROL.name()));
         Assert.assertEquals(workerOfferingId, map.get(WORKER.name()));
-        Assert.assertEquals(masterOfferingId, map.get(MASTER.name()));
+        Assert.assertEquals(controlOfferingId, map.get(CONTROL.name()));
+    }
+
+    @Test
+    public void testNodeOfferingMapNullMap() {
+        cmd.nodeTypeOfferingMap = null;
+        cmd.serviceOfferingId = controlOfferingId;
+        Map<String, Long> map = cmd.getNodeTypeOfferingMap();
+        Assert.assertNotNull(map);
+        Assert.assertEquals(2, map.size());
+        Assert.assertTrue(map.containsKey(WORKER.name()) && map.containsKey(CONTROL.name()));
+        Assert.assertEquals(controlOfferingId, map.get(WORKER.name()));
+        Assert.assertEquals(controlOfferingId, map.get(CONTROL.name()));
+    }
+
+    @Test
+    public void testNodeOfferingMapEtcdNodes() {
+        cmd.nodeTypeOfferingMap = new HashMap<>();
+        Map<String, String> firstMap = createMapEntry(ETCD, etcdNodesOfferingId);
+        cmd.nodeTypeOfferingMap.put("map1", firstMap);
+        cmd.etcdNodes = 2L;
+        cmd.serviceOfferingId = controlOfferingId;
+        Map<String, Long> map = cmd.getNodeTypeOfferingMap();
+        Assert.assertNotNull(map);
+        Assert.assertEquals(3, map.size());
+        Assert.assertTrue(map.containsKey(WORKER.name()) && map.containsKey(CONTROL.name()) && map.containsKey(ETCD.name()));
+        Assert.assertEquals(controlOfferingId, map.get(WORKER.name()));
+        Assert.assertEquals(controlOfferingId, map.get(CONTROL.name()));
+        Assert.assertEquals(etcdOfferingId, map.get(ETCD.name()));
     }
 
     @Test(expected = InvalidParameterValueException.class)
