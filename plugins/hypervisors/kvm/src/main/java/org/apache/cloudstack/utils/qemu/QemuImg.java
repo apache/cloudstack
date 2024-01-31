@@ -824,29 +824,29 @@ public class QemuImg {
      *         Boolean option whether to repair any leaks
      */
     public String checkAndRepair(final QemuImgFile file, final QemuImageOptions imageOptions, final List<QemuObject> qemuObjects, final String repair) throws QemuImgException {
-        final Script s = new Script(_qemuImgPath);
-        s.add("check");
+        final Script script = new Script(_qemuImgPath);
+        script.add("check");
         if (imageOptions == null) {
-            s.add(file.getFileName());
+            script.add(file.getFileName());
         }
 
         for (QemuObject o : qemuObjects) {
-            s.add(o.toCommandFlag());
+            script.add(o.toCommandFlag());
         }
 
         if (imageOptions != null) {
-            s.add(imageOptions.toCommandFlag());
+            script.add(imageOptions.toCommandFlag());
         }
 
-        s.add("--output=json");
+        script.add("--output=json");
 
         if (StringUtils.isNotEmpty(repair)) {
-            s.add("-r");
-            s.add(repair);
+            script.add("-r");
+            script.add(repair);
         }
 
         OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
-        final String result = s.execute(parser);
+        final String result = script.execute(parser);
         if (result != null) {
             throw new QemuImgException(result);
         }

@@ -128,6 +128,7 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.State;
+import com.cloud.storage.VolumeApiServiceImpl;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -2768,7 +2769,7 @@ public class VolumeServiceImpl implements VolumeService {
     @Override
     public void checkAndRepairVolumeBasedOnConfig(DataObject dataObject, Host host) {
         if (HypervisorType.KVM.equals(host.getHypervisorType()) && DataObjectType.VOLUME.equals(dataObject.getType())) {
-            if (com.cloud.storage.VolumeApiServiceImpl.AllowCheckAndRepairVolume.value()) {
+            if (VolumeApiServiceImpl.AllowCheckAndRepairVolume.value()) {
                 s_logger.info(String.format("Trying to check and repair the volume %d", dataObject.getId()));
                 String repair = CheckAndRepairVolumeCmd.RepairValues.LEAKS.name().toLowerCase();
                 CheckAndRepairVolumePayload payload = new CheckAndRepairVolumePayload(repair);
