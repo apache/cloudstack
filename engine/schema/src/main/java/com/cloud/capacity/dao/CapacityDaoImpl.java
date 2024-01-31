@@ -477,6 +477,35 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         }
     }
 
+    protected String getHostAndPoolConditionForFilteredCapacity(Integer capacityType, List<Long> hostIds, List<Long> poolIds) {
+        StringBuilder sql = new StringBuilder();
+        if (CollectionUtils.isEmpty(hostIds) && CollectionUtils.isEmpty(poolIds)) {
+            return "";
+        }
+        sql.append(" AND (");
+        boolean hostConditionAdded = false;
+        if (CollectionUtils.isNotEmpty(hostIds) && (capacityType == null || !Capacity.STORAGE_CAPACITY_TYPES.contains(capacityType.shortValue()))) {
+            sql.append(String.format("(capacity.host_id IN (%s)", StringUtils.join(hostIds, ",")));
+            if (capacityType == null) {
+                sql.append(String.format(" AND capacity_type NOT IN (%s)", StringUtils.join(Capacity.STORAGE_CAPACITY_TYPES, ",")));
+            }
+            sql.append(")");
+            hostConditionAdded = true;
+        }
+        if (CollectionUtils.isNotEmpty(poolIds) && (capacityType == null || Capacity.STORAGE_CAPACITY_TYPES.contains(capacityType.shortValue()))) {
+            if (hostConditionAdded) {
+                sql.append(" OR ");
+            }
+            sql.append(String.format("(capacity.host_id IN (%s)", StringUtils.join(poolIds, ",")));
+            if (capacityType == null || Capacity.STORAGE_CAPACITY_TYPES.contains(capacityType.shortValue())) {
+                sql.append(String.format(" AND capacity_type IN (%s)", StringUtils.join(Capacity.STORAGE_CAPACITY_TYPES, ",")));
+            }
+            sql.append(")");
+        }
+        sql.append(")");
+        return sql.toString();
+    }
+
     @Override
     public List<SummedCapacity> findFilteredCapacityBy(Integer capacityType, Long zoneId, Long podId, Long clusterId, List<Long> hostIds, List<Long> poolIds) {
 
@@ -531,18 +560,8 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
             sql.append(" AND capacity.capacity_type = ?");
             resourceIdList.add(capacityType.longValue());
         }
-        if (CollectionUtils.isNotEmpty(hostIds)) {
-            sql.append(String.format(" AND capacity.host_id IN (%s)", StringUtils.join(hostIds, ",")));
-            if (capacityType == null) {
-                sql.append(String.format(" AND capacity_type NOT IN (%s)", StringUtils.join(Capacity.STORAGE_CAPACITY_TYPES, ",")));
-            }
-        }
-        if (CollectionUtils.isNotEmpty(poolIds)) {
-            sql.append(String.format(" AND capacity.host_id IN (%s)", StringUtils.join(poolIds, ",")));
-            if (capacityType == null) {
-                sql.append(String.format(" AND capacity_type IN (%s)", StringUtils.join(Capacity.STORAGE_CAPACITY_TYPES, ",")));
-            }
-        }
+
+        sql.append(getHostAndPoolConditionForFilteredCapacity(capacityType, hostIds, poolIds));
 
         if (podId == null && clusterId == null) {
             sql.append(" GROUP BY capacity_type, data_center_id");

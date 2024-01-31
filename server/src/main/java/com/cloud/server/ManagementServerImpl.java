@@ -3217,12 +3217,20 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         try {
             List<HostVO> hosts = _hostDao.listByHostTag(Type.Routing, clusterId, podId, zoneId, tag);
             hostIds = hosts.stream().map(HostVO::getId).collect(Collectors.toList());
-        } catch (CloudRuntimeException ignored) {
-        }
+        } catch (CloudRuntimeException ignored) {}
         return new Pair<>(CollectionUtils.isNotEmpty(hostIds), hostIds);
     }
 
-    Pair<Boolean, List<Long>> getStoragePoolIdsForCapacityListing(Integer capacityType, String tag) {
+    protected List<String> getResourceLimitTagsForCapacityListing() {
+        List<String> tags = new ArrayList<>();
+        tags.add(null);
+        tags.addAll(resourceLimitService.getResourceLimitHostTags());
+        tags.addAll(resourceLimitService.getResourceLimitStorageTags());
+        tags = tags.stream().distinct().collect(Collectors.toList());
+        return tags;
+    }
+
+    protected Pair<Boolean, List<Long>> getStoragePoolIdsForCapacityListing(Integer capacityType, String tag) {
         if (StringUtils.isEmpty(tag)) {
             return new Pair<>(true, null);
         }
@@ -3234,21 +3242,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return new Pair<>(CollectionUtils.isNotEmpty(storagePoolIds), storagePoolIds);
     }
 
-    List<SummedCapacity> getCapacitiesWithDetails(final Long zoneId,
-                                                  final Long podId,
-                                                      Long clusterId,
-                                                      final Integer capacityType,
-                                                      final String tag, int level,
-                                                      Long pageSize) {
+    protected List<SummedCapacity> getCapacitiesWithDetails(final Long zoneId, final Long podId, Long clusterId,
+            final Integer capacityType, final String tag, int level, Long pageSize) {
         List<String> tags = new ArrayList<>();
         if (StringUtils.isNotEmpty(tag)) {
             tags.add(tag);
         } else {
-            tags.add(null);
-            final List<String> hostTags = resourceLimitService.getResourceLimitHostTags();
-            final List<String> storageTags = resourceLimitService.getResourceLimitStorageTags();
-            tags.addAll(hostTags);
-            tags.addAll(storageTags);
+            tags = getResourceLimitTagsForCapacityListing();
         }
         List<SummedCapacity> summedCapacities = new ArrayList<>();
         for (String t : tags) {
@@ -3385,19 +3385,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
 
-    protected List<CapacityVO> listCapacitiesWithDetails(final Long zoneId,
-                                                         final Long podId,
-                                                         Long clusterId,
-                                                         final Integer capacityType,
-                                                         final String tag,
-                                                         List<Long> dcList) {
+    protected List<CapacityVO> listCapacitiesWithDetails(final Long zoneId, final Long podId, Long clusterId,
+             final Integer capacityType, final String tag, List<Long> dcList) {
         List<String> tags = new ArrayList<>();
         if (StringUtils.isNotEmpty(tag)) {
             tags.add(tag);
         } else {
-            tags.add(null);
-            tags.addAll(resourceLimitService.getResourceLimitHostTags());
-            tags.addAll(resourceLimitService.getResourceLimitStorageTags());
+            tags = getResourceLimitTagsForCapacityListing();
         }
         List<CapacityVO> capacities = new ArrayList<>();
         for (String t : tags) {
