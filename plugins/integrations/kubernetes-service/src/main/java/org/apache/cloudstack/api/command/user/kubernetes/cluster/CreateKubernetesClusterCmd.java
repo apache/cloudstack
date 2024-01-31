@@ -24,6 +24,7 @@ import javax.inject.Inject;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.kubernetes.cluster.KubernetesClusterHelper;
+import com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.vm.VmDetailConstants;
 import org.apache.cloudstack.acl.RoleType;
@@ -257,23 +258,54 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
         return clusterType;
     }
 
+    protected void checkNodeTypeOfferingEntryCompleteness(String nodeTypeStr, String serviceOfferingUuid) {
+        if (StringUtils.isAnyEmpty(nodeTypeStr, serviceOfferingUuid)) {
+            String error = String.format("Incomplete Node Type to Service Offering ID mapping: '%s' -> '%s'", nodeTypeStr, serviceOfferingUuid);
+            LOGGER.error(error);
+            throw new InvalidParameterValueException(error);
+        }
+    }
+
+    protected void checkNodeTypeOfferingEntryValues(String nodeTypeStr, ServiceOffering serviceOffering, String serviceOfferingUuid) {
+        if (!kubernetesClusterHelper.isValidNodeType(nodeTypeStr)) {
+            String error = String.format("The provided value '%s' for Node Type is invalid", nodeTypeStr);
+            LOGGER.error(error);
+            throw new InvalidParameterValueException(String.format(error));
+        }
+        if (serviceOffering == null) {
+            String error = String.format("Cannot find a service offering with ID %s", serviceOfferingUuid);
+            LOGGER.error(error);
+            throw new InvalidParameterValueException(error);
+        }
+    }
+
+    protected void addNodeTypeOfferingEntry(String nodeTypeStr, String serviceOfferingUuid, ServiceOffering serviceOffering, Map<String, Long> mapping) {
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(String.format("Node Type: '%s' should use Service Offering ID: '%s'", nodeTypeStr, serviceOfferingUuid));
+        }
+        KubernetesClusterNodeType nodeType = KubernetesClusterNodeType.valueOf(nodeTypeStr.toUpperCase());
+        mapping.put(nodeType.name(), serviceOffering.getId());
+    }
+
+    protected void processNodeTypeOfferingEntryAndAddToMappingIfValid(Map<String, String> entry, Map<String, Long> mapping) {
+        if (MapUtils.isEmpty(entry)) {
+            return;
+        }
+        String nodeTypeStr = entry.get(VmDetailConstants.CKS_NODE_TYPE);
+        String serviceOfferingUuid = entry.get(VmDetailConstants.OFFERING);
+        checkNodeTypeOfferingEntryCompleteness(nodeTypeStr, serviceOfferingUuid);
+
+        ServiceOffering serviceOffering = _entityMgr.findByUuid(ServiceOffering.class, serviceOfferingUuid);
+        checkNodeTypeOfferingEntryValues(nodeTypeStr, serviceOffering, serviceOfferingUuid);
+
+        addNodeTypeOfferingEntry(nodeTypeStr, serviceOfferingUuid, serviceOffering, mapping);
+    }
+
     public Map<String, Long> getNodeTypeOfferingMap() {
         Map<String, Long> mapping = new HashMap<>();
         if (MapUtils.isNotEmpty(nodeTypeOfferingMap)) {
             for (Map<String, String> entry : nodeTypeOfferingMap.values()) {
-                String nodeTypeStr = entry.get(VmDetailConstants.CKS_NODE_TYPE);
-                String serviceOfferingUuid = entry.get(VmDetailConstants.OFFERING);
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug(String.format("Node Type: '%s' should use Service Offering ID: '%s'", nodeTypeStr, serviceOfferingUuid));
-                }
-                ServiceOffering serviceOffering = _entityMgr.findByUuid(ServiceOffering.class, serviceOfferingUuid);
-                if (StringUtils.isAnyEmpty(nodeTypeStr, serviceOfferingUuid) ||
-                        !kubernetesClusterHelper.isValidNodeType(nodeTypeStr) ||
-                        serviceOffering == null) {
-                    throw new InvalidParameterValueException(String.format("Service Offering ID: %s for Node Type: %s is invalid", serviceOfferingUuid, nodeTypeStr));
-                }
-                KubernetesClusterHelper.KubernetesClusterNodeType nodeType = KubernetesClusterHelper.KubernetesClusterNodeType.valueOf(nodeTypeStr.toUpperCase());
-                mapping.put(nodeType.name(), serviceOffering.getId());
+                processNodeTypeOfferingEntryAndAddToMappingIfValid(entry, mapping);
             }
         }
         return mapping;

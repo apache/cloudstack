@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.kubernetes.cluster;
 
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.kubernetes.cluster.KubernetesClusterHelper;
 import com.cloud.kubernetes.cluster.KubernetesClusterHelperImpl;
 import com.cloud.offering.ServiceOffering;
@@ -86,5 +87,22 @@ public class CreateKubernetesClusterCmdTest {
         Assert.assertTrue(map.containsKey(WORKER.name()) && map.containsKey(MASTER.name()));
         Assert.assertEquals(workerOfferingId, map.get(WORKER.name()));
         Assert.assertEquals(masterOfferingId, map.get(MASTER.name()));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCheckNodeTypeOfferingEntryCompletenessInvalidParameters() {
+        cmd.checkNodeTypeOfferingEntryCompleteness(WORKER.name(), null);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCheckNodeTypeOfferingEntryValuesInvalidNodeType() {
+        String invalidNodeType = "invalidNodeTypeName";
+        cmd.checkNodeTypeOfferingEntryValues(invalidNodeType, workerServiceOffering, workerNodesOfferingId);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCheckNodeTypeOfferingEntryValuesEmptyOffering() {
+        String nodeType = WORKER.name();
+        cmd.checkNodeTypeOfferingEntryValues(nodeType, null, workerNodesOfferingId);
     }
 }
