@@ -360,3 +360,12 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.quarantined_ips', 'remover_account_i
 -- Explicitly add support for VMware 8.0b (8.0.0.2), 8.0c (8.0.0.3)
 INSERT IGNORE INTO `cloud`.`hypervisor_capabilities` (uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_data_volumes_limit, max_hosts_per_cluster, storage_motion_supported, vm_snapshot_enabled) values (UUID(), 'VMware', '8.0.0.2', 1024, 0, 59, 64, 1, 1);
 INSERT IGNORE INTO `cloud`.`hypervisor_capabilities` (uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_data_volumes_limit, max_hosts_per_cluster, storage_motion_supported, vm_snapshot_enabled) values (UUID(), 'VMware', '8.0.0.3', 1024, 0, 59, 64, 1, 1);
+
+-- Add support for different node types service offerings on CKS clusters
+ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `control_service_offering_id` bigint unsigned COMMENT 'service offering ID for Control Nodes';
+ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `worker_service_offering_id` bigint unsigned COMMENT 'service offering ID for Worker Nodes';
+ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `etcd_service_offering_id` bigint unsigned COMMENT 'service offering ID for etcd Nodes';
+ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `etcd_node_count` bigint COMMENT 'the number of the etcd Nodes deployed for this Kubernetes cluster';
+ALTER TABLE `cloud`.`kubernetes_cluster` ADD CONSTRAINT `fk_cluster__control_service_offering_id` FOREIGN KEY `fk_cluster__control_service_offering_id`(`control_service_offering_id`) REFERENCES `service_offering`(`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud`.`kubernetes_cluster` ADD CONSTRAINT `fk_cluster__worker_service_offering_id` FOREIGN KEY `fk_cluster__worker_service_offering_id`(`worker_service_offering_id`) REFERENCES `service_offering`(`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud`.`kubernetes_cluster` ADD CONSTRAINT `fk_cluster__etcd_service_offering_id` FOREIGN KEY `fk_cluster__etcd_service_offering_id`(`etcd_service_offering_id`) REFERENCES `service_offering`(`id`) ON DELETE CASCADE;
