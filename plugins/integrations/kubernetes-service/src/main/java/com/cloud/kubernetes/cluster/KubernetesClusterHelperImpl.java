@@ -22,6 +22,7 @@ import com.cloud.utils.component.AdapterBase;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -47,6 +48,19 @@ public class KubernetesClusterHelperImpl extends AdapterBase implements Kubernet
             return null;
         }
         return kubernetesClusterDao.findById(clusterVmMapVO.getClusterId());
+    }
+
+    @Override
+    public boolean isValidNodeType(String nodeType) {
+        if (StringUtils.isBlank(nodeType)) {
+            return false;
+        }
+        try {
+            KubernetesClusterNodeType.valueOf(nodeType.toUpperCase());
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
     }
 
     @Override

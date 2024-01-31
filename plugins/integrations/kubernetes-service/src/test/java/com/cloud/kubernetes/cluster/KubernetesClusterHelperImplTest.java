@@ -16,16 +16,30 @@
 // under the License.
 package com.cloud.kubernetes.cluster;
 
-import com.cloud.utils.component.Adapter;
-import org.apache.cloudstack.acl.ControlledEntity;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 
-public interface KubernetesClusterHelper extends Adapter {
+@RunWith(MockitoJUnitRunner.class)
+public class KubernetesClusterHelperImplTest {
 
-    enum KubernetesClusterNodeType {
-        WORKER, MASTER, ETCD
+    private final KubernetesClusterHelperImpl helper = new KubernetesClusterHelperImpl();
+
+    @Test
+    public void testIsValidNodeTypeEmptyNodeType() {
+        Assert.assertFalse(helper.isValidNodeType(null));
     }
 
-    ControlledEntity findByUuid(String uuid);
-    ControlledEntity findByVmId(long vmId);
-    boolean isValidNodeType(String nodeType);
+    @Test
+    public void testIsValidNodeTypeInvalidNodeType() {
+        String nodeType = "invalidNodeType";
+        Assert.assertFalse(helper.isValidNodeType(nodeType));
+    }
+
+    @Test
+    public void testIsValidNodeTypeValidNodeTypeLowercase() {
+        String nodeType = KubernetesClusterHelper.KubernetesClusterNodeType.WORKER.name().toLowerCase();
+        Assert.assertTrue(helper.isValidNodeType(nodeType));
+    }
 }

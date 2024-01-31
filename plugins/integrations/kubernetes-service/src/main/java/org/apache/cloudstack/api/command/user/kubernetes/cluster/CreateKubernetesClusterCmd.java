@@ -17,10 +17,15 @@
 package org.apache.cloudstack.api.command.user.kubernetes.cluster;
 
 import java.security.InvalidParameterException;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.inject.Inject;
 
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.kubernetes.cluster.KubernetesClusterHelper;
+import com.cloud.offering.ServiceOffering;
+import com.cloud.vm.VmDetailConstants;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -40,6 +45,7 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -62,6 +68,8 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
 
     @Inject
     public KubernetesClusterService kubernetesClusterService;
+    @Inject
+    protected KubernetesClusterHelper kubernetesClusterHelper;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -86,6 +94,11 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class,
             description = "the ID of the service offering for the virtual machines in the cluster.")
     private Long serviceOfferingId;
+
+    @ACL(accessType = AccessType.UseEntry)
+    @Parameter(name = ApiConstants.NODE_TYPE_OFFERING_MAP, type = CommandType.MAP,
+            description = "(Optional) Node Type to Service Offering ID mapping. If provided, it overrides the serviceofferingid parameter")
+    protected Map<String, Map<String, String>> nodeTypeOfferingMap;
 
     @ACL(accessType = AccessType.UseEntry)
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for the" +
@@ -242,6 +255,28 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
             return KubernetesCluster.ClusterType.CloudManaged.toString();
         }
         return clusterType;
+    }
+
+    public Map<String, Long> getNodeTypeOfferingMap() {
+        Map<String, Long> mapping = new HashMap<>();
+        if (MapUtils.isNotEmpty(nodeTypeOfferingMap)) {
+            for (Map<String, String> entry : nodeTypeOfferingMap.values()) {
+                String nodeTypeStr = entry.get(VmDetailConstants.CKS_NODE_TYPE);
+                String serviceOfferingUuid = entry.get(VmDetailConstants.OFFERING);
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug(String.format("Node Type: '%s' should use Service Offering ID: '%s'", nodeTypeStr, serviceOfferingUuid));
+                }
+                ServiceOffering serviceOffering = _entityMgr.findByUuid(ServiceOffering.class, serviceOfferingUuid);
+                if (StringUtils.isAnyEmpty(nodeTypeStr, serviceOfferingUuid) ||
+                        !kubernetesClusterHelper.isValidNodeType(nodeTypeStr) ||
+                        serviceOffering == null) {
+                    throw new InvalidParameterValueException(String.format("Service Offering ID: %s for Node Type: %s is invalid", serviceOfferingUuid, nodeTypeStr));
+                }
+                KubernetesClusterHelper.KubernetesClusterNodeType nodeType = KubernetesClusterHelper.KubernetesClusterNodeType.valueOf(nodeTypeStr.toUpperCase());
+                mapping.put(nodeType.name(), serviceOffering.getId());
+            }
+        }
+        return mapping;
     }
 
     /////////////////////////////////////////////////////
