@@ -4547,7 +4547,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         metrics.setIntFreeMemoryKBs(getMemoryFreeInKBs(dm));
 
         if (oldStats != null) {
-            s_logger.debug(String.format("Old stats exist for VM [%s]; thefore, the utilization will be calculated.", vmAsString));
+            s_logger.debug(String.format("Old stats exist for VM [%s]; therefore, the utilization will be calculated.", vmAsString));
 
             s_logger.debug(String.format("Calculating CPU utilization for VM [%s].", vmAsString));
             final Calendar now = Calendar.getInstance();
