@@ -18,11 +18,13 @@ package com.cloud.network;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
@@ -31,6 +33,8 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.network.dao.PublicIpQuarantineDao;
+import com.cloud.network.vo.PublicIpQuarantineVO;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -308,6 +312,9 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     @Inject
     MessageBus messageBus;
 
+    @Inject
+    PublicIpQuarantineDao publicIpQuarantineDao;
+
     SearchBuilder<IPAddressVO> AssignIpAddressSearch;
     SearchBuilder<IPAddressVO> AssignIpAddressFromPodVlanSearch;
     private static final Object allocatedLock = new Object();
@@ -317,6 +324,9 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     public static final ConfigKey<Boolean> SystemVmPublicIpReservationModeStrictness = new ConfigKey<Boolean>("Advanced",
             Boolean.class, "system.vm.public.ip.reservation.mode.strictness", "false",
             "If enabled, the use of System VMs public IP reservation is strict, preferred if not.", true, ConfigKey.Scope.Global);
+
+    public static final ConfigKey<Integer> PUBLIC_IP_ADDRESS_QUARANTINE_DURATION = new ConfigKey<>("Network", Integer.class, "public.ip.address.quarantine.duration",
+            "0", "The duration (in minutes) for the public IP address to be quarantined when it is disassociated.", true, ConfigKey.Scope.Domain);
 
     private Random rand = new Random(System.currentTimeMillis());
 
@@ -523,8 +533,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         return true;
     }
 
-    private IpAddress allocateIP(Account ipOwner, boolean isSystem, long zoneId) throws ResourceAllocationException, InsufficientAddressCapacityException,
-            ConcurrentOperationException {
+    private IpAddress allocateIP(Account ipOwner, boolean isSystem, long zoneId) throws InsufficientAddressCapacityException, ConcurrentOperationException {
         Account caller = CallContext.current().getCallingAccount();
         long callerUserId = CallContext.current().getCallingUserId();
         // check permissions
@@ -698,6 +707,9 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     public boolean disassociatePublicIpAddress(long addrId, long userId, Account caller) {
 
         boolean success = true;
+        IPAddressVO ipToBeDisassociated = _ipAddressDao.findById(addrId);
+
+        PublicIpQuarantine publicIpQuarantine = null;
         // Cleanup all ip address resources - PF/LB/Static nat rules
         if (!cleanupIpResources(addrId, userId, caller)) {
             success = false;
@@ -723,10 +735,9 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             } catch (ResourceUnavailableException e) {
                 throw new CloudRuntimeException("We should never get to here because we used true when applyIpAssociations", e);
             }
-        } else {
-            if (ip.getState() == IpAddress.State.Releasing) {
-                _ipAddressDao.unassignIpAddress(ip.getId());
-            }
+        } else if (ip.getState() == State.Releasing) {
+            publicIpQuarantine = addPublicIpAddressToQuarantine(ipToBeDisassociated, caller.getDomainId());
+            _ipAddressDao.unassignIpAddress(ip.getId());
         }
 
         annotationDao.removeByEntityType(AnnotationService.EntityType.PUBLIC_IP_ADDRESS.name(), ip.getUuid());
@@ -736,6 +747,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 releasePortableIpAddress(addrId);
             }
             s_logger.debug("Released a public ip id=" + addrId);
+        } else if (publicIpQuarantine != null) {
+            removePublicIpAddressFromQuarantine(publicIpQuarantine.getId(), "Public IP address removed from quarantine as there was an error while disassociating it.");
         }
 
         return success;
@@ -972,6 +985,13 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
         if (lockOneRow) {
             assert (addrs.size() == 1) : "Return size is incorrect: " + addrs.size();
+            IpAddress ipAddress = addrs.get(0);
+            boolean ipCanBeAllocated = canPublicIpAddressBeAllocated(ipAddress, owner);
+
+            if (!ipCanBeAllocated) {
+                throw new InsufficientAddressCapacityException(String.format("Failed to allocate public IP address [%s] as it is in quarantine.", ipAddress.getAddress()),
+                        DataCenter.class, dcId);
+            }
         }
 
         if (assign && !fetchFromDedicatedRange && VlanType.VirtualNetwork.equals(vlanUse)) {
@@ -1126,6 +1146,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             } else if (addr.getState() == IpAddress.State.Releasing) {
                 // Cleanup all the resources for ip address if there are any, and only then un-assign ip in the system
                 if (cleanupIpResources(addr.getId(), Account.ACCOUNT_ID_SYSTEM, _accountMgr.getSystemAccount())) {
+                    addPublicIpAddressToQuarantine(addr, network.getDomainId());
                     _ipAddressDao.unassignIpAddress(addr.getId());
                     messageBus.publish(_name, MESSAGE_RELEASE_IPADDR_EVENT, PublishScope.LOCAL, addr);
                 } else {
@@ -1258,8 +1279,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     @DB
     @Override
     public IpAddress allocateIp(final Account ipOwner, final boolean isSystem, Account caller, long callerUserId, final DataCenter zone, final Boolean displayIp, final String ipaddress)
-            throws ConcurrentOperationException,
-            ResourceAllocationException, InsufficientAddressCapacityException {
+            throws ConcurrentOperationException, InsufficientAddressCapacityException, CloudRuntimeException {
 
         final VlanType vlanType = VlanType.VirtualNetwork;
         final boolean assign = false;
@@ -2347,7 +2367,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {UseSystemPublicIps, RulesContinueOnError, SystemVmPublicIpReservationModeStrictness, VrouterRedundantTiersPlacement, AllowUserListAvailableIpsOnSharedNetwork};
+        return new ConfigKey<?>[] {UseSystemPublicIps, RulesContinueOnError, SystemVmPublicIpReservationModeStrictness, VrouterRedundantTiersPlacement, AllowUserListAvailableIpsOnSharedNetwork,
+                PUBLIC_IP_ADDRESS_QUARANTINE_DURATION};
     }
 
     /**
@@ -2379,6 +2400,98 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
     public static ConfigKey<Boolean> getSystemvmpublicipreservationmodestrictness() {
         return SystemVmPublicIpReservationModeStrictness;
+    }
+
+    @Override
+    public boolean canPublicIpAddressBeAllocated(IpAddress ip, Account newOwner) {
+        PublicIpQuarantineVO publicIpQuarantineVO = publicIpQuarantineDao.findByPublicIpAddressId(ip.getId());
+
+        if (publicIpQuarantineVO == null) {
+            s_logger.debug(String.format("Public IP address [%s] is not in quarantine; therefore, it is allowed to be allocated.", ip));
+            return true;
+        }
+
+        if (!isPublicIpAddressStillInQuarantine(publicIpQuarantineVO, new Date())) {
+            s_logger.debug(String.format("Public IP address [%s] is no longer in quarantine; therefore, it is allowed to be allocated.", ip));
+            return true;
+        }
+
+        Account previousOwner = _accountMgr.getAccount(publicIpQuarantineVO.getPreviousOwnerId());
+
+        if (Objects.equals(previousOwner.getUuid(), newOwner.getUuid())) {
+            s_logger.debug(String.format("Public IP address [%s] is in quarantine; however, the Public IP previous owner [%s] is the same as the new owner [%s]; therefore the IP" +
+                    " can be allocated. The public IP address will be removed from quarantine.", ip, previousOwner, newOwner));
+            removePublicIpAddressFromQuarantine(publicIpQuarantineVO.getId(), "IP was removed from quarantine because it has been allocated by the previous owner");
+            return true;
+        }
+
+        s_logger.error(String.format("Public IP address [%s] is in quarantine and the previous owner [%s] is different than the new owner [%s]; therefore, the IP cannot be " +
+                "allocated.", ip, previousOwner, newOwner));
+        return false;
+    }
+
+    public boolean isPublicIpAddressStillInQuarantine(PublicIpQuarantineVO publicIpQuarantineVO, Date currentDate) {
+        Date quarantineEndDate = publicIpQuarantineVO.getEndDate();
+        Date removedDate = publicIpQuarantineVO.getRemoved();
+        boolean hasQuarantineEndedEarly = removedDate != null;
+
+        return hasQuarantineEndedEarly && currentDate.before(removedDate) ||
+                !hasQuarantineEndedEarly && currentDate.before(quarantineEndDate);
+    }
+
+    @Override
+    public PublicIpQuarantine addPublicIpAddressToQuarantine(IpAddress publicIpAddress, Long domainId) {
+        Integer quarantineDuration = PUBLIC_IP_ADDRESS_QUARANTINE_DURATION.valueInDomain(domainId);
+        if (quarantineDuration <= 0) {
+            s_logger.debug(String.format("Not adding IP [%s] to quarantine because configuration [%s] has value equal or less to 0.", publicIpAddress.getAddress(),
+                    PUBLIC_IP_ADDRESS_QUARANTINE_DURATION.key()));
+            return null;
+        }
+
+        long ipId = publicIpAddress.getId();
+        long accountId = publicIpAddress.getAccountId();
+
+        if (accountId == Account.ACCOUNT_ID_SYSTEM) {
+            s_logger.debug(String.format("Not adding IP [%s] to quarantine because it belongs to the system account.", publicIpAddress.getAddress()));
+            return null;
+        }
+
+        Date currentDate = new Date();
+        Calendar quarantineEndDate = Calendar.getInstance();
+        quarantineEndDate.setTime(currentDate);
+        quarantineEndDate.add(Calendar.MINUTE, quarantineDuration);
+
+        PublicIpQuarantineVO publicIpQuarantine = new PublicIpQuarantineVO(ipId, accountId, currentDate, quarantineEndDate.getTime());
+        s_logger.debug(String.format("Adding public IP Address [%s] to quarantine for the duration of [%s] minute(s).", publicIpAddress.getAddress(), quarantineDuration));
+        return publicIpQuarantineDao.persist(publicIpQuarantine);
+    }
+
+    @Override
+    public void removePublicIpAddressFromQuarantine(Long quarantineProcessId, String removalReason) {
+        PublicIpQuarantineVO publicIpQuarantineVO = publicIpQuarantineDao.findById(quarantineProcessId);
+        Ip ipAddress = _ipAddressDao.findById(publicIpQuarantineVO.getPublicIpAddressId()).getAddress();
+        Date removedDate = new Date();
+        Long removerAccountId = CallContext.current().getCallingAccountId();
+
+        publicIpQuarantineVO.setRemoved(removedDate);
+        publicIpQuarantineVO.setRemovalReason(removalReason);
+        publicIpQuarantineVO.setRemoverAccountId(removerAccountId);
+
+        s_logger.debug(String.format("Removing public IP Address [%s] from quarantine by updating the removed date to [%s].", ipAddress, removedDate));
+        publicIpQuarantineDao.persist(publicIpQuarantineVO);
+    }
+
+    @Override
+    public PublicIpQuarantine updatePublicIpAddressInQuarantine(Long quarantineProcessId, Date newEndDate) {
+        PublicIpQuarantineVO publicIpQuarantineVO = publicIpQuarantineDao.findById(quarantineProcessId);
+        Ip ipAddress = _ipAddressDao.findById(publicIpQuarantineVO.getPublicIpAddressId()).getAddress();
+        Date currentEndDate = publicIpQuarantineVO.getEndDate();
+
+        publicIpQuarantineVO.setEndDate(newEndDate);
+
+        s_logger.debug(String.format("Updating the end date for the quarantine of the public IP Address [%s] from [%s] to [%s].", ipAddress, currentEndDate, newEndDate));
+        publicIpQuarantineDao.persist(publicIpQuarantineVO);
+        return publicIpQuarantineVO;
     }
 
     @Override

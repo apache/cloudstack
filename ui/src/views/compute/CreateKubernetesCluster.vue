@@ -259,18 +259,12 @@ export default {
     this.apiParams = this.$getApiParams('createKubernetesCluster')
   },
   created () {
-    this.networks = [
-      {
-        id: null,
-        name: ''
-      }
-    ]
-    this.keyPairs = [
-      {
-        id: null,
-        name: ''
-      }
-    ]
+    this.emptyEntry = {
+      id: null,
+      name: ''
+    }
+    this.networks = [this.emptyEntry]
+    this.keyPairs = [this.emptyEntry]
     this.initForm()
     this.fetchData()
   },
@@ -278,7 +272,7 @@ export default {
     initForm () {
       this.formRef = ref()
       this.form = reactive({
-        controlnodes: 2,
+        controlnodes: 3,
         size: 1,
         noderootdisksize: 8
       })
@@ -322,7 +316,6 @@ export default {
     },
     fetchData () {
       this.fetchZoneData()
-      this.fetchNetworkData()
       this.fetchKeyPairData()
     },
     isValidValueForKey (obj, key) {
@@ -417,14 +410,16 @@ export default {
         params.zoneid = this.selectedZone.id
       }
       this.networkLoading = true
+      this.networks = []
       api('listNetworks', params).then(json => {
         var listNetworks = json.listnetworksresponse.network
         if (this.arrayHasItems(listNetworks)) {
           listNetworks = listNetworks.filter(n => n.type !== 'L2')
-          this.networks = this.networks.concat(listNetworks)
+          this.networks = listNetworks
         }
       }).finally(() => {
         this.networkLoading = false
+        this.networks = [this.emptyEntry].concat(this.networks)
         if (this.arrayHasItems(this.networks)) {
           this.form.networkid = 0
         }

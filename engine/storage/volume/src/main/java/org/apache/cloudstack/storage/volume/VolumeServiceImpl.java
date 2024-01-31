@@ -32,10 +32,6 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.secret.dao.PassphraseDao;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.resource.StorageProcessor;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
@@ -66,6 +62,7 @@ import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.secret.dao.PassphraseDao;
 import org.apache.cloudstack.storage.RemoteHostEndPoint;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
@@ -83,6 +80,7 @@ import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -122,13 +120,16 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.State;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.storage.resource.StorageProcessor;
 import com.cloud.storage.snapshot.SnapshotApiService;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.storage.template.TemplateConstants;
@@ -142,7 +143,6 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
-import org.apache.commons.lang3.StringUtils;
 
 @Component
 public class VolumeServiceImpl implements VolumeService {
@@ -205,8 +205,6 @@ public class VolumeServiceImpl implements VolumeService {
     private SnapshotApiService snapshotApiService;
     @Inject
     private PassphraseDao passphraseDao;
-
-    private final static String SNAPSHOT_ID = "SNAPSHOT_ID";
 
     public VolumeServiceImpl() {
     }
@@ -882,9 +880,7 @@ public class VolumeServiceImpl implements VolumeService {
      */
     private TemplateInfo createManagedTemplateVolume(TemplateInfo srcTemplateInfo, PrimaryDataStore destPrimaryDataStore) {
         // create a template volume on primary storage
-        AsyncCallFuture<VolumeApiResult> createTemplateFuture = new AsyncCallFuture<>();
         TemplateInfo templateOnPrimary = (TemplateInfo)destPrimaryDataStore.create(srcTemplateInfo, srcTemplateInfo.getDeployAsIsConfiguration());
-
         VMTemplateStoragePoolVO templatePoolRef = _tmpltPoolDao.findByPoolTemplate(destPrimaryDataStore.getId(), templateOnPrimary.getId(), srcTemplateInfo.getDeployAsIsConfiguration());
 
         if (templatePoolRef == null) {
@@ -897,7 +893,6 @@ public class VolumeServiceImpl implements VolumeService {
         // At this point, we have an entry in the DB that points to our cached template.
         // We need to lock it as there may be other VMs that may get started using the same template.
         // We want to avoid having to create multiple cache copies of the same template.
-
         int storagePoolMaxWaitSeconds = NumbersUtil.parseInt(configDao.getValue(Config.StoragePoolMaxWaitSeconds.key()), 3600);
         long templatePoolRefId = templatePoolRef.getId();
 
@@ -909,34 +904,44 @@ public class VolumeServiceImpl implements VolumeService {
 
         try {
             // create a cache volume on the back-end
-
             templateOnPrimary.processEvent(Event.CreateOnlyRequested);
+            CreateAsyncCompleteCallback callback = new CreateAsyncCompleteCallback();
 
-            CreateVolumeContext<CreateCmdResult> createContext = new CreateVolumeContext<>(null, templateOnPrimary, createTemplateFuture);
-            AsyncCallbackDispatcher<VolumeServiceImpl, CreateCmdResult> createCaller = AsyncCallbackDispatcher.create(this);
-
-            createCaller.setCallback(createCaller.getTarget().createManagedTemplateImageCallback(null, null)).setContext(createContext);
-
-            destPrimaryDataStore.getDriver().createAsync(destPrimaryDataStore, templateOnPrimary, createCaller);
-
-            VolumeApiResult result = createTemplateFuture.get();
-
-            if (result.isFailed()) {
-                String errMesg = result.getResult();
-
+            destPrimaryDataStore.getDriver().createAsync(destPrimaryDataStore, templateOnPrimary, callback);
+            // validate we got a good result back
+            if (callback.result == null || callback.result.isFailed()) {
+                String errMesg;
+                if (callback.result == null) {
+                    errMesg = "Unknown/unable to determine result";
+                } else {
+                    errMesg = callback.result.getResult();
+                }
+                templateOnPrimary.processEvent(Event.OperationFailed);
                 throw new CloudRuntimeException("Unable to create template " + templateOnPrimary.getId() + " on primary storage " + destPrimaryDataStore.getId() + ":" + errMesg);
             }
+
+            templateOnPrimary.processEvent(Event.OperationSuccessed);
+
         } catch (Throwable e) {
             s_logger.debug("Failed to create template volume on storage", e);
-
             templateOnPrimary.processEvent(Event.OperationFailed);
-
             throw new CloudRuntimeException(e.getMessage());
         } finally {
             _tmpltPoolDao.releaseFromLockTable(templatePoolRefId);
         }
 
         return templateOnPrimary;
+    }
+
+    private static class CreateAsyncCompleteCallback implements AsyncCompletionCallback<CreateCmdResult> {
+
+        public CreateCmdResult result;
+
+        @Override
+        public void complete(CreateCmdResult result) {
+            this.result = result;
+        }
+
     }
 
     /**
@@ -1464,6 +1469,16 @@ public class VolumeServiceImpl implements VolumeService {
                 if (templatePoolRef.getDownloadState() == Status.NOT_DOWNLOADED) {
                     copyTemplateToManagedTemplateVolume(srcTemplateInfo, templateOnPrimary, templatePoolRef, destPrimaryDataStore, destHost);
                 }
+            } catch (Exception e) {
+                if (templateOnPrimary != null) {
+                    templateOnPrimary.processEvent(Event.OperationFailed);
+                }
+                VolumeApiResult result = new VolumeApiResult(volumeInfo);
+                result.setResult(e.getLocalizedMessage());
+                result.setSuccess(false);
+                future.complete(result);
+                s_logger.warn("Failed to create template on primary storage", e);
+                return future;
             } finally {
                 if (lock != null) {
                     lock.unlock();
@@ -1478,8 +1493,8 @@ public class VolumeServiceImpl implements VolumeService {
                 createManagedVolumeCloneTemplateAsync(volumeInfo, templateOnPrimary, destPrimaryDataStore, future);
             } else {
                 // We have a template on PowerFlex primary storage. Create new volume and copy to it.
-                s_logger.debug("Copying the template to the volume on primary storage");
-                createManagedVolumeCopyManagedTemplateAsync(volumeInfo, destPrimaryDataStore, templateOnPrimary, destHost, future);
+                createManagedVolumeCopyManagedTemplateAsyncWithLock(volumeInfo, destPrimaryDataStore, templateOnPrimary,
+                        destHost, future, destDataStoreId, srcTemplateInfo.getId());
             }
         } else {
             s_logger.debug("Primary storage does not support cloning or no support for UUID resigning on the host side; copying the template normally");
@@ -1488,6 +1503,32 @@ public class VolumeServiceImpl implements VolumeService {
         }
 
         return future;
+    }
+
+    private void createManagedVolumeCopyManagedTemplateAsyncWithLock(VolumeInfo volumeInfo, PrimaryDataStore destPrimaryDataStore, TemplateInfo templateOnPrimary,
+                                                                     Host destHost, AsyncCallFuture<VolumeApiResult> future, long destDataStoreId, long srcTemplateId) {
+        GlobalLock lock = null;
+        try {
+            String tmplIdManagedPoolIdDestinationHostLockString = "tmplId:" + srcTemplateId + "managedPoolId:" + destDataStoreId + "destinationHostId:" + destHost.getId();
+            lock = GlobalLock.getInternLock(tmplIdManagedPoolIdDestinationHostLockString);
+            if (lock == null) {
+                throw new CloudRuntimeException("Unable to create volume from template, couldn't get global lock on " + tmplIdManagedPoolIdDestinationHostLockString);
+            }
+
+            int storagePoolMaxWaitSeconds = NumbersUtil.parseInt(configDao.getValue(Config.StoragePoolMaxWaitSeconds.key()), 3600);
+            if (!lock.lock(storagePoolMaxWaitSeconds)) {
+                s_logger.debug("Unable to create volume from template, couldn't lock on " + tmplIdManagedPoolIdDestinationHostLockString);
+                throw new CloudRuntimeException("Unable to create volume from template, couldn't lock on " + tmplIdManagedPoolIdDestinationHostLockString);
+            }
+
+            s_logger.debug("Copying the template to the volume on primary storage");
+            createManagedVolumeCopyManagedTemplateAsync(volumeInfo, destPrimaryDataStore, templateOnPrimary, destHost, future);
+        } finally {
+            if (lock != null) {
+                lock.unlock();
+                lock.releaseRef();
+            }
+        }
     }
 
     private boolean computeSupportsVolumeClone(long zoneId, HypervisorType hypervisorType) {

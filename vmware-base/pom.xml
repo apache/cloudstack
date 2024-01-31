@@ -78,5 +78,11 @@
             <artifactId>maven-artifact</artifactId>
             <version>3.6.3</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-core</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 </project>

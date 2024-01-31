@@ -758,8 +758,9 @@ export default {
     updateVnfDetail (index) {
       if (Array.isArray(this.vnfDetails[index].values) && this.vnfDetails[index].values.length > 0) {
         this.vnfDetails[index].value = this.vnfDetails[index].values.join(',')
+      } else {
+        this.vnfDetails[index].value = this.vnfDetails[index].displayvalue
       }
-      this.vnfDetails[index].value = this.vnfDetails[index].displayvalue
       this.vnfDetails[index].displayvalue = this.getDisplayValue(this.vnfDetails[index].name, this.vnfDetails[index].value)
       this.updateVnfTemplateDetails()
     },

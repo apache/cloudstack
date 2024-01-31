@@ -43,8 +43,10 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
+import com.cloud.hypervisor.vmware.util.VmwareClient;
 import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
 import org.apache.cloudstack.api.command.admin.zone.ImportVsphereStoragePoliciesCmd;
+import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcVmsCmd;
 import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcsCmd;
 import org.apache.cloudstack.api.command.admin.zone.ListVsphereStoragePoliciesCmd;
 import org.apache.cloudstack.api.command.admin.zone.ListVsphereStoragePolicyCompatiblePoolsCmd;
@@ -61,6 +63,7 @@ import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplain
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -109,13 +112,13 @@ import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.hypervisor.vmware.LegacyZoneVO;
 import com.cloud.hypervisor.vmware.VmwareCleanupMaid;
-import com.cloud.hypervisor.vmware.VmwareDatacenter;
+import com.cloud.dc.VmwareDatacenter;
 import com.cloud.hypervisor.vmware.VmwareDatacenterService;
-import com.cloud.hypervisor.vmware.VmwareDatacenterVO;
+import com.cloud.dc.VmwareDatacenterVO;
 import com.cloud.hypervisor.vmware.VmwareDatacenterZoneMap;
 import com.cloud.hypervisor.vmware.VmwareDatacenterZoneMapVO;
 import com.cloud.hypervisor.vmware.dao.LegacyZoneDao;
-import com.cloud.hypervisor.vmware.dao.VmwareDatacenterDao;
+import com.cloud.dc.dao.VmwareDatacenterDao;
 import com.cloud.hypervisor.vmware.dao.VmwareDatacenterZoneMapDao;
 import com.cloud.hypervisor.vmware.mo.CustomFieldConstants;
 import com.cloud.hypervisor.vmware.mo.DatacenterMO;
@@ -296,7 +299,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {s_vmwareNicHotplugWaitTimeout, s_vmwareCleanOldWorderVMs, templateCleanupInterval, s_vmwareSearchExcludeFolder, s_vmwareOVAPackageTimeout, s_vmwareCleanupPortGroups, VMWARE_STATS_TIME_WINDOW};
+        return new ConfigKey<?>[] {s_vmwareNicHotplugWaitTimeout, s_vmwareCleanOldWorderVMs, templateCleanupInterval, s_vmwareSearchExcludeFolder, s_vmwareOVAPackageTimeout, s_vmwareCleanupPortGroups, VMWARE_STATS_TIME_WINDOW, VmwareUserVmNicDeviceType};
     }
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -1113,6 +1116,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         cmdList.add(ImportVsphereStoragePoliciesCmd.class);
         cmdList.add(ListVsphereStoragePoliciesCmd.class);
         cmdList.add(ListVsphereStoragePolicyCompatiblePoolsCmd.class);
+        cmdList.add(ListVmwareDcVmsCmd.class);
         return cmdList;
     }
 
@@ -1584,6 +1588,62 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             }
         }
         return compatiblePools;
+    }
+
+    @Override
+    public List<UnmanagedInstanceTO> listVMsInDatacenter(ListVmwareDcVmsCmd cmd) {
+        String vcenter = cmd.getVcenter();
+        String datacenterName = cmd.getDatacenterName();
+        String username = cmd.getUsername();
+        String password = cmd.getPassword();
+        Long existingVcenterId = cmd.getExistingVcenterId();
+        String keyword = cmd.getKeyword();
+
+        if ((existingVcenterId == null && StringUtils.isBlank(vcenter)) ||
+                (existingVcenterId != null && StringUtils.isNotBlank(vcenter))) {
+            throw new InvalidParameterValueException("Please provide an existing vCenter ID or a vCenter IP/Name, parameters are mutually exclusive");
+        }
+
+        if (existingVcenterId == null && StringUtils.isAnyBlank(vcenter, datacenterName, username, password)) {
+            throw new InvalidParameterValueException("Please set all the information for a vCenter IP/Name, datacenter, username and password");
+        }
+
+        if (existingVcenterId != null) {
+            VmwareDatacenterVO vmwareDc = vmwareDcDao.findById(existingVcenterId);
+            if (vmwareDc == null) {
+                throw new InvalidParameterValueException(String.format("Cannot find a VMware datacenter with ID %s", existingVcenterId));
+            }
+            vcenter = vmwareDc.getVcenterHost();
+            datacenterName = vmwareDc.getVmwareDatacenterName();
+            username = vmwareDc.getUser();
+            password = vmwareDc.getPassword();
+        }
+
+        try {
+            s_logger.debug(String.format("Connecting to the VMware datacenter %s at vCenter %s to retrieve VMs",
+                    datacenterName, vcenter));
+            String serviceUrl = String.format("https://%s/sdk/vimService", vcenter);
+            VmwareClient vimClient = new VmwareClient(vcenter);
+            vimClient.connect(serviceUrl, username, password);
+            VmwareContext context = new VmwareContext(vimClient, vcenter);
+
+            DatacenterMO dcMo = new DatacenterMO(context, datacenterName);
+            ManagedObjectReference dcMor = dcMo.getMor();
+            if (dcMor == null) {
+                String msg = String.format("Unable to find VMware datacenter %s in vCenter %s",
+                        datacenterName, vcenter);
+                s_logger.error(msg);
+                throw new InvalidParameterValueException(msg);
+            }
+            List<UnmanagedInstanceTO> instances = dcMo.getAllVmsOnDatacenter();
+            return StringUtils.isBlank(keyword) ? instances :
+                    instances.stream().filter(x -> x.getName().toLowerCase().contains(keyword.toLowerCase())).collect(Collectors.toList());
+        } catch (Exception e) {
+            String errorMsg = String.format("Error retrieving stopped VMs from the VMware VC %s datacenter %s: %s",
+                    vcenter, datacenterName, e.getMessage());
+            s_logger.error(errorMsg, e);
+            throw new CloudRuntimeException(errorMsg);
+        }
     }
 
     @Override
