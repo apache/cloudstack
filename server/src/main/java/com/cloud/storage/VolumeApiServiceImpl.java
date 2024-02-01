@@ -1895,14 +1895,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         Account caller = CallContext.current().getCallingAccount();
         _accountMgr.checkAccess(caller, null, true, volume);
 
-        Long volumeId = volume.getId();
+        String volumeName = volume.getName();
         Long vmId = volume.getInstanceId();
         if (vmId != null) {
-            validateVMforCheckVolumeOperation(vmId, volumeId);
+            validateVMforCheckVolumeOperation(vmId, volumeName);
         }
 
         if (volume.getState() != Volume.State.Ready) {
-            throw new InvalidParameterValueException(String.format("VolumeId: %d is not in Ready state", volumeId));
+            throw new InvalidParameterValueException(String.format("Volume: %s is not in Ready state", volumeName));
         }
 
         HypervisorType hypervisorType = _volsDao.getHypervisorType(volume.getId());
@@ -1911,17 +1911,17 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
     }
 
-    private void validateVMforCheckVolumeOperation(Long vmId, Long volumeId) {
+    private void validateVMforCheckVolumeOperation(Long vmId, String volumeName) {
         Account caller = CallContext.current().getCallingAccount();
         UserVmVO vm = _userVmDao.findById(vmId);
         if (vm == null) {
-            throw new InvalidParameterValueException(String.format("VM not found, please check the VM to which this volume %d is attached", volumeId));
+            throw new InvalidParameterValueException(String.format("VM not found, please check the VM to which this volume %s is attached", volumeName));
         }
 
         _accountMgr.checkAccess(caller, null, true, vm);
 
         if (vm.getState() != State.Stopped) {
-            throw new InvalidParameterValueException(String.format("VM to which the volume %d is attached should be in stopped state", volumeId));
+            throw new InvalidParameterValueException(String.format("VM to which the volume %s is attached should be in stopped state", volumeName));
         }
     }
 

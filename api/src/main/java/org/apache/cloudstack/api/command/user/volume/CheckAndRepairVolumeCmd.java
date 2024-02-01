@@ -74,8 +74,9 @@ public class CheckAndRepairVolumeCmd extends BaseCmd {
             if (repairType == null) {
                 throw new InvalidParameterValueException(String.format("Repair parameter can only take the following values: %s" + Arrays.toString(RepairValues.values())));
             }
+            return repair.toLowerCase();
         }
-        return repair.toLowerCase();
+        return null;
     }
 
     /////////////////////////////////////////////////////
