@@ -213,8 +213,8 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.ScopeType;
-import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateVO;
@@ -2208,9 +2208,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             boolean result = stateTransitTo(vm, Event.OperationSucceeded, null);
             if (result) {
-                if (VirtualMachine.Type.User.equals(vm.type) && ResourceCountRunningVMsonly.value()) {
-                    ServiceOfferingVO offering = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
-                    resourceCountDecrement(vm.getAccountId(),new Long(offering.getCpu()), new Long(offering.getRamSize()));
+                if (VirtualMachine.Type.User.equals(vm.type)) {
+                    vm.setPowerState(PowerState.PowerOff);
+                    _vmDao.update(vm.getId(), vm);
+
+                    if (ResourceCountRunningVMsonly.value()) {
+                        ServiceOfferingVO offering = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
+                        resourceCountDecrement(vm.getAccountId(),new Long(offering.getCpu()), new Long(offering.getRamSize()));
+                    }
                 }
             } else {
                 throw new CloudRuntimeException("unable to stop " + vm);
