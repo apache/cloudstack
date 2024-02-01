@@ -1834,54 +1834,60 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         Long vmId = volume.getInstanceId();
         if (vmId != null) {
             // serialize VM operation
-            AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
-            if (jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
-                // avoid re-entrance
+            return handleCheckAndRepairVolumeJob(vmId, volumeId, repair);
+        } else {
+            return handleCheckAndRepairVolume(volumeId, repair);
+        }
+    }
 
-                VmWorkJobVO placeHolder = null;
-                placeHolder = createPlaceHolderWork(vmId);
-                try {
-                    Pair<String, String> result = orchestrateCheckAndRepairVolume(volumeId, repair);
-                    return result;
-                } finally {
-                    _workJobDao.expunge(placeHolder.getId());
-                }
-            } else {
-                Outcome<Pair> outcome = checkAndRepairVolumeThroughJobQueue(vmId, volumeId, repair);
+    private Pair<String, String> handleCheckAndRepairVolume(Long volumeId, String repair) {
+        CheckAndRepairVolumePayload payload = new CheckAndRepairVolumePayload(repair);
+        VolumeInfo volumeInfo = volFactory.getVolume(volumeId);
+        volumeInfo.addPayload(payload);
 
-                try {
-                    outcome.get();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException("Operation is interrupted", e);
-                } catch (ExecutionException e) {
-                    throw new RuntimeException("Execution exception--", e);
-                }
+        Pair<String, String> result = volService.checkAndRepairVolume(volumeInfo);
+        return result;
+    }
 
-                Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
-                if (jobResult != null) {
-                    if (jobResult instanceof ConcurrentOperationException) {
-                        throw (ConcurrentOperationException)jobResult;
-                    } else if (jobResult instanceof ResourceAllocationException) {
-                        throw (ResourceAllocationException)jobResult;
-                    } else if (jobResult instanceof Throwable) {
-                        throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
-                    }
-                }
-
-                // retrieve the entity url from job result
-                if (jobResult != null && jobResult instanceof Pair) {
-                    return (Pair<String, String>) jobResult;
-                }
-
-                return null;
+    private Pair<String, String> handleCheckAndRepairVolumeJob(Long vmId, Long volumeId, String repair) throws ResourceAllocationException {
+        AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
+        if (jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
+            // avoid re-entrance
+            VmWorkJobVO placeHolder = null;
+            placeHolder = createPlaceHolderWork(vmId);
+            try {
+                Pair<String, String> result = orchestrateCheckAndRepairVolume(volumeId, repair);
+                return result;
+            } finally {
+                _workJobDao.expunge(placeHolder.getId());
             }
         } else {
-            CheckAndRepairVolumePayload payload = new CheckAndRepairVolumePayload(repair);
-            VolumeInfo volumeInfo = volFactory.getVolume(volumeId);
-            volumeInfo.addPayload(payload);
+            Outcome<Pair> outcome = checkAndRepairVolumeThroughJobQueue(vmId, volumeId, repair);
+            try {
+                outcome.get();
+            } catch (InterruptedException e) {
+                throw new RuntimeException("Operation is interrupted", e);
+            } catch (ExecutionException e) {
+                throw new RuntimeException("Execution exception--", e);
+            }
 
-            Pair<String, String> result = volService.checkAndRepairVolume(volumeInfo);
-            return result;
+            Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
+            if (jobResult != null) {
+                if (jobResult instanceof ConcurrentOperationException) {
+                    throw (ConcurrentOperationException)jobResult;
+                } else if (jobResult instanceof ResourceAllocationException) {
+                    throw (ResourceAllocationException)jobResult;
+                } else if (jobResult instanceof Throwable) {
+                    throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
+                }
+            }
+
+            // retrieve the entity url from job result
+            if (jobResult != null && jobResult instanceof Pair) {
+                return (Pair<String, String>) jobResult;
+            }
+
+            return null;
         }
     }
 
@@ -1892,16 +1898,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         Long volumeId = volume.getId();
         Long vmId = volume.getInstanceId();
         if (vmId != null) {
-            UserVmVO vm = _userVmDao.findById(vmId);
-            if (vm == null) {
-                throw new InvalidParameterValueException(String.format("VM not found, please check the VM to which this volume %d is attached", volumeId));
-            }
-
-            _accountMgr.checkAccess(caller, null, true, vm);
-
-            if (vm.getState() != State.Stopped) {
-                throw new InvalidParameterValueException(String.format("VM to which the volume %d is attached should be in stopped state", volumeId));
-            }
+            validateVMforCheckVolumeOperation(vmId, volumeId);
         }
 
         if (volume.getState() != Volume.State.Ready) {
@@ -1911,6 +1908,20 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         HypervisorType hypervisorType = _volsDao.getHypervisorType(volume.getId());
         if (!HypervisorType.KVM.equals(hypervisorType)) {
             throw new InvalidParameterValueException(String.format("Check and Repair volumes is supported only for KVM hypervisor"));
+        }
+    }
+
+    private void validateVMforCheckVolumeOperation(Long vmId, Long volumeId) {
+        Account caller = CallContext.current().getCallingAccount();
+        UserVmVO vm = _userVmDao.findById(vmId);
+        if (vm == null) {
+            throw new InvalidParameterValueException(String.format("VM not found, please check the VM to which this volume %d is attached", volumeId));
+        }
+
+        _accountMgr.checkAccess(caller, null, true, vm);
+
+        if (vm.getState() != State.Stopped) {
+            throw new InvalidParameterValueException(String.format("VM to which the volume %d is attached should be in stopped state", volumeId));
         }
     }
 

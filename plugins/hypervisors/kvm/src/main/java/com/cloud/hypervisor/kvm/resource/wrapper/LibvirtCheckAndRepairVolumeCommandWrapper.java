@@ -30,6 +30,7 @@ import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.cloudstack.utils.cryptsetup.KeyFile;
@@ -38,6 +39,7 @@ import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.cloudstack.utils.qemu.QemuObject;
+import org.apache.cloudstack.utils.qemu.QemuObject.EncryptFormat;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -61,47 +63,23 @@ public class LibvirtCheckAndRepairVolumeCommandWrapper extends CommandWrapper<Ch
 
         final KVMStoragePoolManager storagePoolMgr = serverResource.getStoragePoolMgr();
         KVMStoragePool pool = storagePoolMgr.getStoragePool(spool.getType(), spool.getUuid());
-
         final KVMPhysicalDisk vol = pool.getPhysicalDisk(volumeId);
-        QemuObject.EncryptFormat encryptFormat = QemuObject.EncryptFormat.enumValue(command.getEncryptFormat());
         byte[] passphrase = command.getPassphrase();
+
         try {
-            String checkVolumeResult = checkAndRepairVolume(vol, null, encryptFormat, passphrase, serverResource);
-            s_logger.info(String.format("Check Volume result for the volume %s is %s", vol.getName(), checkVolumeResult));
-            CheckAndRepairVolumeAnswer answer = new CheckAndRepairVolumeAnswer(command, true, checkVolumeResult);
-            answer.setVolumeCheckExecutionResult(checkVolumeResult);
+            CheckAndRepairVolumeAnswer answer = checkVolume(vol, command, serverResource);
+            String checkVolumeResult =  answer.getVolumeCheckExecutionResult();
 
-            int leaks = 0;
-            if (StringUtils.isNotEmpty(checkVolumeResult) && StringUtils.isNotEmpty(repair) && repair.equals("leaks")) {
-                ObjectMapper objectMapper = new ObjectMapper();
-                JsonNode jsonNode = objectMapper.readTree(checkVolumeResult);
-                JsonNode leaksNode = jsonNode.get("leaks");
-                if (leaksNode != null) {
-                    leaks = leaksNode.asInt();
-                }
-
-                if (leaks == 0) {
-                    String msg = String.format("no leaks found while checking for the volume %s, so skipping repair", vol.getName());
-                    s_logger.info(msg);
-                    String jsonStringFormat = String.format("{ \"message\": \"%s\" }", msg);
-                    String finalResult = (checkVolumeResult != null ? checkVolumeResult.concat(",") : "") + jsonStringFormat;
-                    answer = new CheckAndRepairVolumeAnswer(command, true, finalResult);
-                    answer.setVolumeRepairExecutionResult(jsonStringFormat);
-                    answer.setVolumeCheckExecutionResult(checkVolumeResult);
-
-                    return answer;
-                }
+            CheckAndRepairVolumeAnswer resultAnswer = checkIfRepairLeaksIsRequired(command, checkVolumeResult, vol.getName());
+            // resultAnswer is not null when repair is not required, so return from here
+            if (resultAnswer != null) {
+                return resultAnswer;
             }
 
             if (StringUtils.isNotEmpty(repair)) {
-                String repairVolumeResult = checkAndRepairVolume(vol, repair, encryptFormat, passphrase, serverResource);
-                String finalResult = (checkVolumeResult != null ? checkVolumeResult.concat(",") : "") + repairVolumeResult;
-                s_logger.info(String.format("Repair Volume result for the volume %s is %s", vol.getName(), repairVolumeResult));
-
-                answer = new CheckAndRepairVolumeAnswer(command, true, finalResult);
-                answer.setVolumeRepairExecutionResult(repairVolumeResult);
-                answer.setVolumeCheckExecutionResult(checkVolumeResult);
+                answer = repairVolume(vol, command, serverResource, checkVolumeResult);
             }
+
             return answer;
         } catch (Exception e) {
             return new CheckAndRepairVolumeAnswer(command, false, e.toString());
@@ -112,7 +90,61 @@ public class LibvirtCheckAndRepairVolumeCommandWrapper extends CommandWrapper<Ch
         }
     }
 
-    protected String checkAndRepairVolume(final KVMPhysicalDisk vol, final String repair, final QemuObject.EncryptFormat encryptFormat, byte[] passphrase, final LibvirtComputingResource libvirtComputingResource) throws CloudRuntimeException {
+    private CheckAndRepairVolumeAnswer checkVolume(KVMPhysicalDisk vol, CheckAndRepairVolumeCommand command, LibvirtComputingResource serverResource) {
+        EncryptFormat encryptFormat = EncryptFormat.enumValue(command.getEncryptFormat());
+        byte[] passphrase = command.getPassphrase();
+        String checkVolumeResult = checkAndRepairVolume(vol, null, encryptFormat, passphrase, serverResource);
+        s_logger.info(String.format("Check Volume result for the volume %s is %s", vol.getName(), checkVolumeResult));
+        CheckAndRepairVolumeAnswer answer = new CheckAndRepairVolumeAnswer(command, true, checkVolumeResult);
+        answer.setVolumeCheckExecutionResult(checkVolumeResult);
+
+        return answer;
+    }
+
+    private CheckAndRepairVolumeAnswer repairVolume(KVMPhysicalDisk vol, CheckAndRepairVolumeCommand command, LibvirtComputingResource serverResource, String checkVolumeResult) {
+        EncryptFormat encryptFormat = EncryptFormat.enumValue(command.getEncryptFormat());
+        byte[] passphrase = command.getPassphrase();
+        final String repair = command.getRepair();
+
+        String repairVolumeResult = checkAndRepairVolume(vol, repair, encryptFormat, passphrase, serverResource);
+        String finalResult = (checkVolumeResult != null ? checkVolumeResult.concat(",") : "") + repairVolumeResult;
+        s_logger.info(String.format("Repair Volume result for the volume %s is %s", vol.getName(), repairVolumeResult));
+
+        CheckAndRepairVolumeAnswer answer = new CheckAndRepairVolumeAnswer(command, true, finalResult);
+        answer.setVolumeRepairExecutionResult(repairVolumeResult);
+        answer.setVolumeCheckExecutionResult(checkVolumeResult);
+
+        return answer;
+    }
+
+    private CheckAndRepairVolumeAnswer checkIfRepairLeaksIsRequired(CheckAndRepairVolumeCommand command, String checkVolumeResult, String volumeName) throws JsonProcessingException {
+        final String repair = command.getRepair();
+        int leaks = 0;
+        if (StringUtils.isNotEmpty(checkVolumeResult) && StringUtils.isNotEmpty(repair) && repair.equals("leaks")) {
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode jsonNode = objectMapper.readTree(checkVolumeResult);
+            JsonNode leaksNode = jsonNode.get("leaks");
+            if (leaksNode != null) {
+                leaks = leaksNode.asInt();
+            }
+
+            if (leaks == 0) {
+                String msg = String.format("no leaks found while checking for the volume %s, so skipping repair", volumeName);
+                s_logger.info(msg);
+                String jsonStringFormat = String.format("{ \"message\": \"%s\" }", msg);
+                String finalResult = (checkVolumeResult != null ? checkVolumeResult.concat(",") : "") + jsonStringFormat;
+                CheckAndRepairVolumeAnswer answer = new CheckAndRepairVolumeAnswer(command, true, finalResult);
+                answer.setVolumeRepairExecutionResult(jsonStringFormat);
+                answer.setVolumeCheckExecutionResult(checkVolumeResult);
+
+                return answer;
+            }
+        }
+
+        return null;
+    }
+
+    protected String checkAndRepairVolume(final KVMPhysicalDisk vol, final String repair, final EncryptFormat encryptFormat, byte[] passphrase, final LibvirtComputingResource libvirtComputingResource) throws CloudRuntimeException {
         List<QemuObject> passphraseObjects = new ArrayList<>();
         QemuImageOptions imgOptions = null;
         if (ArrayUtils.isEmpty(passphrase)) {
