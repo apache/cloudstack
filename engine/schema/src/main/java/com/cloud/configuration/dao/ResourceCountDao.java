@@ -71,5 +71,5 @@ public interface ResourceCountDao extends GenericDao<ResourceCountVO, Long> {
      */
     long countMemoryAllocatedToAccount(long accountId);
 
-    void removeResourceCountsForNonMatchingTags(long ownerId, ResourceOwnerType ownerType, ResourceType type, List<String> tags);
+    void removeResourceCountsForNonMatchingTags(Long ownerId, ResourceOwnerType ownerType, List<ResourceType> types, List<String> tags);
 }

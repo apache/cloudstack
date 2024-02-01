@@ -29,6 +29,7 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -82,7 +83,7 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
         NonMatchingTagsSearch = createSearchBuilder();
         NonMatchingTagsSearch.and("accountId", NonMatchingTagsSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         NonMatchingTagsSearch.and("domainId", NonMatchingTagsSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
-        NonMatchingTagsSearch.and("type", NonMatchingTagsSearch.entity().getType(), SearchCriteria.Op.EQ);
+        NonMatchingTagsSearch.and("types", NonMatchingTagsSearch.entity().getType(), SearchCriteria.Op.IN);
         NonMatchingTagsSearch.and("tagNotNull", NonMatchingTagsSearch.entity().getTag(), SearchCriteria.Op.NNULL);
         NonMatchingTagsSearch.and("tags", NonMatchingTagsSearch.entity().getTag(), SearchCriteria.Op.NIN);
         NonMatchingTagsSearch.done();
@@ -327,14 +328,18 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
     }
 
     @Override
-    public void removeResourceCountsForNonMatchingTags(long ownerId, ResourceOwnerType ownerType, ResourceType type, List<String> tags) {
+    public void removeResourceCountsForNonMatchingTags(Long ownerId, ResourceOwnerType ownerType, List<ResourceType> types, List<String> tags) {
         SearchCriteria<ResourceCountVO> sc = NonMatchingTagsSearch.create();
-        if (ResourceOwnerType.Account.equals(ownerType)) {
-            sc.setParameters("accountId", ownerId);
-        } else {
-            sc.setParameters("domainId", ownerId);
+        if (ObjectUtils.allNotNull(ownerId, ownerType)) {
+            if (ResourceOwnerType.Account.equals(ownerType)) {
+                sc.setParameters("accountId", ownerId);
+            } else {
+                sc.setParameters("domainId", ownerId);
+            }
         }
-        sc.setParameters("type", type);
+        if (CollectionUtils.isNotEmpty(types)) {
+            sc.setParameters("types", types.stream().map(ResourceType::getName).toArray());
+        }
         if (CollectionUtils.isNotEmpty(tags)) {
             sc.setParameters("tags", tags.toArray());
         }

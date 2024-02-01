@@ -21,6 +21,7 @@ import java.util.List;
 
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Resource;
@@ -55,7 +56,7 @@ public class ResourceLimitDaoImpl extends GenericDaoBase<ResourceLimitVO, Long> 
         NonMatchingTagsSearch = createSearchBuilder();
         NonMatchingTagsSearch.and("accountId", NonMatchingTagsSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         NonMatchingTagsSearch.and("domainId", NonMatchingTagsSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
-        NonMatchingTagsSearch.and("type", NonMatchingTagsSearch.entity().getType(), SearchCriteria.Op.EQ);
+        NonMatchingTagsSearch.and("types", NonMatchingTagsSearch.entity().getType(), SearchCriteria.Op.IN);
         NonMatchingTagsSearch.and("tagNotNull", NonMatchingTagsSearch.entity().getTag(), SearchCriteria.Op.NNULL);
         NonMatchingTagsSearch.and("tags", NonMatchingTagsSearch.entity().getTag(), SearchCriteria.Op.NIN);
         NonMatchingTagsSearch.done();
@@ -132,14 +133,18 @@ public class ResourceLimitDaoImpl extends GenericDaoBase<ResourceLimitVO, Long> 
     }
 
     @Override
-    public void removeResourceLimitsForNonMatchingTags(long ownerId, ResourceOwnerType ownerType, ResourceType type, List<String> tags) {
+    public void removeResourceLimitsForNonMatchingTags(Long ownerId, ResourceOwnerType ownerType, List<ResourceType> types, List<String> tags) {
         SearchCriteria<ResourceLimitVO> sc = NonMatchingTagsSearch.create();
-        if (ResourceOwnerType.Account.equals(ownerType)) {
-            sc.setParameters("accountId", ownerId);
-        } else {
-            sc.setParameters("domainId", ownerId);
+        if (ObjectUtils.allNotNull(ownerId, ownerType)) {
+            if (ResourceOwnerType.Account.equals(ownerType)) {
+                sc.setParameters("accountId", ownerId);
+            } else {
+                sc.setParameters("domainId", ownerId);
+            }
         }
-        sc.setParameters("type", type);
+        if (CollectionUtils.isNotEmpty(types)) {
+            sc.setParameters("types", types.stream().map(ResourceType::getName).toArray());
+        }
         if (CollectionUtils.isNotEmpty(tags)) {
             sc.setParameters("tags", tags.toArray());
         }

@@ -51,6 +51,7 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -857,6 +858,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     }
 
     protected void addTaggedResourceLimits(List<ResourceLimitVO> limits, ResourceType resourceType, ResourceOwnerType ownerType, long ownerId, List<String> hostTags, List<String> storageTags) {
+        removeUndesiredTaggedLimits(limits, hostTags, storageTags);
         if (CollectionUtils.isEmpty(hostTags) && CollectionUtils.isEmpty(storageTags)) {
             return;
         }
@@ -864,7 +866,6 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         addTaggedResourceLimits(limits, types, hostTags, ownerType, ownerId);
         types = resourceType != null ? StorageTagsSupportingTypes.contains(resourceType) ? List.of(resourceType) : null : StorageTagsSupportingTypes;
         addTaggedResourceLimits(limits, types, storageTags, ownerType, ownerId);
-        removeUndesiredTaggedLimits(limits, hostTags, storageTags);
         limits.sort((o1, o2) -> {
             Integer type1 = o1.getType().getOrdinal();
             Integer type2 = o2.getType().getOrdinal();
@@ -1001,12 +1002,25 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         return CollectionUtils.isEmpty(hostTags) && CollectionUtils.isEmpty(storageTags);
     }
 
+    protected void removeResourceLimitAndCountForNonMatchingTags(Long ownerId, ResourceOwnerType ownerType,
+                                                                 List<String> hostTags, List<String> storageTags) {
+        if (s_logger.isDebugEnabled()) {
+            String msg = String.format("Clearing tagged resource limits and counts which do not match " +
+                            "host tags: %s, storage tags: %s",
+                    StringUtils.join(hostTags), StringUtils.join(storageTags));
+            if (ObjectUtils.allNotNull(ownerId, ownerType)) {
+                msg = String.format("%s for %s ID: %d", msg, ownerType.getName().toLowerCase(), ownerId);
+            }
+            s_logger.debug(msg);
+        }
+        _resourceLimitDao.removeResourceLimitsForNonMatchingTags(ownerId, ownerType, HostTagsSupportingTypes, hostTags);
+        _resourceLimitDao.removeResourceLimitsForNonMatchingTags(ownerId, ownerType, StorageTagsSupportingTypes, storageTags);
+        _resourceCountDao.removeResourceCountsForNonMatchingTags(ownerId, ownerType, HostTagsSupportingTypes, hostTags);
+        _resourceCountDao.removeResourceCountsForNonMatchingTags(ownerId, ownerType, StorageTagsSupportingTypes, storageTags);
+    }
+
     protected List<ResourceCountVO> recalculateAccountTaggedResourceCount(long accountId, ResourceType type, final List<String> hostTags, final List<String> storageTags) {
         List<ResourceCountVO> result = new ArrayList<>();
-        final List<String> allTags = new ArrayList<>(hostTags);
-        allTags.addAll(storageTags);
-        _resourceCountDao.removeResourceCountsForNonMatchingTags(accountId, ResourceOwnerType.Account, type, allTags);
-        _resourceLimitDao.removeResourceLimitsForNonMatchingTags(accountId, ResourceOwnerType.Account, type, allTags);
         if (isTaggedResourceCountRecalculationNotNeeded(type, hostTags, storageTags)) {
             return result;
         }
@@ -1027,10 +1041,6 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
     protected List<ResourceCountVO> recalculateDomainTaggedResourceCount(long domainId, ResourceType type, final List<String> hostTags, final List<String> storageTags) {
         List<ResourceCountVO> result = new ArrayList<>();
-        final List<String> allTags = new ArrayList<>(hostTags);
-        allTags.addAll(storageTags);
-        _resourceCountDao.removeResourceCountsForNonMatchingTags(domainId, ResourceOwnerType.Domain, type, allTags);
-        _resourceLimitDao.removeResourceLimitsForNonMatchingTags(domainId, ResourceOwnerType.Domain, type, allTags);
         if (isTaggedResourceCountRecalculationNotNeeded(type, hostTags, storageTags)) {
             return result;
         }
@@ -1088,6 +1098,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
         List<String> hostTags = getResourceLimitHostTags();
         List<String> storageTags = getResourceLimitStorageTags();
+        removeResourceLimitAndCountForNonMatchingTags(accountId != null ? accountId : domainId,
+                accountId != null ? ResourceOwnerType.Account : ResourceOwnerType.Domain, hostTags, storageTags);
         for (ResourceType type : resourceTypes) {
             if (accountId != null) {
                 count = recalculateAccountResourceCount(accountId, type, tag);
@@ -1871,6 +1883,12 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 s_logger.warn("Resource counters recalculation periodic task failed, unable to fetch active accounts for domain " + Domain.ROOT_DOMAIN, e);
                 // initialize accounts as empty list to do best effort recalculation
                 accounts = new ArrayList<>();
+            }
+            // try/catch task, otherwise it won't be rescheduled in case of exception
+            try {
+                removeResourceLimitAndCountForNonMatchingTags(null, null, getResourceLimitHostTags(), getResourceLimitStorageTags());
+            } catch (Exception e) {
+                s_logger.warn("Failure in resource counters recalculation periodic task, unable to clear undesired tagged limits and counts", e);
             }
 
             for (ResourceType type : ResourceType.values()) {
