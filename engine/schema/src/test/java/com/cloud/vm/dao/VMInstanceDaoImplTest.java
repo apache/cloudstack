@@ -17,16 +17,8 @@
 
 package com.cloud.vm.dao;
 
-import com.cloud.utils.Pair;
-import com.cloud.vm.VirtualMachine;
-import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mock;
-
 import static com.cloud.vm.VirtualMachine.State.Running;
 import static com.cloud.vm.VirtualMachine.State.Stopped;
-
 import static com.cloud.vm.dao.VMInstanceDaoImpl.MAX_CONSECUTIVE_SAME_STATE_UPDATE_COUNT;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -37,11 +29,19 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import com.cloud.vm.VMInstanceVO;
+
+import java.util.Date;
+
+import org.joda.time.DateTime;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
-import java.util.Date;
+import com.cloud.utils.Pair;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 
 /**
  * Created by sudharma_jain on 3/2/17.
@@ -117,6 +117,7 @@ public class VMInstanceDaoImplTest {
         when(vm.getPowerStateUpdateTime()).thenReturn(null);
         when(vm.getPowerHostId()).thenReturn(1L);
         when(vm.getPowerState()).thenReturn(VirtualMachine.PowerState.PowerOn);
+        when(vm.getState()).thenReturn(Running);
         when(vm.getPowerStateUpdateCount()).thenReturn(1);
         doReturn(vm).when(vmInstanceDao).findById(anyLong());
         doReturn(true).when(vmInstanceDao).update(anyLong(), any());
@@ -163,8 +164,8 @@ public class VMInstanceDaoImplTest {
 
         boolean result = vmInstanceDao.updatePowerState(1L, 1L, VirtualMachine.PowerState.PowerOn, new Date());
 
-        verify(vm, never()).setPowerState(any());
-        verify(vm, never()).setPowerHostId(anyLong());
+        verify(vm, times(1)).setPowerState(any());
+        verify(vm, times(1)).setPowerHostId(anyLong());
         verify(vm, times(1)).setPowerStateUpdateCount(1);
         verify(vm, times(1)).setPowerStateUpdateTime(any(Date.class));
 
@@ -183,12 +184,11 @@ public class VMInstanceDaoImplTest {
 
         boolean result = vmInstanceDao.updatePowerState(1L, 1L, VirtualMachine.PowerState.PowerOff, new Date());
 
-        verify(vm, never()).setPowerState(any());
-        verify(vm, never()).setPowerHostId(anyLong());
+        verify(vm, times(1)).setPowerState(any());
+        verify(vm, times(1)).setPowerHostId(anyLong());
         verify(vm, times(1)).setPowerStateUpdateCount(1);
         verify(vm, times(1)).setPowerStateUpdateTime(any(Date.class));
 
         assertTrue(result);
     }
-
 }

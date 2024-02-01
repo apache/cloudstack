@@ -906,8 +906,10 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
                         && (null == instance.getPowerStateUpdateTime()
                         || instance.getPowerStateUpdateTime().before(wisdomEra))) {
                     Long savedPowerHostId = instance.getPowerHostId();
-                    if (instance.getPowerState() != powerState || savedPowerHostId == null
-                            || savedPowerHostId != powerHostId) {
+                    if (instance.getPowerState() != powerState
+                            || savedPowerHostId == null
+                            || savedPowerHostId != powerHostId
+                            || !isPowerStateInSyncWithInstanceState(powerState, powerHostId, instance)) {
                         instance.setPowerState(powerState);
                         instance.setPowerHostId(powerHostId);
                         instance.setPowerStateUpdateCount(1);
@@ -921,37 +923,34 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
                             instance.setPowerStateUpdateTime(DateUtil.currentGMTTime());
                             needToUpdate = true;
                             update(instanceId, instance);
-                        } else {
-                            switch (instance.getState()) {
-                                case Starting:
-                                case Running:
-                                    if (powerState == VirtualMachine.PowerState.PowerOff) {
-                                        s_logger.debug(String.format("VM id: %d on host id: %d and power host id: %d is in %s state, but power state is %s",
-                                                instanceId, instance.getHostId(), powerHostId, instance.getState(), powerState));
-                                        instance.setPowerStateUpdateTime(DateUtil.currentGMTTime());
-                                        instance.setPowerStateUpdateCount(1);
-                                        needToUpdate = true;
-                                        update(instanceId, instance);
-                                    }
-                                    break;
-                                case Stopping:
-                                case Stopped:
-                                    if (powerState == VirtualMachine.PowerState.PowerOn) {
-                                        s_logger.debug(String.format("VM id: %d on host id: %d and power host id: %d is in %s state, but power state is %s",
-                                                instanceId, instance.getHostId(), powerHostId, instance.getState(), powerState));
-                                        instance.setPowerStateUpdateTime(DateUtil.currentGMTTime());
-                                        instance.setPowerStateUpdateCount(1);
-                                        needToUpdate = true;
-                                        update(instanceId, instance);
-                                    }
-                                    break;
-                            }
                         }
                     }
                 }
                 return needToUpdate;
             }
         });
+    }
+
+    private boolean isPowerStateInSyncWithInstanceState(final VirtualMachine.PowerState powerState, final long powerHostId, final VMInstanceVO instance) {
+        switch (instance.getState()) {
+            case Starting:
+            case Running:
+                if (powerState == VirtualMachine.PowerState.PowerOff) {
+                    s_logger.debug(String.format("VM id: %d on host id: %d and power host id: %d is in %s state, but power state is %s",
+                            instance.getId(), instance.getHostId(), powerHostId, instance.getState(), powerState));
+                    return false;
+                }
+                break;
+            case Stopping:
+            case Stopped:
+                if (powerState == VirtualMachine.PowerState.PowerOn) {
+                    s_logger.debug(String.format("VM id: %d on host id: %d and power host id: %d is in %s state, but power state is %s",
+                            instance.getId(), instance.getHostId(), powerHostId, instance.getState(), powerState));
+                    return false;
+                }
+                break;
+        }
+        return true;
     }
 
     @Override
