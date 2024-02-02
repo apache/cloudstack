@@ -658,10 +658,14 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         if(StringUtils.isNumeric(protocol)){
             int protoNumber = Integer.parseInt(protocol);
             // Deal with ICMP(protocol number 1) specially because it need to be paired with icmp type and code
-            if (protoNumber == 1) {
-                protocol = "icmp";
-                icmpCode = -1;
-                icmpType = -1;
+            if (protoNumber == NetUtils.ICMP_PROTO_NUMBER) {
+                protocol = NetUtils.ICMP_PROTO;
+                if (icmpCode == null) {
+                    icmpCode = -1;
+                }
+                if (icmpType == null) {
+                    icmpType = -1;
+                }
             } else if(protoNumber < 0 || protoNumber > 255){
                 throw new InvalidParameterValueException("Invalid protocol number: " + protoNumber);
             }
@@ -673,18 +677,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
             }
         }
         if (protocol.equals(NetUtils.ICMP_PROTO)) {
-            if ((icmpType == null) || (icmpCode == null)) {
-                throw new InvalidParameterValueException("Invalid ICMP type/code specified, icmpType = " + icmpType + ", icmpCode = " + icmpCode);
-            }
-            if (icmpType == -1 && icmpCode != -1) {
-                throw new InvalidParameterValueException("Invalid icmp code");
-            }
-            if (icmpType != -1 && icmpCode == -1) {
-                throw new InvalidParameterValueException("Invalid icmp code: need non-negative icmp code ");
-            }
-            if (icmpCode > 255 || icmpType > 255 || icmpCode < -1 || icmpType < -1) {
-                throw new InvalidParameterValueException("Invalid icmp type/code ");
-            }
+            NetUtils.validateIcmpTypeAndCode(icmpType, icmpCode);
             startPortOrType = icmpType;
             endPortOrCode = icmpCode;
         } else if (protocol.equals(NetUtils.ALL_PROTO)) {
@@ -785,6 +778,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
                         SecurityGroupRuleVO securityGroupRule = _securityGroupRuleDao.findByProtoPortsAndAllowedGroupId(securityGroup.getId(), protocolFinal, startPortOrTypeFinal,
                                 endPortOrCodeFinal, ngVO.getId());
                         if ((securityGroupRule != null) && (securityGroupRule.getRuleType() == ruleType)) {
+                            s_logger.warn("The rule already exists. id= " + securityGroupRule.getUuid());
                             continue; // rule already exists.
                         }
                         securityGroupRule = new SecurityGroupRuleVO(ruleType, securityGroup.getId(), startPortOrTypeFinal, endPortOrCodeFinal, protocolFinal, ngVO.getId());
