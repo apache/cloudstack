@@ -932,23 +932,12 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     }
 
     private boolean isPowerStateInSyncWithInstanceState(final VirtualMachine.PowerState powerState, final long powerHostId, final VMInstanceVO instance) {
-        switch (instance.getState()) {
-            case Starting:
-            case Running:
-                if (powerState == VirtualMachine.PowerState.PowerOff) {
-                    s_logger.debug(String.format("VM id: %d on host id: %d and power host id: %d is in %s state, but power state is %s",
-                            instance.getId(), instance.getHostId(), powerHostId, instance.getState(), powerState));
-                    return false;
-                }
-                break;
-            case Stopping:
-            case Stopped:
-                if (powerState == VirtualMachine.PowerState.PowerOn) {
-                    s_logger.debug(String.format("VM id: %d on host id: %d and power host id: %d is in %s state, but power state is %s",
-                            instance.getId(), instance.getHostId(), powerHostId, instance.getState(), powerState));
-                    return false;
-                }
-                break;
+        State instanceState = instance.getState();
+        if ((powerState == VirtualMachine.PowerState.PowerOff && instanceState == State.Running)
+                || (powerState == VirtualMachine.PowerState.PowerOn && instanceState == State.Stopped)) {
+            s_logger.debug(String.format("VM id: %d on host id: %d and power host id: %d is in %s state, but power state is %s",
+                    instance.getId(), instance.getHostId(), powerHostId, instanceState, powerState));
+            return false;
         }
         return true;
     }

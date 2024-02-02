@@ -2214,7 +2214,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                     if (ResourceCountRunningVMsonly.value()) {
                         ServiceOfferingVO offering = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
-                        resourceCountDecrement(vm.getAccountId(),new Long(offering.getCpu()), new Long(offering.getRamSize()));
+                        resourceCountDecrement(vm.getAccountId(), offering.getCpu().longValue(), offering.getRamSize().longValue());
                     }
                 }
             } else {
