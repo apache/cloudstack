@@ -112,6 +112,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -706,8 +707,9 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
         if (!canHandle(network, Network.Service.NetworkACL)) {
             return false;
         }
-        List<NsxNetworkRule> nsxAddNetworkRules = new ArrayList<>();
+
         List<NsxNetworkRule> nsxDelNetworkRules = new ArrayList<>();
+        boolean success = true;
         for (NetworkACLItem rule : rules) {
             String privatePort = getPrivatePortRangeForACLRule(rule);
             NsxNetworkRule networkRule = new NsxNetworkRule.Builder()
@@ -723,22 +725,26 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
                     .setService(Network.Service.NetworkACL)
                     .build();
             if (Arrays.asList(NetworkACLItem.State.Active, NetworkACLItem.State.Add).contains(rule.getState())) {
-                nsxAddNetworkRules.add(networkRule);
+                success = success && nsxService.addFirewallRules(network, List.of(networkRule));
             } else if (NetworkACLItem.State.Revoke == rule.getState()) {
                 nsxDelNetworkRules.add(networkRule);
             }
         }
-        boolean success = true;
+
         if (!nsxDelNetworkRules.isEmpty()) {
             success = nsxService.deleteFirewallRules(network, nsxDelNetworkRules);
             if (!success) {
                 LOGGER.warn("Not all firewall rules were successfully deleted");
             }
         }
-        return success && nsxService.addFirewallRules(network, nsxAddNetworkRules);
+        return success;
     }
 
-    @Override
+    private void reorderRules(List<? extends NetworkACLItem> rules) {
+        rules.sort((Comparator) (r1, r2) -> ((NetworkACLItem) r2).getNumber() - ((NetworkACLItem) r1).getNumber());
+
+    }
+        @Override
     public boolean applyFWRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
 
         if (!canHandle(network, Network.Service.Firewall)) {
