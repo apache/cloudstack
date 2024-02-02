@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.discoverer;
 
+import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.kvm.discoverer.LibvirtServerDiscoverer;
 
@@ -33,5 +34,11 @@ public class CustomServerDiscoverer extends LibvirtServerDiscoverer {
     @Override
     public void processHostAdded(long hostId) {
         // Not using super class implementation here.
+    }
+
+    @Override
+    public boolean processDisconnect(long agentId, Status state) {
+        // Not using super class implementation here.
+        return false;
     }
 }

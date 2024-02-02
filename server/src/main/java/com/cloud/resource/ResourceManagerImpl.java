@@ -91,6 +91,7 @@ import com.cloud.agent.api.UpdateHostPasswordCommand;
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.agent.api.to.GPUDeviceTO;
 import com.cloud.agent.transport.Request;
+import com.cloud.alert.AlertManager;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.CapacityState;
@@ -132,6 +133,8 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.StorageConflictException;
+import com.cloud.exception.StorageUnavailableException;
 import com.cloud.gpu.GPU;
 import com.cloud.gpu.HostGpuGroupsVO;
 import com.cloud.gpu.VGPUTypesVO;
@@ -151,6 +154,7 @@ import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.kvm.discoverer.KvmDummyResourceBase;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
@@ -168,10 +172,13 @@ import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StorageService;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.Ternary;
@@ -889,8 +896,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             logger.warn(msg);
             throw new DiscoveryException(msg);
         }
-        String errorMsg = "Cannot find the server resources at " + url;
-        logger.warn(errorMsg);
+        String errorMsg = "Cannot find the server resources " + url + ", check server accessibility and connectivity to pool(s)";
+        s_logger.warn(errorMsg);
         throw new DiscoveryException("Unable to add the host: " + errorMsg);
     }
 
@@ -3215,6 +3222,18 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         final QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
         sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
         sc.and(sc.entity().getGuid(), Op.EQ, guid);
+        return sc.list();
+    }
+
+    @Override
+    public List<HostVO> findHostByGuidByStatus(final long dcId, final String guid, final Status status) {
+        final QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
+        sc.and(sc.entity().getGuid(), Op.LIKE, guid + "%");
+        sc.and(sc.entity().getStatus(), Op.EQ, status);
+        sc.and(sc.entity().getType(),Op.EQ, Type.Routing);
+        sc.and(sc.entity().getResourceState(), Op.EQ, ResourceState.Enabled);
+//        sc.and(sc.entity().getRemoved(), Op.NULL);
         return sc.list();
     }
 

@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
@@ -67,7 +68,7 @@ public class ScaleIOStoragePoolTest {
         details = new HashMap<>();
         details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemId);
 
-        adapter = spy(new ScaleIOStorageAdaptor(storageLayer));
+        adapter = spy(new ScaleIOStorageAdaptor());
     }
 
     @After
