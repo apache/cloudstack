@@ -19,4 +19,9 @@
 -- Schema upgrade from 4.19.0.0 to 4.19.1.0
 --;
 
-
+CREATE TABLE IF NOT EXISTS `cloud`.`command_timeout` (
+    command_classpath text primary key,
+    timeout int not null,
+    created datetime not null,
+    updated datetime not null
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
