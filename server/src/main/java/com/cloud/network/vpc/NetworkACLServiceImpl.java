@@ -439,6 +439,9 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
     private void validateNsxConstraints(long vpcId, String protocol, Integer icmpType,
                                         Integer icmpCode, Integer sourcePortStart, Integer sourcePortEnd) {
         VpcVO vpc = _vpcDao.findById(vpcId);
+        if (Objects.isNull(vpc)) {
+            return;
+        }
         final DataCenter dc = _entityMgr.findById(DataCenter.class, vpc.getZoneId());
         final NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(dc.getId());
         if (Objects.isNull(nsxProvider)) {
