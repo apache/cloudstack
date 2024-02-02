@@ -440,7 +440,6 @@ public class NsxElementTest {
         Network.Service service = new Network.Service("service1", new Network.Capability("capability"));
 
         when(nsxElement.canHandle(networkVO, service)).thenReturn(true);
-        when(nsxService.addFirewallRules(any(Network.class), any(List.class))).thenReturn(true);
         assertTrue(nsxElement.applyNetworkACLs(networkVO, List.of(rule)));
     }
 
@@ -457,7 +456,6 @@ public class NsxElementTest {
 
         when(nsxElement.canHandle(networkVO, service)).thenReturn(true);
         when(nsxService.deleteFirewallRules(any(Network.class), any(List.class))).thenReturn(true);
-        when(nsxService.addFirewallRules(any(Network.class), any(List.class))).thenReturn(true);
         assertTrue(nsxElement.applyNetworkACLs(networkVO, List.of(rule)));
     }
 
