@@ -48,6 +48,9 @@
     <bean id="configurationGroupDaoImpl"
           class="org.apache.cloudstack.framework.config.dao.ConfigurationGroupDaoImpl" />
 
+    <bean id="commandTimeoutDaoImpl"
+          class="org.apache.cloudstack.framework.config.dao.CommandTimeoutDaoImpl" />
+
     <bean id="configurationSubGroupDaoImpl"
           class="org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDaoImpl" />
 

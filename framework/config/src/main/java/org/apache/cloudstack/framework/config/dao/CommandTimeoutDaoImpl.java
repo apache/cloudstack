@@ -16,11 +16,26 @@
 // under the License.
 package org.apache.cloudstack.framework.config.dao;
 
-import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import org.apache.cloudstack.framework.config.impl.CommandTimeoutVO;
 
-public interface CommandTimeoutDao extends GenericDao<CommandTimeoutVO, String> {
+public class CommandTimeoutDaoImpl extends GenericDaoBase<CommandTimeoutVO, String> implements CommandTimeoutDao {
 
-    CommandTimeoutVO findByCommandClasspath(String commandClasspath);
+    private SearchBuilder<CommandTimeoutVO> commandTimeoutVoSearchBuilder;
 
+    public CommandTimeoutDaoImpl() {
+        super();
+
+        commandTimeoutVoSearchBuilder = createSearchBuilder();
+        commandTimeoutVoSearchBuilder.and("command_classpath", commandTimeoutVoSearchBuilder.entity().getCommandClasspath(), SearchCriteria.Op.EQ);
+    }
+
+    @Override
+    public CommandTimeoutVO findByCommandClasspath(String commandClasspath) {
+        SearchCriteria<CommandTimeoutVO> searchCriteria = commandTimeoutVoSearchBuilder.create();
+        searchCriteria.setParameters("command_classpath", commandClasspath);
+        return findOneBy(searchCriteria);
+    }
 }
