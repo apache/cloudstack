@@ -21,6 +21,7 @@ import java.util.Map;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.utils.db.GenericDao;
 
@@ -130,7 +131,7 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
 
     Integer countAll();
 
-    List<StoragePoolVO> findPoolsByStorageType(String storageType);
+    List<StoragePoolVO> findPoolsByStorageType(Storage.StoragePoolType storageType);
 
     List<StoragePoolVO> listStoragePoolsWithActiveVolumesByOfferingId(long offeringid);
 }
