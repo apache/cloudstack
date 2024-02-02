@@ -19,7 +19,6 @@
 package org.apache.cloudstack.storage.resource;
 
 import org.apache.logging.log4j.Logger;
-import org.junit.Before;
 import static org.mockito.Matchers.any;
 import org.mockito.Mock;
 import static org.mockito.Mockito.doThrow;
@@ -74,11 +73,6 @@ public class NfsSecondaryStorageResourceTest {
 
     @Mock
     private Logger loggerMock;
-
-    @Before
-    public void setUp() {
-        resource = new NfsSecondaryStorageResource();
-    }
 
     @Test
     public void testSwiftWriteMetadataFile() throws Exception {
