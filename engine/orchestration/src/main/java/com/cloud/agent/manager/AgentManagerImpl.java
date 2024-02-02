@@ -46,7 +46,9 @@ import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.config.dao.CommandTimeoutDao;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.impl.CommandTimeoutVO;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
@@ -159,6 +161,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected HostPodDao _podDao = null;
     @Inject
     protected ConfigurationDao _configDao = null;
+
+    @Inject
+    protected CommandTimeoutDao commandTimeoutDao;
+
     @Inject
     protected ClusterDao _clusterDao = null;
 
@@ -439,7 +445,18 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
 
         if (timeout <= 0) {
-            timeout = Wait.value();
+
+            for (Command command : commands) {
+                CommandTimeoutVO commandTimeoutVo = commandTimeoutDao.findByCommandClasspath(command.getClass().getName());
+
+                if (commandTimeoutVo != null && commandTimeoutVo.getTimeout() > timeout) {
+                    timeout = commandTimeoutVo.getTimeout();
+                }
+            }
+
+            if (timeout <= 0) {
+                timeout = Wait.value();
+            }
         }
 
         if (CheckTxnBeforeSending.value()) {
