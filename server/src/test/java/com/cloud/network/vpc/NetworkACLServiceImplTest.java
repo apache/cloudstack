@@ -635,8 +635,8 @@ public class NetworkACLServiceImplTest {
 
     @Test(expected = InvalidParameterValueException.class)
     public void validateProtocolTestProtocolNotIcmpWithIcmpConfigurations() {
-        Mockito.when(networkAclItemVoMock.getIcmpCode()).thenReturn(1);
-        Mockito.when(networkAclItemVoMock.getIcmpType()).thenReturn(1);
+        Mockito.when(networkAclItemVoMock.getIcmpCode()).thenReturn(2);
+        Mockito.when(networkAclItemVoMock.getIcmpType()).thenReturn(3);
 
         Mockito.when(networkAclItemVoMock.getProtocol()).thenReturn("tcp");
         networkAclServiceImpl.validateProtocol(networkAclItemVoMock);
@@ -660,8 +660,8 @@ public class NetworkACLServiceImplTest {
 
     @Test
     public void validateProtocolTestProtocolIcmpWithIcmpConfigurations() {
-        Mockito.when(networkAclItemVoMock.getIcmpCode()).thenReturn(1);
-        Mockito.when(networkAclItemVoMock.getIcmpType()).thenReturn(1);
+        Mockito.when(networkAclItemVoMock.getIcmpCode()).thenReturn(2);
+        Mockito.when(networkAclItemVoMock.getIcmpType()).thenReturn(3);
 
         Mockito.when(networkAclItemVoMock.getSourcePortStart()).thenReturn(null);
         Mockito.when(networkAclItemVoMock.getSourcePortEnd()).thenReturn(null);
