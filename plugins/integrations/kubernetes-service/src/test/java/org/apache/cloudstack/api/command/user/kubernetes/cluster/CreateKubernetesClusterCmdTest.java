@@ -83,12 +83,12 @@ public class CreateKubernetesClusterCmdTest {
 
     @Test
     public void testNodeOfferingMapMissingEtcd() {
-        cmd.nodeTypeOfferingMap = new HashMap<>();
+        cmd.serviceOfferingNodeTypeMap = new HashMap<>();
         Map<String, String> firstMap = createMapEntry(WORKER, workerNodesOfferingId);
         Map<String, String> secondMap = createMapEntry(CONTROL, controlNodesOfferingId);
-        cmd.nodeTypeOfferingMap.put("map1", firstMap);
-        cmd.nodeTypeOfferingMap.put("map2", secondMap);
-        Map<String, Long> map = cmd.getNodeTypeOfferingMap();
+        cmd.serviceOfferingNodeTypeMap.put("map1", firstMap);
+        cmd.serviceOfferingNodeTypeMap.put("map2", secondMap);
+        Map<String, Long> map = cmd.getServiceOfferingNodeTypeMap();
         Assert.assertNotNull(map);
         Assert.assertEquals(2, map.size());
         Assert.assertTrue(map.containsKey(WORKER.name()) && map.containsKey(CONTROL.name()));
@@ -98,9 +98,9 @@ public class CreateKubernetesClusterCmdTest {
 
     @Test
     public void testNodeOfferingMapNullMap() {
-        cmd.nodeTypeOfferingMap = null;
+        cmd.serviceOfferingNodeTypeMap = null;
         cmd.serviceOfferingId = controlOfferingId;
-        Map<String, Long> map = cmd.getNodeTypeOfferingMap();
+        Map<String, Long> map = cmd.getServiceOfferingNodeTypeMap();
         Assert.assertNotNull(map);
         Assert.assertEquals(2, map.size());
         Assert.assertTrue(map.containsKey(WORKER.name()) && map.containsKey(CONTROL.name()));
@@ -110,12 +110,12 @@ public class CreateKubernetesClusterCmdTest {
 
     @Test
     public void testNodeOfferingMapEtcdNodes() {
-        cmd.nodeTypeOfferingMap = new HashMap<>();
+        cmd.serviceOfferingNodeTypeMap = new HashMap<>();
         Map<String, String> firstMap = createMapEntry(ETCD, etcdNodesOfferingId);
-        cmd.nodeTypeOfferingMap.put("map1", firstMap);
+        cmd.serviceOfferingNodeTypeMap.put("map1", firstMap);
         cmd.etcdNodes = 2L;
         cmd.serviceOfferingId = controlOfferingId;
-        Map<String, Long> map = cmd.getNodeTypeOfferingMap();
+        Map<String, Long> map = cmd.getServiceOfferingNodeTypeMap();
         Assert.assertNotNull(map);
         Assert.assertEquals(3, map.size());
         Assert.assertTrue(map.containsKey(WORKER.name()) && map.containsKey(CONTROL.name()) && map.containsKey(ETCD.name()));

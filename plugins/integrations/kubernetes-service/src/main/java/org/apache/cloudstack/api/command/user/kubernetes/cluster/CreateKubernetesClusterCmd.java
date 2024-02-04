@@ -101,7 +101,7 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     @ACL(accessType = AccessType.UseEntry)
     @Parameter(name = ApiConstants.NODE_TYPE_OFFERING_MAP, type = CommandType.MAP,
             description = "(Optional) Node Type to Service Offering ID mapping. If provided, it overrides the serviceofferingid parameter")
-    protected Map<String, Map<String, String>> nodeTypeOfferingMap;
+    protected Map<String, Map<String, String>> serviceOfferingNodeTypeMap;
 
     @ACL(accessType = AccessType.UseEntry)
     @Parameter(name = ApiConstants.ETCD_NODES, type = CommandType.LONG,
@@ -228,8 +228,8 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
         return controlNodes;
     }
 
-    public Long getEtcdNodes() {
-        return etcdNodes == null ? 0L : etcdNodes;
+    public long getEtcdNodes() {
+        return etcdNodes == null ? 0 : etcdNodes;
     }
 
     public String getExternalLoadBalancerIpAddress() {
@@ -313,10 +313,10 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
         addNodeTypeOfferingEntry(nodeTypeStr, serviceOfferingUuid, serviceOffering, mapping);
     }
 
-    public Map<String, Long> getNodeTypeOfferingMap() {
+    public Map<String, Long> getServiceOfferingNodeTypeMap() {
         Map<String, Long> mapping = new HashMap<>();
-        if (MapUtils.isNotEmpty(nodeTypeOfferingMap)) {
-            for (Map<String, String> entry : nodeTypeOfferingMap.values()) {
+        if (MapUtils.isNotEmpty(serviceOfferingNodeTypeMap)) {
+            for (Map<String, String> entry : serviceOfferingNodeTypeMap.values()) {
                 processNodeTypeOfferingEntryAndAddToMappingIfValid(entry, mapping);
             }
             addMissingNodeTypeDefaultOffering(mapping, serviceOfferingId, etcdNodes);

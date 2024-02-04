@@ -117,6 +117,18 @@ public class KubernetesClusterVO implements KubernetesCluster {
     @Column(name = "cluster_type")
     private ClusterType clusterType;
 
+    @Column(name = "control_service_offering_id")
+    private Long controlServiceOfferingId;
+
+    @Column(name = "worker_service_offering_id")
+    private Long workerServiceOfferingId;
+
+    @Column(name = "etcd_service_offering_id")
+    private Long etcdServiceOfferingId;
+
+    @Column(name = "etcd_node_count")
+    private Long etcdNodeCount;
+
     @Override
     public long getId() {
         return id;
@@ -405,5 +417,37 @@ public class KubernetesClusterVO implements KubernetesCluster {
     @Override
     public Class<?> getEntityType() {
         return KubernetesCluster.class;
+    }
+
+    public Long getControlServiceOfferingId() {
+        return controlServiceOfferingId;
+    }
+
+    public void setControlServiceOfferingId(Long controlServiceOfferingId) {
+        this.controlServiceOfferingId = controlServiceOfferingId;
+    }
+
+    public Long getWorkerServiceOfferingId() {
+        return workerServiceOfferingId;
+    }
+
+    public void setWorkerServiceOfferingId(Long workerServiceOfferingId) {
+        this.workerServiceOfferingId = workerServiceOfferingId;
+    }
+
+    public Long getEtcdServiceOfferingId() {
+        return etcdServiceOfferingId;
+    }
+
+    public void setEtcdServiceOfferingId(Long etcdServiceOfferingId) {
+        this.etcdServiceOfferingId = etcdServiceOfferingId;
+    }
+
+    public Long getEtcdNodeCount() {
+        return etcdNodeCount;
+    }
+
+    public void setEtcdNodeCount(Long etcdNodeCount) {
+        this.etcdNodeCount = etcdNodeCount;
     }
 }

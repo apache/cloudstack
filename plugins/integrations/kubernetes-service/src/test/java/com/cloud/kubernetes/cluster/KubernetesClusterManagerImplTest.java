@@ -27,16 +27,20 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterActionWorker;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
+import com.cloud.kubernetes.version.KubernetesSupportedVersion;
 import com.cloud.network.Network;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.vpc.NetworkACL;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
+import com.cloud.utils.Pair;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.api.BaseCmd;
@@ -59,7 +63,12 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import static com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType.CONTROL;
+import static com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType.WORKER;
 
 @RunWith(MockitoJUnitRunner.class)
 public class KubernetesClusterManagerImplTest {
@@ -84,6 +93,9 @@ public class KubernetesClusterManagerImplTest {
 
     @Mock
     private AccountManager accountManager;
+
+    @Mock
+    private ServiceOfferingDao serviceOfferingDao;
 
     @Spy
     @InjectMocks
@@ -291,5 +303,64 @@ public class KubernetesClusterManagerImplTest {
         Mockito.when(cluster.getClusterType()).thenReturn(KubernetesCluster.ClusterType.ExternalManaged);
         Mockito.when(kubernetesClusterDao.findById(Mockito.anyLong())).thenReturn(cluster);
         Assert.assertTrue(kubernetesClusterManager.removeVmsFromCluster(cmd).size() > 0);
+    }
+
+    @Test
+    public void testValidateServiceOfferingNodeType() {
+        Map<String, Long> map = new HashMap<>();
+        map.put(WORKER.name(), 1L);
+        map.put(CONTROL.name(), 2L);
+        ServiceOfferingVO serviceOffering = Mockito.mock(ServiceOfferingVO.class);
+        Mockito.when(serviceOfferingDao.findById(1L)).thenReturn(serviceOffering);
+        Mockito.when(serviceOffering.isDynamic()).thenReturn(false);
+        Mockito.when(serviceOffering.getCpu()).thenReturn(2);
+        Mockito.when(serviceOffering.getRamSize()).thenReturn(2048);
+        KubernetesSupportedVersion version = Mockito.mock(KubernetesSupportedVersion.class);
+        Mockito.when(version.getMinimumCpu()).thenReturn(2);
+        Mockito.when(version.getMinimumRamSize()).thenReturn(2048);
+        kubernetesClusterManager.validateServiceOfferingForNode(map, WORKER.name(), null, version);
+        Mockito.verify(kubernetesClusterManager).validateServiceOffering(serviceOffering, version);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateServiceOfferingNodeTypeInvalidOffering() {
+        Map<String, Long> map = new HashMap<>();
+        map.put(WORKER.name(), 1L);
+        map.put(CONTROL.name(), 2L);
+        ServiceOfferingVO serviceOffering = Mockito.mock(ServiceOfferingVO.class);
+        Mockito.when(serviceOfferingDao.findById(1L)).thenReturn(serviceOffering);
+        Mockito.when(serviceOffering.isDynamic()).thenReturn(true);
+        kubernetesClusterManager.validateServiceOfferingForNode(map, WORKER.name(), null, null);
+    }
+
+    @Test
+    public void testClusterCapacity() {
+        long workerOfferingId = 1L;
+        long controlOfferingId = 2L;
+        long workerCount = 2L;
+        long controlCount = 2L;
+
+        int workerOfferingCpus = 4;
+        int workerOfferingMemory = 4096;
+        int controlOfferingCpus = 2;
+        int controlOfferingMemory = 2048;
+
+        Map<String, Long> map = Map.of(WORKER.name(), workerOfferingId, CONTROL.name(), controlOfferingId);
+        Map<String, Long> nodeCount = Map.of(WORKER.name(), workerCount, CONTROL.name(), controlCount);
+
+        ServiceOfferingVO workerOffering = Mockito.mock(ServiceOfferingVO.class);
+        Mockito.when(serviceOfferingDao.findById(workerOfferingId)).thenReturn(workerOffering);
+        ServiceOfferingVO controlOffering = Mockito.mock(ServiceOfferingVO.class);
+        Mockito.when(serviceOfferingDao.findById(controlOfferingId)).thenReturn(controlOffering);
+        Mockito.when(workerOffering.getCpu()).thenReturn(workerOfferingCpus);
+        Mockito.when(workerOffering.getRamSize()).thenReturn(workerOfferingMemory);
+        Mockito.when(controlOffering.getCpu()).thenReturn(controlOfferingCpus);
+        Mockito.when(controlOffering.getRamSize()).thenReturn(controlOfferingMemory);
+
+        Pair<Long, Long> pair = kubernetesClusterManager.calculateClusterCapacity(map, nodeCount);
+        Long expectedCpu = (workerOfferingCpus * workerCount) + (controlOfferingCpus * controlCount);
+        Long expectedMemory = (workerOfferingMemory * workerCount) + (controlOfferingMemory * controlCount);
+        Assert.assertEquals(expectedCpu, pair.first());
+        Assert.assertEquals(expectedMemory, pair.second());
     }
 }
