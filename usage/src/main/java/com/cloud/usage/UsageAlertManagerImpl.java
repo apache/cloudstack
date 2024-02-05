@@ -83,7 +83,7 @@ public class UsageAlertManagerImpl extends ManagerBase implements AlertManager {
         if ((alertType != AlertManager.AlertType.ALERT_TYPE_HOST) && (alertType != AlertManager.AlertType.ALERT_TYPE_USERVM)
                 && (alertType != AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER) && (alertType != AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY)
                 && (alertType != AlertManager.AlertType.ALERT_TYPE_SSVM) && (alertType != AlertManager.AlertType.ALERT_TYPE_STORAGE_MISC)
-                && (alertType != AlertManager.AlertType.ALERT_TYPE_MANAGMENT_NODE)) {
+                && (alertType != AlertManager.AlertType.ALERT_TYPE_MANAGEMENT_NODE)) {
             alert = _alertDao.getLastAlert(alertType.getType(), dataCenterId, podId);
         }
         if (alert == null) {
