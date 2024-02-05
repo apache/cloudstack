@@ -43,15 +43,12 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.StorageLayer;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ScaleIOStoragePoolTest {
-
     StorageAdaptor adapter;
-
     Map<String,String> details;
 
     final String uuid = "345fc603-2d7e-47d2-b719-a0110b3732e6";
@@ -59,16 +56,12 @@ public class ScaleIOStoragePoolTest {
     final String sdcId = "301b852c00000003";
     final StoragePoolType type = StoragePoolType.PowerFlex;
 
-    @Mock
-    StorageLayer storageLayer;
-
     @Before
     public void setUp() {
         PowerMockito.mockStatic(Script.class);
+        adapter = spy(new ScaleIOStorageAdaptor());
         details = new HashMap<>();
         details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemId);
-
-        adapter = spy(new ScaleIOStorageAdaptor());
     }
 
     @After

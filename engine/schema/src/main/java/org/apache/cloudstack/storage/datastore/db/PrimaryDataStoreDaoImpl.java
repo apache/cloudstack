@@ -58,7 +58,6 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     private final SearchBuilder<StoragePoolVO> DcLocalStorageSearch;
     private final GenericSearchBuilder<StoragePoolVO, Long> StatusCountSearch;
     private final SearchBuilder<StoragePoolVO> ClustersSearch;
-    private final SearchBuilder<StoragePoolVO> DcClusterProviderSearch;
 
     @Inject
     private StoragePoolDetailsDao _detailsDao;
@@ -145,15 +144,6 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         ClustersSearch = createSearchBuilder();
         ClustersSearch.and("clusterIds", ClustersSearch.entity().getClusterId(), Op.IN);
         ClustersSearch.and("status", ClustersSearch.entity().getStatus(), Op.EQ);
-
-        DcClusterProviderSearch = createSearchBuilder();
-        DcClusterProviderSearch.and("datacenterId", DcClusterProviderSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        DcClusterProviderSearch.and("clusterId", DcClusterProviderSearch.entity().getClusterId(), Op.EQ);
-        DcClusterProviderSearch.and("storageProviderName", DcClusterProviderSearch.entity().getStorageProviderName(), Op.EQ);
-        DcClusterProviderSearch.and("status", DcClusterProviderSearch.entity().getStatus(), SearchCriteria.Op.EQ);
-        DcClusterProviderSearch.and("hypervisor", DcClusterProviderSearch.entity().getHypervisor(), Op.EQ);
-        DcClusterProviderSearch.and("scope", DcClusterProviderSearch.entity().getScope(), SearchCriteria.Op.EQ);
-        DcClusterProviderSearch.done();
     }
 
     @Override
@@ -654,23 +644,5 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         } catch (Throwable e) {
             throw new CloudRuntimeException("Caught: " + sql, e);
         }
-    }
-
-    @Override
-    public List<StoragePoolVO> listPoolsByProviderAndHypervisor(long datacenterId,Long clusterId, String provider, HypervisorType hypervisorType) {
-        SearchCriteria<StoragePoolVO> sc = DcClusterProviderSearch.create();
-        sc.setParameters("datacenterId", datacenterId);
-        sc.setParameters("storageProviderName", provider);
-        sc.setParameters("status", Status.Up);
-        sc.setParameters("hypervisor", hypervisorType);
-        sc.setParameters("scope", ScopeType.ZONE);
-        List<StoragePoolVO> pools = listBy(sc);
-
-        if (clusterId != null) {
-            sc.setParameters("clusterId", clusterId);
-            sc.setParameters("scope", ScopeType.CLUSTER);
-            pools.addAll(listBy(sc));
-        }
-        return pools;
     }
 }

@@ -135,7 +135,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
         }
 
         s_logger.debug("Disconnect host " + agentId + " with current status: " + host.getStatus().toString() + ", next status: " + state.toString());
-        if (getHypervisorType().equals(host.getHypervisorType()) && host.getStatus().equals(Status.Connecting) && state.equals(Status.Alert)) {
+        if (getHypervisorType().equals(host.getHypervisorType()) && host.getStatus().equals(Status.Connecting)) {
             _hostDao.loadDetails(host);
             final String username = host.getDetail("username");
             final String password = host.getDetail("password");
@@ -413,9 +413,8 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
 
             HostVO connectedHost = waitForHostConnect(dcId, podId, clusterId, guid);
             if (connectedHost == null) {
-//                stopAgentOnHost(agentIp, password, username, privateKey);
-                stopAgentOnHostUsingConnection(sshConnection);
                 HostVO connectingHost = getConnectingHost(dcId, guid);
+                stopAgentOnHostUsingConnection(sshConnection);
                 if (connectingHost != null) {
                     s_logger.debug("Remove connecting host with id " + connectingHost.getId());
                     hostDetailsDao.deleteDetails(connectingHost.getId());

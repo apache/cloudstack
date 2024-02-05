@@ -3233,7 +3233,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         sc.and(sc.entity().getStatus(), Op.EQ, status);
         sc.and(sc.entity().getType(),Op.EQ, Type.Routing);
         sc.and(sc.entity().getResourceState(), Op.EQ, ResourceState.Enabled);
-//        sc.and(sc.entity().getRemoved(), Op.NULL);
         return sc.list();
     }
 
