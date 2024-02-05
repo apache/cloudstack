@@ -30,6 +30,7 @@ import static org.mockito.Mockito.times;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Map;
 
@@ -55,6 +56,7 @@ public class VeeamClientTest {
     private String adminPassword = "password";
     private VeeamClient client;
     private VeeamClient mockClient;
+    private static final SimpleDateFormat newDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(9399);
@@ -463,7 +465,7 @@ public class VeeamClientTest {
 
         Assert.assertEquals(1, vmRestorePointList.size());
         Assert.assertEquals("f6d504cf-eafe-4cd2-8dfc-e9cfe2f1e977", vmRestorePointList.get(0).getId());
-        Assert.assertEquals("2023-11-03 16:26:12", vmRestorePointList.get(0).getCreated());
+        Assert.assertEquals("2023-11-03 16:26:12", newDateFormat.format(vmRestorePointList.get(0).getCreated()));
         Assert.assertEquals("Full", vmRestorePointList.get(0).getType());
     }
 
