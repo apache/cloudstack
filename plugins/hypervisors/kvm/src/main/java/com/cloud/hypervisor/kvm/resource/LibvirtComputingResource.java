@@ -85,7 +85,6 @@ import org.libvirt.DomainInfo;
 import org.libvirt.DomainInfo.DomainState;
 import org.libvirt.DomainInterfaceStats;
 import org.libvirt.DomainSnapshot;
-import org.libvirt.Library;
 import org.libvirt.LibvirtException;
 import org.libvirt.MemoryStatistic;
 import org.libvirt.Network;
@@ -3694,20 +3693,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     private void setupLibvirtEventListener() {
-        final Thread libvirtListenerThread = new Thread(() -> {
-            try {
-                Library.runEventLoop();
-            } catch (LibvirtException e) {
-                s_logger.error("LibvirtException was thrown in event loop: ", e);
-            } catch (InterruptedException e) {
-                s_logger.error("Libvirt event loop was interrupted: ", e);
-            }
-        });
-
         try {
-            libvirtListenerThread.setDaemon(true);
-            libvirtListenerThread.start();
-
             Connect conn = LibvirtConnection.getConnection();
             conn.addLifecycleListener(this::onDomainLifecycleChange);
 
@@ -3727,7 +3713,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                          * Checking for this helps us differentiate between events where cloudstack or admin stopped the VM vs guest
                          * initiated, and avoid pushing extra updates for actions we are initiating without a need for extra tracking */
                         DomainEventDetail detail = domainEvent.getDetail();
-                        if (StoppedDetail.SHUTDOWN.equals(detail) || StoppedDetail.CRASHED.equals(detail)) {
+                        if (StoppedDetail.SHUTDOWN.equals(detail) || StoppedDetail.CRASHED.equals(detail) || StoppedDetail.FAILED.equals(detail)) {
                             s_logger.info("Triggering out of band status update due to completed self-shutdown or crash of VM");
                             _agentStatusUpdater.triggerUpdate();
                         } else {

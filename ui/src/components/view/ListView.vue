@@ -340,7 +340,7 @@
       <template v-if="column.key === 'softwareversion'">
         <span>  {{ record.softwareversion ? record.softwareversion : 'N/A' }} </span>
       </template>
-      <template v-if="column.key === 'access'">
+      <template v-if="column.key === 'readonly'">
         <status :text="record.readonly ? 'ReadOnly' : 'ReadWrite'" displayText />
       </template>
       <template v-if="column.key === 'requiresupgrade'">

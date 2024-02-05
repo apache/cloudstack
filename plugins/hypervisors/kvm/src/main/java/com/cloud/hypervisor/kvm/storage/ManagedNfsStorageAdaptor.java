@@ -66,6 +66,9 @@ public class ManagedNfsStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
+    public StoragePoolType getStoragePoolType() { return StoragePoolType.ManagedNFS; }
+
+    @Override
     public KVMStoragePool getStoragePool(String uuid) {
         return getStoragePool(uuid, false);
     }

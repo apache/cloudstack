@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack</artifactId>
-        <version>4.19.0.0-SNAPSHOT</version>
+        <version>4.20.0.0-SNAPSHOT</version>
     </parent>
     <build>
         <plugins>
@@ -195,7 +195,7 @@
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-engine-storage</artifactId>
-            <version>4.19.0.0-SNAPSHOT</version>
+            <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -213,7 +213,7 @@
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-engine-storage-object</artifactId>
-            <version>4.19.0.0-SNAPSHOT</version>
+            <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>

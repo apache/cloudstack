@@ -18,16 +18,38 @@
  */
 package org.apache.cloudstack.storage.datastore.driver;
 
+import java.io.IOException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import javax.inject.Inject;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
+import org.apache.cloudstack.storage.object.BaseObjectStoreDriverImpl;
+import org.apache.cloudstack.storage.object.Bucket;
+import org.apache.cloudstack.storage.object.BucketObject;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+
 import com.amazonaws.services.s3.model.AccessControlList;
 import com.amazonaws.services.s3.model.BucketPolicy;
 import com.cloud.agent.api.to.DataStoreTO;
-import org.apache.cloudstack.storage.object.Bucket;
 import com.cloud.storage.BucketVO;
 import com.cloud.storage.dao.BucketDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountDetailsDao;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.exception.CloudRuntimeException;
+
 import io.minio.BucketExistsArgs;
 import io.minio.DeleteBucketEncryptionArgs;
 import io.minio.MakeBucketArgs;
@@ -42,26 +64,10 @@ import io.minio.admin.UserInfo;
 import io.minio.admin.messages.DataUsageInfo;
 import io.minio.messages.SseConfiguration;
 import io.minio.messages.VersioningConfiguration;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
-import org.apache.cloudstack.storage.datastore.db.ObjectStoreDetailsDao;
-import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
-import org.apache.cloudstack.storage.object.BaseObjectStoreDriverImpl;
-import org.apache.cloudstack.storage.object.BucketObject;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
-
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
-import javax.inject.Inject;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     private static final Logger s_logger = Logger.getLogger(MinIOObjectStoreDriverImpl.class);
+    protected static final String ACS_PREFIX = "acs";
 
     @Inject
     AccountDao _accountDao;
@@ -81,12 +87,16 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     private static final String ACCESS_KEY = "accesskey";
     private static final String SECRET_KEY = "secretkey";
 
-    private static final String MINIO_ACCESS_KEY = "minio-accesskey";
-    private static final String MINIO_SECRET_KEY = "minio-secretkey";
+    protected static final String MINIO_ACCESS_KEY = "minio-accesskey";
+    protected static final String MINIO_SECRET_KEY = "minio-secretkey";
 
     @Override
     public DataStoreTO getStoreTO(DataStore store) {
         return null;
+    }
+
+    protected String getUserOrAccessKeyForAccount(Account account) {
+        return String.format("%s-%s", ACS_PREFIX, account.getUuid());
     }
 
     @Override
@@ -135,8 +145,8 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
                 "     \"Version\": \"2012-10-17\"\n" +
                 " }";
         MinioAdminClient minioAdminClient = getMinIOAdminClient(storeId);
-        String policyName = "acs-"+account.getAccountName()+"-policy";
-        String userName = "acs-"+account.getAccountName();
+        String policyName = getUserOrAccessKeyForAccount(account) + "-policy";
+        String userName = getUserOrAccessKeyForAccount(account);
         try {
             minioAdminClient.addCannedPolicy(policyName, policy);
             minioAdminClient.setPolicy(userName, false, policyName);
@@ -250,22 +260,53 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
 
     }
 
+    protected void updateAccountCredentials(final long accountId, final String accessKey, final String secretKey, final boolean checkIfNotPresent) {
+        Map<String, String> details = _accountDetailsDao.findDetails(accountId);
+        boolean updateNeeded = false;
+        if (!checkIfNotPresent || StringUtils.isBlank(details.get(MINIO_ACCESS_KEY))) {
+            details.put(MINIO_ACCESS_KEY, accessKey);
+            updateNeeded = true;
+        }
+        if (StringUtils.isAllBlank(secretKey, details.get(MINIO_SECRET_KEY))) {
+            s_logger.error(String.format("Failed to retrieve secret key for MinIO user: %s from store and account details", accessKey));
+        }
+        if (StringUtils.isNotBlank(secretKey) && (!checkIfNotPresent || StringUtils.isBlank(details.get(MINIO_SECRET_KEY)))) {
+            details.put(MINIO_SECRET_KEY, secretKey);
+            updateNeeded = true;
+        }
+        if (!updateNeeded) {
+            return;
+        }
+        _accountDetailsDao.persist(accountId, details);
+    }
+
     @Override
     public boolean createUser(long accountId, long storeId) {
         Account account = _accountDao.findById(accountId);
         MinioAdminClient minioAdminClient = getMinIOAdminClient(storeId);
-        String accessKey = "acs-"+account.getAccountName();
+        String accessKey = getUserOrAccessKeyForAccount(account);
         // Check user exists
         try {
             UserInfo userInfo = minioAdminClient.getUserInfo(accessKey);
             if(userInfo != null) {
-                s_logger.debug("User already exists in MinIO store: "+accessKey);
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(String.format("Skipping user creation as the user already exists in MinIO store: %s", accessKey));
+                }
+                updateAccountCredentials(accountId, accessKey, userInfo.secretKey(), true);
                 return true;
             }
-        } catch (Exception e) {
-            s_logger.debug("User does not exist. Creating user: "+accessKey);
+        } catch (NoSuchAlgorithmException | IOException | InvalidKeyException e) {
+            s_logger.error(String.format("Error encountered while retrieving user: %s for existing MinIO store user check", accessKey), e);
+            return false;
+        } catch (RuntimeException e) { // MinIO lib may throw RuntimeException with code: XMinioAdminNoSuchUser
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("Ignoring error encountered while retrieving user: %s for existing MinIO store user check", accessKey));
+            }
+            s_logger.trace("Exception during MinIO user check", e);
         }
-
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(String.format("MinIO store user does not exist. Creating user: %s", accessKey));
+        }
         KeyGenerator generator = null;
         try {
             generator = KeyGenerator.getInstance("HmacSHA1");
@@ -280,10 +321,7 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             throw new CloudRuntimeException(e);
         }
         // Store user credentials
-        Map<String, String> details = new HashMap<>();
-        details.put(MINIO_ACCESS_KEY, accessKey);
-        details.put(MINIO_SECRET_KEY, secretKey);
-        _accountDetailsDao.persist(accountId, details);
+        updateAccountCredentials(accountId, accessKey, secretKey, false);
         return true;
     }
 
