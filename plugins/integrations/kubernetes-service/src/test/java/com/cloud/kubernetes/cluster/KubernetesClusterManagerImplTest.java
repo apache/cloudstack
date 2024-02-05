@@ -318,7 +318,7 @@ public class KubernetesClusterManagerImplTest {
         KubernetesSupportedVersion version = Mockito.mock(KubernetesSupportedVersion.class);
         Mockito.when(version.getMinimumCpu()).thenReturn(2);
         Mockito.when(version.getMinimumRamSize()).thenReturn(2048);
-        kubernetesClusterManager.validateServiceOfferingForNode(map, WORKER.name(), null, version);
+        kubernetesClusterManager.validateServiceOfferingForNode(map, 1L, WORKER.name(), null, version);
         Mockito.verify(kubernetesClusterManager).validateServiceOffering(serviceOffering, version);
     }
 
@@ -330,7 +330,7 @@ public class KubernetesClusterManagerImplTest {
         ServiceOfferingVO serviceOffering = Mockito.mock(ServiceOfferingVO.class);
         Mockito.when(serviceOfferingDao.findById(1L)).thenReturn(serviceOffering);
         Mockito.when(serviceOffering.isDynamic()).thenReturn(true);
-        kubernetesClusterManager.validateServiceOfferingForNode(map, WORKER.name(), null, null);
+        kubernetesClusterManager.validateServiceOfferingForNode(map, 1L, WORKER.name(), null, null);
     }
 
     @Test

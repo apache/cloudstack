@@ -82,7 +82,7 @@ public class CreateKubernetesClusterCmdTest {
     }
 
     @Test
-    public void testNodeOfferingMapMissingEtcd() {
+    public void testNodeOfferingMap() {
         cmd.serviceOfferingNodeTypeMap = new HashMap<>();
         Map<String, String> firstMap = createMapEntry(WORKER, workerNodesOfferingId);
         Map<String, String> secondMap = createMapEntry(CONTROL, controlNodesOfferingId);
@@ -101,11 +101,7 @@ public class CreateKubernetesClusterCmdTest {
         cmd.serviceOfferingNodeTypeMap = null;
         cmd.serviceOfferingId = controlOfferingId;
         Map<String, Long> map = cmd.getServiceOfferingNodeTypeMap();
-        Assert.assertNotNull(map);
-        Assert.assertEquals(2, map.size());
-        Assert.assertTrue(map.containsKey(WORKER.name()) && map.containsKey(CONTROL.name()));
-        Assert.assertEquals(controlOfferingId, map.get(WORKER.name()));
-        Assert.assertEquals(controlOfferingId, map.get(CONTROL.name()));
+        Assert.assertTrue(map.isEmpty());
     }
 
     @Test
@@ -114,13 +110,10 @@ public class CreateKubernetesClusterCmdTest {
         Map<String, String> firstMap = createMapEntry(ETCD, etcdNodesOfferingId);
         cmd.serviceOfferingNodeTypeMap.put("map1", firstMap);
         cmd.etcdNodes = 2L;
-        cmd.serviceOfferingId = controlOfferingId;
         Map<String, Long> map = cmd.getServiceOfferingNodeTypeMap();
         Assert.assertNotNull(map);
-        Assert.assertEquals(3, map.size());
-        Assert.assertTrue(map.containsKey(WORKER.name()) && map.containsKey(CONTROL.name()) && map.containsKey(ETCD.name()));
-        Assert.assertEquals(controlOfferingId, map.get(WORKER.name()));
-        Assert.assertEquals(controlOfferingId, map.get(CONTROL.name()));
+        Assert.assertEquals(1, map.size());
+        Assert.assertTrue(map.containsKey(ETCD.name()));
         Assert.assertEquals(etcdOfferingId, map.get(ETCD.name()));
     }
 

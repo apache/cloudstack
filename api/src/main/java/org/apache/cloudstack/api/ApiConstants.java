@@ -488,6 +488,12 @@ public class ApiConstants {
 
     public static final String VLAN = "vlan";
     public static final String VLAN_RANGE = "vlanrange";
+    public static final String WORKER_SERVICE_OFFERING_ID = "workerofferingid";
+    public static final String WORKER_SERVICE_OFFERING_NAME = "workerofferingname";
+    public static final String CONTROL_SERVICE_OFFERING_ID = "controlofferingid";
+    public static final String CONTROL_SERVICE_OFFERING_NAME = "controlofferingname";
+    public static final String ETCD_SERVICE_OFFERING_ID = "etcdofferingid";
+    public static final String ETCD_SERVICE_OFFERING_NAME = "etcdofferingname";
     public static final String REMOVE_VLAN = "removevlan";
     public static final String VLAN_ID = "vlanid";
     public static final String ISOLATED_PVLAN = "isolatedpvlan";

@@ -17,9 +17,7 @@
 package org.apache.cloudstack.api.command.user.kubernetes.cluster;
 
 import java.security.InvalidParameterException;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
@@ -319,36 +317,8 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
             for (Map<String, String> entry : serviceOfferingNodeTypeMap.values()) {
                 processNodeTypeOfferingEntryAndAddToMappingIfValid(entry, mapping);
             }
-            addMissingNodeTypeDefaultOffering(mapping, serviceOfferingId, etcdNodes);
-        } else {
-            addDefaultNodeTypeOfferingEntries(serviceOfferingId, etcdNodes, mapping);
         }
         return mapping;
-    }
-
-    private void addMissingNodeTypeDefaultOffering(Map<String, Long> mapping, Long serviceOfferingId, Long etcdNodes) {
-        if (MapUtils.isEmpty(mapping)) {
-            return;
-        }
-        boolean addEtcdOffering = etcdNodes != null && etcdNodes > 0;
-        List<String> keys = Arrays.asList(KubernetesClusterNodeType.CONTROL.name(), KubernetesClusterNodeType.WORKER.name(), KubernetesClusterNodeType.ETCD.name());
-        for (String key : keys) {
-            if (mapping.containsKey(key)) {
-                continue;
-            }
-            if (!key.equalsIgnoreCase(KubernetesClusterNodeType.ETCD.name()) ||
-                    (addEtcdOffering && key.equalsIgnoreCase(KubernetesClusterNodeType.ETCD.name()))) {
-                mapping.put(key, serviceOfferingId);
-            }
-        }
-    }
-
-    protected void addDefaultNodeTypeOfferingEntries(Long serviceOfferingId, Long etcdNodes, Map<String, Long> mapping) {
-        mapping.put(KubernetesClusterNodeType.CONTROL.name(), serviceOfferingId);
-        mapping.put(KubernetesClusterNodeType.WORKER.name(), serviceOfferingId);
-        if (etcdNodes != null && etcdNodes > 0) {
-            mapping.put(KubernetesClusterNodeType.ETCD.name(), serviceOfferingId);
-        }
     }
 
     /////////////////////////////////////////////////////
