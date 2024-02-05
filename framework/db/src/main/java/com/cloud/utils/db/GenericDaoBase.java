@@ -42,13 +42,16 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.naming.ConfigurationException;
+import javax.persistence.AttributeConverter;
 import javax.persistence.AttributeOverride;
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.EmbeddedId;
 import javax.persistence.EntityExistsException;
 import javax.persistence.EnumType;
@@ -123,6 +126,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     protected final static TimeZone s_gmtTimeZone = TimeZone.getTimeZone("GMT");
 
     protected final static Map<Class<?>, GenericDao<?, ? extends Serializable>> s_daoMaps = new ConcurrentHashMap<Class<?>, GenericDao<?, ? extends Serializable>>(71);
+    private final ConversionSupport _conversionSupport;
 
     protected Class<T> _entityBeanType;
     protected String _table;
@@ -287,6 +291,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             }
         }
 
+        _conversionSupport = new ConversionSupport();
         setRunLevel(ComponentLifecycle.RUN_LEVEL_SYSTEM);
     }
 
@@ -649,6 +654,9 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                 }
             } else if (type == byte[].class) {
                 field.set(entity, rs.getBytes(index));
+            } else if (field.getDeclaredAnnotation(Convert.class) != null) {
+                Object val = _conversionSupport.convertToEntityAttribute(field, rs.getObject(index));
+                field.set(entity, val);
             } else {
                 field.set(entity, rs.getObject(index));
             }
@@ -1386,7 +1394,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         }
 
         String stackTrace = ExceptionUtils.getStackTrace(new CloudRuntimeException(String.format("The query to count all the records of [%s] resulted in a value smaller than"
-                + " the result set's size [count of records: %s, result set's size: %s]. Using the result set's size instead.", _entityBeanType,
+                        + " the result set's size [count of records: %s, result set's size: %s]. Using the result set's size instead.", _entityBeanType,
                 count, resultSetSize)));
         s_logger.warn(stackTrace);
 
@@ -1595,7 +1603,10 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                 return;
             }
         }
-        if (attr.field.getType() == String.class) {
+        if(attr.field.getDeclaredAnnotation(Convert.class) != null) {
+            Object val = _conversionSupport.convertToDatabaseColumn(attr.field, value);
+            pstmt.setObject(j, val);
+        } else if (attr.field.getType() == String.class) {
             final String str = (String)value;
             if (str == null) {
                 pstmt.setString(j, null);
@@ -2221,4 +2232,50 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
         return sql;
     }
+
+    /**
+     * Support conversion between DB and Entity values.
+     * Detects whether field is annotated with {@link Convert} annotation and use converter instance from the annotation.
+     */
+    static class ConversionSupport {
+        /**
+         * Contains cache of {@link AttributeConverter} instances.
+         */
+        private static final Map<Class<?>, AttributeConverter<?, ?>> s_converterCacheMap = new ConcurrentHashMap<>();
+
+        /**
+         * Checks whether field annotated with {@link Convert} annotation and tries to convert source value with converter.
+         *
+         * @param field Entity field
+         * @param value DB value
+         * @return converted value if field is annotated with {@link Convert} or original value otherwise
+         */
+        private <T> T convertToEntityAttribute(Field field, Object value) {
+            return (T) getConverter(field).map(converter -> converter.convertToEntityAttribute(value)).orElse(value);
+        }
+
+        /**
+         * Checks whether field annotated with {@link Convert} annotation and tries to convert source value with converter.
+         *
+         * @param field Entity field
+         * @param value Entity value
+         * @return converted value if field is annotated with {@link Convert} or original value otherwise
+         */
+        private <T> T convertToDatabaseColumn(Field field, Object value) {
+            return (T) getConverter(field).map(converter -> converter.convertToDatabaseColumn(value)).orElse(value);
+        }
+
+        private Optional<AttributeConverter<Object, Object>> getConverter(Field field) {
+            return Optional.of(field).map(f -> f.getAnnotation(Convert.class)).map(Convert::converter).filter(AttributeConverter.class::isAssignableFrom).map(converterType -> {
+                return (AttributeConverter<Object, Object>) s_converterCacheMap.computeIfAbsent(converterType, ct -> {
+                    try {
+                        return (AttributeConverter<?, ?>) ct.getDeclaredConstructor().newInstance();
+                    } catch (ReflectiveOperationException e) {
+                        throw new CloudRuntimeException("Unable to create converter for the class " + converterType, e);
+                    }
+                });
+            });
+        }
+    }
+
 }
