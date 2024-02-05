@@ -353,6 +353,7 @@ import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.db.UUIDManager;
@@ -7763,49 +7764,68 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         List<Volume> newVols = new ArrayList<>();
         for (VolumeVO root : rootVols) {
-            if ( !Volume.State.Allocated.equals(root.getState()) || newTemplateId != null ){
-                Long templateId = root.getTemplateId();
-                boolean isISO = false;
-                if (templateId == null) {
-                    // Assuming that for a vm deployed using ISO, template ID is set to NULL
-                    isISO = true;
-                    templateId = vm.getIsoId();
-                }
+            if ( !Volume.State.Allocated.equals(root.getState()) || newTemplateId != null ) {
+                final UserVmVO userVm = vm;
+                Pair<UserVmVO, Volume> vmAndNewVol = Transaction.execute(new TransactionCallbackWithException<Pair<UserVmVO, Volume>, CloudRuntimeException>() {
+                    @Override
+                    public Pair<UserVmVO, Volume> doInTransaction(final TransactionStatus status) throws CloudRuntimeException {
+                        Long templateId = root.getTemplateId();
+                        boolean isISO = false;
+                        if (templateId == null) {
+                            // Assuming that for a vm deployed using ISO, template ID is set to NULL
+                            isISO = true;
+                            templateId = userVm.getIsoId();
+                        }
 
-                /* If new template/ISO is provided allocate a new volume from new template/ISO otherwise allocate new volume from original template/ISO */
-                Volume newVol = null;
-                if (newTemplateId != null) {
-                    if (isISO) {
-                        newVol = volumeMgr.allocateDuplicateVolume(root, null);
-                        vm.setIsoId(newTemplateId);
-                        vm.setGuestOSId(template.getGuestOSId());
-                        vm.setTemplateId(newTemplateId);
-                    } else {
-                        newVol = volumeMgr.allocateDuplicateVolume(root, newTemplateId);
-                        vm.setGuestOSId(template.getGuestOSId());
-                        vm.setTemplateId(newTemplateId);
+                        /* If new template/ISO is provided allocate a new volume from new template/ISO otherwise allocate new volume from original template/ISO */
+                        Volume newVol = null;
+                        if (newTemplateId != null) {
+                            if (isISO) {
+                                newVol = volumeMgr.allocateDuplicateVolume(root, null);
+                                userVm.setIsoId(newTemplateId);
+                                userVm.setGuestOSId(template.getGuestOSId());
+                                userVm.setTemplateId(newTemplateId);
+                            } else {
+                                newVol = volumeMgr.allocateDuplicateVolume(root, newTemplateId);
+                                userVm.setGuestOSId(template.getGuestOSId());
+                                userVm.setTemplateId(newTemplateId);
+                            }
+                            // check and update VM if it can be dynamically scalable with the new template
+                            updateVMDynamicallyScalabilityUsingTemplate(userVm, newTemplateId);
+                        } else {
+                            newVol = volumeMgr.allocateDuplicateVolume(root, null);
+                        }
+                        newVols.add(newVol);
+
+                        if (userVmDetailsDao.findDetail(userVm.getId(), VmDetailConstants.ROOT_DISK_SIZE) == null && !newVol.getSize().equals(template.getSize())) {
+                            VolumeVO resizedVolume = (VolumeVO) newVol;
+                            if (template.getSize() != null) {
+                                resizedVolume.setSize(template.getSize());
+                                _volsDao.update(resizedVolume.getId(), resizedVolume);
+                            }
+                        }
+
+                        // 1. Save usage event and update resource count for user vm volumes
+                        try {
+                            _resourceLimitMgr.incrementResourceCount(newVol.getAccountId(), ResourceType.volume, newVol.isDisplay());
+                            _resourceLimitMgr.incrementResourceCount(newVol.getAccountId(),  ResourceType.primary_storage, newVol.isDisplay(), new Long(newVol.getSize()));
+                        } catch (final CloudRuntimeException e) {
+                            throw e;
+                        } catch (final Exception e) {
+                            s_logger.error("Unable to restore VM " + userVm.getUuid(), e);
+                            throw new CloudRuntimeException(e);
+                        }
+
+                        // 2. Create Usage event for the newly created volume
+                        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, newVol.getAccountId(), newVol.getDataCenterId(), newVol.getId(), newVol.getName(), newVol.getDiskOfferingId(), template.getId(), newVol.getSize());
+                        _usageEventDao.persist(usageEvent);
+
+                        return new Pair<>(userVm, newVol);
                     }
-                    // check and update VM if it can be dynamically scalable with the new template
-                    updateVMDynamicallyScalabilityUsingTemplate(vm, newTemplateId);
-                } else {
-                    newVol = volumeMgr.allocateDuplicateVolume(root, null);
-                }
-                newVols.add(newVol);
+                });
 
-                if (userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.ROOT_DISK_SIZE) == null && !newVol.getSize().equals(template.getSize())) {
-                    VolumeVO resizedVolume = (VolumeVO) newVol;
-                    if (template.getSize() != null) {
-                        resizedVolume.setSize(template.getSize());
-                        _volsDao.update(resizedVolume.getId(), resizedVolume);
-                    }
-                }
-
-                // 1. Save usage event and update resource count for user vm volumes
-                _resourceLimitMgr.incrementResourceCount(newVol.getAccountId(), ResourceType.volume, newVol.isDisplay());
-                _resourceLimitMgr.incrementResourceCount(newVol.getAccountId(), ResourceType.primary_storage, newVol.isDisplay(), new Long(newVol.getSize()));
-                // 2. Create Usage event for the newly created volume
-                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, newVol.getAccountId(), newVol.getDataCenterId(), newVol.getId(), newVol.getName(), newVol.getDiskOfferingId(), template.getId(), newVol.getSize());
-                _usageEventDao.persist(usageEvent);
+                vm = vmAndNewVol.first();
+                Volume newVol = vmAndNewVol.second();
 
                 handleManagedStorage(vm, root);
 

@@ -38,6 +38,8 @@ import com.cloud.agent.transport.InterfaceTypeAdaptor;
 import com.cloud.agent.transport.LoggingExclusionStrategy;
 import com.cloud.agent.transport.Request.NwGroupsCommandTypeAdaptor;
 import com.cloud.agent.transport.Request.PortConfigListTypeAdaptor;
+import com.cloud.agent.transport.StoragePoolTypeAdaptor;
+import com.cloud.storage.Storage;
 import com.cloud.utils.Pair;
 
 public class GsonHelper {
@@ -70,6 +72,7 @@ public class GsonHelper {
         }.getType(), new PortConfigListTypeAdaptor());
         builder.registerTypeAdapter(new TypeToken<Pair<Long, Long>>() {
         }.getType(), new NwGroupsCommandTypeAdaptor());
+        builder.registerTypeAdapter(Storage.StoragePoolType.class, new StoragePoolTypeAdaptor());
         Gson gson = builder.create();
         dsAdaptor.initGson(gson);
         dtAdaptor.initGson(gson);

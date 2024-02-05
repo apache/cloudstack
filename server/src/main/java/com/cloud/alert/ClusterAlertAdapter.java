@@ -68,7 +68,7 @@ public class ClusterAlertAdapter extends AdapterBase implements AlertAdapter {
                     logger.debug("Management server node " + mshost.getServiceIP() + " is up, send alert");
                 }
 
-                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_MANAGMENT_NODE, 0, new Long(0), "Management server node " + mshost.getServiceIP() + " is up", "");
+                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_MANAGEMENT_NODE, 0, new Long(0), "Management server node " + mshost.getServiceIP() + " is up", "");
                 break;
             }
         }
@@ -88,7 +88,7 @@ public class ClusterAlertAdapter extends AdapterBase implements AlertAdapter {
                     if (logger.isDebugEnabled()) {
                         logger.debug("Detected management server node " + mshost.getServiceIP() + " is down, send alert");
                     }
-                    _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_MANAGMENT_NODE, 0, new Long(0), "Management server node " + mshost.getServiceIP() + " is down",
+                    _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_MANAGEMENT_NODE, 0, new Long(0), "Management server node " + mshost.getServiceIP() + " is down",
                         "");
                 } else {
                     if (logger.isDebugEnabled()) {
