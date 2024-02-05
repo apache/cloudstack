@@ -25,7 +25,6 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -132,9 +131,9 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             return new ArrayList<Host>();
         }
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Looking for hosts in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId);
-        }
+        String paramAsStringToLog = String.format("zone [%s], pod [%s], cluster [%s]", dcId, podId, clusterId);
+
+        s_logger.debug(String.format("Looking for hosts in %s.", paramAsStringToLog));
 
         String hostTagOnOffering = offering.getHostTag();
         String hostTagOnTemplate = template.getTemplateTag();
@@ -206,8 +205,8 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
 
 
         if (clusterHosts.isEmpty()) {
-            s_logger.error(String.format("No suitable host found for vm [%s] with tags [%s].", vmProfile, hostTagOnOffering));
-            throw new CloudRuntimeException(String.format("No suitable host found for vm [%s].", vmProfile));
+            s_logger.info(String.format("No suitable host found for VM [%s] with tags [%s] in %s.", vmProfile, hostTagOnOffering, paramAsStringToLog));
+            return null;
         }
         // add all hosts that we are not considering to the avoid list
         List<HostVO> allhostsInCluster = _hostDao.listAllUpAndEnabledNonHAHosts(type, clusterId, podId, dcId, null);
