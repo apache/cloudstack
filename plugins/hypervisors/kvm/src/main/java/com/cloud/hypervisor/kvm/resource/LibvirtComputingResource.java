@@ -1064,8 +1064,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         // Reserve 1GB unless admin overrides
         _dom0MinMem = ByteScaleUtils.mebibytesToBytes(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST_RESERVED_MEM_MB));
 
-        value = (String)params.get("host.reserved.cpu.count");
-        _dom0MinCpuCores = NumbersUtil.parseInt(value, 0);
+        _dom0MinCpuCores = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST_RESERVED_CPU_CORE_COUNT);
 
         // Support overcommit memory for host if host uses ZSWAP, KSM and other memory
         // compressing technologies
