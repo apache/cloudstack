@@ -18,3 +18,6 @@
 --;
 -- Schema upgrade from 4.19.0.0 to 4.20.0.0
 --;
+
+-- Quota inject tariff result into subsequent ones
+ALTER TABLE `cloud_usage`.`quota_tariff` ADD COLUMN `position` bigint(20) NOT NULL DEFAULT 1 COMMENT 'Position in the execution sequence for tariffs of the same type' ;
