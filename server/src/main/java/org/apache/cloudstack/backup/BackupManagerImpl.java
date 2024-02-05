@@ -700,7 +700,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_RESTORE, eventDescription = "restoring VM from backup", async = true)
-    public boolean restoreBackupVolumeAndAttachToVM(final String backedUpVolumeUuid, final Long backupId, final Long vmId) throws Exception {
+    public boolean restoreBackupVolumeAndAttachToVM(final String backedUpVolumeUuid, final Long backupId, final Long vmId, final Boolean startVm) throws Exception {
         if (StringUtils.isEmpty(backedUpVolumeUuid)) {
             throw new CloudRuntimeException("Invalid volume ID passed");
         }
@@ -727,6 +727,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vmFromBackup);
 
+        if (!VirtualMachine.PowerState.PowerOff.equals(vm.getPowerState())) {
+            throw new CloudRuntimeException(String.format("VM [%s] needs to be powered off to restore the volume [%s].", vm.getUuid(), backedUpVolumeUuid));
+        }
+
         Pair<HostVO, StoragePoolVO> restoreInfo = getRestoreVolumeHostAndDatastore(vm);
         HostVO host = restoreInfo.first();
         StoragePoolVO datastore = restoreInfo.second();
@@ -740,13 +744,12 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
 
         BackupProvider backupProvider = getBackupProvider(offering.getProvider());
-        LOG.debug(String.format("Trying to restore volume using host private IP address: [%s].", host.getPrivateIpAddress()));
 
         String[] hostPossibleValues = {host.getPrivateIpAddress(), host.getName()};
         String[] datastoresPossibleValues = {datastore.getUuid(), datastore.getName()};
 
         updateVmState(vm, VirtualMachine.Event.RestoringRequested, VirtualMachine.State.Restoring);
-        Pair<Boolean, String> result = restoreBackedUpVolume(backedUpVolumeUuid, backup, backupProvider, hostPossibleValues, datastoresPossibleValues);
+        Pair<Boolean, String> result = restoreBackedUpVolume(backedUpVolumeUuid, backup, backupProvider, hostPossibleValues, datastoresPossibleValues, vm, startVm);
 
         if (BooleanUtils.isFalse(result.first())) {
             updateVmState(vm, VirtualMachine.Event.RestoringFailed, VirtualMachine.State.Stopped);
@@ -763,7 +766,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     protected Pair<Boolean, String> restoreBackedUpVolume(final String backedUpVolumeUuid, final BackupVO backup, BackupProvider backupProvider, String[] hostPossibleValues,
-            String[] datastoresPossibleValues) {
+            String[] datastoresPossibleValues, VMInstanceVO vm, Boolean startVm) {
         Pair<Boolean, String> result = new  Pair<>(false, "");
         for (String hostData : hostPossibleValues) {
             for (String datastoreData : datastoresPossibleValues) {
@@ -771,7 +774,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                         backedUpVolumeUuid, hostData, datastoreData));
 
                 try {
-                    result = backupProvider.restoreBackedUpVolume(backup, backedUpVolumeUuid, hostData, datastoreData);
+                    result = backupProvider.restoreBackedUpVolume(backup, backedUpVolumeUuid, hostData, datastoreData, vm, startVm);
 
                     if (BooleanUtils.isTrue(result.first())) {
                         return result;
@@ -851,12 +854,17 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
         volumeInfo.setType(Volume.Type.DATADISK);
 
-        LOG.debug("Attaching the restored volume to VM " + vm.getId());
+        String volumeData = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volumeInfo, "uuid", "size", "path", "type", "deviceId");
+        String vmData = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "uuid", "hostName", "instanceName");
+
+        LOG.debug(String.format("Trying to attach restored volume [%s] to VM [%s] using datastore [%s].", volumeData, vmData, datastoreUuid));
         StoragePoolVO pool = primaryDataStoreDao.findByUuid(datastoreUuid);
         try {
             return guru.attachRestoredVolumeToVirtualMachine(zoneId, restoredVolumeLocation, volumeInfo, vm, pool.getId(), backup);
         } catch (Exception e) {
-            throw new CloudRuntimeException("Error attach restored volume to VM " + vm.getUuid() + " due to: " + e.getMessage());
+            String errorMsg = String.format("Failed to attach restored volume [%s] to VM [%s] due to [%s].", volumeData, vmData, e.getMessage());
+            LOG.error(errorMsg, e);
+            throw new CloudRuntimeException(errorMsg);
         }
     }
 

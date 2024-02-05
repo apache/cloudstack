@@ -24,7 +24,7 @@ import org.apache.xerces.impl.xpath.regex.RegularExpression;
 
 public class UuidUtils {
 
-    private static final RegularExpression uuidRegex = new RegularExpression("[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}");
+    private static final RegularExpression uuidRegex = new RegularExpression("[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$");
 
     public static String first(String uuid) {
         return uuid.substring(0, uuid.indexOf('-'));
