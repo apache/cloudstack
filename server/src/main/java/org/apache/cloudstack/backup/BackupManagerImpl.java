@@ -79,6 +79,7 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
+import com.cloud.event.EventVO;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
@@ -487,6 +488,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException("The assigned backup offering does not allow ad-hoc user backup");
         }
 
+        ActionEventUtils.onStartedActionEvent(User.UID_SYSTEM, vm.getAccountId(),
+                EventTypes.EVENT_VM_BACKUP_CREATE, "creating backup for VM ID:" + vm.getUuid(),
+                vmId, ApiCommandResourceType.VirtualMachine.toString(),
+                true, 0);
+
         final BackupProvider backupProvider = getBackupProvider(offering.getProvider());
         if (backupProvider != null && backupProvider.takeBackup(vm)) {
             return true;
@@ -565,10 +571,21 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         } catch (final Exception e) {
             LOG.error(String.format("Failed to import VM [vmInternalName: %s] from backup restoration [%s] with hypervisor [type: %s] due to: [%s].", vmInternalName,
                     ReflectionToStringBuilderUtils.reflectOnlySelectedFields(backup, "id", "uuid", "vmId", "externalId", "backupType"), hypervisorType, e.getMessage()), e);
+            ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_BACKUP_RESTORE,
+                    String.format("Failed to import VM %s from backup %s with hypervisor [type: %s]", vmInternalName, backup.getUuid(), hypervisorType),
+                    vm.getId(), ApiCommandResourceType.VirtualMachine.toString(),0);
             throw new CloudRuntimeException("Error during vm backup restoration and import: " + e.getMessage());
         }
         if (vm == null) {
-            LOG.error("Failed to import restored VM " + vmInternalName + " with hypervisor type " + hypervisorType + " using backup of VM ID " + backup.getVmId());
+            String message = String.format("Failed to import restored VM %s  with hypervisor type %s using backup of VM ID %s",
+                    vmInternalName, hypervisorType, backup.getVmId());
+            LOG.error(message);
+            ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_BACKUP_RESTORE,
+                    message, vm.getId(), ApiCommandResourceType.VirtualMachine.toString(),0);
+        } else {
+            ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_BACKUP_RESTORE,
+                    String.format("Restored VM %s from backup %s", vm.getUuid(), backup.getUuid()),
+                    vm.getId(), ApiCommandResourceType.VirtualMachine.toString(),0);
         }
         return vm != null;
     }
@@ -618,9 +635,17 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         try {
             updateVmState(vm, VirtualMachine.Event.RestoringRequested, VirtualMachine.State.Restoring);
             updateVolumeState(vm, Volume.Event.RestoreRequested, Volume.State.Restoring);
+            ActionEventUtils.onStartedActionEvent(User.UID_SYSTEM, vm.getAccountId(), EventTypes.EVENT_VM_BACKUP_RESTORE,
+                    String.format("Restoring VM %s from backup %s", vm.getUuid(), backup.getUuid()),
+                    vm.getId(), ApiCommandResourceType.VirtualMachine.toString(),
+                    true, 0);
+
             final BackupProvider backupProvider = getBackupProvider(offering.getProvider());
             if (!backupProvider.restoreVMFromBackup(vm, backup)) {
-                throw new CloudRuntimeException(String.format("Error restoring %s from backup [%s].", vm, backupDetailsInMessage));
+                ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_BACKUP_RESTORE,
+                        String.format("Failed to restore VM %s from backup %s", vm.getInstanceName(), backup.getUuid()),
+                        vm.getId(), ApiCommandResourceType.VirtualMachine.toString(),0);
+                throw new CloudRuntimeException("Error restoring VM from backup with uuid " + backup.getUuid());
             }
         // The restore process is executed by a backup provider outside of ACS, I am using the catch-all (Exception) to
         // ensure that no provider-side exception is missed. Therefore, we have a proper handling of exceptions, and rollbacks if needed.
