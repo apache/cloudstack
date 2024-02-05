@@ -326,6 +326,17 @@ function vmware_export() {
   log INFO "${appliance} exported for VMWare: dist/${appliance_build_name}-vmware.ova"
 }
 
+function hyperv_export() {
+  log INFO "creating hyperv export"
+  qemu-img convert -f qcow2 -O vpc "dist/${appliance}" "dist/${appliance_build_name}-hyperv.vhd"
+  CDIR=$PWD
+  cd dist
+  zip "${appliance_build_name}-hyperv.vhd.zip" "${appliance_build_name}-hyperv.vhd"
+  rm -f *vhd
+  cd $CDIR
+  log INFO "${appliance} exported for HyperV: dist/${appliance_build_name}-hyperv.vhd.zip"
+}
+
 ###
 ### Main invocation
 ###
@@ -341,6 +352,7 @@ function main() {
   ovm_export
   xen_server_export
   vmware_export
+  hyperv_export
   rm -f "dist/${appliance}"
   cd dist && chmod +r * && cd ..
   cd dist && md5sum * > md5sum.txt && cd ..
