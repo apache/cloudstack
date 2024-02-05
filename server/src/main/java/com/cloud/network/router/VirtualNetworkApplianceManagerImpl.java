@@ -72,7 +72,6 @@ import org.apache.cloudstack.network.topology.NetworkTopologyContext;
 import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.usage.UsageUtils;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -2147,12 +2146,6 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 " on the virtual router.", RouterLogrotateFrequency.key(), routerLogrotateFrequency, dc.getUuid()));
         buf.append(String.format(" logrotatefrequency=%s", routerLogrotateFrequency));
 
-        if (router.getVpcId() != null) {
-            List<IPAddressVO> vpcIps = _ipAddressDao.listByAssociatedVpc(router.getVpcId(), true);
-            if (CollectionUtils.isNotEmpty(vpcIps)) {
-                buf.append(String.format(" source_nat_ip=%s", vpcIps.get(0).getAddress().toString()));
-            }
-        }
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Boot Args for " + profile + ": " + buf.toString());
         }
