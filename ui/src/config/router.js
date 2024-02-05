@@ -221,9 +221,17 @@ export function asyncRouterMap () {
       generateRouterMap(offering),
       generateRouterMap(config),
       generateRouterMap(tools),
+      {
+        path: '/usage',
+        name: 'usage',
+        title: 'label.usage.records',
+        icon: 'ContainerOutlined',
+        permission: ['listUsageRecords'],
+        meta: { title: 'label.usage.records', icon: 'ContainerOutlined' },
+        component: () => import('@/views/infra/UsageRecords.vue')
+      },
       generateRouterMap(quota),
       generateRouterMap(cloudian),
-
       {
         path: '/exception',
         name: 'exception',
