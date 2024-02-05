@@ -64,19 +64,19 @@
                 <div class="list__label">{{ $t('label.protocol') }}</div>
                 <div>{{ element.protocol }}</div>
               </div>
-              <div class="list__col" v-if="element.startport">
+              <div class="list__col" v-if="element.startport !== undefined">
                 <div class="list__label">{{ $t('label.startport') }}</div>
                 <div>{{ element.startport }}</div>
               </div>
-              <div class="list__col" v-if="element.endport">
+              <div class="list__col" v-if="element.endport !== undefined">
                 <div class="list__label">{{ $t('label.endport') }}</div>
                 <div>{{ element.endport }}</div>
               </div>
-              <div class="list__col" v-if="element.icmpcode">
+              <div class="list__col" v-if="element.icmpcode !== undefined">
                 <div class="list__label">{{ $t('label.icmpcode') }}</div>
                 <div>{{ element.icmpcode }}</div>
               </div>
-              <div class="list__col" v-if="element.icmptype">
+              <div class="list__col" v-if="element.icmptype !== undefined">
                 <div class="list__label">{{ $t('label.icmptype') }}</div>
                 <div>{{ element.icmptype }}</div>
               </div>
