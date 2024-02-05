@@ -73,9 +73,9 @@ public class ConfigurationManagerImplTest {
     @Mock
     DiskOfferingDetailsDao diskOfferingDetailsDao;
     @Spy
-    DiskOfferingVO diskOfferingVOSpy = new DiskOfferingVO();
-    @Spy
-    UpdateDiskOfferingCmd updateDiskOfferingCmdSpy = new UpdateDiskOfferingCmd();
+    DiskOfferingVO diskOfferingVOSpy;
+    @Mock
+    UpdateDiskOfferingCmd updateDiskOfferingCmdMock;
 
     Long validId = 1L;
     Long invalidId = 100L;
@@ -314,32 +314,32 @@ public class ConfigurationManagerImplTest {
 
     @Test
     public void updateDiskOfferingIfCmdAttributeNotNullTestNotNullValueUpdateOfferingAttribute() {
-        Mockito.doReturn("DiskOfferingName").when(updateDiskOfferingCmdSpy).getDiskOfferingName();
-        Mockito.doReturn("DisplayText").when(updateDiskOfferingCmdSpy).getDisplayText();
-        Mockito.doReturn(1).when(updateDiskOfferingCmdSpy).getSortKey();
-        Mockito.doReturn(false).when(updateDiskOfferingCmdSpy).getDisplayOffering();
+        Mockito.doReturn("DiskOfferingName").when(updateDiskOfferingCmdMock).getDiskOfferingName();
+        Mockito.doReturn("DisplayText").when(updateDiskOfferingCmdMock).getDisplayText();
+        Mockito.doReturn(1).when(updateDiskOfferingCmdMock).getSortKey();
+        Mockito.doReturn(false).when(updateDiskOfferingCmdMock).getDisplayOffering();
 
-        configurationManagerImplSpy.updateDiskOfferingIfCmdAttributeNotNull(this.diskOfferingVOSpy, updateDiskOfferingCmdSpy);
+        configurationManagerImplSpy.updateDiskOfferingIfCmdAttributeNotNull(diskOfferingVOSpy, updateDiskOfferingCmdMock);
 
-        Assert.assertEquals(updateDiskOfferingCmdSpy.getDiskOfferingName(), diskOfferingVOSpy.getName());
-        Assert.assertEquals(updateDiskOfferingCmdSpy.getDisplayText(), diskOfferingVOSpy.getDisplayText());
-        Assert.assertEquals(updateDiskOfferingCmdSpy.getSortKey(), (Integer) diskOfferingVOSpy.getSortKey());
-        Assert.assertEquals(updateDiskOfferingCmdSpy.getDisplayOffering(), diskOfferingVOSpy.getDisplayOffering());
+        Assert.assertEquals(updateDiskOfferingCmdMock.getDiskOfferingName(), diskOfferingVOSpy.getName());
+        Assert.assertEquals(updateDiskOfferingCmdMock.getDisplayText(), diskOfferingVOSpy.getDisplayText());
+        Assert.assertEquals(updateDiskOfferingCmdMock.getSortKey(), (Integer) diskOfferingVOSpy.getSortKey());
+        Assert.assertEquals(updateDiskOfferingCmdMock.getDisplayOffering(), diskOfferingVOSpy.getDisplayOffering());
     }
 
     @Test
     public void updateDiskOfferingIfCmdAttributeNotNullTestNullValueDoesntUpdateOfferingAttribute() {
-        diskOfferingVOSpy.setName("Name");
-        diskOfferingVOSpy.setDisplayText("DisplayText");
-        diskOfferingVOSpy.setSortKey(1);
-        diskOfferingVOSpy.setDisplayOffering(true);
+        Mockito.doReturn("Name").when(diskOfferingVOSpy).getName();
+        Mockito.doReturn("DisplayText").when(diskOfferingVOSpy).getDisplayText();
+        Mockito.doReturn(1).when(diskOfferingVOSpy).getSortKey();
+        Mockito.doReturn(true).when(diskOfferingVOSpy).getDisplayOffering();
 
-        configurationManagerImplSpy.updateDiskOfferingIfCmdAttributeNotNull(diskOfferingVOSpy, updateDiskOfferingCmdSpy);
+        configurationManagerImplSpy.updateDiskOfferingIfCmdAttributeNotNull(diskOfferingVOSpy, updateDiskOfferingCmdMock);
 
-        Assert.assertNotEquals(updateDiskOfferingCmdSpy.getDiskOfferingName(), diskOfferingVOSpy.getName());
-        Assert.assertNotEquals(updateDiskOfferingCmdSpy.getDisplayText(), diskOfferingVOSpy.getDisplayText());
-        Assert.assertNotEquals(updateDiskOfferingCmdSpy.getSortKey(), (Integer) diskOfferingVOSpy.getSortKey());
-        Assert.assertNotEquals(updateDiskOfferingCmdSpy.getDisplayOffering(), diskOfferingVOSpy.getDisplayOffering());
+        Assert.assertNotEquals(updateDiskOfferingCmdMock.getDiskOfferingName(), diskOfferingVOSpy.getName());
+        Assert.assertNotEquals(updateDiskOfferingCmdMock.getDisplayText(), diskOfferingVOSpy.getDisplayText());
+        Assert.assertNotEquals(updateDiskOfferingCmdMock.getSortKey(), (Integer) diskOfferingVOSpy.getSortKey());
+        Assert.assertNotEquals(updateDiskOfferingCmdMock.getDisplayOffering(), diskOfferingVOSpy.getDisplayOffering());
     }
 
     @Test
@@ -374,7 +374,8 @@ public class ConfigurationManagerImplTest {
 
     @Test
     public void getAccountNonChildDomainsTestValidValuesReturnChildDomains() {
-        List<Long> nonChildDomains = configurationManagerImplSpy.getAccountNonChildDomains(diskOfferingMock, accountMock, userMock, updateDiskOfferingCmdSpy, existingDomainIds);
+        Mockito.doReturn(null).when(updateDiskOfferingCmdMock).getSortKey();
+        List<Long> nonChildDomains = configurationManagerImplSpy.getAccountNonChildDomains(diskOfferingMock, accountMock, userMock, updateDiskOfferingCmdMock, existingDomainIds);
 
         for (int i = 0; i < existingDomainIds.size(); i++) {
             Assert.assertEquals(existingDomainIds.get(i), nonChildDomains.get(i));
@@ -383,20 +384,20 @@ public class ConfigurationManagerImplTest {
 
     @Test
     public void getAccountNonChildDomainsTestAllDomainsAreChildDomainsReturnEmptyList() {
-        for (int i = 0; i < existingDomainIds.size(); i++) {
-            Mockito.when(domainDaoMock.isChildDomain(accountMock.getDomainId(), existingDomainIds.get(i))).thenReturn(true);
+        for (Long existingDomainId : existingDomainIds) {
+            Mockito.when(domainDaoMock.isChildDomain(accountMock.getDomainId(), existingDomainId)).thenReturn(true);
         }
 
-        List<Long> nonChildDomains = configurationManagerImplSpy.getAccountNonChildDomains(diskOfferingMock, accountMock, userMock, updateDiskOfferingCmdSpy, existingDomainIds);
+        List<Long> nonChildDomains = configurationManagerImplSpy.getAccountNonChildDomains(diskOfferingMock, accountMock, userMock, updateDiskOfferingCmdMock, existingDomainIds);
 
         Assert.assertTrue(nonChildDomains.isEmpty());
     }
 
     @Test
     public void getAccountNonChildDomainsTestNotNullCmdAttributeThrowException() {
-        Mockito.doReturn("name").when(updateDiskOfferingCmdSpy).getDiskOfferingName();
+        Mockito.doReturn("name").when(updateDiskOfferingCmdMock).getDiskOfferingName();
 
-        Assert.assertThrows(InvalidParameterValueException.class, () -> configurationManagerImplSpy.getAccountNonChildDomains(diskOfferingMock, accountMock, userMock, updateDiskOfferingCmdSpy, existingDomainIds));
+        Assert.assertThrows(InvalidParameterValueException.class, () -> configurationManagerImplSpy.getAccountNonChildDomains(diskOfferingMock, accountMock, userMock, updateDiskOfferingCmdMock, existingDomainIds));
     }
 
     @Test
