@@ -382,7 +382,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             + " in milliseconds, to execute a storage tag rule; if it is reached, a timeout will happen.", true);
 
     public static final ConfigKey<Boolean> AllowCheckAndRepairVolume = new ConfigKey<Boolean>("Advanced", Boolean.class, "volume.check.and.repair.leaks.before.use", "false",
-            "To check and repair the volume if it has any leaks before performing volume attach or VM start operations", true);
+            "To check and repair the volume if it has any leaks before performing volume attach or VM start operations", true, ConfigKey.Scope.StoragePool);
 
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
 
