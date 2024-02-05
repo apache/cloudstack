@@ -16,13 +16,14 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
+import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
@@ -41,7 +42,7 @@ import java.util.Arrays;
 @APICommand(name = "checkVolume", description = "Check the volume for any errors or leaks and also repairs when repair parameter is passed, this is currently supported for KVM only", responseObject = VolumeResponse.class, entityType = {Volume.class},
         since = "4.19.1",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class CheckAndRepairVolumeCmd extends BaseCmd {
+public class CheckAndRepairVolumeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(CheckAndRepairVolumeCmd.class.getName());
 
     private static final String s_name = "checkandrepairvolumeresponse";
@@ -96,6 +97,16 @@ public class CheckAndRepairVolumeCmd extends BaseCmd {
         }
 
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_VOLUME_CHECK;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return String.format("check and repair operation on volume: %s", this._uuidMgr.getUuid(Volume.class, getId()));
     }
 
     @Override
