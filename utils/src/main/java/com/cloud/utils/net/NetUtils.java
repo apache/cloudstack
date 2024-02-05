@@ -78,6 +78,7 @@ public class NetUtils {
     public final static String ANY_PROTO = "any";
     public final static String ICMP_PROTO = "icmp";
     public static final String ICMP6_PROTO = "icmp6";
+    public final static int ICMP_PROTO_NUMBER = 1;
     public final static String ALL_PROTO = "all";
     public final static String HTTP_PROTO = "http";
     public final static String HTTPS_PROTO = "https";
@@ -1771,4 +1772,18 @@ public class NetUtils {
         }
     }
 
+    public static void validateIcmpTypeAndCode(Integer icmpType, Integer icmpCode) {
+        if ((icmpType == null) || (icmpCode == null)) {
+            throw new CloudRuntimeException("Invalid ICMP type/code specified, icmpType = " + icmpType + ", icmpCode = " + icmpCode);
+        }
+        if (icmpType == -1 && icmpCode != -1) {
+            throw new CloudRuntimeException("Invalid icmp code");
+        }
+        if (icmpType != -1 && icmpCode == -1) {
+            throw new CloudRuntimeException("Invalid icmp code: need non-negative icmp code ");
+        }
+        if (icmpCode > 255 || icmpType > 255 || icmpCode < -1 || icmpType < -1) {
+            throw new CloudRuntimeException("Invalid icmp type/code ");
+        }
+    }
 }

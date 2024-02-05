@@ -322,6 +322,7 @@ public class ApiConstants {
     public static final String IS_DEFAULT_USE = "defaultuse";
     public static final String OLD_FORMAT = "oldformat";
     public static final String OP = "op";
+    public static final String OPTION = "option";
     public static final String OPTIONS = "options";
     public static final String OS_CATEGORY_ID = "oscategoryid";
     public static final String OS_CATEGORY_NAME = "oscategoryname";
