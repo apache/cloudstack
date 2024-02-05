@@ -2208,14 +2208,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             boolean result = stateTransitTo(vm, Event.OperationSucceeded, null);
             if (result) {
-                if (VirtualMachine.Type.User.equals(vm.type)) {
-                    vm.setPowerState(PowerState.PowerOff);
-                    _vmDao.update(vm.getId(), vm);
-
-                    if (ResourceCountRunningVMsonly.value()) {
-                        ServiceOfferingVO offering = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
-                        resourceCountDecrement(vm.getAccountId(), offering.getCpu().longValue(), offering.getRamSize().longValue());
-                    }
+                vm.setPowerState(PowerState.PowerOff);
+                _vmDao.update(vm.getId(), vm);
+                if (VirtualMachine.Type.User.equals(vm.type) && ResourceCountRunningVMsonly.value()) {
+                    ServiceOfferingVO offering = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
+                    resourceCountDecrement(vm.getAccountId(), offering.getCpu().longValue(), offering.getRamSize().longValue());
                 }
             } else {
                 throw new CloudRuntimeException("unable to stop " + vm);
