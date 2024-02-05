@@ -18,3 +18,11 @@
 --;
 -- Schema upgrade from 4.19.0.0 to 4.20.0.0
 --;
+
+-- Update Default System offering for Router to 512MiB
+UPDATE `cloud`.`service_offering` SET ram_size = 512 WHERE unique_name IN ("Cloud.Com-SoftwareRouter", "Cloud.Com-SoftwareRouter-Local",
+                                                                           "Cloud.Com-InternalLBVm", "Cloud.Com-InternalLBVm-Local",
+                                                                           "Cloud.com-ConsoleProxy", "Cloud.com-ConsoleProxy-Local",
+                                                                           "Cloud.com-SecondaryStorage", "Cloud.com-SecondaryStorage-Local",
+                                                                           "Cloud.Com-ElasticLBVm", "Cloud.Com-ElasticLBVm-Local")
+                                                    AND system_use = 1 AND ram_size < 512;
