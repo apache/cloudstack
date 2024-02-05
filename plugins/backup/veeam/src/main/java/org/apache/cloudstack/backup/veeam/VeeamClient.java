@@ -194,11 +194,11 @@ public class VeeamClient {
         );
         Pair<Boolean, String> response = executePowerShellCommands(cmds);
         if (response == null || !response.first() || response.second() == null || StringUtils.isBlank(response.second().trim())) {
-            LOG.error("Failed to get veeam server version, using default version");
+            logger.error("Failed to get veeam server version, using default version");
             return 0;
         } else {
             Integer majorVersion = NumbersUtil.parseInt(response.second().trim().split("\\.")[0], 0);
-            LOG.info(String.format("Veeam server full version is %s, major version is %s", response.second().trim(), majorVersion));
+            logger.info(String.format("Veeam server full version is %s, major version is %s", response.second().trim(), majorVersion));
             return majorVersion;
         }
     }
@@ -668,13 +668,13 @@ public class VeeamClient {
     }
 
     public boolean syncBackupRepository() {
-        LOG.debug("Trying to sync backup repository.");
+        logger.debug("Trying to sync backup repository.");
         Pair<Boolean, String> result = executePowerShellCommands(Arrays.asList(
                 "$repo = Get-VBRBackupRepository",
                 "$Syncs = Sync-VBRBackupRepository -Repository $repo",
                 "while ((Get-VBRSession -ID $Syncs.ID).Result -ne 'Success') { Start-Sleep -Seconds 10 }"
         ));
-        LOG.debug("Done syncing backup repository.");
+        logger.debug("Done syncing backup repository.");
         return result != null && result.first();
     }
 
@@ -687,14 +687,14 @@ public class VeeamClient {
     }
 
     public Map<String, Backup.Metric> getBackupMetricsViaVeeamAPI() {
-        LOG.debug("Trying to get backup metrics via Veeam B&R API");
+        logger.debug("Trying to get backup metrics via Veeam B&R API");
 
         try {
             final HttpResponse response = get(String.format("/backupFiles?format=Entity"));
             checkResponseOK(response);
             return processHttpResponseForBackupMetrics(response.getEntity().getContent());
         } catch (final IOException e) {
-            LOG.error("Failed to get backup metrics via Veeam B&R API due to:", e);
+            logger.error("Failed to get backup metrics via Veeam B&R API due to:", e);
             checkResponseTimeOut(e);
         }
         return new HashMap<>();
@@ -745,7 +745,7 @@ public class VeeamClient {
                 metrics.put(vmUuid, new Backup.Metric(usedSize, dataSize));
             }
         } catch (final IOException e) {
-            LOG.error("Failed to process response to get backup metrics via Veeam B&R API due to:", e);
+            logger.error("Failed to process response to get backup metrics via Veeam B&R API due to:", e);
             checkResponseTimeOut(e);
         }
         return metrics;
@@ -783,7 +783,7 @@ public class VeeamClient {
     }
 
     protected Map<String, Backup.Metric> processPowerShellResultForBackupMetrics(final String result) {
-        LOG.debug("Processing powershell result: " + result);
+        logger.debug("Processing powershell result: " + result);
 
         final String separator = "=====";
         final Map<String, Backup.Metric> sizes = new HashMap<>();
@@ -857,14 +857,14 @@ public class VeeamClient {
     }
 
     public List<Backup.RestorePoint> listVmRestorePointsViaVeeamAPI(String vmInternalName) {
-        LOG.debug(String.format("Trying to list VM restore points via Veeam B&R API for VM %s: ", vmInternalName));
+        logger.debug(String.format("Trying to list VM restore points via Veeam B&R API for VM %s: ", vmInternalName));
 
         try {
             final HttpResponse response = get(String.format("/vmRestorePoints?format=Entity"));
             checkResponseOK(response);
             return processHttpResponseForVmRestorePoints(response.getEntity().getContent(), vmInternalName);
         } catch (final IOException e) {
-            LOG.error("Failed to list VM restore points via Veeam B&R API due to:", e);
+            logger.error("Failed to list VM restore points via Veeam B&R API due to:", e);
             checkResponseTimeOut(e);
         }
         return new ArrayList<>();
@@ -879,7 +879,7 @@ public class VeeamClient {
                 throw new CloudRuntimeException("Could not get VM restore points via Veeam B&R API");
             }
             for (final VmRestorePoint vmRestorePoint : vmRestorePoints.getVmRestorePoints()) {
-                LOG.debug(String.format("Processing VM restore point Name=%s, VmDisplayName=%s for vm name=%s",
+                logger.debug(String.format("Processing VM restore point Name=%s, VmDisplayName=%s for vm name=%s",
                         vmRestorePoint.getName(), vmRestorePoint.getVmDisplayName(), vmInternalName));
                 if (!vmInternalName.equals(vmRestorePoint.getVmDisplayName())) {
                     continue;
@@ -888,7 +888,7 @@ public class VeeamClient {
                 List<Link> links = vmRestorePoint.getLink();
                 for (Link link : links) {
                     if (Arrays.asList(BACKUP_FILE_REFERENCE, RESTORE_POINT_REFERENCE).contains(link.getType()) && !link.getRel().equals("Up")) {
-                        LOG.info(String.format("The VM restore point is not ready. Reference: %s, state: %s", link.getType(), link.getRel()));
+                        logger.info(String.format("The VM restore point is not ready. Reference: %s, state: %s", link.getType(), link.getRel()));
                         isReady = false;
                         break;
                     }
@@ -899,11 +899,11 @@ public class VeeamClient {
                 String vmRestorePointId = vmRestorePoint.getUid().substring(vmRestorePoint.getUid().lastIndexOf(':') + 1);
                 Date created = formatDate(vmRestorePoint.getCreationTimeUtc());
                 String type = vmRestorePoint.getPointType();
-                LOG.debug(String.format("Adding restore point %s, %s, %s", vmRestorePointId, created, type));
+                logger.debug(String.format("Adding restore point %s, %s, %s", vmRestorePointId, created, type));
                 vmRestorePointList.add(new Backup.RestorePoint(vmRestorePointId, created, type));
             }
         } catch (final IOException | ParseException e) {
-            LOG.error("Failed to process response to get VM restore points via Veeam B&R API due to:", e);
+            logger.error("Failed to process response to get VM restore points via Veeam B&R API due to:", e);
             checkResponseTimeOut(e);
         }
         return vmRestorePointList;

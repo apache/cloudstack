@@ -3744,7 +3744,7 @@ public class VirtualMachineMO extends BaseMO {
                 throw new Exception("Unsupported VirtualDeviceBackingInfo");
             }
             VirtualDiskFlatVer2BackingInfo diskBackingInfo = (VirtualDiskFlatVer2BackingInfo)backingInfo;
-            s_logger.info("Removing property ChangeTrackPath from VMDK content file " + diskBackingInfo.getFileName());
+            logger.info("Removing property ChangeTrackPath from VMDK content file " + diskBackingInfo.getFileName());
             Pair<VmdkFileDescriptor, byte[]> vmdkInfo = getVmdkFileInfo(diskBackingInfo.getFileName());
             VmdkFileDescriptor vmdkFileDescriptor = vmdkInfo.first();
             byte[] content = vmdkInfo.second();
@@ -3756,7 +3756,7 @@ public class VirtualMachineMO extends BaseMO {
             Pair<DatacenterMO, String> dcPair = getOwnerDatacenter();
             String vmdkUrl = getContext().composeDatastoreBrowseUrl(dcPair.second(), diskBackingInfo.getFileName());
             getContext().uploadResourceContent(vmdkUrl, newVmdkContent);
-            s_logger.info("Removed property ChangeTrackPath from VMDK content file " + diskBackingInfo.getFileName());
+            logger.info("Removed property ChangeTrackPath from VMDK content file " + diskBackingInfo.getFileName());
         }
     }
 }

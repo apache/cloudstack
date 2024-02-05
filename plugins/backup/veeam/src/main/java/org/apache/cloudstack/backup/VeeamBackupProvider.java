@@ -261,7 +261,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
         try {
             return getClient(vm.getDataCenterId()).restoreFullVM(vm.getInstanceName(), restorePointId);
         } catch (Exception ex) {
-            LOG.error(String.format("Failed to restore Full VM due to: %s. Retrying after some preparation", ex.getMessage()));
+            logger.error(String.format("Failed to restore Full VM due to: %s. Retrying after some preparation", ex.getMessage()));
             prepareForBackupRestoration(vm);
             return getClient(vm.getDataCenterId()).restoreFullVM(vm.getInstanceName(), restorePointId);
         }
@@ -271,7 +271,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
         if (!Hypervisor.HypervisorType.VMware.equals(vm.getHypervisorType())) {
             return;
         }
-        LOG.info("Preparing for restoring VM " + vm);
+        logger.info("Preparing for restoring VM " + vm);
         PrepareForBackupRestorationCommand command = new PrepareForBackupRestorationCommand(vm.getInstanceName());
         Long hostId = virtualMachineManager.findClusterAndHostIdForVm(vm.getId()).second();
         if (hostId == null) {
@@ -280,7 +280,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
         try {
             Answer answer = agentMgr.easySend(hostId, command);
             if (answer != null && answer.getResult()) {
-                LOG.info("Succeeded to prepare for restoring VM " + vm);
+                logger.info("Succeeded to prepare for restoring VM " + vm);
             } else {
                 throw new CloudRuntimeException(String.format("Failed to prepare for restoring VM %s. details: %s", vm,
                         (answer != null ? answer.getDetails() : null)));

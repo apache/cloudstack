@@ -1095,7 +1095,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         VirtualDiskManagerMO virtualDiskManagerMO = new VirtualDiskManagerMO(dcMo.getContext());
 
         // Copy volume to the VM folder
-        s_logger.debug(String.format("Moving volume from %s to %s", srcPath, destPath));
+        logger.debug(String.format("Moving volume from %s to %s", srcPath, destPath));
         virtualDiskManagerMO.moveVirtualDisk(srcPath, dcMo.getMor(), destPath, dcMo.getMor(), true);
 
         try {
@@ -1109,13 +1109,13 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             vmRestored.destroy();
         }
 
-        s_logger.debug(String.format("Attaching disk %s to vm %s", destPath, vm.getId()));
+        logger.debug(String.format("Attaching disk %s to vm %s", destPath, vm.getId()));
         VirtualDisk attachedDisk = getAttachedDisk(vmMo, destPath);
         if (attachedDisk == null) {
             logger.error("Failed to get the attached the (restored) volume " + destPath);
             return false;
         }
-        s_logger.debug(String.format("Creating volume entry for disk %s attached to vm %s", destPath, vm.getId()));
+        logger.debug(String.format("Creating volume entry for disk %s attached to vm %s", destPath, vm.getId()));
         createVolume(attachedDisk, vmMo, vm.getDomainId(), vm.getDataCenterId(), vm.getAccountId(), vm.getId(), poolId, vm.getTemplateId(), backup, false);
 
         if (vm.getBackupOfferingId() == null) {

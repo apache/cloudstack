@@ -248,7 +248,7 @@ public class VmdkFileDescriptor {
                     continue;
                 }
                 if (line.equals(VMDK_PROPERTY_CHANGE_TRACK_PATH_COMMENT)) {
-                    s_logger.debug("Removed line from vmdk: " + line);
+                    LOGGER.debug("Removed line from vmdk: " + line);
                     continue;
                 }
                 if (line.charAt(0) == '#') {
@@ -265,7 +265,7 @@ public class VmdkFileDescriptor {
                         value = value.substring(1, value.length() - 1);
 
                     if (name.equals(VMDK_PROPERTY_CHANGE_TRACK_PATH)) {
-                        s_logger.debug("Removed line from vmdk: " + line);
+                        LOGGER.debug("Removed line from vmdk: " + line);
                     } else {
                         out.write(line);
                         out.newLine();

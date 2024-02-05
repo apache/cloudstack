@@ -7639,7 +7639,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
             if (vmMo == null) {
                 String msg = "VM " + vmName + " no longer exists to execute PrepareForBackupRestorationCommand command";
-                s_logger.error(msg);
+                logger.error(msg);
                 throw new Exception(msg);
             }
 
@@ -7647,7 +7647,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
             return new Answer(command, true, "success");
         } catch (Exception e) {
-            s_logger.error("Unexpected exception: ", e);
+            logger.error("Unexpected exception: ", e);
             return new Answer(command, false, "Unable to execute PrepareForBackupRestorationCommand due to " + e.toString());
         }
     }
