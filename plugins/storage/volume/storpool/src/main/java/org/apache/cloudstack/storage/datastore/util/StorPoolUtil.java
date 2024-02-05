@@ -177,7 +177,7 @@ public class StorPoolUtil {
                 extractUriParams(url);
                 return;
             } catch (URISyntaxException e) {
-                log.debug("[ignore] the uri is not valid");
+                LOGGER.debug("[ignore] the uri is not valid");
             }
             String[] urlSplit = url.split(";");
             if (urlSplit.length == 1 && !urlSplit[0].contains("=")) {

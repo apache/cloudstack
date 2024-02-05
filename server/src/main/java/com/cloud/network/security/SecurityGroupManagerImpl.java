@@ -776,7 +776,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
                         SecurityGroupRuleVO securityGroupRule = _securityGroupRuleDao.findByProtoPortsAndAllowedGroupId(securityGroup.getId(), protocolFinal, startPortOrTypeFinal,
                                 endPortOrCodeFinal, ngVO.getId());
                         if ((securityGroupRule != null) && (securityGroupRule.getRuleType() == ruleType)) {
-                            s_logger.warn("The rule already exists. id= " + securityGroupRule.getUuid());
+                            logger.warn("The rule already exists. id= " + securityGroupRule.getUuid());
                             continue; // rule already exists.
                         }
                         securityGroupRule = new SecurityGroupRuleVO(ruleType, securityGroup.getId(), startPortOrTypeFinal, endPortOrCodeFinal, protocolFinal, ngVO.getId());

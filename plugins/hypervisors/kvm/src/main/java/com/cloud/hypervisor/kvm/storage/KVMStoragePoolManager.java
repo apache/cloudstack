@@ -107,13 +107,13 @@ public class KVMStoragePoolManager {
         Reflections reflections = new Reflections("com.cloud.hypervisor.kvm.storage");
         Set<Class<? extends StorageAdaptor>> storageAdaptorClasses = reflections.getSubTypesOf(StorageAdaptor.class);
         for (Class<? extends StorageAdaptor> storageAdaptorClass : storageAdaptorClasses) {
-            s_logger.debug("Checking pool type for adaptor " + storageAdaptorClass.getName());
+            logger.debug("Checking pool type for adaptor " + storageAdaptorClass.getName());
             if (Modifier.isAbstract(storageAdaptorClass.getModifiers()) || storageAdaptorClass.isInterface()) {
-                s_logger.debug("Skipping registration of abstract class / interface " + storageAdaptorClass.getName());
+                logger.debug("Skipping registration of abstract class / interface " + storageAdaptorClass.getName());
                 continue;
             }
             if (storageAdaptorClass.isAssignableFrom(LibvirtStorageAdaptor.class)) {
-                s_logger.debug("Skipping re-registration of LibvirtStorageAdaptor");
+                logger.debug("Skipping re-registration of LibvirtStorageAdaptor");
                 continue;
             }
             try {
@@ -132,9 +132,9 @@ public class KVMStoragePoolManager {
                 StoragePoolType storagePoolType = adaptor.getStoragePoolType();
                 if (storagePoolType != null) {
                     if (this._storageMapper.containsKey(storagePoolType.toString())) {
-                        s_logger.warn(String.format("Duplicate StorageAdaptor type %s, not loading %s", storagePoolType, storageAdaptorClass.getName()));
+                        logger.warn(String.format("Duplicate StorageAdaptor type %s, not loading %s", storagePoolType, storageAdaptorClass.getName()));
                     } else {
-                        s_logger.info(String.format("Adding storage adaptor for %s", storageAdaptorClass.getName()));
+                        logger.info(String.format("Adding storage adaptor for %s", storageAdaptorClass.getName()));
                         this._storageMapper.put(storagePoolType.toString(), adaptor);
                     }
                 }

@@ -57,15 +57,15 @@ public class LibvirtConnection {
             try {
                 conn.getVersion();
             } catch (LibvirtException e) {
-                s_logger.error("Connection with libvirtd is broken: " + e.getMessage());
+                LOGGER.error("Connection with libvirtd is broken: " + e.getMessage());
 
                 try {
                     conn.close();
                 } catch (LibvirtException closeEx) {
-                    s_logger.debug("Ignoring error while trying to close broken connection:" + closeEx.getMessage());
+                    LOGGER.debug("Ignoring error while trying to close broken connection:" + closeEx.getMessage());
                 }
 
-                s_logger.debug("Opening a new libvirtd connection to: " + hypervisorURI);
+                LOGGER.debug("Opening a new libvirtd connection to: " + hypervisorURI);
                 setupEventListener();
                 conn = new Connect(hypervisorURI, false);
                 s_connections.put(hypervisorURI, conn);
@@ -131,9 +131,9 @@ public class LibvirtConnection {
                         // This blocking call contains a loop of its own that will process events until the event loop is stopped or exception is thrown.
                         Library.runEventLoop();
                     } catch (LibvirtException e) {
-                        s_logger.error("LibvirtException was thrown in event loop: ", e);
+                        LOGGER.error("LibvirtException was thrown in event loop: ", e);
                     } catch (InterruptedException e) {
-                        s_logger.error("Libvirt event loop was interrupted: ", e);
+                        LOGGER.error("Libvirt event loop was interrupted: ", e);
                     }
                 }
             });

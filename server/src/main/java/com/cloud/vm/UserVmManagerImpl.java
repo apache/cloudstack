@@ -7812,7 +7812,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         } catch (final CloudRuntimeException e) {
                             throw e;
                         } catch (final Exception e) {
-                            s_logger.error("Unable to restore VM " + userVm.getUuid(), e);
+                            logger.error("Unable to restore VM " + userVm.getUuid(), e);
                             throw new CloudRuntimeException(e);
                         }
 
