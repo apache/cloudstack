@@ -98,6 +98,9 @@
       <template v-if="column.key === 'templatetype'">
         <span>{{ text }}</span>
       </template>
+      <template v-if="column.key === 'templateid'">
+        <router-link :to="{ path: '/template/' + record.templateid }">{{ text }}</router-link>
+      </template>
       <template v-if="column.key === 'type'">
         <span v-if="['USER.LOGIN', 'USER.LOGOUT', 'ROUTER.HEALTH.CHECKS', 'FIREWALL.CLOSE', 'ALERT.SERVICE.DOMAINROUTER'].includes(text)">{{ $t(text.toLowerCase()) }}</span>
         <span v-else>{{ text }}</span>
@@ -164,7 +167,7 @@
         <router-link :to="{ path: createPathBasedOnVmType(record.vmtype, record.virtualmachineid) }">{{ text }}</router-link>
       </template>
       <template v-if="column.key === 'virtualmachinename'">
-        <router-link :to="{ path: getVmRouteUsingType(record) + record.virtualmachineid }">{{ text }}</router-link>
+        <router-link :to="{ path: getVmRouteUsingType(record) + record.virtualmachineid }">{{ text ? text : record.name }}</router-link>
       </template>
       <template v-if="column.key === 'volumename'">
         <router-link :to="{ path: '/volume/' + record.volumeid }">{{ text }}</router-link>
@@ -244,7 +247,7 @@
       </template>
       <template v-if="column.key === 'vpcname'">
         <a v-if="record.vpcid">
-          <router-link :to="{ path: '/vpc/' + record.vpcid }">{{ text }}</router-link>
+          <router-link :to="{ path: '/vpc/' + record.vpcid }">{{ text || record.vpcid }}</router-link>
         </a>
         <span v-else>{{ text }}</span>
       </template>
@@ -274,6 +277,9 @@
       </template>
       <template v-if="column.key === 'level'">
         <router-link :to="{ path: '/event/' + record.id }">{{ text }}</router-link>
+      </template>
+      <template v-if="column.key === 'usageType'">
+        {{ usageTypeMap[record.usagetype] }}
       </template>
 
       <template v-if="column.key === 'clustername'">
@@ -318,7 +324,7 @@
         <span v-else>{{ text }}</span>
       </template>
       <template v-if="column.key === 'zone'">
-        <router-link v-if="record.zoneid && !record.zoneid.includes(',') && $router.resolve('/zone/' + record.zoneid).matched[0].redirect !== '/exception/404'" :to="{ path: '/zone/' + record.zoneid }">{{ text }}</router-link>
+        <router-link v-if="record.zoneid && !record.zoneid.includes(',') && $router.resolve('/zone/' + record.zoneid).matched[0].redirect !== '/exception/404'" :to="{ path: '/zone/' + record.zoneid }">{{ text || record.zoneid }}</router-link>
         <span v-else>{{ text }}</span>
       </template>
       <template v-if="column.key === 'zonename'">
@@ -405,6 +411,9 @@
       <template v-if="column.key === 'duration' && ['webhook', 'webhookdeliveries'].includes($route.path.split('/')[1])">
         <span>  {{ getDuration(record.startdate, record.enddate) }} </span>
       </template>
+      <template v-if="['startdate', 'enddate'].includes(column.key) && ['usage'].includes($route.path.split('/')[1])">
+        {{ $toLocaleDate(text.replace('\'T\'', ' ')) }}
+      </template>
       <template v-if="column.key === 'order'">
         <div class="shift-btns">
           <a-tooltip :name="text" placement="top">
@@ -480,6 +489,13 @@
           v-if="editableValueKey !== record.key"
           icon="reload-outlined"
           :disabled="!('updateConfiguration' in $store.getters.apis)" />
+      </template>
+      <template v-if="column.key === 'usageActions'">
+        <tooltip-button
+          :tooltip="$t('label.view')"
+          icon="search-outlined"
+          @onClick="$emit('view-usage-record', record)" />
+        <slot></slot>
       </template>
       <template v-if="column.key === 'tariffActions'">
         <tooltip-button
@@ -615,8 +631,12 @@ export default {
           notification: 'storageallocatedthreshold',
           disable: 'storageallocateddisablethreshold'
         }
-      }
+      },
+      usageTypeMap: {}
     }
+  },
+  created () {
+    this.getUsageTypes()
   },
   computed: {
     hasSelected () {
@@ -951,6 +971,24 @@ export default {
       }
       var duration = Date.parse(enddate) - Date.parse(startdate)
       return (duration > 0 ? duration / 1000.0 : 0) + ''
+    },
+    getUsageTypes () {
+      if (this.$route.path.split('/')[1] === 'usage') {
+        api('listUsageTypes').then(json => {
+          if (json && json.listusagetypesresponse && json.listusagetypesresponse.usagetype) {
+            this.usageTypes = json.listusagetypesresponse.usagetype.map(x => {
+              return {
+                id: x.usagetypeid,
+                value: x.description
+              }
+            })
+            this.usageTypeMap = {}
+            for (var usageType of this.usageTypes) {
+              this.usageTypeMap[usageType.id] = usageType.value
+            }
+          }
+        })
+      }
     }
   }
 }
