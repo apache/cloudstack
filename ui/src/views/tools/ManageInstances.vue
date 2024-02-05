@@ -238,6 +238,7 @@
                   </a-form-item>
                   <a-form-item v-if="isDestinationKVM && isMigrateFromVmware && clusterId != undefined">
                     <SelectVmwareVcenter
+                      @onVcenterTypeChanged="updateVmwareVcenterType"
                       @loadingVmwareUnmanagedInstances="() => this.unmanagedInstancesLoading = true"
                       @listedVmwareUnmanagedInstances="($e) => onListUnmanagedInstancesFromVmware($e)"
                     />
@@ -322,8 +323,8 @@
             <a-col v-if="!isDiskImport" :md="24" :lg="(!isMigrateFromVmware && showManagedInstances) ? 12 : 24">
               <a-card class="instances-card">
                 <template #title>
-                  {{ $t('label.unmanaged.instances') }}
-                  <a-tooltip :title="$t('message.instances.unmanaged')">
+                  {{ (isMigrateFromVmware && vmwareVcenterType === 'existing') ? $t('label.instances') : $t('label.unmanaged.instances') }}
+                  <a-tooltip :title="(isMigrateFromVmware && vmwareVcenterType === 'existing') ? $t('message.instances.migrate.vmware') : $t('message.instances.unmanaged')">
                     <info-circle-outlined />
                   </a-tooltip>
                   <a-button
@@ -566,7 +567,7 @@ export default {
       },
       {
         name: 'external',
-        label: 'Import libvirt domain from KVM Host',
+        label: 'Import Instance from remote KVM host',
         sourceDestHypervisors: {
           kvm: 'kvm'
         },
@@ -575,7 +576,7 @@ export default {
       },
       {
         name: 'local',
-        label: 'Import QCOW image from Local Storage',
+        label: 'Import QCOW2 image from Local Storage',
         sourceDestHypervisors: {
           kvm: 'kvm'
         },
@@ -584,7 +585,7 @@ export default {
       },
       {
         name: 'shared',
-        label: 'Import QCOW image from Shared Storage',
+        label: 'Import QCOW2 image from Shared Storage',
         sourceDestHypervisors: {
           kvm: 'kvm'
         },
@@ -731,6 +732,7 @@ export default {
       showUnmanageForm: false,
       selectedUnmanagedInstance: {},
       query: {},
+      vmwareVcenterType: undefined,
       selectedVmwareVcenter: undefined
     }
   },
@@ -1409,6 +1411,9 @@ export default {
       this.unmanagedInstances = obj.response.unmanagedinstance
       this.itemCount.unmanaged = obj.response.count
       this.unmanagedInstancesLoading = false
+    },
+    updateVmwareVcenterType (type) {
+      this.vmwareVcenterType = type
     }
   }
 }
