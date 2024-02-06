@@ -38,7 +38,7 @@ public class CephObjectStoreProviderImplTest {
     @Test
     public void testGetName() {
         String name = cephObjectStoreProviderImpl.getName();
-        assertEquals("Ceph RGW", name);
+        assertEquals("Ceph", name);
     }
 
     @Test
