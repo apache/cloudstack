@@ -19,6 +19,7 @@ package com.cloud.network.vpc;
 import java.util.List;
 
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.Network;
 import com.cloud.network.dao.NetworkVO;
 
 public interface NetworkACLManager {
@@ -92,5 +93,5 @@ public interface NetworkACLManager {
 
     boolean applyACLToPrivateGw(PrivateGateway gateway) throws ResourceUnavailableException;
 
-    boolean reorderAclRules(VpcVO vpc, List<? extends NetworkACLItem> networkACLItems);
+    boolean reorderAclRules(VpcVO vpc, List<? extends Network> networks, List<? extends NetworkACLItem> networkACLItems);
 }

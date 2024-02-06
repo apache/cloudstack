@@ -990,9 +990,10 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             VpcVO vpc = _vpcDao.findById(lockedAcl.getVpcId());
             final DataCenter dc = _entityMgr.findById(DataCenter.class, vpc.getZoneId());
             final NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(dc.getId());
-            if (Objects.nonNull(nsxProvider)) {
+            List<NetworkVO> networks = _networkDao.listByAclId(lockedAcl.getId());
+            if (Objects.nonNull(nsxProvider) && !networks.isEmpty()) {
                 allAclRules = getAllAclRulesSortedByNumber(lockedAcl.getId());
-                _networkAclMgr.reorderAclRules(vpc, allAclRules);
+                _networkAclMgr.reorderAclRules(vpc, networks, allAclRules);
             }
             return networkACLItem;
         } finally {

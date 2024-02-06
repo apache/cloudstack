@@ -21,7 +21,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import com.cloud.network.nsx.NsxProvider;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
@@ -371,12 +370,12 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     }
 
     @Override
-    public boolean reorderAclRules(VpcVO vpc, List<? extends NetworkACLItem> networkACLItems) {
+    public boolean reorderAclRules(VpcVO vpc, List<? extends Network> networks, List<? extends NetworkACLItem> networkACLItems) {
         List<NetworkACLServiceProvider> nsxElements = new ArrayList<>();
         nsxElements.add((NetworkACLServiceProvider) _ntwkModel.getElementImplementingProvider(Network.Provider.Nsx.getName()));
         try {
             for (final NetworkACLServiceProvider provider : nsxElements) {
-                return provider.reorderAclRules(networkACLItems);
+                return provider.reorderAclRules(vpc, networks, networkACLItems);
             }
         } catch (final Exception ex) {
             s_logger.debug("Failed to reorder ACLs on NSX due to: " + ex.getLocalizedMessage());

@@ -701,7 +701,7 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
     }
 
     @Override
-    public boolean reorderAclRules(Vpc vpc, List<? extends NetworkACLItem> networkACLItems) {
+    public boolean reorderAclRules(Vpc vpc, List<? extends Network> networks, List<? extends NetworkACLItem> networkACLItems) {
         return true;
     }
 

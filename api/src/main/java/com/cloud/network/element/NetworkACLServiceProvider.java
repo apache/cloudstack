@@ -33,6 +33,6 @@ public interface NetworkACLServiceProvider extends NetworkElement {
      */
     boolean applyNetworkACLs(Network config, List<? extends NetworkACLItem> rules) throws ResourceUnavailableException;
 
-    boolean reorderAclRules(Vpc vpc, List<? extends NetworkACLItem> networkACLItems);
+    boolean reorderAclRules(Vpc vpc, List<? extends Network> networks, List<? extends NetworkACLItem> networkACLItems);
 
 }

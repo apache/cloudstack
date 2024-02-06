@@ -66,7 +66,6 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.network.vpc.NetworkACLItem;
-import com.cloud.network.vpc.NetworkACLItemVO;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.network.vpc.Vpc;
@@ -90,9 +89,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.VMInstanceDao;
 import net.sf.ehcache.config.InvalidConfigurationException;
-import org.apache.cloudstack.NsxAnswer;
 import org.apache.cloudstack.StartupNsxCommand;
-import org.apache.cloudstack.agent.api.DeleteNsxDistributedFirewallRulesCommand;
 import org.apache.cloudstack.api.command.admin.internallb.ConfigureInternalLoadBalancerElementCmd;
 import org.apache.cloudstack.api.command.admin.internallb.CreateInternalLoadBalancerElementCmd;
 import org.apache.cloudstack.api.command.admin.internallb.ListInternalLoadBalancerElementsCmd;
@@ -709,17 +706,22 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
     }
 
     @Override
-    public boolean reorderAclRules(Vpc vpc, List<? extends NetworkACLItem> networkACLItems) {
+    public boolean reorderAclRules(Vpc vpc, List<? extends Network> networks, List<? extends NetworkACLItem> networkACLItems) {
         List<NsxNetworkRule> aclRulesList = new ArrayList<>();
         for (NetworkACLItem rule : networkACLItems) {
             String privatePort = getPrivatePortRangeForACLRule(rule);
             aclRulesList.add(getNsxNetworkRuleForAcl(rule, privatePort));
         }
-        DeleteNsxDistributedFirewallRulesCommand command = new DeleteNsxDistributedFirewallRulesCommand(vpc.getDomainId(),
-                vpc.getAccountId(), vpc.getZoneId(), vpc.getId(), network.getId(), netRules);
-        NsxAnswer result = nsxControllerUtils.sendNsxCommand(command, network.getDataCenterId());
-        return result.getResult();
-        return true;
+        for (Network network: networks) {
+            nsxService.deleteFirewallRules(network, aclRulesList);
+        }
+        boolean success = true;
+        for (Network network : networks) {
+            for (NsxNetworkRule aclRule : aclRulesList) {
+                success = success && nsxService.addFirewallRules(network, List.of(aclRule));
+            }
+        }
+        return success;
     }
 
     private NsxNetworkRule getNsxNetworkRuleForAcl(NetworkACLItem rule, String privatePort) {
