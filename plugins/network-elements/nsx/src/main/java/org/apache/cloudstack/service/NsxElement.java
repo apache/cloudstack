@@ -66,6 +66,7 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.network.vpc.NetworkACLItem;
+import com.cloud.network.vpc.NetworkACLItemVO;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.network.vpc.Vpc;
@@ -89,7 +90,13 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.VMInstanceDao;
 import net.sf.ehcache.config.InvalidConfigurationException;
+import org.apache.cloudstack.NsxAnswer;
 import org.apache.cloudstack.StartupNsxCommand;
+import org.apache.cloudstack.agent.api.DeleteNsxDistributedFirewallRulesCommand;
+import org.apache.cloudstack.api.command.admin.internallb.ConfigureInternalLoadBalancerElementCmd;
+import org.apache.cloudstack.api.command.admin.internallb.CreateInternalLoadBalancerElementCmd;
+import org.apache.cloudstack.api.command.admin.internallb.ListInternalLoadBalancerElementsCmd;
+import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 import org.apache.cloudstack.resource.NsxLoadBalancerMember;
 import org.apache.cloudstack.resource.NsxNetworkRule;
 import org.apache.cloudstack.resource.NsxOpObject;
@@ -684,18 +691,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
         List<NsxNetworkRule> nsxDelNetworkRules = new ArrayList<>();
         for (NetworkACLItem rule : rules) {
             String privatePort = getPrivatePortRangeForACLRule(rule);
-            NsxNetworkRule networkRule = new NsxNetworkRule.Builder()
-                    .setRuleId(rule.getId())
-                    .setSourceCidrList(Objects.nonNull(rule.getSourceCidrList()) ? transformCidrListValues(rule.getSourceCidrList()) : List.of("ANY"))
-                    .setAclAction(transformActionValue(rule.getAction()))
-                    .setTrafficType(rule.getTrafficType().toString())
-                    .setProtocol(rule.getProtocol().toUpperCase())
-                    .setPublicPort(String.valueOf(rule.getSourcePortStart()))
-                    .setPrivatePort(privatePort)
-                    .setIcmpCode(rule.getIcmpCode())
-                    .setIcmpType(rule.getIcmpType())
-                    .setService(Network.Service.NetworkACL)
-                    .build();
+            NsxNetworkRule networkRule = getNsxNetworkRuleForAcl(rule, privatePort);
             if (Arrays.asList(NetworkACLItem.State.Active, NetworkACLItem.State.Add).contains(rule.getState())) {
                 nsxAddNetworkRules.add(networkRule);
             } else if (NetworkACLItem.State.Revoke == rule.getState()) {
@@ -710,6 +706,35 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
             }
         }
         return success && nsxService.addFirewallRules(network, nsxAddNetworkRules);
+    }
+
+    @Override
+    public boolean reorderAclRules(Vpc vpc, List<? extends NetworkACLItem> networkACLItems) {
+        List<NsxNetworkRule> aclRulesList = new ArrayList<>();
+        for (NetworkACLItem rule : networkACLItems) {
+            String privatePort = getPrivatePortRangeForACLRule(rule);
+            aclRulesList.add(getNsxNetworkRuleForAcl(rule, privatePort));
+        }
+        DeleteNsxDistributedFirewallRulesCommand command = new DeleteNsxDistributedFirewallRulesCommand(vpc.getDomainId(),
+                vpc.getAccountId(), vpc.getZoneId(), vpc.getId(), network.getId(), netRules);
+        NsxAnswer result = nsxControllerUtils.sendNsxCommand(command, network.getDataCenterId());
+        return result.getResult();
+        return true;
+    }
+
+    private NsxNetworkRule getNsxNetworkRuleForAcl(NetworkACLItem rule, String privatePort) {
+        return new NsxNetworkRule.Builder()
+                .setRuleId(rule.getId())
+                .setSourceCidrList(Objects.nonNull(rule.getSourceCidrList()) ? transformCidrListValues(rule.getSourceCidrList()) : List.of("ANY"))
+                .setAclAction(transformActionValue(rule.getAction()))
+                .setTrafficType(rule.getTrafficType().toString())
+                .setProtocol(rule.getProtocol().toUpperCase())
+                .setPublicPort(String.valueOf(rule.getSourcePortStart()))
+                .setPrivatePort(privatePort)
+                .setIcmpCode(rule.getIcmpCode())
+                .setIcmpType(rule.getIcmpType())
+                .setService(Network.Service.NetworkACL)
+                .build();
     }
 
     @Override

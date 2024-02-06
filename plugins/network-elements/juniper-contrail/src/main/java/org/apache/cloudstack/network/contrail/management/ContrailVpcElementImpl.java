@@ -186,6 +186,11 @@ public class ContrailVpcElementImpl extends ContrailElementImpl implements Netwo
     }
 
     @Override
+    public boolean reorderAclRules(Vpc vpc, List<? extends NetworkACLItem> networkACLItems) {
+        return true;
+    }
+
+    @Override
     public boolean applyACLItemsToPrivateGw(PrivateGateway privateGateway,
             List<? extends NetworkACLItem> rules)
                     throws ResourceUnavailableException {
