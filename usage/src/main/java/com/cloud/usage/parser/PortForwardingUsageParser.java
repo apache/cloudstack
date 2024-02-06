@@ -149,8 +149,8 @@ public class PortForwardingUsageParser {
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug(String.format("Creating usage record for port forwarding rule [%s], usage [%s], startDate [%s], and endDate [%s], for account [%s].",
-                    pfId, usageDisplay, DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageTimeZone(), startDate),
-                    DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageTimeZone(), endDate), account.getId()));
+                    pfId, usageDisplay, DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), startDate),
+                    DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), endDate), account.getId()));
         }
 
         // Create the usage record

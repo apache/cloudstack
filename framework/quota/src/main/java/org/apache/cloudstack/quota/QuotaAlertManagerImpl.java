@@ -161,7 +161,7 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
                 }
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("checkAndSendQuotaAlertEmails: Check id=" + account.getId() + " bal=" + accountBalance + ", alertDate=" +
-                            DateUtil.displayDateInTimezone(QuotaManagerImpl.getUsageTimeZone(), alertDate) + ", lockable=" + lockable);
+                            DateUtil.displayDateInTimezone(QuotaManagerImpl.getUsageAggregationTimeZone(), alertDate) + ", lockable=" + lockable);
                 }
                 if (accountBalance.compareTo(zeroBalance) < 0) {
                     if (_lockAccountEnforcement && (lockable == 1)) {

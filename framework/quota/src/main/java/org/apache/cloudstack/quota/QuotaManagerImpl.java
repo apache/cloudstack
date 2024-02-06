@@ -87,7 +87,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     @Inject
     protected PresetVariableHelper presetVariableHelper;
 
-    private static TimeZone usageTimeZone = TimeZone.getTimeZone("GMT");
+    private static TimeZone usageAggregationTimeZone = TimeZone.getTimeZone("GMT");
     static final BigDecimal GiB_DECIMAL = BigDecimal.valueOf(ByteScaleUtils.GiB);
     List<Account.Type> lockablesAccountTypes = Arrays.asList(Account.Type.NORMAL, Account.Type.DOMAIN_ADMIN);
 
@@ -113,14 +113,14 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             mergeConfigs(configs, params);
         }
 
-        String timeZoneStr = ObjectUtils.defaultIfNull(configs.get("usage.aggregation.timezone"), "GMT");
-        usageTimeZone = TimeZone.getTimeZone(timeZoneStr);
+        String aggregationTimeZoneStr = ObjectUtils.defaultIfNull(configs.get("usage.aggregation.timezone"), "GMT");
+        usageAggregationTimeZone = TimeZone.getTimeZone(aggregationTimeZoneStr);
 
         return true;
     }
 
-    public static TimeZone getUsageTimeZone() {
-        return usageTimeZone;
+    public static TimeZone getUsageAggregationTimeZone() {
+        return usageAggregationTimeZone;
     }
 
     @Override
@@ -152,8 +152,8 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         Date endDate = firstQuotaUsage.getStartDate();
 
         s_logger.info(String.format("Processing quota balance for account [%s] between [%s] and [%s].", accountToString,
-                DateUtil.displayDateInTimezone(usageTimeZone, startDate),
-                DateUtil.displayDateInTimezone(usageTimeZone, accountQuotaUsages.get(accountQuotaUsages.size() - 1).getEndDate())));
+                DateUtil.displayDateInTimezone(usageAggregationTimeZone, startDate),
+                DateUtil.displayDateInTimezone(usageAggregationTimeZone, accountQuotaUsages.get(accountQuotaUsages.size() - 1).getEndDate())));
 
         BigDecimal aggregatedUsage = BigDecimal.ZERO;
         long accountId = accountVo.getAccountId();
@@ -241,19 +241,19 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     protected BigDecimal aggregateCreditBetweenDates(Long accountId, Long domainId, Date startDate, Date endDate, String accountToString) {
         List<QuotaBalanceVO> creditsReceived = _quotaBalanceDao.findCreditBalance(accountId, domainId, startDate, endDate);
         s_logger.debug(String.format("Account [%s] has [%s] credit entries before [%s].", accountToString, creditsReceived.size(),
-                DateUtil.displayDateInTimezone(usageTimeZone, endDate)));
+                DateUtil.displayDateInTimezone(usageAggregationTimeZone, endDate)));
 
         BigDecimal aggregatedUsage = BigDecimal.ZERO;
 
         s_logger.debug(String.format("Aggregating the account [%s] credit entries before [%s].", accountToString,
-                DateUtil.displayDateInTimezone(usageTimeZone, endDate)));
+                DateUtil.displayDateInTimezone(usageAggregationTimeZone, endDate)));
 
         for (QuotaBalanceVO credit : creditsReceived) {
             aggregatedUsage = aggregatedUsage.add(credit.getCreditBalance());
         }
 
         s_logger.debug(String.format("The aggregation of the account [%s] credit entries before [%s] resulted in the value [%s].",
-                accountToString, DateUtil.displayDateInTimezone(usageTimeZone, endDate), aggregatedUsage));
+                accountToString, DateUtil.displayDateInTimezone(usageAggregationTimeZone, endDate), aggregatedUsage));
 
         return aggregatedUsage;
     }
@@ -337,7 +337,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     protected boolean shouldCalculateUsageRecord(AccountVO accountVO, UsageVO usageRecord) {
         if (Boolean.FALSE.equals(QuotaConfig.QuotaAccountEnabled.valueIn(accountVO.getAccountId()))) {
             s_logger.debug(String.format("Considering usage record [%s] as calculated and skipping it because account [%s] has the quota plugin disabled.",
-                    usageRecord.toString(usageTimeZone), accountVO.reflectionToString()));
+                    usageRecord.toString(usageAggregationTimeZone), accountVO.reflectionToString()));
             return false;
         }
         return true;
@@ -363,7 +363,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
 
     protected BigDecimal aggregateQuotaTariffsValues(UsageVO usageRecord, List<QuotaTariffVO> quotaTariffs, boolean hasAnyQuotaTariffWithActivationRule,
             JsInterpreter jsInterpreter, String accountToString) {
-        String usageRecordToString = usageRecord.toString(usageTimeZone);
+        String usageRecordToString = usageRecord.toString(usageAggregationTimeZone);
         s_logger.debug(String.format("Validating usage record [%s] for %s against [%s] quota tariffs.", usageRecordToString, accountToString, quotaTariffs.size()));
 
         PresetVariables presetVariables = getPresetVariables(hasAnyQuotaTariffWithActivationRule, usageRecord);
@@ -402,7 +402,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     protected BigDecimal getQuotaTariffValueToBeApplied(QuotaTariffVO quotaTariff, JsInterpreter jsInterpreter, PresetVariables presetVariables) {
         String activationRule = quotaTariff.getActivationRule();
         BigDecimal quotaTariffValue = quotaTariff.getCurrencyValue();
-        String quotaTariffToString = quotaTariff.toString(usageTimeZone);
+        String quotaTariffToString = quotaTariff.toString(usageAggregationTimeZone);
 
         if (StringUtils.isEmpty(activationRule)) {
             s_logger.debug(String.format("Quota tariff [%s] does not have an activation rule, therefore we will use the quota tariff value [%s] in the calculation.",
@@ -465,10 +465,10 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
 
         if ((quotaTariffEndDate != null && usageRecordStartDate.after(quotaTariffEndDate)) || usageRecordEndDate.before(quotaTariffStartDate)) {
             s_logger.debug(String.format("Not applying quota tariff [%s] in usage record [%s] of %s due to it is out of the period to be applied. Period of the usage"
-                            + " record [startDate: %s, endDate: %s], period of the quota tariff [startDate: %s, endDate: %s].", quotaTariff.toString(usageTimeZone),
-                    usageRecord.toString(usageTimeZone), accountToString, DateUtil.displayDateInTimezone(usageTimeZone, usageRecordStartDate),
-                    DateUtil.displayDateInTimezone(usageTimeZone, usageRecordEndDate), DateUtil.displayDateInTimezone(usageTimeZone, quotaTariffStartDate),
-                    DateUtil.displayDateInTimezone(usageTimeZone, quotaTariffEndDate)));
+                            + " record [startDate: %s, endDate: %s], period of the quota tariff [startDate: %s, endDate: %s].", quotaTariff.toString(usageAggregationTimeZone),
+                    usageRecord.toString(usageAggregationTimeZone), accountToString, DateUtil.displayDateInTimezone(usageAggregationTimeZone, usageRecordStartDate),
+                    DateUtil.displayDateInTimezone(usageAggregationTimeZone, usageRecordEndDate), DateUtil.displayDateInTimezone(usageAggregationTimeZone, quotaTariffStartDate),
+                    DateUtil.displayDateInTimezone(usageAggregationTimeZone, quotaTariffEndDate)));
 
             return false;
         }
@@ -494,7 +494,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     }
 
     protected QuotaUsageVO createQuotaUsageAccordingToUsageUnit(UsageVO usageRecord, BigDecimal aggregatedQuotaTariffsValue, String accountToString) {
-        String usageRecordToString = usageRecord.toString(usageTimeZone);
+        String usageRecordToString = usageRecord.toString(usageAggregationTimeZone);
 
         if (aggregatedQuotaTariffsValue.equals(BigDecimal.ZERO)) {
             s_logger.debug(String.format("No tariffs were applied to usage record [%s] of %s or they resulted in 0; We will only mark the usage record as calculated.",

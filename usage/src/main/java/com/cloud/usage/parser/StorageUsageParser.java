@@ -162,8 +162,8 @@ public class StorageUsageParser {
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug(String.format("Creating Storage usage record for type [%s], with id [%s], usage [%s], startDate [%s], and endDate [%s], for account [%s].",
-                    type, storageId, usageDisplay, DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageTimeZone(), startDate),
-                    DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageTimeZone(), endDate), account.getId()));
+                    type, storageId, usageDisplay, DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), startDate),
+                    DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), endDate), account.getId()));
         }
 
         String usageDesc = "";

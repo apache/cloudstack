@@ -156,8 +156,8 @@ public class VolumeUsageParser {
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug(String.format("Creating Volume usage record for vol [%s], usage [%s], startDate [%s], and endDate [%s], for account [%s].",
-                    volId, usageDisplay, DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageTimeZone(), startDate),
-                    DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageTimeZone(), endDate), account.getId()));
+                    volId, usageDisplay, DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), startDate),
+                    DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), endDate), account.getId()));
         }
 
         // Create the usage record

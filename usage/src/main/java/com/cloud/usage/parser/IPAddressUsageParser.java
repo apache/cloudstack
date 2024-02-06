@@ -152,8 +152,8 @@ public class IPAddressUsageParser {
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug(String.format("Creating IP usage record with id [%s], usage [%s], startDate [%s], and endDate [%s], for account [%s].",
-                    ipId, usageDisplay, DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageTimeZone(), startDate),
-                    DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageTimeZone(), endDate), account.getId()));
+                    ipId, usageDisplay, DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), startDate),
+                    DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), endDate), account.getId()));
         }
 
         String usageDesc = "IPAddress: " + ipAddress;

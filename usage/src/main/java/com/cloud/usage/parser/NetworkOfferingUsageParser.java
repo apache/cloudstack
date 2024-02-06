@@ -151,8 +151,8 @@ public class NetworkOfferingUsageParser {
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug(String.format("Creating network offering usage record for id [%s], vm [%s], usage [%s], startDate [%s], and endDate [%s], for account [%s].",
-                    noId, vmId, usageDisplay, DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageTimeZone(), startDate),
-                    DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageTimeZone(), endDate), account.getId()));
+                    noId, vmId, usageDisplay, DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), startDate),
+                    DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), endDate), account.getId()));
         }
 
         // Create the usage record

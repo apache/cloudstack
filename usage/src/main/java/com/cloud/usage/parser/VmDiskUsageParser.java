@@ -112,8 +112,8 @@ public class VmDiskUsageParser {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug(String.format("Creating vm disk usage record, io read [%s], io write [%s], bytes read [%s], bytes write [%s], startDate [%s], and endDate [%s], " +
                                     "for account [%s] in availability zone [%s].", toHumanReadableSize(ioRead), toHumanReadableSize(ioWrite), toHumanReadableSize(bytesRead),
-                            toHumanReadableSize(bytesWrite), DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageTimeZone(), startDate),
-                            DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageTimeZone(), endDate), account.getId(), vmDiskInfo.getZoneId()));
+                            toHumanReadableSize(bytesWrite), DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), startDate),
+                            DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), endDate), account.getId(), vmDiskInfo.getZoneId()));
                 }
 
                 Long vmId = null;
