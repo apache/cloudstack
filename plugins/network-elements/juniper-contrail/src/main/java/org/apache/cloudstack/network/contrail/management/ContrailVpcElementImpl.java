@@ -186,7 +186,7 @@ public class ContrailVpcElementImpl extends ContrailElementImpl implements Netwo
     }
 
     @Override
-    public boolean reorderAclRules(Vpc vpc, List<? extends NetworkACLItem> networkACLItems) {
+    public boolean reorderAclRules(Vpc vpc, List<? extends Network> networks, List<? extends NetworkACLItem> networkACLItems) {
         return true;
     }
 
