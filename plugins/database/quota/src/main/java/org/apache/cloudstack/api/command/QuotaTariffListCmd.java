@@ -51,14 +51,14 @@ public class QuotaTariffListCmd extends BaseListCmd {
     private Date effectiveDate;
 
     @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "The end date of the quota tariff. " +
-            ApiConstants.PARAMETER_DESCRIPTION_END_DATE_POSSIBLE_FORMATS)
+            ApiConstants.PARAMETER_DESCRIPTION_END_DATE_POSSIBLE_FORMATS, since = "4.18.0.0")
     private Date endDate;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the quota tariff.")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the quota tariff.", since = "4.18.0.0")
     private String name;
 
     @Parameter(name = ApiConstants.LIST_ALL, type = CommandType.BOOLEAN, description = "False will list only not removed quota tariffs. If set to true, we will "
-            + "list all, including the removed ones. The default is false.")
+            + "list all, including the removed ones. The default is false.", since = "4.18.0.0")
     private boolean listAll = false;
 
     public QuotaTariffListCmd() {
