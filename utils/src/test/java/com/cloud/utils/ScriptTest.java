@@ -52,7 +52,7 @@ public class ScriptTest {
     public void testLogger() {
         Assume.assumeTrue(SystemUtils.IS_OS_LINUX);
         Logger mock = Mockito.mock(Logger.class);
-        Mockito.doNothing().when(mock).debug(ArgumentMatchers.any());
+        Mockito.doNothing().when(mock).debug((Message) ArgumentMatchers.any());
         Script script = new Script("/bin/echo", mock);
         script.execute();
     }
@@ -81,7 +81,7 @@ public class ScriptTest {
     public void testExecute() {
         Assume.assumeTrue(SystemUtils.IS_OS_LINUX);
         Logger mock = Mockito.mock(Logger.class);
-        Mockito.doNothing().when(mock).debug(ArgumentMatchers.any());
+        Mockito.doNothing().when(mock).debug((Message) ArgumentMatchers.any());
         for (int i = 0; i < 100000; i++) {
             Script script = new Script("/bin/false", mock);
             script.execute();
