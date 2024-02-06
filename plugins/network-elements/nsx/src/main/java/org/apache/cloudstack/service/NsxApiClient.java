@@ -100,6 +100,7 @@ import static org.apache.cloudstack.utils.NsxControllerUtils.getServiceEntryName
 import static org.apache.cloudstack.utils.NsxControllerUtils.getLoadBalancerName;
 import static org.apache.cloudstack.utils.NsxControllerUtils.getLoadBalancerAlgorithm;
 import static org.apache.cloudstack.utils.NsxControllerUtils.getActiveMonitorProfileName;
+import static org.apache.cloudstack.utils.NsxControllerUtils.getTier1GatewayName;
 
 public class NsxApiClient {
 
@@ -429,6 +430,10 @@ public class NsxApiClient {
     public void deleteSegment(long zoneId, long domainId, long accountId, Long vpcId, long networkId, String segmentName) {
         try {
             removeSegmentDistributedFirewallRules(segmentName);
+            if (Objects.isNull(vpcId)) {
+                String t1GatewayName = getTier1GatewayName(domainId, accountId, zoneId, networkId, false);
+                deleteLoadBalancer(getLoadBalancerName(t1GatewayName));
+            }
             removeSegment(segmentName);
             DhcpRelayConfigs dhcpRelayConfig = (DhcpRelayConfigs) nsxService.apply(DhcpRelayConfigs.class);
             String dhcpRelayConfigId = NsxControllerUtils.getNsxDhcpRelayConfigId(zoneId, domainId, accountId, vpcId, networkId);
@@ -445,25 +450,54 @@ public class NsxApiClient {
     protected void removeSegment(String segmentName) {
         LOGGER.debug(String.format("Removing the segment with ID %s", segmentName));
         Segments segmentService = (Segments) nsxService.apply(Segments.class);
-        Segment segment = segmentService.get(segmentName);
-        if (segment == null) {
-            LOGGER.error(String.format("The segment with ID %s is not found, skipping removal", segmentName));
+        String errMsg = String.format("The segment with ID %s is not found, skipping removal", segmentName);
+        try {
+            Segment segment = segmentService.get(segmentName);
+            if (segment == null) {
+                LOGGER.warn(errMsg);
+                return;
+            }
+        } catch (Exception e) {
+            LOGGER.warn(errMsg);
             return;
         }
         String siteId = getDefaultSiteId();
         String enforcementPointPath = getDefaultEnforcementPointPath(siteId);
         SegmentPorts segmentPortsService = (SegmentPorts) nsxService.apply(SegmentPorts.class);
-        PolicyGroupMembersListResult segmentPortsList = segmentPortsService.list(DEFAULT_DOMAIN, segmentName, null, enforcementPointPath,
-                false, null, 50L, false, null);
-        if (segmentPortsList.getResultCount() == 0L) {
+        PolicyGroupMembersListResult segmentPortsList = getSegmentPortList(segmentPortsService, segmentName, enforcementPointPath);
+        Long portCount = segmentPortsList.getResultCount();
+        portCount = retrySegmentDeletion(segmentPortsService, portCount, segmentName, enforcementPointPath);
+        LOGGER.info("Port count: " + portCount);
+        if (portCount == 0L) {
             LOGGER.debug(String.format("Removing the segment with ID %s", segmentName));
             removeGroupForSegment(segmentName);
             segmentService.delete(segmentName);
         } else {
-            String msg = String.format("Cannot remove the NSX segment %s because there are still %s port group(s) attached to it", segmentName, segmentPortsList.getResultCount());
+            String msg = String.format("Cannot remove the NSX segment %s because there are still %s port group(s) attached to it", segmentName, portCount);
             LOGGER.debug(msg);
             throw new CloudRuntimeException(msg);
         }
+    }
+
+    private PolicyGroupMembersListResult getSegmentPortList(SegmentPorts segmentPortsService, String segmentName, String enforcementPointPath) {
+        return segmentPortsService.list(DEFAULT_DOMAIN, segmentName, null, enforcementPointPath,
+                false, null, 50L, false, null);
+    }
+
+    private Long retrySegmentDeletion(SegmentPorts segmentPortsService, Long portCount, String segmentName, String enforcementPointPath) {
+        int retries = 20;
+        int count = 1;
+        do {
+            try {
+                LOGGER.info("Waiting for all port groups to be unlinked from the segment - Attempt: " + count++ + " Waiting for 5 secs");
+                Thread.sleep(5000);
+                portCount = getSegmentPortList(segmentPortsService, segmentName, enforcementPointPath).getResultCount();
+                retries--;
+            } catch (InterruptedException e) {
+                throw new CloudRuntimeException(String.format("Unable to delete segment %s due to: %s", segmentName, e.getLocalizedMessage()));
+            }
+        } while (retries > 0 && portCount > 0);
+        return portCount;
     }
 
     public void createStaticNatRule(String vpcName, String tier1GatewayName,
@@ -684,8 +718,7 @@ public class NsxApiClient {
             LBPoolListResult lbPoolListResult = lbPools.list(null, null, null, null, null, null);
             if (CollectionUtils.isEmpty(lbVsListResult.getResults()) && CollectionUtils.isEmpty(lbPoolListResult.getResults())) {
                 String lbName = getLoadBalancerName(tier1GatewayName);
-                LbServices lbServices = (LbServices) nsxService.apply(LbServices.class);
-                lbServices.delete(lbName, true);
+                deleteLoadBalancer(lbName);
             }
 
         } catch (Error error) {
@@ -694,6 +727,11 @@ public class NsxApiClient {
             LOGGER.error(msg);
             throw new CloudRuntimeException(msg);
         }
+    }
+
+    public void deleteLoadBalancer(String lbName) {
+        LbServices lbServices = (LbServices) nsxService.apply(LbServices.class);
+        lbServices.delete(lbName, true);
     }
 
     private String getLbPoolPath(String lbPoolName) {

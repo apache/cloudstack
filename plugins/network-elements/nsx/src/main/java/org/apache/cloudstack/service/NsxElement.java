@@ -44,6 +44,7 @@ import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
+import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
@@ -51,7 +52,9 @@ import com.cloud.network.dao.LoadBalancerVMMapVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.element.DhcpServiceProvider;
 import com.cloud.network.element.DnsServiceProvider;
 import com.cloud.network.element.FirewallServiceProvider;
@@ -60,9 +63,12 @@ import com.cloud.network.element.LoadBalancingServiceProvider;
 import com.cloud.network.element.NetworkACLServiceProvider;
 import com.cloud.network.element.PortForwardingServiceProvider;
 import com.cloud.network.element.StaticNatServiceProvider;
+import com.cloud.network.element.VirtualRouterElement;
+import com.cloud.network.element.VirtualRouterProviderVO;
 import com.cloud.network.element.VpcProvider;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.LoadBalancerContainer;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.network.vpc.NetworkACLItem;
@@ -82,6 +88,8 @@ import com.cloud.user.AccountManager;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.db.QueryBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -115,7 +123,7 @@ import java.util.function.LongFunction;
 @Component
 public class NsxElement extends AdapterBase implements  DhcpServiceProvider, DnsServiceProvider, VpcProvider,
         StaticNatServiceProvider, IpDeployer, PortForwardingServiceProvider, NetworkACLServiceProvider,
-        LoadBalancingServiceProvider, FirewallServiceProvider, ResourceStateAdapter, Listener {
+        LoadBalancingServiceProvider, FirewallServiceProvider, InternalLoadBalancerElementService, ResourceStateAdapter, Listener {
 
 
     @Inject
@@ -146,6 +154,10 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
     VpcDao vpcDao;
     @Inject
     LoadBalancerVMMapDao lbVmMapDao;
+    @Inject
+    VirtualRouterProviderDao vrProviderDao;
+    @Inject
+    PhysicalNetworkServiceProviderDao pNtwkSvcProviderDao;
 
     private static final Logger LOGGER = Logger.getLogger(NsxElement.class);
 
@@ -163,7 +175,16 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
         capabilities.put(Network.Service.Dns, dnsCapabilities);
 
         capabilities.put(Network.Service.StaticNat, null);
-        capabilities.put(Network.Service.Lb, null);
+
+        // Set capabilities for LB service
+        Map<Network.Capability, String> lbCapabilities = new HashMap<Network.Capability, String>();
+        lbCapabilities.put(Network.Capability.SupportedLBAlgorithms, "roundrobin,leastconn");
+        lbCapabilities.put(Network.Capability.SupportedLBIsolation, "dedicated");
+        lbCapabilities.put(Network.Capability.SupportedProtocols, "tcp, udp");
+        lbCapabilities.put(Network.Capability.SupportedStickinessMethods, VirtualRouterElement.getHAProxyStickinessCapability());
+        lbCapabilities.put(Network.Capability.LbSchemes, String.join(",", LoadBalancerContainer.Scheme.Internal.name(), LoadBalancerContainer.Scheme.Public.name()));
+
+        capabilities.put(Network.Service.Lb, lbCapabilities);
         capabilities.put(Network.Service.PortForwarding, null);
         capabilities.put(Network.Service.NetworkACL, null);
 
@@ -637,7 +658,8 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
                     .setNetworkResourceName(nsxObject.getNetworkResourceName())
                     .setVpcResource(nsxObject.isVpcResource())
                     .setMemberList(lbMembers)
-                    .setPublicIp(publicIp.getAddress().addr())
+                    .setPublicIp(LoadBalancerContainer.Scheme.Public == loadBalancingRule.getScheme() ?
+                            publicIp.getAddress().addr() : loadBalancingRule.getSourceIp().addr())
                     .setPublicPort(String.valueOf(loadBalancingRule.getSourcePortStart()))
                     .setPrivatePort(String.valueOf(loadBalancingRule.getDefaultPortStart()))
                     .setRuleId(loadBalancingRule.getId())
@@ -684,25 +706,26 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
         if (!canHandle(network, Network.Service.NetworkACL)) {
             return false;
         }
-        List<NsxNetworkRule> nsxAddNetworkRules = new ArrayList<>();
+
         List<NsxNetworkRule> nsxDelNetworkRules = new ArrayList<>();
+        boolean success = true;
         for (NetworkACLItem rule : rules) {
             String privatePort = getPrivatePortRangeForACLRule(rule);
             NsxNetworkRule networkRule = getNsxNetworkRuleForAcl(rule, privatePort);
             if (Arrays.asList(NetworkACLItem.State.Active, NetworkACLItem.State.Add).contains(rule.getState())) {
-                nsxAddNetworkRules.add(networkRule);
+                success = success && nsxService.addFirewallRules(network, List.of(networkRule));
             } else if (NetworkACLItem.State.Revoke == rule.getState()) {
                 nsxDelNetworkRules.add(networkRule);
             }
         }
-        boolean success = true;
+
         if (!nsxDelNetworkRules.isEmpty()) {
             success = nsxService.deleteFirewallRules(network, nsxDelNetworkRules);
             if (!success) {
                 LOGGER.warn("Not all firewall rules were successfully deleted");
             }
         }
-        return success && nsxService.addFirewallRules(network, nsxAddNetworkRules);
+        return success;
     }
 
     @Override
@@ -804,5 +827,75 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
             }
         }
         return list;
+    }
+
+    @Override
+    public VirtualRouterProvider configureInternalLoadBalancerElement(long id, boolean enable) {
+        VirtualRouterProviderVO element = vrProviderDao.findById(id);
+        if (element == null || element.getType() != VirtualRouterProvider.Type.Nsx) {
+            throw new InvalidParameterValueException("Can't find " + getName() + " " +
+                    "element with network service provider id " + id + " to be used as a provider for " +
+                    getName());
+        }
+
+        element.setEnabled(enable);
+        element = vrProviderDao.persist(element);
+
+        return element;
+    }
+
+    @Override
+    public VirtualRouterProvider addInternalLoadBalancerElement(long ntwkSvcProviderId) {
+        VirtualRouterProviderVO element = vrProviderDao.findByNspIdAndType(ntwkSvcProviderId, VirtualRouterProvider.Type.Nsx);
+        if (element != null) {
+            LOGGER.debug("There is already an " + getName() + " with service provider id " + ntwkSvcProviderId);
+            return null;
+        }
+
+        PhysicalNetworkServiceProvider provider = pNtwkSvcProviderDao.findById(ntwkSvcProviderId);
+        if (provider == null || !provider.getProviderName().equalsIgnoreCase(getName())) {
+            throw new InvalidParameterValueException("Invalid network service provider is specified");
+        }
+
+        element = new VirtualRouterProviderVO(ntwkSvcProviderId, VirtualRouterProvider.Type.Nsx);
+        element = vrProviderDao.persist(element);
+        return element;
+    }
+
+    @Override
+    public VirtualRouterProvider getInternalLoadBalancerElement(long id) {
+        VirtualRouterProvider provider = vrProviderDao.findById(id);
+        if (provider == null || provider.getType() != VirtualRouterProvider.Type.Nsx) {
+            throw new InvalidParameterValueException("Unable to find " + getName() + " by id");
+        }
+        return provider;
+    }
+
+    @Override
+    public List<? extends VirtualRouterProvider> searchForInternalLoadBalancerElements(Long id, Long ntwkSvsProviderId, Boolean enabled) {
+        QueryBuilder<VirtualRouterProviderVO> sc = QueryBuilder.create(VirtualRouterProviderVO.class);
+        if (id != null) {
+            sc.and(sc.entity().getId(), SearchCriteria.Op.EQ, id);
+        }
+        if (ntwkSvsProviderId != null) {
+            sc.and(sc.entity().getNspId(), SearchCriteria.Op.EQ, ntwkSvsProviderId);
+        }
+        if (enabled != null) {
+            sc.and(sc.entity().isEnabled(), SearchCriteria.Op.EQ, enabled);
+        }
+
+        //return only Internal LB elements
+        sc.and(sc.entity().getType(), SearchCriteria.Op.EQ, VirtualRouterProvider.Type.Nsx);
+
+        return sc.list();
+    }
+
+    @Override
+    public List<Class<?>> getCommands() {
+        List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        cmdList.add(CreateInternalLoadBalancerElementCmd.class);
+        cmdList.add(ConfigureInternalLoadBalancerElementCmd.class);
+        cmdList.add(ListInternalLoadBalancerElementsCmd.class);
+        return cmdList;
     }
 }

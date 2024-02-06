@@ -112,7 +112,7 @@
                 </template>
               </a-pagination>
             </a-collapse-panel>
-            <a-collapse-panel :header="$t('label.internal.lb')" key="ilb" :style="customStyle" :collapsible="!showIlb(network) ? 'disabled' : null" >
+            <a-collapse-panel :header="$t('label.internal.lb')" key="ilb" :style="customStyle" :collapsible="displayCollapsible[network.id] ? null: 'disabled'" >
               <a-button
                 type="dashed"
                 style="margin-bottom: 15px; width: 100%"
@@ -438,7 +438,8 @@ export default {
       publicLBExists: false,
       setMTU: false,
       isNsxEnabled: false,
-      isOfferingNatMode: false
+      isOfferingNatMode: false,
+      displayCollapsible: []
     }
   },
   created () {
@@ -461,8 +462,8 @@ export default {
       this.form = reactive({})
       this.rules = reactive({})
     },
-    showIlb (network) {
-      return network.service.filter(s => (s.name === 'Lb') && (s.capability.filter(c => c.name === 'LbSchemes' && c.value === 'Internal').length > 0)).length > 0 || false
+    showIlb (network, networkOffering) {
+      return ((networkOffering.supportsinternallb && network.service.filter(s => (s.name === 'Lb') && (s.capability.filter(c => c.name === 'LbSchemes' && c.value.split(',').includes('Internal')).length > 0)).length > 0)) || false
     },
     updateMtu () {
       if (this.form.privatemtu > this.privateMtuMax) {
@@ -482,6 +483,7 @@ export default {
       for (const network of this.networks) {
         this.fetchLoadBalancers(network.id)
         this.fetchVMs(network.id)
+        this.updateDisplayCollapsible(network.networkofferingid, network)
       }
       this.publicLBNetworkExists()
     },
@@ -517,6 +519,16 @@ export default {
         }).catch(e => {
           reject(e)
         })
+      })
+    },
+    updateDisplayCollapsible (offeringId, network) {
+      api('listNetworkOfferings', {
+        id: offeringId
+      }).then(json => {
+        var networkOffering = json.listnetworkofferingsresponse.networkoffering[0]
+        this.displayCollapsible[network.id] = this.showIlb(network, networkOffering)
+      }).catch(e => {
+        this.$notifyError(e)
       })
     },
     getVpcNetworkOffering () {

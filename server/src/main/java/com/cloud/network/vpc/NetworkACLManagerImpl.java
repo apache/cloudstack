@@ -206,6 +206,7 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
             final List<NetworkACLItemVO> aclItems = _networkACLItemDao.listByACL(acl.getId());
             if (aclItems == null || aclItems.isEmpty()) {
                 s_logger.debug("New network ACL is empty. Revoke existing rules before applying ACL");
+            } else {
                 if (!revokeACLItemsForNetwork(network.getId())) {
                     throw new CloudRuntimeException("Failed to replace network ACL. Error while removing existing ACL items for network: " + network.getId());
                 }

@@ -1444,6 +1444,7 @@
 "label.nsx.provider.edgecluster": "NSX provider edge cluster",
 "label.nsx.provider.tier0gateway": "NSX provider tier-0 gateway",
 "label.nsx.provider.transportzone": "NSX provider transport zone",
+"label.nsx.supports.internal.lb": "Enable NSX internal LB service",
 "label.nsx.supports.lb": "Enable NSX LB service",
 "label.num.cpu.cores": "# of CPU cores",
 "label.number": "#Rule",
