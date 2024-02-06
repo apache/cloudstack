@@ -993,14 +993,14 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             NetworkACLVO lockedAcl = _networkACLDao.acquireInLockTable(ruleBeingMoved.getAclId());
             List<NetworkACLItemVO> allAclRules = getAllAclRulesSortedByNumber(lockedAcl.getId());
             validateAclConsistency(moveNetworkAclItemCmd, lockedAcl, allAclRules);
-
+            NetworkACLItem networkACLItem = null;
             if (previousRule == null) {
-                return moveRuleToTheTop(ruleBeingMoved, allAclRules);
+                networkACLItem = moveRuleToTheTop(ruleBeingMoved, allAclRules);
+            } else if (nextRule == null) {
+                networkACLItem = moveRuleToTheBottom(ruleBeingMoved, allAclRules);
+            } else {
+                networkACLItem = moveRuleBetweenAclRules(ruleBeingMoved, allAclRules, previousRule, nextRule);
             }
-            if (nextRule == null) {
-                return moveRuleToTheBottom(ruleBeingMoved, allAclRules);
-            }
-            NetworkACLItem networkACLItem = moveRuleBetweenAclRules(ruleBeingMoved, allAclRules, previousRule, nextRule);
             VpcVO vpc = _vpcDao.findById(lockedAcl.getVpcId());
             if (Objects.isNull(vpc)) {
                 return networkACLItem;
