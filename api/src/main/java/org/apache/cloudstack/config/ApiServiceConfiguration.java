@@ -16,9 +16,9 @@
 // under the License.
 package org.apache.cloudstack.config;
 
+import com.cloud.exception.InvalidParameterValueException;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
-import com.cloud.exception.InvalidParameterValueException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -37,7 +37,7 @@ public class ApiServiceConfiguration implements Configurable {
 
     public static void validateEndpointUrl() {
         String csUrl = getApiServletPathValue();
-        if (StringUtils.isBlank(csUrl) || csUrl.contains("localhost") || csUrl.contains("127.0.0.1")) {
+        if (StringUtils.isBlank(csUrl) || StringUtils.containsAny(csUrl, "localhost", "127.0.0.1")) {
             LOGGER.error(String.format("Global setting %s cannot contain localhost or be blank. Current value: %s", ApiServletPath.key(), csUrl));
             throw new InvalidParameterValueException("Unable to complete this operation. Contact your cloud admin.");
         }
