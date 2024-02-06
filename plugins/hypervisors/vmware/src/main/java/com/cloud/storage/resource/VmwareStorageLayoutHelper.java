@@ -218,7 +218,10 @@ public class VmwareStorageLayoutHelper implements Configurable {
     }
 
     public static void syncVolumeToRootFolder(DatacenterMO dcMo, DatastoreMO ds, String vmdkName, String vmName, String excludeFolders) throws Exception {
-        String fileDsFullPath = ds.searchFileInSubFolders(vmdkName + ".vmdk", false, excludeFolders);
+        String fileDsFullPath = ds.searchFileInSubFolders(String.format("%s/%s.vmdk", vmName, vmdkName), false, excludeFolders);
+        if (fileDsFullPath == null) {
+            fileDsFullPath = ds.searchFileInSubFolders(vmdkName + ".vmdk", false, excludeFolders);
+        }
         if (fileDsFullPath == null)
             return;
 
@@ -407,6 +410,22 @@ public class VmwareStorageLayoutHelper implements Configurable {
 
     public static String getVmwareDatastorePathFromVmdkFileName(DatastoreMO dsMo, String vmName, String vmdkFileName) throws Exception {
         return String.format("[%s] %s/%s", dsMo.getName(), vmName, vmdkFileName);
+    }
+
+    public static String getDatastoreVolumePath(DatastoreMO dsMo, String vmName, String volumePath) throws Exception {
+        String datastoreVolumePath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(dsMo, vmName, volumePath + ".vmdk");
+        if (dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmName) && dsMo.fileExists(datastoreVolumePath)) {
+            return datastoreVolumePath;
+        }
+        datastoreVolumePath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(dsMo, volumePath, volumePath + ".vmdk");
+        if (dsMo.folderExists(String.format("[%s]", dsMo.getName()), volumePath) && dsMo.fileExists(datastoreVolumePath)) {
+            return datastoreVolumePath;
+        }
+        datastoreVolumePath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(dsMo, volumePath + ".vmdk");
+        if (dsMo.fileExists(datastoreVolumePath)) {
+            return datastoreVolumePath;
+        }
+        return dsMo.searchFileInSubFolders(volumePath + ".vmdk", false, null);
     }
 
     @Override

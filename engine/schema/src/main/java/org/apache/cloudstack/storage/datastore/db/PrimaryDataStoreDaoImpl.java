@@ -31,6 +31,7 @@ import org.apache.commons.collections.CollectionUtils;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolTagVO;
@@ -619,7 +620,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     }
 
     @Override
-    public List<StoragePoolVO> findPoolsByStorageType(String storageType) {
+    public List<StoragePoolVO> findPoolsByStorageType(Storage.StoragePoolType storageType) {
         SearchCriteria<StoragePoolVO> sc = AllFieldSearch.create();
         sc.setParameters("poolType", storageType);
         return listBy(sc);

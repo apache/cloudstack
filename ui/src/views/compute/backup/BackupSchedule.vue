@@ -41,6 +41,9 @@
             </span>
           </label>
         </template>
+        <template v-if="column.key === 'intervaltype'" :name="text">
+          <label>{{ record.intervaltype }}</label>
+        </template>
         <template v-if="column.key === 'time'" :name="text">
           <label class="interval-content">
             <span v-if="record.intervaltype==='HOURLY'">{{ record.schedule + ' ' + $t('label.min.past.hour') }}</span>
@@ -115,7 +118,10 @@ export default {
           width: 30
         },
         {
-          key: 'time',
+          title: this.$t('label.intervaltype'),
+          dataIndex: 'intervaltype'
+        },
+        {
           title: this.$t('label.time'),
           dataIndex: 'schedule'
         },

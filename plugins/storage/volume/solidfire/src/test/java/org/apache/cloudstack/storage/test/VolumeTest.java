@@ -27,7 +27,7 @@ import javax.inject.Inject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -108,7 +108,7 @@ public class VolumeTest {
         List<HostVO> results = new ArrayList<HostVO>();
         results.add(host);
         Mockito.when(hostDao.listAll()).thenReturn(results);
-        Mockito.when(hostDao.findHypervisorHostInCluster(Matchers.anyLong())).thenReturn(results);
+        Mockito.when(hostDao.findHypervisorHostInCluster(ArgumentMatchers.anyLong())).thenReturn(results);
         // CreateObjectAnswer createVolumeFromImageAnswer = new
         // CreateObjectAnswer(null,UUID.randomUUID().toString(), null);
 

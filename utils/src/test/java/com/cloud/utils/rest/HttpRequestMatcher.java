@@ -19,7 +19,7 @@
 
 package com.cloud.utils.rest;
 
-import static org.mockito.Matchers.argThat;
+import static org.mockito.ArgumentMatchers.argThat;
 
 import java.io.IOException;
 

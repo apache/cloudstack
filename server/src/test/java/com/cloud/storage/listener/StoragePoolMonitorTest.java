@@ -21,6 +21,7 @@ import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManagerImpl;
 import com.cloud.storage.StoragePoolStatus;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -53,6 +54,7 @@ public class StoragePoolMonitorTest {
         pool.setScope(ScopeType.CLUSTER);
         pool.setStatus(StoragePoolStatus.Up);
         pool.setId(123L);
+        pool.setPoolType(Storage.StoragePoolType.Filesystem);
         cmd = new StartupRoutingCommand();
         cmd.setHypervisorType(Hypervisor.HypervisorType.KVM);
     }

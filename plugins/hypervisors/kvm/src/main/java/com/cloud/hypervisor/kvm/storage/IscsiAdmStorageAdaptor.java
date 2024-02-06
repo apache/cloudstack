@@ -36,7 +36,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 
-@StorageAdaptorInfo(storagePoolType=StoragePoolType.Iscsi)
 public class IscsiAdmStorageAdaptor implements StorageAdaptor {
     private static final Logger s_logger = Logger.getLogger(IscsiAdmStorageAdaptor.class);
 
@@ -49,6 +48,11 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
         MapStorageUuidToStoragePool.put(uuid, storagePool);
 
         return storagePool;
+    }
+
+    @Override
+    public StoragePoolType getStoragePoolType() {
+        return StoragePoolType.Iscsi;
     }
 
     @Override

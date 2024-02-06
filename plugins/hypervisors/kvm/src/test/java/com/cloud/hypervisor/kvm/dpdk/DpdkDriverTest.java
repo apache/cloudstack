@@ -24,7 +24,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -51,7 +51,7 @@ public class DpdkDriverTest {
     public void initMocks() {
         closeable = MockitoAnnotations.openMocks(this);
         scriptMockedStatic = Mockito.mockStatic(Script.class);
-        Mockito.when(Script.runSimpleBashScript(Matchers.anyString())).thenReturn(null);
+        Mockito.when(Script.runSimpleBashScript(ArgumentMatchers.anyString())).thenReturn(null);
         extraConfig = new HashMap<>();
     }
 
@@ -68,14 +68,14 @@ public class DpdkDriverTest {
 
     @Test
     public void testGetDpdkLatestPortNumberUsedExistingDpdkPorts() {
-        Mockito.when(Script.runSimpleBashScript(Matchers.anyString())).
+        Mockito.when(Script.runSimpleBashScript(ArgumentMatchers.anyString())).
                 thenReturn(DpdkDriverImpl.DPDK_PORT_PREFIX + String.valueOf(dpdkPortNumber));
         Assert.assertEquals(dpdkPortNumber, driver.getDpdkLatestPortNumberUsed());
     }
 
     @Test
     public void testGetNextDpdkPortNoDpdkPorts() {
-        Mockito.when(Script.runSimpleBashScript(Matchers.anyString())).
+        Mockito.when(Script.runSimpleBashScript(ArgumentMatchers.anyString())).
                 thenReturn(null);
         String expectedPortName = DpdkDriverImpl.DPDK_PORT_PREFIX + String.valueOf(1);
         Assert.assertEquals(expectedPortName, driver.getNextDpdkPort());
@@ -83,7 +83,7 @@ public class DpdkDriverTest {
 
     @Test
     public void testGetNextDpdkPortExistingDpdkPorts() {
-        Mockito.when(Script.runSimpleBashScript(Matchers.anyString())).
+        Mockito.when(Script.runSimpleBashScript(ArgumentMatchers.anyString())).
                 thenReturn(DpdkDriverImpl.DPDK_PORT_PREFIX + String.valueOf(dpdkPortNumber));
         String expectedPortName = DpdkDriverImpl.DPDK_PORT_PREFIX + String.valueOf(dpdkPortNumber + 1);
         Assert.assertEquals(expectedPortName, driver.getNextDpdkPort());

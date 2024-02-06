@@ -31,7 +31,7 @@ import javax.inject.Inject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -116,10 +116,10 @@ public class InternalLbElementTest {
         Mockito.when(_pNtwkProviderDao.findById(validProviderId)).thenReturn(validProvider);
         Mockito.when(_pNtwkProviderDao.findById(invalidProviderId)).thenReturn(invalidProvider);
 
-        Mockito.when(_vrProviderDao.persist(Matchers.any(VirtualRouterProviderVO.class))).thenReturn(validElement);
+        Mockito.when(_vrProviderDao.persist(ArgumentMatchers.any(VirtualRouterProviderVO.class))).thenReturn(validElement);
 
         DataCenterVO dc = new DataCenterVO(1L, null, null, null, null, null, null, null, null, null, NetworkType.Advanced, null, null);
-        Mockito.when(_entityMgr.findById(Matchers.eq(DataCenter.class), Matchers.anyLong())).thenReturn(dc);
+        Mockito.when(_entityMgr.findById(ArgumentMatchers.eq(DataCenter.class), ArgumentMatchers.anyLong())).thenReturn(dc);
     }
 
     //TEST FOR getProvider() method

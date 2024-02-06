@@ -19,6 +19,7 @@ package org.apache.cloudstack.oauth2.api.command;
 
 import com.cloud.api.ApiServer;
 import org.apache.cloudstack.api.ApiConstants;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
@@ -36,10 +37,18 @@ public class OauthLoginAPIAuthenticatorCmdTest {
     @InjectMocks
     private OauthLoginAPIAuthenticatorCmd cmd;
 
+    private AutoCloseable closeable;
+
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
     }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
+    }
+
     @Test
     public void testGetDomainNameWhenDomainNameIsNull() {
         StringBuilder auditTrailSb = new StringBuilder();

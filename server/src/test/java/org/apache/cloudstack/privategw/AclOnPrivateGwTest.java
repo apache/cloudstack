@@ -56,7 +56,7 @@ import org.apache.cloudstack.test.utils.SpringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -96,7 +96,7 @@ public class AclOnPrivateGwTest {
         VpcService _vpcService = Mockito.mock(VpcService.class);
 
         try {
-            _vpcService.applyVpcPrivateGateway(Matchers.anyLong(), Matchers.anyBoolean());
+            _vpcService.applyVpcPrivateGateway(ArgumentMatchers.anyLong(), ArgumentMatchers.anyBoolean());
         } catch (ResourceUnavailableException e) {
             e.printStackTrace();
         } catch (ConcurrentOperationException e) {
@@ -111,7 +111,7 @@ public class AclOnPrivateGwTest {
         createPrivateGwCmd._vpcService = vpcService;
 
         try {
-            Mockito.when(vpcService.applyVpcPrivateGateway(Matchers.anyLong(), Matchers.anyBoolean())).thenReturn(null);
+            Mockito.when(vpcService.applyVpcPrivateGateway(ArgumentMatchers.anyLong(), ArgumentMatchers.anyBoolean())).thenReturn(null);
         } catch (ResourceUnavailableException e) {
             e.printStackTrace();
         } catch (ConcurrentOperationException e) {

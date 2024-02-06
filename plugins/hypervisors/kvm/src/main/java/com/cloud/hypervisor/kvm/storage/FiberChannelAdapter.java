@@ -19,10 +19,14 @@ package com.cloud.hypervisor.kvm.storage;
 import com.cloud.storage.Storage;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@StorageAdaptorInfo(storagePoolType=Storage.StoragePoolType.FiberChannel)
 public class FiberChannelAdapter extends MultipathSCSIAdapterBase {
     public FiberChannelAdapter() {
         LOGGER.info("Loaded FiberChannelAdapter for StorageLayer");
+    }
+
+    @Override
+    public Storage.StoragePoolType getStoragePoolType() {
+        return Storage.StoragePoolType.FiberChannel;
     }
 
     @Override

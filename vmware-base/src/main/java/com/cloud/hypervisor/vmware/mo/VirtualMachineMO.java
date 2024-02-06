@@ -3736,4 +3736,29 @@ public class VirtualMachineMO extends BaseMO {
         String workerTag = String.format("%d-%s", System.currentTimeMillis(), getContext().getStockObject("noderuninfo"));
         setCustomFieldValue(CustomFieldConstants.CLOUD_WORKER_TAG, workerTag);
     }
+
+    public void removeChangeTrackPathFromVmdkForDisks() throws Exception {
+        VirtualDisk[] disks = getAllDiskDevice();
+        for (int i = 0; i < disks.length; i++) {
+            VirtualDisk disk = disks[i];
+            VirtualDeviceBackingInfo backingInfo = disk.getBacking();
+            if (!(backingInfo instanceof VirtualDiskFlatVer2BackingInfo)) {
+                throw new Exception("Unsupported VirtualDeviceBackingInfo");
+            }
+            VirtualDiskFlatVer2BackingInfo diskBackingInfo = (VirtualDiskFlatVer2BackingInfo)backingInfo;
+            s_logger.info("Removing property ChangeTrackPath from VMDK content file " + diskBackingInfo.getFileName());
+            Pair<VmdkFileDescriptor, byte[]> vmdkInfo = getVmdkFileInfo(diskBackingInfo.getFileName());
+            VmdkFileDescriptor vmdkFileDescriptor = vmdkInfo.first();
+            byte[] content = vmdkInfo.second();
+            if (content == null || content.length == 0) {
+                break;
+            }
+            byte[] newVmdkContent = vmdkFileDescriptor.removeChangeTrackPath(content);
+
+            Pair<DatacenterMO, String> dcPair = getOwnerDatacenter();
+            String vmdkUrl = getContext().composeDatastoreBrowseUrl(dcPair.second(), diskBackingInfo.getFileName());
+            getContext().uploadResourceContent(vmdkUrl, newVmdkContent);
+            s_logger.info("Removed property ChangeTrackPath from VMDK content file " + diskBackingInfo.getFileName());
+        }
+    }
 }

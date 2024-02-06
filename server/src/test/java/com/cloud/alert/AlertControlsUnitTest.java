@@ -31,10 +31,10 @@ import org.mockito.Spy;
 
 import java.util.Date;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
@@ -47,12 +47,13 @@ public class AlertControlsUnitTest extends TestCase {
     AccountManager _accountMgr;
     @Mock
     AlertDao _alertDao;
+    private AutoCloseable closeable;
 
     @Override
     @Before
     @SuppressWarnings("unchecked")
-    protected void setUp() {
-        MockitoAnnotations.initMocks(this);
+    public void setUp() {
+        closeable = MockitoAnnotations.openMocks(this);
         _mgmtServer._alertDao = _alertDao;
         _mgmtServer._accountMgr = _accountMgr;
         doReturn(3L).when(_accountMgr).checkAccessAndSpecifyAuthority(any(Account.class), anyLong());
@@ -63,6 +64,7 @@ public class AlertControlsUnitTest extends TestCase {
     @Override
     @After
     public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test

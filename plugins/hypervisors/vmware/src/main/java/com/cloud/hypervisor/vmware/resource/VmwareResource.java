@@ -56,6 +56,7 @@ import com.vmware.vim25.HostDatastoreBrowserSearchResults;
 import com.vmware.vim25.HostDatastoreBrowserSearchSpec;
 import com.vmware.vim25.VirtualMachineConfigSummary;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.backup.PrepareForBackupRestorationCommand;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsAnswer;
@@ -611,6 +612,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 answer = execute((GetHypervisorGuestOsNamesCommand) cmd);
             } else if (clz == ListDataStoreObjectsCommand.class) {
                 answer = execute((ListDataStoreObjectsCommand) cmd);
+            } else if (clz == PrepareForBackupRestorationCommand.class) {
+                answer = execute((PrepareForBackupRestorationCommand) cmd);
             } else {
                 answer = Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -7619,6 +7622,35 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         } catch (Exception e) {
             s_logger.error("Failed to get the hypervisor guest names due to: " + e.getLocalizedMessage(), e);
             return new GetHypervisorGuestOsNamesAnswer(cmd, e.getLocalizedMessage());
+        }
+    }
+
+    private Answer execute(PrepareForBackupRestorationCommand command) {
+        try {
+            VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
+
+            String vmName = command.getVmName();
+            VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmName);
+
+            if (vmMo == null) {
+                if (hyperHost instanceof HostMO) {
+                    ClusterMO clusterMo = new ClusterMO(hyperHost.getContext(), ((HostMO) hyperHost).getParentMor());
+                    vmMo = clusterMo.findVmOnHyperHost(vmName);
+                }
+            }
+
+            if (vmMo == null) {
+                String msg = "VM " + vmName + " no longer exists to execute PrepareForBackupRestorationCommand command";
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
+
+            vmMo.removeChangeTrackPathFromVmdkForDisks();
+
+            return new Answer(command, true, "success");
+        } catch (Exception e) {
+            s_logger.error("Unexpected exception: ", e);
+            return new Answer(command, false, "Unable to execute PrepareForBackupRestorationCommand due to " + e.toString());
         }
     }
 

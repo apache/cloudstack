@@ -17,7 +17,7 @@
 
 package org.apache.cloudstack.network.contrail.model;
 
-import static org.mockito.Matchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 

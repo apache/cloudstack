@@ -1029,12 +1029,12 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     /**
      * Get dest volume full path
      */
-    private String getDestVolumeFullPath(VirtualDisk restoredDisk, VirtualMachineMO restoredVm, VirtualMachineMO vmMo) throws Exception {
+    private String getDestVolumeFullPath(VirtualMachineMO vmMo) throws Exception {
         VirtualDisk vmDisk = vmMo.getVirtualDisks().get(0);
         String vmDiskPath = vmMo.getVmdkFileBaseName(vmDisk);
         String vmDiskFullPath = getVolumeFullPath(vmMo.getVirtualDisks().get(0));
-        String restoredVolumePath = restoredVm.getVmdkFileBaseName(restoredDisk);
-        return vmDiskFullPath.replace(vmDiskPath, restoredVolumePath);
+        String uuid = UUID.randomUUID().toString().replace("-", "");
+        return vmDiskFullPath.replace(vmDiskPath, uuid);
     }
 
     /**
@@ -1086,17 +1086,18 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         VirtualDisk restoredDisk = findRestoredVolume(volumeInfo, vmRestored);
         String diskPath = vmRestored.getVmdkFileBaseName(restoredDisk);
 
-        s_logger.debug("Restored disk size=" + toHumanReadableSize(restoredDisk.getCapacityInKB()) + " path=" + diskPath);
+        s_logger.debug("Restored disk size=" + toHumanReadableSize(restoredDisk.getCapacityInKB() * Resource.ResourceType.bytesToKiB) + " path=" + diskPath);
 
         // Detach restored VM disks
-        vmRestored.detachAllDisks();
+        vmRestored.detachDisk(String.format("%s/%s.vmdk", location, diskPath), false);
 
         String srcPath = getVolumeFullPath(restoredDisk);
-        String destPath = getDestVolumeFullPath(restoredDisk, vmRestored, vmMo);
+        String destPath = getDestVolumeFullPath(vmMo);
 
         VirtualDiskManagerMO virtualDiskManagerMO = new VirtualDiskManagerMO(dcMo.getContext());
 
         // Copy volume to the VM folder
+        s_logger.debug(String.format("Moving volume from %s to %s", srcPath, destPath));
         virtualDiskManagerMO.moveVirtualDisk(srcPath, dcMo.getMor(), destPath, dcMo.getMor(), true);
 
         try {
@@ -1110,11 +1111,13 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             vmRestored.destroy();
         }
 
-        VirtualDisk attachedDisk = getAttachedDisk(vmMo, diskPath);
+        s_logger.debug(String.format("Attaching disk %s to vm %s", destPath, vm.getId()));
+        VirtualDisk attachedDisk = getAttachedDisk(vmMo, destPath);
         if (attachedDisk == null) {
-            s_logger.error("Failed to get the attached the (restored) volume " + diskPath);
+            s_logger.error("Failed to get the attached the (restored) volume " + destPath);
             return false;
         }
+        s_logger.debug(String.format("Creating volume entry for disk %s attached to vm %s", destPath, vm.getId()));
         createVolume(attachedDisk, vmMo, vm.getDomainId(), vm.getDataCenterId(), vm.getAccountId(), vm.getId(), poolId, vm.getTemplateId(), backup, false);
 
         if (vm.getBackupOfferingId() == null) {
@@ -1126,9 +1129,9 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         return true;
     }
 
-    private VirtualDisk getAttachedDisk(VirtualMachineMO vmMo, String diskPath) throws Exception {
+    private VirtualDisk getAttachedDisk(VirtualMachineMO vmMo, String diskFullPath) throws Exception {
         for (VirtualDisk disk : vmMo.getVirtualDisks()) {
-            if (vmMo.getVmdkFileBaseName(disk).equals(diskPath)) {
+            if (getVolumeFullPath(disk).equals(diskFullPath)) {
                 return disk;
             }
         }

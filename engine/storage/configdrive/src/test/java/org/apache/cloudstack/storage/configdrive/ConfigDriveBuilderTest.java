@@ -131,7 +131,7 @@ public class ConfigDriveBuilderTest {
 
             configDriveBuilderMocked.when(() -> ConfigDriveBuilder.writeVendorAndNetworkEmptyJsonFile(Mockito.any(File.class))).then(invocationOnMock -> null);
 
-            configDriveBuilderMocked.when(() -> ConfigDriveBuilder.writeVmMetadata(Mockito.anyListOf(String[].class), Mockito.anyString(), Mockito.any(File.class), anyMap())).then(invocationOnMock -> null);
+            configDriveBuilderMocked.when(() -> ConfigDriveBuilder.writeVmMetadata(Mockito.anyList(), Mockito.anyString(), Mockito.any(File.class), anyMap())).then(invocationOnMock -> null);
 
             configDriveBuilderMocked.when(() -> ConfigDriveBuilder.linkUserData((Mockito.anyString()))).then(invocationOnMock -> null);
 
@@ -145,7 +145,7 @@ public class ConfigDriveBuilderTest {
 
             configDriveBuilderMocked.verify(() -> {
                 ConfigDriveBuilder.writeVendorAndNetworkEmptyJsonFile(Mockito.any(File.class));
-                ConfigDriveBuilder.writeVmMetadata(Mockito.anyListOf(String[].class), Mockito.anyString(), Mockito.any(File.class), anyMap());
+                ConfigDriveBuilder.writeVmMetadata(Mockito.anyList(), Mockito.anyString(), Mockito.any(File.class), anyMap());
                 ConfigDriveBuilder.linkUserData(Mockito.anyString());
                 ConfigDriveBuilder.generateAndRetrieveIsoAsBase64Iso(Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
             });
@@ -194,7 +194,7 @@ public class ConfigDriveBuilderTest {
     @Test
     public void writeVmMetadataTest() {
         try (MockedStatic<ConfigDriveBuilder> configDriveBuilderMocked = Mockito.mockStatic(ConfigDriveBuilder.class)) {
-            Mockito.when(ConfigDriveBuilder.createJsonObjectWithVmData(Mockito.anyListOf(String[].class), Mockito.anyString(), Mockito.anyMap())).thenReturn(new JsonObject());
+            Mockito.when(ConfigDriveBuilder.createJsonObjectWithVmData(Mockito.anyList(), Mockito.anyString(), Mockito.anyMap())).thenReturn(new JsonObject());
 
             List<String[]> vmData = new ArrayList<>();
             vmData.add(new String[]{"dataType", "fileName", "content"});
@@ -347,7 +347,7 @@ public class ConfigDriveBuilderTest {
 
         try (MockedStatic<ConfigDriveBuilder> configDriveBuilderMocked = Mockito.mockStatic(ConfigDriveBuilder.class)) {
 
-            Mockito.when(ConfigDriveBuilder.createJsonObjectWithVmData(Mockito.anyListOf(String[].class), Mockito.anyString(), Mockito.nullable(Map.class))).thenCallRealMethod();
+            Mockito.when(ConfigDriveBuilder.createJsonObjectWithVmData(Mockito.anyList(), Mockito.anyString(), Mockito.nullable(Map.class))).thenCallRealMethod();
 
             List<String[]> vmData = new ArrayList<>();
             vmData.add(new String[]{"dataType", "fileName", "content"});

@@ -583,7 +583,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         Integer icmpCode = networkACLItemVO.getIcmpCode();
         Integer icmpType = networkACLItemVO.getIcmpType();
         // icmp code and icmp type can't be passed in for any other protocol rather than icmp
-        boolean isIcmpProtocol = protocol.equalsIgnoreCase(NetUtils.ICMP_PROTO);
+        boolean isIcmpProtocol = protocol.equalsIgnoreCase(NetUtils.ICMP_PROTO) || protocol.equalsIgnoreCase(String.valueOf(NetUtils.ICMP_PROTO_NUMBER));
         if (!isIcmpProtocol && (icmpCode != null || icmpType != null)) {
             throw new InvalidParameterValueException("Can specify icmpCode and icmpType for ICMP protocol only");
         }

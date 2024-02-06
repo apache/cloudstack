@@ -21,6 +21,7 @@ package com.cloud.network.bigswitch;
 
 import static org.junit.Assert.assertEquals;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -73,14 +74,20 @@ public class BigSwitchBcfUtilsTest {
     NetworkModel networkModel;
     @Mock
     BigSwitchBcfUtils bsUtil;
+    private AutoCloseable closeable;
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         bsUtil = new BigSwitchBcfUtils(networkDao, nicDao, vmDao, hostDao,
                 vpcDao, bigswitchBcfDao, agentMgr, vlanDao, ipAddressDao,
                 fwRulesDao, fwCidrsDao, aclItemDao, aclItemCidrsDao,
                 networkModel);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test

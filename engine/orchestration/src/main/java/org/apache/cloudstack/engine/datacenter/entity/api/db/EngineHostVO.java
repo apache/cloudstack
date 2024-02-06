@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.DiscriminatorColumn;
 import javax.persistence.DiscriminatorType;
 import javax.persistence.Entity;
@@ -45,6 +46,7 @@ import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceState;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.util.StoragePoolTypeConverter;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.StateMachine;
@@ -126,6 +128,7 @@ public class EngineHostVO implements EngineHost, Identity {
     private String resource;
 
     @Column(name = "fs_type")
+    @Convert(converter = StoragePoolTypeConverter.class)
     private StoragePoolType fsType;
 
     @Column(name = "available")

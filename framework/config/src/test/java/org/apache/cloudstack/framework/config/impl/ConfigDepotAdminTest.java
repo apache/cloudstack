@@ -17,7 +17,7 @@
 package org.apache.cloudstack.framework.config.impl;
 
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -28,6 +28,7 @@ import junit.framework.TestCase;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationGroupDao;
 import org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDao;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -74,13 +75,15 @@ public class ConfigDepotAdminTest extends TestCase {
     @Mock
     ScopedConfigStorage _scopedStorage;
 
+    private AutoCloseable closeable;
+
     /**
      * @throws java.lang.Exception
      */
     @Override
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         _depotAdmin = new ConfigDepotImpl();
         _depotAdmin._configDao = _configDao;
         _depotAdmin._configGroupDao = _configGroupDao;
@@ -89,6 +92,12 @@ public class ConfigDepotAdminTest extends TestCase {
         _depotAdmin._configurables.add(_configurable);
         _depotAdmin._scopedStorages = new ArrayList<ScopedConfigStorage>();
         _depotAdmin._scopedStorages.add(_scopedStorage);
+    }
+
+    @Override
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test
