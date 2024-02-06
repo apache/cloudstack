@@ -141,7 +141,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     @Inject
     private AlertManager _alertMgr;
     @Inject
-    private AccountDao _accountDao;
+    AccountDao _accountDao;
     @Inject
     private ConfigurationDao _configDao;
     @Inject
@@ -478,7 +478,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         return max;
     }
 
-    private void checkDomainResourceLimit(final Account account, final Project project, final ResourceType type, String tag, long numResources) throws ResourceAllocationException {
+    protected void checkDomainResourceLimit(final Account account, final Project project, final ResourceType type, String tag, long numResources) throws ResourceAllocationException {
         // check all domains in the account's domain hierarchy
         Long domainId = null;
         if (project != null) {
@@ -534,7 +534,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
     }
 
-    private void checkAccountResourceLimit(final Account account, final Project project, final ResourceType type, String tag, long numResources) throws ResourceAllocationException {
+    protected void checkAccountResourceLimit(final Account account, final Project project, final ResourceType type, String tag, long numResources) throws ResourceAllocationException {
         // Check account limits
         long accountResourceLimit = findCorrectResourceLimitForAccount(account, type, tag);
         long currentResourceCount = _resourceCountDao.getResourceCount(account.getId(), ResourceOwnerType.Account, type, tag);
@@ -572,7 +572,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
     }
 
-    private List<ResourceCountVO> lockAccountAndOwnerDomainRows(long accountId, final ResourceType type, String tag) {
+    protected List<ResourceCountVO> lockAccountAndOwnerDomainRows(long accountId, final ResourceType type, String tag) {
         Set<Long> rowIdsToLock = _resourceCountDao.listAllRowsToUpdate(accountId, ResourceOwnerType.Account, type, tag);
         SearchCriteria<ResourceCountVO> sc = ResourceCountSearch.create();
         sc.setParameters("id", rowIdsToLock.toArray());
@@ -1262,7 +1262,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     }
 
     protected List<UserVmJoinVO> getVmsWithAccountAndTag(long accountId, String tag) {
-        List<VirtualMachine.State> states = Arrays.asList(State.Destroyed, State.Error, State.Expunging);
+        List<VirtualMachine.State> states = new ArrayList<>(Arrays.asList(State.Destroyed, State.Error, State.Expunging));
         if (VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
             states.add(State.Stopped);
         }
