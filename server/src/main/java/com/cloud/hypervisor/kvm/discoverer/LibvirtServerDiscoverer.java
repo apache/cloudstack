@@ -37,7 +37,6 @@ import org.apache.cloudstack.ca.SetupCertificateCommand;
 import org.apache.cloudstack.direct.download.DirectDownloadManager;
 import org.apache.cloudstack.framework.ca.Certificate;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -127,60 +126,24 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
 
     @Override
     public boolean processDisconnect(long agentId, Status state) {
-        s_logger.debug("Disconnected called on host " + agentId + " with status " + state.toString());
-        HostVO host = _hostDao.findById(agentId);
-        if (host == null) {
-            s_logger.debug("Cannot disconnect, unable to find host with id " + agentId);
-            return false;
-        }
-
-        s_logger.debug("Disconnect host " + agentId + " with current status: " + host.getStatus().toString() + ", next status: " + state.toString());
-        if (getHypervisorType().equals(host.getHypervisorType()) && host.getStatus().equals(Status.Connecting)) {
-            _hostDao.loadDetails(host);
-            final String username = host.getDetail("username");
-            final String password = host.getDetail("password");
-            final String privateKey = _configDao.getValue("ssh.privatekey");
-            if ((password == null && privateKey == null) || username == null) {
-                s_logger.debug("Cannot disconnect, username and password or private key are not found");
-                return false;
-            }
-            return stopAgentOnHost(host.getPrivateIpAddress(), username, password, privateKey);
-        }
-
+        // TODO Auto-generated method stub
         return false;
     }
 
-    private boolean stopAgentOnHost(String agentHostIp, String username, String password, String privateKey) {
-        final com.trilead.ssh2.Connection connection = SSHCmdHelper.acquireAuthorizedConnection(agentHostIp, 22, username, password, privateKey);
-        if (connection == null) {
-            s_logger.debug(String.format("Unable to stop agent, failed to connect agent host [%s].", agentHostIp));
+    private boolean stopAgentOnHost(Connection sshConnection) {
+        if (sshConnection == null) {
             return false;
         }
         try {
-            SSHCmdHelper.SSHCmdResult result = SSHCmdHelper.sshExecuteCmdOneShot(connection, "service cloudstack-agent stop");
+            SSHCmdHelper.SSHCmdResult result = SSHCmdHelper.sshExecuteCmdOneShot(sshConnection, "service cloudstack-agent stop");
             if (result.getReturnCode() != 0) {
-                s_logger.debug(String.format("Couldn't stop agent on %s due to: %s", agentHostIp, result.getStdErr()));
+                logger.debug(String.format("Couldn't stop agent due to: %s", result.getStdErr()));
                 return false;
             }
-            s_logger.debug("cloudstack-agent stop result: " + result.toString());
+            logger.debug("cloudstack-agent stop result: " + result.toString());
             return true;
         } catch (final SshException e) {
-            s_logger.debug("cloudstack-agent stop failed", e);
-        }
-        return false;
-    }
-
-    private boolean stopAgentOnHostUsingConnection(Connection connection) {
-        try {
-            SSHCmdHelper.SSHCmdResult result = SSHCmdHelper.sshExecuteCmdOneShot(connection, "service cloudstack-agent stop");
-            if (result.getReturnCode() != 0) {
-                s_logger.debug(String.format("Couldn't stop agent due to: %s", result.getStdErr()));
-                return false;
-            }
-            s_logger.debug("cloudstack-agent stop result: " + result.toString());
-            return true;
-        } catch (final SshException e) {
-            s_logger.debug("cloudstack-agent stop failed", e);
+            logger.debug("cloudstack-agent stop failed", e);
         }
         return false;
     }
@@ -414,9 +377,9 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             HostVO connectedHost = waitForHostConnect(dcId, podId, clusterId, guid);
             if (connectedHost == null) {
                 HostVO connectingHost = getConnectingHost(dcId, guid);
-                stopAgentOnHostUsingConnection(sshConnection);
+                stopAgentOnHost(sshConnection);
                 if (connectingHost != null) {
-                    s_logger.debug("Remove connecting host with id " + connectingHost.getId());
+                    logger.debug("Remove connecting host with id " + connectingHost.getId());
                     hostDetailsDao.deleteDetails(connectingHost.getId());
                     connectingHost.setDisconnectedOn(new Date());
                     connectingHost.setGuid(null);

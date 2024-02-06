@@ -34,8 +34,8 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -71,7 +71,7 @@ public class ScaleIOHostListener implements HypervisorHostListener {
     public boolean hostConnect(long hostId, long poolId) {
         HostVO host = _hostDao.findById(hostId);
         if (host == null) {
-            s_logger.error("Failed to connect host by ScaleIOHostListener as host was not found with id : " + hostId);
+            logger.error("Failed to connect host by ScaleIOHostListener as host was not found with id : " + hostId);
             return false;
         }
 
@@ -91,7 +91,7 @@ public class ScaleIOHostListener implements HypervisorHostListener {
             _storagePoolHostDao.update(storagePoolHost.getId(), storagePoolHost);
         }
 
-        s_logger.info("Connection established between PowerFlex storage pool: " + storagePool + " and host: " + hostId);
+        logger.info("Connection established between PowerFlex storage pool: " + storagePool + " and host: " + hostId);
         return true;
     }
 
@@ -110,7 +110,7 @@ public class ScaleIOHostListener implements HypervisorHostListener {
         Map<String,String> poolDetails = answer.getPoolInfo().getDetails();
         if (MapUtils.isEmpty(poolDetails)) {
             String msg = "PowerFlex storage SDC details not found on the host: " + hostId + ", (re)install SDC and restart agent";
-            s_logger.warn(msg);
+            logger.warn(msg);
             if (alert) {
                 _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "SDC not found on host: " + host.getUuid(), msg);
             }
@@ -127,7 +127,7 @@ public class ScaleIOHostListener implements HypervisorHostListener {
 
         if (StringUtils.isBlank(sdcId)) {
             String msg = "Couldn't retrieve PowerFlex storage SDC details from the host: " + hostId + ", (re)install SDC and restart agent";
-            s_logger.warn(msg);
+            logger.warn(msg);
             if (alert) {
                 _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "SDC details not found on host: " + host.getUuid(), msg);
             }
@@ -135,7 +135,7 @@ public class ScaleIOHostListener implements HypervisorHostListener {
         }
 
         if (!isHostSdcConnected(sdcId, poolId)) {
-            s_logger.warn("PowerFlex storage SDC not connected on the host: " + hostId);
+            logger.warn("PowerFlex storage SDC not connected on the host: " + hostId);
             String msg = "PowerFlex storage SDC not connected on the host: " + hostId + ", reconnect the SDC to MDM and restart agent";
             if (alert) {
                 _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "PowerFlex storage SDC disconnected on host: " + host.getUuid(), msg);
@@ -162,7 +162,7 @@ public class ScaleIOHostListener implements HypervisorHostListener {
             ScaleIOGatewayClient client = ScaleIOGatewayClientConnectionPool.getInstance().getClient(poolId, _storagePoolDetailsDao);
             return client.isSdcConnected(sdcId);
         } catch (NoSuchAlgorithmException | KeyManagementException | URISyntaxException e) {
-            s_logger.error("Failed to check host SDC connection", e);
+            logger.error("Failed to check host SDC connection", e);
             throw new CloudRuntimeException("Failed to establish connection with PowerFlex Gateway to check host SDC connection");
         }
     }

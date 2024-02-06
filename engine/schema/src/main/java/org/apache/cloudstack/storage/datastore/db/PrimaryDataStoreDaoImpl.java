@@ -144,6 +144,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         ClustersSearch = createSearchBuilder();
         ClustersSearch.and("clusterIds", ClustersSearch.entity().getClusterId(), Op.IN);
         ClustersSearch.and("status", ClustersSearch.entity().getStatus(), Op.EQ);
+
     }
 
     @Override

@@ -37,14 +37,6 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.alert.AlertManager;
-import com.cloud.host.HostTagVO;
-import com.cloud.exception.StorageConflictException;
-import com.cloud.exception.StorageUnavailableException;
-import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.hypervisor.HypervisorGuru;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -146,6 +138,7 @@ import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostStats;
+import com.cloud.host.HostTagVO;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
@@ -896,8 +889,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             logger.warn(msg);
             throw new DiscoveryException(msg);
         }
-        String errorMsg = "Cannot find the server resources " + url + ", check server accessibility and connectivity to pool(s)";
-        s_logger.warn(errorMsg);
+        String errorMsg = "Cannot find the server resources at " + url + ", check server accessibility and connectivity to pool(s)";
+        logger.warn(errorMsg);
         throw new DiscoveryException("Unable to add the host: " + errorMsg);
     }
 
