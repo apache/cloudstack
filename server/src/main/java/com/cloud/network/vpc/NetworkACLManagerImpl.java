@@ -370,6 +370,20 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
         return applyACLToPrivateGw(gateway, rules);
     }
 
+    @Override
+    public boolean reorderAclRules(VpcVO vpc, List<? extends Network> networks, List<? extends NetworkACLItem> networkACLItems) {
+        List<NetworkACLServiceProvider> nsxElements = new ArrayList<>();
+        nsxElements.add((NetworkACLServiceProvider) _ntwkModel.getElementImplementingProvider(Network.Provider.Nsx.getName()));
+        try {
+            for (final NetworkACLServiceProvider provider : nsxElements) {
+                return provider.reorderAclRules(vpc, networks, networkACLItems);
+            }
+        } catch (final Exception ex) {
+            s_logger.debug("Failed to reorder ACLs on NSX due to: " + ex.getLocalizedMessage());
+        }
+        return false;
+    }
+
     private boolean applyACLToPrivateGw(final PrivateGateway gateway, final List<? extends NetworkACLItem> rules) throws ResourceUnavailableException {
         List<VpcProvider> vpcElements = new ArrayList<VpcProvider>();
         vpcElements.add((VpcProvider)_ntwkModel.getElementImplementingProvider(Network.Provider.VPCVirtualRouter.getName()));
