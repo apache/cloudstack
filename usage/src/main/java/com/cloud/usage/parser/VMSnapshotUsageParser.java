@@ -135,9 +135,11 @@ public class VMSnapshotUsageParser {
         DecimalFormat dFormat = new DecimalFormat("#.######");
         String usageDisplay = dFormat.format(usage);
 
-        s_logger.debug(String.format("Creating usage record for VMSnapshot with id [%s], vol [%s], usage [%s], startDate [%s], and endDate [%s], for account [%s].",
-                vmSnapshotId, volId, usageDisplay, DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageTimeZone(), startDate),
-                DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageTimeZone(), endDate), account.getId()));
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(String.format("Creating usage record for VMSnapshot with id [%s], vol [%s], usage [%s], startDate [%s], and endDate [%s], for account [%s].",
+                    vmSnapshotId, volId, usageDisplay, DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageTimeZone(), startDate),
+                    DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageTimeZone(), endDate), account.getId()));
+        }
 
         // Create the usage record
         String usageDesc = "VMSnapshot Id: " + vmSnapshotId + " Usage: " + "VM Id: " + vmId + " Volume Id: " + volId + " ";

@@ -212,10 +212,12 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
         Date adjustedStartDate = computeAdjustedTime(startDate, usageTZ);
         Date adjustedEndDate = computeAdjustedTime(endDate, usageTZ);
 
-        s_logger.debug(String.format("Getting usage records for account ID [%s], domain ID [%s] between [%s] and [%s] using page size [%s] and start index [%s].",
-                accountId, domainId, DateUtil.displayDateInTimezone(_usageTimezone, adjustedStartDate),
-                DateUtil.displayDateInTimezone(_usageTimezone, adjustedEndDate), cmd.getPageSizeVal(),
-                cmd.getStartIndex()));
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(String.format("Getting usage records for account ID [%s], domain ID [%s] between [%s] and [%s] using page size [%s] and start index [%s].",
+                    accountId, domainId, DateUtil.displayDateInTimezone(_usageTimezone, adjustedStartDate),
+                    DateUtil.displayDateInTimezone(_usageTimezone, adjustedEndDate), cmd.getPageSizeVal(),
+                    cmd.getStartIndex()));
+        }
 
         Filter usageFilter = new Filter(UsageVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
 

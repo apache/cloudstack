@@ -143,9 +143,11 @@ public class VPNUserUsageParser {
         DecimalFormat dFormat = new DecimalFormat("#.######");
         String usageDisplay = dFormat.format(usage);
 
-        s_logger.debug(String.format("Creating usage record for VPN user [%s], usage [%s], startDate [%s], and endDate [%s], for account [%s].",
-                userId, usageDisplay, DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageTimeZone(), startDate),
-                DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageTimeZone(), endDate), account.getId()));
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(String.format("Creating usage record for VPN user [%s], usage [%s], startDate [%s], and endDate [%s], for account [%s].",
+                    userId, usageDisplay, DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageTimeZone(), startDate),
+                    DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageTimeZone(), endDate), account.getId()));
+        }
 
         // Create the usage record
         String usageDesc = "VPN User: " + userName + ", Id: " + userId + " usage time";

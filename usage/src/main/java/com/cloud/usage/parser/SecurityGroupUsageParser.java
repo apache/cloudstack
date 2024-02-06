@@ -148,9 +148,11 @@ public class SecurityGroupUsageParser {
         DecimalFormat dFormat = new DecimalFormat("#.######");
         String usageDisplay = dFormat.format(usage);
 
-        s_logger.debug(String.format("Creating security group usage record for id [%s], vm [%s], usage [%s], startDate [%s], and endDate [%s], for account [%s].",
-                sgId, vmId, usageDisplay, DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageTimeZone(), startDate),
-                DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageTimeZone(), endDate), account.getId()));
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(String.format("Creating security group usage record for id [%s], vm [%s], usage [%s], startDate [%s], and endDate [%s], for account [%s].",
+                    sgId, vmId, usageDisplay, DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageTimeZone(), startDate),
+                    DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageTimeZone(), endDate), account.getId()));
+        }
 
         // Create the usage record
         String usageDesc = "Security Group: " + sgId + " for Vm : " + vmId + " usage time";

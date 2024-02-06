@@ -104,10 +104,12 @@ public class NetworkUsageParser {
             long totalBytesReceived = networkInfo.getBytesRcvd();
 
             if ((totalBytesSent > 0L) || (totalBytesReceived > 0L)) {
-                s_logger.debug(String.format("Creating usage record, total bytes sent [%s], total bytes received [%s], startDate [%s], and endDate [%s], for account [%s] in " +
-                                "availability zone [%s].", toHumanReadableSize(totalBytesSent), toHumanReadableSize(totalBytesReceived),
-                        DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageTimeZone(), startDate),
-                        DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageTimeZone(), endDate), account.getId(), networkInfo.getZoneId()));
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(String.format("Creating usage record, total bytes sent [%s], total bytes received [%s], startDate [%s], and endDate [%s], for account [%s] in " +
+                                    "availability zone [%s].", toHumanReadableSize(totalBytesSent), toHumanReadableSize(totalBytesReceived),
+                            DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageTimeZone(), startDate),
+                            DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageTimeZone(), endDate), account.getId(), networkInfo.getZoneId()));
+                }
 
                 Long hostId = null;
 
