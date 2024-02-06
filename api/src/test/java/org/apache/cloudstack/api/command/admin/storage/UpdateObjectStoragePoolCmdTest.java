@@ -32,7 +32,7 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import static org.mockito.ArgumentMatchers.anyObject;
+import static org.mockito.ArgumentMatchers.any;
 
 public class UpdateObjectStoragePoolCmdTest {
 
@@ -54,9 +54,11 @@ public class UpdateObjectStoragePoolCmdTest {
 
     private String provider = "Simulator";
 
+    private AutoCloseable closeable;
+
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         updateObjectStoragePoolCmd = Mockito.spy(new UpdateObjectStoragePoolCmd());
         updateObjectStoragePoolCmd._storageService = storageService;
         updateObjectStoragePoolCmd._responseGenerator = responseGenerator;
@@ -68,13 +70,14 @@ public class UpdateObjectStoragePoolCmdTest {
     @After
     public void tearDown() throws Exception {
         CallContext.unregister();
+        closeable.close();
     }
 
     @Test
     public void testUpdateObjectStore() {
         Mockito.doReturn(objectStore).when(storageService).updateObjectStore(1L, updateObjectStoragePoolCmd);
         ObjectStoreResponse objectStoreResponse = new ObjectStoreResponse();
-        Mockito.doReturn(objectStoreResponse).when(responseGenerator).createObjectStoreResponse(anyObject());
+        Mockito.doReturn(objectStoreResponse).when(responseGenerator).createObjectStoreResponse(any());
         updateObjectStoragePoolCmd.execute();
         Mockito.verify(storageService, Mockito.times(1))
                 .updateObjectStore(1L, updateObjectStoragePoolCmd);

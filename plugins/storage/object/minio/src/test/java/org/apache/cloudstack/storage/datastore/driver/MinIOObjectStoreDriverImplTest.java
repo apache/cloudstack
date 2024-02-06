@@ -37,6 +37,7 @@ import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.object.Bucket;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -87,9 +88,11 @@ public class MinIOObjectStoreDriverImplTest {
 
     Bucket bucket;
 
+    private AutoCloseable closeable;
+
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         minioObjectStoreDriverImpl._storeDao = objectStoreDao;
         minioObjectStoreDriverImpl._storeDetailsDao = objectStoreDetailsDao;
         minioObjectStoreDriverImpl._accountDao = accountDao;
@@ -99,6 +102,11 @@ public class MinIOObjectStoreDriverImplTest {
         bucket.setName("test-bucket");
         when(objectStoreVO.getUrl()).thenReturn("http://localhost:9000");
         when(objectStoreDao.findById(any())).thenReturn(objectStoreVO);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test

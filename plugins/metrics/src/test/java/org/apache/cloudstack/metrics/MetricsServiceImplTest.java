@@ -128,7 +128,7 @@ public class MetricsServiceImplTest {
 
         Mockito.verify(scMock).setParameters(stringCaptor1.capture(), objectArrayCaptor.capture());
         Assert.assertEquals("idIN", stringCaptor1.getValue());
-        Assert.assertEquals(Arrays.asList(fakeVmId1), objectArrayCaptor.getAllValues());
+        Assert.assertEquals(fakeVmId1, objectArrayCaptor.getAllValues().get(0)[0]);
         Assert.assertEquals(expectedVmListAndCounter, result);
     }
 
@@ -146,7 +146,7 @@ public class MetricsServiceImplTest {
 
         Mockito.verify(scMock).setParameters(stringCaptor1.capture(), objectArrayCaptor.capture());
         Assert.assertEquals("idIN", stringCaptor1.getValue());
-        Assert.assertEquals(expected, objectArrayCaptor.getAllValues());
+        Assert.assertArrayEquals(expected.toArray(), objectArrayCaptor.getAllValues().get(0));
         Assert.assertEquals(expectedVmListAndCounter, result);
     }
 
@@ -163,7 +163,7 @@ public class MetricsServiceImplTest {
 
         Mockito.verify(scMock).setParameters(stringCaptor1.capture(), objectArrayCaptor.capture());
         Assert.assertEquals("displayName", stringCaptor1.getValue());
-        Assert.assertEquals("%fakeName%", objectArrayCaptor.getValue());
+        Assert.assertEquals("%fakeName%", objectArrayCaptor.getValue()[0]);
         Assert.assertEquals(expectedVmListAndCounter, result);
     }
 
@@ -184,8 +184,8 @@ public class MetricsServiceImplTest {
         List<Object[]> params = objectArrayCaptor.getAllValues();
         Assert.assertEquals("displayName", conditions.get(0));
         Assert.assertEquals("state", conditions.get(1));
-        Assert.assertEquals("%fakeKeyword%", params.get(0));
-        Assert.assertEquals("fakeKeyword", params.get(1));
+        Assert.assertEquals("%fakeKeyword%", params.get(0)[0]);
+        Assert.assertEquals("fakeKeyword", params.get(1)[0]);
         Assert.assertEquals(expectedVmListAndCounter, result);
     }
 

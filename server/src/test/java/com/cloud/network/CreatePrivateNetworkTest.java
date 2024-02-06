@@ -51,6 +51,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -62,10 +63,10 @@ import java.util.UUID;
 
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 //@Ignore("Requires database to be set up")
@@ -89,10 +90,11 @@ public class CreatePrivateNetworkTest {
     NetworkOrchestrationService _networkMgr;
     @Mock
     PrivateIpDao _privateIpDao;
+    private AutoCloseable closeable;
 
     @Before
     public void setup() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
 
         networkService._accountMgr = _accountMgr;
         networkService._networkOfferingDao = _networkOfferingDao;
@@ -136,6 +138,11 @@ public class CreatePrivateNetworkTest {
 
         when(networkService._privateIpDao.findByIpAndSourceNetworkId(net.getId(), "10.1.1.2")).thenReturn(null);
         when(networkService._privateIpDao.findByIpAndSourceNetworkIdAndVpcId(eq(1L), anyString(), eq(1L))).thenReturn(null);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test
