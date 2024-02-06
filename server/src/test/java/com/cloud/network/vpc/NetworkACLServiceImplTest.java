@@ -24,6 +24,7 @@ import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.eq;
 
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -138,8 +139,6 @@ public class NetworkACLServiceImplTest {
     private VpcVO vpcVOMock;
     @Mock
     DataCenter dataCenterVO;
-    @Mock
-    NsxProviderVO nsxProviderVO;
 
     @Mock
     private Account accountMock;
@@ -148,23 +147,25 @@ public class NetworkACLServiceImplTest {
 
     @Before
     public void setup() {
-        callContextMocked = Mockito.mockStatic(CallContext.class);
-        Mockito.when(CallContext.current()).thenReturn(callContextMock);
-        Mockito.doReturn(Mockito.mock(User.class)).when(callContextMock).getCallingUser();
-        Mockito.doReturn(Mockito.mock(Account.class)).when(callContextMock).getCallingAccount();
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+            Mockito.doReturn(Mockito.mock(User.class)).when(callContextMock).getCallingUser();
+            Mockito.doReturn(Mockito.mock(Account.class)).when(callContextMock).getCallingAccount();
 
-        Mockito.when(networkAclDaoMock.findById(networkAclListId)).thenReturn(networkACLVOMock);
-        Mockito.when(createNetworkAclCmdMock.getNetworkId()).thenReturn(1L);
-        Mockito.when(createNetworkAclCmdMock.getProtocol()).thenReturn("tcp");
+            Mockito.when(networkAclDaoMock.findById(networkAclListId)).thenReturn(networkACLVOMock);
+            Mockito.when(createNetworkAclCmdMock.getNetworkId()).thenReturn(1L);
+            Mockito.when(createNetworkAclCmdMock.getProtocol()).thenReturn("tcp");
 
-        Mockito.when(networkMock.getNetworkOfferingId()).thenReturn(networkOfferingMockId);
-        Mockito.when(networkMock.getVpcId()).thenReturn(networkMockVpcMockId);
+            Mockito.when(networkMock.getNetworkOfferingId()).thenReturn(networkOfferingMockId);
+            Mockito.when(networkMock.getVpcId()).thenReturn(networkMockVpcMockId);
 
-        Mockito.when(moveNetworkAclItemCmdMock.getUuidRuleBeingMoved()).thenReturn(uuidAclRuleBeingMoved);
+            Mockito.when(moveNetworkAclItemCmdMock.getUuidRuleBeingMoved()).thenReturn(uuidAclRuleBeingMoved);
 
-        Mockito.when(aclRuleBeingMovedMock.getAclId()).thenReturn(networkAclMockId);
+            Mockito.when(aclRuleBeingMovedMock.getAclId()).thenReturn(networkAclMockId);
 
-        Mockito.when(networkAclMock.getVpcId()).thenReturn(networkMockVpcMockId);
+            Mockito.when(networkAclMock.getVpcId()).thenReturn(networkMockVpcMockId);
+        }
     }
 
     @After
@@ -1013,6 +1014,7 @@ public class NetworkACLServiceImplTest {
 
         Mockito.doReturn(previousAclRuleMock).when(networkAclServiceImpl).retrieveAndValidateAclRule(previousAclRuleUuid);
         Mockito.doReturn(nextAclRuleMock).when(networkAclServiceImpl).retrieveAndValidateAclRule(nextAclRuleUuid);
+        when(nsxProviderDao.findByZoneId(anyLong())).then(null);
 
         configureMoveMethodsToDoNothing();
 

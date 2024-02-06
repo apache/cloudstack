@@ -988,6 +988,9 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             }
             NetworkACLItem networkACLItem = moveRuleBetweenAclRules(ruleBeingMoved, allAclRules, previousRule, nextRule);
             VpcVO vpc = _vpcDao.findById(lockedAcl.getVpcId());
+            if (Objects.isNull(vpc)) {
+                return networkACLItem;
+            }
             final DataCenter dc = _entityMgr.findById(DataCenter.class, vpc.getZoneId());
             final NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(dc.getId());
             List<NetworkVO> networks = _networkDao.listByAclId(lockedAcl.getId());
@@ -1057,11 +1060,6 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             }
         });
         return allAclRules;
-    }
-
-    protected List<NetworkACLItem> getAclRulesSortedByNumber(long aclId) {
-        List<NetworkACLItemVO> allAclRules = getAllAclRulesSortedByNumber(aclId);
-        return new ArrayList<>(allAclRules);
     }
 
     /**
