@@ -34,7 +34,6 @@ import java.util.Map;
 import com.cloud.dc.DataCenter;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.dao.NsxProviderDao;
-import com.cloud.network.element.NsxProviderVO;
 import com.cloud.network.vpc.dao.VpcDao;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ServerApiException;
@@ -138,8 +137,6 @@ public class NetworkACLServiceImplTest {
     private VpcVO vpcVOMock;
     @Mock
     DataCenter dataCenterVO;
-    @Mock
-    NsxProviderVO nsxProviderVO;
 
     @Mock
     private Account accountMock;
