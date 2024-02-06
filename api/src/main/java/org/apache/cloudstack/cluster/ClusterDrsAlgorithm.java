@@ -149,17 +149,17 @@ public interface ClusterDrsAlgorithm extends Adapter {
         return getMetricValue(clusterId, used, free, actualTotal, null);
     }
 
-    private Double getImbalance(List<Double> metricList) {
+    private static Double getImbalance(List<Double> metricList) {
         Double clusterMeanMetric = getClusterMeanMetric(metricList);
         Double clusterStandardDeviation = getClusterStandardDeviation(metricList, clusterMeanMetric);
         return clusterStandardDeviation / clusterMeanMetric;
     }
 
-    default String getClusterDrsMetric(long clusterId) {
+    static String getClusterDrsMetric(long clusterId) {
         return ClusterDrsMetric.valueIn(clusterId);
     }
 
-    default Double getMetricValue(long clusterId, long used, long free, long total, Float skipThreshold) {
+    static Double getMetricValue(long clusterId, long used, long free, long total, Float skipThreshold) {
         boolean useRatio = getDrsMetricUseRatio(clusterId);
         switch (getDrsMetricType(clusterId)) {
             case "free":
@@ -187,7 +187,7 @@ public interface ClusterDrsAlgorithm extends Adapter {
      * Cluster Mean Metric, mavg = (∑mi) / N, where mi is a measurable metric for a
      * resource ‘i’ in a cluster with total N number of resources.
      */
-    default Double getClusterMeanMetric(List<Double> metricList) {
+    static Double getClusterMeanMetric(List<Double> metricList) {
         return new Mean().evaluate(metricList.stream().mapToDouble(i -> i).toArray());
     }
 
@@ -202,7 +202,7 @@ public interface ClusterDrsAlgorithm extends Adapter {
      * mean metric value and mi is a measurable metric for some resource ‘i’ in the
      * cluster with total N number of resources.
      */
-    default Double getClusterStandardDeviation(List<Double> metricList, Double mean) {
+    static Double getClusterStandardDeviation(List<Double> metricList, Double mean) {
         if (mean != null) {
             return new StandardDeviation(false).evaluate(metricList.stream().mapToDouble(i -> i).toArray(), mean);
         } else {
@@ -210,11 +210,11 @@ public interface ClusterDrsAlgorithm extends Adapter {
         }
     }
 
-    default boolean getDrsMetricUseRatio(long clusterId) {
+    static boolean getDrsMetricUseRatio(long clusterId) {
         return ClusterDrsMetricUseRatio.valueIn(clusterId);
     }
 
-    default String getDrsMetricType(long clusterId) {
+    static String getDrsMetricType(long clusterId) {
         return ClusterDrsMetricType.valueIn(clusterId);
     }
 
@@ -228,7 +228,7 @@ public interface ClusterDrsAlgorithm extends Adapter {
      * Cluster Imbalance, Ic = σc / mavg , where σc is the standard deviation and
      * mavg is the mean metric value for the cluster.
      */
-    default Double getClusterImbalance(Long clusterId, List<Ternary<Long, Long, Long>> cpuList,
+    static Double getClusterImbalance(Long clusterId, List<Ternary<Long, Long, Long>> cpuList,
             List<Ternary<Long, Long, Long>> memoryList, Float skipThreshold) throws ConfigurationException {
         String metric = getClusterDrsMetric(clusterId);
         List<Double> list;
@@ -246,7 +246,7 @@ public interface ClusterDrsAlgorithm extends Adapter {
         return getImbalance(list);
     }
 
-    default List<Double> getMetricList(Long clusterId, List<Ternary<Long, Long, Long>> hostMetricsList,
+    static List<Double> getMetricList(Long clusterId, List<Ternary<Long, Long, Long>> hostMetricsList,
             Float skipThreshold) {
         List<Double> list = new ArrayList<>();
         for (Ternary<Long, Long, Long> ternary : hostMetricsList) {

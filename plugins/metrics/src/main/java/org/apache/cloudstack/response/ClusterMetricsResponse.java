@@ -94,6 +94,10 @@ public class ClusterMetricsResponse extends ClusterResponse implements HostMetri
     @Param(description = "memory allocated disable threshold exceeded")
     private Boolean memoryAllocatedDisableThresholdExceeded;
 
+    @SerializedName("drsimbalance")
+    @Param(description = "DRS imbalance for the cluster")
+    private Double drsImbalance;
+
     public void setState(final String allocationState, final String managedState) {
         this.state = allocationState;
         if (managedState.equals("Unmanaged")) {
@@ -207,5 +211,9 @@ public class ClusterMetricsResponse extends ClusterResponse implements HostMetri
         if (memAllocated != null && memTotal != null && threshold != null && memTotal != 0) {
             this.memoryAllocatedDisableThresholdExceeded = (1.0 * memAllocated / memTotal) > threshold;
         }
+    }
+
+    public void setDrsImbalance(Double drsImbalance) {
+        this.drsImbalance = drsImbalance;
     }
 }

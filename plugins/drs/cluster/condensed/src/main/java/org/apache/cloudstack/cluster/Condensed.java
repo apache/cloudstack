@@ -24,7 +24,7 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
-
+import org.apache.log4j.Logger;
 
 import javax.naming.ConfigurationException;
 import java.util.ArrayList;
@@ -36,17 +36,27 @@ import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsImbalanc
 
 public class Condensed extends AdapterBase implements ClusterDrsAlgorithm {
 
-    @Override
-    public String getName() {
-        return "condensed";
-    }
+    private static final Logger logger = Logger.getLogger(Condensed.class);
 
     @Override
     public boolean needsDrs(long clusterId, List<Ternary<Long, Long, Long>> cpuList,
             List<Ternary<Long, Long, Long>> memoryList) throws ConfigurationException {
         double threshold = getThreshold(clusterId);
-        Double imbalance = getClusterImbalance(clusterId, cpuList, memoryList, ClusterDrsImbalanceSkipThreshold.valueIn(clusterId));
-        return imbalance < threshold;
+        Float skipThreshold = ClusterDrsImbalanceSkipThreshold.valueIn(clusterId);
+        Double imbalance = ClusterDrsAlgorithm.getClusterImbalance(clusterId, cpuList, memoryList, skipThreshold);
+        String drsMetric = ClusterDrsAlgorithm.getClusterDrsMetric(clusterId);
+        String metricType = ClusterDrsAlgorithm.getDrsMetricType(clusterId);
+        Boolean useRatio = ClusterDrsAlgorithm.getDrsMetricUseRatio(clusterId);
+        if (imbalance < threshold) {
+
+            logger.debug(String.format("Cluster %d needs DRS. Imbalance: %s Threshold: %s Algorithm: %s DRS metric: %s Metric Type: %s Use ratio: %s SkipThreshold: %s",
+                    clusterId, imbalance, threshold, getName(), drsMetric, metricType, useRatio, skipThreshold));
+            return true;
+        } else {
+            logger.debug(String.format("Cluster %d does not need DRS. Imbalance: %s Threshold: %s Algorithm: %s DRS metric: %s Metric Type: %s Use ratio: %s SkipThreshold: %s",
+                    clusterId, imbalance, threshold, getName(), drsMetric, metricType, useRatio, skipThreshold));
+            return false;
+        }
     }
 
     private double getThreshold(long clusterId) {
@@ -54,12 +64,21 @@ public class Condensed extends AdapterBase implements ClusterDrsAlgorithm {
     }
 
     @Override
+    public String getName() {
+        return "condensed";
+    }
+
+    @Override
     public Ternary<Double, Double, Double> getMetrics(long clusterId, VirtualMachine vm,
             ServiceOffering serviceOffering, Host destHost,
             Map<Long, Ternary<Long, Long, Long>> hostCpuMap, Map<Long, Ternary<Long, Long, Long>> hostMemoryMap,
             Boolean requiresStorageMotion) throws ConfigurationException {
-        Double preImbalance = getClusterImbalance(clusterId, new ArrayList<>(hostCpuMap.values()), new ArrayList<>(hostMemoryMap.values()), null);
+        Double preImbalance = ClusterDrsAlgorithm.getClusterImbalance(clusterId, new ArrayList<>(hostCpuMap.values()),
+                new ArrayList<>(hostMemoryMap.values()), null);
         Double postImbalance = getImbalancePostMigration(serviceOffering, vm, destHost, hostCpuMap, hostMemoryMap);
+
+        logger.debug(String.format("Cluster %d pre-imbalance: %s post-imbalance: %s Algorithm: %s VM: %s destHost: %s",
+                clusterId, preImbalance, postImbalance, getName(), vm.getUuid(), destHost.getUuid()));
 
         // This needs more research to determine the cost and benefit of a migration
         // TODO: Cost should be a factor of the VM size and the host capacity

@@ -23,18 +23,20 @@ import com.cloud.utils.Ternary;
 import junit.framework.TestCase;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Spy;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.List;
 
-import static org.mockito.Mockito.doReturn;
+import static org.apache.cloudstack.cluster.ClusterDrsAlgorithm.getMetricValue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyFloat;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ClusterDrsAlgorithmTest extends TestCase {
-
-    @Spy
-    ClusterDrsAlgorithm drsAlgorithm;
 
     @Test
     public void testGetMetricValue() {
@@ -54,10 +56,13 @@ public class ClusterDrsAlgorithmTest extends TestCase {
             String metricType = data.second();
             double expectedValue = data.third();
 
-            doReturn(useRatio).when(drsAlgorithm).getDrsMetricUseRatio(1L);
-            doReturn(metricType).when(drsAlgorithm).getDrsMetricType(1L);
+            try (MockedStatic<ClusterDrsAlgorithm> ignored = Mockito.mockStatic(ClusterDrsAlgorithm.class)) {
+                when(ClusterDrsAlgorithm.getDrsMetricUseRatio(1L)).thenReturn(useRatio);
+                when(ClusterDrsAlgorithm.getDrsMetricType(1L)).thenReturn(metricType);
+                when(ClusterDrsAlgorithm.getMetricValue(anyLong(), anyLong(), anyLong(), anyLong(), any())).thenCallRealMethod();
 
-            assertEquals(expectedValue, drsAlgorithm.getMetricValue(1, used, free, total, null));
+                assertEquals(expectedValue, getMetricValue(1, used, free, total, null));
+            }
         }
     }
 
@@ -80,10 +85,13 @@ public class ClusterDrsAlgorithmTest extends TestCase {
             Double expectedValue = data.third();
             float skipThreshold = metricType.equals("free") ? 0.1f : 0.7f;
 
-            doReturn(useRatio).when(drsAlgorithm).getDrsMetricUseRatio(1L);
-            doReturn(metricType).when(drsAlgorithm).getDrsMetricType(1L);
+            try (MockedStatic<ClusterDrsAlgorithm> ignored = Mockito.mockStatic(ClusterDrsAlgorithm.class)) {
+                when(ClusterDrsAlgorithm.getDrsMetricUseRatio(1L)).thenReturn(useRatio);
+                when(ClusterDrsAlgorithm.getDrsMetricType(1L)).thenReturn(metricType);
+                when(ClusterDrsAlgorithm.getMetricValue(anyLong(), anyLong(), anyLong(), anyLong(), anyFloat())).thenCallRealMethod();
 
-            assertEquals(expectedValue, drsAlgorithm.getMetricValue(1L, used, free, total, skipThreshold));
+                assertEquals(expectedValue, ClusterDrsAlgorithm.getMetricValue(1L, used, free, total, skipThreshold));
+            }
         }
     }
 }
