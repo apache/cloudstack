@@ -91,4 +91,6 @@ public interface NetworkACLManager {
     boolean revokeACLItemsForPrivateGw(PrivateGateway gateway) throws ResourceUnavailableException;
 
     boolean applyACLToPrivateGw(PrivateGateway gateway) throws ResourceUnavailableException;
+
+    boolean reorderAclRules(VpcVO vpc, List<? extends NetworkACLItem> networkACLItems);
 }

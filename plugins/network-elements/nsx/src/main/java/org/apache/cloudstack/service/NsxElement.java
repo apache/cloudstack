@@ -72,6 +72,7 @@ import com.cloud.network.rules.LoadBalancerContainer;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.network.vpc.NetworkACLItem;
+import com.cloud.network.vpc.NetworkACLItemVO;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.network.vpc.Vpc;
@@ -97,7 +98,9 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.VMInstanceDao;
 import net.sf.ehcache.config.InvalidConfigurationException;
+import org.apache.cloudstack.NsxAnswer;
 import org.apache.cloudstack.StartupNsxCommand;
+import org.apache.cloudstack.agent.api.DeleteNsxDistributedFirewallRulesCommand;
 import org.apache.cloudstack.api.command.admin.internallb.ConfigureInternalLoadBalancerElementCmd;
 import org.apache.cloudstack.api.command.admin.internallb.CreateInternalLoadBalancerElementCmd;
 import org.apache.cloudstack.api.command.admin.internallb.ListInternalLoadBalancerElementsCmd;
@@ -712,18 +715,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
         boolean success = true;
         for (NetworkACLItem rule : rules) {
             String privatePort = getPrivatePortRangeForACLRule(rule);
-            NsxNetworkRule networkRule = new NsxNetworkRule.Builder()
-                    .setRuleId(rule.getId())
-                    .setSourceCidrList(Objects.nonNull(rule.getSourceCidrList()) ? transformCidrListValues(rule.getSourceCidrList()) : List.of("ANY"))
-                    .setAclAction(transformActionValue(rule.getAction()))
-                    .setTrafficType(rule.getTrafficType().toString())
-                    .setProtocol(rule.getProtocol().toUpperCase())
-                    .setPublicPort(String.valueOf(rule.getSourcePortStart()))
-                    .setPrivatePort(privatePort)
-                    .setIcmpCode(rule.getIcmpCode())
-                    .setIcmpType(rule.getIcmpType())
-                    .setService(Network.Service.NetworkACL)
-                    .build();
+            NsxNetworkRule networkRule = getNsxNetworkRuleForAcl(rule, privatePort);
             if (Arrays.asList(NetworkACLItem.State.Active, NetworkACLItem.State.Add).contains(rule.getState())) {
                 success = success && nsxService.addFirewallRules(network, List.of(networkRule));
             } else if (NetworkACLItem.State.Revoke == rule.getState()) {
@@ -740,9 +732,33 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
         return success;
     }
 
-    private void reorderRules(List<? extends NetworkACLItem> rules) {
-        rules.sort((Comparator) (r1, r2) -> ((NetworkACLItem) r2).getNumber() - ((NetworkACLItem) r1).getNumber());
+    @Override
+    public boolean reorderAclRules(Vpc vpc, List<? extends NetworkACLItem> networkACLItems) {
+        List<NsxNetworkRule> aclRulesList = new ArrayList<>();
+        for (NetworkACLItem rule : networkACLItems) {
+            String privatePort = getPrivatePortRangeForACLRule(rule);
+            aclRulesList.add(getNsxNetworkRuleForAcl(rule, privatePort));
+        }
+        DeleteNsxDistributedFirewallRulesCommand command = new DeleteNsxDistributedFirewallRulesCommand(vpc.getDomainId(),
+                vpc.getAccountId(), vpc.getZoneId(), vpc.getId(), network.getId(), netRules);
+        NsxAnswer result = nsxControllerUtils.sendNsxCommand(command, network.getDataCenterId());
+        return result.getResult();
+        return true;
+    }
 
+    private NsxNetworkRule getNsxNetworkRuleForAcl(NetworkACLItem rule, String privatePort) {
+        return new NsxNetworkRule.Builder()
+                .setRuleId(rule.getId())
+                .setSourceCidrList(Objects.nonNull(rule.getSourceCidrList()) ? transformCidrListValues(rule.getSourceCidrList()) : List.of("ANY"))
+                .setAclAction(transformActionValue(rule.getAction()))
+                .setTrafficType(rule.getTrafficType().toString())
+                .setProtocol(rule.getProtocol().toUpperCase())
+                .setPublicPort(String.valueOf(rule.getSourcePortStart()))
+                .setPrivatePort(privatePort)
+                .setIcmpCode(rule.getIcmpCode())
+                .setIcmpType(rule.getIcmpType())
+                .setService(Network.Service.NetworkACL)
+                .build();
     }
         @Override
     public boolean applyFWRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
