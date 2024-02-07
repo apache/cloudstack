@@ -263,6 +263,7 @@ jobs:
         run: |
           mkdir -p integration-test-results/smoke/misc
           mkdir -p integration-test-results/component
+          mkdir -p integration-test-results/plugins
           set -e
           TESTS="${{ matrix.tests }}"
           echo "Tests in this job: $TESTS"
