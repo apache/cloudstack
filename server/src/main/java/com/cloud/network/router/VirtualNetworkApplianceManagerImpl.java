@@ -924,7 +924,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                     final CheckRouterCommand command = new CheckRouterCommand();
                     command.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
                     command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-                    command.setWait(30);
+
                     final Answer origAnswer = _agentMgr.easySend(router.getHostId(), command);
                     CheckRouterAnswer answer = null;
                     if (origAnswer instanceof CheckRouterAnswer) {
