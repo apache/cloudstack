@@ -19,6 +19,10 @@
 
 package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -28,6 +32,8 @@ import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.VM;
+
 
 @ResourceWrapper(handles =  CheckSshCommand.class)
 public final class CitrixCheckSshCommandWrapper extends CommandWrapper<CheckSshCommand, Answer, CitrixResourceBase> {
@@ -58,6 +64,21 @@ public final class CitrixCheckSshCommandWrapper extends CommandWrapper<CheckSshC
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Ping command port succeeded for vm " + vmName);
+        }
+
+        try {
+            final Set<VM> vms = VM.getByNameLabel(conn, vmName);
+            if (vms != null) {
+                for (final VM vm : vms) {
+                    s_logger.debug("Update boot args in xenstore-data for domain router after start. vmName: " + vmName);
+                    Map<String, String> xenstoreData = new HashMap<>();
+                    xenstoreData.put(citrixResourceBase.XENSTORE_DATA_CS_INIT, "");
+                    vm.setXenstoreData(conn, xenstoreData);
+                    break;
+                }
+            }
+        } catch (final Exception e) {
+            s_logger.warn("Catch Exception: " + e.getClass().toString() + " due to " + e.toString(), e);
         }
 
         return new CheckSshAnswer(command);
