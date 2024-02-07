@@ -133,6 +133,13 @@
           </a-tag>
         </div>
       </template>
+      <template #tags="{ text, record, index }">
+        <a-input
+          :disabled="tungstenNetworkIndex > -1 && tungstenNetworkIndex !== index"
+          :value="text"
+          @change="e => onCellChange(record.key, 'tags', e.target.value)"
+           />
+      </template>
       <template #actions="{ record, index }">
         <tooltip-button
           :tooltip="$t('label.delete')"
@@ -308,6 +315,13 @@ export default {
         width: 250,
         slots: { customRender: 'traffics' }
       })
+      columns.push({
+        title: this.$t('label.tags'),
+        key: 'tags',
+        dataIndex: 'tags',
+        width: 175,
+        slots: { customRender: 'tags' }
+      })
       if (this.isAdvancedZone) {
         columns.push({
           title: '',
@@ -399,7 +413,7 @@ export default {
         return { type: item, label: '' }
       })
       this.count = 1
-      this.physicalNetworks = [{ key: this.randomKeyTraffic(this.count), name: 'Physical Network 1', isolationMethod: 'VLAN', traffics: traffics }]
+      this.physicalNetworks = [{ key: this.randomKeyTraffic(this.count), name: 'Physical Network 1', isolationMethod: 'VLAN', traffics: traffics, tags: null }]
     }
     if (this.isAdvancedZone) {
       this.availableTrafficToAdd.push('guest')
@@ -440,7 +454,8 @@ export default {
         key: this.randomKeyTraffic(count + 1),
         name: `Physical Network ${count + 1}`,
         isolationMethod: 'VLAN',
-        traffics: []
+        traffics: [],
+        tags: null
       }
       this.physicalNetworks = [...physicalNetworks, newData]
       this.count = count + 1
@@ -456,11 +471,18 @@ export default {
       this.requiredTrafficTypes.forEach(type => {
         if (!isValid) return false
         let foundType = false
+        let countPhysicalNetworkWithoutTags = 0
         physicalNetworks.forEach(net => {
           net.traffics.forEach(traffic => {
             if (!isValid) return false
             if (traffic.type === type) {
               foundType = true
+            }
+            if (traffic.type === 'guest' && type === 'guest' && (!net.tags || net.tags.length === 0)) {
+              countPhysicalNetworkWithoutTags++
+            }
+            if (countPhysicalNetworkWithoutTags > 1) {
+              isValid = false
             }
             if (this.hypervisor !== 'VMware') {
               if (shouldHaveLabels && (!traffic.label || traffic.label.length === 0)) {

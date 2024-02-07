@@ -2845,7 +2845,7 @@
 "message.remove.vpc": "Please confirm that you want to remove the VPC",
 "message.request.failed": "Request failed.",
 "message.required.add.least.ip": "Please add at least 1 IP Range",
-"message.required.traffic.type": "Error in configuration! All required traffic types should be added and with multiple physical networks each network should have a label.",
+"message.required.traffic.type": "Error in configuration! All required traffic types should be added and with multiple physical networks each network should have a label. There can only be one untagged physical network with guest traffic type.",
 "message.reset.vpn.connection": "Please confirm that you want to reset VPN connection.",
 "message.resize.volume.failed": "Failed to resize volume.",
 "message.resize.volume.processing": "Volume resize is in progress",
