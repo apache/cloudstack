@@ -26,6 +26,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.utils.Pair;
+import org.apache.cloudstack.framework.config.dao.CommandTimeoutDao;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,6 +48,12 @@ public class AgentManagerImplTest {
     @Mock
     private Listener storagePoolMonitor;
 
+    @Mock
+    private Commands commandsMock;
+
+    @Mock
+    private CommandTimeoutDao commandTimeoutDaoMock;
+
     @InjectMocks
     @Spy
     private AgentManagerImpl agentManagerImplSpy;
@@ -54,7 +61,7 @@ public class AgentManagerImplTest {
     private HostVO host;
     private StartupCommand[] cmds = new StartupCommand[]{ new StartupRoutingCommand() };
     private AgentAttache attache = new ConnectedAgentAttache(null, 1L, "kvm-attache", null, false);
-    
+
     @Before
     public void setUp() {
         host = new HostVO("some-Uuid");
@@ -90,4 +97,32 @@ public class AgentManagerImplTest {
         Mockito.verify(agentManagerImplSpy, Mockito.times(1)).handleDisconnectWithoutInvestigation(Mockito.any(attache.getClass()), Mockito.eq(Status.Event.AgentDisconnected), Mockito.eq(true), Mockito.eq(true));
     }
 
+    @Test
+    public void getTimeoutForCommandsTestReturnPassedTimeout() {
+        int expected = 42;
+        int result = agentManagerImplSpy.getTimeoutForCommands(commandsMock, expected);
+
+        Assert.assertEquals(expected, result);
+    }
+
+    @Test
+    public void getTimeoutForCommandsTestReturnTimeoutFromTable() {
+        int expected = 42;
+
+        Mockito.doReturn(expected).when(commandTimeoutDaoMock).findMaxTimeoutBetweenCommands(Mockito.any());
+        int result = agentManagerImplSpy.getTimeoutForCommands(commandsMock, 0);
+
+        Assert.assertEquals(expected, result);
+    }
+
+    @Test
+    public void getTimeoutForCommandsTestFallbackToConfiguration() {
+        int expected = 42;
+
+        Mockito.doReturn(0).when(commandTimeoutDaoMock).findMaxTimeoutBetweenCommands(Mockito.any());
+        Mockito.doReturn(expected).when(agentManagerImplSpy).getWaitValue();
+        int result = agentManagerImplSpy.getTimeoutForCommands(commandsMock, 0);
+
+        Assert.assertEquals(expected, result);
+    }
 }

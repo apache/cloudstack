@@ -490,12 +490,16 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             s_logger.trace(String.format("We found [%s] as the max timeout between commands %s in table [%s]; using it.", timeout, commandsClassPath,
                 CommandTimeoutVO.TABLE_NAME));
         } else {
-            timeout = Wait.value();
+            timeout = getWaitValue();
             s_logger.trace(String.format("We did not find a max timeout between commands %s in table [%s]; therefore, we will fallback to the value of " +
                     "configuration [%s]: [%s].", commandsClassPath, CommandTimeoutVO.TABLE_NAME, Wait.key(), timeout));
         }
 
         return timeout;
+    }
+
+    protected Integer getWaitValue() {
+        return Wait.value();
     }
 
     protected Status investigate(final AgentAttache agent) {
