@@ -31,6 +31,7 @@ import com.cloud.vm.VirtualMachineManager;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.backup.UpdateBackupOfferingCmd;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -72,10 +73,11 @@ public class BackupManagerTest {
 
     private String[] hostPossibleValues = {"127.0.0.1", "hostname"};
     private String[] datastoresPossibleValues = {"e9804933-8609-4de3-bccc-6278072a496c", "datastore-name"};
+    private AutoCloseable closeable;
 
     @Before
     public void setup() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         when(backupOfferingDao.findById(null)).thenReturn(null);
         when(backupOfferingDao.findById(123l)).thenReturn(null);
 
@@ -94,6 +96,11 @@ public class BackupManagerTest {
             offering.setUserDrivenBackupAllowed(true);
             return true;
         });
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test

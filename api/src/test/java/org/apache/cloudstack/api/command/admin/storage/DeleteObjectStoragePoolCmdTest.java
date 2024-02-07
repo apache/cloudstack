@@ -37,9 +37,11 @@ public class DeleteObjectStoragePoolCmdTest {
     @Spy
     DeleteObjectStoragePoolCmd deleteObjectStoragePoolCmd;
 
+    private AutoCloseable closeable;
+
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         deleteObjectStoragePoolCmd = Mockito.spy(new DeleteObjectStoragePoolCmd());
         deleteObjectStoragePoolCmd._storageService = storageService;
     }
@@ -47,6 +49,7 @@ public class DeleteObjectStoragePoolCmdTest {
     @After
     public void tearDown() throws Exception {
         CallContext.unregister();
+        closeable.close();
     }
 
     @Test
