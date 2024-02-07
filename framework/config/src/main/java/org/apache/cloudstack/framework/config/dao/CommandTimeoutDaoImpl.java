@@ -33,7 +33,7 @@ public class CommandTimeoutDaoImpl extends GenericDaoBase<CommandTimeoutVO, Stri
 
         maxCommandTimeoutSearchBuilder = createSearchBuilder(Integer.class);
         maxCommandTimeoutSearchBuilder.select(null, SearchCriteria.Func.MAX, maxCommandTimeoutSearchBuilder.entity().getTimeout());
-        maxCommandTimeoutSearchBuilder.and("command_classpath", maxCommandTimeoutSearchBuilder.entity().getCommandClasspath(), SearchCriteria.Op.EQ);
+        maxCommandTimeoutSearchBuilder.and("command_classpath", maxCommandTimeoutSearchBuilder.entity().getCommandClasspath(), SearchCriteria.Op.IN);
         maxCommandTimeoutSearchBuilder.done();
     }
 
