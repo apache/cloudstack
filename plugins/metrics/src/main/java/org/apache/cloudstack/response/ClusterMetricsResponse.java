@@ -96,7 +96,7 @@ public class ClusterMetricsResponse extends ClusterResponse implements HostMetri
 
     @SerializedName("drsimbalance")
     @Param(description = "DRS imbalance for the cluster")
-    private Double drsImbalance;
+    private String drsImbalance;
 
     public void setState(final String allocationState, final String managedState) {
         this.state = allocationState;
@@ -213,7 +213,11 @@ public class ClusterMetricsResponse extends ClusterResponse implements HostMetri
         }
     }
 
-    public void setDrsImbalance(Double drsImbalance) {
-        this.drsImbalance = drsImbalance;
+    public void setDrsImbalance(String drsImbalance) {
+        if (drsImbalance != null) {
+            this.drsImbalance = String.format("%.2f%%", drsImbalance);
+        } else {
+            this.drsImbalance = null;
+        }
     }
 }
