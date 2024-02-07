@@ -34,8 +34,6 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.user.UserData;
-import com.cloud.storage.VolumeApiService;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTemplateOrIsoPermissionsCmd;
@@ -85,6 +83,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.snapshot.SnapshotHelper;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.DettachCommand;
@@ -164,6 +163,7 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.LaunchPermissionDao;
@@ -181,6 +181,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
+import com.cloud.user.UserData;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.DateUtil;
@@ -209,7 +210,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Joiner;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import org.apache.cloudstack.snapshot.SnapshotHelper;
 
 public class TemplateManagerImpl extends ManagerBase implements TemplateManager, TemplateApiService, Configurable {
     private final static Logger s_logger = Logger.getLogger(TemplateManagerImpl.class);
@@ -2093,8 +2093,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         // update template type
         TemplateType templateType = null;
+        String templateTag = null;
         if (cmd instanceof UpdateTemplateCmd) {
-            String newType = ((UpdateTemplateCmd)cmd).getTemplateType();
+            UpdateTemplateCmd updateTemplateCmd = (UpdateTemplateCmd)cmd;
+            String newType = updateTemplateCmd.getTemplateType();
             if (newType != null) {
                 if (!_accountService.isRootAdmin(account.getId())) {
                     throw new PermissionDeniedException("Parameter templatetype can only be specified by a Root Admin, permission denied");
@@ -2111,6 +2113,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             if (templateType != null && (templateType == TemplateType.SYSTEM || templateType == TemplateType.BUILTIN) && !template.isCrossZones()) {
                 throw new InvalidParameterValueException("System and Builtin templates must be cross zone");
             }
+            templateTag = updateTemplateCmd.getTemplateTag();
         }
 
         // update is needed if any of the fields below got filled by the user
@@ -2127,6 +2130,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                   isDynamicallyScalable == null &&
                   isRoutingTemplate == null &&
                   templateType == null &&
+                  templateTag == null &&
                   (! cleanupDetails && details == null) //update details in every case except this one
                   );
         if (!updateNeeded) {
@@ -2211,6 +2215,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             }
         } else if (templateType != null) {
             template.setTemplateType(templateType);
+        }
+        if (templateTag != null) {
+            template.setTemplateTag(org.apache.commons.lang3.StringUtils.trimToNull(templateTag));
         }
 
         validateDetails(template, details);

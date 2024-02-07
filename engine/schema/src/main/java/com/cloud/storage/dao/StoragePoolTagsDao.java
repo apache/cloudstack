@@ -31,4 +31,6 @@ public interface StoragePoolTagsDao extends GenericDao<StoragePoolTagVO, Long> {
     List<StoragePoolTagVO> searchByIds(Long... stIds);
     StorageTagResponse newStorageTagResponse(StoragePoolTagVO tag);
 
+    List<Long> listPoolIdsByTag(String tag);
+
 }

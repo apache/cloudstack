@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.offering;
 
+import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
@@ -88,6 +89,13 @@ public class ListServiceOfferingsCmd extends BaseListDomainResourcesCmd {
         since = "4.18")
     private Boolean encryptRoot;
 
+    @Parameter(name = ApiConstants.TEMPLATE_ID,
+            type = CommandType.UUID,
+            entityType = TemplateResponse.class,
+            description = "The ID of the template that listed offerings must support",
+            since = "4.20.0")
+    private Long templateId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -129,6 +137,10 @@ public class ListServiceOfferingsCmd extends BaseListDomainResourcesCmd {
     }
 
     public Boolean getEncryptRoot() { return encryptRoot; }
+
+    public Long getTemplateId() {
+        return templateId;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

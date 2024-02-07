@@ -18,19 +18,6 @@
 //
 package com.cloud.resourcelimit;
 
-import com.cloud.configuration.Resource;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.user.Account;
-import com.cloud.user.ResourceLimitService;
-import com.cloud.utils.db.GlobalLock;
-import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.cloudstack.reservation.ReservationVO;
-import org.apache.cloudstack.reservation.dao.ReservationDao;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mock;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
@@ -39,7 +26,33 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
-@PrepareForTest(CheckedReservation.class)
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.reservation.ReservationVO;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.stubbing.Answer;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import com.cloud.configuration.Resource;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.user.Account;
+import com.cloud.user.ResourceLimitService;
+import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.exception.CloudRuntimeException;
+
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({GlobalLock.class, CheckedReservation.class})
 public class CheckedReservationTest {
 
     @Mock
@@ -59,6 +72,9 @@ public class CheckedReservationTest {
     public void setup() {
         initMocks(this);
         when(reservation.getId()).thenReturn(1l);
+        PowerMockito.mockStatic(GlobalLock.class);
+        PowerMockito.when(GlobalLock.getInternLock(Mockito.anyString())).thenReturn(quotaLimitLock);
+        when(quotaLimitLock.lock(anyInt())).thenReturn(true);
     }
 
     @Test
@@ -66,10 +82,11 @@ public class CheckedReservationTest {
         when(reservationDao.persist(any())).thenReturn(reservation);
         when(account.getAccountId()).thenReturn(1l);
         when(account.getDomainId()).thenReturn(4l);
-        when(quotaLimitLock.lock(anyInt())).thenReturn(true);
         boolean fail = false;
         try (CheckedReservation cr = new CheckedReservation(account, Resource.ResourceType.user_vm,1l, reservationDao, resourceLimitService); ) {
-            long id = cr.getId();
+            List<Long> ids = cr.getIds();
+            assertEquals(1, cr.getIds().size());
+            long id = ids.get(0);
             assertEquals(1l, id);
         } catch (NullPointerException npe) {
             fail("NPE caught");
@@ -97,6 +114,33 @@ public class CheckedReservationTest {
             throw new CloudRuntimeException(rae);
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    @Test
+    public void testReservationPersistAndCallContextParam() {
+        List<String> tags = List.of("abc", "xyz");
+        when(account.getAccountId()).thenReturn(1L);
+        when(account.getDomainId()).thenReturn(4L);
+        Resource.ResourceType type = Resource.ResourceType.cpu;
+        String lockName = String.format("CheckedReservation-%s/%d", account.getDomainId(), type.getOrdinal());
+        GlobalLock lock = GlobalLock.getInternLock(lockName);
+        lock.unlock();
+        List<ReservationVO> persistedReservations = new ArrayList<>();
+        Mockito.when(reservationDao.persist(Mockito.any(ReservationVO.class))).thenAnswer((Answer<ReservationVO>) invocation -> {
+            ReservationVO reservationVO = (ReservationVO)invocation.getArguments()[0];
+            ReflectionTestUtils.setField(reservationVO, "id", (long)(persistedReservations.size() + 1));
+            persistedReservations.add(reservationVO);
+            return reservationVO;
+        });
+        try (CheckedReservation cr = new CheckedReservation(account, type, tags, 2L, reservationDao, resourceLimitService);) {
+            Assert.assertEquals(tags.size() + 1, persistedReservations.size()); // An extra for no tag
+            Object obj = CallContext.current().getContextParameter(CheckedReservation.getResourceReservationContextParameterKey(type));
+            Assert.assertTrue(obj instanceof List);
+            List<Long> list = (List<Long>)obj;
+            Assert.assertEquals(tags.size() + 1, list.size()); // An extra for no tag
+        } catch (Exception e) {
+            Assert.fail("Exception faced: " + e.getMessage());
         }
     }
 }

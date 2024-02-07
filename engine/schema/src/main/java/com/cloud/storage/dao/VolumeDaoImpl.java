@@ -25,6 +25,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -790,5 +791,29 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
             update(volume.getId(), volume);
             remove(volume.getId());
         }
+    }
+
+    @Override
+    public List<VolumeVO> listAllocatedVolumesForAccountDiskOfferingIdsAndNotForVms(long accountId, List<Long> diskOfferingIds, List<Long> vmIds) {
+        SearchBuilder<VolumeVO> sb = createSearchBuilder();
+        sb.and("account", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
+        sb.and("state", sb.entity().getState(), SearchCriteria.Op.NIN);
+        sb.and("diskOfferingIds", sb.entity().getDiskOfferingId(), SearchCriteria.Op.IN);
+        sb.and("displayVolume", sb.entity().isDisplayVolume(), Op.EQ);
+        if (CollectionUtils.isNotEmpty(vmIds)) {
+            sb.and().op("instanceId", sb.entity().getInstanceId(), Op.NULL);
+            sb.or("notVmIds", sb.entity().getInstanceId(), Op.NIN);
+            sb.cp();
+        }
+        sb.done();
+        SearchCriteria<VolumeVO> sc = sb.create();
+        sc.setParameters("account", accountId);
+        sc.setParameters("state", Volume.State.Destroy, Volume.State.Expunged);
+        sc.setParameters("diskOfferingIds", diskOfferingIds.toArray());
+        sc.setParameters("displayVolume", 1);
+        if (CollectionUtils.isNotEmpty(vmIds)) {
+            sc.setParameters("notVmIds", vmIds.toArray());
+        }
+        return listBy(sc);
     }
 }

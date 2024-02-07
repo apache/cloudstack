@@ -106,5 +106,6 @@ public interface Resource {
     long getOwnerId();
 
     ResourceOwnerType getResourceOwnerType();
+    String getTag();
 
 }

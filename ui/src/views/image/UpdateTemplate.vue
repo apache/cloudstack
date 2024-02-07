@@ -176,6 +176,15 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-form-item ref="templatetag" name="templatetag" v-if="isAdmin">
+          <template #label>
+            <tooltip-label :title="$t('label.templatetag')" :tooltip="apiParams.templatetag.description"/>
+          </template>
+          <a-input
+            v-model:value="form.templatetag"
+            :placeholder="apiParams.templatetag.description"
+            v-focus="currentForm !== 'Create'"/>
+        </a-form-item>
 
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
@@ -205,6 +214,7 @@ export default {
   data () {
     return {
       templatetypes: ['BUILTIN', 'USER', 'SYSTEM', 'ROUTING'],
+      emptyAllowedFields: ['templatetag'],
       rootDisk: {},
       nicAdapterType: {},
       keyboardType: {},
@@ -246,6 +256,7 @@ export default {
       const resourceFields = ['name', 'displaytext', 'passwordenabled', 'ostypeid', 'isdynamicallyscalable', 'userdataid', 'userdatapolicy']
       if (this.isAdmin) {
         resourceFields.push('templatetype')
+        resourceFields.push('templatetag')
       }
       for (var field of resourceFields) {
         var fieldValue = this.resource[field]
@@ -285,6 +296,9 @@ export default {
       this.fetchUserdataPolicy()
     },
     isValidValueForKey (obj, key) {
+      if (this.emptyAllowedFields.includes(key) && obj[key] === '') {
+        return true
+      }
       return key in obj && obj[key] != null && obj[key] !== undefined && obj[key] !== ''
     },
     fetchOsTypes () {

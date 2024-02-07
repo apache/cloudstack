@@ -304,9 +304,13 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
             return false;
         }
 
-        Volume volume = volumeDao.findById(dskCh.getVolumeId());
-        if(!storageMgr.storagePoolCompatibleWithVolumePool(pool, volume)) {
-            return false;
+        Volume volume = null;
+        boolean isTempVolume = dskCh.getVolumeId() == Volume.DISK_OFFERING_SUITABILITY_CHECK_VOLUME_ID;
+        if (!isTempVolume) {
+            volume = volumeDao.findById(dskCh.getVolumeId());
+            if (!storageMgr.storagePoolCompatibleWithVolumePool(pool, volume)) {
+                return false;
+            }
         }
 
         if (pool.isManaged() && !storageUtil.managedStoragePoolCanScale(pool, plan.getClusterId(), plan.getHostId())) {
@@ -330,8 +334,10 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
             }
 
             try {
-                boolean isStoragePoolStoragepolicyComplaince = storageMgr.isStoragePoolCompliantWithStoragePolicy(requestVolumeDiskProfilePairs, pool);
-                if (!isStoragePoolStoragepolicyComplaince) {
+                boolean isStoragePoolStoragePolicyCompliance = isTempVolume ?
+                        storageMgr.isStoragePoolCompliantWithStoragePolicy(dskCh.getDiskOfferingId(), pool) :
+                        storageMgr.isStoragePoolCompliantWithStoragePolicy(requestVolumeDiskProfilePairs, pool);
+                if (!isStoragePoolStoragePolicyCompliance) {
                     return false;
                 }
             } catch (StorageUnavailableException e) {
@@ -339,7 +345,11 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
                 return false;
             }
         }
-        return storageMgr.storagePoolHasEnoughIops(requestVolumeDiskProfilePairs, pool) && storageMgr.storagePoolHasEnoughSpace(requestVolumeDiskProfilePairs, pool, plan.getClusterId());
+        return isTempVolume ?
+                (storageMgr.storagePoolHasEnoughIops(dskCh.getMinIops(), pool) &&
+                        storageMgr.storagePoolHasEnoughSpace(dskCh.getSize(), pool)):
+                (storageMgr.storagePoolHasEnoughIops(requestVolumeDiskProfilePairs, pool) &&
+                        storageMgr.storagePoolHasEnoughSpace(requestVolumeDiskProfilePairs, pool, plan.getClusterId()));
     }
 
     private boolean checkDiskProvisioningSupport(DiskProfile dskCh, StoragePool pool) {

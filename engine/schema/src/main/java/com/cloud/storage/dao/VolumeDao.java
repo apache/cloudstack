@@ -149,4 +149,6 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
     VolumeVO getInstanceRootVolume(long instanceId);
 
     void updateAndRemoveVolume(VolumeVO volume);
+
+    List<VolumeVO> listAllocatedVolumesForAccountDiskOfferingIdsAndNotForVms(long accountId, List<Long> diskOfferingIds, List<Long> vmIds);
 }

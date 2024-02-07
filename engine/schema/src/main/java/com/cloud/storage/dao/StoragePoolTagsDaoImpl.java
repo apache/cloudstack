@@ -18,6 +18,7 @@ package com.cloud.storage.dao;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -157,4 +158,14 @@ public class StoragePoolTagsDaoImpl extends GenericDaoBase<StoragePoolTagVO, Lon
         return tagResponse;
     }
 
+    @Override
+    public List<Long> listPoolIdsByTag(String tag) {
+        SearchBuilder<StoragePoolTagVO> sb = createSearchBuilder();
+        sb.and("tag", sb.entity().getTag(), SearchCriteria.Op.EQ);
+        sb.done();
+        SearchCriteria<StoragePoolTagVO> sc = sb.create();
+        sc.setParameters("tag", tag);
+        List<StoragePoolTagVO> poolRefs = search(sc, null);
+        return poolRefs.stream().map(StoragePoolTagVO::getPoolId).collect(Collectors.toList());
+    }
 }

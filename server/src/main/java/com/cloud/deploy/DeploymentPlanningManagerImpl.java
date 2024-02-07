@@ -34,6 +34,7 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.exception.StorageUnavailableException;
@@ -696,10 +697,11 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
     protected boolean checkVmProfileAndHost(final VirtualMachineProfile vmProfile, final HostVO host) {
         ServiceOffering offering = vmProfile.getServiceOffering();
-        if (offering.getHostTag() != null) {
+        VirtualMachineTemplate template = vmProfile.getTemplate();
+        if (offering.getHostTag() != null || template.getTemplateTag() != null) {
             _hostDao.loadHostTags(host);
-            if (!host.checkHostServiceOfferingTags(offering)) {
-                s_logger.debug("Service Offering host tag does not match the last host of this VM");
+            if (!host.checkHostServiceOfferingAndTemplateTags(offering, template)) {
+                s_logger.debug("Service Offering host tag or template tag does not match the last host of this VM");
                 return false;
             }
         }

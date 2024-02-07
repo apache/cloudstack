@@ -58,7 +58,7 @@ export default {
           'crossZones', 'directdownload', 'deployasis', 'ispublic', 'isfeatured', 'isextractable', 'isdynamicallyscalable', 'crosszones', 'type',
           'account', 'domain', 'created', 'userdatadetails', 'userdatapolicy']
         if (['Admin'].includes(store.getters.userInfo.roletype)) {
-          fields.push('templatetype', 'url')
+          fields.push('templatetag', 'templatetype', 'url')
         }
         return fields
       },

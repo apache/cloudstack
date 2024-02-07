@@ -72,6 +72,9 @@ public class UpdateResourceLimitCmd extends BaseCmd {
                    + "11 - SecondaryStorage. Total secondary storage space (in GiB) a user can use. ")
     private Integer resourceType;
 
+    @Parameter(name = ApiConstants.TAG, type = CommandType.STRING, description = "Tag for the resource type", since = "4.20.0")
+    private String tag;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -82,6 +85,10 @@ public class UpdateResourceLimitCmd extends BaseCmd {
 
     public Long getDomainId() {
         return domainId;
+    }
+
+    public String getTag() {
+        return tag;
     }
 
     public Integer getResourceType() {
@@ -104,7 +111,7 @@ public class UpdateResourceLimitCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        ResourceLimit result = _resourceLimitService.updateResourceLimit(_accountService.finalyzeAccountId(accountName, domainId, projectId, true), getDomainId(), resourceType, max);
+        ResourceLimit result = _resourceLimitService.updateResourceLimit(_accountService.finalyzeAccountId(accountName, domainId, projectId, true), getDomainId(), resourceType, max, getTag());
         if (result != null || (result == null && max != null && max.longValue() == -1L)) {
             ResourceLimitResponse response = _responseGenerator.createResourceLimitResponse(result);
             response.setResponseName(getCommandName());

@@ -16,10 +16,9 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.template;
 
-import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -27,6 +26,7 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.log4j.Logger;
 
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
@@ -41,8 +41,11 @@ public class UpdateTemplateCmd extends BaseUpdateTemplateOrIsoCmd implements Use
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = "templatetype", type = CommandType.STRING, description = "the type of the template")
+    @Parameter(name = ApiConstants.TEMPLATETYPE, type = CommandType.STRING, description = "the type of the template")
     private String templateType;
+
+    @Parameter(name = ApiConstants.TEMPLATE_TAG, type = CommandType.STRING, description = "the tag for this template.", since = "4.20.0")
+    private String templateTag;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -55,6 +58,10 @@ public class UpdateTemplateCmd extends BaseUpdateTemplateOrIsoCmd implements Use
 
     public String getTemplateType() {
         return templateType;
+    }
+
+    public String getTemplateTag() {
+        return templateTag;
     }
 
     /////////////////////////////////////////////////////
