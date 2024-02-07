@@ -184,7 +184,7 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
         }
 
         ListDataStoreObjectsCommand listDSCmd = new ListDataStoreObjectsCommand(dataStore.getTO(), path, startIndex, pageSize);
-        listDSCmd.setWait(15);
+
         Answer answer = null;
         try {
             answer = ep.sendMessage(listDSCmd);
