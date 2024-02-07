@@ -424,6 +424,11 @@
                       {{ $t('label.ispublic') }}
                     </a-checkbox>
                   </a-col>
+                  <a-col :span="12">
+                    <a-checkbox value="forCks">
+                      {{ $t('label.for.cks') }}
+                    </a-checkbox>
+                  </a-col>
                 </a-row>
               </a-checkbox-group>
             </a-form-item>

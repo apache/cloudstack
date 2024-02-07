@@ -360,3 +360,6 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.quarantined_ips', 'remover_account_i
 -- Explicitly add support for VMware 8.0b (8.0.0.2), 8.0c (8.0.0.3)
 INSERT IGNORE INTO `cloud`.`hypervisor_capabilities` (uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_data_volumes_limit, max_hosts_per_cluster, storage_motion_supported, vm_snapshot_enabled) values (UUID(), 'VMware', '8.0.0.2', 1024, 0, 59, 64, 1, 1);
 INSERT IGNORE INTO `cloud`.`hypervisor_capabilities` (uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_data_volumes_limit, max_hosts_per_cluster, storage_motion_supported, vm_snapshot_enabled) values (UUID(), 'VMware', '8.0.0.3', 1024, 0, 59, 64, 1, 1);
+
+-- Add for_cks column to the vm_template table
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vm_template','for_cks', 'int(1) unsigned DEFAULT "0" COMMENT "if true, the template can be used for CKS cluster deployment"');

@@ -401,6 +401,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                 profile.getDisplayText(), profile.isPasswordEnabled(), profile.getGuestOsId(), profile.isBootable(), profile.getHypervisorType(),
                 profile.getTemplateTag(), profile.getDetails(), profile.isSshKeyEnabled(), profile.IsDynamicallyScalable(), profile.isDirectDownload(), profile.isDeployAsIs());
         template.setState(initialState);
+        template.setForCks(profile.isForCks());
 
         if (profile.isDirectDownload()) {
             template.setSize(profile.getSize());
