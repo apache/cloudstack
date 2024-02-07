@@ -24,8 +24,8 @@ import com.cloud.utils.Pair;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -70,7 +70,7 @@ public class NetworkModelImplTest {
         DataCenter zone = Mockito.mock(DataCenter.class);
         VpcVO vpc = Mockito.mock(VpcVO.class);
         Mockito.when(network.getVpcId()).thenReturn(1L);
-        Mockito.doReturn(vpc).when(vpcDao).findById(Matchers.anyLong());
+        Mockito.doReturn(vpc).when(vpcDao).findById(ArgumentMatchers.anyLong());
         // network, vpc and zone have valid dns
         prepareMocks(isIp6, network, zone, vpc, dns1[0], dns1[1], dns2[0], dns2[1], dns1[2], dns2[2]);
         Pair<String, String> result = isIp6 ? networkModel.getNetworkIp6Dns(network, zone) :
