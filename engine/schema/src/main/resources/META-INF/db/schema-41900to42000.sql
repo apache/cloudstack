@@ -26,3 +26,6 @@ CREATE TABLE IF NOT EXISTS `cloud`.`command_timeout` (
      created datetime not null,
      updated datetime not null
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT INTO  `cloud`.`command_timeout` (command_classpath, timeout, created, updated)
+VALUES ('org.apache.cloudstack.ca.SetupCertificateCommand', 60, now(), now());
