@@ -72,6 +72,12 @@ public interface KubernetesClusterService extends PluggableService, Configurable
             "Timeout interval (in seconds) in which upgrade operation for a Kubernetes cluster should be completed. Not strictly obeyed while upgrade is in progress on a node",
             true,
             KubernetesServiceEnabled.key());
+    static final ConfigKey<Integer> KubernetesClusterUpgradeRetries = new ConfigKey<Integer>("Advanced", Integer.class,
+            "cloud.kubernetes.cluster.upgrade.retries",
+            "3",
+            "The number of retries if fail to upgrade kubernetes cluster due to some reasons (e.g. drain node, etcdserver leader changed)",
+            true,
+            KubernetesServiceEnabled.key());
     static final ConfigKey<Boolean> KubernetesClusterExperimentalFeaturesEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class,
             "cloud.kubernetes.cluster.experimental.features.enabled",
             "false",
