@@ -36,7 +36,7 @@
         <a-statistic
           :title="$t('label.status')"
           :value="serverStats.state"
-          :valueStyle="{ color: serverStats.state === 'UP' ? 'green' : 'red' }"
+          :valueStyle="{ color: this.$config.theme[serverStats.state === 'UP' ? '@success-color' : '@error-color' ] }"
         />
       </a-card>
     </a-col>
@@ -110,7 +110,7 @@
           layout="inline"
           @finish="handleSearch"
         >
-          <a-col :span="5">
+          <a-col :span="4">
             <a-row>
               <a-col :span="24">
                 <a-form-item
@@ -182,7 +182,7 @@
               />
             </a-form-item>
           </a-col>
-          <a-col :span="3">
+          <a-col :span="4">
             <a-form-item
               ref="dateRange"
               name="dateRange"
@@ -262,7 +262,7 @@
     :maskClosable="true"
     :destroyOnClose="true"
     :visible="generateModal"
-    @ok="generateModal = false"
+    @ok="generateUsageRecords"
     @cancel="generateModal = false"
   >
     <a-alert
@@ -586,6 +586,7 @@ export default {
       for (var columnKey of this.columnKeys) {
         if (!this.selectedColumnKeys.includes(columnKey)) continue
         var title
+        var dataIndex = columnKey
         switch (columnKey) {
           case 'templateid':
             title = this.$t('label.templatename')
@@ -599,13 +600,16 @@ export default {
           case 'usageActions':
             title = ''
             break
+          case 'virtualmachinename':
+            dataIndex = 'name'
+            break
           default:
             title = this.$t('label.' + String(columnKey).toLowerCase())
         }
         this.columns.push({
           key: columnKey,
           title: title,
-          dataIndex: columnKey
+          dataIndex: dataIndex
         })
       }
       if (this.columns.length > 0) {
@@ -687,6 +691,15 @@ export default {
     },
     parseDates (date) {
       return this.$toLocaleDate(dayjs(date))
+    },
+    generateUsageRecords () {
+      api('generateUsageRecords').then(json => {
+        this.$message.success(this.$t('label.usage.records.generated'))
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(f => {
+        this.generateModal = false
+      })
     },
     purgeUsageRecords () {
       var params = {

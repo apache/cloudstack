@@ -38,6 +38,7 @@ import zone from '@/config/section/zone'
 import offering from '@/config/section/offering'
 import config from '@/config/section/config'
 import tools from '@/config/section/tools'
+import usage from '@/config/section/usage'
 import quota from '@/config/section/plugin/quota'
 import cloudian from '@/config/section/plugin/cloudian'
 
@@ -221,15 +222,7 @@ export function asyncRouterMap () {
       generateRouterMap(offering),
       generateRouterMap(config),
       generateRouterMap(tools),
-      {
-        path: '/usage',
-        name: 'usage',
-        title: 'label.usage.records',
-        icon: 'ContainerOutlined',
-        permission: ['listUsageRecords'],
-        meta: { title: 'label.usage.records', icon: 'ContainerOutlined' },
-        component: () => import('@/views/infra/UsageRecords.vue')
-      },
+      generateRouterMap(usage),
       generateRouterMap(quota),
       generateRouterMap(cloudian),
       {
