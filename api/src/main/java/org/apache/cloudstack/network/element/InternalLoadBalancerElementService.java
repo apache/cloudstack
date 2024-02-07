@@ -23,7 +23,7 @@ import com.cloud.utils.component.PluggableService;
 
 public interface InternalLoadBalancerElementService extends PluggableService {
     /**
-     * Configures existing Internal Load Balancer Element (eInternalLoadBalancerElementServicenables or disables it)
+     * Configures existing Internal Load Balancer Element (enables or disables it)
      * @param id
      * @param enable
      * @return
