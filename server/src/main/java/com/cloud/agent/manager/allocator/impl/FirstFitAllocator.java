@@ -133,7 +133,9 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
 
         String paramAsStringToLog = String.format("zone [%s], pod [%s], cluster [%s]", dcId, podId, clusterId);
 
-        s_logger.debug(String.format("Looking for hosts in %s.", paramAsStringToLog));
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(String.format("Looking for hosts in %s.", paramAsStringToLog));
+        }
 
         String hostTagOnOffering = offering.getHostTag();
         String hostTagOnTemplate = template.getTemplateTag();
