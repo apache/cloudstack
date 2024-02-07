@@ -338,7 +338,7 @@
         <span>  {{ record.version }} </span>
       </template>
       <template v-if="column.key === 'drsimbalance'">
-        <span>  {{ record.drsimbalance.toFixed(3) }} </span>
+        <span>  {{ record.drsimbalance }} </span>
       </template>
       <template v-if="column.key === 'softwareversion'">
         <span>  {{ record.softwareversion ? record.softwareversion : 'N/A' }} </span>

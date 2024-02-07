@@ -789,7 +789,7 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
 
             try {
                 Double imbalance = ClusterDrsAlgorithm.getClusterImbalance(clusterId, cpuList, memoryList, null);
-                metricsResponse.setDrsImbalance(imbalance.isNaN() ? null : String.format("%.2f%%", imbalance));
+                metricsResponse.setDrsImbalance(imbalance.isNaN() ? null : 100.0 * imbalance);
             } catch (ConfigurationException e) {
                 LOGGER.warn("Failed to get cluster imbalance for cluster " + clusterId, e);
             }

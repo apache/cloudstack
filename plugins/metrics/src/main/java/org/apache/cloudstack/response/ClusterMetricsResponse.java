@@ -213,7 +213,7 @@ public class ClusterMetricsResponse extends ClusterResponse implements HostMetri
         }
     }
 
-    public void setDrsImbalance(String drsImbalance) {
+    public void setDrsImbalance(Double drsImbalance) {
         if (drsImbalance != null) {
             this.drsImbalance = String.format("%.2f%%", drsImbalance);
         } else {
