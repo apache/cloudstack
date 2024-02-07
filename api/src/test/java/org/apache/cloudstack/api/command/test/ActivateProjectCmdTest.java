@@ -23,7 +23,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 
 import org.apache.cloudstack.api.command.user.project.ActivateProjectCmd;
@@ -57,7 +57,7 @@ public class ActivateProjectCmdTest extends TestCase {
     @Test
     public void testGetEntityOwnerIdForNullProject() {
         ProjectService projectService = Mockito.mock(ProjectService.class);
-        Mockito.when(projectService.getProject(Matchers.anyLong())).thenReturn(null);
+        Mockito.when(projectService.getProject(ArgumentMatchers.anyLong())).thenReturn(null);
         activateProjectCmd._projectService = projectService;
 
         try {
@@ -74,9 +74,9 @@ public class ActivateProjectCmdTest extends TestCase {
         ProjectService projectService = Mockito.mock(ProjectService.class);
         Account account = Mockito.mock(Account.class);
         Mockito.when(account.getId()).thenReturn(2L);
-        Mockito.when(projectService.getProject(Matchers.anyLong())).thenReturn(project);
+        Mockito.when(projectService.getProject(ArgumentMatchers.anyLong())).thenReturn(project);
 
-        Mockito.when(projectService.getProjectOwner(Matchers.anyLong())).thenReturn(account);
+        Mockito.when(projectService.getProjectOwner(ArgumentMatchers.anyLong())).thenReturn(account);
         activateProjectCmd._projectService = projectService;
 
         Assert.assertEquals(2L, activateProjectCmd.getEntityOwnerId());

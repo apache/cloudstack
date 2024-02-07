@@ -263,7 +263,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
             parameters.setPort(port);
             parameters.setPath(hostPath);
         } else {
-            StoragePoolType type = Enum.valueOf(StoragePoolType.class, scheme);
+            StoragePoolType type = StoragePoolType.valueOf(scheme);
 
             if (type != null) {
                 parameters.setType(type);
