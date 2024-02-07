@@ -98,13 +98,13 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
                         break;
                     }
                     if (retry > 0) {
-                        LOGGER.error(String.format("%s, retries left: %s", errorMessage, retry));
+                        logger.error(String.format("%s, retries left: %s", errorMessage, retry));
                     } else {
                         logTransitStateDetachIsoAndThrow(Level.ERROR, errorMessage, kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, null);
                     }
                 } catch (Exception e) {
                     if (retry > 0) {
-                        LOGGER.error(String.format("%s due to %s, retries left: %s", errorMessage, e, retry));
+                        logger.error(String.format("%s due to %s, retries left: %s", errorMessage, e, retry));
                     } else {
                         logTransitStateDetachIsoAndThrow(Level.ERROR, errorMessage, kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, e);
                     }
@@ -122,13 +122,13 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
                         break;
                     }
                     if (retry > 0) {
-                        LOGGER.error(String.format("%s, retries left: %s", errorMessage, retry));
+                        logger.error(String.format("%s, retries left: %s", errorMessage, retry));
                     } else {
                         logTransitStateDetachIsoAndThrow(Level.ERROR, errorMessage, kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, null);
                     }
                 } catch (Exception e) {
                     if (retry > 0) {
-                        LOGGER.error(String.format("%s due to %s, retries left: %s", errorMessage, e, retry));
+                        logger.error(String.format("%s due to %s, retries left: %s", errorMessage, e, retry));
                     } else {
                         logTransitStateDetachIsoAndThrow(Level.ERROR, errorMessage, kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, e);
                     }
