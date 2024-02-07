@@ -34,9 +34,9 @@ import org.mockito.Spy;
 import java.util.Date;
 import java.util.List;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
@@ -50,11 +50,12 @@ public class EventControlsUnitTest extends TestCase {
     @Mock
     EventDao _eventDao;
     List<EventVO> _events = null;
+    private AutoCloseable closeable;
 
     @Override
     @Before
-    protected void setUp() {
-        MockitoAnnotations.initMocks(this);
+    public void setUp() {
+        closeable = MockitoAnnotations.openMocks(this);
         _mgmtServer._eventDao = _eventDao;
         _mgmtServer._accountMgr = _accountMgr;
         doNothing().when(_accountMgr).checkAccess(any(Account.class), any(AccessType.class), any(Boolean.class), any(ControlledEntity.class));
@@ -64,6 +65,7 @@ public class EventControlsUnitTest extends TestCase {
     @Override
     @After
     public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test

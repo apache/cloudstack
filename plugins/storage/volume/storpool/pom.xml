@@ -54,7 +54,7 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-inline</artifactId>
-            <version>4.7.0</version>
+            <version>${cs.mockito.version}</version>
         </dependency>
         <dependency>
             <groupId>pl.project13.maven</groupId>
