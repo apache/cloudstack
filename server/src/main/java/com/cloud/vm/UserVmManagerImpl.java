@@ -656,6 +656,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private static final ConfigKey<Boolean> VmDestroyForcestop = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.destroy.forcestop", "false",
             "On destroy, force-stop takes this value ", true);
 
+    private static final ConfigKey<Integer> MigrateRetry = new ConfigKey<Integer>("Advanced", Integer.class, "migrate.retry", "1",
+            "Number of times to retry migrating a user vm", true, ConfigKey.Scope.Cluster);
+
+    private static final ConfigKey<Integer> MigrateRetryDelay = new ConfigKey<Integer>("Advanced", Integer.class, "migrate.retry.delay", "5",
+            "Wait Interval (in seconds) before retrying to migrate a user vm", true, ConfigKey.Scope.Cluster);
+
     public static final List<HypervisorType> VM_STORAGE_MIGRATION_SUPPORTING_HYPERVISORS = new ArrayList<>(Arrays.asList(
             HypervisorType.KVM,
             HypervisorType.VMware,
@@ -6482,8 +6488,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_MIGRATE, eventDescription = "migrating VM", async = true)
-    public VirtualMachine migrateVirtualMachine(Long vmId, Host destinationHost) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
-    VirtualMachineMigrationException {
+    public VirtualMachine migrateVirtualMachine(Long vmId, Host destinationHost) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException {
         // access check - only root admin can migrate VM
         Account caller = CallContext.current().getCallingAccount();
         if (!_accountMgr.isRootAdmin(caller.getId())) {
@@ -6497,17 +6502,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (vm == null) {
             throw new InvalidParameterValueException("Unable to find the VM by id=" + vmId);
         }
-        // business logic
-        if (vm.getState() != State.Running) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("VM is not Running, unable to migrate the vm " + vm);
-            }
-            InvalidParameterValueException ex = new InvalidParameterValueException("VM is not Running, unable to migrate the vm with specified id");
-            ex.addProxyObject(vm.getUuid(), "vmId");
-            throw ex;
-        }
-
-        checkIfHostOfVMIsInPrepareForMaintenanceState(vm.getHostId(), vmId, "Migrate");
 
         if(serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()) != null) {
             throw new InvalidParameterValueException("Live Migration of GPU enabled VM is not supported");
@@ -6534,21 +6528,53 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Cannot migrate VM, host with id: " + srcHostId + " for VM not found");
         }
 
-        DeployDestination dest = null;
-        if (destinationHost == null) {
-            dest = chooseVmMigrationDestination(vm, srcHost, null);
-        } else {
-            dest = checkVmMigrationDestination(vm, srcHost, destinationHost);
+        DeployDestination dest;
+        int retries = 1;
+        VirtualMachine migratedVm = null;
+
+        do {
+            if (vm.getState() != State.Running) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("VM is not Running, unable to migrate the vm " + vm);
+                }
+                InvalidParameterValueException ex = new InvalidParameterValueException("VM is not Running, unable to migrate the vm with specified id");
+                ex.addProxyObject(vm.getUuid(), "vmId");
+                throw ex;
+            }
+
+            checkIfHostOfVMIsInPrepareForMaintenanceState(vm.getHostId(), vmId, "Migrate");
+
+            s_logger.debug(String.format("Trying to migrate the VM, attempt #%d out of %d" , retries , MigrateRetry.value()));
+
+            dest = (destinationHost == null) ? chooseVmMigrationDestination(vm, srcHost, null) :  checkVmMigrationDestination(vm, srcHost, destinationHost);
+
+            if (dest != null) {
+                collectVmDiskAndNetworkStatistics(vmId, State.Running);
+                _itMgr.migrate(vm.getUuid(), srcHostId, dest);
+                migratedVm = findMigratedVm(vm.getId(), vm.getType());
+            }
+
+            if (migratedVm == null){
+                s_logger.debug(String.format("Failed to migrate the VM on attempt %d out of %d.", retries , MigrateRetry.value() ));
+                retries++;
+                try {
+                    s_logger.debug(String.format("Waiting %d seconds before trying another migration." , MigrateRetryDelay.value()));
+                    Thread.sleep(MigrateRetryDelay.value());
+                } catch (InterruptedException ignored) {
+                }
+            }
+        } while ( (MigrateRetry.value() != 1) && (retries <= MigrateRetry.value()) && migratedVm==null);
+
+        if (migratedVm == null){
+            s_logger.error("Failed to migrate the VM after " +  MigrateRetry.value()  + " attempts");
+            if(dest == null) { // If no suitable destination hasn't been found then throw exception
+                throw new CloudRuntimeException("Unable to find suitable destination to migrate VM " + vm.getInstanceName());
+            } else {
+                throw new CloudRuntimeException("Failed to migrate the VM after " +  MigrateRetry.value()  + " attempts");
+            }
         }
 
-        // If no suitable destination found then throw exception
-        if (dest == null) {
-            throw new CloudRuntimeException("Unable to find suitable destination to migrate VM " + vm.getInstanceName());
-        }
-
-        collectVmDiskAndNetworkStatistics(vmId, State.Running);
-        _itMgr.migrate(vm.getUuid(), srcHostId, dest);
-        return findMigratedVm(vm.getId(), vm.getType());
+        return migratedVm;
     }
 
     private DeployDestination chooseVmMigrationDestination(VMInstanceVO vm, Host srcHost, Long poolId) {
@@ -8102,7 +8128,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {EnableDynamicallyScaleVm, AllowDiskOfferingChangeDuringScaleVm, AllowUserExpungeRecoverVm, VmIpFetchWaitInterval, VmIpFetchTrialMax,
                 VmIpFetchThreadPoolMax, VmIpFetchTaskWorkers, AllowDeployVmIfGivenHostFails, EnableAdditionalVmConfig, DisplayVMOVFProperties,
-                KvmAdditionalConfigAllowList, XenServerAdditionalConfigAllowList, VmwareAdditionalConfigAllowList, DestroyRootVolumeOnVmDestruction};
+                KvmAdditionalConfigAllowList, XenServerAdditionalConfigAllowList, VmwareAdditionalConfigAllowList, DestroyRootVolumeOnVmDestruction, MigrateRetry, MigrateRetryDelay};
     }
 
     @Override
