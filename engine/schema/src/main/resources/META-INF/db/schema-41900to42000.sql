@@ -20,7 +20,8 @@
 --;
 
 CREATE TABLE IF NOT EXISTS `cloud`.`command_timeout` (
-     command_classpath text primary key,
+     id bigint(20) unsigned not null auto_increment primary key,
+     command_classpath text unique key,
      timeout int not null,
      created datetime not null,
      updated datetime not null
