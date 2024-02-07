@@ -34,4 +34,5 @@ VALUES
     ('com.cloud.agent.api.CheckOnHostCommand', 20, now(), now()),
     ('com.cloud.agent.api.CheckVirtualMachineCommand', 20, now(), now()),
     ('com.cloud.agent.api.CheckRouterCommand', 30, now(), now()),
-    ('com.cloud.agent.api.CheckHealthCommand', 50, now(), now());
+    ('com.cloud.agent.api.CheckHealthCommand', 50, now(), now()),
+    ('com.cloud.agent.api.routing.GetAutoScaleMetricsCommand', 30, now(), now());

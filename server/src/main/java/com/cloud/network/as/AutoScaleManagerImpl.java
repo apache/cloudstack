@@ -2765,7 +2765,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         for (DomainRouterVO router : routers) {
             if (VirtualMachine.State.Running.equals(router.getState())) {
                 final GetAutoScaleMetricsCommand command = new GetAutoScaleMetricsCommand(router.getPrivateIpAddress(), network.getVpcId() != null, publicIpAddr.first(), publicIpAddr.second(), metrics);
-                command.setWait(30);
+
                 GetAutoScaleMetricsAnswer answer = (GetAutoScaleMetricsAnswer) agentMgr.easySend(router.getHostId(), command);
                 if (answer == null || !answer.getResult()) {
                     s_logger.error("Failed to get autoscale metrics from virtual router " + router.getName());
