@@ -17,25 +17,31 @@
 package org.apache.cloudstack.framework.config.dao;
 
 import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import org.apache.cloudstack.framework.config.impl.CommandTimeoutVO;
+import org.apache.commons.lang3.ObjectUtils;
+
+import java.util.Set;
 
 public class CommandTimeoutDaoImpl extends GenericDaoBase<CommandTimeoutVO, String> implements CommandTimeoutDao {
 
-    private SearchBuilder<CommandTimeoutVO> commandTimeoutVoSearchBuilder;
+    private GenericSearchBuilder<CommandTimeoutVO, Integer> maxCommandTimeoutSearchBuilder;
 
     public CommandTimeoutDaoImpl() {
         super();
 
-        commandTimeoutVoSearchBuilder = createSearchBuilder();
-        commandTimeoutVoSearchBuilder.and("command_classpath", commandTimeoutVoSearchBuilder.entity().getCommandClasspath(), SearchCriteria.Op.EQ);
+        maxCommandTimeoutSearchBuilder = createSearchBuilder(Integer.class);
+        maxCommandTimeoutSearchBuilder.select(null, SearchCriteria.Func.MAX, maxCommandTimeoutSearchBuilder.entity().getTimeout());
+        maxCommandTimeoutSearchBuilder.and("command_classpath", maxCommandTimeoutSearchBuilder.entity().getCommandClasspath(), SearchCriteria.Op.EQ);
+        maxCommandTimeoutSearchBuilder.done();
     }
 
     @Override
-    public CommandTimeoutVO findByCommandClasspath(String commandClasspath) {
-        SearchCriteria<CommandTimeoutVO> searchCriteria = commandTimeoutVoSearchBuilder.create();
-        searchCriteria.setParameters("command_classpath", commandClasspath);
-        return findOneBy(searchCriteria);
+    public int findMaxTimeoutBetweenCommands(Set<String> commandsClassPath) {
+        SearchCriteria<Integer> searchCriteria = maxCommandTimeoutSearchBuilder.create();
+        searchCriteria.setParameters("command_classpath", commandsClassPath.toArray());
+        Integer max = customSearch(searchCriteria, null).get(0);
+        return ObjectUtils.defaultIfNull(max, 0);
     }
 }

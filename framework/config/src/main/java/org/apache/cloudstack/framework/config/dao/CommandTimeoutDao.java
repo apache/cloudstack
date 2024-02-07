@@ -19,8 +19,10 @@ package org.apache.cloudstack.framework.config.dao;
 import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.framework.config.impl.CommandTimeoutVO;
 
+import java.util.Set;
+
 public interface CommandTimeoutDao extends GenericDao<CommandTimeoutVO, String> {
 
-    CommandTimeoutVO findByCommandClasspath(String commandClasspath);
+    int findMaxTimeoutBetweenCommands(Set<String> commandsClassPath);
 
 }

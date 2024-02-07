@@ -25,6 +25,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -34,6 +35,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -444,20 +446,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             throw new AgentUnavailableException(-1);
         }
 
-        if (timeout <= 0) {
-
-            for (Command command : commands) {
-                CommandTimeoutVO commandTimeoutVo = commandTimeoutDao.findByCommandClasspath(command.getClass().getName());
-
-                if (commandTimeoutVo != null && commandTimeoutVo.getTimeout() > timeout) {
-                    timeout = commandTimeoutVo.getTimeout();
-                }
-            }
-
-            if (timeout <= 0) {
-                timeout = Wait.value();
-            }
-        }
+        timeout = getTimeoutForCommands(commands, timeout);
 
         if (CheckTxnBeforeSending.value()) {
             if (!noDbTxn()) {
@@ -482,6 +471,31 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         notifyAnswersToMonitors(hostId, req.getSequence(), answers);
         commands.setAnswers(answers);
         return answers;
+    }
+
+    protected int getTimeoutForCommands(Commands commands, int timeout) {
+        Set<String> commandsClassPath = commands.getCommands().stream().map(command -> command.getClass().getName()).collect(Collectors.toSet());
+
+        if (timeout > 0) {
+            s_logger.trace(String.format("The timeout [%s] was already defined for commands %s; therefore, we will use it instead of searching for the max value in table " +
+                "[%s].", timeout, commandsClassPath, CommandTimeoutVO.TABLE_NAME));
+            return timeout;
+        }
+
+        s_logger.trace(String.format("The timeout for commands %s was not defined yet; therefore, we will search for the max value between the commands in table " +
+            "[%s].", commandsClassPath, CommandTimeoutVO.TABLE_NAME));
+        timeout = commandTimeoutDao.findMaxTimeoutBetweenCommands(commandsClassPath);
+
+        if (timeout > 0) {
+            s_logger.trace(String.format("We found [%s] as the max timeout between commands %s in table [%s]; using it.", timeout, commandsClassPath,
+                CommandTimeoutVO.TABLE_NAME));
+        } else {
+            timeout = Wait.value();
+            s_logger.trace(String.format("We did not find a max timeout between commands %s in table [%s]; therefore, we will fallback to the value of " +
+                    "configuration [%s]: [%s].", commandsClassPath, CommandTimeoutVO.TABLE_NAME, Wait.key(), timeout));
+        }
+
+        return timeout;
     }
 
     protected Status investigate(final AgentAttache agent) {

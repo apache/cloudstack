@@ -25,8 +25,10 @@ import javax.persistence.TemporalType;
 import java.util.Date;
 
 @Entity
-@Table(name = "command_timeout")
+@Table(name = CommandTimeoutVO.TABLE_NAME)
 public class CommandTimeoutVO {
+    public static final String TABLE_NAME = "command_timeout";
+
     @Id
     @Column(name = "command_classpath", length = 65535)
     private String commandClasspath;
