@@ -4572,7 +4572,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             } catch (CloudRuntimeException cre) {
                 ArrayList<ExceptionProxyObject> epoList =  cre.getIdProxyList();
                 if (epoList == null || !epoList.stream().anyMatch( e -> e.getUuid().equals(vm.getUuid()))) {
-                    cre.addProxyObject(vm.getUuid(), "vmId");
+                    cre.addProxyObject(vm.getUuid(), ApiConstants.VIRTUAL_MACHINE_ID);
                 }
                 throw cre;
             }
