@@ -4580,7 +4580,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return vm;
     }
 
-    private void OrchestrateVirtualMachineCreate(UserVmVO vm, GuestOSCategoryVO guestOSCategory, List<String> computeTags, List<String> rootDiskTags, DataCenterDeployment plan, Long rootDiskSize, VirtualMachineTemplate template, String hostName, String displayName, Account owner,
+    private void orchestrateVirtualMachineCreate(UserVmVO vm, GuestOSCategoryVO guestOSCategory, List<String> computeTags, List<String> rootDiskTags, DataCenterDeployment plan, Long rootDiskSize, VirtualMachineTemplate template, String hostName, String displayName, Account owner,
                                         Long diskOfferingId, Long diskSize,
                                         ServiceOffering offering, boolean isIso, LinkedHashMap<String, List<NicProfile>> networkNicMap,
                                         HypervisorType hypervisorType,
