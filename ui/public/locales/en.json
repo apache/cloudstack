@@ -2297,6 +2297,7 @@
 "label.usage.records.fetch.child.domains": "Fetch usage records for child domains",
 "label.usage.records.usagetype.required": "Usage type is required with resource ID",
 "label.usage.records.generate": "Generate usage records",
+"label.usage.records.generated": "A job has been created to generate usage records.",
 "label.usage.records.generate.description": "This will generate records only if there any records to be generated. i.e if the scheduled usage job was not run or failed",
 "label.usage.records.purge": "Purge usage records",
 "label.usage.records.purge.days": "Purge records older than",

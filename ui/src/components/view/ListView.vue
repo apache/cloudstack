@@ -167,7 +167,7 @@
         <router-link :to="{ path: createPathBasedOnVmType(record.vmtype, record.virtualmachineid) }">{{ text }}</router-link>
       </template>
       <template v-if="column.key === 'virtualmachinename'">
-        <router-link :to="{ path: getVmRouteUsingType(record) + record.virtualmachineid }">{{ text ? text : record.name }}</router-link>
+        <router-link :to="{ path: getVmRouteUsingType(record) + record.virtualmachineid }">{{ text }}</router-link>
       </template>
       <template v-if="column.key === 'volumename'">
         <router-link :to="{ path: '/volume/' + record.volumeid }">{{ text }}</router-link>
