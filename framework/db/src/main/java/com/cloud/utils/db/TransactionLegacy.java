@@ -583,7 +583,7 @@ public class TransactionLegacy implements Closeable {
 
             //
             // MySQL default transaction isolation level is REPEATABLE READ,
-            // to reduce chances of DB deadlock, we will use READ COMMITED isolation level instead
+            // to reduce chances of DB deadlock, we will use READ COMMITTED isolation level instead
             // see http://dev.mysql.com/doc/refman/5.0/en/innodb-deadlocks.html
             //
             _stack.push(new StackElement(CREATE_CONN, null));

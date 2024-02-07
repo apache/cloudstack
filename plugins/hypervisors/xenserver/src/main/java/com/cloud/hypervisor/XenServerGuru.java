@@ -28,7 +28,7 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.hypervisor.xenserver.XenserverConfigs;
 import org.apache.cloudstack.resourcedetail.dao.GuestOsDetailsDao;
 import org.apache.cloudstack.storage.command.CopyCommand;
-import org.apache.cloudstack.storage.command.DettachCommand;
+import org.apache.cloudstack.storage.command.DetachCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -148,7 +148,7 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru,
                     DataTO volTO = volFactory.getVolume(volume.getId()).getTO();
                     DiskTO disk = new DiskTO(volTO, volume.getDeviceId(), volume.getPath(), volume.getVolumeType());
 
-                    DettachCommand cmd = new DettachCommand(disk, vm.getInstanceName());
+                    DetachCommand cmd = new DetachCommand(disk, vm.getInstanceName());
 
                     cmd.setManaged(true);
 

@@ -91,7 +91,7 @@ import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
 import org.apache.cloudstack.snapshot.SnapshotHelper;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.CommandResult;
-import org.apache.cloudstack.storage.command.DettachCommand;
+import org.apache.cloudstack.storage.command.DetachCommand;
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
@@ -1299,8 +1299,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             cmd = new AttachCommand(disk, vmName, vmTO.getDetails());
             ((AttachCommand)cmd).setForced(forced);
         } else {
-            cmd = new DettachCommand(disk, vmName, vmTO.getDetails());
-            ((DettachCommand)cmd).setForced(forced);
+            cmd = new DetachCommand(disk, vmName, vmTO.getDetails());
+            ((DetachCommand)cmd).setForced(forced);
         }
         Answer a = _agentMgr.easySend(vm.getHostId(), cmd);
         return (a != null && a.getResult());

@@ -16,7 +16,7 @@
 # under the License.
 """
 
-Test cases relating to enabling/diabling of zone/pod/cluster/host
+Test cases relating to enabling/disabling of zone/pod/cluster/host
 
 """
 # Import System modules
@@ -335,7 +335,7 @@ class TestOrganizationStates(cloudstackTestCase):
     @attr("disruptive", "simulator_only", tags=["advanced"], required_hardware="false")
     def test_25_disablePod_user_stop_startVM(self):
         """
-            Validate that regular user is allowed to stop and start existing VMs runing in a disabled pod
+            Validate that regular user is allowed to stop and start existing VMs running in a disabled pod
         """
         self.vm_user.stop(self.user_apiclient)
         listResp = VirtualMachine.list(self.user_apiclient, id=self.vm_user.id)

@@ -380,7 +380,7 @@ class VirtualMachine:
     STOPPING = STOPPING
     STARTING = STARTING
 
-    # Varibles denoting VM state - end
+    # Variables denoting VM state - end
 
     def __init__(self, items, services):
         self.__dict__.update(items)

@@ -130,7 +130,7 @@ public class IscsiStorageCleanupMonitor implements Runnable{
         /**
          * When the state is false, the iscsi sessions are stale. They may be
          * removed. We go through each volume which is false, check iscsiadm,
-         * if the volume still exisits, logout of that volume and remove it from the map
+         * if the volume still exists, logout of that volume and remove it from the map
 
          * XXX: It is possible that someone had manually added an iSCSI volume.
          * we would not be able to detect that

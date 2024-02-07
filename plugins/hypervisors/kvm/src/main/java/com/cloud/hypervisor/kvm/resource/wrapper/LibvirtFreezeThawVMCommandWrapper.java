@@ -83,7 +83,7 @@ public class LibvirtFreezeThawVMCommandWrapper extends CommandWrapper<FreezeThaw
                 try {
                     domain.free();
                 } catch (LibvirtException e) {
-                    s_logger.trace("Ingore error ", e);
+                    s_logger.trace("Ignore error ", e);
                 }
             }
         }

@@ -45,7 +45,7 @@ public class UpdateHypervisorCapabilitiesCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HypervisorCapabilitiesResponse.class, description = "ID of the hypervisor capability")
     private Long id;
 
-    @Parameter(name = ApiConstants.SECURITY_GROUP_EANBLED, type = CommandType.BOOLEAN, description = "set true to enable security group for this hypervisor.")
+    @Parameter(name = ApiConstants.SECURITY_GROUP_ENABLED, type = CommandType.BOOLEAN, description = "set true to enable security group for this hypervisor.")
     private Boolean securityGroupEnabled;
 
     @Parameter(name = ApiConstants.MAX_GUESTS_LIMIT, type = CommandType.LONG, description = "the max number of Guest VMs per host for this hypervisor.")

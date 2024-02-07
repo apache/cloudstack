@@ -1250,7 +1250,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             List<UsageVMInstanceVO> usageInstances = _usageInstanceDao.search(sc, null);
             if (usageInstances != null) {
                 if (usageInstances.size() > 1) {
-                    s_logger.warn("found multiple entries for a vm allocated with id: " + vmId + ", detroying them all...");
+                    s_logger.warn("found multiple entries for a vm allocated with id: " + vmId + ", destroying them all...");
                 }
                 for (UsageVMInstanceVO usageInstance : usageInstances) {
                     usageInstance.setEndDate(event.getCreateDate());

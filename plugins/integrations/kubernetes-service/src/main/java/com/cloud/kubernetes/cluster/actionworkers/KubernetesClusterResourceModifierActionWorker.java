@@ -186,7 +186,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     }
 
     protected String updateKubeConfigWithRegistryDetails(String k8sConfig) {
-        /* genarate /etc/containerd/config.toml file on the nodes only if Kubernetes cluster is created to
+        /* generate /etc/containerd/config.toml file on the nodes only if Kubernetes cluster is created to
          * use docker private registry */
         String registryUsername = null;
         String registryPassword = null;

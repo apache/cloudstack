@@ -3210,7 +3210,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Boolean fetchLatest = cmd.getFetchLatest();
 
         if (clusterId != null) {
-            throw new InvalidParameterValueException("Currently clusterId param is not suppoerted");
+            throw new InvalidParameterValueException("Currently clusterId param is not supported");
         }
         zoneId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), zoneId);
 

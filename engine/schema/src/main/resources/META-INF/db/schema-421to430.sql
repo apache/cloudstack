@@ -76,7 +76,7 @@ CREATE TABLE `cloud`.`async_job_journal` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `job_id` bigint unsigned NOT NULL,
   `journal_type` varchar(32),
-  `journal_text` varchar(1024) COMMENT 'journal descriptive informaton',
+  `journal_text` varchar(1024) COMMENT 'journal descriptive information',
   `journal_obj` varchar(1024) COMMENT 'journal strutural information, JSON encoded object',
   `created` datetime NOT NULL COMMENT 'date created',
   PRIMARY KEY (`id`),

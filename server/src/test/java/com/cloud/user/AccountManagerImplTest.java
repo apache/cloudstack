@@ -563,19 +563,19 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
     }
 
     @Test
-    public void valiateUserPasswordAndUpdateIfNeededTestPasswordNull() {
+    public void validateUserPasswordAndUpdateIfNeededTestPasswordNull() {
         accountManagerImpl.validateUserPasswordAndUpdateIfNeeded(null, userVoMock, null);
 
         Mockito.verify(userVoMock, Mockito.times(0)).setPassword(Mockito.anyString());
     }
 
     @Test(expected = InvalidParameterValueException.class)
-    public void valiateUserPasswordAndUpdateIfNeededTestBlankPassword() {
+    public void validateUserPasswordAndUpdateIfNeededTestBlankPassword() {
         accountManagerImpl.validateUserPasswordAndUpdateIfNeeded("       ", userVoMock, null);
     }
 
     @Test(expected = InvalidParameterValueException.class)
-    public void valiateUserPasswordAndUpdateIfNeededTestNoAdminAndNoCurrentPasswordProvided() {
+    public void validateUserPasswordAndUpdateIfNeededTestNoAdminAndNoCurrentPasswordProvided() {
         Mockito.doReturn(accountMock).when(accountManagerImpl).getCurrentCallingAccount();
         Mockito.doReturn(false).when(accountManagerImpl).isRootAdmin(accountMockId);
         Mockito.doReturn(false).when(accountManagerImpl).isDomainAdmin(accountMockId);
@@ -589,7 +589,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
     }
 
     @Test(expected = CloudRuntimeException.class)
-    public void valiateUserPasswordAndUpdateIfNeededTestNoUserAuthenticatorsConfigured() {
+    public void validateUserPasswordAndUpdateIfNeededTestNoUserAuthenticatorsConfigured() {
         Mockito.doReturn(accountMock).when(accountManagerImpl).getCurrentCallingAccount();
         Mockito.doReturn(true).when(accountManagerImpl).isRootAdmin(accountMockId);
         Mockito.doReturn(false).when(accountManagerImpl).isDomainAdmin(accountMockId);

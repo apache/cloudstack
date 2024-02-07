@@ -282,7 +282,7 @@ public interface ConfigurationService {
     /**
      * Deletes a zone from the database. Will not allow you to delete zones that are being used anywhere in the system.
      *
-     * @param cmd command object containg the zoneid
+     * @param cmd command object containing the zoneid
      */
     boolean deleteZone(DeleteZoneCmd cmd);
 

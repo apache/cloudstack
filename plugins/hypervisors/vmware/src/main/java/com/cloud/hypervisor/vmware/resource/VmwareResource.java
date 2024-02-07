@@ -3050,7 +3050,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
     /**
      * Set the vApp configuration to vmConfig spec, copying existing configuration from vAppConfig
-     * and seting properties values from ovfProperties
+     * and setting properties values from ovfProperties
      */
     protected void setVAppPropertiesToConfigSpec(VmConfigInfo vAppConfig,
                                                  Map<String, String> ovfProperties,
@@ -4932,7 +4932,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             try {
                 // OfflineVmwareMigration: worker *may* have been renamed
                 vmName = vmMo.getVmName();
-                s_logger.info("Dettaching disks before destroying worker VM '" + vmName + "' after volume migration");
+                s_logger.info("Detaching disks before destroying worker VM '" + vmName + "' after volume migration");
                 VirtualDisk[] disks = vmMo.getAllDiskDevice();
                 String format = "disk %d was migrated to %s";
                 for (VirtualDisk disk : disks) {

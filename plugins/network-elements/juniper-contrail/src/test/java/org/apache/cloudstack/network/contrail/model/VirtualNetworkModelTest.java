@@ -145,7 +145,7 @@ public class VirtualNetworkModelTest extends TestCase {
         VirtualNetworkModel guestModel2 = new VirtualNetworkModel(network, UUID.randomUUID().toString(), "test", TrafficType.Guest);
         db.getVirtualNetworks().add(guestModel2);
         s_logger.debug("networks: " + db.getVirtualNetworks().size());
-        s_logger.debug("No of Vitual Networks added to database : " + db.getVirtualNetworks().size());
+        s_logger.debug("No of Virtual Networks added to database : " + db.getVirtualNetworks().size());
         assertEquals(4, db.getVirtualNetworks().size());
         assertSame(storageModel, db.lookupVirtualNetwork(null, storageModel.getName(), TrafficType.Storage));
         assertSame(mgmtModel, db.lookupVirtualNetwork(null, mgmtModel.getName(), TrafficType.Management));

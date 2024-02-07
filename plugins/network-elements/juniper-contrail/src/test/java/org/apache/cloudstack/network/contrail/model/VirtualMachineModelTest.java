@@ -60,7 +60,7 @@ public class VirtualMachineModelTest extends TestCase {
         VirtualMachineModel vm2 = new VirtualMachineModel(vm, "fbc1f8fa-4b78-45ee-bba0-b551dbf94575");
         db.getVirtualMachines().add(vm2);
 
-        s_logger.debug("No of Vitual Machines added to database : " + db.getVirtualMachines().size());
+        s_logger.debug("No of Virtual Machines added to database : " + db.getVirtualMachines().size());
 
         assertEquals(3, db.getVirtualMachines().size());
 

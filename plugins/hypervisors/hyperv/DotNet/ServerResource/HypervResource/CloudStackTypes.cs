@@ -871,8 +871,8 @@ namespace HypervResource
         public const string CreateObjectAnswer = "org.apache.cloudstack.storage.command.CreateObjectAnswer";
         public const string CreateObjectCommand = "org.apache.cloudstack.storage.command.CreateObjectCommand";
         public const string DeleteCommand = "org.apache.cloudstack.storage.command.DeleteCommand";
-        public const string DettachAnswer = "org.apache.cloudstack.storage.command.DettachAnswer";
-        public const string DettachCommand = "org.apache.cloudstack.storage.command.DettachCommand";
+        public const string DetachAnswer = "org.apache.cloudstack.storage.command.DetachAnswer";
+        public const string DetachCommand = "org.apache.cloudstack.storage.command.DetachCommand";
         public const string HostVmStateReportCommand = "org.apache.cloudstack.HostVmStateReportCommand";
     }
 }

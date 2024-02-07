@@ -294,7 +294,7 @@ class TestHosts(cloudstackTestCase):
             "Host state not correct"
         )
         check_db(self, host_state)
-        # disbale the zone and check op_host_capacity table
+        # disable the zone and check op_host_capacity table
         zone_state = "Disabled"
         zone_allocationstate = update_zone(
             self.apiclient,

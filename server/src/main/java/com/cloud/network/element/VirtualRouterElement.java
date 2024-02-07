@@ -300,7 +300,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
 
             if (rules != null && rules.size() == 1) {
                 // for VR no need to add default egress rule to ALLOW traffic
-                //The default allow rule is added from the router defalut iptables rules iptables-router
+                //The default allow rule is added from the router default iptables rules iptables-router
                 if (rules.get(0).getTrafficType() == FirewallRule.TrafficType.Egress && rules.get(0).getType() == FirewallRule.FirewallRuleType.System
                         && _networkMdl.getNetworkEgressDefaultPolicy(network.getId())) {
                     return true;

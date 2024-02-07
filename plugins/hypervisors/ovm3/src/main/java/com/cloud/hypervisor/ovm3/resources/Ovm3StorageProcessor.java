@@ -30,7 +30,7 @@ import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
-import org.apache.cloudstack.storage.command.DettachCommand;
+import org.apache.cloudstack.storage.command.DetachCommand;
 import org.apache.cloudstack.storage.command.ForgetObjectCmd;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
 import org.apache.cloudstack.storage.command.ResignatureAnswer;
@@ -413,8 +413,8 @@ public class Ovm3StorageProcessor implements StorageProcessor {
      * Detach an iso
      */
     @Override
-    public AttachAnswer dettachIso(DettachCommand cmd) {
-        LOGGER.debug("execute dettachIso: "+ cmd.getClass());
+    public AttachAnswer detachIso(DetachCommand cmd) {
+        LOGGER.debug("execute detachIso: "+ cmd.getClass());
         String vmName = cmd.getVmName();
         DiskTO disk = cmd.getDisk();
         return attachDetach(cmd, vmName, disk, false);
@@ -469,7 +469,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
     private AttachAnswer attachDetach(Command cmd, String vmName, DiskTO disk,
             boolean isAttach) {
         Xen xen = new Xen(c);
-        String doThis = (isAttach) ? "Attach" : "Dettach";
+        String doThis = (isAttach) ? "Attach" : "Detach";
         LOGGER.debug(doThis + " volume type " + disk.getType() + "  " + vmName);
         String msg = "";
         String path = "";
@@ -528,8 +528,8 @@ public class Ovm3StorageProcessor implements StorageProcessor {
      * Detach a volume
      */
     @Override
-    public AttachAnswer dettachVolume(DettachCommand cmd) {
-        LOGGER.debug("execute dettachVolume: "+ cmd.getClass());
+    public AttachAnswer detachVolume(DetachCommand cmd) {
+        LOGGER.debug("execute detachVolume: "+ cmd.getClass());
         String vmName = cmd.getVmName();
         DiskTO disk = cmd.getDisk();
         return attachDetach(cmd, vmName, disk, false);
@@ -704,7 +704,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
         Long templateId = cmd.getTemplateId();
         int wait = cmd.getWait();
         if (wait == 0) {
-            /* Defaut timeout 2 hours */
+            /* Default timeout 2 hours */
             wait = 7200;
         }
 
@@ -862,7 +862,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
      * @param cmd
      * @return
      */
-    public Answer execute(DettachCommand cmd) {
+    public Answer execute(DetachCommand cmd) {
         LOGGER.debug("execute: "+ cmd.getClass());
         String vmName = cmd.getVmName();
         DiskTO disk = cmd.getDisk();

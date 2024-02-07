@@ -282,7 +282,7 @@ def replace_or_add_line(f,startswith,stanza):
 # ==================================== CHECK FUNCTIONS ==========================
 
 # If they return without exception, it's okay.  If they raise a CheckFailed exception, that means a condition
-# (generallly one that needs administrator intervention) was detected.
+# (generally one that needs administrator intervention) was detected.
 
 class CheckFailed(Exception): pass
 

@@ -199,7 +199,7 @@ public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements
         }
         String pingDir = pcmd.getPingDir();
         if (pingDir == null) {
-            throw new IllegalArgumentException("No direcotry for storage server specified");
+            throw new IllegalArgumentException("No directory for storage server specified");
         }
         String tftpDir = pcmd.getTftpDir();
         if (tftpDir == null) {

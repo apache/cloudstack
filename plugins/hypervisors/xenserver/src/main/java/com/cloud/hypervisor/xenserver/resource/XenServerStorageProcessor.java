@@ -41,8 +41,8 @@ import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
-import org.apache.cloudstack.storage.command.DettachAnswer;
-import org.apache.cloudstack.storage.command.DettachCommand;
+import org.apache.cloudstack.storage.command.DetachAnswer;
+import org.apache.cloudstack.storage.command.DetachCommand;
 import org.apache.cloudstack.storage.command.ForgetObjectCmd;
 import org.apache.cloudstack.storage.command.IntroduceObjectAnswer;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
@@ -384,7 +384,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
     }
 
     @Override
-    public Answer dettachIso(final DettachCommand cmd) {
+    public Answer detachIso(final DetachCommand cmd) {
         final DiskTO disk = cmd.getDisk();
         final DataTO data = disk.getData();
         final DataStoreTO store = data.getDataStore();
@@ -435,20 +435,20 @@ public class XenServerStorageProcessor implements StorageProcessor {
                 hypervisorResource.removeSR(conn, sr);
             }
 
-            return new DettachAnswer(disk);
+            return new DetachAnswer(disk);
         } catch (final XenAPIException e) {
             final String msg = "Failed to detach volume" + " for uuid: " + data.getPath() + "  due to " + e.toString();
             s_logger.warn(msg, e);
-            return new DettachAnswer(msg);
+            return new DetachAnswer(msg);
         } catch (final Exception e) {
             final String msg = "Failed to detach volume" + " for uuid: " + data.getPath() + "  due to " + e.getMessage();
             s_logger.warn(msg, e);
-            return new DettachAnswer(msg);
+            return new DetachAnswer(msg);
         }
     }
 
     @Override
-    public Answer dettachVolume(final DettachCommand cmd) {
+    public Answer detachVolume(final DetachCommand cmd) {
         final DiskTO disk = cmd.getDisk();
         final DataTO data = disk.getData();
 
@@ -472,7 +472,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
             // if the VM is not running and we're not dealing with managed storage, just return success (nothing to do here)
             // this should probably never actually happen
             if (vmNotRunning && !cmd.isManaged()) {
-                return new DettachAnswer(disk);
+                return new DetachAnswer(disk);
             }
 
             if (!vmNotRunning) {
@@ -499,10 +499,10 @@ public class XenServerStorageProcessor implements StorageProcessor {
                 hypervisorResource.handleSrAndVdiDetach(cmd.get_iScsiName(), conn);
             }
 
-            return new DettachAnswer(disk);
+            return new DetachAnswer(disk);
         } catch (final Exception e) {
-            s_logger.warn("Failed dettach volume: " + data.getPath());
-            return new DettachAnswer("Failed dettach volume: " + data.getPath() + ", due to " + e.toString());
+            s_logger.warn("Failed detach volume: " + data.getPath());
+            return new DetachAnswer("Failed detach volume: " + data.getPath() + ", due to " + e.toString());
         }
     }
 

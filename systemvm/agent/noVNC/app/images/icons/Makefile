@@ -17,7 +17,7 @@ ALL_ICONS := \
 all: $(ALL_ICONS)
 
 # Our testing shows that the ICO file need to be sorted in largest to
-# smallest to get the apporpriate behviour
+# smallest to get the appropriate behaviour
 WEB_ICON_SIZES_REVERSE := $(shell echo $(WEB_ICON_SIZES) | tr ' ' '\n' | sort -nr | tr '\n' ' ')
 WEB_BASE_ICONS := $(WEB_ICON_SIZES_REVERSE:%=novnc-%.png)
 .INTERMEDIATE: $(WEB_BASE_ICONS)

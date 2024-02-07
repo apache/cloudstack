@@ -208,8 +208,8 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
     public boolean start() {
         if (cacheReplacementEnabled) {
             Random generator = new Random();
-            int initalDelay = generator.nextInt(cacheReplaceMentInterval);
-            executors.scheduleWithFixedDelay(new CacheReplacementRunner(), initalDelay, cacheReplaceMentInterval, TimeUnit.SECONDS);
+            int initialDelay = generator.nextInt(cacheReplaceMentInterval);
+            executors.scheduleWithFixedDelay(new CacheReplacementRunner(), initialDelay, cacheReplaceMentInterval, TimeUnit.SECONDS);
         }
         return true;
     }

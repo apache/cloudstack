@@ -106,7 +106,7 @@ public class Ovm3HypervisorNetwork {
                     return true;
                 }
             } catch (Ovm3ResourceException e) {
-                LOGGER.debug("Unxpected error looking for name: " + nameTag, e);
+                LOGGER.debug("Unexpected error looking for name: " + nameTag, e);
                 return false;
             }
         }

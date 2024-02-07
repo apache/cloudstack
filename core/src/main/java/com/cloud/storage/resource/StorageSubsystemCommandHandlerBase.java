@@ -26,7 +26,7 @@ import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
-import org.apache.cloudstack.storage.command.DettachCommand;
+import org.apache.cloudstack.storage.command.DetachCommand;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
 import org.apache.cloudstack.storage.command.QuerySnapshotZoneCopyAnswer;
 import org.apache.cloudstack.storage.command.QuerySnapshotZoneCopyCommand;
@@ -68,8 +68,8 @@ public class StorageSubsystemCommandHandlerBase implements StorageSubsystemComma
             return execute((DeleteCommand)command);
         } else if (command instanceof AttachCommand) {
             return execute((AttachCommand)command);
-        } else if (command instanceof DettachCommand) {
-            return execute((DettachCommand)command);
+        } else if (command instanceof DetachCommand) {
+            return execute((DetachCommand)command);
         } else if (command instanceof IntroduceObjectCmd) {
             return processor.introduceObject((IntroduceObjectCmd)command);
         } else if (command instanceof SnapshotAndCopyCommand) {
@@ -169,12 +169,12 @@ public class StorageSubsystemCommandHandlerBase implements StorageSubsystemComma
         }
     }
 
-    protected Answer execute(DettachCommand cmd) {
+    protected Answer execute(DetachCommand cmd) {
         DiskTO disk = cmd.getDisk();
         if (disk.getType() == Volume.Type.ISO) {
-            return processor.dettachIso(cmd);
+            return processor.detachIso(cmd);
         } else {
-            return processor.dettachVolume(cmd);
+            return processor.detachVolume(cmd);
         }
     }
 

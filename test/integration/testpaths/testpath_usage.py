@@ -453,7 +453,7 @@ class TestUsage(cloudstackTestCase):
         # 12. Start the VM
         # 13. Verify that the running VM usage after start operation is less
               than the allocated VM usage
-        # 14. Verify that the running VM usage after start vm opearation
+        # 14. Verify that the running VM usage after start vm operation
               is greater running VM usage after recover VM operation
         """
 

@@ -214,7 +214,7 @@ def restart_ms(self):
 
 
 def update_global_settings(self, value, name, zoneid=None):
-    """Update Gloabal/zonelevel settings and verify
+    """Update Global/zonelevel settings and verify
     #1-Update configuration
     #2-Restart ms if zone id is None"""
     Configurations.update(self.apiclient,

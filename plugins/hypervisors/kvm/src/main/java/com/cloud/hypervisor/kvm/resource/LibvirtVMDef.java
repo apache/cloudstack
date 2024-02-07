@@ -610,7 +610,7 @@ public class LibvirtVMDef {
         }
 
         public enum DiskType {
-            FILE("file"), BLOCK("block"), DIRECTROY("dir"), NETWORK("network");
+            FILE("file"), BLOCK("block"), DIRECTORY("dir"), NETWORK("network");
             String _diskType;
 
             DiskType(String type) {

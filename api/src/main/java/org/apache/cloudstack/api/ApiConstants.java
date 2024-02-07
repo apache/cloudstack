@@ -621,7 +621,7 @@ public class ApiConstants {
     public static final String SERVICE_NAME = "servicename";
     public static final String DHCP_RANGE = "dhcprange";
     public static final String UUID = "uuid";
-    public static final String SECURITY_GROUP_EANBLED = "securitygroupenabled";
+    public static final String SECURITY_GROUP_ENABLED = "securitygroupenabled";
     public static final String LOCAL_STORAGE_ENABLED = "localstorageenabled";
     public static final String GUEST_IP_TYPE = "guestiptype";
     public static final String GUEST_IP6_PREFIX = "guestip6prefix";

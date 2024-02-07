@@ -1564,7 +1564,7 @@ class TestPersistentNetworks(cloudstackTestCase):
         self.assertEqual(
             validateList(networks)[0],
             FAIL,
-            "network list should be enmpty, it is %s" %
+            "network list should be empty, it is %s" %
             networks)
 
         public_ips = PublicIPAddress.list(

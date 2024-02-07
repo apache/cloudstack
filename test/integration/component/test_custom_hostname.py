@@ -559,7 +559,7 @@ class TestInstanceNameFlagTrue(cloudstackTestCase):
             "Vm state should be running after deployment"
         )
         self.debug("Display name: %s" % vm.displayname)
-        self.debug("Deplying another virtual machine with same name")
+        self.debug("Deploying another virtual machine with same name")
         with self.assertRaises(Exception):
             VirtualMachine.create(
                 self.apiclient,

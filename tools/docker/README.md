@@ -102,7 +102,7 @@ tag:latest = main branch
    docker build -f Dockerfile.centos6 -t cloudstack/management_centos6 .
    ```
 
-2. on jenkins, database and systemvm.iso are pre-deployed. the inital start require privileged container to
+2. on jenkins, database and systemvm.iso are pre-deployed. the initial start require privileged container to
    mount systemvm.iso and copy ssh_rsa.pub into it.
 
    ```

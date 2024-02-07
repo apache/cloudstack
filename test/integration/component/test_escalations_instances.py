@@ -2072,7 +2072,7 @@ class TestListInstances(cloudstackTestCase):
     @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_14_Create_vm_with_same_sshkey(self):
         """
-        @Desc: Test to verify API call Register ssh key pair fails when uses same public key for differnet key name
+        @Desc: Test to verify API call Register ssh key pair fails when uses same public key for different key name
         """
 
 

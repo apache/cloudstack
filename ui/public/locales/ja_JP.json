@@ -800,7 +800,7 @@
   "label.disabled": "無効",
   "label.disabling.vpn.access": "VPNアクセスを無効にしています",
   "label.disassociate.profile.blade": "プロファイルとブレードの関連付けの解除",
-  "label.disbale.vnmc.device": "VNMCデバイスの無効化",
+  "label.disable.vnmc.device": "VNMCデバイスの無効化",
   "label.disconnected": "最終切断日時",
   "label.disk": "ディスク",
   "label.disk.newoffering": "新しいディスクオファリング",
