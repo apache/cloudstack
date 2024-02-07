@@ -35,7 +35,7 @@ public class SetupKeyStoreCommand extends NetworkElementCommand {
 
     public SetupKeyStoreCommand(final int validityDays) {
         super();
-        setWait(60);
+
         this.validityDays = validityDays;
         if (this.validityDays < 1) {
             this.validityDays = 1;
