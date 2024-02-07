@@ -890,6 +890,11 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
     }
 
     @Override
+    public VirtualRouterProvider.Type getProviderType() {
+        return VirtualRouterProvider.Type.Nsx;
+    }
+
+    @Override
     public List<Class<?>> getCommands() {
         List<Class<?>> cmdList = new ArrayList<Class<?>>();
         cmdList.add(CreateInternalLoadBalancerElementCmd.class);

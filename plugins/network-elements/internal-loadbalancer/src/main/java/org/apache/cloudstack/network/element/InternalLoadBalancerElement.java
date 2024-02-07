@@ -84,7 +84,9 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.network.router.NetworkHelper;
+import org.springframework.stereotype.Component;
 
+@Component
 public class InternalLoadBalancerElement extends AdapterBase implements LoadBalancingServiceProvider, InternalLoadBalancerElementService, IpDeployer {
     private static final Logger s_logger = Logger.getLogger(InternalLoadBalancerElement.class);
     protected static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
@@ -114,14 +116,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
     @Qualifier("networkHelper")
     protected NetworkHelper _networkHelper;
 
-    protected InternalLoadBalancerElement() {
-    }
-
-    public static InternalLoadBalancerElement getInstance() {
-        if (internalLbElement == null) {
-            internalLbElement = new InternalLoadBalancerElement();
-        }
-        return internalLbElement;
+    public InternalLoadBalancerElement() {
     }
 
     private boolean canHandle(Network config, Scheme lbScheme) {
@@ -517,6 +512,11 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
         sc.and(sc.entity().getType(), Op.EQ, VirtualRouterProvider.Type.InternalLbVm);
 
         return sc.list();
+    }
+
+    @Override
+    public Type getProviderType() {
+        return Type.InternalLbVm;
     }
 
     @Override

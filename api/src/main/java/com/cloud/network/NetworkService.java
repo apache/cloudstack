@@ -56,6 +56,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
+import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 
 /**
  * The NetworkService interface is the "public" api to entities that make requests to the orchestration engine
@@ -257,4 +258,9 @@ public interface NetworkService {
     PublicIpQuarantine updatePublicIpAddressInQuarantine(UpdateQuarantinedIpCmd cmd);
 
     void removePublicIpAddressFromQuarantine(RemoveQuarantinedIpCmd cmd);
+
+    InternalLoadBalancerElementService getInternalLoadBalancerElementByType(VirtualRouterProvider.Type type);
+    InternalLoadBalancerElementService getInternalLoadBalancerElementByNetworkServiceProviderId(long networkProviderId);
+    InternalLoadBalancerElementService getInternalLoadBalancerElementById(long providerId);
+    List<InternalLoadBalancerElementService> getInternalLoadBalancerElements();
 }
