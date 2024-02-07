@@ -23,6 +23,7 @@ import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
+import org.libvirt.Library;
 import org.libvirt.LibvirtException;
 
 import com.cloud.hypervisor.Hypervisor;
@@ -34,6 +35,7 @@ public class LibvirtConnection {
 
     static private Connect s_connection;
     static private String s_hypervisorURI;
+    static private Thread libvirtEventThread;
 
     static public Connect getConnection() throws LibvirtException {
         return getConnection(s_hypervisorURI);
@@ -45,6 +47,8 @@ public class LibvirtConnection {
 
         if (conn == null) {
             s_logger.info("No existing libvirtd connection found. Opening a new one");
+
+            setupEventListener();
             conn = new Connect(hypervisorURI, false);
             s_logger.debug("Successfully connected to libvirt at: " + hypervisorURI);
             s_connections.put(hypervisorURI, conn);
@@ -53,7 +57,15 @@ public class LibvirtConnection {
                 conn.getVersion();
             } catch (LibvirtException e) {
                 s_logger.error("Connection with libvirtd is broken: " + e.getMessage());
+
+                try {
+                    conn.close();
+                } catch (LibvirtException closeEx) {
+                    s_logger.debug("Ignoring error while trying to close broken connection:" + closeEx.getMessage());
+                }
+
                 s_logger.debug("Opening a new libvirtd connection to: " + hypervisorURI);
+                setupEventListener();
                 conn = new Connect(hypervisorURI, false);
                 s_connections.put(hypervisorURI, conn);
             }
@@ -100,5 +112,34 @@ public class LibvirtConnection {
         }
 
         return "qemu:///system";
+    }
+
+    /**
+     * Set up Libvirt event handling and polling. This is not specific to a connection object instance, but needs
+     * to be done prior to creating connections. See the Libvirt documentation for virEventRegisterDefaultImpl and
+     * virEventRunDefaultImpl or the libvirt-java Library Javadoc for more information.
+     * @throws LibvirtException
+     */
+    private static synchronized void setupEventListener() throws LibvirtException {
+        if (libvirtEventThread == null || !libvirtEventThread.isAlive()) {
+            // Registers a default event loop, must be called before connecting to hypervisor
+            Library.initEventLoop();
+            libvirtEventThread = new Thread(() -> {
+                while (true) {
+                    try {
+                        // This blocking call contains a loop of its own that will process events until the event loop is stopped or exception is thrown.
+                        Library.runEventLoop();
+                    } catch (LibvirtException e) {
+                        s_logger.error("LibvirtException was thrown in event loop: ", e);
+                    } catch (InterruptedException e) {
+                        s_logger.error("Libvirt event loop was interrupted: ", e);
+                    }
+                }
+            });
+
+            // Process events in separate thread. Failure to run event loop regularly will cause connections to close due to keepalive timeout.
+            libvirtEventThread.setDaemon(true);
+            libvirtEventThread.start();
+        }
     }
 }

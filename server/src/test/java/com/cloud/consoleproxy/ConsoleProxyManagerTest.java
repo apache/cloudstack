@@ -32,6 +32,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
 import org.apache.log4j.Logger;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -46,9 +47,9 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.mockito.AdditionalMatchers.not;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -66,17 +67,23 @@ public class ConsoleProxyManagerTest {
     NetworkDao networkDaoMock;
     @Mock
     ConsoleProxyManagerImpl consoleProxyManagerImplMock;
+    private AutoCloseable closeable;
 
     @Before
     public void setup() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         ReflectionTestUtils.setField(consoleProxyManagerImplMock, "allocProxyLock", globalLockMock);
         ReflectionTestUtils.setField(consoleProxyManagerImplMock, "dataCenterDao", dataCenterDaoMock);
         ReflectionTestUtils.setField(consoleProxyManagerImplMock, "networkDao", networkDaoMock);
-        Mockito.doCallRealMethod().when(consoleProxyManagerImplMock).expandPool(Mockito.anyLong(), Mockito.anyObject());
+        Mockito.doCallRealMethod().when(consoleProxyManagerImplMock).expandPool(Mockito.anyLong(), Mockito.any());
         Mockito.doCallRealMethod().when(consoleProxyManagerImplMock).getDefaultNetworkForCreation(Mockito.any(DataCenter.class));
         Mockito.doCallRealMethod().when(consoleProxyManagerImplMock).getDefaultNetworkForAdvancedZone(Mockito.any(DataCenter.class));
         Mockito.doCallRealMethod().when(consoleProxyManagerImplMock).getDefaultNetworkForBasicZone(Mockito.any(DataCenter.class));
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test

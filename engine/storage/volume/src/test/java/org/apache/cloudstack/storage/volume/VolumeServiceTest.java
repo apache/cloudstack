@@ -19,6 +19,7 @@
 
 package org.apache.cloudstack.storage.volume;
 
+import com.cloud.storage.Storage;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotManager;
@@ -185,7 +186,9 @@ public class VolumeServiceTest extends TestCase{
     public void validateDestroySourceVolumeAfterMigrationExpungeSourceVolumeAfterMigrationThrowExceptionReturnFalse() throws
       ExecutionException, InterruptedException{
         VolumeObject volumeObject = new VolumeObject();
-        volumeObject.configure(null, new VolumeVO() {});
+        VolumeVO vo = new VolumeVO() {};
+        vo.setPoolType(Storage.StoragePoolType.Filesystem);
+        volumeObject.configure(null, vo);
 
         List<Exception> exceptions = new ArrayList<>(Arrays.asList(new InterruptedException(), new ExecutionException() {}));
 

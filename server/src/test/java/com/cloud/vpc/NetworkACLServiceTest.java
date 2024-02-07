@@ -47,7 +47,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -100,16 +100,16 @@ public class NetworkACLServiceTest extends TestCase {
 
     @Test(expected = InvalidParameterValueException.class)
     public void testDeleteDefaultACL() throws Exception {
-        Mockito.when(_networkACLDao.findById(Matchers.anyLong())).thenReturn(acl);
+        Mockito.when(_networkACLDao.findById(ArgumentMatchers.anyLong())).thenReturn(acl);
         Mockito.when(_networkAclMgr.deleteNetworkACL(acl)).thenReturn(true);
         _aclService.deleteNetworkACL(1L);
     }
 
     @Test
     public void testDeleteACLItem() throws Exception {
-        Mockito.when(_networkACLItemDao.findById(Matchers.anyLong())).thenReturn(aclItem);
-        Mockito.when(_networkAclMgr.getNetworkACL(Matchers.anyLong())).thenReturn(acl);
-        Mockito.when(_networkAclMgr.revokeNetworkACLItem(Matchers.anyLong())).thenReturn(true);
+        Mockito.when(_networkACLItemDao.findById(ArgumentMatchers.anyLong())).thenReturn(aclItem);
+        Mockito.when(_networkAclMgr.getNetworkACL(ArgumentMatchers.anyLong())).thenReturn(acl);
+        Mockito.when(_networkAclMgr.revokeNetworkACLItem(ArgumentMatchers.anyLong())).thenReturn(true);
         Mockito.when(_entityMgr.findById(Mockito.eq(Vpc.class), Mockito.anyLong())).thenReturn(new VpcVO());
         assertTrue(_aclService.revokeNetworkACLItem(1L));
     }

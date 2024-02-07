@@ -50,6 +50,7 @@ import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.user.User;
+import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.Pair;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
@@ -267,6 +268,8 @@ public interface NetworkOrchestrationService {
         throws ConcurrentOperationException, InsufficientAddressCapacityException, ResourceUnavailableException, InsufficientCapacityException;
 
     Map<String, String> finalizeServicesAndProvidersForNetwork(NetworkOffering offering, Long physicalNetworkId);
+
+    boolean stateTransitTo(Network network, Network.Event e) throws NoTransitionException;
 
     List<Provider> getProvidersForServiceInNetwork(Network network, Service service);
 
