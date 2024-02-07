@@ -838,19 +838,19 @@ public class QemuImg {
             script.add(imageOptions.toCommandFlag());
         }
 
-        script.add("--output=json");
-
         if (StringUtils.isNotEmpty(repair)) {
             script.add("-r");
             script.add(repair);
         }
 
-        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
-        final String result = script.execute(parser);
+        script.add("--output=json");
+        script.add("2>/dev/null");
+
+        final String result = Script.runBashScriptIgnoreExitValue(script.toString(), 3);
         if (result != null) {
-            throw new QemuImgException(result);
+            logger.debug("Check volume execution result " +  result);
         }
 
-        return (parser.getLines() != null) ? parser.getLines().trim() : null;
+        return result;
     }
 }

@@ -117,31 +117,43 @@ public class LibvirtCheckAndRepairVolumeCommandWrapper extends CommandWrapper<Ch
         return answer;
     }
 
-    private CheckAndRepairVolumeAnswer checkIfRepairLeaksIsRequired(CheckAndRepairVolumeCommand command, String checkVolumeResult, String volumeName) throws JsonProcessingException {
+    private CheckAndRepairVolumeAnswer checkIfRepairLeaksIsRequired(CheckAndRepairVolumeCommand command, String checkVolumeResult, String volumeName) {
         final String repair = command.getRepair();
         int leaks = 0;
         if (StringUtils.isNotEmpty(checkVolumeResult) && StringUtils.isNotEmpty(repair) && repair.equals("leaks")) {
             ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode jsonNode = objectMapper.readTree(checkVolumeResult);
+            JsonNode jsonNode = null;
+            try {
+                jsonNode = objectMapper.readTree(checkVolumeResult);
+            } catch (JsonProcessingException e) {
+                String msg = String.format("Error processing response %s during check volume %s", checkVolumeResult, e.getMessage());
+                s_logger.info(msg);
+
+                return skipRepairVolumeCommand(command, checkVolumeResult, msg);
+            }
             JsonNode leaksNode = jsonNode.get("leaks");
             if (leaksNode != null) {
                 leaks = leaksNode.asInt();
             }
 
             if (leaks == 0) {
-                String msg = String.format("no leaks found while checking for the volume %s, so skipping repair", volumeName);
-                s_logger.info(msg);
-                String jsonStringFormat = String.format("{ \"message\": \"%s\" }", msg);
-                String finalResult = (checkVolumeResult != null ? checkVolumeResult.concat(",") : "") + jsonStringFormat;
-                CheckAndRepairVolumeAnswer answer = new CheckAndRepairVolumeAnswer(command, true, finalResult);
-                answer.setVolumeRepairExecutionResult(jsonStringFormat);
-                answer.setVolumeCheckExecutionResult(checkVolumeResult);
-
-                return answer;
+                String msg = String.format("No leaks found while checking for the volume %s, so skipping repair", volumeName);
+                return skipRepairVolumeCommand(command, checkVolumeResult, msg);
             }
         }
 
         return null;
+    }
+
+    private CheckAndRepairVolumeAnswer skipRepairVolumeCommand(CheckAndRepairVolumeCommand command, String checkVolumeResult, String msg) {
+        s_logger.info(msg);
+        String jsonStringFormat = String.format("{ \"message\": \"%s\" }", msg);
+        String finalResult = (checkVolumeResult != null ? checkVolumeResult.concat(",") : "") + jsonStringFormat;
+        CheckAndRepairVolumeAnswer answer = new CheckAndRepairVolumeAnswer(command, true, finalResult);
+        answer.setVolumeRepairExecutionResult(jsonStringFormat);
+        answer.setVolumeCheckExecutionResult(checkVolumeResult);
+
+        return answer;
     }
 
     protected String checkAndRepairVolume(final KVMPhysicalDisk vol, final String repair, final EncryptFormat encryptFormat, byte[] passphrase, final LibvirtComputingResource libvirtComputingResource) throws CloudRuntimeException {
