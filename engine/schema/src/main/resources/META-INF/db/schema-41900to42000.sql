@@ -30,4 +30,5 @@ CREATE TABLE IF NOT EXISTS `cloud`.`command_timeout` (
 INSERT INTO `cloud`.`command_timeout` (command_classpath, timeout, created, updated)
 VALUES
     ('org.apache.cloudstack.ca.SetupCertificateCommand', 60, now(), now()),
-    ('com.cloud.agent.api.CheckS2SVpnConnectionsCommand', 30, now(), now());
+    ('com.cloud.agent.api.CheckS2SVpnConnectionsCommand', 30, now(), now()),
+    ('com.cloud.agent.api.CheckOnHostCommand', 20, now(), now());
