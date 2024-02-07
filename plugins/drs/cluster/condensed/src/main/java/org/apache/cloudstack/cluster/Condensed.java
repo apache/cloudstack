@@ -77,8 +77,8 @@ public class Condensed extends AdapterBase implements ClusterDrsAlgorithm {
                 new ArrayList<>(hostMemoryMap.values()), null);
         Double postImbalance = getImbalancePostMigration(serviceOffering, vm, destHost, hostCpuMap, hostMemoryMap);
 
-        logger.debug(String.format("Cluster %d pre-imbalance: %s post-imbalance: %s Algorithm: %s VM: %s destHost: %s",
-                clusterId, preImbalance, postImbalance, getName(), vm.getUuid(), destHost.getUuid()));
+        logger.debug(String.format("Cluster %d pre-imbalance: %s post-imbalance: %s Algorithm: %s VM: %s srcHost: %d destHost: %s",
+                clusterId, preImbalance, postImbalance, getName(), vm.getUuid(), vm.getHostId(), destHost.getUuid()));
 
         // This needs more research to determine the cost and benefit of a migration
         // TODO: Cost should be a factor of the VM size and the host capacity

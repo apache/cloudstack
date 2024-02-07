@@ -375,6 +375,8 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
                 logger.debug("VM migrating to it's original host or no host found for migration");
                 break;
             }
+            logger.debug(String.format("Plan for VM %s to migrate from host %s to host %s", vm.getUuid(),
+                    hostMap.get(vm.getHostId()).getUuid(), destHost.getUuid()));
 
             ServiceOffering serviceOffering = vmIdServiceOfferingMap.get(vm.getId());
             migrationPlan.add(new Ternary<>(vm, hostMap.get(vm.getHostId()), hostMap.get(destHost.getId())));
