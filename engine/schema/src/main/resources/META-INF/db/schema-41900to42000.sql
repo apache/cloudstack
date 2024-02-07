@@ -31,4 +31,5 @@ INSERT INTO `cloud`.`command_timeout` (command_classpath, timeout, created, upda
 VALUES
     ('org.apache.cloudstack.ca.SetupCertificateCommand', 60, now(), now()),
     ('com.cloud.agent.api.CheckS2SVpnConnectionsCommand', 30, now(), now()),
-    ('com.cloud.agent.api.CheckOnHostCommand', 20, now(), now());
+    ('com.cloud.agent.api.CheckOnHostCommand', 20, now(), now()),
+    ('com.cloud.agent.api.CheckVirtualMachineCommand', 20, now(), now());
