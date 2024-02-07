@@ -4764,11 +4764,11 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         try {
             VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
             if (hyperHost == null) {
-                throw new CloudRuntimeException("no hypervisor found for migrate command");
+                throw new CloudRuntimeException("no hypervisor host found for migrate command");
             }
             ManagedObjectReference morDc = hyperHost.getHyperHostDatacenter();
             if (morDc == null) {
-                throw new CloudRuntimeException("no morDc found for migrate command");
+                throw new CloudRuntimeException("no Managed Object Reference for the Data Center found for migrate command");
             }
 
             // find VM through datacenter (VM is not at the target host yet)
@@ -4781,7 +4781,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
             VmwareHypervisorHost destHyperHost = getTargetHyperHost(new DatacenterMO(hyperHost.getContext(), morDc), cmd.getDestinationIp());
             if (destHyperHost == null) {
-                throw new CloudRuntimeException("no destHyperHost found for migrate command");
+                throw new CloudRuntimeException("no destination Hypervisor Host found for migrate command");
             }
 
             ManagedObjectReference morTargetPhysicalHost = destHyperHost.findMigrationTarget(vmMo);
