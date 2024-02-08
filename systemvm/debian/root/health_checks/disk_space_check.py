@@ -17,7 +17,7 @@
 # under the License.
 
 from os import sys, path, statvfs
-from .utility import getHealthChecksData
+from utility import getHealthChecksData
 
 
 def main():

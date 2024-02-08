@@ -18,7 +18,7 @@
 
 from os import sys, path
 from subprocess import *
-from .utility import getHealthChecksData, formatPort
+from utility import getHealthChecksData, formatPort
 
 
 def main():

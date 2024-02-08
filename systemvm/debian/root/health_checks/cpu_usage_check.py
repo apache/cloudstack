@@ -18,7 +18,7 @@
 
 from os import sys, path, statvfs
 from subprocess import *
-from .utility import getHealthChecksData
+from utility import getHealthChecksData
 
 
 def main():
