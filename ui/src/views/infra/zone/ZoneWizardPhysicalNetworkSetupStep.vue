@@ -77,14 +77,17 @@
       </template>
       <template #traffics="{ record, index }">
         <div v-for="traffic in record.traffics" :key="traffic.type">
-          <a-tag
-            :color="trafficColors[traffic.type]"
-            style="margin:2px"
-          >
-            {{ traffic.type.toUpperCase() + ' (' + traffic.label + ')' }}
+          <a-tooltip :title="traffic.type.toUpperCase() + ' (' + traffic.label + ')'">
+            <a-tag
+              :color="trafficColors[traffic.type]"
+              style="margin:2px"
+            >
+            {{ (traffic.type.toUpperCase() + ' (' + traffic.label + ')').slice(0, 20) }}
+            {{ (traffic.type.toUpperCase() + ' (' + traffic.label + ')').length > 20 ? '...' : '' }}
             <edit-outlined class="traffic-type-action" @click="editTraffic(record.key, traffic, $event)"/>
             <delete-outlined class="traffic-type-action" @click="deleteTraffic(record.key, traffic, $event)"/>
           </a-tag>
+          </a-tooltip>
         </div>
         <div v-if="isShowAddTraffic(record.traffics, index)">
           <div class="traffic-select-item" v-if="addingTrafficForKey === record.key">
@@ -314,7 +317,7 @@ export default {
       columns.push({
         title: this.$t('label.isolation.method'),
         dataIndex: 'isolationMethod',
-        width: 150,
+        width: 125,
         slots: { customRender: 'isolationMethod' }
       })
       columns.push({
