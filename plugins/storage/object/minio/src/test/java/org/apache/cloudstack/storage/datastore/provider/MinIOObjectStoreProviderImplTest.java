@@ -17,6 +17,7 @@
 package org.apache.cloudstack.storage.datastore.provider;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider.DataStoreProviderType;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
@@ -29,10 +30,17 @@ public class MinIOObjectStoreProviderImplTest {
 
     private MinIOObjectStoreProviderImpl minioObjectStoreProviderImpl;
 
+    private AutoCloseable closeable;
+
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         minioObjectStoreProviderImpl = new MinIOObjectStoreProviderImpl();
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test

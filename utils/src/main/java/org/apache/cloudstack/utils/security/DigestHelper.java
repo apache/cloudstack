@@ -19,7 +19,8 @@ package org.apache.cloudstack.utils.security;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,7 +34,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class DigestHelper {
-    public static final Logger LOGGER = Logger.getLogger(DigestHelper.class.getName());
+    protected static Logger LOGGER = LogManager.getLogger(DigestHelper.class);
     public static ChecksumValue digest(String algorithm, InputStream is) throws NoSuchAlgorithmException, IOException {
         MessageDigest digest = MessageDigest.getInstance(algorithm);
         ChecksumValue checksum = null;

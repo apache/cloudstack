@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -42,7 +41,6 @@ import com.cloud.user.Account;
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = true)
 public class DestroyVolumeCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DestroyVolumeCmd.class.getName());
 
     private static final String s_name = "destroyvolumeresponse";
 

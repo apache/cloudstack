@@ -34,7 +34,6 @@ import com.cloud.user.Account;
 import com.cloud.user.dao.AccountDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
-import org.apache.log4j.Logger;
 
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
@@ -73,7 +72,6 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class PrometheusExporterImpl extends ManagerBase implements PrometheusExporter, Manager {
-    private static final Logger LOG = Logger.getLogger(PrometheusExporterImpl.class);
 
     private static final String USED = "used";
     private static final String ALLOCATED = "allocated";
@@ -493,7 +491,7 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
             addDomainLimits(latestMetricsItems);
             addDomainResourceCount(latestMetricsItems);
         } catch (Exception e) {
-            LOG.warn("Getting metrics failed ", e);
+            logger.warn("Getting metrics failed ", e);
         }
         metricsItems = latestMetricsItems;
     }

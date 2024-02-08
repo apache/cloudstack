@@ -34,7 +34,8 @@ import java.util.concurrent.TimeUnit;
 import com.cloud.agent.api.CleanupPersistentNetworkResourceCommand;
 import org.apache.cloudstack.agent.lb.SetupMSListCommand;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.Answer;
@@ -69,7 +70,7 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
  *  AgentAttache provides basic commands to be implemented.
  */
 public abstract class AgentAttache {
-    private static final Logger s_logger = Logger.getLogger(AgentAttache.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private static final ScheduledExecutorService s_listenerExecutor = Executors.newScheduledThreadPool(10, new NamedThreadFactory("ListenerTimer"));
     private static final Random s_rand = new Random(System.currentTimeMillis());
@@ -196,8 +197,8 @@ public abstract class AgentAttache {
     }
 
     protected synchronized void cancel(final long seq) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug(log(seq, "Cancelling."));
+        if (logger.isDebugEnabled()) {
+            logger.debug(log(seq, "Cancelling."));
         }
         final Listener listener = _waitForList.remove(seq);
         if (listener != null) {
@@ -222,8 +223,8 @@ public abstract class AgentAttache {
     }
 
     protected void registerListener(final long seq, final Listener listener) {
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace(log(seq, "Registering listener"));
+        if (logger.isTraceEnabled()) {
+            logger.trace(log(seq, "Registering listener"));
         }
         if (listener.getTimeout() != -1) {
             s_listenerExecutor.schedule(new Alarm(seq), listener.getTimeout(), TimeUnit.SECONDS);
@@ -232,8 +233,8 @@ public abstract class AgentAttache {
     }
 
     protected Listener unregisterListener(final long sequence) {
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace(log(sequence, "Unregistering listener"));
+        if (logger.isTraceEnabled()) {
+            logger.trace(log(sequence, "Unregistering listener"));
         }
         return _waitForList.remove(sequence);
     }
@@ -266,7 +267,7 @@ public abstract class AgentAttache {
                 final Listener monitor = entry.getValue();
                 if (!monitor.isRecurring()) {
                     //TODO - remove this debug statement later
-                    s_logger.debug("Listener is " + entry.getValue() + " waiting on " + entry.getKey());
+                    logger.debug("Listener is " + entry.getValue() + " waiting on " + entry.getKey());
                     nonRecurringListenersList.add(monitor);
                 }
             }
@@ -289,13 +290,13 @@ public abstract class AgentAttache {
                 if (answers[0] != null && answers[0].getResult()) {
                     processed = true;
                 }
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(log(seq, "Unable to find listener."));
+                if (logger.isDebugEnabled()) {
+                    logger.debug(log(seq, "Unable to find listener."));
                 }
             } else {
                 processed = monitor.processAnswers(_id, seq, answers);
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace(log(seq, (processed ? "" : " did not ") + " processed "));
+                if (logger.isTraceEnabled()) {
+                    logger.trace(log(seq, (processed ? "" : " did not ") + " processed "));
                 }
 
                 if (!monitor.isRecurring()) {
@@ -323,8 +324,8 @@ public abstract class AgentAttache {
                 final Map.Entry<Long, Listener> entry = it.next();
                 it.remove();
                 final Listener monitor = entry.getValue();
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(log(entry.getKey(), "Sending disconnect to " + monitor.getClass()));
+                if (logger.isDebugEnabled()) {
+                    logger.debug(log(entry.getKey(), "Sending disconnect to " + monitor.getClass()));
                 }
                 monitor.processDisconnect(_id, state);
             }
@@ -356,8 +357,8 @@ public abstract class AgentAttache {
         long seq = req.getSequence();
         if (listener != null) {
             registerListener(seq, listener);
-        } else if (s_logger.isDebugEnabled()) {
-            s_logger.debug(log(seq, "Routed from " + req.getManagementServerId()));
+        } else if (logger.isDebugEnabled()) {
+            logger.debug(log(seq, "Routed from " + req.getManagementServerId()));
         }
 
         synchronized (this) {
@@ -380,16 +381,16 @@ public abstract class AgentAttache {
 
                 if (req.executeInSequence() && _currentSequence == null) {
                     _currentSequence = seq;
-                    if (s_logger.isTraceEnabled()) {
-                        s_logger.trace(log(seq, " is current sequence"));
+                    if (logger.isTraceEnabled()) {
+                        logger.trace(log(seq, " is current sequence"));
                     }
                 }
             } catch (AgentUnavailableException e) {
-                s_logger.info(log(seq, "Unable to send due to " + e.getMessage()));
+                logger.info(log(seq, "Unable to send due to " + e.getMessage()));
                 cancel(seq);
                 throw e;
             } catch (Exception e) {
-                s_logger.warn(log(seq, "Unable to send due to "), e);
+                logger.warn(log(seq, "Unable to send due to "), e);
                 cancel(seq);
                 throw new AgentUnavailableException("Problem due to other exception " + e.getMessage(), _id);
             }
@@ -408,10 +409,10 @@ public abstract class AgentAttache {
                 try {
                     answers = sl.waitFor(wait);
                 } catch (final InterruptedException e) {
-                    s_logger.debug(log(seq, "Interrupted"));
+                    logger.debug(log(seq, "Interrupted"));
                 }
                 if (answers != null) {
-                    if (s_logger.isDebugEnabled()) {
+                    if (logger.isDebugEnabled()) {
                         new Response(req, answers).logD("Received: ", false);
                     }
                     return answers;
@@ -419,7 +420,7 @@ public abstract class AgentAttache {
 
                 answers = sl.getAnswers(); // Try it again.
                 if (answers != null) {
-                    if (s_logger.isDebugEnabled()) {
+                    if (logger.isDebugEnabled()) {
                         new Response(req, answers).logD("Received after timeout: ", true);
                     }
 
@@ -429,21 +430,21 @@ public abstract class AgentAttache {
 
                 final Long current = _currentSequence;
                 if (current != null && seq != current) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug(log(seq, "Waited too long."));
+                    if (logger.isDebugEnabled()) {
+                        logger.debug(log(seq, "Waited too long."));
                     }
 
                     throw new OperationTimedoutException(req.getCommands(), _id, seq, wait, false);
                 }
 
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(log(seq, "Waiting some more time because this is the current command"));
+                if (logger.isDebugEnabled()) {
+                    logger.debug(log(seq, "Waiting some more time because this is the current command"));
                 }
             }
 
             throw new OperationTimedoutException(req.getCommands(), _id, seq, wait * 2, true);
         } catch (OperationTimedoutException e) {
-            s_logger.warn(log(seq, "Timed out on " + req.toString()));
+            logger.warn(log(seq, "Timed out on " + req.toString()));
             cancel(seq);
             final Long current = _currentSequence;
             if (req.executeInSequence() && (current != null && current == seq)) {
@@ -451,7 +452,7 @@ public abstract class AgentAttache {
             }
             throw e;
         } catch (Exception e) {
-            s_logger.warn(log(seq, "Exception while waiting for answer"), e);
+            logger.warn(log(seq, "Exception while waiting for answer"), e);
             cancel(seq);
             final Long current = _currentSequence;
             if (req.executeInSequence() && (current != null && current == seq)) {
@@ -466,21 +467,21 @@ public abstract class AgentAttache {
     protected synchronized void sendNext(final long seq) {
         _currentSequence = null;
         if (_requests.isEmpty()) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(log(seq, "No more commands found"));
+            if (logger.isDebugEnabled()) {
+                logger.debug(log(seq, "No more commands found"));
             }
             return;
         }
 
         Request req = _requests.pop();
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug(log(req.getSequence(), "Sending now.  is current sequence."));
+        if (logger.isDebugEnabled()) {
+            logger.debug(log(req.getSequence(), "Sending now.  is current sequence."));
         }
         try {
             send(req);
         } catch (AgentUnavailableException e) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(log(req.getSequence(), "Unable to send the next sequence"));
+            if (logger.isDebugEnabled()) {
+                logger.debug(log(req.getSequence(), "Unable to send the next sequence"));
             }
             cancel(req.getSequence());
         }
@@ -527,7 +528,7 @@ public abstract class AgentAttache {
                     listener.processTimeout(_id, _seq);
                 }
             } catch (Exception e) {
-                s_logger.warn("Exception ", e);
+                logger.warn("Exception ", e);
             }
         }
     }

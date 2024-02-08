@@ -27,12 +27,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class Upgrade305to306 extends Upgrade30xBase {
-    final static Logger s_logger = Logger.getLogger(Upgrade305to306.class);
 
     @Override
     public String[] getUpgradableVersionRange() {
@@ -78,14 +76,14 @@ public class Upgrade305to306 extends Upgrade30xBase {
 
         //First drop if it exists. (Due to patches shipped to customers some will have the index and some won't.)
         List<String> indexList = new ArrayList<String>();
-        s_logger.debug("Dropping index i_alert__last_sent if it exists");
+        logger.debug("Dropping index i_alert__last_sent if it exists");
         indexList.add("i_alert__last_sent");
         DbUpgradeUtils.dropKeysIfExist(conn, "alert", indexList, false);
 
         //Now add index.
         try (PreparedStatement pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`alert` ADD INDEX `i_alert__last_sent`(`last_sent`)");) {
             pstmt.executeUpdate();
-            s_logger.debug("Added index i_alert__last_sent for table alert");
+            logger.debug("Added index i_alert__last_sent for table alert");
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to add index i_alert__last_sent to alert table for the column last_sent", e);
         }
@@ -117,14 +115,14 @@ public class Upgrade305to306 extends Upgrade30xBase {
 
         //First drop if it exists. (Due to patches shipped to customers some will have the index and some won't.)
         List<String> indexList = new ArrayList<String>();
-        s_logger.debug("Dropping index fk_host_details__host_id if it exists");
+        logger.debug("Dropping index fk_host_details__host_id if it exists");
         indexList.add("fk_host_details__host_id");
         DbUpgradeUtils.dropKeysIfExist(conn, "host_details", indexList, false);
 
         //Now add index.
         try (PreparedStatement pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`host_details` ADD INDEX `fk_host_details__host_id`(`host_id`)");) {
             pstmt.executeUpdate();
-            s_logger.debug("Added index fk_host_details__host_id for table host_details");
+            logger.debug("Added index fk_host_details__host_id for table host_details");
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to add index fk_host_details__host_id to host_details table for the column host_id", e);
         }
@@ -140,7 +138,7 @@ public class Upgrade305to306 extends Upgrade30xBase {
             // update the existing ingress rules traffic type
             pstmt = conn.prepareStatement("update `cloud`.`firewall_rules`" +
                 "  set traffic_type='Ingress' where purpose='Firewall' and ip_address_id is not null and traffic_type is null");
-            s_logger.debug("Updating firewall Ingress rule traffic type: " + pstmt);
+            logger.debug("Updating firewall Ingress rule traffic type: " + pstmt);
             pstmt.executeUpdate();
 
             pstmt = conn.prepareStatement("select network_id FROM `cloud`.`ntwk_service_map` where service='Firewall' and provider='VirtualRouter' ");
@@ -152,7 +150,7 @@ public class Upgrade305to306 extends Upgrade30xBase {
                 pstmt = conn.prepareStatement("select account_id, domain_id FROM `cloud`.`networks` where (guest_type='Isolated' OR guest_type='" +
                     "Virtual') and traffic_type='Guest' and vpc_id is NULL and (state='implemented' OR state='Shutdown') and id=? ");
                 pstmt.setLong(1, netId);
-                s_logger.debug("Getting account_id, domain_id from networks table: " + pstmt);
+                logger.debug("Getting account_id, domain_id from networks table: " + pstmt);
                 rsNw = pstmt.executeQuery();
 
                 if (rsNw.next()) {
@@ -160,7 +158,7 @@ public class Upgrade305to306 extends Upgrade30xBase {
                     long domainId = rsNw.getLong(2);
 
                     //Add new rule for the existing networks
-                    s_logger.debug("Adding default egress firewall rule for network " + netId);
+                    logger.debug("Adding default egress firewall rule for network " + netId);
                     pstmt =
                         conn.prepareStatement("INSERT INTO firewall_rules (uuid, state, protocol, purpose, account_id, domain_id, network_id, xid, created,  traffic_type) VALUES (?, 'Active', 'all', 'Firewall', ?, ?, ?, ?, now(), 'Egress')");
                     pstmt.setString(1, UUID.randomUUID().toString());
@@ -168,7 +166,7 @@ public class Upgrade305to306 extends Upgrade30xBase {
                     pstmt.setLong(3, domainId);
                     pstmt.setLong(4, netId);
                     pstmt.setString(5, UUID.randomUUID().toString());
-                    s_logger.debug("Inserting default egress firewall rule " + pstmt);
+                    logger.debug("Inserting default egress firewall rule " + pstmt);
                     pstmt.executeUpdate();
 
                     pstmt = conn.prepareStatement("select id from firewall_rules where protocol='all' and network_id=?");
@@ -180,7 +178,7 @@ public class Upgrade305to306 extends Upgrade30xBase {
                         firewallRuleId = rsId.getLong(1);
                         pstmt = conn.prepareStatement("insert into firewall_rules_cidrs (firewall_rule_id,source_cidr) values (?, '0.0.0.0/0')");
                         pstmt.setLong(1, firewallRuleId);
-                        s_logger.debug("Inserting rule for cidr 0.0.0.0/0 for the new Firewall rule id=" + firewallRuleId + " with statement " + pstmt);
+                        logger.debug("Inserting rule for cidr 0.0.0.0/0 for the new Firewall rule id=" + firewallRuleId + " with statement " + pstmt);
                         pstmt.executeUpdate();
                     }
                 }
@@ -218,7 +216,7 @@ public class Upgrade305to306 extends Upgrade30xBase {
     private void fix22xKVMSnapshots(Connection conn) {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
-        s_logger.debug("Updating KVM snapshots");
+        logger.debug("Updating KVM snapshots");
         try {
             pstmt =
                 conn.prepareStatement("select id, backup_snap_id from `cloud`.`snapshots` where hypervisor_type='KVM' and removed is null and backup_snap_id is not null");
@@ -232,14 +230,14 @@ public class Upgrade305to306 extends Upgrade30xBase {
                 int index = backUpPath.indexOf("snapshots" + File.separator);
                 if (index > 1) {
                     String correctedPath = File.separator + backUpPath.substring(index);
-                    s_logger.debug("Updating Snapshot with id: " + id + " original backup path: " + backUpPath + " updated backup path: " + correctedPath);
+                    logger.debug("Updating Snapshot with id: " + id + " original backup path: " + backUpPath + " updated backup path: " + correctedPath);
                     pstmt = conn.prepareStatement("UPDATE `cloud`.`snapshots` set backup_snap_id=? where id = ?");
                     pstmt.setString(1, correctedPath);
                     pstmt.setLong(2, id);
                     pstmt.executeUpdate();
                 }
             }
-            s_logger.debug("Done updating KVM snapshots");
+            logger.debug("Done updating KVM snapshots");
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to update backup id for KVM snapshots", e);
         } finally {

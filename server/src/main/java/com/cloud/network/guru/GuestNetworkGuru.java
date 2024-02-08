@@ -29,7 +29,6 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
 import com.cloud.dc.DataCenter;
@@ -91,7 +90,6 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 
 public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGuru, Configurable {
-    private static final Logger s_logger = Logger.getLogger(GuestNetworkGuru.class);
 
     @Inject
     protected VpcDao _vpcDao;
@@ -198,7 +196,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
         }
         if (methods.isEmpty()) {
             // The empty isolation method is assumed to be VLAN
-            s_logger.debug("Empty physical isolation type for physical network " + physicalNetwork.getUuid());
+            logger.debug("Empty physical isolation type for physical network " + physicalNetwork.getUuid());
             methods = new ArrayList<String>(1);
             methods.add("VLAN".toLowerCase());
         }
@@ -291,8 +289,8 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     @DB
     public void deallocate(final Network network, final NicProfile nic, final VirtualMachineProfile vm) {
         if (network.getSpecifyIpRanges()) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Deallocate network: networkId: " + nic.getNetworkId() + ", ip: " + nic.getIPv4Address());
+            if (logger.isDebugEnabled()) {
+                logger.debug("Deallocate network: networkId: " + nic.getNetworkId() + ", ip: " + nic.getIPv4Address());
             }
 
             final IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIPv4Address());
@@ -431,7 +429,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
                     if (network.getGuestType() != GuestType.L2 && vm.getType() == VirtualMachine.Type.DomainRouter) {
                         Nic placeholderNic = _networkModel.getPlaceholderNicForRouter(network, null);
                         if (placeholderNic != null) {
-                            s_logger.debug("Nic got an ip address " + placeholderNic.getIPv4Address() + " stored in placeholder nic for the network " + network);
+                            logger.debug("Nic got an ip address " + placeholderNic.getIPv4Address() + " stored in placeholder nic for the network " + network);
                             guestIp = placeholderNic.getIPv4Address();
                         }
                     }
@@ -508,7 +506,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
         }
 
         if ((profile.getBroadcastDomainType() == BroadcastDomainType.Vlan || profile.getBroadcastDomainType() == BroadcastDomainType.Vxlan) && !offering.isSpecifyVlan()) {
-            s_logger.debug("Releasing vnet for the network id=" + profile.getId());
+            logger.debug("Releasing vnet for the network id=" + profile.getId());
             _dcDao.releaseVnet(BroadcastDomainType.getValue(profile.getBroadcastUri()), profile.getDataCenterId(), profile.getPhysicalNetworkId(), profile.getAccountId(),
                     profile.getReservationId());
             ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), profile.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_RELEASE,

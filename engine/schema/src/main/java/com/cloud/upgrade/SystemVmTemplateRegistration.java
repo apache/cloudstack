@@ -56,7 +56,8 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.ini4j.Ini;
 
 import javax.inject.Inject;
@@ -82,7 +83,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class SystemVmTemplateRegistration {
-    private static final Logger LOGGER = Logger.getLogger(SystemVmTemplateRegistration.class);
+    protected static Logger LOGGER = LogManager.getLogger(SystemVmTemplateRegistration.class);
     private static final String MOUNT_COMMAND = "sudo mount -t nfs %s %s";
     private static final String UMOUNT_COMMAND = "sudo umount %s";
     private static final String RELATIVE_TEMPLATE_PATH = "./engine/schema/dist/systemvm-templates/";

@@ -20,7 +20,6 @@ import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceTag;
 import com.cloud.user.Account;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -34,7 +33,6 @@ import java.util.List;
 @APICommand(name = "listUsers", description = "Lists user accounts", responseObject = UserResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class ListUsersCmd extends BaseListAccountResourcesCmd {
-    public static final Logger s_logger = Logger.getLogger(ListUsersCmd.class.getName());
 
 
     /////////////////////////////////////////////////////

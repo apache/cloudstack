@@ -28,7 +28,8 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -57,7 +58,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class PrimaryDataStoreHelper {
-    private static final Logger s_logger = Logger.getLogger(PrimaryDataStoreHelper.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     @Inject
     private PrimaryDataStoreDao dataStoreDao;
     @Inject
@@ -108,7 +109,7 @@ public class PrimaryDataStoreHelper {
 
             if (user == null || password == null) {
                 String errMsg = "Missing cifs user and password details. Add them as details parameter.";
-                s_logger.warn(errMsg);
+                logger.warn(errMsg);
                 throw new InvalidParameterValueException(errMsg);
             } else {
                 try {
@@ -261,7 +262,7 @@ public class PrimaryDataStoreHelper {
         this._capacityDao.removeBy(Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED, null, null, null, poolVO.getId());
         txn.commit();
 
-        s_logger.debug("Storage pool id=" + poolVO.getId() + " is removed successfully");
+        logger.debug("Storage pool id=" + poolVO.getId() + " is removed successfully");
         return true;
     }
 
