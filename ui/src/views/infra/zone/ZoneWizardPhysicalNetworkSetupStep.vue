@@ -181,10 +181,18 @@
       @cancel="() => { showError = false }"
       centered
     >
-      <div v-ctrl-enter="() => showError = false">
-        <span>{{ $t('message.required.traffic.type') }}</span>
+      <div v-ctrl-enter="() => showError = false" >
+        <a-list item-layout="horizontal" :dataSource="errorList">
+          <template #renderItem="{ item }">
+            <a-list-item>
+              <exclamation-circle-outlined
+              :style="{ color: $config.theme['@error-color'], fontSize: '20px', marginRight: '10px' }"
+              />
+              {{ item }}
+            </a-list-item>
+          </template>
+        </a-list>
         <div :span="24" class="action-button">
-          <a-button @click="showError = false">{{ $t('label.cancel') }}</a-button>
           <a-button type="primary" ref="submit" @click="showError = false">{{ $t('label.ok') }}</a-button>
         </div>
       </div>
@@ -289,6 +297,7 @@ export default {
       addingTrafficForKey: '-1',
       trafficLabelSelected: null,
       showError: false,
+      errorList: [],
       defaultTrafficOptions: [],
       isChangeHyperv: false
     }
@@ -462,27 +471,23 @@ export default {
       this.hasUnusedPhysicalNetwork = this.getHasUnusedPhysicalNetwork()
     },
     isValidSetup () {
+      this.errorList = []
       let physicalNetworks = this.physicalNetworks
       if (this.tungstenNetworkIndex > -1) {
         physicalNetworks = [this.physicalNetworks[this.tungstenNetworkIndex]]
       }
       const shouldHaveLabels = physicalNetworks.length > 1
       let isValid = true
+      let countPhysicalNetworkWithoutTags = 0
       this.requiredTrafficTypes.forEach(type => {
-        if (!isValid) return false
         let foundType = false
-        let countPhysicalNetworkWithoutTags = 0
         physicalNetworks.forEach(net => {
           net.traffics.forEach(traffic => {
-            if (!isValid) return false
             if (traffic.type === type) {
               foundType = true
             }
             if (traffic.type === 'guest' && type === 'guest' && (!net.tags || net.tags.length === 0)) {
               countPhysicalNetworkWithoutTags++
-            }
-            if (countPhysicalNetworkWithoutTags > 1) {
-              isValid = false
             }
             if (this.hypervisor !== 'VMware') {
               if (shouldHaveLabels && (!traffic.label || traffic.label.length === 0)) {
@@ -497,8 +502,15 @@ export default {
         })
         if (!foundType || !isValid) {
           isValid = false
+          if (this.errorList.indexOf(this.$t('message.required.traffic.type')) === -1) {
+            this.errorList.push(this.$t('message.required.traffic.type'))
+          }
         }
       })
+      if (countPhysicalNetworkWithoutTags > 1) {
+        this.errorList.push(this.$t('message.required.tagged.physical.network'))
+        isValid = false
+      }
       return isValid
     },
     handleSubmit (e) {
