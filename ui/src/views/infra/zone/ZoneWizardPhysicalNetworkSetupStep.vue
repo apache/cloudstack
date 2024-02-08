@@ -81,7 +81,7 @@
             :color="trafficColors[traffic.type]"
             style="margin:2px"
           >
-            {{ traffic.type.toUpperCase() }}
+            {{ traffic.type.toUpperCase() + ' (' + traffic.label + ')' }}
             <edit-outlined class="traffic-type-action" @click="editTraffic(record.key, traffic, $event)"/>
             <delete-outlined class="traffic-type-action" @click="deleteTraffic(record.key, traffic, $event)"/>
           </a-tag>
