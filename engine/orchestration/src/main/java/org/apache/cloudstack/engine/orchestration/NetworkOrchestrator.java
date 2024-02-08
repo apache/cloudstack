@@ -3858,13 +3858,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         for (final NicVO nic : result) {
             if (_networkModel.isProviderForNetwork(Provider.NiciraNvp, nic.getNetworkId())) {
-<<<<<<< HEAD
-                //For Nsx Based networks, add nsxlogicalswitch, nsxlogicalswitchport to each result
-                s_logger.info("Listing Nsx logical switch and logical switch por for each nic");
-=======
                 //For NSX Based networks, add nsxlogicalswitch, nsxlogicalswitchport to each result
                 logger.info("Listing NSX logical switch and logical switch por for each nic");
->>>>>>> 49cecaed067bfcf1bd54f1fca1839a4cf6897769
                 final NetworkVO network = _networksDao.findById(nic.getNetworkId());
                 final NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
                 final NetworkGuruAdditionalFunctions guruFunctions = (NetworkGuruAdditionalFunctions) guru;
