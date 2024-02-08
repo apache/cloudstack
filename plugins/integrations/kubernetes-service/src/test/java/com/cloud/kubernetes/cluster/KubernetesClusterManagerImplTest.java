@@ -391,7 +391,7 @@ public class KubernetesClusterManagerImplTest {
 
     @Test
     public void testCreateNodeTypeToServiceOfferingMapNullMap() {
-        Map<String, ServiceOffering> mapping = kubernetesClusterManager.createNodeTypeToServiceOfferingMap(null, null);
+        Map<String, ServiceOffering> mapping = kubernetesClusterManager.createNodeTypeToServiceOfferingMap(new HashMap<>(), null);
         Assert.assertTrue(MapUtils.isEmpty(mapping));
     }
 
