@@ -8457,4 +8457,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             vm.setVncPassword(customParameters.get(VmDetailConstants.KVM_VNC_PASSWORD));
         }
     }
+
+    @Override
+    public Map<Long, Boolean> getDiskOfferingSuitabilityForVm(long vmId, List<Long> diskOfferingIds) {
+        return _itMgr.getDiskOfferingSuitabilityForVm(vmId, diskOfferingIds);
+    }
 }

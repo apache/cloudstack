@@ -282,6 +282,7 @@ import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolTagVO;
 import com.cloud.storage.VMTemplateVO;
@@ -523,6 +524,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private ResourceIconDao resourceIconDao;
+    @Inject
+    StorageManager storageManager;
 
     @Inject
     private ManagementServerHostDao msHostDao;
@@ -3155,8 +3158,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Override
     public ListResponse<DiskOfferingResponse> searchForDiskOfferings(ListDiskOfferingsCmd cmd) {
         Pair<List<DiskOfferingJoinVO>, Integer> result = searchForDiskOfferingsInternal(cmd);
-        ListResponse<DiskOfferingResponse> response = new ListResponse<DiskOfferingResponse>();
-        List<DiskOfferingResponse> offeringResponses = ViewResponseHelper.createDiskOfferingResponse(result.first().toArray(new DiskOfferingJoinVO[result.first().size()]));
+        ListResponse<DiskOfferingResponse> response = new ListResponse<>();
+        List<DiskOfferingResponse> offeringResponses = ViewResponseHelper.createDiskOfferingResponses(cmd.getVirtualMachineId(), result.first());
         response.setResponses(offeringResponses, result.second());
         return response;
     }
@@ -3191,6 +3194,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long storagePoolId = cmd.getStoragePoolId();
         Boolean encrypt = cmd.getEncrypt();
         String storageType = cmd.getStorageType();
+        final Long vmId = cmd.getVirtualMachineId();
 
         // Keeping this logic consistent with domain specific zones
         // if a domainId is provided, we just return the disk offering
@@ -3296,6 +3300,16 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 scc.setParameters("id", ids.toArray());
             }
             sc.addAnd("domainId", SearchCriteria.Op.SC, scc);
+        }
+
+        if (vmId != null) {
+            UserVmVO vm = userVmDao.findById(vmId);
+            if (vm == null) {
+                throw new InvalidParameterValueException("Unable to find the VM instance with the specified ID");
+            }
+            if (!isRootAdmin) {
+                accountMgr.checkAccess(account, null, false, vm);
+            }
         }
 
         Pair<List<DiskOfferingJoinVO>, Integer> result = _diskOfferingJoinDao.searchAndCount(sc, searchFilter);

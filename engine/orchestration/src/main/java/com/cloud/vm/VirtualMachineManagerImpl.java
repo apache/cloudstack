@@ -19,6 +19,7 @@ package com.cloud.vm;
 
 import static com.cloud.configuration.ConfigurationManagerImpl.MIGRATE_VM_ACROSS_CLUSTERS;
 
+import java.lang.reflect.Field;
 import java.net.URI;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -6045,5 +6046,49 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
         }
         return vmNetworkStatsById;
+    }
+
+    protected boolean isDiskOfferingSuitableForVm(VMInstanceVO vm, VirtualMachineProfile profile, long podId, long clusterId, long hostId, long diskOfferingId) {
+
+        DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
+        VolumeVO dummyVolume = new VolumeVO("Data", vm.getDataCenterId(), podId, vm.getAccountId(),
+                vm.getDomainId(), vm.getId(), null, null, diskOffering.getProvisioningType(), diskOffering.getDiskSize(), Type.DATADISK);
+        try {
+            Field idField = dummyVolume.getClass().getDeclaredField("id");
+            idField.setAccessible(true);
+            idField.set(dummyVolume, Volume.DISK_OFFERING_SUITABILITY_CHECK_VOLUME_ID);
+        } catch (NoSuchFieldException | IllegalAccessException ignored) {
+            return false;
+        }
+        dummyVolume.setDiskOfferingId(diskOfferingId);
+        DiskProfile diskProfile = new DiskProfile(dummyVolume, diskOffering, profile.getHypervisorType());
+        diskProfile.setMinIops(diskOffering.getMinIops());
+        diskProfile.setMaxIops(diskOffering.getMaxIops());
+        ExcludeList avoid = new ExcludeList();
+        DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), podId, clusterId, hostId, null, null);
+        for (StoragePoolAllocator allocator : _storagePoolAllocators) {
+            List<StoragePool> poolListFromAllocator = allocator.allocateToPool(diskProfile, profile, plan, avoid, 1);
+            if (CollectionUtils.isNotEmpty(poolListFromAllocator)) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(String.format("Found a suitable pool: %s for disk offering: %s", poolListFromAllocator.get(0).getName(), diskOffering.getName()));
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public Map<Long, Boolean> getDiskOfferingSuitabilityForVm(long vmId, List<Long> diskOfferingIds) {
+        VMInstanceVO vm = _vmDao.findById(vmId);
+        VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
+        Pair<Long, Long> clusterAndHost = findClusterAndHostIdForVm(vm, false);
+        Long clusterId = clusterAndHost.first();
+        Cluster cluster = _clusterDao.findById(clusterId);
+        Map<Long, Boolean> result = new HashMap<>();
+        for (Long diskOfferingId : diskOfferingIds) {
+            result.put(diskOfferingId, isDiskOfferingSuitableForVm(vm, profile, cluster.getPodId(), clusterId, clusterAndHost.second(), diskOfferingId));
+        }
+        return result;
     }
 }

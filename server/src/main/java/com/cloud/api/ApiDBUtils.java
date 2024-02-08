@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
@@ -53,6 +54,7 @@ import org.apache.cloudstack.api.response.HostTagResponse;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
+import org.apache.cloudstack.api.response.ObjectStoreResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
@@ -85,6 +87,8 @@ import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
 import org.apache.cloudstack.resourcedetail.SnapshotPolicyDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.SnapshotPolicyDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
@@ -349,10 +353,6 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-
-import org.apache.cloudstack.api.response.ObjectStoreResponse;
-import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
-import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 
 public class ApiDBUtils {
     private static ManagementServer s_ms;
@@ -2096,6 +2096,22 @@ public class ApiDBUtils {
 
     public static AsyncJobJoinVO newAsyncJobView(AsyncJob e) {
         return s_jobJoinDao.newAsyncJobView(e);
+    }
+
+    public static List<DiskOfferingResponse> newDiskOfferingResponses(Long vmId, List<DiskOfferingJoinVO> offerings) {
+        List<DiskOfferingResponse> list = new ArrayList<>();
+        Map<Long, Boolean> suitability = null;
+        if (vmId != null) {
+            suitability = s_userVmMgr.getDiskOfferingSuitabilityForVm(vmId, offerings.stream().map(DiskOfferingJoinVO::getId).collect(Collectors.toList()));
+        }
+        for (DiskOfferingJoinVO offering : offerings) {
+            DiskOfferingResponse response = s_diskOfferingJoinDao.newDiskOfferingResponse(offering);
+            if (vmId != null) {
+                response.setSuitableForVm(suitability.get(offering.getId()));
+            }
+            list.add(response);
+        }
+        return list;
     }
 
     public static DiskOfferingResponse newDiskOfferingResponse(DiskOfferingJoinVO offering) {

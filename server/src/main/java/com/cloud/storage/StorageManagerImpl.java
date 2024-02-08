@@ -2665,13 +2665,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return 0;
     }
 
-    @Override
-    public boolean storagePoolHasEnoughIops(List<Pair<Volume, DiskProfile>> requestedVolumes, StoragePool pool) {
-        if (requestedVolumes == null || requestedVolumes.isEmpty() || pool == null) {
-            s_logger.debug(String.format("Cannot check if storage [%s] has enough IOPS to allocate volumes [%s].", pool, requestedVolumes));
-            return false;
-        }
-
+    protected boolean checkIfPoolIopsCapacityNull(StoragePool pool) {
         // Only IOPS-guaranteed primary storage like SolidFire is using/setting IOPS.
         // This check returns true for storage that does not specify IOPS.
         if (pool.getCapacityIops() == null) {
@@ -2679,12 +2673,29 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
             return true;
         }
+        return false;
+    }
 
+    protected boolean storagePoolHasEnoughIops(long requestedIops, StoragePool pool, boolean skipPoolCheck) {
+        if (!skipPoolCheck && checkIfPoolIopsCapacityNull(pool)) {
+            return true;
+        }
         StoragePoolVO storagePoolVo = _storagePoolDao.findById(pool.getId());
         long currentIops = _capacityMgr.getUsedIops(storagePoolVo);
+        long futureIops = currentIops + requestedIops;
+        return futureIops <= pool.getCapacityIops();
+    }
 
+    @Override
+    public boolean storagePoolHasEnoughIops(List<Pair<Volume, DiskProfile>> requestedVolumes, StoragePool pool) {
+        if (requestedVolumes == null || requestedVolumes.isEmpty() || pool == null) {
+            s_logger.debug(String.format("Cannot check if storage [%s] has enough IOPS to allocate volumes [%s].", pool, requestedVolumes));
+            return false;
+        }
+        if (checkIfPoolIopsCapacityNull(pool)) {
+            return true;
+        }
         long requestedIops = 0;
-
         for (Pair<Volume, DiskProfile> volumeDiskProfilePair : requestedVolumes) {
             Volume requestedVolume = volumeDiskProfilePair.first();
             DiskProfile diskProfile = volumeDiskProfilePair.second();
@@ -2697,12 +2708,28 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 requestedIops += minIops;
             }
         }
+        return storagePoolHasEnoughIops(requestedIops, pool, true);
+    }
 
-        long futureIops = currentIops + requestedIops;
-        boolean hasEnoughIops = futureIops <= pool.getCapacityIops();
-        String hasCapacity = hasEnoughIops ? "has" : "does not have";
-        s_logger.debug(String.format("Pool [%s] %s enough IOPS to allocate volumes [%s].", pool, hasCapacity, requestedVolumes));
-        return hasEnoughIops;
+    @Override
+    public boolean storagePoolHasEnoughIops(Long requestedIops, StoragePool pool) {
+        if (pool == null) {
+            return false;
+        }
+        if (requestedIops == null || requestedIops == 0) {
+            return true;
+        }
+        return storagePoolHasEnoughIops(requestedIops, pool, false);
+    }
+
+    @Override
+    public boolean storagePoolHasEnoughSpace(Long size, StoragePool pool) {
+        if (size == null || size == 0) {
+            return true;
+        }
+        final StoragePoolVO poolVO = _storagePoolDao.findById(pool.getId());
+        long allocatedSizeWithTemplate = _capacityMgr.getAllocatedPoolCapacity(poolVO, null);
+        return checkPoolforSpace(pool, allocatedSizeWithTemplate, size);
     }
 
     @Override
@@ -2792,6 +2819,38 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
     }
 
+    protected Answer getCheckDatastorePolicyComplianceAnswer(String storagePolicyId, StoragePool pool) throws StorageUnavailableException {
+        if (StringUtils.isEmpty(storagePolicyId)) {
+            return null;
+        }
+        VsphereStoragePolicyVO storagePolicyVO = _vsphereStoragePolicyDao.findById(Long.parseLong(storagePolicyId));
+        List<Long> hostIds = getUpHostsInPool(pool.getId());
+        Collections.shuffle(hostIds);
+
+        if (CollectionUtils.isEmpty(hostIds)) {
+            throw new StorageUnavailableException("Unable to send command to the pool " + pool.getName() + " due to there is no enabled hosts up in this cluster", pool.getId());
+        }
+        try {
+            StorageFilerTO storageFilerTO = new StorageFilerTO(pool);
+            CheckDataStoreStoragePolicyComplainceCommand cmd = new CheckDataStoreStoragePolicyComplainceCommand(storagePolicyVO.getPolicyId(), storageFilerTO);
+            long targetHostId = _hvGuruMgr.getGuruProcessedCommandTargetHost(hostIds.get(0), cmd);
+            return _agentMgr.send(targetHostId, cmd);
+        } catch (AgentUnavailableException e) {
+            s_logger.debug("Unable to send storage pool command to " + pool + " via " + hostIds.get(0), e);
+            throw new StorageUnavailableException("Unable to send command to the pool ", pool.getId());
+        } catch (OperationTimedoutException e) {
+            s_logger.debug("Failed to process storage pool command to " + pool + " via " + hostIds.get(0), e);
+            throw new StorageUnavailableException("Failed to process storage command to the pool ", pool.getId());
+        }
+    }
+
+    @Override
+    public boolean isStoragePoolCompliantWithStoragePolicy(long diskOfferingId, StoragePool pool) throws StorageUnavailableException {
+        String storagePolicyId = _diskOfferingDetailsDao.getDetail(diskOfferingId, ApiConstants.STORAGE_POLICY);
+        Answer answer = getCheckDatastorePolicyComplianceAnswer(storagePolicyId, pool);
+        return answer == null || answer.getResult();
+    }
+
     @Override
     public boolean isStoragePoolCompliantWithStoragePolicy(List<Pair<Volume, DiskProfile>> volumes, StoragePool pool) throws StorageUnavailableException {
         if (CollectionUtils.isEmpty(volumes)) {
@@ -2812,27 +2871,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             } else {
                 storagePolicyId = _diskOfferingDetailsDao.getDetail(diskProfile.getDiskOfferingId(), ApiConstants.STORAGE_POLICY);
             }
-            if (StringUtils.isNotEmpty(storagePolicyId)) {
-                VsphereStoragePolicyVO storagePolicyVO = _vsphereStoragePolicyDao.findById(Long.parseLong(storagePolicyId));
-                List<Long> hostIds = getUpHostsInPool(pool.getId());
-                Collections.shuffle(hostIds);
-
-                if (hostIds == null || hostIds.isEmpty()) {
-                    throw new StorageUnavailableException("Unable to send command to the pool " + pool.getName() + " due to there is no enabled hosts up in this cluster", pool.getId());
-                }
-                try {
-                    StorageFilerTO storageFilerTO = new StorageFilerTO(pool);
-                    CheckDataStoreStoragePolicyComplainceCommand cmd = new CheckDataStoreStoragePolicyComplainceCommand(storagePolicyVO.getPolicyId(), storageFilerTO);
-                    long targetHostId = _hvGuruMgr.getGuruProcessedCommandTargetHost(hostIds.get(0), cmd);
-                    Answer answer = _agentMgr.send(targetHostId, cmd);
-                    answers.add(new Pair<>(volume, answer));
-                } catch (AgentUnavailableException e) {
-                    s_logger.debug("Unable to send storage pool command to " + pool + " via " + hostIds.get(0), e);
-                    throw new StorageUnavailableException("Unable to send command to the pool ", pool.getId());
-                } catch (OperationTimedoutException e) {
-                    s_logger.debug("Failed to process storage pool command to " + pool + " via " + hostIds.get(0), e);
-                    throw new StorageUnavailableException("Failed to process storage command to the pool ", pool.getId());
-                }
+            Answer answer = getCheckDatastorePolicyComplianceAnswer(storagePolicyId, pool);
+            if (answer != null) {
+                answers.add(new Pair<>(volume, answer));
             }
         }
         // check cummilative result for all volumes

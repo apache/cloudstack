@@ -556,12 +556,8 @@ public class ViewResponseHelper {
         return respList;
     }
 
-    public static List<DiskOfferingResponse> createDiskOfferingResponse(DiskOfferingJoinVO... offerings) {
-        List<DiskOfferingResponse> respList = new ArrayList<DiskOfferingResponse>();
-        for (DiskOfferingJoinVO vt : offerings) {
-            respList.add(ApiDBUtils.newDiskOfferingResponse(vt));
-        }
-        return respList;
+    public static List<DiskOfferingResponse> createDiskOfferingResponses(Long vmId, List<DiskOfferingJoinVO> offerings) {
+        return ApiDBUtils.newDiskOfferingResponses(vmId, offerings);
     }
 
     public static List<ServiceOfferingResponse> createServiceOfferingResponse(ServiceOfferingJoinVO... offerings) {
