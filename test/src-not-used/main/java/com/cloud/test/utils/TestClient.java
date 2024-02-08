@@ -25,7 +25,8 @@ import java.util.Random;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.log4j.NDC;
 
 import com.trilead.ssh2.ChannelCondition;
@@ -36,7 +37,7 @@ import com.trilead.ssh2.Session;
 public class TestClient {
     private static long sleepTime = 180000L; // default 0
     private static boolean cleanUp = true;
-    public static final Logger s_logger = Logger.getLogger(TestClient.class.getName());
+    protected Logger logger = LogManager.getLogger(getClass());
     private static boolean repeat = true;
     private static int numOfUsers = 0;
     private static String[] users = null;
@@ -94,12 +95,12 @@ public class TestClient {
             }
 
             final String server = host + ":" + port + testUrl;
-            s_logger.info("Starting test against server: " + server + " with " + numThreads + " thread(s)");
+            logger.info("Starting test against server: " + server + " with " + numThreads + " thread(s)");
             if (cleanUp)
-                s_logger.info("Clean up is enabled, each test will wait " + sleepTime + " ms before cleaning up");
+                logger.info("Clean up is enabled, each test will wait " + sleepTime + " ms before cleaning up");
 
             if (numOfUsers > 0) {
-                s_logger.info("Pre-generating users for test of size : " + numOfUsers);
+                logger.info("Pre-generating users for test of size : " + numOfUsers);
                 users = new String[numOfUsers];
                 Random ran = new Random();
                 for (int i = 0; i < numOfUsers; i++) {
@@ -124,7 +125,7 @@ public class TestClient {
                                 NDC.push(username);
 
                                 String url = server + "?email=" + username + "&password=" + username + "&command=deploy";
-                                s_logger.info("Launching test for user: " + username + " with url: " + url);
+                                logger.info("Launching test for user: " + username + " with url: " + url);
                                 HttpClient client = new HttpClient();
                                 HttpMethod method = new GetMethod(url);
                                 int responseCode = client.executeMethod(method);
@@ -132,35 +133,35 @@ public class TestClient {
                                 String reason = null;
                                 if (responseCode == 200) {
                                     if (internet) {
-                                        s_logger.info("Deploy successful...waiting 5 minute before SSH tests");
+                                        logger.info("Deploy successful...waiting 5 minute before SSH tests");
                                         Thread.sleep(300000L);  // Wait 60 seconds so the linux VM can boot up.
 
-                                        s_logger.info("Begin Linux SSH test");
+                                        logger.info("Begin Linux SSH test");
                                         reason = sshTest(method.getResponseHeader("linuxIP").getValue());
 
                                         if (reason == null) {
-                                            s_logger.info("Linux SSH test successful");
-                                            s_logger.info("Begin Windows SSH test");
+                                            logger.info("Linux SSH test successful");
+                                            logger.info("Begin Windows SSH test");
                                             reason = sshWinTest(method.getResponseHeader("windowsIP").getValue());
                                         }
                                     }
                                     if (reason == null) {
                                         if (internet) {
-                                            s_logger.info("Windows SSH test successful");
+                                            logger.info("Windows SSH test successful");
                                         } else {
-                                            s_logger.info("deploy test successful....now cleaning up");
+                                            logger.info("deploy test successful....now cleaning up");
                                             if (cleanUp) {
-                                                s_logger.info("Waiting " + sleepTime + " ms before cleaning up vms");
+                                                logger.info("Waiting " + sleepTime + " ms before cleaning up vms");
                                                 Thread.sleep(sleepTime);
                                             } else {
                                                 success = true;
                                             }
                                         }
                                         if (users == null) {
-                                            s_logger.info("Sending cleanup command");
+                                            logger.info("Sending cleanup command");
                                             url = server + "?email=" + username + "&password=" + username + "&command=cleanup";
                                         } else {
-                                            s_logger.info("Sending stop DomR / destroy VM command");
+                                            logger.info("Sending stop DomR / destroy VM command");
                                             url = server + "?email=" + username + "&password=" + username + "&command=stopDomR";
                                         }
                                         method = new GetMethod(url);
@@ -172,32 +173,32 @@ public class TestClient {
                                         }
                                     } else {
                                         // Just stop but don't destroy the VMs/Routers
-                                        s_logger.info("SSH test failed with reason '" + reason + "', stopping VMs");
+                                        logger.info("SSH test failed with reason '" + reason + "', stopping VMs");
                                         url = server + "?email=" + username + "&password=" + username + "&command=stop";
                                         responseCode = client.executeMethod(new GetMethod(url));
                                     }
                                 } else {
                                     // Just stop but don't destroy the VMs/Routers
                                     reason = method.getStatusText();
-                                    s_logger.info("Deploy test failed with reason '" + reason + "', stopping VMs");
+                                    logger.info("Deploy test failed with reason '" + reason + "', stopping VMs");
                                     url = server + "?email=" + username + "&password=" + username + "&command=stop";
                                     client.executeMethod(new GetMethod(url));
                                 }
 
                                 if (success) {
-                                    s_logger.info("***** Completed test for user : " + username + " in " + ((System.currentTimeMillis() - now) / 1000L) + " seconds");
+                                    logger.info("***** Completed test for user : " + username + " in " + ((System.currentTimeMillis() - now) / 1000L) + " seconds");
                                 } else {
-                                    s_logger.info("##### FAILED test for user : " + username + " in " + ((System.currentTimeMillis() - now) / 1000L) +
+                                    logger.info("##### FAILED test for user : " + username + " in " + ((System.currentTimeMillis() - now) / 1000L) +
                                         " seconds with reason : " + reason);
                                 }
                             } catch (Exception e) {
-                                s_logger.warn("Error in thread", e);
+                                logger.warn("Error in thread", e);
                                 try {
                                     HttpClient client = new HttpClient();
                                     String url = server + "?email=" + username + "&password=" + username + "&command=stop";
                                     client.executeMethod(new GetMethod(url));
                                 } catch (Exception e1) {
-                                    s_logger.info("[ignored]"
+                                    logger.info("[ignored]"
                                             + "error while executing last resort stop attempt: " + e1.getLocalizedMessage());
                                 }
                             } finally {
@@ -208,13 +209,13 @@ public class TestClient {
                 }).start();
             }
         } catch (Exception e) {
-            s_logger.error(e);
+            logger.error(e);
         }
     }
 
     private static String sshWinTest(String host) {
         if (host == null) {
-            s_logger.info("Did not receive a host back from test, ignoring win ssh test");
+            logger.info("Did not receive a host back from test, ignoring win ssh test");
             return null;
         }
 
@@ -224,16 +225,16 @@ public class TestClient {
         while (true) {
             try {
                 if (retry > 0) {
-                    s_logger.info("Retry attempt : " + retry + " ...sleeping 300 seconds before next attempt");
+                    logger.info("Retry attempt : " + retry + " ...sleeping 300 seconds before next attempt");
                     Thread.sleep(300000);
                 }
 
-                s_logger.info("Attempting to SSH into windows host " + host + " with retry attempt: " + retry);
+                logger.info("Attempting to SSH into windows host " + host + " with retry attempt: " + retry);
 
                 Connection conn = new Connection(host);
                 conn.connect(null, 60000, 60000);
 
-                s_logger.info("SSHed successfully into windows host " + host);
+                logger.info("SSHed successfully into windows host " + host);
                 boolean success = false;
                 boolean isAuthenticated = conn.authenticateWithPassword("vmops", "vmops");
                 if (isAuthenticated == false) {
@@ -244,7 +245,7 @@ public class TestClient {
                 scp.put("wget.exe", "");
 
                 Session sess = conn.openSession();
-                s_logger.info("Executing : wget http://172.16.0.220/dump.bin");
+                logger.info("Executing : wget http://172.16.0.220/dump.bin");
                 sess.execCommand("wget http://172.16.0.220/dump.bin && dir dump.bin");
 
                 InputStream stdout = sess.getStdout();
@@ -256,7 +257,7 @@ public class TestClient {
                         int conditions = sess.waitForCondition(ChannelCondition.STDOUT_DATA | ChannelCondition.STDERR_DATA | ChannelCondition.EOF, 120000);
 
                         if ((conditions & ChannelCondition.TIMEOUT) != 0) {
-                            s_logger.info("Timeout while waiting for data from peer.");
+                            logger.info("Timeout while waiting for data from peer.");
                             return null;
                         }
 
@@ -271,7 +272,7 @@ public class TestClient {
                         success = true;
                         int len = stdout.read(buffer);
                         if (len > 0) // this check is somewhat paranoid
-                            s_logger.info(new String(buffer, 0, len));
+                            logger.info(new String(buffer, 0, len));
                     }
 
                     while (stderr.available() > 0) {
@@ -300,7 +301,7 @@ public class TestClient {
 
     private static String sshTest(String host) {
         if (host == null) {
-            s_logger.info("Did not receive a host back from test, ignoring ssh test");
+            logger.info("Did not receive a host back from test, ignoring ssh test");
             return null;
         }
 
@@ -310,16 +311,16 @@ public class TestClient {
         while (true) {
             try {
                 if (retry > 0) {
-                    s_logger.info("Retry attempt : " + retry + " ...sleeping 120 seconds before next attempt");
+                    logger.info("Retry attempt : " + retry + " ...sleeping 120 seconds before next attempt");
                     Thread.sleep(120000);
                 }
 
-                s_logger.info("Attempting to SSH into linux host " + host + " with retry attempt: " + retry);
+                logger.info("Attempting to SSH into linux host " + host + " with retry attempt: " + retry);
 
                 Connection conn = new Connection(host);
                 conn.connect(null, 60000, 60000);
 
-                s_logger.info("SSHed successfully into linux host " + host);
+                logger.info("SSHed successfully into linux host " + host);
 
                 boolean isAuthenticated = conn.authenticateWithPassword("root", "password");
 
@@ -328,7 +329,7 @@ public class TestClient {
                 }
                 boolean success = false;
                 Session sess = conn.openSession();
-                s_logger.info("Executing : wget http://172.16.0.220/dump.bin");
+                logger.info("Executing : wget http://172.16.0.220/dump.bin");
                 sess.execCommand("wget http://172.16.0.220/dump.bin && ls -al dump.bin");
 
                 InputStream stdout = sess.getStdout();
@@ -340,7 +341,7 @@ public class TestClient {
                         int conditions = sess.waitForCondition(ChannelCondition.STDOUT_DATA | ChannelCondition.STDERR_DATA | ChannelCondition.EOF, 120000);
 
                         if ((conditions & ChannelCondition.TIMEOUT) != 0) {
-                            s_logger.info("Timeout while waiting for data from peer.");
+                            logger.info("Timeout while waiting for data from peer.");
                             return null;
                         }
 
@@ -355,7 +356,7 @@ public class TestClient {
                         success = true;
                         int len = stdout.read(buffer);
                         if (len > 0) // this check is somewhat paranoid
-                            s_logger.info(new String(buffer, 0, len));
+                            logger.info(new String(buffer, 0, len));
                     }
 
                     while (stderr.available() > 0) {

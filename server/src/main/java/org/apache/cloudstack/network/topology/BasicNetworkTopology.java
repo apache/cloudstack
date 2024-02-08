@@ -22,7 +22,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -73,7 +74,7 @@ import com.cloud.vm.VirtualMachineProfile;
 @Component
 public class BasicNetworkTopology implements NetworkTopology {
 
-    private static final Logger s_logger = Logger.getLogger(BasicNetworkTopology.class);
+    protected Logger logger = LogManager.getLogger(BasicNetworkTopology.class);
 
     @Autowired
     @Qualifier("basicNetworkVisitor")
@@ -124,12 +125,12 @@ public class BasicNetworkTopology implements NetworkTopology {
     public boolean configDhcpForSubnet(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest,
             final List<DomainRouterVO> routers) throws ResourceUnavailableException {
 
-        s_logger.debug("CONFIG DHCP FOR SUBNETS RULES");
+        logger.debug("CONFIG DHCP FOR SUBNETS RULES");
 
         // Assuming we have only one router per network For Now.
         final DomainRouterVO router = routers.get(0);
         if (router.getState() != State.Running) {
-            s_logger.warn("Failed to configure dhcp: router not in running state");
+            logger.warn("Failed to configure dhcp: router not in running state");
             throw new ResourceUnavailableException("Unable to assign ip addresses, domR is not in right state " + router.getState(), DataCenter.class, network.getDataCenterId());
         }
 
@@ -142,7 +143,7 @@ public class BasicNetworkTopology implements NetworkTopology {
     public boolean applyDhcpEntry(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest,
             final DomainRouterVO router) throws ResourceUnavailableException {
 
-        s_logger.debug("APPLYING DHCP ENTRY RULES");
+        logger.debug("APPLYING DHCP ENTRY RULES");
 
         final String typeString = "dhcp entry";
         final Long podId = dest.getPod().getId();
@@ -167,7 +168,7 @@ public class BasicNetworkTopology implements NetworkTopology {
     public boolean applyUserData(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest, final DomainRouterVO router)
             throws ResourceUnavailableException {
 
-        s_logger.debug("APPLYING USERDATA RULES");
+        logger.debug("APPLYING USERDATA RULES");
 
         final String typeString = "userdata and password entry";
         final Long podId = dest.getPod().getId();
@@ -190,11 +191,11 @@ public class BasicNetworkTopology implements NetworkTopology {
             throws ResourceUnavailableException {
 
         if (rules == null || rules.isEmpty()) {
-            s_logger.debug("No lb rules to be applied for network " + network.getId());
+            logger.debug("No lb rules to be applied for network " + network.getId());
             return true;
         }
 
-        s_logger.debug("APPLYING LOAD BALANCING RULES");
+        logger.debug("APPLYING LOAD BALANCING RULES");
 
         final String typeString = "loadbalancing rules";
         final boolean isPodLevelException = false;
@@ -210,11 +211,11 @@ public class BasicNetworkTopology implements NetworkTopology {
     public boolean applyFirewallRules(final Network network, final List<? extends FirewallRule> rules, final VirtualRouter router)
             throws ResourceUnavailableException {
         if (rules == null || rules.isEmpty()) {
-            s_logger.debug("No firewall rules to be applied for network " + network.getId());
+            logger.debug("No firewall rules to be applied for network " + network.getId());
             return true;
         }
 
-        s_logger.debug("APPLYING FIREWALL RULES");
+        logger.debug("APPLYING FIREWALL RULES");
 
         final String typeString = "firewall rules";
         final boolean isPodLevelException = false;
@@ -229,11 +230,11 @@ public class BasicNetworkTopology implements NetworkTopology {
     @Override
     public boolean applyStaticNats(final Network network, final List<? extends StaticNat> rules, final VirtualRouter router) throws ResourceUnavailableException {
         if (rules == null || rules.isEmpty()) {
-            s_logger.debug("No static nat rules to be applied for network " + network.getId());
+            logger.debug("No static nat rules to be applied for network " + network.getId());
             return true;
         }
 
-        s_logger.debug("APPLYING STATIC NAT RULES");
+        logger.debug("APPLYING STATIC NAT RULES");
 
         final String typeString = "static nat rules";
         final boolean isPodLevelException = false;
@@ -249,11 +250,11 @@ public class BasicNetworkTopology implements NetworkTopology {
     public boolean associatePublicIP(final Network network, final List<? extends PublicIpAddress> ipAddress, final VirtualRouter router)
             throws ResourceUnavailableException {
         if (ipAddress == null || ipAddress.isEmpty()) {
-            s_logger.debug("No ip association rules to be applied for network " + network.getId());
+            logger.debug("No ip association rules to be applied for network " + network.getId());
             return true;
         }
 
-        s_logger.debug("APPLYING IP RULES");
+        logger.debug("APPLYING IP RULES");
 
         final String typeString = "ip association";
         final boolean isPodLevelException = false;
@@ -268,22 +269,22 @@ public class BasicNetworkTopology implements NetworkTopology {
     @Override
     public String[] applyVpnUsers(final Network network, final List<? extends VpnUser> users, final List<DomainRouterVO> routers) throws ResourceUnavailableException {
         if (routers == null || routers.isEmpty()) {
-            s_logger.warn("Failed to add/remove VPN users: no router found for account and zone");
+            logger.warn("Failed to add/remove VPN users: no router found for account and zone");
             throw new ResourceUnavailableException("Unable to assign ip addresses, domR doesn't exist for network " + network.getId(), DataCenter.class, network.getDataCenterId());
         }
 
-        s_logger.debug("APPLYING BASIC VPN RULES");
+        logger.debug("APPLYING BASIC VPN RULES");
 
         final BasicVpnRules vpnRules = new BasicVpnRules(network, users);
         boolean agentResults = true;
 
         for (final DomainRouterVO router : routers) {
             if(router.getState() == State.Stopped || router.getState() == State.Stopping){
-                s_logger.info("The router " + router.getInstanceName()+ " is in the " + router.getState() + " state. So not applying the VPN rules. Will be applied once the router gets restarted.");
+                logger.info("The router " + router.getInstanceName()+ " is in the " + router.getState() + " state. So not applying the VPN rules. Will be applied once the router gets restarted.");
                 continue;
             }
             else if (router.getState() != State.Running) {
-                s_logger.warn("Failed to add/remove VPN users: router not in running state");
+                logger.warn("Failed to add/remove VPN users: router not in running state");
                 throw new ResourceUnavailableException("Unable to assign ip addresses, domR is not in right state " + router.getState(), DataCenter.class,
                         network.getDataCenterId());
             }
@@ -311,7 +312,7 @@ public class BasicNetworkTopology implements NetworkTopology {
     public boolean savePasswordToRouter(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final VirtualRouter router)
             throws ResourceUnavailableException {
 
-        s_logger.debug("SAVE PASSWORD TO ROUTE RULES");
+        logger.debug("SAVE PASSWORD TO ROUTE RULES");
 
         final String typeString = "save password entry";
         final boolean isPodLevelException = false;
@@ -326,7 +327,7 @@ public class BasicNetworkTopology implements NetworkTopology {
     @Override
     public boolean saveSSHPublicKeyToRouter(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final VirtualRouter router,
             final String sshPublicKey) throws ResourceUnavailableException {
-        s_logger.debug("SAVE SSH PUB KEY TO ROUTE RULES");
+        logger.debug("SAVE SSH PUB KEY TO ROUTE RULES");
 
         final String typeString = "save SSHkey entry";
         final boolean isPodLevelException = false;
@@ -341,7 +342,7 @@ public class BasicNetworkTopology implements NetworkTopology {
     @Override
     public boolean saveUserDataToRouter(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final VirtualRouter router)
             throws ResourceUnavailableException {
-        s_logger.debug("SAVE USERDATA TO ROUTE RULES");
+        logger.debug("SAVE USERDATA TO ROUTE RULES");
 
         final String typeString = "save userdata entry";
         final boolean isPodLevelException = false;
@@ -357,7 +358,7 @@ public class BasicNetworkTopology implements NetworkTopology {
             final boolean failWhenDisconnect, final RuleApplierWrapper<RuleApplier> ruleApplierWrapper) throws ResourceUnavailableException {
 
         if (router == null) {
-            s_logger.warn("Unable to apply " + typeString + ", virtual router doesn't exist in the network " + network.getId());
+            logger.warn("Unable to apply " + typeString + ", virtual router doesn't exist in the network " + network.getId());
             throw new ResourceUnavailableException("Unable to apply " + typeString, DataCenter.class, network.getDataCenterId());
         }
 
@@ -374,14 +375,14 @@ public class BasicNetworkTopology implements NetworkTopology {
         boolean result = true;
         final String msg = "Unable to apply " + typeString + " on disconnected router ";
         if (router.getState() == State.Running) {
-            s_logger.debug("Applying " + typeString + " in network " + network);
+            logger.debug("Applying " + typeString + " in network " + network);
 
             if (router.isStopPending()) {
                 if (_hostDao.findById(router.getHostId()).getState() == Status.Up) {
                     throw new ResourceUnavailableException("Unable to process due to the stop pending router " + router.getInstanceName()
                             + " haven't been stopped after it's host coming back!", DataCenter.class, router.getDataCenterId());
                 }
-                s_logger.debug("Router " + router.getInstanceName() + " is stop pending, so not sending apply " + typeString + " commands to the backend");
+                logger.debug("Router " + router.getInstanceName() + " is stop pending, so not sending apply " + typeString + " commands to the backend");
                 return false;
             }
 
@@ -389,7 +390,7 @@ public class BasicNetworkTopology implements NetworkTopology {
                 result = ruleApplier.accept(getVisitor(), router);
                 connectedRouters.add(router);
             } catch (final AgentUnavailableException e) {
-                s_logger.warn(msg + router.getInstanceName(), e);
+                logger.warn(msg + router.getInstanceName(), e);
                 disconnectedRouters.add(router);
             }
 
@@ -403,9 +404,9 @@ public class BasicNetworkTopology implements NetworkTopology {
             }
 
         } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
-            s_logger.debug("Router " + router.getInstanceName() + " is in " + router.getState() + ", so not sending apply " + typeString + " commands to the backend");
+            logger.debug("Router " + router.getInstanceName() + " is in " + router.getState() + ", so not sending apply " + typeString + " commands to the backend");
         } else {
-            s_logger.warn("Unable to apply " + typeString + ", virtual router is not in the right state " + router.getState());
+            logger.warn("Unable to apply " + typeString + ", virtual router is not in the right state " + router.getState());
             if (isZoneBasic && isPodLevelException) {
                 throw new ResourceUnavailableException("Unable to apply " + typeString + ", virtual router is not in the right state", Pod.class, podId);
             }
@@ -426,8 +427,8 @@ public class BasicNetworkTopology implements NetworkTopology {
                 }
             }
         } else if (!disconnectedRouters.isEmpty()) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(msg + router.getInstanceName() + "(" + router.getId() + ")");
+            if (logger.isDebugEnabled()) {
+                logger.debug(msg + router.getInstanceName() + "(" + router.getId() + ")");
             }
             if (isZoneBasic && isPodLevelException) {
                 throw new ResourceUnavailableException(msg, Pod.class, podId);
@@ -444,7 +445,7 @@ public class BasicNetworkTopology implements NetworkTopology {
 
     @Override
     public boolean removeDhcpEntry(Network network, NicProfile nic, VirtualMachineProfile profile, VirtualRouter virtualRouter) throws ResourceUnavailableException {
-        s_logger.debug("REMOVING DHCP ENTRY RULE");
+        logger.debug("REMOVING DHCP ENTRY RULE");
 
         final String typeString = "dhcp entry";
         final Long podId = profile.getVirtualMachine().getPodIdToDeployIn();

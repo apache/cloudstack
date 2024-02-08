@@ -50,7 +50,8 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.SolidFireUtil;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
@@ -91,7 +92,7 @@ import com.cloud.vm.VirtualMachine;
 import com.google.common.base.Preconditions;
 
 public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
-    private static final Logger LOGGER = Logger.getLogger(SolidFirePrimaryDataStoreDriver.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     private static final int LOWEST_HYPERVISOR_SNAPSHOT_RESERVE = 10;
     private static final long MIN_IOPS_FOR_TEMPLATE_VOLUME = 100L;
     private static final long MAX_IOPS_FOR_TEMPLATE_VOLUME = 20000L;
@@ -169,7 +170,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         if (!lock.lock(SolidFireUtil.LOCK_TIME_IN_SECONDS)) {
             String errMsg = "Couldn't lock the DB (in grantAccess) on the following string: " + cluster.getUuid();
 
-            LOGGER.warn(errMsg);
+            logger.warn(errMsg);
 
             throw new CloudRuntimeException(errMsg);
         }
@@ -214,7 +215,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
 
         if (isRevokeAccessNotNeeded(dataObject)) {
-            LOGGER.debug("Skipping revoke access for Solidfire data object type:" + dataObject.getType() + " id:" + dataObject.getId());
+            logger.debug("Skipping revoke access for Solidfire data object type:" + dataObject.getType() + " id:" + dataObject.getId());
             return;
         }
 
@@ -229,12 +230,12 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         if (!lock.lock(SolidFireUtil.LOCK_TIME_IN_SECONDS)) {
             String errMsg = "Couldn't lock the DB (in revokeAccess) on the following string: " + cluster.getUuid();
 
-            LOGGER.warn(errMsg);
+            logger.warn(errMsg);
 
             throw new CloudRuntimeException(errMsg);
         }
 
-        LOGGER.debug("Revoking access for Solidfire data object type:" + dataObject.getType() + " id:" + dataObject.getId());
+        logger.debug("Revoking access for Solidfire data object type:" + dataObject.getType() + " id:" + dataObject.getId());
 
         try {
             SolidFireUtil.SolidFireConnection sfConnection = SolidFireUtil.getSolidFireConnection(storagePoolId, storagePoolDetailsDao);
@@ -565,13 +566,13 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             } else {
                 errMsg = "Invalid DataObjectType (" + dataObject.getType() + ") passed to createAsync";
 
-                LOGGER.error(errMsg);
+                logger.error(errMsg);
             }
         }
         catch (Exception ex) {
             errMsg = ex.getMessage();
 
-            LOGGER.error(errMsg);
+            logger.error(errMsg);
 
             if (callback == null) {
                 throw ex;
@@ -840,7 +841,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         catch (Exception ex) {
             errMsg = ex.getMessage();
 
-            LOGGER.error(errMsg);
+            logger.error(errMsg);
         }
 
         if (callback != null) {
@@ -950,7 +951,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             result.setResult(null);
         }
         catch (Exception ex) {
-            LOGGER.debug(SolidFireUtil.LOG_PREFIX + "Failed to take CloudStack snapshot: " + snapshotInfo.getId(), ex);
+            logger.debug(SolidFireUtil.LOGGER_PREFIX + "Failed to take CloudStack snapshot: " + snapshotInfo.getId(), ex);
 
             result = new CreateCmdResult(null, new CreateObjectAnswer(ex.toString()));
 
@@ -1268,7 +1269,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             }
         }
         catch (Exception ex) {
-            LOGGER.debug(SolidFireUtil.LOG_PREFIX + "Failed to delete SolidFire volume. CloudStack volume ID: " + volumeInfo.getId(), ex);
+            logger.debug(SolidFireUtil.LOGGER_PREFIX + "Failed to delete SolidFire volume. CloudStack volume ID: " + volumeInfo.getId(), ex);
 
             throw ex;
         }
@@ -1311,7 +1312,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             storagePoolDao.update(storagePoolId, storagePool);
         }
         catch (Exception ex) {
-            LOGGER.debug(SolidFireUtil.LOG_PREFIX + "Issue in 'deleteSnapshot(SnapshotInfo, long)'. CloudStack snapshot ID: " + csSnapshotId, ex);
+            logger.debug(SolidFireUtil.LOGGER_PREFIX + "Issue in 'deleteSnapshot(SnapshotInfo, long)'. CloudStack snapshot ID: " + csSnapshotId, ex);
 
             throw ex;
         }
@@ -1335,7 +1336,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             storagePoolDao.update(storagePoolId, storagePool);
         }
         catch (Exception ex) {
-            LOGGER.debug(SolidFireUtil.LOG_PREFIX + "Failed to delete SolidFire template volume. CloudStack template ID: " + template.getId(), ex);
+            logger.debug(SolidFireUtil.LOGGER_PREFIX + "Failed to delete SolidFire template volume. CloudStack template ID: " + template.getId(), ex);
 
             throw ex;
         }

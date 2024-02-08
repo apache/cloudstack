@@ -48,7 +48,6 @@ import org.apache.cloudstack.api.response.SAMLMetaDataResponse;
 import org.apache.cloudstack.saml.SAML2AuthManager;
 import org.apache.cloudstack.saml.SAMLProviderMetadata;
 import org.apache.cloudstack.utils.security.ParserUtils;
-import org.apache.log4j.Logger;
 import org.opensaml.Configuration;
 import org.opensaml.DefaultBootstrap;
 import org.opensaml.common.xml.SAMLConstants;
@@ -95,7 +94,6 @@ import com.cloud.utils.HttpUtils;
 
 @APICommand(name = "getSPMetadata", description = "Returns SAML2 CloudStack Service Provider MetaData", responseObject = SAMLMetaDataResponse.class, entityType = {})
 public class GetServiceProviderMetaDataCmd extends BaseCmd implements APIAuthenticator {
-    public static final Logger s_logger = Logger.getLogger(GetServiceProviderMetaDataCmd.class.getName());
     private static final String s_name = "spmetadataresponse";
 
     @Inject
@@ -130,7 +128,7 @@ public class GetServiceProviderMetaDataCmd extends BaseCmd implements APIAuthent
         try {
             DefaultBootstrap.bootstrap();
         } catch (ConfigurationException | FactoryConfigurationError e) {
-            s_logger.error("OpenSAML Bootstrapping error: " + e.getMessage());
+            logger.error("OpenSAML Bootstrapping error: " + e.getMessage());
             throw new ServerApiException(ApiErrorCode.ACCOUNT_ERROR, _apiServer.getSerializedApiError(ApiErrorCode.ACCOUNT_ERROR.getHttpCode(),
                     "OpenSAML Bootstrapping error while creating SP MetaData",
                     params, responseType));
@@ -167,7 +165,7 @@ public class GetServiceProviderMetaDataCmd extends BaseCmd implements APIAuthent
             spSSODescriptor.getKeyDescriptors().add(signKeyDescriptor);
             spSSODescriptor.getKeyDescriptors().add(encKeyDescriptor);
         } catch (SecurityException e) {
-            s_logger.warn("Unable to add SP X509 descriptors:" + e.getMessage());
+            logger.warn("Unable to add SP X509 descriptors:" + e.getMessage());
         }
 
         NameIDFormat nameIDFormat = new NameIDFormatBuilder().buildObject();
@@ -281,7 +279,7 @@ public class GetServiceProviderMetaDataCmd extends BaseCmd implements APIAuthent
             }
         }
         if (_samlAuthManager == null) {
-            s_logger.error("No suitable Pluggable Authentication Manager found for SAML2 getSPMetadata Cmd");
+            logger.error("No suitable Pluggable Authentication Manager found for SAML2 getSPMetadata Cmd");
         }
     }
 }

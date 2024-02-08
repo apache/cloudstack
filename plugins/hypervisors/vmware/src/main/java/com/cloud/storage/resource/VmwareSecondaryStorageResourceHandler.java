@@ -20,8 +20,8 @@ import java.util.List;
 
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.resource.SecondaryStorageResourceHandler;
-import org.apache.log4j.Logger;
-import org.apache.log4j.NDC;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.BackupSnapshotCommand;
@@ -50,9 +50,10 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.google.gson.Gson;
 import com.vmware.vim25.ManagedObjectReference;
+import org.apache.logging.log4j.ThreadContext;
 
 public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageResourceHandler, VmwareHostService, VmwareStorageMount {
-    private static final Logger s_logger = Logger.getLogger(VmwareSecondaryStorageResourceHandler.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private final PremiumSecondaryStorageResource _resource;
     private final VmwareStorageManager _storageMgr;
@@ -94,7 +95,7 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
 
         try {
             Answer answer;
-            NDC.push(getCommandLogTitle(cmd));
+            ThreadContext.push(getCommandLogTitle(cmd));
             logCommand(cmd);
 
             if (cmd instanceof PrimaryStorageDownloadCommand) {
@@ -130,23 +131,23 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
                 answer.setContextParam("checkpoint2", cmd.getContextParam("checkpoint2"));
             }
 
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("Command execution answer: " + _gson.toJson(answer));
+            if (logger.isDebugEnabled())
+                logger.debug("Command execution answer: " + _gson.toJson(answer));
 
             return answer;
         } finally {
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("Done executing " + _gson.toJson(cmd));
+            if (logger.isDebugEnabled())
+                logger.debug("Done executing " + _gson.toJson(cmd));
             recycleServiceContext();
-            NDC.pop();
+            ThreadContext.pop();
         }
     }
 
     private void logCommand(Command cmd) {
         try {
-            s_logger.debug(String.format("Executing command: [%s].", _gson.toJson(cmd)));
+            logger.debug(String.format("Executing command: [%s].", _gson.toJson(cmd)));
         } catch (Exception e) {
-            s_logger.debug(String.format("Executing command: [%s].", cmd.getClass().getSimpleName()));
+            logger.debug(String.format("Executing command: [%s].", cmd.getClass().getSimpleName()));
         }
     }
 
@@ -186,13 +187,13 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
     public VmwareContext getServiceContext(Command cmd) {
         String guid = cmd.getContextParam("guid");
         if (guid == null || guid.isEmpty()) {
-            s_logger.error("Invalid command context parameter guid");
+            logger.error("Invalid command context parameter guid");
             return null;
         }
 
         String username = cmd.getContextParam("username");
         if (username == null || username.isEmpty()) {
-            s_logger.error("Invalid command context parameter username");
+            logger.error("Invalid command context parameter username");
             return null;
         }
 
@@ -201,14 +202,14 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
         // validate command guid parameter
         String[] tokens = guid.split("@");
         if (tokens == null || tokens.length != 2) {
-            s_logger.error("Invalid content in command context parameter guid");
+            logger.error("Invalid content in command context parameter guid");
             return null;
         }
 
         String vCenterAddress = tokens[1];
         String[] hostTokens = tokens[0].split(":");
         if (hostTokens == null || hostTokens.length != 2) {
-            s_logger.error("Invalid content in command context parameter guid");
+            logger.error("Invalid content in command context parameter guid");
             return null;
         }
 
@@ -223,7 +224,7 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
                 context = null;
             }
             if (context == null) {
-                s_logger.info("Open new VmwareContext. vCenter: " + vCenterAddress + ", user: " + username + ", password: " + StringUtils.getMaskedPasswordForDisplay(password));
+                logger.info("Open new VmwareContext. vCenter: " + vCenterAddress + ", user: " + username + ", password: " + StringUtils.getMaskedPasswordForDisplay(password));
                 VmwareSecondaryStorageContextFactory.setVcenterSessionTimeout(vCenterSessionTimeout);
                 context = VmwareSecondaryStorageContextFactory.getContext(vCenterAddress, username, password);
             }
@@ -235,7 +236,7 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
             currentContext.set(context);
             return context;
         } catch (Exception e) {
-            s_logger.error("Unexpected exception " + e.toString(), e);
+            logger.error("Unexpected exception " + e.toString(), e);
             return null;
         }
     }
@@ -266,7 +267,7 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
         ManagedObjectReference morHyperHost = new ManagedObjectReference();
         String[] hostTokens = tokens[0].split(":");
         if (hostTokens == null || hostTokens.length != 2) {
-            s_logger.error("Invalid content in command context parameter guid");
+            logger.error("Invalid content in command context parameter guid");
             return null;
         }
 
@@ -289,10 +290,10 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
                             : cmd.getContextParam("serviceconsole"));
                     _resource.ensureOutgoingRuleForAddress(netSummary.getHostIp());
 
-                    s_logger.info("Setup firewall rule for host: " + netSummary.getHostIp());
+                    logger.info("Setup firewall rule for host: " + netSummary.getHostIp());
                 }
             } catch (Throwable e) {
-                s_logger.warn("Unable to retrive host network information due to exception " + e.toString() + ", host: " + hostTokens[0] + "-" + hostTokens[1]);
+                logger.warn("Unable to retrive host network information due to exception " + e.toString() + ", host: " + hostTokens[0] + "-" + hostTokens[1]);
             }
 
             return hostMo;
@@ -320,7 +321,7 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
     @Override
     public String createLogMessageException(Throwable e, Command command) {
         String message = String.format("%s failed due to [%s].", command.getClass().getSimpleName(), VmwareHelper.getExceptionMessage(e));
-        s_logger.error(message, e);
+        logger.error(message, e);
 
         return message;
     }

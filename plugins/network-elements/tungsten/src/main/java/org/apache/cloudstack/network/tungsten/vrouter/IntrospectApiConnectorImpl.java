@@ -21,7 +21,8 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -33,7 +34,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 public class IntrospectApiConnectorImpl implements IntrospectApiConnector {
-    private static final Logger s_logger = Logger.getLogger(IntrospectApiConnectorImpl.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     private final String vrouterUrl;
 
     public IntrospectApiConnectorImpl(VRouter vRouter) {
@@ -46,13 +47,13 @@ public class IntrospectApiConnectorImpl implements IntrospectApiConnector {
             CloseableHttpResponse httpResponse = httpClient.execute(request)) {
             return getResponse(httpResponse);
         } catch (IOException ex) {
-            s_logger.error("Failed to connect host : " + ex.getMessage());
+            logger.error("Failed to connect host : " + ex.getMessage());
             return null;
         } catch (ParserConfigurationException ex) {
-            s_logger.error("Failed to parse xml configuration : " + ex.getMessage());
+            logger.error("Failed to parse xml configuration : " + ex.getMessage());
             return null;
         } catch (SAXException ex) {
-            s_logger.error("Failed to get xml data : " + ex.getMessage());
+            logger.error("Failed to get xml data : " + ex.getMessage());
             return null;
         }
     }

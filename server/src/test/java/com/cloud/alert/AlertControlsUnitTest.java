@@ -21,7 +21,8 @@ import com.cloud.server.ManagementServerImpl;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import junit.framework.TestCase;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,7 +40,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 public class AlertControlsUnitTest extends TestCase {
-    private static final Logger s_logger = Logger.getLogger(AlertControlsUnitTest.class);
+    private Logger logger = LogManager.getLogger(AlertControlsUnitTest.class);
 
     @Spy
     ManagementServerImpl _mgmtServer = new ManagementServerImpl();
@@ -69,10 +70,10 @@ public class AlertControlsUnitTest extends TestCase {
 
     @Test
     public void testInjected() throws Exception {
-        s_logger.info("Starting test to archive and delete alerts");
+        logger.info("Starting test to archive and delete alerts");
         archiveAlerts();
         deleteAlerts();
-        s_logger.info("archive/delete alerts: TEST PASSED");
+        logger.info("archive/delete alerts: TEST PASSED");
     }
 
     protected void archiveAlerts() {

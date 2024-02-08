@@ -29,7 +29,8 @@ import java.util.Set;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -37,7 +38,7 @@ import org.w3c.dom.NodeList;
 
 public class TestCaseEngine {
 
-    public static final Logger s_logger = Logger.getLogger(TestCaseEngine.class.getName());
+    protected Logger logger = LogManager.getLogger(getClass());
     public static String s_fileName = "../metadata/adapter.xml";
     public static HashMap<String, String> s_globalParameters = new HashMap<String, String>();
     protected static HashMap<String, String> s_componentMap = new HashMap<String, String>();
@@ -108,9 +109,9 @@ public class TestCaseEngine {
             // execute test
             for (int i = 0; i < s_numThreads; i++) {
                 if (s_numThreads > 1) {
-                    s_logger.info("STARTING STRESS TEST IN " + s_numThreads + " THREADS");
+                    logger.info("STARTING STRESS TEST IN " + s_numThreads + " THREADS");
                 } else {
-                    s_logger.info("STARTING FUNCTIONAL TEST");
+                    logger.info("STARTING FUNCTIONAL TEST");
                 }
                 new Thread(new Runnable() {
                     @Override
@@ -124,7 +125,7 @@ public class TestCaseEngine {
                                         executeTest(key, c, component);
                                     }
                                 } catch (Exception ex1) {
-                                    s_logger.error(ex1);
+                                    logger.error(ex1);
                                 } finally {
                                     if (s_failure > 0) {
                                         System.exit(1);
@@ -139,7 +140,7 @@ public class TestCaseEngine {
                                     TestCase component = (TestCase)c.newInstance();
                                     executeTest(key, c, component);
                                 } catch (Exception e) {
-                                    s_logger.error("Error in thread ", e);
+                                    logger.error("Error in thread ", e);
                                 }
                             }
                         } while (s_repeat);
@@ -148,7 +149,7 @@ public class TestCaseEngine {
             }
 
         } catch (Exception exc) {
-            s_logger.error(exc);
+            logger.error(exc);
         }
     }
 
@@ -211,12 +212,12 @@ public class TestCaseEngine {
 
         //If sanity test required, make sure that SANITY TEST componennt got loaded
         if (s_isSanity == true && s_componentMap.size() == 0) {
-            s_logger.error("FAILURE!!! Failed to load SANITY TEST component. Verify that the test is uncommented in adapter.xml");
+            logger.error("FAILURE!!! Failed to load SANITY TEST component. Verify that the test is uncommented in adapter.xml");
             System.exit(1);
         }
 
         if (s_isRegression == true && s_componentMap.size() != 2) {
-            s_logger.error("FAILURE!!! Failed to load SANITY TEST or REGRESSION TEST components. Verify that these tests are uncommented in adapter.xml");
+            logger.error("FAILURE!!! Failed to load SANITY TEST or REGRESSION TEST components. Verify that these tests are uncommented in adapter.xml");
             System.exit(1);
         }
 
@@ -234,7 +235,7 @@ public class TestCaseEngine {
     public static boolean executeTest(String key, Class<?> c, TestCase component) {
         boolean finalResult = false;
         try {
-            s_logger.info("Starting \"" + key + "\" test...\n\n");
+            logger.info("Starting \"" + key + "\" test...\n\n");
 
             // set global parameters
             HashMap<String, String> updateParam = new HashMap<String, String>();
@@ -260,15 +261,15 @@ public class TestCaseEngine {
             // execute method
             s_result.set(component.executeTest());
             if (s_result.get().toString().equals("false")) {
-                s_logger.error("FAILURE!!! Test \"" + key + "\" failed\n\n\n");
+                logger.error("FAILURE!!! Test \"" + key + "\" failed\n\n\n");
                 s_failure++;
             } else {
                 finalResult = true;
-                s_logger.info("SUCCESS!!! Test \"" + key + "\" passed\n\n\n");
+                logger.info("SUCCESS!!! Test \"" + key + "\" passed\n\n\n");
             }
 
         } catch (Exception ex) {
-            s_logger.error("error during test execution ", ex);
+            logger.error("error during test execution ", ex);
         }
         return finalResult;
     }

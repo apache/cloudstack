@@ -52,7 +52,6 @@ import org.apache.cloudstack.quota.vo.QuotaAccountVO;
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.apache.cloudstack.quota.vo.QuotaUsageVO;
 import org.apache.cloudstack.utils.usage.UsageUtils;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Config;
@@ -67,7 +66,6 @@ import com.cloud.utils.db.Filter;
 
 @Component
 public class QuotaServiceImpl extends ManagerBase implements QuotaService, Configurable, QuotaConfig {
-    private static final Logger s_logger = Logger.getLogger(QuotaServiceImpl.class);
 
     @Inject
     private AccountDao _accountDao;
@@ -103,11 +101,11 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
 
         _aggregationDuration = Integer.parseInt(aggregationRange);
         if (_aggregationDuration < UsageUtils.USAGE_AGGREGATION_RANGE_MIN) {
-            s_logger.warn("Usage stats job aggregation range is to small, using the minimum value of " + UsageUtils.USAGE_AGGREGATION_RANGE_MIN);
+            logger.warn("Usage stats job aggregation range is to small, using the minimum value of " + UsageUtils.USAGE_AGGREGATION_RANGE_MIN);
             _aggregationDuration = UsageUtils.USAGE_AGGREGATION_RANGE_MIN;
         }
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Usage timezone = " + _usageTimezone + " AggregationDuration=" + _aggregationDuration);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Usage timezone = " + _usageTimezone + " AggregationDuration=" + _aggregationDuration);
         }
         return true;
     }
@@ -176,15 +174,15 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
         if (endDate == null) {
             // adjust start date to end of day as there is no end date
             Date adjustedStartDate = computeAdjustedTime(_respBldr.startOfNextDay(startDate));
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("getQuotaBalance1: Getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", on or before " + adjustedStartDate);
+            if (logger.isDebugEnabled()) {
+                logger.debug("getQuotaBalance1: Getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", on or before " + adjustedStartDate);
             }
             List<QuotaBalanceVO> qbrecords = _quotaBalanceDao.lastQuotaBalanceVO(accountId, domainId, adjustedStartDate);
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Found records size=" + qbrecords.size());
+            if (logger.isDebugEnabled()) {
+                logger.debug("Found records size=" + qbrecords.size());
             }
             if (qbrecords.isEmpty()) {
-                s_logger.info("Incorrect Date there are no quota records before this date " + adjustedStartDate);
+                logger.info("Incorrect Date there are no quota records before this date " + adjustedStartDate);
                 return qbrecords;
             } else {
                 return qbrecords;
@@ -195,16 +193,16 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
                 throw new InvalidParameterValueException("Incorrect Date Range. End date:" + endDate + " should not be in future. ");
             } else if (startDate.before(endDate)) {
                 Date adjustedEndDate = computeAdjustedTime(endDate);
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("getQuotaBalance2: Getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate
+                if (logger.isDebugEnabled()) {
+                    logger.debug("getQuotaBalance2: Getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate
                             + " and " + adjustedEndDate);
                 }
                 List<QuotaBalanceVO> qbrecords = _quotaBalanceDao.findQuotaBalance(accountId, domainId, adjustedStartDate, adjustedEndDate);
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("getQuotaBalance3: Found records size=" + qbrecords.size());
+                if (logger.isDebugEnabled()) {
+                    logger.debug("getQuotaBalance3: Found records size=" + qbrecords.size());
                 }
                 if (qbrecords.isEmpty()) {
-                    s_logger.info("There are no quota records between these dates start date " + adjustedStartDate + " and end date:" + endDate);
+                    logger.info("There are no quota records between these dates start date " + adjustedStartDate + " and end date:" + endDate);
                     return qbrecords;
                 } else {
                     return qbrecords;
@@ -245,8 +243,8 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
         }
         Date adjustedEndDate = computeAdjustedTime(endDate);
         Date adjustedStartDate = computeAdjustedTime(startDate);
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Getting quota records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate + " and " + adjustedEndDate);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Getting quota records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate + " and " + adjustedEndDate);
         }
         return _quotaUsageDao.findQuotaUsage(accountId, domainId, usageType, adjustedStartDate, adjustedEndDate);
     }
@@ -302,16 +300,16 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
             quota_account = new QuotaAccountVO(account.getAccountId());
             quota_account.setQuotaBalance(aggrUsage);
             quota_account.setQuotaBalanceDate(endDate);
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(quota_account);
+            if (logger.isDebugEnabled()) {
+                logger.debug(quota_account);
             }
             _quotaAcc.persistQuotaAccount(quota_account);
             return true;
         } else {
             quota_account.setQuotaBalance(aggrUsage);
             quota_account.setQuotaBalanceDate(endDate);
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(quota_account);
+            if (logger.isDebugEnabled()) {
+                logger.debug(quota_account);
             }
             return _quotaAcc.updateQuotaAccount(account.getAccountId(), quota_account);
         }

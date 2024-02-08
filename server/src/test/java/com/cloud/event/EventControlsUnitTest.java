@@ -23,7 +23,8 @@ import com.cloud.user.AccountManager;
 import junit.framework.TestCase;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,7 +42,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
 public class EventControlsUnitTest extends TestCase {
-    private static final Logger s_logger = Logger.getLogger(EventControlsUnitTest.class);
+    private Logger logger = LogManager.getLogger(EventControlsUnitTest.class);
 
     @Spy
     ManagementServerImpl _mgmtServer = new ManagementServerImpl();
@@ -70,10 +71,10 @@ public class EventControlsUnitTest extends TestCase {
 
     @Test
     public void testInjected() throws Exception {
-        s_logger.info("Starting test to archive and delete events");
+        logger.info("Starting test to archive and delete events");
         archiveEvents();
         deleteEvents();
-        s_logger.info("archive/delete events: TEST PASSED");
+        logger.info("archive/delete events: TEST PASSED");
     }
 
     protected void archiveEvents() {

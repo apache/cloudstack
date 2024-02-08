@@ -28,7 +28,8 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class SignEC2 {
     public static String url;
@@ -37,7 +38,7 @@ public class SignEC2 {
     public static String port;
     public static String command;
     public static String accessPoint;
-    public static final Logger s_logger = Logger.getLogger(SignEC2.class.getName());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     public static void main(String[] args) {
         // Parameters
@@ -55,7 +56,7 @@ public class SignEC2 {
         try {
             prop.load(new FileInputStream("../conf/tool.properties"));
         } catch (IOException ex) {
-            s_logger.error("Error reading from ../conf/tool.properties", ex);
+            logger.error("Error reading from ../conf/tool.properties", ex);
             System.exit(2);
         }
 
@@ -64,32 +65,32 @@ public class SignEC2 {
         port = prop.getProperty("port");
 
         if (host == null) {
-            s_logger.info("Please set host in tool.properties file");
+            logger.info("Please set host in tool.properties file");
             System.exit(1);
         }
 
         if (port == null) {
-            s_logger.info("Please set port in tool.properties file");
+            logger.info("Please set port in tool.properties file");
             System.exit(1);
         }
 
         if (url == null) {
-            s_logger.info("Please specify url with -u option");
+            logger.info("Please specify url with -u option");
             System.exit(1);
         }
 
         if (secretkey == null) {
-            s_logger.info("Please set secretkey in tool.properties file");
+            logger.info("Please set secretkey in tool.properties file");
             System.exit(1);
         }
 
         if (prop.get("apikey") == null) {
-            s_logger.info("Please set apikey in tool.properties file");
+            logger.info("Please set apikey in tool.properties file");
             System.exit(1);
         }
 
         if (prop.get("accesspoint") == null) {
-            s_logger.info("Please set apikey in tool.properties file");
+            logger.info("Please set apikey in tool.properties file");
             System.exit(1);
         }
 
@@ -123,7 +124,7 @@ public class SignEC2 {
             try {
                 temp = temp + key + "=" + URLEncoder.encode(value, "UTF-8") + "&";
             } catch (Exception ex) {
-                s_logger.error("Unable to set parameter " + value + " for the command " + param.get("command"));
+                logger.error("Unable to set parameter " + value + " for the command " + param.get("command"));
             }
 
         }
@@ -134,10 +135,10 @@ public class SignEC2 {
         try {
             encodedSignature = URLEncoder.encode(signature, "UTF-8");
         } catch (Exception ex) {
-            s_logger.error(ex);
+            logger.error(ex);
         }
         String url = "http://" + host + ":" + prop.getProperty("port") + "/" + prop.getProperty("accesspoint") + "?" + temp + "&Signature=" + encodedSignature;
-        s_logger.info("Url is " + url);
+        logger.info("Url is " + url);
 
     }
 }

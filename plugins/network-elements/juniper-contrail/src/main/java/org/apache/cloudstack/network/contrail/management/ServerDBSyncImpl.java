@@ -41,7 +41,8 @@ import net.juniper.contrail.api.types.VirtualMachineInterface;
 import net.juniper.contrail.api.types.VirtualNetwork;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.network.contrail.model.FloatingIpModel;
@@ -118,7 +119,7 @@ public class ServerDBSyncImpl implements ServerDBSync {
         _dbSync = new DBSyncGeneric(this);
     }
 
-    private static final Logger s_logger = Logger.getLogger(ServerDBSync.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     /*
      * API for syncing all classes of vnc objects with cloudstack
@@ -131,7 +132,7 @@ public class ServerDBSyncImpl implements ServerDBSync {
         short syncState = SYNC_STATE_IN_SYNC;
 
         /* vnc classes need to be synchronized with cloudstack */
-        s_logger.debug("syncing cloudstack db with vnc");
+        logger.debug("syncing cloudstack db with vnc");
         try {
             for (Class<?> cls : _vncClasses) {
 
@@ -141,29 +142,29 @@ public class ServerDBSyncImpl implements ServerDBSync {
                 _dbSync.setSyncMode(syncMode);
 
                 if (_dbSync.getSyncMode() == DBSyncGeneric.SYNC_MODE_CHECK) {
-                    s_logger.debug("sync check start: " + DBSyncGeneric.getClassName(cls));
+                    logger.debug("sync check start: " + DBSyncGeneric.getClassName(cls));
                 } else {
-                    s_logger.debug("sync start: " + DBSyncGeneric.getClassName(cls));
+                    logger.debug("sync start: " + DBSyncGeneric.getClassName(cls));
                 }
 
                 if (_dbSync.sync(cls) == false) {
                     if (_dbSync.getSyncMode() == DBSyncGeneric.SYNC_MODE_CHECK) {
-                        s_logger.info("out of sync detected: " + DBSyncGeneric.getClassName(cls));
+                        logger.info("out of sync detected: " + DBSyncGeneric.getClassName(cls));
                     } else {
-                        s_logger.info("out of sync detected and re-synced: " + DBSyncGeneric.getClassName(cls));
+                        logger.info("out of sync detected and re-synced: " + DBSyncGeneric.getClassName(cls));
                     }
                     syncState = SYNC_STATE_OUT_OF_SYNC;
                 }
                 if (_dbSync.getSyncMode() == DBSyncGeneric.SYNC_MODE_CHECK) {
-                    s_logger.debug("sync check finish: " + DBSyncGeneric.getClassName(cls));
+                    logger.debug("sync check finish: " + DBSyncGeneric.getClassName(cls));
                 } else {
-                    s_logger.debug("sync finish: " + DBSyncGeneric.getClassName(cls));
+                    logger.debug("sync finish: " + DBSyncGeneric.getClassName(cls));
                 }
                 /* unlock the sync mode */
                 _lockSyncMode.unlock();
             }
         } catch (Exception ex) {
-            s_logger.warn("DB Synchronization", ex);
+            logger.warn("DB Synchronization", ex);
             syncState = SYNC_STATE_UNKNOWN;
             if (_lockSyncMode.isLocked()) {
                 _lockSyncMode.unlock();
@@ -176,16 +177,16 @@ public class ServerDBSyncImpl implements ServerDBSync {
     @Override
     public void syncClass(Class<?> cls) {
 
-        s_logger.debug("syncClass: " + cls.getName());
+        logger.debug("syncClass: " + cls.getName());
         try {
-            s_logger.debug("sync start: " + DBSyncGeneric.getClassName(cls));
+            logger.debug("sync start: " + DBSyncGeneric.getClassName(cls));
             _lockSyncMode.lock();
             _dbSync.setSyncMode(DBSyncGeneric.SYNC_MODE_UPDATE);
             _dbSync.sync(cls);
             _lockSyncMode.unlock();
-            s_logger.debug("sync finish: " + DBSyncGeneric.getClassName(cls));
+            logger.debug("sync finish: " + DBSyncGeneric.getClassName(cls));
         } catch (Exception ex) {
-            s_logger.warn("Sync error: " + cls.getName(), ex);
+            logger.warn("Sync error: " + cls.getName(), ex);
             if (_lockSyncMode.isLocked()) {
                 _lockSyncMode.unlock();
             }
@@ -240,7 +241,7 @@ public class ServerDBSyncImpl implements ServerDBSync {
             List<?> vncList = api.list(net.juniper.contrail.api.types.Domain.class, null);
             return _dbSync.syncGeneric(net.juniper.contrail.api.types.Domain.class, dbList, vncList);
         } catch (Exception ex) {
-            s_logger.warn("syncDomain", ex);
+            logger.warn("syncDomain", ex);
             throw ex;
         }
     }
@@ -252,7 +253,7 @@ public class ServerDBSyncImpl implements ServerDBSync {
         vnc.setName(db.getName());
         vnc.setUuid(db.getUuid());
         if (!api.create(vnc)) {
-            s_logger.error("Unable to create domain " + vnc.getName());
+            logger.error("Unable to create domain " + vnc.getName());
             syncLogMesg.append("Error: Virtual domain# VNC : Unable to create domain: " + vnc.getName() + "\n");
             return;
         }
@@ -268,7 +269,7 @@ public class ServerDBSyncImpl implements ServerDBSync {
         try {
             deleteChildren(vnc.getProjects(), net.juniper.contrail.api.types.Project.class, syncLogMesg);
         } catch (Exception ex) {
-            s_logger.warn("deleteDomain", ex);
+            logger.warn("deleteDomain", ex);
         }
 
         api.delete(vnc);
@@ -341,7 +342,7 @@ public class ServerDBSyncImpl implements ServerDBSync {
             List<?> vncList = api.list(net.juniper.contrail.api.types.Project.class, null);
             return _dbSync.syncGeneric(net.juniper.contrail.api.types.Project.class, dbList, vncList);
         } catch (Exception ex) {
-            s_logger.warn("syncProject", ex);
+            logger.warn("syncProject", ex);
             throw ex;
         }
     }
@@ -353,7 +354,7 @@ public class ServerDBSyncImpl implements ServerDBSync {
         vnc.setName(db.getName());
         vnc.setUuid(db.getUuid());
         if (!api.create(vnc)) {
-            s_logger.error("Unable to create project: " + vnc.getName());
+            logger.error("Unable to create project: " + vnc.getName());
             syncLogMesg.append("Error: Virtual project# VNC : Unable to create project: " + vnc.getName() + "\n");
             return;
         }
@@ -371,7 +372,7 @@ public class ServerDBSyncImpl implements ServerDBSync {
             deleteChildren(vnc.getNetworkIpams(), net.juniper.contrail.api.types.NetworkIpam.class, syncLogMesg);
             deleteChildren(vnc.getNetworkPolicys(), net.juniper.contrail.api.types.NetworkPolicy.class, syncLogMesg);
         } catch (Exception ex) {
-            s_logger.warn("deleteProject", ex);
+            logger.warn("deleteProject", ex);
         }
 
         api.delete(vnc);
@@ -464,10 +465,10 @@ public class ServerDBSyncImpl implements ServerDBSync {
                     vncList.add(vn);
                 }
             }
-            s_logger.debug("sync VN - DB size: " + dbNets.size() + " VNC Size: " + vncList.size());
+            logger.debug("sync VN - DB size: " + dbNets.size() + " VNC Size: " + vncList.size());
             return _dbSync.syncGeneric(VirtualNetwork.class, dbNets, vncList);
         } catch (Exception ex) {
-            s_logger.warn("sync virtual-networks", ex);
+            logger.warn("sync virtual-networks", ex);
             throw ex;
         }
     }
@@ -510,7 +511,7 @@ public class ServerDBSyncImpl implements ServerDBSync {
         syncLogMesg.append("VN# DB: " + _manager.getCanonicalName(dbNet) + "(" + dbNet.getUuid() + "); VNC: none;  action: create\n");
 
         if (_manager.getDatabase().lookupVirtualNetwork(dbNet.getUuid(), _manager.getCanonicalName(dbNet), dbNet.getTrafficType()) != null) {
-            s_logger.warn("VN model object is already present in DB: " + dbNet.getUuid() + ", name: " + dbNet.getName());
+            logger.warn("VN model object is already present in DB: " + dbNet.getUuid() + ", name: " + dbNet.getName());
         }
 
         VirtualNetworkModel vnModel = new VirtualNetworkModel(dbNet, dbNet.getUuid(), _manager.getCanonicalName(dbNet), dbNet.getTrafficType());
@@ -518,7 +519,7 @@ public class ServerDBSyncImpl implements ServerDBSync {
             NetworkACLVO acl = _networkACLDao.findById(dbNet.getNetworkACLId());
             NetworkPolicyModel policyModel = _manager.getDatabase().lookupNetworkPolicy(acl.getUuid());
             if (policyModel == null) {
-                s_logger.error("Network(" + dbNet.getName() + ") has ACL but policy model not created: " +
+                logger.error("Network(" + dbNet.getName() + ") has ACL but policy model not created: " +
                                        acl.getUuid() + ", name: " + acl.getName());
             } else {
                 vnModel.addToNetworkPolicy(policyModel);
@@ -532,11 +533,11 @@ public class ServerDBSyncImpl implements ServerDBSync {
                     vnModel.update(_manager.getModelController());
                 }
             } catch (InternalErrorException ex) {
-                s_logger.warn("create virtual-network", ex);
+                logger.warn("create virtual-network", ex);
                 syncLogMesg.append("Error: VN# VNC : Unable to create network " + dbNet.getName() + "\n");
                 return;
             }
-            s_logger.debug("add model " + vnModel.getName());
+            logger.debug("add model " + vnModel.getName());
             _manager.getDatabase().getVirtualNetworks().add(vnModel);
             syncLogMesg.append("VN# VNC: " + dbNet.getUuid() + ", " + vnModel.getName() + " created\n");
         } else {
@@ -598,7 +599,7 @@ public class ServerDBSyncImpl implements ServerDBSync {
             NetworkACLVO acl = _networkACLDao.findById(dbn.getNetworkACLId());
             NetworkPolicyModel policyModel = _manager.getDatabase().lookupNetworkPolicy(acl.getUuid());
             if (policyModel == null) {
-                s_logger.error("Network(" + dbn.getName() + ") has ACL but policy model not created: " +
+                logger.error("Network(" + dbn.getName() + ") has ACL but policy model not created: " +
                                        acl.getUuid() + ", name: " + acl.getName());
             } else {
                 vnModel.addToNetworkPolicy(policyModel);
@@ -615,14 +616,14 @@ public class ServerDBSyncImpl implements ServerDBSync {
                 }
                 _manager.getDatabase().getVirtualNetworks().remove(current);
             }
-            s_logger.debug("add model " + vnModel.getName());
+            logger.debug("add model " + vnModel.getName());
             _manager.getDatabase().getVirtualNetworks().add(vnModel);
             try {
                 if (!vnModel.verify(_manager.getModelController())) {
                     vnModel.update(_manager.getModelController());
                 }
             } catch (Exception ex) {
-                s_logger.warn("update virtual-network", ex);
+                logger.warn("update virtual-network", ex);
             }
             if (current != null) {
                 NetworkPolicyModel oldPolicyModel = current.getNetworkPolicyModel();
@@ -661,10 +662,10 @@ public class ServerDBSyncImpl implements ServerDBSync {
             List<VMInstanceVO> vmDbList = _vmInstanceDao.listAll();
             @SuppressWarnings("unchecked")
             List<VirtualMachine> vncVmList = (List<VirtualMachine>)api.list(VirtualMachine.class, null);
-            s_logger.debug("sync VM:  CS size: " + vmDbList.size() + " VNC size: " + vncVmList.size());
+            logger.debug("sync VM:  CS size: " + vmDbList.size() + " VNC size: " + vncVmList.size());
             return _dbSync.syncGeneric(VirtualMachine.class, vmDbList, vncVmList);
         } catch (Exception ex) {
-            s_logger.warn("sync virtual-machines", ex);
+            logger.warn("sync virtual-machines", ex);
         }
         return false;
     }
@@ -699,7 +700,7 @@ public class ServerDBSyncImpl implements ServerDBSync {
             try {
                 vmModel.update(_manager.getModelController());
             } catch (InternalErrorException ex) {
-                s_logger.warn("create virtual-machine", ex);
+                logger.warn("create virtual-machine", ex);
                 return;
             }
             _manager.getDatabase().getVirtualMachines().add(vmModel);
@@ -757,7 +758,7 @@ public class ServerDBSyncImpl implements ServerDBSync {
             deleteVirtualMachineInterfaces(vncVm.getVirtualMachineInterfaces(), syncLogMesg);
             api.delete(VirtualMachine.class, vncVm.getUuid());
         } catch (IOException ex) {
-            s_logger.warn("delete virtual-machine", ex);
+            logger.warn("delete virtual-machine", ex);
             return;
         }
         syncLogMesg.append("VM# VNC: " + vncVm.getName() + " deleted\n");
@@ -783,7 +784,7 @@ public class ServerDBSyncImpl implements ServerDBSync {
                 VirtualNetworkModel vnModel =
                     _manager.getDatabase().lookupVirtualNetwork(network.getUuid(), _manager.getCanonicalName(network), network.getTrafficType());
                 if (vnModel == null) {
-                    s_logger.warn("Unable to locate virtual-network for network id " + network.getId());
+                    logger.warn("Unable to locate virtual-network for network id " + network.getId());
                     continue;
                 }
                 vmiModel.addToVirtualMachine(vmModel);
@@ -805,7 +806,7 @@ public class ServerDBSyncImpl implements ServerDBSync {
             try {
                 buildNicResources(vmModel, dbVm, syncLogMsg);
             } catch (IOException ex) {
-                s_logger.warn("build nic information for " + dbVm.getInstanceName(), ex);
+                logger.warn("build nic information for " + dbVm.getInstanceName(), ex);
             }
         }
 
@@ -818,7 +819,7 @@ public class ServerDBSyncImpl implements ServerDBSync {
             try {
                 vmModel.update(_manager.getModelController());
             } catch (Exception ex) {
-                s_logger.warn("update virtual-machine", ex);
+                logger.warn("update virtual-machine", ex);
             }
         } else {
             //compare
@@ -845,7 +846,7 @@ public class ServerDBSyncImpl implements ServerDBSync {
         try {
             status = _dbSync.syncGeneric(FloatingIp.class, ipList, vncList);
         } catch (Exception ex) {
-            s_logger.warn("sync floating-ips", ex);
+            logger.warn("sync floating-ips", ex);
             throw ex;
         }
         return status;
@@ -915,21 +916,21 @@ public class ServerDBSyncImpl implements ServerDBSync {
                 fipPoolModel.update(_manager.getModelController());
                 vnModel.setFipPoolModel(fipPoolModel);
             } catch (Exception ex) {
-                s_logger.warn("floating-ip-pool create: ", ex);
+                logger.warn("floating-ip-pool create: ", ex);
                 return false;
             }
         }
 
         FloatingIpModel current = fipPoolModel.getFloatingIpModel(db.getUuid());
         if (current == null) {
-            s_logger.debug("add model " + db.getAddress().addr());
+            logger.debug("add model " + db.getAddress().addr());
             FloatingIpModel fipModel = new FloatingIpModel(db.getUuid());
             fipModel.addToFloatingIpPool(fipPoolModel);
             fipModel.build(_manager.getModelController(), PublicIp.createFromAddrAndVlan(db, _vlanDao.findById(db.getVlanId())));
             try {
                 fipModel.update(_manager.getModelController());
             } catch (Exception ex) {
-                s_logger.warn("floating-ip create: ", ex);
+                logger.warn("floating-ip create: ", ex);
                 return false;
             }
         }
@@ -957,10 +958,10 @@ public class ServerDBSyncImpl implements ServerDBSync {
                     vncList.add(policy);
                 }
             }
-            s_logger.debug("sync Network Policy - DB size: " + dbAcls.size() + " VNC Size: " + vncList.size());
+            logger.debug("sync Network Policy - DB size: " + dbAcls.size() + " VNC Size: " + vncList.size());
             return _dbSync.syncGeneric(NetworkPolicy.class, dbAcls, vncList);
         } catch (Exception ex) {
-            s_logger.warn("sync network-policys", ex);
+            logger.warn("sync network-policys", ex);
             throw ex;
         }
     }
@@ -988,7 +989,7 @@ public class ServerDBSyncImpl implements ServerDBSync {
                 "(" + db.getUuid() + "); VNC: none;  action: create\n");
 
         if (_manager.getDatabase().lookupNetworkPolicy(db.getUuid()) != null) {
-             s_logger.warn("Policy model object is already present in DB: " +
+             logger.warn("Policy model object is already present in DB: " +
                                    db.getUuid() + ", name: " + db.getName());
         }
         NetworkPolicyModel policyModel = new NetworkPolicyModel(db.getUuid(), db.getName());
@@ -1001,7 +1002,7 @@ public class ServerDBSyncImpl implements ServerDBSync {
                 project = _manager.getDefaultVncProject();
             }
         } catch (IOException ex) {
-            s_logger.warn("read project", ex);
+            logger.warn("read project", ex);
             throw ex;
         }
         policyModel.setProject(project);
@@ -1018,12 +1019,12 @@ public class ServerDBSyncImpl implements ServerDBSync {
                     policyModel.update(_manager.getModelController());
                 }
             } catch (Exception ex) {
-                s_logger.warn("create network-policy", ex);
+                logger.warn("create network-policy", ex);
                 syncLogMesg.append("Error: Policy# VNC : Unable to create network policy " +
                     db.getName() + "\n");
                 return;
             }
-            s_logger.debug("add model " + policyModel.getName());
+            logger.debug("add model " + policyModel.getName());
             _manager.getDatabase().getNetworkPolicys().add(policyModel);
             syncLogMesg.append("Policy# VNC: " + db.getUuid() + ", " + policyModel.getName() + " created\n");
         } else {
@@ -1071,7 +1072,7 @@ public class ServerDBSyncImpl implements ServerDBSync {
                 project = _manager.getDefaultVncProject();
             }
         } catch (IOException ex) {
-            s_logger.warn("read project", ex);
+            logger.warn("read project", ex);
         }
         policyModel.setProject(project);
         List<NetworkACLItemVO> rules = _networkACLItemDao.listByACL(db.getId());
@@ -1084,14 +1085,14 @@ public class ServerDBSyncImpl implements ServerDBSync {
             if (current != null) {
                 _manager.getDatabase().getNetworkPolicys().remove(current);
             }
-            s_logger.debug("add policy model " + policyModel.getName());
+            logger.debug("add policy model " + policyModel.getName());
             _manager.getDatabase().getNetworkPolicys().add(policyModel);
             try {
                 if (!policyModel.verify(_manager.getModelController())) {
                     policyModel.update(_manager.getModelController());
                 }
             } catch (Exception ex) {
-                s_logger.warn("update network-policy", ex);
+                logger.warn("update network-policy", ex);
             }
         } else {
             //compare
@@ -1122,14 +1123,14 @@ public class ServerDBSyncImpl implements ServerDBSync {
 
     public void deleteServiceInstance(ServiceInstance siObj, StringBuffer logMsg) {
         final ApiConnector api = _manager.getApiConnector();
-        s_logger.debug("delete " + siObj.getQualifiedName());
+        logger.debug("delete " + siObj.getQualifiedName());
         if (!_rwMode) {
             return;
         }
         try {
             api.delete(siObj);
         } catch (IOException ex) {
-            s_logger.warn("service-instance delete", ex);
+            logger.warn("service-instance delete", ex);
         }
     }
 
@@ -1141,7 +1142,7 @@ public class ServerDBSyncImpl implements ServerDBSync {
      * @param logMsg
      */
     public void equalServiceInstance(ServiceInstanceModel siModel, ServiceInstance siObj, StringBuffer logMsg) {
-        s_logger.debug("equal " + siModel.getQualifiedName());
+        logger.debug("equal " + siModel.getQualifiedName());
     }
 
     static class ServiceInstanceComparator implements Comparator<ServiceInstance>, Serializable {
@@ -1169,7 +1170,7 @@ public class ServerDBSyncImpl implements ServerDBSync {
             _dbSync.syncCollections(ServiceInstance.class, _manager.getDatabase().getServiceInstances(), siList, _rwMode, stats);
             inSync = stats.create == 0 && stats.delete == 0;
         } catch (Exception ex) {
-            s_logger.warn("synchronize service-instances", ex);
+            logger.warn("synchronize service-instances", ex);
             return false;
         }
         return inSync;
