@@ -2137,6 +2137,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         // update template type
         TemplateType templateType = null;
+        String templateTag = null;
         if (cmd instanceof UpdateTemplateCmd) {
             boolean isAdmin = _accountMgr.isAdmin(account.getId());
             templateType = validateTemplateType(cmd, isAdmin, template.isCrossZones());
@@ -2144,6 +2145,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 VnfTemplateUtils.validateApiCommandParams(cmd, template);
                 vnfTemplateManager.updateVnfTemplate(template.getId(), (UpdateVnfTemplateCmd) cmd);
             }
+            templateTag = ((UpdateTemplateCmd)cmd).getTemplateTag();
         }
 
         // update is needed if any of the fields below got filled by the user
@@ -2160,6 +2162,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                   isDynamicallyScalable == null &&
                   isRoutingTemplate == null &&
                   templateType == null &&
+                  templateTag == null &&
                   (! cleanupDetails && details == null) //update details in every case except this one
                   );
         if (!updateNeeded) {
@@ -2244,6 +2247,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             }
         } else if (templateType != null) {
             template.setTemplateType(templateType);
+        }
+        if (templateTag != null) {
+            template.setTemplateTag(org.apache.commons.lang3.StringUtils.trimToNull(templateTag));
         }
 
         validateDetails(template, details);
