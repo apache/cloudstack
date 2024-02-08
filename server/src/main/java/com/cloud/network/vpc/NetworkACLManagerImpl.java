@@ -377,7 +377,7 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
                 return provider.reorderAclRules(vpc, networks, networkACLItems);
             }
         } catch (final Exception ex) {
-            s_logger.debug("Failed to reorder ACLs on NSX due to: " + ex.getLocalizedMessage());
+            logger.debug("Failed to reorder ACLs on NSX due to: " + ex.getLocalizedMessage());
         }
         return false;
     }

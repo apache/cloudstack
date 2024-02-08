@@ -448,14 +448,14 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
         if (NetUtils.ICMP_PROTO.equals(protocol.toLowerCase(Locale.ROOT)) && (icmpType == -1 || icmpCode == -1)) {
             String errorMsg = "Passing -1 for ICMP type is not supported for NSX enabled zones";
-            s_logger.error(errorMsg);
+            logger.error(errorMsg);
             throw new InvalidParameterValueException(errorMsg);
         }
 
         if (List.of(NetUtils.TCP_PROTO, NetUtils.UDP_PROTO).contains(protocol.toLowerCase(Locale.ROOT)) &&
                 (Objects.isNull(sourcePortStart) || Objects.isNull(sourcePortEnd))) {
             String errorMsg = "Source start and end ports are required to be passed";
-            s_logger.error(errorMsg);
+            logger.error(errorMsg);
             throw new InvalidParameterValueException(errorMsg);
         }
     }

@@ -733,7 +733,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         if (NetUtils.ICMP_PROTO.equals(protocol.toLowerCase(Locale.ROOT)) && (rule.getIcmpType() == -1 || rule.getIcmpCode() == -1)
                 && State.Add.equals(rule.getState())) {
             String errorMsg = "Passing -1 for ICMP type is not supported for NSX enabled zones";
-            s_logger.error(errorMsg);
+            logger.error(errorMsg);
             throw new InvalidParameterValueException(errorMsg);
         }
 
@@ -741,7 +741,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
                 (Objects.isNull(rule.getSourcePortStart()) || Objects.isNull(rule.getSourcePortEnd())) &&
             State.Add.equals(rule.getState())) {
             String errorMsg = "Source start and end ports are required to be passed";
-            s_logger.error(errorMsg);
+            logger.error(errorMsg);
             throw new InvalidParameterValueException(errorMsg);
         }
     }

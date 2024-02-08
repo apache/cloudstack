@@ -834,7 +834,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             for (InternalLoadBalancerElementService service : internalLoadBalancerElementServices) {
                 internalLoadBalancerElementServiceMap.put(service.getProviderType().name(), service);
             }
-            s_logger.debug(String.format("Discovered internal loadbalancer elements configured on NetworkServiceImpl"));
+            logger.debug(String.format("Discovered internal loadbalancer elements configured on NetworkServiceImpl"));
         }
     }
 
@@ -1170,14 +1170,14 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         VlanVO vlan = findOneVlanRangeMatchingVlanDetailKey(zone, vlanDetailKey);
         if (vlan == null) {
             String msg = String.format("Cannot find any vlan matching the detail key %s on zone %s", vlanDetailKey, zone.getName());
-            s_logger.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
 
         List<IPAddressVO> freeIps = _ipAddressDao.listByVlanIdAndState(vlan.getId(), State.Free);
         if (CollectionUtils.isEmpty(freeIps)) {
             String msg = String.format("Cannot find any free IP matching on the VLAN range %s on zone %s", vlan.getIpRange(), zone.getName());
-            s_logger.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
 
@@ -1206,7 +1206,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         for (VlanVO zoneVlan : zoneVlans) {
             VlanDetailsVO detail = vlanDetailsDao.findDetail(zoneVlan.getId(), vlanDetailKey);
             if (detail != null && detail.getValue().equalsIgnoreCase("true")) {
-                s_logger.debug(String.format("Found the VLAN range %s is set for NSX on zone %s", zoneVlan.getIpRange(), zone.getName()));
+                logger.debug(String.format("Found the VLAN range %s is set for NSX on zone %s", zoneVlan.getIpRange(), zone.getName()));
                 return zoneVlan;
             }
         }
@@ -6112,7 +6112,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         PhysicalNetworkServiceProviderVO provider = _pNSPDao.findById(networkProviderId);
         if (provider == null) {
             String msg = String.format("Cannot find a network service provider with ID %s", networkProviderId);
-            s_logger.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
         Type type = provider.getProviderName().equalsIgnoreCase("nsx") ? Type.Nsx : Type.InternalLbVm;

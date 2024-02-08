@@ -6001,8 +6001,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         } else {
             if (Objects.nonNull(nsxMode)) {
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("nsxMode has is ignored for non-NSX enabled zones");
+                if (logger.isTraceEnabled()) {
+                    logger.trace("nsxMode has is ignored for non-NSX enabled zones");
                 }
                 nsxMode = null;
             }
