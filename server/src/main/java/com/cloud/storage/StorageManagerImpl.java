@@ -2416,25 +2416,24 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return capacity;
     }
 
-    @Override
-    public CapacityVO getStoragePoolUsedStats(Long poolId, Long clusterId, Long podId, Long zoneId) {
+    private CapacityVO getStoragePoolUsedStatsInternal(Long zoneId, Long podId, Long clusterId, List<Long> poolIds, Long poolId) {
         SearchCriteria<StoragePoolVO> sc = _storagePoolDao.createSearchCriteria();
-        List<StoragePoolVO> pools = new ArrayList<StoragePoolVO>();
+        List<StoragePoolVO> pools = new ArrayList<>();
 
         if (zoneId != null) {
             sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
         }
-
         if (podId != null) {
             sc.addAnd("podId", SearchCriteria.Op.EQ, podId);
         }
-
         if (clusterId != null) {
             sc.addAnd("clusterId", SearchCriteria.Op.EQ, clusterId);
         }
-
+        if (CollectionUtils.isNotEmpty(poolIds)) {
+            sc.addAnd("id", SearchCriteria.Op.IN, poolIds.toArray());
+        }
         if (poolId != null) {
-            sc.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, poolId);
+            sc.addAnd("id", SearchCriteria.Op.EQ, poolId);
         }
         sc.addAnd("parent", SearchCriteria.Op.EQ, 0L);
         if (poolId != null) {
@@ -2444,8 +2443,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         CapacityVO capacity = new CapacityVO(poolId, zoneId, podId, clusterId, 0, 0, Capacity.CAPACITY_TYPE_STORAGE);
-        for (StoragePoolVO PrimaryDataStoreVO : pools) {
-            StorageStats stats = ApiDBUtils.getStoragePoolStatistics(PrimaryDataStoreVO.getId());
+        for (StoragePoolVO pool : pools) {
+            StorageStats stats = ApiDBUtils.getStoragePoolStatistics(pool.getId());
             if (stats == null) {
                 continue;
             }
@@ -2453,6 +2452,17 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             capacity.setTotalCapacity(stats.getCapacityBytes() + capacity.getTotalCapacity());
         }
         return capacity;
+
+    }
+
+    @Override
+    public CapacityVO getStoragePoolUsedStats(Long poolId, Long clusterId, Long podId, Long zoneId) {
+        return getStoragePoolUsedStatsInternal(zoneId, podId, clusterId, null, poolId);
+    }
+
+    @Override
+    public CapacityVO getStoragePoolUsedStats(Long zoneId, Long podId, Long clusterId, List<Long> poolIds) {
+        return getStoragePoolUsedStatsInternal(zoneId, podId, clusterId, poolIds, null);
     }
 
     @Override
@@ -2665,13 +2675,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return 0;
     }
 
-    @Override
-    public boolean storagePoolHasEnoughIops(List<Pair<Volume, DiskProfile>> requestedVolumes, StoragePool pool) {
-        if (requestedVolumes == null || requestedVolumes.isEmpty() || pool == null) {
-            s_logger.debug(String.format("Cannot check if storage [%s] has enough IOPS to allocate volumes [%s].", pool, requestedVolumes));
-            return false;
-        }
-
+    protected boolean checkIfPoolIopsCapacityNull(StoragePool pool) {
         // Only IOPS-guaranteed primary storage like SolidFire is using/setting IOPS.
         // This check returns true for storage that does not specify IOPS.
         if (pool.getCapacityIops() == null) {
@@ -2679,12 +2683,29 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
             return true;
         }
+        return false;
+    }
 
+    protected boolean storagePoolHasEnoughIops(long requestedIops, StoragePool pool, boolean skipPoolCheck) {
+        if (!skipPoolCheck && checkIfPoolIopsCapacityNull(pool)) {
+            return true;
+        }
         StoragePoolVO storagePoolVo = _storagePoolDao.findById(pool.getId());
         long currentIops = _capacityMgr.getUsedIops(storagePoolVo);
+        long futureIops = currentIops + requestedIops;
+        return futureIops <= pool.getCapacityIops();
+    }
 
+    @Override
+    public boolean storagePoolHasEnoughIops(List<Pair<Volume, DiskProfile>> requestedVolumes, StoragePool pool) {
+        if (requestedVolumes == null || requestedVolumes.isEmpty() || pool == null) {
+            s_logger.debug(String.format("Cannot check if storage [%s] has enough IOPS to allocate volumes [%s].", pool, requestedVolumes));
+            return false;
+        }
+        if (checkIfPoolIopsCapacityNull(pool)) {
+            return true;
+        }
         long requestedIops = 0;
-
         for (Pair<Volume, DiskProfile> volumeDiskProfilePair : requestedVolumes) {
             Volume requestedVolume = volumeDiskProfilePair.first();
             DiskProfile diskProfile = volumeDiskProfilePair.second();
@@ -2697,12 +2718,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 requestedIops += minIops;
             }
         }
-
-        long futureIops = currentIops + requestedIops;
-        boolean hasEnoughIops = futureIops <= pool.getCapacityIops();
-        String hasCapacity = hasEnoughIops ? "has" : "does not have";
-        s_logger.debug(String.format("Pool [%s] %s enough IOPS to allocate volumes [%s].", pool, hasCapacity, requestedVolumes));
-        return hasEnoughIops;
+        return storagePoolHasEnoughIops(requestedIops, pool, true);
     }
 
     @Override
