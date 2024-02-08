@@ -475,22 +475,22 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         Set<String> commandsClassPath = commands.getCommands().stream().map(command -> command.getClass().getName()).collect(Collectors.toSet());
 
         if (timeout > 0) {
-            s_logger.trace(String.format("The timeout [%s] was already defined for commands %s; therefore, we will use it instead of searching for the max value in table " +
-                "[%s].", timeout, commandsClassPath, CommandTimeoutVO.TABLE_NAME));
+            logger.trace("The timeout [{}] was already defined for commands {}; therefore, we will use it instead of searching for the max value in table " +
+                "[{}].", timeout, commandsClassPath, CommandTimeoutVO.TABLE_NAME);
             return timeout;
         }
 
-        s_logger.trace(String.format("The timeout for commands %s was not defined yet; therefore, we will search for the max value between the commands in table " +
-            "[%s].", commandsClassPath, CommandTimeoutVO.TABLE_NAME));
+        logger.trace("The timeout for commands {} was not defined yet; therefore, we will search for the max value between the commands in table " +
+            "[{}].", commandsClassPath, CommandTimeoutVO.TABLE_NAME);
         timeout = commandTimeoutDao.findMaxTimeoutBetweenCommands(commandsClassPath);
 
         if (timeout > 0) {
-            s_logger.trace(String.format("We found [%s] as the max timeout between commands %s in table [%s]; using it.", timeout, commandsClassPath,
-                CommandTimeoutVO.TABLE_NAME));
+            logger.trace("We found [{}] as the max timeout between commands {} in table [{}]; using it.", timeout, commandsClassPath,
+                CommandTimeoutVO.TABLE_NAME);
         } else {
             timeout = getWaitValue();
-            s_logger.trace(String.format("We did not find a max timeout between commands %s in table [%s]; therefore, we will fallback to the value of " +
-                    "configuration [%s]: [%s].", commandsClassPath, CommandTimeoutVO.TABLE_NAME, Wait.key(), timeout));
+            logger.trace("We did not find a max timeout between commands %s in table [{}]; therefore, we will fallback to the value of " +
+                    "configuration [{}]: [{}].", commandsClassPath, CommandTimeoutVO.TABLE_NAME, Wait.key(), timeout);
         }
 
         return timeout;
