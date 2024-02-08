@@ -186,7 +186,8 @@ export default {
       inputKey: null,
       inputValue: null,
       fieldValues: {},
-      isFiltered: false
+      isFiltered: false,
+      alertTypes: []
     }
   },
   created () {
@@ -346,6 +347,7 @@ export default {
     },
     async fetchDynamicFieldData (arrayField, searchKeyword) {
       const promises = []
+      let typeIndex = -1
       let zoneIndex = -1
       let domainIndex = -1
       let imageStoreIndex = -1
@@ -353,6 +355,14 @@ export default {
       let podIndex = -1
       let clusterIndex = -1
       let groupIndex = -1
+
+      if (arrayField.includes('type')) {
+        if (this.$route.path === '/alert') {
+          typeIndex = this.fields.findIndex(item => item.name === 'type')
+          this.fields[typeIndex].loading = true
+          promises.push(await this.fetchAlertTypes())
+        }
+      }
 
       if (arrayField.includes('zoneid')) {
         zoneIndex = this.fields.findIndex(item => item.name === 'zoneid')
@@ -397,6 +407,12 @@ export default {
       }
 
       Promise.all(promises).then(response => {
+        if (typeIndex > -1) {
+          const types = response.filter(item => item.type === 'type')
+          if (types && types.length > 0) {
+            this.fields[typeIndex].opts = this.sortArray(types[0].data)
+          }
+        }
         if (zoneIndex > -1) {
           const zones = response.filter(item => item.type === 'zoneid')
           if (zones && zones.length > 0) {
@@ -440,6 +456,9 @@ export default {
           }
         }
       }).finally(() => {
+        if (typeIndex > -1) {
+          this.fields[typeIndex].loading = false
+        }
         if (zoneIndex > -1) {
           this.fields[zoneIndex].loading = false
         }
@@ -583,6 +602,29 @@ export default {
           reject(error.response.headers['x-description'])
         })
       })
+    },
+    fetchAlertTypes () {
+      if (this.alertTypes.length > 0) {
+        return new Promise((resolve, reject) => {
+          resolve({
+            type: 'type',
+            data: this.alertTypes
+          })
+        })
+      } else {
+        return new Promise((resolve, reject) => {
+          api('listAlertTypes').then(json => {
+            const alerttypes = json.listalerttypesresponse.alerttype.map(a => { return { id: a.alerttypeid, name: a.name } })
+            this.alertTypes = alerttypes
+            resolve({
+              type: 'type',
+              data: alerttypes
+            })
+          }).catch(error => {
+            reject(error.response.headers['x-description'])
+          })
+        })
+      }
     },
     fetchGuestNetworkTypes () {
       const types = []

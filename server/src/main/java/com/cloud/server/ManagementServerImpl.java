@@ -187,6 +187,7 @@ import org.apache.cloudstack.api.command.admin.region.UpdateRegionCmd;
 import org.apache.cloudstack.api.command.admin.resource.ArchiveAlertsCmd;
 import org.apache.cloudstack.api.command.admin.resource.CleanVMReservationsCmd;
 import org.apache.cloudstack.api.command.admin.resource.DeleteAlertsCmd;
+import org.apache.cloudstack.api.command.admin.resource.ListAlertTypesCmd;
 import org.apache.cloudstack.api.command.admin.resource.ListAlertsCmd;
 import org.apache.cloudstack.api.command.admin.resource.ListCapacityCmd;
 import org.apache.cloudstack.api.command.admin.resource.StartRollingMaintenanceCmd;
@@ -3458,6 +3459,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(RemoveRegionCmd.class);
         cmdList.add(UpdateRegionCmd.class);
         cmdList.add(ListAlertsCmd.class);
+        cmdList.add(ListAlertTypesCmd.class);
         cmdList.add(ListCapacityCmd.class);
         cmdList.add(UpdatePodManagementNetworkIpRangeCmd.class);
         cmdList.add(UploadCustomCertificateCmd.class);
