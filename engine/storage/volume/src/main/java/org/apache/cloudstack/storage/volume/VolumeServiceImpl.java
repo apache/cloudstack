@@ -2769,11 +2769,11 @@ public class VolumeServiceImpl implements VolumeService {
     @Override
     public void checkAndRepairVolumeBasedOnConfig(DataObject dataObject, Host host) {
         if (HypervisorType.KVM.equals(host.getHypervisorType()) && DataObjectType.VOLUME.equals(dataObject.getType())) {
-            if (VolumeApiServiceImpl.AllowCheckAndRepairVolume.value()) {
+            VolumeInfo volumeInfo = volFactory.getVolume(dataObject.getId());
+            if (VolumeApiServiceImpl.AllowCheckAndRepairVolume.valueIn(volumeInfo.getPoolId())) {
                 s_logger.info(String.format("Trying to check and repair the volume %d", dataObject.getId()));
                 String repair = CheckAndRepairVolumeCmd.RepairValues.LEAKS.name().toLowerCase();
                 CheckAndRepairVolumePayload payload = new CheckAndRepairVolumePayload(repair);
-                VolumeInfo volumeInfo = volFactory.getVolume(dataObject.getId());
                 volumeInfo.addPayload(payload);
                 checkAndRepairVolume(volumeInfo);
             }
