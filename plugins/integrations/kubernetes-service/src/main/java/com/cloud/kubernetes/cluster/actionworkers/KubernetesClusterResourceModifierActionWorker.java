@@ -17,6 +17,7 @@
 
 package com.cloud.kubernetes.cluster.actionworkers;
 
+import static com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType.WORKER;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 import java.io.File;
@@ -376,7 +377,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             ResourceUnavailableException, InsufficientCapacityException {
         UserVm nodeVm = null;
         DataCenter zone = dataCenterDao.findById(kubernetesCluster.getZoneId());
-        ServiceOffering serviceOffering = serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId());
+        ServiceOffering serviceOffering = getServiceOfferingForNodeTypeOnCluster(WORKER, kubernetesCluster);
         List<Long> networkIds = new ArrayList<Long>();
         networkIds.add(kubernetesCluster.getNetworkId());
         Account owner = accountDao.findById(kubernetesCluster.getAccountId());

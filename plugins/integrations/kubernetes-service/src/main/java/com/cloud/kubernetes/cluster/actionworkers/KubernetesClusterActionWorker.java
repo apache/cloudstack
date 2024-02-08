@@ -31,6 +31,8 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType;
+import com.cloud.offering.ServiceOffering;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
@@ -688,5 +690,28 @@ public class KubernetesClusterActionWorker {
 
     public void setKeys(String[] keys) {
         this.keys = keys;
+    }
+
+    protected ServiceOffering getServiceOfferingForNodeTypeOnCluster(KubernetesClusterNodeType nodeType,
+                                                                     KubernetesCluster cluster) {
+        Long offeringId = null;
+        Long defaultOfferingId = cluster.getServiceOfferingId();
+        Long controlOfferingId = cluster.getControlServiceOfferingId();
+        Long workerOfferingId = cluster.getWorkerServiceOfferingId();
+        Long etcdOfferingId = cluster.getEtcdServiceOfferingId();
+        if (KubernetesClusterNodeType.CONTROL == nodeType) {
+            offeringId = controlOfferingId != null ? controlOfferingId : defaultOfferingId;
+        } else if (KubernetesClusterNodeType.WORKER == nodeType) {
+            offeringId = workerOfferingId != null ? workerOfferingId : defaultOfferingId;
+        } else if (KubernetesClusterNodeType.ETCD == nodeType && cluster.getEtcdNodeCount() != null && cluster.getEtcdNodeCount() > 0) {
+            offeringId = etcdOfferingId != null ? etcdOfferingId : defaultOfferingId;
+        }
+
+        if (offeringId == null) {
+            String msg = String.format("Cannot find a service offering for the %s nodes on the Kubernetes cluster %s", nodeType.name(), cluster.getName());
+            LOGGER.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+        return serviceOfferingDao.findById(offeringId);
     }
 }

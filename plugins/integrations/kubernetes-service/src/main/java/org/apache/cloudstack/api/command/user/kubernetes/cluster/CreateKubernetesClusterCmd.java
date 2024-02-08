@@ -17,10 +17,12 @@
 package org.apache.cloudstack.api.command.user.kubernetes.cluster;
 
 import java.security.InvalidParameterException;
+import java.util.Map;
 
 import javax.inject.Inject;
 
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.kubernetes.cluster.KubernetesClusterHelper;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -62,6 +64,8 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
 
     @Inject
     public KubernetesClusterService kubernetesClusterService;
+    @Inject
+    protected KubernetesClusterHelper kubernetesClusterHelper;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -85,7 +89,18 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     @ACL(accessType = AccessType.UseEntry)
     @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class,
             description = "the ID of the service offering for the virtual machines in the cluster.")
-    private Long serviceOfferingId;
+    protected Long serviceOfferingId;
+
+    @ACL(accessType = AccessType.UseEntry)
+    @Parameter(name = ApiConstants.NODE_TYPE_OFFERING_MAP, type = CommandType.MAP,
+            description = "(Optional) Node Type to Service Offering ID mapping. If provided, it overrides the serviceofferingid parameter")
+    protected Map<String, Map<String, String>> serviceOfferingNodeTypeMap;
+
+    @ACL(accessType = AccessType.UseEntry)
+    @Parameter(name = ApiConstants.ETCD_NODES, type = CommandType.LONG,
+            description = "(Optional) Number of Kubernetes cluster etcd nodes, default is 0." +
+                    "In case the number is greater than 0, etcd nodes are separate from master nodes and are provisioned accordingly")
+    protected Long etcdNodes;
 
     @ACL(accessType = AccessType.UseEntry)
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for the" +
@@ -206,6 +221,10 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
         return controlNodes;
     }
 
+    public long getEtcdNodes() {
+        return etcdNodes == null ? 0 : etcdNodes;
+    }
+
     public String getExternalLoadBalancerIpAddress() {
         return externalLoadBalancerIpAddress;
     }
@@ -242,6 +261,10 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
             return KubernetesCluster.ClusterType.CloudManaged.toString();
         }
         return clusterType;
+    }
+
+    public Map<String, Long> getServiceOfferingNodeTypeMap() {
+        return kubernetesClusterHelper.getServiceOfferingNodeTypeMap(serviceOfferingNodeTypeMap);
     }
 
     /////////////////////////////////////////////////////

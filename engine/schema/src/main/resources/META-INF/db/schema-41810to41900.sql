@@ -363,3 +363,12 @@ INSERT IGNORE INTO `cloud`.`hypervisor_capabilities` (uuid, hypervisor_type, hyp
 
 -- Add for_cks column to the vm_template table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vm_template','for_cks', 'int(1) unsigned DEFAULT "0" COMMENT "if true, the template can be used for CKS cluster deployment"');
+
+-- Add support for different node types service offerings on CKS clusters
+ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `control_service_offering_id` bigint unsigned COMMENT 'service offering ID for Control Nodes';
+ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `worker_service_offering_id` bigint unsigned COMMENT 'service offering ID for Worker Nodes';
+ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `etcd_service_offering_id` bigint unsigned COMMENT 'service offering ID for etcd Nodes';
+ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `etcd_node_count` bigint COMMENT 'the number of the etcd Nodes deployed for this Kubernetes cluster';
+ALTER TABLE `cloud`.`kubernetes_cluster` ADD CONSTRAINT `fk_cluster__control_service_offering_id` FOREIGN KEY `fk_cluster__control_service_offering_id`(`control_service_offering_id`) REFERENCES `service_offering`(`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud`.`kubernetes_cluster` ADD CONSTRAINT `fk_cluster__worker_service_offering_id` FOREIGN KEY `fk_cluster__worker_service_offering_id`(`worker_service_offering_id`) REFERENCES `service_offering`(`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud`.`kubernetes_cluster` ADD CONSTRAINT `fk_cluster__etcd_service_offering_id` FOREIGN KEY `fk_cluster__etcd_service_offering_id`(`etcd_service_offering_id`) REFERENCES `service_offering`(`id`) ON DELETE CASCADE;

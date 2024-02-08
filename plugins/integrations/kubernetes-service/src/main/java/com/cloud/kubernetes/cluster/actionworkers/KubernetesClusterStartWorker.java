@@ -75,6 +75,8 @@ import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmDetailConstants;
 
+import static com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType.CONTROL;
+
 public class KubernetesClusterStartWorker extends KubernetesClusterResourceModifierActionWorker {
 
     private KubernetesSupportedVersion kubernetesClusterVersion;
@@ -183,7 +185,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             ResourceUnavailableException, InsufficientCapacityException {
         UserVm controlVm = null;
         DataCenter zone = dataCenterDao.findById(kubernetesCluster.getZoneId());
-        ServiceOffering serviceOffering = serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId());
+        ServiceOffering serviceOffering = getServiceOfferingForNodeTypeOnCluster(CONTROL, kubernetesCluster);
         List<Long> networkIds = new ArrayList<Long>();
         networkIds.add(kubernetesCluster.getNetworkId());
         Pair<String, Map<Long, Network.IpAddresses>> ipAddresses = getKubernetesControlNodeIpAddresses(zone, network, owner);
@@ -263,7 +265,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             ResourceUnavailableException, InsufficientCapacityException {
         UserVm additionalControlVm = null;
         DataCenter zone = dataCenterDao.findById(kubernetesCluster.getZoneId());
-        ServiceOffering serviceOffering = serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId());
+        ServiceOffering serviceOffering = getServiceOfferingForNodeTypeOnCluster(CONTROL, kubernetesCluster);
         List<Long> networkIds = new ArrayList<Long>();
         networkIds.add(kubernetesCluster.getNetworkId());
         Network.IpAddresses addrs = new Network.IpAddresses(null, null);
