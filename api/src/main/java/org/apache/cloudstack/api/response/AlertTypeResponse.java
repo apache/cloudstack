@@ -52,5 +52,4 @@ public class AlertTypeResponse extends BaseResponse {
         this.name = name;
         setObjectName("alerttype");
     }
-
 }

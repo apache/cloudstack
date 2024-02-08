@@ -78,7 +78,6 @@ public class UpdateProjectRoleCmd extends ProjectRoleCmd {
         return 0;
     }
 
-
     @Override
     public Long getApiResourceId() {
         return getProjectId();

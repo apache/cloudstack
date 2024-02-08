@@ -96,7 +96,6 @@ public class DisableOutOfBandManagementForZoneCmd extends BaseAsyncCmd {
         return "disable out-of-band management password for zone: " + getZoneId();
     }
 
-
     @Override
     public Long getApiResourceId() {
         return getZoneId();

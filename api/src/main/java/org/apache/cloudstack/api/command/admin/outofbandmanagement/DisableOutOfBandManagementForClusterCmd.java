@@ -96,7 +96,6 @@ public class DisableOutOfBandManagementForClusterCmd extends BaseAsyncCmd {
         return "disable out-of-band management password for cluster: " + getClusterId();
     }
 
-
     @Override
     public Long getApiResourceId() {
         return getClusterId();

@@ -81,7 +81,6 @@ public class DeleteProjectRoleCmd extends BaseCmd {
         return CallContext.current().getCallingAccountId();
     }
 
-
     @Override
     public Long getApiResourceId() {
         return getProjectId();
