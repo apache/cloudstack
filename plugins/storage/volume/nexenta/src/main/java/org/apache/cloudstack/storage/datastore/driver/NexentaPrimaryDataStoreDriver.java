@@ -41,7 +41,8 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.NexentaStorAppliance;
 import org.apache.cloudstack.storage.datastore.util.NexentaStorAppliance.NexentaStorZvol;
 import org.apache.cloudstack.storage.datastore.util.NexentaUtil;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
@@ -58,7 +59,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 
 public class NexentaPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
-    private static final Logger logger = Logger.getLogger(NexentaPrimaryDataStoreDriver.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Override
     public boolean grantAccess(DataObject dataObject, Host host, DataStore dataStore) {

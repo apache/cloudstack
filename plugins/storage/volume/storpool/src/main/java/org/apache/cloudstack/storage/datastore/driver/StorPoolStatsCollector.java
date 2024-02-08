@@ -35,7 +35,6 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil;
 import org.apache.cloudstack.storage.snapshot.StorPoolConfigurationManager;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -46,8 +45,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 public class StorPoolStatsCollector extends ManagerBase {
-
-    private static Logger log = Logger.getLogger(StorPoolStatsCollector.class);
 
     @Inject
     private PrimaryDataStoreDao storagePoolDao;
@@ -93,19 +90,19 @@ public class StorPoolStatsCollector extends ManagerBase {
             if (CollectionUtils.isNotEmpty(spPools)) {
                 volumesStats.clear();
 
-                log.debug("Collecting StorPool volumes used space");
+                logger.debug("Collecting StorPool volumes used space");
                 Map<Long, StoragePoolVO> onePoolforZone = new HashMap<>();
                 for (StoragePoolVO storagePoolVO : spPools) {
                     onePoolforZone.put(storagePoolVO.getDataCenterId(), storagePoolVO);
                 }
                 for (StoragePoolVO storagePool : onePoolforZone.values()) {
                     try {
-                        log.debug(String.format("Collecting volumes statistics for zone [%s]", storagePool.getDataCenterId()));
+                        logger.debug(String.format("Collecting volumes statistics for zone [%s]", storagePool.getDataCenterId()));
                         JsonArray arr = StorPoolUtil.volumesSpace(StorPoolUtil.getSpConnection(storagePool.getUuid(),
                                 storagePool.getId(), storagePoolDetailsDao, storagePoolDao));
                         volumesStats.putAll(getClusterVolumeOrTemplateSpace(arr, StorPoolObject.VOLUME));
                     } catch (Exception e) {
-                        log.debug(String.format("Could not collect StorPool volumes statistics due to %s", e.getMessage()));
+                        logger.debug(String.format("Could not collect StorPool volumes statistics due to %s", e.getMessage()));
                     }
                 }
             }
@@ -126,12 +123,12 @@ public class StorPoolStatsCollector extends ManagerBase {
                 }
                 for (StoragePoolVO storagePool : onePoolforZone.values()) {
                     try {
-                        log.debug(String.format("Collecting templates statistics for zone [%s]", storagePool.getDataCenterId()));
+                        logger.debug(String.format("Collecting templates statistics for zone [%s]", storagePool.getDataCenterId()));
                         JsonArray arr = StorPoolUtil.templatesStats(StorPoolUtil.getSpConnection(storagePool.getUuid(),
                                 storagePool.getId(), storagePoolDetailsDao, storagePoolDao));
                         templatesStats.put(storagePool.getDataCenterId(), getClusterVolumeOrTemplateSpace(arr, StorPoolObject.TEMPLATE));
                     } catch (Exception e) {
-                        log.debug(String.format("Could not collect StorPool templates statistics %s", e.getMessage()));
+                        logger.debug(String.format("Could not collect StorPool templates statistics %s", e.getMessage()));
                     }
                 }
             }

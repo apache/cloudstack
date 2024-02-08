@@ -29,7 +29,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.utils.db.TransactionLegacy;
 
@@ -39,7 +40,7 @@ import com.cloud.utils.db.TransactionLegacy;
  */
 public class UsageSanityChecker {
 
-    protected static final Logger s_logger = Logger.getLogger(UsageSanityChecker.class);
+    protected static Logger LOGGER = LogManager.getLogger(UsageSanityChecker.class);
     protected static final int DEFAULT_AGGREGATION_RANGE = 1440;
     protected StringBuilder errors;
     protected List<CheckCase> checkCases;
@@ -102,7 +103,7 @@ public class UsageSanityChecker {
 
     private static void throwPreparedStatementExcecutionException(String msgPrefix, String stmt, Exception e) {
         String msg = String.format("%s for prepared statement \"%s\" reason: %s", msgPrefix, stmt, e.getMessage());
-        s_logger.error(msg);
+        LOGGER.error(msg);
         throw new CloudRuntimeException(msg, e);
     }
 
@@ -128,8 +129,8 @@ public class UsageSanityChecker {
            if (rs.next()) {
                 aggregationRange = rs.getInt(1);
             } else {
-               if (s_logger.isDebugEnabled()) {
-                   s_logger.debug("Failed to retrieve aggregation range. Using default : " + aggregationRange);
+               if (LOGGER.isDebugEnabled()) {
+                   LOGGER.debug("Failed to retrieve aggregation range. Using default : " + aggregationRange);
                }
             }
         } catch (SQLException e) {
@@ -188,8 +189,8 @@ public class UsageSanityChecker {
     }
 
     protected void readLastCheckId(){
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("reading last checked id for sanity check");
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("reading last checked id for sanity check");
         }
         try(BufferedReader reader = new BufferedReader(new FileReader(lastCheckFile));) {
             String lastIdText = null;
@@ -199,10 +200,10 @@ public class UsageSanityChecker {
             }
         } catch (Exception e) {
             String msg = String.format("error reading the LastCheckId reason: %s", e.getMessage());
-            s_logger.error(msg);
-            s_logger.debug(msg, e);
+            LOGGER.error(msg);
+            LOGGER.debug(msg, e);
         } finally {
-            s_logger.info(String.format("using %d as last checked id to start from in sanity check", lastId));
+            LOGGER.info(String.format("using %d as last checked id to start from in sanity check", lastId));
         }
     }
 
@@ -218,18 +219,18 @@ public class UsageSanityChecker {
                 }
             }
         }catch (Exception e) {
-            s_logger.error("readMaxId:"+e.getMessage(),e);
+            LOGGER.error("readMaxId:"+e.getMessage(),e);
         }
     }
 
     protected void updateNewMaxId() {
-        s_logger.info(String.format("writing %d as the new last id checked", maxId));
+        LOGGER.info(String.format("writing %d as the new last id checked", maxId));
         try (FileWriter fstream = new FileWriter(lastCheckFile);
              BufferedWriter out = new BufferedWriter(fstream);
         ){
             out.write("" + maxId);
         } catch (IOException e) {
-            s_logger.error(String.format("Exception writing the last checked id: %d reason: %s", maxId, e.getMessage()));
+            LOGGER.error(String.format("Exception writing the last checked id: %d reason: %s", maxId, e.getMessage()));
             // Error while writing last check id
         }
     }
@@ -276,7 +277,7 @@ public class UsageSanityChecker {
         try {
             sanityErrors = usc.runSanityCheck();
             if (sanityErrors.length() > 0) {
-                s_logger.error(sanityErrors);
+                LOGGER.error(sanityErrors);
             }
         } catch (SQLException e) {
             e.printStackTrace();

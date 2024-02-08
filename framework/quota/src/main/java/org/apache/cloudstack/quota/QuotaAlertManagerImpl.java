@@ -42,7 +42,6 @@ import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.text.StrSubstitutor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.ObjectUtils;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.domain.DomainVO;
@@ -66,7 +65,6 @@ import org.apache.commons.lang3.BooleanUtils;
 
 @Component
 public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertManager {
-    private static final Logger s_logger = Logger.getLogger(QuotaAlertManagerImpl.class);
 
     @Inject
     private AccountDao _accountDao;
@@ -131,16 +129,16 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
 
     @Override
     public boolean start() {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Starting Alert Manager");
+        if (logger.isInfoEnabled()) {
+            logger.info("Starting Alert Manager");
         }
         return true;
     }
 
     @Override
     public boolean stop() {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Stopping Alert Manager");
+        if (logger.isInfoEnabled()) {
+            logger.info("Stopping Alert Manager");
         }
         return true;
     }
@@ -149,13 +147,13 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
     public void checkAndSendQuotaAlertEmails() {
         List<DeferredQuotaEmail> deferredQuotaEmailList = new ArrayList<DeferredQuotaEmail>();
 
-        s_logger.info("Checking and sending quota alert emails.");
+        logger.info("Checking and sending quota alert emails.");
         for (final QuotaAccountVO quotaAccount : _quotaAcc.listAllQuotaAccount()) {
             checkQuotaAlertEmailForAccount(deferredQuotaEmailList, quotaAccount);
         }
 
         for (DeferredQuotaEmail emailToBeSent : deferredQuotaEmailList) {
-            s_logger.debug(String.format("Attempting to send a quota alert email to users of account [%s].", emailToBeSent.getAccount().getAccountName()));
+            logger.debug(String.format("Attempting to send a quota alert email to users of account [%s].", emailToBeSent.getAccount().getAccountName()));
             sendQuotaAlert(emailToBeSent);
         }
     }
@@ -165,17 +163,17 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
      * if they should receive either QUOTA_EMPTY or QUOTA_LOW emails, taking into account if these email templates are disabled or not for that account.
      * */
     protected void checkQuotaAlertEmailForAccount(List<DeferredQuotaEmail> deferredQuotaEmailList, QuotaAccountVO quotaAccount) {
-        s_logger.debug(String.format("Checking %s for email alerts.", quotaAccount));
+        logger.debug(String.format("Checking %s for email alerts.", quotaAccount));
         BigDecimal accountBalance = quotaAccount.getQuotaBalance();
 
         if (accountBalance == null) {
-            s_logger.debug(String.format("%s has a null balance, therefore it will not receive quota alert emails.", quotaAccount));
+            logger.debug(String.format("%s has a null balance, therefore it will not receive quota alert emails.", quotaAccount));
             return;
         }
 
         AccountVO account = _accountDao.findById(quotaAccount.getId());
         if (account == null) {
-            s_logger.debug(String.format("Account of %s is removed, thus it will not receive quota alert emails.", quotaAccount));
+            logger.debug(String.format("Account of %s is removed, thus it will not receive quota alert emails.", quotaAccount));
             return;
         }
 
@@ -184,7 +182,7 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         int lockable = quotaAccount.getQuotaEnforce();
         BigDecimal thresholdBalance = quotaAccount.getQuotaMinBalance();
 
-        s_logger.debug(String.format("Checking %s with accountBalance [%s], alertDate [%s] and lockable [%s] to see if a quota alert email should be sent.", account,
+        logger.debug(String.format("Checking %s with accountBalance [%s], alertDate [%s] and lockable [%s] to see if a quota alert email should be sent.", account,
                 accountBalance, alertDate, lockable));
 
         QuotaEmailConfigurationVO quotaEmpty = quotaEmailConfigurationDao.findByAccountIdAndEmailTemplateType(account.getAccountId(), QuotaEmailTemplateTypes.QUOTA_EMPTY);
@@ -194,20 +192,20 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
 
         if (accountBalance.compareTo(BigDecimal.ZERO) < 0) {
             if (_lockAccountEnforcement && lockable == 1 && _quotaManager.isLockable(account)) {
-                s_logger.info(String.format("Locking %s, as quota balance is lower than 0.", account));
+                logger.info(String.format("Locking %s, as quota balance is lower than 0.", account));
                 lockAccount(account.getId());
             }
             if (quotaEmpty != null && quotaEmpty.isEnabled() && shouldSendEmail) {
-                s_logger.debug(String.format("Adding %s to the deferred emails list, as quota balance is lower than 0.", account));
+                logger.debug(String.format("Adding %s to the deferred emails list, as quota balance is lower than 0.", account));
                 deferredQuotaEmailList.add(new DeferredQuotaEmail(account, quotaAccount, QuotaEmailTemplateTypes.QUOTA_EMPTY));
                 return;
             }
         } else if (accountBalance.compareTo(thresholdBalance) < 0 && quotaLow != null && quotaLow.isEnabled() && shouldSendEmail) {
-            s_logger.debug(String.format("Adding %s to the deferred emails list, as quota balance [%s] is below the threshold [%s].", account, accountBalance, thresholdBalance));
+            logger.debug(String.format("Adding %s to the deferred emails list, as quota balance [%s] is below the threshold [%s].", account, accountBalance, thresholdBalance));
             deferredQuotaEmailList.add(new DeferredQuotaEmail(account, quotaAccount, QuotaEmailTemplateTypes.QUOTA_LOW));
             return;
         }
-        s_logger.debug(String.format("%s will not receive any quota alert emails in this round.", account));
+        logger.debug(String.format("%s will not receive any quota alert emails in this round.", account));
     }
 
     @Override
@@ -243,8 +241,8 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
             final Map<String, String> subjectOptionMap = generateOptionMap(account, userNames, accountDomain, balanceStr, usageStr, emailType, false);
             final Map<String, String> bodyOptionMap = generateOptionMap(account, userNames, accountDomain, balanceStr, usageStr, emailType, true);
 
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(String.format("Sending quota alert with values: accountName [%s], accountID [%s], accountUsers [%s], domainName [%s], domainID [%s].",
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("Sending quota alert with values: accountName [%s], accountID [%s], accountUsers [%s], domainName [%s], domainID [%s].",
                         account.getAccountName(), account.getUuid(), userNames, accountDomain.getName(), accountDomain.getUuid()));
             }
 
@@ -258,14 +256,14 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
                 sendQuotaAlert(account, emailRecipients, subject, body);
                 emailToBeSent.sentSuccessfully(_quotaAcc);
             } catch (Exception e) {
-                s_logger.error(String.format("Unable to send quota alert email (subject=%s; body=%s) to account %s (%s) recipients (%s) due to error (%s)", subject, body, account.getAccountName(),
+                logger.error(String.format("Unable to send quota alert email (subject=%s; body=%s) to account %s (%s) recipients (%s) due to error (%s)", subject, body, account.getAccountName(),
                         account.getUuid(), emailRecipients, e));
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Exception", e);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Exception", e);
                 }
             }
         } else {
-            s_logger.error(String.format("No quota email template found for type %s, cannot send quota alert email to account %s(%s)", emailType, account.getAccountName(), account.getUuid()));
+            logger.error(String.format("No quota email template found for type %s, cannot send quota alert email to account %s(%s)", emailType, account.getAccountName(), account.getUuid()));
         }
     }
 
@@ -325,15 +323,15 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
                     acctForUpdate.setState(State.LOCKED);
                     success = _accountDao.update(Long.valueOf(accountId), acctForUpdate);
                 } else {
-                    if (s_logger.isInfoEnabled()) {
-                        s_logger.info("Attempting to lock a non-enabled account, current state is " + account.getState() + " (accountId: " + accountId + "), locking failed.");
+                    if (logger.isInfoEnabled()) {
+                        logger.info("Attempting to lock a non-enabled account, current state is " + account.getState() + " (accountId: " + accountId + "), locking failed.");
                     }
                 }
             } else {
-                s_logger.warn("Failed to lock account " + accountId + ", account not found.");
+                logger.warn("Failed to lock account " + accountId + ", account not found.");
             }
         } catch (Exception e) {
-            s_logger.error("Exception occurred while locking account by Quota Alert Manager", e);
+            logger.error("Exception occurred while locking account by Quota Alert Manager", e);
             throw e;
         } finally {
             TransactionLegacy.open(opendb).close();
@@ -408,7 +406,7 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         mailProperties.setContentType("text/html; charset=utf-8");
 
         if (CollectionUtils.isEmpty(emails)) {
-            s_logger.warn(String.format("Account [%s] does not have users with email registered, "
+            logger.warn(String.format("Account [%s] does not have users with email registered, "
                     + "therefore we are unable to send quota alert email with subject [%s] and content [%s].", account.getUuid(), subject, body));
             return;
         }

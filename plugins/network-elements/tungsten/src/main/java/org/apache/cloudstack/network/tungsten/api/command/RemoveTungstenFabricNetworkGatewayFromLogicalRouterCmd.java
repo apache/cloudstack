@@ -34,7 +34,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricLogicalRouterResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
-import org.apache.log4j.Logger;
 
 import java.util.List;
 
@@ -43,7 +42,6 @@ import javax.inject.Inject;
 @APICommand(name = RemoveTungstenFabricNetworkGatewayFromLogicalRouterCmd.APINAME, description = "remove Tungsten-Fabric network gateway from logical router",
     responseObject = TungstenFabricLogicalRouterResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class RemoveTungstenFabricNetworkGatewayFromLogicalRouterCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(RemoveTungstenFabricNetworkGatewayFromLogicalRouterCmd.class.getName());
     public static final String APINAME = "removeTungstenFabricNetworkGatewayFromLogicalRouter";
 
     @Inject

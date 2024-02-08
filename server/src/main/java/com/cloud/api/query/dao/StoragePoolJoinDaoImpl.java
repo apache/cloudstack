@@ -34,7 +34,6 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.jsinterpreter.TagAsRuleHelper;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
@@ -57,7 +56,6 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Component
 public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Long> implements StoragePoolJoinDao {
-    public static final Logger s_logger = Logger.getLogger(StoragePoolJoinDaoImpl.class);
 
     @Inject
     private ConfigurationDao _configDao;
@@ -419,7 +417,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
                 if (storagePoolVO != null) {
                     filteredPools.add(storagePoolVO);
                 } else {
-                    s_logger.warn(String.format("Unable to find Storage Pool [%s] in the DB.", storagePoolJoinVO.getUuid()));
+                    logger.warn(String.format("Unable to find Storage Pool [%s] in the DB.", storagePoolJoinVO.getUuid()));
                 }
             }
         }

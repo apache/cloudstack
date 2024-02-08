@@ -29,7 +29,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.KubernetesSupportedVersionResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.kubernetes.version.KubernetesVersionService;
@@ -41,7 +40,6 @@ import org.apache.commons.lang3.StringUtils;
         responseView = ResponseObject.ResponseView.Restricted,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListKubernetesSupportedVersionsCmd extends BaseListCmd {
-    public static final Logger LOGGER = Logger.getLogger(ListKubernetesSupportedVersionsCmd.class.getName());
 
     @Inject
     private KubernetesVersionService kubernetesVersionService;

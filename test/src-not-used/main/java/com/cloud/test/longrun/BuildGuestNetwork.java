@@ -21,11 +21,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class BuildGuestNetwork {
 
-    public static final Logger s_logger = Logger.getLogger(BuildGuestNetwork.class.getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
     private static final int ApiPort = 8096;
     private static final int DeveloperPort = 8080;
     private static final String ApiUrl = "/client/api";
@@ -67,7 +68,7 @@ public class BuildGuestNetwork {
 
         final String server = host + ":" + ApiPort + "/";
         final String developerServer = host + ":" + DeveloperPort + ApiUrl;
-        s_logger.info("Starting test in " + numThreads + " thread(s). Each thread is launching " + numVM + " VMs");
+        logger.info("Starting test in " + numThreads + " thread(s). Each thread is launching " + numVM + " VMs");
 
         for (int i = 0; i < numThreads; i++) {
             new Thread(new Runnable() {
@@ -86,11 +87,11 @@ public class BuildGuestNetwork {
                             myUser.launchUser();
                             myUser.registerUser();
                         } catch (Exception e) {
-                            s_logger.warn("Error code: ", e);
+                            logger.warn("Error code: ", e);
                         }
 
                         if (myUser.getUserId() != null) {
-                            s_logger.info("User " + myUser.getUserName() + " was created successfully, starting VM creation");
+                            logger.info("User " + myUser.getUserName() + " was created successfully, starting VM creation");
                             //create VMs for the user
                             for (int i = 0; i < numVM; i++) {
                                 //Create a new VM, add it to the list of user's VMs
@@ -100,19 +101,19 @@ public class BuildGuestNetwork {
                                 singlePrivateIp = myVM.getPrivateIp();
 
                                 if (singlePrivateIp != null) {
-                                    s_logger.info("VM with private Ip " + singlePrivateIp + " was successfully created");
+                                    logger.info("VM with private Ip " + singlePrivateIp + " was successfully created");
                                 } else {
-                                    s_logger.info("Problems with VM creation for a user" + myUser.getUserName());
-                                    s_logger.info("Deployment failed");
+                                    logger.info("Problems with VM creation for a user" + myUser.getUserName());
+                                    logger.info("Deployment failed");
                                     break;
                                 }
                             }
 
-                            s_logger.info("Deployment done..." + numVM + " VMs were created.");
+                            logger.info("Deployment done..." + numVM + " VMs were created.");
                         }
 
                     } catch (Exception e) {
-                        s_logger.error(e);
+                        logger.error(e);
                     }
                 }
             }).start();

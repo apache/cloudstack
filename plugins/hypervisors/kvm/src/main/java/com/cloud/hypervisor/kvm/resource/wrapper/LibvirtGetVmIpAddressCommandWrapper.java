@@ -26,12 +26,10 @@ import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
-import org.apache.log4j.Logger;
 
 @ResourceWrapper(handles =  GetVmIpAddressCommand.class)
 public final class LibvirtGetVmIpAddressCommandWrapper extends CommandWrapper<GetVmIpAddressCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtGetVmIpAddressCommandWrapper.class);
 
     @Override
     public Answer execute(final GetVmIpAddressCommand command, final LibvirtComputingResource libvirtComputingResource) {
@@ -53,7 +51,7 @@ public final class LibvirtGetVmIpAddressCommandWrapper extends CommandWrapper<Ge
                         ip = ipAddr;
                         break;
                     }
-                    s_logger.debug("GetVmIp: "+command.getVmName()+ " Ip: "+ipAddr+" does not belong to network "+networkCidr);
+                    logger.debug("GetVmIp: "+command.getVmName()+ " Ip: "+ipAddr+" does not belong to network "+networkCidr);
                 }
             }
         } else {
@@ -61,7 +59,7 @@ public final class LibvirtGetVmIpAddressCommandWrapper extends CommandWrapper<Ge
             String ipList = Script.runSimpleBashScript(new StringBuilder().append("virt-win-reg --unsafe-printable-strings ").append(command.getVmName())
                     .append(" 'HKEY_LOCAL_MACHINE\\SYSTEM\\ControlSet001\\Services\\Tcpip\\Parameters\\Interfaces' | grep DhcpIPAddress | awk -F : '{print $2}' | sed -e 's/^\"//' -e 's/\"$//'").toString());
             if(ipList != null) {
-                s_logger.debug("GetVmIp: "+command.getVmName()+ "Ips: "+ipList);
+                logger.debug("GetVmIp: "+command.getVmName()+ "Ips: "+ipList);
                 String[] ips = ipList.split("\n");
                 for (String ipAddr : ips){
                     // Check if the IP belongs to the network
@@ -69,13 +67,13 @@ public final class LibvirtGetVmIpAddressCommandWrapper extends CommandWrapper<Ge
                         ip = ipAddr;
                         break;
                     }
-                    s_logger.debug("GetVmIp: "+command.getVmName()+ " Ip: "+ipAddr+" does not belong to network "+networkCidr);
+                    logger.debug("GetVmIp: "+command.getVmName()+ " Ip: "+ipAddr+" does not belong to network "+networkCidr);
                 }
             }
         }
         if(ip != null){
             result = true;
-            s_logger.debug("GetVmIp: "+command.getVmName()+ " Found Ip: "+ip);
+            logger.debug("GetVmIp: "+command.getVmName()+ " Found Ip: "+ip);
         }
         return new Answer(command, result, ip);
     }

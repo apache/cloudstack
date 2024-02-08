@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.command.user.ratelimit;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -35,7 +34,6 @@ import com.cloud.user.Account;
 @APICommand(name = "getApiLimit", responseObject = ApiLimitResponse.class, description = "Get API limit count for the caller",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class GetApiLimitCmd extends BaseCmd {
-    private static final Logger s_logger = Logger.getLogger(GetApiLimitCmd.class.getName());
 
 
     @Inject

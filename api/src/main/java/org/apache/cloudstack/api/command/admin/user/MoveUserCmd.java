@@ -32,7 +32,6 @@ import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.region.RegionService;
 import org.apache.commons.lang3.ObjectUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 import com.cloud.user.User;
@@ -46,7 +45,6 @@ import com.google.common.base.Preconditions;
         since = "4.11",
         authorized = {RoleType.Admin})
 public class MoveUserCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(MoveUserCmd.class.getName());
 
 
     /////////////////////////////////////////////////////

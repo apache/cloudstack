@@ -38,7 +38,6 @@ import org.apache.cloudstack.storage.object.Bucket;
 import org.apache.cloudstack.storage.object.BucketObject;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.amazonaws.services.s3.model.AccessControlList;
 import com.amazonaws.services.s3.model.BucketPolicy;
@@ -66,7 +65,6 @@ import io.minio.messages.SseConfiguration;
 import io.minio.messages.VersioningConfiguration;
 
 public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
-    private static final Logger s_logger = Logger.getLogger(MinIOObjectStoreDriverImpl.class);
     protected static final String ACS_PREFIX = "acs";
 
     @Inject
@@ -268,7 +266,7 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             updateNeeded = true;
         }
         if (StringUtils.isAllBlank(secretKey, details.get(MINIO_SECRET_KEY))) {
-            s_logger.error(String.format("Failed to retrieve secret key for MinIO user: %s from store and account details", accessKey));
+            logger.error(String.format("Failed to retrieve secret key for MinIO user: %s from store and account details", accessKey));
         }
         if (StringUtils.isNotBlank(secretKey) && (!checkIfNotPresent || StringUtils.isBlank(details.get(MINIO_SECRET_KEY)))) {
             details.put(MINIO_SECRET_KEY, secretKey);
@@ -289,23 +287,23 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         try {
             UserInfo userInfo = minioAdminClient.getUserInfo(accessKey);
             if(userInfo != null) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(String.format("Skipping user creation as the user already exists in MinIO store: %s", accessKey));
+                if (logger.isDebugEnabled()) {
+                    logger.debug(String.format("Skipping user creation as the user already exists in MinIO store: %s", accessKey));
                 }
                 updateAccountCredentials(accountId, accessKey, userInfo.secretKey(), true);
                 return true;
             }
         } catch (NoSuchAlgorithmException | IOException | InvalidKeyException e) {
-            s_logger.error(String.format("Error encountered while retrieving user: %s for existing MinIO store user check", accessKey), e);
+            logger.error(String.format("Error encountered while retrieving user: %s for existing MinIO store user check", accessKey), e);
             return false;
         } catch (RuntimeException e) { // MinIO lib may throw RuntimeException with code: XMinioAdminNoSuchUser
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(String.format("Ignoring error encountered while retrieving user: %s for existing MinIO store user check", accessKey));
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("Ignoring error encountered while retrieving user: %s for existing MinIO store user check", accessKey));
             }
-            s_logger.trace("Exception during MinIO user check", e);
+            logger.trace("Exception during MinIO user check", e);
         }
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug(String.format("MinIO store user does not exist. Creating user: %s", accessKey));
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("MinIO store user does not exist. Creating user: %s", accessKey));
         }
         KeyGenerator generator = null;
         try {

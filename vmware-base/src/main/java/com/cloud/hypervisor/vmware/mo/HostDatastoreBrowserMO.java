@@ -18,7 +18,6 @@ package com.cloud.hypervisor.vmware.mo;
 
 import java.util.ArrayList;
 
-import org.apache.log4j.Logger;
 
 import com.vmware.vim25.HostDatastoreBrowserSearchResults;
 import com.vmware.vim25.HostDatastoreBrowserSearchSpec;
@@ -28,7 +27,6 @@ import com.cloud.hypervisor.vmware.util.VmwareContext;
 
 public class HostDatastoreBrowserMO extends BaseMO {
 
-    private static final Logger s_logger = Logger.getLogger(HostDatastoreBrowserMO.class);
 
     public HostDatastoreBrowserMO(VmwareContext context, ManagedObjectReference morHostDatastoreBrowser) {
         super(context, morHostDatastoreBrowser);
@@ -39,18 +37,18 @@ public class HostDatastoreBrowserMO extends BaseMO {
     }
 
     public void DeleteFile(String datastoreFullPath) throws Exception {
-        if (s_logger.isTraceEnabled())
-            s_logger.trace("vCenter API trace - deleteFile(). target mor: " + _mor.getValue() + ", file datastore path: " + datastoreFullPath);
+        if (logger.isTraceEnabled())
+            logger.trace("vCenter API trace - deleteFile(). target mor: " + _mor.getValue() + ", file datastore path: " + datastoreFullPath);
 
         _context.getService().deleteFile(_mor, datastoreFullPath);
 
-        if (s_logger.isTraceEnabled())
-            s_logger.trace("vCenter API trace - deleteFile() done");
+        if (logger.isTraceEnabled())
+            logger.trace("vCenter API trace - deleteFile() done");
     }
 
     public HostDatastoreBrowserSearchResults searchDatastore(String datastorePath, HostDatastoreBrowserSearchSpec searchSpec) throws Exception {
-        if (s_logger.isTraceEnabled())
-            s_logger.trace("vCenter API trace - searchDatastore(). target mor: " + _mor.getValue() + ", file datastore path: " + datastorePath);
+        if (logger.isTraceEnabled())
+            logger.trace("vCenter API trace - searchDatastore(). target mor: " + _mor.getValue() + ", file datastore path: " + datastorePath);
 
         try {
             ManagedObjectReference morTask = _context.getService().searchDatastoreTask(_mor, datastorePath, searchSpec);
@@ -61,11 +59,11 @@ public class HostDatastoreBrowserMO extends BaseMO {
 
                 return (HostDatastoreBrowserSearchResults)_context.getVimClient().getDynamicProperty(morTask, "info.result");
             } else {
-                s_logger.error("VMware searchDaastore_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+                logger.error("VMware searchDaastore_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
             }
         } finally {
-            if (s_logger.isTraceEnabled())
-                s_logger.trace("vCenter API trace - searchDatastore() done");
+            if (logger.isTraceEnabled())
+                logger.trace("vCenter API trace - searchDatastore() done");
         }
 
         return null;
@@ -81,8 +79,8 @@ public class HostDatastoreBrowserMO extends BaseMO {
 
     @SuppressWarnings("unchecked")
     public ArrayList<HostDatastoreBrowserSearchResults> searchDatastoreSubFolders(String datastorePath, HostDatastoreBrowserSearchSpec searchSpec) throws Exception {
-        if (s_logger.isTraceEnabled())
-            s_logger.trace("vCenter API trace - searchDatastoreSubFolders(). target mor: " + _mor.getValue() + ", file datastore path: " + datastorePath);
+        if (logger.isTraceEnabled())
+            logger.trace("vCenter API trace - searchDatastoreSubFolders(). target mor: " + _mor.getValue() + ", file datastore path: " + datastorePath);
 
         try {
             ManagedObjectReference morTask = _context.getService().searchDatastoreSubFoldersTask(_mor, datastorePath, searchSpec);
@@ -93,11 +91,11 @@ public class HostDatastoreBrowserMO extends BaseMO {
 
                 return (ArrayList<HostDatastoreBrowserSearchResults>)_context.getVimClient().getDynamicProperty(morTask, "info.result");
             } else {
-                s_logger.error("VMware searchDaastoreSubFolders_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+                logger.error("VMware searchDaastoreSubFolders_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
             }
         } finally {
-            if (s_logger.isTraceEnabled())
-                s_logger.trace("vCenter API trace - searchDatastoreSubFolders() done");
+            if (logger.isTraceEnabled())
+                logger.trace("vCenter API trace - searchDatastoreSubFolders() done");
         }
 
         return null;

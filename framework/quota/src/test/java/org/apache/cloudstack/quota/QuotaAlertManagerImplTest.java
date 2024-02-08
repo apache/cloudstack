@@ -41,7 +41,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -256,7 +256,7 @@ public class QuotaAlertManagerImplTest extends TestCase {
         quotaAlertManager.sendQuotaAlert(email);
         assertTrue(email.getSendDate() != null);
 
-        Mockito.verify(quotaAlertManager, Mockito.times(1)).sendQuotaAlert(Mockito.any(), Mockito.anyListOf(String.class), Mockito.anyString(), Mockito.anyString());
+        Mockito.verify(quotaAlertManager, Mockito.times(1)).sendQuotaAlert(Mockito.any(), Mockito.anyList(), Mockito.anyString(), Mockito.anyString());
         Mockito.verify(quotaAlertManager.mailSender, Mockito.times(1)).sendMail(Mockito.any(SMTPMailProperties.class));
     }
 
