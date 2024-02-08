@@ -25,7 +25,8 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.usage.UsageTypes;
@@ -41,7 +42,7 @@ import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 @Component
 public class VmDiskUsageParser {
-    public static final Logger s_logger = Logger.getLogger(VmDiskUsageParser.class.getName());
+    protected static Logger LOGGER = LogManager.getLogger(VmDiskUsageParser.class);
 
     private static UsageDao s_usageDao;
     private static UsageVmDiskDao s_usageVmDiskDao;
@@ -58,8 +59,8 @@ public class VmDiskUsageParser {
     }
 
     public static boolean parse(AccountVO account, Date startDate, Date endDate) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Parsing all Vm Disk usage events for account: " + account.getId());
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Parsing all Vm Disk usage events for account: " + account.getId());
         }
 
         if ((endDate == null) || endDate.after(new Date())) {
@@ -107,8 +108,8 @@ public class VmDiskUsageParser {
             long bytesWrite = vmDiskInfo.getBytesWrite();
 
             if ((ioRead > 0L) || (ioWrite > 0L) || (bytesRead > 0L) || (bytesWrite > 0L)) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Creating vm disk usage record, io read:" + toHumanReadableSize(ioRead) + ", io write: " + toHumanReadableSize(ioWrite) + ", bytes read:" + toHumanReadableSize(bytesRead) + ", bytes write: " +
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Creating vm disk usage record, io read:" + toHumanReadableSize(ioRead) + ", io write: " + toHumanReadableSize(ioWrite) + ", bytes read:" + toHumanReadableSize(bytesRead) + ", bytes write: " +
                             toHumanReadableSize(bytesWrite) + " for account: " + account.getId() + " in availability zone " + vmDiskInfo.getZoneId() + ", start: " + startDate + ", end: " +
                         endDate);
                 }
@@ -160,8 +161,8 @@ public class VmDiskUsageParser {
 
             } else {
                 // Don't charge anything if there were zero bytes processed
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("No vm disk usage record (0 bytes used) generated for account: " + account.getId());
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("No vm disk usage record (0 bytes used) generated for account: " + account.getId());
                 }
             }
         }

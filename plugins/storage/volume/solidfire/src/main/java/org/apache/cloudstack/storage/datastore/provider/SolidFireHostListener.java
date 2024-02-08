@@ -25,7 +25,8 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
@@ -55,7 +56,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class SolidFireHostListener implements HypervisorHostListener {
-    private static final Logger LOGGER = Logger.getLogger(SolidFireHostListener.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject private AgentManager agentMgr;
     @Inject private AlertManager alertMgr;
@@ -73,13 +74,13 @@ public class SolidFireHostListener implements HypervisorHostListener {
         HostVO host = hostDao.findById(hostId);
 
         if (host == null) {
-            LOGGER.error(String.format("Failed to add host by SolidFireHostListener as host was not found with id = %s ", hostId));
+            logger.error(String.format("Failed to add host by SolidFireHostListener as host was not found with id = %s ", hostId));
 
             return false;
         }
 
         if (host.getClusterId() == null) {
-            LOGGER.error("Failed to add host by SolidFireHostListener as host has no associated cluster id");
+            logger.error("Failed to add host by SolidFireHostListener as host has no associated cluster id");
             return false;
         }
 
@@ -295,6 +296,6 @@ public class SolidFireHostListener implements HypervisorHostListener {
 
         assert (answer instanceof ModifyStoragePoolAnswer) : "ModifyStoragePoolAnswer expected ; Pool = " + storagePool.getId() + " Host = " + hostId;
 
-        LOGGER.info("Connection established between storage pool " + storagePool + " and host + " + hostId);
+        logger.info("Connection established between storage pool " + storagePool + " and host + " + hostId);
     }
 }

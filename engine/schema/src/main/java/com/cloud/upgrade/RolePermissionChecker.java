@@ -16,7 +16,8 @@
 // under the License.
 package com.cloud.upgrade;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -25,7 +26,7 @@ import java.sql.SQLException;
 
 public class RolePermissionChecker {
 
-    final static Logger LOG = Logger.getLogger(RolePermissionChecker.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private static final String checkAnnotationRulesPermissionPreparedStatement =
             "SELECT permission FROM `cloud`.`role_permissions` WHERE role_id = ? AND rule = ?";
@@ -43,7 +44,7 @@ public class RolePermissionChecker {
             ResultSet rs = pstmt.executeQuery();
             return rs != null && rs.next();
         } catch (SQLException e) {
-            LOG.error("Error on existsRolePermissionByRoleIdAndRule: " + e.getMessage(), e);
+            logger.error("Error on existsRolePermissionByRoleIdAndRule: " + e.getMessage(), e);
             return false;
         }
     }
@@ -55,7 +56,7 @@ public class RolePermissionChecker {
             pstmt.setString(2, rule);
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            LOG.error("Error on insertAnnotationRulePermission: " + e.getMessage(), e);
+            logger.error("Error on insertAnnotationRulePermission: " + e.getMessage(), e);
         }
     }
 }

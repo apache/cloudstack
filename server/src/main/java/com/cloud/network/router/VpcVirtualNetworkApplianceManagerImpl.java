@@ -30,7 +30,6 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.vpc.dao.VpcDao;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
@@ -109,7 +108,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
 public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplianceManagerImpl implements VpcVirtualNetworkApplianceManager {
-    private static final Logger s_logger = Logger.getLogger(VpcVirtualNetworkApplianceManagerImpl.class);
 
     @Inject
     private NetworkACLManager _networkACLMgr;
@@ -146,7 +144,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     public boolean addVpcRouterToGuestNetwork(final VirtualRouter router, final Network network, final Map<VirtualMachineProfile.Param, Object> params)
             throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         if (network.getTrafficType() != TrafficType.Guest) {
-            s_logger.warn("Network " + network + " is not of type " + TrafficType.Guest);
+            logger.warn("Network " + network + " is not of type " + TrafficType.Guest);
             return false;
         }
 
@@ -167,7 +165,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             if (guestNic != null) {
                 result = setupVpcGuestNetwork(network, router, true, guestNic);
             } else {
-                s_logger.warn("Failed to add router " + router + " to guest network " + network);
+                logger.warn("Failed to add router " + router + " to guest network " + network);
                 result = false;
             }
             // 3) apply networking rules
@@ -176,18 +174,18 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 sendNetworkRulesToRouter(router.getId(), network.getId(), reprogramNetwork);
             }
         } catch (final Exception ex) {
-            s_logger.warn("Failed to add router " + router + " to network " + network + " due to ", ex);
+            logger.warn("Failed to add router " + router + " to network " + network + " due to ", ex);
             result = false;
         } finally {
             if (!result) {
-                s_logger.debug("Removing the router " + router + " from network " + network + " as a part of cleanup");
+                logger.debug("Removing the router " + router + " from network " + network + " as a part of cleanup");
                 if (removeVpcRouterFromGuestNetwork(router, network)) {
-                    s_logger.debug("Removed the router " + router + " from network " + network + " as a part of cleanup");
+                    logger.debug("Removed the router " + router + " from network " + network + " as a part of cleanup");
                 } else {
-                    s_logger.warn("Failed to remove the router " + router + " from network " + network + " as a part of cleanup");
+                    logger.warn("Failed to remove the router " + router + " from network " + network + " as a part of cleanup");
                 }
             } else {
-                s_logger.debug("Successfully added router " + router + " to guest network " + network);
+                logger.debug("Successfully added router " + router + " to guest network " + network);
             }
         }
 
@@ -198,7 +196,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     public boolean removeVpcRouterFromGuestNetwork(final VirtualRouter router, final Network network) throws ConcurrentOperationException,
     ResourceUnavailableException {
         if (network.getTrafficType() != TrafficType.Guest) {
-            s_logger.warn("Network " + network + " is not of type " + TrafficType.Guest);
+            logger.warn("Network " + network + " is not of type " + TrafficType.Guest);
             return false;
         }
 
@@ -206,13 +204,13 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         try {
             // Check if router is a part of the Guest network
             if (!_networkModel.isVmPartOfNetwork(router.getId(), network.getId())) {
-                s_logger.debug("Router " + router + " is not a part of the Guest network " + network);
+                logger.debug("Router " + router + " is not a part of the Guest network " + network);
                 return result;
             }
 
             result = setupVpcGuestNetwork(network, router, false, _networkModel.getNicProfile(router, network.getId(), null));
             if (!result) {
-                s_logger.warn("Failed to destroy guest network config " + network + " on router " + router);
+                logger.warn("Failed to destroy guest network config " + network + " on router " + router);
                 return false;
             }
 
@@ -240,15 +238,15 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             final Answer setupAnswer = cmds.getAnswer("setupguestnetwork");
             final String setup = add ? "set" : "destroy";
             if (!(setupAnswer != null && setupAnswer.getResult())) {
-                s_logger.warn("Unable to " + setup + " guest network on router " + router);
+                logger.warn("Unable to " + setup + " guest network on router " + router);
                 result = false;
             }
             return result;
         } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
-            s_logger.debug("Router " + router.getInstanceName() + " is in " + router.getState() + ", so not sending setup guest network command to the backend");
+            logger.debug("Router " + router.getInstanceName() + " is in " + router.getState() + ", so not sending setup guest network command to the backend");
             return true;
         } else {
-            s_logger.warn("Unable to setup guest network on virtual router " + router + " is not in the right state " + router.getState());
+            logger.warn("Unable to setup guest network on virtual router " + router + " is not in the right state " + router.getState());
             throw new ResourceUnavailableException("Unable to setup guest network on the backend," + " virtual router " + router + " is not in the right state", DataCenter.class,
                     router.getDataCenterId());
         }
@@ -278,7 +276,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                             defaultIp6Dns1 = nic.getIPv6Dns1();
                             defaultIp6Dns2 = nic.getIPv6Dns2();
                         }
-                        s_logger.debug("Removing nic " + nic + " of type " + nic.getTrafficType() + " from the nics passed on vm start. " + "The nic will be plugged later");
+                        logger.debug("Removing nic " + nic + " of type " + nic.getTrafficType() + " from the nics passed on vm start. " + "The nic will be plugged later");
                         it.remove();
                     }
                 }
@@ -327,7 +325,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             // 1) FORM SSH CHECK COMMAND
             final NicProfile controlNic = getControlNic(profile);
             if (controlNic == null) {
-                s_logger.error("Control network doesn't exist for the router " + domainRouterVO);
+                logger.error("Control network doesn't exist for the router " + domainRouterVO);
                 return false;
             }
 
@@ -431,7 +429,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                     if (privateGwAclId != null) {
                         // set network acl on private gateway
                         final List<NetworkACLItemVO> networkACLs = _networkACLItemDao.listByACL(privateGwAclId);
-                        s_logger.debug("Found " + networkACLs.size() + " network ACLs to apply as a part of VPC VR " + domainRouterVO + " start for private gateway ip = "
+                        logger.debug("Found " + networkACLs.size() + " network ACLs to apply as a part of VPC VR " + domainRouterVO + " start for private gateway ip = "
                                 + ipVO.getIpAddress());
 
                         _commandSetupHelper.createNetworkACLsCommands(networkACLs, domainRouterVO, cmds, ipVO.getNetworkId(), true);
@@ -452,7 +450,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                     cmds.addCommand(setupCmd);
                 }
             } catch (final Exception ex) {
-                s_logger.warn("Failed to add router " + domainRouterVO + " to network due to exception ", ex);
+                logger.warn("Failed to add router " + domainRouterVO + " to network due to exception ", ex);
                 return false;
             }
 
@@ -469,7 +467,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 staticRouteProfiles.add(new StaticRouteProfile(route, gateway));
             }
 
-            s_logger.debug("Found " + staticRouteProfiles.size() + " static routes to apply as a part of vpc route " + domainRouterVO + " start");
+            logger.debug("Found " + staticRouteProfiles.size() + " static routes to apply as a part of vpc route " + domainRouterVO + " start");
             if (!staticRouteProfiles.isEmpty()) {
                 _commandSetupHelper.createStaticRouteCommands(staticRouteProfiles, domainRouterVO, cmds);
             }
@@ -542,7 +540,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.NetworkACL, Provider.VPCVirtualRouter)) {
                     final List<NetworkACLItemVO> networkACLs = _networkACLMgr.listNetworkACLItems(guestNetworkId);
                     if (networkACLs != null && !networkACLs.isEmpty()) {
-                        s_logger.debug("Found " + networkACLs.size() + " network ACLs to apply as a part of VPC VR " + domainRouterVO + " start for guest network id=" + guestNetworkId);
+                        logger.debug("Found " + networkACLs.size() + " network ACLs to apply as a part of VPC VR " + domainRouterVO + " start for guest network id=" + guestNetworkId);
                         _commandSetupHelper.createNetworkACLsCommands(networkACLs, domainRouterVO, cmds, guestNetworkId, false);
                     }
                 }
@@ -605,20 +603,20 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
 
             try {
                 if (_nwHelper.sendCommandsToRouter(router, cmds)) {
-                    s_logger.debug("Successfully applied ip association for ip " + ip + " in vpc network " + network);
+                    logger.debug("Successfully applied ip association for ip " + ip + " in vpc network " + network);
                     return true;
                 } else {
-                    s_logger.warn("Failed to associate ip address " + ip + " in vpc network " + network);
+                    logger.warn("Failed to associate ip address " + ip + " in vpc network " + network);
                     return false;
                 }
             } catch (final Exception ex) {
-                s_logger.warn("Failed to send  " + (add ? "add " : "delete ") + " private network " + network + " commands to rotuer ");
+                logger.warn("Failed to send  " + (add ? "add " : "delete ") + " private network " + network + " commands to rotuer ");
                 return false;
             }
         } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
-            s_logger.debug("Router " + router.getInstanceName() + " is in " + router.getState() + ", so not sending setup private network command to the backend");
+            logger.debug("Router " + router.getInstanceName() + " is in " + router.getState() + ", so not sending setup private network command to the backend");
         } else {
-            s_logger.warn("Unable to setup private gateway, virtual router " + router + " is not in the right state " + router.getState());
+            logger.warn("Unable to setup private gateway, virtual router " + router + " is not in the right state " + router.getState());
 
             throw new ResourceUnavailableException("Unable to setup Private gateway on the backend," + " virtual router " + router + " is not in the right state",
                     DataCenter.class, router.getDataCenterId());
@@ -631,29 +629,29 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         boolean result = true;
 
         if (!_networkModel.isVmPartOfNetwork(router.getId(), gateway.getNetworkId())) {
-            s_logger.debug("Router doesn't have nic for gateway " + gateway + " so no need to removed it");
+            logger.debug("Router doesn't have nic for gateway " + gateway + " so no need to removed it");
             return result;
         }
 
         final Network privateNetwork = _networkModel.getNetwork(gateway.getNetworkId());
         final NicProfile nicProfile = _networkModel.getNicProfile(router, privateNetwork.getId(), null);
 
-        s_logger.debug("Releasing private ip for gateway " + gateway + " from " + router);
+        logger.debug("Releasing private ip for gateway " + gateway + " from " + router);
         result = setupVpcPrivateNetwork(router, false, nicProfile);
         if (!result) {
-            s_logger.warn("Failed to release private ip for gateway " + gateway + " on router " + router);
+            logger.warn("Failed to release private ip for gateway " + gateway + " on router " + router);
             return false;
         }
 
         // revoke network acl on the private gateway.
         if (!_networkACLMgr.revokeACLItemsForPrivateGw(gateway)) {
-            s_logger.debug("Failed to delete network acl items on " + gateway + " from router " + router);
+            logger.debug("Failed to delete network acl items on " + gateway + " from router " + router);
             return false;
         }
 
-        s_logger.debug("Removing router " + router + " from private network " + privateNetwork + " as a part of delete private gateway");
+        logger.debug("Removing router " + router + " from private network " + privateNetwork + " as a part of delete private gateway");
         result = result && _itMgr.removeVmFromNetwork(router, privateNetwork, null);
-        s_logger.debug("Private gateawy " + gateway + " is removed from router " + router);
+        logger.debug("Private gateawy " + gateway + " is removed from router " + router);
         return result;
     }
 
@@ -670,7 +668,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             final ArrayList<? extends PublicIpAddress> publicIps = getPublicIpsToApply(domainRouterVO, provider, guestNetworkId, IpAddress.State.Releasing);
 
             if (publicIps != null && !publicIps.isEmpty()) {
-                s_logger.debug("Found " + publicIps.size() + " ip(s) to apply as a part of domR " + domainRouterVO + " start.");
+                logger.debug("Found " + publicIps.size() + " ip(s) to apply as a part of domR " + domainRouterVO + " start.");
                 // Re-apply public ip addresses - should come before PF/LB/VPN
                 _commandSetupHelper.createVpcAssociatePublicIPCommands(domainRouterVO, publicIps, cmds, vlanMacAddress);
             }
@@ -680,7 +678,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     @Override
     public boolean startSite2SiteVpn(final Site2SiteVpnConnection conn, final VirtualRouter router) throws ResourceUnavailableException {
         if (router.getState() != State.Running) {
-            s_logger.warn("Unable to apply site-to-site VPN configuration, virtual router is not in the right state " + router.getState());
+            logger.warn("Unable to apply site-to-site VPN configuration, virtual router is not in the right state " + router.getState());
             throw new ResourceUnavailableException("Unable to apply site 2 site VPN configuration," + " virtual router is not in the right state", DataCenter.class,
                     router.getDataCenterId());
         }
@@ -702,7 +700,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     @Override
     public boolean stopSite2SiteVpn(final Site2SiteVpnConnection conn, final VirtualRouter router) throws ResourceUnavailableException {
         if (router.getState() != State.Running) {
-            s_logger.warn("Unable to apply site-to-site VPN configuration, virtual router is not in the right state " + router.getState());
+            logger.warn("Unable to apply site-to-site VPN configuration, virtual router is not in the right state " + router.getState());
             throw new ResourceUnavailableException("Unable to apply site 2 site VPN configuration," + " virtual router is not in the right state", DataCenter.class,
                     router.getDataCenterId());
         }
@@ -736,7 +734,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 final Nic nic = _nicDao.findByIp4AddressAndNetworkIdAndInstanceId(publicNtwkId, router.getId(), ip.getAddress().addr());
                 if (nic != null) {
                     nicsToUnplug.put(ip.getVlanTag(), ip);
-                    s_logger.debug("Need to unplug the nic for ip=" + ip + "; vlan=" + ip.getVlanTag() + " in public network id =" + publicNtwkId);
+                    logger.debug("Need to unplug the nic for ip=" + ip + "; vlan=" + ip.getVlanTag() + " in public network id =" + publicNtwkId);
                 }
             }
         }
@@ -759,14 +757,14 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
 
                 if (nic == null && nicsToPlug.get(ip.getVlanTag()) == null) {
                     nicsToPlug.put(ip.getVlanTag(), ip);
-                    s_logger.debug("Need to plug the nic for ip=" + ip + "; vlan=" + ip.getVlanTag() + " in public network id =" + publicNtwkId);
+                    logger.debug("Need to plug the nic for ip=" + ip + "; vlan=" + ip.getVlanTag() + " in public network id =" + publicNtwkId);
                 } else {
                     final PublicIpAddress nicToUnplug = nicsToUnplug.get(ip.getVlanTag());
                     if (nicToUnplug != null) {
                         final NicVO nicVO = _nicDao.findByIp4AddressAndNetworkIdAndInstanceId(publicNtwkId, router.getId(), nicToUnplug.getAddress().addr());
                         nicVO.setIPv4Address(ip.getAddress().addr());
                         _nicDao.update(nicVO.getId(), nicVO);
-                        s_logger.debug("Updated the nic " + nicVO + " with the new ip address " + ip.getAddress().addr());
+                        logger.debug("Updated the nic " + nicVO + " with the new ip address " + ip.getAddress().addr());
                         nicsToUnplug.remove(ip.getVlanTag());
                     }
                 }
@@ -807,7 +805,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     @Override
     public boolean startRemoteAccessVpn(final RemoteAccessVpn vpn, final VirtualRouter router) throws ResourceUnavailableException {
         if (router.getState() != State.Running) {
-            s_logger.warn("Unable to apply remote access VPN configuration, virtual router is not in the right state " + router.getState());
+            logger.warn("Unable to apply remote access VPN configuration, virtual router is not in the right state " + router.getState());
             throw new ResourceUnavailableException("Unable to apply remote access VPN configuration," + " virtual router is not in the right state", DataCenter.class,
                     router.getDataCenterId());
         }
@@ -818,13 +816,13 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         try {
             _agentMgr.send(router.getHostId(), cmds);
         } catch (final OperationTimedoutException e) {
-            s_logger.debug("Failed to start remote access VPN: ", e);
+            logger.debug("Failed to start remote access VPN: ", e);
             throw new AgentUnavailableException("Unable to send commands to virtual router ", router.getHostId(), e);
         }
         Answer answer = cmds.getAnswer("users");
         if (answer == null || !answer.getResult()) {
             String errorMessage = (answer == null) ? "null answer object" : answer.getDetails();
-            s_logger.error("Unable to start vpn: unable add users to vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: "
+            logger.error("Unable to start vpn: unable add users to vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: "
                     + router.getInstanceName() + " due to " + errorMessage);
             throw new ResourceUnavailableException("Unable to start vpn: Unable to add users to vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId()
             + " on domR: " + router.getInstanceName() + " due to " + errorMessage, DataCenter.class, router.getDataCenterId());
@@ -832,7 +830,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         answer = cmds.getAnswer("startVpn");
         if (answer == null || !answer.getResult()) {
             String errorMessage = (answer == null) ? "null answer object" : answer.getDetails();
-            s_logger.error("Unable to start vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: " + router.getInstanceName() + " due to "
+            logger.error("Unable to start vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: " + router.getInstanceName() + " due to "
                     + errorMessage);
             throw new ResourceUnavailableException("Unable to start vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: "
                     + router.getInstanceName() + " due to " + errorMessage, DataCenter.class, router.getDataCenterId());
@@ -850,9 +848,9 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             _commandSetupHelper.createApplyVpnCommands(false, vpn, router, cmds);
             result = result && _nwHelper.sendCommandsToRouter(router, cmds);
         } else if (router.getState() == State.Stopped) {
-            s_logger.debug("Router " + router + " is in Stopped state, not sending deleteRemoteAccessVpn command to it");
+            logger.debug("Router " + router + " is in Stopped state, not sending deleteRemoteAccessVpn command to it");
         } else {
-            s_logger.warn("Failed to stop remote access VPN: domR " + router + " is not in right state " + router.getState());
+            logger.warn("Failed to stop remote access VPN: domR " + router + " is not in right state " + router.getState());
             throw new ResourceUnavailableException("Failed to stop remote access VPN: domR is not in right state " + router.getState(), DataCenter.class,
                     router.getDataCenterId());
         }

@@ -194,8 +194,15 @@ jobs:
                   component/test_vpc_network
                   component/test_vpc_offerings
                   component/test_vpc_routers
-                  component/test_vpn_users",
-                "component/test_vpc_network_lbrules" ]
+                  component/test_vpn_users
+                  component/test_vpc_network_lbrules",
+                "smoke/test_list_accounts
+                  smoke/test_list_disk_offerings
+                  smoke/test_list_domains
+                  smoke/test_list_hosts
+                  smoke/test_list_service_offerings
+                  smoke/test_list_storage_pools
+                  smoke/test_list_volumes"]
 
     steps:
       - uses: actions/checkout@v4
@@ -211,7 +218,7 @@ jobs:
           cache: maven
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.8'
           architecture: 'x64'
@@ -278,7 +285,7 @@ jobs:
           while ! nc -vzw 5 localhost 8096 2>&1 > /dev/null; do grep Exception /tmp/jetty-log; sleep 10; done
           set -e
           echo -e "\nStarting Advanced Zone DataCenter deployment"
-          python3 tools/marvin/marvin/deployDataCenter.py -i setup/dev/advanced.cfg 2>&1 || true
+          python3 tools/marvin/marvin/deployDataCenter.py -i setup/dev/advdualzone.cfg 2>&1 || true
 
       - name: Run Integration Tests with Simulator
         run: |
@@ -291,7 +298,7 @@ jobs:
           TESTS=($(echo $TESTS | tr -d '\n' | tr -s ' '))
           for suite in "${TESTS[@]}" ; do
             echo -e "Currently running test: $suite\n"
-            time nosetests-3.4 --with-xunit --xunit-file=integration-test-results/$suite.xml --with-marvin --marvin-config=setup/dev/advanced.cfg test/integration/$suite.py -s -a tags=advanced,required_hardware=false --zone=Sandbox-simulator --hypervisor=simulator || true ;
+            time nosetests-3.4 --with-xunit --xunit-file=integration-test-results/$suite.xml --with-marvin --marvin-config=setup/dev/advdualzone.cfg test/integration/$suite.py -s -a tags=advanced,required_hardware=false --zone=zim1 --hypervisor=simulator || true ;
           done
 
           echo -e "Stopping Simulator, integration tests run completed\n"

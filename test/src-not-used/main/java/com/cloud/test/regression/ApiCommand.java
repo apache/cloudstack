@@ -39,7 +39,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -48,7 +49,7 @@ import org.w3c.dom.NodeList;
 import com.cloud.test.utils.UtilsForTest;
 
 public class ApiCommand {
-    public static final Logger s_logger = Logger.getLogger(ApiCommand.class.getName());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     public static enum CommandType {
         HTTP, MYSQL, SCRIPT;
@@ -248,7 +249,7 @@ public class ApiCommand {
                 try {
                     temp = temp + " -" + key + " " + value;
                 } catch (Exception ex) {
-                    s_logger.error("Unable to set parameter " + key + " for the command " + this.getName());
+                    logger.error("Unable to set parameter " + key + " for the command " + this.getName());
                 }
             }
             this.command = temp;
@@ -263,11 +264,11 @@ public class ApiCommand {
                 try {
                     temp = temp + key + "=" + value;
                 } catch (Exception ex) {
-                    s_logger.error("Unable to set parameter " + key + " for the command " + this.getName());
+                    logger.error("Unable to set parameter " + key + " for the command " + this.getName());
                 }
             }
             this.command = temp;
-            s_logger.info("The command is " + this.command);
+            logger.info("The command is " + this.command);
 
         } else {
             if ((param.get("apikey") == null) || (param.get("secretkey") == null) || (this.isUserCommand == false)) {
@@ -281,7 +282,7 @@ public class ApiCommand {
                     try {
                         temp = temp + "&" + key + "=" + URLEncoder.encode(value, "UTF-8");
                     } catch (Exception ex) {
-                        s_logger.error("Unable to set parameter " + key + " for the command " + this.getName());
+                        logger.error("Unable to set parameter " + key + " for the command " + this.getName());
                     }
                 }
                 this.command = temp;
@@ -303,7 +304,7 @@ public class ApiCommand {
                     try {
                         temp = temp + key + "=" + URLEncoder.encode(value, "UTF-8") + "&";
                     } catch (Exception ex) {
-                        s_logger.error("Unable to set parameter " + value + " for the command " + this.getName());
+                        logger.error("Unable to set parameter " + value + " for the command " + this.getName());
                     }
 
                 }
@@ -314,7 +315,7 @@ public class ApiCommand {
                 try {
                     encodedSignature = URLEncoder.encode(signature, "UTF-8");
                 } catch (Exception ex) {
-                    s_logger.error(ex);
+                    logger.error(ex);
                 }
                 this.command = this.host + ":8080/client/api/?" + temp + "&signature=" + encodedSignature;
             }
@@ -377,12 +378,12 @@ public class ApiCommand {
     // Send api command to the server
     public void sendCommand(HttpClient client, Connection conn) {
         if (TestCaseEngine.s_printUrl == true) {
-            s_logger.info("url is " + this.command);
+            logger.info("url is " + this.command);
         }
 
         if (this.getCommandType() == CommandType.SCRIPT) {
             try {
-                s_logger.info("Executing command " + this.command);
+                logger.info("Executing command " + this.command);
                 Runtime rtime = Runtime.getRuntime();
                 Process child = rtime.exec(this.command);
                 Thread.sleep(10000);
@@ -394,7 +395,7 @@ public class ApiCommand {
                 }
 
             } catch (Exception ex) {
-                s_logger.error("Unable to execute a command " + this.command, ex);
+                logger.error("Unable to execute a command " + this.command, ex);
             }
         } else if (this.getCommandType() == CommandType.MYSQL) {
             try {
@@ -403,7 +404,7 @@ public class ApiCommand {
                 this.responseCode = 200;
             } catch (Exception ex) {
                 this.responseCode = 400;
-                s_logger.error("Unable to execute mysql query " + this.command, ex);
+                logger.error("Unable to execute mysql query " + this.command, ex);
             }
         } else {
             HttpMethod method = new GetMethod(this.command);
@@ -425,7 +426,7 @@ public class ApiCommand {
                         String jobId = jobTag.getTextContent();
                         Element responseBodyAsyncEl = queryAsyncJobResult(jobId);
                         if (responseBodyAsyncEl == null) {
-                            s_logger.error("Can't get a async result");
+                            logger.error("Can't get a async result");
                         } else {
                             this.responseBody = responseBodyAsyncEl;
                             // get status of the job
@@ -441,10 +442,10 @@ public class ApiCommand {
                 }
 
                 if (TestCaseEngine.s_printUrl == true) {
-                    s_logger.info("Response code is " + this.responseCode);
+                    logger.info("Response code is " + this.responseCode);
                 }
             } catch (Exception ex) {
-                s_logger.error("Command " + command + " failed with exception " + ex.getMessage());
+                logger.error("Command " + command + " failed with exception " + ex.getMessage());
             } finally {
                 method.releaseConnection();
             }
@@ -463,7 +464,7 @@ public class ApiCommand {
 
     public boolean setParam(HashMap<String, String> param) {
         if ((this.responseBody == null) && (this.commandType == CommandType.HTTP)) {
-            s_logger.error("Response body is empty");
+            logger.error("Response body is empty");
             return false;
         }
         Boolean result = true;
@@ -483,11 +484,11 @@ public class ApiCommand {
                     if (itemName != null) {
                         param.put(key, itemName);
                     } else {
-                        s_logger.error("Following return parameter is missing: " + value);
+                        logger.error("Following return parameter is missing: " + value);
                         result = false;
                     }
                 } catch (Exception ex) {
-                    s_logger.error("Unable to set parameter " + value, ex);
+                    logger.error("Unable to set parameter " + value, ex);
                 }
             }
         } else if (this.getCommandType() == CommandType.HTTP) {
@@ -510,7 +511,7 @@ public class ApiCommand {
                             }
                         }
                     } else {
-                        s_logger.error("Following return parameter is missing: " + value);
+                        logger.error("Following return parameter is missing: " + value);
                         result = false;
                     }
                 }
@@ -534,7 +535,7 @@ public class ApiCommand {
                                 param.put(key, itemNameElement.getTextContent());
                             }
                         } else {
-                            s_logger.error("Following return parameter is missing: " + value);
+                            logger.error("Following return parameter is missing: " + value);
                             result = false;
                         }
                     }
@@ -560,7 +561,7 @@ public class ApiCommand {
                     String key = (String)me.getKey();
                     String value = (String)me.getValue();
                     if (value == null) {
-                        s_logger.error("Parameter " + key + " is missing in the list of global parameters");
+                        logger.error("Parameter " + key + " is missing in the list of global parameters");
                         return false;
                     }
 
@@ -571,12 +572,12 @@ public class ApiCommand {
                             continue;
                         }
                         if (!(verifyParam.get(key).equals("no value")) && !(itemNameElement.getTextContent().equals(verifyParam.get(key)))) {
-                            s_logger.error("Incorrect value for the following tag: " + key + ". Expected value is " + verifyParam.get(key) + " while actual value is " +
+                            logger.error("Incorrect value for the following tag: " + key + ". Expected value is " + verifyParam.get(key) + " while actual value is " +
                                 itemNameElement.getTextContent());
                             result = false;
                         }
                     } else {
-                        s_logger.error("Following xml element is missing in the response: " + key);
+                        logger.error("Following xml element is missing in the response: " + key);
                         result = false;
                     }
                 }
@@ -597,19 +598,19 @@ public class ApiCommand {
                         String key = (String)me.getKey();
                         String value = (String)me.getValue();
                         if (value == null) {
-                            s_logger.error("Parameter " + key + " is missing in the list of global parameters");
+                            logger.error("Parameter " + key + " is missing in the list of global parameters");
                             return false;
                         }
                         NodeList itemName = fstElmnt.getElementsByTagName(key);
                         if ((itemName.getLength() != 0) && (itemName != null)) {
                             Element itemNameElement = (Element)itemName.item(0);
                             if (!(verifyParam.get(key).equals("no value")) && !(itemNameElement.getTextContent().equals(verifyParam.get(key)))) {
-                                s_logger.error("Incorrect value for the following tag: " + key + ". Expected value is " + verifyParam.get(key) +
+                                logger.error("Incorrect value for the following tag: " + key + ". Expected value is " + verifyParam.get(key) +
                                     " while actual value is " + itemNameElement.getTextContent());
                                 result = false;
                             }
                         } else {
-                            s_logger.error("Following xml element is missing in the response: " + key);
+                            logger.error("Following xml element is missing in the response: " + key);
                             result = false;
                         }
                     }
@@ -624,7 +625,7 @@ public class ApiCommand {
                 String key = (String)me.getKey();
                 String value = (String)me.getValue();
                 if (value == null) {
-                    s_logger.error("Parameter " + key + " is missing in the list of global parameters");
+                    logger.error("Parameter " + key + " is missing in the list of global parameters");
                     return false;
                 }
 
@@ -634,11 +635,11 @@ public class ApiCommand {
                         itemName = this.result.getString(key);
                     }
                 } catch (Exception ex) {
-                    s_logger.error("Unable to get element from result set " + key);
+                    logger.error("Unable to get element from result set " + key);
                 }
 
                 if (!(value.equals("no value")) && !(itemName.equals(verifyParam.get(key)))) {
-                    s_logger.error("Incorrect value for the following tag: " + key + ". Expected value is " + verifyParam.get(key) + " while actual value is " + itemName);
+                    logger.error("Incorrect value for the following tag: " + key + ". Expected value is " + verifyParam.get(key) + " while actual value is " + itemName);
                     result = false;
                 }
             }
@@ -667,7 +668,7 @@ public class ApiCommand {
 
                 // get actual events
                 String url = host + "/?command=listEvents&account=" + account + "&level=" + level + "&domainid=1&pagesize=100";
-                s_logger.info("Getting events with the following url " + url);
+                logger.info("Getting events with the following url " + url);
                 HttpClient client = new HttpClient();
                 HttpMethod method = new GetMethod(url);
                 int responseCode = client.executeMethod(method);
@@ -702,12 +703,12 @@ public class ApiCommand {
                     expected = expectedEvents.get(type);
                     actual = actualEvents.get(type);
                     if (actual == null) {
-                        s_logger.error("Event of type " + type + " and level " + level + " is missing in the listEvents response. Expected number of these events is " +
+                        logger.error("Event of type " + type + " and level " + level + " is missing in the listEvents response. Expected number of these events is " +
                             expected);
                         fail++;
                     } else if (expected.compareTo(actual) != 0) {
                         fail++;
-                        s_logger.info("Amount of events of  " + type + " type and level " + level + " is incorrect. Expected number of these events is " + expected +
+                        logger.info("Amount of events of  " + type + " type and level " + level + " is incorrect. Expected number of these events is " + expected +
                             ", actual number is " + actual);
                     }
                 }
@@ -715,10 +716,10 @@ public class ApiCommand {
                     result = true;
                 }
             } catch (Exception ex) {
-                s_logger.error(ex);
+                logger.error(ex);
             }
         } else {
-            s_logger.info("File " + fileName + " not found");
+            logger.info("File " + fileName + " not found");
         }
         return result;
     }
@@ -749,7 +750,7 @@ public class ApiCommand {
             }
             method.releaseConnection();
         } catch (Exception ex) {
-            s_logger.error(ex);
+            logger.error(ex);
         }
 
         // compare actual events with expected events
@@ -764,11 +765,11 @@ public class ApiCommand {
             expected = expectedEvents.get(type);
             actual = actualEvents.get(type);
             if (actual == null) {
-                s_logger.error("Event of type " + type + " and level " + level + " is missing in the listEvents response. Expected number of these events is " + expected);
+                logger.error("Event of type " + type + " and level " + level + " is missing in the listEvents response. Expected number of these events is " + expected);
                 fail++;
             } else if (expected.compareTo(actual) != 0) {
                 fail++;
-                s_logger.info("Amount of events of  " + type + " type and level " + level + " is incorrect. Expected number of these events is " + expected +
+                logger.info("Amount of events of  " + type + " type and level " + level + " is incorrect. Expected number of these events is " + expected +
                     ", actual number is " + actual);
             }
         }
@@ -802,19 +803,19 @@ public class ApiCommand {
                         try {
                             Thread.sleep(1000);
                         } catch (InterruptedException e) {
-                            s_logger.debug("[ignored] interrupted while during async job result query.");
+                            logger.debug("[ignored] interrupted while during async job result query.");
                         }
                     } else {
                         break;
                     }
                     method.releaseConnection();
                 } else {
-                    s_logger.error("Error during queryJobAsync. Error code is " + code);
+                    logger.error("Error during queryJobAsync. Error code is " + code);
                     this.responseCode = code;
                     return null;
                 }
             } catch (Exception ex) {
-                s_logger.error(ex);
+                logger.error(ex);
             }
         }
         return returnBody;

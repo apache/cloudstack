@@ -22,7 +22,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
 import org.libvirt.StoragePool;
@@ -44,7 +45,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
 public class ManagedNfsStorageAdaptor implements StorageAdaptor {
-    private static final Logger s_logger = Logger.getLogger(ManagedNfsStorageAdaptor.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     private String _mountPoint = "/mnt";
     private StorageLayer _storageLayer;
 
@@ -64,6 +65,9 @@ public class ManagedNfsStorageAdaptor implements StorageAdaptor {
 
         return storagePool;
     }
+
+    @Override
+    public StoragePoolType getStoragePoolType() { return StoragePoolType.ManagedNFS; }
 
     @Override
     public KVMStoragePool getStoragePool(String uuid) {
@@ -109,7 +113,7 @@ public class ManagedNfsStorageAdaptor implements StorageAdaptor {
             spd = new LibvirtStoragePoolDef(PoolType.NETFS, volumeUuid, details.get(DiskTO.UUID), pool.getSourceHost(), details.get(DiskTO.MOUNT_POINT), targetPath);
             _storageLayer.mkdir(targetPath);
 
-            s_logger.debug(spd.toString());
+            logger.debug(spd.toString());
             sp = conn.storagePoolCreateXML(spd.toString(), 0);
 
             if (sp == null) {
@@ -118,7 +122,7 @@ public class ManagedNfsStorageAdaptor implements StorageAdaptor {
 
             try {
                 if (sp.isActive() == 0) {
-                    // s_logger.debug("attempting to activate pool " + name);
+                    // logger.debug("attempting to activate pool " + name);
                     sp.create(0);
                 }
                 // now add the storage pool
@@ -136,25 +140,25 @@ public class ManagedNfsStorageAdaptor implements StorageAdaptor {
                 }
             }
         } catch (LibvirtException e) {
-            s_logger.error(e.toString());
+            logger.error(e.toString());
             // if error is that pool is mounted, try to handle it
             if (e.toString().contains("already mounted")) {
-                s_logger.error("Attempting to unmount old mount libvirt is unaware of at " + targetPath);
+                logger.error("Attempting to unmount old mount libvirt is unaware of at " + targetPath);
                 String result = Script.runSimpleBashScript("umount -l " + targetPath);
                 if (result == null) {
-                    s_logger.error("Succeeded in unmounting " + targetPath);
+                    logger.error("Succeeded in unmounting " + targetPath);
                     try {
                         conn.storagePoolCreateXML(spd.toString(), 0);
-                        s_logger.error("Succeeded in redefining storage");
+                        logger.error("Succeeded in redefining storage");
                         return true;
                     } catch (LibvirtException l) {
-                        s_logger.error("Target was already mounted, unmounted it but failed to redefine storage:" + l);
+                        logger.error("Target was already mounted, unmounted it but failed to redefine storage:" + l);
                     }
                 } else {
-                    s_logger.error("Failed in unmounting and redefining storage");
+                    logger.error("Failed in unmounting and redefining storage");
                 }
             } else {
-                s_logger.error("Internal error occurred when attempting to mount:" + e.getMessage());
+                logger.error("Internal error occurred when attempting to mount:" + e.getMessage());
                 // stacktrace for agent.log
                 e.printStackTrace();
                 throw new CloudRuntimeException(e.toString());
@@ -192,7 +196,7 @@ public class ManagedNfsStorageAdaptor implements StorageAdaptor {
                 volCapacity = poolinfo.available;
 
                 LibvirtStorageVolumeDef volDef = new LibvirtStorageVolumeDef(volumeUuid, volCapacity, libvirtformat, null, null);
-                s_logger.debug(volDef.toString());
+                logger.debug(volDef.toString());
 
                 vol = virtPool.storageVolCreateXML(volDef.toString(), 0);
 
@@ -221,15 +225,15 @@ public class ManagedNfsStorageAdaptor implements StorageAdaptor {
         try {
             vol = pool.storageVolLookupByName(volName);
         } catch (LibvirtException e) {
-            s_logger.debug("Can't find volume: " + e.toString());
+            logger.debug("Can't find volume: " + e.toString());
         }
         if (vol == null) {
             try {
                 refreshPool(pool);
             } catch (LibvirtException e) {
-                s_logger.debug("failed to refresh pool: " + e.toString());
+                logger.debug("failed to refresh pool: " + e.toString());
             }
-            s_logger.debug("no volume is present on the pool, creating a new one");
+            logger.debug("no volume is present on the pool, creating a new one");
         }
         return vol;
     }

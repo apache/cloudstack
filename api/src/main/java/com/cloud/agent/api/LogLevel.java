@@ -23,8 +23,8 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
 
 /**
  */
@@ -41,7 +41,7 @@ public @interface LogLevel {
         }
 
         public boolean enabled(Logger logger) {
-            return _level != Level.OFF && logger.isEnabledFor(_level);
+            return _level != Level.OFF && logger.isEnabled(_level);
         }
     }
 

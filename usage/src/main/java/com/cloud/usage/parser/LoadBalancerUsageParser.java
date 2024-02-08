@@ -25,7 +25,8 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.usage.UsageTypes;
@@ -39,7 +40,7 @@ import com.cloud.utils.Pair;
 
 @Component
 public class LoadBalancerUsageParser {
-    public static final Logger s_logger = Logger.getLogger(LoadBalancerUsageParser.class.getName());
+    protected static Logger LOGGER = LogManager.getLogger(LoadBalancerUsageParser.class);
 
     private static UsageDao s_usageDao;
     private static UsageLoadBalancerPolicyDao s_usageLoadBalancerPolicyDao;
@@ -56,8 +57,8 @@ public class LoadBalancerUsageParser {
     }
 
     public static boolean parse(AccountVO account, Date startDate, Date endDate) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Parsing all LoadBalancerPolicy usage events for account: " + account.getId());
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Parsing all LoadBalancerPolicy usage events for account: " + account.getId());
         }
         if ((endDate == null) || endDate.after(new Date())) {
             endDate = new Date();
@@ -71,7 +72,7 @@ public class LoadBalancerUsageParser {
         List<UsageLoadBalancerPolicyVO> usageLBs = s_usageLoadBalancerPolicyDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate, false, 0);
 
         if (usageLBs.isEmpty()) {
-            s_logger.debug("No load balancer usage events for this period");
+            LOGGER.debug("No load balancer usage events for this period");
             return true;
         }
 
@@ -136,8 +137,8 @@ public class LoadBalancerUsageParser {
 
     private static void createUsageRecord(int type, long runningTime, Date startDate, Date endDate, AccountVO account, long lbId, long zoneId) {
         // Our smallest increment is hourly for now
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Total running time " + runningTime + "ms");
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Total running time " + runningTime + "ms");
         }
 
         float usage = runningTime / 1000f / 60f / 60f;
@@ -145,8 +146,8 @@ public class LoadBalancerUsageParser {
         DecimalFormat dFormat = new DecimalFormat("#.######");
         String usageDisplay = dFormat.format(usage);
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Creating Volume usage record for load balancer: " + lbId + ", usage: " + usageDisplay + ", startDate: " + startDate + ", endDate: " +
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Creating Volume usage record for load balancer: " + lbId + ", usage: " + usageDisplay + ", startDate: " + startDate + ", endDate: " +
                 endDate + ", for account: " + account.getId());
         }
 

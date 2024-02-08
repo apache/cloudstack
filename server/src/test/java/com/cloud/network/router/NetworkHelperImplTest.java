@@ -31,9 +31,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -83,7 +83,7 @@ public class NetworkHelperImplTest {
         nwHelperUT.sendCommandsToRouter(vr, null);
 
         // Assert
-        verify(this.agentManager, times(0)).send((Long) Matchers.anyObject(), (Command) Matchers.anyObject());
+        verify(this.agentManager, times(0)).send((Long) ArgumentMatchers.any(), (Command) ArgumentMatchers.any());
     }
 
     @Test

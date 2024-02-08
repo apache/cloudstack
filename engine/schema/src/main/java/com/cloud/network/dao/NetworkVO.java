@@ -39,7 +39,6 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.NetUtils;
-import org.apache.log4j.Logger;
 
 /**
  * NetworkConfigurationVO contains information about a specific network.
@@ -48,7 +47,6 @@ import org.apache.log4j.Logger;
 @Entity
 @Table(name = "networks")
 public class NetworkVO implements Network {
-    static final Logger s_logger = Logger.getLogger(NetworkVO.class);
     @Id
     @TableGenerator(name = "networks_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value", pkColumnValue = "networks_seq", allocationSize = 1)
     @Column(name = "id")
