@@ -320,6 +320,7 @@ rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/templates/systemvm/md5sum
 # UI
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/ui
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-ui/
+cp -r client/target/classes/META-INF/webapp/WEB-INF ${RPM_BUILD_ROOT}%{_datadir}/%{name}-ui
 cp ui/dist/config.json ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/ui/
 cp -r ui/dist/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-ui/
 rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{name}-ui/config.json
@@ -658,7 +659,7 @@ pip3 install --upgrade urllib3
 
 %files ui
 %config(noreplace) %attr(0640,root,cloud) %{_sysconfdir}/%{name}/ui/config.json
-%attr(0644,root,root) %{_datadir}/%{name}-ui/*
+%{_datadir}/%{name}-ui/*
 %{_defaultdocdir}/%{name}-ui-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-ui-%{version}/NOTICE
 
