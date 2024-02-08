@@ -31,7 +31,8 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import org.apache.cloudstack.network.opendaylight.agent.commands.AddHypervisorCommand;
 import org.apache.cloudstack.network.opendaylight.agent.commands.ConfigureNetworkCommand;
@@ -71,7 +72,7 @@ import com.cloud.host.Host.Type;
 import com.cloud.resource.ServerResource;
 
 public class OpenDaylightControllerResource implements ServerResource {
-    private static final Logger s_logger = Logger.getLogger(OpenDaylightControllerResource.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     private Map<String, Object> configuration = new HashMap<String, Object>();
 
     private URL controllerUrl;
@@ -182,7 +183,7 @@ public class OpenDaylightControllerResource implements ServerResource {
 
     @Override
     public void disconnected() {
-        s_logger.warn("OpenDaylightControllerResource is disconnected from the controller at " + controllerUrl);
+        logger.warn("OpenDaylightControllerResource is disconnected from the controller at " + controllerUrl);
 
     }
 
@@ -225,7 +226,7 @@ public class OpenDaylightControllerResource implements ServerResource {
                 break;
             }
         } catch (NeutronRestApiException e) {
-            s_logger.error("Failed to list existing networks on the ODL Controller", e);
+            logger.error("Failed to list existing networks on the ODL Controller", e);
             return new ConfigureNetworkAnswer(cmd, e);
         }
 
@@ -246,7 +247,7 @@ public class OpenDaylightControllerResource implements ServerResource {
         try {
             wrapper = configureNetwork.createNeutronNetwork(wrapper);
         } catch (NeutronRestApiException e) {
-            s_logger.error("createNeutronNetwork failed", e);
+            logger.error("createNeutronNetwork failed", e);
             return new ConfigureNetworkAnswer(cmd, e);
         }
 
@@ -258,7 +259,7 @@ public class OpenDaylightControllerResource implements ServerResource {
         try {
             configureNetwork.deleteNeutronNetwork(cmd.getNetworkUuid());
         } catch (NeutronRestApiException e) {
-            s_logger.error("deleteNeutronNetwork failed", e);
+            logger.error("deleteNeutronNetwork failed", e);
             return new DestroyNetworkAnswer(cmd, e);
         }
 
@@ -287,7 +288,7 @@ public class OpenDaylightControllerResource implements ServerResource {
         try {
             portWrapper = configurePort.createNeutronPort(portWrapper);
         } catch (NeutronRestApiException e) {
-            s_logger.error("createPortCommand failed", e);
+            logger.error("createPortCommand failed", e);
             return new ConfigurePortAnswer(cmd, e);
         }
 
@@ -300,7 +301,7 @@ public class OpenDaylightControllerResource implements ServerResource {
         try {
             configurePort.deleteNeutronPort(cmd.getPortId().toString());
         } catch (NeutronRestApiException e) {
-            s_logger.error("deleteNeutronPort failed", e);
+            logger.error("deleteNeutronPort failed", e);
             return new DestroyPortAnswer(cmd, e);
         }
 
@@ -323,7 +324,7 @@ public class OpenDaylightControllerResource implements ServerResource {
             // Not found in the existing node list, add it
             nodeActions.updateNeutronNodeV2("OVS", cmd.getHostId(), cmd.getIpAddress(), 6640);
         } catch (NeutronRestApiException e) {
-            s_logger.error("Call to OpenDaylight failed", e);
+            logger.error("Call to OpenDaylight failed", e);
             return new AddHypervisorAnswer(cmd, e);
         }
         return new AddHypervisorAnswer(cmd, true, "Hypervisor " + cmd.getHostId() + " added");

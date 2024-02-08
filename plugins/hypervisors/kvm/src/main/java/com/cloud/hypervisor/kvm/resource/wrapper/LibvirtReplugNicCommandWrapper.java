@@ -19,7 +19,6 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.LibvirtException;
@@ -38,7 +37,6 @@ import com.cloud.resource.ResourceWrapper;
 @ResourceWrapper(handles =  ReplugNicCommand.class)
 public final class LibvirtReplugNicCommandWrapper extends CommandWrapper<ReplugNicCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtReplugNicCommandWrapper.class);
     public enum DomainAffect {
         CURRENT(0), LIVE(1), CONFIG(2), BOTH(3);
 
@@ -78,15 +76,15 @@ public final class LibvirtReplugNicCommandWrapper extends CommandWrapper<ReplugN
             int i = 0;
             do {
                 i++;
-                s_logger.debug("ReplugNic: Detaching interface" + oldPluggedNic + " (Attempt: " + i + ")");
+                logger.debug("ReplugNic: Detaching interface" + oldPluggedNic + " (Attempt: " + i + ")");
                 vm.detachDevice(oldPluggedNic.toString());
             } while (findPluggedNic(libvirtComputingResource, nic, vmName, conn) != null && i <= 10);
 
-            s_logger.debug("ReplugNic: Attaching interface" + interfaceDef);
+            logger.debug("ReplugNic: Attaching interface" + interfaceDef);
             vm.attachDevice(interfaceDef.toString());
 
             interfaceDef.setLinkStateUp(true);
-            s_logger.debug("ReplugNic: Updating interface" + interfaceDef);
+            logger.debug("ReplugNic: Updating interface" + interfaceDef);
             vm.updateDeviceFlags(interfaceDef.toString(), DomainAffect.LIVE.getValue());
 
             // We don't know which "traffic type" is associated with
@@ -98,14 +96,14 @@ public final class LibvirtReplugNicCommandWrapper extends CommandWrapper<ReplugN
             return new ReplugNicAnswer(command, true, "success");
         } catch (final LibvirtException | InternalErrorException e) {
             final String msg = " Plug Nic failed due to " + e.toString();
-            s_logger.warn(msg, e);
+            logger.warn(msg, e);
             return new ReplugNicAnswer(command, false, msg);
         } finally {
             if (vm != null) {
                 try {
                     vm.free();
                 } catch (final LibvirtException l) {
-                    s_logger.trace("Ignoring libvirt error.", l);
+                    logger.trace("Ignoring libvirt error.", l);
                 }
             }
         }

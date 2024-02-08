@@ -26,7 +26,8 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
@@ -73,7 +74,7 @@ import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycle {
-    private static final Logger LOGGER = Logger.getLogger(SolidFireSharedPrimaryDataStoreLifeCycle.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject private AccountDao accountDao;
     @Inject private AccountDetailsDao accountDetailsDao;
@@ -183,7 +184,7 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
                 lMinIops = Long.parseLong(minIops);
             }
         } catch (Exception ex) {
-            LOGGER.info("[ignored] error getting Min IOPS: " + ex.getLocalizedMessage());
+            logger.info("[ignored] error getting Min IOPS: " + ex.getLocalizedMessage());
         }
 
         try {
@@ -193,7 +194,7 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
                 lMaxIops = Long.parseLong(maxIops);
             }
         } catch (Exception ex) {
-            LOGGER.info("[ignored] error getting Max IOPS: " + ex.getLocalizedMessage());
+            logger.info("[ignored] error getting Max IOPS: " + ex.getLocalizedMessage());
         }
 
         try {
@@ -203,7 +204,7 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
                 lBurstIops = Long.parseLong(burstIops);
             }
         } catch (Exception ex) {
-            LOGGER.info("[ignored] error getting Burst IOPS: " + ex.getLocalizedMessage());
+            logger.info("[ignored] error getting Burst IOPS: " + ex.getLocalizedMessage());
         }
 
         if (lMinIops > lMaxIops) {
@@ -272,7 +273,7 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
         if (!lock.lock(SolidFireUtil.LOCK_TIME_IN_SECONDS)) {
             String errMsg = "Couldn't lock the DB on the following string: " + cluster.getUuid();
 
-            LOGGER.debug(errMsg);
+            logger.debug(errMsg);
 
             throw new CloudRuntimeException(errMsg);
         }
@@ -418,12 +419,12 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
 
                 poolHosts.add(host);
             } catch (Exception e) {
-                LOGGER.warn("Unable to establish a connection between " + host + " and " + primaryDataStoreInfo, e);
+                logger.warn("Unable to establish a connection between " + host + " and " + primaryDataStoreInfo, e);
             }
         }
 
         if (poolHosts.isEmpty()) {
-            LOGGER.warn("No host can access storage pool '" + primaryDataStoreInfo + "' on cluster '" + primaryDataStoreInfo.getClusterId() + "'.");
+            logger.warn("No host can access storage pool '" + primaryDataStoreInfo + "' on cluster '" + primaryDataStoreInfo.getClusterId() + "'.");
 
             primaryDataStoreDao.expunge(primaryDataStoreInfo.getId());
 
@@ -479,7 +480,7 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
                 msg = "Cannot create storage pool through host '" + hostId + "' due to CreateStoragePoolCommand returns null";
             }
 
-            LOGGER.warn(msg);
+            logger.warn(msg);
 
             throw new CloudRuntimeException(msg);
         }
@@ -562,7 +563,7 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
             final Answer answer = agentMgr.easySend(host.getHostId(), deleteCmd);
 
             if (answer != null && answer.getResult()) {
-                LOGGER.info("Successfully deleted storage pool using Host ID " + host.getHostId());
+                logger.info("Successfully deleted storage pool using Host ID " + host.getHostId());
 
                 HostVO hostVO = hostDao.findById(host.getHostId());
 
@@ -575,10 +576,10 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
             }
             else {
                 if (answer != null) {
-                    LOGGER.error("Failed to delete storage pool using Host ID " + host.getHostId() + ": " + answer.getResult());
+                    logger.error("Failed to delete storage pool using Host ID " + host.getHostId() + ": " + answer.getResult());
                 }
                 else {
-                    LOGGER.error("Failed to delete storage pool using Host ID " + host.getHostId());
+                    logger.error("Failed to delete storage pool using Host ID " + host.getHostId());
                 }
             }
         }
@@ -591,7 +592,7 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
             if (!lock.lock(SolidFireUtil.LOCK_TIME_IN_SECONDS)) {
                 String errMsg = "Couldn't lock the DB on the following string: " + cluster.getUuid();
 
-                LOGGER.debug(errMsg);
+                logger.debug(errMsg);
 
                 throw new CloudRuntimeException(errMsg);
             }
@@ -660,12 +661,12 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
         if (answer == null) {
             String msg = "Unable to get an answer to the modify targets command";
 
-            LOGGER.warn(msg);
+            logger.warn(msg);
         }
         else if (!answer.getResult()) {
             String msg = "Unable to modify target on the following host: " + hostId;
 
-            LOGGER.warn(msg);
+            logger.warn(msg);
         }
     }
 

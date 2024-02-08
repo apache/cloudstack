@@ -23,7 +23,7 @@ import java.sql.Connection;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class Upgrade441to442 implements DbUpgrade {
+public class Upgrade441to442 extends DbUpgradeAbstractImpl {
 
     @Override
     public String[] getUpgradableVersionRange() {

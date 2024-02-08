@@ -23,7 +23,6 @@ import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.response.ObjectStoreResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.object.ObjectStore;
-import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -36,7 +35,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 import static org.mockito.ArgumentMatchers.any;
 
 public class UpdateObjectStoragePoolCmdTest {
-    public static final Logger s_logger = Logger.getLogger(UpdateObjectStoragePoolCmdTest.class.getName());
 
     @Mock
     private StorageService storageService;

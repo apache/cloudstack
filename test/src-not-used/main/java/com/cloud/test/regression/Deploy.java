@@ -22,13 +22,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 public class Deploy extends TestCase {
-    public static final Logger s_logger = Logger.getLogger(Deploy.class.getName());
 
     public Deploy() {
         this.setClient();
@@ -55,9 +53,9 @@ public class Deploy extends TestCase {
             //verify the response of the command
             if (api.getResponseCode() != 200) {
                 error++;
-                s_logger.error("The command " + api.getUrl() + " failed");
+                logger.error("The command " + api.getUrl() + " failed");
             } else {
-                s_logger.info("The command " + api.getUrl() + " passsed");
+                logger.info("The command " + api.getUrl() + " passsed");
             }
         }
         if (error != 0)
@@ -94,14 +92,14 @@ public class Deploy extends TestCase {
         deploy.getParam().put("apicommands", "../metadata/func/commands");
         deploy.setCommands();
 
-        s_logger.info("Starting deployment against host " + host);
+        logger.info("Starting deployment against host " + host);
 
         boolean result = deploy.executeTest();
         if (result == false) {
-            s_logger.error("DEPLOYMENT FAILED");
+            logger.error("DEPLOYMENT FAILED");
             System.exit(1);
         } else {
-            s_logger.info("DEPLOYMENT IS SUCCESSFUL");
+            logger.info("DEPLOYMENT IS SUCCESSFUL");
         }
 
     }

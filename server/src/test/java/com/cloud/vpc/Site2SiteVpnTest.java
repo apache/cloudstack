@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.vpc;
 
-import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,7 +26,6 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = "classpath:/VpcTestContext.xml")
 public class Site2SiteVpnTest {
-    private final static Logger s_logger = Logger.getLogger(Site2SiteVpnTest.class);
 
 //    private static void addDaos(MockComponentLocator locator) {
 //        locator.addDao("AccountDao", AccountDaoImpl.class);
@@ -51,7 +49,7 @@ public class Site2SiteVpnTest {
 //        locator = new MockComponentLocator("management-server");
 //        addDaos(locator);
 //        addManagers(locator);
-//        s_logger.info("Finished setUp");
+//        logger.info("Finished setUp");
     }
 
     @After
@@ -64,11 +62,11 @@ public class Site2SiteVpnTest {
 //                new ArrayList<Pair<String, Class<? extends Site2SiteVpnServiceProvider>>>();
 //        list.add(new Pair<String, Class<? extends Site2SiteVpnServiceProvider>>("Site2SiteVpnServiceProvider", MockSite2SiteVpnServiceProvider.class));
 //        locator.addAdapterChain(Site2SiteVpnServiceProvider.class, list);
-//        s_logger.info("Finished add adapter");
+//        logger.info("Finished add adapter");
 //        locator.makeActive(new DefaultInterceptorLibrary());
-//        s_logger.info("Finished make active");
+//        logger.info("Finished make active");
 //        Site2SiteVpnManagerImpl vpnMgr = ComponentLocator.inject(Site2SiteVpnManagerImpl.class);
-//        s_logger.info("Finished inject");
+//        logger.info("Finished inject");
 //        Assert.assertTrue(vpnMgr.configure("Site2SiteVpnMgr",new HashMap<String, Object>()) );
 //        Assert.assertTrue(vpnMgr.start());
 

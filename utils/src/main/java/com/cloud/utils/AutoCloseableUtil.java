@@ -16,10 +16,11 @@
 // under the License.
 package com.cloud.utils;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class AutoCloseableUtil {
-    private final static Logger s_logger = Logger.getLogger(AutoCloseableUtil.class);
+    protected static Logger LOGGER = LogManager.getLogger(AutoCloseableUtil.class);
 
     public static void closeAutoCloseable(AutoCloseable ac, String message) {
         try {
@@ -29,7 +30,7 @@ public class AutoCloseableUtil {
             }
 
         } catch (Exception e) {
-            s_logger.warn("[ignored] " + message, e);
+            LOGGER.warn("[ignored] " + message, e);
         }
     }
 

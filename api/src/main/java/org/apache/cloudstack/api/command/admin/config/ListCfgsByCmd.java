@@ -23,7 +23,6 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -47,7 +46,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class ListCfgsByCmd extends BaseListCmd {
 
     public static final String APINAME = "listConfigurations";
-    public static final Logger s_logger = Logger.getLogger(ListCfgsByCmd.class.getName());
 
 
     // ///////////////////////////////////////////////////

@@ -22,7 +22,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -74,7 +73,6 @@ import com.cloud.vm.dao.NicIpAliasVO;
 @Component
 public class BasicNetworkVisitor extends NetworkTopologyVisitor {
 
-    private static final Logger s_logger = Logger.getLogger(BasicNetworkVisitor.class);
 
     @Autowired
     @Qualifier("networkHelper")
@@ -157,7 +155,7 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
             return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
 
         }
-        s_logger.warn("Unable to apply rules of purpose: " + rules.get(0).getPurpose());
+        logger.warn("Unable to apply rules of purpose: " + rules.get(0).getPurpose());
 
         return false;
     }
