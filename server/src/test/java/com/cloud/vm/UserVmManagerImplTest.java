@@ -16,15 +16,38 @@
 // under the License.
 package com.cloud.vm;
 
+import com.cloud.dc.dao.DedicatedResourceDao;
+import com.cloud.event.UsageEventUtils;
+import com.cloud.event.dao.UsageEventDao;
+import com.cloud.network.Network;
+import com.cloud.network.dao.NetworkDaoImpl;
+import com.cloud.network.vpc.VpcManager;
+import com.cloud.offering.DiskOffering;
+import com.cloud.offering.NetworkOffering;
+import com.cloud.org.Grouping;
+import com.cloud.resourcelimit.CheckedReservation;
+import com.cloud.storage.GuestOSCategoryVO;
+import com.cloud.storage.Storage;
+import com.cloud.storage.StoragePoolStatus;
+import com.cloud.storage.VMTemplateZoneVO;
+import com.cloud.storage.Volume;
+import com.cloud.storage.dao.GuestOSCategoryDao;
+import com.cloud.storage.dao.VMTemplateZoneDao;
+import com.cloud.storage.dao.VolumeDao;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
@@ -32,10 +55,23 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.user.UserData;
+import com.cloud.user.UserDataVO;
+import com.cloud.user.dao.UserDao;
+import com.cloud.user.dao.UserDataDao;
+import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.UUIDManager;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.exception.ExceptionProxyObject;
+import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
 import org.apache.cloudstack.api.command.user.vm.ResetVMUserDataCmd;
@@ -44,6 +80,10 @@ import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.engine.service.api.OrchestrationService;
+import org.apache.cloudstack.reservation.ReservationVO;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.userdata.UserDataManager;
 import org.junit.After;
 import org.junit.Assert;
@@ -53,9 +93,11 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.configuration.Resource;
@@ -80,36 +122,29 @@ import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
-import com.cloud.user.UserData;
-import com.cloud.user.UserDataVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.user.dao.UserDao;
-import com.cloud.user.dao.UserDataDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.db.EntityManager;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
-@RunWith(MockitoJUnitRunner.class)
+@PrepareForTest({GlobalLock.class, CallContext.class, UsageEventUtils.class})
+@RunWith(PowerMockRunner.class)
 public class UserVmManagerImplTest {
 
     @Spy
@@ -217,6 +252,43 @@ public class UserVmManagerImplTest {
     @Mock
     UserDataManager userDataManager;
 
+    @Mock
+    private OrchestrationService orchestrationService;
+
+    @Mock
+    private VpcManager vpcMgr;
+
+    @Mock
+    private NetworkDaoImpl networkDao;
+
+    @Mock
+    private DedicatedResourceDao dedicatedDao;
+
+    @Mock
+    private GlobalLock quotaLimitLock;
+
+    @Mock
+    private ReservationDao reservationDao;
+
+    @Mock
+    private PrimaryDataStoreDao storagePoolDao;
+
+    @Mock
+    private VMTemplateZoneDao templateZoneDao;
+
+    @Mock
+    private UUIDManager uuidManager;
+
+    @Mock
+    private VMInstanceDao vmInstanceDao;
+
+    @Mock
+    private GuestOSCategoryDao guestOSCategoryDao;
+
+    @Mock
+    private UsageEventDao usageEventDao;
+
+
     private static final long vmId = 1l;
     private static final long zoneId = 2L;
     private static final long accountId = 3L;
@@ -232,7 +304,10 @@ public class UserVmManagerImplTest {
     @Before
     public void beforeTest() {
 
+        MockitoAnnotations.initMocks(this);
+
         Mockito.when(updateVmCommand.getId()).thenReturn(vmId);
+
 
         when(_dcDao.findById(anyLong())).thenReturn(_dcMock);
 
@@ -949,6 +1024,157 @@ public class UserVmManagerImplTest {
         userVmManagerImpl.updateVncPasswordIfItHasChanged(vncPassword, newPassword, virtualMachineProfile);
         Mockito.verify(userVmDao).findById(vmId);
         Mockito.verify(userVmDao).update(vmId, userVmVoMock);
+    }
+
+    @Test
+    public void vmCreateExceptionVmIdPropagation() throws InsufficientCapacityException, ResourceAllocationException {
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        long id = 7L;
+        long zoneId = 2L;
+        long accountId = 5L;
+        Long diskOfferingId = 4L;
+        Long diskSize = 1024L;
+        long userId = 6L;
+        Long networkId = 15L;
+        Long volumeSize = 2048L;
+        long guestOsId = 16L;
+        long templateId = 17L;
+        long reservationId = 17l;
+        long guestOSCategoryId = 18l;
+        Integer cpuSize = 8;
+        Integer ramSize = 1024;
+        Integer cpuSpeed = 100;
+
+        String uuid = "uuid";
+        String hostName = "test";
+        String displayName = "testDisplayName";
+        String instanceName = "testInstanceName";
+        String uuidName = "testUuidName";
+        String vmType = "testVmType";
+        String base64UserData = "testUserData";
+        vm.setUuid(uuid);
+        DataCenter zone = Mockito.mock(DataCenter.class);
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        Account owner = Mockito.mock(Account.class);
+        when(owner.getAccountId()).thenReturn(accountId);
+        String userData = null;
+        Long userDataId = null;
+        String userDataDetails = null;
+        Boolean isDisplayVm = false;
+        String keyboard = null;
+
+        Long rootDiskOfferingId = diskOfferingId;
+        String sshkeypairs = null;
+        Long overrideDiskOfferingId = diskOfferingId;
+        ServiceOffering offering = Mockito.mock(ServiceOffering.class);
+        boolean isIso = false;
+        String sshPublicKeys = null;
+        resourceLimitMgr = Mockito.mock(ResourceLimitService.class);
+        when(template.getId()).thenReturn(templateId);
+        LinkedHashMap<String, List<NicProfile>> networkNicMap = new LinkedHashMap<String, List<NicProfile>>();
+
+        Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType.KVM;
+        Map<String, String> customParameters = null;
+        Map<String, Map<Integer, String>> extraDhcpOptionMap = null;
+        Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap = null;
+        Map<String, String> userVmOVFPropertiesMap = null;
+        VirtualMachine.PowerState powerState = VirtualMachine.PowerState.PowerOn;
+        boolean dynamicScalingEnabled = false;
+        List<Long> networkIdList = Arrays.asList(networkId);
+        List<String> keypairs = new ArrayList<String>();
+        Network.IpAddresses addrs = new Network.IpAddresses(null, null);
+        NetworkVO network = Mockito.mock(NetworkVO.class);
+        NetworkOffering networkOffering = Mockito.mock(NetworkOffering.class);
+        DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
+        when(diskOffering.getDiskSize()).thenReturn(volumeSize);
+        customParameters = Mockito.mock(HashMap.class);
+        ReservationVO reservationVO = Mockito.mock(ReservationVO.class);
+        when(customParameters.containsKey(VmDetailConstants.ROOT_DISK_SIZE)).thenReturn(Boolean.FALSE);
+
+        when(vpcMgr.getSupportedVpcHypervisors()).thenReturn(Arrays.asList(Hypervisor.HypervisorType.KVM));
+        when(_networkDao.findById(networkId)).thenReturn(network);
+        when(network.getVpcId()).thenReturn(null);
+        when(entityManager.findById(NetworkOffering.class, network.getNetworkOfferingId())).thenReturn(networkOffering);
+        when(networkOffering.isSystemOnly()).thenReturn(Boolean.FALSE);
+        when(owner.getState()).thenReturn(Account.State.ENABLED);
+        when(templateDao.findById(template.getId())).thenReturn((VMTemplateVO) template);
+        when(template.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        when(owner.getId()).thenReturn(accountId);
+        when(zone.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
+        when(accountManager.isRootAdmin(accountId)).thenReturn(Boolean.FALSE);
+        when(dedicatedDao.findByZoneId(zone.getId())).thenReturn(null);
+        when(_serviceOfferingDao.findById(serviceOffering.getId())).thenReturn(serviceOffering);
+        when(serviceOffering.isDynamic()).thenReturn(Boolean.FALSE);
+        when(serviceOffering.getCpu()).thenReturn(cpuSize);
+        when(serviceOffering.getRamSize()).thenReturn(ramSize);
+        when(serviceOffering.getSpeed()).thenReturn(cpuSpeed);
+        when(template.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+        when(serviceOffering.getDiskOfferingId()).thenReturn(diskOfferingId);
+        when(diskOfferingDao.findById(diskOfferingId)).thenReturn(diskOffering);
+        Mockito.doNothing().when(userVmManagerImpl).verifyIfHypervisorSupportsRootdiskSizeOverride(any());
+        when(userVmManagerImpl.configureCustomRootDiskSize(customParameters, template, Hypervisor.HypervisorType.KVM, diskOffering)).thenReturn(volumeSize);
+        when(diskOffering.getEncrypt()).thenReturn(Boolean.FALSE);
+        when(diskOffering.isCustomized()).thenReturn(Boolean.FALSE);
+        when(diskOffering.getDiskSize()).thenReturn(diskSize);
+        CheckedReservation checkedReservation = Mockito.mock(CheckedReservation.class);
+        PowerMockito.mockStatic(GlobalLock.class);
+        GlobalLock lock = PowerMockito.mock(GlobalLock.class);
+        PowerMockito.when(GlobalLock.getInternLock(anyString())).thenReturn(lock);
+        when(storagePoolDao.countPoolsByStatus(StoragePoolStatus.Up)).thenReturn(2l);
+        when(template.getTemplateType()).thenReturn(Storage.TemplateType.USER);
+        VMTemplateZoneVO templateZoneVO = Mockito.mock(VMTemplateZoneVO.class);
+        List<VMTemplateZoneVO> listZoneTemplate = Arrays.asList(templateZoneVO);
+        when(templateZoneDao.listByZoneTemplate(zone.getId(), template.getId())).thenReturn(listZoneTemplate);
+        when(userVmDao.getNextInSequence(any(), anyString())).thenReturn(id);
+        when(uuidManager.generateUuid(UserVm.class, null)).thenReturn(uuid);
+        when(vmInstanceDao.findVMByInstanceName(anyString())).thenReturn(null);
+        PowerMockito.mockStatic(CallContext.class);
+        CallContext callContext = Mockito.mock(CallContext.class);
+        PowerMockito.when(CallContext.current()).thenReturn(callContext);
+        when(callContext.getCallingAccount()).thenReturn(owner);
+        when(template.getGuestOSId()).thenReturn(guestOsId);
+        GuestOSVO guestOSVO = Mockito.mock(GuestOSVO.class);
+        when(guestOSDao.findById(guestOsId)).thenReturn(guestOSVO);
+        when(guestOSVO.getCategoryId()).thenReturn(guestOSCategoryId);
+        GuestOSCategoryVO guestOSCategoryVO = Mockito.mock(GuestOSCategoryVO.class);
+        when(guestOSCategoryDao.findById(guestOSCategoryId)).thenReturn(guestOSCategoryVO);
+        try {
+            PowerMockito.whenNew(CheckedReservation.class).withAnyArguments().thenReturn(checkedReservation);
+        } catch (Exception e) {
+
+        }
+        Mockito.doReturn(Boolean.TRUE).when(quotaLimitLock).lock(120);
+        Mockito.doReturn(Boolean.TRUE).when(lock).lock(120);
+        //when(quotaLimitLock.lock(120)).thenReturn(Boolean.TRUE);
+        Mockito.doNothing().when(resourceLimitMgr).checkResourceLimit(any(), any(), any());
+        when(reservationDao.persist(any())).thenReturn(reservationVO);
+        when(reservationVO.getId()).thenReturn(reservationId);
+        when(serviceOffering.isDynamic()).thenReturn(Boolean.FALSE);
+        PowerMockito.mockStatic(UsageEventUtils.class);
+        UsageEventUtils usageEventUtils = Mockito.mock(UsageEventUtils.class);
+
+        CloudRuntimeException cre = new CloudRuntimeException("Error and CloudRuntimeException is thrown");
+        Mockito.doThrow(new CloudRuntimeException("Error and CloudRuntimeException is thrown")).when(orchestrationService).createVirtualMachine(anyString(), anyString(), anyString(), anyString(), anyString(), anyString(),
+                anyInt(), anyInt(), anyInt(), nullable(Long.class), any(), any(), any(), any(), nullable(Long.class), nullable(Map.class),
+                nullable(Map.class), nullable(Long.class), nullable(Long.class));
+
+        Mockito.doThrow(new CloudRuntimeException("Error and CloudRuntimeException is thrown")).doNothing().when(userVmManagerImpl).resourceCountIncrement(5, null, serviceOffering, template);
+        Mockito.doThrow(new CloudRuntimeException("Error and CloudRuntimeException is thrown")).doNothing().when(resourceLimitMgr).incrementResourceCount(anyLong(), any(Resource.ResourceType.class), any());
+        willThrow(new CloudRuntimeException("Error and CloudRuntimeException is thrown")).given(resourceLimitMgr).incrementResourceCount(anyLong(), any(Resource.ResourceType.class), any(), any());
+
+        try {
+            UserVm vmCreated = userVmManagerImpl.createAdvancedVirtualMachine(zone, serviceOffering, template, networkIdList, owner,
+                    hostName, hostName, null, null, null,
+                    Hypervisor.HypervisorType.KVM, BaseCmd.HTTPMethod.POST, base64UserData, null, null, keypairs,
+                    null, addrs, null, null, null, customParameters, null, null, null, null, true, UserVmManager.CKS_NODE, null);
+        } catch (CloudRuntimeException crException) {
+            ArrayList<ExceptionProxyObject> proxyIdList = crException.getIdProxyList();
+            assertNotNull(proxyIdList != null);
+            assertTrue(proxyIdList.stream().anyMatch(p -> p.getUuid().equals(uuid)));
+
+        } catch (Exception e) {
+            fail("No Exception is expected");
+        }
     }
 
     @Test(expected = InvalidParameterValueException.class)
