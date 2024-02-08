@@ -17,20 +17,10 @@
 
 package com.cloud.hypervisor.kvm.storage;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.withSettings;
-
-import java.io.File;
-import java.io.FileFilter;
-import java.util.HashMap;
-import java.util.Map;
-
+import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.OutputInterpreter;
+import com.cloud.utils.script.Script;
 import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClient;
 import org.apache.cloudstack.storage.datastore.util.ScaleIOUtil;
 import org.apache.cloudstack.utils.qemu.QemuImg;
@@ -47,22 +37,29 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.OutputInterpreter;
-import com.cloud.utils.script.Script;
+import java.io.File;
+import java.io.FileFilter;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ScaleIOStoragePoolTest {
-    StorageAdaptor adapter;
-    Map<String,String> details;
-
+    private static MockedStatic<Script> mockedScript;
     final String uuid = "345fc603-2d7e-47d2-b719-a0110b3732e6";
     final String systemId = "218ce1797566a00f";
     final String sdcId = "301b852c00000003";
     final StoragePoolType type = StoragePoolType.PowerFlex;
-
-    private static MockedStatic<Script> mockedScript;
+    StorageAdaptor adapter;
+    Map<String, String> details;
 
     @Before
     public void setUp() {
@@ -77,7 +74,7 @@ public class ScaleIOStoragePoolTest {
         mockedScript.close();
     }
 
-    @Test (expected = CloudRuntimeException.class)
+    @Test(expected = CloudRuntimeException.class)
     public void testAddSDCDetailsFailure() {
         new ScaleIOStoragePool(uuid, "192.168.1.19", 443, "a519be2f00000000", type, details, adapter);
     }
@@ -162,32 +159,23 @@ public class ScaleIOStoragePoolTest {
         try (MockedConstruction<QemuImg> ignored = Mockito.mockConstruction(QemuImg.class, (mockQemuImg, contextQemuImg) -> {
             Map<String, String> details = new HashMap<>();
             Mockito.doReturn(details).when(mockQemuImg).info(any(QemuImgFile.class));
+        }); MockedConstruction<File> ignored1 = Mockito.mockConstruction(File.class, (mockFile, contextFile) -> {
+            File[] files = new File[1];
+            String volumeId = ScaleIOUtil.getVolumePath(volumePath);
+            String diskFilePath = ScaleIOUtil.DISK_PATH + File.separator + ScaleIOUtil.DISK_NAME_PREFIX + systemId + "-" + volumeId;
+            files[0] = new File(diskFilePath);
+            Mockito.when(mockFile.listFiles(any(FileFilter.class))).thenReturn(files);
+        }); MockedConstruction<WildcardFileFilter> ignored2 = Mockito.mockConstruction(WildcardFileFilter.class); MockedConstruction<Script> ignored3 = Mockito.mockConstruction(Script.class, (mockScript, contextScript) -> {
+            Mockito.doReturn(null).when(mockScript).execute(any(OutputInterpreter.class));
+        }); MockedConstruction<OutputInterpreter.OneLineParser> ignored4 = Mockito.mockConstruction(OutputInterpreter.OneLineParser.class, withSettings().spiedInstance(spyParser), (mockParser, contextParser) -> {
+            Mockito.doReturn("8192").when(mockParser).getLine();
         })) {
-            try (MockedConstruction<File> ignored1 = Mockito.mockConstruction(File.class, (mockFile, contextFile) -> {
-                File[] files = new File[1];
-                String volumeId = ScaleIOUtil.getVolumePath(volumePath);
-                String diskFilePath = ScaleIOUtil.DISK_PATH + File.separator + ScaleIOUtil.DISK_NAME_PREFIX + systemId + "-" + volumeId;
-                files[0] = new File(diskFilePath);
-                Mockito.when(mockFile.listFiles(any(FileFilter.class))).thenReturn(files);
-            })) {
-                try (MockedConstruction<WildcardFileFilter> ignored2 = Mockito.mockConstruction(WildcardFileFilter.class, (mockFileFilter, contextFileFilter) -> {
-                })) {
-                    try (MockedConstruction<Script> ignored3 = Mockito.mockConstruction(Script.class, (mockScript, contextScript) -> {
-                        Mockito.doReturn(null).when(mockScript).execute(any(OutputInterpreter.class));
-                    })) {
-                        try (MockedConstruction<OutputInterpreter.OneLineParser> ignored4 = Mockito.mockConstruction(OutputInterpreter.OneLineParser.class, withSettings().spiedInstance(spyParser), (mockParser, contextParser) -> {
-                            Mockito.doReturn("8192").when(mockParser).getLine();
-                        })) {
-                            KVMPhysicalDisk disk = adapter.getPhysicalDisk(volumePath, pool);
-                            assertNotNull(disk);
-                            assertEquals("/dev/disk/by-id/emc-vol-" + systemId + "-6c3362b500000001", disk.getPath());
-                            assertEquals(QemuImg.PhysicalDiskFormat.RAW, disk.getFormat());
-                            assertEquals(8192, disk.getSize());
-                            assertEquals(8192, disk.getVirtualSize());
-                        }
-                    }
-                }
-            }
+            KVMPhysicalDisk disk = adapter.getPhysicalDisk(volumePath, pool);
+            assertNotNull(disk);
+            assertEquals("/dev/disk/by-id/emc-vol-" + systemId + "-6c3362b500000001", disk.getPath());
+            assertEquals(PhysicalDiskFormat.RAW, disk.getFormat());
+            assertEquals(8192, disk.getSize());
+            assertEquals(8192, disk.getVirtualSize());
         }
     }
 
@@ -201,34 +189,25 @@ public class ScaleIOStoragePoolTest {
         try (MockedConstruction<QemuImg> ignored = Mockito.mockConstruction(QemuImg.class, (mockQemuImg, contextQemuImg) -> {
             Map<String, String> details = new HashMap<>();
             details.put(QemuImg.VIRTUAL_SIZE, "16384");
-            details.put(QemuImg.FILE_FORMAT, QemuImg.PhysicalDiskFormat.QCOW2.toString());
+            details.put(QemuImg.FILE_FORMAT, PhysicalDiskFormat.QCOW2.toString());
             Mockito.doReturn(details).when(mockQemuImg).info(any(QemuImgFile.class));
+        }); MockedConstruction<File> ignored1 = Mockito.mockConstruction(File.class, (mockFile, contextFile) -> {
+            File[] files = new File[1];
+            String volumeId = ScaleIOUtil.getVolumePath(volumePath);
+            String diskFilePath = ScaleIOUtil.DISK_PATH + File.separator + ScaleIOUtil.DISK_NAME_PREFIX + systemId + "-" + volumeId;
+            files[0] = new File(diskFilePath);
+            Mockito.when(mockFile.listFiles(any(FileFilter.class))).thenReturn(files);
+        }); MockedConstruction<WildcardFileFilter> ignored2 = Mockito.mockConstruction(WildcardFileFilter.class); MockedConstruction<Script> ignored3 = Mockito.mockConstruction(Script.class, (mockScript, contextScript) -> {
+            Mockito.doReturn(null).when(mockScript).execute(any(OutputInterpreter.class));
+        }); MockedConstruction<OutputInterpreter.OneLineParser> ignored4 = Mockito.mockConstruction(OutputInterpreter.OneLineParser.class, withSettings().spiedInstance(spyParser), (mockParser, contextParser) -> {
+            Mockito.doReturn("16384").when(mockParser).getLine();
         })) {
-            try (MockedConstruction<File> ignored1 = Mockito.mockConstruction(File.class, (mockFile, contextFile) -> {
-                File[] files = new File[1];
-                String volumeId = ScaleIOUtil.getVolumePath(volumePath);
-                String diskFilePath = ScaleIOUtil.DISK_PATH + File.separator + ScaleIOUtil.DISK_NAME_PREFIX + systemId + "-" + volumeId;
-                files[0] = new File(diskFilePath);
-                Mockito.when(mockFile.listFiles(any(FileFilter.class))).thenReturn(files);
-            })) {
-                try (MockedConstruction<WildcardFileFilter> ignored2 = Mockito.mockConstruction(WildcardFileFilter.class, (mockFileFilter, contextFileFilter) -> {
-                })) {
-                    try (MockedConstruction<Script> ignored3 = Mockito.mockConstruction(Script.class, (mockScript, contextScript) -> {
-                        Mockito.doReturn(null).when(mockScript).execute(any(OutputInterpreter.class));
-                    })) {
-                        try (MockedConstruction<OutputInterpreter.OneLineParser> ignored4 = Mockito.mockConstruction(OutputInterpreter.OneLineParser.class, withSettings().spiedInstance(spyParser), (mockParser, contextParser) -> {
-                            Mockito.doReturn("16384").when(mockParser).getLine();
-                        })) {
-                            KVMPhysicalDisk disk = adapter.getPhysicalDisk(volumePath, pool);
-                            assertNotNull(disk);
-                            assertEquals("/dev/disk/by-id/emc-vol-" + systemId + "-6c3362b500000001", disk.getPath());
-                            assertEquals(QemuImg.PhysicalDiskFormat.QCOW2, disk.getFormat());
-                            assertEquals(16384, disk.getSize());
-                            assertEquals(16384, disk.getVirtualSize());
-                        }
-                    }
-                }
-            }
+            KVMPhysicalDisk disk = adapter.getPhysicalDisk(volumePath, pool);
+            assertNotNull(disk);
+            assertEquals("/dev/disk/by-id/emc-vol-" + systemId + "-6c3362b500000001", disk.getPath());
+            assertEquals(PhysicalDiskFormat.QCOW2, disk.getFormat());
+            assertEquals(16384, disk.getSize());
+            assertEquals(16384, disk.getVirtualSize());
         }
     }
 
@@ -238,8 +217,7 @@ public class ScaleIOStoragePoolTest {
         ScaleIOStoragePool pool = new ScaleIOStoragePool(uuid, "192.168.1.19", 443, "a519be2f00000000", type, details, adapter);
         final String volumePath = "6c3362b500000001:vol-139-3d2c-12f0";
         final String volumeId = ScaleIOUtil.getVolumePath(volumePath);
-        try (MockedStatic<ScaleIOUtil> ignored = Mockito.mockStatic(ScaleIOUtil.class, Mockito.CALLS_REAL_METHODS);
-             MockedConstruction<File> ignored1 = Mockito.mockConstruction(File.class, (mock, context) -> {
+        try (MockedStatic<ScaleIOUtil> ignored = Mockito.mockStatic(ScaleIOUtil.class, Mockito.CALLS_REAL_METHODS); MockedConstruction<File> ignored1 = Mockito.mockConstruction(File.class, (mock, context) -> {
             Mockito.when(mock.exists()).thenReturn(false);
         })) {
             when(ScaleIOUtil.getSystemIdForVolume(volumeId)).thenReturn(systemId);
@@ -260,29 +238,21 @@ public class ScaleIOStoragePoolTest {
         try (MockedConstruction<QemuImg> ignored = Mockito.mockConstruction(QemuImg.class, (mockQemuImg, contextQemuImg) -> {
             Map<String, String> details = new HashMap<>();
             Mockito.doReturn(details).when(mockQemuImg).info(any(QemuImgFile.class));
-        })) {
-            try (MockedConstruction<File> ignored1 = Mockito.mockConstruction(File.class, (mockFile, contextFile) -> {
-                Mockito.when(mockFile.exists()).thenReturn(true);
-            })) {
-                try (MockedConstruction<Script> ignored2 = Mockito.mockConstruction(Script.class, (mockScript, contextScript) -> {
-                    Mockito.doReturn(null).when(mockScript).execute(any(OutputInterpreter.class));
-                })) {
-                    try (MockedConstruction<OutputInterpreter.OneLineParser> ignored3 = Mockito.mockConstruction(OutputInterpreter.OneLineParser.class, withSettings().spiedInstance(spyParser), (mockParser, contextParser) -> {
-                        Mockito.doReturn("8192").when(mockParser).getLine();
-                    })) {
-                        try (MockedStatic<ScaleIOUtil> ignored5 = Mockito.mockStatic(ScaleIOUtil.class, Mockito.CALLS_REAL_METHODS)) {
-                            when(ScaleIOUtil.getSystemIdForVolume(volumeId)).thenReturn(systemId);
+        }); MockedConstruction<File> ignored1 = Mockito.mockConstruction(File.class, (mockFile, contextFile) -> {
+            Mockito.when(mockFile.exists()).thenReturn(true);
+        }); MockedConstruction<Script> ignored2 = Mockito.mockConstruction(Script.class, (mockScript, contextScript) -> {
+            Mockito.doReturn(null).when(mockScript).execute(any(OutputInterpreter.class));
+        }); MockedConstruction<OutputInterpreter.OneLineParser> ignored3 = Mockito.mockConstruction(OutputInterpreter.OneLineParser.class, withSettings().spiedInstance(spyParser), (mockParser, contextParser) -> {
+            Mockito.doReturn("8192").when(mockParser).getLine();
+        }); MockedStatic<ScaleIOUtil> ignored5 = Mockito.mockStatic(ScaleIOUtil.class, Mockito.CALLS_REAL_METHODS)) {
+            when(ScaleIOUtil.getSystemIdForVolume(volumeId)).thenReturn(systemId);
 
-                            KVMPhysicalDisk disk = adapter.getPhysicalDisk(volumePath, pool);
-                            assertNotNull(disk);
-                            assertEquals("/dev/disk/by-id/emc-vol-" + systemId + "-6c3362b500000001", disk.getPath());
-                            assertEquals(QemuImg.PhysicalDiskFormat.RAW, disk.getFormat());
-                            assertEquals(8192, disk.getSize());
-                            assertEquals(8192, disk.getVirtualSize());
-                        }
-                    }
-                }
-            }
+            KVMPhysicalDisk disk = adapter.getPhysicalDisk(volumePath, pool);
+            assertNotNull(disk);
+            assertEquals("/dev/disk/by-id/emc-vol-" + systemId + "-6c3362b500000001", disk.getPath());
+            assertEquals(PhysicalDiskFormat.RAW, disk.getFormat());
+            assertEquals(8192, disk.getSize());
+            assertEquals(8192, disk.getVirtualSize());
         }
     }
 
@@ -297,31 +267,23 @@ public class ScaleIOStoragePoolTest {
         try (MockedConstruction<QemuImg> ignored = Mockito.mockConstruction(QemuImg.class, (mockQemuImg, contextQemuImg) -> {
             Map<String, String> details = new HashMap<>();
             details.put(QemuImg.VIRTUAL_SIZE, "16384");
-            details.put(QemuImg.FILE_FORMAT, QemuImg.PhysicalDiskFormat.QCOW2.toString());
+            details.put(QemuImg.FILE_FORMAT, PhysicalDiskFormat.QCOW2.toString());
             Mockito.doReturn(details).when(mockQemuImg).info(any(QemuImgFile.class));
-        })) {
-            try (MockedConstruction<File> ignored1 = Mockito.mockConstruction(File.class, (mockFile, contextFile) -> {
-                Mockito.when(mockFile.exists()).thenReturn(true);
-            })) {
-                try (MockedConstruction<Script> ignored2 = Mockito.mockConstruction(Script.class, (mockScript, contextScript) -> {
-                    Mockito.doReturn(null).when(mockScript).execute(any(OutputInterpreter.class));
-                })) {
-                    try (MockedConstruction<OutputInterpreter.OneLineParser> ignored3 = Mockito.mockConstruction(OutputInterpreter.OneLineParser.class, withSettings().spiedInstance(spyParser), (mockParser, contextParser) -> {
-                        Mockito.doReturn("16384").when(mockParser).getLine();
-                    })) {
-                        try (MockedStatic<ScaleIOUtil> ignored5 = Mockito.mockStatic(ScaleIOUtil.class, Mockito.CALLS_REAL_METHODS)) {
-                            when(ScaleIOUtil.getSystemIdForVolume(volumeId)).thenReturn(systemId);
+        }); MockedConstruction<File> ignored1 = Mockito.mockConstruction(File.class, (mockFile, contextFile) -> {
+            Mockito.when(mockFile.exists()).thenReturn(true);
+        }); MockedConstruction<Script> ignored2 = Mockito.mockConstruction(Script.class, (mockScript, contextScript) -> {
+            Mockito.doReturn(null).when(mockScript).execute(any(OutputInterpreter.class));
+        }); MockedConstruction<OutputInterpreter.OneLineParser> ignored3 = Mockito.mockConstruction(OutputInterpreter.OneLineParser.class, withSettings().spiedInstance(spyParser), (mockParser, contextParser) -> {
+            Mockito.doReturn("16384").when(mockParser).getLine();
+        }); MockedStatic<ScaleIOUtil> ignored5 = Mockito.mockStatic(ScaleIOUtil.class, Mockito.CALLS_REAL_METHODS)) {
+            when(ScaleIOUtil.getSystemIdForVolume(volumeId)).thenReturn(systemId);
 
-                            KVMPhysicalDisk disk = adapter.getPhysicalDisk(volumePath, pool);
-                            assertNotNull(disk);
-                            assertEquals("/dev/disk/by-id/emc-vol-" + systemId + "-6c3362b500000001", disk.getPath());
-                            assertEquals(QemuImg.PhysicalDiskFormat.QCOW2, disk.getFormat());
-                            assertEquals(16384, disk.getSize());
-                            assertEquals(16384, disk.getVirtualSize());
-                        }
-                    }
-                }
-            }
+            KVMPhysicalDisk disk = adapter.getPhysicalDisk(volumePath, pool);
+            assertNotNull(disk);
+            assertEquals("/dev/disk/by-id/emc-vol-" + systemId + "-6c3362b500000001", disk.getPath());
+            assertEquals(PhysicalDiskFormat.QCOW2, disk.getFormat());
+            assertEquals(16384, disk.getSize());
+            assertEquals(16384, disk.getVirtualSize());
         }
     }
 
