@@ -20,7 +20,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.hypervisor.vmware.manager.VmwareManager;
 import com.cloud.hypervisor.vmware.mo.ClusterMO;
@@ -30,7 +31,7 @@ import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 
 public class VmwareCleanupMaid {
-    private static final Logger s_logger = Logger.getLogger(VmwareCleanupMaid.class);
+    protected static Logger LOGGER = LogManager.getLogger(VmwareCleanupMaid.class);
 
     private static Map<String, List<VmwareCleanupMaid>> s_leftoverDummyVMs = new HashMap<String, List<VmwareCleanupMaid>>();
 
@@ -117,11 +118,11 @@ public class VmwareCleanupMaid {
                     }
 
                     if (vmMo != null) {
-                        s_logger.info("Found left over dummy VM " + cleanupMaid.getVmName() + ", destroy it");
+                        LOGGER.info("Found left over dummy VM " + cleanupMaid.getVmName() + ", destroy it");
                         vmMo.destroy();
                     }
                 } catch (Throwable e) {
-                    s_logger.warn("Unable to destroy left over dummy VM " + cleanupMaid.getVmName());
+                    LOGGER.warn("Unable to destroy left over dummy VM " + cleanupMaid.getVmName());
                 } finally {
 // FIXME                    mgr.popCleanupCheckpoint(cleanupMaid.getCheckPoint());
                 }

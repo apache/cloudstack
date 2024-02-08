@@ -29,14 +29,12 @@ import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.object.ObjectStoreDriver;
 import org.apache.cloudstack.storage.object.ObjectStoreEntity;
-import org.apache.log4j.Logger;
 
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 public class ObjectStoreImpl implements ObjectStoreEntity {
-    private static final Logger s_logger = Logger.getLogger(ObjectStoreImpl.class);
 
     protected ObjectStoreDriver driver;
     protected ObjectStoreVO objectStoreVO;

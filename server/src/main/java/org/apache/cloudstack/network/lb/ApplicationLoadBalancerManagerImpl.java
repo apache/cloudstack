@@ -23,7 +23,6 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -79,7 +78,6 @@ import com.cloud.utils.net.NetUtils;
 
 @Component
 public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements ApplicationLoadBalancerService {
-    private static final Logger s_logger = Logger.getLogger(ApplicationLoadBalancerManagerImpl.class);
 
     @Inject
     NetworkModel _networkModel;
@@ -182,7 +180,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
                     if (!_firewallDao.setStateToAdd(newRule)) {
                         throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
                     }
-                    s_logger.debug("Load balancer " + newRule.getId() + " for Ip address " + newRule.getSourceIp().addr() + ", source port " +
+                    logger.debug("Load balancer " + newRule.getId() + " for Ip address " + newRule.getSourceIp().addr() + ", source port " +
                         newRule.getSourcePortStart().intValue() + ", instance port " + newRule.getDefaultPortStart() + " is added successfully.");
                     CallContext.current().setEventDetails("Load balancer Id: " + newRule.getId());
                     Network ntwk = _networkModel.getNetwork(newRule.getNetworkId());
@@ -259,7 +257,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
 
         if (requestedIp != null) {
             if (_lbDao.countBySourceIp(new Ip(requestedIp), sourceIpNtwk.getId()) > 0)  {
-                s_logger.debug("IP address " + requestedIp + " is already used by existing LB rule, returning it");
+                logger.debug("IP address " + requestedIp + " is already used by existing LB rule, returning it");
                 return new Ip(requestedIp);
             }
 
@@ -530,8 +528,8 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
             }
         }
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("No network rule conflicts detected for " + newLbRule + " against " + (lbRules.size() - 1) + " existing rules");
+        if (logger.isDebugEnabled()) {
+            logger.debug("No network rule conflicts detected for " + newLbRule + " against " + (lbRules.size() - 1) + " existing rules");
         }
     }
 

@@ -19,7 +19,6 @@ package org.apache.cloudstack.quota.dao;
 import java.util.List;
 
 import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.GenericDaoBase;
@@ -33,7 +32,6 @@ import org.apache.commons.lang3.StringUtils;
 
 @Component
 public class QuotaEmailTemplatesDaoImpl extends GenericDaoBase<QuotaEmailTemplatesVO, Long> implements QuotaEmailTemplatesDao {
-    private static final Logger s_logger = Logger.getLogger(QuotaEmailTemplatesDaoImpl.class);
 
     protected SearchBuilder<QuotaEmailTemplatesVO> QuotaEmailTemplateSearch;
 

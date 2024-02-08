@@ -32,7 +32,6 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
-import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainBlockInfo;
@@ -45,8 +44,6 @@ import java.util.List;
 
 @ResourceWrapper(handles = GetRemoteVmsCommand.class)
 public final class LibvirtGetRemoteVmsCommandWrapper extends CommandWrapper<GetRemoteVmsCommand, Answer, LibvirtComputingResource> {
-
-    private static final Logger s_logger = Logger.getLogger(LibvirtGetRemoteVmsCommandWrapper.class);
 
     @Override
     public Answer execute(final GetRemoteVmsCommand command, final LibvirtComputingResource libvirtComputingResource) {
@@ -64,22 +61,22 @@ public final class LibvirtGetRemoteVmsCommandWrapper extends CommandWrapper<GetR
 
                 final VirtualMachine.PowerState state = libvirtComputingResource.convertToPowerState(ps);
 
-                s_logger.debug("VM " + domain.getName() + ": powerstate = " + ps + "; vm state=" + state.toString());
+                logger.debug("VM " + domain.getName() + ": powerstate = " + ps + "; vm state=" + state.toString());
 
                 if (state == VirtualMachine.PowerState.PowerOff) {
                     try {
                         UnmanagedInstanceTO instance = getUnmanagedInstance(libvirtComputingResource, domain, conn);
                         unmanagedInstances.put(instance.getName(), instance);
                     } catch (Exception e) {
-                        s_logger.error("Error while fetching instance details", e);
+                        logger.error("Error while fetching instance details", e);
                     }
                 }
                 domain.free();
             }
-            s_logger.debug("Found Vms: "+ unmanagedInstances.size());
+            logger.debug("Found Vms: "+ unmanagedInstances.size());
             return  new GetRemoteVmsAnswer(command, "", unmanagedInstances);
         } catch (final LibvirtException e) {
-            s_logger.error("Error while listing stopped Vms on remote host: "+ e.getMessage());
+            logger.error("Error while listing stopped Vms on remote host: "+ e.getMessage());
             return new Answer(command, false, result);
         }
     }
@@ -106,7 +103,7 @@ public final class LibvirtGetRemoteVmsCommandWrapper extends CommandWrapper<GetR
 
             return instance;
         } catch (Exception e) {
-            s_logger.debug("Unable to retrieve unmanaged instance info. ", e);
+            logger.debug("Unable to retrieve unmanaged instance info. ", e);
             throw new CloudRuntimeException("Unable to retrieve unmanaged instance info. " + e.getMessage());
         }
     }

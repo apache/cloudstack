@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -42,7 +41,6 @@ import com.cloud.user.Account;
 @APICommand(name = "addCluster", description = "Adds a new cluster", responseObject = ClusterResponse.class,
         requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
 public class AddClusterCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(AddClusterCmd.class.getName());
 
 
     @Parameter(name = ApiConstants.CLUSTER_NAME, type = CommandType.STRING, required = true, description = "the cluster name")
@@ -226,10 +224,10 @@ public class AddClusterCmd extends BaseCmd {
 
             this.setResponseObject(response);
         } catch (DiscoveryException ex) {
-            s_logger.warn("Exception: ", ex);
+            logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         } catch (ResourceInUseException ex) {
-            s_logger.warn("Exception: ", ex);
+            logger.warn("Exception: ", ex);
             ServerApiException e = new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
             for (String proxyObj : ex.getIdProxyList()) {
                 e.addProxyObject(proxyObj);

@@ -37,7 +37,6 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.event.ActionEvent;
@@ -75,7 +74,6 @@ import com.cloud.utils.net.NetUtils;
 
 @Component
 public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLService {
-    private static final Logger s_logger = Logger.getLogger(NetworkACLServiceImpl.class);
 
     @Inject
     private AccountManager _accountMgr;
@@ -478,7 +476,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
      * @return the Id of the network ACL that is created.
      */
     protected Long createAclListForNetworkAndReturnAclListId(CreateNetworkACLCmd aclItemCmd, Network network) {
-        s_logger.debug("Network " + network.getId() + " is not associated with any ACL. Creating an ACL before adding acl item");
+        logger.debug("Network " + network.getId() + " is not associated with any ACL. Creating an ACL before adding acl item");
 
         if (!networkModel.areServicesSupportedByNetworkOffering(network.getNetworkOfferingId(), Network.Service.NetworkACL)) {
             throw new InvalidParameterValueException("Network Offering does not support NetworkACL service");
@@ -495,14 +493,14 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         if (acl == null) {
             throw new CloudRuntimeException("Error while create ACL before adding ACL Item for network " + network.getId());
         }
-        s_logger.debug("Created ACL: " + aclName + " for network " + network.getId());
+        logger.debug("Created ACL: " + aclName + " for network " + network.getId());
         Long aclId = acl.getId();
         //Apply acl to network
         try {
             if (!_networkAclMgr.replaceNetworkACL(acl, (NetworkVO)network)) {
                 throw new CloudRuntimeException("Unable to apply auto created ACL to network " + network.getId());
             }
-            s_logger.debug("Created ACL is applied to network " + network.getId());
+            logger.debug("Created ACL is applied to network " + network.getId());
         } catch (ResourceUnavailableException e) {
             throw new CloudRuntimeException("Unable to apply auto created ACL to network " + network.getId(), e);
         }
@@ -992,7 +990,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
      */
     protected void validateAclConsistency(MoveNetworkAclItemCmd moveNetworkAclItemCmd, NetworkACLVO lockedAcl, List<NetworkACLItemVO> allAclRules) {
         if (CollectionUtils.isEmpty(allAclRules)) {
-            s_logger.debug(String.format("No ACL rules for [id=%s, name=%s]. Therefore, there is no need for consistency validation.", lockedAcl.getUuid(), lockedAcl.getName()));
+            logger.debug(String.format("No ACL rules for [id=%s, name=%s]. Therefore, there is no need for consistency validation.", lockedAcl.getUuid(), lockedAcl.getName()));
             return;
         }
         String aclConsistencyHash = moveNetworkAclItemCmd.getAclConsistencyHash();
@@ -1000,7 +998,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             User callingUser = CallContext.current().getCallingUser();
             Account callingAccount = CallContext.current().getCallingAccount();
 
-            s_logger.warn(String.format(
+            logger.warn(String.format(
                     "User [id=%s, name=%s] from Account [id=%s, name=%s] has not entered an ACL consistency hash to execute the replacement of an ACL rule. Therefore, she/he is assuming all of the risks of procedding without this validation.",
                     callingUser.getUuid(), callingUser.getUsername(), callingAccount.getUuid(), callingAccount.getAccountName()));
             return;
@@ -1183,10 +1181,10 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
      */
     protected void validateGlobalAclPermissionAndAclAssociatedToVpc(NetworkACL acl, Account account, String exception){
         if (isGlobalAcl(acl.getVpcId())) {
-            s_logger.info(String.format("Checking if account [%s] has permission to manipulate global ACL [%s].", account, acl));
+            logger.info(String.format("Checking if account [%s] has permission to manipulate global ACL [%s].", account, acl));
             checkGlobalAclPermission(acl.getVpcId(), account, exception);
         } else {
-            s_logger.info(String.format("Validating ACL [%s] associated to VPC [%s] with account [%s].", acl, acl.getVpcId(), account));
+            logger.info(String.format("Validating ACL [%s] associated to VPC [%s] with account [%s].", acl, acl.getVpcId(), account));
             validateAclAssociatedToVpc(acl.getVpcId(), account, acl.getUuid());
         }
     }

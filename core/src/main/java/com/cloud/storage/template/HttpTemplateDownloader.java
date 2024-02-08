@@ -45,7 +45,6 @@ import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.params.HttpMethodParams;
-import org.apache.log4j.Logger;
 
 import com.cloud.storage.StorageLayer;
 import com.cloud.utils.Pair;
@@ -58,7 +57,6 @@ import com.cloud.utils.net.Proxy;
  *
  */
 public class HttpTemplateDownloader extends ManagedContextRunnable implements TemplateDownloader {
-    public static final Logger s_logger = Logger.getLogger(HttpTemplateDownloader.class.getName());
     private static final MultiThreadedHttpConnectionManager s_httpClientManager = new MultiThreadedHttpConnectionManager();
 
     private static final int CHUNK_SIZE = 1024 * 1024; //1M
@@ -102,9 +100,9 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
         } catch (Exception ex) {
             errorString = "Unable to start download -- check url? ";
             status = TemplateDownloader.Status.UNRECOVERABLE_ERROR;
-            s_logger.warn("Exception in constructor -- " + ex.toString());
+            logger.warn("Exception in constructor -- " + ex.toString());
         } catch (Throwable th) {
-            s_logger.warn("throwable caught ", th);
+            logger.warn("throwable caught ", th);
         }
     }
 
@@ -127,7 +125,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
         } catch (IOException ex) {
             errorString = "Unable to start download -- check url? ";
             status = TemplateDownloader.Status.UNRECOVERABLE_ERROR;
-            s_logger.warn("Exception in constructor -- " + ex.toString());
+            logger.warn("Exception in constructor -- " + ex.toString());
         }
     }
 
@@ -138,9 +136,9 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
                 client.getParams().setAuthenticationPreemptive(true);
                 Credentials defaultcreds = new UsernamePasswordCredentials(user, password);
                 client.getState().setCredentials(new AuthScope(hostAndPort.first(), hostAndPort.second(), AuthScope.ANY_REALM), defaultcreds);
-                s_logger.info("Added username=" + user + ", password=" + password + "for host " + hostAndPort.first() + ":" + hostAndPort.second());
+                logger.info("Added username=" + user + ", password=" + password + "for host " + hostAndPort.first() + ":" + hostAndPort.second());
             } else {
-                s_logger.info("No credentials configured for host=" + hostAndPort.first() + ":" + hostAndPort.second());
+                logger.info("No credentials configured for host=" + hostAndPort.first() + ":" + hostAndPort.second());
             }
         } catch (IllegalArgumentException iae) {
             errorString = iae.getMessage();
@@ -206,7 +204,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
             ) {
                 out.seek(localFileSize);
 
-                s_logger.info("Starting download from " + downloadUrl + " to " + toFile + " remoteSize=" + toHumanReadableSize(remoteSize) + " , max size=" + toHumanReadableSize(maxTemplateSizeInBytes));
+                logger.info("Starting download from " + downloadUrl + " to " + toFile + " remoteSize=" + toHumanReadableSize(remoteSize) + " , max size=" + toHumanReadableSize(maxTemplateSizeInBytes));
 
                 if (copyBytes(file, in, out)) return 0;
 
@@ -278,7 +276,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
 
     private boolean canHandleDownloadSize() {
         if (remoteSize > maxTemplateSizeInBytes) {
-            s_logger.info("Remote size is too large: " + toHumanReadableSize(remoteSize) + " , max=" + toHumanReadableSize(maxTemplateSizeInBytes));
+            logger.info("Remote size is too large: " + toHumanReadableSize(remoteSize) + " , max=" + toHumanReadableSize(maxTemplateSizeInBytes));
             status = Status.UNRECOVERABLE_ERROR;
             errorString = "Download file size is too large";
             return false;
@@ -347,7 +345,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
         long localFileSize = 0;
         if (file.exists() && resume) {
             localFileSize = file.length();
-            s_logger.info("Resuming download to file (current size)=" + toHumanReadableSize(localFileSize));
+            logger.info("Resuming download to file (current size)=" + toHumanReadableSize(localFileSize));
         }
         return localFileSize;
     }
@@ -431,7 +429,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
         try {
             download(resume, completionCallback);
         } catch (Throwable t) {
-            s_logger.warn("Caught exception during download " + t.getMessage(), t);
+            logger.warn("Caught exception during download " + t.getMessage(), t);
             errorString = "Failed to install: " + t.getMessage();
             status = TemplateDownloader.Status.UNRECOVERABLE_ERROR;
         }
@@ -519,20 +517,20 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
                 URI str = new URI(downloadUrl);
                 uripath = str.getPath();
             } catch (URISyntaxException e) {
-                s_logger.warn("Invalid download url: " + downloadUrl + ", This should not happen since we have validated the url before!!");
+                logger.warn("Invalid download url: " + downloadUrl + ", This should not happen since we have validated the url before!!");
             }
             String unsupportedFormat = ImageStoreUtil.checkTemplateFormat(file.getAbsolutePath(), uripath);
             if (unsupportedFormat == null || !unsupportedFormat.isEmpty()) {
                 try {
                     request.abort();
                 } catch (Exception ex) {
-                    s_logger.debug("Error on http connection : " + ex.getMessage());
+                    logger.debug("Error on http connection : " + ex.getMessage());
                 }
                 status = Status.UNRECOVERABLE_ERROR;
                 errorString = "Template content is unsupported, or mismatch between selected format and template content. Found  : " + unsupportedFormat;
                 throw new CloudRuntimeException(errorString);
             } else {
-                s_logger.debug("Verified format of downloading file " + file.getAbsolutePath() + " is supported");
+                logger.debug("Verified format of downloading file " + file.getAbsolutePath() + " is supported");
                 verifiedFormat = true;
             }
             return this;

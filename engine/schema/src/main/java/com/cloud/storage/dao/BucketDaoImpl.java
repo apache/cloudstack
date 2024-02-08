@@ -20,7 +20,6 @@ import com.cloud.storage.BucketVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import javax.naming.ConfigurationException;
@@ -29,7 +28,6 @@ import java.util.Map;
 
 @Component
 public class BucketDaoImpl extends GenericDaoBase<BucketVO, Long> implements BucketDao {
-    public static final Logger s_logger = Logger.getLogger(BucketDaoImpl.class.getName());
     private SearchBuilder<BucketVO> searchFilteringStoreId;
 
     private SearchBuilder<BucketVO> bucketSearch;

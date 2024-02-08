@@ -27,7 +27,6 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
 
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
@@ -44,7 +43,6 @@ public class CephSnapshotStrategy extends StorageSystemSnapshotStrategy {
     @Inject
     private VolumeDao volumeDao;
 
-    private static final Logger s_logger = Logger.getLogger(CephSnapshotStrategy.class);
 
     @Override
     public StrategyPriority canHandle(Snapshot snapshot, Long zoneId, SnapshotOperation op) {
@@ -71,7 +69,7 @@ public class CephSnapshotStrategy extends StorageSystemSnapshotStrategy {
         VolumeInfo volumeInfo = snapshotInfo.getBaseVolume();
         ImageFormat imageFormat = volumeInfo.getFormat();
         if (!ImageFormat.RAW.equals(imageFormat)) {
-            s_logger.error(String.format("Does not support revert snapshot of the image format [%s] on Ceph/RBD. Can only rollback snapshots of format RAW", imageFormat));
+            logger.error(String.format("Does not support revert snapshot of the image format [%s] on Ceph/RBD. Can only rollback snapshots of format RAW", imageFormat));
             return false;
         }
 
