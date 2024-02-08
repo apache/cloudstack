@@ -49,7 +49,8 @@ import org.apache.cloudstack.agent.api.DeleteNsxTier1GatewayCommand;
 import org.apache.cloudstack.service.NsxApiClient;
 import org.apache.cloudstack.utils.NsxControllerUtils;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.naming.ConfigurationException;
 import java.util.HashMap;
@@ -59,7 +60,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class NsxResource implements ServerResource {
-    private static final Logger LOGGER = Logger.getLogger(NsxResource.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     private static final String DHCP_RELAY_CONFIGS_PATH_PREFIX = "/infra/dhcp-relay-configs";
 
     private String name;
@@ -243,7 +244,7 @@ public class NsxResource implements ServerResource {
             nsxApiClient.createTier1NatRule(tier1GatewayName, natId, natRuleId, action, translatedIpAddress);
         } catch (CloudRuntimeException e) {
             String msg = String.format("Error creating the NAT rule with ID %s on Tier1 Gateway %s: %s", natRuleId, tier1GatewayName, e.getMessage());
-            LOGGER.error(msg, e);
+            logger.error(msg, e);
             return new NsxAnswer(cmd, e);
         }
         return new NsxAnswer(cmd, true, "");
@@ -263,13 +264,13 @@ public class NsxResource implements ServerResource {
 
         String msg = String.format("Creating DHCP relay config with name %s on network %s of VPC %s",
                 dhcpRelayConfigName, networkName, vpcName);
-        LOGGER.debug(msg);
+        logger.debug(msg);
 
         try {
             nsxApiClient.createDhcpRelayConfig(dhcpRelayConfigName, addresses);
         } catch (CloudRuntimeException e) {
             msg = String.format("Error creating the DHCP relay config with name %s: %s", dhcpRelayConfigName, e.getMessage());
-            LOGGER.error(msg, e);
+            logger.error(msg, e);
             return new NsxAnswer(cmd, e);
         }
 
@@ -281,7 +282,7 @@ public class NsxResource implements ServerResource {
             nsxApiClient.updateSegment(segmentName, segment);
         } catch (CloudRuntimeException e) {
             msg = String.format("Error adding the DHCP relay config with name %s to the segment %s: %s", dhcpRelayConfigName, segmentName, e.getMessage());
-            LOGGER.error(msg);
+            logger.error(msg);
             return new NsxAnswer(cmd, e);
         }
 
@@ -301,7 +302,7 @@ public class NsxResource implements ServerResource {
         } catch (CloudRuntimeException e) {
             String msg = String.format("Cannot create tier 1 gateway %s (%s: %s): %s", tier1GatewayName,
                     (cmd.isResourceVpc() ? "VPC" : "NETWORK"), cmd.getNetworkResourceName(), e.getMessage());
-            LOGGER.error(msg);
+            logger.error(msg);
             return new NsxAnswer(cmd, e);
         }
     }
@@ -325,13 +326,13 @@ public class NsxResource implements ServerResource {
             TransportZoneListResult transportZoneListResult = nsxApiClient.getTransportZones();
             if (CollectionUtils.isEmpty(transportZoneListResult.getResults())) {
                 String errorMsg = String.format("Failed to create network: %s as no transport zones were found in the linked NSX infrastructure", cmd.getNetworkName());
-                LOGGER.error(errorMsg);
+                logger.error(errorMsg);
                 return new NsxAnswer(cmd, new CloudRuntimeException(errorMsg));
             }
             List<TransportZone> transportZones = transportZoneListResult.getResults().stream().filter(tz -> tz.getDisplayName().equals(transportZone)).collect(Collectors.toList());
             if (CollectionUtils.isEmpty(transportZones)) {
                 String errorMsg = String.format("Failed to create network: %s as no transport zone of name %s was found in the linked NSX infrastructure", cmd.getNetworkName(), transportZone);
-                LOGGER.error(errorMsg);
+                logger.error(errorMsg);
                 return new NsxAnswer(cmd, new CloudRuntimeException(errorMsg));
             }
 
@@ -345,7 +346,7 @@ public class NsxResource implements ServerResource {
             nsxApiClient.createSegment(segmentName, tier1GatewayName, gatewayAddress, enforcementPointPath, transportZones);
             nsxApiClient.createGroupForSegment(segmentName);
         } catch (Exception e) {
-            LOGGER.error(String.format("Failed to create network: %s", cmd.getNetworkName()));
+            logger.error(String.format("Failed to create network: %s", cmd.getNetworkName()));
             return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
         }
         return new NsxAnswer(cmd, true, null);
@@ -357,7 +358,7 @@ public class NsxResource implements ServerResource {
         try {
             nsxApiClient.deleteSegment(cmd.getZoneId(), cmd.getDomainId(), cmd.getAccountId(), cmd.getVpcId(), cmd.getNetworkId(), segmentName);
         } catch (Exception e) {
-            LOGGER.error(String.format("Failed to delete NSX segment %s: %s", segmentName, e.getMessage()));
+            logger.error(String.format("Failed to delete NSX segment %s: %s", segmentName, e.getMessage()));
             return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
         }
         return new NsxAnswer(cmd, true, null);
@@ -371,7 +372,7 @@ public class NsxResource implements ServerResource {
         try {
             nsxApiClient.createStaticNatRule(cmd.getNetworkResourceName(), tier1GatewayName, staticNatRuleName, cmd.getPublicIp(), cmd.getVmIp());
         } catch (Exception e) {
-            LOGGER.error(String.format("Failed to add NSX static NAT rule %s for network: %s", staticNatRuleName, cmd.getNetworkResourceName()));
+            logger.error(String.format("Failed to add NSX static NAT rule %s for network: %s", staticNatRuleName, cmd.getNetworkResourceName()));
             return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
         }
         return new NsxAnswer(cmd, true, null);
@@ -390,7 +391,7 @@ public class NsxResource implements ServerResource {
             nsxApiClient.createPortForwardingRule(ruleName, tier1GatewayName, cmd.getNetworkResourceName(), cmd.getPublicIp(),
                     cmd.getVmIp(), cmd.getPublicPort(), service);
         } catch (Exception e) {
-            LOGGER.error(String.format("Failed to add NSX port forward rule %s for network: %s", ruleName, cmd.getNetworkResourceName()));
+            logger.error(String.format("Failed to add NSX port forward rule %s for network: %s", ruleName, cmd.getNetworkResourceName()));
             return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
         }
         return new NsxAnswer(cmd, true, null);
@@ -411,7 +412,7 @@ public class NsxResource implements ServerResource {
             nsxApiClient.deleteNatRule(cmd.getService(), cmd.getPrivatePort(), cmd.getProtocol(),
                     cmd.getNetworkResourceName(), tier1GatewayName, ruleName);
         } catch (Exception e) {
-            LOGGER.error(String.format("Failed to add NSX static NAT rule %s for network: %s", ruleName, cmd.getNetworkResourceName()));
+            logger.error(String.format("Failed to add NSX static NAT rule %s for network: %s", ruleName, cmd.getNetworkResourceName()));
             return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
         }
         return new NsxAnswer(cmd, true, null);
@@ -425,7 +426,7 @@ public class NsxResource implements ServerResource {
             nsxApiClient.createAndAddNsxLbVirtualServer(tier1GatewayName, cmd.getLbId(), cmd.getPublicIp(), cmd.getPublicPort(),
                     cmd.getMemberList(), cmd.getAlgorithm(), cmd.getProtocol(), cmd.getPrivatePort());
         } catch (Exception e) {
-            LOGGER.error(String.format("Failed to add NSX load balancer rule %s for network: %s", ruleName, cmd.getNetworkResourceName()));
+            logger.error(String.format("Failed to add NSX load balancer rule %s for network: %s", ruleName, cmd.getNetworkResourceName()));
             return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
         }
         return new NsxAnswer(cmd, true, null);
@@ -438,7 +439,7 @@ public class NsxResource implements ServerResource {
         try {
             nsxApiClient.deleteNsxLbResources(tier1GatewayName, cmd.getLbId());
         } catch (Exception e) {
-            LOGGER.error(String.format("Failed to add NSX load balancer rule %s for network: %s", ruleName, cmd.getNetworkResourceName()));
+            logger.error(String.format("Failed to add NSX load balancer rule %s for network: %s", ruleName, cmd.getNetworkResourceName()));
             return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
         }
         return new NsxAnswer(cmd, true, null);
@@ -451,7 +452,7 @@ public class NsxResource implements ServerResource {
         try {
             nsxApiClient.createSegmentDistributedFirewall(segmentName, rules);
         } catch (Exception e) {
-            LOGGER.error(String.format("Failed to create NSX distributed firewall %s: %s", segmentName, e.getMessage()), e);
+            logger.error(String.format("Failed to create NSX distributed firewall %s: %s", segmentName, e.getMessage()), e);
             return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
         }
         return new NsxAnswer(cmd, true, null);
@@ -464,7 +465,7 @@ public class NsxResource implements ServerResource {
         try {
             nsxApiClient.deleteDistributedFirewallRules(segmentName, rules);
         } catch (Exception e) {
-            LOGGER.error(String.format("Failed to delete NSX distributed firewall %s: %s", segmentName, e.getMessage()), e);
+            logger.error(String.format("Failed to delete NSX distributed firewall %s: %s", segmentName, e.getMessage()), e);
             return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
         }
         return new NsxAnswer(cmd, true, null);

@@ -105,7 +105,8 @@ import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 import org.apache.cloudstack.resource.NsxLoadBalancerMember;
 import org.apache.cloudstack.resource.NsxNetworkRule;
 import org.apache.cloudstack.resource.NsxOpObject;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -159,7 +160,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
     @Inject
     PhysicalNetworkServiceProviderDao pNtwkSvcProviderDao;
 
-    private static final Logger LOGGER = Logger.getLogger(NsxElement.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private final Map<Network.Service, Map<Network.Capability, String>> capabilities = initCapabilities();
 
@@ -286,7 +287,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
         DomainVO domain = domainDao.findById(account.getDomainId());
         if (Objects.isNull(zone)) {
             String msg = String.format("Cannot find zone with ID %s", network.getDataCenterId());
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
         return nsxService.deleteNetwork(zone.getId(), account.getId(), domain.getId(), networkVO);
@@ -352,7 +353,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
         DomainVO domain = domainDao.findById(account.getDomainId());
         if (Objects.isNull(domain)) {
             String msg = String.format("Unable to find domain with id: %s", account.getDomainId());
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
         return domain;
@@ -479,11 +480,11 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
     }
 
     protected boolean canHandle(Network network, Network.Service service) {
-        LOGGER.debug("Checking if Nsx Element can handle service " + service.getName() + " on network "
+        logger.debug("Checking if Nsx Element can handle service " + service.getName() + " on network "
                 + network.getDisplayText());
 
         if (!networkModel.isProviderForNetwork(getProvider(), network.getId())) {
-            LOGGER.debug("Nsx Element is not a provider for network " + network.getDisplayText());
+            logger.debug("Nsx Element is not a provider for network " + network.getDisplayText());
             return false;
         }
 
@@ -722,7 +723,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
         if (!nsxDelNetworkRules.isEmpty()) {
             success = nsxService.deleteFirewallRules(network, nsxDelNetworkRules);
             if (!success) {
-                LOGGER.warn("Not all firewall rules were successfully deleted");
+                logger.warn("Not all firewall rules were successfully deleted");
             }
         }
         return success;
@@ -794,7 +795,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
         if (!nsxDelNetworkRules.isEmpty()) {
             success = nsxService.deleteFirewallRules(network, nsxDelNetworkRules);
             if (!success) {
-                LOGGER.warn("Not all firewall rules were successfully deleted");
+                logger.warn("Not all firewall rules were successfully deleted");
             }
         }
         return success && nsxService.addFirewallRules(network, nsxAddNetworkRules);
@@ -807,7 +808,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
             return NsxNetworkRule.NsxRuleAction.DROP;
         }
         String err = String.format("Unsupported action %s", action.toString());
-        LOGGER.error(err);
+        logger.error(err);
         throw new CloudRuntimeException(err);
     }
 
@@ -847,7 +848,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
     public VirtualRouterProvider addInternalLoadBalancerElement(long ntwkSvcProviderId) {
         VirtualRouterProviderVO element = vrProviderDao.findByNspIdAndType(ntwkSvcProviderId, VirtualRouterProvider.Type.Nsx);
         if (element != null) {
-            LOGGER.debug("There is already an " + getName() + " with service provider id " + ntwkSvcProviderId);
+            logger.debug("There is already an " + getName() + " with service provider id " + ntwkSvcProviderId);
             return null;
         }
 

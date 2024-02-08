@@ -40,7 +40,8 @@ import org.apache.cloudstack.agent.api.DeleteNsxTier1GatewayCommand;
 import org.apache.cloudstack.resource.NsxNetworkRule;
 import org.apache.cloudstack.utils.NsxControllerUtils;
 import org.apache.cloudstack.utils.NsxHelper;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.List;
@@ -54,7 +55,7 @@ public class NsxServiceImpl implements NsxService {
     @Inject
     NetworkDao networkDao;
 
-    private static final Logger LOGGER = Logger.getLogger(NsxServiceImpl.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     public boolean createVpcNetwork(Long zoneId, long accountId, long domainId, Long vpcId, String vpcName, boolean sourceNatEnabled) {
         CreateNsxTier1GatewayCommand createNsxTier1GatewayCommand =
@@ -73,13 +74,13 @@ public class NsxServiceImpl implements NsxService {
         long zoneId = vpc.getZoneId();
         long vpcId = vpc.getId();
 
-        LOGGER.debug(String.format("Updating the source NAT IP for NSX VPC %s to IP: %s", vpc.getName(), address.getAddress().addr()));
+        logger.debug(String.format("Updating the source NAT IP for NSX VPC %s to IP: %s", vpc.getName(), address.getAddress().addr()));
         String tier1GatewayName = NsxControllerUtils.getTier1GatewayName(domainId, accountId, zoneId, vpcId, true);
         String sourceNatRuleId = NsxControllerUtils.getNsxNatRuleId(domainId, accountId, zoneId, vpcId, true);
         CreateOrUpdateNsxTier1NatRuleCommand cmd = NsxHelper.createOrUpdateNsxNatRuleCommand(domainId, accountId, zoneId, tier1GatewayName, "SNAT", address.getAddress().addr(), sourceNatRuleId);
         NsxAnswer answer = nsxControllerUtils.sendNsxCommand(cmd, zoneId);
         if (!answer.getResult()) {
-            LOGGER.error(String.format("Could not update the source NAT IP address for VPC %s: %s", vpc.getName(), answer.getDetails()));
+            logger.error(String.format("Could not update the source NAT IP address for VPC %s: %s", vpc.getName(), answer.getDetails()));
             return false;
         }
         return true;
@@ -110,7 +111,7 @@ public class NsxServiceImpl implements NsxService {
         NsxAnswer result = nsxControllerUtils.sendNsxCommand(deleteNsxSegmentCommand, network.getDataCenterId());
         if (!result.getResult()) {
             String msg = String.format("Could not remove the NSX segment for network %s: %s", network.getName(), result.getDetails());
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
 

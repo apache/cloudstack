@@ -57,14 +57,15 @@ import org.apache.cloudstack.agent.api.CreateOrUpdateNsxTier1NatRuleCommand;
 import org.apache.cloudstack.utils.NsxControllerUtils;
 
 import org.apache.cloudstack.utils.NsxHelper;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.List;
 import java.util.Objects;
 
 public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigrationResponder  {
-    private static final Logger LOGGER = Logger.getLogger(NsxGuestNetworkGuru.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
     NetworkOfferingServiceMapDao networkOfferingServiceMapDao;
@@ -97,7 +98,7 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
         DataCenter dc = _dcDao.findById(plan.getDataCenterId());
 
         if (!canHandle(offering, dc.getNetworkType(), physnet)) {
-            LOGGER.debug("Refusing to design this network");
+            logger.debug("Refusing to design this network");
             return null;
         }
 
@@ -206,25 +207,25 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
         long zoneId = network.getDataCenterId();
         if (Objects.isNull(zone)) {
             String msg = String.format("Unable to find zone with id: %s", zoneId);
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
         Account account = accountDao.findById(network.getAccountId());
         if (Objects.isNull(account)) {
             String msg = String.format("Unable to find account with id: %s", network.getAccountId());
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
         VpcVO vpc = _vpcDao.findById(network.getVpcId());
         if (Objects.isNull(vpc)) {
             String msg = String.format("Unable to find VPC with id: %s, allocating for network %s", network.getVpcId(), network.getName());
-            LOGGER.debug(msg);
+            logger.debug(msg);
         }
 
         DomainVO domain = domainDao.findById(account.getDomainId());
         if (Objects.isNull(domain)) {
             String msg = String.format("Unable to find domain with id: %s", account.getDomainId());
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
 
@@ -238,13 +239,13 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
             PublicIpAddress ipAddress = networkModel.getSourceNatIpAddressForGuestNetwork(account, network);
             String translatedIp = ipAddress.getAddress().addr();
             String tier1GatewayName = NsxControllerUtils.getTier1GatewayName(domainId, accountId, dataCenterId, resourceId, false);
-            LOGGER.debug(String.format("Creating NSX NAT Rule for Tier1 GW %s for translated IP %s for Isolated network %s", tier1GatewayName, translatedIp, network.getName()));
+            logger.debug(String.format("Creating NSX NAT Rule for Tier1 GW %s for translated IP %s for Isolated network %s", tier1GatewayName, translatedIp, network.getName()));
             String natRuleId = NsxControllerUtils.getNsxNatRuleId(domainId, accountId, dataCenterId, resourceId, false);
             CreateOrUpdateNsxTier1NatRuleCommand cmd = NsxHelper.createOrUpdateNsxNatRuleCommand(domainId, accountId, dataCenterId, tier1GatewayName, "SNAT", translatedIp, natRuleId);
             NsxAnswer nsxAnswer = nsxControllerUtils.sendNsxCommand(cmd, dataCenterId);
             if (!nsxAnswer.getResult()) {
                 String msg = String.format("Could not create NSX NAT Rule on Tier1 Gateway %s for IP %s  for Isolated network %s", tier1GatewayName, translatedIp, network.getName());
-                LOGGER.error(msg);
+                logger.error(msg);
                 throw new CloudRuntimeException(msg);
             }
         }
@@ -256,7 +257,7 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
         NsxAnswer answer = nsxControllerUtils.sendNsxCommand(command, zone.getId());
         if (!answer.getResult()) {
             String msg = String.format("Error creating DHCP relay config for network %s and nic %s: %s", network.getName(), nic.getName(), answer.getDetails());
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
         return nicProfile;
@@ -307,7 +308,7 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
         DomainVO domain = domainDao.findById(account.getDomainId());
         if (Objects.isNull(domain)) {
             String msg = String.format("Unable to find domain with id: %s", account.getDomainId());
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
         String vpcName = null;
@@ -318,7 +319,7 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
             }
             vpcName = vpc.getName();
         } else {
-            LOGGER.debug(String.format("Creating a Tier 1 Gateway for the network %s before creating the NSX segment", networkVO.getName()));
+            logger.debug(String.format("Creating a Tier 1 Gateway for the network %s before creating the NSX segment", networkVO.getName()));
             long networkOfferingId = networkVO.getNetworkOfferingId();
             NetworkOfferingVO networkOfferingVO = networkOfferingDao.findById(networkOfferingId);
             boolean isSourceNatSupported = !NetworkOffering.NsxMode.ROUTED.name().equals(networkOfferingVO.getNsxMode()) &&
@@ -328,7 +329,7 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
             NsxAnswer nsxAnswer = nsxControllerUtils.sendNsxCommand(nsxTier1GatewayCommand, zone.getId());
             if (!nsxAnswer.getResult()) {
                 String msg = String.format("Could not create a Tier 1 Gateway for network %s: %s", networkVO.getName(), nsxAnswer.getDetails());
-                LOGGER.error(msg);
+                logger.error(msg);
                 throw new CloudRuntimeException(msg);
             }
         }

@@ -24,7 +24,8 @@ import com.cloud.network.element.NsxProviderVO;
 import org.apache.cloudstack.NsxAnswer;
 import org.apache.cloudstack.agent.api.NsxCommand;
 import org.apache.cloudstack.service.NsxApiClient;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -33,7 +34,7 @@ import static java.util.Objects.isNull;
 
 @Component
 public class NsxControllerUtils {
-    private static final Logger s_logger = Logger.getLogger(NsxControllerUtils.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
     private AgentManager agentMgr;
@@ -52,13 +53,13 @@ public class NsxControllerUtils {
     public NsxAnswer sendNsxCommand(NsxCommand cmd, long zoneId) throws IllegalArgumentException {
         NsxProviderVO nsxProviderVO = nsxProviderDao.findByZoneId(zoneId);
         if (nsxProviderVO == null) {
-            s_logger.error("No NSX controller was found!");
+            logger.error("No NSX controller was found!");
             throw new InvalidParameterValueException("Failed to find an NSX controller");
         }
         Answer answer = agentMgr.easySend(nsxProviderVO.getHostId(), cmd);
 
         if (answer == null || !answer.getResult()) {
-            s_logger.error("NSX API Command failed");
+            logger.error("NSX API Command failed");
             throw new InvalidParameterValueException("Failed API call to NSX controller");
         }
 

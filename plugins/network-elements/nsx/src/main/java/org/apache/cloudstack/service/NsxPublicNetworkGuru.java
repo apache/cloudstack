@@ -46,7 +46,8 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.utils.NsxControllerUtils;
 import org.apache.cloudstack.utils.NsxHelper;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.List;
@@ -69,7 +70,7 @@ public class NsxPublicNetworkGuru extends PublicNetworkGuru {
     @Inject
     private NetworkOfferingDao offeringDao;
 
-    private static final Logger s_logger = Logger.getLogger(NsxPublicNetworkGuru.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     public NsxPublicNetworkGuru() {
         super();
@@ -95,12 +96,12 @@ public class NsxPublicNetworkGuru extends PublicNetworkGuru {
 
     @Override
     public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException, ConcurrentOperationException {
-        s_logger.debug("NSX Public network guru: allocate");
+        logger.debug("NSX Public network guru: allocate");
 
         IPAddressVO ipAddress = _ipAddressDao.findByIp(nic.getIPv4Address());
         if (ipAddress == null) {
             String err = String.format("Cannot find the IP address %s", nic.getIPv4Address());
-            s_logger.error(err);
+            logger.error(err);
             throw new CloudRuntimeException(err);
         }
         Long vpcId = ipAddress.getVpcId();
@@ -108,7 +109,7 @@ public class NsxPublicNetworkGuru extends PublicNetworkGuru {
         VpcVO vpc = vpcDao.findById(vpcId);
         if (vpc == null) {
             String err = String.format("Cannot find a VPC with ID %s", vpcId);
-            s_logger.error(err);
+            logger.error(err);
             throw new CloudRuntimeException(err);
         }
 
@@ -116,7 +117,7 @@ public class NsxPublicNetworkGuru extends PublicNetworkGuru {
         List<IPAddressVO> ips = _ipAddressDao.listByAssociatedVpc(vpc.getId(), true);
         if (CollectionUtils.isEmpty(ips)) {
             String err = String.format("Cannot find a source NAT IP for the VPC %s", vpc.getName());
-            s_logger.error(err);
+            logger.error(err);
             throw new CloudRuntimeException(err);
         }
         ips = ips.stream().filter(x -> !x.getAddress().addr().equals(nic.getIPv4Address())).collect(Collectors.toList());
@@ -135,11 +136,11 @@ public class NsxPublicNetworkGuru extends PublicNetworkGuru {
                 boolean sourceNatEnabled = !NetworkOffering.NsxMode.ROUTED.name().equals(vpcVO.getNsxMode()) &&
                         vpcOfferingServiceMapDao.areServicesSupportedByVpcOffering(vpc.getVpcOfferingId(), services);
 
-                s_logger.info(String.format("Creating Tier 1 Gateway for VPC %s", vpc.getName()));
+                logger.info(String.format("Creating Tier 1 Gateway for VPC %s", vpc.getName()));
                 boolean result = nsxService.createVpcNetwork(dataCenterId, accountId, domainId, resourceId, vpc.getName(), sourceNatEnabled);
                 if (!result) {
                     String msg = String.format("Error creating Tier 1 Gateway for VPC %s", vpc.getName());
-                    s_logger.error(msg);
+                    logger.error(msg);
                     throw new CloudRuntimeException(msg);
                 }
 
@@ -153,13 +154,13 @@ public class NsxPublicNetworkGuru extends PublicNetworkGuru {
 
                 String tier1GatewayName = NsxControllerUtils.getTier1GatewayName(domainId, accountId, dataCenterId, resourceId, isForVpc);
                 String translatedIp = ipAddress.getAddress().addr();
-                s_logger.debug(String.format("Creating NSX Nat Rule for Tier1 GW %s for translated IP %s", tier1GatewayName, translatedIp));
+                logger.debug(String.format("Creating NSX Nat Rule for Tier1 GW %s for translated IP %s", tier1GatewayName, translatedIp));
                 String natRuleId = NsxControllerUtils.getNsxNatRuleId(domainId, accountId, dataCenterId, resourceId, isForVpc);
                 CreateOrUpdateNsxTier1NatRuleCommand cmd = NsxHelper.createOrUpdateNsxNatRuleCommand(domainId, accountId, dataCenterId, tier1GatewayName, "SNAT", translatedIp, natRuleId);
                 NsxAnswer nsxAnswer = nsxControllerUtils.sendNsxCommand(cmd, dataCenterId);
                 if (!nsxAnswer.getResult()) {
                     String msg = String.format("Could not create NSX Nat Rule on Tier1 Gateway %s for IP %s", tier1GatewayName, translatedIp);
-                    s_logger.error(msg);
+                    logger.error(msg);
                     throw new CloudRuntimeException(msg);
                 }
             }

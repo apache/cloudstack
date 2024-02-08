@@ -82,7 +82,8 @@ import org.apache.cloudstack.resource.NsxLoadBalancerMember;
 import org.apache.cloudstack.resource.NsxNetworkRule;
 import org.apache.cloudstack.utils.NsxControllerUtils;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -108,7 +109,7 @@ public class NsxApiClient {
     protected Function<Class<? extends Service>, Service> nsxService;
 
     public static final int RESPONSE_TIMEOUT_SECONDS = 60;
-    private static final Logger LOGGER = Logger.getLogger(NsxApiClient.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     // Constants
     private static final String TIER_1_RESOURCE_TYPE = "Tier1";
@@ -219,7 +220,7 @@ public class NsxApiClient {
         } catch (Error error) {
             ApiError ae = error.getData()._convertTo(ApiError.class);
             String msg = String.format("Error creating the DHCP relay config with name %s: %s", dhcpRelayConfigName, ae.getErrorMessage());
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(ae.getErrorMessage());
         }
     }
@@ -231,7 +232,7 @@ public class NsxApiClient {
         } catch (Error error) {
             ApiError ae = error.getData()._convertTo(ApiError.class);
             String msg = String.format("Error obtaining the segment with name %s: %s", segmentName, ae.getErrorMessage());
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(ae.getErrorMessage());
         }
     }
@@ -243,7 +244,7 @@ public class NsxApiClient {
         } catch (Error error) {
             ApiError ae = error.getData()._convertTo(ApiError.class);
             String msg = String.format("Error updating the segment with name %s: %s", segmentName, ae.getErrorMessage());
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(ae.getErrorMessage());
         }
     }
@@ -253,7 +254,7 @@ public class NsxApiClient {
             Tier1s tier1service = (Tier1s) nsxService.apply(Tier1s.class);
             return tier1service.get(tier1GatewayId);
         } catch (Exception e) {
-            LOGGER.debug(String.format("NSX Tier-1 gateway with name: %s not found", tier1GatewayId));
+            logger.debug(String.format("NSX Tier-1 gateway with name: %s not found", tier1GatewayId));
         }
         return null;
     }
@@ -298,7 +299,7 @@ public class NsxApiClient {
         String tier0GatewayPath = TIER_0_GATEWAY_PATH_PREFIX + tier0Gateway;
         Tier1 tier1 = getTier1Gateway(name);
         if (tier1 != null) {
-            LOGGER.info(String.format("VPC network with name %s exists in NSX zone", name));
+            logger.info(String.format("VPC network with name %s exists in NSX zone", name));
             return;
         }
 
@@ -321,7 +322,7 @@ public class NsxApiClient {
         } catch (Error error) {
             ApiError ae = error.getData()._convertTo(ApiError.class);
             String msg = String.format("Error creating tier 1 gateway %s: %s", name, ae.getErrorMessage());
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
     }
@@ -330,7 +331,7 @@ public class NsxApiClient {
         com.vmware.nsx_policy.infra.tier_1s.LocaleServices localeService = (com.vmware.nsx_policy.infra.tier_1s.LocaleServices)
                 nsxService.apply(com.vmware.nsx_policy.infra.tier_1s.LocaleServices.class);
         if (getTier1Gateway(tier1Id) == null) {
-            LOGGER.warn(String.format("The Tier 1 Gateway %s does not exist, cannot be removed", tier1Id));
+            logger.warn(String.format("The Tier 1 Gateway %s does not exist, cannot be removed", tier1Id));
             return;
         }
         removeTier1GatewayNatRules(tier1Id);
@@ -345,10 +346,10 @@ public class NsxApiClient {
         PolicyNatRuleListResult result = natRulesService.list(tier1Id, natId, null, false, null, null, null, null);
         List<PolicyNatRule> natRules = result.getResults();
         if (CollectionUtils.isEmpty(natRules)) {
-            LOGGER.debug(String.format("Didn't find any NAT rule to remove on the Tier 1 Gateway %s", tier1Id));
+            logger.debug(String.format("Didn't find any NAT rule to remove on the Tier 1 Gateway %s", tier1Id));
         } else {
             for (PolicyNatRule natRule : natRules) {
-                LOGGER.debug(String.format("Removing NAT rule %s from Tier 1 Gateway %s", natRule.getId(), tier1Id));
+                logger.debug(String.format("Removing NAT rule %s from Tier 1 Gateway %s", natRule.getId(), tier1Id));
                 natRulesService.delete(tier1Id, natId, natRule.getId());
             }
         }
@@ -359,7 +360,7 @@ public class NsxApiClient {
         SiteListResult sites = getSites();
         if (CollectionUtils.isEmpty(sites.getResults())) {
             String errorMsg = "No sites are found in the linked NSX infrastructure";
-            LOGGER.error(errorMsg);
+            logger.error(errorMsg);
             throw new CloudRuntimeException(errorMsg);
         }
         return sites.getResults().get(0).getId();
@@ -378,7 +379,7 @@ public class NsxApiClient {
         EnforcementPointListResult epList = getEnforcementPoints(siteId);
         if (CollectionUtils.isEmpty(epList.getResults())) {
             String errorMsg = String.format("No enforcement points are found in the linked NSX infrastructure for site ID %s", siteId);
-            LOGGER.error(errorMsg);
+            logger.error(errorMsg);
             throw new CloudRuntimeException(errorMsg);
         }
         return epList.getResults().get(0).getPath();
@@ -422,7 +423,7 @@ public class NsxApiClient {
         } catch (Error error) {
             ApiError ae = error.getData()._convertTo(ApiError.class);
             String msg = String.format("Error creating segment %s: %s", segmentName, ae.getErrorMessage());
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
     }
@@ -437,28 +438,28 @@ public class NsxApiClient {
             removeSegment(segmentName);
             DhcpRelayConfigs dhcpRelayConfig = (DhcpRelayConfigs) nsxService.apply(DhcpRelayConfigs.class);
             String dhcpRelayConfigId = NsxControllerUtils.getNsxDhcpRelayConfigId(zoneId, domainId, accountId, vpcId, networkId);
-            LOGGER.debug(String.format("Removing the DHCP relay config with ID %s", dhcpRelayConfigId));
+            logger.debug(String.format("Removing the DHCP relay config with ID %s", dhcpRelayConfigId));
             dhcpRelayConfig.delete(dhcpRelayConfigId);
         } catch (Error error) {
             ApiError ae = error.getData()._convertTo(ApiError.class);
             String msg = String.format("Error deleting segment %s: %s", segmentName, ae.getErrorMessage());
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
     }
 
     protected void removeSegment(String segmentName) {
-        LOGGER.debug(String.format("Removing the segment with ID %s", segmentName));
+        logger.debug(String.format("Removing the segment with ID %s", segmentName));
         Segments segmentService = (Segments) nsxService.apply(Segments.class);
         String errMsg = String.format("The segment with ID %s is not found, skipping removal", segmentName);
         try {
             Segment segment = segmentService.get(segmentName);
             if (segment == null) {
-                LOGGER.warn(errMsg);
+                logger.warn(errMsg);
                 return;
             }
         } catch (Exception e) {
-            LOGGER.warn(errMsg);
+            logger.warn(errMsg);
             return;
         }
         String siteId = getDefaultSiteId();
@@ -467,14 +468,14 @@ public class NsxApiClient {
         PolicyGroupMembersListResult segmentPortsList = getSegmentPortList(segmentPortsService, segmentName, enforcementPointPath);
         Long portCount = segmentPortsList.getResultCount();
         portCount = retrySegmentDeletion(segmentPortsService, portCount, segmentName, enforcementPointPath);
-        LOGGER.info("Port count: " + portCount);
+        logger.info("Port count: " + portCount);
         if (portCount == 0L) {
-            LOGGER.debug(String.format("Removing the segment with ID %s", segmentName));
+            logger.debug(String.format("Removing the segment with ID %s", segmentName));
             removeGroupForSegment(segmentName);
             segmentService.delete(segmentName);
         } else {
             String msg = String.format("Cannot remove the NSX segment %s because there are still %s port group(s) attached to it", segmentName, portCount);
-            LOGGER.debug(msg);
+            logger.debug(msg);
             throw new CloudRuntimeException(msg);
         }
     }
@@ -489,7 +490,7 @@ public class NsxApiClient {
         int count = 1;
         do {
             try {
-                LOGGER.info("Waiting for all port groups to be unlinked from the segment - Attempt: " + count++ + " Waiting for 5 secs");
+                logger.info("Waiting for all port groups to be unlinked from the segment - Attempt: " + count++ + " Waiting for 5 secs");
                 Thread.sleep(5000);
                 portCount = getSegmentPortList(segmentPortsService, segmentName, enforcementPointPath).getResultCount();
                 retries--;
@@ -514,13 +515,13 @@ public class NsxApiClient {
                     .setEnabled(true)
                     .build();
 
-            LOGGER.debug(String.format("Creating NSX static NAT rule %s for tier-1 gateway %s (VPC: %s)", ruleName, tier1GatewayName, vpcName));
+            logger.debug(String.format("Creating NSX static NAT rule %s for tier-1 gateway %s (VPC: %s)", ruleName, tier1GatewayName, vpcName));
             natService.patch(tier1GatewayName, NatId.USER.name(), ruleName, rule);
         } catch (Error error) {
             ApiError ae = error.getData()._convertTo(ApiError.class);
             String msg = String.format("Error creating NSX Static NAT rule %s for tier-1 gateway %s (VPC: %s), due to %s",
                     ruleName, tier1GatewayName, vpcName, ae.getErrorMessage());
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
     }
@@ -528,7 +529,7 @@ public class NsxApiClient {
     public void deleteNatRule(Network.Service service, String privatePort, String protocol, String networkName, String tier1GatewayName, String ruleName) {
         try {
             NatRules natService = (NatRules) nsxService.apply(NatRules.class);
-            LOGGER.debug(String.format("Deleting NSX static NAT rule %s for tier-1 gateway %s (network: %s)", ruleName, tier1GatewayName, networkName));
+            logger.debug(String.format("Deleting NSX static NAT rule %s for tier-1 gateway %s (network: %s)", ruleName, tier1GatewayName, networkName));
             // delete NAT rule
             natService.delete(tier1GatewayName, NatId.USER.name(), ruleName);
             if (service == Network.Service.PortForwarding) {
@@ -541,7 +542,7 @@ public class NsxApiClient {
             ApiError ae = error.getData()._convertTo(ApiError.class);
             String msg = String.format("Failed to delete NSX Static NAT rule %s for tier-1 gateway %s (VPC: %s), due to %s",
                     ruleName, tier1GatewayName, networkName, ae.getErrorMessage());
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
     }
@@ -550,7 +551,7 @@ public class NsxApiClient {
                                          String vmIp, String publicPort, String service) {
         try {
             NatRules natService = (NatRules) nsxService.apply(NatRules.class);
-            LOGGER.debug(String.format("Creating NSX Port-Forwarding NAT %s for network %s", ruleName, networkName));
+            logger.debug(String.format("Creating NSX Port-Forwarding NAT %s for network %s", ruleName, networkName));
             PolicyNatRule rule = new PolicyNatRule.Builder()
                     .setId(ruleName)
                     .setDisplayName(ruleName)
@@ -567,7 +568,7 @@ public class NsxApiClient {
             ApiError ae = error.getData()._convertTo(ApiError.class);
             String msg = String.format("Failed to delete NSX Port-forward rule %s for network: %s, due to %s",
                     ruleName, networkName, ae.getErrorMessage());
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
     }
@@ -586,7 +587,7 @@ public class NsxApiClient {
             } catch (Error error) {
                 ApiError ae = error.getData()._convertTo(ApiError.class);
                 String msg = String.format("Failed to create NSX LB pool members, due to: %s", ae.getErrorMessage());
-                LOGGER.error(msg);
+                logger.error(msg);
                 throw new CloudRuntimeException(msg);
             }
         }
@@ -610,7 +611,7 @@ public class NsxApiClient {
         } catch (Error error) {
             ApiError ae = error.getData()._convertTo(ApiError.class);
             String msg = String.format("Failed to create NSX LB server pool, due to: %s", ae.getErrorMessage());
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
     }
@@ -660,7 +661,7 @@ public class NsxApiClient {
         } catch (Error error) {
             ApiError ae = error.getData()._convertTo(ApiError.class);
             String msg = String.format("Failed to create NSX load balancer, due to: %s", ae.getErrorMessage());
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
     }
@@ -688,7 +689,7 @@ public class NsxApiClient {
         } catch (Error error) {
             ApiError ae = error.getData()._convertTo(ApiError.class);
             String msg = String.format("Failed to create and add NSX virtual server to the Load Balancer, due to: %s", ae.getErrorMessage());
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
     }
@@ -724,7 +725,7 @@ public class NsxApiClient {
         } catch (Error error) {
             ApiError ae = error.getData()._convertTo(ApiError.class);
             String msg = String.format("Failed to delete NSX Load Balancer resources, due to: %s", ae.getErrorMessage());
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
     }
@@ -742,7 +743,7 @@ public class NsxApiClient {
         } catch (Error error) {
             ApiError ae = error.getData()._convertTo(ApiError.class);
             String msg = String.format("Failed to get NSX LB server pool, due to: %s", ae.getErrorMessage());
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
     }
@@ -767,7 +768,7 @@ public class NsxApiClient {
         } catch (Error error) {
             ApiError ae = error.getData()._convertTo(ApiError.class);
             String msg = String.format("Failed to get NSX LB server pool, due to: %s", ae.getErrorMessage());
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
     }
@@ -782,7 +783,7 @@ public class NsxApiClient {
         } catch (Error error) {
             ApiError ae = error.getData()._convertTo(ApiError.class);
             String msg = String.format("Failed to list NSX LB App profiles, due to: %s", ae.getErrorMessage());
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
     }
@@ -816,7 +817,7 @@ public class NsxApiClient {
         } catch (Error error) {
             ApiError ae = error.getData()._convertTo(ApiError.class);
             String msg = String.format("Failed to list NSX infra service, due to: %s", ae.getErrorMessage());
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
     }
@@ -866,7 +867,7 @@ public class NsxApiClient {
         } catch (Error error) {
             ApiError ae = error.getData()._convertTo(ApiError.class);
             String msg = String.format("Failed to create NSX infra service, due to: %s", ae.getErrorMessage());
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
     }
@@ -888,7 +889,7 @@ public class NsxApiClient {
      * Create a Group for the Segment on the Inventory, with the same name as the segment and being the segment the only member of the group
      */
     public void createGroupForSegment(String segmentName) {
-        LOGGER.info(String.format("Creating Group for Segment %s", segmentName));
+        logger.info(String.format("Creating Group for Segment %s", segmentName));
 
         PathExpression pathExpression = new PathExpression();
         List<String> paths = List.of(String.format("%s/%s", SEGMENTS_PATH, segmentName));
@@ -907,7 +908,7 @@ public class NsxApiClient {
      * Remove Segment Group from the Inventory
      */
     private void removeGroupForSegment(String segmentName) {
-        LOGGER.info(String.format("Removing Group for Segment %s", segmentName));
+        logger.info(String.format("Removing Group for Segment %s", segmentName));
         Groups service = (Groups) nsxService.apply(Groups.class);
         service.delete(DEFAULT_DOMAIN, segmentName, true, false);
     }
@@ -919,7 +920,7 @@ public class NsxApiClient {
         } catch (Error error) {
             ApiError ae = error.getData()._convertTo(ApiError.class);
             String msg = String.format("Failed to remove NSX distributed firewall policy for segment %s, due to: %s", segmentName, ae.getErrorMessage());
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
     }
@@ -943,7 +944,7 @@ public class NsxApiClient {
         } catch (Error error) {
             ApiError ae = error.getData()._convertTo(ApiError.class);
             String msg = String.format("Failed to create NSX distributed firewall policy for segment %s, due to: %s", segmentName, ae.getErrorMessage());
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
     }
@@ -1010,7 +1011,7 @@ public class NsxApiClient {
             return source ? segmentGroup : egressSource;
        }
         String err = String.format("Unsupported traffic type %s", trafficType);
-        LOGGER.error(err);
+        logger.error(err);
         throw new CloudRuntimeException(err);
     }
 
@@ -1023,7 +1024,7 @@ public class NsxApiClient {
         } catch (Error error) {
             ApiError ae = error.getData()._convertTo(ApiError.class);
             String msg = String.format("Failed to list NSX groups, due to: %s", ae.getErrorMessage());
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
     }
