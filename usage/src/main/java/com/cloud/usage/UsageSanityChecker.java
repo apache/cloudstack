@@ -213,7 +213,7 @@ public class UsageSanityChecker {
             String lastIdText = null;
             lastId = -1;
             if ((lastIdText = reader.readLine()) != null) {
-                s_logger.info(String.format("Read [%s] as lastId for Usage sanity checking.", lastIdText));
+                logger.info("Read {} as lastId for Usage sanity checking.", lastIdText);
                 lastId = Integer.parseInt(lastIdText);
             }
         } catch (Exception e) {
@@ -232,9 +232,9 @@ public class UsageSanityChecker {
             maxId = -1;
             if (rs.next() && (rs.getInt(1) > 0)) {
                 maxId = rs.getInt(1);
-                s_logger.info(String.format("Read [%s] as maxId for Usage sanity checking.", maxId));
+                logger.info("Read {} as maxId for Usage sanity checking.", maxId);
                 if (maxId > lastId) {
-                    s_logger.info(String.format("The max id [%s] is greater than the last id [%s]; adding id check to the query.", maxId, lastId));
+                    logger.info("The max id {} is greater than the last id {}; adding id check to the query.", maxId, lastId);
                     lastCheckId += " and cu.id <= ?";
                 }
             }
