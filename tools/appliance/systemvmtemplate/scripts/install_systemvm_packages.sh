@@ -22,7 +22,7 @@ set -x
 function install_vhd_util() {
   [[ -f /bin/vhd-util ]] && return
 
-  wget --no-check-certificate https://github.com/shapeblue/cloudstack-nonoss/raw/main/vhd-util -O /bin/vhd-util
+  wget --no-check-certificate https://download.cloudstack.org/tools/vhd-util -O /bin/vhd-util
   chmod a+x /bin/vhd-util
 }
 
@@ -100,7 +100,7 @@ function install_packages() {
 
   install_vhd_util
   # Install xenserver guest utilities as debian repos don't have it
-  wget http://archive.ubuntu.com/ubuntu/pool/universe/x/xe-guest-utilities/xe-guest-utilities_7.20.2-0ubuntu1_amd64.deb
+  wget --no-check-certificate https://download.cloudstack.org/systemvm/debian/xe-guest-utilities_7.20.2-0ubuntu1_amd64.deb
   dpkg -i xe-guest-utilities_7.20.2-0ubuntu1_amd64.deb
   rm -f xe-guest-utilities_7.20.2-0ubuntu1_amd64.deb
 }

@@ -28,7 +28,7 @@
       "headless": true,
       "http_directory": "http",
       "iso_checksum": "sha512:0262488ce2cec6d95a6c9002cfba8b81ac0d1c29fe7993aa5af30f81cecad3eb66558b9d8689a86b57bf12b8cbeab1e11d128a53356b288d48e339bb003dace5",
-      "iso_url": "https://cdimage.debian.org/mirror/cdimage/release/12.4.0/amd64/iso-cd/debian-12.4.0-amd64-netinst.iso",
+      "iso_url": "https://download.cloudstack.org/systemvm/debian/debian-12.4.0-amd64-netinst.iso",
       "net_device": "virtio-net",
       "output_directory": "../dist",
       "qemuargs": [
