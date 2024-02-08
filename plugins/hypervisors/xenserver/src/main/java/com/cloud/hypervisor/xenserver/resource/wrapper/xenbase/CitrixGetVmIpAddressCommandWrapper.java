@@ -27,7 +27,6 @@ import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.VM;
 import com.xensource.xenapi.VMGuestMetrics;
 import com.xensource.xenapi.Types;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
@@ -37,7 +36,6 @@ import org.apache.xmlrpc.XmlRpcException;
 @ResourceWrapper(handles =  GetVmIpAddressCommand.class)
 public final class CitrixGetVmIpAddressCommandWrapper extends CommandWrapper<GetVmIpAddressCommand, Answer, CitrixResourceBase> {
 
-    private static final Logger s_logger = Logger.getLogger(CitrixGetVmIpAddressCommandWrapper.class);
 
     @Override
     public Answer execute(final GetVmIpAddressCommand command, final CitrixResourceBase citrixResourceBase) {
@@ -63,16 +61,16 @@ public final class CitrixGetVmIpAddressCommandWrapper extends CommandWrapper<Get
             }
 
             if (vmIp != null) {
-                s_logger.debug("VM " +vmName + " ip address got retrieved "+vmIp);
+                logger.debug("VM " +vmName + " ip address got retrieved "+vmIp);
                 result = true;
                 return new Answer(command, result, vmIp);
             }
 
         }catch (Types.XenAPIException e) {
-            s_logger.debug("Got exception in GetVmIpAddressCommand "+ e.getMessage());
+            logger.debug("Got exception in GetVmIpAddressCommand "+ e.getMessage());
             errorMsg = "Failed to retrived vm ip addr, exception: "+e.getMessage();
         }catch (XmlRpcException e) {
-            s_logger.debug("Got exception in GetVmIpAddressCommand "+ e.getMessage());
+            logger.debug("Got exception in GetVmIpAddressCommand "+ e.getMessage());
             errorMsg = "Failed to retrived vm ip addr, exception: "+e.getMessage();
         }
 

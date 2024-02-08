@@ -26,7 +26,8 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -35,7 +36,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 public class LibvirtStoragePoolXMLParser {
-    private static final Logger s_logger = Logger.getLogger(LibvirtStoragePoolXMLParser.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     public LibvirtStoragePoolDef parseStoragePoolXML(String poolXML) {
         DocumentBuilder builder;
@@ -101,11 +102,11 @@ public class LibvirtStoragePoolXMLParser {
                 return new LibvirtStoragePoolDef(LibvirtStoragePoolDef.PoolType.valueOf(type.toUpperCase()), poolName, uuid, host, path, targetPath);
             }
         } catch (ParserConfigurationException e) {
-            s_logger.debug(e.toString());
+            logger.debug(e.toString());
         } catch (SAXException e) {
-            s_logger.debug(e.toString());
+            logger.debug(e.toString());
         } catch (IOException e) {
-            s_logger.debug(e.toString());
+            logger.debug(e.toString());
         }
         return null;
     }

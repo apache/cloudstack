@@ -20,7 +20,6 @@ package org.apache.cloudstack.api.command.admin.storage;
 
 import com.cloud.storage.StorageService;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,16 +29,17 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
 public class DeleteObjectStoragePoolCmdTest {
-    public static final Logger s_logger = Logger.getLogger(DeleteObjectStoragePoolCmdTest.class.getName());
     @Mock
     private StorageService storageService;
 
     @Spy
     DeleteObjectStoragePoolCmd deleteObjectStoragePoolCmd;
 
+    private AutoCloseable closeable;
+
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         deleteObjectStoragePoolCmd = Mockito.spy(new DeleteObjectStoragePoolCmd());
         deleteObjectStoragePoolCmd._storageService = storageService;
     }
@@ -47,6 +47,7 @@ public class DeleteObjectStoragePoolCmdTest {
     @After
     public void tearDown() throws Exception {
         CallContext.unregister();
+        closeable.close();
     }
 
     @Test

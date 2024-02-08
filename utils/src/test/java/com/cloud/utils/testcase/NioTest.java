@@ -27,7 +27,8 @@ import com.cloud.utils.nio.NioClient;
 import com.cloud.utils.nio.NioServer;
 import com.cloud.utils.nio.Task;
 import com.cloud.utils.nio.Task.Type;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -58,7 +59,7 @@ import java.util.concurrent.Executors;
 
 public class NioTest {
 
-    private static final Logger LOGGER = Logger.getLogger(NioTest.class);
+    protected Logger logger = LogManager.getLogger(NioTest.class);
 
     // Test should fail in due time instead of looping forever
     private static final int TESTTIMEOUT = 60000;
@@ -92,7 +93,7 @@ public class NioTest {
 
     @Before
     public void setUp() {
-        LOGGER.info("Setting up Benchmark Test");
+        logger.info("Setting up Benchmark Test");
 
         completedTestCount = 0;
         testBytes = new byte[1000000];
@@ -129,31 +130,31 @@ public class NioTest {
         for (NioClient maliciousClient : maliciousClients) {
             maliciousClient.stop();
         }
-        LOGGER.info("Clients stopped.");
+        logger.info("Clients stopped.");
     }
 
     protected void stopServer() {
         server.stop();
-        LOGGER.info("Server stopped.");
+        logger.info("Server stopped.");
     }
 
     @Test(timeout=TESTTIMEOUT)
     public void testConnection() {
         while (!isTestsDone()) {
             try {
-                LOGGER.debug(completedTestCount + "/" + totalTestCount + " tests done. Waiting for completion");
+                logger.debug(completedTestCount + "/" + totalTestCount + " tests done. Waiting for completion");
                 Thread.sleep(1000);
             } catch (final InterruptedException e) {
                 Assert.fail(e.getMessage());
             }
         }
-        LOGGER.debug(completedTestCount + "/" + totalTestCount + " tests done.");
+        logger.debug(completedTestCount + "/" + totalTestCount + " tests done.");
     }
 
     protected void doServerProcess(final byte[] data) {
         oneMoreTestDone();
         Assert.assertArrayEquals(testBytes, data);
-        LOGGER.info("Verify data received by server done.");
+        logger.info("Verify data received by server done.");
     }
 
     public byte[] getTestBytes() {
@@ -187,7 +188,7 @@ public class NioTest {
             _selector = Selector.open();
             try {
                 _clientConnection = SocketChannel.open();
-                LOGGER.info("Connecting to " + _host + ":" + _port);
+                logger.info("Connecting to " + _host + ":" + _port);
                 final InetSocketAddress peerAddr = new InetSocketAddress(_host, _port);
                 _clientConnection.connect(peerAddr);
                 // This is done on purpose, the malicious client would connect
@@ -197,7 +198,7 @@ public class NioTest {
                 _selector.close();
                 throw e;
             } catch (InterruptedException e) {
-                LOGGER.debug(e.getMessage());
+                logger.debug(e.getMessage());
             }
         }
     }
@@ -217,7 +218,7 @@ public class NioTest {
 
             @Override
             public void doTask(final Task task) {
-                LOGGER.info("Malicious Client: Received task " + task.getType().toString());
+                logger.info("Malicious Client: Received task " + task.getType().toString());
             }
         }
     }
@@ -238,21 +239,21 @@ public class NioTest {
             @Override
             public void doTask(final Task task) {
                 if (task.getType() == Task.Type.CONNECT) {
-                    LOGGER.info("Client: Received CONNECT task");
+                    logger.info("Client: Received CONNECT task");
                     try {
-                        LOGGER.info("Sending data to server");
+                        logger.info("Sending data to server");
                         task.getLink().send(getTestBytes());
                     } catch (ClosedChannelException e) {
-                        LOGGER.error(e.getMessage());
+                        logger.error(e.getMessage());
                         e.printStackTrace();
                     }
                 } else if (task.getType() == Task.Type.DATA) {
-                    LOGGER.info("Client: Received DATA task");
+                    logger.info("Client: Received DATA task");
                 } else if (task.getType() == Task.Type.DISCONNECT) {
-                    LOGGER.info("Client: Received DISCONNECT task");
+                    logger.info("Client: Received DISCONNECT task");
                     stopClient();
                 } else if (task.getType() == Task.Type.OTHER) {
-                    LOGGER.info("Client: Received OTHER task");
+                    logger.info("Client: Received OTHER task");
                 }
             }
         }
@@ -274,15 +275,15 @@ public class NioTest {
             @Override
             public void doTask(final Task task) {
                 if (task.getType() == Task.Type.CONNECT) {
-                    LOGGER.info("Server: Received CONNECT task");
+                    logger.info("Server: Received CONNECT task");
                 } else if (task.getType() == Task.Type.DATA) {
-                    LOGGER.info("Server: Received DATA task");
+                    logger.info("Server: Received DATA task");
                     doServerProcess(task.getData());
                 } else if (task.getType() == Task.Type.DISCONNECT) {
-                    LOGGER.info("Server: Received DISCONNECT task");
+                    logger.info("Server: Received DISCONNECT task");
                     stopServer();
                 } else if (task.getType() == Task.Type.OTHER) {
-                    LOGGER.info("Server: Received OTHER task");
+                    logger.info("Server: Received OTHER task");
                 }
             }
         }

@@ -17,9 +17,9 @@
 
 package org.apache.cloudstack.network.contrail.model;
 
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.util.UUID;
 
 import org.apache.cloudstack.network.contrail.management.ContrailManagerImpl;
-import org.apache.log4j.Logger;
 import org.junit.Test;
 
 import com.cloud.network.Network;
@@ -45,8 +44,6 @@ import net.juniper.contrail.api.ApiConnectorMock;
 import net.juniper.contrail.api.types.VirtualMachineInterface;
 
 public class VMInterfaceModelTest extends TestCase {
-    private static final Logger s_logger =
-            Logger.getLogger(VMInterfaceModelTest.class);
 
     @Test
     public void testCreateVMInterface() throws IOException {

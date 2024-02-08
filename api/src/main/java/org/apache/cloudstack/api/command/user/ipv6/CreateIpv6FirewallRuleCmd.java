@@ -32,7 +32,6 @@ import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -50,7 +49,6 @@ import com.cloud.utils.net.NetUtils;
         responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class CreateIpv6FirewallRuleCmd extends BaseAsyncCreateCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateIpv6FirewallRuleCmd.class.getName());
 
 
     // ///////////////////////////////////////////////////
@@ -224,7 +222,7 @@ public class CreateIpv6FirewallRuleCmd extends BaseAsyncCreateCmd {
             setEntityId(result.getId());
             setEntityUuid(result.getUuid());
         } catch (NetworkRuleConflictException e) {
-            s_logger.trace("Network Rule Conflict: ", e);
+            logger.trace("Network Rule Conflict: ", e);
             throw new ServerApiException(ApiErrorCode.NETWORK_RULE_CONFLICT_ERROR, e.getMessage(), e);
         }
     }

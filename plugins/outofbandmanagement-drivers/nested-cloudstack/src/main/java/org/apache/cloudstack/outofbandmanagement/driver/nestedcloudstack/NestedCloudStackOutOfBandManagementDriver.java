@@ -31,14 +31,12 @@ import org.apache.cloudstack.outofbandmanagement.driver.OutOfBandManagementDrive
 import org.apache.cloudstack.outofbandmanagement.driver.OutOfBandManagementDriverCommand;
 import org.apache.cloudstack.outofbandmanagement.driver.OutOfBandManagementDriverPowerCommand;
 import org.apache.cloudstack.outofbandmanagement.driver.OutOfBandManagementDriverResponse;
-import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
 public final class NestedCloudStackOutOfBandManagementDriver extends AdapterBase implements OutOfBandManagementDriver {
-    private static final Logger LOG = Logger.getLogger(NestedCloudStackOutOfBandManagementDriver.class);
 
     public OutOfBandManagementDriverResponse execute(final OutOfBandManagementDriverCommand cmd) {
         OutOfBandManagementDriverResponse response = new OutOfBandManagementDriverResponse(null, "Unsupported Command", false);
@@ -79,7 +77,7 @@ public final class NestedCloudStackOutOfBandManagementDriver extends AdapterBase
                 }
             }
         } catch (IOException e) {
-            LOG.warn("Exception caught while de-serializing and reading state of the nested-cloudstack VM from the response: " + jsonResponse + ", with exception:", e);
+            logger.warn("Exception caught while de-serializing and reading state of the nested-cloudstack VM from the response: " + jsonResponse + ", with exception:", e);
         }
         return OutOfBandManagement.PowerState.Unknown;
     }
@@ -130,7 +128,7 @@ public final class NestedCloudStackOutOfBandManagementDriver extends AdapterBase
         try {
             apiResponse = client.executeRequest(apacheCloudStackRequest);
         } catch (final ApacheCloudStackClientRequestRuntimeException e) {
-            LOG.error("Nested CloudStack oobm plugin failed due to API error: ", e);
+            logger.error("Nested CloudStack oobm plugin failed due to API error: ", e);
             final OutOfBandManagementDriverResponse failedResponse = new OutOfBandManagementDriverResponse(e.getResponse(), "HTTP error code: " + e.getStatusCode(), false);
             if (e.getStatusCode() == 401) {
                 failedResponse.setAuthFailure(true);

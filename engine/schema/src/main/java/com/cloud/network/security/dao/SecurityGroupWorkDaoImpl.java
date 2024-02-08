@@ -20,7 +20,6 @@ import java.util.Date;
 import java.util.List;
 
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.network.security.SecurityGroupWork;
@@ -37,7 +36,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO, Long> implements SecurityGroupWorkDao {
-    private static final Logger s_logger = Logger.getLogger(SecurityGroupWorkDaoImpl.class);
 
     private final SearchBuilder<SecurityGroupWorkVO> VmIdTakenSearch;
     private final SearchBuilder<SecurityGroupWorkVO> VmIdSeqNumSearch;
@@ -107,8 +105,8 @@ public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO
             final List<SecurityGroupWorkVO> vos = lockRows(sc, filter, true);
             if (vos.size() == 0) {
                 txn.commit();
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("Security Group take: no work found");
+                if (logger.isTraceEnabled()) {
+                    logger.trace("Security Group take: no work found");
                 }
                 return null;
             }
@@ -117,8 +115,8 @@ public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO
             if (findByVmIdStep(work.getInstanceId(), Step.Processing) != null) {
                 //ensure that there is no job in Processing state for the same VM
                 processing = true;
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("Security Group work take: found a job in Scheduled and Processing  vmid=" + work.getInstanceId());
+                if (logger.isTraceEnabled()) {
+                    logger.trace("Security Group work take: found a job in Scheduled and Processing  vmid=" + work.getInstanceId());
                 }
             }
             work.setServerId(serverId);
