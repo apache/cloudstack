@@ -79,6 +79,7 @@ public class LibvirtPatchSystemVmCommandWrapper extends CommandWrapper<PatchSyst
         if (patchResult.first()) {
             String scriptVersion = lines[1];
             if (StringUtils.isNotEmpty(patchResult.second())) {
+                s_logger.debug(String.format("Patch result of systemVM %s: %s", sysVMName, patchResult.second()));
                 String res = patchResult.second().replace("\n", " ");
                 String[] output = res.split(":");
                 if (output.length != 2) {

@@ -15,14 +15,10 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-set -x
 PATH="/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
-
-. /lib/lsb/init-functions
 
 log_it() {
   echo "$(date) $@" >> /var/log/cloud.log
-  log_action_msg "$@"
 }
 
 patch_sshd_config() {
@@ -82,6 +78,7 @@ install_packages() {
       fi
     done <$PACKAGES_INI
   fi
+  export DEBIAN_FRONTEND=noninteractive
   install_package
 }
 
