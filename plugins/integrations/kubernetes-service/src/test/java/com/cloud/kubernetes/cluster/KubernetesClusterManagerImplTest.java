@@ -33,6 +33,7 @@ import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.vpc.NetworkACL;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.VMTemplateVO;
@@ -48,6 +49,7 @@ import org.apache.cloudstack.api.command.user.kubernetes.cluster.AddVirtualMachi
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.RemoveVirtualMachinesFromKubernetesClusterCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.commons.collections.MapUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -68,6 +70,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType.CONTROL;
+import static com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType.ETCD;
 import static com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType.WORKER;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -362,5 +365,53 @@ public class KubernetesClusterManagerImplTest {
         Long expectedMemory = (workerOfferingMemory * workerCount) + (controlOfferingMemory * controlCount);
         Assert.assertEquals(expectedCpu, pair.first());
         Assert.assertEquals(expectedMemory, pair.second());
+    }
+
+    @Test
+    public void testIsAnyNodeOfferingEmptyNullMap() {
+        Assert.assertFalse(kubernetesClusterManager.isAnyNodeOfferingEmpty(null));
+    }
+
+    @Test
+    public void testIsAnyNodeOfferingEmptyNullValue() {
+        Map<String, Long> map = new HashMap<>();
+        map.put(WORKER.name(), 1L);
+        map.put(CONTROL.name(), null);
+        map.put(ETCD.name(), 2L);
+        Assert.assertTrue(kubernetesClusterManager.isAnyNodeOfferingEmpty(map));
+    }
+
+    @Test
+    public void testIsAnyNodeOfferingEmpty() {
+        Map<String, Long> map = new HashMap<>();
+        map.put(WORKER.name(), 1L);
+        map.put(CONTROL.name(), 2L);
+        Assert.assertFalse(kubernetesClusterManager.isAnyNodeOfferingEmpty(map));
+    }
+
+    @Test
+    public void testCreateNodeTypeToServiceOfferingMapNullMap() {
+        Map<String, ServiceOffering> mapping = kubernetesClusterManager.createNodeTypeToServiceOfferingMap(null, null);
+        Assert.assertTrue(MapUtils.isEmpty(mapping));
+    }
+
+    @Test
+    public void testCreateNodeTypeToServiceOfferingMap() {
+        Map<String, Long> idsMap = new HashMap<>();
+        long workerOfferingId = 1L;
+        long controlOfferingId = 2L;
+        idsMap.put(WORKER.name(), workerOfferingId);
+        idsMap.put(CONTROL.name(), controlOfferingId);
+
+        ServiceOfferingVO workerOffering = Mockito.mock(ServiceOfferingVO.class);
+        Mockito.when(serviceOfferingDao.findById(workerOfferingId)).thenReturn(workerOffering);
+        ServiceOfferingVO controlOffering = Mockito.mock(ServiceOfferingVO.class);
+        Mockito.when(serviceOfferingDao.findById(controlOfferingId)).thenReturn(controlOffering);
+
+        Map<String, ServiceOffering> mapping = kubernetesClusterManager.createNodeTypeToServiceOfferingMap(idsMap, null);
+        Assert.assertEquals(2, mapping.size());
+        Assert.assertTrue(mapping.containsKey(WORKER.name()) && mapping.containsKey(CONTROL.name()));
+        Assert.assertEquals(workerOffering, mapping.get(WORKER.name()));
+        Assert.assertEquals(controlOffering, mapping.get(CONTROL.name()));
     }
 }

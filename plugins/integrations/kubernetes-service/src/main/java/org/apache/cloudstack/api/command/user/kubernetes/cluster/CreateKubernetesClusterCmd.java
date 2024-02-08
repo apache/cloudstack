@@ -17,16 +17,12 @@
 package org.apache.cloudstack.api.command.user.kubernetes.cluster;
 
 import java.security.InvalidParameterException;
-import java.util.HashMap;
 import java.util.Map;
 
 import javax.inject.Inject;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.kubernetes.cluster.KubernetesClusterHelper;
-import com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType;
-import com.cloud.offering.ServiceOffering;
-import com.cloud.vm.VmDetailConstants;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -46,7 +42,6 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -268,57 +263,8 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
         return clusterType;
     }
 
-    protected void checkNodeTypeOfferingEntryCompleteness(String nodeTypeStr, String serviceOfferingUuid) {
-        if (StringUtils.isAnyEmpty(nodeTypeStr, serviceOfferingUuid)) {
-            String error = String.format("Incomplete Node Type to Service Offering ID mapping: '%s' -> '%s'", nodeTypeStr, serviceOfferingUuid);
-            LOGGER.error(error);
-            throw new InvalidParameterValueException(error);
-        }
-    }
-
-    protected void checkNodeTypeOfferingEntryValues(String nodeTypeStr, ServiceOffering serviceOffering, String serviceOfferingUuid) {
-        if (!kubernetesClusterHelper.isValidNodeType(nodeTypeStr)) {
-            String error = String.format("The provided value '%s' for Node Type is invalid", nodeTypeStr);
-            LOGGER.error(error);
-            throw new InvalidParameterValueException(String.format(error));
-        }
-        if (serviceOffering == null) {
-            String error = String.format("Cannot find a service offering with ID %s", serviceOfferingUuid);
-            LOGGER.error(error);
-            throw new InvalidParameterValueException(error);
-        }
-    }
-
-    protected void addNodeTypeOfferingEntry(String nodeTypeStr, String serviceOfferingUuid, ServiceOffering serviceOffering, Map<String, Long> mapping) {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug(String.format("Node Type: '%s' should use Service Offering ID: '%s'", nodeTypeStr, serviceOfferingUuid));
-        }
-        KubernetesClusterNodeType nodeType = KubernetesClusterNodeType.valueOf(nodeTypeStr.toUpperCase());
-        mapping.put(nodeType.name(), serviceOffering.getId());
-    }
-
-    protected void processNodeTypeOfferingEntryAndAddToMappingIfValid(Map<String, String> entry, Map<String, Long> mapping) {
-        if (MapUtils.isEmpty(entry)) {
-            return;
-        }
-        String nodeTypeStr = entry.get(VmDetailConstants.CKS_NODE_TYPE);
-        String serviceOfferingUuid = entry.get(VmDetailConstants.OFFERING);
-        checkNodeTypeOfferingEntryCompleteness(nodeTypeStr, serviceOfferingUuid);
-
-        ServiceOffering serviceOffering = _entityMgr.findByUuid(ServiceOffering.class, serviceOfferingUuid);
-        checkNodeTypeOfferingEntryValues(nodeTypeStr, serviceOffering, serviceOfferingUuid);
-
-        addNodeTypeOfferingEntry(nodeTypeStr, serviceOfferingUuid, serviceOffering, mapping);
-    }
-
     public Map<String, Long> getServiceOfferingNodeTypeMap() {
-        Map<String, Long> mapping = new HashMap<>();
-        if (MapUtils.isNotEmpty(serviceOfferingNodeTypeMap)) {
-            for (Map<String, String> entry : serviceOfferingNodeTypeMap.values()) {
-                processNodeTypeOfferingEntryAndAddToMappingIfValid(entry, mapping);
-            }
-        }
-        return mapping;
+        return kubernetesClusterHelper.getServiceOfferingNodeTypeMap(serviceOfferingNodeTypeMap);
     }
 
     /////////////////////////////////////////////////////

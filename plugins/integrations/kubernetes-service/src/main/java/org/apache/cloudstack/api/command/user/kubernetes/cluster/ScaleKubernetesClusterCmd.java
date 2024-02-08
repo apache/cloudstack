@@ -17,9 +17,11 @@
 package org.apache.cloudstack.api.command.user.kubernetes.cluster;
 
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.kubernetes.cluster.KubernetesClusterHelper;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ACL;
@@ -55,6 +57,8 @@ public class ScaleKubernetesClusterCmd extends BaseAsyncCmd {
 
     @Inject
     public KubernetesClusterService kubernetesClusterService;
+    @Inject
+    protected KubernetesClusterHelper kubernetesClusterHelper;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -68,6 +72,11 @@ public class ScaleKubernetesClusterCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class,
         description = "the ID of the service offering for the virtual machines in the cluster.")
     private Long serviceOfferingId;
+
+    @ACL(accessType = SecurityChecker.AccessType.UseEntry)
+    @Parameter(name = ApiConstants.NODE_TYPE_OFFERING_MAP, type = CommandType.MAP,
+            description = "(Optional) Node Type to Service Offering ID mapping. If provided, it overrides the serviceofferingid parameter")
+    protected Map<String, Map<String, String>> serviceOfferingNodeTypeMap;
 
     @Parameter(name=ApiConstants.SIZE, type = CommandType.LONG,
         description = "number of Kubernetes cluster nodes")
@@ -102,6 +111,10 @@ public class ScaleKubernetesClusterCmd extends BaseAsyncCmd {
 
     public Long getServiceOfferingId() {
         return serviceOfferingId;
+    }
+
+    public Map<String, Long> getServiceOfferingNodeTypeMap() {
+        return kubernetesClusterHelper.getServiceOfferingNodeTypeMap(this.serviceOfferingNodeTypeMap);
     }
 
     public Long getClusterSize() {

@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -64,6 +65,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
     protected VMInstanceDao vmInstanceDao;
 
     private ServiceOffering serviceOffering;
+    private Map<String, ServiceOffering> serviceOfferingNodeTypeMap;
     private Long clusterSize;
     private List<Long> nodeIds;
     private KubernetesCluster.State originalState;
@@ -75,6 +77,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
 
     public KubernetesClusterScaleWorker(final KubernetesCluster kubernetesCluster,
                                         final ServiceOffering serviceOffering,
+                                        final Map<String, ServiceOffering> serviceOfferingNodeTypeMap,
                                         final Long clusterSize,
                                         final List<Long> nodeIds,
                                         final Boolean isAutoscalingEnabled,
@@ -83,6 +86,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
                                         final KubernetesClusterManagerImpl clusterManager) {
         super(kubernetesCluster, clusterManager);
         this.serviceOffering = serviceOffering;
+        this.serviceOfferingNodeTypeMap = serviceOfferingNodeTypeMap;
         this.nodeIds = nodeIds;
         this.isAutoscalingEnabled = isAutoscalingEnabled;
         this.minSize = minSize;

@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.kubernetes.cluster;
 
+import static com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType.ALL;
 import static com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType.CONTROL;
 import static com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType.ETCD;
 import static com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType.WORKER;
@@ -76,6 +77,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -1008,12 +1010,13 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
     private void validateKubernetesClusterScaleParameters(ScaleKubernetesClusterCmd cmd) {
         final Long kubernetesClusterId = cmd.getId();
-        final Long serviceOfferingId = cmd.getServiceOfferingId();
         final Long clusterSize = cmd.getClusterSize();
         final List<Long> nodeIds = cmd.getNodeIds();
         final Boolean isAutoscalingEnabled = cmd.isAutoscalingEnabled();
         final Long minSize = cmd.getMinSize();
         final Long maxSize = cmd.getMaxSize();
+        final Long defaultServiceOfferingId = cmd.getServiceOfferingId();
+        final Map<String, Long> serviceOfferingNodeTypeMap = cmd.getServiceOfferingNodeTypeMap();
 
         if (kubernetesClusterId == null || kubernetesClusterId < 1L) {
             throw new InvalidParameterValueException("Invalid Kubernetes cluster ID");
@@ -1029,7 +1032,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             logAndThrow(Level.WARN, String.format("Unable to find zone for Kubernetes cluster : %s", kubernetesCluster.getName()));
         }
 
-        if (serviceOfferingId == null && clusterSize == null && nodeIds == null && isAutoscalingEnabled == null) {
+        if (defaultServiceOfferingId == null && isAnyNodeOfferingEmpty(serviceOfferingNodeTypeMap)
+                && clusterSize == null && nodeIds == null && isAutoscalingEnabled == null) {
             throw new InvalidParameterValueException(String.format("Kubernetes cluster %s cannot be scaled, either service offering or cluster size or nodeids to be removed or autoscaling must be passed", kubernetesCluster.getName()));
         }
 
@@ -1076,8 +1080,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             }
         }
 
+        Long workerOfferingId = serviceOfferingNodeTypeMap != null ? serviceOfferingNodeTypeMap.getOrDefault(WORKER.name(), null) : null;
         if (nodeIds != null) {
-            if (clusterSize != null || serviceOfferingId != null) {
+            if (clusterSize != null || defaultServiceOfferingId != null || workerOfferingId != null) {
                 throw new InvalidParameterValueException("nodeids can not be passed along with clustersize or service offering");
             }
             List<KubernetesClusterVmMapVO> nodes = kubernetesClusterVmMapDao.listByClusterIdAndVmIdsIn(kubernetesCluster.getId(), nodeIds);
@@ -1097,37 +1102,53 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             }
         }
 
-        ServiceOffering serviceOffering = null;
-        if (serviceOfferingId != null) {
-            serviceOffering = serviceOfferingDao.findById(serviceOfferingId);
-            if (serviceOffering == null) {
-                throw new InvalidParameterValueException("Failed to find service offering ID: " + serviceOfferingId);
-            } else {
-                if (serviceOffering.isDynamic()) {
-                    throw new InvalidParameterValueException(String.format("Custom service offerings are not supported for Kubernetes clusters. Kubernetes cluster : %s, service offering : %s", kubernetesCluster.getName(), serviceOffering.getName()));
-                }
-                if (serviceOffering.getCpu() < MIN_KUBERNETES_CLUSTER_NODE_CPU || serviceOffering.getRamSize() < MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE) {
-                    throw new InvalidParameterValueException(String.format("Kubernetes cluster : %s cannot be scaled with service offering : %s, Kubernetes cluster template(CoreOS) needs minimum %d vCPUs and %d MB RAM",
-                            kubernetesCluster.getName(), serviceOffering.getName(), MIN_KUBERNETES_CLUSTER_NODE_CPU, MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE));
-                }
-                if (serviceOffering.getCpu() < clusterVersion.getMinimumCpu()) {
-                    throw new InvalidParameterValueException(String.format("Kubernetes cluster : %s cannot be scaled with service offering : %s, associated Kubernetes version : %s needs minimum %d vCPUs",
-                            kubernetesCluster.getName(), serviceOffering.getName(), clusterVersion.getName(), clusterVersion.getMinimumCpu()));
-                }
-                if (serviceOffering.getRamSize() < clusterVersion.getMinimumRamSize()) {
-                    throw new InvalidParameterValueException(String.format("Kubernetes cluster : %s cannot be scaled with service offering : %s, associated Kubernetes version : %s needs minimum %d MB RAM",
-                            kubernetesCluster.getName(), serviceOffering.getName(), clusterVersion.getName(), clusterVersion.getMinimumRamSize()));
-                }
-            }
-            final ServiceOffering existingServiceOffering = serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId());
-            if (KubernetesCluster.State.Running.equals(kubernetesCluster.getState()) && (serviceOffering.getRamSize() < existingServiceOffering.getRamSize() ||
-                    serviceOffering.getCpu() * serviceOffering.getSpeed() < existingServiceOffering.getCpu() * existingServiceOffering.getSpeed())) {
-                logAndThrow(Level.WARN, String.format("Kubernetes cluster cannot be scaled down for service offering. Service offering : %s offers lesser resources as compared to service offering : %s of Kubernetes cluster : %s",
-                        serviceOffering.getName(), existingServiceOffering.getName(), kubernetesCluster.getName()));
-            }
-        }
+        validateServiceOfferingsForNodeTypesScale(serviceOfferingNodeTypeMap, defaultServiceOfferingId, kubernetesCluster, clusterVersion);
 
         validateKubernetesClusterScaleSize(kubernetesCluster, clusterSize, maxClusterSize, zone);
+    }
+
+    protected void validateServiceOfferingsForNodeTypesScale(Map<String, Long> map, Long defaultServiceOfferingId, KubernetesClusterVO kubernetesCluster, KubernetesSupportedVersion clusterVersion) {
+        for (String key : CLUSTER_NODES_TYPES_LIST) {
+            Long serviceOfferingId = map.getOrDefault(key, defaultServiceOfferingId);
+            if (serviceOfferingId != null) {
+                ServiceOffering serviceOffering = serviceOfferingDao.findById(serviceOfferingId);
+                if (serviceOffering == null) {
+                    throw new InvalidParameterValueException("Failed to find service offering ID: " + serviceOfferingId);
+                }
+                checkServiceOfferingForNodesScale(serviceOffering, kubernetesCluster, clusterVersion);
+                final ServiceOffering existingServiceOffering = serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId());
+                if (KubernetesCluster.State.Running.equals(kubernetesCluster.getState()) && (serviceOffering.getRamSize() < existingServiceOffering.getRamSize() ||
+                        serviceOffering.getCpu() * serviceOffering.getSpeed() < existingServiceOffering.getCpu() * existingServiceOffering.getSpeed())) {
+                    logAndThrow(Level.WARN, String.format("Kubernetes cluster cannot be scaled down for service offering. Service offering : %s offers lesser resources as compared to service offering : %s of Kubernetes cluster : %s",
+                            serviceOffering.getName(), existingServiceOffering.getName(), kubernetesCluster.getName()));
+                }
+            }
+        }
+    }
+
+    protected void checkServiceOfferingForNodesScale(ServiceOffering serviceOffering, KubernetesClusterVO kubernetesCluster, KubernetesSupportedVersion clusterVersion) {
+        if (serviceOffering.isDynamic()) {
+            throw new InvalidParameterValueException(String.format("Custom service offerings are not supported for Kubernetes clusters. Kubernetes cluster : %s, service offering : %s", kubernetesCluster.getName(), serviceOffering.getName()));
+        }
+        if (serviceOffering.getCpu() < MIN_KUBERNETES_CLUSTER_NODE_CPU || serviceOffering.getRamSize() < MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE) {
+            throw new InvalidParameterValueException(String.format("Kubernetes cluster : %s cannot be scaled with service offering : %s, Kubernetes cluster template(CoreOS) needs minimum %d vCPUs and %d MB RAM",
+                    kubernetesCluster.getName(), serviceOffering.getName(), MIN_KUBERNETES_CLUSTER_NODE_CPU, MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE));
+        }
+        if (serviceOffering.getCpu() < clusterVersion.getMinimumCpu()) {
+            throw new InvalidParameterValueException(String.format("Kubernetes cluster : %s cannot be scaled with service offering : %s, associated Kubernetes version : %s needs minimum %d vCPUs",
+                    kubernetesCluster.getName(), serviceOffering.getName(), clusterVersion.getName(), clusterVersion.getMinimumCpu()));
+        }
+        if (serviceOffering.getRamSize() < clusterVersion.getMinimumRamSize()) {
+            throw new InvalidParameterValueException(String.format("Kubernetes cluster : %s cannot be scaled with service offering : %s, associated Kubernetes version : %s needs minimum %d MB RAM",
+                    kubernetesCluster.getName(), serviceOffering.getName(), clusterVersion.getName(), clusterVersion.getMinimumRamSize()));
+        }
+    }
+
+    protected boolean isAnyNodeOfferingEmpty(Map<String, Long> map) {
+        if (MapUtils.isEmpty(map)) {
+            return false;
+        }
+        return map.values().stream().anyMatch(Objects::isNull);
     }
 
     private void validateKubernetesClusterUpgradeParameters(UpgradeKubernetesClusterCmd cmd) {
@@ -1652,12 +1673,14 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
         }
         validateKubernetesClusterScaleParameters(cmd);
+        Map<String, ServiceOffering> nodeToOfferingMap = createNodeTypeToServiceOfferingMap(cmd.getServiceOfferingNodeTypeMap(), cmd.getServiceOfferingId());
 
         KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.findById(cmd.getId());
         String[] keys = getServiceUserKeys(kubernetesCluster);
         KubernetesClusterScaleWorker scaleWorker =
             new KubernetesClusterScaleWorker(kubernetesClusterDao.findById(cmd.getId()),
                 serviceOfferingDao.findById(cmd.getServiceOfferingId()),
+                nodeToOfferingMap,
                 cmd.getClusterSize(),
                 cmd.getNodeIds(),
                 cmd.isAutoscalingEnabled(),
@@ -1667,6 +1690,22 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         scaleWorker.setKeys(keys);
         scaleWorker = ComponentContext.inject(scaleWorker);
         return scaleWorker.scaleCluster();
+    }
+
+    protected Map<String, ServiceOffering> createNodeTypeToServiceOfferingMap(Map<String, Long> idsMapping,
+                                                                              Long serviceOfferingId) {
+        Map<String, ServiceOffering> map = new HashMap<>();
+        if (MapUtils.isEmpty(idsMapping) && serviceOfferingId != null) {
+            map.put(ALL.name(), serviceOfferingDao.findById(serviceOfferingId));
+            return map;
+        }
+        for (String key : CLUSTER_NODES_TYPES_LIST) {
+            if (!idsMapping.containsKey(key)) {
+                continue;
+            }
+            map.put(key, serviceOfferingDao.findById(idsMapping.get(key)));
+        }
+        return map;
     }
 
     @Override
