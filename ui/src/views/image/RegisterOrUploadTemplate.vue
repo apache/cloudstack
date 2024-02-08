@@ -425,7 +425,7 @@
                     </a-checkbox>
                   </a-col>
                   <a-col :span="12">
-                    <a-checkbox value="forCks">
+                    <a-checkbox value="forCks" v-if="currentForm === 'Create'">
                       {{ $t('label.for.cks') }}
                     </a-checkbox>
                   </a-col>
