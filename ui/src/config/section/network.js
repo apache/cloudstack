@@ -1046,6 +1046,11 @@ export default {
         name: 'loadbalancerinstance',
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/InternalLBAssignedVmTab.vue'))),
         show: () => true
+      }, {
+        name: 'events',
+        resourceType: 'LoadBalancerRule',
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+        show: () => { return 'listEvents' in store.getters.apis }
       }],
       actions: [
         {
@@ -1161,6 +1166,12 @@ export default {
         {
           name: 'details',
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'events',
+          resourceType: 'VpnCustomerGateway',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+          show: () => { return 'listEvents' in store.getters.apis }
         },
         {
           name: 'comments',
