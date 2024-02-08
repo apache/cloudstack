@@ -86,7 +86,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 
 import com.cloud.agent.api.to.DataTO;
@@ -179,7 +178,6 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         full, linked
     }
 
-    private static final Logger s_logger = Logger.getLogger(VolumeOrchestrator.class);
 
     @Inject
     EntityManager _entityMgr;
@@ -348,12 +346,12 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         if (storagePool.isPresent()) {
             String storagePoolToString = getReflectOnlySelectedFields(storagePool.get());
-            s_logger.debug(String.format("The storage pool [%s] was specified for this account [%s] and will be used for allocation.", storagePoolToString, vm.getAccountId()));
+            logger.debug(String.format("The storage pool [%s] was specified for this account [%s] and will be used for allocation.", storagePoolToString, vm.getAccountId()));
 
         } else {
             String globalStoragePoolUuid = StorageManager.PreferredStoragePool.value();
             storagePool = getMatchingStoragePool(globalStoragePoolUuid, poolList);
-            storagePool.ifPresent(pool -> s_logger.debug(String.format("The storage pool [%s] was specified in the Global Settings and will be used for allocation.",
+            storagePool.ifPresent(pool -> logger.debug(String.format("The storage pool [%s] was specified in the Global Settings and will be used for allocation.",
                     getReflectOnlySelectedFields(pool))));
         }
         return storagePool;
@@ -374,28 +372,28 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
             final List<StoragePool> poolList = allocator.allocateToPool(dskCh, profile, plan, avoidList, StoragePoolAllocator.RETURN_UPTO_ALL);
             if (poolList != null && !poolList.isEmpty()) {
-                StorageUtil.traceLogStoragePools(poolList, s_logger, "pools to choose from: ");
+                StorageUtil.traceLogStoragePools(poolList, logger, "pools to choose from: ");
                 // Check if the preferred storage pool can be used. If yes, use it.
                 Optional<StoragePool> storagePool = getPreferredStoragePool(poolList, vm);
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace(String.format("we have a preferred pool: %b", storagePool.isPresent()));
+                if (logger.isTraceEnabled()) {
+                    logger.trace(String.format("we have a preferred pool: %b", storagePool.isPresent()));
                 }
 
                 StoragePool storage;
                 if (storagePool.isPresent()) {
                     storage = (StoragePool)this.dataStoreMgr.getDataStore(storagePool.get().getId(), DataStoreRole.Primary);
-                    s_logger.debug(String.format("VM [%s] has a preferred storage pool [%s]. Volume Orchestrator found this storage using Storage Pool Allocator [%s] and will"
+                    logger.debug(String.format("VM [%s] has a preferred storage pool [%s]. Volume Orchestrator found this storage using Storage Pool Allocator [%s] and will"
                             + " use it.", vm, storage, allocator.getClass().getSimpleName()));
                 } else {
                     storage = (StoragePool)dataStoreMgr.getDataStore(poolList.get(0).getId(), DataStoreRole.Primary);
-                    s_logger.debug(String.format("VM [%s] does not have a preferred storage pool or it cannot be used. Volume Orchestrator will use the available Storage Pool"
+                    logger.debug(String.format("VM [%s] does not have a preferred storage pool or it cannot be used. Volume Orchestrator will use the available Storage Pool"
                             + " [%s], which was discovered using Storage Pool Allocator [%s].", vm, storage, allocator.getClass().getSimpleName()));
                 }
                 return storage;
             }
-            s_logger.debug(String.format("Could not find any available Storage Pool using Storage Pool Allocator [%s].", allocator.getClass().getSimpleName()));
+            logger.debug(String.format("Could not find any available Storage Pool using Storage Pool Allocator [%s].", allocator.getClass().getSimpleName()));
         }
-        s_logger.info("Volume Orchestrator could not find any available Storage Pool.");
+        logger.info("Volume Orchestrator could not find any available Storage Pool.");
         return null;
     }
 
@@ -524,7 +522,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 String logMsg = String.format("Could not find a storage pool in the pod/cluster of the provided VM [%s] to create the volume [%s] in.", vm, volumeToString);
 
                 //pool could not be found in the VM's pod/cluster.
-                s_logger.error(logMsg);
+                logger.error(logMsg);
 
                 StringBuilder addDetails = new StringBuilder(msg);
                 addDetails.append(logMsg);
@@ -542,8 +540,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 if (pool != null) {
                     String poolToString = getReflectOnlySelectedFields(pool);
 
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug(String.format("Found a suitable pool [%s] to create the volume [%s] in.", poolToString, volumeToString));
+                    if (logger.isDebugEnabled()) {
+                        logger.debug(String.format("Found a suitable pool [%s] to create the volume [%s] in.", poolToString, volumeToString));
                     }
                     break;
                 }
@@ -551,7 +549,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
 
         if (pool == null) {
-            s_logger.info(msg);
+            logger.info(msg);
             throw new StorageUnavailableException(msg, -1);
         }
 
@@ -579,7 +577,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 _snapshotSrv.syncVolumeSnapshotsToRegionStore(snapVolId, snapStore);
             } catch (Exception ex) {
                 // log but ignore the sync error to avoid any potential S3 down issue, it should be sync next time
-                s_logger.warn(ex.getMessage(), ex);
+                logger.warn(ex.getMessage(), ex);
             }
         }
 
@@ -591,14 +589,14 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             VolumeApiResult result = future.get();
             if (result.isFailed()) {
                 String logMsg = String.format("Failed to create volume from snapshot [%s] due to [%s].", snapshotToString, result.getResult());
-                s_logger.error(logMsg);
+                logger.error(logMsg);
                 throw new CloudRuntimeException(logMsg);
             }
             return result.getVolume();
         } catch (InterruptedException | ExecutionException e) {
             String message = String.format("Failed to create volume from snapshot [%s] due to [%s].", snapshotToString, e.getMessage());
-            s_logger.error(message);
-            s_logger.debug("Exception: ", e);
+            logger.error(message);
+            logger.debug("Exception: ", e);
             throw new CloudRuntimeException(message, e);
         } finally {
             snapshotHelper.expungeTemporarySnapshot(kvmSnapshotOnlyInPrimaryStorage, snapInfo);
@@ -647,14 +645,14 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             VolumeApiResult result = future.get();
             if (result.isFailed()) {
                 String msg = String.format("Copy of the volume [%s] failed due to [%s].", volumeToString, result.getResult());
-                s_logger.error(msg);
+                logger.error(msg);
                 throw new CloudRuntimeException(msg);
             }
             return result.getVolume();
         } catch (InterruptedException | ExecutionException e) {
             String msg = String.format("Failed to copy the volume [%s] due to [%s].", volumeToString, e.getMessage());
-            s_logger.error(msg);
-            s_logger.debug("Exception: ", e);
+            logger.error(msg);
+            logger.debug("Exception: ", e);
             throw new CloudRuntimeException(msg, e);
         }
     }
@@ -699,14 +697,14 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         pool = findStoragePool(dskCh, dc, pod, clusterId, hostId, vm, avoidPools);
         if (pool == null) {
             String msg = String.format("Unable to find suitable primary storage when creating volume [%s].", volumeToString);
-            s_logger.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
 
         String poolToString = getReflectOnlySelectedFields(pool);
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug(String.format("Trying to create volume [%s] on storage pool [%s].",
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Trying to create volume [%s] on storage pool [%s].",
                     volumeToString, poolToString));
         }
         DataStore store = dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
@@ -724,19 +722,19 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 VolumeApiResult result = future.get();
                 if (result.isFailed()) {
                     if (result.getResult().contains(REQUEST_TEMPLATE_RELOAD) && (i == 0)) {
-                        s_logger.debug(String.format("Retrying to deploy template [%s] for VMware, attempt 2/2. ", templateToString));
+                        logger.debug(String.format("Retrying to deploy template [%s] for VMware, attempt 2/2. ", templateToString));
                         continue;
                     } else {
                         String msg = String.format("Failed to create volume [%s] due to [%s].", volumeToString, result.getResult());
-                        s_logger.error(msg);
+                        logger.error(msg);
                         throw new CloudRuntimeException(msg);
                     }
                 }
                 return result.getVolume();
             } catch (InterruptedException | ExecutionException e) {
                 String msg = String.format("Failed to create volume [%s] due to [%s].", volumeToString, e.getMessage());
-                s_logger.error(msg);
-                s_logger.debug("Exception: ", e);
+                logger.error(msg);
+                logger.debug("Exception: ", e);
                 throw new CloudRuntimeException(msg, e);
             }
         }
@@ -903,10 +901,10 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             } else {
                 rootDisksize = rootDisksize * 1024 * 1024 * 1024;
                 if (rootDisksize > size) {
-                    s_logger.debug(String.format("Using root disk size of [%s] bytes for the volume [%s].", toHumanReadableSize(rootDisksize), name));
+                    logger.debug(String.format("Using root disk size of [%s] bytes for the volume [%s].", toHumanReadableSize(rootDisksize), name));
                     size = rootDisksize;
                 } else {
-                    s_logger.debug(String.format("The specified root disk size of [%s] bytes is smaller than the template. Using root disk size of [%s] bytes for the volume [%s].",
+                    logger.debug(String.format("The specified root disk size of [%s] bytes is smaller than the template. Using root disk size of [%s] bytes for the volume [%s].",
                             toHumanReadableSize(rootDisksize), size, name));
                 }
             }
@@ -983,7 +981,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         if (template.isDeployAsIs() && vm.getType() != VirtualMachine.Type.SecondaryStorageVm) {
             List<SecondaryStorageVmVO> runningSSVMs = secondaryStorageVmDao.getSecStorageVmListInStates(null, vm.getDataCenterId(), State.Running);
             if (CollectionUtils.isEmpty(runningSSVMs)) {
-                s_logger.info(String.format("Could not find a running SSVM in datacenter [%s] for deploying VM as is. Not deploying VM [%s] as is.",
+                logger.info(String.format("Could not find a running SSVM in datacenter [%s] for deploying VM as is. Not deploying VM [%s] as is.",
                         vm.getDataCenterId(), vm));
             } else {
                 UserVmDetailVO configurationDetail = userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.DEPLOY_AS_IS_CONFIGURATION);
@@ -1018,7 +1016,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 volumeSize = templateAsIsDisks.get(number).getVirtualSize();
                 deviceId = templateAsIsDisks.get(number).getDiskNumber();
             }
-            s_logger.info(String.format("Adding disk object [%s] to VM [%s]", volumeName, vm));
+            logger.info(String.format("Adding disk object [%s] to VM [%s]", volumeName, vm));
             DiskProfile diskProfile = allocateTemplatedVolume(type, volumeName, offering, volumeSize, minIops, maxIops,
                     template, vm, owner, deviceId, configurationId);
             profiles.add(diskProfile);
@@ -1115,8 +1113,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         VirtualMachineTemplate rootDiskTmplt = _entityMgr.findById(VirtualMachineTemplate.class, vm.getTemplateId());
         DataCenter dcVO = _entityMgr.findById(DataCenter.class, vm.getDataCenterId());
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace(String.format("storage-pool %s/%s is associated with pod %d",storagePool.getName(), storagePool.getUuid(), storagePool.getPodId()));
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("storage-pool %s/%s is associated with pod %d",storagePool.getName(), storagePool.getUuid(), storagePool.getPodId()));
         }
         Long podId = storagePool.getPodId() != null ? storagePool.getPodId() : vm.getPodIdToDeployIn();
         Pod pod = _entityMgr.findById(Pod.class, podId);
@@ -1124,8 +1122,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         ServiceOffering svo = _entityMgr.findById(ServiceOffering.class, vm.getServiceOfferingId());
         DiskOffering diskVO = _entityMgr.findById(DiskOffering.class, volumeInfo.getDiskOfferingId());
         Long clusterId = storagePool.getClusterId();
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace(String.format("storage-pool %s/%s is associated with cluster %d",storagePool.getName(), storagePool.getUuid(), clusterId));
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("storage-pool %s/%s is associated with cluster %d",storagePool.getName(), storagePool.getUuid(), clusterId));
         }
         Long hostId = vm.getHostId();
         if (hostId == null && storagePool.isLocal()) {
@@ -1166,8 +1164,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         Long volTemplateId = existingVolume.getTemplateId();
         long vmTemplateId = vm.getTemplateId();
         if (volTemplateId != null && volTemplateId.longValue() != vmTemplateId) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(String.format("switchVolume: Old volume's templateId [%s] does not match the VM's templateId [%s]. Updating templateId in the new volume.", volTemplateId, vmTemplateId));
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("switchVolume: Old volume's templateId [%s] does not match the VM's templateId [%s]. Updating templateId in the new volume.", volTemplateId, vmTemplateId));
             }
             templateIdToUse = vmTemplateId;
         }
@@ -1180,17 +1178,17 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 try {
                     stateTransitTo(existingVolume, Volume.Event.DestroyRequested);
                 } catch (NoTransitionException e) {
-                    s_logger.error(String.format("Unable to destroy existing volume [%s] due to [%s].", volumeToString, e.getMessage()));
+                    logger.error(String.format("Unable to destroy existing volume [%s] due to [%s].", volumeToString, e.getMessage()));
                 }
                 // In case of VMware VM will continue to use the old root disk until expunged, so force expunge old root disk
                 if (vm.getHypervisorType() == HypervisorType.VMware) {
-                    s_logger.info(String.format("Trying to expunge volume [%s] from primary data storage.", volumeToString));
+                    logger.info(String.format("Trying to expunge volume [%s] from primary data storage.", volumeToString));
                     AsyncCallFuture<VolumeApiResult> future = volService.expungeVolumeAsync(volFactory.getVolume(existingVolume.getId()));
                     try {
                         future.get();
                     } catch (Exception e) {
-                        s_logger.error(String.format("Failed to expunge volume [%s] from primary data storage due to [%s].", volumeToString, e.getMessage()));
-                        s_logger.debug("Exception: ", e);
+                        logger.error(String.format("Failed to expunge volume [%s] from primary data storage due to [%s].", volumeToString, e.getMessage()));
+                        logger.debug("Exception: ", e);
                     }
                 }
 
@@ -1216,8 +1214,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         HostVO host = _hostDao.findById(hostId);
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug(String.format("Releasing [%s] volumes for VM [%s] from host [%s].", volumesForVm.size(), _userVmDao.findById(vmId), host));
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Releasing [%s] volumes for VM [%s] from host [%s].", volumesForVm.size(), _userVmDao.findById(vmId), host));
         }
 
         for (VolumeVO volumeForVm : volumesForVm) {
@@ -1241,8 +1239,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     public void cleanupVolumes(long vmId) throws ConcurrentOperationException {
         VMInstanceVO vm = _userVmDao.findById(vmId);
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug(String.format("Cleaning storage for VM [%s].", vm));
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Cleaning storage for VM [%s].", vm));
         }
         final List<VolumeVO> volumesForVm = _volsDao.findByInstance(vmId);
         final List<VolumeVO> toBeExpunged = new ArrayList<VolumeVO>();
@@ -1259,12 +1257,12 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                         if (!volumeAlreadyDestroyed) {
                             destroyVolumeInContext(vol);
                         } else {
-                            s_logger.debug(String.format("Skipping destroy for the volume [%s] as it is in [%s] state.", volumeToString, vol.getState().toString()));
+                            logger.debug(String.format("Skipping destroy for the volume [%s] as it is in [%s] state.", volumeToString, vol.getState().toString()));
                         }
                         toBeExpunged.add(vol);
                     } else {
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug(String.format("Detaching volume [%s].", volumeToString));
+                        if (logger.isDebugEnabled()) {
+                            logger.debug(String.format("Detaching volume [%s].", volumeToString));
                         }
                         if (vm.getHypervisorType().equals(HypervisorType.VMware)) {
                             _volumeApiService.detachVolumeViaDestroyVM(vmId, vol.getId());
@@ -1283,8 +1281,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             try {
                 future.get();
             } catch (InterruptedException | ExecutionException e) {
-                s_logger.error(String.format("Failed to expunge volume [%s] due to [%s].", expungeToString, e.getMessage()));
-                s_logger.debug("Exception: ", e);
+                logger.error(String.format("Failed to expunge volume [%s] due to [%s].", expungeToString, e.getMessage()));
+                logger.debug("Exception: ", e);
             }
         }
     }
@@ -1367,7 +1365,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 String volToString = getReflectOnlySelectedFields(vol.getVolume());
 
                 String msg = String.format("Volume [%s] migration failed due to [%s].", volToString, result.getResult());
-                s_logger.error(msg);
+                logger.error(msg);
 
                 if (result.getResult() != null && result.getResult().contains("[UNSUPPORTED]")) {
                     throw new CloudRuntimeException(msg);
@@ -1383,8 +1381,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             return result.getVolume();
         } catch (InterruptedException | ExecutionException e) {
             String msg = String.format("Volume [%s] migration failed due to [%s].", volumeToString, e.getMessage());
-            s_logger.error(msg);
-            s_logger.debug("Exception: ", e);
+            logger.error(msg);
+            logger.debug("Exception: ", e);
             throw new CloudRuntimeException(msg, e);
         }
     }
@@ -1401,13 +1399,13 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         try {
             VolumeApiResult result = future.get();
             if (result.isFailed()) {
-                s_logger.error(String.format("Volume [%s] migration failed due to [%s].", volToString, result.getResult()));
+                logger.error(String.format("Volume [%s] migration failed due to [%s].", volToString, result.getResult()));
                 return null;
             }
             return result.getVolume();
         } catch (InterruptedException | ExecutionException e) {
-            s_logger.error(String.format("Volume [%s] migration failed due to [%s].", volToString, e.getMessage()));
-            s_logger.debug("Exception: ", e);
+            logger.error(String.format("Volume [%s] migration failed due to [%s].", volToString, e.getMessage()));
+            logger.debug("Exception: ", e);
             return null;
         }
     }
@@ -1443,12 +1441,12 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             CommandResult result = future.get();
             if (result.isFailed()) {
                 String msg = String.format("Failed to migrate VM [%s] along with its volumes due to [%s].", vm, result.getResult());
-                s_logger.error(msg);
+                logger.error(msg);
                 throw new CloudRuntimeException(msg);
             }
         } catch (InterruptedException |  ExecutionException e) {
-            s_logger.error(String.format("Failed to migrate VM [%s] along with its volumes due to [%s].", vm, e.getMessage()));
-            s_logger.debug("Exception: ", e);
+            logger.error(String.format("Failed to migrate VM [%s] along with its volumes due to [%s].", vm, e.getMessage()));
+            logger.debug("Exception: ", e);
         }
     }
 
@@ -1464,23 +1462,23 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
             if (volume.getState() != Volume.State.Ready) {
                 String msg = String.format("Volume [%s] is in [%s] state.", volumeToString, volume.getState());
-                s_logger.error(msg);
+                logger.error(msg);
                 throw new CloudRuntimeException(msg);
             }
 
             if (volume.getPoolId() == pool.getId()) {
-                s_logger.debug(String.format("Volume [%s] already is on the elected storage pool [%s].", volumeToString, poolToString));
+                logger.debug(String.format("Volume [%s] already is on the elected storage pool [%s].", volumeToString, poolToString));
                 continue;
             }
             volumeStoragePoolMap.put(volume, volumeToPool.get(volume));
         }
 
         if (MapUtils.isEmpty(volumeStoragePoolMap)) {
-            s_logger.debug("No volume needs to be migrated.");
+            logger.debug("No volume needs to be migrated.");
             return true;
         }
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Offline VM migration was not done up the stack in VirtualMachineManager. Trying to migrate the VM here.");
+        if (logger.isDebugEnabled()) {
+            logger.debug("Offline VM migration was not done up the stack in VirtualMachineManager. Trying to migrate the VM here.");
         }
         for (Map.Entry<Volume, StoragePool> entry : volumeStoragePoolMap.entrySet()) {
             Volume result = migrateVolume(entry.getKey(), entry.getValue());
@@ -1494,8 +1492,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     @Override
     public void prepareForMigration(VirtualMachineProfile vm, DeployDestination dest) {
         List<VolumeVO> vols = _volsDao.findUsableVolumesForInstance(vm.getId());
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug(String.format("Preparing to migrate [%s] volumes for VM [%s].", vols.size(), vm.getVirtualMachine()));
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Preparing to migrate [%s] volumes for VM [%s].", vols.size(), vm.getVirtualMachine()));
         }
 
         for (VolumeVO vol : vols) {
@@ -1618,15 +1616,15 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                     tasks.add(task);
                 } else {
                     if (vol.isRecreatable()) {
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug(String.format("Volume [%s] will be recreated on storage pool [%s], assigned by deploymentPlanner.", volToString, assignedPoolToString));
+                        if (logger.isDebugEnabled()) {
+                            logger.debug(String.format("Volume [%s] will be recreated on storage pool [%s], assigned by deploymentPlanner.", volToString, assignedPoolToString));
                         }
                         VolumeTask task = new VolumeTask(VolumeTaskType.RECREATE, vol, null);
                         tasks.add(task);
                     } else {
                         if (assignedPool.getId() != vol.getPoolId()) {
-                            if (s_logger.isDebugEnabled()) {
-                                s_logger.debug(String.format("Mismatch with the storage pool [%s] assigned by deploymentPlanner and the one associated with the volume [%s].",
+                            if (logger.isDebugEnabled()) {
+                                logger.debug(String.format("Mismatch with the storage pool [%s] assigned by deploymentPlanner and the one associated with the volume [%s].",
                                         assignedPoolToString, volToString));
                             }
                             DiskOffering diskOffering = _entityMgr.findById(DiskOffering.class, vol.getDiskOfferingId());
@@ -1634,7 +1632,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                                 // Currently migration of local volume is not supported so bail out
                                 String msg = String.format("Local volume [%s] cannot be recreated on storage pool [%s], assigned by deploymentPlanner.", volToString, assignedPoolToString);
 
-                                s_logger.error(msg);
+                                logger.error(msg);
                                 throw new CloudRuntimeException(msg);
 
                             } else {
@@ -1647,8 +1645,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                                     storageMigrationEnabled = StorageMigrationEnabled.value();
                                 }
                                 if (storageMigrationEnabled) {
-                                    if (s_logger.isDebugEnabled()) {
-                                        s_logger.debug(String.format("Shared volume [%s] will be migrated to the storage pool [%s], assigned by deploymentPlanner.",
+                                    if (logger.isDebugEnabled()) {
+                                        logger.debug(String.format("Shared volume [%s] will be migrated to the storage pool [%s], assigned by deploymentPlanner.",
                                                 volToString, assignedPoolToString));
                                     }
                                     VolumeTask task = new VolumeTask(VolumeTaskType.MIGRATE, vol, assignedPool);
@@ -1673,8 +1671,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
                 StoragePoolVO pool = _storagePoolDao.findById(vol.getPoolId());
 
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(String.format("No need to recreate the volume [%s] since it already has an assigned pool: [%s]. Adding disk to the VM.",
+                if (logger.isDebugEnabled()) {
+                    logger.debug(String.format("No need to recreate the volume [%s] since it already has an assigned pool: [%s]. Adding disk to the VM.",
                             volToString, pool.getUuid()));
                 }
                 VolumeTask task = new VolumeTask(VolumeTaskType.NOP, vol, pool);
@@ -1689,7 +1687,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         if (Objects.equals(originalEntry.getSize(), updateEntry.getSize())) {
             return;
         }
-        s_logger.debug(String.format("Size mismatch found for %s after creation, old size: %d, new size: %d. Updating resource count", updateEntry, originalEntry.getSize(), updateEntry.getSize()));
+        logger.debug(String.format("Size mismatch found for %s after creation, old size: %d, new size: %d. Updating resource count", updateEntry, originalEntry.getSize(), updateEntry.getSize()));
         if (ObjectUtils.anyNull(originalEntry.getSize(), updateEntry.getSize())) {
             _resourceLimitMgr.recalculateResourceCount(updateEntry.getAccountId(), updateEntry.getDomainId(),
                     ResourceType.primary_storage.getOrdinal());
@@ -1711,7 +1709,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         if (recreate && (dest.getStorageForDisks() == null || dest.getStorageForDisks().get(vol) == null)) {
             destPool = dataStoreMgr.getDataStore(vol.getPoolId(), DataStoreRole.Primary);
             String destPoolToString = getReflectOnlySelectedFields(destPool);
-            s_logger.debug(String.format("Existing pool: [%s].", destPoolToString));
+            logger.debug(String.format("Existing pool: [%s].", destPoolToString));
         } else {
             StoragePool pool = dest.getStorageForDisks().get(vol);
             destPool = dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
@@ -1733,8 +1731,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 dest.getStorageForDisks().put(newVol, poolWithOldVol);
                 dest.getStorageForDisks().remove(vol);
             }
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(String.format("Created new volume [%s] from old volume [%s].", newVolToString, volToString));
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("Created new volume [%s] from old volume [%s].", newVolToString, volToString));
             }
         }
         VolumeInfo volume = volFactory.getVolume(newVol.getId(), destPool);
@@ -1756,7 +1754,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             } else {
                 final VirtualMachineTemplate template = _entityMgr.findById(VirtualMachineTemplate.class, templateId);
                 if (template == null) {
-                    s_logger.error(String.format("Failed to find template: %d for %s", templateId, volume));
+                    logger.error(String.format("Failed to find template: %d for %s", templateId, volume));
                     throw new CloudRuntimeException(String.format("Failed to find template for volume ID: %s", volume.getUuid()));
                 }
                 TemplateInfo templ = tmplFactory.getReadyTemplateOnImageStore(templateId, dest.getDataCenter().getId());
@@ -1768,19 +1766,19 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                         if (!primaryDataStore.isManaged()) {
                             templ = tmplFactory.getReadyBypassedTemplateOnPrimaryStore(templateId, destPool.getId(), dest.getHost().getId());
                         } else {
-                            s_logger.debug(String.format("Directly downloading template [%s] on host [%s] and copying it to the managed storage pool [%s].",
+                            logger.debug(String.format("Directly downloading template [%s] on host [%s] and copying it to the managed storage pool [%s].",
                                     templateId, dest.getHost().getUuid(), destPool.getUuid()));
                             templ = volService.createManagedStorageTemplate(templateId, destPool.getId(), dest.getHost().getId());
                         }
 
                         if (templ == null) {
                             String msg = String.format("Failed to spool direct download template [%s] to the data center [%s].", templateId, dest.getDataCenter().getUuid());
-                            s_logger.error(msg);
+                            logger.error(msg);
                             throw new CloudRuntimeException(msg);
                         }
                     } else {
                         String msg = String.format("Could not find template [%s] ready for the data center [%s].", templateId, dest.getDataCenter().getUuid());
-                        s_logger.error(msg);
+                        logger.error(msg);
                         throw new CloudRuntimeException(msg);
                     }
                 }
@@ -1806,11 +1804,11 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 result = future.get();
                 if (result.isFailed()) {
                     if (result.getResult().contains(REQUEST_TEMPLATE_RELOAD) && (i == 0)) {
-                        s_logger.debug("Retrying template deploy for VMware.");
+                        logger.debug("Retrying template deploy for VMware.");
                         continue;
                     } else {
                         String msg = String.format("Unable to create volume [%s] due to [%s].", newVolToString, result.getResult());
-                        s_logger.error(msg);
+                        logger.error(msg);
                         throw new StorageUnavailableException(msg, destPool.getId());
                     }
                 }
@@ -1834,8 +1832,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 throw e;
             } catch (InterruptedException | ExecutionException e) {
                 String msg = String.format("Unable to create volume [%s] due to [%s].", newVolToString, e.toString());
-                s_logger.error(msg);
-                s_logger.debug("Exception: ", e);
+                logger.error(msg);
+                logger.debug("Exception: ", e);
                 throw new StorageUnavailableException(msg, destPool.getId());
             }
         }
@@ -1847,12 +1845,12 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         if (volume.getPassphraseId() != null) {
             return volume;
         }
-        s_logger.debug("Creating passphrase for the volume: " + volume.getName());
+        logger.debug("Creating passphrase for the volume: " + volume.getName());
         long startTime = System.currentTimeMillis();
         PassphraseVO passphrase = passphraseDao.persist(new PassphraseVO(true));
         volume.setPassphraseId(passphrase.getId());
         long finishTime = System.currentTimeMillis();
-        s_logger.debug("Creating and persisting passphrase took: " + (finishTime - startTime) + " ms for the volume: " + volume.toString());
+        logger.debug("Creating and persisting passphrase took: " + (finishTime - startTime) + " ms for the volume: " + volume.toString());
         return _volsDao.persist(volume);
     }
 
@@ -1860,7 +1858,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     public void prepare(VirtualMachineProfile vm, DeployDestination dest) throws StorageUnavailableException, InsufficientStorageCapacityException, ConcurrentOperationException, StorageAccessException {
         if (dest == null) {
             String msg = String.format("Unable to prepare volumes for the VM [%s] because DeployDestination is null.", vm.getVirtualMachine());
-            s_logger.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
 
@@ -2009,12 +2007,12 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         String volumeToString = getReflectOnlySelectedFields(volume);
 
         if (volume.getState().equals(Volume.State.Creating)) {
-            s_logger.debug(String.format("Removing volume [%s], as it was leftover from the last management server stop.", volumeToString));
+            logger.debug(String.format("Removing volume [%s], as it was leftover from the last management server stop.", volumeToString));
             _volsDao.remove(volume.getId());
         }
 
         if (volume.getState().equals(Volume.State.Attaching)) {
-            s_logger.warn(String.format("Volume [%s] failed to attach to the VM [%s] on the last management server stop, changing state back to Ready.", volumeToString, _userVmDao.findById(vmId)));
+            logger.warn(String.format("Volume [%s] failed to attach to the VM [%s] on the last management server stop, changing state back to Ready.", volumeToString, _userVmDao.findById(vmId)));
             volume.setState(Volume.State.Ready);
             _volsDao.update(volumeId, volume);
         }
@@ -2037,11 +2035,11 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             if (duplicateVol != null) {
                 String duplicateVolToString = getReflectOnlySelectedFields(duplicateVol);
 
-                s_logger.debug(String.format("Removing volume [%s] from storage pool [%s] because it's duplicated.", duplicateVolToString, destPoolToString));
+                logger.debug(String.format("Removing volume [%s] from storage pool [%s] because it's duplicated.", duplicateVolToString, destPoolToString));
                 _volsDao.remove(duplicateVol.getId());
             }
 
-            s_logger.debug(String.format("Changing volume [%s] state from Migrating to Ready in case of migration failure.", volumeToString));
+            logger.debug(String.format("Changing volume [%s] state from Migrating to Ready in case of migration failure.", volumeToString));
             volume.setState(Volume.State.Ready);
             _volsDao.update(volumeId, volume);
         }
@@ -2055,7 +2053,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         String volumeToString = getReflectOnlySelectedFields(volume);
 
         if (volume.getState() == Volume.State.Snapshotting) {
-            s_logger.debug(String.format("Changing volume [%s] state back to Ready.", volumeToString));
+            logger.debug(String.format("Changing volume [%s] state back to Ready.", volumeToString));
             volume.setState(Volume.State.Ready);
             _volsDao.update(volume.getId(), volume);
         }
@@ -2079,8 +2077,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                     cleanupVolumeDuringSnapshotFailure(work.getVolumeId(), work.getSnapshotId());
                 }
             } catch (Exception e) {
-                s_logger.error(String.format("Clean up job failed due to [%s]. Will continue with other clean up jobs.", e.getMessage()));
-                s_logger.debug("Exception: ", e);
+                logger.error(String.format("Clean up job failed due to [%s]. Will continue with other clean up jobs.", e.getMessage()));
+                logger.debug("Exception: ", e);
             }
         }
     }
@@ -2115,8 +2113,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                     volume.getUuid(), volume.isDisplayVolume());
         } catch (Exception e) {
             String msg = String.format("Failed to destroy volume [%s] due to [%s].", volumeToString, e.getMessage());
-            s_logger.error(msg);
-            s_logger.debug("Exception: ", e);
+            logger.error(msg);
+            logger.debug("Exception: ", e);
             throw new CloudRuntimeException(msg, e);
         }
     }
@@ -2157,7 +2155,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
 
         if (needUpdate) {
-            s_logger.info(String.format("Updating volume's disk chain info. Volume: [%s]. Path: [%s] -> [%s], Disk Chain Info: [%s] -> [%s].",
+            logger.info(String.format("Updating volume's disk chain info. Volume: [%s]. Path: [%s] -> [%s], Disk Chain Info: [%s] -> [%s].",
                     volToString, vol.getPath(), path, vol.getChainInfo(), chainInfo));
             vol.setPath(path);
             vol.setChainInfo(chainInfo);
@@ -2269,8 +2267,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
     @Override
     public void unmanageVolumes(long vmId) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug(String.format("Unmanaging storage for VM [%s].", _userVmDao.findById(vmId)));
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Unmanaging storage for VM [%s].", _userVmDao.findById(vmId)));
         }
         final List<VolumeVO> volumesForVm = _volsDao.findByInstance(vmId);
 
@@ -2283,7 +2281,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                     boolean volumeAlreadyDestroyed = (vol.getState() == Volume.State.Destroy || vol.getState() == Volume.State.Expunged
                             || vol.getState() == Volume.State.Expunging);
                     if (volumeAlreadyDestroyed) {
-                        s_logger.debug(String.format("Skipping Destroy for the volume [%s] as it is in [%s] state.", volToString, vol.getState().toString()));
+                        logger.debug(String.format("Skipping Destroy for the volume [%s] as it is in [%s] state.", volToString, vol.getState().toString()));
                     } else {
                         volService.unmanageVolume(vol.getId());
                     }

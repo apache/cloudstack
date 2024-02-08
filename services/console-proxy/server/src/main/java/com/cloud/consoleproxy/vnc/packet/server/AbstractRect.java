@@ -16,7 +16,11 @@
 // under the License.
 package com.cloud.consoleproxy.vnc.packet.server;
 
+import com.cloud.consoleproxy.util.Logger;
+
 public abstract class AbstractRect implements Rect {
+
+    protected Logger logger = Logger.getLogger(getClass());
 
     protected final int x;
     protected final int y;

@@ -21,7 +21,6 @@ import java.util.List;
 
 import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.api.query.vo.VpcOfferingJoinVO;
 import com.cloud.network.vpc.VpcOffering;
@@ -31,7 +30,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.net.NetUtils;
 
 public class VpcOfferingJoinDaoImpl extends GenericDaoBase<VpcOfferingJoinVO, Long> implements VpcOfferingJoinDao {
-    public static final Logger s_logger = Logger.getLogger(VpcOfferingJoinDaoImpl.class);
 
     private SearchBuilder<VpcOfferingJoinVO> sofIdSearch;
 

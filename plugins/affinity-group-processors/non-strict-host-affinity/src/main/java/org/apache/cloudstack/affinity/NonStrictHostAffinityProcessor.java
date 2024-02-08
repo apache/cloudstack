@@ -23,7 +23,6 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -45,7 +44,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 public class NonStrictHostAffinityProcessor extends AffinityProcessorBase implements AffinityGroupProcessor {
 
-    private final Logger logger = Logger.getLogger(this.getClass().getName());
     @Inject
     protected UserVmDao vmDao;
     @Inject

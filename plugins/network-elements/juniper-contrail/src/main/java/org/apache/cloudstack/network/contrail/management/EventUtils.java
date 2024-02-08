@@ -23,7 +23,8 @@ import java.util.Map;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.stereotype.Component;
 
@@ -44,7 +45,7 @@ import com.cloud.utils.component.ComponentMethodInterceptor;
 
 @Component
 public class EventUtils {
-    private static final Logger s_logger = Logger.getLogger(EventUtils.class);
+    protected static Logger LOGGER = LogManager.getLogger(EventUtils.class);
 
     protected static  EventBus s_eventBus = null;
 
@@ -75,14 +76,14 @@ public class EventUtils {
             s_eventBus.publish(event);
         } catch (EventBusException evx) {
             String errMsg = "Failed to publish contrail event.";
-            s_logger.warn(errMsg, evx);
+            LOGGER.warn(errMsg, evx);
         }
 
     }
 
     public static class EventInterceptor implements ComponentMethodInterceptor, MethodInterceptor {
 
-        private static final Logger s_logger = Logger.getLogger(EventInterceptor.class);
+    protected Logger LOGGER = LogManager.getLogger(getClass());
 
         public EventInterceptor() {
 
@@ -155,7 +156,7 @@ public class EventUtils {
 
         @Override
         public void interceptException(Method method, Object target, Object event) {
-            s_logger.debug("interceptException");
+            LOGGER.debug("interceptException");
         }
 
         @Override

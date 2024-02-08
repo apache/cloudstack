@@ -85,7 +85,7 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
     @Param(description = "Virtual size of the fully loaded process")
     private String systemMemoryVirtualSize;
 
-    @SerializedName(MetricConstants.LOG_INFO)
+    @SerializedName(MetricConstants.logger_INFO)
     @Param(description = "the log files and their usage on disk")
     private String logInfo;
 

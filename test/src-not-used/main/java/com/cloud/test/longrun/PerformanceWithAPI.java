@@ -28,13 +28,14 @@ import java.util.Random;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.test.stress.TestClientWithAPI;
 
 public class PerformanceWithAPI {
 
-    public static final Logger s_logger = Logger.getLogger(PerformanceWithAPI.class.getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
     private static final int Retry = 10;
     private static final int ApiPort = 8096;
     private static int s_numVM = 2;
@@ -67,7 +68,7 @@ public class PerformanceWithAPI {
         final String server = host + ":" + ApiPort + "/";
         final String developerServer = host + ":" + DeveloperPort + ApiUrl;
 
-        s_logger.info("Starting test in " + numThreads + " thread(s). Each thread is launching " + s_numVM + " VMs");
+        logger.info("Starting test in " + numThreads + " thread(s). Each thread is launching " + s_numVM + " VMs");
 
         for (int i = 0; i < numThreads; i++) {
             new Thread(new Runnable() {
@@ -87,11 +88,11 @@ public class PerformanceWithAPI {
                             myUser.launchUser();
                             myUser.registerUser();
                         } catch (Exception e) {
-                            s_logger.warn("Error code: ", e);
+                            logger.warn("Error code: ", e);
                         }
 
                         if (myUser.getUserId() != null) {
-                            s_logger.info("User " + myUser.getUserName() + " was created successfully, starting VM creation");
+                            logger.info("User " + myUser.getUserName() + " was created successfully, starting VM creation");
                             //create VMs for the user
                             for (int i = 0; i < s_numVM; i++) {
                                 //Create a new VM, add it to the list of user's VMs
@@ -101,9 +102,9 @@ public class PerformanceWithAPI {
                                 singlePrivateIp = myVM.getPrivateIp();
 
                                 if (singlePrivateIp != null) {
-                                    s_logger.info("VM with private Ip " + singlePrivateIp + " was successfully created");
+                                    logger.info("VM with private Ip " + singlePrivateIp + " was successfully created");
                                 } else {
-                                    s_logger.info("Problems with VM creation for a user" + myUser.getUserName());
+                                    logger.info("Problems with VM creation for a user" + myUser.getUserName());
                                     break;
                                 }
 
@@ -111,9 +112,9 @@ public class PerformanceWithAPI {
                                 myUser.retrievePublicIp(ZoneId);
                                 singlePublicIp = myUser.getPublicIp().get(myUser.getPublicIp().size() - 1);
                                 if (singlePublicIp != null) {
-                                    s_logger.info("Successfully got public Ip " + singlePublicIp + " for user " + myUser.getUserName());
+                                    logger.info("Successfully got public Ip " + singlePublicIp + " for user " + myUser.getUserName());
                                 } else {
-                                    s_logger.info("Problems with getting public Ip address for user" + myUser.getUserName());
+                                    logger.info("Problems with getting public Ip address for user" + myUser.getUserName());
                                     break;
                                 }
 
@@ -123,13 +124,13 @@ public class PerformanceWithAPI {
                                     break;
                             }
 
-                            s_logger.info("Deployment successful..." + s_numVM + " VMs were created. Waiting for 5 min before performance test");
+                            logger.info("Deployment successful..." + s_numVM + " VMs were created. Waiting for 5 min before performance test");
                             Thread.sleep(300000L); // Wait
 
                             //Start performance test for the user
-                            s_logger.info("Starting performance test for Guest network that has " + myUser.getPublicIp().size() + " public IP addresses");
+                            logger.info("Starting performance test for Guest network that has " + myUser.getPublicIp().size() + " public IP addresses");
                             for (int j = 0; j < myUser.getPublicIp().size(); j++) {
-                                s_logger.info("Starting test for user which has " + myUser.getVirtualMachines().size() + " vms. Public IP for the user is " +
+                                logger.info("Starting test for user which has " + myUser.getVirtualMachines().size() + " vms. Public IP for the user is " +
                                     myUser.getPublicIp().get(j) + " , number of retries is " + Retry + " , private IP address of the machine is" +
                                     myUser.getVirtualMachines().get(j).getPrivateIp());
                                 GuestNetwork myNetwork = new GuestNetwork(myUser.getPublicIp().get(j), Retry);
@@ -139,7 +140,7 @@ public class PerformanceWithAPI {
 
                         }
                     } catch (Exception e) {
-                        s_logger.error(e);
+                        logger.error(e);
                     }
                 }
             }).start();
@@ -160,7 +161,7 @@ public class PerformanceWithAPI {
                 "&protocol=tcp&publicIp=" + encodedPublicIp + "&publicPort=" + encodedPublicPort;
 
         requestToSign = requestToSign.toLowerCase();
-        s_logger.info("Request to sign is " + requestToSign);
+        logger.info("Request to sign is " + requestToSign);
 
         String signature = TestClientWithAPI.signRequest(requestToSign, myUser.getSecretKey());
         String encodedSignature = URLEncoder.encode(signature, "UTF-8");
@@ -169,20 +170,20 @@ public class PerformanceWithAPI {
             myUser.getDeveloperServer() + "?command=createOrUpdateIpForwardingRule" + "&publicIp=" + encodedPublicIp + "&publicPort=" + encodedPublicPort +
                 "&privateIp=" + encodedPrivateIp + "&privatePort=" + encodedPrivatePort + "&protocol=tcp&apiKey=" + encodedApiKey + "&signature=" + encodedSignature;
 
-        s_logger.info("Trying to create IP forwarding rule: " + url);
+        logger.info("Trying to create IP forwarding rule: " + url);
         HttpClient client = new HttpClient();
         HttpMethod method = new GetMethod(url);
         responseCode = client.executeMethod(method);
-        s_logger.info("create ip forwarding rule response code: " + responseCode);
+        logger.info("create ip forwarding rule response code: " + responseCode);
         if (responseCode == 200) {
-            s_logger.info("The rule is created successfully");
+            logger.info("The rule is created successfully");
         } else if (responseCode == 500) {
             InputStream is = method.getResponseBodyAsStream();
             Map<String, String> errorInfo = TestClientWithAPI.getSingleValueFromXML(is, new String[] {"errorCode", "description"});
-            s_logger.error("create ip forwarding rule (linux) test failed with errorCode: " + errorInfo.get("errorCode") + " and description: " +
+            logger.error("create ip forwarding rule (linux) test failed with errorCode: " + errorInfo.get("errorCode") + " and description: " +
                 errorInfo.get("description"));
         } else {
-            s_logger.error("internal error processing request: " + method.getStatusText());
+            logger.error("internal error processing request: " + method.getStatusText());
         }
         return responseCode;
     }

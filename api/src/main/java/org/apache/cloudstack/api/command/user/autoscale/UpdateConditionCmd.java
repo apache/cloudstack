@@ -17,7 +17,6 @@
 
 package org.apache.cloudstack.api.command.user.autoscale;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -41,7 +40,6 @@ import com.cloud.user.Account;
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.18.0")
 public class UpdateConditionCmd extends BaseAsyncCmd {
-    public static final Logger LOGGER = Logger.getLogger(UpdateConditionCmd.class.getName());
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -69,7 +67,7 @@ public class UpdateConditionCmd extends BaseAsyncCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } catch (ResourceInUseException ex) {
-            LOGGER.warn("Exception: ", ex);
+            logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_IN_USE_ERROR, ex.getMessage());
         }
     }

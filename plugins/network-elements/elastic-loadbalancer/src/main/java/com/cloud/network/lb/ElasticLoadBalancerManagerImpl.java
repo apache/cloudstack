@@ -34,7 +34,6 @@ import org.apache.cloudstack.api.command.user.loadbalancer.CreateLoadBalancerRul
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
@@ -103,7 +102,6 @@ import com.cloud.vm.dao.NicDao;
 
 @Component
 public class ElasticLoadBalancerManagerImpl extends ManagerBase implements ElasticLoadBalancerManager, VirtualMachineGuru {
-    private static final Logger s_logger = Logger.getLogger(ElasticLoadBalancerManagerImpl.class);
 
     @Inject
     private AgentManager _agentMgr;
@@ -162,7 +160,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
         try {
             answers = _agentMgr.send(elbVm.getHostId(), cmds);
         } catch (OperationTimedoutException e) {
-            s_logger.warn("ELB: Timed Out", e);
+            logger.warn("ELB: Timed Out", e);
             throw new AgentUnavailableException("Unable to send commands to virtual elbVm ", elbVm.getHostId(), e);
         }
 
@@ -249,7 +247,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
         DomainRouterVO elbVm = findElbVmForLb(rules.get(0));
 
         if (elbVm == null) {
-            s_logger.warn("Unable to apply lb rules, ELB vm  doesn't exist in the network " + network.getId());
+            logger.warn("Unable to apply lb rules, ELB vm  doesn't exist in the network " + network.getId());
             throw new ResourceUnavailableException("Unable to apply lb rules", DataCenter.class, network.getDataCenterId());
         }
 
@@ -269,10 +267,10 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
             }
             return applyLBRules(elbVm, lbRules, network.getId());
         } else if (elbVm.getState() == State.Stopped || elbVm.getState() == State.Stopping) {
-            s_logger.debug("ELB VM is in " + elbVm.getState() + ", so not sending apply LoadBalancing rules commands to the backend");
+            logger.debug("ELB VM is in " + elbVm.getState() + ", so not sending apply LoadBalancing rules commands to the backend");
             return true;
         } else {
-            s_logger.warn("Unable to apply loadbalancing rules, ELB VM is not in the right state " + elbVm.getState());
+            logger.warn("Unable to apply loadbalancing rules, ELB VM is not in the right state " + elbVm.getState());
             throw new ResourceUnavailableException("Unable to apply loadbalancing rules, ELB VM is not in the right state", VirtualRouter.class, elbVm.getId());
         }
     }
@@ -296,13 +294,13 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
         // this can sometimes happen, if DB is manually or programmatically manipulated
         if (offerings == null || offerings.size() < 2) {
             String msg = "Data integrity problem : System Offering For Elastic LB VM has been removed?";
-            s_logger.error(msg);
+            logger.error(msg);
             throw new ConfigurationException(msg);
         }
 
         String enabled = _configDao.getValue(Config.ElasticLoadBalancerEnabled.key());
         _enabled = (enabled == null) ? false : Boolean.parseBoolean(enabled);
-        s_logger.info("Elastic Load balancer enabled: " + _enabled);
+        logger.info("Elastic Load balancer enabled: " + _enabled);
         if (_enabled) {
             String traffType = _configDao.getValue(Config.ElasticLoadBalancerNetwork.key());
             if ("guest".equalsIgnoreCase(traffType)) {
@@ -311,11 +309,11 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
                 _frontendTrafficType = TrafficType.Public;
             } else
                 throw new ConfigurationException("ELB: Traffic type for front end of load balancer has to be guest or public; found : " + traffType);
-            s_logger.info("ELB: Elastic Load Balancer: will balance on " + traffType);
+            logger.info("ELB: Elastic Load Balancer: will balance on " + traffType);
             int gcIntervalMinutes = NumbersUtil.parseInt(configs.get(Config.ElasticLoadBalancerVmGcInterval.key()), 5);
             if (gcIntervalMinutes < 5)
                 gcIntervalMinutes = 5;
-            s_logger.info("ELB: Elastic Load Balancer: scheduling GC to run every " + gcIntervalMinutes + " minutes");
+            logger.info("ELB: Elastic Load Balancer: scheduling GC to run every " + gcIntervalMinutes + " minutes");
             _gcThreadPool = Executors.newScheduledThreadPool(1, new NamedThreadFactory("ELBVM-GC"));
             _gcThreadPool.scheduleAtFixedRate(new CleanupThread(), gcIntervalMinutes, gcIntervalMinutes, TimeUnit.MINUTES);
             _itMgr.registerGuru(VirtualMachine.Type.ElasticLoadBalancerVm, this);
@@ -327,7 +325,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
     }
 
     private DomainRouterVO stop(DomainRouterVO elbVm, boolean forced) throws ConcurrentOperationException, ResourceUnavailableException {
-        s_logger.debug("Stopping ELB vm " + elbVm);
+        logger.debug("Stopping ELB vm " + elbVm);
         try {
             _itMgr.advanceStop(elbVm.getUuid(), forced);
             return _routerDao.findById(elbVm.getId());
@@ -346,7 +344,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
         List<DomainRouterVO> unusedElbVms = _elbVmMapDao.listUnusedElbVms();
         if (unusedElbVms != null) {
             if (unusedElbVms.size() > 0) {
-                s_logger.info("Found " + unusedElbVms.size() + " unused ELB vms");
+                logger.info("Found " + unusedElbVms.size() + " unused ELB vms");
             }
             Set<Long> currentGcCandidates = new HashSet<Long>();
             for (DomainRouterVO elbVm : unusedElbVms) {
@@ -359,22 +357,22 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
                 boolean gceed = false;
 
                 try {
-                    s_logger.info("Attempting to stop ELB VM: " + elbVm);
+                    logger.info("Attempting to stop ELB VM: " + elbVm);
                     stop(elbVm, true);
                     gceed = true;
                 } catch (ConcurrentOperationException e) {
-                    s_logger.warn("Unable to stop unused ELB vm " + elbVm + " due to ", e);
+                    logger.warn("Unable to stop unused ELB vm " + elbVm + " due to ", e);
                 } catch (ResourceUnavailableException e) {
-                    s_logger.warn("Unable to stop unused ELB vm " + elbVm + " due to ", e);
+                    logger.warn("Unable to stop unused ELB vm " + elbVm + " due to ", e);
                     continue;
                 }
                 if (gceed) {
                     try {
-                        s_logger.info("Attempting to destroy ELB VM: " + elbVm);
+                        logger.info("Attempting to destroy ELB VM: " + elbVm);
                         _itMgr.expunge(elbVm.getUuid());
                         _routerDao.remove(elbVm.getId());
                     } catch (ResourceUnavailableException e) {
-                        s_logger.warn("Unable to destroy unused ELB vm " + elbVm + " due to ", e);
+                        logger.warn("Unable to destroy unused ELB vm " + elbVm + " due to ", e);
                         gceed = false;
                     }
                 }
@@ -444,14 +442,14 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
             } else if (nic.getTrafficType() == TrafficType.Control) {
                 //  control command is sent over management network in VMware
                 if (dest.getHost().getHypervisorType() == HypervisorType.VMware) {
-                    if (s_logger.isInfoEnabled()) {
-                        s_logger.info("Check if we need to add management server explicit route to ELB vm. pod cidr: " + dest.getPod().getCidrAddress() + "/"
+                    if (logger.isInfoEnabled()) {
+                        logger.info("Check if we need to add management server explicit route to ELB vm. pod cidr: " + dest.getPod().getCidrAddress() + "/"
                                 + dest.getPod().getCidrSize() + ", pod gateway: " + dest.getPod().getGateway() + ", management host: "
                                 + ApiServiceConfiguration.ManagementServerAddresses.value());
                     }
 
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Added management server explicit route to ELB vm.");
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Added management server explicit route to ELB vm.");
                     }
                     // always add management explicit route, for basic networking setup
                     buf.append(" mgmtcidr=").append(_mgmtCidr);
@@ -478,8 +476,8 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
         }
         String msPublicKey = _configDao.getValue("ssh.publickey");
         buf.append(" authorized_key=").append(VirtualMachineGuru.getEncodedMsPublicKey(msPublicKey));
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Boot Args for " + profile + ": " + buf.toString());
+        if (logger.isDebugEnabled()) {
+            logger.debug("Boot Args for " + profile + ": " + buf.toString());
         }
 
         if (controlNic == null) {
@@ -514,7 +512,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
     public boolean finalizeStart(VirtualMachineProfile profile, long hostId, Commands cmds, ReservationContext context) {
         CheckSshAnswer answer = (CheckSshAnswer)cmds.getAnswer("checkSsh");
         if (answer == null || !answer.getResult()) {
-            s_logger.warn("Unable to ssh to the ELB VM: " + (answer != null ? answer.getDetails() : "No answer (answer for \"checkSsh\" was null)"));
+            logger.warn("Unable to ssh to the ELB VM: " + (answer != null ? answer.getDetails() : "No answer (answer for \"checkSsh\" was null)"));
             return false;
         }
 
@@ -549,7 +547,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
         }
 
         if (controlNic == null) {
-            s_logger.error("Control network doesn't exist for the ELB vm " + elbVm);
+            logger.error("Control network doesn't exist for the ELB vm " + elbVm);
             return false;
         }
 
@@ -567,7 +565,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
             lbRules.add(loadBalancing);
         }
 
-        s_logger.debug("Found " + lbRules.size() + " load balancing rule(s) to apply as a part of ELB vm " + elbVm + " start.");
+        logger.debug("Found " + lbRules.size() + " load balancing rule(s) to apply as a part of ELB vm " + elbVm + " start.");
         if (!lbRules.isEmpty()) {
             createApplyLoadBalancingRulesCommands(lbRules, elbVm, cmds, guestNetworkId);
         }

@@ -30,7 +30,8 @@ import javax.inject.Inject;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
@@ -150,7 +151,7 @@ import com.cloud.vm.dao.UserVmDao;
 
 public class CommandSetupHelper {
 
-    private static final Logger s_logger = Logger.getLogger(CommandSetupHelper.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
     private EntityManager _entityMgr;
@@ -226,7 +227,7 @@ public class CommandSetupHelper {
 
             Domain domain = domainDao.findById(vm.getDomainId());
             if (domain != null && VirtualMachineManager.AllowExposeDomainInMetadata.valueIn(domain.getId())) {
-                s_logger.debug("Adding domain info to cloud metadata");
+                logger.debug("Adding domain info to cloud metadata");
                 vmDataCommand.addVmData(NetworkModel.METATDATA_DIR, NetworkModel.CLOUD_DOMAIN_FILE, domain.getName());
                 vmDataCommand.addVmData(NetworkModel.METATDATA_DIR, NetworkModel.CLOUD_DOMAIN_ID_FILE, domain.getUuid());
             }
@@ -317,8 +318,8 @@ public class CommandSetupHelper {
         ipList.add(new DhcpTO(router_guest_nic.getIPv4Address(), router_guest_nic.getIPv4Gateway(), router_guest_nic.getIPv4Netmask(), startIpOfSubnet));
         for (final NicIpAliasVO ipAliasVO : ipAliasVOList) {
             final DhcpTO DhcpTO = new DhcpTO(ipAliasVO.getIp4Address(), ipAliasVO.getGateway(), ipAliasVO.getNetmask(), ipAliasVO.getStartIpOfSubnet());
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("configDnsMasq : adding ip {" + DhcpTO.getGateway() + ", " + DhcpTO.getNetmask() + ", " + DhcpTO.getRouterIp() + ", " + DhcpTO.getStartIpOfSubnet()
+            if (logger.isTraceEnabled()) {
+                logger.trace("configDnsMasq : adding ip {" + DhcpTO.getGateway() + ", " + DhcpTO.getNetmask() + ", " + DhcpTO.getRouterIp() + ", " + DhcpTO.getStartIpOfSubnet()
                         + "}");
             }
             ipList.add(DhcpTO);
@@ -734,7 +735,7 @@ public class CommandSetupHelper {
             if (createVmData) {
                 final NicVO nic = _nicDao.findByNtwkIdAndInstanceId(guestNetworkId, vm.getId());
                 if (nic != null) {
-                    s_logger.debug("Creating user data entry for vm " + vm + " on domR " + router);
+                    logger.debug("Creating user data entry for vm " + vm + " on domR " + router);
 
                     _userVmDao.loadDetails(vm);
                     createVmDataCommand(router, vm, nic, vm.getDetail("SSH.PublicKey"), cmds);
@@ -755,7 +756,7 @@ public class CommandSetupHelper {
 
             final NicVO nic = _nicDao.findByNtwkIdAndInstanceId(guestNetworkId, vm.getId());
             if (nic != null) {
-                s_logger.debug("Creating dhcp entry for vm " + vm + " on domR " + router + ".");
+                logger.debug("Creating dhcp entry for vm " + vm + " on domR " + router + ".");
                 createDhcpEntryCommand(router, vm, nic, false, cmds);
             }
         }
@@ -1331,7 +1332,7 @@ public class CommandSetupHelper {
 
     private void setIpAddressNetworkParams(IpAddressTO ipAddress, final Network network, final VirtualRouter router) {
         if (_networkModel.isPrivateGateway(network.getId())) {
-            s_logger.debug("network " + network.getId() + " (name: " + network.getName() + " ) is a vpc private gateway, set traffic type to Public");
+            logger.debug("network " + network.getId() + " (name: " + network.getName() + " ) is a vpc private gateway, set traffic type to Public");
             ipAddress.setTrafficType(TrafficType.Public);
             ipAddress.setPrivateGateway(true);
         } else {
@@ -1358,7 +1359,7 @@ public class CommandSetupHelper {
 
     private Map<NetworkOffering.Detail, String> getNicDetails(Network network) {
         if (network == null) {
-            s_logger.debug("Unable to get NIC details as the network is null");
+            logger.debug("Unable to get NIC details as the network is null");
             return null;
         }
         Map<NetworkOffering.Detail, String> details = networkOfferingDetailsDao.getNtwkOffDetails(network.getNetworkOfferingId());

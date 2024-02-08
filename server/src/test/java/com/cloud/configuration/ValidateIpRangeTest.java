@@ -20,6 +20,7 @@ import com.cloud.dc.VlanVO;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.utils.Pair;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,15 +41,21 @@ public class ValidateIpRangeTest {
     Network network;
     ConfigurationManagerImpl configurationMgr = new ConfigurationManagerImpl();
     List<VlanVO> vlanVOList = new ArrayList<VlanVO>();
+    private AutoCloseable closeable;
 
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         configurationMgr._networkModel = _networkModel;
         vlanVOList.add(vlan);
         when(vlan.getVlanGateway()).thenReturn("10.147.33.1");
         when(vlan.getVlanNetmask()).thenReturn("255.255.255.128");
 
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test

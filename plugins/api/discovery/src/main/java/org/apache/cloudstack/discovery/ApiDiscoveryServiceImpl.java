@@ -44,7 +44,6 @@ import org.apache.cloudstack.api.response.ApiResponseResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.reflections.ReflectionUtils;
 import org.springframework.stereotype.Component;
 
@@ -60,7 +59,6 @@ import com.google.gson.annotations.SerializedName;
 
 @Component
 public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements ApiDiscoveryService {
-    private static final Logger s_logger = Logger.getLogger(ApiDiscoveryServiceImpl.class);
 
     List<APIChecker> _apiAccessCheckers = null;
     List<PluggableService> _services = null;
@@ -83,13 +81,13 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
             s_apiNameDiscoveryResponseMap = new HashMap<String, ApiDiscoveryResponse>();
             Set<Class<?>> cmdClasses = new LinkedHashSet<Class<?>>();
             for (PluggableService service : _services) {
-                s_logger.debug(String.format("getting api commands of service: %s", service.getClass().getName()));
+                logger.debug(String.format("getting api commands of service: %s", service.getClass().getName()));
                 cmdClasses.addAll(service.getCommands());
             }
             cmdClasses.addAll(this.getCommands());
             cacheResponseMap(cmdClasses);
             long endTime = System.nanoTime();
-            s_logger.info("Api Discovery Service: Annotation, docstrings, api relation graph processed in " + (endTime - startTime) / 1000000.0 + " ms");
+            logger.info("Api Discovery Service: Annotation, docstrings, api relation graph processed in " + (endTime - startTime) / 1000000.0 + " ms");
         }
 
         return true;
@@ -108,8 +106,8 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
             }
 
             String apiName = apiCmdAnnotation.name();
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Found api: " + apiName);
+            if (logger.isTraceEnabled()) {
+                logger.trace("Found api: " + apiName);
             }
             ApiDiscoveryResponse response = getCmdRequestMap(cmdClass, apiCmdAnnotation);
 
@@ -258,7 +256,7 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
                 try {
                     apiChecker.checkAccess(user, name);
                 } catch (Exception ex) {
-                    s_logger.error(String.format("API discovery access check failed for [%s] with error [%s].", name, ex.getMessage()), ex);
+                    logger.error(String.format("API discovery access check failed for [%s] with error [%s].", name, ex.getMessage()), ex);
                     return null;
                 }
             }
@@ -277,7 +275,7 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
             }
 
             if (role.getRoleType() == RoleType.Admin && role.getId() == RoleType.Admin.getId()) {
-                s_logger.info(String.format("Account [%s] is Root Admin, all APIs are allowed.",
+                logger.info(String.format("Account [%s] is Root Admin, all APIs are allowed.",
                         ReflectionToStringBuilderUtils.reflectOnlySelectedFields(account, "accountName", "uuid")));
             } else {
                 for (APIChecker apiChecker : _apiAccessCheckers) {

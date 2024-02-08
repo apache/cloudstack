@@ -18,7 +18,7 @@ package org.apache.cloudstack.api.command.test;
 
 
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyObject;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.isNull;
 
@@ -86,7 +86,7 @@ public class AddSecondaryStorageCmdTest extends TestCase {
         StorageService resourceService = Mockito.mock(StorageService.class);
         addImageStoreCmd._storageService = resourceService;
 
-        Mockito.when(resourceService.discoverImageStore(anyString(), anyString(), anyString(), anyLong(), (Map)anyObject()))
+        Mockito.when(resourceService.discoverImageStore(anyString(), anyString(), anyString(), anyLong(), (Map)any()))
                 .thenReturn(null);
 
         try {

@@ -20,7 +20,6 @@
 package org.apache.cloudstack.utils.identity;
 
 
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ComponentLifecycle;
@@ -29,7 +28,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.MacAddress;
 
 public class ManagementServerNode extends AdapterBase implements SystemIntegrityChecker {
-    private static final Logger s_logger = Logger.getLogger(ManagementServerNode.class);
 
     private static final long s_nodeId = MacAddress.getMacAddress().toLong();
 
@@ -53,7 +51,7 @@ public class ManagementServerNode extends AdapterBase implements SystemIntegrity
         try {
             check();
         } catch (Exception e) {
-            s_logger.error("System integrity check exception", e);
+            logger.error("System integrity check exception", e);
             System.exit(1);
         }
         return true;

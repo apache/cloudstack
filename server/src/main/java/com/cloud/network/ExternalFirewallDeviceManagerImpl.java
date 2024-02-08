@@ -30,7 +30,6 @@ import org.apache.cloudstack.api.response.ExternalFirewallResponse;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -174,7 +173,6 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
     @Inject
     FirewallRulesDao _fwRulesDao;
 
-    private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalFirewallDeviceManagerImpl.class);
     private long _defaultFwCapacity;
 
     @Override
@@ -219,7 +217,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
         try {
             uri = new URI(url);
         } catch (Exception e) {
-            s_logger.debug(e);
+            logger.debug(e);
             throw new InvalidParameterValueException(e.getMessage());
         }
 
@@ -302,7 +300,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
             _externalFirewallDeviceDao.remove(fwDeviceId);
             return true;
         } catch (Exception e) {
-            s_logger.debug("Failed to delete external firewall device due to " + e.getMessage());
+            logger.debug("Failed to delete external firewall device due to " + e.getMessage());
             return false;
         }
     }
@@ -388,7 +386,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
                         _networkExternalFirewallDao.remove(fwDeviceForNetwork.getId());
                     }
                 } catch (Exception exception) {
-                    s_logger.error("Failed to release firewall device for the network" + network.getId() + " due to " + exception.getMessage());
+                    logger.error("Failed to release firewall device for the network" + network.getId() + " due to " + exception.getMessage());
                     return false;
                 } finally {
                     deviceMapLock.unlock();
@@ -423,7 +421,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
     @Override
     public boolean manageGuestNetworkWithExternalFirewall(boolean add, Network network) throws ResourceUnavailableException, InsufficientCapacityException {
         if (network.getTrafficType() != TrafficType.Guest) {
-            s_logger.trace("External firewall can only be used for add/remove guest networks.");
+            logger.trace("External firewall can only be used for add/remove guest networks.");
             return false;
         }
 
@@ -453,7 +451,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
         } else {
             ExternalFirewallDeviceVO fwDeviceVO = getExternalFirewallForNetwork(network);
             if (fwDeviceVO == null) {
-                s_logger.warn("Network shutdown requested on external firewall element, which did not implement the network."
+                logger.warn("Network shutdown requested on external firewall element, which did not implement the network."
                     + " Either network implement failed half way through or already network shutdown is completed.");
                 return true;
             }
@@ -478,7 +476,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
             }
             if (sourceNatIp == null) {
                 String errorMsg = "External firewall was unable to find the source NAT IP address for network " + network.getName();
-                s_logger.error(errorMsg);
+                logger.error(errorMsg);
                 return true;
             }
         }
@@ -515,10 +513,10 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
             String answerDetails = (answer != null) ? answer.getDetails() : "answer was null";
             String msg =
                 "External firewall was unable to " + action + " the guest network on the external firewall in zone " + zone.getName() + " due to " + answerDetails;
-            s_logger.error(msg);
+            logger.error(msg);
             if (!add && (!reservedIpAddressesForGuestNetwork.contains(network.getGateway()))) {
                 // If we failed the implementation as well, then just return, no complain
-                s_logger.error("Skip the shutdown of guest network on SRX because it seems we didn't implement it as well");
+                logger.error("Skip the shutdown of guest network on SRX because it seems we didn't implement it as well");
                 return true;
             }
             throw new ResourceUnavailableException(msg, DataCenter.class, zoneId);
@@ -545,7 +543,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
             List<NicVO> nics = _nicDao.listByNetworkId(network.getId());
             for (NicVO nic : nics) {
                 if (nic.getVmType() == null && ReservationStrategy.PlaceHolder.equals(nic.getReservationStrategy()) && nic.getIPv4Address().equals(network.getGateway())) {
-                    s_logger.debug("Removing placeholder nic " + nic + " for the network " + network);
+                    logger.debug("Removing placeholder nic " + nic + " for the network " + network);
                     _nicDao.remove(nic.getId());
                 }
             }
@@ -553,7 +551,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
         }
 
         String action = add ? "implemented" : "shut down";
-        s_logger.debug("External firewall has " + action + " the guest network for account " + account.getAccountName() + "(id = " + account.getAccountId() +
+        logger.debug("External firewall has " + action + " the guest network for account " + account.getAccountName() + "(id = " + account.getAccountId() +
             ") with VLAN tag " + guestVlanTag);
 
         return true;
@@ -574,7 +572,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
         assert (externalFirewall != null);
 
         if (network.getState() == Network.State.Allocated) {
-            s_logger.debug("External firewall was asked to apply firewall rules for network with ID " + network.getId() +
+            logger.debug("External firewall was asked to apply firewall rules for network with ID " + network.getId() +
                 "; this network is not implemented. Skipping backend commands.");
             return true;
         }
@@ -617,7 +615,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
         assert (externalFirewall != null);
 
         if (network.getState() == Network.State.Allocated) {
-            s_logger.debug("External firewall was asked to apply firewall rules for network with ID " + network.getId() +
+            logger.debug("External firewall was asked to apply firewall rules for network with ID " + network.getId() +
                 "; this network is not implemented. Skipping backend commands.");
             return true;
         }
@@ -645,7 +643,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
             if (answer == null || !answer.getResult()) {
                 String details = (answer != null) ? answer.getDetails() : "details unavailable";
                 String msg = "External firewall was unable to apply static nat rules to the SRX appliance in zone " + zone.getName() + " due to: " + details + ".";
-                s_logger.error(msg);
+                logger.error(msg);
                 throw new ResourceUnavailableException(msg, DataCenter.class, zone.getId());
             }
         }
@@ -658,7 +656,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
             if (answer == null || !answer.getResult()) {
                 String details = (answer != null) ? answer.getDetails() : "details unavailable";
                 String msg = "External firewall was unable to apply static nat rules to the SRX appliance in zone " + zone.getName() + " due to: " + details + ".";
-                s_logger.error(msg);
+                logger.error(msg);
                 throw new ResourceUnavailableException(msg, DataCenter.class, zone.getId());
             }
         }
@@ -671,7 +669,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
             if (answer == null || !answer.getResult()) {
                 String details = (answer != null) ? answer.getDetails() : "details unavailable";
                 String msg = "External firewall was unable to apply port forwarding rules to the SRX appliance in zone " + zone.getName() + " due to: " + details + ".";
-                s_logger.error(msg);
+                logger.error(msg);
                 throw new ResourceUnavailableException(msg, DataCenter.class, zone.getId());
             }
         }
@@ -713,7 +711,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
         if (answer == null || !answer.getResult()) {
             String details = (answer != null) ? answer.getDetails() : "details unavailable";
             String msg = "External firewall was unable to create a remote access VPN in zone " + zone.getName() + " due to: " + details + ".";
-            s_logger.error(msg);
+            logger.error(msg);
             throw new ResourceUnavailableException(msg, DataCenter.class, zone.getId());
         }
 
@@ -749,7 +747,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
             String details = (answer != null) ? answer.getDetails() : "details unavailable";
             DataCenterVO zone = _dcDao.findById(network.getDataCenterId());
             String msg = "External firewall was unable to add remote access users in zone " + zone.getName() + " due to: " + details + ".";
-            s_logger.error(msg);
+            logger.error(msg);
             throw new ResourceUnavailableException(msg, DataCenter.class, zone.getId());
         }
 
@@ -822,7 +820,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
         assert (externalFirewall != null);
 
         if (network.getState() == Network.State.Allocated) {
-            s_logger.debug("External firewall was asked to apply firewall rules for network with ID " + network.getId() +
+            logger.debug("External firewall was asked to apply firewall rules for network with ID " + network.getId() +
                 "; this network is not implemented. Skipping backend commands.");
             return true;
         }

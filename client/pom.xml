@@ -752,7 +752,7 @@
                     </webApp>
                     <systemProperties>
                         <systemProperty>
-                            <name>log4j.configuration</name>
+                            <name>log4j2.configurationFile</name>
                             <value>log4j-cloud.xml</value>
                         </systemProperty>
                     </systemProperties>
