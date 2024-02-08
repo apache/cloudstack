@@ -46,7 +46,9 @@ import com.cloud.dc.VlanDetailsVO;
 import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.dao.PublicIpQuarantineDao;
+import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.element.NsxProviderVO;
+import com.cloud.network.element.VirtualRouterProviderVO;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.dao.ServiceOfferingDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -84,6 +86,7 @@ import org.apache.cloudstack.network.NetworkPermissionVO;
 import org.apache.cloudstack.network.dao.NetworkPermissionDao;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -356,8 +359,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     @Inject
     HostDao _hostDao;
     @Inject
-    InternalLoadBalancerElementService _internalLbElementSvc;
-    @Inject
     DataCenterVnetDao _dcVnetDao;
     @Inject
     AccountGuestVlanMapDao _accountGuestVlanMapDao;
@@ -413,6 +414,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     PublicIpQuarantineDao publicIpQuarantineDao;
     @Inject
     NsxProviderDao nsxProviderDao;
+    @Inject
+    private VirtualRouterProviderDao virtualRouterProviderDao;
+    List<InternalLoadBalancerElementService> internalLoadBalancerElementServices = new ArrayList<>();
+    Map<String, InternalLoadBalancerElementService> internalLoadBalancerElementServiceMap = new HashMap<>();
 
     @Autowired
     @Qualifier("networkHelper")
@@ -820,7 +825,17 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
     @Override
     public boolean start() {
+        initializeInternalLoadBalancerElementsMap();
         return true;
+    }
+
+    private void initializeInternalLoadBalancerElementsMap() {
+        if (MapUtils.isEmpty(internalLoadBalancerElementServiceMap) && CollectionUtils.isNotEmpty(internalLoadBalancerElementServices)) {
+            for (InternalLoadBalancerElementService service : internalLoadBalancerElementServices) {
+                internalLoadBalancerElementServiceMap.put(service.getProviderType().name(), service);
+            }
+            s_logger.debug(String.format("Discovered internal loadbalancer elements configured on NetworkServiceImpl"));
+        }
     }
 
     @Override
@@ -5420,7 +5435,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             throw new CloudRuntimeException("Unable to find the Network Element implementing the " + Network.Provider.InternalLbVm.getName() + " Provider");
         }
 
-        _internalLbElementSvc.addInternalLoadBalancerElement(nsp.getId());
+        InternalLoadBalancerElementService service = getInternalLoadBalancerElementByNetworkServiceProviderId(nsp.getId());
+        service.addInternalLoadBalancerElement(nsp.getId());
 
         return nsp;
     }
@@ -5739,6 +5755,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     @Inject
     public void setNetworkGurus(List<NetworkGuru> networkGurus) {
         _networkGurus = networkGurus;
+    }
+
+    public void setInternalLoadBalancerElementServices(List<InternalLoadBalancerElementService> services) {
+        this.internalLoadBalancerElementServices = services;
     }
 
     @Override
@@ -6080,6 +6100,34 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         checkCallerForPublicIpQuarantineAccess(publicIpQuarantine);
 
         _ipAddrMgr.removePublicIpAddressFromQuarantine(publicIpQuarantine.getId(), removalReason);
+    }
+
+    @Override
+    public InternalLoadBalancerElementService getInternalLoadBalancerElementByType(Type type) {
+        return internalLoadBalancerElementServiceMap.getOrDefault(type.name(), null);
+    }
+
+    @Override
+    public InternalLoadBalancerElementService getInternalLoadBalancerElementByNetworkServiceProviderId(long networkProviderId) {
+        PhysicalNetworkServiceProviderVO provider = _pNSPDao.findById(networkProviderId);
+        if (provider == null) {
+            String msg = String.format("Cannot find a network service provider with ID %s", networkProviderId);
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+        Type type = provider.getProviderName().equalsIgnoreCase("nsx") ? Type.Nsx : Type.InternalLbVm;
+        return getInternalLoadBalancerElementByType(type);
+    }
+
+    @Override
+    public InternalLoadBalancerElementService getInternalLoadBalancerElementById(long providerId) {
+        VirtualRouterProviderVO provider = virtualRouterProviderDao.findById(providerId);
+        return getInternalLoadBalancerElementByType(provider.getType());
+    }
+
+    @Override
+    public List<InternalLoadBalancerElementService> getInternalLoadBalancerElements() {
+        return new ArrayList<>(this.internalLoadBalancerElementServiceMap.values());
     }
 
     /**

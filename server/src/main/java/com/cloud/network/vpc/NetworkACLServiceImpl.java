@@ -991,14 +991,26 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             NetworkACLVO lockedAcl = _networkACLDao.acquireInLockTable(ruleBeingMoved.getAclId());
             List<NetworkACLItemVO> allAclRules = getAllAclRulesSortedByNumber(lockedAcl.getId());
             validateAclConsistency(moveNetworkAclItemCmd, lockedAcl, allAclRules);
-
+            NetworkACLItem networkACLItem = null;
             if (previousRule == null) {
-                return moveRuleToTheTop(ruleBeingMoved, allAclRules);
+                networkACLItem = moveRuleToTheTop(ruleBeingMoved, allAclRules);
+            } else if (nextRule == null) {
+                networkACLItem = moveRuleToTheBottom(ruleBeingMoved, allAclRules);
+            } else {
+                networkACLItem = moveRuleBetweenAclRules(ruleBeingMoved, allAclRules, previousRule, nextRule);
             }
-            if (nextRule == null) {
-                return moveRuleToTheBottom(ruleBeingMoved, allAclRules);
+            VpcVO vpc = _vpcDao.findById(lockedAcl.getVpcId());
+            if (Objects.isNull(vpc)) {
+                return networkACLItem;
             }
-            return moveRuleBetweenAclRules(ruleBeingMoved, allAclRules, previousRule, nextRule);
+            final DataCenter dc = _entityMgr.findById(DataCenter.class, vpc.getZoneId());
+            final NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(dc.getId());
+            List<NetworkVO> networks = _networkDao.listByAclId(lockedAcl.getId());
+            if (Objects.nonNull(nsxProvider) && !networks.isEmpty()) {
+                allAclRules = getAllAclRulesSortedByNumber(lockedAcl.getId());
+                _networkAclMgr.reorderAclRules(vpc, networks, allAclRules);
+            }
+            return networkACLItem;
         } finally {
             _networkACLDao.releaseFromLockTable(ruleBeingMoved.getAclId());
         }

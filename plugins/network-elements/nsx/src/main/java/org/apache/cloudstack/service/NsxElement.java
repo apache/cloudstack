@@ -112,7 +112,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -712,18 +711,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
         boolean success = true;
         for (NetworkACLItem rule : rules) {
             String privatePort = getPrivatePortRangeForACLRule(rule);
-            NsxNetworkRule networkRule = new NsxNetworkRule.Builder()
-                    .setRuleId(rule.getId())
-                    .setSourceCidrList(Objects.nonNull(rule.getSourceCidrList()) ? transformCidrListValues(rule.getSourceCidrList()) : List.of("ANY"))
-                    .setAclAction(transformActionValue(rule.getAction()))
-                    .setTrafficType(rule.getTrafficType().toString())
-                    .setProtocol(rule.getProtocol().toUpperCase())
-                    .setPublicPort(String.valueOf(rule.getSourcePortStart()))
-                    .setPrivatePort(privatePort)
-                    .setIcmpCode(rule.getIcmpCode())
-                    .setIcmpType(rule.getIcmpType())
-                    .setService(Network.Service.NetworkACL)
-                    .build();
+            NsxNetworkRule networkRule = getNsxNetworkRuleForAcl(rule, privatePort);
             if (Arrays.asList(NetworkACLItem.State.Active, NetworkACLItem.State.Add).contains(rule.getState())) {
                 success = success && nsxService.addFirewallRules(network, List.of(networkRule));
             } else if (NetworkACLItem.State.Revoke == rule.getState()) {
@@ -740,9 +728,38 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
         return success;
     }
 
-    private void reorderRules(List<? extends NetworkACLItem> rules) {
-        rules.sort((Comparator) (r1, r2) -> ((NetworkACLItem) r2).getNumber() - ((NetworkACLItem) r1).getNumber());
+    @Override
+    public boolean reorderAclRules(Vpc vpc, List<? extends Network> networks, List<? extends NetworkACLItem> networkACLItems) {
+        List<NsxNetworkRule> aclRulesList = new ArrayList<>();
+        for (NetworkACLItem rule : networkACLItems) {
+            String privatePort = getPrivatePortRangeForACLRule(rule);
+            aclRulesList.add(getNsxNetworkRuleForAcl(rule, privatePort));
+        }
+        for (Network network: networks) {
+            nsxService.deleteFirewallRules(network, aclRulesList);
+        }
+        boolean success = true;
+        for (Network network : networks) {
+            for (NsxNetworkRule aclRule : aclRulesList) {
+                success = success && nsxService.addFirewallRules(network, List.of(aclRule));
+            }
+        }
+        return success;
+    }
 
+    private NsxNetworkRule getNsxNetworkRuleForAcl(NetworkACLItem rule, String privatePort) {
+        return new NsxNetworkRule.Builder()
+                .setRuleId(rule.getId())
+                .setSourceCidrList(Objects.nonNull(rule.getSourceCidrList()) ? transformCidrListValues(rule.getSourceCidrList()) : List.of("ANY"))
+                .setAclAction(transformActionValue(rule.getAction()))
+                .setTrafficType(rule.getTrafficType().toString())
+                .setProtocol(rule.getProtocol().toUpperCase())
+                .setPublicPort(String.valueOf(rule.getSourcePortStart()))
+                .setPrivatePort(privatePort)
+                .setIcmpCode(rule.getIcmpCode())
+                .setIcmpType(rule.getIcmpType())
+                .setService(Network.Service.NetworkACL)
+                .build();
     }
         @Override
     public boolean applyFWRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
@@ -870,6 +887,11 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
         sc.and(sc.entity().getType(), SearchCriteria.Op.EQ, VirtualRouterProvider.Type.Nsx);
 
         return sc.list();
+    }
+
+    @Override
+    public VirtualRouterProvider.Type getProviderType() {
+        return VirtualRouterProvider.Type.Nsx;
     }
 
     @Override

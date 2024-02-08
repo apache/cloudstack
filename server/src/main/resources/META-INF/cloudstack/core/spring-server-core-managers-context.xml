@@ -165,6 +165,7 @@
 
     <bean id="networkServiceImpl" class="com.cloud.network.NetworkServiceImpl" >
         <property name="networkGurus" value="#{networkGurusRegistry.registered}" />
+        <property name="internalLoadBalancerElementServices" value="#{internalLoadBalancerElementServiceRegistry.registered}" />
     </bean>
 
     <bean id="networkUsageManagerImpl" class="com.cloud.network.NetworkUsageManagerImpl" />
