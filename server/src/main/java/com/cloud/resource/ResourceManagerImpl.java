@@ -3219,7 +3219,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
-    public List<HostVO> findHostByGuidByStatus(final long dcId, final String guid, final Status status) {
+    public List<HostVO> findHostByGuidAndStatus(final long dcId, final String guid, final Status status) {
         final QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
         sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
         sc.and(sc.entity().getGuid(), Op.LIKE, guid + "%");

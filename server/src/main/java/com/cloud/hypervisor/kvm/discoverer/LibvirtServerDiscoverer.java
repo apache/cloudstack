@@ -439,7 +439,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
     }
 
     private HostVO getConnectingHost(long dcId, String guid) {
-        List<HostVO> hosts = _resourceMgr.findHostByGuidByStatus(dcId, guid, Status.Connecting);
+        List<HostVO> hosts = _resourceMgr.findHostByGuidAndStatus(dcId, guid, Status.Connecting);
         if (hosts.size() == 1) {
             return hosts.get(0);
         } else {

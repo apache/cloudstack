@@ -545,7 +545,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#findHostByGuidByStatus(long, java.lang.String, com.cloud.host.Status)
      */
     @Override
-    public List<HostVO> findHostByGuidByStatus(final long dcId, final String guid, final Status status) {
+    public List<HostVO> findHostByGuidAndStatus(final long dcId, final String guid, final Status status) {
         // TODO Auto-generated method stub
         return null;
     }

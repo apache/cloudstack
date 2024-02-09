@@ -156,7 +156,7 @@ public interface ResourceManager extends ResourceService, Configurable {
 
     List<HostVO> findHostByGuid(long dcId, String guid);
 
-    List<HostVO> findHostByGuidByStatus(long dcId, String guid, Status status);
+    List<HostVO> findHostByGuidAndStatus(long dcId, String guid, Status status);
 
     /**
      * @param type
