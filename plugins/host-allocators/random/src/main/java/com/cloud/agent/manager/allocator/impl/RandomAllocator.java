@@ -65,7 +65,7 @@ public class RandomAllocator extends AdapterBase implements HostAllocator {
     protected List<HostVO> listHostsByTags(Host.Type type, long dcId, Long podId, Long clusterId, String offeringHostTag, String templateTag) {
         List<HostVO> taggedHosts = new ArrayList<>();
         if (offeringHostTag != null) {
-            taggedHosts = _hostDao.listByHostTag(type, clusterId, podId, dcId, offeringHostTag);
+            taggedHosts.addAll(_hostDao.listByHostTag(type, clusterId, podId, dcId, offeringHostTag));
         }
         if (templateTag != null) {
             List<HostVO> templateTaggedHosts = _hostDao.listByHostTag(type, clusterId, podId, dcId, templateTag);
