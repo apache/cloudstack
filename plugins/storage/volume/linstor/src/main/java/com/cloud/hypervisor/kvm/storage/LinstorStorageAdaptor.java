@@ -72,7 +72,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
 
     private String getHostname() {
         // either there is already some function for that in the agent or a better way.
-        ProcessBuilder pb = new ProcessBuilder("/usr/bin/hostname");
+        ProcessBuilder pb = new ProcessBuilder("hostname");
         try
         {
             String result;
@@ -88,7 +88,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
             return result.trim();
         } catch (IOException | InterruptedException exc) {
             Thread.currentThread().interrupt();
-            throw new CloudRuntimeException("Unable to run '/usr/bin/hostname' command.");
+            throw new CloudRuntimeException("Unable to run 'hostname' command.");
         }
     }
 
