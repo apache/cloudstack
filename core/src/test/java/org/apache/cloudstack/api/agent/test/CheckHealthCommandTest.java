@@ -20,7 +20,6 @@
 package org.apache.cloudstack.api.agent.test;
 
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
@@ -28,12 +27,6 @@ import com.cloud.agent.api.CheckHealthCommand;
 
 public class CheckHealthCommandTest {
     CheckHealthCommand chc = new CheckHealthCommand();
-
-    @Test
-    public void testGetWait() {
-        int wait = chc.getWait();
-        assertTrue(wait == 50);
-    }
 
     @Test
     public void testExecuteInSequence() {

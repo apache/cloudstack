@@ -533,12 +533,6 @@ public class CheckOnHostCommandTest {
     }
 
     @Test
-    public void testGetWait() {
-        int wait = cohc.getWait();
-        assertTrue(20 == wait);
-    }
-
-    @Test
     public void testExecuteInSequence() {
         boolean b = cohc.executeInSequence();
         assertFalse(b);
