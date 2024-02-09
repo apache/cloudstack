@@ -17,7 +17,8 @@
 
 package com.cloud.hypervisor.ovm3.resources.helpers;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.NetworkRulesSystemVmCommand;
@@ -31,8 +32,7 @@ import com.cloud.hypervisor.ovm3.resources.Ovm3VirtualRoutingResource;
 import com.cloud.utils.ExecutionResult;
 
 public class Ovm3VirtualRoutingSupport {
-    private static final Logger LOGGER = Logger
-            .getLogger(Ovm3VirtualRoutingSupport.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     private static final String CREATE = "create";
     private static final String SUCCESS = "success";
     private final Connection c;
@@ -49,8 +49,8 @@ public class Ovm3VirtualRoutingSupport {
         if (cmd.isForVpc()) {
             return vpcNetworkUsage(cmd);
         }
-        if (LOGGER.isInfoEnabled()) {
-            LOGGER.info("Executing resource NetworkUsageCommand " + cmd);
+        if (logger.isInfoEnabled()) {
+            logger.info("Executing resource NetworkUsageCommand " + cmd);
         }
         if (cmd.getOption() != null && CREATE.equals(cmd.getOption())) {
             String result = networkUsage(cmd.getPrivateIP(), CREATE, null);
@@ -101,7 +101,7 @@ public class Ovm3VirtualRoutingSupport {
                     stats[1] += (Long.parseLong(splitResult[i++]));
                 }
             } catch (Exception e) {
-                LOGGER.warn(
+                logger.warn(
                         "Unable to parse return from script return of network usage command: "
                                 + e.toString(), e);
             }
@@ -136,7 +136,7 @@ public class Ovm3VirtualRoutingSupport {
                 args);
 
         if (!callResult.isSuccess()) {
-            LOGGER.error("Unable to execute NetworkUsage command on DomR ("
+            logger.error("Unable to execute NetworkUsage command on DomR ("
                     + privateIp
                     + "), domR may not be ready yet. failure due to "
                     + callResult.getDetails());
@@ -145,7 +145,7 @@ public class Ovm3VirtualRoutingSupport {
         if ("get".equals(option) || "vpn".equals(option)) {
             String result = callResult.getDetails();
             if (result == null || result.isEmpty()) {
-                LOGGER.error(" vpc network usage get returns empty ");
+                logger.error(" vpc network usage get returns empty ");
             }
             long[] stats = new long[2];
             if (result != null) {
@@ -182,18 +182,18 @@ public class Ovm3VirtualRoutingSupport {
             if (!cSp.dom0CheckPort(privateIp, cmdPort, retries, interval)) {
                 String msg = "Port " + cmdPort + " not reachable for " + vmName
                         + ": " + config.getAgentHostname();
-                LOGGER.info(msg);
+                logger.info(msg);
                 return new CheckSshAnswer(cmd, msg);
             }
         } catch (Exception e) {
             String msg = "Can not reach port " + cmdPort + " on System vm "
                     + vmName + ": " + config.getAgentHostname()
                     + " due to exception: " + e;
-            LOGGER.error(msg);
+            logger.error(msg);
             return new CheckSshAnswer(cmd, msg);
         }
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Ping " + cmdPort + " succeeded for vm " + vmName
+        if (logger.isDebugEnabled()) {
+            logger.debug("Ping " + cmdPort + " succeeded for vm " + vmName
                     + ": " + config.getAgentHostname() + " " + cmd);
         }
         return new CheckSshAnswer(cmd);

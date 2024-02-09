@@ -33,12 +33,10 @@ import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.script.Script;
 
-import org.apache.log4j.Logger;
 
 @ResourceWrapper(handles =  ReadyCommand.class)
 public final class LibvirtReadyCommandWrapper extends CommandWrapper<ReadyCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtReadyCommandWrapper.class);
 
     @Override
     public Answer execute(final ReadyCommand command, final LibvirtComputingResource libvirtComputingResource) {
@@ -57,9 +55,9 @@ public final class LibvirtReadyCommandWrapper extends CommandWrapper<ReadyComman
         if (isUbuntuHost) {
             cmd = "dpkg -l ovmf";
         }
-        s_logger.debug("Running command : [" + cmd + "] with timeout : " + timeout + " ms");
+        logger.debug("Running command : [" + cmd + "] with timeout : " + timeout + " ms");
         int result = Script.runSimpleBashScriptForExitValue(cmd, timeout, false);
-        s_logger.debug("Got result : " + result);
+        logger.debug("Got result : " + result);
         return result == 0;
     }
 }

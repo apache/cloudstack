@@ -20,7 +20,6 @@ package com.cloud.storage.dao;
 import java.util.Date;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.storage.SnapshotZoneVO;
 import com.cloud.utils.db.GenericDaoBase;
@@ -28,7 +27,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 public class SnapshotZoneDaoImpl extends GenericDaoBase<SnapshotZoneVO, Long> implements SnapshotZoneDao {
-    public static final Logger s_logger = Logger.getLogger(SnapshotZoneDaoImpl.class.getName());
     protected final SearchBuilder<SnapshotZoneVO> ZoneSnapshotSearch;
 
     public SnapshotZoneDaoImpl() {

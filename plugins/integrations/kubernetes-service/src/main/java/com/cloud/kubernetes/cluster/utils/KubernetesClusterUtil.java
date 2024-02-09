@@ -33,7 +33,8 @@ import javax.net.ssl.TrustManager;
 
 import org.apache.cloudstack.utils.security.SSLUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.uservm.UserVm;
@@ -43,7 +44,7 @@ import com.cloud.utils.ssh.SshHelper;
 
 public class KubernetesClusterUtil {
 
-    protected static final Logger LOGGER = Logger.getLogger(KubernetesClusterUtil.class);
+    protected static Logger LOGGER = LogManager.getLogger(KubernetesClusterUtil.class);
 
     public static final String CLUSTER_NODE_READY_COMMAND = "sudo /opt/bin/kubectl get nodes | awk '{if ($1 == \"%s\" && $2 == \"Ready\") print $1}'";
     public static final String CLUSTER_NODE_VERSION_COMMAND = "sudo /opt/bin/kubectl get nodes | awk '{if ($1 == \"%s\") print $5}'";

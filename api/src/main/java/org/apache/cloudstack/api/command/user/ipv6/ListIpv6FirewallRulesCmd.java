@@ -29,7 +29,6 @@ import org.apache.cloudstack.api.response.FirewallResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.utils.Pair;
@@ -41,7 +40,6 @@ import com.cloud.utils.Pair;
         responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListIpv6FirewallRulesCmd extends BaseListTaggedResourcesCmd implements IListFirewallRulesCmd {
-    public static final Logger s_logger = Logger.getLogger(ListIpv6FirewallRulesCmd.class.getName());
 
 
     /////////////////////////////////////////////////////

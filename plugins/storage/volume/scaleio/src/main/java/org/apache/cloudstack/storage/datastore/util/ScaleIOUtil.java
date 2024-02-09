@@ -17,14 +17,15 @@
 
 package org.apache.cloudstack.storage.datastore.util;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.utils.UuidUtils;
 import com.cloud.utils.script.Script;
 import org.apache.commons.lang3.StringUtils;
 
 public class ScaleIOUtil {
-    private static final Logger LOGGER = Logger.getLogger(ScaleIOUtil.class);
+    protected static Logger LOGGER = LogManager.getLogger(ScaleIOUtil.class);
 
     public static final String PROVIDER_NAME = "PowerFlex";
 

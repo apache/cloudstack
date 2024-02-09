@@ -26,7 +26,6 @@ import javax.inject.Inject;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.CreateBcfAttachmentCommand;
@@ -91,7 +90,6 @@ import com.cloud.vm.dao.VMInstanceDao;
  * removes them when the VM is destroyed.
  */
 public class BigSwitchBcfGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigrationResponder {
-    private static final Logger s_logger = Logger.getLogger(BigSwitchBcfGuestNetworkGuru.class);
 
     @Inject
     PhysicalNetworkDao _physicalNetworkDao;
@@ -139,7 +137,7 @@ public class BigSwitchBcfGuestNetworkGuru extends GuestNetworkGuru implements Ne
             isMyIsolationMethod(physicalNetwork)) {
             return true;
         } else {
-            s_logger.trace("We only take care of Guest networks of type   " + GuestType.Isolated + " in zone of type " + NetworkType.Advanced);
+            logger.trace("We only take care of Guest networks of type   " + GuestType.Isolated + " in zone of type " + NetworkType.Advanced);
             return false;
         }
     }
@@ -149,21 +147,21 @@ public class BigSwitchBcfGuestNetworkGuru extends GuestNetworkGuru implements Ne
         // Check if the isolation type of the physical network is BCF_SEGMENT, then delegate GuestNetworkGuru to design
         PhysicalNetworkVO physnet = _physicalNetworkDao.findById(plan.getPhysicalNetworkId());
         if (physnet == null || physnet.getIsolationMethods() == null || !physnet.getIsolationMethods().contains("BCF_SEGMENT")) {
-            s_logger.debug("Refusing to design this network, the physical isolation type is not BCF_SEGMENT");
+            logger.debug("Refusing to design this network, the physical isolation type is not BCF_SEGMENT");
             return null;
         }
 
         List<BigSwitchBcfDeviceVO> devices = _bigswitchBcfDao.listByPhysicalNetwork(physnet.getId());
         if (devices.isEmpty()) {
-            s_logger.error("No BigSwitch Controller on physical network " + physnet.getName());
+            logger.error("No BigSwitch Controller on physical network " + physnet.getName());
             return null;
         }
         for (BigSwitchBcfDeviceVO d: devices){
-            s_logger.debug("BigSwitch Controller " + d.getUuid()
+            logger.debug("BigSwitch Controller " + d.getUuid()
                     + " found on physical network " + physnet.getId());
         }
 
-        s_logger.debug("Physical isolation type is BCF_SEGMENT, asking GuestNetworkGuru to design this network");
+        logger.debug("Physical isolation type is BCF_SEGMENT, asking GuestNetworkGuru to design this network");
         NetworkVO networkObject = (NetworkVO)super.design(offering, plan, userSpecified, owner);
         if (networkObject == null) {
             return null;
@@ -311,7 +309,7 @@ public class BigSwitchBcfGuestNetworkGuru extends GuestNetworkGuru implements Ne
     public void shutdown(NetworkProfile profile, NetworkOffering offering) {
         NetworkVO networkObject = _networkDao.findById(profile.getId());
         if (networkObject.getBroadcastDomainType() != BroadcastDomainType.Vlan || networkObject.getBroadcastUri() == null) {
-            s_logger.warn("BroadcastUri is empty or incorrect for guestnetwork " + networkObject.getDisplayText());
+            logger.warn("BroadcastUri is empty or incorrect for guestnetwork " + networkObject.getDisplayText());
             return;
         }
 
@@ -355,7 +353,7 @@ public class BigSwitchBcfGuestNetworkGuru extends GuestNetworkGuru implements Ne
             tenantId = vpc.getUuid();
             tenantName = vpc.getName();
             boolean released = _vpcDao.releaseFromLockTable(vpc.getId());
-            s_logger.debug("BCF guru release lock vpc id: " + vpc.getId()
+            logger.debug("BCF guru release lock vpc id: " + vpc.getId()
                     + " released? " + released);
         } else {
             // use network id in CS as tenant in BSN
@@ -401,14 +399,14 @@ public class BigSwitchBcfGuestNetworkGuru extends GuestNetworkGuru implements Ne
     public void rollbackMigration(NicProfile nic, Network network,
             VirtualMachineProfile vm, ReservationContext src,
             ReservationContext dst) {
-        s_logger.debug("BCF guru rollback migration");
+        logger.debug("BCF guru rollback migration");
     }
 
     @Override
     public void commitMigration(NicProfile nic, Network network,
             VirtualMachineProfile vm, ReservationContext src,
             ReservationContext dst) {
-        s_logger.debug("BCF guru commit migration");
+        logger.debug("BCF guru commit migration");
     }
 
     private void bcfUtilsInit(){

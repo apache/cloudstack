@@ -20,7 +20,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 import org.apache.cloudstack.ha.HAManager;
 
 import com.cloud.agent.AgentManager;
@@ -42,7 +41,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 
 public class SimulatorInvestigator extends AdapterBase implements Investigator {
-    private final static Logger s_logger = Logger.getLogger(SimulatorInvestigator.class);
     @Inject
     AgentManager _agentMgr;
     @Inject
@@ -77,7 +75,7 @@ public class SimulatorInvestigator extends AdapterBase implements Investigator {
                     return answer.getResult() ? Status.Up : Status.Down;
                 }
             } catch (Exception e) {
-                s_logger.debug("Failed to send command to host: " + neighbor.getId());
+                logger.debug("Failed to send command to host: " + neighbor.getId());
             }
         }
 
@@ -93,17 +91,17 @@ public class SimulatorInvestigator extends AdapterBase implements Investigator {
         try {
             Answer answer = _agentMgr.send(vm.getHostId(), cmd);
             if (!answer.getResult()) {
-                s_logger.debug("Unable to get vm state on " + vm.toString());
+                logger.debug("Unable to get vm state on " + vm.toString());
                 throw new UnknownVM();
             }
             CheckVirtualMachineAnswer cvmAnswer = (CheckVirtualMachineAnswer)answer;
-            s_logger.debug("Agent responded with state " + cvmAnswer.getState().toString());
+            logger.debug("Agent responded with state " + cvmAnswer.getState().toString());
             return cvmAnswer.getState() == PowerState.PowerOn;
         } catch (AgentUnavailableException e) {
-            s_logger.debug("Unable to reach the agent for " + vm.toString() + ": " + e.getMessage());
+            logger.debug("Unable to reach the agent for " + vm.toString() + ": " + e.getMessage());
             throw new UnknownVM();
         } catch (OperationTimedoutException e) {
-            s_logger.debug("Operation timed out for " + vm.toString() + ": " + e.getMessage());
+            logger.debug("Operation timed out for " + vm.toString() + ": " + e.getMessage());
             throw new UnknownVM();
         }
     }

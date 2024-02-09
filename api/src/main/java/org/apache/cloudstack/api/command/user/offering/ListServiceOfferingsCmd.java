@@ -18,12 +18,10 @@ package org.apache.cloudstack.api.command.user.offering;
 
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
@@ -31,7 +29,6 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 @APICommand(name = "listServiceOfferings", description = "Lists all available service offerings.", responseObject = ServiceOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListServiceOfferingsCmd extends BaseListProjectAndAccountResourcesCmd {
-    public static final Logger s_logger = Logger.getLogger(ListServiceOfferingsCmd.class.getName());
 
 
     /////////////////////////////////////////////////////

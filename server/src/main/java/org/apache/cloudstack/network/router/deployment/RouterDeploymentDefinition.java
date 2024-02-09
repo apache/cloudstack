@@ -26,7 +26,8 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -79,7 +80,7 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class RouterDeploymentDefinition {
-    private static final Logger logger = Logger.getLogger(RouterDeploymentDefinition.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     protected static final int LIMIT_NUMBER_OF_ROUTERS = 5;
     protected static final int MAX_NUMBER_OF_ROUTERS = 2;
