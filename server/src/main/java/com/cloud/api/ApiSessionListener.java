@@ -20,14 +20,15 @@ import javax.servlet.annotation.WebListener;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @WebListener
 public class ApiSessionListener implements HttpSessionListener {
-    public static final Logger LOGGER = Logger.getLogger(ApiSessionListener.class.getName());
+    protected Logger logger = LogManager.getLogger(getClass());
     private static Map<String, HttpSession> sessions = new ConcurrentHashMap<>();
 
     /**
@@ -45,27 +46,27 @@ public class ApiSessionListener implements HttpSessionListener {
     }
 
     public void sessionCreated(HttpSessionEvent event) {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Session created by Id : " + event.getSession().getId() + " , session: " + event.getSession().toString() + " , source: " + event.getSource().toString() + " , event: " + event.toString());
+        if (logger.isDebugEnabled()) {
+            logger.debug("Session created by Id : " + event.getSession().getId() + " , session: " + event.getSession().toString() + " , source: " + event.getSource().toString() + " , event: " + event.toString());
         }
         synchronized (this) {
             HttpSession session = event.getSession();
             sessions.put(session.getId(), event.getSession());
         }
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("Sessions count: " + getSessionCount());
+        if (logger.isTraceEnabled()) {
+            logger.trace("Sessions count: " + getSessionCount());
         }
     }
 
     public void sessionDestroyed(HttpSessionEvent event) {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Session destroyed by Id : " + event.getSession().getId() + " , session: " + event.getSession().toString() + " , source: " + event.getSource().toString() + " , event: " + event.toString());
+        if (logger.isDebugEnabled()) {
+            logger.debug("Session destroyed by Id : " + event.getSession().getId() + " , session: " + event.getSession().toString() + " , source: " + event.getSource().toString() + " , event: " + event.toString());
         }
         synchronized (this) {
             sessions.remove(event.getSession().getId());
         }
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("Sessions count: " + getSessionCount());
+        if (logger.isTraceEnabled()) {
+            logger.trace("Sessions count: " + getSessionCount());
         }
     }
 }

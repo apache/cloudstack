@@ -36,14 +36,12 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.storage.Volume;
 
 @APICommand(name = "listVolumes", description = "Lists all volumes.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = {
         Volume.class}, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListVolumesCmd extends BaseListRetrieveOnlyResourceCountCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(ListVolumesCmd.class.getName());
 
     private static final String s_name = "listvolumesresponse";
 

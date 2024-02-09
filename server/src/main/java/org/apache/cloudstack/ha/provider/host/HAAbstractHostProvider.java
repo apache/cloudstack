@@ -33,13 +33,11 @@ import org.apache.cloudstack.ha.HAConfig;
 import org.apache.cloudstack.ha.HAResource;
 import org.apache.cloudstack.ha.provider.HAProvider;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
 public abstract class HAAbstractHostProvider extends AdapterBase implements HAProvider<Host> {
 
-    private final static Logger LOG = Logger.getLogger(HAAbstractHostProvider.class);
 
     @Inject
     private AlertManager alertManager;
@@ -74,11 +72,11 @@ public abstract class HAAbstractHostProvider extends AdapterBase implements HAPr
     public void fenceSubResources(final Host r) {
         if (r.getState() != Status.Down) {
             try {
-                LOG.debug("Trying to disconnect the host without investigation and scheduling HA for the VMs on host id=" + r.getId());
+                logger.debug("Trying to disconnect the host without investigation and scheduling HA for the VMs on host id=" + r.getId());
                 agentManager.disconnectWithoutInvestigation(r.getId(), Event.HostDown);
                 oldHighAvailabilityManager.scheduleRestartForVmsOnHost((HostVO)r, true);
             } catch (Exception e) {
-                LOG.error("Failed to disconnect host and schedule HA restart of VMs after fencing the host: ", e);
+                logger.error("Failed to disconnect host and schedule HA restart of VMs after fencing the host: ", e);
             }
         }
     }
@@ -88,7 +86,7 @@ public abstract class HAAbstractHostProvider extends AdapterBase implements HAPr
         try {
             resourceManager.resourceStateTransitTo(r, ResourceState.Event.InternalEnterMaintenance, ManagementServerNode.getManagementServerId());
         } catch (NoTransitionException e) {
-            LOG.error("Failed to put host in maintenance mode after host-ha fencing and scheduling VM-HA: ", e);
+            logger.error("Failed to put host in maintenance mode after host-ha fencing and scheduling VM-HA: ", e);
         }
     }
 

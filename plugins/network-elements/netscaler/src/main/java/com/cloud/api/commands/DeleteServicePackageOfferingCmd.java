@@ -20,7 +20,6 @@ package com.cloud.api.commands;
 import javax.inject.Inject;
 import javax.persistence.EntityExistsException;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -40,7 +39,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @APICommand(name = "deleteServicePackageOffering", responseObject = SuccessResponse.class, description = "Delete Service Package")
 public class DeleteServicePackageOfferingCmd extends BaseCmd {
 
-    public static final Logger s_logger = Logger.getLogger(DeleteServicePackageOfferingCmd.class.getName());
     private static final String s_name = "deleteServicePackage";
     @Inject
     NetscalerLoadBalancerElementService _netsclarLbService;

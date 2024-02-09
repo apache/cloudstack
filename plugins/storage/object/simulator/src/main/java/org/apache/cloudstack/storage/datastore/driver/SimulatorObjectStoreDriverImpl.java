@@ -28,7 +28,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.object.BaseObjectStoreDriverImpl;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -37,7 +36,6 @@ import java.util.List;
 import java.util.Map;
 
 public class SimulatorObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
-    private static final Logger s_logger = Logger.getLogger(SimulatorObjectStoreDriverImpl.class);
 
     @Inject
     ObjectStoreDao _storeDao;

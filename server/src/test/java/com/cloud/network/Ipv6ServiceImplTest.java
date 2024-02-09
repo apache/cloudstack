@@ -149,11 +149,13 @@ public class Ipv6ServiceImplTest {
 
     private MockedStatic<UsageEventUtils> usageEventUtilsMocked;
 
+    private AutoCloseable closeable;
+
     @Before
     public void setup() {
         updatedPrefixSubnetMap = new ArrayList<>();
         persistedPrefixSubnetMap = new ArrayList<>();
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         ipv6Service.firewallManager = firewallManager;
         Mockito.when(ipv6GuestPrefixSubnetNetworkMapDao.update(Mockito.anyLong(), Mockito.any(Ipv6GuestPrefixSubnetNetworkMapVO.class))).thenAnswer((Answer<Boolean>) invocation -> {
             Ipv6GuestPrefixSubnetNetworkMapVO map = (Ipv6GuestPrefixSubnetNetworkMapVO)invocation.getArguments()[1];
@@ -176,6 +178,7 @@ public class Ipv6ServiceImplTest {
         apiDBUtilsMocked.close();
         actionEventUtilsMocked.close();
         usageEventUtilsMocked.close();
+        closeable.close();
     }
 
     private DataCenterGuestIpv6PrefixVO prepareMocksForIpv6Subnet() {

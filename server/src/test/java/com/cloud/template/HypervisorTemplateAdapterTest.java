@@ -32,7 +32,6 @@ import com.cloud.storage.TemplateProfile;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateZoneDao;
-import com.cloud.test.TestAppender;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.dao.AccountDao;
@@ -55,7 +54,7 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.heuristics.HeuristicRuleHelper;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
-import org.apache.log4j.Level;
+import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -82,13 +81,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.regex.Pattern;
 
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyLong;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -138,6 +137,9 @@ public class HypervisorTemplateAdapterTest {
 
     @Mock
     StatsCollector statsCollectorMock;
+
+    @Mock
+    Logger loggerMock;
 
     @Spy
     @InjectMocks
@@ -439,14 +441,9 @@ public class HypervisorTemplateAdapterTest {
         Set<Long> zoneSet = null;
         boolean isTemplatePrivate = false;
 
-        TestAppender.TestAppenderBuilder appenderBuilder = new TestAppender.TestAppenderBuilder();
-        appenderBuilder.addExpectedPattern(Level.WARN, Pattern.quote(String.format("Zone ID is null, cannot allocate ISO/template in image store [%s].", dataStoreMock)));
-        TestAppender testLogAppender = appenderBuilder.build();
-        TestAppender.safeAddAppender(HypervisorTemplateAdapter.s_logger, testLogAppender);
-
         boolean result = _adapter.isZoneAndImageStoreAvailable(dataStoreMock, zoneId, zoneSet, isTemplatePrivate);
 
-        testLogAppender.assertMessagesLogged();
+        Mockito.verify(loggerMock, Mockito.times(1)).warn(String.format("Zone ID is null, cannot allocate ISO/template in image store [%s].", dataStoreMock));
         Assert.assertFalse(result);
     }
 
@@ -461,15 +458,10 @@ public class HypervisorTemplateAdapterTest {
         Mockito.when(_dcDao.findById(Mockito.anyLong())).thenReturn(dataCenterVOMock);
         Mockito.when(dataStoreMock.getId()).thenReturn(2L);
 
-        TestAppender.TestAppenderBuilder appenderBuilder = new TestAppender.TestAppenderBuilder();
-        appenderBuilder.addExpectedPattern(Level.WARN, Pattern.quote(String.format("Unable to find zone by id [%s], so skip downloading template to its image store [%s].",
-                zoneId, dataStoreMock.getId())));
-        TestAppender testLogAppender = appenderBuilder.build();
-        TestAppender.safeAddAppender(HypervisorTemplateAdapter.s_logger, testLogAppender);
-
         boolean result = _adapter.isZoneAndImageStoreAvailable(dataStoreMock, zoneId, zoneSet, isTemplatePrivate);
 
-        testLogAppender.assertMessagesLogged();
+        Mockito.verify(loggerMock, Mockito.times(1)).warn(String.format("Unable to find zone by id [%s], so skip downloading template to its image store [%s].",
+                zoneId, dataStoreMock.getId()));
         Assert.assertFalse(result);
     }
 
@@ -485,14 +477,9 @@ public class HypervisorTemplateAdapterTest {
         Mockito.when(dataCenterVOMock.getAllocationState()).thenReturn(Grouping.AllocationState.Disabled);
         Mockito.when(dataStoreMock.getId()).thenReturn(2L);
 
-        TestAppender.TestAppenderBuilder appenderBuilder = new TestAppender.TestAppenderBuilder();
-        appenderBuilder.addExpectedPattern(Level.INFO, Pattern.quote(String.format("Zone [%s] is disabled. Skip downloading template to its image store [%s].", zoneId, dataStoreMock.getId())));
-        TestAppender testLogAppender = appenderBuilder.build();
-        TestAppender.safeAddAppender(HypervisorTemplateAdapter.s_logger, testLogAppender);
-
         boolean result = _adapter.isZoneAndImageStoreAvailable(dataStoreMock, zoneId, zoneSet, isTemplatePrivate);
 
-        testLogAppender.assertMessagesLogged();
+        Mockito.verify(loggerMock, Mockito.times(1)).info(String.format("Zone [%s] is disabled. Skip downloading template to its image store [%s].", zoneId, dataStoreMock.getId()));
         Assert.assertFalse(result);
     }
 
@@ -509,15 +496,10 @@ public class HypervisorTemplateAdapterTest {
         Mockito.when(dataStoreMock.getId()).thenReturn(2L);
         Mockito.when(statsCollectorMock.imageStoreHasEnoughCapacity(any(DataStore.class))).thenReturn(false);
 
-        TestAppender.TestAppenderBuilder appenderBuilder = new TestAppender.TestAppenderBuilder();
-        appenderBuilder.addExpectedPattern(Level.INFO, Pattern.quote(String.format("Image store doesn't have enough capacity. Skip downloading template to this image store [%s].",
-                dataStoreMock.getId())));
-        TestAppender testLogAppender = appenderBuilder.build();
-        TestAppender.safeAddAppender(HypervisorTemplateAdapter.s_logger, testLogAppender);
-
         boolean result = _adapter.isZoneAndImageStoreAvailable(dataStoreMock, zoneId, zoneSet, isTemplatePrivate);
 
-        testLogAppender.assertMessagesLogged();
+        Mockito.verify(loggerMock, times(1)).info(String.format("Image store doesn't have enough capacity. Skip downloading template to this image store [%s].",
+                dataStoreMock.getId()));
         Assert.assertFalse(result);
     }
 
@@ -533,15 +515,10 @@ public class HypervisorTemplateAdapterTest {
         Mockito.when(dataCenterVOMock.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
         Mockito.when(statsCollectorMock.imageStoreHasEnoughCapacity(any(DataStore.class))).thenReturn(true);
 
-        TestAppender.TestAppenderBuilder appenderBuilder = new TestAppender.TestAppenderBuilder();
-        appenderBuilder.addExpectedPattern(Level.INFO, Pattern.quote(String.format("Zone set is null; therefore, the ISO/template should be allocated in every secondary storage " +
-                "of zone [%s].", dataCenterVOMock)));
-        TestAppender testLogAppender = appenderBuilder.build();
-        TestAppender.safeAddAppender(HypervisorTemplateAdapter.s_logger, testLogAppender);
-
         boolean result = _adapter.isZoneAndImageStoreAvailable(dataStoreMock, zoneId, zoneSet, isTemplatePrivate);
 
-        testLogAppender.assertMessagesLogged();
+        Mockito.verify(loggerMock, times(1)).info(String.format("Zone set is null; therefore, the ISO/template should be allocated in every secondary storage " +
+                "of zone [%s].", dataCenterVOMock));
         Assert.assertTrue(result);
     }
 
@@ -557,15 +534,10 @@ public class HypervisorTemplateAdapterTest {
         Mockito.when(dataCenterVOMock.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
         Mockito.when(statsCollectorMock.imageStoreHasEnoughCapacity(any(DataStore.class))).thenReturn(true);
 
-        TestAppender.TestAppenderBuilder appenderBuilder = new TestAppender.TestAppenderBuilder();
-        appenderBuilder.addExpectedPattern(Level.INFO, Pattern.quote(String.format("The template is private and it is already allocated in a secondary storage in zone [%s]; " +
-                "therefore, image store [%s] will be skipped.", dataCenterVOMock, dataStoreMock)));
-        TestAppender testLogAppender = appenderBuilder.build();
-        TestAppender.safeAddAppender(HypervisorTemplateAdapter.s_logger, testLogAppender);
-
         boolean result = _adapter.isZoneAndImageStoreAvailable(dataStoreMock, zoneId, zoneSet, isTemplatePrivate);
 
-        testLogAppender.assertMessagesLogged();
+        Mockito.verify(loggerMock, times(1)).info(String.format("The template is private and it is already allocated in a secondary storage in zone [%s]; " +
+                "therefore, image store [%s] will be skipped.", dataCenterVOMock, dataStoreMock));
         Assert.assertFalse(result);
     }
 
@@ -581,15 +553,10 @@ public class HypervisorTemplateAdapterTest {
         Mockito.when(dataCenterVOMock.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
         Mockito.when(statsCollectorMock.imageStoreHasEnoughCapacity(any(DataStore.class))).thenReturn(true);
 
-        TestAppender.TestAppenderBuilder appenderBuilder = new TestAppender.TestAppenderBuilder();
-        appenderBuilder.addExpectedPattern(Level.INFO, Pattern.quote(String.format("Private template will be allocated in image store [%s] in zone [%s].",
-                dataStoreMock, dataCenterVOMock)));
-        TestAppender testLogAppender = appenderBuilder.build();
-        TestAppender.safeAddAppender(HypervisorTemplateAdapter.s_logger, testLogAppender);
-
         boolean result = _adapter.isZoneAndImageStoreAvailable(dataStoreMock, zoneId, zoneSet, isTemplatePrivate);
 
-        testLogAppender.assertMessagesLogged();
+        Mockito.verify(loggerMock, times(1)).info(String.format("Private template will be allocated in image store [%s] in zone [%s].",
+                dataStoreMock, dataCenterVOMock));
         Assert.assertTrue(result);
     }
 

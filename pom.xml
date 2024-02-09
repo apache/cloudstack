@@ -29,7 +29,7 @@
 
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.19.0.0-SNAPSHOT</version>
+    <version>4.20.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Apache CloudStack</name>
     <description>Apache CloudStack is an IaaS ("Infrastructure as a Service") cloud orchestration platform.</description>
@@ -81,9 +81,9 @@
         <cs.clover-maven-plugin.version>4.4.1</cs.clover-maven-plugin.version>
 
         <!-- Logging versions -->
+        <cs.log4j.version>2.19.0</cs.log4j.version>
         <cs.reload4j.version>1.2.25</cs.reload4j.version>
         <cs.log4j.extras.version>1.2.17</cs.log4j.extras.version>
-        <cs.logging.version>1.1.1</cs.logging.version>
 
         <!-- Apache Commons versions -->
         <cs.codec.version>1.15</cs.codec.version>
@@ -114,7 +114,7 @@
         <cs.junit.dataprovider.version>1.13.1</cs.junit.dataprovider.version>
         <cs.junit.jupiter.version>5.9.1</cs.junit.jupiter.version>
         <cs.guava-testlib.version>18.0</cs.guava-testlib.version>
-        <cs.mockito.version>3.12.4</cs.mockito.version>
+        <cs.mockito.version>4.11.0</cs.mockito.version>
         <cs.selenium.server.version>1.0-20081010.060147</cs.selenium.server.version>
         <cs.selenium-java-client-driver.version>1.0.1</cs.selenium-java-client-driver.version>
         <cs.testng.version>7.1.0</cs.testng.version>
@@ -437,6 +437,21 @@
                 <version>${cs.jstl.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-core</artifactId>
+                <version>${cs.log4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-api</artifactId>
+                <version>${cs.log4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.qos.reload4j</groupId>
+                <artifactId>reload4j</artifactId>
+                <version>${cs.reload4j.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>log4j</groupId>
                 <artifactId>apache-log4j-extras</artifactId>
                 <version>${cs.log4j.extras.version}</version>
@@ -446,11 +461,6 @@
                         <groupId>log4j</groupId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>ch.qos.reload4j</groupId>
-                <artifactId>reload4j</artifactId>
-                <version>${cs.reload4j.version}</version>
             </dependency>
             <dependency>
                 <groupId>mysql</groupId>
@@ -717,7 +727,7 @@
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
+            <artifactId>mockito-inline</artifactId>
             <version>${cs.mockito.version}</version>
             <scope>test</scope>
             <exclusions>

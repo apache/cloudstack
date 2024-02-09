@@ -25,7 +25,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.network.security.SecurityGroupWork.Step;
 
@@ -34,7 +35,7 @@ import com.cloud.network.security.SecurityGroupWork.Step;
  *
  */
 public class LocalSecurityGroupWorkQueue implements SecurityGroupWorkQueue {
-    protected static Logger s_logger = Logger.getLogger(LocalSecurityGroupWorkQueue.class);
+    protected static Logger LOGGER = LogManager.getLogger(LocalSecurityGroupWorkQueue.class);
 
     //protected Set<SecurityGroupWork> _currentWork = new HashSet<SecurityGroupWork>();
     protected Set<SecurityGroupWork> _currentWork = new TreeSet<SecurityGroupWork>();

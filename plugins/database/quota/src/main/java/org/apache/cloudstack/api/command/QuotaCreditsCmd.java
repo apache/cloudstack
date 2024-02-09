@@ -29,7 +29,6 @@ import org.apache.cloudstack.api.response.QuotaCreditsResponse;
 import org.apache.cloudstack.api.response.QuotaResponseBuilder;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.quota.QuotaService;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
@@ -42,7 +41,6 @@ public class QuotaCreditsCmd extends BaseCmd {
     @Inject
     QuotaService _quotaService;
 
-    public static final Logger s_logger = Logger.getLogger(QuotaStatementCmd.class);
 
 
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required = true, description = "Account Id for which quota credits need to be added")

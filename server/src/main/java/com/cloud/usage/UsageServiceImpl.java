@@ -39,7 +39,6 @@ import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -85,7 +84,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
 public class UsageServiceImpl extends ManagerBase implements UsageService, Manager {
-    public static final Logger s_logger = Logger.getLogger(UsageServiceImpl.class);
 
     //ToDo: Move implementation to ManagaerImpl
 
@@ -193,7 +191,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
             //List records for all the accounts if the caller account is of type admin.
             //If account_id or account_name is explicitly mentioned, list records for the specified account only even if the caller is of type admin
             ignoreAccountId = _accountService.isRootAdmin(caller.getId());
-            s_logger.debug("Account details not available. Using userContext accountId: " + accountId);
+            logger.debug("Account details not available. Using userContext accountId: " + accountId);
         }
 
         // Check if a domain admin is allowed to access the requested domain id
@@ -212,12 +210,10 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
         Date adjustedStartDate = computeAdjustedTime(startDate, usageTZ);
         Date adjustedEndDate = computeAdjustedTime(endDate, usageTZ);
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug(String.format("Getting usage records for account ID [%s], domain ID [%s] between [%s] and [%s] using page size [%s] and start index [%s].",
-                    accountId, domainId, DateUtil.displayDateInTimezone(_usageTimezone, adjustedStartDate),
-                    DateUtil.displayDateInTimezone(_usageTimezone, adjustedEndDate), cmd.getPageSizeVal(),
-                    cmd.getStartIndex()));
-        }
+        logger.debug("Getting usage records for account ID [{}], domain ID [{}] between [{}] and [{}] using page size [{}] and start index [{}].",
+                accountId, domainId, DateUtil.displayDateInTimezone(_usageTimezone, adjustedStartDate),
+                DateUtil.displayDateInTimezone(_usageTimezone, adjustedEndDate), cmd.getPageSizeVal(),
+                cmd.getStartIndex());
 
         Filter usageFilter = new Filter(UsageVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
 
@@ -407,8 +403,8 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
             throw new InvalidParameterValueException("Unable to find project by id " + projectId);
         }
         final long projectAccountId = project.getProjectAccountId();
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info(String.format("Using projectAccountId %d for project %s [%s] as account id", projectAccountId, project.getName(), project.getUuid()));
+        if (logger.isInfoEnabled()) {
+            logger.info(String.format("Using projectAccountId %d for project %s [%s] as account id", projectAccountId, project.getName(), project.getUuid()));
         }
         accountId = projectAccountId;
         return accountId;
@@ -480,7 +476,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
                     cal.set(Calendar.SECOND, 0);
                     cal.set(Calendar.MILLISECOND, 0);
                     long execTS = cal.getTimeInMillis();
-                    s_logger.debug("Trying to remove old raw cloud_usage records older than " + interval + " day(s), current time=" + curTS + " next job execution time=" + execTS);
+                    logger.debug("Trying to remove old raw cloud_usage records older than " + interval + " day(s), current time=" + curTS + " next job execution time=" + execTS);
                     // Let's avoid cleanup when job runs and around a 15 min interval
                     if (Math.abs(curTS - execTS) < 15 * 60 * 1000) {
                         return false;

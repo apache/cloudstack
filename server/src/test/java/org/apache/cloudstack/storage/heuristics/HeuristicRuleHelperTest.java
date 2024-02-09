@@ -18,7 +18,6 @@ package org.apache.cloudstack.storage.heuristics;
 
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
-import com.cloud.test.TestAppender;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -28,7 +27,7 @@ import org.apache.cloudstack.secstorage.dao.SecondaryStorageHeuristicDao;
 import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
 import org.apache.cloudstack.storage.heuristics.presetvariables.PresetVariables;
 import org.apache.cloudstack.utils.jsinterpreter.JsInterpreter;
-import org.apache.log4j.Level;
+import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -37,8 +36,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
-
-import java.util.regex.Pattern;
 
 @RunWith(MockitoJUnitRunner.class)
 public class HeuristicRuleHelperTest {
@@ -64,6 +61,9 @@ public class HeuristicRuleHelperTest {
     @Mock
     DataStore dataStoreMock;
 
+    @Mock
+    Logger loggerMock;
+
     @Spy
     @InjectMocks
     HeuristicRuleHelper heuristicRuleHelperSpy = new HeuristicRuleHelper();
@@ -74,15 +74,10 @@ public class HeuristicRuleHelperTest {
 
         Mockito.when(secondaryStorageHeuristicDaoMock.findByZoneIdAndType(Mockito.anyLong(), Mockito.any(HeuristicType.class))).thenReturn(null);
 
-        TestAppender.TestAppenderBuilder appenderBuilder = new TestAppender.TestAppenderBuilder();
-        appenderBuilder.addExpectedPattern(Level.DEBUG, Pattern.quote(String.format("No heuristic rules found for zone with ID [%s] and heuristic type [%s]. Returning null.",
-                zoneId, HeuristicType.TEMPLATE)));
-        TestAppender testLogAppender = appenderBuilder.build();
-        TestAppender.safeAddAppender(HeuristicRuleHelper.LOGGER, testLogAppender);
-
         DataStore result = heuristicRuleHelperSpy.getImageStoreIfThereIsHeuristicRule(zoneId, HeuristicType.TEMPLATE, null);
 
-        testLogAppender.assertMessagesLogged();
+        Mockito.verify(loggerMock, Mockito.times(1)).debug(String.format("No heuristic rules found for zone with ID [%s] and heuristic type [%s]. Returning null.",
+                zoneId, HeuristicType.TEMPLATE));
         Assert.assertNull(result);
     }
 
@@ -95,14 +90,9 @@ public class HeuristicRuleHelperTest {
         Mockito.doReturn(null).when(heuristicRuleHelperSpy).interpretHeuristicRule(Mockito.anyString(), Mockito.any(HeuristicType.class), Mockito.isNull(),
                 Mockito.anyLong());
 
-        TestAppender.TestAppenderBuilder appenderBuilder = new TestAppender.TestAppenderBuilder();
-        appenderBuilder.addExpectedPattern(Level.DEBUG, Pattern.quote(String.format("Found the heuristic rule %s to apply for zone with ID [%s].", heuristicVOMock, zoneId)));
-        TestAppender testLogAppender = appenderBuilder.build();
-        TestAppender.safeAddAppender(HeuristicRuleHelper.LOGGER, testLogAppender);
-
         DataStore result = heuristicRuleHelperSpy.getImageStoreIfThereIsHeuristicRule(zoneId, HeuristicType.TEMPLATE, null);
 
-        testLogAppender.assertMessagesLogged();
+        Mockito.verify(loggerMock, Mockito.times(1)).debug(String.format("Found the heuristic rule %s to apply for zone with ID [%s].", heuristicVOMock, zoneId));
         Assert.assertNull(result);
     }
 
