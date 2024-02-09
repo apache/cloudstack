@@ -1254,7 +1254,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     protected void updateInstanceDetailsKeepCurrentValueIfNull(Integer newValue, Map<String, String> details, String detailsConstant, Integer currentValue) {
         if (newValue == null && details.get(detailsConstant) == null) {
             String currentValueString = String.valueOf(currentValue);
-            s_logger.debug(String.format("[%s] was not specified, keeping the current value: [%s].", detailsConstant, currentValueString));
+            logger.debug("{} was not specified, keeping the current value: {}.", detailsConstant, currentValueString);
             details.put(detailsConstant, currentValueString);
         }
     }
