@@ -1857,7 +1857,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 deleteUsageVpnUser(event, account);
                 break;
             default:
-                logger.debug("The event [type={}, zoneId={}, accountId={}, userId={}, resourceName={}, createDate={}] is neither of type [{}] nor [{}]",
+                logger.debug("The event [type={}, zoneId={}, accountId={}, userId={}, resourceName={}, createDate={}] is neither of type [{}] nor [{}].",
                         event.getType(), zoneId, accountId, userId, event.getResourceName(), DateUtil.displayDateInTimezone(usageAggregationTimeZone, event.getCreateDate()),
                         EventTypes.EVENT_VPN_USER_ADD, EventTypes.EVENT_VPN_USER_REMOVE);
         }
@@ -1975,7 +1975,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 deleteUsageVMSnapshot(event);
                 break;
             default:
-                logger.debug("The event [type={}, zoneId={}, accountId={}, resourceName={}, diskOfferingId={}, createDate={}] is neither of type [{}] nor [{}]",
+                logger.debug("The event [type={}, zoneId={}, accountId={}, resourceName={}, diskOfferingId={}, createDate={}] is neither of type [{}] nor [{}].",
                         event.getType(), event.getZoneId(), event.getAccountId(), event.getResourceName(), event.getOfferingId(),
                         DateUtil.displayDateInTimezone(usageAggregationTimeZone, event.getCreateDate()), EventTypes.EVENT_VM_SNAPSHOT_CREATE,
                         EventTypes.EVENT_VM_SNAPSHOT_DELETE);
