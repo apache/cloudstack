@@ -286,7 +286,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
             checkLinstorAnswersThrow(answers);
 
         } catch (ApiException apiEx) {
-            s_logger.error(apiEx);
+            logger.error(apiEx);
             throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
         }
 
