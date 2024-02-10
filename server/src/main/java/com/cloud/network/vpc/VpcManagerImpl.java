@@ -1176,7 +1176,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             cmd.getIp6Dns2(), cmd.isDisplay(), cmd.getPublicMtu());
 
         String sourceNatIP = cmd.getSourceNatIP();
-        if (sourceNatIP != null || isVpcForNsx(vpc)) {
+        boolean forNsx = isVpcForNsx(vpc);
+        if (sourceNatIP != null || forNsx) {
+            if (forNsx) {
+                logger.info("Provided source NAT IP will be ignored in an NSX-enabled zone");
+                sourceNatIP = null;
+            }
             logger.info(String.format("Trying to allocate the specified IP [%s] as the source NAT of VPC [%s].", sourceNatIP, vpc));
             allocateSourceNatIp(vpc, sourceNatIP);
         }

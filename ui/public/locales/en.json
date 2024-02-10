@@ -1050,7 +1050,7 @@
 "label.internaldns2": "Internal DNS 2",
 "label.internallb.description": "Brief description of the internal LB.",
 "label.internallb.name.description": "Unique name for internal LB.",
-"label.internallb.sourceip.description": "Brief description of the internal LB.",
+"label.internallb.sourceip.description": "Source IP address the network traffic will be load balanced from",
 "label.internallbvm": "InternalLbVm",
 "label.internetprotocol": "Internet protocol",
 "label.interval": "Polling interval (in sec)",
