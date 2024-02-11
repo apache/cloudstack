@@ -95,6 +95,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.template.VnfTemplateManager;
 import org.apache.cloudstack.userdata.UserDataManager;
+import org.apache.xpath.operations.Bool;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -1394,5 +1395,15 @@ public class UserVmManagerImplTest {
         when(vmSnapshotDaoMock.findByVm(vmId)).thenReturn(vmSnapshots);
 
         userVmManagerImpl.restoreVirtualMachine(accountMock, vmId, newTemplateId);
+    }
+
+    @Test
+    public void testGetDiskOfferingSuitabilityForVm() {
+        Map<Long, Boolean> response = new HashMap<>();
+        response.put(1L, true);
+        response.put(2L, false);
+        Mockito.when(virtualMachineManager.getDiskOfferingSuitabilityForVm(Mockito.anyLong(), Mockito.anyList())).thenReturn(response);
+        Map<Long, Boolean> result = userVmManagerImpl.getDiskOfferingSuitabilityForVm(1L, List.of(1L, 2L));
+        Assert.assertEquals(response, result);
     }
 }
