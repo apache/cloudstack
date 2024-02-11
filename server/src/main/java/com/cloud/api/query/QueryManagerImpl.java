@@ -3370,6 +3370,24 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         return response;
     }
 
+    protected List<String> getHostTagsFromTemplateForServiceOfferingsListing(Account caller, Long templateId) {
+        List<String> hostTags = new ArrayList<>();
+        if (templateId == null) {
+            return hostTags;
+        }
+        VMTemplateVO template = _templateDao.findByIdIncludingRemoved(templateId);
+        if (template == null) {
+            throw new InvalidParameterValueException("Unable to find template with the specified ID");
+        }
+        if (caller.getType() != Account.Type.ADMIN) {
+            accountMgr.checkAccess(caller, null, false, template);
+        }
+        if (StringUtils.isNotEmpty(template.getTemplateTag())) {
+            hostTags.add(template.getTemplateTag());
+        }
+        return hostTags;
+    }
+
     private Pair<List<ServiceOfferingJoinVO>, Integer> searchForServiceOfferingsInternal(ListServiceOfferingsCmd cmd) {
         // Note
         // The filteredOfferings method for offerings is being modified in accordance with
@@ -3596,19 +3614,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.addAnd("domainId", SearchCriteria.Op.SC, scc);
         }
 
-        List<String> hostTags = new ArrayList<>();
-        if (templateId != null) {
-            VMTemplateVO template = _templateDao.findByIdIncludingRemoved(templateId);
-            if (template == null) {
-                throw new InvalidParameterValueException("Unable to find template with the specified ID");
-            }
-            if (caller.getType() != Account.Type.ADMIN) {
-                accountMgr.checkAccess(caller, null, false, template);
-            }
-            if (StringUtils.isNotEmpty(template.getTemplateTag())) {
-                hostTags.add(template.getTemplateTag());
-            }
-        }
+        List<String> hostTags = getHostTagsFromTemplateForServiceOfferingsListing(caller, templateId);
 
         if (currentVmOffering != null) {
             DiskOfferingVO diskOffering = _diskOfferingDao.findByIdIncludingRemoved(currentVmOffering.getDiskOfferingId());
