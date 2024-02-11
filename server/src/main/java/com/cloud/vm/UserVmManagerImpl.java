@@ -7130,30 +7130,35 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     protected void checkVolumesLimits(Account account, List<VolumeVO> volumes) throws ResourceAllocationException {
         Long totalVolumes = 0L;
         Long totalVolumesSize = 0L;
-        Map<Long, Long> diskOfferingVolumeCountMap = new HashMap<>();
-        Map<Long, Long> diskOfferingSizeMap = new HashMap<>();
+        Map<Long, List<String>> diskOfferingTagsMap = new HashMap<>();
+        Map<String, Long> tagVolumeCountMap = new HashMap<>();
+        Map<String, Long> tagSizeMap = new HashMap<>();
         for (VolumeVO volume : volumes) {
             if (!volume.isDisplay()) {
                 continue;
             }
             totalVolumes++;
             totalVolumesSize += volume.getSize();
-            if (diskOfferingVolumeCountMap.containsKey(volume.getDiskOfferingId())) {
-                diskOfferingVolumeCountMap.put(volume.getDiskOfferingId(), diskOfferingVolumeCountMap.get(volume.getDiskOfferingId()) + 1);
-                diskOfferingSizeMap.put(volume.getDiskOfferingId(), diskOfferingSizeMap.get(volume.getDiskOfferingId()) + volume.getSize());
-            } else {
-                diskOfferingVolumeCountMap.put(volume.getDiskOfferingId(), 1L);
-                diskOfferingSizeMap.put(volume.getDiskOfferingId(), volume.getSize());
+            if (!diskOfferingTagsMap.containsKey(volume.getDiskOfferingId())) {
+                diskOfferingTagsMap.put(volume.getDiskOfferingId(), _resourceLimitMgr.getResourceLimitStorageTags(
+                        _diskOfferingDao.findById(volume.getDiskOfferingId())));
+            }
+            List<String> tags = diskOfferingTagsMap.get(volume.getDiskOfferingId());
+            for (String tag : tags) {
+                if (tagVolumeCountMap.containsKey(tag)) {
+                    tagVolumeCountMap.put(tag, tagVolumeCountMap.get(tag) + 1);
+                    tagSizeMap.put(tag, tagSizeMap.get(tag) + volume.getSize());
+                } else {
+                    tagVolumeCountMap.put(tag, 1L);
+                    tagSizeMap.put(tag, volume.getSize());
+                }
             }
         }
         _resourceLimitMgr.checkResourceLimit(account, ResourceType.volume, totalVolumes);
         _resourceLimitMgr.checkResourceLimit(account, ResourceType.primary_storage, totalVolumesSize);
-        for (Long diskOfferingId : diskOfferingVolumeCountMap.keySet()) {
-            List<String> tags = resourceLimitService.getResourceLimitStorageTags(_diskOfferingDao.findById(diskOfferingId));
-            for (String tag : tags) {
-                resourceLimitService.checkResourceLimitWithTag(account, ResourceType.volume, tag, diskOfferingVolumeCountMap.get(diskOfferingId));
-                resourceLimitService.checkResourceLimitWithTag(account, ResourceType.primary_storage, tag, diskOfferingSizeMap.get(diskOfferingId));
-            }
+        for (String tag : tagVolumeCountMap.keySet()) {
+            resourceLimitService.checkResourceLimitWithTag(account, ResourceType.volume, tag, tagVolumeCountMap.get(tag));
+            resourceLimitService.checkResourceLimitWithTag(account, ResourceType.primary_storage, tag, tagSizeMap.get(tag));
         }
     }
 
