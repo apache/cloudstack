@@ -1395,4 +1395,62 @@ public class UserVmManagerImplTest {
 
         userVmManagerImpl.restoreVirtualMachine(accountMock, vmId, newTemplateId);
     }
+
+    @Test
+    public void testCheckVolumesLimits() {
+        userVmManagerImpl.resourceLimitService = resourceLimitMgr;
+        long diskOffId1 = 1L;
+        DiskOfferingVO diskOfferingVO1 = Mockito.mock(DiskOfferingVO.class);
+        Mockito.when(diskOfferingDao.findById(diskOffId1)).thenReturn(diskOfferingVO1);
+        Mockito.when(resourceLimitMgr.getResourceLimitStorageTags(diskOfferingVO1)).thenReturn(List.of("tag1", "tag2"));
+        long diskOffId2 = 2L;
+        DiskOfferingVO diskOfferingVO2 = Mockito.mock(DiskOfferingVO.class);
+        Mockito.when(diskOfferingDao.findById(diskOffId2)).thenReturn(diskOfferingVO2);
+        Mockito.when(resourceLimitMgr.getResourceLimitStorageTags(diskOfferingVO2)).thenReturn(List.of("tag2"));
+        long diskOffId3 = 3L;
+        DiskOfferingVO diskOfferingVO3 = Mockito.mock(DiskOfferingVO.class);
+        Mockito.when(diskOfferingDao.findById(diskOffId3)).thenReturn(diskOfferingVO3);
+        Mockito.when(resourceLimitMgr.getResourceLimitStorageTags(diskOfferingVO3)).thenReturn(new ArrayList<>());
+
+        VolumeVO vol1 = Mockito.mock(VolumeVO.class);
+        Mockito.when(vol1.getDiskOfferingId()).thenReturn(diskOffId1);
+        Mockito.when(vol1.getSize()).thenReturn(10L);
+        Mockito.when(vol1.isDisplay()).thenReturn(true);
+        VolumeVO undisplayedVolume = Mockito.mock(VolumeVO.class); // shouldn't be considered for limits
+        Mockito.when(undisplayedVolume.isDisplay()).thenReturn(false);
+        VolumeVO vol3 = Mockito.mock(VolumeVO.class);
+        Mockito.when(vol3.getDiskOfferingId()).thenReturn(diskOffId2);
+        Mockito.when(vol3.getSize()).thenReturn(30L);
+        Mockito.when(vol3.isDisplay()).thenReturn(true);
+        VolumeVO vol4 = Mockito.mock(VolumeVO.class);
+        Mockito.when(vol4.getDiskOfferingId()).thenReturn(diskOffId3);
+        Mockito.when(vol4.getSize()).thenReturn(40L);
+        Mockito.when(vol4.isDisplay()).thenReturn(true);
+        VolumeVO vol5 = Mockito.mock(VolumeVO.class);
+        Mockito.when(vol5.getDiskOfferingId()).thenReturn(diskOffId1);
+        Mockito.when(vol5.getSize()).thenReturn(50L);
+        Mockito.when(vol5.isDisplay()).thenReturn(true);
+
+        List<VolumeVO> volumes = List.of(vol1, undisplayedVolume, vol3, vol4, vol5);
+        Long size = volumes.stream().filter(VolumeVO::isDisplay).mapToLong(VolumeVO::getSize).sum();
+        try {
+            userVmManagerImpl.checkVolumesLimits(account, volumes);
+            Mockito.verify(resourceLimitMgr, Mockito.times(1))
+                    .checkResourceLimit(account, Resource.ResourceType.volume, 4);
+            Mockito.verify(resourceLimitMgr, Mockito.times(1))
+                    .checkResourceLimit(account, Resource.ResourceType.primary_storage, size);
+            Mockito.verify(resourceLimitMgr, Mockito.times(1))
+                    .checkResourceLimitWithTag(account, Resource.ResourceType.volume, "tag1", 2);
+            Mockito.verify(resourceLimitMgr, Mockito.times(1))
+                    .checkResourceLimitWithTag(account, Resource.ResourceType.volume, "tag2", 3);
+            Mockito.verify(resourceLimitMgr, Mockito.times(1))
+                    .checkResourceLimitWithTag(account, Resource.ResourceType.primary_storage, "tag1",
+                            vol1.getSize() + vol5.getSize());
+            Mockito.verify(resourceLimitMgr, Mockito.times(1))
+                    .checkResourceLimitWithTag(account, Resource.ResourceType.primary_storage, "tag2",
+                            vol1.getSize() + vol3.getSize() + vol5.getSize());
+        } catch (ResourceAllocationException e) {
+            Assert.fail(e.getMessage());
+        }
+    }
 }
