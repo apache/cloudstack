@@ -16,10 +16,7 @@
 // under the License.
 package com.cloud.agent.manager.allocator.impl;
 
-import static org.junit.Assert.*;
-
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.collections.CollectionUtils;
@@ -80,5 +77,4 @@ public class RandomAllocatorTest {
         Assert.assertFalse(CollectionUtils.isEmpty(result));
         Assert.assertEquals(1, result.size());
     }
-  
 }
