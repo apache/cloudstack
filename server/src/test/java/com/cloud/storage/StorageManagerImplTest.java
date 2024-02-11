@@ -38,12 +38,19 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
+import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.capacity.CapacityManager;
+import com.cloud.dc.VsphereStoragePolicyVO;
+import com.cloud.dc.dao.VsphereStoragePolicyDao;
+import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
+import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.Pair;
 import com.cloud.vm.DiskProfile;
@@ -64,6 +71,12 @@ public class StorageManagerImplTest {
     CapacityManager capacityManager;
     @Mock
     DiskOfferingDetailsDao diskOfferingDetailsDao;
+    @Mock
+    VsphereStoragePolicyDao vsphereStoragePolicyDao;
+    @Mock
+    HypervisorGuruManager hvGuruMgr;
+    @Mock
+    AgentManager agentManager;
 
     @Spy
     @InjectMocks
@@ -267,7 +280,8 @@ public class StorageManagerImplTest {
     @Test
     public void testStoragePoolHasEnoughIopsSuccess1() {
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
-        Mockito.when(storageManagerImpl.storagePoolHasEnoughIops(100L, pool, false)).thenReturn(true);
+        Mockito.when(storageManagerImpl.storagePoolHasEnoughIops(100L, pool, false))
+                .thenReturn(true);
         Assert.assertTrue(storageManagerImpl.storagePoolHasEnoughIops(100L, pool));
     }
 
@@ -282,7 +296,8 @@ public class StorageManagerImplTest {
 
     @Test
     public void testStoragePoolHasEnoughIopsWithVolPoolNullIops() {
-        List<Pair<Volume, DiskProfile>> list = List.of(new Pair<>(Mockito.mock(Volume.class), Mockito.mock(DiskProfile.class)));
+        List<Pair<Volume, DiskProfile>> list = List.of(
+                new Pair<>(Mockito.mock(Volume.class), Mockito.mock(DiskProfile.class)));
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
         Mockito.when(pool.getCapacityIops()).thenReturn(null);
         Assert.assertTrue(storageManagerImpl.storagePoolHasEnoughIops(list, pool));
@@ -297,12 +312,14 @@ public class StorageManagerImplTest {
         Mockito.when(profile.getDiskOfferingId()).thenReturn(1L);
         List<Pair<Volume, DiskProfile>> list = List.of(new Pair<>(volume, profile));
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
-        Mockito.doReturn(true).when(storageManagerImpl).storagePoolHasEnoughIops(100L, pool, true);
+        Mockito.doReturn(true).when(storageManagerImpl)
+                .storagePoolHasEnoughIops(100L, pool, true);
         Assert.assertTrue(storageManagerImpl.storagePoolHasEnoughIops(list, pool));
 
         Mockito.when(profile.getDiskOfferingId()).thenReturn(2L);
         Mockito.when(profile.getMinIops()).thenReturn(200L);
-        Mockito.doReturn(false).when(storageManagerImpl).storagePoolHasEnoughIops(200L, pool, true);
+        Mockito.doReturn(false).when(storageManagerImpl)
+                .storagePoolHasEnoughIops(200L, pool, true);
         Assert.assertFalse(storageManagerImpl.storagePoolHasEnoughIops(list, pool));
     }
 
@@ -325,7 +342,8 @@ public class StorageManagerImplTest {
             long total = invocationOnMock.getArgument(1);
             long asking = invocationOnMock.getArgument(2);
             return total > asking;
-        }).when(storageManagerImpl).checkPoolforSpace(Mockito.any(StoragePool.class), Mockito.anyLong(), Mockito.anyLong());
+        }).when(storageManagerImpl).checkPoolforSpace(Mockito.any(StoragePool.class),
+                Mockito.anyLong(), Mockito.anyLong());
         Assert.assertTrue(storageManagerImpl.storagePoolHasEnoughSpace(1000L, pool));
         Assert.assertFalse(storageManagerImpl.storagePoolHasEnoughSpace(2200L, pool));
     }
@@ -333,7 +351,8 @@ public class StorageManagerImplTest {
     @Test
     public void testIsStoragePoolCompliantWithStoragePolicy() {
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
-        Mockito.when(diskOfferingDetailsDao.getDetail(1L, ApiConstants.STORAGE_POLICY)).thenReturn("policy");
+        Mockito.when(diskOfferingDetailsDao.getDetail(1L, ApiConstants.STORAGE_POLICY))
+                .thenReturn("policy");
         try {
             Mockito.doReturn(null)
                     .when(storageManagerImpl).getCheckDatastorePolicyComplianceAnswer("policy", pool);
@@ -342,7 +361,8 @@ public class StorageManagerImplTest {
             Assert.fail(e.getMessage());
         }
         try {
-            Mockito.doReturn(new com.cloud.agent.api.Answer(Mockito.mock(CheckDataStoreStoragePolicyComplainceCommand.class)))
+            Mockito.doReturn(new com.cloud.agent.api.Answer(
+                    Mockito.mock(CheckDataStoreStoragePolicyComplainceCommand.class)))
                     .when(storageManagerImpl).getCheckDatastorePolicyComplianceAnswer("policy", pool);
             Assert.assertTrue(storageManagerImpl.isStoragePoolCompliantWithStoragePolicy(1L, pool));
         } catch (StorageUnavailableException e) {
@@ -361,7 +381,7 @@ public class StorageManagerImplTest {
     }
 
     @Test
-    public void testGetCheckDatastorePolicyComplianceAnswer() {
+    public void testGetCheckDatastorePolicyComplianceAnswerNullAnswer() {
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
         try {
             Assert.assertNull(storageManagerImpl.getCheckDatastorePolicyComplianceAnswer(null, pool));
@@ -369,5 +389,67 @@ public class StorageManagerImplTest {
         } catch (StorageUnavailableException e) {
             Assert.fail(e.getMessage());
         }
+    }
+
+    @Test(expected = StorageUnavailableException.class)
+    public void testGetCheckDatastorePolicyComplianceAnswerNoHost() throws StorageUnavailableException {
+        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+        Mockito.when(pool.getId()).thenReturn(1L);
+        Mockito.when(vsphereStoragePolicyDao.findById(Mockito.anyLong()))
+                .thenReturn(Mockito.mock(VsphereStoragePolicyVO.class));
+        Mockito.doReturn(new ArrayList<>()).when(storageManagerImpl).getUpHostsInPool(Mockito.anyLong());
+        storageManagerImpl.getCheckDatastorePolicyComplianceAnswer("1", pool);
+    }
+
+    @Test(expected = StorageUnavailableException.class)
+    public void testGetCheckDatastorePolicyComplianceAnswerAgentException() throws StorageUnavailableException {
+        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+        Mockito.when(pool.getId()).thenReturn(1L);
+        VsphereStoragePolicyVO policy = Mockito.mock(VsphereStoragePolicyVO.class);
+        Mockito.when(policy.getPolicyId()).thenReturn("some");
+        Mockito.when(vsphereStoragePolicyDao.findById(Mockito.anyLong()))
+                .thenReturn(Mockito.mock(VsphereStoragePolicyVO.class));
+        Mockito.doReturn(new ArrayList<>(List.of(1L, 2L)))
+                .when(storageManagerImpl).getUpHostsInPool(Mockito.anyLong());
+        Mockito.when(hvGuruMgr.getGuruProcessedCommandTargetHost(Mockito.anyLong(),
+                Mockito.any(CheckDataStoreStoragePolicyComplainceCommand.class))).thenReturn(1L);
+        try {
+            Mockito.when(agentManager.send(Mockito.anyLong(), Mockito.any(Command.class)))
+                    .thenThrow(AgentUnavailableException.class);
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
+            Assert.fail(e.getMessage());
+        }
+        storageManagerImpl.getCheckDatastorePolicyComplianceAnswer("1", pool);
+        try {
+            Mockito.when(agentManager.send(Mockito.anyLong(), Mockito.any(Command.class)))
+                    .thenThrow(OperationTimedoutException.class);
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
+            Assert.fail(e.getMessage());
+        }
+        storageManagerImpl.getCheckDatastorePolicyComplianceAnswer("1", pool);
+    }
+
+    @Test
+    public void testGetCheckDatastorePolicyComplianceAnswerSuccess() throws StorageUnavailableException {
+        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+        Mockito.when(pool.getId()).thenReturn(1L);
+        VsphereStoragePolicyVO policy = Mockito.mock(VsphereStoragePolicyVO.class);
+        Mockito.when(policy.getPolicyId()).thenReturn("some");
+        Mockito.when(vsphereStoragePolicyDao.findById(Mockito.anyLong()))
+                .thenReturn(Mockito.mock(VsphereStoragePolicyVO.class));
+        Mockito.doReturn(new ArrayList<>(List.of(1L, 2L))).when(storageManagerImpl).getUpHostsInPool(Mockito.anyLong());
+        Mockito.when(hvGuruMgr.getGuruProcessedCommandTargetHost(Mockito.anyLong(),
+                Mockito.any(CheckDataStoreStoragePolicyComplainceCommand.class))).thenReturn(1L);
+        try {
+            Mockito.when(agentManager.send(Mockito.anyLong(),
+                            Mockito.any(CheckDataStoreStoragePolicyComplainceCommand.class)))
+                    .thenReturn(new com.cloud.agent.api.Answer(
+                            Mockito.mock(CheckDataStoreStoragePolicyComplainceCommand.class)));
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
+            Assert.fail(e.getMessage());
+        }
+        com.cloud.agent.api.Answer answer =
+                storageManagerImpl.getCheckDatastorePolicyComplianceAnswer("1", pool);
+        Assert.assertTrue(answer.getResult());
     }
 }
