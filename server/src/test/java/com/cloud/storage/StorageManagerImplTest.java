@@ -284,7 +284,7 @@ public class StorageManagerImplTest {
     public void testStoragePoolHasEnoughIopsSuccess1() {
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
         Mockito.doReturn(true).when(storageManagerImpl).storagePoolHasEnoughIops(
-                100L, null, pool, false);
+                Mockito.eq(100L), Mockito.anyList(), Mockito.eq(pool), Mockito.eq(false));
         Assert.assertTrue(storageManagerImpl.storagePoolHasEnoughIops(100L, pool));
     }
 
