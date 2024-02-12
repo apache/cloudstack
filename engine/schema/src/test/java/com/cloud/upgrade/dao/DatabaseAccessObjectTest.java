@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
-
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
@@ -32,14 +31,13 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.test.util.ReflectionTestUtils;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DatabaseAccessObjectTest {
@@ -60,8 +58,7 @@ public class DatabaseAccessObjectTest {
 
     @Before
     public void setup() {
-        ReflectionTestUtils.setField(dao, "s_logger", loggerMock);
-
+        dao.logger = loggerMock;
     }
 
     @Test
@@ -93,8 +90,8 @@ public class DatabaseAccessObjectTest {
 
     @Test
     public void generateIndexNameTest() {
-        String indexName = dao.generateIndexName("mytable","mycolumn");
-        Assert.assertEquals( "i_mytable__mycolumn", indexName);
+        String indexName = dao.generateIndexName("mytable","mycolumn1", "mycolumn2");
+        Assert.assertEquals( "i_mytable__mycolumn1__mycolumn2", indexName);
     }
 
     @Test
@@ -136,10 +133,11 @@ public class DatabaseAccessObjectTest {
 
         Connection conn = connectionMock;
         String tableName = "mytable";
-        String columnName = "mycolumn";
+        String columnName1 = "mycolumn1";
+        String columnName2 = "mycolumn2";
         String indexName = "myindex";
 
-        dao.createIndex(conn, tableName, columnName, indexName);
+        dao.createIndex(conn, tableName, indexName, columnName1, columnName2);
         verify(connectionMock, times(1)).prepareStatement(anyString());
         verify(preparedStatementMock, times(1)).execute();
         verify(preparedStatementMock, times(1)).close();

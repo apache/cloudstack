@@ -18,6 +18,7 @@ package com.cloud.consoleproxy;
 
 import com.cloud.consoleproxy.util.Logger;
 import com.cloud.consoleproxy.util.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
 
 public class ConsoleProxyLoggerFactory implements LoggerFactory {
     public ConsoleProxyLoggerFactory() {
@@ -25,13 +26,13 @@ public class ConsoleProxyLoggerFactory implements LoggerFactory {
 
     @Override
     public Logger getLogger(Class<?> clazz) {
-        return new Log4jLogger(org.apache.log4j.Logger.getLogger(clazz));
+        return new Log4jLogger(LogManager.getLogger(clazz));
     }
 
     public static class Log4jLogger extends Logger {
-        private org.apache.log4j.Logger logger;
+        private org.apache.logging.log4j.Logger logger;
 
-        public Log4jLogger(org.apache.log4j.Logger logger) {
+        public Log4jLogger(org.apache.logging.log4j.Logger logger) {
             this.logger = logger;
         }
 

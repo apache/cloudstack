@@ -29,19 +29,22 @@ http.port=8080
 # Max inactivity time in minutes for the session
 session.timeout=30
 
-# Options to configure and enable HTTPS on management server
+# Max allowed API request payload/content size in bytes
+request.content.size=1048576
+
+# Options to configure and enable HTTPS on the management server
 #
-# For management server to pickup these configuration settings, the configured
-# keystore file should exists and be readable by the management server.
+# For the management server to pick up these configuration settings, the configured
+# keystore file should exist and be readable by the management server.
 https.enable=false
 https.port=8443
 
 # The keystore and manager passwords are assumed to be same.
 https.keystore=/etc/cloudstack/management/cloud.jks
-# If you want to encrypt the password follow the steps mentioned at:
-# http://docs.cloudstack.apache.org/projects/archived-cloudstack-administration/en/latest/management.html?highlight=jasypt#changing-the-database-password
+# If you want to encrypt the password itself, follow the steps mentioned at:
+http://docs.cloudstack.apache.org/en/latest/adminguide/management.html?highlight=jasypt#changing-the-database-password
 https.keystore.password=vmops.com
-# If an encrypted password is used, specify the encryption type - valid types: file, env (set environment variable CLOUD_SECRET_KEY), web
+# If an encrypted password is used, specify the encryption type. Valid types: file, web, env (set environment variable CLOUD_SECRET_KEY)
 # password.encryption.type=none
 
 # The path to webapp directory

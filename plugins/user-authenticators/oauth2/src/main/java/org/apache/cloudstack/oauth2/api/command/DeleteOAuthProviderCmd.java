@@ -19,7 +19,6 @@ package org.apache.cloudstack.oauth2.api.command;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.oauth2.OAuth2AuthManager;
 import org.apache.cloudstack.oauth2.api.response.OauthProviderResponse;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -35,7 +34,6 @@ import javax.inject.Inject;
 @APICommand(name = "deleteOauthProvider", description = "Deletes the registered OAuth provider", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0")
 public class DeleteOAuthProviderCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteOAuthProviderCmd.class.getName());
 
 
     /////////////////////////////////////////////////////

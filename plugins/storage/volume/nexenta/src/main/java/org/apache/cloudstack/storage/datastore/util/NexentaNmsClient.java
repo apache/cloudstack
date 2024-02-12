@@ -43,7 +43,8 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.BasicClientConnectionManager;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import org.apache.cloudstack.utils.security.SSLUtils;
 
@@ -53,7 +54,7 @@ import com.google.gson.annotations.SerializedName;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class NexentaNmsClient {
-    private static final Logger logger = Logger.getLogger(NexentaNmsClient.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     protected NexentaNmsUrl nmsUrl = null;
     protected DefaultHttpClient httpClient = null;

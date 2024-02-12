@@ -29,13 +29,11 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.validation.ChecksumUtil;
 import com.xensource.xenapi.Connection;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import java.io.File;
 
 @ResourceWrapper(handles = PatchSystemVmCommand.class)
 public class CitrixPatchSystemVmCommandWrapper extends CommandWrapper<PatchSystemVmCommand, Answer, CitrixResourceBase> {
-    private static final Logger s_logger = Logger.getLogger(CitrixPatchSystemVmCommandWrapper.class);
     private static int sshPort = CitrixResourceBase.DEFAULTDOMRSSHPORT;
     private static File pemFile = new File(CitrixResourceBase.SSHPRVKEYPATH);
 
@@ -62,7 +60,7 @@ public class CitrixPatchSystemVmCommandWrapper extends CommandWrapper<PatchSyste
         String checksum = ChecksumUtil.calculateCurrentChecksum(sysVMName, "vms/cloud-scripts.tgz").trim();
         if (!StringUtils.isEmpty(checksum) && checksum.equals(scriptChecksum) && !command.isForced()) {
             String msg = String.format("No change in the scripts checksum, not patching systemVM %s", sysVMName);
-            s_logger.info(msg);
+            logger.info(msg);
             return new PatchSystemVmAnswer(command, msg, lines[0], lines[1]);
         }
 
@@ -79,7 +77,7 @@ public class CitrixPatchSystemVmCommandWrapper extends CommandWrapper<PatchSyste
             String res = patchResult.replace("\n", " ");
             String[] output = res.split(":");
             if (output.length != 2) {
-                s_logger.warn("Failed to get the latest script version");
+                logger.warn("Failed to get the latest script version");
             } else {
                 scriptVersion = output[1].split(" ")[0];
             }
@@ -96,12 +94,12 @@ public class CitrixPatchSystemVmCommandWrapper extends CommandWrapper<PatchSyste
             result = serverResource.executeInVR(controlIp, VRScripts.VERSION, null);
             if (!result.isSuccess()) {
                 String errMsg = String.format("GetSystemVMVersionCmd on %s failed, message %s", controlIp, result.getDetails());
-                s_logger.error(errMsg);
+                logger.error(errMsg);
                 throw new CloudRuntimeException(errMsg);
             }
         } catch (final Exception e) {
             final String msg = "GetSystemVMVersionCmd failed due to " + e;
-            s_logger.error(msg, e);
+            logger.error(msg, e);
             throw new CloudRuntimeException(msg, e);
         }
         return result;

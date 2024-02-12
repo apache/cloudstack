@@ -45,9 +45,9 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -58,7 +58,7 @@ import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
-import static org.mockito.Matchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
@@ -688,7 +688,7 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
         when(mockNw.getNetworkOfferingId()).thenReturn(OFFERING_ID);
         when(mockNetworkOfferingDao.findById(OFFERING_ID)).thenReturn(mockNwOfferingVO);
         when(mockNwOfferingVO.getServiceOfferingId()).thenReturn(null);
-        when(mockServiceOfferingDao.findDefaultSystemOffering(Matchers.anyString(), Matchers.anyBoolean())).thenReturn(mockSvcOfferingVO);
+        when(mockServiceOfferingDao.findDefaultSystemOffering(ArgumentMatchers.anyString(), ArgumentMatchers.anyBoolean())).thenReturn(mockSvcOfferingVO);
         when(mockSvcOfferingVO.getId()).thenReturn(DEFAULT_OFFERING_ID);
 
         // Execute

@@ -36,10 +36,11 @@ import javax.naming.ldap.PagedResultsResponseControl;
 import org.apache.cloudstack.ldap.dao.LdapTrustMapDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class OpenLdapUserManagerImpl implements LdapUserManager {
-    private static final Logger LOGGER = Logger.getLogger(OpenLdapUserManagerImpl.class.getName());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
     protected LdapConfiguration _ldapConfiguration;
@@ -112,8 +113,8 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
         result.append(")");
 
         String returnString = result.toString();
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("constructed ldap query: " + returnString);
+        if (logger.isTraceEnabled()) {
+            logger.trace("constructed ldap query: " + returnString);
         }
         return returnString;
     }
@@ -133,8 +134,8 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
     private String getMemberOfGroupString(String group, String memberOfAttribute) {
         final StringBuilder memberOfFilter = new StringBuilder();
         if (null != group) {
-            if(LOGGER.isDebugEnabled()) {
-                LOGGER.debug("adding search filter for '" + group +
+            if(logger.isDebugEnabled()) {
+                logger.debug("adding search filter for '" + group +
                 "', using '" + memberOfAttribute + "'");
             }
             memberOfFilter.append("(" + memberOfAttribute + "=");
@@ -253,7 +254,7 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
                 try{
                     users.add(getUserForDn(userdn, context, domainId));
                 } catch (NamingException e){
-                    LOGGER.info("Userdn: " + userdn + " Not Found:: Exception message: " + e.getMessage());
+                    logger.info("Userdn: " + userdn + " Not Found:: Exception message: " + e.getMessage());
                 }
             }
         }
@@ -292,8 +293,8 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
         searchControls.setReturningAttributes(_ldapConfiguration.getReturnAttributes(domainId));
 
         NamingEnumeration<SearchResult> results = context.search(basedn, searchString, searchControls);
-        if(LOGGER.isDebugEnabled()) {
-            LOGGER.debug("searching user(s) with filter: \"" + searchString + "\"");
+        if(logger.isDebugEnabled()) {
+            logger.debug("searching user(s) with filter: \"" + searchString + "\"");
         }
         final List<LdapUser> users = new ArrayList<LdapUser>();
         while (results.hasMoreElements()) {
@@ -342,7 +343,7 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
                     }
                 }
             } else {
-                LOGGER.info("No controls were sent from the ldap server");
+                logger.info("No controls were sent from the ldap server");
             }
             context.setRequestControls(new Control[] {new PagedResultsControl(pageSize, cookie, Control.CRITICAL)});
         } while (cookie != null);

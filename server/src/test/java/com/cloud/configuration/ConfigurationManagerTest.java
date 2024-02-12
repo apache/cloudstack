@@ -58,6 +58,7 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.projects.ProjectManager;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.StoragePoolTagVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.StoragePoolTagsDao;
@@ -96,7 +97,8 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -134,7 +136,7 @@ import static org.mockito.Mockito.when;
 
 public class ConfigurationManagerTest {
 
-    private static final Logger s_logger = Logger.getLogger(ConfigurationManagerTest.class);
+    private Logger logger = LogManager.getLogger(ConfigurationManagerTest.class);
 
     @Spy
     @InjectMocks
@@ -219,9 +221,11 @@ public class ConfigurationManagerTest {
     @Mock
     Account account;
 
+    private AutoCloseable closeable;
+
     @Before
     public void setup() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
 
         Account account = new AccountVO("testaccount", 1, "networkdomain", Account.Type.NORMAL, UUID.randomUUID().toString());
         when(configurationMgr._accountMgr.getAccount(anyLong())).thenReturn(account);
@@ -261,14 +265,15 @@ public class ConfigurationManagerTest {
     }
 
     @After
-    public void tearDown() {
+    public void tearDown() throws Exception {
         CallContext.unregister();
+        closeable.close();
     }
 
     @Test
     public void testDedicatePublicIpRange() throws Exception {
 
-        s_logger.info("Running tests for DedicatePublicIpRange API");
+        logger.info("Running tests for DedicatePublicIpRange API");
 
         /*
          * TEST 1: given valid parameters DedicatePublicIpRange should succeed
@@ -298,7 +303,7 @@ public class ConfigurationManagerTest {
     @Test
     public void testReleasePublicIpRange() throws Exception {
 
-        s_logger.info("Running tests for DedicatePublicIpRange API");
+        logger.info("Running tests for DedicatePublicIpRange API");
 
         /*
          * TEST 1: given valid parameters and no allocated public ip's in the range ReleasePublicIpRange should succeed
@@ -341,7 +346,7 @@ public class ConfigurationManagerTest {
             Vlan result = configurationMgr.dedicatePublicIpRange(dedicatePublicIpRangesCmd);
             Assert.assertNotNull(result);
         } catch (Exception e) {
-            s_logger.info("exception in testing runDedicatePublicIpRangePostiveTest message: " + e.toString());
+            logger.info("exception in testing runDedicatePublicIpRangePostiveTest message: " + e.toString());
         } finally {
             txn.close("runDedicatePublicIpRangePostiveTest");
         }
@@ -460,7 +465,7 @@ public class ConfigurationManagerTest {
             Boolean result = configurationMgr.releasePublicIpRange(releasePublicIpRangesCmd);
             Assert.assertTrue(result);
         } catch (Exception e) {
-            s_logger.info("exception in testing runReleasePublicIpRangePostiveTest1 message: " + e.toString());
+            logger.info("exception in testing runReleasePublicIpRangePostiveTest1 message: " + e.toString());
         } finally {
             txn.close("runReleasePublicIpRangePostiveTest1");
         }
@@ -494,7 +499,7 @@ public class ConfigurationManagerTest {
             Boolean result = configurationMgr.releasePublicIpRange(releasePublicIpRangesCmd);
             Assert.assertTrue(result);
         } catch (Exception e) {
-            s_logger.info("exception in testing runReleasePublicIpRangePostiveTest2 message: " + e.toString());
+            logger.info("exception in testing runReleasePublicIpRangePostiveTest2 message: " + e.toString());
         } finally {
             txn.close("runReleasePublicIpRangePostiveTest2");
         }
@@ -1163,12 +1168,17 @@ public class ConfigurationManagerTest {
     @Test
     public void updateDiskOfferingTagsWithPrimaryStorageWithCorrectTagsTestSuccess(){
         String tags = "tag1,tag2";
-        List<String> storageTagsWithCorrectTags = new ArrayList<>(Arrays.asList("tag1","tag2"));
         List<StoragePoolVO> pools = new ArrayList<>(Arrays.asList(storagePoolVO));
         List<VolumeVO> volumes = new ArrayList<>(Arrays.asList(volumeVO));
 
+        StoragePoolTagVO poolTagMock1 = Mockito.mock(StoragePoolTagVO.class);
+        StoragePoolTagVO poolTagMock2 = Mockito.mock(StoragePoolTagVO.class);
+        List<StoragePoolTagVO> poolTags = List.of(poolTagMock1, poolTagMock2);
+        Mockito.doReturn("tag1").when(poolTagMock1).getTag();
+        Mockito.doReturn("tag2").when(poolTagMock2).getTag();
+
         Mockito.when(primaryDataStoreDao.listStoragePoolsWithActiveVolumesByOfferingId(anyLong())).thenReturn(pools);
-        Mockito.when(storagePoolTagsDao.getStoragePoolTags(anyLong())).thenReturn(storageTagsWithCorrectTags);
+        Mockito.when(storagePoolTagsDao.findStoragePoolTags(anyLong())).thenReturn(poolTags);
         Mockito.when(diskOfferingDao.findById(anyLong())).thenReturn(diskOfferingVOMock);
         Mockito.when(_volumeDao.findByDiskOfferingId(anyLong())).thenReturn(volumes);
 

@@ -32,7 +32,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreParame
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.util.NexentaUtil;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.dc.DataCenterVO;
@@ -46,8 +47,7 @@ import com.cloud.storage.StoragePoolAutomation;
 
 public class NexentaPrimaryDataStoreLifeCycle
         implements PrimaryDataStoreLifeCycle {
-    private static final Logger logger =
-            Logger.getLogger(NexentaPrimaryDataStoreLifeCycle.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
     private DataCenterDao zoneDao;
@@ -69,6 +69,7 @@ public class NexentaPrimaryDataStoreLifeCycle
         Long capacityBytes = (Long)dsInfos.get("capacityBytes");
         Long capacityIops = (Long)dsInfos.get("capacityIops");
         String tags = (String)dsInfos.get("tags");
+        Boolean isTagARule = (Boolean) dsInfos.get("isTagARule");
         Map<String, String> details = (Map<String, String>) dsInfos.get("details");
         NexentaUtil.NexentaPluginParameters params = NexentaUtil.parseNexentaPluginUrl(url);
         DataCenterVO zone = zoneDao.findById(zoneId);
@@ -98,6 +99,7 @@ public class NexentaPrimaryDataStoreLifeCycle
         parameters.setCapacityIops(capacityIops);
         parameters.setHypervisorType(Hypervisor.HypervisorType.Any);
         parameters.setTags(tags);
+        parameters.setIsTagARule(isTagARule);
 
         details.put(NexentaUtil.NMS_URL, params.getNmsUrl().toString());
 

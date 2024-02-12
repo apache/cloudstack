@@ -34,6 +34,7 @@ import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VolumeVO;
 import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachineProfile;
 
@@ -116,7 +117,7 @@ public interface TemplateManager {
 
     Long getTemplateSize(long templateId, long zoneId);
 
-    DataStore getImageStore(String storeUuid, Long zoneId);
+    DataStore getImageStore(String storeUuid, Long zoneId, VolumeVO volume);
 
     String getChecksum(DataStore store, String templatePath, String algorithm);
 

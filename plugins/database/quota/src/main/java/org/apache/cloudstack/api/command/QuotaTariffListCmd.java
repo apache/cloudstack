@@ -28,7 +28,6 @@ import org.apache.cloudstack.api.response.QuotaResponseBuilder;
 import org.apache.cloudstack.api.response.QuotaTariffResponse;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
@@ -38,7 +37,6 @@ import java.util.List;
 
 @APICommand(name = "quotaTariffList", responseObject = QuotaTariffResponse.class, description = "Lists all quota tariff plans", since = "4.7.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class QuotaTariffListCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(QuotaTariffListCmd.class);
 
     @Inject
     QuotaResponseBuilder _responseBuilder;
@@ -71,7 +69,7 @@ public class QuotaTariffListCmd extends BaseListCmd {
 
         final List<QuotaTariffResponse> responses = new ArrayList<>();
 
-        s_logger.trace(String.format("Adding quota tariffs [%s] to response of API quotaTariffList.", ReflectionToStringBuilderUtils.reflectCollection(responses)));
+        logger.trace(String.format("Adding quota tariffs [%s] to response of API quotaTariffList.", ReflectionToStringBuilderUtils.reflectCollection(responses)));
 
         for (final QuotaTariffVO resource : result.first()) {
             responses.add(_responseBuilder.createQuotaTariffResponse(resource));

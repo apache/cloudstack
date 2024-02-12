@@ -29,7 +29,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
 import org.libvirt.NodeInfo;
@@ -46,7 +47,7 @@ import com.cloud.utils.script.Script;
 
 public class KVMHostInfo {
 
-    private static final Logger LOGGER = Logger.getLogger(KVMHostInfo.class);
+    protected static Logger LOGGER = LogManager.getLogger(KVMHostInfo.class);
 
     private int totalCpus;
     private int allocatableCpus;

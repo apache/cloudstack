@@ -68,7 +68,6 @@ public class VNF {
     }
 
     public enum VnfDetail {
-        ICON,
         VERSION,
         VENDOR,
         MAINTAINER

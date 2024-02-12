@@ -27,7 +27,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.cloud.host.HostTagVO;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.StoragePoolTagVO;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.RoleVO;
 import org.apache.cloudstack.acl.dao.RoleDao;
@@ -241,6 +243,14 @@ public class PresetVariableHelperTest {
         return host;
     }
 
+    private List<HostTagVO> getHostTagsForTests() {
+        return Arrays.asList(new HostTagVO(1, "tag1", false), new HostTagVO(1, "tag2", false));
+    }
+
+    private List<HostTagVO> getHostRuleTagsForTests() {
+        return List.of(new HostTagVO(1, "tagrule", true));
+    }
+
     private Storage getStorageForTests() {
         Storage storage = new Storage();
         storage.setId("storage_id");
@@ -248,6 +258,14 @@ public class PresetVariableHelperTest {
         storage.setTags(Arrays.asList("tag1", "tag2"));
         storage.setScope(ScopeType.ZONE);
         return storage;
+    }
+
+    private List<StoragePoolTagVO> getStorageTagsForTests() {
+        return Arrays.asList(new StoragePoolTagVO(1, "tag1", false), new StoragePoolTagVO(1, "tag2", false));
+    }
+
+    private List<StoragePoolTagVO> getStorageRuleTagsForTests() {
+        return List.of(new StoragePoolTagVO(1, "tagrule", true));
     }
 
     private Set<Map.Entry<Integer, QuotaTypes>> getQuotaTypesForTests(Integer... typesToRemove) {
@@ -539,15 +557,16 @@ public class PresetVariableHelperTest {
     @Test
     public void setPresetVariableHostInValueIfUsageTypeIsRunningVmTestQuotaTypeIsRunningVmSetHost() {
         Value result = new Value();
-        Host expected = getHostForTests();
+        Host expectedHost = getHostForTests();
+        List<HostTagVO> expectedHostTags = getHostTagsForTests();
 
-        Mockito.doReturn(expected).when(presetVariableHelperSpy).getPresetVariableValueHost(Mockito.anyLong());
+        Mockito.doReturn(expectedHost).when(presetVariableHelperSpy).getPresetVariableValueHost(Mockito.anyLong());
         presetVariableHelperSpy.setPresetVariableHostInValueIfUsageTypeIsRunningVm(result, UsageTypes.RUNNING_VM, vmInstanceVoMock);
 
         Assert.assertNotNull(result.getHost());
 
-        assertPresetVariableIdAndName(expected, result.getHost());
-        Assert.assertEquals(expected.getTags(), result.getHost().getTags());
+        assertPresetVariableIdAndName(expectedHost, result.getHost());
+        Assert.assertEquals(expectedHost.getTags(), result.getHost().getTags());
         validateFieldNamesToIncludeInToString(Arrays.asList("host"), result);
     }
 
@@ -555,18 +574,39 @@ public class PresetVariableHelperTest {
     public void getPresetVariableValueHostTestSetFieldsAndReturnObject() {
         Host expected = getHostForTests();
         HostVO hostVoMock = Mockito.mock(HostVO.class);
+        List<HostTagVO> hostTagVOListMock = getHostTagsForTests();
 
         Mockito.doReturn(hostVoMock).when(hostDaoMock).findByIdIncludingRemoved(Mockito.anyLong());
         mockMethodValidateIfObjectIsNull();
         Mockito.doReturn(expected.getId()).when(hostVoMock).getUuid();
         Mockito.doReturn(expected.getName()).when(hostVoMock).getName();
-        Mockito.doReturn(expected.getTags()).when(hostTagsDaoMock).getHostTags(Mockito.anyLong());
+        Mockito.doReturn(hostTagVOListMock).when(hostTagsDaoMock).getHostTags(Mockito.anyLong());
 
         Host result = presetVariableHelperSpy.getPresetVariableValueHost(1l);
 
         assertPresetVariableIdAndName(expected, result);
         Assert.assertEquals(expected.getTags(), result.getTags());
-        validateFieldNamesToIncludeInToString(Arrays.asList("id", "name", "tags"), result);
+        validateFieldNamesToIncludeInToString(Arrays.asList("id", "isTagARule", "name", "tags"), result);
+    }
+
+    @Test
+    public void getPresetVariableValueHostTestSetFieldsWithRuleTagAndReturnObject() {
+        Host expected = getHostForTests();
+        HostVO hostVoMock = Mockito.mock(HostVO.class);
+        List<HostTagVO> hostTagVOListMock = getHostRuleTagsForTests();
+
+        Mockito.doReturn(hostVoMock).when(hostDaoMock).findByIdIncludingRemoved(Mockito.anyLong());
+        mockMethodValidateIfObjectIsNull();
+        Mockito.doReturn(expected.getId()).when(hostVoMock).getUuid();
+        Mockito.doReturn(expected.getName()).when(hostVoMock).getName();
+        Mockito.doReturn(hostTagVOListMock).when(hostTagsDaoMock).getHostTags(Mockito.anyLong());
+
+        Host result = presetVariableHelperSpy.getPresetVariableValueHost(1l);
+
+        assertPresetVariableIdAndName(expected, result);
+        Assert.assertEquals(new ArrayList<>(), result.getTags());
+        Assert.assertTrue(result.getIsTagARule());
+        validateFieldNamesToIncludeInToString(Arrays.asList("id", "isTagARule", "name", "tags"), result);
     }
 
     @Test
@@ -755,13 +795,15 @@ public class PresetVariableHelperTest {
         Storage expected = getStorageForTests();
         Mockito.doReturn(null).when(presetVariableHelperSpy).getSecondaryStorageForSnapshot(Mockito.anyLong(), Mockito.anyInt());
 
+        List<StoragePoolTagVO> storageTagVOListMock = getStorageTagsForTests();
+
         StoragePoolVO storagePoolVoMock = Mockito.mock(StoragePoolVO.class);
         Mockito.doReturn(storagePoolVoMock).when(primaryStorageDaoMock).findByIdIncludingRemoved(Mockito.anyLong());
 
         Mockito.doReturn(expected.getId()).when(storagePoolVoMock).getUuid();
         Mockito.doReturn(expected.getName()).when(storagePoolVoMock).getName();
         Mockito.doReturn(expected.getScope()).when(storagePoolVoMock).getScope();
-        Mockito.doReturn(expected.getTags()).when(storagePoolTagsDaoMock).getStoragePoolTags(Mockito.anyLong());
+        Mockito.doReturn(storageTagVOListMock).when(storagePoolTagsDaoMock).findStoragePoolTags(Mockito.anyLong());
 
         Storage result = presetVariableHelperSpy.getPresetVariableValueStorage(1l, 2);
 
@@ -769,7 +811,32 @@ public class PresetVariableHelperTest {
         Assert.assertEquals(expected.getScope(), result.getScope());
         Assert.assertEquals(expected.getTags(), result.getTags());
 
-        validateFieldNamesToIncludeInToString(Arrays.asList("id", "name", "scope", "tags"), result);
+        validateFieldNamesToIncludeInToString(Arrays.asList("id", "isTagARule",  "name", "scope", "tags"), result);
+    }
+
+    @Test
+    public void getPresetVariableValueStorageTestGetSecondaryStorageForSnapshotReturnsNullWithRuleTag() {
+        Storage expected = getStorageForTests();
+        Mockito.doReturn(null).when(presetVariableHelperSpy).getSecondaryStorageForSnapshot(Mockito.anyLong(), Mockito.anyInt());
+
+        List<StoragePoolTagVO> storageTagVOListMock = getStorageRuleTagsForTests();
+
+        StoragePoolVO storagePoolVoMock = Mockito.mock(StoragePoolVO.class);
+        Mockito.doReturn(storagePoolVoMock).when(primaryStorageDaoMock).findByIdIncludingRemoved(Mockito.anyLong());
+
+        Mockito.doReturn(expected.getId()).when(storagePoolVoMock).getUuid();
+        Mockito.doReturn(expected.getName()).when(storagePoolVoMock).getName();
+        Mockito.doReturn(expected.getScope()).when(storagePoolVoMock).getScope();
+        Mockito.doReturn(storageTagVOListMock).when(storagePoolTagsDaoMock).findStoragePoolTags(Mockito.anyLong());
+
+        Storage result = presetVariableHelperSpy.getPresetVariableValueStorage(1l, 2);
+
+        assertPresetVariableIdAndName(expected, result);
+        Assert.assertEquals(expected.getScope(), result.getScope());
+        Assert.assertEquals(new ArrayList<>(), result.getTags());
+        Assert.assertTrue(result.getIsTagARule());
+
+        validateFieldNamesToIncludeInToString(Arrays.asList("id", "isTagARule",  "name", "scope", "tags"), result);
     }
 
     @Test

@@ -34,10 +34,16 @@ export default {
       permission: ['listNetworks'],
       resourceType: 'Network',
       columns: () => {
-        var fields = ['name', 'state', 'type', 'vpcname', 'cidr', 'ip6cidr', 'broadcasturi', 'domainpath', 'account', 'zonename']
+        var fields = ['name', 'state', 'type', 'vpcname', 'cidr', 'ip6cidr', 'broadcasturi', 'domainpath']
         if (!isAdmin()) {
           fields = fields.filter(function (e) { return e !== 'broadcasturi' })
         }
+        if (store.getters.listAllProjects) {
+          fields.push('project')
+        } else {
+          fields.push('account')
+        }
+        fields.push('zonename')
         return fields
       },
       details: () => {
@@ -66,7 +72,7 @@ export default {
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/Ipv6FirewallRulesTab.vue'))),
         show: (record, route, user) => { return record.type === 'Isolated' && ['IPv6', 'DualStack'].includes(record.internetprotocol) && !('vpcid' in record) && 'listIpv6FirewallRules' in store.getters.apis && (['Admin', 'DomainAdmin'].includes(user.roletype) || record.account === user.account || record.projectid) }
       }, {
-        name: 'public.ip.addresses',
+        name: (record) => { return record.type === 'Shared' ? 'ip.addresses' : 'public.ip.addresses' },
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/IpAddressesTab.vue'))),
         show: (record, route, user) => { return 'listPublicIpAddresses' in store.getters.apis && (record.type === 'Shared' || (record.type === 'Isolated' && !('vpcname' in record) && (['Admin', 'DomainAdmin'].includes(user.roletype) || record.account === user.account || record.projectid))) }
       }, {
@@ -197,7 +203,14 @@ export default {
       docHelp: 'adminguide/networking_and_traffic.html#configuring-a-virtual-private-cloud',
       permission: ['listVPCs'],
       resourceType: 'Vpc',
-      columns: ['name', 'state', 'displaytext', 'cidr', 'account', 'domain', 'zonename'],
+      columns: () => {
+        var fields = ['name', 'state', 'displaytext', 'cidr', 'account']
+        if (store.getters.listAllProjects) {
+          fields.push('project')
+        }
+        fields.push(...['domain', 'zonename'])
+        return fields
+      },
       details: ['name', 'id', 'displaytext', 'cidr', 'networkdomain', 'ip6routes', 'ispersistent', 'redundantvpcrouter', 'restartrequired', 'zonename', 'account', 'domain', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'publicmtu'],
       searchFilters: ['name', 'zoneid', 'domainid', 'account', 'tags'],
       related: [{
@@ -325,6 +338,7 @@ export default {
       title: 'label.vnf.appliances',
       icon: 'gateway-outlined',
       permission: ['listVirtualMachinesMetrics'],
+      resourceType: 'UserVm',
       params: () => {
         return { details: 'servoff,tmpl,nics', isvnf: true }
       },
@@ -333,10 +347,16 @@ export default {
         if (store.getters.userInfo.roletype === 'Admin') {
           fields.splice(2, 0, 'instancename')
           fields.push('account')
+          if (store.getters.listAllProjects) {
+            fields.push('project')
+          }
           fields.push('domain')
           fields.push('hostname')
         } else if (store.getters.userInfo.roletype === 'DomainAdmin') {
           fields.push('account')
+          if (store.getters.listAllProjects) {
+            fields.push('project')
+          }
         } else {
           fields.push('serviceofferingname')
         }
@@ -729,7 +749,14 @@ export default {
       docHelp: 'adminguide/networking_and_traffic.html#reserving-public-ip-addresses-and-vlans-for-accounts',
       permission: ['listPublicIpAddresses'],
       resourceType: 'PublicIpAddress',
-      columns: ['ipaddress', 'state', 'associatednetworkname', 'vpcname', 'virtualmachinename', 'allocated', 'account', 'domain', 'zonename'],
+      columns: () => {
+        var fields = ['ipaddress', 'state', 'associatednetworkname', 'vpcname', 'virtualmachinename', 'allocated', 'account']
+        if (store.getters.listAllProjects) {
+          fields.push('project')
+        }
+        fields.push(...['domain', 'zonename'])
+        return fields
+      },
       details: ['ipaddress', 'id', 'associatednetworkname', 'virtualmachinename', 'networkid', 'issourcenat', 'isstaticnat', 'virtualmachinename', 'vmipaddress', 'vlan', 'allocated', 'account', 'domain', 'zonename'],
       filters: ['allocated', 'reserved', 'free'],
       component: shallowRef(() => import('@/views/network/PublicIpResource.vue')),
@@ -1119,7 +1146,14 @@ export default {
       title: 'label.vpncustomergatewayid',
       icon: 'lock-outlined',
       permission: ['listVpnCustomerGateways'],
-      columns: ['name', 'gateway', 'cidrlist', 'ipsecpsk', 'account', 'domain'],
+      columns: () => {
+        var fields = ['name', 'gateway', 'cidrlist', 'ipsecpsk', 'account']
+        if (store.getters.listAllProjects) {
+          fields.push('project')
+        }
+        fields.push('domain')
+        return fields
+      },
       details: ['name', 'id', 'gateway', 'cidrlist', 'ipsecpsk', 'ikepolicy', 'ikelifetime', 'ikeversion', 'esppolicy', 'esplifetime', 'dpd', 'splitconnections', 'forceencap', 'account', 'domain'],
       searchFilters: ['keyword', 'domainid', 'account'],
       resourceType: 'VPNCustomerGateway',

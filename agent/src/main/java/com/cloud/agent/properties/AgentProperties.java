@@ -14,6 +14,8 @@
  */
 package com.cloud.agent.properties;
 
+import org.apache.cloudstack.utils.security.KeyStoreUtils;
+
 /**
  * Class of constant agent's properties available to configure on
  * "agent.properties".
@@ -658,6 +660,14 @@ public class AgentProperties{
     public static final Property<Integer> STOP_SCRIPT_TIMEOUT = new Property<>("stop.script.timeout", 120);
 
     /**
+     * Time (in seconds) to wait for scripts to complete.<br>
+     * This is currently used only while checking if the host supports UEFI.<br>
+     * Data type: Integer.<br>
+     * Default value: <code>60</code>
+     */
+    public static final Property<Integer> AGENT_SCRIPT_TIMEOUT = new Property<>("agent.script.timeout", 60);
+
+    /**
      * Definition of VMs video model type.<br>
      * Data type: String.<br>
      * Default value: <code>null</code>
@@ -734,6 +744,13 @@ public class AgentProperties{
     public static final Property<Integer> IOTHREADS = new Property<>("iothreads", 1);
 
     /**
+     * Enable verbose mode for virt-v2v Instance Conversion from Vmware to KVM
+     * Data type: Boolean.<br>
+     * Default value: <code>false</code>
+     */
+    public static final Property<Boolean> VIRTV2V_VERBOSE_ENABLED = new Property<>("virtv2v.verbose.enabled", false);
+
+    /**
      * BGP controll CIDR
      * Data type: String.<br>
      * Default value: <code>169.254.0.0/16</code>
@@ -771,6 +788,13 @@ public class AgentProperties{
      * Default value: <code>360000l</code>
      */
     public static final Property<Long> KVM_HEARTBEAT_CHECKER_TIMEOUT = new Property<>("kvm.heartbeat.checker.timeout", 360000L);
+
+    /**
+     * Keystore passphrase
+     * Data type: String.<br>
+     * Default value: <code>null</code>
+     */
+    public static final Property<String> KEYSTORE_PASSPHRASE = new Property<>(KeyStoreUtils.KS_PASSPHRASE_PROPERTY, null, String.class);
 
     public static class Property <T>{
         private String name;

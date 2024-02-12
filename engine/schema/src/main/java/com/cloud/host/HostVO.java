@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.DiscriminatorColumn;
 import javax.persistence.DiscriminatorType;
 import javax.persistence.Entity;
@@ -39,14 +40,19 @@ import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
 import com.cloud.agent.api.VgpuTypesInfo;
+import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.resource.ResourceState;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.util.StoragePoolTypeConverter;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
 import java.util.Arrays;
+
+import org.apache.cloudstack.utils.jsinterpreter.TagAsRuleHelper;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 
 @Entity
@@ -126,6 +132,7 @@ public class HostVO implements Host {
     private String resource;
 
     @Column(name = "fs_type")
+    @Convert(converter = StoragePoolTypeConverter.class)
     private StoragePoolType fsType;
 
     @Column(name = "available")
@@ -158,6 +165,14 @@ public class HostVO implements Host {
     // Call host dao to load it.
     @Transient
     List<String> hostTags;
+
+    /**
+     * This is a delayed load value.
+     * If the value is null, then this field has not been loaded yet.
+     * Call host dao to load it.
+     */
+    @Transient
+    Boolean isTagARule;
 
     // This value is only for saving and current cannot be loaded.
     @Transient
@@ -322,8 +337,13 @@ public class HostVO implements Host {
         return hostTags;
     }
 
-    public void setHostTags(List<String> hostTags) {
+    public void setHostTags(List<String> hostTags, Boolean isTagARule) {
         this.hostTags = hostTags;
+        this.isTagARule = isTagARule;
+    }
+
+    public Boolean getIsTagARule() {
+        return isTagARule;
     }
 
     public  HashMap<String, HashMap<String, VgpuTypesInfo>> getGpuGroupDetails() {
@@ -748,6 +768,11 @@ public class HostVO implements Host {
         if (serviceOffering == null) {
             return false;
         }
+
+        if (BooleanUtils.isTrue(this.getIsTagARule())) {
+            return TagAsRuleHelper.interpretTagAsRule(this.getHostTags().get(0), serviceOffering.getHostTag(), HostTagsDao.hostTagRuleExecutionTimeout.value());
+        }
+
         if (StringUtils.isEmpty(serviceOffering.getHostTag())) {
             return true;
         }

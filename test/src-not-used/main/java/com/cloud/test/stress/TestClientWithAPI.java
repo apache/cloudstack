@@ -42,7 +42,8 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.log4j.NDC;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -59,7 +60,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class TestClientWithAPI {
     private static long sleepTime = 180000L; // default 0
     private static boolean cleanUp = true;
-    public static final Logger s_logger = Logger.getLogger(TestClientWithAPI.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     private static boolean repeat = true;
     private static int numOfUsers = 0;
     private static String[] users = null;
@@ -195,12 +196,12 @@ public class TestClientWithAPI {
 
             final String server = host + ":" + port + "/";
             final String developerServer = host + ":" + devPort + apiUrl;
-            s_logger.info("Starting test against server: " + server + " with " + numThreads + " thread(s)");
+            logger.info("Starting test against server: " + server + " with " + numThreads + " thread(s)");
             if (cleanUp)
-                s_logger.info("Clean up is enabled, each test will wait " + sleepTime + " ms before cleaning up");
+                logger.info("Clean up is enabled, each test will wait " + sleepTime + " ms before cleaning up");
 
             if (numOfUsers > 0) {
-                s_logger.info("Pre-generating users for test of size : " + numOfUsers);
+                logger.info("Pre-generating users for test of size : " + numOfUsers);
                 users = new String[numOfUsers];
                 Random ran = new Random();
                 for (int i = 0; i < numOfUsers; i++) {
@@ -224,7 +225,7 @@ public class TestClientWithAPI {
                                 }
                                 NDC.push(username);
 
-                                s_logger.info("Starting test for the user " + username);
+                                logger.info("Starting test for the user " + username);
                                 int response = executeDeployment(server, developerServer, username, snapshotTest);
                                 boolean success = false;
                                 String reason = null;
@@ -232,20 +233,20 @@ public class TestClientWithAPI {
                                 if (response == 200) {
                                     success = true;
                                     if (internet) {
-                                        s_logger.info("Deploy successful...waiting 5 minute before SSH tests");
+                                        logger.info("Deploy successful...waiting 5 minute before SSH tests");
                                         Thread.sleep(300000L); // Wait 60
                                         // seconds so
                                         // the windows VM
                                         // can boot up and do a sys prep.
 
                                         if (accountName == null) {
-                                            s_logger.info("Begin Linux SSH test for account " + s_account.get());
+                                            logger.info("Begin Linux SSH test for account " + s_account.get());
                                             reason = sshTest(s_linuxIP.get(), s_linuxPassword.get(), snapshotTest);
                                         }
 
                                         if (reason == null) {
-                                            s_logger.info("Linux SSH test successful for account " + s_account.get());
-                                            s_logger.info("Begin WindowsSSH test for account " + s_account.get());
+                                            logger.info("Linux SSH test successful for account " + s_account.get());
+                                            logger.info("Begin WindowsSSH test for account " + s_account.get());
 
                                             reason = sshTest(s_linuxIP.get(), s_linuxPassword.get(), snapshotTest);
                                             // reason = sshWinTest(s_windowsIP.get());
@@ -258,17 +259,17 @@ public class TestClientWithAPI {
                                     }
 
                                     // sleep for 3 min before getting the latest network stat
-                                    // s_logger.info("Sleeping for 5 min before getting the lates network stat for the account");
+                                    // logger.info("Sleeping for 5 min before getting the lates network stat for the account");
                                     // Thread.sleep(300000);
                                     // verify that network stat is correct for the user; if it's not - stop all the resources
                                     // for the user
                                     // if ((reason == null) && (getNetworkStat(server) == false) ) {
-                                    // s_logger.error("Stopping all the resources for the account " + s_account.get() +
+                                    // logger.error("Stopping all the resources for the account " + s_account.get() +
                                     // " as network stat is incorrect");
                                     // int stopResponseCode = executeStop(
                                     // server, developerServer,
                                     // username, false);
-                                    // s_logger
+                                    // logger
                                     // .info("stop command finished with response code: "
                                     // + stopResponseCode);
                                     // success = false; // since the SSH test
@@ -276,11 +277,11 @@ public class TestClientWithAPI {
                                     // } else
                                     if (reason == null) {
                                         if (internet) {
-                                            s_logger.info("Windows SSH test successful for account " + s_account.get());
+                                            logger.info("Windows SSH test successful for account " + s_account.get());
                                         } else {
-                                            s_logger.info("deploy test successful....now cleaning up");
+                                            logger.info("deploy test successful....now cleaning up");
                                             if (cleanUp) {
-                                                s_logger.info("Waiting " + sleepTime + " ms before cleaning up vms");
+                                                logger.info("Waiting " + sleepTime + " ms before cleaning up vms");
                                                 Thread.sleep(sleepTime);
                                             } else {
                                                 success = true;
@@ -289,33 +290,33 @@ public class TestClientWithAPI {
 
                                         if (usageIterator >= numThreads) {
                                             int eventsAndBillingResponseCode = executeEventsAndBilling(server, developerServer);
-                                            s_logger.info("events and usage records command finished with response code: " + eventsAndBillingResponseCode);
+                                            logger.info("events and usage records command finished with response code: " + eventsAndBillingResponseCode);
                                             usageIterator = 1;
 
                                         } else {
-                                            s_logger.info("Skipping events and usage records for this user: usageIterator " + usageIterator + " and number of Threads " +
+                                            logger.info("Skipping events and usage records for this user: usageIterator " + usageIterator + " and number of Threads " +
                                                 numThreads);
                                             usageIterator++;
                                         }
 
                                         if ((users == null) && (accountName == null)) {
-                                            s_logger.info("Sending cleanup command");
+                                            logger.info("Sending cleanup command");
                                             int cleanupResponseCode = executeCleanup(server, developerServer, username);
-                                            s_logger.info("cleanup command finished with response code: " + cleanupResponseCode);
+                                            logger.info("cleanup command finished with response code: " + cleanupResponseCode);
                                             success = (cleanupResponseCode == 200);
                                         } else {
-                                            s_logger.info("Sending stop DomR / destroy VM command");
+                                            logger.info("Sending stop DomR / destroy VM command");
                                             int stopResponseCode = executeStop(server, developerServer, username, true);
-                                            s_logger.info("stop(destroy) command finished with response code: " + stopResponseCode);
+                                            logger.info("stop(destroy) command finished with response code: " + stopResponseCode);
                                             success = (stopResponseCode == 200);
                                         }
 
                                     } else {
                                         // Just stop but don't destroy the
                                         // VMs/Routers
-                                        s_logger.info("SSH test failed for account " + s_account.get() + "with reason '" + reason + "', stopping VMs");
+                                        logger.info("SSH test failed for account " + s_account.get() + "with reason '" + reason + "', stopping VMs");
                                         int stopResponseCode = executeStop(server, developerServer, username, false);
-                                        s_logger.info("stop command finished with response code: " + stopResponseCode);
+                                        logger.info("stop command finished with response code: " + stopResponseCode);
                                         success = false; // since the SSH test
                                         // failed, mark the
                                         // whole test as
@@ -324,30 +325,30 @@ public class TestClientWithAPI {
                                 } else {
                                     // Just stop but don't destroy the
                                     // VMs/Routers
-                                    s_logger.info("Deploy test failed with reason '" + reason + "', stopping VMs");
+                                    logger.info("Deploy test failed with reason '" + reason + "', stopping VMs");
                                     int stopResponseCode = executeStop(server, developerServer, username, true);
-                                    s_logger.info("stop command finished with response code: " + stopResponseCode);
+                                    logger.info("stop command finished with response code: " + stopResponseCode);
                                     success = false; // since the deploy test
                                     // failed, mark the
                                     // whole test as failure
                                 }
 
                                 if (success) {
-                                    s_logger.info("***** Completed test for user : " + username + " in " + ((System.currentTimeMillis() - now) / 1000L) + " seconds");
+                                    logger.info("***** Completed test for user : " + username + " in " + ((System.currentTimeMillis() - now) / 1000L) + " seconds");
 
                                 } else {
-                                    s_logger.info("##### FAILED test for user : " + username + " in " + ((System.currentTimeMillis() - now) / 1000L) +
+                                    logger.info("##### FAILED test for user : " + username + " in " + ((System.currentTimeMillis() - now) / 1000L) +
                                         " seconds with reason : " + reason);
                                 }
-                                s_logger.info("Sleeping for " + wait + " seconds before starting next iteration");
+                                logger.info("Sleeping for " + wait + " seconds before starting next iteration");
                                 Thread.sleep(wait);
                             } catch (Exception e) {
-                                s_logger.warn("Error in thread", e);
+                                logger.warn("Error in thread", e);
                                 try {
                                     int stopResponseCode = executeStop(server, developerServer, username, true);
-                                    s_logger.info("stop response code: " + stopResponseCode);
+                                    logger.info("stop response code: " + stopResponseCode);
                                 } catch (Exception e1) {
-                                    s_logger.info("[ignored]"
+                                    logger.info("[ignored]"
                                             + "error executing stop during api test: " + e1.getLocalizedMessage());
                                 }
                             } finally {
@@ -358,7 +359,7 @@ public class TestClientWithAPI {
                 }).start();
             }
         } catch (Exception e) {
-            s_logger.error(e);
+            logger.error(e);
         }
     }
 
@@ -371,7 +372,7 @@ public class TestClientWithAPI {
             for (int i = 0; i < tagNames.length; i++) {
                 NodeList targetNodes = rootElement.getElementsByTagName(tagNames[i]);
                 if (targetNodes.getLength() <= 0) {
-                    s_logger.error("no " + tagNames[i] + " tag in XML response...returning null");
+                    logger.error("no " + tagNames[i] + " tag in XML response...returning null");
                 } else {
                     List<String> valueList = new ArrayList<String>();
                     for (int j = 0; j < targetNodes.getLength(); j++) {
@@ -382,7 +383,7 @@ public class TestClientWithAPI {
                 }
             }
         } catch (Exception ex) {
-            s_logger.error(ex);
+            logger.error(ex);
         }
         return returnValues;
     }
@@ -397,13 +398,13 @@ public class TestClientWithAPI {
             for (int i = 0; i < tagNames.length; i++) {
                 NodeList targetNodes = rootElement.getElementsByTagName(tagNames[i]);
                 if (targetNodes.getLength() <= 0) {
-                    s_logger.error("no " + tagNames[i] + " tag in XML response...returning null");
+                    logger.error("no " + tagNames[i] + " tag in XML response...returning null");
                 } else {
                     returnValues.put(tagNames[i], targetNodes.item(0).getTextContent());
                 }
             }
         } catch (Exception ex) {
-            s_logger.error("error processing XML", ex);
+            logger.error("error processing XML", ex);
         }
         return returnValues;
     }
@@ -411,20 +412,20 @@ public class TestClientWithAPI {
     public static Map<String, String> getSingleValueFromXML(Element rootElement, String[] tagNames) {
         Map<String, String> returnValues = new HashMap<String, String>();
         if (rootElement == null) {
-            s_logger.error("Root element is null, can't get single value from xml");
+            logger.error("Root element is null, can't get single value from xml");
             return null;
         }
         try {
             for (int i = 0; i < tagNames.length; i++) {
                 NodeList targetNodes = rootElement.getElementsByTagName(tagNames[i]);
                 if (targetNodes.getLength() <= 0) {
-                    s_logger.error("no " + tagNames[i] + " tag in XML response...returning null");
+                    logger.error("no " + tagNames[i] + " tag in XML response...returning null");
                 } else {
                     returnValues.put(tagNames[i], targetNodes.item(0).getTextContent());
                 }
             }
         } catch (Exception ex) {
-            s_logger.error("error processing XML", ex);
+            logger.error("error processing XML", ex);
         }
         return returnValues;
     }
@@ -456,7 +457,7 @@ public class TestClientWithAPI {
                 }
             }
         } catch (Exception ex) {
-            s_logger.error(ex);
+            logger.error(ex);
         }
         return returnValues;
     }
@@ -491,14 +492,14 @@ public class TestClientWithAPI {
                 }
             }
         } catch (Exception ex) {
-            s_logger.error(ex);
+            logger.error(ex);
         }
         return returnValues;
     }
 
     private static String executeRegistration(String server, String username, String password) throws HttpException, IOException {
         String url = server + "?command=registerUserKeys&id=" + s_userId.get().toString();
-        s_logger.info("registering: " + username);
+        logger.info("registering: " + username);
         String returnValue = null;
         HttpClient client = new HttpClient();
         HttpMethod method = new GetMethod(url);
@@ -509,7 +510,7 @@ public class TestClientWithAPI {
             s_apiKey.set(requestKeyValues.get("apikey"));
             returnValue = requestKeyValues.get("secretkey");
         } else {
-            s_logger.error("registration failed with error code: " + responseCode);
+            logger.error("registration failed with error code: " + responseCode);
         }
         return returnValue;
     }
@@ -544,18 +545,18 @@ public class TestClientWithAPI {
             InputStream is = method.getResponseBodyAsStream();
             Map<String, String> accountValues = getSingleValueFromXML(is, new String[] {"id", "name"});
             String accountIdStr = accountValues.get("id");
-            s_logger.info("created account " + username + " with id " + accountIdStr);
+            logger.info("created account " + username + " with id " + accountIdStr);
             if (accountIdStr != null) {
                 accountId = Long.parseLong(accountIdStr);
                 s_accountId.set(accountId);
                 s_account.set(accountValues.get("name"));
                 if (accountId == -1) {
-                    s_logger.error("create account (" + username + ") failed to retrieve a valid user id, aborting depolyment test");
+                    logger.error("create account (" + username + ") failed to retrieve a valid user id, aborting depolyment test");
                     return -1;
                 }
             }
         } else {
-            s_logger.error("create account test failed for account " + username + " with error code :" + responseCode +
+            logger.error("create account test failed for account " + username + " with error code :" + responseCode +
                 ", aborting deployment test. The command was sent with url " + url);
             return -1;
         }
@@ -570,17 +571,17 @@ public class TestClientWithAPI {
             InputStream is = method.getResponseBodyAsStream();
             Map<String, String> userIdValues = getSingleValueFromXML(is, new String[] {"id"});
             String userIdStr = userIdValues.get("id");
-            s_logger.info("listed user " + username + " with id " + userIdStr);
+            logger.info("listed user " + username + " with id " + userIdStr);
             if (userIdStr != null) {
                 userId = Long.parseLong(userIdStr);
                 s_userId.set(userId);
                 if (userId == -1) {
-                    s_logger.error("list user by username " + username + ") failed to retrieve a valid user id, aborting depolyment test");
+                    logger.error("list user by username " + username + ") failed to retrieve a valid user id, aborting depolyment test");
                     return -1;
                 }
             }
         } else {
-            s_logger.error("list user test failed for account " + username + " with error code :" + responseCode +
+            logger.error("list user test failed for account " + username + " with error code :" + responseCode +
                 ", aborting deployment test. The command was sent with url " + url);
             return -1;
         }
@@ -588,11 +589,11 @@ public class TestClientWithAPI {
         s_secretKey.set(executeRegistration(server, username, username));
 
         if (s_secretKey.get() == null) {
-            s_logger.error("FAILED to retrieve secret key during registration, skipping user: " + username);
+            logger.error("FAILED to retrieve secret key during registration, skipping user: " + username);
             return -1;
         } else {
-            s_logger.info("got secret key: " + s_secretKey.get());
-            s_logger.info("got api key: " + s_apiKey.get());
+            logger.info("got secret key: " + s_secretKey.get());
+            logger.info("got api key: " + s_apiKey.get());
         }
 
         // ---------------------------------
@@ -608,12 +609,12 @@ public class TestClientWithAPI {
             InputStream is = method.getResponseBodyAsStream();
             Map<String, String> networkValues = getSingleValueFromXML(is, new String[] {"id"});
             String networkIdStr = networkValues.get("id");
-            s_logger.info("Created virtual network with name virtualnetwork-" + encodedUsername + " and id " + networkIdStr);
+            logger.info("Created virtual network with name virtualnetwork-" + encodedUsername + " and id " + networkIdStr);
             if (networkIdStr != null) {
                 s_networkId.set(networkIdStr);
             }
         } else {
-            s_logger.error("Create virtual network failed for account " + username + " with error code :" + responseCode +
+            logger.error("Create virtual network failed for account " + username + " with error code :" + responseCode +
                 ", aborting deployment test. The command was sent with url " + url);
             return -1;
         }
@@ -629,12 +630,12 @@ public class TestClientWithAPI {
             InputStream is = method.getResponseBodyAsStream();
             Map<String, String> networkValues = getSingleValueFromXML(is, new String[] { "id" });
             String networkIdStr = networkValues.get("id");
-            s_logger.info("Created direct network with name directnetwork-" + encodedUsername + " and id " + networkIdStr);
+            logger.info("Created direct network with name directnetwork-" + encodedUsername + " and id " + networkIdStr);
             if (networkIdStr != null) {
                 s_networkId_dir.set(networkIdStr);
             }
         } else {
-            s_logger.error("Create direct network failed for account " + username + " with error code :" + responseCode + ", aborting deployment test. The command was sent with url " + url);
+            logger.error("Create direct network failed for account " + username + " with error code :" + responseCode + ", aborting deployment test. The command was sent with url " + url);
             return -1;
         }
          */
@@ -670,20 +671,20 @@ public class TestClientWithAPI {
                 Map<String, String> values = getSingleValueFromXML(el, new String[] {"id", "ipaddress"});
 
                 if ((values.get("ipaddress") == null) || (values.get("id") == null)) {
-                    s_logger.info("deploy linux vm response code: 401, the command was sent with url " + url);
+                    logger.info("deploy linux vm response code: 401, the command was sent with url " + url);
                     return 401;
                 } else {
-                    s_logger.info("deploy linux vm response code: " + responseCode);
+                    logger.info("deploy linux vm response code: " + responseCode);
                     long linuxVMId = Long.parseLong(values.get("id"));
-                    s_logger.info("got linux virtual machine id: " + linuxVMId);
+                    logger.info("got linux virtual machine id: " + linuxVMId);
                     s_linuxVmId.set(values.get("id"));
                     linuxVMPrivateIP = values.get("ipaddress");
                     // s_linuxPassword.set(values.get("password"));
                     s_linuxPassword.set(vmPassword);
-                    s_logger.info("got linux virtual machine password: " + s_linuxPassword.get());
+                    logger.info("got linux virtual machine password: " + s_linuxPassword.get());
                 }
             } else {
-                s_logger.error("deploy linux vm failed with error code: " + responseCode + ". Following URL was sent: " + url);
+                logger.error("deploy linux vm failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
         }
@@ -711,16 +712,16 @@ public class TestClientWithAPI {
                 Map<String, String> values = getSingleValueFromXML(associpel, new String[] {"id", "ipaddress"});
 
                 if ((values.get("ipaddress") == null) || (values.get("id") == null)) {
-                    s_logger.info("associate ip for Windows response code: 401, the command was sent with url " + url);
+                    logger.info("associate ip for Windows response code: 401, the command was sent with url " + url);
                     return 401;
                 } else {
-                    s_logger.info("Associate IP Address response code: " + responseCode);
+                    logger.info("Associate IP Address response code: " + responseCode);
                     long publicIpId = Long.parseLong(values.get("id"));
-                    s_logger.info("Associate IP's Id: " + publicIpId);
+                    logger.info("Associate IP's Id: " + publicIpId);
                     s_publicIpId.set(values.get("id"));
                 }
             } else {
-                s_logger.error("associate ip address for windows vm failed with error code: " + responseCode + ". Following URL was sent: " + url);
+                logger.error("associate ip address for windows vm failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
 
@@ -734,8 +735,8 @@ public class TestClientWithAPI {
             client = new HttpClient();
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
-            s_logger.info("url is " + url);
-            s_logger.info("list ip addresses for user " + userId + " response code: " + responseCode);
+            logger.info("url is " + url);
+            logger.info("list ip addresses for user " + userId + " response code: " + responseCode);
             if (responseCode == 200) {
                 InputStream is = method.getResponseBodyAsStream();
                 //       InputStream ips = method.getResponseBodyAsStream();
@@ -744,11 +745,11 @@ public class TestClientWithAPI {
                 if ((ipAddressValues != null) && !ipAddressValues.isEmpty()) {
                     s_windowsIpId.set(ipAddressValues.get(0));
                     s_windowsIP.set(ipAddressValues.get(1));
-                    s_logger.info("For Windows, using non-sourceNat IP address ID: " + ipAddressValues.get(0));
-                    s_logger.info("For Windows, using non-sourceNat IP address: " + ipAddressValues.get(1));
+                    logger.info("For Windows, using non-sourceNat IP address ID: " + ipAddressValues.get(0));
+                    logger.info("For Windows, using non-sourceNat IP address: " + ipAddressValues.get(1));
                 }
             } else {
-                s_logger.error("list ip addresses failed with error code: " + responseCode + ". Following URL was sent: " + url);
+                logger.error("list ip addresses failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
 
@@ -765,8 +766,8 @@ public class TestClientWithAPI {
                 client = new HttpClient();
                 method = new GetMethod(url);
                 responseCode = client.executeMethod(method);
-                s_logger.info("url is " + url);
-                s_logger.info("list ip addresses for user " + userId + " response code: " + responseCode);
+                logger.info("url is " + url);
+                logger.info("list ip addresses for user " + userId + " response code: " + responseCode);
                 if (responseCode == 200) {
                     InputStream is = method.getResponseBodyAsStream();
 //                  InputStream ips = method.getResponseBodyAsStream();
@@ -776,11 +777,11 @@ public class TestClientWithAPI {
                     if ((ipAddressValues != null) && !ipAddressValues.isEmpty()) {
                         s_linuxIpId.set(ipAddressValues.get(0));
                         s_linuxIP.set(ipAddressValues.get(1));
-                        s_logger.info("For linux, using sourceNat IP address ID: " + ipAddressValues.get(0));
-                        s_logger.info("For linux, using sourceNat IP address: " + ipAddressValues.get(1));
+                        logger.info("For linux, using sourceNat IP address ID: " + ipAddressValues.get(0));
+                        logger.info("For linux, using sourceNat IP address: " + ipAddressValues.get(1));
                     }
                 } else {
-                    s_logger.error("list ip addresses failed with error code: " + responseCode + ". Following URL was sent: " + url);
+                    logger.error("list ip addresses failed with error code: " + responseCode + ". Following URL was sent: " + url);
                     return responseCode;
                 }
             }
@@ -799,14 +800,14 @@ public class TestClientWithAPI {
             client = new HttpClient();
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
-            s_logger.info("url is " + url);
-            s_logger.info("list ip addresses for user " + userId + " response code: " + responseCode);
+            logger.info("url is " + url);
+            logger.info("list ip addresses for user " + userId + " response code: " + responseCode);
             if (responseCode == 200) {
                 InputStream is = method.getResponseBodyAsStream();
                 Map<String, String> success = getSingleValueFromXML(is, new String[] { "success" });
-                s_logger.info("Enable Static NAT..success? " + success.get("success"));
+                logger.info("Enable Static NAT..success? " + success.get("success"));
             } else {
-                s_logger.error("Enable Static NAT failed with error code: " + responseCode + ". Following URL was sent: " + url);
+                logger.error("Enable Static NAT failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
              */
@@ -826,20 +827,20 @@ public class TestClientWithAPI {
                 developerServer + "?command=createPortForwardingRule&apikey=" + encodedApiKey + "&ipaddressid=" + encodedIpAddress +
                     "&privateport=22&protocol=TCP&publicport=22&virtualmachineid=" + encodedVmId + "&signature=" + encodedSignature;
 
-            s_logger.info("Created port forwarding rule with " + url);
+            logger.info("Created port forwarding rule with " + url);
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
             if (responseCode == 200) {
                 InputStream input = method.getResponseBodyAsStream();
                 Element el = queryAsyncJobResult(server, input);
                 Map<String, String> values = getSingleValueFromXML(el, new String[] {"id"});
-                s_logger.info("Port forwarding rule was assigned successfully to Linux VM");
+                logger.info("Port forwarding rule was assigned successfully to Linux VM");
                 long ipfwdid = Long.parseLong(values.get("id"));
-                s_logger.info("got Port Forwarding Rule's Id:" + ipfwdid);
+                logger.info("got Port Forwarding Rule's Id:" + ipfwdid);
                 s_linipfwdid.set(values.get("id"));
 
             } else {
-                s_logger.error("Port forwarding rule creation failed with error code: " + responseCode + ". Following URL was sent: " + url);
+                logger.error("Port forwarding rule creation failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
 
@@ -849,21 +850,21 @@ public class TestClientWithAPI {
                 // list volumes for linux vm
                 {
                     url = server + "?command=listVolumes&virtualMachineId=" + s_linuxVmId.get() + "&type=root";
-                    s_logger.info("Getting rootDisk id of Centos vm");
+                    logger.info("Getting rootDisk id of Centos vm");
                     client = new HttpClient();
                     method = new GetMethod(url);
                     responseCode = client.executeMethod(method);
-                    s_logger.info("List volumes response code: " + responseCode);
+                    logger.info("List volumes response code: " + responseCode);
                     if (responseCode == 200) {
                         InputStream is = method.getResponseBodyAsStream();
                         Map<String, String> success = getSingleValueFromXML(is, new String[] {"id"});
                         if (success.get("id") == null) {
-                            s_logger.error("Unable to get root volume for linux vm. Followin url was sent: " + url);
+                            logger.error("Unable to get root volume for linux vm. Followin url was sent: " + url);
                         }
-                        s_logger.info("Got rootVolume for linux vm with id " + success.get("id"));
+                        logger.info("Got rootVolume for linux vm with id " + success.get("id"));
                         s_rootVolume.set(success.get("id"));
                     } else {
-                        s_logger.error("List volumes for linux vm failed with error code: " + responseCode + ". Following URL was sent: " + url);
+                        logger.error("List volumes for linux vm failed with error code: " + responseCode + ". Following URL was sent: " + url);
                         return responseCode;
                     }
                 }
@@ -873,13 +874,13 @@ public class TestClientWithAPI {
                     url =
                         server + "?command=createSnapshotPolicy&intervaltype=hourly&schedule=10&maxsnaps=4&volumeid=" + s_rootVolume.get() + "&timezone=" +
                             encodedTimeZone;
-                    s_logger.info("Creating recurring snapshot policy for linux vm ROOT disk");
+                    logger.info("Creating recurring snapshot policy for linux vm ROOT disk");
                     client = new HttpClient();
                     method = new GetMethod(url);
                     responseCode = client.executeMethod(method);
-                    s_logger.info("Create recurring snapshot policy for linux vm ROOT disk: " + responseCode);
+                    logger.info("Create recurring snapshot policy for linux vm ROOT disk: " + responseCode);
                     if (responseCode != 200) {
-                        s_logger.error("Create recurring snapshot policy for linux vm ROOT disk failed with error code: " + responseCode + ". Following URL was sent: " +
+                        logger.error("Create recurring snapshot policy for linux vm ROOT disk failed with error code: " + responseCode + ". Following URL was sent: " +
                             url);
                         return responseCode;
                     }
@@ -918,17 +919,17 @@ public class TestClientWithAPI {
                         Map<String, String> values = getSingleValueFromXML(el, new String[] {"id", "ipaddress"});
 
                         if ((values.get("ipaddress") == null) || (values.get("id") == null)) {
-                            s_logger.info("deploy windows vm response code: 401, the command was sent with url " + url);
+                            logger.info("deploy windows vm response code: 401, the command was sent with url " + url);
                             return 401;
                         } else {
-                            s_logger.info("deploy windows vm response code: " + responseCode);
+                            logger.info("deploy windows vm response code: " + responseCode);
                             windowsVMPrivateIP = values.get("ipaddress");
                             long windowsVMId = Long.parseLong(values.get("id"));
-                            s_logger.info("got windows virtual machine id: " + windowsVMId);
+                            logger.info("got windows virtual machine id: " + windowsVMId);
                             s_windowsVmId.set(values.get("id"));
                         }
                     } else {
-                        s_logger.error("deploy windows vm failes with error code: " + responseCode + ". Following URL was sent: " + url);
+                        logger.error("deploy windows vm failes with error code: " + responseCode + ". Following URL was sent: " + url);
                         return responseCode;
                     }
                 }
@@ -950,14 +951,14 @@ public class TestClientWithAPI {
                 client = new HttpClient();
                 method = new GetMethod(url);
                 responseCode = client.executeMethod(method);
-                s_logger.info("url is " + url);
-                s_logger.info("list ip addresses for user " + userId + " response code: " + responseCode);
+                logger.info("url is " + url);
+                logger.info("list ip addresses for user " + userId + " response code: " + responseCode);
                 if (responseCode == 200) {
                     InputStream is = method.getResponseBodyAsStream();
                     Map<String, String> success = getSingleValueFromXML(is, new String[] {"success"});
-                    s_logger.info("Enable Static NAT..success? " + success.get("success"));
+                    logger.info("Enable Static NAT..success? " + success.get("success"));
                 } else {
-                    s_logger.error("Enable Static NAT failed with error code: " + responseCode + ". Following URL was sent: " + url);
+                    logger.error("Enable Static NAT failed with error code: " + responseCode + ". Following URL was sent: " + url);
                     return responseCode;
                 }
 
@@ -978,19 +979,19 @@ public class TestClientWithAPI {
                     developerServer + "?command=createIpForwardingRule&apikey=" + encodedApiKey + "&endPort=22&ipaddressid=" + encodedIpAddress +
                         "&protocol=TCP&signature=" + encodedSignature + "&startPort=22";
 
-                s_logger.info("Created Ip forwarding rule with " + url);
+                logger.info("Created Ip forwarding rule with " + url);
                 method = new GetMethod(url);
                 responseCode = client.executeMethod(method);
                 if (responseCode == 200) {
                     InputStream input = method.getResponseBodyAsStream();
                     Element el = queryAsyncJobResult(server, input);
                     Map<String, String> values = getSingleValueFromXML(el, new String[] {"id"});
-                    s_logger.info("Port forwarding rule was assigned successfully to Windows VM");
+                    logger.info("Port forwarding rule was assigned successfully to Windows VM");
                     long ipfwdid = Long.parseLong(values.get("id"));
-                    s_logger.info("got Ip Forwarding Rule's Id:" + ipfwdid);
+                    logger.info("got Ip Forwarding Rule's Id:" + ipfwdid);
                     s_winipfwdid.set(values.get("id"));
                 } else {
-                    s_logger.error("Port forwarding rule creation failed with error code: " + responseCode + ". Following URL was sent: " + url);
+                    logger.error("Port forwarding rule creation failed with error code: " + responseCode + ". Following URL was sent: " + url);
                     return responseCode;
                 }
             }
@@ -1009,21 +1010,21 @@ public class TestClientWithAPI {
         String userId = s_userId.get().toString();
         String encodedUserId = URLEncoder.encode(userId, "UTF-8");
         String url = server + "?command=listUsers&id=" + encodedUserId;
-        s_logger.info("Cleaning up resources for user: " + userId + " with url " + url);
+        logger.info("Cleaning up resources for user: " + userId + " with url " + url);
         HttpClient client = new HttpClient();
         HttpMethod method = new GetMethod(url);
         int responseCode = client.executeMethod(method);
-        s_logger.info("get user response code: " + responseCode);
+        logger.info("get user response code: " + responseCode);
         if (responseCode == 200) {
             InputStream is = method.getResponseBodyAsStream();
             Map<String, String> userInfo = getSingleValueFromXML(is, new String[] {"username", "id", "account"});
             if (!username.equals(userInfo.get("username"))) {
-                s_logger.error("get user failed to retrieve requested user, aborting cleanup test" + ". Following URL was sent: " + url);
+                logger.error("get user failed to retrieve requested user, aborting cleanup test" + ". Following URL was sent: " + url);
                 return -1;
             }
 
         } else {
-            s_logger.error("get user failed with error code: " + responseCode + ". Following URL was sent: " + url);
+            logger.error("get user failed with error code: " + responseCode + ". Following URL was sent: " + url);
             return responseCode;
         }
 
@@ -1035,13 +1036,13 @@ public class TestClientWithAPI {
             client = new HttpClient();
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
-            s_logger.info("update user response code: " + responseCode);
+            logger.info("update user response code: " + responseCode);
             if (responseCode == 200) {
                 InputStream is = method.getResponseBodyAsStream();
                 Map<String, String> success = getSingleValueFromXML(is, new String[] {"success"});
-                s_logger.info("update user..success? " + success.get("success"));
+                logger.info("update user..success? " + success.get("success"));
             } else {
-                s_logger.error("update user failed with error code: " + responseCode + ". Following URL was sent: " + url);
+                logger.error("update user failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
         }
@@ -1051,18 +1052,18 @@ public class TestClientWithAPI {
         // -----------------------------
         {
             url = server + "?command=listVolumes&virtualMachineId=" + s_linuxVmId.get() + "&type=dataDisk";
-            s_logger.info("Getting dataDisk id of Centos vm");
+            logger.info("Getting dataDisk id of Centos vm");
             client = new HttpClient();
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
-            s_logger.info("List volumes response code: " + responseCode);
+            logger.info("List volumes response code: " + responseCode);
             if (responseCode == 200) {
                 InputStream is = method.getResponseBodyAsStream();
                 Map<String, String> success = getSingleValueFromXML(is, new String[] {"id"});
-                s_logger.info("Got dataDiskVolume with id " + success.get("id"));
+                logger.info("Got dataDiskVolume with id " + success.get("id"));
                 s_dataVolume.set(success.get("id"));
             } else {
-                s_logger.error("List volumes failed with error code: " + responseCode + ". Following URL was sent: " + url);
+                logger.error("List volumes failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
         }
@@ -1070,17 +1071,17 @@ public class TestClientWithAPI {
         // Detach volume
         {
             url = server + "?command=detachVolume&id=" + s_dataVolume.get();
-            s_logger.info("Detaching volume with id " + s_dataVolume.get());
+            logger.info("Detaching volume with id " + s_dataVolume.get());
             client = new HttpClient();
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
-            s_logger.info("Detach data volume response code: " + responseCode);
+            logger.info("Detach data volume response code: " + responseCode);
             if (responseCode == 200) {
                 InputStream input = method.getResponseBodyAsStream();
                 Element el = queryAsyncJobResult(server, input);
-                s_logger.info("The volume was detached successfully");
+                logger.info("The volume was detached successfully");
             } else {
-                s_logger.error("Detach data disk failed with error code: " + responseCode + ". Following URL was sent: " + url);
+                logger.error("Detach data disk failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
         }
@@ -1088,15 +1089,15 @@ public class TestClientWithAPI {
         // Delete a volume
         {
             url = server + "?command=deleteVolume&id=" + s_dataVolume.get();
-            s_logger.info("Deleting volume with id " + s_dataVolume.get());
+            logger.info("Deleting volume with id " + s_dataVolume.get());
             client = new HttpClient();
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
-            s_logger.info("Delete data volume response code: " + responseCode);
+            logger.info("Delete data volume response code: " + responseCode);
             if (responseCode == 200) {
-                s_logger.info("The volume was deleted successfully");
+                logger.info("The volume was deleted successfully");
             } else {
-                s_logger.error("Delete volume failed with error code: " + responseCode + ". Following URL was sent: " + url);
+                logger.error("Delete volume failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
         }
@@ -1104,7 +1105,7 @@ public class TestClientWithAPI {
         // Create a new volume
         {
             url = server + "?command=createVolume&diskofferingid=" + diskOfferingId + "&zoneid=" + zoneId + "&name=newvolume&account=" + s_account.get() + "&domainid=1";
-            s_logger.info("Creating volume....");
+            logger.info("Creating volume....");
             client = new HttpClient();
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
@@ -1114,16 +1115,16 @@ public class TestClientWithAPI {
                 Map<String, String> values = getSingleValueFromXML(el, new String[] {"id"});
 
                 if (values.get("id") == null) {
-                    s_logger.info("create volume response code: 401");
+                    logger.info("create volume response code: 401");
                     return 401;
                 } else {
-                    s_logger.info("create volume response code: " + responseCode);
+                    logger.info("create volume response code: " + responseCode);
                     long volumeId = Long.parseLong(values.get("id"));
-                    s_logger.info("got volume id: " + volumeId);
+                    logger.info("got volume id: " + volumeId);
                     s_newVolume.set(values.get("id"));
                 }
             } else {
-                s_logger.error("create volume failed with error code: " + responseCode + ". Following URL was sent: " + url);
+                logger.error("create volume failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
         }
@@ -1131,17 +1132,17 @@ public class TestClientWithAPI {
         // attach a new volume to the vm
         {
             url = server + "?command=attachVolume&id=" + s_newVolume.get() + "&virtualmachineid=" + s_linuxVmId.get();
-            s_logger.info("Attaching volume with id " + s_newVolume.get() + " to the vm " + s_linuxVmId.get());
+            logger.info("Attaching volume with id " + s_newVolume.get() + " to the vm " + s_linuxVmId.get());
             client = new HttpClient();
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
-            s_logger.info("Attach data volume response code: " + responseCode);
+            logger.info("Attach data volume response code: " + responseCode);
             if (responseCode == 200) {
                 InputStream input = method.getResponseBodyAsStream();
                 Element el = queryAsyncJobResult(server, input);
-                s_logger.info("The volume was attached successfully");
+                logger.info("The volume was attached successfully");
             } else {
-                s_logger.error("Attach volume failed with error code: " + responseCode + ". Following URL was sent: " + url);
+                logger.error("Attach volume failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
         }
@@ -1150,21 +1151,21 @@ public class TestClientWithAPI {
         // list volumes
         {
             url = server + "?command=listVolumes&virtualMachineId=" + s_linuxVmId.get() + "&type=root";
-            s_logger.info("Getting rootDisk id of Centos vm");
+            logger.info("Getting rootDisk id of Centos vm");
             client = new HttpClient();
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
-            s_logger.info("List volumes response code: " + responseCode);
+            logger.info("List volumes response code: " + responseCode);
             if (responseCode == 200) {
                 InputStream is = method.getResponseBodyAsStream();
                 Map<String, String> success = getSingleValueFromXML(is, new String[] {"id"});
                 if (success.get("id") == null) {
-                    s_logger.error("Unable to get root volume. Followin url was sent: " + url);
+                    logger.error("Unable to get root volume. Followin url was sent: " + url);
                 }
-                s_logger.info("Got rootVolume with id " + success.get("id"));
+                logger.info("Got rootVolume with id " + success.get("id"));
                 s_rootVolume.set(success.get("id"));
             } else {
-                s_logger.error("List volumes failed with error code: " + responseCode + ". Following URL was sent: " + url);
+                logger.error("List volumes failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
         }
@@ -1180,21 +1181,21 @@ public class TestClientWithAPI {
         client = new HttpClient();
         method = new GetMethod(url);
         responseCode = client.executeMethod(method);
-        s_logger.info("Create snapshot response code: " + responseCode);
+        logger.info("Create snapshot response code: " + responseCode);
         if (responseCode == 200) {
             InputStream input = method.getResponseBodyAsStream();
             Element el = queryAsyncJobResult(server, input);
             Map<String, String> values = getSingleValueFromXML(el, new String[] {"id"});
 
             if (values.get("id") == null) {
-                s_logger.info("create snapshot response code: 401");
+                logger.info("create snapshot response code: 401");
                 return 401;
             } else {
-                s_logger.info("create snapshot response code: " + responseCode + ". Got snapshot with id " + values.get("id"));
+                logger.info("create snapshot response code: " + responseCode + ". Got snapshot with id " + values.get("id"));
                 s_snapshot.set(values.get("id"));
             }
         } else {
-            s_logger.error("create snapshot failed with error code: " + responseCode + ". Following URL was sent: " + url);
+            logger.error("create snapshot failed with error code: " + responseCode + ". Following URL was sent: " + url);
             return responseCode;
         }
 
@@ -1209,37 +1210,37 @@ public class TestClientWithAPI {
         client = new HttpClient();
         method = new GetMethod(url);
         responseCode = client.executeMethod(method);
-        s_logger.info("Create volume from snapshot response code: " + responseCode);
+        logger.info("Create volume from snapshot response code: " + responseCode);
         if (responseCode == 200) {
             InputStream input = method.getResponseBodyAsStream();
             Element el = queryAsyncJobResult(server, input);
             Map<String, String> values = getSingleValueFromXML(el, new String[] { "id" });
 
             if (values.get("id") == null) {
-                s_logger.info("create volume from snapshot response code: 401");
+                logger.info("create volume from snapshot response code: 401");
                 return 401;
             } else {
-                s_logger.info("create volume from snapshot response code: " + responseCode + ". Got volume with id " + values.get("id") + ". The command was sent with url " + url);
+                logger.info("create volume from snapshot response code: " + responseCode + ". Got volume with id " + values.get("id") + ". The command was sent with url " + url);
                 s_volumeFromSnapshot.set(values.get("id"));
             }
         } else {
-            s_logger.error("create volume from snapshot failed with error code: " + responseCode + ". Following URL was sent: " + url);
+            logger.error("create volume from snapshot failed with error code: " + responseCode + ". Following URL was sent: " + url);
             return responseCode;
         }
 
         {
             url = server + "?command=attachVolume&id=" + s_volumeFromSnapshot.get() + "&virtualmachineid=" + s_linuxVmId.get();
-            s_logger.info("Attaching volume with id " + s_volumeFromSnapshot.get() + " to the vm " + s_linuxVmId.get());
+            logger.info("Attaching volume with id " + s_volumeFromSnapshot.get() + " to the vm " + s_linuxVmId.get());
             client = new HttpClient();
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
-            s_logger.info("Attach volume from snapshot to linux vm response code: " + responseCode);
+            logger.info("Attach volume from snapshot to linux vm response code: " + responseCode);
             if (responseCode == 200) {
                 InputStream input = method.getResponseBodyAsStream();
                 Element el = queryAsyncJobResult(server, input);
-                s_logger.info("The volume created from snapshot was attached successfully to linux vm");
+                logger.info("The volume created from snapshot was attached successfully to linux vm");
             } else {
-                s_logger.error("Attach volume created from snapshot failed with error code: " + responseCode + ". Following URL was sent: " + url);
+                logger.error("Attach volume created from snapshot failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
         }
@@ -1258,14 +1259,14 @@ public class TestClientWithAPI {
         client = new HttpClient();
         method = new GetMethod(url);
         responseCode = client.executeMethod(method);
-        s_logger.info("Reboot windows Vm response code: " + responseCode);
+        logger.info("Reboot windows Vm response code: " + responseCode);
         if (responseCode == 200) {
             InputStream input = method.getResponseBodyAsStream();
             Element el = queryAsyncJobResult(server, input);
             Map<String, String> success = getSingleValueFromXML(el, new String[] {"success"});
-            s_logger.info("Windows VM was rebooted with the status: " + success.get("success"));
+            logger.info("Windows VM was rebooted with the status: " + success.get("success"));
         } else {
-            s_logger.error("Reboot windows VM test failed with error code: " + responseCode + ". Following URL was sent: " + url);
+            logger.error("Reboot windows VM test failed with error code: " + responseCode + ". Following URL was sent: " + url);
             return responseCode;
         }
 
@@ -1279,14 +1280,14 @@ public class TestClientWithAPI {
         client = new HttpClient();
         method = new GetMethod(url);
         responseCode = client.executeMethod(method);
-        s_logger.info("Stop linux Vm response code: " + responseCode);
+        logger.info("Stop linux Vm response code: " + responseCode);
         if (responseCode == 200) {
             InputStream input = method.getResponseBodyAsStream();
             Element el = queryAsyncJobResult(server, input);
             Map<String, String> success = getSingleValueFromXML(el, new String[] {"success"});
-            s_logger.info("Linux VM was stopped with the status: " + success.get("success"));
+            logger.info("Linux VM was stopped with the status: " + success.get("success"));
         } else {
-            s_logger.error("Stop linux VM test failed with error code: " + responseCode + ". Following URL was sent: " + url);
+            logger.error("Stop linux VM test failed with error code: " + responseCode + ". Following URL was sent: " + url);
             return responseCode;
         }
 
@@ -1304,20 +1305,20 @@ public class TestClientWithAPI {
         client = new HttpClient();
         method = new GetMethod(url);
         responseCode = client.executeMethod(method);
-        s_logger.info("Create private template response code: " + responseCode);
+        logger.info("Create private template response code: " + responseCode);
         if (responseCode == 200) {
             InputStream input = method.getResponseBodyAsStream();
             Element el = queryAsyncJobResult(server, input);
             Map<String, String> values = getSingleValueFromXML(el, new String[] {"id"});
 
             if (values.get("id") == null) {
-                s_logger.info("create private template response code: 401");
+                logger.info("create private template response code: 401");
                 return 401;
             } else {
-                s_logger.info("create private template response code: " + responseCode);
+                logger.info("create private template response code: " + responseCode);
             }
         } else {
-            s_logger.error("create private template failed with error code: " + responseCode + ". Following URL was sent: " + url);
+            logger.error("create private template failed with error code: " + responseCode + ". Following URL was sent: " + url);
             return responseCode;
         }
 
@@ -1331,9 +1332,9 @@ public class TestClientWithAPI {
         client = new HttpClient();
         method = new GetMethod(url);
         responseCode = client.executeMethod(method);
-        s_logger.info("Start linux Vm response code: " + responseCode);
+        logger.info("Start linux Vm response code: " + responseCode);
         if (responseCode != 200) {
-            s_logger.error("Start linux VM test failed with error code: " + responseCode + ". Following URL was sent: " + url);
+            logger.error("Start linux VM test failed with error code: " + responseCode + ". Following URL was sent: " + url);
             return responseCode;
         }
 
@@ -1343,14 +1344,14 @@ public class TestClientWithAPI {
             client = new HttpClient();
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
-            s_logger.info("List domain routers response code: " + responseCode);
+            logger.info("List domain routers response code: " + responseCode);
             if (responseCode == 200) {
                 InputStream is = method.getResponseBodyAsStream();
                 Map<String, String> success = getSingleValueFromXML(is, new String[] {"id"});
-                s_logger.info("Got the domR with id " + success.get("id"));
+                logger.info("Got the domR with id " + success.get("id"));
                 s_domainRouterId.set(success.get("id"));
             } else {
-                s_logger.error("List domain routers failed with error code: " + responseCode + ". Following URL was sent: " + url);
+                logger.error("List domain routers failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
         }
@@ -1358,17 +1359,17 @@ public class TestClientWithAPI {
         // reboot the domain router
         {
             url = server + "?command=rebootRouter&id=" + s_domainRouterId.get();
-            s_logger.info("Rebooting domR with id " + s_domainRouterId.get());
+            logger.info("Rebooting domR with id " + s_domainRouterId.get());
             client = new HttpClient();
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
-            s_logger.info("Reboot domain router response code: " + responseCode);
+            logger.info("Reboot domain router response code: " + responseCode);
             if (responseCode == 200) {
                 InputStream input = method.getResponseBodyAsStream();
                 Element el = queryAsyncJobResult(server, input);
-                s_logger.info("Domain router was rebooted successfully");
+                logger.info("Domain router was rebooted successfully");
             } else {
-                s_logger.error("Reboot domain routers failed with error code: " + responseCode + ". Following URL was sent: " + url);
+                logger.error("Reboot domain routers failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
         }
@@ -1381,13 +1382,13 @@ public class TestClientWithAPI {
             client = new HttpClient();
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
-            s_logger.info("delete account response code: " + responseCode);
+            logger.info("delete account response code: " + responseCode);
             if (responseCode == 200) {
                 InputStream input = method.getResponseBodyAsStream();
                 Element el = queryAsyncJobResult(server, input);
-                s_logger.info("Deleted account successfully");
+                logger.info("Deleted account successfully");
             } else {
-                s_logger.error("delete account failed with error code: " + responseCode + ". Following URL was sent: " + url);
+                logger.error("delete account failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
         }
@@ -1405,24 +1406,24 @@ public class TestClientWithAPI {
         // -----------------------------
         String url = server + "?command=listEvents&page=1&pagesize=100&&account=" + s_account.get();
 
-        s_logger.info("Getting events for the account " + s_account.get());
+        logger.info("Getting events for the account " + s_account.get());
         HttpClient client = new HttpClient();
         HttpMethod method = new GetMethod(url);
         int responseCode = client.executeMethod(method);
-        s_logger.info("get events response code: " + responseCode);
+        logger.info("get events response code: " + responseCode);
         if (responseCode == 200) {
             InputStream is = method.getResponseBodyAsStream();
             Map<String, List<String>> eventDescriptions = getMultipleValuesFromXML(is, new String[] {"description"});
             List<String> descriptionText = eventDescriptions.get("description");
             if (descriptionText == null) {
-                s_logger.info("no events retrieved...");
+                logger.info("no events retrieved...");
             } else {
                 for (String text : descriptionText) {
-                    s_logger.info("event: " + text);
+                    logger.info("event: " + text);
                 }
             }
         } else {
-            s_logger.error("list events failed with error code: " + responseCode + ". Following URL was sent: " + url);
+            logger.error("list events failed with error code: " + responseCode + ". Following URL was sent: " + url);
 
             return responseCode;
         }
@@ -1433,19 +1434,19 @@ public class TestClientWithAPI {
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
         Date currentDate = new Date();
         String endDate = dateFormat.format(currentDate);
-        s_logger.info("Generating usage records from September 1st till " + endDate);
+        logger.info("Generating usage records from September 1st till " + endDate);
         url = server + "?command=generateUsageRecords&startdate=2009-09-01&enddate=" + endDate; // generate
         // all usage record till today
         client = new HttpClient();
         method = new GetMethod(url);
         responseCode = client.executeMethod(method);
-        s_logger.info("generate usage records response code: " + responseCode);
+        logger.info("generate usage records response code: " + responseCode);
         if (responseCode == 200) {
             InputStream is = method.getResponseBodyAsStream();
             Map<String, String> successStr = getSingleValueFromXML(is, new String[] {"success"});
-            s_logger.info("successfully generated usage records? " + successStr.get("success"));
+            logger.info("successfully generated usage records? " + successStr.get("success"));
         } else {
-            s_logger.error("generate usage records failed with error code: " + responseCode + ". Following URL was sent: " + url);
+            logger.error("generate usage records failed with error code: " + responseCode + ". Following URL was sent: " + url);
             return responseCode;
         }
 
@@ -1453,18 +1454,18 @@ public class TestClientWithAPI {
         try {
             Thread.sleep(120000);
         } catch (Exception ex) {
-            s_logger.error(ex);
+            logger.error(ex);
         }
 
         // --------------------------------
         // GET USAGE RECORDS
         // --------------------------------
         url = server + "?command=listUsageRecords&startdate=2009-09-01&enddate=" + endDate + "&account=" + s_account.get() + "&domaindid=1";
-        s_logger.info("Getting all usage records with request: " + url);
+        logger.info("Getting all usage records with request: " + url);
         client = new HttpClient();
         method = new GetMethod(url);
         responseCode = client.executeMethod(method);
-        s_logger.info("get usage records response code: " + responseCode);
+        logger.info("get usage records response code: " + responseCode);
         if (responseCode == 200) {
             InputStream is = method.getResponseBodyAsStream();
             Map<String, List<String>> usageRecValues = getMultipleValuesFromXML(is, new String[] {"description", "usage"});
@@ -1479,12 +1480,12 @@ public class TestClientWithAPI {
                             usage = ", usage: " + usages.get(i);
                         }
                     }
-                    s_logger.info("desc: " + desc + usage);
+                    logger.info("desc: " + desc + usage);
                 }
             }
 
         } else {
-            s_logger.error("list usage records failed with error code: " + responseCode + ". Following URL was sent: " + url);
+            logger.error("list usage records failed with error code: " + responseCode + ". Following URL was sent: " + url);
             return responseCode;
         }
 
@@ -1497,27 +1498,27 @@ public class TestClientWithAPI {
             HttpClient client = new HttpClient();
             HttpMethod method = new GetMethod(url);
             int responseCode = client.executeMethod(method);
-            s_logger.info("listAccountStatistics response code: " + responseCode);
+            logger.info("listAccountStatistics response code: " + responseCode);
             if (responseCode == 200) {
                 InputStream is = method.getResponseBodyAsStream();
                 Map<String, String> requestKeyValues = getSingleValueFromXML(is, new String[] {"receivedbytes", "sentbytes"});
                 int bytesReceived = Integer.parseInt(requestKeyValues.get("receivedbytes"));
                 int bytesSent = Integer.parseInt(requestKeyValues.get("sentbytes"));
                 if ((bytesReceived > 100000000) && (bytesSent > 0)) {
-                    s_logger.info("Network stat is correct for account" + s_account.get() + "; bytest received is " + toHumanReadableSize(bytesReceived) + " and bytes sent is " + toHumanReadableSize(bytesSent));
+                    logger.info("Network stat is correct for account" + s_account.get() + "; bytest received is " + toHumanReadableSize(bytesReceived) + " and bytes sent is " + toHumanReadableSize(bytesSent));
                     return true;
                 } else {
-                    s_logger.error("Incorrect value for bytes received/sent for the account " + s_account.get() + ". We got " + toHumanReadableSize(bytesReceived) + " bytes received; " +
+                    logger.error("Incorrect value for bytes received/sent for the account " + s_account.get() + ". We got " + toHumanReadableSize(bytesReceived) + " bytes received; " +
                         " and " + toHumanReadableSize(bytesSent) + " bytes sent");
                     return false;
                 }
 
             } else {
-                s_logger.error("listAccountStatistics failed with error code: " + responseCode + ". Following URL was sent: " + url);
+                logger.error("listAccountStatistics failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return false;
             }
         } catch (Exception ex) {
-            s_logger.error("Exception while sending command listAccountStatistics");
+            logger.error("Exception while sending command listAccountStatistics");
             return false;
         }
     }
@@ -1537,11 +1538,11 @@ public class TestClientWithAPI {
         String encodedUserId = URLEncoder.encode(userId, "UTF-8");
 
         String url = server + "?command=listUsers&id=" + encodedUserId;
-        s_logger.info("Stopping resources for user: " + username);
+        logger.info("Stopping resources for user: " + username);
         HttpClient client = new HttpClient();
         HttpMethod method = new GetMethod(url);
         int responseCode = client.executeMethod(method);
-        s_logger.info("get user response code: " + responseCode);
+        logger.info("get user response code: " + responseCode);
         if (responseCode == 200) {
             InputStream is = method.getResponseBodyAsStream();
             Map<String, String> userIdValues = getSingleValueFromXML(is, new String[] {"id"});
@@ -1550,11 +1551,11 @@ public class TestClientWithAPI {
                 userId = userIdStr;
 
             } else {
-                s_logger.error("get user failed to retrieve a valid user id, aborting depolyment test" + ". Following URL was sent: " + url);
+                logger.error("get user failed to retrieve a valid user id, aborting depolyment test" + ". Following URL was sent: " + url);
                 return -1;
             }
         } else {
-            s_logger.error("get user failed with error code: " + responseCode + ". Following URL was sent: " + url);
+            logger.error("get user failed with error code: " + responseCode + ". Following URL was sent: " + url);
             return responseCode;
         }
 
@@ -1570,12 +1571,12 @@ public class TestClientWithAPI {
 
             url = developerServer + "?command=listVirtualMachines&apikey=" + encodedApiKey + "&signature=" + encodedSignature;
 
-            s_logger.info("Listing all virtual machines for the user with url " + url);
+            logger.info("Listing all virtual machines for the user with url " + url);
             String[] vmIds = null;
             client = new HttpClient();
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
-            s_logger.info("list virtual machines response code: " + responseCode);
+            logger.info("list virtual machines response code: " + responseCode);
             if (responseCode == 200) {
                 InputStream is = method.getResponseBodyAsStream();
                 Map<String, List<String>> vmIdValues = getMultipleValuesFromXML(is, new String[] {"id"});
@@ -1591,12 +1592,12 @@ public class TestClientWithAPI {
                                 vmIdLogStr = vmIdLogStr + "," + vmIds[i];
                             }
                         }
-                        s_logger.info("got virtual machine ids: " + vmIdLogStr);
+                        logger.info("got virtual machine ids: " + vmIdLogStr);
                     }
                 }
 
             } else {
-                s_logger.error("list virtual machines test failed with error code: " + responseCode + ". Following URL was sent: " + url);
+                logger.error("list virtual machines test failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
 
@@ -1614,7 +1615,7 @@ public class TestClientWithAPI {
             client = new HttpClient();
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
-            s_logger.info("list ip addresses for user " + userId + " response code: " + responseCode);
+            logger.info("list ip addresses for user " + userId + " response code: " + responseCode);
             if (responseCode == 200) {
                 InputStream is = method.getResponseBodyAsStream();
                 Map<String, List<String>> ipAddressValues = getMultipleValuesFromXML(is, new String[] {"ipaddress"});
@@ -1630,12 +1631,12 @@ public class TestClientWithAPI {
                                 ipAddressLogStr = ipAddressLogStr + "," + ipAddresses[i];
                             }
                         }
-                        s_logger.info("got IP addresses: " + ipAddressLogStr);
+                        logger.info("got IP addresses: " + ipAddressLogStr);
                     }
                 }
 
             } else {
-                s_logger.error("list user ip addresses failed with error code: " + responseCode + ". Following URL was sent: " + url);
+                logger.error("list user ip addresses failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
 
@@ -1653,7 +1654,7 @@ public class TestClientWithAPI {
             client = new HttpClient();
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
-            s_logger.info("list zones response code: " + responseCode);
+            logger.info("list zones response code: " + responseCode);
             if (responseCode == 200) {
                 InputStream is = method.getResponseBodyAsStream();
                 Map<String, List<String>> zoneNameValues = getMultipleValuesFromXML(is, new String[] {"name"});
@@ -1671,12 +1672,12 @@ public class TestClientWithAPI {
 
                         }
                         zoneNameLogStr += "\n\n";
-                        s_logger.info("got zones names: " + zoneNameLogStr);
+                        logger.info("got zones names: " + zoneNameLogStr);
                     }
                 }
 
             } else {
-                s_logger.error("list zones failed with error code: " + responseCode + ". Following URL was sent: " + url);
+                logger.error("list zones failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
 
@@ -1694,7 +1695,7 @@ public class TestClientWithAPI {
             client = new HttpClient();
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
-            s_logger.info("listAccountStatistics response code: " + responseCode);
+            logger.info("listAccountStatistics response code: " + responseCode);
             if (responseCode == 200) {
                 InputStream is = method.getResponseBodyAsStream();
                 Map<String, List<String>> statValues = getMultipleValuesFromXML(is, new String[] {"receivedbytes"});
@@ -1712,12 +1713,12 @@ public class TestClientWithAPI {
 
                         }
                         statLogStr += "\n\n";
-                        s_logger.info("got accountstatistics: " + statLogStr);
+                        logger.info("got accountstatistics: " + statLogStr);
                     }
                 }
 
             } else {
-                s_logger.error("listAccountStatistics failed with error code: " + responseCode + ". Following URL was sent: " + url);
+                logger.error("listAccountStatistics failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
 
@@ -1735,7 +1736,7 @@ public class TestClientWithAPI {
             client = new HttpClient();
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
-            s_logger.info("list templates response code: " + responseCode);
+            logger.info("list templates response code: " + responseCode);
             if (responseCode == 200) {
                 InputStream is = method.getResponseBodyAsStream();
                 Map<String, List<String>> templateNameValues = getMultipleValuesFromXML(is, new String[] {"name"});
@@ -1754,12 +1755,12 @@ public class TestClientWithAPI {
 
                         }
                         templateNameLogStr += "\n\n";
-                        s_logger.info("got template names: " + templateNameLogStr);
+                        logger.info("got template names: " + templateNameLogStr);
                     }
                 }
 
             } else {
-                s_logger.error("list templates failed with error code: " + responseCode + ". Following URL was sent: " + url);
+                logger.error("list templates failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
 
@@ -1777,7 +1778,7 @@ public class TestClientWithAPI {
             client = new HttpClient();
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
-            s_logger.info("list service offerings response code: " + responseCode);
+            logger.info("list service offerings response code: " + responseCode);
             if (responseCode == 200) {
                 InputStream is = method.getResponseBodyAsStream();
                 Map<String, List<String>> serviceOfferingNameValues = getMultipleValuesFromXML(is, new String[] {"name"});
@@ -1794,12 +1795,12 @@ public class TestClientWithAPI {
                                 serviceOfferingNameLogStr = serviceOfferingNameLogStr + ", " + serviceOfferingNames[i];
                             }
                         }
-                        s_logger.info("got service offering names: " + serviceOfferingNameLogStr);
+                        logger.info("got service offering names: " + serviceOfferingNameLogStr);
                     }
                 }
 
             } else {
-                s_logger.error("list service offerings failed with error code: " + responseCode + ". Following URL was sent: " + url);
+                logger.error("list service offerings failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
 
@@ -1812,7 +1813,7 @@ public class TestClientWithAPI {
             client = new HttpClient();
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
-            s_logger.info("list events response code: " + responseCode);
+            logger.info("list events response code: " + responseCode);
             if (responseCode == 200) {
                 InputStream is = method.getResponseBodyAsStream();
                 Map<String, List<String>> eventNameValues = getMultipleValuesFromXML(is, new String[] {"description"});
@@ -1830,11 +1831,11 @@ public class TestClientWithAPI {
                             }
                         }
                         eventNameLogStr += "\n\n";
-                        s_logger.info("got event descriptions: " + eventNameLogStr);
+                        logger.info("got event descriptions: " + eventNameLogStr);
                     }
                 }
             } else {
-                s_logger.error("list events failed with error code: " + responseCode + ". Following URL was sent: " + url);
+                logger.error("list events failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
 
@@ -1853,14 +1854,14 @@ public class TestClientWithAPI {
                     client = new HttpClient();
                     method = new GetMethod(url);
                     responseCode = client.executeMethod(method);
-                    s_logger.info(cmdName + " [" + vmId + "] response code: " + responseCode);
+                    logger.info(cmdName + " [" + vmId + "] response code: " + responseCode);
                     if (responseCode == 200) {
                         InputStream input = method.getResponseBodyAsStream();
                         Element el = queryAsyncJobResult(server, input);
                         Map<String, String> success = getSingleValueFromXML(el, new String[] {"success"});
-                        s_logger.info(cmdName + "..success? " + success.get("success"));
+                        logger.info(cmdName + "..success? " + success.get("success"));
                     } else {
-                        s_logger.error(cmdName + "test failed with error code: " + responseCode + ". Following URL was sent: " + url);
+                        logger.error(cmdName + "test failed with error code: " + responseCode + ". Following URL was sent: " + url);
                         return responseCode;
                     }
                 }
@@ -1882,7 +1883,7 @@ public class TestClientWithAPI {
             client = new HttpClient();
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
-            s_logger.info("list ip addresses for user " + userId + " response code: " + responseCode);
+            logger.info("list ip addresses for user " + userId + " response code: " + responseCode);
             if (responseCode == 200) {
 
                 InputStream is = method.getResponseBodyAsStream();
@@ -1896,10 +1897,10 @@ public class TestClientWithAPI {
                         ipAddrLogStr = ipAddrLogStr + "," + ipAddresses[i];
                     }
                 }
-                s_logger.info("got ip addresses: " + ipAddrLogStr);
+                logger.info("got ip addresses: " + ipAddrLogStr);
 
             } else {
-                s_logger.error("list nat ip addresses failed with error code: " + responseCode + ". Following URL was sent: " + url);
+                logger.error("list nat ip addresses failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
 
@@ -1915,16 +1916,16 @@ public class TestClientWithAPI {
 
             url = developerServer + "?command=deleteIpForwardingRule&apikey=" + encodedApiKey + "&id=" + encodedIpFwdId + "&signature=" + encodedSignature;
 
-            s_logger.info("Delete Ip forwarding rule with " + url);
+            logger.info("Delete Ip forwarding rule with " + url);
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
             if (responseCode == 200) {
                 InputStream input = method.getResponseBodyAsStream();
                 Element el = queryAsyncJobResult(server, input);
-                s_logger.info("IP forwarding rule was successfully deleted");
+                logger.info("IP forwarding rule was successfully deleted");
 
             } else {
-                s_logger.error("IP forwarding rule creation failed with error code: " + responseCode + ". Following URL was sent: " + url);
+                logger.error("IP forwarding rule creation failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
 
@@ -1942,14 +1943,14 @@ public class TestClientWithAPI {
             client = new HttpClient();
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
-            s_logger.info("url is " + url);
-            s_logger.info("list ip addresses for user " + userId + " response code: " + responseCode);
+            logger.info("url is " + url);
+            logger.info("list ip addresses for user " + userId + " response code: " + responseCode);
             if (responseCode == 200) {
                 InputStream is = method.getResponseBodyAsStream();
                 Map<String, String> success = getSingleValueFromXML(is, new String[] {"success"});
-                s_logger.info("Disable Static NAT..success? " + success.get("success"));
+                logger.info("Disable Static NAT..success? " + success.get("success"));
             } else {
-                s_logger.error("Disable Static NAT failed with error code: " + responseCode + ". Following URL was sent: " + url);
+                logger.error("Disable Static NAT failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
 
@@ -1967,15 +1968,15 @@ public class TestClientWithAPI {
                     client = new HttpClient();
                     method = new GetMethod(url);
                     responseCode = client.executeMethod(method);
-                    s_logger.info("disassociate ip address [" + userId + "/" + ipAddress + "] response code: " + responseCode);
+                    logger.info("disassociate ip address [" + userId + "/" + ipAddress + "] response code: " + responseCode);
                     if (responseCode == 200) {
                         InputStream input = method.getResponseBodyAsStream();
                         Element disassocipel = queryAsyncJobResult(server, input);
                         Map<String, String> success = getSingleValueFromXML(disassocipel, new String[] {"success"});
                         //       Map<String, String> success = getSingleValueFromXML(input, new String[] { "success" });
-                        s_logger.info("disassociate ip address..success? " + success.get("success"));
+                        logger.info("disassociate ip address..success? " + success.get("success"));
                     } else {
-                        s_logger.error("disassociate ip address failed with error code: " + responseCode + ". Following URL was sent: " + url);
+                        logger.error("disassociate ip address failed with error code: " + responseCode + ". Following URL was sent: " + url);
                         return responseCode;
                     }
                 }
@@ -2005,14 +2006,14 @@ public class TestClientWithAPI {
             byte[] encryptedBytes = mac.doFinal();
             return org.apache.commons.codec.binary.Base64.encodeBase64String(encryptedBytes);
         } catch (Exception ex) {
-            s_logger.error("unable to sign request", ex);
+            logger.error("unable to sign request", ex);
         }
         return null;
     }
 
     private static String sshWinTest(String host) {
         if (host == null) {
-            s_logger.info("Did not receive a host back from test, ignoring win ssh test");
+            logger.info("Did not receive a host back from test, ignoring win ssh test");
             return null;
         }
 
@@ -2022,38 +2023,38 @@ public class TestClientWithAPI {
         while (true) {
             try {
                 if (retry > 0) {
-                    s_logger.info("Retry attempt : " + retry + " ...sleeping 300 seconds before next attempt. Account is " + s_account.get());
+                    logger.info("Retry attempt : " + retry + " ...sleeping 300 seconds before next attempt. Account is " + s_account.get());
                     Thread.sleep(300000);
                 }
 
-                s_logger.info("Attempting to SSH into windows host " + host + " with retry attempt: " + retry + " for account " + s_account.get());
+                logger.info("Attempting to SSH into windows host " + host + " with retry attempt: " + retry + " for account " + s_account.get());
 
                 Connection conn = new Connection(host);
                 conn.connect(null, 60000, 60000);
 
-                s_logger.info("User " + s_account.get() + " ssHed successfully into windows host " + host);
+                logger.info("User " + s_account.get() + " ssHed successfully into windows host " + host);
                 boolean success = false;
                 boolean isAuthenticated = conn.authenticateWithPassword("Administrator", "password");
                 if (isAuthenticated == false) {
                     return "Authentication failed";
                 } else {
-                    s_logger.info("Authentication is successful");
+                    logger.info("Authentication is successful");
                 }
 
                 try {
                     SCPClient scp = new SCPClient(conn);
                     scp.put("wget.exe", "wget.exe", "C:\\Users\\Administrator", "0777");
-                    s_logger.info("Successfully put wget.exe file");
+                    logger.info("Successfully put wget.exe file");
                 } catch (Exception ex) {
-                    s_logger.error("Unable to put wget.exe " + ex);
+                    logger.error("Unable to put wget.exe " + ex);
                 }
 
                 if (conn == null) {
-                    s_logger.error("Connection is null");
+                    logger.error("Connection is null");
                 }
                 Session sess = conn.openSession();
 
-                s_logger.info("User + " + s_account.get() + " executing : wget http://" + downloadUrl);
+                logger.info("User + " + s_account.get() + " executing : wget http://" + downloadUrl);
                 String downloadCommand = "wget http://" + downloadUrl + " && dir dump.bin";
                 sess.execCommand(downloadCommand);
 
@@ -2066,7 +2067,7 @@ public class TestClientWithAPI {
                         int conditions = sess.waitForCondition(ChannelCondition.STDOUT_DATA | ChannelCondition.STDERR_DATA | ChannelCondition.EOF, 120000);
 
                         if ((conditions & ChannelCondition.TIMEOUT) != 0) {
-                            s_logger.info("Timeout while waiting for data from peer.");
+                            logger.info("Timeout while waiting for data from peer.");
                             return null;
                         }
 
@@ -2081,7 +2082,7 @@ public class TestClientWithAPI {
                         success = true;
                         int len = stdout.read(buffer);
                         if (len > 0) // this check is somewhat paranoid
-                            s_logger.info(new String(buffer, 0, len));
+                            logger.info(new String(buffer, 0, len));
                     }
 
                     while (stderr.available() > 0) {
@@ -2100,7 +2101,7 @@ public class TestClientWithAPI {
                     }
                 }
             } catch (Exception e) {
-                s_logger.error(e);
+                logger.error(e);
                 retry++;
                 if (retry == MAX_RETRY_WIN) {
                     return "SSH Windows Network test fail with error " + e.getMessage();
@@ -2112,12 +2113,12 @@ public class TestClientWithAPI {
     private static String sshTest(String host, String password, String snapshotTest) {
         int i = 0;
         if (host == null) {
-            s_logger.info("Did not receive a host back from test, ignoring ssh test");
+            logger.info("Did not receive a host back from test, ignoring ssh test");
             return null;
         }
 
         if (password == null) {
-            s_logger.info("Did not receive a password back from test, ignoring ssh test");
+            logger.info("Did not receive a password back from test, ignoring ssh test");
             return null;
         }
 
@@ -2128,21 +2129,21 @@ public class TestClientWithAPI {
         while (true) {
             try {
                 if (retry > 0) {
-                    s_logger.info("Retry attempt : " + retry + " ...sleeping 120 seconds before next attempt. Account is " + s_account.get());
+                    logger.info("Retry attempt : " + retry + " ...sleeping 120 seconds before next attempt. Account is " + s_account.get());
                     Thread.sleep(120000);
                 }
 
-                s_logger.info("Attempting to SSH into linux host " + host + " with retry attempt: " + retry + ". Account is " + s_account.get());
+                logger.info("Attempting to SSH into linux host " + host + " with retry attempt: " + retry + ". Account is " + s_account.get());
 
                 Connection conn = new Connection(host);
                 conn.connect(null, 60000, 60000);
 
-                s_logger.info("User + " + s_account.get() + " ssHed successfully into linux host " + host);
+                logger.info("User + " + s_account.get() + " ssHed successfully into linux host " + host);
 
                 boolean isAuthenticated = conn.authenticateWithPassword("root", password);
 
                 if (isAuthenticated == false) {
-                    s_logger.info("Authentication failed for root with password" + password);
+                    logger.info("Authentication failed for root with password" + password);
                     return "Authentication failed";
 
                 }
@@ -2156,7 +2157,7 @@ public class TestClientWithAPI {
                     linuxCommand = "wget http://" + downloadUrl + " && ls -al dump.bin";
 
                 Session sess = conn.openSession();
-                s_logger.info("User " + s_account.get() + " executing : " + linuxCommand);
+                logger.info("User " + s_account.get() + " executing : " + linuxCommand);
                 sess.execCommand(linuxCommand);
 
                 InputStream stdout = sess.getStdout();
@@ -2168,7 +2169,7 @@ public class TestClientWithAPI {
                         int conditions = sess.waitForCondition(ChannelCondition.STDOUT_DATA | ChannelCondition.STDERR_DATA | ChannelCondition.EOF, 120000);
 
                         if ((conditions & ChannelCondition.TIMEOUT) != 0) {
-                            s_logger.info("Timeout while waiting for data from peer.");
+                            logger.info("Timeout while waiting for data from peer.");
                             return null;
                         }
 
@@ -2183,7 +2184,7 @@ public class TestClientWithAPI {
                         success = true;
                         int len = stdout.read(buffer);
                         if (len > 0) // this check is somewhat paranoid
-                            s_logger.info(new String(buffer, 0, len));
+                            logger.info(new String(buffer, 0, len));
                     }
 
                     while (stderr.available() > 0) {
@@ -2205,12 +2206,12 @@ public class TestClientWithAPI {
                     return result;
                 else {
                     Long sleep = 300000L;
-                    s_logger.info("Sleeping for " + sleep / 1000 / 60 + "minutes before executing next ssh test");
+                    logger.info("Sleeping for " + sleep / 1000 / 60 + "minutes before executing next ssh test");
                     Thread.sleep(sleep);
                 }
             } catch (Exception e) {
                 retry++;
-                s_logger.error("SSH Linux Network test fail with error");
+                logger.error("SSH Linux Network test fail with error");
                 if ((retry == MAX_RETRY_LINUX) && (snapshotTest.equals("no"))) {
                     return "SSH Linux Network test fail with error " + e.getMessage();
                 }
@@ -2249,18 +2250,18 @@ public class TestClientWithAPI {
         String jobId = values.get("jobid");
 
         if (jobId == null) {
-            s_logger.error("Unable to get a jobId");
+            logger.error("Unable to get a jobId");
             return null;
         }
 
-        // s_logger.info("Job id is " + jobId);
+        // logger.info("Job id is " + jobId);
         String resultUrl = host + "?command=queryAsyncJobResult&jobid=" + jobId;
         HttpClient client = new HttpClient();
         HttpMethod method = new GetMethod(resultUrl);
         while (true) {
             try {
                 client.executeMethod(method);
-                // s_logger.info("Method is executed successfully. Following url was sent " + resultUrl);
+                // logger.info("Method is executed successfully. Following url was sent " + resultUrl);
                 InputStream is = method.getResponseBodyAsStream();
                 DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
                 DocumentBuilder builder = factory.newDocumentBuilder();
@@ -2273,14 +2274,14 @@ public class TestClientWithAPI {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
-                        s_logger.debug("[ignored] interrupted while during async job result query.");
+                        logger.debug("[ignored] interrupted while during async job result query.");
                     }
                 } else {
                     break;
                 }
 
             } catch (Exception ex) {
-                s_logger.error(ex);
+                logger.error(ex);
             }
         }
         return returnBody;
