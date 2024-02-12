@@ -52,7 +52,6 @@ import org.apache.cloudstack.quota.vo.QuotaAccountVO;
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.apache.cloudstack.quota.vo.QuotaUsageVO;
 import org.apache.commons.lang3.ObjectUtils;
-import org.apache.cloudstack.utils.usage.UsageUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Config;
