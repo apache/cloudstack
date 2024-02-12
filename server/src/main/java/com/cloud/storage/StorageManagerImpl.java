@@ -2685,14 +2685,17 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return false;
     }
 
-    protected boolean storagePoolHasEnoughIops(long requestedIops, StoragePool pool, boolean skipPoolNullIopsCheck) {
+    protected boolean storagePoolHasEnoughIops(long requestedIops, List<Pair<Volume, DiskProfile>> requestedVolumes, StoragePool pool, boolean skipPoolNullIopsCheck) {
         if (!skipPoolNullIopsCheck && checkIfPoolIopsCapacityNull(pool)) {
             return true;
         }
         StoragePoolVO storagePoolVo = _storagePoolDao.findById(pool.getId());
         long currentIops = _capacityMgr.getUsedIops(storagePoolVo);
         long futureIops = currentIops + requestedIops;
-        return futureIops <= pool.getCapacityIops();
+        boolean hasEnoughIops = futureIops <= pool.getCapacityIops();
+        String hasCapacity = hasEnoughIops ? "has" : "does not have";
+        logger.debug(String.format("Pool [%s] %s enough IOPS to allocate volumes [%s].", pool, hasCapacity, requestedVolumes));
+        return hasEnoughIops;
     }
 
     @Override
@@ -2717,7 +2720,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 requestedIops += minIops;
             }
         }
-        return storagePoolHasEnoughIops(requestedIops, pool, true);
+        return storagePoolHasEnoughIops(requestedIops, requestedVolumes, pool, true);
     }
 
     @Override
@@ -2728,7 +2731,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (requestedIops == null || requestedIops == 0) {
             return true;
         }
-        return storagePoolHasEnoughIops(requestedIops, pool, false);
+        return storagePoolHasEnoughIops(requestedIops, new ArrayList<>(), pool, false);
     }
 
     @Override
