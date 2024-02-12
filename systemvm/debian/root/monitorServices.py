@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from configparser import SafeConfigParser
+from configparser import ConfigParser
 from subprocess import *
 from datetime import datetime
 import time
@@ -56,7 +56,7 @@ def getServicesConfig( config_file_path = "/etc/monitor.conf" ):
 
     """
     process_dict = {}
-    parser = SafeConfigParser()
+    parser = ConfigParser()
     parser.read( config_file_path )
 
 
