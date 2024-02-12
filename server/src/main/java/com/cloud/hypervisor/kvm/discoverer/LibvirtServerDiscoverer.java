@@ -490,7 +490,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
         return _resourceMgr.fillRoutingHostVO(host, ssCmd, getHypervisorType(), host.getDetails(), null);
     }
 
-    private boolean isHostOsCompatibleWithOtherHost(String hostOsInCluster, String hostOs) {
+    protected boolean isHostOsCompatibleWithOtherHost(String hostOsInCluster, String hostOs) {
         if (hostOsInCluster.equalsIgnoreCase(hostOs)) {
             return true;
         }
