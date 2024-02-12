@@ -992,7 +992,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (!isAdmin) {
             return;
         }
-        if (nic == null || Nic.ReservationStrategy.PlaceHolder.equals(nic.getReservationStrategy())) {
+        if (nic == null || nic.getInstanceId() == null) {
             return;
         }
         VirtualMachine vm = ApiDBUtils.findVMInstanceById(nic.getInstanceId());
