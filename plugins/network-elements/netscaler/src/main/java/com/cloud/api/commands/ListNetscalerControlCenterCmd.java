@@ -22,7 +22,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -42,7 +41,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @APICommand(name = "listNetscalerControlCenter", responseObject = NetscalerControlCenterResponse.class, description = "list control center", requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
 public class ListNetscalerControlCenterCmd extends BaseListCmd {
 
-    public static final Logger s_logger = Logger.getLogger(ListNetscalerControlCenterCmd.class.getName());
     private static final String s_name = "listNetscalerControlCenter";
 
     @Inject

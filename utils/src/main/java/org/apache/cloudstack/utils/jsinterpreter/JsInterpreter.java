@@ -30,7 +30,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.apache.commons.collections.MapUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.openjdk.nashorn.api.scripting.NashornScriptEngineFactory;
@@ -41,7 +42,7 @@ import javax.script.ScriptEngine;
  * A class to execute JavaScript scripts, with the possibility to inject context to the scripts.
  */
 public class JsInterpreter implements Closeable {
-    protected Logger logger = Logger.getLogger(JsInterpreter.class);
+    protected Logger logger = LogManager.getLogger(JsInterpreter.class);
 
     protected ScriptEngine interpreter;
     protected String interpreterName;

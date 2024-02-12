@@ -25,7 +25,6 @@ import java.util.LinkedList;
 
 import javax.net.ssl.SSLEngine;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.Command;
@@ -35,7 +34,6 @@ import com.cloud.host.Status;
 import com.cloud.utils.nio.Link;
 
 public class ClusteredAgentAttache extends ConnectedAgentAttache implements Routable {
-    private final static Logger s_logger = Logger.getLogger(ClusteredAgentAttache.class);
     private static ClusteredAgentManagerImpl s_clusteredAgentMgr;
     protected ByteBuffer _buffer = ByteBuffer.allocate(2048);
     private boolean _forward = false;
@@ -92,10 +90,10 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
                 String peerName = synchronous.getPeer();
                 if (peerName != null) {
                     if (s_clusteredAgentMgr != null) {
-                        s_logger.debug(log(seq, "Forwarding to peer to cancel due to timeout"));
+                        logger.debug(log(seq, "Forwarding to peer to cancel due to timeout"));
                         s_clusteredAgentMgr.cancel(peerName, _id, seq, "Timed Out");
                     } else {
-                        s_logger.error("Unable to forward cancel, ClusteredAgentAttache is not properly initialized");
+                        logger.error("Unable to forward cancel, ClusteredAgentAttache is not properly initialized");
                     }
 
                 }
@@ -107,13 +105,13 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
 
     @Override
     public void routeToAgent(final byte[] data) throws AgentUnavailableException {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug(log(Request.getSequence(data), "Routing from " + Request.getManagementServerId(data)));
+        if (logger.isDebugEnabled()) {
+            logger.debug(log(Request.getSequence(data), "Routing from " + Request.getManagementServerId(data)));
         }
 
         if (_link == null) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(log(Request.getSequence(data), "Link is closed"));
+            if (logger.isDebugEnabled()) {
+                logger.debug(log(Request.getSequence(data), "Link is closed"));
             }
             throw new AgentUnavailableException("Link is closed", _id);
         }
@@ -121,14 +119,14 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
         try {
             _link.send(data);
         } catch (ClosedChannelException e) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(log(Request.getSequence(data), "Channel is closed"));
+            if (logger.isDebugEnabled()) {
+                logger.debug(log(Request.getSequence(data), "Channel is closed"));
             }
 
             throw new AgentUnavailableException("Channel to agent is closed", _id);
         } catch (NullPointerException e) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(log(Request.getSequence(data), "Link is closed"));
+            if (logger.isDebugEnabled()) {
+                logger.debug(log(Request.getSequence(data), "Link is closed"));
             }
             // Note: since this block is not in synchronized.  It is possible for _link to become null.
             throw new AgentUnavailableException("Channel to agent is null", _id);
@@ -150,8 +148,8 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
 
         if (_transferMode) {
 
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(log(seq, "Holding request as the corresponding agent is in transfer mode: "));
+            if (logger.isDebugEnabled()) {
+                logger.debug(log(seq, "Holding request as the corresponding agent is in transfer mode: "));
             }
 
             synchronized (this) {
@@ -176,8 +174,8 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
 
                 ch = s_clusteredAgentMgr.connectToPeer(peerName, ch);
                 if (ch == null) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug(log(seq, "Unable to forward " + req.toString()));
+                    if (logger.isDebugEnabled()) {
+                        logger.debug(log(seq, "Unable to forward " + req.toString()));
                     }
                     continue;
                 }
@@ -188,8 +186,8 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
                 }
 
                 try {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug(log(seq, "Forwarding " + req.toString() + " to " + peerName));
+                    if (logger.isDebugEnabled()) {
+                        logger.debug(log(seq, "Forwarding " + req.toString() + " to " + peerName));
                     }
                     if (req.executeInSequence() && listener != null && listener instanceof SynchronousListener) {
                         SynchronousListener synchronous = (SynchronousListener)listener;
@@ -199,12 +197,12 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
                     error = false;
                     return;
                 } catch (IOException e) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug(log(seq, "Error on connecting to management node: " + req.toString() + " try = " + i));
+                    if (logger.isDebugEnabled()) {
+                        logger.debug(log(seq, "Error on connecting to management node: " + req.toString() + " try = " + i));
                     }
 
-                    if (s_logger.isInfoEnabled()) {
-                        s_logger.info("IOException " + e.getMessage() + " when sending data to peer " + peerName + ", close peer connection and let it re-open");
+                    if (logger.isInfoEnabled()) {
+                        logger.info("IOException " + e.getMessage() + " when sending data to peer " + peerName + ", close peer connection and let it re-open");
                     }
                 }
             }

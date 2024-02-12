@@ -26,7 +26,6 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
-import org.apache.log4j.Logger;
 
 import java.util.List;
 
@@ -35,7 +34,6 @@ import java.util.List;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin, RoleType.DomainAdmin, RoleType.ResourceAdmin, RoleType.User})
 public class ListResourceIconCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(ListResourceIconCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

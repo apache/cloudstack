@@ -25,7 +25,6 @@ import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ResourceLimitResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Resource;
 import com.cloud.configuration.ResourceLimit;
@@ -34,7 +33,6 @@ import com.cloud.exception.InvalidParameterValueException;
 @APICommand(name = "listResourceLimits", description = "Lists resource limits.", responseObject = ResourceLimitResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListResourceLimitsCmd extends BaseListProjectAndAccountResourcesCmd {
-    public static final Logger s_logger = Logger.getLogger(ListResourceLimitsCmd.class.getName());
 
 
     /////////////////////////////////////////////////////

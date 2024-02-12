@@ -25,13 +25,14 @@ import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.params.HttpClientParams;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.utils.Profiler;
 
 public class ClusterServiceServletImpl implements ClusterService {
     private static final long serialVersionUID = 4574025200012566153L;
-    private static final Logger s_logger = Logger.getLogger(ClusterServiceServletImpl.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private String _serviceUrl;
 
@@ -41,7 +42,7 @@ public class ClusterServiceServletImpl implements ClusterService {
     }
 
     public ClusterServiceServletImpl(final String serviceUrl) {
-        s_logger.info("Setup cluster service servlet. service url: " + serviceUrl + ", request timeout: " + ClusterServiceAdapter.ClusterMessageTimeOut.value() +
+        logger.info("Setup cluster service servlet. service url: " + serviceUrl + ", request timeout: " + ClusterServiceAdapter.ClusterMessageTimeOut.value() +
                 " seconds");
 
         _serviceUrl = serviceUrl;
@@ -68,8 +69,8 @@ public class ClusterServiceServletImpl implements ClusterService {
 
     @Override
     public boolean ping(final String callingPeer) throws RemoteException {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Ping at " + _serviceUrl);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Ping at " + _serviceUrl);
         }
 
         final HttpClient client = getHttpClient();
@@ -95,20 +96,20 @@ public class ClusterServiceServletImpl implements ClusterService {
             if (response == HttpStatus.SC_OK) {
                 result = method.getResponseBodyAsString();
                 profiler.stop();
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("POST " + _serviceUrl + " response :" + result + ", responding time: " + profiler.getDurationInMillis() + " ms");
+                if (logger.isDebugEnabled()) {
+                    logger.debug("POST " + _serviceUrl + " response :" + result + ", responding time: " + profiler.getDurationInMillis() + " ms");
                 }
             } else {
                 profiler.stop();
-                s_logger.error("Invalid response code : " + response + ", from : " + _serviceUrl + ", method : " + method.getParameter("method") + " responding time: " +
+                logger.error("Invalid response code : " + response + ", from : " + _serviceUrl + ", method : " + method.getParameter("method") + " responding time: " +
                         profiler.getDurationInMillis());
             }
         } catch (final HttpException e) {
-            s_logger.error("HttpException from : " + _serviceUrl + ", method : " + method.getParameter("method"));
+            logger.error("HttpException from : " + _serviceUrl + ", method : " + method.getParameter("method"));
         } catch (final IOException e) {
-            s_logger.error("IOException from : " + _serviceUrl + ", method : " + method.getParameter("method"));
+            logger.error("IOException from : " + _serviceUrl + ", method : " + method.getParameter("method"));
         } catch (final Throwable e) {
-            s_logger.error("Exception from : " + _serviceUrl + ", method : " + method.getParameter("method") + ", exception :", e);
+            logger.error("Exception from : " + _serviceUrl + ", method : " + method.getParameter("method") + ", exception :", e);
         } finally {
             method.releaseConnection();
         }

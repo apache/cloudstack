@@ -27,12 +27,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class XmlObject {
-    private final Logger logger = Logger.getLogger(XmlObject.class.getName());
+    protected Logger logger = LogManager.getLogger(getClass());
     private final Map<String, Object> elements = new HashMap<String, Object>();
     private String text;
     private String tag;

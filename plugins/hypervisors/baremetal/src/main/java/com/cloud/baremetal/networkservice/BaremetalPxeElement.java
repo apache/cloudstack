@@ -51,7 +51,6 @@ import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.HashMap;
@@ -59,7 +58,6 @@ import java.util.Map;
 import java.util.Set;
 
 public class BaremetalPxeElement extends AdapterBase implements NetworkElement {
-    private static final Logger s_logger = Logger.getLogger(BaremetalPxeElement.class);
     private static final Map<Service, Map<Capability, String>> capabilities;
 
     @Inject
@@ -110,7 +108,7 @@ public class BaremetalPxeElement extends AdapterBase implements NetworkElement {
         }
 
         if (offering.isSystemOnly() || !canHandle(dest, offering.getTrafficType(), network.getGuestType())) {
-            s_logger.debug("BaremetalPxeElement can not handle network offering: " + offering.getName());
+            logger.debug("BaremetalPxeElement can not handle network offering: " + offering.getName());
             return false;
         }
         return true;

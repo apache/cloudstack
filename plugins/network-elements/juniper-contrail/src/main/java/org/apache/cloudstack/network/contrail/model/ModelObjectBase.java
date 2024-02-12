@@ -17,11 +17,15 @@
 
 package org.apache.cloudstack.network.contrail.model;
 
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+
 import java.io.Serializable;
 import java.util.Comparator;
 import java.util.TreeSet;
 
 public abstract class ModelObjectBase implements ModelObject {
+    protected Logger logger = LogManager.getLogger(getClass());
     public static class UuidComparator implements Comparator<ModelObject>, Serializable {
         @Override
         public int compare(ModelObject lhs, ModelObject rhs) {

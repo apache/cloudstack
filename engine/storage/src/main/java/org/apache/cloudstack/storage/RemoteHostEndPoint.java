@@ -26,7 +26,8 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -51,7 +52,7 @@ import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 
 public class RemoteHostEndPoint implements EndPoint {
-    private static final Logger s_logger = Logger.getLogger(RemoteHostEndPoint.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private long hostId;
     private String hostAddress;
@@ -125,10 +126,10 @@ public class RemoteHostEndPoint implements EndPoint {
             return agentMgr.send(newHostId, cmd);
         } catch (AgentUnavailableException e) {
             errMsg = e.toString();
-            s_logger.debug("Failed to send command, due to Agent:" + getId() + ", " + e.toString());
+            logger.debug("Failed to send command, due to Agent:" + getId() + ", " + e.toString());
         } catch (OperationTimedoutException e) {
             errMsg = e.toString();
-            s_logger.debug("Failed to send command, due to Agent:" + getId() + ", " + e.toString());
+            logger.debug("Failed to send command, due to Agent:" + getId() + ", " + e.toString());
         }
         throw new CloudRuntimeException("Failed to send command, due to Agent:" + getId() + ", " + errMsg);
     }
@@ -216,8 +217,8 @@ public class RemoteHostEndPoint implements EndPoint {
                 // update endpoint with new host if changed
                 setId(newHostId);
             }
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Sending command " + cmd.toString() + " to host: " + newHostId);
+            if (logger.isDebugEnabled()) {
+                logger.debug("Sending command " + cmd.toString() + " to host: " + newHostId);
             }
             agentMgr.send(newHostId, new Commands(cmd), new CmdRunner(callback));
         } catch (AgentUnavailableException e) {

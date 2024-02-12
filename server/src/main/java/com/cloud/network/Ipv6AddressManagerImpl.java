@@ -23,7 +23,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
 import com.cloud.dc.DataCenter;
@@ -52,7 +51,6 @@ import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.googlecode.ipv6.IPv6Address;
 
 public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressManager {
-    public static final Logger s_logger = Logger.getLogger(Ipv6AddressManagerImpl.class.getName());
 
     String _name = null;
     int _ipv6RetryMax = 0;
@@ -205,14 +203,14 @@ public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressMa
     public void setNicIp6Address(final NicProfile nic, final DataCenter dc, final Network network) throws InsufficientAddressCapacityException {
         if (network.getIp6Gateway() != null) {
             if (nic.getIPv6Address() == null) {
-                s_logger.debug("Found IPv6 CIDR " + network.getIp6Cidr() + " for Network " + network);
+                logger.debug("Found IPv6 CIDR " + network.getIp6Cidr() + " for Network " + network);
                 nic.setIPv6Cidr(network.getIp6Cidr());
                 nic.setIPv6Gateway(network.getIp6Gateway());
 
                 setNicPropertiesFromNetwork(nic, network);
 
                 IPv6Address ipv6addr = NetUtils.EUI64Address(network.getIp6Cidr(), nic.getMacAddress());
-                s_logger.info("Calculated IPv6 address " + ipv6addr + " using EUI-64 for NIC " + nic.getUuid());
+                logger.info("Calculated IPv6 address " + ipv6addr + " using EUI-64 for NIC " + nic.getUuid());
                 nic.setIPv6Address(ipv6addr.toString());
 
                 if (nic.getIPv4Address() != null) {

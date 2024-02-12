@@ -33,7 +33,6 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.log4j.Logger;
 
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
@@ -73,7 +72,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.host.dao.HostDetailsDao;
 
 public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPlanner, Configurable, DeploymentPlanner {
-    private static final Logger s_logger = Logger.getLogger(FirstFitPlanner.class);
     @Inject
     protected HostDao hostDao;
     @Inject
@@ -134,8 +132,8 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
 
         //check if datacenter is in avoid set
         if (avoid.shouldAvoid(dc)) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("DataCenter id = '" + dc.getId() + "' provided is in avoid set, DeploymentPlanner cannot allocate the VM, returning.");
+            if (logger.isDebugEnabled()) {
+                logger.debug("DataCenter id = '" + dc.getId() + "' provided is in avoid set, DeploymentPlanner cannot allocate the VM, returning.");
             }
             return null;
         }
@@ -143,29 +141,29 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
         List<Long> clusterList = new ArrayList<Long>();
         if (plan.getClusterId() != null) {
             Long clusterIdSpecified = plan.getClusterId();
-            s_logger.debug("Searching resources only under specified Cluster: " + clusterIdSpecified);
+            logger.debug("Searching resources only under specified Cluster: " + clusterIdSpecified);
             ClusterVO cluster = clusterDao.findById(plan.getClusterId());
             if (cluster != null) {
                 if (avoid.shouldAvoid(cluster)) {
-                    s_logger.debug("The specified cluster is in avoid set, returning.");
+                    logger.debug("The specified cluster is in avoid set, returning.");
                 } else {
                     clusterList.add(clusterIdSpecified);
                     removeClustersCrossingThreshold(clusterList, avoid, vmProfile, plan);
                 }
             } else {
-                s_logger.debug("The specified cluster cannot be found, returning.");
+                logger.debug("The specified cluster cannot be found, returning.");
                 avoid.addCluster(plan.getClusterId());
                 return null;
             }
         } else if (plan.getPodId() != null) {
             //consider clusters under this pod only
             Long podIdSpecified = plan.getPodId();
-            s_logger.debug("Searching resources only under specified Pod: " + podIdSpecified);
+            logger.debug("Searching resources only under specified Pod: " + podIdSpecified);
 
             HostPodVO pod = podDao.findById(podIdSpecified);
             if (pod != null) {
                 if (avoid.shouldAvoid(pod)) {
-                    s_logger.debug("The specified pod is in avoid set, returning.");
+                    logger.debug("The specified pod is in avoid set, returning.");
                 } else {
                     clusterList = scanClustersForDestinationInZoneOrPod(podIdSpecified, false, vmProfile, plan, avoid);
                     if (clusterList == null) {
@@ -173,12 +171,12 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
                     }
                 }
             } else {
-                s_logger.debug("The specified Pod cannot be found, returning.");
+                logger.debug("The specified Pod cannot be found, returning.");
                 avoid.addPod(plan.getPodId());
                 return null;
             }
         } else {
-            s_logger.debug("Searching all possible resources under this Zone: " + plan.getDataCenterId());
+            logger.debug("Searching all possible resources under this Zone: " + plan.getDataCenterId());
 
             boolean applyAllocationAtPods = Boolean.parseBoolean(configDao.getValue(Config.ApplyAllocationAlgorithmToPods.key()));
             if (applyAllocationAtPods) {
@@ -257,14 +255,14 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
 
         if (!podsWithCapacity.isEmpty()) {
             if (avoid.getPodsToAvoid() != null) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Removing from the podId list these pods from avoid set: " + avoid.getPodsToAvoid());
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Removing from the podId list these pods from avoid set: " + avoid.getPodsToAvoid());
                 }
                 podsWithCapacity.removeAll(avoid.getPodsToAvoid());
             }
         } else {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("No pods found having a host with enough capacity, returning.");
+            if (logger.isDebugEnabled()) {
+                logger.debug("No pods found having a host with enough capacity, returning.");
             }
             return null;
         }
@@ -273,8 +271,8 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
 
             prioritizedPodIds = reorderPods(podCapacityInfo, vmProfile, plan);
             if (prioritizedPodIds == null || prioritizedPodIds.isEmpty()) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("No Pods found for destination, returning.");
+                if (logger.isDebugEnabled()) {
+                    logger.debug("No Pods found for destination, returning.");
                 }
                 return null;
             }
@@ -282,7 +280,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
             List<Long> clusterList = new ArrayList<Long>();
             //loop over pods
             for (Long podId : prioritizedPodIds) {
-                s_logger.debug("Checking resources under Pod: " + podId);
+                logger.debug("Checking resources under Pod: " + podId);
                 List<Long> clustersUnderPod = scanClustersForDestinationInZoneOrPod(podId, false, vmProfile, plan, avoid);
                 if (clustersUnderPod != null) {
                     clusterList.addAll(clustersUnderPod);
@@ -290,8 +288,8 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
             }
             return clusterList;
         } else {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("No Pods found after removing disabled pods and pods in avoid list, returning.");
+            if (logger.isDebugEnabled()) {
+                logger.debug("No Pods found after removing disabled pods and pods in avoid list, returning.");
             }
             return null;
         }
@@ -377,7 +375,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
                         "Cannot allocate cluster list %s for VM creation since their allocated percentage crosses the disable capacity threshold defined at each cluster at"
                         + " Global Settings Configuration [name: %s, value: %s] for capacity Type : %s, skipping these clusters", clustersCrossingThreshold.toString(),
                         configurationName, String.valueOf(configurationValue), CapacityVO.getCapacityName(capacity));
-                s_logger.warn(warnMessageForClusterReachedCapacityThreshold);
+                logger.warn(warnMessageForClusterReachedCapacityThreshold);
             }
 
         }
@@ -396,8 +394,8 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
         List<Long> prioritizedClusterIds = clusterCapacityInfo.first();
         if (!prioritizedClusterIds.isEmpty()) {
             if (avoid.getClustersToAvoid() != null) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Removing from the clusterId list these clusters from avoid set: " + avoid.getClustersToAvoid());
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Removing from the clusterId list these clusters from avoid set: " + avoid.getClustersToAvoid());
                 }
                 prioritizedClusterIds.removeAll(avoid.getClustersToAvoid());
             }
@@ -409,8 +407,8 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
             }
 
         } else {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("No clusters found having a host with enough capacity, returning.");
+            if (logger.isDebugEnabled()) {
+                logger.debug("No clusters found having a host with enough capacity, returning.");
             }
             return null;
         }
@@ -418,8 +416,8 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
             List<Long> clusterList = reorderClusters(id, isZone, clusterCapacityInfo, vmProfile, plan);
             return clusterList; //return checkClustersforDestination(clusterList, vmProfile, plan, avoid, dc);
         } else {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("No clusters found after removing disabled clusters and clusters in avoid list, returning.");
+            if (logger.isDebugEnabled()) {
+                logger.debug("No clusters found after removing disabled clusters and clusters in avoid list, returning.");
             }
             return null;
         }
@@ -455,8 +453,8 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
         //although an aggregate value may be false indicator that a cluster can host a vm, it will at the least eliminate those clusters which definitely cannot
 
         //we need clusters having enough cpu AND RAM to host this particular VM and order them by aggregate cluster capacity
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Listing clusters in order of aggregate capacity, that have (at least one host with) enough CPU and RAM capacity under this " +
+        if (logger.isDebugEnabled()) {
+            logger.debug("Listing clusters in order of aggregate capacity, that have (at least one host with) enough CPU and RAM capacity under this " +
                 (isZone ? "Zone: " : "Pod: ") + id);
         }
         String capacityTypeToOrder = configDao.getValue(Config.HostCapacityTypeToOrderClusters.key());
@@ -466,19 +464,19 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
         }
 
         List<Long> clusterIdswithEnoughCapacity = capacityDao.listClustersInZoneOrPodByHostCapacities(id, vmId, requiredCpu, requiredRam, capacityType, isZone);
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("ClusterId List having enough CPU and RAM capacity: " + clusterIdswithEnoughCapacity);
+        if (logger.isTraceEnabled()) {
+            logger.trace("ClusterId List having enough CPU and RAM capacity: " + clusterIdswithEnoughCapacity);
         }
         Pair<List<Long>, Map<Long, Double>> result = capacityDao.orderClustersByAggregateCapacity(id, vmId, capacityType, isZone);
         List<Long> clusterIdsOrderedByAggregateCapacity = result.first();
         //only keep the clusters that have enough capacity to host this VM
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("ClusterId List in order of aggregate capacity: " + clusterIdsOrderedByAggregateCapacity);
+        if (logger.isTraceEnabled()) {
+            logger.trace("ClusterId List in order of aggregate capacity: " + clusterIdsOrderedByAggregateCapacity);
         }
         clusterIdsOrderedByAggregateCapacity.retainAll(clusterIdswithEnoughCapacity);
 
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("ClusterId List having enough CPU and RAM capacity & in order of aggregate capacity: " + clusterIdsOrderedByAggregateCapacity);
+        if (logger.isTraceEnabled()) {
+            logger.trace("ClusterId List having enough CPU and RAM capacity & in order of aggregate capacity: " + clusterIdsOrderedByAggregateCapacity);
         }
 
         return result;
@@ -490,8 +488,8 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
         //although an aggregate value may be false indicator that a pod can host a vm, it will at the least eliminate those pods which definitely cannot
 
         //we need pods having enough cpu AND RAM to host this particular VM and order them by aggregate pod capacity
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Listing pods in order of aggregate capacity, that have (at least one host with) enough CPU and RAM capacity under this Zone: " + zoneId);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Listing pods in order of aggregate capacity, that have (at least one host with) enough CPU and RAM capacity under this Zone: " + zoneId);
         }
         String capacityTypeToOrder = configDao.getValue(Config.HostCapacityTypeToOrderClusters.key());
         short capacityType = Capacity.CAPACITY_TYPE_CPU;
@@ -500,19 +498,19 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
         }
 
         List<Long> podIdswithEnoughCapacity = capacityDao.listPodsByHostCapacities(zoneId, requiredCpu, requiredRam, capacityType);
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("PodId List having enough CPU and RAM capacity: " + podIdswithEnoughCapacity);
+        if (logger.isTraceEnabled()) {
+            logger.trace("PodId List having enough CPU and RAM capacity: " + podIdswithEnoughCapacity);
         }
         Pair<List<Long>, Map<Long, Double>> result = capacityDao.orderPodsByAggregateCapacity(zoneId, capacityType);
         List<Long> podIdsOrderedByAggregateCapacity = result.first();
         //only keep the clusters that have enough capacity to host this VM
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("PodId List in order of aggregate capacity: " + podIdsOrderedByAggregateCapacity);
+        if (logger.isTraceEnabled()) {
+            logger.trace("PodId List in order of aggregate capacity: " + podIdsOrderedByAggregateCapacity);
         }
         podIdsOrderedByAggregateCapacity.retainAll(podIdswithEnoughCapacity);
 
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("PodId List having enough CPU and RAM capacity & in order of aggregate capacity: " + podIdsOrderedByAggregateCapacity);
+        if (logger.isTraceEnabled()) {
+            logger.trace("PodId List having enough CPU and RAM capacity & in order of aggregate capacity: " + podIdsOrderedByAggregateCapacity);
         }
 
         return result;
@@ -525,14 +523,14 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
         matchingClusters.addAll(hostDao.findClustersThatMatchHostTagRule(hostTagOnOffering));
 
         if (matchingClusters.isEmpty()) {
-            s_logger.error(String.format("No suitable host found for the following compute offering tags [%s].", hostTagOnOffering));
+            logger.error(String.format("No suitable host found for the following compute offering tags [%s].", hostTagOnOffering));
             throw new CloudRuntimeException("No suitable host found.");
         }
 
         clusterListForVmAllocation.retainAll(matchingClusters);
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("The clusterId list for the given offering tag: " + clusterListForVmAllocation);
+        if (logger.isDebugEnabled()) {
+            logger.debug("The clusterId list for the given offering tag: " + clusterListForVmAllocation);
         }
 
     }
