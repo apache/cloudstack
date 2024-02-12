@@ -48,6 +48,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
+import com.cloud.configuration.Resource;
 import com.cloud.event.ActionEventUtils;
 import com.google.gson.Gson;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -81,6 +82,7 @@ import org.apache.cloudstack.framework.messagebus.MessageDispatcher;
 import org.apache.cloudstack.framework.messagebus.MessageHandler;
 import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -287,6 +289,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     private AgentManager _agentMgr;
     @Inject
     private VMInstanceDao _vmDao;
+    @Inject
+    private ReservationDao _reservationDao;
     @Inject
     private ServiceOfferingDao _offeringDao;
     @Inject
@@ -2243,6 +2247,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (e == Event.OperationSucceeded) {
                 vm.setLastHostId(vm.getHostId());
             }
+        }
+
+        if (e.equals(VirtualMachine.Event.DestroyRequested) || e.equals(VirtualMachine.Event.ExpungeOperation)) {
+            _reservationDao.setResourceId(Resource.ResourceType.user_vm, null);
+            _reservationDao.setResourceId(Resource.ResourceType.cpu, null);
+            _reservationDao.setResourceId(Resource.ResourceType.memory, null);
         }
         return _stateMachine.transitTo(vm, e, new Pair<>(vm.getHostId(), hostId), _vmDao);
     }

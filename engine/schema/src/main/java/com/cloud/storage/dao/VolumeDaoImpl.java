@@ -23,12 +23,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
 import com.cloud.configuration.Resource;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
+import org.apache.cloudstack.reservation.ReservationVO;
 import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
@@ -515,21 +517,23 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 
     @Override
     public Long countAllocatedVolumesForAccount(long accountId) {
-        List<Long> resourceIds = reservationDao.getResourceIds(accountId, Resource.ResourceType.volume);
+        List<ReservationVO> reservations = reservationDao.getReservationsForAccount(accountId, Resource.ResourceType.volume, null);
+        List<Long> reservedResourceIds = reservations.stream().filter(reservation -> reservation.getReservedAmount() > 0).map(ReservationVO::getResourceId).collect(Collectors.toList());
 
         SearchCriteria<Long> sc = CountByAccount.create();
         sc.setParameters("account", accountId);
         sc.setParameters("state", State.Destroy, State.Expunged);
         sc.setParameters("displayVolume", 1);
-        if (CollectionUtils.isNotEmpty(resourceIds)) {
-            sc.setParameters("idNIN", resourceIds.toArray());
+        if (CollectionUtils.isNotEmpty(reservedResourceIds)) {
+            sc.setParameters("idNIN", reservedResourceIds.toArray());
         }
         return customSearch(sc, null).get(0);
     }
 
     @Override
     public long primaryStorageUsedForAccount(long accountId, List<Long> virtualRouters) {
-        List<Long> resourceIds = reservationDao.getResourceIds(accountId, Resource.ResourceType.volume);
+        List<ReservationVO> reservations = reservationDao.getReservationsForAccount(accountId, Resource.ResourceType.volume, null);
+        List<Long> reservedResourceIds = reservations.stream().filter(reservation -> reservation.getReservedAmount() > 0).map(ReservationVO::getResourceId).collect(Collectors.toList());
 
         SearchCriteria<SumCount> sc;
         if (!virtualRouters.isEmpty()) {
@@ -542,8 +546,8 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         sc.setParameters("states", State.Allocated);
         sc.setParameters("NotCountStates", State.Destroy, State.Expunged);
         sc.setParameters("displayVolume", 1);
-        if (CollectionUtils.isNotEmpty(resourceIds)) {
-            sc.setParameters("idNIN", resourceIds.toArray());
+        if (CollectionUtils.isNotEmpty(reservedResourceIds)) {
+            sc.setParameters("idNIN", reservedResourceIds.toArray());
         }
         List<SumCount> storageSpace = customSearch(sc, null);
         if (storageSpace != null) {

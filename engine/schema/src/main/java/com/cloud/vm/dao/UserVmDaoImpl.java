@@ -26,6 +26,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
@@ -33,6 +34,7 @@ import javax.inject.Inject;
 import com.cloud.configuration.Resource;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
+import org.apache.cloudstack.reservation.ReservationVO;
 import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.commons.collections.CollectionUtils;
 
@@ -704,7 +706,8 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
 
     @Override
     public Long countAllocatedVMsForAccount(long accountId, boolean runningVMsonly) {
-        List<Long> resourceIds = reservationDao.getResourceIds(accountId, Resource.ResourceType.user_vm);
+        List<ReservationVO> reservations = reservationDao.getReservationsForAccount(accountId, Resource.ResourceType.user_vm, null);
+        List<Long> reservedResourceIds = reservations.stream().filter(reservation -> reservation.getReservedAmount() > 0).map(ReservationVO::getResourceId).collect(Collectors.toList());
 
         SearchCriteria<Long> sc = CountByAccount.create();
         sc.setParameters("account", accountId);
@@ -715,8 +718,8 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             sc.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging});
         sc.setParameters("displayVm", 1);
 
-        if (CollectionUtils.isNotEmpty(resourceIds)) {
-            sc.setParameters("idNIN", resourceIds.toArray());
+        if (CollectionUtils.isNotEmpty(reservedResourceIds)) {
+            sc.setParameters("idNIN", reservedResourceIds.toArray());
         }
 
         return customSearch(sc, null).get(0);

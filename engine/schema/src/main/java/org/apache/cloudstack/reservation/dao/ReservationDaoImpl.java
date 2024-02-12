@@ -45,6 +45,7 @@ public class ReservationDaoImpl extends GenericDaoBase<ReservationVO, Long> impl
 
     private final SearchBuilder<ReservationVO> listDomainAndTypeSearch;
     private final SearchBuilder<ReservationVO> listDomainAndTypeAndNoTagSearch;
+    private final SearchBuilder<ReservationVO> listResourceByAccountAndTypeAndNoTagSearch;
 
     public ReservationDaoImpl() {
 
@@ -52,7 +53,15 @@ public class ReservationDaoImpl extends GenericDaoBase<ReservationVO, Long> impl
         listResourceByAccountAndTypeSearch.and(ACCOUNT_ID, listResourceByAccountAndTypeSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         listResourceByAccountAndTypeSearch.and(RESOURCE_TYPE, listResourceByAccountAndTypeSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
         listResourceByAccountAndTypeSearch.and(RESOURCE_ID, listResourceByAccountAndTypeSearch.entity().getResourceId(), SearchCriteria.Op.NNULL);
+        listResourceByAccountAndTypeSearch.and(RESOURCE_TAG, listResourceByAccountAndTypeSearch.entity().getTag(), SearchCriteria.Op.EQ);
         listResourceByAccountAndTypeSearch.done();
+
+        listResourceByAccountAndTypeAndNoTagSearch = createSearchBuilder();
+        listResourceByAccountAndTypeAndNoTagSearch.and(ACCOUNT_ID, listResourceByAccountAndTypeAndNoTagSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        listResourceByAccountAndTypeAndNoTagSearch.and(RESOURCE_TYPE, listResourceByAccountAndTypeAndNoTagSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
+        listResourceByAccountAndTypeAndNoTagSearch.and(RESOURCE_ID, listResourceByAccountAndTypeAndNoTagSearch.entity().getResourceId(), SearchCriteria.Op.NNULL);
+        listResourceByAccountAndTypeAndNoTagSearch.and(RESOURCE_TAG, listResourceByAccountAndTypeAndNoTagSearch.entity().getTag(), SearchCriteria.Op.NULL);
+        listResourceByAccountAndTypeAndNoTagSearch.done();
 
         listAccountAndTypeSearch = createSearchBuilder();
         listAccountAndTypeSearch.and(ACCOUNT_ID, listAccountAndTypeSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
@@ -114,7 +123,7 @@ public class ReservationDaoImpl extends GenericDaoBase<ReservationVO, Long> impl
     }
 
     @Override
-    public void setResourceId(Resource.ResourceType type, long resourceId) {
+    public void setResourceId(Resource.ResourceType type, Long resourceId) {
         Object obj = CallContext.current().getContextParameter(String.format("%s-%s", ResourceReservation.class.getSimpleName(), type.getName()));
         if (obj instanceof List) {
             try {
@@ -141,10 +150,14 @@ public class ReservationDaoImpl extends GenericDaoBase<ReservationVO, Long> impl
     }
 
     @Override
-    public List<ReservationVO> getReservationsForAccount(long accountId, Resource.ResourceType type) {
-        SearchCriteria<ReservationVO> sc = listResourceByAccountAndTypeSearch.create();
+    public List<ReservationVO> getReservationsForAccount(long accountId, Resource.ResourceType type, String tag) {
+        SearchCriteria<ReservationVO> sc = tag == null ?
+                listResourceByAccountAndTypeAndNoTagSearch.create() : listResourceByAccountAndTypeSearch.create();
         sc.setParameters(ACCOUNT_ID, accountId);
         sc.setParameters(RESOURCE_TYPE, type);
+        if (tag != null) {
+            sc.setParameters(RESOURCE_TAG, tag);
+        }
         return listBy(sc);
     }
 }

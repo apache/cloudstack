@@ -1303,10 +1303,10 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
         List<UserVmJoinVO> vms = getVmsWithAccountAndTag(accountId, tag);
         Set<Long> vmIds = vms.stream().map(UserVmJoinVO::getId).collect(Collectors.toSet());
-        List<ReservationVO> vmReservations = reservationDao.getReservationsForAccount(accountId, ResourceType.user_vm);
+        List<ReservationVO> vmReservations = reservationDao.getReservationsForAccount(accountId, ResourceType.user_vm, tag);
         long reservedVMs = 0;
         for (ReservationVO reservation : vmReservations) {
-            if (vmIds.contains(reservation.getResourceId())) {
+            if ((vmIds.contains(reservation.getResourceId()) || reservation.getReservedAmount() < 0) || (!vmIds.contains(reservation.getResourceId()) && reservation.getReservedAmount() < 0)) {
                 reservedVMs += reservation.getReservedAmount();
             }
         }
@@ -1330,12 +1330,12 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         List<UserVmJoinVO> vms = getVmsWithAccountAndTag(accountId, tag);
         Set<Long> vmIds = vms.stream().map(UserVmJoinVO::getId).collect(Collectors.toSet());
 
-        List<ReservationVO> vmReservations = reservationDao.getReservationsForAccount(accountId, ResourceType.cpu);
+        List<ReservationVO> vmReservations = reservationDao.getReservationsForAccount(accountId, ResourceType.cpu, tag);
         for (UserVmJoinVO vm : vms) {
             cputotal += vm.getCpu();
         }
         for (ReservationVO reservation : vmReservations) {
-            if (vmIds.contains(reservation.getResourceId())) {
+            if ((vmIds.contains(reservation.getResourceId()) || reservation.getReservedAmount() < 0) || (!vmIds.contains(reservation.getResourceId()) && reservation.getReservedAmount() < 0)) {
                 cputotal -= reservation.getReservedAmount();
             }
         }
@@ -1349,12 +1349,12 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         long memory = 0;
         List<UserVmJoinVO> vms = getVmsWithAccountAndTag(accountId, tag);
         Set<Long> vmIds = vms.stream().map(UserVmJoinVO::getId).collect(Collectors.toSet());
-        List<ReservationVO> vmReservations = reservationDao.getReservationsForAccount(accountId, ResourceType.memory);
+        List<ReservationVO> vmReservations = reservationDao.getReservationsForAccount(accountId, ResourceType.memory, tag);
         for (UserVmJoinVO vm : vms) {
             memory += vm.getRamSize();
         }
         for (ReservationVO reservation : vmReservations) {
-            if (vmIds.contains(reservation.getResourceId())) {
+            if ((vmIds.contains(reservation.getResourceId()) || reservation.getReservedAmount() < 0) || (!vmIds.contains(reservation.getResourceId()) && reservation.getReservedAmount() < 0)) {
                 memory -= reservation.getReservedAmount();
             }
         }
@@ -1365,12 +1365,12 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         long cputotal = 0;
         List<UserVmJoinVO> userVms = getVmsWithAccount(accountId);
         Set<Long> vmIds = userVms.stream().map(UserVmJoinVO::getId).collect(Collectors.toSet());
-        List<ReservationVO> vmReservations = reservationDao.getReservationsForAccount(accountId, ResourceType.cpu);
+        List<ReservationVO> vmReservations = reservationDao.getReservationsForAccount(accountId, ResourceType.cpu, null);
         for (UserVmJoinVO vm : userVms) {
             cputotal += vm.getCpu();
         }
         for (ReservationVO reservation : vmReservations) {
-            if (vmIds.contains(reservation.getResourceId())) {
+            if ((vmIds.contains(reservation.getResourceId()) && reservation.getReservedAmount() > 0) || (!vmIds.contains(reservation.getResourceId()) && reservation.getReservedAmount() < 0)) {
                 cputotal -= reservation.getReservedAmount();
             }
         }
@@ -1381,12 +1381,12 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         long ramtotal = 0;
         List<UserVmJoinVO> userVms = getVmsWithAccount(accountId);
         Set<Long> vmIds = userVms.stream().map(UserVmJoinVO::getId).collect(Collectors.toSet());
-        List<ReservationVO> vmReservations = reservationDao.getReservationsForAccount(accountId, ResourceType.memory);
+        List<ReservationVO> vmReservations = reservationDao.getReservationsForAccount(accountId, ResourceType.memory, null);
         for (UserVmJoinVO vm : userVms) {
             ramtotal += vm.getRamSize();
         }
         for (ReservationVO reservation : vmReservations) {
-            if (vmIds.contains(reservation.getResourceId())) {
+            if ((vmIds.contains(reservation.getResourceId()) && reservation.getReservedAmount() > 0) || (!vmIds.contains(reservation.getResourceId()) && reservation.getReservedAmount() < 0)) {
                 ramtotal -= reservation.getReservedAmount();
             }
         }

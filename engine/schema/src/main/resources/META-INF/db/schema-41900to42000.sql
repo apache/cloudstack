@@ -28,3 +28,10 @@ DROP INDEX `i_resource_count__type_accountId`,
 DROP INDEX `i_resource_count__type_domaintId`,
 ADD UNIQUE INDEX `i_resource_count__type_tag_accountId` (`type`,`tag`,`account_id`),
 ADD UNIQUE INDEX `i_resource_count__type_tag_domaintId` (`type`,`tag`,`domain_id`);
+
+
+ALTER TABLE `cloud`.`resource_reservation`
+    ADD COLUMN `resource_id` bigint unsigned NULL;
+
+ALTER TABLE `cloud`.`resource_reservation`
+    MODIFY COLUMN `amount` bigint NOT NULL;

@@ -61,8 +61,8 @@ public class ReservationVO implements ResourceReservation {
     }
 
     public ReservationVO(Long accountId, Long domainId, Resource.ResourceType resourceType, String tag, Long delta) {
-        if (delta == null || delta <= 0) {
-            throw new CloudRuntimeException("resource reservations can not be made for no resources");
+        if (delta == null) {
+            throw new CloudRuntimeException("resource reservations can not be made for null resources");
         }
         this.accountId = accountId;
         this.domainId = domainId;
