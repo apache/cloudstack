@@ -276,27 +276,35 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         }
 
         final DevelopersApi api = getLinstorAPI(pool);
+        String rscName;
         try
         {
-            final String rscName = getLinstorRscName(volumePath);
+            rscName = getLinstorRscName(volumePath);
 
             ResourceMakeAvailable rma = new ResourceMakeAvailable();
             ApiCallRcList answers = api.resourceMakeAvailableOnNode(rscName, localNodeName, rma);
             checkLinstorAnswersThrow(answers);
 
+        } catch (ApiException apiEx) {
+            logger.error(apiEx);
+            throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
+        }
+
+        try
+        {
             // allow 2 primaries for live migration, should be removed by disconnect on the other end
             ResourceDefinitionModify rdm = new ResourceDefinitionModify();
             Properties props = new Properties();
             props.put("DrbdOptions/Net/allow-two-primaries", "yes");
             rdm.setOverrideProps(props);
-            answers = api.resourceDefinitionModify(rscName, rdm);
+            ApiCallRcList answers = api.resourceDefinitionModify(rscName, rdm);
             if (answers.hasError()) {
                 logger.error("Unable to set 'allow-two-primaries' on " + rscName);
-                throw new CloudRuntimeException(answers.get(0).getMessage());
+                // do not fail here as adding allow-two-primaries property is only a problem while live migrating
             }
         } catch (ApiException apiEx) {
             logger.error(apiEx);
-            throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
+            // do not fail here as adding allow-two-primaries property is only a problem while live migrating
         }
         return true;
     }
@@ -358,21 +366,22 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
                     ResourceDefinitionModify rdm = new ResourceDefinitionModify();
                     rdm.deleteProps(Collections.singletonList("DrbdOptions/Net/allow-two-primaries"));
                     ApiCallRcList answers = api.resourceDefinitionModify(rsc.get().getName(), rdm);
-                    if (answers.hasError())
-                    {
-                        logger.error("Failed to remove 'allow-two-primaries' on " + rsc.get().getName());
-                        throw new CloudRuntimeException(answers.get(0).getMessage());
+                    if (answers.hasError()) {
+                        logger.error(
+                                String.format("Failed to remove 'allow-two-primaries' on %s: %s",
+                                        rsc.get().getName(), LinstorUtil.getBestErrorMessage(answers)));
+                        // do not fail here as removing allow-two-primaries property isn't fatal
                     }
 
                     return true;
                 }
                 logger.warn("Linstor: Couldn't find resource for this path: " + localPath);
             } catch (ApiException apiEx) {
-                logger.error(apiEx);
-                throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
+                logger.error(apiEx.getBestMessage());
+                // do not fail here as removing allow-two-primaries property isn't fatal
             }
         }
-        return false;
+        return true;
     }
 
     @Override
