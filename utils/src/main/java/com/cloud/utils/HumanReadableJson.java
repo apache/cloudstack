@@ -23,7 +23,8 @@ import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -32,7 +33,7 @@ import com.google.gson.JsonParser;
 
 public class HumanReadableJson {
 
-    static final Logger LOGGER = Logger.getLogger(HumanReadableJson.class);
+    static final Logger LOGGER = LogManager.getLogger(HumanReadableJson.class);
 
     private boolean changeValue;
     private StringBuilder output = new StringBuilder();

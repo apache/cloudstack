@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.LibvirtException;
@@ -40,7 +39,6 @@ import com.cloud.vm.VirtualMachine;
 @ResourceWrapper(handles =  RestoreVMSnapshotCommand.class)
 public final class LibvirtRestoreVMSnapshotCommandWrapper extends CommandWrapper<RestoreVMSnapshotCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtRestoreVMSnapshotCommandWrapper.class);
 
     @Override
     public Answer execute(final RestoreVMSnapshotCommand cmd, final LibvirtComputingResource libvirtComputingResource) {
@@ -65,7 +63,7 @@ public final class LibvirtRestoreVMSnapshotCommandWrapper extends CommandWrapper
             for (VMSnapshotTO snapshot: snapshots) {
                 VMSnapshotTO parent = snapshotAndParents.get(snapshot.getId());
                 String vmSnapshotXML = libvirtUtilitiesHelper.generateVMSnapshotXML(snapshot, parent, xmlDesc);
-                s_logger.debug("Restoring vm snapshot " + snapshot.getSnapshotName() + " on " + vmName + " with XML:\n " + vmSnapshotXML);
+                logger.debug("Restoring vm snapshot " + snapshot.getSnapshotName() + " on " + vmName + " with XML:\n " + vmSnapshotXML);
                 try {
                     int flags = 1; // VIR_DOMAIN_SNAPSHOT_CREATE_REDEFINE = 1
                     if (snapshot.getCurrent()) {
@@ -73,7 +71,7 @@ public final class LibvirtRestoreVMSnapshotCommandWrapper extends CommandWrapper
                     }
                     dm.snapshotCreateXML(vmSnapshotXML, flags);
                 } catch (LibvirtException e) {
-                    s_logger.debug("Failed to restore vm snapshot " + snapshot.getSnapshotName() + " on " + vmName);
+                    logger.debug("Failed to restore vm snapshot " + snapshot.getSnapshotName() + " on " + vmName);
                     return new RestoreVMSnapshotAnswer(cmd, false, e.toString());
                 }
             }
@@ -81,14 +79,14 @@ public final class LibvirtRestoreVMSnapshotCommandWrapper extends CommandWrapper
             return new RestoreVMSnapshotAnswer(cmd, listVolumeTo, vmState);
         } catch (LibvirtException e) {
             String msg = " Restore snapshot failed due to " + e.toString();
-            s_logger.warn(msg, e);
+            logger.warn(msg, e);
             return new RestoreVMSnapshotAnswer(cmd, false, msg);
         } finally {
             if (dm != null) {
                 try {
                     dm.free();
                 } catch (LibvirtException l) {
-                    s_logger.trace("Ignoring libvirt error.", l);
+                    logger.trace("Ignoring libvirt error.", l);
                 };
             }
         }

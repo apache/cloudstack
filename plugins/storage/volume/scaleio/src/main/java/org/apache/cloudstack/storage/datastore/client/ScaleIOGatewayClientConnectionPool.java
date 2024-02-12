@@ -23,14 +23,15 @@ import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.storage.StorageManager;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.google.common.base.Preconditions;
 
 public class ScaleIOGatewayClientConnectionPool {
-    private static final Logger LOGGER = Logger.getLogger(ScaleIOGatewayClientConnectionPool.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private ConcurrentHashMap<Long, ScaleIOGatewayClient> gatewayClients;
 
@@ -66,7 +67,7 @@ public class ScaleIOGatewayClientConnectionPool {
 
                 client = new ScaleIOGatewayClientImpl(url, username, password, false, clientTimeout, clientMaxConnections);
                 gatewayClients.put(storagePoolId, client);
-                LOGGER.debug("Added gateway client for the storage pool: " + storagePoolId);
+                logger.debug("Added gateway client for the storage pool: " + storagePoolId);
             }
         }
 
@@ -82,7 +83,7 @@ public class ScaleIOGatewayClientConnectionPool {
         }
 
         if (client != null) {
-            LOGGER.debug("Removed gateway client for the storage pool: " + storagePoolId);
+            logger.debug("Removed gateway client for the storage pool: " + storagePoolId);
             return true;
         }
 

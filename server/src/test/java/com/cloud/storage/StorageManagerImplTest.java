@@ -408,7 +408,7 @@ public class StorageManagerImplTest {
         VsphereStoragePolicyVO policy = Mockito.mock(VsphereStoragePolicyVO.class);
         Mockito.when(policy.getPolicyId()).thenReturn("some");
         Mockito.when(vsphereStoragePolicyDao.findById(Mockito.anyLong()))
-                .thenReturn(Mockito.mock(VsphereStoragePolicyVO.class));
+                .thenReturn(policy);
         Mockito.doReturn(new ArrayList<>(List.of(1L, 2L)))
                 .when(storageManagerImpl).getUpHostsInPool(Mockito.anyLong());
         Mockito.when(hvGuruMgr.getGuruProcessedCommandTargetHost(Mockito.anyLong(),
@@ -436,7 +436,7 @@ public class StorageManagerImplTest {
         VsphereStoragePolicyVO policy = Mockito.mock(VsphereStoragePolicyVO.class);
         Mockito.when(policy.getPolicyId()).thenReturn("some");
         Mockito.when(vsphereStoragePolicyDao.findById(Mockito.anyLong()))
-                .thenReturn(Mockito.mock(VsphereStoragePolicyVO.class));
+                .thenReturn(policy);
         Mockito.doReturn(new ArrayList<>(List.of(1L, 2L))).when(storageManagerImpl).getUpHostsInPool(Mockito.anyLong());
         Mockito.when(hvGuruMgr.getGuruProcessedCommandTargetHost(Mockito.anyLong(),
                 Mockito.any(CheckDataStoreStoragePolicyComplainceCommand.class))).thenReturn(1L);

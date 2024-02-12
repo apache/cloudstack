@@ -26,7 +26,6 @@ import java.util.TimeZone;
 
 
 import com.cloud.exception.CloudException;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.usage.UsageIPAddressVO;
@@ -36,7 +35,6 @@ import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 public class UsageIPAddressDaoImpl extends GenericDaoBase<UsageIPAddressVO, Long> implements UsageIPAddressDao {
-    public static final Logger s_logger = Logger.getLogger(UsageIPAddressDaoImpl.class.getName());
 
     protected static final String UPDATE_RELEASED = "UPDATE usage_ip_address SET released = ? WHERE account_id = ? AND public_ip_address = ? and released IS NULL";
     protected static final String GET_USAGE_RECORDS_BY_ACCOUNT =
@@ -79,7 +77,7 @@ public class UsageIPAddressDaoImpl extends GenericDaoBase<UsageIPAddressVO, Long
             txn.commit();
         } catch (Exception e) {
             txn.rollback();
-            s_logger.error("Error updating usageIPAddressVO:"+e.getMessage(), e);
+            logger.error("Error updating usageIPAddressVO:"+e.getMessage(), e);
         } finally {
             txn.close();
         }
@@ -145,7 +143,7 @@ public class UsageIPAddressDaoImpl extends GenericDaoBase<UsageIPAddressVO, Long
             }
         } catch (Exception e) {
             txn.rollback();
-            s_logger.warn("Error getting usage records", e);
+            logger.warn("Error getting usage records", e);
         } finally {
             txn.close();
         }

@@ -19,7 +19,8 @@ package org.apache.cloudstack.hypervisor.xenserver;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.exception.InvalidParameterValueException;
@@ -29,7 +30,7 @@ import com.xensource.xenapi.Types;
 import com.xensource.xenapi.VM;
 
 public class ExtraConfigurationUtility {
-    private static final Logger LOG = Logger.getLogger(ExtraConfigurationUtility.class);
+    protected static Logger LOGGER = LogManager.getLogger(ExtraConfigurationUtility.class);
 
     public static void setExtraConfigurationToVm(Connection conn, VM.Record vmr, VM vm, Map<String, String> extraConfig) {
         Map<String, Object> recordMap = vmr.toMap();
@@ -63,7 +64,7 @@ public class ExtraConfigurationUtility {
         String keyName = paramKey.substring(i + 1);
 
         if (!isValidOperation(recordMap, actualParam)) {
-            LOG.error("Unsupported extra configuration has been passed " + actualParam);
+            LOGGER.error("Unsupported extra configuration has been passed " + actualParam);
             throw new InvalidParameterValueException("Unsupported extra configuration option has been passed: " + actualParam);
         }
 
@@ -86,17 +87,17 @@ public class ExtraConfigurationUtility {
                     break;
                 default:
                     String msg = String.format("Passed configuration %s is not supported", paramKey);
-                    LOG.warn(msg);
+                    LOGGER.warn(msg);
             }
         } catch (XmlRpcException | Types.XenAPIException e) {
-            LOG.error("Exception caught while setting VM configuration. exception: " + e.getMessage());
+            LOGGER.error("Exception caught while setting VM configuration. exception: " + e.getMessage());
             throw new CloudRuntimeException("Exception caught while setting VM configuration", e);
         }
     }
 
     private static void applyConfigWithKeyValue(Connection conn, VM vm, Map<String, Object> recordMap, String paramKey, String paramValue) {
         if (!isValidOperation(recordMap, paramKey)) {
-            LOG.error("Unsupported extra configuration has been passed: " + paramKey);
+            LOGGER.error("Unsupported extra configuration has been passed: " + paramKey);
             throw new InvalidParameterValueException("Unsupported extra configuration parameter key has been passed: " + paramKey);
         }
 
@@ -161,10 +162,10 @@ public class ExtraConfigurationUtility {
                     break;
                 default:
                     String anotherMessage = String.format("Passed configuration %s is not supported", paramKey);
-                    LOG.error(anotherMessage);
+                    LOGGER.error(anotherMessage);
             }
         } catch (XmlRpcException | Types.XenAPIException e) {
-            LOG.error("Exception caught while setting VM configuration, exception: " + e.getMessage());
+            LOGGER.error("Exception caught while setting VM configuration, exception: " + e.getMessage());
             throw new CloudRuntimeException("Exception caught while setting VM configuration: ", e);
         }
     }

@@ -21,7 +21,8 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.trilead.ssh2.ChannelCondition;
 import com.trilead.ssh2.Connection;
@@ -30,7 +31,7 @@ import com.trilead.ssh2.Session;
 public class WgetTest {
 
     public static final int MAX_RETRY_LINUX = 1;
-    public static final Logger s_logger = Logger.getLogger(WgetTest.class.getName());
+    protected Logger logger = LogManager.getLogger(getClass());
     public static String host = "";
     public static String password = "rs-ccb35ea5";
 
@@ -55,33 +56,33 @@ public class WgetTest {
 
         int i = 0;
         if (host == null || host.equals("")) {
-            s_logger.info("Did not receive a host back from test, ignoring ssh test");
+            logger.info("Did not receive a host back from test, ignoring ssh test");
             System.exit(2);
         }
 
         if (password == null) {
-            s_logger.info("Did not receive a password back from test, ignoring ssh test");
+            logger.info("Did not receive a password back from test, ignoring ssh test");
             System.exit(2);
         }
         int retry = 0;
 
         try {
             if (retry > 0) {
-                s_logger.info("Retry attempt : " + retry + " ...sleeping 120 seconds before next attempt");
+                logger.info("Retry attempt : " + retry + " ...sleeping 120 seconds before next attempt");
                 Thread.sleep(120000);
             }
 
-            s_logger.info("Attempting to SSH into linux host " + host + " with retry attempt: " + retry);
+            logger.info("Attempting to SSH into linux host " + host + " with retry attempt: " + retry);
 
             Connection conn = new Connection(host);
             conn.connect(null, 60000, 60000);
 
-            s_logger.info("User + ssHed successfully into linux host " + host);
+            logger.info("User + ssHed successfully into linux host " + host);
 
             boolean isAuthenticated = conn.authenticateWithPassword("root", password);
 
             if (isAuthenticated == false) {
-                s_logger.info("Authentication failed for root with password" + password);
+                logger.info("Authentication failed for root with password" + password);
                 System.exit(2);
             }
 
@@ -105,7 +106,7 @@ public class WgetTest {
                     int conditions = sess.waitForCondition(ChannelCondition.STDOUT_DATA | ChannelCondition.STDERR_DATA | ChannelCondition.EOF, 120000);
 
                     if ((conditions & ChannelCondition.TIMEOUT) != 0) {
-                        s_logger.info("Timeout while waiting for data from peer.");
+                        logger.info("Timeout while waiting for data from peer.");
                         System.exit(2);
                     }
 
@@ -120,7 +121,7 @@ public class WgetTest {
                     success = true;
                     int len = stdout.read(buffer);
                     if (len > 0) // this check is somewhat paranoid
-                        s_logger.info(new String(buffer, 0, len));
+                        logger.info(new String(buffer, 0, len));
                 }
 
                 while (stderr.available() > 0) {
@@ -139,9 +140,9 @@ public class WgetTest {
             }
         } catch (Exception e) {
             retry++;
-            s_logger.error("SSH Linux Network test fail with error");
+            logger.error("SSH Linux Network test fail with error");
             if (retry == MAX_RETRY_LINUX) {
-                s_logger.error("Ssh test failed");
+                logger.error("Ssh test failed");
                 System.exit(2);
             }
         }

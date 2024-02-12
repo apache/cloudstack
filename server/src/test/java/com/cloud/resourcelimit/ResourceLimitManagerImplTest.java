@@ -26,7 +26,8 @@ import java.util.Map;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -69,9 +70,11 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vpc.MockResourceLimitManagerImpl;
 
+import junit.framework.TestCase;
+
 @RunWith(MockitoJUnitRunner.class)
-public class ResourceLimitManagerImplTest {
-    private static final Logger s_logger = Logger.getLogger(ResourceLimitManagerImplTest.class);
+public class ResourceLimitManagerImplTest extends TestCase {
+    private Logger logger = LogManager.getLogger(ResourceLimitManagerImplTest.class);
 
     MockResourceLimitManagerImpl _resourceLimitService = new MockResourceLimitManagerImpl();
 
@@ -115,7 +118,7 @@ public class ResourceLimitManagerImplTest {
             overrideDefaultConfigValue(ResourceLimitService.ResourceLimitHostTags, "_defaultValue", StringUtils.join(hostTags, ","));
             overrideDefaultConfigValue(ResourceLimitService.ResourceLimitStorageTags, "_defaultValue", StringUtils.join(storageTags, ","));
         } catch (IllegalAccessException | NoSuchFieldException e) {
-            s_logger.error("Failed to update configurations");
+            logger.error("Failed to update configurations");
         }
     }
 
@@ -125,11 +128,11 @@ public class ResourceLimitManagerImplTest {
 
     @Test
     public void testInjected() throws Exception {
-        s_logger.info("Starting test for Resource Limit manager");
+        logger.info("Starting test for Resource Limit manager");
         updateResourceCount();
         updateResourceLimit();
         //listResourceLimits();
-        s_logger.info("Resource Limit Manager: TEST PASSED");
+        logger.info("Resource Limit Manager: TEST PASSED");
     }
 
     protected void updateResourceCount() {

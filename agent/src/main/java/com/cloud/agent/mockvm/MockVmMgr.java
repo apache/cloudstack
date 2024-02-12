@@ -22,14 +22,15 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.State;
 
 public class MockVmMgr implements VmMgr {
-    private static final Logger s_logger = Logger.getLogger(MockVmMgr.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private static final int DEFAULT_DOM0_MEM_MB = 128;
     private static final Random randSeed = new Random();
@@ -56,14 +57,14 @@ public class MockVmMgr implements VmMgr {
     public String startVM(String vmName, String vnetId, String gateway, String dns, String privateIP, String privateMac, String privateMask, String publicIP,
         String publicMac, String publicMask, int cpuCount, int cpuUtilization, long ramSize, String localPath, String vncPassword) {
 
-        if (s_logger.isInfoEnabled()) {
+        if (logger.isInfoEnabled()) {
             StringBuffer sb = new StringBuffer();
             sb.append("Start VM. name: " + vmName + ", vnet: " + vnetId + ", dns: " + dns);
             sb.append(", privateIP: " + privateIP + ", privateMac: " + privateMac + ", privateMask: " + privateMask);
             sb.append(", publicIP: " + publicIP + ", publicMac: " + publicMac + ", publicMask: " + publicMask);
             sb.append(", cpu count: " + cpuCount + ", cpuUtilization: " + cpuUtilization + ", ram : " + ramSize);
             sb.append(", localPath: " + localPath);
-            s_logger.info(sb.toString());
+            logger.info(sb.toString());
         }
 
         synchronized (this) {
@@ -86,8 +87,8 @@ public class MockVmMgr implements VmMgr {
 
     @Override
     public String stopVM(String vmName, boolean force) {
-        if (s_logger.isInfoEnabled())
-            s_logger.info("Stop VM. name: " + vmName);
+        if (logger.isInfoEnabled())
+            logger.info("Stop VM. name: " + vmName);
 
         synchronized (this) {
             MockVm vm = vms.get(vmName);
@@ -102,8 +103,8 @@ public class MockVmMgr implements VmMgr {
 
     @Override
     public String rebootVM(String vmName) {
-        if (s_logger.isInfoEnabled())
-            s_logger.info("Reboot VM. name: " + vmName);
+        if (logger.isInfoEnabled())
+            logger.info("Reboot VM. name: " + vmName);
 
         synchronized (this) {
             MockVm vm = vms.get(vmName);
@@ -115,8 +116,8 @@ public class MockVmMgr implements VmMgr {
 
     @Override
     public boolean migrate(String vmName, String params) {
-        if (s_logger.isInfoEnabled())
-            s_logger.info("Migrate VM. name: " + vmName);
+        if (logger.isInfoEnabled())
+            logger.info("Migrate VM. name: " + vmName);
 
         synchronized (this) {
             MockVm vm = vms.get(vmName);
@@ -258,13 +259,13 @@ public class MockVmMgr implements VmMgr {
             vm = vms.get(vmName);
             if (vm == null) {
                 if (ramSize > getHostFreeMemory()) {
-                    s_logger.debug("host is out of memory");
+                    logger.debug("host is out of memory");
                     throw new CloudRuntimeException("Host is out of Memory");
                 }
 
                 int vncPort = allocVncPort();
                 if (vncPort < 0) {
-                    s_logger.debug("Unable to allocate VNC port");
+                    logger.debug("Unable to allocate VNC port");
                     throw new CloudRuntimeException("Unable to allocate vnc port");
                 }
 
