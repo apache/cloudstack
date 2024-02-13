@@ -18,21 +18,19 @@
 package org.apache.cloudstack.network.contrail.management;
 
 import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import org.aopalliance.intercept.MethodInterceptor;
+import org.aopalliance.intercept.MethodInvocation;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.events.EventBusException;
 import org.apache.cloudstack.framework.events.EventDistributor;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.stereotype.Component;
-
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.events.EventBus;
-import org.apache.cloudstack.framework.events.EventBusException;
-import org.aopalliance.intercept.MethodInterceptor;
-import org.aopalliance.intercept.MethodInvocation;
 
 import com.cloud.event.ActionEvent;
 import com.cloud.event.ActionEvents;
@@ -49,7 +47,6 @@ public class EventUtils {
     private static final Logger s_logger = Logger.getLogger(EventUtils.class);
 
     private static EventDistributor eventDistributor;
-    protected static  EventBus s_eventBus = null;
 
     public EventUtils() {
     }
@@ -66,7 +63,6 @@ public class EventUtils {
 
         try {
             setEventDistributor(ComponentContext.getComponent(EventDistributor.class));
-            s_eventBus = ComponentContext.getComponent(EventBus.class);
         } catch (NoSuchBeanDefinitionException nbe) {
              return; // no provider is configured to provide events bus, so just return
         }
