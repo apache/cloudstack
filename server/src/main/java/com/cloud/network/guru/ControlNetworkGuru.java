@@ -167,10 +167,9 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         assert nic.getTrafficType() == TrafficType.Control;
         HypervisorType hType = vm.getHypervisorType();
         if ( ( (hType == HypervisorType.VMware) || (hType == HypervisorType.Hyperv) )&& isRouterVm(vm)) {
-            // for now place this in the vmware specific part, but it miught be more generic and move up two or three lines
             if (!VirtualNetworkApplianceManager.RemoveControlIpOnStop.valueIn(vm.getVirtualMachine().getDataCenterId())) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(String.format("not releasing %s from %s with reservationId %s.", nic, vm, reservationId));
+                    s_logger.debug(String.format("not releasing %s from %s with reservationId %s, as systemvm.release.control.ip.on.stop is set to false for the data center.", nic, vm, reservationId));
                 }
                 return true;
             }
