@@ -70,12 +70,7 @@ public class QuotaEmailConfigurationDaoImpl extends GenericDaoBase<QuotaEmailCon
         SearchCriteria<QuotaEmailConfigurationVO> sc = searchBuilderFindByIds.create();
         sc.setParameters("account_id", accountId);
         sc.setParameters("email_template_id", emailTemplateId);
-        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<QuotaEmailConfigurationVO>() {
-            @Override
-            public QuotaEmailConfigurationVO doInTransaction(TransactionStatus status) {
-                return findOneBy(sc);
-            }
-        });
+        return Transaction.execute(TransactionLegacy.USAGE_DB, (TransactionCallback<QuotaEmailConfigurationVO>) status -> findOneBy(sc));
     }
 
     @Override
@@ -83,24 +78,14 @@ public class QuotaEmailConfigurationDaoImpl extends GenericDaoBase<QuotaEmailCon
         SearchCriteria<QuotaEmailConfigurationVO> sc = searchBuilderFindByIds.create();
         sc.setParameters("account_id", quotaEmailConfigurationVO.getAccountId());
         sc.setParameters("email_template_id", quotaEmailConfigurationVO.getEmailTemplateId());
-        Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallbackNoReturn() {
-            @Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
-                update(quotaEmailConfigurationVO, sc);
-            }
-        });
+        Transaction.execute(TransactionLegacy.USAGE_DB, (TransactionCallback<Integer>) status -> update(quotaEmailConfigurationVO, sc));
 
         return quotaEmailConfigurationVO;
     }
 
     @Override
     public void persistQuotaEmailConfiguration(QuotaEmailConfigurationVO quotaEmailConfigurationVO) {
-        Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallbackNoReturn() {
-            @Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
-                persist(quotaEmailConfigurationVO);
-            }
-        });
+        Transaction.execute(TransactionLegacy.USAGE_DB, (TransactionCallback<QuotaEmailConfigurationVO>) status -> persist(quotaEmailConfigurationVO));
     }
 
     @Override
@@ -108,12 +93,7 @@ public class QuotaEmailConfigurationDaoImpl extends GenericDaoBase<QuotaEmailCon
         SearchCriteria<QuotaEmailConfigurationVO> sc = searchBuilderFindByIds.create();
         sc.setParameters("account_id", accountId);
 
-        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<List<QuotaEmailConfigurationVO>>() {
-            @Override
-            public List<QuotaEmailConfigurationVO> doInTransaction(TransactionStatus status) {
-                return listBy(sc);
-            }
-        });
+        return Transaction.execute(TransactionLegacy.USAGE_DB, (TransactionCallback<List<QuotaEmailConfigurationVO>>) status -> listBy(sc));
     }
 
     @Override
@@ -122,11 +102,6 @@ public class QuotaEmailConfigurationDaoImpl extends GenericDaoBase<QuotaEmailCon
         sc.setParameters("account_id", accountId);
         sc.setJoinParameters("email_template_id", "template_name", quotaEmailTemplateType.toString());
 
-        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<QuotaEmailConfigurationVO>() {
-            @Override
-            public QuotaEmailConfigurationVO doInTransaction(TransactionStatus status) {
-                return findOneBy(sc);
-            }
-        });
+        return Transaction.execute(TransactionLegacy.USAGE_DB, (TransactionCallback<QuotaEmailConfigurationVO>) status -> findOneBy(sc));
     }
 }

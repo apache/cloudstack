@@ -670,6 +670,11 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             _quotaService.setMinBalance(cmd.getAccountId(), cmd.getMinBalance());
         }
 
+        QuotaEmailConfigurationVO configurationVO = getQuotaEmailConfigurationVo(cmd);
+        return new Pair<>(configurationVO, minBalance);
+    }
+
+    private QuotaEmailConfigurationVO getQuotaEmailConfigurationVo(QuotaConfigureEmailCmd cmd) {
         if (cmd.getTemplateName() != null) {
             List<QuotaEmailTemplatesVO> templateVO = _quotaEmailTemplateDao.listAllQuotaEmailTemplates(cmd.getTemplateName());
             if (templateVO.isEmpty()) {
@@ -681,13 +686,13 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             if (configurationVO == null) {
                 configurationVO = new QuotaEmailConfigurationVO(cmd.getAccountId(), templateId, cmd.getEnable());
                 quotaEmailConfigurationDao.persistQuotaEmailConfiguration(configurationVO);
-                return new Pair<>(configurationVO, minBalance);
+                return configurationVO;
             }
 
             configurationVO.setEnabled(cmd.getEnable());
-            return new Pair<>(quotaEmailConfigurationDao.updateQuotaEmailConfiguration(configurationVO), minBalance);
+            return quotaEmailConfigurationDao.updateQuotaEmailConfiguration(configurationVO);
         }
-        return new Pair<>(null, minBalance);
+        return null;
     }
 
     protected void validateQuotaConfigureEmailCmdParameters(QuotaConfigureEmailCmd cmd) {

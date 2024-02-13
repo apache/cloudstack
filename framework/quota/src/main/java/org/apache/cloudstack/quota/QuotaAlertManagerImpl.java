@@ -177,6 +177,10 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
             return;
         }
 
+        checkBalanceAndAddToEmailList(deferredQuotaEmailList, quotaAccount, account, accountBalance);
+    }
+
+    private void checkBalanceAndAddToEmailList(List<DeferredQuotaEmail> deferredQuotaEmailList, QuotaAccountVO quotaAccount, AccountVO account, BigDecimal accountBalance) {
         Date balanceDate = quotaAccount.getQuotaBalanceDate();
         Date alertDate = quotaAccount.getQuotaAlertDate();
         int lockable = quotaAccount.getQuotaEnforce();
