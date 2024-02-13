@@ -453,8 +453,8 @@ class CsIP:
                 ["", "", "-A NETWORK_STATS_%s -o %s ! -i eth0 -p tcp" % (self.dev, self.dev)])
             self.fw.append(
                 ["", "", "-A NETWORK_STATS_%s -i %s ! -o eth0 -p tcp" % (self.dev, self.dev)])
-            self.fw.append(["nat", "",
-                            "-A POSTROUTING -o %s -j SNAT --to-source %s" % (self.dev, self.cl.get_eth2_ip())])
+            self.fw.append(
+                ["nat", "", "-A POSTROUTING -o %s -j SNAT --to-source %s" % (self.dev, self.cl.get_eth2_ip())])
             self.fw.append(["mangle", "",
                             "-A PREROUTING -i %s -m state --state NEW " % self.dev +
                             "-j CONNMARK --set-xmark %s/0xffffffff" % self.dnum])
@@ -695,6 +695,9 @@ class CsIP:
                     ["filter", 3, "-A FORWARD -s %s ! -d %s -j ACCEPT" % (vpccidr, vpccidr)])
                 self.fw.append(
                     ["nat", "", "-A POSTROUTING -j SNAT -o %s --to-source %s" % (self.dev, self.address['public_ip'])])
+            elif cmdline.get_source_nat_ip() and not self.is_private_gateway():
+                self.fw.append(
+                    ["nat", "", "-A POSTROUTING -j SNAT -o %s --to-source %s" % (self.dev, cmdline.get_source_nat_ip())])
 
     def list(self):
         self.iplist = {}
