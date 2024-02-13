@@ -34,7 +34,6 @@ import org.apache.cloudstack.api.AddBaremetalPxeCmd;
 import org.apache.cloudstack.api.AddBaremetalPxePingServerCmd;
 import org.apache.cloudstack.api.ListBaremetalPxeServersCmd;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -71,7 +70,6 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 
 public class BaremetalPxeManagerImpl extends ManagerBase implements BaremetalPxeManager, ResourceStateAdapter {
-    private static final org.apache.log4j.Logger s_logger = Logger.getLogger(BaremetalPxeManagerImpl.class);
     @Inject
     DataCenterDao _dcDao;
     @Inject
@@ -233,13 +231,13 @@ public class BaremetalPxeManagerImpl extends ManagerBase implements BaremetalPxe
         try {
             Answer ans = _agentMgr.send(pxeVo.getHostId(), cmd);
             if (!ans.getResult()) {
-                s_logger.debug(String.format("Add userdata to vm:%s failed because %s", vm.getInstanceName(), ans.getDetails()));
+                logger.debug(String.format("Add userdata to vm:%s failed because %s", vm.getInstanceName(), ans.getDetails()));
                 return false;
             } else {
                 return true;
             }
         } catch (Exception e) {
-            s_logger.debug(String.format("Add userdata to vm:%s failed", vm.getInstanceName()), e);
+            logger.debug(String.format("Add userdata to vm:%s failed", vm.getInstanceName()), e);
             return false;
         }
     }

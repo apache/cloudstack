@@ -38,7 +38,8 @@ import org.apache.cloudstack.storage.datastore.util.StorPoolUtil;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpApiResponse;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpConnectionDesc;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.host.HostVO;
@@ -61,7 +62,7 @@ import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class StorPoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycle {
-    private static final Logger log = Logger.getLogger(StorPoolPrimaryDataStoreLifeCycle.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
     protected PrimaryDataStoreHelper dataStoreHelper;
@@ -92,7 +93,7 @@ public class StorPoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCy
         }
         StorPoolUtil.spLog("");
 
-        log.debug("initialize");
+        logger.debug("initialize");
 
         String name = (String)dsInfos.get("name");
         String providerName = (String)dsInfos.get("providerName");
@@ -186,18 +187,18 @@ public class StorPoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCy
         }
         StorPoolUtil.spLog("");
 
-        log.debug("updateStoragePool");
+        logger.debug("updateStoragePool");
         return;
     }
     @Override
     public boolean attachHost(DataStore store, HostScope scope, StoragePoolInfo existingInfo) {
-        log.debug("attachHost");
+        logger.debug("attachHost");
         return true;
     }
 
     @Override
     public boolean attachCluster(DataStore store, ClusterScope scope) {
-        log.debug("attachCluster");
+        logger.debug("attachCluster");
         if (!scope.getScopeType().equals(ScopeType.ZONE)) {
             throw new UnsupportedOperationException("Only Zone-Wide scope is supported!");
         }
@@ -206,7 +207,7 @@ public class StorPoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCy
 
     @Override
     public boolean attachZone(DataStore dataStore, ZoneScope scope, HypervisorType hypervisorType) {
-        log.debug("attachZone");
+        logger.debug("attachZone");
 
         if (hypervisorType != HypervisorType.KVM) {
             throw new UnsupportedOperationException("Only KVM hypervisors supported!");
@@ -216,7 +217,7 @@ public class StorPoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCy
             try {
                 storageMgr.connectHostToSharedPool(host.getId(), dataStore.getId());
             } catch (Exception e) {
-                log.warn(String.format("Unable to establish a connection between host %s and pool %s due to %s", host, dataStore, e));
+                logger.warn(String.format("Unable to establish a connection between host %s and pool %s due to %s", host, dataStore, e));
             }
         }
         dataStoreHelper.attachZone(dataStore, hypervisorType);
@@ -225,7 +226,7 @@ public class StorPoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCy
 
     @Override
     public boolean maintain(DataStore dataStore) {
-        log.debug("maintain");
+        logger.debug("maintain");
 
         storagePoolAutmation.maintain(dataStore);
         dataStoreHelper.maintain(dataStore);
@@ -234,7 +235,7 @@ public class StorPoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCy
 
     @Override
     public boolean cancelMaintain(DataStore store) {
-        log.debug("cancelMaintain");
+        logger.debug("cancelMaintain");
 
         dataStoreHelper.cancelMaintain(store);
         storagePoolAutmation.cancelMaintain(store);
@@ -243,7 +244,7 @@ public class StorPoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCy
 
     @Override
     public boolean deleteDataStore(DataStore store) {
-        log.debug("deleteDataStore");
+        logger.debug("deleteDataStore");
         long storagePoolId = store.getId();
 
         List<SnapshotVO> lstSnapshots = snapshotDao.listAll();
@@ -303,19 +304,19 @@ public class StorPoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCy
 
     @Override
     public boolean migrateToObjectStore(DataStore store) {
-        log.debug("migrateToObjectStore");
+        logger.debug("migrateToObjectStore");
         return false;
     }
 
     @Override
     public void enableStoragePool(DataStore dataStore) {
-        log.debug("enableStoragePool");
+        logger.debug("enableStoragePool");
         dataStoreHelper.enable(dataStore);
     }
 
     @Override
     public void disableStoragePool(DataStore dataStore) {
-        log.debug("disableStoragePool");
+        logger.debug("disableStoragePool");
         dataStoreHelper.disable(dataStore);
     }
 }

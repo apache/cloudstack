@@ -40,7 +40,8 @@ import org.apache.cloudstack.storage.datastore.util.StorPoolUtil;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpApiResponse;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpConnectionDesc;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import com.cloud.exception.InvalidParameterValueException;
@@ -60,7 +61,7 @@ import com.cloud.utils.fsm.NoTransitionException;
 
 @Component
 public class StorPoolSnapshotStrategy implements SnapshotStrategy {
-    private static final Logger log = Logger.getLogger(StorPoolSnapshotStrategy.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
     private SnapshotDao _snapshotDao;
@@ -90,11 +91,11 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
             snapshotObj.processEvent(Snapshot.Event.BackupToSecondary);
             snapshotObj.processEvent(Snapshot.Event.OperationSucceeded);
         } catch (NoTransitionException ex) {
-            log.debug("Failed to change state: " + ex.toString());
+            logger.debug("Failed to change state: " + ex.toString());
             try {
                 snapshotObj.processEvent(Snapshot.Event.OperationFailed);
             } catch (NoTransitionException ex2) {
-                log.debug("Failed to change state: " + ex2.toString());
+                logger.debug("Failed to change state: " + ex2.toString());
             }
         }
         return snapshotInfo;
@@ -131,7 +132,7 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
 
     @Override
     public StrategyPriority canHandle(Snapshot snapshot, Long zoneId, SnapshotOperation op) {
-        log.debug(String.format("StorpoolSnapshotStrategy.canHandle: snapshot=%s, uuid=%s, op=%s", snapshot.getName(), snapshot.getUuid(), op));
+        logger.debug(String.format("StorpoolSnapshotStrategy.canHandle: snapshot=%s, uuid=%s, op=%s", snapshot.getName(), snapshot.getUuid(), op));
 
         if (op != SnapshotOperation.DELETE) {
             return StrategyPriority.CANT_HANDLE;
@@ -160,7 +161,7 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
     }
 
     private boolean deleteSnapshotChain(SnapshotInfo snapshot) {
-        log.debug("delete snapshot chain for snapshot: " + snapshot.getId());
+        logger.debug("delete snapshot chain for snapshot: " + snapshot.getId());
         final SnapshotInfo snapOnImage = snapshot;
         boolean result = false;
         boolean resultIsSet = false;
@@ -170,15 +171,15 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
                 SnapshotInfo child = snapshot.getChild();
 
                 if (child != null) {
-                    log.debug("the snapshot has child, can't delete it on the storage");
+                    logger.debug("the snapshot has child, can't delete it on the storage");
                     break;
                 }
-                log.debug("Snapshot: " + snapshot.getId() + " doesn't have children, so it's ok to delete it and its parents");
+                logger.debug("Snapshot: " + snapshot.getId() + " doesn't have children, so it's ok to delete it and its parents");
                 SnapshotInfo parent = snapshot.getParent();
                 boolean deleted = false;
                 if (parent != null) {
                     if (parent.getPath() != null && parent.getPath().equalsIgnoreCase(snapshot.getPath())) {
-                        log.debug("for empty delta snapshot, only mark it as destroyed in db");
+                        logger.debug("for empty delta snapshot, only mark it as destroyed in db");
                         snapshot.processEvent(Event.DestroyRequested);
                         snapshot.processEvent(Event.OperationSuccessed);
                         deleted = true;
@@ -195,7 +196,7 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
                             if (r) {
                                 List<SnapshotInfo> cacheSnaps = snapshotDataFactory.listSnapshotOnCache(snapshot.getId());
                                 for (SnapshotInfo cacheSnap : cacheSnaps) {
-                                    log.debug("Delete snapshot " + snapshot.getId() + " from image cache store: " + cacheSnap.getDataStore().getName());
+                                    logger.debug("Delete snapshot " + snapshot.getId() + " from image cache store: " + cacheSnap.getDataStore().getName());
                                     cacheSnap.delete();
                                 }
                             }
@@ -204,7 +205,7 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
                                 resultIsSet = true;
                             }
                         } catch (Exception e) {
-                            log.debug("Failed to delete snapshot on storage. ", e);
+                            logger.debug("Failed to delete snapshot on storage. ", e);
                         }
                     }
                 } else {
@@ -213,7 +214,7 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
                 snapshot = parent;
             }
         } catch (Exception e) {
-            log.debug("delete snapshot failed: ", e);
+            logger.debug("delete snapshot failed: ", e);
         }
         return result;
     }
@@ -235,7 +236,7 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
                 obj.processEvent(Snapshot.Event.DestroyRequested);
             }
         } catch (NoTransitionException e) {
-            log.debug("Failed to set the state to destroying: ", e);
+            logger.debug("Failed to set the state to destroying: ", e);
             return false;
         }
 
@@ -253,13 +254,13 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
                 }
             }
         } catch (Exception e) {
-            log.debug("Failed to delete snapshot: ", e);
+            logger.debug("Failed to delete snapshot: ", e);
             try {
                 if (areLastSnapshotRef) {
                     obj.processEvent(Snapshot.Event.OperationFailed);
                 }
             } catch (NoTransitionException e1) {
-                log.debug("Failed to change snapshot state: " + e.toString());
+                logger.debug("Failed to change snapshot state: " + e.toString());
             }
             return false;
         }

@@ -20,14 +20,15 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.Answer;
 
 public class SecurityGroupWorkTracker {
-    protected static final Logger s_logger = Logger.getLogger(SecurityGroupWorkTracker.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     protected AtomicLong _discardCount = new AtomicLong(0);
     AgentManager _agentMgr;
     Listener _answerListener;
@@ -55,7 +56,7 @@ public class SecurityGroupWorkTracker {
             if (currLength + 1 > _bufferLength) {
                 long discarded = _discardCount.incrementAndGet();
                 //drop it on the floor
-                s_logger.debug("SecurityGroupManager: dropping a message because there are more than " + currLength + " outstanding messages, total dropped=" + discarded);
+                logger.debug("SecurityGroupManager: dropping a message because there are more than " + currLength + " outstanding messages, total dropped=" + discarded);
                 return false;
             }
             _unackedMessages.put(agentId, ++currLength);

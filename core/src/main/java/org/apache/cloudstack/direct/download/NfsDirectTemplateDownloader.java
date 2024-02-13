@@ -80,7 +80,7 @@ public class NfsDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
             parseUrl();
             return true;
         } catch (CloudRuntimeException e) {
-            s_logger.error(String.format("Cannot check URL %s is reachable due to: %s", url, e.getMessage()), e);
+            logger.error(String.format("Cannot check URL %s is reachable due to: %s", url, e.getMessage()), e);
             return false;
         }
     }

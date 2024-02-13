@@ -22,7 +22,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.alert.AlertService;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenterVO;
@@ -38,7 +37,6 @@ import com.cloud.vm.dao.SecondaryStorageVmDao;
 @Component
 public class SecondaryStorageVmAlertAdapter extends AdapterBase implements AlertAdapter {
 
-    private static final Logger s_logger = Logger.getLogger(SecondaryStorageVmAlertAdapter.class);
 
     @Inject
     private AlertManager _alertMgr;
@@ -48,8 +46,8 @@ public class SecondaryStorageVmAlertAdapter extends AdapterBase implements Alert
     private SecondaryStorageVmDao _ssvmDao;
 
     public void onSSVMAlert(Object sender, SecStorageVmAlertEventArgs args) {
-        if (s_logger.isDebugEnabled())
-            s_logger.debug("received secondary storage vm alert");
+        if (logger.isDebugEnabled())
+            logger.debug("received secondary storage vm alert");
 
         DataCenterVO dc = _dcDao.findById(args.getZoneId());
         SecondaryStorageVmVO secStorageVm = args.getSecStorageVm();
@@ -79,15 +77,15 @@ public class SecondaryStorageVmAlertAdapter extends AdapterBase implements Alert
 
         switch (args.getType()) {
             case SecStorageVmAlertEventArgs.SSVM_CREATED:
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("New secondary storage vm created in " + zoneSecStorageVmPrivateAndPublicIp);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("New secondary storage vm created in " + zoneSecStorageVmPrivateAndPublicIp);
                 }
                 break;
 
             case SecStorageVmAlertEventArgs.SSVM_UP:
                 message = "Secondary Storage Vm is up in " + zoneSecStorageVmPrivateAndPublicIp;
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(message);
+                if (logger.isDebugEnabled()) {
+                    logger.debug(message);
                 }
 
                 _alertMgr.sendAlert(AlertService.AlertType.ALERT_TYPE_SSVM, args.getZoneId(), secStorageVmPodIdToDeployIn, message, "Secondary Storage Vm up " + zone);
@@ -95,8 +93,8 @@ public class SecondaryStorageVmAlertAdapter extends AdapterBase implements Alert
 
             case SecStorageVmAlertEventArgs.SSVM_DOWN:
                 message = "Secondary Storage Vm is down in " + zoneSecStorageVmPrivateAndPublicIp;
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(message);
+                if (logger.isDebugEnabled()) {
+                    logger.debug(message);
                 }
 
                 _alertMgr.sendAlert(AlertService.AlertType.ALERT_TYPE_SSVM, args.getZoneId(), secStorageVmPodIdToDeployIn, message, "Secondary Storage Vm down " + zone);
@@ -104,8 +102,8 @@ public class SecondaryStorageVmAlertAdapter extends AdapterBase implements Alert
 
             case SecStorageVmAlertEventArgs.SSVM_REBOOTED:
                 message = "Secondary Storage Vm rebooted in " + zoneSecStorageVmPrivateAndPublicIp;
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(message);
+                if (logger.isDebugEnabled()) {
+                    logger.debug(message);
                 }
 
                 _alertMgr.sendAlert(AlertService.AlertType.ALERT_TYPE_SSVM, args.getZoneId(), secStorageVmPodIdToDeployIn, message, "Secondary Storage Vm rebooted " + zone);
@@ -113,8 +111,8 @@ public class SecondaryStorageVmAlertAdapter extends AdapterBase implements Alert
 
             case SecStorageVmAlertEventArgs.SSVM_CREATE_FAILURE:
                 message = String.format("Secondary Storage Vm creation failure in zone [%s].", dc.getName());
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(message);
+                if (logger.isDebugEnabled()) {
+                    logger.debug(message);
                 }
 
                 _alertMgr.sendAlert(AlertService.AlertType.ALERT_TYPE_SSVM, args.getZoneId(), null, message + errorDetails,
@@ -123,8 +121,8 @@ public class SecondaryStorageVmAlertAdapter extends AdapterBase implements Alert
 
             case SecStorageVmAlertEventArgs.SSVM_START_FAILURE:
                 message = "Secondary Storage Vm startup failure in " + zoneSecStorageVmPrivateAndPublicIp;
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(message);
+                if (logger.isDebugEnabled()) {
+                    logger.debug(message);
                 }
 
                 _alertMgr.sendAlert(AlertService.AlertType.ALERT_TYPE_SSVM, args.getZoneId(), secStorageVmPodIdToDeployIn, message + errorDetails,
@@ -132,8 +130,8 @@ public class SecondaryStorageVmAlertAdapter extends AdapterBase implements Alert
                 break;
 
             case SecStorageVmAlertEventArgs.SSVM_FIREWALL_ALERT:
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Secondary Storage Vm firewall alert, " + zoneSecStorageVmPrivateAndPublicIp);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Secondary Storage Vm firewall alert, " + zoneSecStorageVmPrivateAndPublicIp);
                 }
 
                 _alertMgr.sendAlert(AlertService.AlertType.ALERT_TYPE_SSVM, args.getZoneId(), secStorageVmPodIdToDeployIn, "Failed to open secondary storage vm firewall port. "
@@ -141,8 +139,8 @@ public class SecondaryStorageVmAlertAdapter extends AdapterBase implements Alert
                 break;
 
             case SecStorageVmAlertEventArgs.SSVM_STORAGE_ALERT:
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Secondary Storage Vm storage alert, " + zoneSecStorageVmPrivateAndPublicIp + ", message: " + args.getMessage());
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Secondary Storage Vm storage alert, " + zoneSecStorageVmPrivateAndPublicIp + ", message: " + args.getMessage());
                 }
 
                 _alertMgr.sendAlert(AlertService.AlertType.ALERT_TYPE_STORAGE_MISC, args.getZoneId(), secStorageVmPodIdToDeployIn,
@@ -154,8 +152,8 @@ public class SecondaryStorageVmAlertAdapter extends AdapterBase implements Alert
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
 
-        if (s_logger.isInfoEnabled())
-            s_logger.info("Start configuring secondary storage vm alert manager : " + name);
+        if (logger.isInfoEnabled())
+            logger.info("Start configuring secondary storage vm alert manager : " + name);
 
         try {
             SubscriptionMgr.getInstance().subscribe(SecondaryStorageVmManager.ALERT_SUBJECT, this, "onSSVMAlert");

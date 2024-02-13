@@ -25,7 +25,8 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.usage.UsageTypes;
@@ -39,7 +40,7 @@ import com.cloud.utils.Pair;
 
 @Component
 public class VolumeUsageParser {
-    public static final Logger s_logger = Logger.getLogger(VolumeUsageParser.class.getName());
+    protected static Logger LOGGER = LogManager.getLogger(VolumeUsageParser.class);
 
     private static UsageDao s_usageDao;
     private static UsageVolumeDao s_usageVolumeDao;
@@ -56,8 +57,8 @@ public class VolumeUsageParser {
     }
 
     public static boolean parse(AccountVO account, Date startDate, Date endDate) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Parsing all Volume usage events for account: " + account.getId());
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Parsing all Volume usage events for account: " + account.getId());
         }
         if ((endDate == null) || endDate.after(new Date())) {
             endDate = new Date();
@@ -71,7 +72,7 @@ public class VolumeUsageParser {
         List<UsageVolumeVO> usageUsageVols = s_usageVolumeDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate, false, 0);
 
         if (usageUsageVols.isEmpty()) {
-            s_logger.debug("No volume usage events for this period");
+            LOGGER.debug("No volume usage events for this period");
             return true;
         }
 
@@ -143,8 +144,8 @@ public class VolumeUsageParser {
     private static void createUsageRecord(int type, long runningTime, Date startDate, Date endDate, AccountVO account, long volId, long zoneId, Long doId,
         Long templateId, long size) {
         // Our smallest increment is hourly for now
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Total running time " + runningTime + "ms");
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Total running time " + runningTime + "ms");
         }
 
         float usage = runningTime / 1000f / 60f / 60f;
@@ -152,8 +153,8 @@ public class VolumeUsageParser {
         DecimalFormat dFormat = new DecimalFormat("#.######");
         String usageDisplay = dFormat.format(usage);
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Creating Volume usage record for vol: " + volId + ", usage: " + usageDisplay + ", startDate: " + startDate + ", endDate: " + endDate +
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Creating Volume usage record for vol: " + volId + ", usage: " + usageDisplay + ", startDate: " + startDate + ", endDate: " + endDate +
                 ", for account: " + account.getId());
         }
 

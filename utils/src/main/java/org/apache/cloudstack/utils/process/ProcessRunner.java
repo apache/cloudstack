@@ -21,7 +21,8 @@ package org.apache.cloudstack.utils.process;
 
 import com.google.common.base.Preconditions;
 import com.google.common.io.CharStreams;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.joda.time.Duration;
 
 import java.io.IOException;
@@ -36,7 +37,7 @@ import java.util.concurrent.TimeoutException;
 import org.apache.commons.lang3.StringUtils;
 
 public final class ProcessRunner {
-    public static final Logger LOG = Logger.getLogger(ProcessRunner.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     // Default maximum timeout of 5 minutes for any command
     public static final Duration DEFAULT_MAX_TIMEOUT = new Duration(5 * 60 * 1000);
@@ -76,10 +77,10 @@ public final class ProcessRunner {
         String oneLineCommand = StringUtils.join(commands, " ");
 
         try {
-            LOG.debug(String.format("Preparing command [%s] to execute.", oneLineCommand));
+            logger.debug(String.format("Preparing command [%s] to execute.", oneLineCommand));
             final Process process = new ProcessBuilder().command(commands).start();
 
-            LOG.debug(String.format("Submitting command [%s].", oneLineCommand));
+            logger.debug(String.format("Submitting command [%s].", oneLineCommand));
             final Future<Integer> processFuture = executor.submit(new Callable<Integer>() {
                 @Override
                 public Integer call() throws Exception {
@@ -87,14 +88,14 @@ public final class ProcessRunner {
                 }
             });
             try {
-                LOG.debug(String.format("Waiting for a response from command [%s]. Defined timeout: [%s].", oneLineCommand, timeOut.getStandardSeconds()));
+                logger.debug(String.format("Waiting for a response from command [%s]. Defined timeout: [%s].", oneLineCommand, timeOut.getStandardSeconds()));
                 retVal = processFuture.get(timeOut.getStandardSeconds(), TimeUnit.SECONDS);
             } catch (ExecutionException e) {
-                LOG.warn(String.format("Failed to complete the requested command [%s] due to execution error.", oneLineCommand), e);
+                logger.warn(String.format("Failed to complete the requested command [%s] due to execution error.", oneLineCommand), e);
                 retVal = -2;
                 stdError = e.getMessage();
             } catch (TimeoutException e) {
-                LOG.warn(String.format("Failed to complete the requested command [%s] within timeout. Defined timeout: [%s].", oneLineCommand, timeOut.getStandardSeconds()), e);
+                logger.warn(String.format("Failed to complete the requested command [%s] within timeout. Defined timeout: [%s].", oneLineCommand, timeOut.getStandardSeconds()), e);
                 retVal = -1;
                 stdError = "Operation timed out, aborted.";
             } finally {
@@ -105,10 +106,10 @@ public final class ProcessRunner {
                 process.destroy();
             }
 
-            LOG.debug(String.format("Process standard output for command [%s]: [%s].", oneLineCommand, stdOutput));
-            LOG.debug(String.format("Process standard error output command [%s]: [%s].", oneLineCommand, stdError));
+            logger.debug(String.format("Process standard output for command [%s]: [%s].", oneLineCommand, stdOutput));
+            logger.debug(String.format("Process standard error output command [%s]: [%s].", oneLineCommand, stdError));
         } catch (IOException | InterruptedException e) {
-            LOG.error(String.format("Exception caught error running command [%s].", oneLineCommand), e);
+            logger.error(String.format("Exception caught error running command [%s].", oneLineCommand), e);
             stdError = e.getMessage();
         }
         return new ProcessResult(stdOutput, stdError, retVal);

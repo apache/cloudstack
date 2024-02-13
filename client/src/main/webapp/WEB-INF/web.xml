@@ -21,7 +21,7 @@
     version="2.5">
 
     <context-param>
-        <param-name>log4jConfigLocation</param-name>
+        <param-name>log4jConfiguration</param-name>
         <param-value>classpath:log4j-cloud.xml</param-value>
     </context-param>
 
