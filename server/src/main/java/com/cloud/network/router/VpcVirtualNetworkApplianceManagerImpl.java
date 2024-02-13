@@ -305,9 +305,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             List<IPAddressVO> vpcIps = _ipAddressDao.listByAssociatedVpc(router.getVpcId(), true);
             if (CollectionUtils.isNotEmpty(vpcIps)) {
                 buf.append(String.format(" source_nat_ip=%s", vpcIps.get(0).getAddress().toString()));
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("The final Boot Args for " + profile + ": " + buf);
-                }
+                logger.debug("The final Boot Args for " + profile + ": " + buf);
             }
         }
     }
