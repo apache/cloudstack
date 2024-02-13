@@ -2783,9 +2783,10 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
     private void removeNics(VirtualMachine vm, DomainRouterVO domR) {
         final List<? extends Nic> routerNics = _nicDao.listByVmId(vm.getId());
+        final DataCenterVO dcVO = _dcDao.findById(vm.getDataCenterId());
+
         for (final Nic nic : routerNics) {
             final Network network = _networkModel.getNetwork(nic.getNetworkId());
-            final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
 
             if (network.getTrafficType() == TrafficType.Guest && nic.getBroadcastUri() != null && nic.getBroadcastUri().getScheme().equals("pvlan")) {
                 final NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 0, false, "pvlan-nic");
