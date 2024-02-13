@@ -19,8 +19,7 @@
 
 DROP VIEW IF EXISTS `cloud`.`volume_view`;
 
-CREATE OR REPLACE
-ALGORITHM = UNDEFINED VIEW `volume_view` AS
+CREATE VIEW `cloud`.`volume_view` AS
 SELECT
     `volumes`.`id` AS `id`,
     `volumes`.`uuid` AS `uuid`,
