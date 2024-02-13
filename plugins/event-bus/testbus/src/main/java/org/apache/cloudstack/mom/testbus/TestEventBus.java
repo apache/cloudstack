@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.cloudstack.mom.testbus1;
+package org.apache.cloudstack.mom.testbus;
 
 import java.util.Map;
 import java.util.UUID;
@@ -33,9 +33,9 @@ import org.apache.log4j.Logger;
 
 import com.cloud.utils.component.ManagerBase;
 
-public class Test1EventBus extends ManagerBase implements EventBus {
+public class TestEventBus extends ManagerBase implements EventBus {
 
-    private static final Logger s_logger = Logger.getLogger(Test1EventBus.class);
+    private static final Logger s_logger = Logger.getLogger(TestEventBus.class);
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {

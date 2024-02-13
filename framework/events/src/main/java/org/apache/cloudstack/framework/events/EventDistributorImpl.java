@@ -24,7 +24,6 @@ import java.util.List;
 
 import javax.annotation.PostConstruct;
 
-import org.apache.cloudstack.framework.ca.CAProvider;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.component.ManagerBase;
@@ -32,38 +31,28 @@ import com.cloud.utils.component.ManagerBase;
 public class EventDistributorImpl extends ManagerBase implements EventDistributor {
     private static final Logger LOGGER = Logger.getLogger(EventDistributorImpl.class);
 
-    public void setEventBusses(List<EventBus> eventBusses) {
-        this.eventBusses = eventBusses;
-    }
+    List<EventBus> eventBuses;
 
-    List<EventBus> eventBusses;
-
-    List<CAProvider> caProviders;
-
-    public List<CAProvider> getCaProviders() {
-        return caProviders;
-    }
-
-    public void setCaProviders(List<CAProvider> caProviders) {
-        this.caProviders = caProviders;
+    public void setEventBuses(List<EventBus> eventBuses) {
+        this.eventBuses = eventBuses;
     }
 
     @PostConstruct
     public void init() {
         if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(String.format("testing %d event busses", eventBusses.size()));
+            LOGGER.trace(String.format("testing %d event buses", eventBuses.size()));
         }
         publish(new Event("server", "NONE","starting", "server", "NONE"));
     }
 
     @Override
     public List<EventBusException> publish(Event event) {
-        LOGGER.info(String.format("publishing %s to %d event busses", (event == null ? "<none>" : event.getDescription()), eventBusses.size()));
+        LOGGER.info(String.format("publishing %s to %d event buses", (event == null ? "<none>" : event.getDescription()), eventBuses.size()));
         List<EventBusException> exceptions = new ArrayList<>();
         if (event == null) {
             return exceptions;
         }
-        for (EventBus bus : eventBusses) {
+        for (EventBus bus : eventBuses) {
             try {
                 bus.publish(event);
             } catch (EventBusException e) {

@@ -79,7 +79,7 @@
         <module>event-bus/inmemory</module>
         <module>event-bus/kafka</module>
         <module>event-bus/rabbitmq</module>
-        <module>event-bus/testbus1</module>
+        <module>event-bus/testbus</module>
 
         <module>ha-planners/skip-heurestics</module>
 

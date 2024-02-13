@@ -145,8 +145,7 @@
     </bean>
 
     <bean id="eventDistributor" class="org.apache.cloudstack.framework.events.EventDistributorImpl" >
-        <property name="eventBusses" value="#{eventBussesRegistry.registered}" />
-        <property name="caProviders" value="#{caProvidersRegistry.registered}" />
+        <property name="eventBuses" value="#{eventBusRegistry.registered}" />
     </bean>
 
     <bean id="hypervisorGuruManagerImpl" class="com.cloud.hypervisor.HypervisorGuruManagerImpl" >

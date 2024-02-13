@@ -25,10 +25,9 @@
                       http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd
                       http://www.springframework.org/schema/context
                       http://www.springframework.org/schema/context/spring-context.xsd"
->
-    <bean id="eventDistributor"
-          class="org.apache.cloudstack.framework.events.EventDistributorImpl" >
-        <property name="eventBusses" value="#{eventBussesRegistry.registered}" />
-        <property name="caProviders" value="#{caProvidersRegistry.registered}" />
-    </bean>
+                      >
+
+  <bean id="testEventBus" class="org.apache.cloudstack.mom.testbus.TestEventBus">
+      <property name="name" value="testbus" />
+  </bean>
 </beans>

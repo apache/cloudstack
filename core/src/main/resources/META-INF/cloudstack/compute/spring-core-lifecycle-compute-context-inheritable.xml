@@ -40,11 +40,6 @@
     </bean>
 
     <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
-        <property name="registry" ref="eventBussesRegistry" />
-        <property name="typeClass" value="org.apache.cloudstack.framework.events.EventBus" />
-    </bean>
-
-    <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
         <property name="registry" ref="hypervisorGurusRegistry" />
         <property name="typeClass" value="com.cloud.hypervisor.HypervisorGuru" />
     </bean>

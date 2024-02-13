@@ -449,7 +449,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
-            <artifactId>cloud-mom-testbus1</artifactId>
+            <artifactId>cloud-mom-testbus</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
