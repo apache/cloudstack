@@ -24,7 +24,8 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.naming.ConfigurationException;
 import java.util.ArrayList;
@@ -35,7 +36,7 @@ import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsImbalanc
 
 public class Balanced extends AdapterBase implements ClusterDrsAlgorithm {
 
-    private static final Logger logger = Logger.getLogger(Balanced.class);
+    private static final Logger logger = LogManager.getLogger(Balanced.class);
 
     @Override
     public boolean needsDrs(long clusterId, List<Ternary<Long, Long, Long>> cpuList,
