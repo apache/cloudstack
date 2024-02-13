@@ -23,6 +23,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.mom.webhook.api.command.user.CreateWebhookRuleCmd;
@@ -186,14 +187,86 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
 
     @Override
     public boolean deleteWebhookRule(DeleteWebhookRuleCmd cmd) throws CloudRuntimeException {
+        final Account caller = CallContext.current().getCallingAccount();
         final long id = cmd.getId();
-        // check access
+        WebhookRule rule = webhookRuleDao.findById(id);
+        if (rule == null) {
+            throw new InvalidParameterValueException("Unable to find the webhook rule with the specified ID");
+        }
+        accountManager.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, false, rule);
         return webhookRuleDao.remove(id);
     }
 
     @Override
     public WebhookRuleResponse updateWebhookRule(UpdateWebhookRuleCmd cmd) throws CloudRuntimeException {
-        return null;
+        final Account caller = CallContext.current().getCallingAccount();
+        final long id = cmd.getId();
+        final String name  = cmd.getName();
+        final String description = cmd.getDescription();
+        final String payloadUrl = cmd.getPayloadUrl();
+        final String secretKey = cmd.getSecretKey();
+        final Boolean sslVerification = cmd.isSslVerification();
+        final String scopeStr = cmd.getScope();
+        final String stateStr = cmd.getState();
+        WebhookRuleVO rule = webhookRuleDao.findById(id);
+        if (rule == null) {
+            throw new InvalidParameterValueException("Unable to find the webhook rule with the specified ID");
+        }
+        accountManager.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, false, rule);
+        boolean updateNeeded = false;
+        if (StringUtils.isNotBlank(name)) {
+            rule.setName(name);
+            updateNeeded = true;
+        }
+        if (description != null) {
+            rule.setDescription(description);
+            updateNeeded = true;
+        }
+        if (StringUtils.isNotEmpty(stateStr)) {
+            try {
+                WebhookRule.State state = WebhookRule.State.valueOf(stateStr);
+                rule.setState(state);
+                updateNeeded = true;
+            } catch (IllegalArgumentException iae) {
+                throw new InvalidParameterValueException("Invalid state specified");
+            }
+        }
+        if (StringUtils.isNotEmpty(scopeStr)) {
+            try {
+                WebhookRule.Scope scope = WebhookRule.Scope.valueOf(scopeStr);
+                Account owner = accountManager.getAccount(rule.getAccountId());
+                if ((WebhookRule.Scope.Global.equals(scope) && !Account.Type.ADMIN.equals(owner.getType())) ||
+                        (WebhookRule.Scope.Domain.equals(scope) &&
+                                !List.of(Account.Type.ADMIN, Account.Type.DOMAIN_ADMIN).contains(owner.getType()))) {
+                    throw new InvalidParameterValueException(String.format("Scope %s can not be specified for owner %s", scope, owner.getName()));
+                }
+                rule.setScope(scope);
+                updateNeeded = true;
+            } catch (IllegalArgumentException iae) {
+                throw new InvalidParameterValueException("Invalid scope specified");
+            }
+        }
+        URI uri = URI.create(rule.getPayloadUrl());
+        if (StringUtils.isNotEmpty(payloadUrl)) {
+            UriUtils.validateUrl(payloadUrl);
+            uri = URI.create(payloadUrl);
+            rule.setPayloadUrl(payloadUrl);
+            updateNeeded = true;
+        }
+        if (sslVerification != null) {
+            if (Boolean.TRUE.equals(sslVerification) && !HttpConstants.HTTPS.equalsIgnoreCase(uri.getScheme())) {
+                throw new InvalidParameterValueException(String.format("SSL verification can be specified only for HTTPS URLs, %s", payloadUrl));
+            }
+            updateNeeded = true;
+        }
+        if (secretKey != null) {
+            rule.setSecretKey(secretKey);
+            updateNeeded = true;
+        }
+        if (updateNeeded && !webhookRuleDao.update(id, rule)) {
+            return null;
+        }
+        return createWebhookRuleResponse(rule);
     }
 
     @Override

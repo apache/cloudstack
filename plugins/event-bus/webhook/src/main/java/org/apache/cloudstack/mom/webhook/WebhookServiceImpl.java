@@ -18,6 +18,7 @@
 package org.apache.cloudstack.mom.webhook;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -33,6 +34,7 @@ import org.apache.cloudstack.mom.webhook.vo.WebhookRuleVO;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 
@@ -93,11 +95,17 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService {
         // All global rules
         // All domain level rules for current and parent domains
         // All local rules
+        Map<Long, Pair<Integer, Integer>> domainConfigs = new HashMap<>();
         List<Runnable> jobs = new ArrayList<>();
         for (WebhookRuleVO rule : rules) {
+            if (!domainConfigs.containsKey(rule.getDomainId())) {
+                domainConfigs.put(rule.getDomainId(), new Pair<>(WebhookDispatchRetries.valueIn(rule.getDomainId()),
+                        WebhookDeliveryTimeout.valueIn(rule.getDomainId())));
+            }
+            Pair<Integer, Integer> configs = domainConfigs.get(rule.getDomainId());
             WebhookDispatchThread job = new WebhookDispatchThread(closeableHttpClient, rule, event);
-            job.setDispatchRetries(WebhookDispatchRetries.valueIn(rule.getDomainId()));
-            job.setDeliveryTimeout(WebhookDeliveryTimeout.valueIn(rule.getDomainId()));
+            job.setDispatchRetries(configs.first());
+            job.setDeliveryTimeout(configs.second());
             jobs.add(job);
         }
         return jobs;

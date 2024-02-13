@@ -32,7 +32,7 @@ import org.apache.cloudstack.mom.webhook.WebhookApiService;
 import org.apache.cloudstack.mom.webhook.WebhookRule;
 import org.apache.cloudstack.mom.webhook.api.response.WebhookRuleResponse;
 
-@APICommand(name = "listWebhooks",
+@APICommand(name = "listWebhookRules",
         description = "Lists Webhook rules",
         responseObject = WebhookRuleResponse.class,
         responseView = ResponseObject.ResponseView.Restricted,

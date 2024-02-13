@@ -23,11 +23,12 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponseWithAnnotations;
 import org.apache.cloudstack.api.EntityReference;
 import org.apache.cloudstack.api.response.ControlledEntityResponse;
+import org.apache.cloudstack.mom.webhook.WebhookRule;
 
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value = {WebhookRuleResponse.class})
+@EntityReference(value = {WebhookRule.class})
 public class WebhookRuleResponse extends BaseResponseWithAnnotations implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "The id of the Webhook rule")

@@ -52,12 +52,63 @@ public class UpdateWebhookRuleCmd extends BaseCmd {
             description = "The ID of the Webhook rule",
             required = true)
     private Long id;
+    @Parameter(name = ApiConstants.NAME, type = BaseCmd.CommandType.STRING, description = "Name for the Webhook rule")
+    private String name;
+
+    @Parameter(name = ApiConstants.DESCRIPTION, type = BaseCmd.CommandType.STRING, description = "Description for the Webhook rule")
+    private String description;
+
+    @Parameter(name = ApiConstants.STATE, type = BaseCmd.CommandType.STRING, description = "State of the Webhook rule")
+    private String state;
+
+    @Parameter(name = ApiConstants.PAYLOAD_URL,
+            type = BaseCmd.CommandType.STRING,
+            description = "Payload URL of the Webhook rule")
+    private String payloadUrl;
+
+    @Parameter(name = ApiConstants.SECRET_KEY, type = BaseCmd.CommandType.STRING, description = "Secret key of the Webhook rule")
+    private String secretKey;
+
+    @Parameter(name = ApiConstants.SSL_VERIFICATION, type = BaseCmd.CommandType.BOOLEAN, description = "If set to true then SSL verification will be done for the Webhook rule otherwise not")
+    private Boolean sslVerification;
+
+    @Parameter(name = ApiConstants.SCOPE, type = BaseCmd.CommandType.STRING, description = "Scope of the Webhook rule",
+            authorized = {RoleType.Admin, RoleType.DomainAdmin})
+    private String scope;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
     public Long getId() {
         return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public String getPayloadUrl() {
+        return payloadUrl;
+    }
+
+    public String getSecretKey() {
+        return secretKey;
+    }
+
+    public Boolean isSslVerification() {
+        return sslVerification;
+    }
+
+    public String getScope() {
+        return scope;
     }
 
     @Override
