@@ -19,12 +19,15 @@
 
 package org.apache.cloudstack.framework.events;
 
-import com.cloud.utils.component.ManagerBase;
-import org.apache.log4j.Logger;
-
-import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.annotation.PostConstruct;
+
+import org.apache.cloudstack.framework.ca.CAProvider;
+import org.apache.log4j.Logger;
+
+import com.cloud.utils.component.ManagerBase;
 
 public class EventDistributorImpl extends ManagerBase implements EventDistributor {
     private static final Logger LOGGER = Logger.getLogger(EventDistributorImpl.class);
@@ -34,6 +37,16 @@ public class EventDistributorImpl extends ManagerBase implements EventDistributo
     }
 
     List<EventBus> eventBusses;
+
+    List<CAProvider> caProviders;
+
+    public List<CAProvider> getCaProviders() {
+        return caProviders;
+    }
+
+    public void setCaProviders(List<CAProvider> caProviders) {
+        this.caProviders = caProviders;
+    }
 
     @PostConstruct
     public void init() {
