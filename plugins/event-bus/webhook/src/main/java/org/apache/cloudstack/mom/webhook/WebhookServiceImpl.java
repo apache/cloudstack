@@ -85,7 +85,7 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService {
 
     @Override
     public List<Class<?>> getCommands() {
-        return null;
+        return new ArrayList<>();
     }
 
     protected List<Runnable> getDispatchJobs(Event event) {
