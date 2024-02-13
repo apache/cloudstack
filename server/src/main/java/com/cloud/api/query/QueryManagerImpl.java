@@ -2396,7 +2396,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     private Pair<List<Long>, Integer> searchForVolumeIdsAndCount(ListVolumesCmd cmd) {
 
         Account caller = CallContext.current().getCallingAccount();
-        List<Long> permittedAccounts = new ArrayList<Long>();
+        List<Long> permittedAccounts = new ArrayList<>();
 
         Long id = cmd.getId();
         Long vmInstanceId = cmd.getVirtualMachineId();
@@ -2416,7 +2416,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
 
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(cmd.getDomainId(), cmd.isRecursive(), null);
         accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();

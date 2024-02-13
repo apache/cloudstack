@@ -18,6 +18,7 @@ package com.cloud.storage.dao;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.ScopeType;

@@ -263,6 +263,7 @@ public class ApiConstants {
     public static final String IS_CLEANUP_REQUIRED = "iscleanuprequired";
     public static final String IS_DYNAMIC = "isdynamic";
     public static final String IS_EDGE = "isedge";
+    public static final String IS_ENCRYPTED = "isencrypted";
     public static final String IS_EXTRACTABLE = "isextractable";
     public static final String IS_FEATURED = "isfeatured";
     public static final String IS_PORTABLE = "isportable";

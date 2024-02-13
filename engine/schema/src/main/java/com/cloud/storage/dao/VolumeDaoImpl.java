@@ -16,12 +16,14 @@
 // under the License.
 package com.cloud.storage.dao;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -67,6 +69,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     protected final SearchBuilder<VolumeVO> RootDiskStateSearch;
     private final SearchBuilder<VolumeVO> storeAndInstallPathSearch;
     private final SearchBuilder<VolumeVO> volumeIdSearch;
+    private final SearchBuilder<VolumeVO> encryptedIdSearch;
     protected GenericSearchBuilder<VolumeVO, Long> CountByAccount;
     protected GenericSearchBuilder<VolumeVO, SumCount> primaryStorageSearch;
     protected GenericSearchBuilder<VolumeVO, SumCount> primaryStorageSearch2;
@@ -488,6 +491,10 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         volumeIdSearch = createSearchBuilder();
         volumeIdSearch.and("idIN", volumeIdSearch.entity().getId(), Op.IN);
         volumeIdSearch.done();
+
+        encryptedIdSearch = createSearchBuilder();
+        encryptedIdSearch.and("encryptionMethod", encryptedIdSearch.entity().getId(), Op.NNULL);
+        encryptedIdSearch.done();
 
         poolAndPathSearch = createSearchBuilder();
         poolAndPathSearch.and("poolId", poolAndPathSearch.entity().getPoolId(), Op.EQ);
