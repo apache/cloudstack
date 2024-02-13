@@ -22,6 +22,7 @@ import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.annotation.PostConstruct;
@@ -32,8 +33,8 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventBusException;
+import org.apache.cloudstack.framework.events.EventDistributor;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -62,7 +63,7 @@ public class ActionEventUtils {
     private static AccountDao s_accountDao;
     private static ProjectDao s_projectDao;
     protected static UserDao s_userDao;
-    protected static EventBus s_eventBus = null;
+    private static EventDistributor eventDistributor;
     protected static EntityManager s_entityMgr;
     protected static ConfigurationDao s_configDao;
 
@@ -198,8 +199,9 @@ public class ActionEventUtils {
         boolean configValue = Boolean.parseBoolean(value);
         if(!configValue)
             return;
+
         try {
-            s_eventBus = ComponentContext.getComponent(EventBus.class);
+            eventDistributor = ComponentContext.getComponent(EventDistributor.class);
         } catch (NoSuchBeanDefinitionException nbe) {
             return; // no provider is configured to provide events bus, so just return
         }
@@ -233,10 +235,10 @@ public class ActionEventUtils {
 
         event.setDescription(eventDescription);
 
-        try {
-            s_eventBus.publish(event);
-        } catch (EventBusException e) {
-            s_logger.warn("Failed to publish action event on the event bus.");
+        List<EventBusException> exceptions = eventDistributor.publish(event);
+        for (EventBusException ex : exceptions) {
+            String errMsg = "Failed to publish event.";
+            s_logger.warn(errMsg, ex);
         }
     }
 

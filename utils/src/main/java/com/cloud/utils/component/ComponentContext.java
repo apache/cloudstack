@@ -100,7 +100,7 @@ public class ComponentContext implements ApplicationContextAware {
             s_logger.info("Running SystemIntegrityChecker " + entry.getKey());
             try {
                 entry.getValue().check();
-            } catch (Throwable e) {
+            } catch (RuntimeException e) {
                 s_logger.error("System integrity check failed. Refuse to startup", e);
                 System.exit(1);
             }
@@ -178,6 +178,13 @@ public class ComponentContext implements ApplicationContextAware {
         return (T)s_appContext.getBean(name);
     }
 
+    /**
+     * only ever used to get the event bus
+     *
+     * @param beanType the component type to return
+     * @return one of the component registered for the requested type
+     * @param <T>
+     */
     public static <T> T getComponent(Class<T> beanType) {
         assert (s_appContext != null);
         Map<String, T> matchedTypes = getComponentsOfType(beanType);

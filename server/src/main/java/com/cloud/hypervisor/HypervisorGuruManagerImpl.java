@@ -40,7 +40,7 @@ public class HypervisorGuruManagerImpl extends ManagerBase implements Hypervisor
     HostDao _hostDao;
 
     List<HypervisorGuru> _hvGuruList;
-    Map<HypervisorType, HypervisorGuru> _hvGurus = new ConcurrentHashMap<HypervisorType, HypervisorGuru>();
+    Map<HypervisorType, HypervisorGuru> _hvGurus = new ConcurrentHashMap<>();
 
     @PostConstruct
     public void init() {

@@ -17,68 +17,29 @@
  * under the License.
  */
 
-package org.apache.cloudstack.mom.kafka;
-
-import java.io.FileInputStream;
+package org.apache.cloudstack.mom.testbus;
 
 import java.util.Map;
 import java.util.UUID;
-import java.util.Properties;
 
 import javax.naming.ConfigurationException;
-
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.events.Event;
 import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventBusException;
 import org.apache.cloudstack.framework.events.EventSubscriber;
 import org.apache.cloudstack.framework.events.EventTopic;
+import org.apache.log4j.Logger;
 
 import com.cloud.utils.component.ManagerBase;
 
-import org.apache.kafka.clients.producer.Producer;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
+public class TestEventBus extends ManagerBase implements EventBus {
 
-import com.cloud.utils.PropertiesUtil;
-
-public class KafkaEventBus extends ManagerBase implements EventBus {
-
-    public static final String DEFAULT_TOPIC = "cloudstack";
-    public static final String DEFAULT_SERIALIZER = "org.apache.kafka.common.serialization.StringSerializer";
-
-    private String _topic = null;
-    private Producer<String,String> _producer;
-    private static final Logger s_logger = Logger.getLogger(KafkaEventBus.class);
+    private static final Logger s_logger = Logger.getLogger(TestEventBus.class);
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-
-        final Properties props = new Properties();
-
-        try (final FileInputStream is = new FileInputStream(PropertiesUtil.findConfigFile("kafka.producer.properties"));) {
-            props.load(is);
-
-            _topic = (String)props.remove("topic");
-            if (_topic == null) {
-                _topic = DEFAULT_TOPIC;
-            }
-
-            if (!props.containsKey("key.serializer")) {
-                props.put("key.serializer", DEFAULT_SERIALIZER);
-            }
-
-            if (!props.containsKey("value.serializer")) {
-                props.put("value.serializer", DEFAULT_SERIALIZER);
-            }
-        } catch (Exception e) {
-            throw new ConfigurationException("Could not read kafka properties");
-        }
-
-        _producer = new KafkaProducer<String,String>(props);
         _name = name;
-
         return true;
     }
 
@@ -107,11 +68,7 @@ public class KafkaEventBus extends ManagerBase implements EventBus {
 
     @Override
     public void publish(Event event) throws EventBusException {
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace(String.format("publish \'%s\'", event.getDescription()));
-        }
-        ProducerRecord<String, String> newRecord = new ProducerRecord<>(_topic, event.getResourceUUID(), event.getDescription());
-        _producer.send(newRecord);
+        s_logger.info(String.format("New event: %s", event.getDescription()));
     }
 
     @Override

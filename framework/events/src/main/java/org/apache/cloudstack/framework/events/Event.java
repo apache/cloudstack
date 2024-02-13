@@ -31,11 +31,11 @@ public class Event {
     String description;
 
     public Event(String eventSource, String eventCategory, String eventType, String resourceType, String resourceUUID) {
-        this.eventCategory = eventCategory;
-        this.eventType = eventType;
-        this.eventSource = eventSource;
-        this.resourceType = resourceType;
-        this.resourceUUID = resourceUUID;
+        setEventCategory(eventCategory);
+        setEventType(eventType);
+        setEventSource(eventSource);
+        setResourceType(resourceType);
+        setResourceUUID(resourceUUID);
     }
 
     public String getEventCategory() {
@@ -68,7 +68,7 @@ public class Event {
 
     public void setDescription(Object message) {
         Gson gson = new Gson();
-        this.description = gson.toJson(message).toString();
+        this.description = gson.toJson(message);
     }
 
     public void setDescription(String description) {
