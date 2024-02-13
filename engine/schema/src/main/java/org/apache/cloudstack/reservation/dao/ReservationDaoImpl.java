@@ -29,11 +29,12 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import org.apache.cloudstack.user.ResourceReservation;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class ReservationDaoImpl extends GenericDaoBase<ReservationVO, Long> implements ReservationDao {
 
-    public static final Logger logger = Logger.getLogger(ReservationDaoImpl.class);
+    protected transient Logger logger = LogManager.getLogger(getClass());
     private static final String RESOURCE_TYPE = "resourceType";
     private static final String RESOURCE_TAG = "resourceTag";
     private static final String RESOURCE_ID = "resourceId";

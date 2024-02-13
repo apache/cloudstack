@@ -5686,9 +5686,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         ServiceOfferingVO offering = serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId());
 
-        try (CheckedReservation vmReservation = new CheckedReservation(owner, ResourceType.user_vm, null, -1L, reservationDao, resourceLimitService);
-             CheckedReservation cpuReservation = new CheckedReservation(owner, ResourceType.cpu, null, -1 * Long.valueOf(offering.getCpu()), reservationDao, resourceLimitService);
-             CheckedReservation memReservation = new CheckedReservation(owner, ResourceType.memory, null, -1 * Long.valueOf(offering.getRamSize()), reservationDao, resourceLimitService);
+        try (CheckedReservation vmReservation = new CheckedReservation(owner, ResourceType.user_vm, vmId, null, -1L, reservationDao, resourceLimitService);
+             CheckedReservation cpuReservation = new CheckedReservation(owner, ResourceType.cpu, vmId, null, -1 * Long.valueOf(offering.getCpu()), reservationDao, resourceLimitService);
+             CheckedReservation memReservation = new CheckedReservation(owner, ResourceType.memory, vmId, null, -1 * Long.valueOf(offering.getRamSize()), reservationDao, resourceLimitService);
         ) {
             try {
                 VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());

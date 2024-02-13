@@ -1296,20 +1296,25 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 vrIds);
     }
 
+    private long calculateReservedResources(List<UserVmJoinVO> vms,long accountId, ResourceType type, String tag) {
+        Set<Long> vmIds = vms.stream().map(UserVmJoinVO::getId).collect(Collectors.toSet());
+        List<ReservationVO> reservations = reservationDao.getReservationsForAccount(accountId, type, tag);
+        long reserved = 0;
+        for (ReservationVO reservation : reservations) {
+            if (vmIds.contains(reservation.getResourceId()) ? reservation.getReservedAmount() > 0 : reservation.getReservedAmount() < 0) {
+                reserved += reservation.getReservedAmount();
+            }
+        }
+        return reserved;
+    }
+
     protected long calculateVmCountForAccount(long accountId, String tag) {
         if (StringUtils.isEmpty(tag)) {
             return _userVmDao.countAllocatedVMsForAccount(accountId, VirtualMachineManager.ResourceCountRunningVMsonly.value());
         }
 
         List<UserVmJoinVO> vms = getVmsWithAccountAndTag(accountId, tag);
-        Set<Long> vmIds = vms.stream().map(UserVmJoinVO::getId).collect(Collectors.toSet());
-        List<ReservationVO> vmReservations = reservationDao.getReservationsForAccount(accountId, ResourceType.user_vm, tag);
-        long reservedVMs = 0;
-        for (ReservationVO reservation : vmReservations) {
-            if ((vmIds.contains(reservation.getResourceId()) || reservation.getReservedAmount() < 0) || (!vmIds.contains(reservation.getResourceId()) && reservation.getReservedAmount() < 0)) {
-                reservedVMs += reservation.getReservedAmount();
-            }
-        }
+        long reservedVMs = calculateReservedResources(vms, accountId, ResourceType.user_vm, tag);
         return vms.size() - reservedVMs;
     }
 
@@ -1328,18 +1333,12 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
         long cputotal = 0;
         List<UserVmJoinVO> vms = getVmsWithAccountAndTag(accountId, tag);
-        Set<Long> vmIds = vms.stream().map(UserVmJoinVO::getId).collect(Collectors.toSet());
 
-        List<ReservationVO> vmReservations = reservationDao.getReservationsForAccount(accountId, ResourceType.cpu, tag);
         for (UserVmJoinVO vm : vms) {
             cputotal += vm.getCpu();
         }
-        for (ReservationVO reservation : vmReservations) {
-            if ((vmIds.contains(reservation.getResourceId()) || reservation.getReservedAmount() < 0) || (!vmIds.contains(reservation.getResourceId()) && reservation.getReservedAmount() < 0)) {
-                cputotal -= reservation.getReservedAmount();
-            }
-        }
-        return cputotal;
+        long reservedCpus = calculateReservedResources(vms, accountId, ResourceType.cpu, tag);
+        return cputotal - reservedCpus;
     }
 
     protected long calculateVmMemoryCountForAccount(long accountId, String tag) {
@@ -1348,49 +1347,32 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
         long memory = 0;
         List<UserVmJoinVO> vms = getVmsWithAccountAndTag(accountId, tag);
-        Set<Long> vmIds = vms.stream().map(UserVmJoinVO::getId).collect(Collectors.toSet());
-        List<ReservationVO> vmReservations = reservationDao.getReservationsForAccount(accountId, ResourceType.memory, tag);
+
         for (UserVmJoinVO vm : vms) {
             memory += vm.getRamSize();
         }
-        for (ReservationVO reservation : vmReservations) {
-            if ((vmIds.contains(reservation.getResourceId()) || reservation.getReservedAmount() < 0) || (!vmIds.contains(reservation.getResourceId()) && reservation.getReservedAmount() < 0)) {
-                memory -= reservation.getReservedAmount();
-            }
-        }
-        return memory;
+        long reservedMemory = calculateReservedResources(vms, accountId, ResourceType.memory, tag);
+        return memory - reservedMemory;
     }
 
     public long countCpusForAccount(long accountId) {
         long cputotal = 0;
         List<UserVmJoinVO> userVms = getVmsWithAccount(accountId);
-        Set<Long> vmIds = userVms.stream().map(UserVmJoinVO::getId).collect(Collectors.toSet());
-        List<ReservationVO> vmReservations = reservationDao.getReservationsForAccount(accountId, ResourceType.cpu, null);
         for (UserVmJoinVO vm : userVms) {
             cputotal += vm.getCpu();
         }
-        for (ReservationVO reservation : vmReservations) {
-            if ((vmIds.contains(reservation.getResourceId()) && reservation.getReservedAmount() > 0) || (!vmIds.contains(reservation.getResourceId()) && reservation.getReservedAmount() < 0)) {
-                cputotal -= reservation.getReservedAmount();
-            }
-        }
-        return cputotal;
+        long reservedCpuTotal = calculateReservedResources(userVms, accountId, ResourceType.cpu, null);
+        return cputotal - reservedCpuTotal;
     }
 
     public long calculateMemoryForAccount(long accountId) {
         long ramtotal = 0;
         List<UserVmJoinVO> userVms = getVmsWithAccount(accountId);
-        Set<Long> vmIds = userVms.stream().map(UserVmJoinVO::getId).collect(Collectors.toSet());
-        List<ReservationVO> vmReservations = reservationDao.getReservationsForAccount(accountId, ResourceType.memory, null);
         for (UserVmJoinVO vm : userVms) {
             ramtotal += vm.getRamSize();
         }
-        for (ReservationVO reservation : vmReservations) {
-            if ((vmIds.contains(reservation.getResourceId()) && reservation.getReservedAmount() > 0) || (!vmIds.contains(reservation.getResourceId()) && reservation.getReservedAmount() < 0)) {
-                ramtotal -= reservation.getReservedAmount();
-            }
-        }
-        return ramtotal;
+        long reservedRamTotal = calculateReservedResources(userVms, accountId, ResourceType.memory, null);
+        return ramtotal - reservedRamTotal;
     }
 
     public long calculateSecondaryStorageForAccount(long accountId) {

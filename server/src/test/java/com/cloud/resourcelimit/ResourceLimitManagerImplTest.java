@@ -19,7 +19,6 @@ package com.cloud.resourcelimit;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -636,7 +635,6 @@ public class ResourceLimitManagerImplTest extends TestCase {
         Mockito.when(vmTemplateDao.listByTemplateTag(tag)).thenReturn(List.of(templateVO));
         List<UserVmJoinVO> vmList = List.of(Mockito.mock(UserVmJoinVO.class));
         Mockito.when(userVmJoinDao.listByAccountServiceOfferingTemplateAndNotInState(Mockito.anyLong(), Mockito.anyList(), Mockito.anyList(), Mockito.anyList())).thenReturn(vmList);
-        Mockito.when(reservationDao.getResourceIds(1L, Resource.ResourceType.cpu)).thenReturn(Collections.emptyList());
         List<UserVmJoinVO> result = resourceLimitManager.getVmsWithAccountAndTag(1L, tag);
         Assert.assertEquals(vmList.size(), result.size());
     }
