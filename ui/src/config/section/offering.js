@@ -47,6 +47,13 @@ export default {
           store.getters.apis.createServiceOffering.params.filter(x => x.name === 'rootdisksize').length > 0) {
           fields.splice(12, 0, 'rootdisksize')
         }
+        const detailFields = ['minmemory', 'maxmemory', 'mincpunumber', 'maxcpunumber']
+        for (const field of detailFields) {
+          if (store.getters.apis.createServiceOffering &&
+              store.getters.apis.createServiceOffering.params.filter(x => field === x.name).length > 0) {
+            fields.push(field)
+          }
+        }
         return fields
       },
       resourceType: 'ServiceOffering',
