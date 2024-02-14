@@ -1445,16 +1445,6 @@ public class UserVmManagerImplTest {
     }
 
     @Test
-    public void testGetDiskOfferingSuitabilityForVm() {
-        Map<Long, Boolean> response = new HashMap<>();
-        response.put(1L, true);
-        response.put(2L, false);
-        Mockito.when(virtualMachineManager.getDiskOfferingSuitabilityForVm(Mockito.anyLong(), Mockito.anyList())).thenReturn(response);
-        Map<Long, Boolean> result = userVmManagerImpl.getDiskOfferingSuitabilityForVm(1L, List.of(1L, 2L));
-        Assert.assertEquals(response, result);
-    }
-
-    @Test
     public void testCheckVolumesLimits() {
         userVmManagerImpl.resourceLimitService = resourceLimitMgr;
         long diskOffId1 = 1L;
