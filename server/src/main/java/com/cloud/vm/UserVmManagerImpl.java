@@ -2273,12 +2273,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 // Get serviceOffering for Virtual Machine
                 ServiceOfferingVO serviceOffering = serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
-                VMTemplateVO tempalte = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
+                VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
 
                 // First check that the maximum number of UserVMs, CPU and Memory limit for the given
                 // accountId will not be exceeded
                 if (! VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
-                    resourceLimitService.checkVmResourceLimit(account, vm.isDisplayVm(), serviceOffering, tempalte);
+                    resourceLimitService.checkVmResourceLimit(account, vm.isDisplayVm(), serviceOffering, template);
                 }
 
                 _haMgr.cancelDestroy(vm, vm.getHostId());
@@ -2302,7 +2302,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
 
                 //Update Resource Count for the given account
-                resourceCountIncrement(account.getId(), vm.isDisplayVm(), serviceOffering, tempalte);
+                resourceCountIncrement(account.getId(), vm.isDisplayVm(), serviceOffering, template);
             }
         });
 
@@ -2593,10 +2593,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 // Get serviceOffering and template for Virtual Machine
                 ServiceOfferingVO offering = serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
-                VMTemplateVO tempalte = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
+                VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
 
                 // Update Resource Count for the given account
-                resourceCountDecrement(vm.getAccountId(), vm.isDisplayVm(), offering, tempalte);
+                resourceCountDecrement(vm.getAccountId(), vm.isDisplayVm(), offering, template);
             }
         }
     }
@@ -8452,7 +8452,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
                         Volume.class.getName(), volume.getUuid(), volume.isDisplayVolume());
             }
-            _resourceLimitMgr.decrementVolumeResourceCount(vm.getAccountId(), volume.isDisplayVolume(), volume.getSize(), _diskOfferingDao.findById(volume.getDiskOfferingId()));
+            _resourceLimitMgr.decrementVolumeResourceCount(vm.getAccountId(), volume.isDisplayVolume(),
+                    volume.getSize(), _diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId()));
         }
     }
 

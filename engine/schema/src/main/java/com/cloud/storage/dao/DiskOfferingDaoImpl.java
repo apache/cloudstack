@@ -161,7 +161,6 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
     @Override
     public List<DiskOfferingVO> listByStorageTag(String tag) {
         SearchBuilder<DiskOfferingVO> sb = createSearchBuilder();
-        sb.and("s", sb.entity().getTags(), SearchCriteria.Op.NNULL);
         sb.and("tagNotNull", sb.entity().getTags(), SearchCriteria.Op.NNULL);
         sb.and().op("tagEq", sb.entity().getTags(), SearchCriteria.Op.EQ);
         sb.or("tagStartLike", sb.entity().getTags(), SearchCriteria.Op.LIKE);
