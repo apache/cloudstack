@@ -350,10 +350,10 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
         List<HostJoinVO> hostJoinList = hostJoinDao.searchByIds(
                 hostList.stream().map(HostVO::getId).toArray(Long[]::new));
 
-        Map<Long, Long> hostCpuMap = hostJoinList.stream().collect(Collectors.toMap(HostJoinVO::getId,
-                hostJoin -> hostJoin.getCpus() * hostJoin.getSpeed() - hostJoin.getCpuReservedCapacity() - hostJoin.getCpuUsedCapacity()));
-        Map<Long, Long> hostMemoryMap = hostJoinList.stream().collect(Collectors.toMap(HostJoinVO::getId,
-                hostJoin -> hostJoin.getTotalMemory() - hostJoin.getMemUsedCapacity() - hostJoin.getMemReservedCapacity()));
+        Map<Long, Ternary<Long, Long, Long>> hostCpuMap = hostJoinList.stream().collect(Collectors.toMap(HostJoinVO::getId,
+                hostJoin -> new Ternary<>(hostJoin.getCpuUsedCapacity(), hostJoin.getCpuReservedCapacity(), hostJoin.getCpus() * hostJoin.getSpeed())));
+        Map<Long, Ternary<Long, Long, Long>> hostMemoryMap = hostJoinList.stream().collect(Collectors.toMap(HostJoinVO::getId,
+                hostJoin -> new Ternary<>(hostJoin.getMemUsedCapacity(), hostJoin.getMemReservedCapacity(), hostJoin.getTotalMemory())));
 
         Map<Long, ServiceOffering> vmIdServiceOfferingMap = new HashMap<>();
 
@@ -372,6 +372,8 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
                 logger.debug("VM migrating to it's original host or no host found for migration");
                 break;
             }
+            logger.debug(String.format("Plan for VM %s to migrate from host %s to host %s", vm.getUuid(),
+                    hostMap.get(vm.getHostId()).getUuid(), destHost.getUuid()));
 
             ServiceOffering serviceOffering = vmIdServiceOfferingMap.get(vm.getId());
             migrationPlan.add(new Ternary<>(vm, hostMap.get(vm.getHostId()), hostMap.get(destHost.getId())));
@@ -384,10 +386,11 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
             long vmCpu = (long) serviceOffering.getCpu() * serviceOffering.getSpeed();
             long vmMemory = serviceOffering.getRamSize() * 1024L * 1024L;
 
-            hostCpuMap.put(vm.getHostId(), hostCpuMap.get(vm.getHostId()) + vmCpu);
-            hostCpuMap.put(destHost.getId(), hostCpuMap.get(destHost.getId()) - vmCpu);
-            hostMemoryMap.put(vm.getHostId(), hostMemoryMap.get(vm.getHostId()) + vmMemory);
-            hostMemoryMap.put(destHost.getId(), hostMemoryMap.get(destHost.getId()) - vmMemory);
+            // Updating the map as per the migration
+            hostCpuMap.get(vm.getHostId()).first(hostCpuMap.get(vm.getHostId()).first() - vmCpu);
+            hostCpuMap.get(destHost.getId()).first(hostCpuMap.get(destHost.getId()).first() + vmCpu);
+            hostMemoryMap.get(vm.getHostId()).first(hostMemoryMap.get(vm.getHostId()).first() - vmMemory);
+            hostMemoryMap.get(destHost.getId()).first(hostMemoryMap.get(destHost.getId()).first() + vmMemory);
             vm.setHostId(destHost.getId());
             iteration++;
         }
@@ -440,8 +443,8 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
     Pair<VirtualMachine, Host> getBestMigration(Cluster cluster, ClusterDrsAlgorithm algorithm,
             List<VirtualMachine> vmList,
             Map<Long, ServiceOffering> vmIdServiceOfferingMap,
-            Map<Long, Long> hostCpuCapacityMap,
-            Map<Long, Long> hostMemoryCapacityMap) {
+            Map<Long, Ternary<Long, Long, Long>> hostCpuCapacityMap,
+            Map<Long, Ternary<Long, Long, Long>> hostMemoryCapacityMap) throws ConfigurationException {
         double improvement = 0;
         Pair<VirtualMachine, Host> bestMigration = new Pair<>(null, null);
 
@@ -624,8 +627,9 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[]{ClusterDrsPlanExpireInterval, ClusterDrsEnabled, ClusterDrsInterval,
-                ClusterDrsMaxMigrations, ClusterDrsAlgorithm, ClusterDrsImbalanceThreshold, ClusterDrsMetric};
+        return new ConfigKey<?>[]{ClusterDrsPlanExpireInterval, ClusterDrsEnabled, ClusterDrsInterval, ClusterDrsMaxMigrations,
+                ClusterDrsAlgorithm, ClusterDrsImbalanceThreshold, ClusterDrsMetric, ClusterDrsMetricType, ClusterDrsMetricUseRatio,
+                ClusterDrsImbalanceSkipThreshold};
     }
 
     @Override

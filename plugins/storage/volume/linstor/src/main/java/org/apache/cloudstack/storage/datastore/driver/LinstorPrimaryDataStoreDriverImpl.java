@@ -1241,7 +1241,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
 
     @Override
     public boolean isStorageSupportHA(StoragePoolType type) {
-        return false;
+        return true;
     }
 
     @Override

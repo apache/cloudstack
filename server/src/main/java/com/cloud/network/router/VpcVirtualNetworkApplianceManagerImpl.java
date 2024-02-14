@@ -30,6 +30,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.vpc.dao.VpcDao;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
@@ -299,7 +300,21 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             }
         }
 
-        return super.finalizeVirtualMachineProfile(profile, dest, context);
+        super.finalizeVirtualMachineProfile(profile, dest, context);
+        appendSourceNatIpToBootArgs(profile);
+        return true;
+    }
+
+    private void appendSourceNatIpToBootArgs(final VirtualMachineProfile profile) {
+        final StringBuilder buf = profile.getBootArgsBuilder();
+        final DomainRouterVO router = _routerDao.findById(profile.getVirtualMachine().getId());
+        if (router != null && router.getVpcId() != null) {
+            List<IPAddressVO> vpcIps = _ipAddressDao.listByAssociatedVpc(router.getVpcId(), true);
+            if (CollectionUtils.isNotEmpty(vpcIps)) {
+                buf.append(String.format(" source_nat_ip=%s", vpcIps.get(0).getAddress().toString()));
+                logger.debug("The final Boot Args for " + profile + ": " + buf);
+            }
+        }
     }
 
     @Override
