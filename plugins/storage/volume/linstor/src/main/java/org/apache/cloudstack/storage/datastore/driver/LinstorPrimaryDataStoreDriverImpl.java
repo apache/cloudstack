@@ -958,9 +958,12 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             }
             else {
                 answer = new Answer(cmd, false, "Unable to get matching Linstor endpoint.");
+                deleteResourceDefinition(pool, rscName);
             }
         } catch (ApiException exc) {
             s_logger.error("copy template failed: ", exc);
+            s_logger.info(String.format("deleting failed template resource: %s", rscName));
+            deleteResourceDefinition(pool, rscName);
             throw new CloudRuntimeException(exc.getBestMessage());
         }
         return answer;
