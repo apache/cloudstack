@@ -2292,7 +2292,7 @@
 "label.upload.volume.from.url": "Upload volume from URL",
 "label.url": "URL",
 "label.usage.explanation": "Note: Only the usage server that owns the active usage job is shown here.",
-"label.usage.records": "Usage records",
+"label.usage": "Usage",
 "label.usage.records.downloading": "Downloading usage records",
 "label.usage.records.fetch.child.domains": "Fetch usage records for child domains",
 "label.usage.records.usagetype.required": "Usage type is required with resource ID",
