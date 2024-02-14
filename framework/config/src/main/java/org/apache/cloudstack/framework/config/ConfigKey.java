@@ -36,7 +36,7 @@ public class ConfigKey<T> {
     public static final String CATEGORY_ALERT = "Alert";
 
     public enum Scope {
-        Global, Zone, Cluster, StoragePool, Account, ManagementServer, ImageStore, Domain
+        Global, Zone, Cluster, StoragePool, Account, ManagementServer, ImageStore, Domain, Network
     }
 
     public enum Kind {
