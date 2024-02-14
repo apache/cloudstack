@@ -441,6 +441,7 @@ public class ApiConstants {
     public static final String SYSTEM_VM_TYPE = "systemvmtype";
     public static final String TAGS = "tags";
     public static final String STORAGE_TAGS = "storagetags";
+    public static final String SUCCESS = "success";
     public static final String SUPPORTS_STORAGE_SNAPSHOT = "supportsstoragesnapshot";
     public static final String TARGET_IQN = "targetiqn";
     public static final String TEMPLATE_FILTER = "templatefilter";
@@ -1093,6 +1094,9 @@ public class ApiConstants {
     public static final String IS_TAG_A_RULE = "istagarule";
 
     public static final String PARAMETER_DESCRIPTION_IS_TAG_A_RULE = "Whether the informed tag is a JS interpretable rule or not.";
+
+    public static final String WEBHOOK_RULE_ID = "webhookruleid";
+    public static final String WEBHOOK_RULE_NAME = "webhookrulename";
 
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.

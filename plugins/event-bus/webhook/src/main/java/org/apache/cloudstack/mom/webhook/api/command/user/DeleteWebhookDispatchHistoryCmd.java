@@ -26,21 +26,23 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.ManagementServerResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.mom.webhook.WebhookApiService;
-import org.apache.cloudstack.mom.webhook.WebhookRule;
+import org.apache.cloudstack.mom.webhook.WebhookDispatch;
+import org.apache.cloudstack.mom.webhook.api.response.WebhookDispatchResponse;
 import org.apache.cloudstack.mom.webhook.api.response.WebhookRuleResponse;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "updateWebhookRule",
-        description = "Update a Webhook rule",
+@APICommand(name = "deleteWebhookDispatchHistory",
+        description = "Deletes Webhook dispatch history",
         responseObject = SuccessResponse.class,
-        entityType = {WebhookRule.class},
+        entityType = {WebhookDispatch.class},
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
         since = "4.20.0")
-public class UpdateWebhookRuleCmd extends BaseCmd {
+public class DeleteWebhookDispatchHistoryCmd extends BaseCmd {
 
     @Inject
     WebhookApiService webhookApiService;
@@ -48,34 +50,21 @@ public class UpdateWebhookRuleCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID,
-            entityType = WebhookRuleResponse.class,
-            description = "The ID of the Webhook rule",
-            required = true)
+    @Parameter(name = ApiConstants.ID, type = BaseCmd.CommandType.UUID,
+            entityType = WebhookDispatchResponse.class,
+            description = "The ID of the Webhook dispatch")
     private Long id;
-    @Parameter(name = ApiConstants.NAME, type = BaseCmd.CommandType.STRING, description = "Name for the Webhook rule")
-    private String name;
 
-    @Parameter(name = ApiConstants.DESCRIPTION, type = BaseCmd.CommandType.STRING, description = "Description for the Webhook rule")
-    private String description;
+    @Parameter(name = ApiConstants.WEBHOOK_RULE_ID, type = BaseCmd.CommandType.UUID,
+            entityType = WebhookRuleResponse.class,
+            description = "The ID of the Webhook rule")
+    private Long webhookRuleId;
 
-    @Parameter(name = ApiConstants.STATE, type = BaseCmd.CommandType.STRING, description = "State of the Webhook rule")
-    private String state;
-
-    @Parameter(name = ApiConstants.PAYLOAD_URL,
-            type = BaseCmd.CommandType.STRING,
-            description = "Payload URL of the Webhook rule")
-    private String payloadUrl;
-
-    @Parameter(name = ApiConstants.SECRET_KEY, type = BaseCmd.CommandType.STRING, description = "Secret key of the Webhook rule")
-    private String secretKey;
-
-    @Parameter(name = ApiConstants.SSL_VERIFICATION, type = BaseCmd.CommandType.BOOLEAN, description = "If set to true then SSL verification will be done for the Webhook rule otherwise not")
-    private Boolean sslVerification;
-
-    @Parameter(name = ApiConstants.SCOPE, type = BaseCmd.CommandType.STRING, description = "Scope of the Webhook rule",
-            authorized = {RoleType.Admin, RoleType.DomainAdmin})
-    private String scope;
+    @Parameter(name = ApiConstants.MANAGEMENT_SERVER_ID, type = BaseCmd.CommandType.UUID,
+            entityType = ManagementServerResponse.class,
+            description = "The ID of the management server",
+            authorized = {RoleType.Admin})
+    private Long managementServerId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -84,32 +73,12 @@ public class UpdateWebhookRuleCmd extends BaseCmd {
         return id;
     }
 
-    public String getName() {
-        return name;
+    public Long getWebhookRuleId() {
+        return webhookRuleId;
     }
 
-    public String getDescription() {
-        return description;
-    }
-
-    public String getState() {
-        return state;
-    }
-
-    public String getPayloadUrl() {
-        return payloadUrl;
-    }
-
-    public String getSecretKey() {
-        return secretKey;
-    }
-
-    public Boolean isSslVerification() {
-        return sslVerification;
-    }
-
-    public String getScope() {
-        return scope;
+    public Long getManagementServerId() {
+        return managementServerId;
     }
 
     @Override
@@ -123,11 +92,10 @@ public class UpdateWebhookRuleCmd extends BaseCmd {
     @Override
     public void execute() throws ServerApiException {
         try {
-            WebhookRuleResponse response = webhookApiService.updateWebhookRule(this);
-            if (response == null) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update Webhook rule");
+            if (!webhookApiService.deleteWebhookDispatchHistory(this)) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete webhook dispatch history");
             }
-            response.setResponseName(getCommandName());
+            SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
         } catch (CloudRuntimeException ex) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());

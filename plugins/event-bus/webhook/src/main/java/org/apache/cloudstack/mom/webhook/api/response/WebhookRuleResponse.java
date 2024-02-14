@@ -31,7 +31,7 @@ import com.google.gson.annotations.SerializedName;
 @EntityReference(value = {WebhookRule.class})
 public class WebhookRuleResponse extends BaseResponseWithAnnotations implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "The id of the Webhook rule")
+    @Param(description = "The ID of the Webhook rule")
     private String id;
 
     @SerializedName(ApiConstants.NAME)

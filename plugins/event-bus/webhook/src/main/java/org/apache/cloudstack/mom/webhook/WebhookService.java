@@ -40,5 +40,15 @@ public interface WebhookService extends PluggableService, Configurable {
             "Size of thread pool for webhook dispatchers",
             false, ConfigKey.Scope.Global);
 
+    ConfigKey<Integer> WebhookDispatchHistoryLimit = new ConfigKey<>("Advanced", Integer.class,
+            "webhook.dispatch.history.limit", "100",
+            "Limit for number of webhook dispatches to keep in history",
+            true, ConfigKey.Scope.Global);
+
+    ConfigKey<Integer> WebhookDispatchHistoryCleanupInterval = new ConfigKey<>("Advanced", Integer.class,
+            "webhook.dispatch.history.cleanup.interval", "3600",
+            "Interval (in seconds) for cleaning up webhook dispatch history",
+            false, ConfigKey.Scope.Global);
+
     void handleEvent(Event event);
 }

@@ -19,9 +19,12 @@ package org.apache.cloudstack.mom.webhook;
 
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.mom.webhook.api.command.user.CreateWebhookRuleCmd;
+import org.apache.cloudstack.mom.webhook.api.command.user.DeleteWebhookDispatchHistoryCmd;
 import org.apache.cloudstack.mom.webhook.api.command.user.DeleteWebhookRuleCmd;
+import org.apache.cloudstack.mom.webhook.api.command.user.ListWebhookDispatchHistoryCmd;
 import org.apache.cloudstack.mom.webhook.api.command.user.ListWebhookRulesCmd;
 import org.apache.cloudstack.mom.webhook.api.command.user.UpdateWebhookRuleCmd;
+import org.apache.cloudstack.mom.webhook.api.response.WebhookDispatchResponse;
 import org.apache.cloudstack.mom.webhook.api.response.WebhookRuleResponse;
 
 import com.cloud.utils.component.PluggableService;
@@ -34,4 +37,6 @@ public interface WebhookApiService extends PluggableService {
     boolean deleteWebhookRule(DeleteWebhookRuleCmd cmd) throws CloudRuntimeException;
     WebhookRuleResponse updateWebhookRule(UpdateWebhookRuleCmd cmd) throws CloudRuntimeException;
     WebhookRuleResponse createWebhookRuleResponse(long webhookRuleId);
+    ListResponse<WebhookDispatchResponse> listWebhookDispatchHistory(ListWebhookDispatchHistoryCmd cmd);
+    boolean deleteWebhookDispatchHistory(DeleteWebhookDispatchHistoryCmd cmd) throws CloudRuntimeException;
 }

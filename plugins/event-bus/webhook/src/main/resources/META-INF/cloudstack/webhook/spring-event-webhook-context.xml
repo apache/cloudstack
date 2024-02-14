@@ -28,11 +28,12 @@
                       >
 
     <bean id="webhookRuleDao" class="org.apache.cloudstack.mom.webhook.dao.WebhookRuleDaoImpl" />
+    <bean id="webhookDispatchDao" class="org.apache.cloudstack.mom.webhook.dao.WebhookDispatchDaoImpl" />
     <bean id="webhookApiService" class="org.apache.cloudstack.mom.webhook.WebhookApiServiceImpl" />
     <bean id="webhookService" class="org.apache.cloudstack.mom.webhook.WebhookServiceImpl" />
 
-<!--    <bean id="kubernetesClusterHelper" class="com.cloud.kubernetes.cluster.KubernetesClusterHelperImpl" >-->
-<!--        <property name="name" value="KubernetesClusterHelper" />-->
-<!--    </bean>-->
+    <bean id="webhookEventBus" class="org.apache.cloudstack.mom.webhook.WebhookEventBus">
+        <property name="name" value="webhookEventBus" />
+    </bean>
 
 </beans>

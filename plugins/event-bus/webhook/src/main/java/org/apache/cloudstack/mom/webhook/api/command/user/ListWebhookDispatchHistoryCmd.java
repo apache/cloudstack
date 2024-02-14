@@ -17,29 +17,31 @@
 
 package org.apache.cloudstack.mom.webhook.api.command.user;
 
-
 import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ManagementServerResponse;
 import org.apache.cloudstack.mom.webhook.WebhookApiService;
-import org.apache.cloudstack.mom.webhook.WebhookRule;
+import org.apache.cloudstack.mom.webhook.WebhookDispatch;
+import org.apache.cloudstack.mom.webhook.api.response.WebhookDispatchResponse;
 import org.apache.cloudstack.mom.webhook.api.response.WebhookRuleResponse;
 
-@APICommand(name = "listWebhookRules",
-        description = "Lists Webhook rules",
+@APICommand(name = "listWebhookDispatchHistory",
+        description = "Lists Webhook dispatch history",
         responseObject = WebhookRuleResponse.class,
         responseView = ResponseObject.ResponseView.Restricted,
-        entityType = {WebhookRule.class},
+        entityType = {WebhookDispatch.class},
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
         since = "4.20.0")
-public class ListWebhookRulesCmd extends BaseListProjectAndAccountResourcesCmd {
+public class ListWebhookDispatchHistoryCmd extends BaseListCmd {
 
     @Inject
     WebhookApiService webhookApiService;
@@ -47,16 +49,21 @@ public class ListWebhookRulesCmd extends BaseListProjectAndAccountResourcesCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID,
-            entityType = WebhookRuleResponse.class,
-            description = "The ID of the Webhook rules")
+    @Parameter(name = ApiConstants.ID, type = BaseCmd.CommandType.UUID,
+            entityType = WebhookDispatchResponse.class,
+            description = "The ID of the Webhook dispatch")
     private Long id;
 
-    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "The state of the Webhook rule")
-    private String state;
+    @Parameter(name = ApiConstants.WEBHOOK_RULE_ID, type = BaseCmd.CommandType.UUID,
+            entityType = WebhookRuleResponse.class,
+            description = "The ID of the Webhook rule")
+    private Long webhookRuleId;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the Webhook rule")
-    private String name;
+    @Parameter(name = ApiConstants.MANAGEMENT_SERVER_ID, type = BaseCmd.CommandType.UUID,
+            entityType = ManagementServerResponse.class,
+            description = "The ID of the management server",
+            authorized = {RoleType.Admin})
+    private Long managementServerId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -65,12 +72,12 @@ public class ListWebhookRulesCmd extends BaseListProjectAndAccountResourcesCmd {
         return id;
     }
 
-    public String getState() {
-        return state;
+    public Long getWebhookRuleId() {
+        return webhookRuleId;
     }
 
-    public String getName() {
-        return name;
+    public Long getManagementServerId() {
+        return managementServerId;
     }
 
     /////////////////////////////////////////////////////
@@ -78,7 +85,7 @@ public class ListWebhookRulesCmd extends BaseListProjectAndAccountResourcesCmd {
     /////////////////////////////////////////////////////
     @Override
     public void execute() throws ServerApiException {
-        ListResponse<WebhookRuleResponse> response = webhookApiService.listWebhookRules(this);
+        ListResponse<WebhookDispatchResponse> response = webhookApiService.listWebhookDispatchHistory(this);
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }

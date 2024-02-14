@@ -23,37 +23,64 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.events.Event;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.mom.webhook.dao.WebhookDispatchDao;
 import org.apache.cloudstack.mom.webhook.dao.WebhookRuleDao;
+import org.apache.cloudstack.mom.webhook.vo.WebhookDispatchVO;
 import org.apache.cloudstack.mom.webhook.vo.WebhookRuleVO;
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.log4j.Logger;
 
+import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.utils.Pair;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
+import com.cloud.utils.db.GlobalLock;
 
 public class WebhookServiceImpl extends ManagerBase implements WebhookService {
+    public static final Logger LOGGER = Logger.getLogger(WebhookApiServiceImpl.class.getName());
     public static final String WEBHOOK_JOB_POOL_THREAD_PREFIX = "Webhook-Job-Executor";
     private ExecutorService webhookJobExecutor;
+    private ScheduledExecutorService webhookDispatchCleanupExecutor;
     private CloseableHttpClient closeableHttpClient;
 
     @Inject
     WebhookRuleDao webhookRuleDao;
+    @Inject
+    protected WebhookDispatchDao webhookDispatchDao;
+    @Inject
+    ManagementServerHostDao managementServerHostDao;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         try {
             webhookJobExecutor = Executors.newFixedThreadPool(WebhookDispatcherThreadPoolSize.value(), new NamedThreadFactory(WEBHOOK_JOB_POOL_THREAD_PREFIX));
+            webhookDispatchCleanupExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Webhook-Dispatch-Cleanup-Worker"));
             closeableHttpClient = HttpClients.createDefault();
         } catch (final Exception e) {
             throw new ConfigurationException("Unable to to configure WebhookServiceImpl");
         }
+        return true;
+    }
+
+    @Override
+    public boolean start() {
+        long webhookDispatchCleanupInterval = WebhookDispatchHistoryCleanupInterval.value();
+        webhookDispatchCleanupExecutor.scheduleWithFixedDelay(new WebhookDispatchCleanupWorker(),
+                webhookDispatchCleanupInterval, webhookDispatchCleanupInterval, TimeUnit.SECONDS);
         return true;
     }
 
@@ -73,7 +100,9 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService {
         return new ConfigKey[]{
                 WebhookDeliveryTimeout,
                 WebhookDispatchRetries,
-                WebhookDispatcherThreadPoolSize
+                WebhookDispatcherThreadPoolSize,
+                WebhookDispatchHistoryLimit,
+                WebhookDispatchHistoryCleanupInterval
         };
     }
 
@@ -103,11 +132,55 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService {
                         WebhookDeliveryTimeout.valueIn(rule.getDomainId())));
             }
             Pair<Integer, Integer> configs = domainConfigs.get(rule.getDomainId());
-            WebhookDispatchThread job = new WebhookDispatchThread(closeableHttpClient, rule, event);
+            WebhookDispatchThread.WebhookDispatchContext<WebhookDispatchThread.WebhookDispatchResult> context =
+                    new WebhookDispatchThread.WebhookDispatchContext<>(null, rule);
+            AsyncCallbackDispatcher<WebhookServiceImpl, WebhookDispatchThread.WebhookDispatchResult> caller =
+                    AsyncCallbackDispatcher.create(this);
+            caller.setCallback(caller.getTarget().dispatchCompleteCallback(null, null))
+                    .setContext(context);
+            WebhookDispatchThread job = new WebhookDispatchThread(closeableHttpClient, rule, event, caller);
+            job = ComponentContext.inject(job);
             job.setDispatchRetries(configs.first());
             job.setDeliveryTimeout(configs.second());
             jobs.add(job);
         }
         return jobs;
+    }
+
+    protected Void dispatchCompleteCallback(
+            AsyncCallbackDispatcher<WebhookServiceImpl,WebhookDispatchThread.WebhookDispatchResult> callback,
+            WebhookDispatchThread.WebhookDispatchContext<WebhookRule> context) {
+        WebhookDispatchThread.WebhookDispatchResult result = callback.getResult();
+        WebhookRule rule = context.getRule();
+        WebhookDispatchVO dispatchVO = new WebhookDispatchVO(rule.getId(), ManagementServerNode.getManagementServerId(),
+                result.getPayload(), result.isSuccess(), result.getResult(),  result.getStarTime(),
+                result.getEndTime());
+        webhookDispatchDao.persist(dispatchVO);
+        return null;
+    }
+
+
+    public class WebhookDispatchCleanupWorker extends ManagedContextRunnable {
+        @Override
+        protected void runInContext() {
+            GlobalLock gcLock = GlobalLock.getInternLock("WebhookDispatchHistoryCleanup");
+            try {
+                if (gcLock.lock(3)) {
+                    try {
+                        ManagementServerHostVO msHost = managementServerHostDao.findOneByLongestRuntime();
+                        if (msHost == null || (msHost.getMsid() != ManagementServerNode.getManagementServerId())) {
+                            LOGGER.trace("Skipping the webhook dispatch cleanup task on this management server");
+                            return;
+                        }
+                        long limit = WebhookDispatchHistoryLimit.value();
+                        webhookDispatchDao.removeOlderDispatches(limit);
+                    } finally {
+                        gcLock.unlock();
+                    }
+                }
+            } finally {
+                gcLock.releaseRef();
+            }
+        }
     }
 }

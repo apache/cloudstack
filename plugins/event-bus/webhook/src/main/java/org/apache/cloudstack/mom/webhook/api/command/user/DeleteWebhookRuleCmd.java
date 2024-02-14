@@ -31,7 +31,6 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.mom.webhook.WebhookApiService;
 import org.apache.cloudstack.mom.webhook.WebhookRule;
 import org.apache.cloudstack.mom.webhook.api.response.WebhookRuleResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -39,9 +38,9 @@ import com.cloud.utils.exception.CloudRuntimeException;
         description = "Delete a Webhook rule",
         responseObject = SuccessResponse.class,
         entityType = {WebhookRule.class},
-        authorized = {RoleType.Admin})
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
+        since = "4.20.0")
 public class DeleteWebhookRuleCmd extends BaseCmd {
-    public static final Logger LOGGER = Logger.getLogger(DeleteWebhookRuleCmd.class.getName());
 
     @Inject
     WebhookApiService webhookApiService;
