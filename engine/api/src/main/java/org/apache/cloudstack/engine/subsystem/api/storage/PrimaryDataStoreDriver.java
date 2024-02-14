@@ -42,6 +42,8 @@ public interface PrimaryDataStoreDriver extends DataStoreDriver {
 
     void revokeAccess(DataObject dataObject, Host host, DataStore dataStore);
 
+    boolean requiresAccessForMigration(DataObject dataObject);
+
     /**
      * intended for managed storage (cloud.storage_pool.managed = true)
      * if not managed, return volume.getSize()

@@ -89,6 +89,11 @@ public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver 
     public void revokeAccess(DataObject dataObject, Host host, DataStore dataStore) {}
 
     @Override
+    public boolean requiresAccessForMigration(DataObject dataObject) {
+        return false;
+    }
+
+    @Override
     public long getUsedBytes(StoragePool storagePool) {
         return 0;
     }
