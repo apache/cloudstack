@@ -709,9 +709,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         }
 
-        // Check that the resource limit for volumes won't be exceeded
-//        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.volume, displayVolume);
-
         Long zoneId = cmd.getZoneId();
         Long diskOfferingId = null;
         DiskOfferingVO diskOffering = null;
@@ -1042,7 +1039,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (!created) {
                 logger.trace("Decrementing volume resource count for account id=" + volume.getAccountId() + " as volume failed to create on the backend");
                 _resourceLimitMgr.decrementVolumeResourceCount(volume.getAccountId(), cmd.getDisplayVolume(),
-                        volume.getSize(), _diskOfferingDao.findById(volume.getDiskOfferingId()));
+                        volume.getSize(), _diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId()));
             }
         }
     }
@@ -1530,7 +1527,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
 
             /* Update resource count for the account on primary storage resource */
-            DiskOffering diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
+            DiskOffering diskOffering = _diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId());
             if (!shrinkOk) {
                 _resourceLimitMgr.incrementVolumePrimaryStorageResourceCount(volume.getAccountId(), volume.isDisplayVolume(), newSize - currentSize, diskOffering);
             } else {
@@ -1737,7 +1734,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     return null;
                 }
                 _resourceLimitMgr.decrementVolumeResourceCount(volume.getAccountId(), volume.isDisplay(),
-                        volume.getSize(), _diskOfferingDao.findById(volume.getDiskOfferingId()));
+                        volume.getSize(), _diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId()));
                 return volume;
             }
             if (!deleteVolumeFromStorage(volume, caller)) {
