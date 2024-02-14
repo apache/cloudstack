@@ -23,6 +23,7 @@ import com.google.gson.Gson;
 
 public class Event {
 
+    String eventUuid;
     String eventCategory;
     String eventType;
     String eventSource;
@@ -36,6 +37,14 @@ public class Event {
         setEventSource(eventSource);
         setResourceType(resourceType);
         setResourceUUID(resourceUUID);
+    }
+
+    public String getEventUuid() {
+        return eventUuid;
+    }
+
+    public void setEventUuid(String eventUuid) {
+        this.eventUuid = eventUuid;
     }
 
     public String getEventCategory() {

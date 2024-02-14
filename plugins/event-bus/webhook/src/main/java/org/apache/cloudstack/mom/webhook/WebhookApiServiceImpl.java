@@ -181,9 +181,10 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         final CallContext ctx = CallContext.current();
         final Account caller = ctx.getCallingAccount();
         final Long clusterId = cmd.getId();
-        final String state = cmd.getState();
+        final String stateStr = cmd.getState();
         final String name = cmd.getName();
         final String keyword = cmd.getKeyword();
+        final String scopeStr = cmd.getScope();
         List<WebhookRuleResponse> responsesList = new ArrayList<>();
         List<Long> permittedAccounts = new ArrayList<>();
         Ternary<Long, Boolean, Project.ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(cmd.getDomainId(), cmd.isRecursive(), null);
@@ -199,11 +200,36 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("keyword", sb.entity().getName(), SearchCriteria.Op.LIKE);
-        sb.and("state", sb.entity().getState(), SearchCriteria.Op.IN);
+        sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
+        sb.and("scope", sb.entity().getState(), SearchCriteria.Op.EQ);
         SearchCriteria<WebhookRuleVO> sc = sb.create();
         accountManager.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        WebhookRule.Scope scope = null;
+        if (StringUtils.isNotEmpty(scopeStr)) {
+            try {
+                scope = WebhookRule.Scope.valueOf(scopeStr);
+            } catch (IllegalArgumentException iae) {
+                throw new InvalidParameterValueException("Invalid scope specified");
+            }
+        }
+        if ((WebhookRule.Scope.Global.equals(scope) && !Account.Type.ADMIN.equals(caller.getType())) ||
+                (WebhookRule.Scope.Domain.equals(scope) &&
+                        !List.of(Account.Type.ADMIN, Account.Type.DOMAIN_ADMIN).contains(caller.getType()))) {
+            throw new InvalidParameterValueException(String.format("Scope %s can not be specified", scope));
+        }
+        WebhookRule.State state = null;
+        if (StringUtils.isNotEmpty(stateStr)) {
+            try {
+                state = WebhookRule.State.valueOf(stateStr);
+            } catch (IllegalArgumentException iae) {
+                throw new InvalidParameterValueException("Invalid state specified");
+            }
+        }
+        if (scope != null) {
+            sc.setParameters("scope", scope.name());
+        }
         if (state != null) {
-            sc.setParameters("state", state);
+            sc.setParameters("state", state.name());
         }
         if(keyword != null){
             sc.setParameters("keyword", "%" + keyword + "%");

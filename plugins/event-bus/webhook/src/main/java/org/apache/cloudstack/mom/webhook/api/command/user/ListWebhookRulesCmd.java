@@ -58,6 +58,12 @@ public class ListWebhookRulesCmd extends BaseListProjectAndAccountResourcesCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the Webhook rule")
     private String name;
 
+    @Parameter(name = ApiConstants.SCOPE,
+        type = CommandType.STRING,
+        description = "The scope of the Webhook rule",
+        authorized = {RoleType.Admin, RoleType.DomainAdmin})
+    private String scope;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -71,6 +77,10 @@ public class ListWebhookRulesCmd extends BaseListProjectAndAccountResourcesCmd {
 
     public String getName() {
         return name;
+    }
+
+    public String getScope() {
+        return scope;
     }
 
     /////////////////////////////////////////////////////

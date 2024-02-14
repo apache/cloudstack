@@ -19,17 +19,28 @@ package org.apache.cloudstack.mom.webhook;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Date;
+
+import javax.crypto.Mac;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcContext;
 import org.apache.cloudstack.framework.events.Event;
 import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpHeaders;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -43,6 +54,10 @@ import com.google.gson.Gson;
 
 public class WebhookDispatchThread implements Runnable {
     private static final Logger LOGGER = Logger.getLogger(WebhookDispatchThread.class);
+
+    private static final String HEADER_X_CS_EVENT_ID = "X-CS-Event-ID";
+    private static final String HEADER_X_CS_EVENT = "X-CS-Event";
+    private static final String HEADER_X_CS_SIGNATURE = "X-CS-Signature";
 
     private final CloseableHttpClient httpClient;
     private WebhookRule rule;
@@ -112,13 +127,19 @@ public class WebhookDispatchThread implements Runnable {
             requestConfig.setSocketTimeout(deliveryTimeout * 1000);
             request.setConfig(requestConfig.build());
             request.setURI(uri);
+
+            request.setHeader(HEADER_X_CS_EVENT, event.getEventType());
+            request.setHeader(HEADER_X_CS_EVENT, event.getEventType());
+            request.setHeader(HttpHeaders.USER_AGENT, String.format("CS-Hookshot/%s", event.getEventUuid()));
+
+
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace(String.format("Dispatching event: %s for webhook: %s on URL: %s with timeout: %d, attempt #%d", event.getEventType(), rule.getName(), rule.getPayloadUrl(), deliveryTimeout, attempt));
             }
             StringEntity input = new StringEntity(payload, ContentType.APPLICATION_JSON);
             request.setEntity(input);
 
-            if (!"RANDOM".equals(this.event.getEventCategory())) { //ToDo: Remove this debug
+            if (!"VirtualMachine".equals(this.event.getResourceType())) {
                 if (EventCategory.ACTION_EVENT.getName().equals(this.event.getEventCategory())) {
                     LOGGER.info(String.format("Successfully dispatched event: %s for webhook: %s", payload, rule.getName()));
                     response = "Success";
@@ -142,6 +163,24 @@ public class WebhookDispatchThread implements Runnable {
             response = String.format("Failed due to : %s", e.getMessage());
         }
         return false;
+    }
+
+    public static String getHac(String dataUno,  String keyUno)
+            throws InvalidKeyException, NoSuchAlgorithmException, UnsupportedEncodingException, DecoderException {
+
+        SecretKey secretKey;
+        Mac mac = Mac.getInstance("HMACSHA256");
+
+        byte[] keyBytes = Hex.decodeHex(keyUno);
+
+        secretKey = new SecretKeySpec(keyBytes, mac.getAlgorithm());
+
+        mac.init(secretKey);
+
+        byte[] text = dataUno.getBytes("UTF-8");
+
+        byte[] encodedText = mac.doFinal(text);
+        return new String(Base64.encodeBase64(encodedText)).trim();
     }
 
     public static class WebhookDispatchContext<T> extends AsyncRpcContext<T> {

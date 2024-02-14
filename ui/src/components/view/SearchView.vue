@@ -154,6 +154,7 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import { isAdmin } from '@/role'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
 
@@ -305,6 +306,13 @@ export default {
           this.fields[typeIndex].opts = this.fetchGuestNetworkTypes()
           this.fields[typeIndex].loading = false
         }
+      }
+
+      if (arrayField.includes('scope')) {
+        const scopeIndex = this.fields.findIndex(item => item.name === 'scope')
+        this.fields[scopeIndex].loading = true
+        this.fields[scopeIndex].opts = this.fetchScope()
+        this.fields[scopeIndex].loading = false
       }
 
       if (arrayField.includes('state')) {
@@ -602,6 +610,26 @@ export default {
       }
       return types
     },
+    fetchScopee () {
+      const scope = []
+      if (this.apiName.indexOf('listWebhookRules') > -1) {
+        scope.push({
+          id: 'Local',
+          name: 'label.local'
+        })
+        scope.push({
+          id: 'Domain',
+          name: 'label.domain'
+        })
+        if (isAdmin()) {
+          scope.push({
+            id: 'Global',
+            name: 'label.global'
+          })
+        }
+      }
+      return scope
+    },
     fetchState () {
       const state = []
       if (this.apiName.indexOf('listVolumes') > -1) {
@@ -624,6 +652,15 @@ export default {
         state.push({
           id: 'Expunged',
           name: 'label.expunged'
+        })
+      } else if (this.apiName.indexOf('listWebhookRules') > -1) {
+        state.push({
+          id: 'Enabled',
+          name: 'label.enabled'
+        })
+        state.push({
+          id: 'Disabled',
+          name: 'label.disabled'
         })
       }
       return state

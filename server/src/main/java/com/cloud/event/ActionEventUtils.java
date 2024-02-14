@@ -101,8 +101,8 @@ public class ActionEventUtils {
 
     public static Long onActionEvent(Long userId, Long accountId, Long domainId, String type, String description, Long resourceId, String resourceType) {
         Ternary<Long, String, String> resourceDetails = getResourceDetails(resourceId, resourceType, type);
-        publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Completed, description, resourceDetails.second(), resourceDetails.third());
         Event event = persistActionEvent(userId, accountId, domainId, null, type, Event.State.Completed, true, description, resourceDetails.first(), resourceDetails.third(), null);
+        publishOnEventBus(event.getUuid(), userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Completed, description, resourceDetails.second(), resourceDetails.third());
         return event.getId();
     }
 
@@ -111,8 +111,8 @@ public class ActionEventUtils {
      */
     public static Long onScheduledActionEvent(Long userId, Long accountId, String type, String description, Long resourceId, String resourceType, boolean eventDisplayEnabled, long startEventId) {
         Ternary<Long, String, String> resourceDetails = getResourceDetails(resourceId, resourceType, type);
-        publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Scheduled, description, resourceDetails.second(), resourceDetails.third());
         Event event = persistActionEvent(userId, accountId, null, null, type, Event.State.Scheduled, eventDisplayEnabled, description, resourceDetails.first(), resourceDetails.third(), startEventId);
+        publishOnEventBus(event.getUuid(), userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Scheduled, description, resourceDetails.second(), resourceDetails.third());
         return event.getId();
     }
 
@@ -136,8 +136,8 @@ public class ActionEventUtils {
      */
     public static Long onStartedActionEvent(Long userId, Long accountId, String type, String description, Long resourceId, String resourceType, boolean eventDisplayEnabled, long startEventId) {
         Ternary<Long, String, String> resourceDetails = getResourceDetails(resourceId, resourceType, type);
-        publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Started, description, resourceDetails.second(), resourceDetails.third());
         Event event = persistActionEvent(userId, accountId, null, null, type, Event.State.Started, eventDisplayEnabled, description, resourceDetails.first(), resourceDetails.third(), startEventId);
+        publishOnEventBus(event.getUuid(), userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Started, description, resourceDetails.second(), resourceDetails.third());
         return event.getId();
     }
 
@@ -148,16 +148,16 @@ public class ActionEventUtils {
 
     public static Long onCompletedActionEvent(Long userId, Long accountId, String level, String type, boolean eventDisplayEnabled, String description, Long resourceId, String resourceType, long startEventId) {
         Ternary<Long, String, String> resourceDetails = getResourceDetails(resourceId, resourceType, type);
-        publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Completed, description, resourceDetails.second(), resourceDetails.third());
         Event event = persistActionEvent(userId, accountId, null, level, type, Event.State.Completed, eventDisplayEnabled, description, resourceDetails.first(), resourceDetails.third(), startEventId);
+        publishOnEventBus(event.getUuid(), userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Completed, description, resourceDetails.second(), resourceDetails.third());
         return event.getId();
 
     }
 
     public static Long onCreatedActionEvent(Long userId, Long accountId, String level, String type, boolean eventDisplayEnabled, String description, Long resourceId, String resourceType) {
         Ternary<Long, String, String> resourceDetails = getResourceDetails(resourceId, resourceType, type);
-        publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Created, description, resourceDetails.second(), resourceDetails.third());
         Event event = persistActionEvent(userId, accountId, null, level, type, Event.State.Created, eventDisplayEnabled, description, resourceDetails.first(), resourceDetails.third(), null);
+        publishOnEventBus(event.getUuid(), userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Created, description, resourceDetails.second(), resourceDetails.third());
         return event.getId();
     }
 
@@ -193,7 +193,8 @@ public class ActionEventUtils {
         return event;
     }
 
-    private static void publishOnEventBus(long userId, long accountId, String eventCategory, String eventType, Event.State state, String description, String resourceUuid, String resourceType) {
+    private static void publishOnEventBus(String eventUuid, long userId, long accountId, String eventCategory,
+          String eventType, Event.State state, String description, String resourceUuid, String resourceType) {
         String configKey = Config.PublishActionEvent.key();
         String value = s_configDao.getValue(configKey);
         boolean configValue = Boolean.parseBoolean(value);
@@ -208,6 +209,7 @@ public class ActionEventUtils {
 
         org.apache.cloudstack.framework.events.Event event =
             new org.apache.cloudstack.framework.events.Event(ManagementService.Name, eventCategory, eventType, resourceType, resourceUuid);
+        event.setEventUuid(eventUuid);
 
         Map<String, String> eventDescription = new HashMap<String, String>();
         Project project = s_projectDao.findByProjectAccountId(accountId);

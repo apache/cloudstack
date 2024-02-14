@@ -68,6 +68,90 @@ export default {
       resourceType: 'UserVm',
       permission: ['listInfrastructure', 'listUnmanagedInstances'],
       component: () => import('@/views/tools/ManageInstances.vue')
+    },
+    {
+      name: 'webhook',
+      title: 'label.webhooks',
+      icon: 'message-outlined',
+      docHelp: 'adminguide/webhooks.html',
+      permission: ['listWebhookRules'],
+      columns: () => {
+        const cols = ['name', 'payloadurl', 'state', 'account', 'created']
+        if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
+          cols.push('scope')
+        }
+        return cols
+      },
+      details: ['name', 'id', 'description', 'scope', 'payloadurl', 'sslverification', 'secret', 'state', 'account', 'domainid'],
+      searchFilters: () => {
+        var filters = ['state', 'keyword']
+        if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
+          filters.push('scope')
+        }
+        return filters
+      },
+      filters: () => {
+        const filters = ['self', 'all']
+        return filters
+      },
+      actions: [
+        {
+          api: 'createWebhookRule',
+          icon: 'plus-outlined',
+          label: 'label.create.webhook',
+          message: 'message.webhook.create',
+          docHelp: 'adminguide/events.html#creating-webhooks',
+          listView: true,
+          args: ['name', 'description', 'payloadurl', 'sslverification', 'secret']
+        },
+        {
+          api: 'updateWebhookRule',
+          icon: 'edit-outlined',
+          label: 'label.update.webhook',
+          dataView: true,
+          popup: true,
+          args: ['name', 'description', 'payloadurl', 'sslverification', 'secret']
+        },
+        {
+          api: 'updateWebhookRule',
+          icon: 'play-circle-outlined',
+          label: 'label.enable.webhook',
+          message: 'message.confirm.enable.webhook',
+          dataView: true,
+          groupAction: true,
+          popup: true,
+          defaultArgs: { state: 'Enabled' },
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
+          show: (record) => { return ['Disabled'].includes(record.state) }
+        },
+        {
+          api: 'updateWebhookRule',
+          icon: 'pause-circle-outlined',
+          label: 'label.disable.webhook',
+          message: 'message.confirm.disable.webhook',
+          dataView: true,
+          groupAction: true,
+          popup: true,
+          defaultArgs: { state: 'Disabled' },
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
+          show: (record) => { return ['Enabled'].includes(record.state) }
+        },
+        {
+          api: 'deleteWebhookRule',
+          icon: 'delete-outlined',
+          label: 'label.delete.webhook',
+          message: 'message.delete.webhook',
+          dataView: true,
+          groupAction: true,
+          popup: true,
+          groupShow: (selectedItems, storegetters) => {
+            if (['Admin'].includes(storegetters.userInfo.roletype)) {
+              return true
+            }
+          },
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+        }
+      ]
     }
   ]
 }

@@ -39,7 +39,7 @@ import org.apache.cloudstack.mom.webhook.api.response.WebhookRuleResponse;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "createWebhook",
+@APICommand(name = "createWebhookRule",
         description = "Creates a Webhook rule",
         responseObject = WebhookRuleResponse.class,
         responseView = ResponseObject.ResponseView.Restricted,
@@ -94,7 +94,7 @@ public class CreateWebhookRuleCmd extends BaseCmd {
     private Boolean sslVerification;
 
     @Parameter(name = ApiConstants.SCOPE, type = BaseCmd.CommandType.STRING, description = "Scope of the Webhook rule",
-        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin})
+        authorized = {RoleType.Admin, RoleType.DomainAdmin})
     private String scope;
 
     /////////////////////////////////////////////////////
