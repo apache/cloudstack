@@ -32,9 +32,9 @@ export default {
       permission: ['listVirtualMachinesMetrics'],
       resourceType: 'UserVm',
       params: () => {
-        var params = {}
+        var params = { details: 'servoff,tmpl,nics,backoff' }
         if (store.getters.metrics) {
-          params = { state: 'running' }
+          params = { details: 'servoff,tmpl,nics,backoff,stats' }
         }
         return params
       },

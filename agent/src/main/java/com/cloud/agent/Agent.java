@@ -40,6 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.PingAnswer;
 import com.cloud.utils.NumbersUtil;
 import org.apache.cloudstack.agent.lb.SetupMSListAnswer;
 import org.apache.cloudstack.agent.lb.SetupMSListCommand;
@@ -822,6 +823,9 @@ public class Agent implements HandlerFactory, IAgentControl {
                     listener.processControlResponse(response, (AgentControlAnswer)answer);
                 }
             }
+        } else if (answer instanceof PingAnswer && (((PingAnswer) answer).isSendStartup()) && _reconnectAllowed) {
+            s_logger.info("Management server requested startup command to reinitialize the agent");
+            sendStartup(link);
         } else {
             setLastPingResponseTime();
         }

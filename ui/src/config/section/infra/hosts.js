@@ -94,7 +94,7 @@ export default {
       label: 'label.action.force.reconnect',
       message: 'message.confirm.action.force.reconnect',
       dataView: true,
-      show: (record) => { return ['Disconnected', 'Up'].includes(record.state) }
+      show: (record) => { return ['Disconnected', 'Up', 'Alert'].includes(record.state) }
     },
     {
       api: 'updateHost',
@@ -288,6 +288,26 @@ export default {
         hostids: {
           value: (record) => { return record.id }
         }
+      }
+    },
+    {
+      api: 'declareHostAsDegraded',
+      icon: 'exception-outlined',
+      label: 'label.declare.host.as.degraded',
+      message: 'label.declare.host.as.degraded',
+      dataView: true,
+      show: (record) => {
+        return record.resourcestate !== 'Degraded' && (record.state === 'Alert' || record.state === 'Disconnected')
+      }
+    },
+    {
+      api: 'cancelHostAsDegraded',
+      icon: 'file-done-outlined',
+      label: 'label.cancel.host.as.degraded',
+      message: 'label.cancel.host.as.degraded',
+      dataView: true,
+      show: (record) => {
+        return record.resourcestate === 'Degraded'
       }
     },
     {

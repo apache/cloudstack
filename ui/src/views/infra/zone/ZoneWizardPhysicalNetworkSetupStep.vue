@@ -77,14 +77,17 @@
       </template>
       <template #traffics="{ record, index }">
         <div v-for="traffic in record.traffics" :key="traffic.type">
-          <a-tag
-            :color="trafficColors[traffic.type]"
-            style="margin:2px"
-          >
-            {{ traffic.type.toUpperCase() }}
+          <a-tooltip :title="traffic.type.toUpperCase() + ' (' + traffic.label + ')'">
+            <a-tag
+              :color="trafficColors[traffic.type]"
+              style="margin:2px"
+            >
+            {{ (traffic.type.toUpperCase() + ' (' + traffic.label + ')').slice(0, 20) }}
+            {{ (traffic.type.toUpperCase() + ' (' + traffic.label + ')').length > 20 ? '...' : '' }}
             <edit-outlined class="traffic-type-action" @click="editTraffic(record.key, traffic, $event)"/>
             <delete-outlined class="traffic-type-action" @click="deleteTraffic(record.key, traffic, $event)"/>
           </a-tag>
+          </a-tooltip>
         </div>
         <div v-if="isShowAddTraffic(record.traffics, index)">
           <div class="traffic-select-item" v-if="addingTrafficForKey === record.key">
@@ -133,6 +136,13 @@
           </a-tag>
         </div>
       </template>
+      <template #tags="{ text, record, index }">
+        <a-input
+          :disabled="tungstenNetworkIndex > -1 && tungstenNetworkIndex !== index"
+          :value="text"
+          @change="e => onCellChange(record.key, 'tags', e.target.value)"
+           />
+      </template>
       <template #actions="{ record, index }">
         <tooltip-button
           :tooltip="$t('label.delete')"
@@ -174,10 +184,18 @@
       @cancel="() => { showError = false }"
       centered
     >
-      <div v-ctrl-enter="() => showError = false">
-        <span>{{ $t('message.required.traffic.type') }}</span>
+      <div v-ctrl-enter="() => showError = false" >
+        <a-list item-layout="horizontal" :dataSource="errorList">
+          <template #renderItem="{ item }">
+            <a-list-item>
+              <exclamation-circle-outlined
+              :style="{ color: $config.theme['@error-color'], fontSize: '20px', marginRight: '10px' }"
+              />
+              {{ item }}
+            </a-list-item>
+          </template>
+        </a-list>
         <div :span="24" class="action-button">
-          <a-button @click="showError = false">{{ $t('label.cancel') }}</a-button>
           <a-button type="primary" ref="submit" @click="showError = false">{{ $t('label.ok') }}</a-button>
         </div>
       </div>
@@ -282,6 +300,7 @@ export default {
       addingTrafficForKey: '-1',
       trafficLabelSelected: null,
       showError: false,
+      errorList: [],
       defaultTrafficOptions: [],
       isChangeHyperv: false
     }
@@ -298,7 +317,7 @@ export default {
       columns.push({
         title: this.$t('label.isolation.method'),
         dataIndex: 'isolationMethod',
-        width: 150,
+        width: 125,
         slots: { customRender: 'isolationMethod' }
       })
       columns.push({
@@ -307,6 +326,13 @@ export default {
         dataIndex: 'traffics',
         width: 250,
         slots: { customRender: 'traffics' }
+      })
+      columns.push({
+        title: this.$t('label.tags'),
+        key: 'tags',
+        dataIndex: 'tags',
+        width: 175,
+        slots: { customRender: 'tags' }
       })
       if (this.isAdvancedZone) {
         columns.push({
@@ -399,7 +425,7 @@ export default {
         return { type: item, label: '' }
       })
       this.count = 1
-      this.physicalNetworks = [{ key: this.randomKeyTraffic(this.count), name: 'Physical Network 1', isolationMethod: 'VLAN', traffics: traffics }]
+      this.physicalNetworks = [{ key: this.randomKeyTraffic(this.count), name: 'Physical Network 1', isolationMethod: 'VLAN', traffics: traffics, tags: null }]
     }
     if (this.isAdvancedZone) {
       this.availableTrafficToAdd.push('guest')
@@ -440,27 +466,31 @@ export default {
         key: this.randomKeyTraffic(count + 1),
         name: `Physical Network ${count + 1}`,
         isolationMethod: 'VLAN',
-        traffics: []
+        traffics: [],
+        tags: null
       }
       this.physicalNetworks = [...physicalNetworks, newData]
       this.count = count + 1
       this.hasUnusedPhysicalNetwork = this.getHasUnusedPhysicalNetwork()
     },
     isValidSetup () {
+      this.errorList = []
       let physicalNetworks = this.physicalNetworks
       if (this.tungstenNetworkIndex > -1) {
         physicalNetworks = [this.physicalNetworks[this.tungstenNetworkIndex]]
       }
       const shouldHaveLabels = physicalNetworks.length > 1
       let isValid = true
+      let countPhysicalNetworkWithoutTags = 0
       this.requiredTrafficTypes.forEach(type => {
-        if (!isValid) return false
         let foundType = false
         physicalNetworks.forEach(net => {
           net.traffics.forEach(traffic => {
-            if (!isValid) return false
             if (traffic.type === type) {
               foundType = true
+            }
+            if (traffic.type === 'guest' && type === 'guest' && (!net.tags || net.tags.length === 0)) {
+              countPhysicalNetworkWithoutTags++
             }
             if (this.hypervisor !== 'VMware') {
               if (shouldHaveLabels && (!traffic.label || traffic.label.length === 0)) {
@@ -475,8 +505,15 @@ export default {
         })
         if (!foundType || !isValid) {
           isValid = false
+          if (this.errorList.indexOf(this.$t('message.required.traffic.type')) === -1) {
+            this.errorList.push(this.$t('message.required.traffic.type'))
+          }
         }
       })
+      if (countPhysicalNetworkWithoutTags > 1) {
+        this.errorList.push(this.$t('message.required.tagged.physical.network'))
+        isValid = false
+      }
       return isValid
     },
     handleSubmit (e) {

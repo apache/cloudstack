@@ -65,19 +65,19 @@
                 <div class="list__label">{{ $t('label.protocol') }}</div>
                 <div>{{ element.protocol }}</div>
               </div>
-              <div class="list__col" v-if="element.startport">
+              <div class="list__col" v-if="element.startport !== undefined">
                 <div class="list__label">{{ $t('label.startport') }}</div>
                 <div>{{ element.startport }}</div>
               </div>
-              <div class="list__col" v-if="element.endport">
+              <div class="list__col" v-if="element.endport !== undefined">
                 <div class="list__label">{{ $t('label.endport') }}</div>
                 <div>{{ element.endport }}</div>
               </div>
-              <div class="list__col" v-if="element.icmpcode">
+              <div class="list__col" v-if="element.icmpcode !== undefined">
                 <div class="list__label">{{ $t('label.icmpcode') }}</div>
                 <div>{{ element.icmpcode }}</div>
               </div>
-              <div class="list__col" v-if="element.icmptype">
+              <div class="list__col" v-if="element.icmptype !== undefined">
                 <div class="list__label">{{ $t('label.icmptype') }}</div>
                 <div>{{ element.icmptype }}</div>
               </div>
@@ -212,7 +212,7 @@
           <a-input v-model:value="form.protocolnumber" />
         </a-form-item>
 
-        <div v-if="['icmp', 'protocolnumber'].includes(form.protocol)">
+        <div v-if="form.protocol === 'icmp'">
           <a-form-item :label="$t('label.icmptype')" ref="icmptype" name="icmptype">
             <a-input v-model:value="form.icmptype" :placeholder="$t('icmp.type.desc')" />
           </a-form-item>
@@ -334,7 +334,17 @@ export default {
             result += columnDelimiter
           }
 
-          result += typeof item[key] === 'string' && item[key].includes(columnDelimiter) ? `"${item[key]}"` : item[key]
+          if (key === 'tags') {
+            var tags = '"'
+            if (item[key].length > 0) {
+              item[key].forEach(tag => {
+                tags += '(' + tag.key + ',' + tag.value + ')'
+              })
+            }
+            result += tags + '"'
+          } else {
+            result += typeof item[key] === 'string' && item[key].includes(columnDelimiter) ? `"${item[key]}"` : item[key]
+          }
           ctr++
         })
         result += lineDelimiter

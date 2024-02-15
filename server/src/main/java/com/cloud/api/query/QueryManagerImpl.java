@@ -195,6 +195,7 @@ import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.ha.HighAvailabilityManager;
+import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.RouterHealthCheckResult;
@@ -1076,7 +1077,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         sb.and("stateNIN", sb.entity().getState(), SearchCriteria.Op.NIN);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
-        sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
+        if (clusterId != null) {
+            sb.and().op("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
+            sb.or("clusterHostId", sb.entity().getHostId(), Op.IN);
+            sb.or("clusterLastHostId", sb.entity().getLastHostId(), Op.IN);
+            sb.cp();
+        }
         sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
         sb.and("hostIdEQ", sb.entity().getHostId(), SearchCriteria.Op.EQ);
         sb.and("templateId", sb.entity().getTemplateId(), SearchCriteria.Op.EQ);
@@ -1272,6 +1278,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
             if (clusterId != null) {
                 sc.setParameters("clusterId", clusterId);
+                List<HostJoinVO> hosts = _hostJoinDao.findByClusterId((Long)clusterId, Host.Type.Routing);
+                List<Long> hostIds = hosts.stream().map(HostJoinVO::getId).collect(Collectors.toList());
+                sc.setParameters("clusterHostId", hostIds.toArray());
+                sc.setParameters("clusterLastHostId", hostIds.toArray());
             }
 
             if (hostId != null) {
@@ -2919,6 +2929,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Object id = cmd.getId();
         Object keyword = cmd.getKeyword();
         Long domainId = cmd.getDomainId();
+        Long projectId = cmd.getProjectId();
+        String accountName = cmd.getAccountName();
         Boolean isRootAdmin = _accountMgr.isRootAdmin(account.getAccountId());
         Boolean isRecursive = cmd.isRecursive();
         Long zoneId = cmd.getZoneId();
@@ -2928,7 +2940,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         // Keeping this logic consistent with domain specific zones
         // if a domainId is provided, we just return the disk offering
         // associated with this domain
-        if (domainId != null) {
+        if (domainId != null && accountName == null) {
             if (_accountMgr.isRootAdmin(account.getId()) || isPermissible(account.getDomainId(), domainId)) {
                 // check if the user's domain == do's domain || user's domain is
                 // a child of so's domain for non-root users
@@ -3009,9 +3021,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         // Filter offerings that are not associated with caller's domain
         // Fetch the offering ids from the details table since theres no smart way to filter them in the join ... yet!
-        Account caller = CallContext.current().getCallingAccount();
-        if (caller.getType() != Account.Type.ADMIN) {
-            Domain callerDomain = _domainDao.findById(caller.getDomainId());
+        account = _accountMgr.finalizeOwner(account, accountName, domainId, projectId);
+        if (!Account.Type.ADMIN.equals(account.getType())) {
+            Domain callerDomain = _domainDao.findById(account.getDomainId());
             List<Long> domainIds = findRelatedDomainIds(callerDomain, isRecursive);
 
             List<Long> ids = _diskOfferingDetailsDao.findOfferingIdsByDomainIds(domainIds);
@@ -3090,6 +3102,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         searchFilter.addOrderBy(ServiceOfferingJoinVO.class, "id", true);
 
         Account caller = CallContext.current().getCallingAccount();
+        Long projectId = cmd.getProjectId();
+        String accountName = cmd.getAccountName();
         Object name = cmd.getServiceOfferingName();
         Object id = cmd.getId();
         Object keyword = cmd.getKeyword();
@@ -3105,9 +3119,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Integer cpuSpeed = cmd.getCpuSpeed();
         Boolean encryptRoot = cmd.getEncryptRoot();
 
+        final Account owner = _accountMgr.finalizeOwner(caller, accountName, domainId, projectId);
         SearchCriteria<ServiceOfferingJoinVO> sc = _srvOfferingJoinDao.createSearchCriteria();
         if (!_accountMgr.isRootAdmin(caller.getId()) && isSystem) {
-            throw new InvalidParameterValueException("Only ROOT admins can access system's offering");
+            throw new InvalidParameterValueException("Only ROOT admins can access system offerings.");
         }
 
         // Keeping this logic consistent with domain specific zones
@@ -3116,8 +3131,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (domainId != null && !_accountMgr.isRootAdmin(caller.getId())) {
             // check if the user's domain == so's domain || user's domain is a
             // child of so's domain
-            if (!isPermissible(caller.getDomainId(), domainId)) {
-                throw new PermissionDeniedException("The account:" + caller.getAccountName() + " does not fall in the same domain hierarchy as the service offering");
+            if (!isPermissible(owner.getDomainId(), domainId)) {
+                throw new PermissionDeniedException("The account:" + owner.getAccountName() + " does not fall in the same domain hierarchy as the service offering");
             }
         }
 
@@ -3129,7 +3144,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 throw ex;
             }
 
-            _accountMgr.checkAccess(caller, null, true, vmInstance);
+            _accountMgr.checkAccess(owner, null, true, vmInstance);
 
             currentVmOffering = _srvOfferingDao.findByIdIncludingRemoved(vmInstance.getId(), vmInstance.getServiceOfferingId());
             if (! currentVmOffering.isDynamic()) {
@@ -3177,22 +3192,22 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         // boolean includePublicOfferings = false;
-        if ((_accountMgr.isNormalUser(caller.getId()) || _accountMgr.isDomainAdmin(caller.getId())) || caller.getType() == Account.Type.RESOURCE_DOMAIN_ADMIN) {
+        if ((_accountMgr.isNormalUser(owner.getId()) || _accountMgr.isDomainAdmin(owner.getId())) || owner.getType() == Account.Type.RESOURCE_DOMAIN_ADMIN) {
             // For non-root users.
             if (isSystem) {
                 throw new InvalidParameterValueException("Only root admins can access system's offering");
             }
             if (isRecursive) { // domain + all sub-domains
-                if (caller.getType() == Account.Type.NORMAL) {
+                if (owner.getType() == Account.Type.NORMAL) {
                     throw new InvalidParameterValueException("Only ROOT admins and Domain admins can list service offerings with isrecursive=true");
                 }
             }
         } else {
             // for root users
-            if (caller.getDomainId() != 1 && isSystem) { // NON ROOT admin
-                throw new InvalidParameterValueException("Non ROOT admins cannot access system's offering");
+            if (owner.getDomainId() != 1 && isSystem) { // NON ROOT admin
+                throw new InvalidParameterValueException("Non ROOT admins cannot access system's offering.");
             }
-            if (domainId != null) {
+            if (domainId != null && accountName == null) {
                 sc.addAnd("domainId", Op.FIND_IN_SET, String.valueOf(domainId));
             }
         }
@@ -3276,8 +3291,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         // Filter offerings that are not associated with caller's domain
         // Fetch the offering ids from the details table since theres no smart way to filter them in the join ... yet!
-        if (caller.getType() != Account.Type.ADMIN) {
-            Domain callerDomain = _domainDao.findById(caller.getDomainId());
+        if (owner.getType() != Account.Type.ADMIN) {
+            Domain callerDomain = _domainDao.findById(owner.getDomainId());
             List<Long> domainIds = findRelatedDomainIds(callerDomain, isRecursive);
 
             List<Long> ids = _srvOfferingDetailsDao.findOfferingIdsByDomainIds(domainIds);
@@ -3758,6 +3773,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 }
             } else if (templateFilter == TemplateFilter.sharedexecutable || templateFilter == TemplateFilter.shared) {
                 // only show templates shared by others
+                if (permittedAccounts.isEmpty()) {
+                    return new Pair<>(new ArrayList<>(), 0);
+                }
                 sc.addAnd("sharedAccountId", SearchCriteria.Op.IN, permittedAccountIds.toArray());
             } else if (templateFilter == TemplateFilter.executable) {
                 SearchCriteria<TemplateJoinVO> scc = _templateJoinDao.createSearchCriteria();
@@ -3940,7 +3958,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Override
     public ListResponse<TemplateResponse> listIsos(ListIsosCmd cmd) {
         Pair<List<TemplateJoinVO>, Integer> result = searchForIsosInternal(cmd);
-        ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
+        ListResponse<TemplateResponse> response = new ListResponse<>();
 
         ResponseView respView = ResponseView.Restricted;
         if (cmd instanceof ListIsosCmdByAdmin) {
@@ -3967,11 +3985,11 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             listAll = true;
         }
 
-        List<Long> permittedAccountIds = new ArrayList<Long>();
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
+        List<Long> permittedAccountIds = new ArrayList<>();
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(cmd.getDomainId(), cmd.isRecursive(), null);
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccountIds, domainIdRecursiveListProject, listAll, false);
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
-        List<Account> permittedAccounts = new ArrayList<Account>();
+        List<Account> permittedAccounts = new ArrayList<>();
         for (Long accountId : permittedAccountIds) {
             permittedAccounts.add(_accountMgr.getAccount(accountId));
         }

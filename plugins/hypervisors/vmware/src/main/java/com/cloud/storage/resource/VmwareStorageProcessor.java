@@ -2062,17 +2062,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     datastoreVolumePath = dsMo.getDatastorePath((vmdkPath != null ? vmdkPath : dsMo.getName()) + ".vmdk");
                 } else {
                     if (dsMo.getDatastoreType().equalsIgnoreCase("VVOL")) {
-                        datastoreVolumePath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(dsMo, volumePath + ".vmdk");
-                        if (!dsMo.fileExists(datastoreVolumePath)) {
-                            datastoreVolumePath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(dsMo, vmName, volumePath + ".vmdk");
-                        }
-                        if (!dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmName) || !dsMo.fileExists(datastoreVolumePath)) {
-                            datastoreVolumePath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(dsMo, volumePath, volumePath + ".vmdk");
-                        }
-                        if (!dsMo.folderExists(String.format("[%s]", dsMo.getName()), volumePath) || !dsMo.fileExists(datastoreVolumePath)) {
-                            datastoreVolumePath = dsMo.searchFileInSubFolders(volumePath + ".vmdk", true, null);
-                        }
-
+                        datastoreVolumePath = VmwareStorageLayoutHelper.getDatastoreVolumePath(dsMo, vmName, volumePath);
                     } else {
                         datastoreVolumePath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dsMo.getOwnerDatacenter().first(), vmName, dsMo, volumePath, VmwareManager.s_vmwareSearchExcludeFolder.value());
                     }
@@ -2101,16 +2091,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     }
                     dsMo = new DatastoreMO(context, morDs);
 
-                    datastoreVolumePath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(dsMo, volumePath + ".vmdk");
-                    if (!dsMo.fileExists(datastoreVolumePath)) {
-                        datastoreVolumePath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(dsMo, vmName, volumePath + ".vmdk");
-                    }
-                    if (!dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmName) || !dsMo.fileExists(datastoreVolumePath)) {
-                        datastoreVolumePath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(dsMo, volumePath, volumePath + ".vmdk");
-                    }
-                    if (!dsMo.folderExists(String.format("[%s]", dsMo.getName()), volumePath) || !dsMo.fileExists(datastoreVolumePath)) {
-                        datastoreVolumePath = dsMo.searchFileInSubFolders(volumePath + ".vmdk", true, null);
-                    }
+                    datastoreVolumePath = VmwareStorageLayoutHelper.getDatastoreVolumePath(dsMo, vmName, volumePath);
                 }
             }
 
@@ -2825,7 +2806,15 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
         morDs = firstHostDatastoreSystemMO.findDatastoreByName(datastoreName);
         if (morDs == null) {
-            morDs = firstHostDatastoreSystemMO.createVmfsDatastore(datastoreName, hostScsiDisk);
+            final String hostVersion = firstHostMO.getProductVersion();
+            if (hostVersion.compareTo(VmwareHelper.MIN_VERSION_VMFS6) >= 0) {
+                morDs = firstHostDatastoreSystemMO.createVmfs6Datastore(datastoreName, hostScsiDisk);
+            } else {
+                morDs = firstHostDatastoreSystemMO.createVmfs5Datastore(datastoreName, hostScsiDisk);
+            }
+        } else {
+            // in case of iSCSI/solidfire 1:1 VMFS datastore could be inaccessible
+            mountVmfsDatastore(new DatastoreMO(context, morDs), lstHosts);
         }
 
         if (morDs != null) {
@@ -3364,7 +3353,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         }
     }
 
-    private void rescanAllHosts(VmwareContext context, List<Pair<ManagedObjectReference, String>> lstHostPairs, boolean rescanHba, boolean rescanVmfs) throws Exception {
+    public void rescanAllHosts(VmwareContext context, List<Pair<ManagedObjectReference, String>> lstHostPairs, boolean rescanHba, boolean rescanVmfs) throws Exception {
         List<HostMO> hosts = new ArrayList<>(lstHostPairs.size());
 
         for (Pair<ManagedObjectReference, String> hostPair : lstHostPairs) {

@@ -466,6 +466,9 @@ export default {
           if (physicalNetwork.isolationMethod) {
             params.isolationmethods = physicalNetwork.isolationMethod
           }
+          if (physicalNetwork.tags) {
+            params.tags = physicalNetwork.tags
+          }
 
           try {
             if (!this.stepData.stepMove.includes('createPhysicalNetwork' + index)) {
@@ -482,6 +485,9 @@ export default {
               }
             } else {
               this.stepData.physicalNetworkReturned = this.stepData.physicalNetworkItem['createPhysicalNetwork' + index]
+            }
+            if (physicalNetwork.traffics.findIndex(traffic => traffic.type === 'guest') > -1) {
+              this.stepData.guestPhysicalNetworkId = physicalNetworkReturned.id
             }
           } catch (e) {
             this.messageError = e
@@ -1181,7 +1187,7 @@ export default {
             }
 
             const updateParams = {}
-            updateParams.id = this.stepData.physicalNetworkReturned.id
+            updateParams.id = this.stepData.guestPhysicalNetworkId
             updateParams.vlan = vlan
 
             try {

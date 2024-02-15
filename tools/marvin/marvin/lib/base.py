@@ -1518,6 +1518,8 @@ class Template:
 
         if "directdownload" in services:
             cmd.directdownload = services["directdownload"]
+        if "checksum" in services:
+            cmd.checksum = services["checksum"]
 
         # Register Template
         template = apiclient.registerTemplate(cmd)
@@ -5914,7 +5916,9 @@ class ResourceDetails:
         cmd.resourcetype = resourcetype
         return (apiclient.removeResourceDetail(cmd))
 
+
 # Backup and Recovery
+
 
 class BackupOffering:
 
@@ -5980,6 +5984,7 @@ class BackupOffering:
         cmd.forced = forced
         return (apiclient.removeVirtualMachineFromBackupOffering(cmd))
 
+
 class Backup:
 
     def __init__(self, items):
@@ -5991,14 +5996,16 @@ class Backup:
 
         cmd = createBackup.createBackupCmd()
         cmd.virtualmachineid = vmid
-        return (apiclient.createBackup(cmd))
+        return Backup(apiclient.createBackup(cmd).__dict__)
 
     @classmethod
-    def delete(self, apiclient, id):
+    def delete(self, apiclient, id, forced=None):
         """Delete VM backup"""
 
         cmd = deleteBackup.deleteBackupCmd()
         cmd.id = id
+        if forced:
+            cmd.forced = forced
         return (apiclient.deleteBackup(cmd))
 
     @classmethod
@@ -6010,12 +6017,65 @@ class Backup:
         cmd.listall = True
         return (apiclient.listBackups(cmd))
 
-    def restoreVM(self, apiclient):
+    @classmethod
+    def restoreVM(self, apiclient, backupid):
         """Restore VM from backup"""
 
         cmd = restoreBackup.restoreBackupCmd()
-        cmd.id = self.id
+        cmd.id = backupid
         return (apiclient.restoreBackup(cmd))
+
+    @classmethod
+    def restoreVolumeFromBackupAndAttachToVM(self, apiclient, backupid, volumeid, virtualmachineid):
+        """Restore VM from backup"""
+
+        cmd = restoreVolumeFromBackupAndAttachToVM.restoreVolumeFromBackupAndAttachToVMCmd()
+        cmd.backupid = backupid
+        cmd.volumeid = volumeid
+        cmd.virtualmachineid = virtualmachineid
+        return (apiclient.restoreVolumeFromBackupAndAttachToVM(cmd))
+
+
+class BackupSchedule:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(self, apiclient, vmid, **kwargs):
+        """Create VM backup schedule"""
+
+        cmd = createBackupSchedule.createBackupScheduleCmd()
+        cmd.virtualmachineid = vmid
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return BackupSchedule(apiclient.createBackupSchedule(cmd).__dict__)
+
+    @classmethod
+    def delete(self, apiclient, vmid):
+        """Delete VM backup schedule"""
+
+        cmd = deleteBackupSchedule.deleteBackupScheduleCmd()
+        cmd.virtualmachineid = vmid
+        return (apiclient.deleteBackupSchedule(cmd))
+
+    @classmethod
+    def list(self, apiclient, vmid):
+        """List VM backup schedule"""
+
+        cmd = listBackupSchedule.listBackupScheduleCmd()
+        cmd.virtualmachineid = vmid
+        cmd.listall = True
+        return (apiclient.listBackupSchedule(cmd))
+
+    @classmethod
+    def update(self, apiclient, vmid, **kwargs):
+        """Update VM backup schedule"""
+
+        cmd = updateBackupSchedule.updateBackupScheduleCmd()
+        cmd.virtualmachineid = vmid
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return (apiclient.updateBackupSchedule(cmd))
+
 
 class ProjectRole:
 

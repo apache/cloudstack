@@ -137,7 +137,7 @@ if [ -d "$BINARIES_DIR" ]; then
 
   systemctl stop kubelet
   cp -a ${BINARIES_DIR}/k8s/{kubelet,kubectl} /opt/bin
-  chmod +x {kubelet,kubectl}
+  chmod +x /opt/bin/{kubelet,kubectl}
 
   systemctl daemon-reload
   systemctl restart containerd

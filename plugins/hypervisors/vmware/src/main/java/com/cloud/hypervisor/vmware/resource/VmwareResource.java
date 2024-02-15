@@ -49,6 +49,7 @@ import javax.naming.ConfigurationException;
 import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.backup.PrepareForBackupRestorationCommand;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
@@ -606,6 +607,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 answer = execute((GetVmVncTicketCommand) cmd);
             } else if (clz == GetAutoScaleMetricsCommand.class) {
                 answer = execute((GetAutoScaleMetricsCommand) cmd);
+            } else if (clz == PrepareForBackupRestorationCommand.class) {
+                answer = execute((PrepareForBackupRestorationCommand) cmd);
             } else {
                 answer = Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -939,6 +942,11 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
                 ManagedObjectReference morDS = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, VmwareResource.getDatastoreName(iScsiName));
                 DatastoreMO dsMo = new DatastoreMO(hyperHost.getContext(), morDS);
+
+                if (path.startsWith("[-iqn.")) {
+                    // Rescan 1:1 LUN that VMware may not know the LUN was recently resized
+                    _storageProcessor.rescanAllHosts(context, lstHosts, true, true);
+                }
 
                 _storageProcessor.expandDatastore(hostDatastoreSystem, dsMo);
             }
@@ -2627,7 +2635,9 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             //
             // Power-on VM
             //
-            if (!vmMo.powerOn()) {
+            if (powerOnVM(vmMo, vmInternalCSName, vmNameOnVcenter)) {
+                s_logger.debug(String.format("VM %s has been started successfully with hostname %s.", vmInternalCSName, vmNameOnVcenter));
+            } else {
                 throw new Exception("Failed to start VM. vmName: " + vmInternalCSName + " with hostname " + vmNameOnVcenter);
             }
 
@@ -2697,6 +2707,23 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             }
             return startAnswer;
         }
+    }
+
+    private boolean powerOnVM(final VirtualMachineMO vmMo, final String vmInternalCSName, final String vmNameOnVcenter) throws Exception {
+        int retry = 20;
+        while (retry-- > 0) {
+            try {
+                return vmMo.powerOn();
+            } catch (Exception e) {
+                s_logger.info(String.format("Got exception while power on VM %s with hostname %s", vmInternalCSName, vmNameOnVcenter), e);
+                if (e.getMessage() != null && e.getMessage().contains("File system specific implementation of Ioctl[file] failed")) {
+                    s_logger.debug(String.format("Failed to power on VM %s with hostname %s. Retrying", vmInternalCSName, vmNameOnVcenter));
+                } else {
+                    throw e;
+                }
+            }
+        }
+        return false;
     }
 
     private boolean multipleIsosAtached(DiskTO[] sortedDisks) {
@@ -5186,7 +5213,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                     String childPath = datacenterName + summary.getName();
                     poolInfo.setHostPath(childPath);
                     String uuid = childDsMo.getCustomFieldValue(CustomFieldConstants.CLOUD_UUID);
-                    if (uuid == null) {
+                    if (uuid == null || !uuid.contains("-")) {
                         uuid = UUID.nameUUIDFromBytes(((pool.getHost() + childPath)).getBytes()).toString();
                     }
                     poolInfo.setUuid(uuid);
@@ -7724,6 +7751,35 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         } catch (Exception e) {
             s_logger.error("Error getting VNC ticket for VM " + vmInternalName, e);
             return new GetVmVncTicketAnswer(null, false, e.getLocalizedMessage());
+        }
+    }
+
+    private Answer execute(PrepareForBackupRestorationCommand command) {
+        try {
+            VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
+
+            String vmName = command.getVmName();
+            VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmName);
+
+            if (vmMo == null) {
+                if (hyperHost instanceof HostMO) {
+                    ClusterMO clusterMo = new ClusterMO(hyperHost.getContext(), ((HostMO) hyperHost).getParentMor());
+                    vmMo = clusterMo.findVmOnHyperHost(vmName);
+                }
+            }
+
+            if (vmMo == null) {
+                String msg = "VM " + vmName + " no longer exists to execute PrepareForBackupRestorationCommand command";
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
+
+            vmMo.removeChangeTrackPathFromVmdkForDisks();
+
+            return new Answer(command, true, "success");
+        } catch (Exception e) {
+            s_logger.error("Unexpected exception: ", e);
+            return new Answer(command, false, "Unable to execute PrepareForBackupRestorationCommand due to " + e.toString());
         }
     }
 
