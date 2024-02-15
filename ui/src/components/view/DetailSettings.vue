@@ -194,7 +194,6 @@ export default {
         return
       }
       this.resourceType = this.$route.meta.resourceType
-      console.log(this.resourceType)
       if (resource.details) {
         this.details = Object.keys(resource.details).map(k => {
           return { name: k, value: resource.details[k], edit: false }
