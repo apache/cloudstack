@@ -1200,7 +1200,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     }
                 });
             } else {
-                logger.debug("Cannot delete storage pool {} as the following non-destroyed volumes are on it: {}.", sPool.getName(), getStoragePoolNonDestroyedVolumesLog(sPool.getId()));
+                logger.debug("Cannot delete storage pool {} as the following non-destroyed volumes are on it: {}.", sPool.getName(), () -> getStoragePoolNonDestroyedVolumesLog(sPool.getId()));
                 throw new CloudRuntimeException(String.format("Cannot delete pool %s as there are non-destroyed volumes associated to this pool.", sPool.getName()));
             }
         }
@@ -1236,7 +1236,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             if (vlms.first() > 0) {
                 Pair<Long, Long> nonDstrdVlms = volumeDao.getNonDestroyedCountAndTotalByPool(sPool.getId());
                 if (nonDstrdVlms.first() > 0) {
-                    logger.debug("Cannot delete storage pool {} as the following non-destroyed volumes are on it: {}.", sPool.getName(), getStoragePoolNonDestroyedVolumesLog(sPool.getId()));
+                    logger.debug("Cannot delete storage pool {} as the following non-destroyed volumes are on it: {}.", sPool.getName(), () -> getStoragePoolNonDestroyedVolumesLog(sPool.getId()));
                     throw new CloudRuntimeException(String.format("Cannot delete pool %s as there are non-destroyed volumes associated to this pool.", sPool.getName()));
                 }
                 // force expunge non-destroyed volumes
@@ -1254,7 +1254,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             // Check if the pool has associated volumes in the volumes table
             // If it does , then you cannot delete the pool
             if (vlms.first() > 0) {
-                logger.debug("Cannot delete storage pool {} as the following non-destroyed volumes are on it: {}.", sPool.getName(), getStoragePoolNonDestroyedVolumesLog(sPool.getId()));
+                logger.debug("Cannot delete storage pool {} as the following non-destroyed volumes are on it: {}.", sPool.getName(), () -> getStoragePoolNonDestroyedVolumesLog(sPool.getId()));
                 throw new CloudRuntimeException(String.format("Cannot delete pool %s as there are non-destroyed volumes associated to this pool.", sPool.getName()));
             }
         }
