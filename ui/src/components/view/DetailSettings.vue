@@ -15,6 +15,9 @@
 // specific language governing permissions and limitations
 // under the License.
 
+// :disabled="!('updateTemplate' in $store.getters.apis && 'updateVirtualMachine' in $store.getters.apis && isAdminOrOwner())"
+// :disabled="!(isAdminOrOwner() && ((resourceType === 'Template' && 'updateTemplate' in $store.getters.apis) || (resourceType === 'UserVm' && 'updateVirtualMachine' in $store.getters.apis)))"
+
 <template>
   <a-spin :spinning="loading">
     <a-alert
@@ -26,7 +29,7 @@
         <a-button
           type="dashed"
           style="width: 100%"
-          :disabled="!('updateTemplate' in $store.getters.apis && 'updateVirtualMachine' in $store.getters.apis && isAdminOrOwner())"
+          :disabled="!(isAdminOrOwner() && hasAPIPermission())"
           @click="onShowAddDetail">
           <template #icon><plus-outlined /></template>
           {{ $t('label.add.setting') }}
@@ -96,8 +99,7 @@
         </a-list-item-meta>
         <template #actions>
           <div
-            v-if="!disableSettings && 'updateTemplate' in $store.getters.apis &&
-              'updateVirtualMachine' in $store.getters.apis && isAdminOrOwner() && allowEditOfDetail(item.name)">
+            v-if="!disableSettings && isAdminOrOwner() && allowEditOfDetail(item.name) && hasAPIPermission()">
             <tooltip-button
               :tooltip="$t('label.edit')"
               icon="edit-outlined"
@@ -106,8 +108,7 @@
               @onClick="showEditDetail(index)" />
           </div>
           <div
-            v-if="!disableSettings && 'updateTemplate' in $store.getters.apis &&
-              'updateVirtualMachine' in $store.getters.apis && isAdminOrOwner() && allowEditOfDetail(item.name)">
+            v-if="!disableSettings && isAdminOrOwner() && allowEditOfDetail(item.name) && hasAPIPermission()">
             <a-popconfirm
               :title="`${$t('label.delete.setting')}?`"
               @confirm="deleteDetail(index)"
@@ -196,6 +197,7 @@ export default {
         return
       }
       this.resourceType = this.$route.meta.resourceType
+      console.log(this.resourceType)
       if (resource.details) {
         this.details = Object.keys(resource.details).map(k => {
           return { name: k, value: resource.details[k], edit: false }
@@ -333,6 +335,12 @@ export default {
       this.newValue = ''
       this.error = false
       this.showAddDetail = false
+    },
+    hasAPIPermission () {
+      return (
+        (this.resourceType === 'Template' && 'updateTemplate' in this.$store.getters.apis) ||
+        (this.resourceType === 'UserVm' && 'updateVirtualMachine' in this.$store.getters.apis)
+      )
     }
   }
 }
