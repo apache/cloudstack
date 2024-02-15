@@ -420,15 +420,15 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
 
     /**
      * Checks if the role of the caller account has compatible permissions of the specified role.
-     * For each permission of the role of the caller, the roleToAccess needs to contain the same permission.
+     * For each permission of the role of the caller, the target role needs to contain the same permission.
      *
-     * @param rolePermissions the permissions of the caller role.
-     * @param roleToAccess the role that the caller role wants to access.
+     * @param sourceRolePermissions the permissions of the caller role.
+     * @param targetRole the role that the caller role wants to access.
      * @return True if the role can be accessed with the given permissions; false otherwise.
      */
-    protected boolean roleHasPermission(Map<String, Permission> rolePermissions, Role roleToAccess) {
+    protected boolean roleHasPermission(Map<String, Permission> sourceRolePermissions, Role targetRole) {
         Set<String> rulesAlreadyCompared = new HashSet<>();
-        for (RolePermission rolePermission : findAllPermissionsBy(roleToAccess.getId())) {
+        for (RolePermission rolePermission : findAllPermissionsBy(targetRole.getId())) {
             boolean permissionIsRegex = rolePermission.getRule().getRuleString().contains("*");
 
             for (String apiName : accountManager.getApiNameList()) {
@@ -436,7 +436,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
                     continue;
                 }
 
-                if (rolePermission.getPermission() == Permission.ALLOW && (!rolePermissions.containsKey(apiName) || rolePermissions.get(apiName) == Permission.DENY)) {
+                if (rolePermission.getPermission() == Permission.ALLOW && (!sourceRolePermissions.containsKey(apiName) || sourceRolePermissions.get(apiName) == Permission.DENY)) {
                     return false;
                 }
 
