@@ -41,11 +41,11 @@ public class UserDataResponse extends BaseResponseWithAnnotations implements Con
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project id of the userdata")
+    @Param(description = "the project id of the userdata", since = "4.19.1")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name of the userdata")
+    @Param(description = "the project name of the userdata", since = "4.19.1")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain id of the userdata owner")
