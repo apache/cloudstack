@@ -15,9 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-// :disabled="!('updateTemplate' in $store.getters.apis && 'updateVirtualMachine' in $store.getters.apis && isAdminOrOwner())"
-// :disabled="!(isAdminOrOwner() && ((resourceType === 'Template' && 'updateTemplate' in $store.getters.apis) || (resourceType === 'UserVm' && 'updateVirtualMachine' in $store.getters.apis)))"
-
 <template>
   <a-spin :spinning="loading">
     <a-alert
