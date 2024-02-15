@@ -326,7 +326,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         });
 
         String isRootVolumeReadyMsg = plan.getPoolId() != null ? "is ready" : "is not ready";
-        logger.debug("ROOT volume {} to deploy VM [{}].", vm.getUuid(), isRootVolumeReadyMsg);
+        logger.debug("ROOT volume {} to deploy VM [{}].", isRootVolumeReadyMsg, vm.getUuid());
 
         avoidDisabledResources(vmProfile, dc, avoids);
 
@@ -1803,7 +1803,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
             final List<StoragePool> suitablePools = allocator.allocateToPool(diskProfile, vmProfile, plan, avoid, returnUpTo);
             if (suitablePools != null && !suitablePools.isEmpty()) {
-                logger.debug("StoragePoolAllocator [{}] find {} suitable pools to allocate volume [{}] necessary to deploy VM [{}].",
+                logger.debug("StoragePoolAllocator [{}] found {} suitable pools to allocate volume [{}] necessary to deploy VM [{}].",
                         allocator.getClass().getSimpleName(), suitablePools.size(), toBeCreated.getUuid(), vmProfile.getUuid());
                 checkForPreferredStoragePool(suitablePools, vmProfile.getVirtualMachine(), suitableVolumeStoragePools, toBeCreated);
                 return true;
