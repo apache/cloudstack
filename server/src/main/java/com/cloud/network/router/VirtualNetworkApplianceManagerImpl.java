@@ -2683,9 +2683,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
     protected ArrayList<? extends PublicIpAddress> getPublicIpsToApply(final Provider provider, final Long guestNetworkId,
             final com.cloud.network.IpAddress.State... skipInStates) {
-        final List<? extends IpAddress> userIps;
 
-        userIps = _networkModel.listPublicIpsAssignedToGuestNtwk(guestNetworkId, null);
+        final List<? extends IpAddress> userIps = _networkModel.listPublicIpsAssignedToGuestNtwk(guestNetworkId, null);
 
         final List<PublicIp> allPublicIps = new ArrayList<PublicIp>();
         if (userIps != null && !userIps.isEmpty()) {
