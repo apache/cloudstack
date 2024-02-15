@@ -781,8 +781,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 volume = createVolume(disk, vmToImport, domainId, zoneId, accountId, instanceId, poolId, templateId, backup, true);
                 operation = "created";
             }
-            s_logger.debug(String.format("VM [id: %s, instanceName: %s] backup restore operation %s volume [id: %s].", instanceId, vmInstanceVO.getInstanceName(),
-                    operation, volume.getUuid()));
+            s_logger.debug(String.format("Sync volumes to %s in backup restore operation: %s volume [id: %s].", vmInstanceVO, operation, volume.getUuid()));
         }
     }
 
@@ -879,9 +878,13 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         String tag = parts[parts.length - 1];
         String[] tagSplit = tag.split("-");
         tag = tagSplit[tagSplit.length - 1];
+
+        s_logger.debug(String.format("Trying to find network with vlan: [%s].", vlan));
         NetworkVO networkVO = networkDao.findByVlan(vlan);
         if (networkVO == null) {
             networkVO = createNetworkRecord(zoneId, tag, vlan, accountId, domainId);
+            s_logger.debug(String.format("Created new network record [id: %s] with details [zoneId: %s, tag: %s, vlan: %s, accountId: %s and domainId: %s].",
+                    networkVO.getUuid(), zoneId, tag, vlan, accountId, domainId));
         }
         return networkVO;
     }
@@ -893,6 +896,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         Map<String, NetworkVO> mapping = new HashMap<>();
         for (String networkName : vmNetworkNames) {
             NetworkVO networkVO = getGuestNetworkFromNetworkMorName(networkName, accountId, zoneId, domainId);
+            s_logger.debug(String.format("Mapping network name [%s] to networkVO [id: %s].", networkName, networkVO.getUuid()));
             mapping.put(networkName, networkVO);
         }
         return mapping;
@@ -927,12 +931,19 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             String macAddress = pair.first();
             String networkName = pair.second();
             NetworkVO networkVO = networksMapping.get(networkName);
-            NicVO nicVO = nicDao.findByNetworkIdAndMacAddress(networkVO.getId(), macAddress);
+            NicVO nicVO = nicDao.findByNetworkIdAndMacAddressIncludingRemoved(networkVO.getId(), macAddress);
             if (nicVO != null) {
+                s_logger.warn(String.format("Find NIC in DB with networkId [%s] and MAC Address [%s], so this NIC will be removed from list of unmapped NICs of VM [id: %s, name: %s].",
+                        networkVO.getId(), macAddress, vm.getUuid(), vm.getInstanceName()));
                 allNics.remove(nicVO);
+
+                if (nicVO.getRemoved() != null) {
+                    nicDao.unremove(nicVO.getId());
+                }
             }
         }
         for (final NicVO unMappedNic : allNics) {
+            s_logger.debug(String.format("Removing NIC [%s] from backup restored %s.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(unMappedNic, "uuid", "macAddress"), vm));
             vmManager.removeNicFromVm(vm, unMappedNic);
         }
     }
@@ -1011,12 +1022,12 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     /**
      * Get dest volume full path
      */
-    private String getDestVolumeFullPath(VirtualDisk restoredDisk, VirtualMachineMO restoredVm, VirtualMachineMO vmMo) throws Exception {
+    private String getDestVolumeFullPath(VirtualMachineMO vmMo) throws Exception {
         VirtualDisk vmDisk = vmMo.getVirtualDisks().get(0);
         String vmDiskPath = vmMo.getVmdkFileBaseName(vmDisk);
         String vmDiskFullPath = getVolumeFullPath(vmMo.getVirtualDisks().get(0));
-        String restoredVolumePath = restoredVm.getVmdkFileBaseName(restoredDisk);
-        return vmDiskFullPath.replace(vmDiskPath, restoredVolumePath);
+        String uuid = UUID.randomUUID().toString().replace("-", "");
+        return vmDiskFullPath.replace(vmDiskPath, uuid);
     }
 
     /**
@@ -1068,17 +1079,18 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         VirtualDisk restoredDisk = findRestoredVolume(volumeInfo, vmRestored);
         String diskPath = vmRestored.getVmdkFileBaseName(restoredDisk);
 
-        s_logger.debug("Restored disk size=" + toHumanReadableSize(restoredDisk.getCapacityInKB()) + " path=" + diskPath);
+        s_logger.debug("Restored disk size=" + toHumanReadableSize(restoredDisk.getCapacityInKB() * Resource.ResourceType.bytesToKiB) + " path=" + diskPath);
 
         // Detach restored VM disks
-        vmRestored.detachAllDisks();
+        vmRestored.detachDisk(String.format("%s/%s.vmdk", location, diskPath), false);
 
         String srcPath = getVolumeFullPath(restoredDisk);
-        String destPath = getDestVolumeFullPath(restoredDisk, vmRestored, vmMo);
+        String destPath = getDestVolumeFullPath(vmMo);
 
         VirtualDiskManagerMO virtualDiskManagerMO = new VirtualDiskManagerMO(dcMo.getContext());
 
         // Copy volume to the VM folder
+        s_logger.debug(String.format("Moving volume from %s to %s", srcPath, destPath));
         virtualDiskManagerMO.moveVirtualDisk(srcPath, dcMo.getMor(), destPath, dcMo.getMor(), true);
 
         try {
@@ -1092,11 +1104,13 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             vmRestored.destroy();
         }
 
-        VirtualDisk attachedDisk = getAttachedDisk(vmMo, diskPath);
+        s_logger.debug(String.format("Attaching disk %s to vm %s", destPath, vm.getId()));
+        VirtualDisk attachedDisk = getAttachedDisk(vmMo, destPath);
         if (attachedDisk == null) {
-            s_logger.error("Failed to get the attached the (restored) volume " + diskPath);
+            s_logger.error("Failed to get the attached the (restored) volume " + destPath);
             return false;
         }
+        s_logger.debug(String.format("Creating volume entry for disk %s attached to vm %s", destPath, vm.getId()));
         createVolume(attachedDisk, vmMo, vm.getDomainId(), vm.getDataCenterId(), vm.getAccountId(), vm.getId(), poolId, vm.getTemplateId(), backup, false);
 
         if (vm.getBackupOfferingId() == null) {
@@ -1108,9 +1122,9 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         return true;
     }
 
-    private VirtualDisk getAttachedDisk(VirtualMachineMO vmMo, String diskPath) throws Exception {
+    private VirtualDisk getAttachedDisk(VirtualMachineMO vmMo, String diskFullPath) throws Exception {
         for (VirtualDisk disk : vmMo.getVirtualDisks()) {
-            if (vmMo.getVmdkFileBaseName(disk).equals(diskPath)) {
+            if (getVolumeFullPath(disk).equals(diskFullPath)) {
                 return disk;
             }
         }
