@@ -137,28 +137,33 @@ public class LinstorUtil {
         return path;
     }
 
-    public static long getCapacityBytes(String linstorUrl, String rscGroupName) {
-        DevelopersApi linstorApi = getLinstorAPI(linstorUrl);
-        try {
-            List<ResourceGroup> rscGrps = linstorApi.resourceGroupList(
+    public static List<StoragePool> getRscGroupStoragePools(DevelopersApi api, String rscGroupName)
+            throws ApiException {
+        List<ResourceGroup> rscGrps = api.resourceGroupList(
                 Collections.singletonList(rscGroupName),
                 null,
                 null,
                 null);
 
-            if (rscGrps.isEmpty()) {
-                final String errMsg = String.format("Linstor: Resource group '%s' not found", rscGroupName);
-                LOGGER.error(errMsg);
-                throw new CloudRuntimeException(errMsg);
-            }
+        if (rscGrps.isEmpty()) {
+            final String errMsg = String.format("Linstor: Resource group '%s' not found", rscGroupName);
+            LOGGER.error(errMsg);
+            throw new CloudRuntimeException(errMsg);
+        }
 
-            List<StoragePool> storagePools = linstorApi.viewStoragePools(
+        return api.viewStoragePools(
                 Collections.emptyList(),
                 rscGrps.get(0).getSelectFilter().getStoragePoolList(),
                 null,
                 null,
                 null
-            );
+        );
+    }
+
+    public static long getCapacityBytes(String linstorUrl, String rscGroupName) {
+        DevelopersApi linstorApi = getLinstorAPI(linstorUrl);
+        try {
+            List<StoragePool> storagePools = getRscGroupStoragePools(linstorApi, rscGroupName);
 
             return storagePools.stream()
                 .filter(sp -> sp.getProviderKind() != ProviderKind.DISKLESS)
