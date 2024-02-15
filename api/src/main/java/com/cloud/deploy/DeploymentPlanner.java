@@ -79,7 +79,7 @@ public interface DeploymentPlanner extends Adapter {
 
     public static class ExcludeList implements Serializable {
         private static final long serialVersionUID = -482175549460148301L;
-        private static final Logger LOGGER = LogManager.getLogger(ExcludeList.class);
+        protected static Logger LOGGER = LogManager.getLogger(ExcludeList.class);
         private Set<Long> _dcIds;
         private Set<Long> _podIds;
         private Set<Long> _clusterIds;
@@ -115,10 +115,10 @@ public interface DeploymentPlanner extends Adapter {
             } else if (e instanceof ResourceUnavailableException) {
                 id = ((ResourceUnavailableException) e).getResourceId();
             } else {
-                LOGGER.debug(String.format("Failed to log avoided component due to unexpected exception type [%s].", e.getMessage()));
+                LOGGER.debug("Failed to log avoided component due to unexpected exception type [{}].", e.getMessage());
                 return;
             }
-            LOGGER.debug(String.format("Adding %s [%s] to the avoid set due to [%s].", scope.getSimpleName(), id, e.getMessage()));
+            LOGGER.debug("Adding {} [{}] to the avoid set due to [{}].", scope.getSimpleName(), id, e.getMessage());
         }
 
         public boolean add(InsufficientCapacityException e) {

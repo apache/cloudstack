@@ -28,7 +28,6 @@ import javax.naming.ConfigurationException;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
-import org.apache.logging.log4j.util.Supplier;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.manager.allocator.HostAllocator;
@@ -213,7 +212,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
         List<HostVO> allhostsInCluster = _hostDao.listAllUpAndEnabledNonHAHosts(type, clusterId, podId, dcId, null);
         allhostsInCluster.removeAll(clusterHosts);
 
-        logger.debug((Supplier<String>) () -> String.format("Adding hosts [%s] to the avoid set because these hosts do not support HA.",
+        logger.debug(() -> String.format("Adding hosts [%s] to the avoid set because these hosts do not support HA.",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(allhostsInCluster, "uuid", "name")));
 
         for (HostVO host : allhostsInCluster) {
@@ -331,7 +330,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
 
             //find number of guest VMs occupying capacity on this host.
             if (_capacityMgr.checkIfHostReachMaxGuestLimit(host)) {
-                logger.debug(String.format("Adding host [%s] to the avoid set because this host already has the max number of running (user and/or system) VMs.",
+                logger.debug(() -> String.format("Adding host [%s] to the avoid set because this host already has the max number of running (user and/or system) VMs.",
                         ReflectionToStringBuilderUtils.reflectOnlySelectedFields(host, "uuid", "name")));
                 avoid.addHost(host.getId());
                 continue;
