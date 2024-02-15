@@ -2438,7 +2438,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             for (final NetworkElement element : networkElements) {
                 if (providersToImplement.contains(element.getProvider())) {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug(String.format("Asking %s to release %s, according to %s", element.getName(), nic, nic.getReservationStrategy()));
+                        s_logger.debug(String.format("Asking %s to release %s, according to the reservation strategy %s", element.getName(), nic, nic.getReservationStrategy()));
                     }
                     try {
                         element.release(network, profile, vm, null);
