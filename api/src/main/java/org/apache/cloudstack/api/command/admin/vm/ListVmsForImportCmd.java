@@ -36,7 +36,6 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.cloudstack.vm.VmImportService;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
@@ -50,7 +49,6 @@ import javax.inject.Inject;
         authorized = {RoleType.Admin},
         since = "4.19.0")
 public class ListVmsForImportCmd extends BaseListCmd {
-    public static final Logger LOGGER = Logger.getLogger(ListVmsForImportCmd.class.getName());
 
     @Inject
     public VmImportService vmImportService;

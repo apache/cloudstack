@@ -25,7 +25,8 @@ import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.libvirt.LibvirtException;
 
 import com.cloud.agent.api.to.DiskTO;
@@ -36,9 +37,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 
-@StorageAdaptorInfo(storagePoolType=StoragePoolType.Iscsi)
 public class IscsiAdmStorageAdaptor implements StorageAdaptor {
-    private static final Logger s_logger = Logger.getLogger(IscsiAdmStorageAdaptor.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private static final Map<String, KVMStoragePool> MapStorageUuidToStoragePool = new HashMap<>();
 
@@ -49,6 +49,11 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
         MapStorageUuidToStoragePool.put(uuid, storagePool);
 
         return storagePool;
+    }
+
+    @Override
+    public StoragePoolType getStoragePoolType() {
+        return StoragePoolType.Iscsi;
     }
 
     @Override
@@ -81,7 +86,7 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
     @Override
     public boolean connectPhysicalDisk(String volumeUuid, KVMStoragePool pool, Map<String, String> details) {
         // ex. sudo iscsiadm -m node -T iqn.2012-03.com.test:volume1 -p 192.168.233.10:3260 -o new
-        Script iScsiAdmCmd = new Script(true, "iscsiadm", 0, s_logger);
+        Script iScsiAdmCmd = new Script(true, "iscsiadm", 0, logger);
 
         iScsiAdmCmd.add("-m", "node");
         iScsiAdmCmd.add("-T", getIqn(volumeUuid));
@@ -91,12 +96,12 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
         String result = iScsiAdmCmd.execute();
 
         if (result != null) {
-            s_logger.debug("Failed to add iSCSI target " + volumeUuid);
+            logger.debug("Failed to add iSCSI target " + volumeUuid);
             System.out.println("Failed to add iSCSI target " + volumeUuid);
 
             return false;
         } else {
-            s_logger.debug("Successfully added iSCSI target " + volumeUuid);
+            logger.debug("Successfully added iSCSI target " + volumeUuid);
             System.out.println("Successfully added to iSCSI target " + volumeUuid);
         }
 
@@ -119,7 +124,7 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
         }
 
         // ex. sudo iscsiadm -m node -T iqn.2012-03.com.test:volume1 -p 192.168.233.10:3260 --login
-        iScsiAdmCmd = new Script(true, "iscsiadm", 0, s_logger);
+        iScsiAdmCmd = new Script(true, "iscsiadm", 0, logger);
 
         iScsiAdmCmd.add("-m", "node");
         iScsiAdmCmd.add("-T", getIqn(volumeUuid));
@@ -129,12 +134,12 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
         result = iScsiAdmCmd.execute();
 
         if (result != null) {
-            s_logger.debug("Failed to log in to iSCSI target " + volumeUuid);
+            logger.debug("Failed to log in to iSCSI target " + volumeUuid);
             System.out.println("Failed to log in to iSCSI target " + volumeUuid);
 
             return false;
         } else {
-            s_logger.debug("Successfully logged in to iSCSI target " + volumeUuid);
+            logger.debug("Successfully logged in to iSCSI target " + volumeUuid);
             System.out.println("Successfully logged in to iSCSI target " + volumeUuid);
         }
 
@@ -186,7 +191,7 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
     }
 
     private void executeChapCommand(String path, KVMStoragePool pool, String nParameter, String vParameter, String detail) throws Exception {
-        Script iScsiAdmCmd = new Script(true, "iscsiadm", 0, s_logger);
+        Script iScsiAdmCmd = new Script(true, "iscsiadm", 0, logger);
 
         iScsiAdmCmd.add("-m", "node");
         iScsiAdmCmd.add("-T", getIqn(path));
@@ -202,18 +207,18 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
         detail = useDetail ? detail.trim() + " " : detail;
 
         if (result != null) {
-            s_logger.debug("Failed to execute CHAP " + (useDetail ? detail : "") + "command for iSCSI target " + path + " : message = " + result);
+            logger.debug("Failed to execute CHAP " + (useDetail ? detail : "") + "command for iSCSI target " + path + " : message = " + result);
             System.out.println("Failed to execute CHAP " + (useDetail ? detail : "") + "command for iSCSI target " + path + " : message = " + result);
 
             throw new Exception("Failed to execute CHAP " + (useDetail ? detail : "") + "command for iSCSI target " + path + " : message = " + result);
         } else {
-            s_logger.debug("CHAP " + (useDetail ? detail : "") + "command executed successfully for iSCSI target " + path);
+            logger.debug("CHAP " + (useDetail ? detail : "") + "command executed successfully for iSCSI target " + path);
             System.out.println("CHAP " + (useDetail ? detail : "") + "command executed successfully for iSCSI target " + path);
         }
     }
 
     // example by-path: /dev/disk/by-path/ip-192.168.233.10:3260-iscsi-iqn.2012-03.com.solidfire:storagepool2-lun-0
-    private static String getByPath(String host, int port, String path) {
+    private String getByPath(String host, int port, String path) {
         return "/dev/disk/by-path/ip-" + host + ":" + port + "-iscsi-" + getIqn(path) + "-lun-" + getLun(path);
     }
 
@@ -233,7 +238,7 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
     }
 
     private long getDeviceSize(String deviceByPath) {
-        Script iScsiAdmCmd = new Script(true, "blockdev", 0, s_logger);
+        Script iScsiAdmCmd = new Script(true, "blockdev", 0, logger);
 
         iScsiAdmCmd.add("--getsize64", deviceByPath);
 
@@ -242,32 +247,32 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
         String result = iScsiAdmCmd.execute(parser);
 
         if (result != null) {
-            s_logger.warn("Unable to retrieve the size of device (resource may have moved to a different host)" + deviceByPath);
+            logger.warn("Unable to retrieve the size of device (resource may have moved to a different host)" + deviceByPath);
 
             return 0;
         }
         else {
-            s_logger.info("Successfully retrieved the size of device " + deviceByPath);
+            logger.info("Successfully retrieved the size of device " + deviceByPath);
         }
 
         return Long.parseLong(parser.getLine());
     }
 
-    private static String getIqn(String path) {
+    private String getIqn(String path) {
         return getComponent(path, 1);
     }
 
-    private static String getLun(String path) {
+    private String getLun(String path) {
         return getComponent(path, 2);
     }
 
-    private static String getComponent(String path, int index) {
+    private String getComponent(String path, int index) {
         String[] tmp = path.split("/");
 
         if (tmp.length != 3) {
             String msg = "Wrong format for iScsi path: " + path + ". It should be formatted as '/targetIQN/LUN'.";
 
-            s_logger.warn(msg);
+            logger.warn(msg);
 
             throw new CloudRuntimeException(msg);
         }
@@ -279,7 +284,7 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
         // use iscsiadm to log out of the iSCSI target and un-discover it
 
         // ex. sudo iscsiadm -m node -T iqn.2012-03.com.test:volume1 -p 192.168.233.10:3260 --logout
-        Script iScsiAdmCmd = new Script(true, "iscsiadm", 0, s_logger);
+        Script iScsiAdmCmd = new Script(true, "iscsiadm", 0, logger);
 
         iScsiAdmCmd.add("-m", "node");
         iScsiAdmCmd.add("-T", iqn);
@@ -289,17 +294,17 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
         String result = iScsiAdmCmd.execute();
 
         if (result != null) {
-            s_logger.debug("Failed to log out of iSCSI target /" + iqn + "/" + lun + " : message = " + result);
+            logger.debug("Failed to log out of iSCSI target /" + iqn + "/" + lun + " : message = " + result);
             System.out.println("Failed to log out of iSCSI target /" + iqn + "/" + lun + " : message = " + result);
 
             return false;
         } else {
-            s_logger.debug("Successfully logged out of iSCSI target /" + iqn + "/" + lun);
+            logger.debug("Successfully logged out of iSCSI target /" + iqn + "/" + lun);
             System.out.println("Successfully logged out of iSCSI target /" + iqn + "/" + lun);
         }
 
         // ex. sudo iscsiadm -m node -T iqn.2012-03.com.test:volume1 -p 192.168.233.10:3260 -o delete
-        iScsiAdmCmd = new Script(true, "iscsiadm", 0, s_logger);
+        iScsiAdmCmd = new Script(true, "iscsiadm", 0, logger);
 
         iScsiAdmCmd.add("-m", "node");
         iScsiAdmCmd.add("-T", iqn);
@@ -309,12 +314,12 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
         result = iScsiAdmCmd.execute();
 
         if (result != null) {
-            s_logger.debug("Failed to remove iSCSI target /" + iqn + "/" + lun + " : message = " + result);
+            logger.debug("Failed to remove iSCSI target /" + iqn + "/" + lun + " : message = " + result);
             System.out.println("Failed to remove iSCSI target /" + iqn + "/" + lun + " : message = " + result);
 
             return false;
         } else {
-            s_logger.debug("Removed iSCSI target /" + iqn + "/" + lun);
+            logger.debug("Removed iSCSI target /" + iqn + "/" + lun);
             System.out.println("Removed iSCSI target /" + iqn + "/" + lun);
         }
 
@@ -423,7 +428,7 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
             String msg = "Failed to copy data from " + srcDisk.getPath() + " to " +
                     destDisk.getPath() + ". The error was the following: " + ex.getMessage();
 
-            s_logger.error(msg);
+            logger.error(msg);
 
             throw new CloudRuntimeException(msg);
         }

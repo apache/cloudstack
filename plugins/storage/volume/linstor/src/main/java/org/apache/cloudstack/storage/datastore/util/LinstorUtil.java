@@ -36,10 +36,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class LinstorUtil {
-    private static final Logger s_logger = Logger.getLogger(LinstorUtil.class);
+    protected static Logger LOGGER = LogManager.getLogger(LinstorUtil.class);
 
     public final static String PROVIDER_NAME = "Linstor";
     public static final String RSC_PREFIX = "cs-";
@@ -136,35 +137,40 @@ public class LinstorUtil {
         return path;
     }
 
-    public static long getCapacityBytes(String linstorUrl, String rscGroupName) {
-        DevelopersApi linstorApi = getLinstorAPI(linstorUrl);
-        try {
-            List<ResourceGroup> rscGrps = linstorApi.resourceGroupList(
+    public static List<StoragePool> getRscGroupStoragePools(DevelopersApi api, String rscGroupName)
+            throws ApiException {
+        List<ResourceGroup> rscGrps = api.resourceGroupList(
                 Collections.singletonList(rscGroupName),
                 null,
                 null,
                 null);
 
-            if (rscGrps.isEmpty()) {
-                final String errMsg = String.format("Linstor: Resource group '%s' not found", rscGroupName);
-                s_logger.error(errMsg);
-                throw new CloudRuntimeException(errMsg);
-            }
+        if (rscGrps.isEmpty()) {
+            final String errMsg = String.format("Linstor: Resource group '%s' not found", rscGroupName);
+            LOGGER.error(errMsg);
+            throw new CloudRuntimeException(errMsg);
+        }
 
-            List<StoragePool> storagePools = linstorApi.viewStoragePools(
+        return api.viewStoragePools(
                 Collections.emptyList(),
                 rscGrps.get(0).getSelectFilter().getStoragePoolList(),
                 null,
                 null,
                 null
-            );
+        );
+    }
+
+    public static long getCapacityBytes(String linstorUrl, String rscGroupName) {
+        DevelopersApi linstorApi = getLinstorAPI(linstorUrl);
+        try {
+            List<StoragePool> storagePools = getRscGroupStoragePools(linstorApi, rscGroupName);
 
             return storagePools.stream()
                 .filter(sp -> sp.getProviderKind() != ProviderKind.DISKLESS)
                 .mapToLong(sp -> sp.getTotalCapacity() != null ? sp.getTotalCapacity() : 0L)
                 .sum() * 1024;  // linstor uses kiB
         } catch (ApiException apiEx) {
-            s_logger.error(apiEx.getMessage());
+            LOGGER.error(apiEx.getMessage());
             throw new CloudRuntimeException(apiEx);
         }
     }

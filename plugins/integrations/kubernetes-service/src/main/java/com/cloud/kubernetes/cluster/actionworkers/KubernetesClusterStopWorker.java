@@ -19,7 +19,7 @@ package com.cloud.kubernetes.cluster.actionworkers;
 
 import java.util.List;
 
-import org.apache.log4j.Level;
+import org.apache.logging.log4j.Level;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
@@ -35,8 +35,8 @@ public class KubernetesClusterStopWorker extends KubernetesClusterActionWorker {
 
     public boolean stop() throws CloudRuntimeException {
         init();
-        if (LOGGER.isInfoEnabled()) {
-            LOGGER.info(String.format("Stopping Kubernetes cluster : %s", kubernetesCluster.getName()));
+        if (logger.isInfoEnabled()) {
+            logger.info(String.format("Stopping Kubernetes cluster : %s", kubernetesCluster.getName()));
         }
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.StopRequested);
         List<UserVm> clusterVMs = getKubernetesClusterVMs();
@@ -47,7 +47,7 @@ public class KubernetesClusterStopWorker extends KubernetesClusterActionWorker {
             try {
                 userVmService.stopVirtualMachine(vm.getId(), false);
             } catch (ConcurrentOperationException ex) {
-                LOGGER.warn(String.format("Failed to stop VM : %s in Kubernetes cluster : %s",
+                logger.warn(String.format("Failed to stop VM : %s in Kubernetes cluster : %s",
                     vm.getDisplayName(), kubernetesCluster.getName()), ex);
             }
         }

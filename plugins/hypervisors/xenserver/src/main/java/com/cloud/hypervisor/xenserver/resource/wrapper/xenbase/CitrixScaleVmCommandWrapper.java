@@ -22,7 +22,6 @@ package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 import java.util.Iterator;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.Answer;
@@ -42,7 +41,6 @@ import com.xensource.xenapi.VM;
 @ResourceWrapper(handles =  ScaleVmCommand.class)
 public final class CitrixScaleVmCommandWrapper extends CommandWrapper<ScaleVmCommand, Answer, CitrixResourceBase> {
 
-    private static final Logger s_logger = Logger.getLogger(CitrixScaleVmCommandWrapper.class);
 
     @Override
     public Answer execute(final ScaleVmCommand command, final CitrixResourceBase citrixResourceBase) {
@@ -60,7 +58,7 @@ public final class CitrixScaleVmCommandWrapper extends CommandWrapper<ScaleVmCom
             }
 
             if (vms == null || vms.size() == 0) {
-                s_logger.info("No running VM " + vmName + " exists on XenServer" + citrixResourceBase.getHost().getUuid());
+                logger.info("No running VM " + vmName + " exists on XenServer" + citrixResourceBase.getHost().getUuid());
                 return new ScaleVmAnswer(command, false, "VM does not exist");
             }
 
@@ -82,26 +80,26 @@ public final class CitrixScaleVmCommandWrapper extends CommandWrapper<ScaleVmCom
                     citrixResourceBase.scaleVM(conn, vm, vmSpec, host);
                 } catch (final Exception e) {
                     final String msg = "Catch exception " + e.getClass().getName() + " when scaling VM:" + vmName + " due to " + e.toString();
-                    s_logger.debug(msg);
+                    logger.debug(msg);
                     return new ScaleVmAnswer(command, false, msg);
                 }
 
             }
             final String msg = "scaling VM " + vmName + " is successful on host " + host;
-            s_logger.debug(msg);
+            logger.debug(msg);
             return new ScaleVmAnswer(command, true, msg);
 
         } catch (final XenAPIException e) {
             final String msg = "Upgrade Vm " + vmName + " fail due to " + e.toString();
-            s_logger.warn(msg, e);
+            logger.warn(msg, e);
             return new ScaleVmAnswer(command, false, msg);
         } catch (final XmlRpcException e) {
             final String msg = "Upgrade Vm " + vmName + " fail due to " + e.getMessage();
-            s_logger.warn(msg, e);
+            logger.warn(msg, e);
             return new ScaleVmAnswer(command, false, msg);
         } catch (final Exception e) {
             final String msg = "Unable to upgrade " + vmName + " due to " + e.getMessage();
-            s_logger.warn(msg, e);
+            logger.warn(msg, e);
             return new ScaleVmAnswer(command, false, msg);
         }
     }

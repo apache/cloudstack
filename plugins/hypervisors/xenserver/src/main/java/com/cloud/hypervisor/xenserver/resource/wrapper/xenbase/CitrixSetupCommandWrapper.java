@@ -22,7 +22,6 @@ package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.Answer;
@@ -45,7 +44,6 @@ import com.xensource.xenapi.Types.XenAPIException;
 @ResourceWrapper(handles =  SetupCommand.class)
 public final class CitrixSetupCommandWrapper extends CommandWrapper<SetupCommand, Answer, CitrixResourceBase> {
 
-    private static final Logger s_logger = Logger.getLogger(CitrixSetupCommandWrapper.class);
 
     @Override
     public Answer execute(final SetupCommand command, final CitrixResourceBase citrixResourceBase) {
@@ -61,7 +59,7 @@ public final class CitrixSetupCommandWrapper extends CommandWrapper<SetupCommand
             citrixResourceBase.setupServer(conn, host);
 
             if (!citrixResourceBase.setIptables(conn)) {
-                s_logger.warn("set xenserver Iptable failed");
+                logger.warn("set xenserver Iptable failed");
                 return null;
             }
 
@@ -70,8 +68,8 @@ public final class CitrixSetupCommandWrapper extends CommandWrapper<SetupCommand
                 citrixResourceBase.setCanBridgeFirewall(canBridgeFirewall);
                 if (!canBridgeFirewall) {
                     final String msg = "Failed to configure bridge firewall";
-                    s_logger.warn(msg);
-                    s_logger.warn("Check host " + citrixResourceBase.getHost().getIp() +" for CSP is installed or not and check network mode for bridge");
+                    logger.warn(msg);
+                    logger.warn("Check host " + citrixResourceBase.getHost().getIp() +" for CSP is installed or not and check network mode for bridge");
                     return new SetupAnswer(command, msg);
                 }
 
@@ -90,14 +88,14 @@ public final class CitrixSetupCommandWrapper extends CommandWrapper<SetupCommand
                 }
 
             } catch (final Types.MapDuplicateKey e) {
-                s_logger.debug("multipath is already set");
+                logger.debug("multipath is already set");
             }
 
             if (command.needSetup() ) {
                 final String result = citrixResourceBase.callHostPlugin(conn, "vmops", "setup_iscsi", "uuid", citrixResourceBase.getHost().getUuid());
 
                 if (!result.contains("> DONE <")) {
-                    s_logger.warn("Unable to setup iscsi: " + result);
+                    logger.warn("Unable to setup iscsi: " + result);
                     return new SetupAnswer(command, result);
                 }
 
@@ -114,11 +112,11 @@ public final class CitrixSetupCommandWrapper extends CommandWrapper<SetupCommand
                                     .append("; vlan=")
                                     .append(rec.VLAN)
                                     .toString();
-                            s_logger.warn(msg);
+                            logger.warn(msg);
                             return new SetupAnswer(command, msg);
                         }
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Management network is on pif=" + rec.uuid);
+                        if (logger.isDebugEnabled()) {
+                            logger.debug("Management network is on pif=" + rec.uuid);
                         }
                         mgmtPif = new Pair<PIF, PIF.Record>(pif, rec);
                         break;
@@ -127,14 +125,14 @@ public final class CitrixSetupCommandWrapper extends CommandWrapper<SetupCommand
 
                 if (mgmtPif == null) {
                     final String msg = "Unable to find management network for " + citrixResourceBase.getHost().getUuid();
-                    s_logger.warn(msg);
+                    logger.warn(msg);
                     return new SetupAnswer(command, msg);
                 }
 
                 final Map<Network, Network.Record> networks = Network.getAllRecords(conn);
                 if(networks == null) {
                     final String msg = "Unable to setup as there are no networks in the host: " +  citrixResourceBase.getHost().getUuid();
-                    s_logger.warn(msg);
+                    logger.warn(msg);
                     return new SetupAnswer(command, msg);
                 }
                 for (final Network.Record network : networks.values()) {
@@ -142,8 +140,8 @@ public final class CitrixSetupCommandWrapper extends CommandWrapper<SetupCommand
                         for (final PIF pif : network.PIFs) {
                             final PIF.Record pr = pif.getRecord(conn);
                             if (citrixResourceBase.getHost().getUuid().equals(pr.host.getUuid(conn))) {
-                                if (s_logger.isDebugEnabled()) {
-                                    s_logger.debug("Found a network called cloud-private. host=" + citrixResourceBase.getHost().getUuid() + ";  Network=" + network.uuid + "; pif=" + pr.uuid);
+                                if (logger.isDebugEnabled()) {
+                                    logger.debug("Found a network called cloud-private. host=" + citrixResourceBase.getHost().getUuid() + ";  Network=" + network.uuid + "; pif=" + pr.uuid);
                                 }
                                 if (pr.VLAN != null && pr.VLAN != -1) {
                                     final String msg =
@@ -151,7 +149,7 @@ public final class CitrixSetupCommandWrapper extends CommandWrapper<SetupCommand
                                             .append(" ; pif=")
                                             .append(pr.uuid)
                                             .toString();
-                                    s_logger.warn(msg);
+                                    logger.warn(msg);
                                     return new SetupAnswer(command, msg);
                                 }
                                 if (!pr.management && pr.bondMasterOf != null && pr.bondMasterOf.size() > 0) {
@@ -161,7 +159,7 @@ public final class CitrixSetupCommandWrapper extends CommandWrapper<SetupCommand
                                                 .append("; pif=")
                                                 .append(pr.uuid)
                                                 .toString();
-                                        s_logger.warn(msg);
+                                        logger.warn(msg);
                                         return new SetupAnswer(command, msg);
                                     }
                                     final Bond bond = pr.bondMasterOf.iterator().next();
@@ -173,7 +171,7 @@ public final class CitrixSetupCommandWrapper extends CommandWrapper<SetupCommand
                                                 final String msg =
                                                         new StringBuilder("Unable to transfer management network.  slave=" + spr.uuid + "; master=" + pr.uuid + "; host=" +
                                                                 citrixResourceBase.getHost().getUuid()).toString();
-                                                s_logger.warn(msg);
+                                                logger.warn(msg);
                                                 return new SetupAnswer(command, msg);
                                             }
                                             break;
@@ -188,13 +186,13 @@ public final class CitrixSetupCommandWrapper extends CommandWrapper<SetupCommand
             return new SetupAnswer(command, false);
 
         } catch (final XmlRpcException e) {
-            s_logger.warn("Unable to setup", e);
+            logger.warn("Unable to setup", e);
             return new SetupAnswer(command, e.getMessage());
         } catch (final XenAPIException e) {
-            s_logger.warn("Unable to setup", e);
+            logger.warn("Unable to setup", e);
             return new SetupAnswer(command, e.getMessage());
         } catch (final Exception e) {
-            s_logger.warn("Unable to setup", e);
+            logger.warn("Unable to setup", e);
             return new SetupAnswer(command, e.getMessage());
         }
     }

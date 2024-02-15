@@ -48,7 +48,8 @@ import javax.net.ssl.TrustManagerFactory;
 import org.apache.cloudstack.framework.ca.CAService;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.cloudstack.utils.security.SSLUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -56,7 +57,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 /**
  */
 public class Link {
-    private static final Logger s_logger = Logger.getLogger(Link.class);
+    protected static Logger LOGGER = LogManager.getLogger(Link.class);
 
     private final InetSocketAddress _addr;
     private final NioConnection _connection;
@@ -141,15 +142,15 @@ public class Link {
             headBuf.flip();
 
             while (headRemaining > 0) {
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("Writing Header " + headRemaining);
+                if (LOGGER.isTraceEnabled()) {
+                    LOGGER.trace("Writing Header " + headRemaining);
                 }
                 long count = ch.write(headBuf);
                 headRemaining -= count;
             }
             while (dataRemaining > 0) {
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("Writing Data " + dataRemaining);
+                if (LOGGER.isTraceEnabled()) {
+                    LOGGER.trace("Writing Data " + dataRemaining);
                 }
                 long count = ch.write(pkgBuf);
                 dataRemaining -= count;
@@ -187,14 +188,14 @@ public class Link {
             }
 
             if (_readBuffer.hasRemaining()) {
-                s_logger.trace("Need to read the rest of the packet length");
+                LOGGER.trace("Need to read the rest of the packet length");
                 return null;
             }
             _readBuffer.flip();
             int header = _readBuffer.getInt();
             int readSize = (short)header;
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Packet length is " + readSize);
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("Packet length is " + readSize);
             }
 
             if (readSize > MAX_SIZE_PER_PACKET) {
@@ -215,8 +216,8 @@ public class Link {
             _readHeader = false;
 
             if (_readBuffer.capacity() < readSize) {
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("Resizing the byte buffer from " + _readBuffer.capacity());
+                if (LOGGER.isTraceEnabled()) {
+                    LOGGER.trace("Resizing the byte buffer from " + _readBuffer.capacity());
                 }
                 _readBuffer = ByteBuffer.allocate(readSize);
             }
@@ -228,8 +229,8 @@ public class Link {
         }
 
         if (_readBuffer.hasRemaining()) {   // We're not done yet.
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Still has " + _readBuffer.remaining());
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("Still has " + _readBuffer.remaining());
             }
             return null;
         }
@@ -263,8 +264,8 @@ public class Link {
                 _plaintextBuffer = newBuffer;
             }
             _plaintextBuffer.put(appBuf);
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Done with packet: " + appBuf.limit());
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("Done with packet: " + appBuf.limit());
             }
         }
 
@@ -277,8 +278,8 @@ public class Link {
             _plaintextBuffer.get(result);
             return result;
         } else {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Waiting for more packets");
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("Waiting for more packets");
             }
             return null;
         }
@@ -304,8 +305,8 @@ public class Link {
         item[0].putInt(remaining);
         item[0].flip();
 
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("Sending packet of length " + remaining);
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("Sending packet of length " + remaining);
         }
 
         _writeQueue.add(item);
@@ -334,8 +335,8 @@ public class Link {
         ByteBuffer[] data = null;
         while ((data = _writeQueue.poll()) != null) {
             if (data.length == 0) {
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("Closing connection requested");
+                if (LOGGER.isTraceEnabled()) {
+                    LOGGER.trace("Closing connection requested");
                 }
                 return true;
             }
@@ -378,7 +379,7 @@ public class Link {
         if (caService != null) {
             return caService.createSSLEngine(sslContext, clientAddress);
         }
-        s_logger.error("CA service is not configured, by-passing CA manager to create SSL engine");
+        LOGGER.error("CA service is not configured, by-passing CA manager to create SSL engine");
         char[] passphrase = KeyStoreUtils.DEFAULT_KS_PASSPHRASE;
         final KeyStore ks = loadKeyStore(NioConnection.class.getResourceAsStream("/cloud.keystore"), passphrase);
         final KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
@@ -412,7 +413,7 @@ public class Link {
         char[] passphrase = KeyStoreUtils.DEFAULT_KS_PASSPHRASE;
         File confFile = PropertiesUtil.findConfigFile("agent.properties");
         if (confFile != null) {
-            s_logger.info("Conf file found: " + confFile.getAbsolutePath());
+            LOGGER.info("Conf file found: " + confFile.getAbsolutePath());
             final String pass = PropertiesUtil.loadFromFile(confFile).getProperty(KeyStoreUtils.KS_PASSPHRASE_PROPERTY);
             if (pass != null) {
                 passphrase = pass.toCharArray();
@@ -437,7 +438,7 @@ public class Link {
         } else {
             // This enforces a one-way SSL authentication
             tms = new TrustManager[]{new TrustAllManager()};
-            s_logger.warn("Failed to load keystore, using trust all manager");
+            LOGGER.warn("Failed to load keystore, using trust all manager");
         }
 
         if (stream != null) {
@@ -489,7 +490,7 @@ public class Link {
             try {
                 sslEngine.closeInbound();
             } catch (SSLException e) {
-                s_logger.warn("This SSL engine was forced to close inbound due to end of stream.", e);
+                LOGGER.warn("This SSL engine was forced to close inbound due to end of stream.", e);
             }
             sslEngine.closeOutbound();
             // After closeOutbound the engine will be set to WRAP state,
@@ -502,7 +503,7 @@ public class Link {
             result = sslEngine.unwrap(peerNetData, peerAppData);
             peerNetData.compact();
         } catch (final SSLException sslException) {
-            s_logger.error(String.format("SSL error caught during unwrap data: %s, for local address=%s, remote address=%s. The client may have invalid ca-certificates.",
+            LOGGER.error(String.format("SSL error caught during unwrap data: %s, for local address=%s, remote address=%s. The client may have invalid ca-certificates.",
                     sslException.getMessage(), socketChannel.getLocalAddress(), socketChannel.getRemoteAddress()));
             sslEngine.closeOutbound();
             return new HandshakeHolder(peerAppData, peerNetData, false);
@@ -547,7 +548,7 @@ public class Link {
         try {
             result = sslEngine.wrap(myAppData, myNetData);
         } catch (final SSLException sslException) {
-            s_logger.error(String.format("SSL error caught during wrap data: %s, for local address=%s, remote address=%s.",
+            LOGGER.error(String.format("SSL error caught during wrap data: %s, for local address=%s, remote address=%s.",
                     sslException.getMessage(), socketChannel.getLocalAddress(), socketChannel.getRemoteAddress()));
             sslEngine.closeOutbound();
             return new HandshakeHolder(myAppData, myNetData, true);
@@ -581,7 +582,7 @@ public class Link {
                     // so we make sure that peerNetData is clear to read.
                     peerNetData.clear();
                 } catch (Exception e) {
-                    s_logger.error("Failed to send server's CLOSE message due to socket channel's failure.");
+                    LOGGER.error("Failed to send server's CLOSE message due to socket channel's failure.");
                 }
                 break;
             default:
@@ -609,7 +610,7 @@ public class Link {
                 && handshakeStatus != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING) {
             final long timeTaken = System.currentTimeMillis() - startTimeMills;
             if (timeTaken > 30000L) {
-                s_logger.warn("SSL Handshake has taken more than 30s to connect to: " + socketChannel.getRemoteAddress() +
+                LOGGER.warn("SSL Handshake has taken more than 30s to connect to: " + socketChannel.getRemoteAddress() +
                         ". Please investigate this connection.");
                 return false;
             }
@@ -632,8 +633,8 @@ public class Link {
                 case NEED_TASK:
                     Runnable task;
                     while ((task = sslEngine.getDelegatedTask()) != null) {
-                        if (s_logger.isTraceEnabled()) {
-                            s_logger.trace("SSL: Running delegated task!");
+                        if (LOGGER.isTraceEnabled()) {
+                            LOGGER.trace("SSL: Running delegated task!");
                         }
                         executor.execute(task);
                     }

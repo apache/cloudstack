@@ -62,7 +62,6 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.storage.volume.VolumeObject;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.ResizeVolumeAnswer;
@@ -108,10 +107,12 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
-    private static final Logger log = Logger.getLogger(StorPoolPrimaryDataStoreDriver.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
     private VolumeDao volumeDao;
@@ -190,6 +191,15 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     @Override
     public void revokeAccess(DataObject data, Host host, DataStore dataStore) {
+        if (DataObjectType.VOLUME == data.getType()) {
+            final VolumeVO volume = volumeDao.findById(data.getId());
+            if (volume.getInstanceId() == null) {
+                StorPoolUtil.spLog("Removing tags from detached volume=%s", volume.toString());
+                SpConnectionDesc conn = StorPoolUtil.getSpConnection(dataStore.getUuid(), dataStore.getId(), storagePoolDetailsDao, primaryStoreDao);
+                StorPoolUtil.volumeRemoveTags(StorPoolStorageAdaptor.getVolumeNameFromPath(volume.getPath(), true), conn);
+            }
+        }
+
     }
 
     private void updateStoragePool(final long poolId, final long deltaUsedBytes) {
@@ -364,11 +374,11 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     // try restoring volume to its initial size
                     resp = StorPoolUtil.volumeUpdate(name, oldSize, true, oldMaxIops, conn);
                     if (resp.getError() != null) {
-                        log.debug(String.format("Could not resize StorPool volume %s back to its original size. Error: %s", name, resp.getError()));
+                        logger.debug(String.format("Could not resize StorPool volume %s back to its original size. Error: %s", name, resp.getError()));
                     }
                 }
             } catch (Exception e) {
-                log.debug("sending resize command failed", e);
+                logger.debug("sending resize command failed", e);
                 err = e.toString();
             }
         } else {
@@ -413,7 +423,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
 
         if (err != null) {
-            log.error(err);
+            logger.error(err);
             StorPoolUtil.spLog(err);
         }
 
@@ -562,7 +572,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                                 SpApiResponse resp = StorPoolUtil.snapshotDelete(snapName, conn);
                                 if (resp.getError() != null) {
                                     final String err2 = String.format("Failed to cleanup StorPool snapshot '%s'. Error: %s.", snapName, resp.getError());
-                                    log.error(err2);
+                                    logger.error(err2);
                                     StorPoolUtil.spLog(err2);
                                 }
                             }
@@ -593,7 +603,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                         if (answer != null && answer.getResult()) {
                             SpApiResponse resSnapshot = StorPoolUtil.volumeSnapshot(volumeName, template.getUuid(), null, "template", "no", conn);
                             if (resSnapshot.getError() != null) {
-                                log.debug(String.format("Could not snapshot volume with ID=%s", volume.getId()));
+                                logger.debug(String.format("Could not snapshot volume with ID=%s", volume.getId()));
                                 StorPoolUtil.spLog("Volume snapshot failed with error=%s", resSnapshot.getError().getDescr());
                                 err = resSnapshot.getError().getDescr();
                             }
@@ -675,7 +685,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 if (err != null) {
                     resp = StorPoolUtil.volumeDelete(StorPoolUtil.getNameFromResponse(resp, true), conn);
                     if (resp.getError() != null) {
-                        log.warn(String.format("Could not clean-up Storpool volume %s. Error: %s", name, resp.getError()));
+                        logger.warn(String.format("Could not clean-up Storpool volume %s. Error: %s", name, resp.getError()));
                     }
                 }
             } else if (srcType == DataObjectType.TEMPLATE && dstType == DataObjectType.VOLUME) {
@@ -768,7 +778,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                         if (err != null) {
                             SpApiResponse resp3 = StorPoolUtil.volumeDelete(name, conn);
                             if (resp3.getError() != null) {
-                               log.warn(String.format("Could not clean-up Storpool volume %s. Error: %s", name, resp3.getError()));
+                               logger.warn(String.format("Could not clean-up Storpool volume %s. Error: %s", name, resp3.getError()));
                             }
                         }
                     }
@@ -817,7 +827,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                         final SpApiResponse resp2 = StorPoolUtil.snapshotDelete(snapshotName, conn);
                         if (resp2.getError() != null) {
                             final String err2 = String.format("Failed to delete temporary StorPool snapshot %s. Error: %s", StorPoolUtil.getNameFromResponse(resp, true), resp2.getError());
-                            log.error(err2);
+                            logger.error(err2);
                             StorPoolUtil.spLog(err2);
                         }
                     }
@@ -837,7 +847,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         if (err != null) {
             StorPoolUtil.spLog("Failed due to %s", err);
 
-            log.error(err);
+            logger.error(err);
             answer = new Answer(cmd, false, err);
         }
 
@@ -1038,7 +1048,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
 
         if (vinfo.getMaxIops() != null) {
-            response = StorPoolUtil.volumeUpdateTags(volumeName, null, vinfo.getMaxIops(), conn, null);
+            response = StorPoolUtil.volumeUpdateIopsAndTags(volumeName, null, vinfo.getMaxIops(), conn, null);
             if (response.getError() != null) {
                 StorPoolUtil.spLog("Volume was reverted successfully but max iops could not be set due to %s", response.getError().getDescr());
             }
@@ -1054,7 +1064,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     public void handleQualityOfServiceForVolumeMigration(VolumeInfo arg0, QualityOfServiceState arg1) {
-        log.debug(String.format("handleQualityOfServiceForVolumeMigration with volume name=%s is not supported", arg0.getName()));
+        logger.debug(String.format("handleQualityOfServiceForVolumeMigration with volume name=%s is not supported", arg0.getName()));
     }
 
 
@@ -1127,18 +1137,21 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Override
     public void provideVmInfo(long vmId, long volumeId) {
         VolumeVO volume = volumeDao.findById(volumeId);
+        if (volume.getInstanceId() == null) {
+            return;
+        }
         StoragePoolVO poolVO = primaryStoreDao.findById(volume.getPoolId());
         if (poolVO != null) {
             try {
                 SpConnectionDesc conn = StorPoolUtil.getSpConnection(poolVO.getUuid(), poolVO.getId(), storagePoolDetailsDao, primaryStoreDao);
                 String volName = StorPoolStorageAdaptor.getVolumeNameFromPath(volume.getPath(), true);
                 VMInstanceVO userVM = vmInstanceDao.findById(vmId);
-                SpApiResponse resp = StorPoolUtil.volumeUpdateTags(volName, volume.getInstanceId() != null ? userVM.getUuid() : "", null, conn, getVcPolicyTag(vmId));
+                SpApiResponse resp = StorPoolUtil.volumeUpdateIopsAndTags(volName, volume.getInstanceId() != null ? userVM.getUuid() : "", null, conn, getVcPolicyTag(vmId));
                 if (resp.getError() != null) {
-                    log.warn(String.format("Could not update VC policy tags of a volume with id [%s]", volume.getUuid()));
+                    logger.warn(String.format("Could not update VC policy tags of a volume with id [%s]", volume.getUuid()));
                 }
             } catch (Exception e) {
-                log.warn(String.format("Could not update Virtual machine tags due to %s", e.getMessage()));
+                logger.warn(String.format("Could not update Virtual machine tags due to %s", e.getMessage()));
             }
         }
     }
@@ -1158,10 +1171,10 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 String volName = StorPoolStorageAdaptor.getVolumeNameFromPath(volume.getPath(), true);
                 SpApiResponse resp = StorPoolUtil.volumeUpdateVCTags(volName, conn, getVcPolicyTag(vmId));
                 if (resp.getError() != null) {
-                    log.warn(String.format("Could not update VC policy tags of a volume with id [%s]", volume.getUuid()));
+                    logger.warn(String.format("Could not update VC policy tags of a volume with id [%s]", volume.getUuid()));
                 }
             } catch (Exception e) {
-                log.warn(String.format("Could not update Virtual machine tags due to %s", e.getMessage()));
+                logger.warn(String.format("Could not update Virtual machine tags due to %s", e.getMessage()));
             }
         }
     }

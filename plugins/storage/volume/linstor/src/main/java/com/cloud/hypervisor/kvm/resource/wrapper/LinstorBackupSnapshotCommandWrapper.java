@@ -35,7 +35,8 @@ import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.commons.io.FileUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.joda.time.Duration;
 import org.libvirt.LibvirtException;
 
@@ -43,7 +44,7 @@ import org.libvirt.LibvirtException;
 public final class LinstorBackupSnapshotCommandWrapper
     extends CommandWrapper<LinstorBackupSnapshotCommand, CopyCmdAnswer, LibvirtComputingResource>
 {
-    private static final Logger s_logger = Logger.getLogger(LinstorBackupSnapshotCommandWrapper.class);
+    protected static Logger LOGGER = LogManager.getLogger(LinstorBackupSnapshotCommandWrapper.class);
 
     private String zfsSnapdev(boolean hide, String zfsUrl) {
         Script script = new Script("/usr/bin/zfs", Duration.millis(5000));
@@ -67,7 +68,7 @@ public final class LinstorBackupSnapshotCommandWrapper
             try {
                 secondaryPool.delete();
             } catch (final Exception e) {
-                s_logger.debug("Failed to delete secondary storage", e);
+                LOGGER.debug("Failed to delete secondary storage", e);
             }
         }
     }
@@ -90,7 +91,7 @@ public final class LinstorBackupSnapshotCommandWrapper
         // NOTE: the qemu img will also contain the drbd metadata at the end
         final QemuImg qemu = new QemuImg(waitMilliSeconds);
         qemu.convert(srcFile, dstFile);
-        s_logger.info("Backup snapshot " + srcFile + " to " + dstPath);
+        LOGGER.info("Backup snapshot " + srcFile + " to " + dstPath);
         return dstPath;
     }
 
@@ -107,7 +108,7 @@ public final class LinstorBackupSnapshotCommandWrapper
     @Override
     public CopyCmdAnswer execute(LinstorBackupSnapshotCommand cmd, LibvirtComputingResource serverResource)
     {
-        s_logger.debug("LinstorBackupSnapshotCommandWrapper: " + cmd.getSrcTO().getPath() + " -> " + cmd.getDestTO().getPath());
+        LOGGER.debug("LinstorBackupSnapshotCommandWrapper: " + cmd.getSrcTO().getPath() + " -> " + cmd.getDestTO().getPath());
         final SnapshotObjectTO src = (SnapshotObjectTO) cmd.getSrcTO();
         final SnapshotObjectTO dst = (SnapshotObjectTO) cmd.getDestTO();
         KVMStoragePool secondaryPool = null;
@@ -130,7 +131,7 @@ public final class LinstorBackupSnapshotCommandWrapper
             // provide the linstor snapshot block device
             // on lvm thin this should already be there in /dev/mapper/vg-snapshotname
             // on zfs we need to unhide the snapshot block device
-            s_logger.info("Src: " + srcPath + " | " + src.getName());
+            LOGGER.info("Src: " + srcPath + " | " + src.getName());
             if (srcPath.startsWith("zfs://")) {
                 zfsHidden = true;
                 if (zfsSnapdev(false, srcPath) != null) {
@@ -148,14 +149,14 @@ public final class LinstorBackupSnapshotCommandWrapper
             if (result != null) {
                 return new CopyCmdAnswer("qemu-img shrink failed: " + result);
             }
-            s_logger.info("Backup shrunk " + dstPath + " to actual size " + src.getVolume().getSize());
+            LOGGER.info("Backup shrunk " + dstPath + " to actual size " + src.getVolume().getSize());
 
             SnapshotObjectTO snapshot = setCorrectSnapshotSize(dst, dstPath);
             return new CopyCmdAnswer(snapshot);
         } catch (final Exception e) {
             final String error = String.format("Failed to backup snapshot with id [%s] with a pool %s, due to %s",
                 cmd.getSrcTO().getId(), cmd.getSrcTO().getDataStore().getUuid(), e.getMessage());
-            s_logger.error(error);
+            LOGGER.error(error);
             return new CopyCmdAnswer(cmd, e);
         } finally {
             cleanupSecondaryPool(secondaryPool);

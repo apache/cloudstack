@@ -35,7 +35,7 @@ import com.sun.net.httpserver.HttpHandler;
 import com.cloud.consoleproxy.util.Logger;
 
 public class ConsoleProxyThumbnailHandler implements HttpHandler {
-    private static final Logger s_logger = Logger.getLogger(ConsoleProxyThumbnailHandler.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     public ConsoleProxyThumbnailHandler() {
     }
@@ -46,26 +46,26 @@ public class ConsoleProxyThumbnailHandler implements HttpHandler {
         try {
             Thread.currentThread().setName("JPG Thread " + Thread.currentThread().getId() + " " + t.getRemoteAddress());
 
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("ScreenHandler " + t.getRequestURI());
+            if (logger.isDebugEnabled())
+                logger.debug("ScreenHandler " + t.getRequestURI());
 
             long startTick = System.currentTimeMillis();
             doHandle(t);
 
-            if (s_logger.isDebugEnabled())
-                s_logger.debug(t.getRequestURI() + "Process time " + (System.currentTimeMillis() - startTick) + " ms");
+            if (logger.isDebugEnabled())
+                logger.debug(t.getRequestURI() + "Process time " + (System.currentTimeMillis() - startTick) + " ms");
         } catch (IllegalArgumentException e) {
             String response = "Bad query string";
-            s_logger.error(response + ", request URI : " + t.getRequestURI());
+            logger.error(response + ", request URI : " + t.getRequestURI());
             t.sendResponseHeaders(200, response.length());
             OutputStream os = t.getResponseBody();
             os.write(response.getBytes());
             os.close();
         } catch (OutOfMemoryError e) {
-            s_logger.error("Unrecoverable OutOfMemory Error, exit and let it be re-launched");
+            logger.error("Unrecoverable OutOfMemory Error, exit and let it be re-launched");
             System.exit(1);
         } catch (Throwable e) {
-            s_logger.error("Unexpected exception while handing thumbnail request, ", e);
+            logger.error("Unexpected exception while handing thumbnail request, ", e);
 
             String queries = t.getRequestURI().getQuery();
             Map<String, String> queryMap = getQueryMap(queries);
@@ -77,7 +77,7 @@ public class ConsoleProxyThumbnailHandler implements HttpHandler {
                 width = Integer.parseInt(ws);
                 height = Integer.parseInt(hs);
             } catch (NumberFormatException ex) {
-                s_logger.debug("Cannot parse width: " + ws + " or height: " + hs, ex);
+                logger.debug("Cannot parse width: " + ws + " or height: " + hs, ex);
             }
             width = Math.min(width, 800);
             height = Math.min(height, 600);
@@ -94,7 +94,7 @@ public class ConsoleProxyThumbnailHandler implements HttpHandler {
             OutputStream os = t.getResponseBody();
             os.write(bs);
             os.close();
-            s_logger.error("Cannot get console, sent error JPG response for " + t.getRequestURI());
+            logger.error("Cannot get console, sent error JPG response for " + t.getRequestURI());
             return;
         } finally {
             t.close();
@@ -157,8 +157,8 @@ public class ConsoleProxyThumbnailHandler implements HttpHandler {
             os.write(bs);
             os.close();
 
-            if (s_logger.isInfoEnabled())
-                s_logger.info("Console not ready, sent dummy JPG response");
+            if (logger.isInfoEnabled())
+                logger.info("Console not ready, sent dummy JPG response");
             return;
         }
 
@@ -181,7 +181,7 @@ public class ConsoleProxyThumbnailHandler implements HttpHandler {
         }
     }
 
-    public static BufferedImage generateTextImage(int w, int h, String text) {
+    public BufferedImage generateTextImage(int w, int h, String text) {
         BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_3BYTE_BGR);
         Graphics2D g = img.createGraphics();
         g.setColor(Color.BLACK);
@@ -196,7 +196,7 @@ public class ConsoleProxyThumbnailHandler implements HttpHandler {
                 startx = 0;
             g.drawString(text, startx, h / 2);
         } catch (Throwable e) {
-            s_logger.warn("Problem in generating text to thumnail image, return blank image");
+            logger.warn("Problem in generating text to thumnail image, return blank image");
         }
         return img;
     }

@@ -19,7 +19,6 @@ package com.cloud.network.guru;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Vlan.VlanType;
@@ -61,7 +60,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
-    private static final Logger s_logger = Logger.getLogger(PublicNetworkGuru.class);
 
     @Inject
     DataCenterDao _dcDao;
@@ -213,8 +211,8 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     @Override
     @DB
     public void deallocate(Network network, NicProfile nic, VirtualMachineProfile vm) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("public network deallocate network: networkId: " + nic.getNetworkId() + ", ip: " + nic.getIPv4Address());
+        if (logger.isDebugEnabled()) {
+            logger.debug("public network deallocate network: networkId: " + nic.getNetworkId() + ", ip: " + nic.getIPv4Address());
         }
 
         final IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIPv4Address());
@@ -229,8 +227,8 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
         }
         nic.deallocate();
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Deallocated nic: " + nic);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Deallocated nic: " + nic);
         }
     }
 

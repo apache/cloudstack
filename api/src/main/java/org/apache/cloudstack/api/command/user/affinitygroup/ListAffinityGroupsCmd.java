@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.affinitygroup;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -31,7 +30,6 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 @APICommand(name = "listAffinityGroups", description = "Lists affinity groups", responseObject = AffinityGroupResponse.class, entityType = {AffinityGroup.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListAffinityGroupsCmd extends BaseListProjectAndAccountResourcesCmd {
-    public static final Logger s_logger = Logger.getLogger(ListAffinityGroupsCmd.class.getName());
 
 
     /////////////////////////////////////////////////////

@@ -24,7 +24,6 @@ import java.util.List;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.Pair;
@@ -39,7 +38,6 @@ import com.cloud.utils.db.TransactionStatus;
 
 @Component
 public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> implements QuotaTariffDao {
-    private static final Logger s_logger = Logger.getLogger(QuotaTariffDaoImpl.class.getName());
 
     private final SearchBuilder<QuotaTariffVO> searchUsageType;
     private final SearchBuilder<QuotaTariffVO> listAllIncludedUsageType;
@@ -70,8 +68,8 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
                 if (result != null && !result.isEmpty()) {
                     return result.get(0);
                 } else {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("QuotaTariffDaoImpl::findTariffPlanByUsageType: Missing quota type " + quotaType);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("QuotaTariffDaoImpl::findTariffPlanByUsageType: Missing quota type " + quotaType);
                     }
                     return null;
                 }
@@ -124,8 +122,8 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
                     List<QuotaTariffVO> result = search(sc, filter);
                     if (result != null && !result.isEmpty()) {
                         tariffs.add(result.get(0));
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("ListAllTariffPlans on or before " + effectiveDate + " quota type " + result.get(0).getUsageTypeDescription() + " , effective Date="
+                        if (logger.isDebugEnabled()) {
+                            logger.debug("ListAllTariffPlans on or before " + effectiveDate + " quota type " + result.get(0).getUsageTypeDescription() + " , effective Date="
                                     + result.get(0).getEffectiveOn() + " val=" + result.get(0).getCurrencyValue());
                         }
                     }
@@ -212,7 +210,7 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
         List<QuotaTariffVO> quotaTariffs = pairQuotaTariffs.first();
 
         if (CollectionUtils.isEmpty(quotaTariffs)) {
-            s_logger.debug(String.format("Could not find quota tariff with name [%s].", name));
+            logger.debug(String.format("Could not find quota tariff with name [%s].", name));
             return null;
         }
 
@@ -225,7 +223,7 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
         List<QuotaTariffVO> quotaTariffs = pairQuotaTariffs.first();
 
         if (CollectionUtils.isEmpty(quotaTariffs)) {
-            s_logger.debug(String.format("Could not find quota tariff with UUID [%s].", uuid));
+            logger.debug(String.format("Could not find quota tariff with UUID [%s].", uuid));
             return null;
         }
 

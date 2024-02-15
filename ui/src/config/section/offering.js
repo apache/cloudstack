@@ -47,6 +47,13 @@ export default {
           store.getters.apis.createServiceOffering.params.filter(x => x.name === 'rootdisksize').length > 0) {
           fields.splice(12, 0, 'rootdisksize')
         }
+        const detailFields = ['minmemory', 'maxmemory', 'mincpunumber', 'maxcpunumber']
+        for (const field of detailFields) {
+          if (store.getters.apis.createServiceOffering &&
+              store.getters.apis.createServiceOffering.params.filter(x => field === x.name).length > 0) {
+            fields.push(field)
+          }
+        }
         return fields
       },
       resourceType: 'ServiceOffering',
@@ -155,7 +162,7 @@ export default {
       },
       columns: ['name', 'displaytext', 'disksize', 'domain', 'zone', 'order'],
       details: () => {
-        var fields = ['name', 'id', 'displaytext', 'disksize', 'provisioningtype', 'storagetype', 'iscustomized', 'disksizestrictness', 'iscustomizediops', 'tags', 'domain', 'zone', 'created', 'encrypt']
+        var fields = ['name', 'id', 'displaytext', 'disksize', 'provisioningtype', 'storagetype', 'iscustomized', 'disksizestrictness', 'iscustomizediops', 'diskIopsReadRate', 'diskIopsWriteRate', 'diskBytesReadRate', 'diskBytesWriteRate', 'miniops', 'maxiops', 'tags', 'domain', 'zone', 'created', 'encrypt']
         if (store.getters.apis.createDiskOffering &&
           store.getters.apis.createDiskOffering.params.filter(x => x.name === 'storagepolicy').length > 0) {
           fields.splice(6, 0, 'vspherestoragepolicy')

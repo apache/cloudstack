@@ -43,7 +43,6 @@ import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -59,8 +58,6 @@ import java.util.stream.Collectors;
 
 @ResourceWrapper(handles =  ConvertInstanceCommand.class)
 public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<ConvertInstanceCommand, Answer, LibvirtComputingResource> {
-
-    private static final Logger s_logger = Logger.getLogger(LibvirtConvertInstanceCommandWrapper.class);
 
     private static final List<Hypervisor.HypervisorType> supportedInstanceConvertSourceHypervisors =
             List.of(Hypervisor.HypervisorType.VMware);
@@ -80,7 +77,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         if (!isInstanceConversionSupportedOnHost()) {
             String msg = String.format("Cannot convert the instance %s from VMware as the virt-v2v binary is not found. " +
                     "Please install virt-v2v on the host before attempting the instance conversion", sourceInstanceName);
-            s_logger.info(msg);
+            logger.info(msg);
             return new ConvertInstanceAnswer(cmd, false, msg);
         }
 
@@ -88,14 +85,14 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
             String err = destinationHypervisorType != Hypervisor.HypervisorType.KVM ?
                     String.format("The destination hypervisor type is %s, KVM was expected, cannot handle it", destinationHypervisorType) :
                     String.format("The source hypervisor type %s is not supported for KVM conversion", sourceHypervisorType);
-            s_logger.error(err);
+            logger.error(err);
             return new ConvertInstanceAnswer(cmd, false, err);
         }
 
         final KVMStoragePoolManager storagePoolMgr = serverResource.getStoragePoolMgr();
         KVMStoragePool temporaryStoragePool = getTemporaryStoragePool(conversionTemporaryLocation, storagePoolMgr);
 
-        s_logger.info(String.format("Attempting to convert the instance %s from %s to KVM",
+        logger.info(String.format("Attempting to convert the instance %s from %s to KVM",
                 sourceInstanceName, sourceHypervisorType));
         final String convertInstanceUrl = getConvertInstanceUrl(sourceInstance);
         final String temporaryConvertUuid = UUID.randomUUID().toString();
@@ -109,7 +106,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
             if (!result) {
                 String err = String.format("The virt-v2v conversion of the instance %s failed. " +
                                 "Please check the agent logs for the virt-v2v output", sourceInstanceName);
-                s_logger.error(err);
+                logger.error(err);
                 return new ConvertInstanceAnswer(cmd, false, err);
             }
             String convertedBasePath = String.format("%s/%s", temporaryConvertPath, temporaryConvertUuid);
@@ -130,13 +127,13 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         } catch (Exception e) {
             String error = String.format("Error converting instance %s from %s, due to: %s",
                     sourceInstanceName, sourceHypervisorType, e.getMessage());
-            s_logger.error(error, e);
+            logger.error(error, e);
             return new ConvertInstanceAnswer(cmd, false, error);
         } finally {
-            s_logger.debug("Cleaning up instance conversion temporary password file");
+            logger.debug("Cleaning up instance conversion temporary password file");
             Script.runSimpleBashScript(String.format("rm -rf %s", temporaryPasswordFilePath));
             if (conversionTemporaryLocation instanceof NfsTO) {
-                s_logger.debug("Cleaning up secondary storage temporary location");
+                logger.debug("Cleaning up secondary storage temporary location");
                 storagePoolMgr.deleteStoragePool(temporaryStoragePool.getType(), temporaryStoragePool.getUuid());
             }
         }
@@ -164,7 +161,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
                 x.getDeviceType() == LibvirtVMDef.DiskDef.DeviceType.DISK).collect(Collectors.toList());
         if (CollectionUtils.isEmpty(disksDefs)) {
             String err = String.format("Cannot find any disk defined on the converted XML domain %s.xml", convertedBasePath);
-            s_logger.error(err);
+            logger.error(err);
             throw new CloudRuntimeException(err);
         }
         sanitizeDisksPath(disksDefs);
@@ -182,7 +179,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
 
     protected List<KVMPhysicalDisk> getTemporaryDisksWithPrefixFromTemporaryPool(KVMStoragePool pool, String path, String prefix) {
         String msg = String.format("Could not parse correctly the converted XML domain, checking for disks on %s with prefix %s", path, prefix);
-        s_logger.info(msg);
+        logger.info(msg);
         pool.refresh();
         List<KVMPhysicalDisk> disksWithPrefix = pool.listPhysicalDisks()
                 .stream()
@@ -190,7 +187,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
                 .collect(Collectors.toList());
         if (CollectionUtils.isEmpty(disksWithPrefix)) {
             msg = String.format("Could not find any converted disk with prefix %s on temporary location %s", prefix, path);
-            s_logger.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
         return disksWithPrefix;
@@ -200,10 +197,10 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
                                                             KVMStoragePool temporaryStoragePool,
                                                             String temporaryConvertUuid) {
         for (KVMPhysicalDisk disk : disks) {
-            s_logger.info(String.format("Cleaning up temporary disk %s after conversion from temporary location", disk.getName()));
+            logger.info(String.format("Cleaning up temporary disk %s after conversion from temporary location", disk.getName()));
             temporaryStoragePool.deletePhysicalDisk(disk.getName(), Storage.ImageFormat.QCOW2);
         }
-        s_logger.info(String.format("Cleaning up temporary domain %s after conversion from temporary location", temporaryConvertUuid));
+        logger.info(String.format("Cleaning up temporary domain %s after conversion from temporary location", temporaryConvertUuid));
         Script.runSimpleBashScript(String.format("rm -f %s/%s*.xml", temporaryStoragePool.getLocalPath(), temporaryConvertUuid));
     }
 
@@ -227,21 +224,21 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         if (temporaryDisks.size() != destinationStoragePools.size()) {
             String warn = String.format("Discrepancy between the converted instance disks (%s) " +
                     "and the expected number of disks (%s)", temporaryDisks.size(), destinationStoragePools.size());
-            s_logger.warn(warn);
+            logger.warn(warn);
         }
         for (int i = 0; i < temporaryDisks.size(); i++) {
             String poolPath = destinationStoragePools.get(i);
             KVMStoragePool destinationPool = storagePoolMgr.getStoragePool(Storage.StoragePoolType.NetworkFilesystem, poolPath);
             if (destinationPool == null) {
                 String err = String.format("Could not find a storage pool by URI: %s", poolPath);
-                s_logger.error(err);
+                logger.error(err);
                 continue;
             }
             KVMPhysicalDisk sourceDisk = temporaryDisks.get(i);
-            if (s_logger.isDebugEnabled()) {
+            if (logger.isDebugEnabled()) {
                 String msg = String.format("Trying to copy converted instance disk number %s from the temporary location %s" +
                         " to destination storage pool %s", i, sourceDisk.getPool().getLocalPath(), destinationPool.getUuid());
-                s_logger.debug(msg);
+                logger.debug(msg);
             }
 
             String destinationName = UUID.randomUUID().toString();
@@ -322,7 +319,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
                                               String temporaryConvertFolder,
                                               String temporaryConvertUuid,
                                               long timeout, boolean verboseModeEnabled) {
-        Script script = new Script("virt-v2v", timeout, s_logger);
+        Script script = new Script("virt-v2v", timeout, logger);
         script.add("--root", "first");
         script.add("-ic", convertInstanceUrl);
         script.add(sourceInstanceName);
@@ -336,7 +333,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         }
 
         String logPrefix = String.format("virt-v2v source: %s %s progress", convertInstanceUrl, sourceInstanceName);
-        OutputInterpreter.LineByLineOutputLogger outputLogger = new OutputInterpreter.LineByLineOutputLogger(s_logger, logPrefix);
+        OutputInterpreter.LineByLineOutputLogger outputLogger = new OutputInterpreter.LineByLineOutputLogger(logger, logPrefix);
         script.execute(outputLogger);
         int exitValue = script.getExitValue();
         return exitValue == 0;
@@ -349,7 +346,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         }
         String passwordFile = String.format("/tmp/vmw-%s", UUID.randomUUID());
         String msg = String.format("Creating a temporary password file for VMware instance %s conversion on: %s", sourceInstance.getInstanceName(), passwordFile);
-        s_logger.debug(msg);
+        logger.debug(msg);
         Script.runSimpleBashScriptForExitValueAvoidLogging(String.format("echo \"%s\" > %s", password, passwordFile));
         return passwordFile;
     }
@@ -377,7 +374,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         String xmlPath = String.format("%s.xml", installPath);
         if (!new File(xmlPath).exists()) {
             String err = String.format("Conversion failed. Unable to find the converted XML domain, expected %s", xmlPath);
-            s_logger.error(err);
+            logger.error(err);
             throw new CloudRuntimeException(err);
         }
         InputStream is = new BufferedInputStream(new FileInputStream(xmlPath));
@@ -388,8 +385,8 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
             return parser;
         } catch (RuntimeException e) {
             String err = String.format("Error parsing the converted instance XML domain at %s: %s", xmlPath, e.getMessage());
-            s_logger.error(err, e);
-            s_logger.debug(xml);
+            logger.error(err, e);
+            logger.debug(xml);
             return null;
         }
     }

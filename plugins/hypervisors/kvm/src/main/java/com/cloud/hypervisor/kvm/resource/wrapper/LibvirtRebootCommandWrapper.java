@@ -19,7 +19,6 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
 
@@ -34,7 +33,6 @@ import com.cloud.resource.ResourceWrapper;
 @ResourceWrapper(handles =  RebootCommand.class)
 public final class LibvirtRebootCommandWrapper extends CommandWrapper<RebootCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtRebootCommandWrapper.class);
 
     @Override
     public Answer execute(final RebootCommand command, final LibvirtComputingResource libvirtComputingResource) {
@@ -49,7 +47,7 @@ public final class LibvirtRebootCommandWrapper extends CommandWrapper<RebootComm
                 try {
                     vncPort = libvirtComputingResource.getVncPort(conn, command.getVmName());
                 } catch (final LibvirtException e) {
-                    s_logger.trace("Ignoring libvirt error.", e);
+                    logger.trace("Ignoring libvirt error.", e);
                 }
                 if (vmSpec != null) {
                     libvirtComputingResource.applyDefaultNetworkRules(conn, vmSpec, false);

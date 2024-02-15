@@ -24,7 +24,7 @@ import java.util.Map;
 import com.cloud.consoleproxy.util.Logger;
 
 public class AjaxFIFOImageCache {
-    private static final Logger s_logger = Logger.getLogger(AjaxFIFOImageCache.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     private List<Integer> fifoQueue;
     private Map<Integer, byte[]> cache;
@@ -47,14 +47,14 @@ public class AjaxFIFOImageCache {
             Integer keyToRemove = fifoQueue.remove(0);
             cache.remove(keyToRemove);
 
-            if (s_logger.isTraceEnabled())
-                s_logger.trace("Remove image from cache, key: " + keyToRemove);
+            if (logger.isTraceEnabled())
+                logger.trace("Remove image from cache, key: " + keyToRemove);
         }
 
         int key = getNextKey();
 
-        if (s_logger.isTraceEnabled())
-            s_logger.trace("Add image to cache, key: " + key);
+        if (logger.isTraceEnabled())
+            logger.trace("Add image to cache, key: " + key);
 
         cache.put(key, image);
         fifoQueue.add(key);
@@ -66,14 +66,14 @@ public class AjaxFIFOImageCache {
             key = nextKey;
         }
         if (cache.containsKey(key)) {
-            if (s_logger.isTraceEnabled())
-                s_logger.trace("Retrieve image from cache, key: " + key);
+            if (logger.isTraceEnabled())
+                logger.trace("Retrieve image from cache, key: " + key);
 
             return cache.get(key);
         }
 
-        if (s_logger.isTraceEnabled())
-            s_logger.trace("Image is no long in cache, key: " + key);
+        if (logger.isTraceEnabled())
+            logger.trace("Image is no long in cache, key: " + key);
         return null;
     }
 
