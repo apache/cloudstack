@@ -28,7 +28,9 @@
                       >
 
     <bean id="webhookRuleDao" class="org.apache.cloudstack.mom.webhook.dao.WebhookRuleDaoImpl" />
+    <bean id="webhookRuleJoinDao" class="org.apache.cloudstack.mom.webhook.dao.WebhookRuleJoinDaoImpl" />
     <bean id="webhookDispatchDao" class="org.apache.cloudstack.mom.webhook.dao.WebhookDispatchDaoImpl" />
+    <bean id="webhookDispatchJoinDao" class="org.apache.cloudstack.mom.webhook.dao.WebhookDispatchJoinDaoImpl" />
     <bean id="webhookApiService" class="org.apache.cloudstack.mom.webhook.WebhookApiServiceImpl" />
     <bean id="webhookService" class="org.apache.cloudstack.mom.webhook.WebhookServiceImpl" />
 

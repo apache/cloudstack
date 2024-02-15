@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 import store from '@/store'
+import { shallowRef, defineAsyncComponent } from 'vue'
 
 export default {
   name: 'tools',
@@ -80,6 +81,9 @@ export default {
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           cols.push('scope')
         }
+        if (store.getters.listAllProjects) {
+          cols.push('project')
+        }
         return cols
       },
       details: ['name', 'id', 'description', 'scope', 'payloadurl', 'sslverification', 'secret', 'state', 'account', 'domainid'],
@@ -90,19 +94,38 @@ export default {
         }
         return filters
       },
-      filters: () => {
-        const filters = ['self', 'all']
-        return filters
-      },
+      tabs: [
+        {
+          name: 'details',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'history',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/WebhookDispatchHistoryTab.vue')))
+        }
+      ],
       actions: [
         {
           api: 'createWebhookRule',
           icon: 'plus-outlined',
           label: 'label.create.webhook',
-          message: 'message.webhook.create',
           docHelp: 'adminguide/events.html#creating-webhooks',
           listView: true,
-          args: ['name', 'description', 'payloadurl', 'sslverification', 'secret']
+          args: (record, store) => {
+            var fields = ['name', 'description', 'payloadurl', 'sslverification', 'secretkey', 'state']
+            if (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype)) {
+              fields.push('scope')
+            }
+            return fields
+          },
+          mapping: {
+            state: {
+              options: ['Enabled', 'Disabled']
+            },
+            scope: {
+              options: ['Local', 'Domain', 'Global']
+            }
+          }
         },
         {
           api: 'updateWebhookRule',
@@ -110,7 +133,12 @@ export default {
           label: 'label.update.webhook',
           dataView: true,
           popup: true,
-          args: ['name', 'description', 'payloadurl', 'sslverification', 'secret']
+          args: ['name', 'description', 'payloadurl', 'sslverification', 'secretkey', 'state'],
+          mapping: {
+            state: {
+              options: ['Enabled', 'Disabled']
+            }
+          }
         },
         {
           api: 'updateWebhookRule',
@@ -152,6 +180,27 @@ export default {
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         }
       ]
+    },
+    {
+      name: 'webhookhistory',
+      title: 'label.webhook.history',
+      icon: 'gateway-outlined',
+      hidden: true,
+      permission: ['listWebhookDispatchHistory'],
+      columns: () => {
+        const cols = ['eventtype', 'payload', 'webhookrulename', 'success', 'response', 'startdate', 'enddate']
+        if (['Admin'].includes(store.getters.userInfo.roletype)) {
+          cols.splice(3, 0, 'managementservername')
+        }
+        return cols
+      },
+      details: () => {
+        const fields = ['id', 'eventid', 'eventtype', 'payload', 'success', 'response', 'startdate', 'enddate']
+        if (['Admin'].includes(store.getters.userInfo.roletype)) {
+          fields.splice(1, 0, 'managementserverid', 'managementservername')
+        }
+        return fields
+      }
     }
   ]
 }

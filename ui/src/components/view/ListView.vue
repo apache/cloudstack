@@ -367,6 +367,32 @@
       <template v-if="['startdate', 'enddate'].includes(column.key) && ['vm', 'vnfapp'].includes($route.path.split('/')[1])">
         {{ getDateAtTimeZone(text, record.timezone) }}
       </template>
+      <template v-if="['startdate', 'enddate'].includes(column.key) && ['webhook'].includes($route.path.split('/')[1])">
+        {{ $toLocaleDate(text, record.timezone) }}
+      </template>
+      <template v-if="column.key === 'eventtype'">
+        <router-link v-if="$router.resolve('/event/' + record.eventid).matched[0].redirect !== '/exception/404'" :to="{ path: '/event/' + record.eventid }">{{ text }}</router-link>
+        <span v-else>{{ text }}</span>
+      </template>
+      <template v-if="column.key === 'managementservername'">
+        <router-link v-if="$router.resolve('/managementserver/' + record.managementserverid).matched[0].redirect !== '/exception/404'" :to="{ path: '/managementserver/' + record.managementserverid }">{{ text }}</router-link>
+        <router-link v-else-if="$router.resolve('/managementservers/' + record.managementserverid).matched[0].redirect !== '/exception/404'" :to="{ path: '/managementservers/' + record.managementserverid }">{{ text }}</router-link>
+        <span v-else>{{ text }}</span>
+      </template>
+      <template v-if="column.key === 'payload'">
+        <router-link v-if="$router.resolve('/webhookhistory/' + record.id).matched[0].redirect !== '/exception/404'" :to="{ path: '/webhookhistory/' + record.id }">{{ getTrimmedText(text, 48) }}</router-link>
+        <span v-else>  {{ getTrimmedText(text, 48) }} </span>
+      </template>
+      <template v-if="column.key === 'webhookrulename'">
+        <router-link v-if="$router.resolve('/webhook/' + record.webhookruleid).matched[0].redirect !== '/exception/404'" :to="{ path: '/webhook/' + record.webhookruleid }">{{ text }}</router-link>
+        <span v-else>  {{ text }} </span>
+      </template>
+      <template v-if="column.key === 'success'">
+        <status :text="text ? 'success' : 'error'" />
+      </template>
+      <template v-if="column.key === 'response'">
+        <span>  {{ getTrimmedText(text, 48) }} </span>
+      </template>
       <template v-if="column.key === 'order'">
         <div class="shift-btns">
           <a-tooltip :name="text" placement="top">
@@ -595,14 +621,15 @@ export default {
         '/project', '/account', 'buckets', 'objectstore',
         '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm', '/annotation',
         '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering',
-        '/tungstenfabric', '/oauthsetting', '/guestos', '/guestoshypervisormapping'].join('|'))
+        '/tungstenfabric', '/oauthsetting', '/guestos', '/guestoshypervisormapping', '/webhook'].join('|'))
         .test(this.$route.path)
     },
     enableGroupAction () {
       return ['vm', 'alert', 'vmgroup', 'ssh', 'userdata', 'affinitygroup', 'autoscalevmgroup', 'volume', 'snapshot',
         'vmsnapshot', 'backup', 'guestnetwork', 'vpc', 'publicip', 'vpnuser', 'vpncustomergateway', 'vnfapp',
         'project', 'account', 'systemvm', 'router', 'computeoffering', 'systemoffering',
-        'diskoffering', 'backupoffering', 'networkoffering', 'vpcoffering', 'ilbvm', 'kubernetes', 'comment', 'buckets'
+        'diskoffering', 'backupoffering', 'networkoffering', 'vpcoffering', 'ilbvm', 'kubernetes', 'comment', 'buckets',
+        'webhook'
       ].includes(this.$route.name)
     },
     getDateAtTimeZone (date, timezone) {
@@ -895,6 +922,12 @@ export default {
         case 'SecondaryStorageVm': return '/systemvm/'
         default: return '/vm/'
       }
+    },
+    getTrimmedText (text, length) {
+      if (!text) {
+        return ''
+      }
+      return (text.length <= length) ? text : (text.substring(0, length - 3) + '...')
     }
   }
 }

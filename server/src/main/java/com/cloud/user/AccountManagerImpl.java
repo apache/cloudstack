@@ -1101,6 +1101,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             // Delete registered UserData
             userDataDao.removeByAccountId(accountId);
 
+            // Delete WebhookRules
+            //ToDo: webhook delete
+
+
             return true;
         } catch (Exception ex) {
             s_logger.warn("Failed to cleanup account " + account + " due to ", ex);

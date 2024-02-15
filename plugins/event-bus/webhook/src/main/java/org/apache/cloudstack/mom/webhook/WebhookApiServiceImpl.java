@@ -20,6 +20,7 @@ package org.apache.cloudstack.mom.webhook;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -35,16 +36,21 @@ import org.apache.cloudstack.mom.webhook.api.command.user.UpdateWebhookRuleCmd;
 import org.apache.cloudstack.mom.webhook.api.response.WebhookDispatchResponse;
 import org.apache.cloudstack.mom.webhook.api.response.WebhookRuleResponse;
 import org.apache.cloudstack.mom.webhook.dao.WebhookDispatchDao;
+import org.apache.cloudstack.mom.webhook.dao.WebhookDispatchJoinDao;
 import org.apache.cloudstack.mom.webhook.dao.WebhookRuleDao;
+import org.apache.cloudstack.mom.webhook.dao.WebhookRuleJoinDao;
+import org.apache.cloudstack.mom.webhook.vo.WebhookDispatchJoinVO;
 import org.apache.cloudstack.mom.webhook.vo.WebhookDispatchVO;
+import org.apache.cloudstack.mom.webhook.vo.WebhookRuleJoinVO;
 import org.apache.cloudstack.mom.webhook.vo.WebhookRuleVO;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.domain.Domain;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.projects.Project;
@@ -65,29 +71,25 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
     @Inject
     AccountManager accountManager;
     @Inject
+    DomainDao domainDao;
+    @Inject
     WebhookRuleDao webhookRuleDao;
+    @Inject
+    WebhookRuleJoinDao webhookRuleJoinDao;
     @Inject
     WebhookDispatchDao webhookDispatchDao;
     @Inject
+    WebhookDispatchJoinDao webhookDispatchJoinDao;
+    @Inject
     ManagementServerHostDao managementServerHostDao;
 
-    protected WebhookRuleResponse createWebhookRuleResponse(WebhookRuleVO webhookRuleVO) {
+    protected WebhookRuleResponse createWebhookRuleResponse(WebhookRuleJoinVO webhookRuleVO) {
         WebhookRuleResponse response = new WebhookRuleResponse();
         response.setObjectName("webhook");
         response.setId(webhookRuleVO.getUuid());
         response.setName(webhookRuleVO.getName());
         response.setDescription(webhookRuleVO.getDescription());
-        Account account = ApiDBUtils.findAccountById(webhookRuleVO.getAccountId());
-        if (account.getType() == Account.Type.PROJECT) {
-            Project project = ApiDBUtils.findProjectByProjectAccountId(account.getId());
-            response.setProjectId(project.getUuid());
-            response.setProjectName(project.getName());
-        } else {
-            response.setAccountName(account.getAccountName());
-        }
-        Domain domain = ApiDBUtils.findDomainById(webhookRuleVO.getDomainId());
-        response.setDomainId(domain.getUuid());
-        response.setDomainName(domain.getName());
+        ApiResponseHelper.populateOwner(response, webhookRuleVO);
         response.setState(webhookRuleVO.getState().toString());
         response.setPayloadUrl(webhookRuleVO.getPayloadUrl());
         response.setSecretKey(webhookRuleVO.getSecretKey());
@@ -95,6 +97,19 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         response.setScope(webhookRuleVO.getScope().toString());
         response.setCreated(webhookRuleVO.getCreated());
         return response;
+    }
+
+    protected List<Long> getIdsOfAccessibleWebhookRules(Account caller) {
+        if (Account.Type.ADMIN.equals(caller.getType())) {
+            return new ArrayList<>();
+        }
+        String domainPath = null;
+        if (Account.Type.DOMAIN_ADMIN.equals(caller.getType())) {
+            Domain domain = domainDao.findById(caller.getDomainId());
+            domainPath = domain.getPath();
+        }
+        List<WebhookRuleJoinVO> rules = webhookRuleJoinDao.listByAccountOrDomain(caller.getId(), domainPath);
+        return rules.stream().map(WebhookRuleJoinVO::getId).collect(Collectors.toList());
     }
 
     protected ManagementServerHostVO basicWebhookDispatchApiCheck(Account caller, final Long id, final Long webhookRuleId,
@@ -129,36 +144,17 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         return managementServerHostVO;
     }
 
-    protected SearchCriteria<WebhookDispatchVO> getWebhookDispatchSearchCriteria(final Long id,
-         final Long webhookRuleId, final Long managementServerId, final String keyword) {
-        SearchBuilder<WebhookDispatchVO> sb = webhookDispatchDao.createSearchBuilder();
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("webhookRuleId", sb.entity().getWebhookRuleId(), SearchCriteria.Op.EQ);
-        sb.and("managementServerId", sb.entity().getManagementServerId(), SearchCriteria.Op.EQ);
-        sb.and("keyword", sb.entity().getPayload(), SearchCriteria.Op.LIKE);
-        SearchCriteria<WebhookDispatchVO> sc = sb.create();
-        if (id != null) {
-            sc.setParameters("id", id);
-        }
-        if (webhookRuleId != null) {
-            sc.setParameters("webhookRuleId", webhookRuleId);
-        }
-        if (managementServerId != null) {
-            sc.setParameters("managementServerId", managementServerId);
-        }
-        if (keyword != null) {
-            sc.setParameters("keyword", "%" + keyword + "%");
-        }
-        return sc;
-    }
-
-    protected WebhookDispatchResponse createWebhookDispatchResponse(WebhookDispatchVO webhookDispatchVO) {
+    protected WebhookDispatchResponse createWebhookDispatchResponse(WebhookDispatchJoinVO webhookDispatchVO) {
         WebhookDispatchResponse response = new WebhookDispatchResponse();
         response.setObjectName(WebhookDispatch.class.getSimpleName().toLowerCase());
         response.setId(webhookDispatchVO.getUuid());
-        response.setWebhookRuleId("SOME");
-        response.setWebhookRuleName("SOME");
-        response.setManagementServerId("SOME");
+        response.setEventId(webhookDispatchVO.getEventUuid());
+        response.setEventType(webhookDispatchVO.getEventType());
+        response.setWebhookRuleName(webhookDispatchVO.getWebhookRuleName());
+        response.setWebhookRuleId(webhookDispatchVO.getWebhookRuleUuId());
+        response.setWebhookRuleName(webhookDispatchVO.getWebhookRuleName());
+        response.setManagementServerId(webhookDispatchVO.getManagementServerUuId());
+        response.setManagementServerName(webhookDispatchVO.getMangementServerName());
         response.setPayload(webhookDispatchVO.getPayload());
         response.setSuccess(webhookDispatchVO.isSuccess());
         response.setResponse(webhookDispatchVO.getResponse());
@@ -195,14 +191,14 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
 
 
         Filter searchFilter = new Filter(WebhookRuleVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-        SearchBuilder<WebhookRuleVO> sb = webhookRuleDao.createSearchBuilder();
+        SearchBuilder<WebhookRuleJoinVO> sb = webhookRuleJoinDao.createSearchBuilder();
         accountManager.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("keyword", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("scope", sb.entity().getState(), SearchCriteria.Op.EQ);
-        SearchCriteria<WebhookRuleVO> sc = sb.create();
+        SearchCriteria<WebhookRuleJoinVO> sc = sb.create();
         accountManager.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         WebhookRule.Scope scope = null;
         if (StringUtils.isNotEmpty(scopeStr)) {
@@ -240,8 +236,8 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         if (name != null) {
             sc.setParameters("name", name);
         }
-        List<WebhookRuleVO> rules = webhookRuleDao.search(sc, searchFilter);
-        for (WebhookRuleVO rule : rules) {
+        List<WebhookRuleJoinVO> rules = webhookRuleJoinDao.search(sc, searchFilter);
+        for (WebhookRuleJoinVO rule : rules) {
             WebhookRuleResponse response = createWebhookRuleResponse(rule);
             responsesList.add(response);
         }
@@ -290,7 +286,7 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         WebhookRuleVO rule = new WebhookRuleVO(name, description, state, owner.getDomainId(),
                 owner.getId(), payloadUrl, secretKey, sslVerification, scope);
         rule = webhookRuleDao.persist(rule);
-        return createWebhookRuleResponse(rule);
+        return createWebhookRuleResponse(rule.getId());
     }
 
     @Override
@@ -374,12 +370,12 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         if (updateNeeded && !webhookRuleDao.update(id, rule)) {
             return null;
         }
-        return createWebhookRuleResponse(rule);
+        return createWebhookRuleResponse(rule.getId());
     }
 
     @Override
     public WebhookRuleResponse createWebhookRuleResponse(long webhookRuleId) {
-        WebhookRuleVO webhookRuleVO = webhookRuleDao.findById(webhookRuleId);
+        WebhookRuleJoinVO webhookRuleVO = webhookRuleJoinDao.findById(webhookRuleId);
         return createWebhookRuleResponse(webhookRuleVO);
     }
 
@@ -394,10 +390,17 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         List<WebhookDispatchResponse> responsesList = new ArrayList<>();
         ManagementServerHostVO host = basicWebhookDispatchApiCheck(caller, id, webhookRuleId, managementServerId);
 
-        Filter searchFilter = new Filter(WebhookDispatchVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-        SearchCriteria<WebhookDispatchVO> sc = getWebhookDispatchSearchCriteria(id, webhookRuleId, host != null ? host.getMsid() : null, keyword);
-        List<WebhookDispatchVO> dispatches = webhookDispatchDao.search(sc, searchFilter);
-        for (WebhookDispatchVO dispatch : dispatches) {
+        Filter searchFilter = new Filter(WebhookDispatchVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
+        List<Long> webhookRuleIds = new ArrayList<>();
+        if (webhookRuleId != null) {
+            webhookRuleIds.add(webhookRuleId);
+        } else {
+            webhookRuleIds.addAll(getIdsOfAccessibleWebhookRules(caller));
+        }
+        List<WebhookDispatchJoinVO> dispatches =
+                webhookDispatchJoinDao.listByIdWebhookRulesManagementServerKeyword(id, webhookRuleIds,
+                        (host != null ? host.getMsid() : null), keyword, searchFilter);
+        for (WebhookDispatchJoinVO dispatch : dispatches) {
             WebhookDispatchResponse response = createWebhookDispatchResponse(dispatch);
             responsesList.add(response);
         }
@@ -414,8 +417,8 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         final Long webhookRuleId = cmd.getWebhookRuleId();
         final Long managementServerId = cmd.getManagementServerId();
         ManagementServerHostVO host = basicWebhookDispatchApiCheck(caller, id, webhookRuleId, managementServerId);
-        SearchCriteria<WebhookDispatchVO> sc = getWebhookDispatchSearchCriteria(id, webhookRuleId, host != null ? host.getMsid() : null, null);
-        int removed = webhookDispatchDao.remove(sc);
+        int removed = webhookDispatchDao.deleteByIdWebhookRuleManagementServer(id, webhookRuleId,
+                host != null ? host.getMsid() : null);
         return removed > 0;
     }
 

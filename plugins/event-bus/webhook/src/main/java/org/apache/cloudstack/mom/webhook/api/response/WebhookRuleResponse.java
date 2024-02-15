@@ -20,16 +20,16 @@ package org.apache.cloudstack.mom.webhook.api.response;
 import java.util.Date;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponseWithAnnotations;
+import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
-import org.apache.cloudstack.api.response.ControlledEntityResponse;
+import org.apache.cloudstack.api.response.ControlledViewEntityResponse;
 import org.apache.cloudstack.mom.webhook.WebhookRule;
 
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = {WebhookRule.class})
-public class WebhookRuleResponse extends BaseResponseWithAnnotations implements ControlledEntityResponse {
+public class WebhookRuleResponse extends BaseResponse implements ControlledViewEntityResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "The ID of the Webhook rule")
     private String id;

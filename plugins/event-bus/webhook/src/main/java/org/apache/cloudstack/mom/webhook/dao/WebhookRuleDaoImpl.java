@@ -17,9 +17,44 @@
 
 package org.apache.cloudstack.mom.webhook.dao;
 
+import java.util.List;
+
+import org.apache.cloudstack.mom.webhook.WebhookRule;
 import org.apache.cloudstack.mom.webhook.vo.WebhookRuleVO;
+import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 
 public class WebhookRuleDaoImpl extends GenericDaoBase<WebhookRuleVO, Long> implements WebhookRuleDao {
+    @Override
+    public List<WebhookRuleVO> listByEnabledRulesForDispatch(Long accountId, List<Long> domainIds) {
+        SearchBuilder<WebhookRuleVO> sb = createSearchBuilder();
+        sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
+        sb.and().op("scopeGlobal", sb.entity().getScope(), SearchCriteria.Op.EQ);
+        if (accountId != null) {
+            sb.or().op("scopeLocal", sb.entity().getScope(), SearchCriteria.Op.EQ);
+            sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
+            sb.cp();
+        }
+        if (CollectionUtils.isNotEmpty(domainIds)) {
+            sb.or().op("scopeDomain", sb.entity().getScope(), SearchCriteria.Op.EQ);
+            sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.IN);
+            sb.cp();
+        }
+        sb.cp();
+        SearchCriteria<WebhookRuleVO> sc = sb.create();
+        sc.setParameters("state", WebhookRule.State.Enabled.name());
+        sc.setParameters("scopeGlobal", WebhookRule.Scope.Global.name());
+        if (accountId != null) {
+            sc.setParameters("scopeLocal", WebhookRule.Scope.Local.name());
+            sc.setParameters("accountId", accountId);
+        }
+        if (CollectionUtils.isNotEmpty(domainIds)) {
+            sc.setParameters("scopeDomain", WebhookRule.Scope.Domain.name());
+            sc.setParameters("domainId", domainIds.toArray());
+        }
+        return listBy(sc);
+    }
 }

@@ -44,6 +44,7 @@ DROP TABLE IF EXISTS `cloud`.`webhook_dispatch`;
 CREATE TABLE `cloud`.`webhook_dispatch` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id of the webhook dispatch',
   `uuid` varchar(255) COMMENT 'uuid of the webhook',
+  `event_id` bigint unsigned NOT NULL COMMENT 'id of the event',
   `webhook_id` bigint unsigned NOT NULL COMMENT 'id of the webhook rule',
   `mshost_msid` bigint unsigned NOT NULL COMMENT 'msid of the management server',
   `payload` TEXT COMMENT 'payload URL for the webhook',
@@ -52,6 +53,8 @@ CREATE TABLE `cloud`.`webhook_dispatch` (
   `start_time` datetime COMMENT 'start timestamp of the webhook dispatch',
   `end_time` datetime COMMENT 'end timestamp of the webhook dispatch',
   PRIMARY KEY(`id`),
+  INDEX `i_webhook__event_id`(`event_id`),
   INDEX `i_webhook__webhook_id`(`webhook_id`),
+  CONSTRAINT `fk_webhook__event_id` FOREIGN KEY (`event_id`) REFERENCES `event`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_webhook__webhook_id` FOREIGN KEY (`webhook_id`) REFERENCES `webhook`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

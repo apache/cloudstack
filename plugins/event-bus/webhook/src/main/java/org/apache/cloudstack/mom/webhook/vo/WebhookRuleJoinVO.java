@@ -19,30 +19,28 @@ package org.apache.cloudstack.mom.webhook.vo;
 
 
 import java.util.Date;
-import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
 import org.apache.cloudstack.mom.webhook.WebhookRule;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
+import com.cloud.api.query.vo.ControlledViewEntity;
+import com.cloud.user.Account;
 import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
-@Table(name = "webhook")
-public class WebhookRuleVO implements WebhookRule {
+@Table(name = "webhook_view")
+public class WebhookRuleJoinVO implements ControlledViewEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
+    @Column(name = "id", updatable = false, nullable = false)
     private long id;
 
     @Column(name = "uuid")
@@ -56,13 +54,7 @@ public class WebhookRuleVO implements WebhookRule {
 
     @Column(name = "state")
     @Enumerated(value = EnumType.STRING)
-    private State state;
-
-    @Column(name = "domain_id")
-    private long domainId;
-
-    @Column(name = "account_id")
-    private long accountId;
+    private WebhookRule.State state;
 
     @Column(name = "payload_url")
     private String payloadUrl;
@@ -76,13 +68,47 @@ public class WebhookRuleVO implements WebhookRule {
 
     @Column(name = "scope")
     @Enumerated(value = EnumType.STRING)
-    private Scope scope;
+    private WebhookRule.Scope scope;
 
     @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
 
     @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
+
+    @Column(name = "account_id")
+    private long accountId;
+
+    @Column(name = "account_uuid")
+    private String accountUuid;
+
+    @Column(name = "account_name")
+    private String accountName;
+
+    @Column(name = "account_type")
+    @Enumerated(value = EnumType.STRING)
+    private Account.Type accountType;
+
+    @Column(name = "domain_id")
+    private long domainId;
+
+    @Column(name = "domain_uuid")
+    private String domainUuid;
+
+    @Column(name = "domain_name")
+    private String domainName;
+
+    @Column(name = "domain_path")
+    private String domainPath;
+
+    @Column(name = "project_id")
+    private long projectId;
+
+    @Column(name = "project_uuid")
+    private String projectUuid;
+
+    @Column(name = "project_name")
+    private String projectName;
 
     @Override
     public long getId() {
@@ -94,7 +120,6 @@ public class WebhookRuleVO implements WebhookRule {
         return uuid;
     }
 
-    @Override
     public String getName() {
         return name;
     }
@@ -103,7 +128,6 @@ public class WebhookRuleVO implements WebhookRule {
         this.name = name;
     }
 
-    @Override
     public String getDescription() {
         return description;
     }
@@ -112,34 +136,10 @@ public class WebhookRuleVO implements WebhookRule {
         this.description = description;
     }
 
-    @Override
-    public State getState() {
+    public WebhookRule.State getState() {
         return state;
     }
 
-    public void setState(State state) {
-        this.state = state;
-    }
-
-    @Override
-    public long getDomainId() {
-        return domainId;
-    }
-
-    public void setDomainId(long domainId) {
-        this.domainId = domainId;
-    }
-
-    @Override
-    public long getAccountId() {
-        return accountId;
-    }
-
-    public void setAccountId(long accountId) {
-        this.accountId = accountId;
-    }
-
-    @Override
     public String getPayloadUrl() {
         return payloadUrl;
     }
@@ -148,40 +148,74 @@ public class WebhookRuleVO implements WebhookRule {
         this.payloadUrl = payloadUrl;
     }
 
-    @Override
     public String getSecretKey() {
         return secretKey;
     }
 
-    public void setSecretKey(String secretKey) {
-        this.secretKey = secretKey;
-    }
-
-    @Override
-    public Scope getScope() {
+    public WebhookRule.Scope getScope() {
         return scope;
     }
 
-    public void setScope(Scope scope) {
-        this.scope = scope;
-    }
-
-    @Override
     public boolean isSslVerification() {
         return sslVerification;
     }
 
-    public void setSslVerification(boolean sslVerification) {
-        this.sslVerification = sslVerification;
-    }
-
-    @Override
     public Date getCreated() {
         return created;
     }
 
     public Date getRemoved() {
         return removed;
+    }
+
+    @Override
+    public long getDomainId() {
+        return domainId;
+    }
+
+    @Override
+    public String getDomainPath() {
+        return domainPath;
+    }
+
+    @Override
+    public String getDomainUuid() {
+        return domainUuid;
+    }
+
+    @Override
+    public String getDomainName() {
+        return domainName;
+    }
+
+    @Override
+    public Account.Type getAccountType() {
+        return accountType;
+    }
+
+    @Override
+    public long getAccountId() {
+        return accountId;
+    }
+
+    @Override
+    public String getAccountUuid() {
+        return accountUuid;
+    }
+
+    @Override
+    public String getAccountName() {
+        return accountName;
+    }
+
+    @Override
+    public String getProjectUuid() {
+        return projectUuid;
+    }
+
+    @Override
+    public String getProjectName() {
+        return projectName;
     }
 
     @Override
@@ -194,21 +228,6 @@ public class WebhookRuleVO implements WebhookRule {
         return String.format("WebhookRule [%s]", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "uuid", "name"));
     }
 
-    public WebhookRuleVO() {
-        this.uuid = UUID.randomUUID().toString();
-    }
-
-    public WebhookRuleVO(String name, String description, State state, long domainId, long accountId,
-         String payloadUrl, String secretKey, boolean sslVerification, Scope scope) {
-        this.uuid = UUID.randomUUID().toString();
-        this.name = name;
-        this.description = description;
-        this.state = state;
-        this.domainId = domainId;
-        this.accountId = accountId;
-        this.payloadUrl = payloadUrl;
-        this.secretKey = secretKey;
-        this.sslVerification = sslVerification;
-        this.scope = scope;
+    public WebhookRuleJoinVO() {
     }
 }

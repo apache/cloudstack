@@ -34,6 +34,14 @@ public class WebhookDispatchResponse extends BaseResponse {
     @Param(description = "The ID of the Webhook dispatch")
     private String id;
 
+    @SerializedName(ApiConstants.EVENT_ID)
+    @Param(description = "The ID of the event")
+    private String eventId;
+
+    @SerializedName(ApiConstants.EVENT_TYPE)
+    @Param(description = "The type of the event")
+    private String eventType;
+
     @SerializedName(ApiConstants.WEBHOOK_RULE_ID)
     @Param(description = "The ID of the Webhook rule")
     private String webhookRuleId;
@@ -45,6 +53,10 @@ public class WebhookDispatchResponse extends BaseResponse {
     @SerializedName(ApiConstants.MANAGEMENT_SERVER_ID)
     @Param(description = "The ID of the management server which executed dispatch")
     private String managementServerId;
+
+    @SerializedName(ApiConstants.MANAGEMENT_SERVER_NAME)
+    @Param(description = "The name of the management server which executed dispatch")
+    private String managementServerName;
 
     @SerializedName(ApiConstants.PAYLOAD)
     @Param(description = "The payload of the webhook dispatch")
@@ -70,6 +82,14 @@ public class WebhookDispatchResponse extends BaseResponse {
         this.id = id;
     }
 
+    public void setEventId(String eventId) {
+        this.eventId = eventId;
+    }
+
+    public void setEventType(String eventType) {
+        this.eventType = eventType;
+    }
+
     public void setWebhookRuleId(String webhookRuleId) {
         this.webhookRuleId = webhookRuleId;
     }
@@ -80,6 +100,10 @@ public class WebhookDispatchResponse extends BaseResponse {
 
     public void setManagementServerId(String managementServerId) {
         this.managementServerId = managementServerId;
+    }
+
+    public void setManagementServerName(String managementServerName) {
+        this.managementServerName = managementServerName;
     }
 
     public void setPayload(String payload) {

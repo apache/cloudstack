@@ -44,6 +44,8 @@ import org.apache.log4j.Logger;
 
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.EventCategory;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
@@ -63,6 +65,8 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService {
     protected WebhookDispatchDao webhookDispatchDao;
     @Inject
     ManagementServerHostDao managementServerHostDao;
+    @Inject
+    DomainDao domainDao;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -80,7 +84,7 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService {
     public boolean start() {
         long webhookDispatchCleanupInterval = WebhookDispatchHistoryCleanupInterval.value();
         webhookDispatchCleanupExecutor.scheduleWithFixedDelay(new WebhookDispatchCleanupWorker(),
-                webhookDispatchCleanupInterval, webhookDispatchCleanupInterval, TimeUnit.SECONDS);
+                (5 * 60), webhookDispatchCleanupInterval, TimeUnit.SECONDS);
         return true;
     }
 
@@ -120,12 +124,18 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService {
     }
 
     protected List<Runnable> getDispatchJobs(Event event) {
-        List<WebhookRuleVO> rules = webhookRuleDao.listAll();
-        // All global rules
-        // All domain level rules for current and parent domains
-        // All local rules
-        Map<Long, Pair<Integer, Integer>> domainConfigs = new HashMap<>();
         List<Runnable> jobs = new ArrayList<>();
+        if (!EventCategory.ACTION_EVENT.getName().equals(event.getEventCategory()) ||
+                event.getResourceAccountId() == null) {
+            return jobs;
+        }
+        List<Long> domainIds = new ArrayList<>();
+        if (event.getResourceDomainId() != null) {
+            domainIds.add(event.getResourceDomainId());
+            domainIds.addAll(domainDao.getDomainParentIds(event.getResourceDomainId()));
+        }
+        List<WebhookRuleVO> rules = webhookRuleDao.listByEnabledRulesForDispatch(event.getResourceAccountId(), domainIds);
+        Map<Long, Pair<Integer, Integer>> domainConfigs = new HashMap<>();
         for (WebhookRuleVO rule : rules) {
             if (!domainConfigs.containsKey(rule.getDomainId())) {
                 domainConfigs.put(rule.getDomainId(), new Pair<>(WebhookDispatchRetries.valueIn(rule.getDomainId()),
@@ -133,7 +143,7 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService {
             }
             Pair<Integer, Integer> configs = domainConfigs.get(rule.getDomainId());
             WebhookDispatchThread.WebhookDispatchContext<WebhookDispatchThread.WebhookDispatchResult> context =
-                    new WebhookDispatchThread.WebhookDispatchContext<>(null, rule);
+                    new WebhookDispatchThread.WebhookDispatchContext<>(null, event.getEventId(), rule.getId());
             AsyncCallbackDispatcher<WebhookServiceImpl, WebhookDispatchThread.WebhookDispatchResult> caller =
                     AsyncCallbackDispatcher.create(this);
             caller.setCallback(caller.getTarget().dispatchCompleteCallback(null, null))
@@ -150,11 +160,10 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService {
     protected Void dispatchCompleteCallback(
             AsyncCallbackDispatcher<WebhookServiceImpl,WebhookDispatchThread.WebhookDispatchResult> callback,
             WebhookDispatchThread.WebhookDispatchContext<WebhookRule> context) {
-        WebhookDispatchThread.WebhookDispatchResult result = callback.getResult();
-        WebhookRule rule = context.getRule();
-        WebhookDispatchVO dispatchVO = new WebhookDispatchVO(rule.getId(), ManagementServerNode.getManagementServerId(),
-                result.getPayload(), result.isSuccess(), result.getResult(),  result.getStarTime(),
-                result.getEndTime());
+        WebhookDispatchThread.WebhookDispatchResult result = callback.getResult();;
+        WebhookDispatchVO dispatchVO = new WebhookDispatchVO(context.getEventId(), context.getRuleId(),
+                ManagementServerNode.getManagementServerId(), result.getPayload(), result.isSuccess(),
+                result.getResult(),  result.getStarTime(), result.getEndTime());
         webhookDispatchDao.persist(dispatchVO);
         return null;
     }

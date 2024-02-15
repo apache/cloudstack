@@ -20,9 +20,13 @@
 package org.apache.cloudstack.framework.events;
 
 import com.google.gson.Gson;
+import com.google.gson.annotations.Expose;
 
 public class Event {
 
+    @Expose(serialize = false, deserialize = false)
+    Long eventId;
+    @Expose(serialize = false, deserialize = false)
     String eventUuid;
     String eventCategory;
     String eventType;
@@ -30,6 +34,12 @@ public class Event {
     String resourceType;
     String resourceUUID;
     String description;
+    @Expose(serialize = false, deserialize = false)
+    Long resourceAccountId;
+    @Expose(serialize = false, deserialize = false)
+    String resourceAccountUuid;
+    @Expose(serialize = false, deserialize = false)
+    Long resourceDomainId;
 
     public Event(String eventSource, String eventCategory, String eventType, String resourceType, String resourceUUID) {
         setEventCategory(eventCategory);
@@ -37,6 +47,14 @@ public class Event {
         setEventSource(eventSource);
         setResourceType(resourceType);
         setResourceUUID(resourceUUID);
+    }
+
+    public Long getEventId() {
+        return eventId;
+    }
+
+    public void setEventId(Long eventId) {
+        this.eventId = eventId;
     }
 
     public String getEventUuid() {
@@ -98,5 +116,29 @@ public class Event {
 
     public String getResourceUUID() {
         return resourceUUID;
+    }
+
+    public Long getResourceAccountId() {
+        return resourceAccountId;
+    }
+
+    public void setResourceAccountId(Long resourceAccountId) {
+        this.resourceAccountId = resourceAccountId;
+    }
+
+    public String getResourceAccountUuid() {
+        return resourceAccountUuid;
+    }
+
+    public void setResourceAccountUuid(String resourceAccountUuid) {
+        this.resourceAccountUuid = resourceAccountUuid;
+    }
+
+    public Long getResourceDomainId() {
+        return resourceDomainId;
+    }
+
+    public void setResourceDomainId(Long resourceDomainId) {
+        this.resourceDomainId = resourceDomainId;
     }
 }
