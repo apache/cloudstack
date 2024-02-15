@@ -1095,7 +1095,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     public void orchestrateStart(final String vmUuid, final Map<VirtualMachineProfile.Param, Object> params, final DeploymentPlan planToDeploy, final DeploymentPlanner planner)
             throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
 
-        s_logger.debug(LogUtils.logGsonWithoutException("Trying to start VM [%s] using plan [%s] and planner [%s].", vmUuid, planToDeploy, planner));
+        logger.debug(LogUtils.logGsonWithoutException("Trying to start VM [%s] using plan [%s] and planner [%s].", vmUuid, planToDeploy, planner));
         final CallContext cctxt = CallContext.current();
         final Account account = cctxt.getCallingAccount();
         final User caller = cctxt.getCallingUser();
@@ -1119,7 +1119,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), vm.getPodIdToDeployIn(), null, null, null, null, ctx);
         if (planToDeploy != null && planToDeploy.getDataCenterId() != 0) {
-            s_logger.debug(DeploymentPlanningManagerImpl.logDeploymentWithoutException(vm, planToDeploy, planToDeploy.getAvoids(), planner));
+            logger.debug(DeploymentPlanningManagerImpl.logDeploymentWithoutException(vm, planToDeploy, planToDeploy.getAvoids(), planner));
             plan =
                     new DataCenterDeployment(planToDeploy.getDataCenterId(), planToDeploy.getPodId(), planToDeploy.getClusterId(), planToDeploy.getHostId(),
                             planToDeploy.getPoolId(), planToDeploy.getPhysicalNetworkId(), ctx);
@@ -1140,7 +1140,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             if (planToDeploy != null) {
                 avoids = planToDeploy.getAvoids();
-                s_logger.debug(LogUtils.logGsonWithoutException("Avoiding components [%s] in deployment of VM [%s].", avoids, vmUuid));
+                logger.debug(LogUtils.logGsonWithoutException("Avoiding components [%s] in deployment of VM [%s].", avoids, vmUuid));
             }
             if (avoids == null) {
                 avoids = new ExcludeList();

@@ -299,7 +299,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
     @Override
     public DeployDestination planDeployment(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoids, DeploymentPlanner planner)
             throws InsufficientServerCapacityException, AffinityConflictException {
-        s_logger.debug(logDeploymentWithoutException(vmProfile.getVirtualMachine(), plan, avoids, planner));
+        logger.debug(logDeploymentWithoutException(vmProfile.getVirtualMachine(), plan, avoids, planner));
 
         ServiceOffering offering = vmProfile.getServiceOffering();
         int cpuRequested = offering.getCpu() * offering.getSpeed();
@@ -309,21 +309,21 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         boolean volumesRequireEncryption = anyVolumeRequiresEncryption(_volsDao.findByInstance(vm.getId()));
 
         if (vm.getType() == VirtualMachine.Type.User || vm.getType() == VirtualMachine.Type.DomainRouter) {
-            s_logger.debug(String.format("Checking non dedicated resources to deploy VM [%s].",
+            logger.debug(String.format("Checking non dedicated resources to deploy VM [%s].",
                     ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "uuid", "type", "instanceName")));
             checkForNonDedicatedResources(vmProfile, dc, avoids);
         }
 
-        if (s_logger.isDebugEnabled()) {
+        if (logger.isDebugEnabled()) {
             String datacenter = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(dc, "uuid", "name");
             String podVO = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(_podDao.findById(plan.getPodId()), "uuid", "name");
             String clusterVO = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(_clusterDao.findById(plan.getClusterId()), "uuid", "name");
             String vmDetails = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "uuid", "type", "instanceName");
-            s_logger.debug(String.format("Trying to allocate a host and storage pools from datacenter [%s], pod [%s], cluster [%s], to deploy VM [%s] "
+            logger.debug(String.format("Trying to allocate a host and storage pools from datacenter [%s], pod [%s], cluster [%s], to deploy VM [%s] "
                     + "with requested CPU [%s] and requested RAM [%s].", datacenter, podVO, clusterVO, vmDetails, cpuRequested, toHumanReadableSize(ramRequested)));
         }
         String isRootVolumeReadyMsg = plan.getPoolId() != null ? "is ready" : "is not ready";
-        s_logger.debug(String.format("ROOT volume %s to deploy VM [%s].", vm.getUuid(), isRootVolumeReadyMsg));
+        logger.debug(String.format("ROOT volume %s to deploy VM [%s].", vm.getUuid(), isRootVolumeReadyMsg));
 
         avoidDisabledResources(vmProfile, dc, avoids);
 
@@ -342,7 +342,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 processor.process(vmProfile, plan, avoids);
             }
         }
-        s_logger.debug(String.format("DeploymentPlan [%s] has not specified host. Trying to find another destination to deploy VM [%s], avoiding pods [%s], "
+        logger.debug(String.format("DeploymentPlan [%s] has not specified host. Trying to find another destination to deploy VM [%s], avoiding pods [%s], "
                 + "clusters [%s] and hosts [%s].", plan.getClass().getSimpleName(), vmProfile.getUuid(), StringUtils.join(avoids.getPodsToAvoid(), ", "),
                 StringUtils.join(avoids.getClustersToAvoid(), ", "), StringUtils.join(avoids.getHostsToAvoid(), ", ")));
 
@@ -429,10 +429,10 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                         avoids.addHost(dest.getHost().getId());
 
                         if (volumesRequireEncryption && !Boolean.parseBoolean(_hostDetailsDao.findDetail(hostId, Host.HOST_VOLUME_ENCRYPTION).getValue())) {
-                            s_logger.warn(String.format("VM's volumes require encryption support, and the planner-provided host %s can't handle it", dest.getHost()));
+                            logger.warn(String.format("VM's volumes require encryption support, and the planner-provided host %s can't handle it", dest.getHost()));
                             continue;
                         } else {
-                            s_logger.debug(String.format("VM's volume encryption requirements are met by host %s", dest.getHost()));
+                            logger.debug(String.format("VM's volume encryption requirements are met by host %s", dest.getHost()));
                         }
 
                         if (checkIfHostFitsPlannerUsage(hostId, DeploymentPlanner.PlannerResourceUsage.Shared)) {
@@ -461,7 +461,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
         if (canUseLastHost(host, avoids, plan, vm, offering, volumesRequireEncryption)) {
             if (host.getStatus() != Status.Up) {
-                s_logger.debug(String.format("Cannot deploy VM [%s] to the last host [%s] because this host is not in UP state or is not enabled. Host current status [%s] and resource status [%s].",
+                logger.debug(String.format("Cannot deploy VM [%s] to the last host [%s] because this host is not in UP state or is not enabled. Host current status [%s] and resource status [%s].",
                         vm.getUuid(), host.getUuid(), host.getState().name(), host.getResourceState()));
                 return null;
             }
@@ -486,10 +486,10 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
                 boolean displayStorage = getDisplayStorageFromVmProfile(vmProfile);
                 if (!hostHasCapacity || !hostHasCpuCapability) {
-                    s_logger.debug(String.format("Cannot deploy VM [%s] to the last host [%s] because this host does not have enough capacity to deploy this VM.", vm.getUuid(), host.getUuid()));
+                    logger.debug(String.format("Cannot deploy VM [%s] to the last host [%s] because this host does not have enough capacity to deploy this VM.", vm.getUuid(), host.getUuid()));
                     return null;
                 }
-                s_logger.debug(String.format("Last host [%s] of VM [%s] is UP and has enough capacity. Checking for suitable pools for this host under zone [%s], pod [%s] and cluster [%s].",
+                logger.debug(String.format("Last host [%s] of VM [%s] is UP and has enough capacity. Checking for suitable pools for this host under zone [%s], pod [%s] and cluster [%s].",
                         host.getUuid(), vm.getUuid(), host.getDataCenterId(), host.getPodId(), host.getClusterId()));
 
                 Pod pod = _podDao.findById(host.getPodId());
@@ -513,7 +513,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 // choose the potential pool for this VM for this
                 // host
                 if (suitableVolumeStoragePools.isEmpty()) {
-                    s_logger.debug(String.format("Cannot find suitable storage pools in host [%s] to deploy VM [%s]", host.getUuid(), vm.getUuid()));
+                    logger.debug(String.format("Cannot find suitable storage pools in host [%s] to deploy VM [%s]", host.getUuid(), vm.getUuid()));
                     return null;
                 }
                 List<Host> suitableHosts = new ArrayList<Host>();
@@ -531,34 +531,34 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                         storageVolMap.remove(vol);
                     }
                     DeployDestination dest = new DeployDestination(dc, pod, cluster, host, storageVolMap, displayStorage);
-                    s_logger.debug("Returning Deployment Destination: " + dest);
+                    logger.debug("Returning Deployment Destination: " + dest);
                     return dest;
                 }
             }
         }
-        s_logger.debug(String.format("Cannot choose the last host to deploy this VM %s", vm));
+        logger.debug(String.format("Cannot choose the last host to deploy this VM %s", vm));
         return null;
     }
 
     private boolean canUseLastHost(HostVO host, ExcludeList avoids, DeploymentPlan plan, VirtualMachine vm, ServiceOffering offering, boolean volumesRequireEncryption) {
         if (host == null) {
-            s_logger.warn(String.format("Could not find last host of VM [%s] with id [%s]. Skipping this and trying other available hosts.", vm.getUuid(), vm.getLastHostId()));
+            logger.warn(String.format("Could not find last host of VM [%s] with id [%s]. Skipping this and trying other available hosts.", vm.getUuid(), vm.getLastHostId()));
             return false;
         }
 
         if (avoids.shouldAvoid(host)) {
-            s_logger.warn(String.format("The last host [%s] of VM [%s] is in the avoid set. Skipping this and trying other available hosts.", host.getUuid(), vm.getUuid()));
+            logger.warn(String.format("The last host [%s] of VM [%s] is in the avoid set. Skipping this and trying other available hosts.", host.getUuid(), vm.getUuid()));
             return false;
         }
 
         if (plan.getClusterId() != null && host.getClusterId() != null && !plan.getClusterId().equals(host.getClusterId())) {
-            s_logger.debug(String.format("The last host [%s] of VM [%s] cannot be picked, as the plan [%s] specifies a different cluster [%s] to deploy this VM. Skipping this and trying other available hosts.",
+            logger.debug(String.format("The last host [%s] of VM [%s] cannot be picked, as the plan [%s] specifies a different cluster [%s] to deploy this VM. Skipping this and trying other available hosts.",
                     ReflectionToStringBuilderUtils.reflectOnlySelectedFields(host, "uuid", "clusterId"), vm.getUuid(), plan.getClass().getSimpleName(), plan.getClusterId()));
             return false;
         }
 
         if (_capacityMgr.checkIfHostReachMaxGuestLimit(host)) {
-            s_logger.debug(String.format("Cannot deploy VM [%s] in the last host [%s] because this host already has the max number of running VMs (users and system VMs). Skipping this and trying other available hosts.",
+            logger.debug(String.format("Cannot deploy VM [%s] in the last host [%s] because this host already has the max number of running VMs (users and system VMs). Skipping this and trying other available hosts.",
                     vm.getUuid(), host.getUuid()));
             return false;
         }
@@ -566,13 +566,13 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         ServiceOfferingDetailsVO offeringDetails = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString());
         ServiceOfferingDetailsVO groupName = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.pciDevice.toString());
         if (offeringDetails != null && !_resourceMgr.isGPUDeviceAvailable(host.getId(), groupName.getValue(), offeringDetails.getValue())) {
-            s_logger.debug(String.format("Cannot deploy VM [%s] in the last host [%s] because this host does not have the required GPU devices available. Skipping this and trying other available hosts.",
+            logger.debug(String.format("Cannot deploy VM [%s] in the last host [%s] because this host does not have the required GPU devices available. Skipping this and trying other available hosts.",
                     vm.getUuid(), host.getUuid()));
             return false;
         }
 
         if (volumesRequireEncryption && !Boolean.parseBoolean(host.getDetail(Host.HOST_VOLUME_ENCRYPTION))) {
-            s_logger.warn(String.format("The last host of this VM %s does not support volume encryption, which is required by this VM.", host));
+            logger.warn(String.format("The last host of this VM %s does not support volume encryption, which is required by this VM.", host));
             return false;
         }
         return true;
@@ -582,27 +582,27 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             DeploymentPlanner planner, VirtualMachine vm, DataCenter dc, String uefiFlag)
             throws InsufficientServerCapacityException {
         Long hostIdSpecified = plan.getHostId();
-        s_logger.debug(String.format("DeploymentPlan [%s] has specified host [%s] without HA flag. Choosing this host to deploy VM [%s].", plan.getClass().getSimpleName(), hostIdSpecified, vm.getUuid()));
+        logger.debug(String.format("DeploymentPlan [%s] has specified host [%s] without HA flag. Choosing this host to deploy VM [%s].", plan.getClass().getSimpleName(), hostIdSpecified, vm.getUuid()));
 
         HostVO host = _hostDao.findById(hostIdSpecified);
         if (host != null && StringUtils.isNotBlank(uefiFlag) && "yes".equalsIgnoreCase(uefiFlag)) {
             _hostDao.loadDetails(host);
             if (MapUtils.isNotEmpty(host.getDetails()) && host.getDetails().containsKey(Host.HOST_UEFI_ENABLE) && "false".equalsIgnoreCase(host.getDetails().get(Host.HOST_UEFI_ENABLE))) {
-                s_logger.debug(String.format("Cannot deploy VM [%s] to specified host [%s] because this host does not support UEFI VM deployment, returning.", vm.getUuid(), host.getUuid()));
+                logger.debug(String.format("Cannot deploy VM [%s] to specified host [%s] because this host does not support UEFI VM deployment, returning.", vm.getUuid(), host.getUuid()));
                 return null;
 
             }
         }
         if (host == null) {
-            s_logger.debug(String.format("Cannot deploy VM [%s] to host [%s] because this host cannot be found.", vm.getUuid(), hostIdSpecified));
+            logger.debug(String.format("Cannot deploy VM [%s] to host [%s] because this host cannot be found.", vm.getUuid(), hostIdSpecified));
             return null;
         }
         if (avoids.shouldAvoid(host)) {
-            s_logger.debug(String.format("Cannot deploy VM [%s] to host [%s] because this host is in the avoid set.", vm.getUuid(), host.getUuid()));
+            logger.debug(String.format("Cannot deploy VM [%s] to host [%s] because this host is in the avoid set.", vm.getUuid(), host.getUuid()));
             return null;
         }
 
-        s_logger.debug(String.format("Trying to find suitable pools for host [%s] under pod [%s], cluster [%s] and zone [%s], to deploy VM [%s].",
+        logger.debug(String.format("Trying to find suitable pools for host [%s] under pod [%s], cluster [%s] and zone [%s], to deploy VM [%s].",
                 host.getUuid(), host.getDataCenterId(), host.getPodId(), host.getClusterId(), vm.getUuid()));
 
         Pod pod = _podDao.findById(host.getPodId());
@@ -612,7 +612,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         if (vm.getHypervisorType() == HypervisorType.BareMetal) {
             DeployDestination dest = new DeployDestination(dc, pod, cluster, host, new HashMap<Volume, StoragePool>(),
                     displayStorage);
-            s_logger.debug("Returning Deployment Destination: " + dest);
+            logger.debug("Returning Deployment Destination: " + dest);
             return dest;
         }
 
@@ -638,11 +638,11 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                     storageVolMap.remove(vol);
                 }
                 DeployDestination dest = new DeployDestination(dc, pod, cluster, host, storageVolMap, displayStorage);
-                s_logger.debug("Returning Deployment Destination: " + dest);
+                logger.debug("Returning Deployment Destination: " + dest);
                 return dest;
             }
         }
-        s_logger.debug(String.format("Cannot deploy VM [%s] under host [%s], because no suitable pools were found.", vmProfile.getUuid(), host.getUuid()));
+        logger.debug(String.format("Cannot deploy VM [%s] under host [%s], because no suitable pools were found.", vmProfile.getUuid(), host.getUuid()));
         return null;
     }
 
@@ -716,7 +716,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
      */
     protected void avoidDisabledHosts(DataCenter dc, ExcludeList avoids) {
         List<HostVO> disabledHosts = _hostDao.listDisabledByDataCenterId(dc.getId());
-        s_logger.debug(String.format("Adding hosts [%s] of datacenter [%s] to the avoid set, because these hosts are in the Disabled state.",
+        logger.debug(String.format("Adding hosts [%s] of datacenter [%s] to the avoid set, because these hosts are in the Disabled state.",
                 disabledHosts.stream().map(HostVO::getUuid).collect(Collectors.joining(", ")), dc.getUuid()));
         for (HostVO host : disabledHosts) {
             avoids.addHost(host.getId());
@@ -730,7 +730,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         List<Long> pods = _podDao.listAllPods(dc.getId());
         for (Long podId : pods) {
             List<Long> disabledClusters = _clusterDao.listDisabledClusters(dc.getId(), podId);
-            s_logger.debug(String.format("Adding clusters [%s] of pod [%s] to the void set because these clusters are in the Disabled state.", StringUtils.join(disabledClusters, ", "), podId));
+            logger.debug(String.format("Adding clusters [%s] of pod [%s] to the void set because these clusters are in the Disabled state.", StringUtils.join(disabledClusters, ", "), podId));
             avoids.addClusterList(disabledClusters);
         }
     }
@@ -740,7 +740,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
      */
     protected void avoidDisabledPods(DataCenter dc, ExcludeList avoids) {
         List<Long> disabledPods = _podDao.listDisabledPods(dc.getId());
-        s_logger.debug(String.format("Adding pods [%s] to the avoid set because these pods are in the Disabled state.", StringUtils.join(disabledPods, ", ")));
+        logger.debug(String.format("Adding pods [%s] to the avoid set because these pods are in the Disabled state.", StringUtils.join(disabledPods, ", ")));
         avoids.addPodList(disabledPods);
     }
 
@@ -749,7 +749,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
      */
     protected void avoidDisabledDataCenters(DataCenter dc, ExcludeList avoids) {
         if (dc.getAllocationState() == Grouping.AllocationState.Disabled) {
-            s_logger.debug(String.format("Adding datacenter [%s] to the avoid set because this datacenter is in Disabled state.", dc.getUuid()));
+            logger.debug(String.format("Adding datacenter [%s] to the avoid set because this datacenter is in Disabled state.", dc.getUuid()));
             avoids.addDataCenter(dc.getId());
         }
     }
@@ -802,7 +802,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         if (dedicatedZone != null && !_accountMgr.isRootAdmin(vmProfile.getOwner().getId())) {
             long accountDomainId = vmProfile.getOwner().getDomainId();
             long accountId = vmProfile.getOwner().getAccountId();
-            s_logger.debug(String.format("Zone [%s] is dedicated. Checking if account [%s] in domain [%s] can use this zone to deploy VM [%s].",
+            logger.debug(String.format("Zone [%s] is dedicated. Checking if account [%s] in domain [%s] can use this zone to deploy VM [%s].",
                     dedicatedZone.getUuid(), accountId, accountDomainId, vmProfile.getUuid()));
 
             // If a zone is dedicated to an account then all hosts in this zone
@@ -925,7 +925,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             allHostsInDc.removeAll(allHostsFromDedicatedID);
         }
 
-        s_logger.debug(LogUtils.logGsonWithoutException(
+        logger.debug(LogUtils.logGsonWithoutException(
                 "Adding pods [%s], clusters [%s] and hosts [%s] to the avoid list in the deploy process of VR VM [%s], "
                         + "because this VM is not dedicated to this components.",
                 allPodsInDc, allClustersInDc, allHostsInDc, vm.getUuid()));
@@ -935,7 +935,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
     }
 
     private void findAvoidSetForNonExplicitUserVM(ExcludeList avoids, boolean isExplicit, VirtualMachine vm, List<Long> allPodsInDc, List<Long> allClustersInDc, List<Long> allHostsInDc) {
-        s_logger.debug(LogUtils.logGsonWithoutException(
+        logger.debug(LogUtils.logGsonWithoutException(
                 "Adding pods [%s], clusters [%s] and hosts [%s] to the avoid list in the deploy process of user VM [%s], "
                         + "because this VM is not explicitly dedicated to these components.",
                 allPodsInDc, allClustersInDc, allHostsInDc, vm.getUuid()));
@@ -1603,7 +1603,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 volumeAllocationMap.clear();
                 return new Pair<Host, Map<Volume, StoragePool>>(potentialHost, storage);
             } else {
-                s_logger.debug(String.format("Adding host [%s] to the avoid set because: can access Pool [%b], has enough space [%b], affinity check [%b], fits planner [%s] usage [%b].",
+                logger.debug(String.format("Adding host [%s] to the avoid set because: can access Pool [%b], has enough space [%b], affinity check [%b], fits planner [%s] usage [%b].",
                         potentialHost.getUuid(), hostCanAccessPool, haveEnoughSpace, hostAffinityCheck, resourceUsageRequired.getClass().getSimpleName(), hostFitsPlannerUsage));
                 if (!hostMeetsEncryptionRequirements) {
                     logger.debug("Potential host " + potentialHost + " did not meet encryption requirements of all volumes");
@@ -1740,7 +1740,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             }
 
             if (!isRootAdmin(vmProfile) && !isEnabledForAllocation(plan.getDataCenterId(), plan.getPodId(), plan.getClusterId())) {
-                s_logger.debug(String.format("Cannot find new storage pool to deploy volume [%s] of VM [%s] in cluster [%s] because allocation state is disabled. Returning.",
+                logger.debug(String.format("Cannot find new storage pool to deploy volume [%s] of VM [%s] in cluster [%s] because allocation state is disabled. Returning.",
                         toBeCreated.getUuid(), vmProfile.getUuid(), plan.getClusterId()));
                 suitableVolumeStoragePools.clear();
                 break;
@@ -1762,7 +1762,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 useLocalStorage = diskOffering.isUseLocalStorage();
             }
             diskProfile.setUseLocalStorage(useLocalStorage);
-            s_logger.debug(String.format("Calling StoragePoolAllocators to find suitable pools to allocate volume [%s] necessary to deploy VM [%s].", toBeCreated.getUuid(), vmProfile.getUuid()));
+            logger.debug(String.format("Calling StoragePoolAllocators to find suitable pools to allocate volume [%s] necessary to deploy VM [%s].", toBeCreated.getUuid(), vmProfile.getUuid()));
             boolean foundPotentialPools = tryToFindPotentialPoolsToAlocateVolume(vmProfile, plan, avoid, returnUpTo, suitableVolumeStoragePools, toBeCreated, diskProfile);
 
             if (avoid.getPoolsToAvoid() != null) {
@@ -1803,12 +1803,12 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
     private boolean tryToFindPotentialPoolsToAlocateVolume(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo,
             Map<Volume, List<StoragePool>> suitableVolumeStoragePools, VolumeVO toBeCreated, DiskProfile diskProfile) {
         for (StoragePoolAllocator allocator : _storagePoolAllocators) {
-            s_logger.debug(String.format("Trying to find suitable pools to allocate volume [%s] necessary to deploy VM [%s], using StoragePoolAllocator: [%s].",
+            logger.debug(String.format("Trying to find suitable pools to allocate volume [%s] necessary to deploy VM [%s], using StoragePoolAllocator: [%s].",
                     toBeCreated.getUuid(), vmProfile.getUuid(), allocator.getClass().getSimpleName()));
 
             final List<StoragePool> suitablePools = allocator.allocateToPool(diskProfile, vmProfile, plan, avoid, returnUpTo);
             if (suitablePools != null && !suitablePools.isEmpty()) {
-                s_logger.debug(String.format("StoragePoolAllocator [%s] find %s suitable pools to allocate volume [%s] necessary to deploy VM [%s].",
+                logger.debug(String.format("StoragePoolAllocator [%s] find %s suitable pools to allocate volume [%s] necessary to deploy VM [%s].",
                         allocator.getClass().getSimpleName(), suitablePools.size(), toBeCreated.getUuid(), vmProfile.getUuid()));
                 checkForPreferredStoragePool(suitablePools, vmProfile.getVirtualMachine(), suitableVolumeStoragePools, toBeCreated);
                 return true;
@@ -1820,7 +1820,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
     private boolean checkIfPoolCanBeReused(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid,
             Map<Volume, List<StoragePool>> suitableVolumeStoragePools, List<Volume> readyAndReusedVolumes,
             VolumeVO toBeCreated) {
-        s_logger.debug(String.format("Volume [%s] of VM [%s] has pool [%s] already specified. Checking if this pool can be reused.", toBeCreated.getUuid(), vmProfile.getUuid(), toBeCreated.getPoolId()));
+        logger.debug(String.format("Volume [%s] of VM [%s] has pool [%s] already specified. Checking if this pool can be reused.", toBeCreated.getUuid(), vmProfile.getUuid(), toBeCreated.getPoolId()));
         List<StoragePool> suitablePools = new ArrayList<StoragePool>();
         StoragePool pool = null;
         if (toBeCreated.getPoolId() != null) {
@@ -1833,11 +1833,11 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             if (!avoid.shouldAvoid(pool)) {
                 return canReusePool(vmProfile, plan, suitableVolumeStoragePools, readyAndReusedVolumes, toBeCreated, suitablePools, pool);
             } else {
-                s_logger.debug(String.format("Pool [%s] of volume [%s] used by VM [%s] is in the avoid set. Need to reallocate a pool for this volume.",
+                logger.debug(String.format("Pool [%s] of volume [%s] used by VM [%s] is in the avoid set. Need to reallocate a pool for this volume.",
                         pool.getUuid(), toBeCreated.getUuid(), vmProfile.getUuid()));
             }
         } else {
-            s_logger.debug(String.format("Pool [%s] of volume [%s] used by VM [%s] is in maintenance. Need to reallocate a pool for this volume.",
+            logger.debug(String.format("Pool [%s] of volume [%s] used by VM [%s] is in maintenance. Need to reallocate a pool for this volume.",
                     pool.getUuid(), toBeCreated.getUuid(), vmProfile.getUuid()));
         }
         return false;
@@ -1854,7 +1854,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
         if (plan.getDataCenterId() == exstPoolDcId && ((plan.getPodId() == exstPoolPodId && plan.getClusterId() == exstPoolClusterId) ||
                 (dataStore != null && dataStore.getScope() != null && dataStore.getScope().getScopeType() == ScopeType.ZONE))) {
-            s_logger.debug(String.format("Pool [%s] of volume [%s] used by VM [%s] fits the specified plan. No need to reallocate a pool for this volume.",
+            logger.debug(String.format("Pool [%s] of volume [%s] used by VM [%s] fits the specified plan. No need to reallocate a pool for this volume.",
                     pool.getUuid(), toBeCreated.getUuid(), vmProfile.getUuid()));
             suitablePools.add(pool);
             suitableVolumeStoragePools.put(toBeCreated, suitablePools);
@@ -1864,7 +1864,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             return true;
         }
 
-        s_logger.debug(String.format("Pool [%s] of volume [%s] used by VM [%s] does not fit the specified plan. Need to reallocate a pool for this volume.",
+        logger.debug(String.format("Pool [%s] of volume [%s] used by VM [%s] does not fit the specified plan. Need to reallocate a pool for this volume.",
                 pool.getUuid(), toBeCreated.getUuid(), vmProfile.getUuid()));
         return false;
     }

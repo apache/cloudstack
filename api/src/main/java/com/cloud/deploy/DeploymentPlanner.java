@@ -21,7 +21,8 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
@@ -78,7 +79,7 @@ public interface DeploymentPlanner extends Adapter {
 
     public static class ExcludeList implements Serializable {
         private static final long serialVersionUID = -482175549460148301L;
-        private static final Logger LOGGER = Logger.getLogger(ExcludeList.class);
+        private static final Logger LOGGER = LogManager.getLogger(ExcludeList.class);
         private Set<Long> _dcIds;
         private Set<Long> _podIds;
         private Set<Long> _clusterIds;
