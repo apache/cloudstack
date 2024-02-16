@@ -60,9 +60,7 @@ public class DirectAgentAttache extends AgentAttache {
 
     @Override
     public void disconnect(Status state) {
-        if (logger.isDebugEnabled()) {
-            logger.debug("Processing disconnect " + _id + "(" + _name + ")");
-        }
+        logger.debug("Processing disconnect " + _id + "(" + _name + ")");
 
         for (ScheduledFuture<?> future : _futures) {
             future.cancel(false);
@@ -142,9 +140,7 @@ public class DirectAgentAttache extends AgentAttache {
     }
 
     private synchronized void scheduleFromQueue() {
-        if (logger.isTraceEnabled()) {
-            logger.trace("Agent attache=" + _id + ", task queue size=" + tasks.size() + ", outstanding tasks=" + _outstandingTaskCount.get());
-        }
+        logger.trace("Agent attache=" + _id + ", task queue size=" + tasks.size() + ", outstanding tasks=" + _outstandingTaskCount.get());
         while (!tasks.isEmpty() && _outstandingTaskCount.get() < _agentMgr.getDirectAgentThreadCap()) {
             _outstandingTaskCount.incrementAndGet();
             _agentMgr.getDirectAgentPool().execute(tasks.remove());
@@ -178,14 +174,10 @@ public class DirectAgentAttache extends AgentAttache {
                     if (cmd.getContextParam("logid") != null) {
                         ThreadContext.put("logcontextid", cmd.getContextParam("logid"));
                     }
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Ping from " + _id + "(" + _name + ")");
-                    }
+                    logger.debug("Ping from " + _id + "(" + _name + ")");
                     long seq = _seq++;
 
-                    if (logger.isTraceEnabled()) {
-                        logger.trace("SeqA " + _id + "-" + seq + ": " + new Request(_id, -1, cmd, false).toString());
-                    }
+                    logger.trace("SeqA " + _id + "-" + seq + ": " + new Request(_id, -1, cmd, false).toString());
 
                     _agentMgr.handleCommands(DirectAgentAttache.this, seq, new Command[] {cmd});
                 } else {
@@ -236,9 +228,7 @@ public class DirectAgentAttache extends AgentAttache {
                 Command[] cmds = _req.getCommands();
                 boolean stopOnError = _req.stopOnError();
 
-                if (logger.isDebugEnabled()) {
-                    logger.debug(log(seq, "Executing request"));
-                }
+                logger.debug(log(seq, "Executing request"));
                 ArrayList<Answer> answers = new ArrayList<Answer>(cmds.length);
                 for (int i = 0; i < cmds.length; i++) {
                     Answer answer = null;
@@ -270,9 +260,7 @@ public class DirectAgentAttache extends AgentAttache {
                 }
 
                 Response resp = new Response(_req, answers.toArray(new Answer[answers.size()]));
-                if (logger.isDebugEnabled()) {
-                    logger.debug(log(seq, "Response Received: "));
-                }
+                logger.debug(log(seq, "Response Received: "));
 
                 processAnswers(seq, resp);
             } catch (Exception e) {
@@ -298,9 +286,7 @@ public class DirectAgentAttache extends AgentAttache {
                 Command[] cmds = _req.getCommands();
                 boolean stopOnError = _req.stopOnError();
 
-                if (logger.isDebugEnabled()) {
-                    logger.debug(log(seq, "Executing request"));
-                }
+                logger.debug(log(seq, "Executing request"));
                 ArrayList<Answer> answers = new ArrayList<Answer>(cmds.length);
                 for (int i = 0; i < cmds.length; i++) {
                     Answer answer = null;
@@ -333,9 +319,7 @@ public class DirectAgentAttache extends AgentAttache {
                 }
 
                 Response resp = new Response(_req, answers.toArray(new Answer[answers.size()]));
-                if (logger.isDebugEnabled()) {
-                    logger.debug(log(seq, "Response Received: "));
-                }
+                logger.debug(log(seq, "Response Received: "));
 
                 processAnswers(seq, resp);
             } catch (Throwable t) {
