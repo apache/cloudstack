@@ -16,90 +16,92 @@
 // under the License.
 
 <template>
-  <a-row style="margin-bottom: 5px;" :gutter="5">
-    <a-col :span="4">
-      <a-card
-        class="server-metrics"
-        :loading="serverMetricsLoading"
-      >
-        <a-statistic
-          :title="$t('label.server')"
-          :value="serverStats.hostname"
-        />
-      </a-card>
-    </a-col>
-    <a-col :span="4">
-      <a-card
-        class="server-metrics"
-        :loading="serverMetricsLoading"
-      >
-        <a-statistic
-          :title="$t('label.status')"
-          :value="serverStats.state"
-          :valueStyle="{ color: this.$config.theme[serverStats.state === 'UP' ? '@success-color' : '@error-color' ] }"
-        />
-      </a-card>
-    </a-col>
-    <a-col :span="4">
-      <a-card
-        class="server-metrics"
-        :loading="serverMetricsLoading"
-      >
-        <a-statistic
-          :title="$t('label.lastheartbeat')"
-          :value="$toLocaleDate(serverStats.lastheartbeat)"
-        />
-        <a-card-meta :description="getTimeSince(serverStats.collectiontime)" />
-      </a-card>
-    </a-col>
-    <a-col :span="4">
-      <a-card
-        class="server-metrics"
-        :loading="serverMetricsLoading"
-      >
-        <a-statistic
-          :title="$t('label.lastsuccessfuljob')"
-          :value="$toLocaleDate(serverStats.lastsuccessfuljob)"
-        />
-        <a-card-meta :description="getTimeSince(serverStats.lastsuccessfuljob)" />
-      </a-card>
-    </a-col>
-    <a-col :span="4">
-      <a-card
-        class="server-metrics"
-        :loading="serverMetricsLoading"
-      >
-        <a-statistic
-          :title="$t('label.collectiontime')"
-          :value="$toLocaleDate(serverStats.collectiontime)"
-        />
-        <a-card-meta :description="getTimeSince(serverStats.collectiontime)" />
-      </a-card>
-    </a-col>
-    <a-col :span="4">
-      <a-card class="server-metrics">
-        <a-row justify="center">
-          <a-button
-            type="primary"
-            @click="generateModal = true"
+  <a-affix :offsetTop="this.$store.getters.shutdownTriggered ? 103 : 78">
+    <a-card class="breadcrumb-card">
+      <a-row>
+        <a-col
+          :span="device === 'mobile' ? 24 : 12"
+          style="padding-left: 12px; margin-top: 10px"
+        >
+          <breadcrumb :resource="resource">
+            <template #end>
+              <a-tooltip placement="bottom">
+                <template #title>{{ $t('label.refresh') }}</template>
+                <a-button
+                  style="margin-top: 4px"
+                  :loading="loading"
+                  shape="round"
+                  size="small"
+                  @click="fetchDetails()"
+                >
+                  <template #icon>
+                    <ReloadOutlined />
+                  </template>
+                  {{ $t('label.refresh') }}
+                </a-button>
+              </a-tooltip>
+            </template>
+          </breadcrumb>
+        </a-col>
+        <a-col
+          :span="device === 'mobile' ? 24 : 12"
+          :style="device === 'mobile' ? { float: 'right', 'margin-top': '12px', 'margin-bottom': '-6px', display: 'table' } : { float: 'right', display: 'table', 'margin-top': '6px' }"
+        >
+          <a-row justify="end">
+            <a-col>
+              <tooltip-button
+                type="primary"
+                icon="hdd-outlined"
+                :tooltip="$t('label.usage.records.generate')"
+                @onClick="generateModal = true"
+              />
+            </a-col>&nbsp;&nbsp;
+            <a-col>
+              <tooltip-button
+                type="danger"
+                icon="delete-outlined"
+                :tooltip="$t('label.usage.records.purge')"
+                @onClick="() => purgeModal = true"
+              />
+            </a-col>
+          </a-row>
+        </a-col>
+      </a-row>
+    </a-card>
+  </a-affix>
+  <a-col>
+    <a-card size="small">
+      <a-row justify="space-around">
+        <a-card-grid style="width: 30%; text-align: center; font-size: small;">
+          <a-statistic
+            :title="$t('label.server')"
+            :value="serverStats.hostname"
+            valueStyle="font-size: medium"
           >
-            <hdd-outlined />
-            {{ $t('label.usage.records.generate') }}
-          </a-button>
-        </a-row>
-        <br />
-        <a-row justify="center">
-          <a-button
-            type="danger"
-            @click="() => purgeModal = true"
-          >
-            <delete-outlined />
-            {{ $t('label.usage.records.purge') }}
-          </a-button>
-        </a-row>
-      </a-card>
-    </a-col>
-  </a-row>
+            <template #prefix>
+              <status :text="serverStats.state || ''" />
+            </template>
+          </a-statistic>
+        </a-card-grid>
+        <a-card-grid style="width: 35%; text-align: center; font-size: small;">
+          <a-statistic
+            :title="$t('label.lastheartbeat')"
+            :value="$toLocaleDate(serverStats.lastheartbeat)"
+            valueStyle="font-size: medium"
+          />
+          <a-card-meta :description="getTimeSince(serverStats.collectiontime)" />
+        </a-card-grid>
+        <a-card-grid style="width: 35%; text-align: center; font-size: small;">
+          <a-statistic
+            :title="$t('label.lastsuccessfuljob')"
+            :value="$toLocaleDate(serverStats.lastsuccessfuljob)"
+            valueStyle="font-size: medium"
+          />
+          <a-card-meta :description="getTimeSince(serverStats.lastsuccessfuljob)" />
+        </a-card-grid>
+      </a-row>
+    </a-card>
+  </a-col>
   <a-row justify="space-between">
     <a-col :span="24">
       <a-card>
@@ -117,18 +119,18 @@
                   ref="domain"
                   name="domain"
                 >
-                  <a-auto-complete
+                  <a-select
                     v-model:value="form.domain"
                     :options="domains"
                     :placeholder="$t('label.domain')"
                     :filter-option="filterOption"
                     style="width: 100%;"
-                    @select="getAccounts"
+                    @change="getAccounts"
                     :dropdownMatchSelectWidth="400"
                   />
                 </a-form-item>
               </a-col>
-            </a-row>
+            </a-row>&nbsp;
             <a-row>
               <a-col :span="24">
                 <a-form-item
@@ -146,14 +148,14 @@
               ref="account"
               name="account"
             >
-              <a-auto-complete
+              <a-select
                 v-model:value="form.account"
                 :options="accounts"
                 :placeholder="$t('label.account')"
                 :filter-option="filterOption"
                 :disabled="form.isRecursive"
                 :dropdownMatchSelectWidth="400"
-                @select="(value, option) => account = option"
+                @select="selectAccount"
               />
             </a-form-item>
           </a-col>
@@ -162,12 +164,12 @@
               ref="type"
               name="type"
             >
-              <a-auto-complete
+              <a-select
                 v-model:value="form.type"
                 :options="usageTypes"
                 :placeholder="$t('label.usagetype')"
-                :filter-option="filterOption"
-                @select="(value, option) => usageType = option"
+                :filterOption="filterOption"
+                @select="selectUsageType"
               />
             </a-form-item>
           </a-col>
@@ -228,10 +230,10 @@
       </a-card>
     </a-col>
   </a-row>
-  <a-row>
+  <a-row justify="space-around">
     <a-col :span="24">
       <list-view
-        :tabLoading="tabLoading"
+        :loading="tableLoading"
         :columns="columns"
         :items="usageRecords"
         :columnKeys="columnKeys"
@@ -270,8 +272,9 @@
       type="info"
       show-icon
     >
-      <template #icon><smile-outlined /></template>
     </a-alert>
+    <br/>
+    {{ $t('label.usage.records.generate.after') + $toLocaleDate(serverStats.lastsuccessfuljob) }}
   </a-modal>
 
   <a-modal
@@ -289,7 +292,7 @@
     <a-row>
       <a-alert
         :description="$t('label.usage.records.purge.alert')"
-        type="warning"
+        type="error"
         show-icon
       />
 
@@ -351,6 +354,8 @@ import Breadcrumb from '@/components/widgets/Breadcrumb'
 import ChartCard from '@/components/widgets/ChartCard'
 import ListView from '@/components/view/ListView'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import TooltipButton from '@/components/widgets/TooltipButton'
+import Status from '@/components/widgets/Status'
 
 dayjs.extend(relativeTime)
 
@@ -361,14 +366,25 @@ export default {
     Breadcrumb,
     ChartCard,
     ListView,
-    TooltipLabel
+    Status,
+    TooltipLabel,
+    TooltipButton
+  },
+  props: {
+    resource: {
+      type: Object,
+      default: function () {
+        return {}
+      }
+    }
   },
   data () {
-    var selectedColumnKeys = ['usageActions', 'account', 'domain', 'usageType', 'usageid', 'startdate', 'enddate', 'rawusage', 'description']
+    var selectedColumnKeys = ['account', 'domain', 'usageType', 'usageid', 'startdate', 'enddate', 'rawusage', 'description']
     return {
       serverMetricsLoading: true,
       serverStats: {},
       loading: false,
+      tableLoading: false,
       usageRecords: [],
       totalUsageRecords: 0,
       columnKeys: [...selectedColumnKeys,
@@ -431,7 +447,7 @@ export default {
       return option.value.toUpperCase().indexOf(input.toUpperCase()) >= 0
     },
     initForm () {
-      this.purgeDays = ref(1)
+      this.purgeDays = ref(365)
       this.formRef = ref()
       this.form = reactive({})
       this.rules = reactive({
@@ -451,12 +467,13 @@ export default {
     },
     handleTableChange (page, pageSize) {
       if (this.pageSize !== pageSize) {
-        this.page = 1
+        page = 1
       }
       if (this.page !== page || this.pageSize !== pageSize) {
         this.page = page
         this.pageSize = pageSize
         this.listUsageRecords()
+        document.documentElement.scrollIntoView()
       }
     },
     listUsageServerMetrics () {
@@ -479,15 +496,35 @@ export default {
         this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
+    selectAccount (value, option) {
+      if (option && option.id) {
+        this.account = option
+      } else {
+        this.account = null
+        if (this.formRef?.value) {
+          this.formRef.value.resetFields('account')
+        }
+      }
+    },
+    selectUsageType (value, option) {
+      if (option && option.id) {
+        this.usageType = option
+      } else {
+        this.usageType = null
+        if (this.formRef?.value) {
+          this.formRef.value.resetFields('type')
+        }
+      }
+    },
     getDomains () {
       api('listDomains', { listAll: true }).then(json => {
         if (json && json.listdomainsresponse && json.listdomainsresponse.domain) {
-          this.domains = json.listdomainsresponse.domain.map(x => {
+          this.domains = [{ id: null, value: '' }, ...json.listdomainsresponse.domain.map(x => {
             return {
               id: x.id,
               value: x.path
             }
-          })
+          })]
         }
       })
     },
@@ -498,15 +535,20 @@ export default {
       if (option && option.id) {
         params.domainid = option.id
         this.domain = option
+      } else {
+        this.domain = null
+        if (this.formRef?.value) {
+          this.formRef.value.resetFields('domain')
+        }
       }
       api('listAccounts', params).then(json => {
         if (json && json.listaccountsresponse && json.listaccountsresponse.account) {
-          this.accounts = json.listaccountsresponse.account.map(x => {
+          this.accounts = [{ id: null, value: '' }, ...json.listaccountsresponse.account.map(x => {
             return {
               id: x.id,
               value: x.name
             }
-          })
+          })]
         }
       })
     },
@@ -537,9 +579,12 @@ export default {
       return params
     },
     listUsageRecords () {
-      this.loading = true
+      this.tableLoading = true
       var params = this.getParams()
-
+      if (params.startdate === undefined || params.enddate === undefined) {
+        this.tableLoading = false
+        return
+      }
       api('listUsageRecords', params).then(json => {
         if (json && json.listusagerecordsresponse && json.listusagerecordsresponse.usagerecord) {
           this.usageRecords = json.listusagerecordsresponse.usagerecord
@@ -548,18 +593,18 @@ export default {
       }).catch(error => {
         this.$notifyError(error)
       }).finally(f => {
-        this.loading = false
+        this.tableLoading = false
       })
     },
     getUsageTypes () {
       api('listUsageTypes').then(json => {
         if (json && json.listusagetypesresponse && json.listusagetypesresponse.usagetype) {
-          this.usageTypes = json.listusagetypesresponse.usagetype.map(x => {
+          this.usageTypes = [{ id: null, value: '' }, ...json.listusagetypesresponse.usagetype.map(x => {
             return {
               id: x.usagetypeid,
               value: x.description
             }
-          })
+          })]
           this.usageTypeMap = {}
           for (var usageType of this.usageTypes) {
             this.usageTypeMap[usageType.id] = usageType.value
@@ -587,6 +632,7 @@ export default {
         if (!this.selectedColumnKeys.includes(columnKey)) continue
         var title
         var dataIndex = columnKey
+        var resizable = true
         switch (columnKey) {
           case 'templateid':
             title = this.$t('label.templatename')
@@ -609,23 +655,37 @@ export default {
         this.columns.push({
           key: columnKey,
           title: title,
-          dataIndex: dataIndex
+          dataIndex: dataIndex,
+          resizable: resizable
         })
       }
+      this.columns.push({
+        key: 'usageActions',
+        title: '',
+        dataIndex: 'usageActions',
+        resizable: false
+      })
       if (this.columns.length > 0) {
         this.columns[this.columns.length - 1].customFilterDropdown = true
       }
     },
     downloadRecords () {
-      this.downloadModal = true
-      this.downloadPercent = 0
-      this.downloadStatus = 'active'
-      this.loading = true
-      var params = this.getParams(1, 0) // to get count
-      api('listUsageRecords', params).then(json => {
-        if (json && json.listusagerecordsresponse && json.listusagerecordsresponse.count) {
-          if (json.listusagerecordsresponse.count === 0) {
-            this.$message.error(this.$t('label.no.usage.records'))
+      if (this.loading) return
+      this.formRef.value.validate().then(() => {
+        this.downloadModal = true
+        this.downloadPercent = 0
+        this.downloadStatus = 'active'
+        this.loading = true
+        var params = this.getParams(1, 0) // to get count
+        api('listUsageRecords', params).then(json => {
+          if (Object.getOwnPropertyNames(json.listusagerecordsresponse).length === 0 || json.listusagerecordsresponse.count === 0) {
+            this.$notifyError({
+              response: { data: null },
+              message: this.$t('label.no.usage.records')
+            })
+            this.loading = false
+            this.downloadStatus = 'exception'
+            this.downloadModal = false
           } else {
             var totalRecords = json.listusagerecordsresponse.count
             this.downloadTotalRecords = totalRecords
@@ -654,7 +714,9 @@ export default {
               this.downloadModal = false
             })
           }
-        }
+        })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     downloadCsv (records, filename) {
@@ -718,8 +780,10 @@ export default {
 </script>
 
 <style lang="less" scoped>
-.server-metrics {
-  min-height: 100%;
-  text-align: center;
+.breadcrumb-card {
+  margin-left: -24px;
+  margin-right: -24px;
+  margin-top: -16px;
+  margin-bottom: 12px;
 }
 </style>
