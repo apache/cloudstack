@@ -311,8 +311,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         boolean volumesRequireEncryption = anyVolumeRequiresEncryption(_volsDao.findByInstance(vm.getId()));
 
         if (vm.getType() == VirtualMachine.Type.User || vm.getType() == VirtualMachine.Type.DomainRouter) {
-            logger.debug(() -> String.format("Checking non dedicated resources to deploy VM [%s].",
-                    ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "uuid", "type", "instanceName")));
+            logger.debug("Checking non dedicated resources to deploy VM [{}].", () -> ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "uuid", "type", "instanceName"));
             checkForNonDedicatedResources(vmProfile, dc, avoids);
         }
 
@@ -325,8 +324,11 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                     + "with requested CPU [%s] and requested RAM [%s].", datacenter, podVO, clusterVO, vmDetails, cpuRequested, toHumanReadableSize(ramRequested));
         });
 
-        String isRootVolumeReadyMsg = plan.getPoolId() != null ? "is ready" : "is not ready";
-        logger.debug("ROOT volume {} to deploy VM [{}].", isRootVolumeReadyMsg, vm.getUuid());
+        if (logger.isDebugEnabled()) {
+            String rootVolumeUuid = getRootVolumeUuid(_volsDao.findByInstance(vm.getId()));
+            String isRootVolumeReadyMsg = plan.getPoolId() != null ? "is ready" : "is not ready";
+            logger.debug("ROOT volume [{}] {} to deploy VM [{}].", rootVolumeUuid, isRootVolumeReadyMsg, vm.getUuid());
+        }
 
         avoidDisabledResources(vmProfile, dc, avoids);
 
@@ -346,8 +348,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             }
         }
         logger.debug("DeploymentPlan [{}] has not specified host. Trying to find another destination to deploy VM [{}], avoiding pods [{}], clusters [{}] and hosts [{}].",
-                plan.getClass().getSimpleName(), vmProfile.getUuid(), StringUtils.join(avoids.getPodsToAvoid(), ", "), StringUtils.join(avoids.getClustersToAvoid(), ", "),
-                StringUtils.join(avoids.getHostsToAvoid(), ", "));
+                () -> plan.getClass().getSimpleName(), vmProfile::getUuid, () -> StringUtils.join(avoids.getPodsToAvoid(), ", "), () -> StringUtils.join(avoids.getClustersToAvoid(), ", "),
+                () -> StringUtils.join(avoids.getHostsToAvoid(), ", "));
 
 
         logger.debug("Deploy avoids pods: {}, clusters: {}, hosts: {}.", avoids.getPodsToAvoid(), avoids.getClustersToAvoid(),  avoids.getHostsToAvoid());
@@ -645,6 +647,15 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             }
         }
         logger.debug("Cannot deploy VM [{}] under host [{}], because no suitable pools were found.", vmProfile.getUuid(), host.getUuid());
+        return null;
+    }
+
+    protected String getRootVolumeUuid(List<? extends Volume> volumes) {
+        for (Volume volume : volumes) {
+            if (volume.getVolumeType() == Volume.Type.ROOT) {
+                return volume.getUuid();
+            }
+        }
         return null;
     }
 
