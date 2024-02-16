@@ -334,9 +334,7 @@ public class OVFHelper {
             od._controller = getControllerType(items, od._diskId);
             vd.add(od);
         }
-        if (logger.isTraceEnabled()) {
-            logger.trace(String.format("found %d disk definitions",vd.size()));
-        }
+        logger.trace("found {} disk definitions",vd.size());
         return vd;
     }
 
@@ -366,9 +364,7 @@ public class OVFHelper {
                 vf.add(of);
             }
         }
-        if (logger.isTraceEnabled()) {
-            logger.trace(String.format("found %d file definitions in %s",vf.size(), ovfFile.getPath()));
-        }
+        logger.trace("found %d file definitions in {}",vf.size(), ovfFile.getPath());
         return vf;
     }
 
@@ -540,9 +536,7 @@ public class OVFHelper {
     private void matchNicsToNets(Map<String, OVFNetworkTO> nets, Node systemElement) {
         final DocumentTraversal traversal = (DocumentTraversal) systemElement;
         final NodeIterator iterator = traversal.createNodeIterator(systemElement, NodeFilter.SHOW_ELEMENT, null, true);
-        if (logger.isTraceEnabled()) {
-            logger.trace(String.format("starting out with %d network-prerequisites, parsing hardware",nets.size()));
-        }
+        logger.trace("starting out with {} network-prerequisites, parsing hardware",nets.size());
         int nicCount = 0;
         for (Node n = iterator.nextNode(); n != null; n = iterator.nextNode()) {
             final Element e = (Element) n;
@@ -561,9 +555,7 @@ public class OVFHelper {
                 }
             }
         }
-        if (logger.isTraceEnabled()) {
-            logger.trace(String.format("ending up with %d network-prerequisites, parsed %d nics", nets.size(), nicCount));
-        }
+        logger.trace("ending up with %d network-prerequisites, parsed {} nics", nets.size(), nicCount);
     }
 
     /**
@@ -630,9 +622,7 @@ public class OVFHelper {
 
             nets.put(networkName,network);
         }
-        if (logger.isTraceEnabled()) {
-            logger.trace(String.format("found %d networks in template", nets.size()));
-        }
+        logger.trace("found {} networks in template", nets.size());
         return nets;
     }
 
