@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.Event;
+import org.apache.cloudstack.framework.events.EventBusException;
 import org.apache.cloudstack.framework.events.EventDistributor;
 import org.junit.After;
 import org.junit.Assert;
@@ -166,10 +167,10 @@ public class ActionEventUtilsTest {
         });
 
         //Needed to record events published on the bus.
-        Mockito.doAnswer((Answer<Void>) invocation -> {
+        Mockito.doAnswer((Answer<List<EventBusException>>) invocation -> {
             Event event = (Event)invocation.getArguments()[0];
             publishedEvents.add(event);
-            return null;
+            return new ArrayList<>();
         }).when(eventDistributor).publish(Mockito.any(Event.class));
 
         account = new AccountVO("testaccount", 1L, "networkdomain", Account.Type.NORMAL, "uuid");
