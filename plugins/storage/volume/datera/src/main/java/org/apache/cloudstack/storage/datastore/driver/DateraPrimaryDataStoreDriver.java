@@ -394,11 +394,6 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
     }
 
-    @Override
-    public boolean requiresAccessForMigration(DataObject dataObject) {
-        return false;
-    }
-
     /**
      * Returns the size of template on this primary storage. If we already have a
      * template on this storage, we return 0

@@ -385,11 +385,6 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     @Override
-    public boolean requiresAccessForMigration(DataObject dataObject) {
-        return false;
-    }
-
-    @Override
     public long getUsedBytes(StoragePool storagePool) {
         return getUsedBytes(storagePool, Long.MIN_VALUE);
     }

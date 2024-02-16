@@ -177,11 +177,6 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     public void revokeAccess(DataObject data, Host host, DataStore dataStore) {
     }
 
-    @Override
-    public boolean requiresAccessForMigration(DataObject dataObject) {
-        return false;
-    }
-
     private void updateStoragePool(final long poolId, final long deltaUsedBytes) {
         StoragePoolVO storagePool = primaryStoreDao.findById(poolId);
         final long capacity = storagePool.getCapacityBytes();

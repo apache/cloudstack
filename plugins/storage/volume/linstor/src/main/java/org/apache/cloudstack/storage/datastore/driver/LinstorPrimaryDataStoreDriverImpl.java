@@ -149,11 +149,6 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     }
 
     @Override
-    public boolean requiresAccessForMigration(DataObject dataObject) {
-        return false;
-    }
-
-    @Override
     public long getUsedBytes(StoragePool storagePool)
     {
         return 0;
