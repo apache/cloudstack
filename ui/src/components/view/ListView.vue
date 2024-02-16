@@ -25,6 +25,7 @@
     :pagination="false"
     :rowSelection=" enableGroupAction() || $route.name === 'event' ? {selectedRowKeys: selectedRowKeys, onChange: onSelectChange, columnWidth: 30} : null"
     :rowClassName="getRowClassName"
+    @resizeColumn="handleResizeColumn"
     style="overflow-y: auto"
   >
     <template #customFilterDropdown>
@@ -904,6 +905,9 @@ export default {
         name = Object.keys(name).includes('customTitle') ? name.customTitle : name.field
       }
       return name
+    },
+    handleResizeColumn (w, col) {
+      col.width = w
     },
     updateSelectedColumns (name) {
       this.$emit('update-selected-columns', name)
