@@ -278,8 +278,7 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
             disableRpFilter();
         }
 
-        if (logger.isInfoEnabled())
-            logger.info("Receive proxyVmId in ConsoleProxyResource configuration as " + proxyVmId);
+        logger.info("Receive proxyVmId in ConsoleProxyResource configuration as " + proxyVmId);
 
         return true;
     }
@@ -431,9 +430,7 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
         ConsoleProxyLoadReportCommand cmd = new ConsoleProxyLoadReportCommand(proxyVmId, gsonLoadInfo);
         try {
             getAgentControl().postRequest(cmd);
-
-            if (logger.isDebugEnabled())
-                logger.debug("Report proxy load info, proxy : " + proxyVmId + ", load: " + gsonLoadInfo);
+            logger.debug("Report proxy load info, proxy : " + proxyVmId + ", load: " + gsonLoadInfo);
         } catch (AgentControlChannelException e) {
             logger.error("Unable to send out load info due to " + e.getMessage(), e);
         }
@@ -441,8 +438,7 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
 
     public void ensureRoute(String address) {
         if (localGateway != null) {
-            if (logger.isDebugEnabled())
-                logger.debug("Ensure route for " + address + " via " + localGateway);
+            logger.debug("Ensure route for " + address + " via " + localGateway);
 
             // this method won't be called in high frequency, serialize access
             // to script execution

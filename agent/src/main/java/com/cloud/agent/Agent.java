@@ -1192,9 +1192,8 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                         shell.launchNewAgent(resource);
                         return;
                     }
-                    if (logger.isTraceEnabled()) {
-                        logger.debug("Other tasks are in progress, will retry post certificate renewal command after few seconds");
-                    }
+                    logger.debug("Other tasks are in progress, will retry post certificate renewal command after few seconds");
+
                     Thread.sleep(5000);
                 } catch (final Exception e) {
                     logger.warn("Failed to execute post certificate renewal command:", e);
@@ -1215,23 +1214,20 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                 }
                 final String preferredHost  = msList[0];
                 final String connectedHost = _shell.getConnectedHost();
-                if (logger.isTraceEnabled()) {
-                    logger.trace("Running preferred host checker task, connected host=" + connectedHost + ", preferred host=" + preferredHost);
-                }
+                logger.trace("Running preferred host checker task, connected host=" + connectedHost + ", preferred host=" + preferredHost);
+
                 if (preferredHost != null && !preferredHost.equals(connectedHost) && _link != null) {
                     boolean isHostUp = true;
                     try (final Socket socket = new Socket()) {
                         socket.connect(new InetSocketAddress(preferredHost, _shell.getPort()), 5000);
                     } catch (final IOException e) {
                         isHostUp = false;
-                        if (logger.isTraceEnabled()) {
-                            logger.trace("Host: " + preferredHost + " is not reachable");
-                        }
+                        logger.trace("Host: " + preferredHost + " is not reachable");
+
                     }
                     if (isHostUp && _link != null && _inProgress.get() == 0) {
-                        if (logger.isDebugEnabled()) {
-                            logger.debug("Preferred host " + preferredHost + " is found to be reachable, trying to reconnect");
-                        }
+                        logger.debug("Preferred host " + preferredHost + " is found to be reachable, trying to reconnect");
+
                         _shell.resetHostCounter();
                         reconnect(_link);
                     }
