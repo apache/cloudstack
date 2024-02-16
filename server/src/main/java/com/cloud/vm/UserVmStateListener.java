@@ -43,6 +43,7 @@ import com.cloud.vm.dao.UserVmDao;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.EventDistributor;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 public class UserVmStateListener implements StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
@@ -64,10 +65,6 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
         this._userVmDao = userVmDao;
         this._userVmMgr = userVmMgr;
         this._configDao = configDao;
-    }
-
-    public void setEventDistributor(EventDistributor eventDistributor) {
-        this.eventDistributor = eventDistributor;
     }
 
     @Override
@@ -127,8 +124,10 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
         boolean configValue = Boolean.parseBoolean(value);
         if(!configValue)
             return;
-        if (eventDistributor == null) {
-            setEventDistributor(ComponentContext.getComponent(EventDistributor.class));
+        try {
+            eventDistributor = ComponentContext.getComponent(EventDistributor.class);
+        } catch (NoSuchBeanDefinitionException nbe) {
+            return; // no provider is configured to provide events distributor, so just return
         }
 
         String resourceName = getEntityFromClassName(VirtualMachine.class.getName());
