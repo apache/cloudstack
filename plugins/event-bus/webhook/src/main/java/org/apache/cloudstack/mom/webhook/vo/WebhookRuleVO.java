@@ -211,4 +211,21 @@ public class WebhookRuleVO implements WebhookRule {
         this.sslVerification = sslVerification;
         this.scope = scope;
     }
+
+    /*
+     * For creating a dummy rule for testing dispatch
+     */
+    public WebhookRuleVO(long domainId, long accountId, String payloadUrl, String secretKey, boolean sslVerification) {
+        this.uuid = UUID.randomUUID().toString();
+        this.id = ID_DUMMY_RULE;
+        this.name = NAME_DUMMY_RULE;
+        this.description = NAME_DUMMY_RULE;
+        this.state = State.Enabled;
+        this.domainId = domainId;
+        this.accountId = accountId;
+        this.payloadUrl = payloadUrl;
+        this.secretKey = secretKey;
+        this.sslVerification = sslVerification;
+        this.scope = Scope.Local;
+    }
 }

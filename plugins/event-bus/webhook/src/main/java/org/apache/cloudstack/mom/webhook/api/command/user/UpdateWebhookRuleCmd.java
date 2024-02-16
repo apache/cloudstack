@@ -50,8 +50,8 @@ public class UpdateWebhookRuleCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID,
             entityType = WebhookRuleResponse.class,
-            description = "The ID of the Webhook rule",
-            required = true)
+            required = true,
+            description = "The ID of the Webhook rule")
     private Long id;
     @Parameter(name = ApiConstants.NAME, type = BaseCmd.CommandType.STRING, description = "Name for the Webhook rule")
     private String name;

@@ -2080,6 +2080,8 @@
 "label.templatetype": "Template type",
 "label.templateversion": "Template version",
 "label.term.type": "Term type",
+"label.test": "Test",
+"label.test.webhook.dispatch": "Test Webhook Dispatch",
 "label.tftpdir": "TFTP root directory",
 "label.theme.alert": "The setting is only visible to the current browser. To apply the setting, please download the JSON file and replace its content in the `theme` section of the `config.json` file under the path: `/public/config.json`",
 "label.theme.color": "Theme color",

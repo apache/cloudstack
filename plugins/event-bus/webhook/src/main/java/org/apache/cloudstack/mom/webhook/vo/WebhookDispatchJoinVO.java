@@ -75,7 +75,7 @@ public class WebhookDispatchJoinVO extends BaseViewVO implements InternalIdentit
     private long managementServerMsId;
 
     @Column(name = "mshost_name")
-    private String mangementServerName;
+    private String managementServerName;
 
     @Column(name = "payload", length = 65535)
     private String payload;
@@ -140,8 +140,8 @@ public class WebhookDispatchJoinVO extends BaseViewVO implements InternalIdentit
         return managementServerMsId;
     }
 
-    public String getMangementServerName() {
-        return mangementServerName;
+    public String getManagementServerName() {
+        return managementServerName;
     }
 
     public String getPayload() {

@@ -120,6 +120,7 @@ import {
   MinusSquareOutlined,
   MobileOutlined,
   MoreOutlined,
+  NodeIndexOutlined,
   NotificationOutlined,
   NumberOutlined,
   LaptopOutlined,
@@ -140,6 +141,7 @@ import {
   RedoOutlined,
   ReloadOutlined,
   RightCircleOutlined,
+  RightSquareOutlined,
   RocketOutlined,
   SafetyCertificateOutlined,
   SafetyOutlined,
@@ -279,6 +281,7 @@ export default {
     app.component('MinusSquareOutlined', MinusSquareOutlined)
     app.component('MobileOutlined', MobileOutlined)
     app.component('MoreOutlined', MoreOutlined)
+    app.component('NodeIndexOutlined', NodeIndexOutlined)
     app.component('NotificationOutlined', NotificationOutlined)
     app.component('NumberOutlined', NumberOutlined)
     app.component('LaptopOutlined', LaptopOutlined)
@@ -299,6 +302,7 @@ export default {
     app.component('RedoOutlined', RedoOutlined)
     app.component('ReloadOutlined', ReloadOutlined)
     app.component('RightCircleOutlined', RightCircleOutlined)
+    app.component('RightSquareOutlined', RightSquareOutlined)
     app.component('RocketOutlined', RocketOutlined)
     app.component('SafetyCertificateOutlined', SafetyCertificateOutlined)
     app.component('SafetyOutlined', SafetyOutlined)

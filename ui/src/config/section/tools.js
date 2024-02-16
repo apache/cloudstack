@@ -73,7 +73,7 @@ export default {
     {
       name: 'webhook',
       title: 'label.webhooks',
-      icon: 'message-outlined',
+      icon: 'node-index-outlined',
       docHelp: 'adminguide/webhooks.html',
       permission: ['listWebhookRules'],
       columns: () => {
@@ -163,6 +163,15 @@ export default {
           defaultArgs: { state: 'Disabled' },
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
           show: (record) => { return ['Enabled'].includes(record.state) }
+        },
+        {
+          api: 'testWebhookDispatch',
+          icon: 'right-square-outlined',
+          label: 'label.test.webhook.dispatch',
+          message: 'message.test.webhook.dispatch',
+          dataView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/tools/TestWebhookDispatch.vue')))
         },
         {
           api: 'deleteWebhookRule',

@@ -22,6 +22,7 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.events.Event;
 
 import com.cloud.utils.component.PluggableService;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public interface WebhookService extends PluggableService, Configurable {
 
@@ -51,4 +52,5 @@ public interface WebhookService extends PluggableService, Configurable {
             false, ConfigKey.Scope.Global);
 
     void handleEvent(Event event);
+    WebhookDispatch testWebhookDispatch(WebhookRule rule, String payload) throws CloudRuntimeException;
 }

@@ -31,6 +31,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 import org.apache.cloudstack.mom.webhook.WebhookDispatch;
+import org.apache.cloudstack.mom.webhook.WebhookRule;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 @Entity
@@ -93,7 +94,7 @@ public class WebhookDispatchVO implements WebhookDispatch {
 
     @Override
     public long getManagementServerId() {
-        return 0;
+        return mangementServerId;
     }
 
     @Override
@@ -135,6 +136,25 @@ public class WebhookDispatchVO implements WebhookDispatch {
         this.uuid = UUID.randomUUID().toString();
         this.eventId = eventId;
         this.webhookRuleId = webhookRuleId;
+        this.mangementServerId = managementServerId;
+        this.payload = payload;
+        this.success = success;
+        this.response = response;
+        this.startTime = startTime;
+        this.endTime = endTime;
+    }
+
+
+
+    /*
+     * For creating a dummy object for testing dispatch
+     */
+    public WebhookDispatchVO(long managementServerId, String payload, boolean success,
+                             String response, Date startTime, Date endTime) {
+        this.id = WebhookRule.ID_DUMMY_RULE;
+        this.uuid = UUID.randomUUID().toString();
+        this.eventId = WebhookRule.ID_DUMMY_RULE;
+        this.webhookRuleId = WebhookRule.ID_DUMMY_RULE;
         this.mangementServerId = managementServerId;
         this.payload = payload;
         this.success = success;

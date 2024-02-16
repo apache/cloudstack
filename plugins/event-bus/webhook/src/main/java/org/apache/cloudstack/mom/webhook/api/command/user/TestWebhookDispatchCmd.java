@@ -20,27 +20,33 @@ package org.apache.cloudstack.mom.webhook.api.command.user;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.mom.webhook.WebhookApiService;
-import org.apache.cloudstack.mom.webhook.WebhookRule;
+import org.apache.cloudstack.mom.webhook.WebhookDispatch;
+import org.apache.cloudstack.mom.webhook.api.response.WebhookDispatchResponse;
 import org.apache.cloudstack.mom.webhook.api.response.WebhookRuleResponse;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "deleteWebhookRule",
-        description = "Delete a Webhook rule",
-        responseObject = SuccessResponse.class,
-        entityType = {WebhookRule.class},
+
+@APICommand(name = "testWebhookDispatch",
+        description = "Test a Webhook",
+        responseObject = WebhookDispatchResponse.class,
+        entityType = {WebhookDispatch.class},
+        requestHasSensitiveInfo = false,
+        responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
         since = "4.20.0")
-public class DeleteWebhookRuleCmd extends BaseCmd {
+public class TestWebhookDispatchCmd extends BaseCmd {
 
     @Inject
     WebhookApiService webhookApiService;
@@ -50,15 +56,57 @@ public class DeleteWebhookRuleCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID,
             entityType = WebhookRuleResponse.class,
-            required = true,
             description = "The ID of the Webhook rule")
     private Long id;
+
+    @Parameter(name = ApiConstants.PAYLOAD_URL,
+            type = BaseCmd.CommandType.STRING,
+            description = "Payload URL of the Webhook dispatch")
+    private String payloadUrl;
+
+    @Parameter(name = ApiConstants.SECRET_KEY, type = BaseCmd.CommandType.STRING, description = "Secret key of the Webhook dispatch")
+    private String secretKey;
+
+    @Parameter(name = ApiConstants.SSL_VERIFICATION, type = BaseCmd.CommandType.BOOLEAN, description = "If set to true then SSL verification will be done for the Webhook dispatch otherwise not")
+    private Boolean sslVerification;
+
+    @Parameter(name = ApiConstants.PAYLOAD,
+            type = BaseCmd.CommandType.STRING,
+            description = "Payload of the Webhook dispatch")
+    private String payload;
+
+    @ACL(accessType = SecurityChecker.AccessType.UseEntry)
+    @Parameter(name = ApiConstants.PROJECT_ID, type = BaseCmd.CommandType.UUID, entityType = ProjectResponse.class,
+            description = "Project for the Webhook dispatch")
+    private Long projectId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
+
+
     public Long getId() {
         return id;
+    }
+
+    public String getPayloadUrl() {
+        return payloadUrl;
+    }
+
+    public String getSecretKey() {
+        return secretKey;
+    }
+
+    public Boolean isSslVerification() {
+        return sslVerification;
+    }
+
+    public String getPayload() {
+        return payload;
+    }
+
+    public Long getProjectId() {
+        return projectId;
     }
 
     @Override
@@ -69,16 +117,19 @@ public class DeleteWebhookRuleCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
+
     @Override
     public void execute() throws ServerApiException {
         try {
-            if (!webhookApiService.deleteWebhookRule(this)) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to delete webhook rule ID: %d", getId()));
+            WebhookDispatchResponse response = webhookApiService.testWebhookDispatch(this);
+            if (response == null) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to test Webhook dispatch");
             }
-            SuccessResponse response = new SuccessResponse(getCommandName());
+            response.setResponseName(getCommandName());
             setResponseObject(response);
         } catch (CloudRuntimeException ex) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
+
     }
 }

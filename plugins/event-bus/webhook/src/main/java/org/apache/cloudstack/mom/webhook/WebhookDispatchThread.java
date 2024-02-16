@@ -18,7 +18,6 @@
 package org.apache.cloudstack.mom.webhook;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -38,8 +37,8 @@ import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -47,6 +46,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
 
 public class WebhookDispatchThread implements Runnable {
@@ -67,6 +67,10 @@ public class WebhookDispatchThread implements Runnable {
     private int deliveryTimeout = 10;
 
     AsyncCompletionCallback<WebhookDispatchResult> callback;
+
+    protected boolean isValidJson(String json) {
+        return json.startsWith("}") || json.startsWith("["); //ToDo
+    }
 
     public WebhookDispatchThread(CloseableHttpClient httpClient, WebhookRule rule, Event event,AsyncCompletionCallback<WebhookDispatchResult> callback) {
         this.httpClient = httpClient;
@@ -105,18 +109,19 @@ public class WebhookDispatchThread implements Runnable {
         callback.complete(new WebhookDispatchResult(payload, success, response, startTime));
     }
 
-    protected void updateResponseFromRequest(InputStream is) {
+    protected void updateResponseFromRequest(HttpEntity entity) {
         try {
-            this.response =  IOUtils.toString(is, StandardCharsets.UTF_8);
+            this.response =  EntityUtils.toString(entity, StandardCharsets.UTF_8);
         } catch (IOException e) {
             LOGGER.error(String.format("Failed to parse response for event: %s, webhook: %s having URL: %s", event.getEventType(), rule.getName(), rule.getPayloadUrl()));
+            this.response = "";
         }
     }
 
     protected boolean dispatch(int attempt) {
         startTime = new Date();
         try {
-            final URI uri = new URI("http://localhost:8888"); //ToDo: rule.getPayloadUrl()
+            final URI uri = new URI(WebhookRule.Scope.Local.equals(rule.getScope()) ? rule.getPayloadUrl() : "http://localhost:8888"); //ToDo: rule.getPayloadUrl()
             HttpPost request = new HttpPost();
             RequestConfig.Builder requestConfig = RequestConfig.custom();
             requestConfig.setConnectTimeout(deliveryTimeout * 1000);
@@ -131,13 +136,16 @@ public class WebhookDispatchThread implements Runnable {
             if (StringUtils.isNotBlank(rule.getSecretKey())) {
                 request.setHeader(HEADER_X_CS_SIGNATURE, generateHMACSignature(payload, rule.getSecretKey()));
             }
+            if (!isValidJson(payload)) {
+                request.setHeader(HttpHeaders.CONTENT_TYPE, "text/plain; charset=UTF-8");
+            }
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace(String.format("Dispatching event: %s for webhook: %s on URL: %s with timeout: %d, attempt #%d", event.getEventType(), rule.getName(), rule.getPayloadUrl(), deliveryTimeout, attempt));
             }
             StringEntity input = new StringEntity(payload, ContentType.APPLICATION_JSON);
             request.setEntity(input);
             final CloseableHttpResponse response = httpClient.execute(request);
-            updateResponseFromRequest(response.getEntity().getContent());
+            updateResponseFromRequest(response.getEntity());
             if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
                 if (LOGGER.isTraceEnabled()) {
                     LOGGER.trace(String.format("Successfully dispatched event: %s for webhook: %s", event.getEventType(), rule.getName()));
