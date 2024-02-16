@@ -67,7 +67,7 @@ public class QuotaTariffUpdateCmd extends BaseCmd {
             "value will be applied. Inform empty to remove the activation rule.", length = 65535, since = "4.18.0.0")
     private String activationRule;
 
-    @Parameter(name = ApiConstants.POSITION, type = CommandType.INTEGER, description = "Position in the execution sequence for tariffs of the same type", since = "4.19.0.0")
+    @Parameter(name = ApiConstants.POSITION, type = CommandType.INTEGER, description = "Position in the execution sequence for tariffs of the same type", since = "4.20.0.0")
     private Integer position;
 
     public Integer getUsageType() {

@@ -159,20 +159,16 @@ class TestQuotaTariffOrder(cloudstackTestCase):
         start = datetime.datetime.now() + datetime.timedelta(seconds=1)
         end = datetime.datetime.now() + datetime.timedelta(hours=1)
 
-        self.debug("INSERT INTO cloud_usage.cloud_usage (zone_id,account_id,domain_id,description,usage_display,"
-                   "usage_type,raw_usage,vm_instance_id,vm_name,offering_id,template_id,usage_id,`type`,`size`,"
-                   "network_id,start_date,end_date,virtual_size,cpu_speed,cpu_cores,memory,quota_calculated,"
-                   "is_hidden,state) VALUES ('{}','{}','{}','Test','1 Hrs',22,1,NULL,NULL,NULL,NULL,NULL,"
-                   "'VirtualMachine',NULL,NULL,'{}','{}',NULL,NULL,NULL,NULL,0,0,NULL);"
-                   .format(zone_id, account_id, domain_id, start, end))
+        query = "INSERT INTO cloud_usage.cloud_usage (zone_id,account_id,domain_id,description,usage_display,"
+        "usage_type,raw_usage,vm_instance_id,vm_name,offering_id,template_id,usage_id,`type`,`size`,"
+        "network_id,start_date,end_date,virtual_size,cpu_speed,cpu_cores,memory,quota_calculated,"
+        "is_hidden,state) VALUES ('{}','{}','{}','Test','1 Hrs',22,1,NULL,NULL,NULL,NULL,NULL,"
+        "'VirtualMachine',NULL,NULL,'{}','{}',NULL,NULL,NULL,NULL,0,0,NULL);".format(zone_id, account_id, domain_id, start, end)
+
+        self.debug(query)
 
         self.dbclient.execute(
-            "INSERT INTO cloud_usage.cloud_usage (zone_id,account_id,domain_id,description,usage_display,usage_type,"
-            "raw_usage,vm_instance_id,vm_name,offering_id,template_id,usage_id,`type`,`size`,network_id,"
-            "start_date,end_date,virtual_size,cpu_speed,cpu_cores,memory,quota_calculated,is_hidden,"
-            "state) VALUES ('{}','{}','{}','Test','1 Hrs',22,1,NULL,NULL,NULL,NULL,NULL,'VirtualMachine',"
-            "NULL,NULL,'{}','{}',NULL,NULL,NULL,NULL,0,0,NULL);"
-            .format(zone_id, account_id, domain_id, start, end))
+            query)
 
         cmd = quotaUpdate.quotaUpdateCmd()
         self.api_client.quotaUpdate(cmd)

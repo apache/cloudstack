@@ -66,7 +66,7 @@ public class QuotaTariffCreateCmd extends BaseCmd {
             + " endDate=2009-06-03.")
     private Date endDate;
 
-    @Parameter(name = ApiConstants.POSITION, type = CommandType.INTEGER, description = "Position in the execution sequence for tariffs of the same type", since = "4.19.0.0")
+    @Parameter(name = ApiConstants.POSITION, type = CommandType.INTEGER, description = "Position in the execution sequence for tariffs of the same type", since = "4.20.0.0")
     private Integer position;
 
     @Override
