@@ -332,7 +332,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     private List<SecurityChecker> _securityCheckers;
     private int _cleanupInterval;
-    final private String OAUTH2_PROVIDER_NAME = "oauth2";
+    private String oauth2ProviderName = "oauth2";
     private List<String> apiNameList;
 
     protected static Map<String, UserTwoFactorAuthenticator> userTwoFactorAuthenticationProvidersMap = new HashMap<>();
@@ -2651,8 +2651,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     continue;
                 }
             }
-            if ((secretCode != null && !authenticator.getName().equals(OAUTH2_PROVIDER_NAME))
-                    || (secretCode == null && authenticator.getName().equals(OAUTH2_PROVIDER_NAME))) {
+            if ((secretCode != null && !authenticator.getName().equals(oauth2ProviderName))
+                    || (secretCode == null && authenticator.getName().equals(oauth2ProviderName))) {
                 continue;
             }
             Pair<Boolean, ActionOnFailedAuthentication> result = authenticator.authenticate(username, password, domainId, requestParameters);
