@@ -674,25 +674,26 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         return new Pair<>(configurationVO, minBalance);
     }
 
-    private QuotaEmailConfigurationVO getQuotaEmailConfigurationVo(QuotaConfigureEmailCmd cmd) {
-        if (cmd.getTemplateName() != null) {
-            List<QuotaEmailTemplatesVO> templateVO = _quotaEmailTemplateDao.listAllQuotaEmailTemplates(cmd.getTemplateName());
-            if (templateVO.isEmpty()) {
-                throw new InvalidParameterValueException(String.format("Could not find template with name [%s].", cmd.getTemplateName()));
-            }
-            long templateId = templateVO.get(0).getId();
-            QuotaEmailConfigurationVO configurationVO = quotaEmailConfigurationDao.findByAccountIdAndEmailTemplateId(cmd.getAccountId(), templateId);
-
-            if (configurationVO == null) {
-                configurationVO = new QuotaEmailConfigurationVO(cmd.getAccountId(), templateId, cmd.getEnable());
-                quotaEmailConfigurationDao.persistQuotaEmailConfiguration(configurationVO);
-                return configurationVO;
-            }
-
-            configurationVO.setEnabled(cmd.getEnable());
-            return quotaEmailConfigurationDao.updateQuotaEmailConfiguration(configurationVO);
+    protected QuotaEmailConfigurationVO getQuotaEmailConfigurationVo(QuotaConfigureEmailCmd cmd) {
+        if (cmd.getTemplateName() == null) {
+            return null;
         }
-        return null;
+
+        List<QuotaEmailTemplatesVO> templateVO = _quotaEmailTemplateDao.listAllQuotaEmailTemplates(cmd.getTemplateName());
+        if (templateVO.isEmpty()) {
+            throw new InvalidParameterValueException(String.format("Could not find template with name [%s].", cmd.getTemplateName()));
+        }
+        long templateId = templateVO.get(0).getId();
+        QuotaEmailConfigurationVO configurationVO = quotaEmailConfigurationDao.findByAccountIdAndEmailTemplateId(cmd.getAccountId(), templateId);
+
+        if (configurationVO == null) {
+            configurationVO = new QuotaEmailConfigurationVO(cmd.getAccountId(), templateId, cmd.getEnable());
+            quotaEmailConfigurationDao.persistQuotaEmailConfiguration(configurationVO);
+            return configurationVO;
+        }
+
+        configurationVO.setEnabled(cmd.getEnable());
+        return quotaEmailConfigurationDao.updateQuotaEmailConfiguration(configurationVO);
     }
 
     protected void validateQuotaConfigureEmailCmdParameters(QuotaConfigureEmailCmd cmd) {

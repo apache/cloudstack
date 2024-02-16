@@ -33,7 +33,9 @@ import org.apache.cloudstack.quota.dao.QuotaAccountDao;
 import org.apache.cloudstack.quota.dao.QuotaEmailConfigurationDaoImpl;
 import org.apache.cloudstack.quota.dao.QuotaEmailTemplatesDao;
 import org.apache.cloudstack.quota.vo.QuotaAccountVO;
+import org.apache.cloudstack.quota.vo.QuotaEmailConfigurationVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -87,6 +89,9 @@ public class QuotaAlertManagerImplTest extends TestCase {
     @Mock
     private Date balanceDateMock;
 
+    @Mock
+    private AccountVO accountMock;
+
     @Spy
     @InjectMocks
     private QuotaAlertManagerImpl quotaAlertManager = new QuotaAlertManagerImpl();
@@ -106,6 +111,27 @@ public class QuotaAlertManagerImplTest extends TestCase {
         Mockito.doReturn(0).when(quotaAccountVOMock).getQuotaEnforce();
 
         TransactionLegacy.open("QuotaAlertManagerImplTest");
+    }
+
+    @Test
+    public void isQuotaEmailTypeEnabledForAccountTestConfigurationIsEnabledAndEmailIsConfiguredReturnConfiguredValue() {
+        boolean expectedValue = !QuotaConfig.QuotaEnableEmails.value();
+        QuotaEmailConfigurationVO quotaEmailConfigurationVoMock = Mockito.mock(QuotaEmailConfigurationVO.class);
+        Mockito.when(quotaEmailConfigurationVoMock.isEnabled()).thenReturn(expectedValue);
+        Mockito.doReturn(quotaEmailConfigurationVoMock).when(quotaEmailConfigurationDaoMock).findByAccountIdAndEmailTemplateType(Mockito.anyLong(), Mockito.any(QuotaConfig.QuotaEmailTemplateTypes.class));
+
+        boolean result = quotaAlertManager.isQuotaEmailTypeEnabledForAccount(accountMock, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_EMPTY);
+
+        Assert.assertEquals(expectedValue, result);
+    }
+
+    @Test
+    public void isQuotaEmailTypeEnabledForAccountTestConfigurationIsEnabledAndEmailIsNotConfiguredReturnDefaultValue() {
+        boolean defaultValue = QuotaConfig.QuotaEnableEmails.value();
+
+        boolean result = quotaAlertManager.isQuotaEmailTypeEnabledForAccount(accountMock, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_EMPTY);
+
+        Assert.assertEquals(defaultValue, result);
     }
 
     @Test

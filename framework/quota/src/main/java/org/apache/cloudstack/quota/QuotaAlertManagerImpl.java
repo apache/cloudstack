@@ -143,6 +143,29 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         return true;
     }
 
+    /**
+     * Returns whether a Quota email type is enabled or not for the provided account.
+     */
+    @Override
+    public boolean isQuotaEmailTypeEnabledForAccount(AccountVO account, QuotaEmailTemplateTypes quotaEmailTemplateType) {
+        boolean quotaEmailsEnabled = QuotaConfig.QuotaEnableEmails.valueIn(account.getAccountId());
+        if (!quotaEmailsEnabled) {
+            logger.debug("Configuration [{}] is disabled for account [{}]. Therefore, the account will not receive Quota email of type [{}].", QuotaConfig.QuotaEnableEmails.key(), account, quotaEmailTemplateType);
+            return false;
+        }
+
+        QuotaEmailConfigurationVO quotaEmail = quotaEmailConfigurationDao.findByAccountIdAndEmailTemplateType(account.getAccountId(), quotaEmailTemplateType);
+
+        boolean emailEnabled = quotaEmail == null || quotaEmail.isEnabled();
+        if (emailEnabled) {
+            logger.debug("Quota email [{}] is enabled for account [{}].", quotaEmailTemplateType, account);
+        } else {
+            logger.debug("Quota email [{}] has been manually disabled for account [{}] through the API quotaConfigureEmail.", quotaEmailTemplateType, account);
+        }
+        return emailEnabled;
+    }
+
+
     @Override
     public void checkAndSendQuotaAlertEmails() {
         List<DeferredQuotaEmail> deferredQuotaEmailList = new ArrayList<DeferredQuotaEmail>();
@@ -153,7 +176,7 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         }
 
         for (DeferredQuotaEmail emailToBeSent : deferredQuotaEmailList) {
-            logger.debug(String.format("Attempting to send a quota alert email to users of account [%s].", emailToBeSent.getAccount().getAccountName()));
+            logger.debug("Attempting to send a quota alert email to users of account [{}].", emailToBeSent.getAccount().getAccountName());
             sendQuotaAlert(emailToBeSent);
         }
     }
@@ -163,17 +186,17 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
      * if they should receive either QUOTA_EMPTY or QUOTA_LOW emails, taking into account if these email templates are disabled or not for that account.
      * */
     protected void checkQuotaAlertEmailForAccount(List<DeferredQuotaEmail> deferredQuotaEmailList, QuotaAccountVO quotaAccount) {
-        logger.debug(String.format("Checking %s for email alerts.", quotaAccount));
+        logger.debug("Checking {} for email alerts.", quotaAccount);
         BigDecimal accountBalance = quotaAccount.getQuotaBalance();
 
         if (accountBalance == null) {
-            logger.debug(String.format("%s has a null balance, therefore it will not receive quota alert emails.", quotaAccount));
+            logger.debug("{} has a null balance, therefore it will not receive quota alert emails.", quotaAccount);
             return;
         }
 
         AccountVO account = _accountDao.findById(quotaAccount.getId());
         if (account == null) {
-            logger.debug(String.format("Account of %s is removed, thus it will not receive quota alert emails.", quotaAccount));
+            logger.debug("Account of {} is removed, thus it will not receive quota alert emails.", quotaAccount);
             return;
         }
 
@@ -186,30 +209,34 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         int lockable = quotaAccount.getQuotaEnforce();
         BigDecimal thresholdBalance = quotaAccount.getQuotaMinBalance();
 
-        logger.debug(String.format("Checking %s with accountBalance [%s], alertDate [%s] and lockable [%s] to see if a quota alert email should be sent.", account,
-                accountBalance, alertDate, lockable));
+        logger.debug("Checking {} with accountBalance [{}], alertDate [{}] and lockable [{}] to see if a quota alert email should be sent.", account,
+                accountBalance, alertDate, lockable);
 
-        QuotaEmailConfigurationVO quotaEmpty = quotaEmailConfigurationDao.findByAccountIdAndEmailTemplateType(account.getAccountId(), QuotaEmailTemplateTypes.QUOTA_EMPTY);
-        QuotaEmailConfigurationVO quotaLow = quotaEmailConfigurationDao.findByAccountIdAndEmailTemplateType(account.getAccountId(), QuotaEmailTemplateTypes.QUOTA_LOW);
+
 
         boolean shouldSendEmail = alertDate == null || (balanceDate.after(alertDate) && getDifferenceDays(alertDate, new Date()) > 1);
 
         if (accountBalance.compareTo(BigDecimal.ZERO) < 0) {
             if (_lockAccountEnforcement && lockable == 1 && _quotaManager.isLockable(account)) {
-                logger.info(String.format("Locking %s, as quota balance is lower than 0.", account));
+                logger.info("Locking {}, as quota balance is lower than 0.", account);
                 lockAccount(account.getId());
             }
-            if (quotaEmpty != null && quotaEmpty.isEnabled() && shouldSendEmail) {
-                logger.debug(String.format("Adding %s to the deferred emails list, as quota balance is lower than 0.", account));
+
+            boolean quotaEmptyEmailEnabled = isQuotaEmailTypeEnabledForAccount(account, QuotaEmailTemplateTypes.QUOTA_EMPTY);
+            if (quotaEmptyEmailEnabled && shouldSendEmail) {
+                logger.debug("Adding {} to the deferred emails list, as quota balance is lower than 0.", account);
                 deferredQuotaEmailList.add(new DeferredQuotaEmail(account, quotaAccount, QuotaEmailTemplateTypes.QUOTA_EMPTY));
                 return;
             }
-        } else if (accountBalance.compareTo(thresholdBalance) < 0 && quotaLow != null && quotaLow.isEnabled() && shouldSendEmail) {
-            logger.debug(String.format("Adding %s to the deferred emails list, as quota balance [%s] is below the threshold [%s].", account, accountBalance, thresholdBalance));
-            deferredQuotaEmailList.add(new DeferredQuotaEmail(account, quotaAccount, QuotaEmailTemplateTypes.QUOTA_LOW));
-            return;
+        } else if (accountBalance.compareTo(thresholdBalance) < 0) {
+            boolean quotaLowEmailEnabled = isQuotaEmailTypeEnabledForAccount(account, QuotaEmailTemplateTypes.QUOTA_LOW);
+            if (quotaLowEmailEnabled && shouldSendEmail) {
+                logger.debug("Adding {} to the deferred emails list, as quota balance [{}] is below the threshold [{}].", account, accountBalance, thresholdBalance);
+                deferredQuotaEmailList.add(new DeferredQuotaEmail(account, quotaAccount, QuotaEmailTemplateTypes.QUOTA_LOW));
+                return;
+            }
         }
-        logger.debug(String.format("%s will not receive any quota alert emails in this round.", account));
+            logger.debug("{} will not receive any quota alert emails in this round.", account);
     }
 
     @Override

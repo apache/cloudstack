@@ -27,12 +27,12 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.quota.QuotaStatementImpl.QuotaStatementPeriods;
+import org.apache.cloudstack.quota.constant.QuotaConfig;
 import org.apache.cloudstack.quota.dao.QuotaAccountDao;
 import org.apache.cloudstack.quota.dao.QuotaEmailConfigurationDaoImpl;
 import org.apache.cloudstack.quota.dao.QuotaEmailTemplatesDao;
 import org.apache.cloudstack.quota.dao.QuotaUsageDao;
 import org.apache.cloudstack.quota.vo.QuotaAccountVO;
-import org.apache.cloudstack.quota.vo.QuotaEmailConfigurationVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
 import org.junit.Before;
 import org.junit.Test;
@@ -244,9 +244,8 @@ public class QuotaStatementTest extends TestCase {
 
     @Test
     public void sendStatementTestUnconfiguredEmail() {
-        Mockito.doReturn(listMock).when(quotaEmailTemplatesDaoMock).listAllQuotaEmailTemplates(Mockito.anyString());
-        Mockito.doReturn(quotaEmailTemplatesVOMock).when(listMock).get(Mockito.anyInt());
-        Mockito.doReturn(null).when(quotaEmailConfigurationDaoMock).findByAccountIdAndEmailTemplateId(Mockito.anyLong(), Mockito.anyLong());
+        boolean defaultConfigurationValue = QuotaConfig.QuotaEnableEmails.value();
+        Mockito.doReturn(defaultConfigurationValue).when(alertManager).isQuotaEmailTypeEnabledForAccount(Mockito.any(AccountVO.class), Mockito.any(QuotaConfig.QuotaEmailTemplateTypes.class));
 
         Calendar date = Calendar.getInstance();
         AccountVO accountVO = new AccountVO();
@@ -274,13 +273,7 @@ public class QuotaStatementTest extends TestCase {
 
     @Test
     public void sendStatementTestEnabledEmail() {
-        Mockito.doReturn(listMock).when(quotaEmailTemplatesDaoMock).listAllQuotaEmailTemplates(Mockito.anyString());
-        Mockito.doReturn(quotaEmailTemplatesVOMock).when(listMock).get(Mockito.anyInt());
-
-        QuotaEmailConfigurationVO quotaEmailConfigurationVOMock = new QuotaEmailConfigurationVO();
-        quotaEmailConfigurationVOMock.setEnabled(true);
-
-        Mockito.doReturn(quotaEmailConfigurationVOMock).when(quotaEmailConfigurationDaoMock).findByAccountIdAndEmailTemplateId(Mockito.anyLong(), Mockito.anyLong());
+        Mockito.doReturn(true).when(alertManager).isQuotaEmailTypeEnabledForAccount(Mockito.any(AccountVO.class), Mockito.any(QuotaConfig.QuotaEmailTemplateTypes.class));
 
         Calendar date = Calendar.getInstance();
         AccountVO accountVO = new AccountVO();
@@ -308,13 +301,12 @@ public class QuotaStatementTest extends TestCase {
 
     @Test
     public void sendStatementTestDisabledEmail() {
-        Mockito.doReturn(listMock).when(quotaEmailTemplatesDaoMock).listAllQuotaEmailTemplates(Mockito.anyString());
-        Mockito.doReturn(quotaEmailTemplatesVOMock).when(listMock).get(Mockito.anyInt());
-
-        QuotaEmailConfigurationVO quotaEmailConfigurationVOMock = new QuotaEmailConfigurationVO();
-        quotaEmailConfigurationVOMock.setEnabled(false);
-
-        Mockito.lenient().doReturn(quotaEmailConfigurationVOMock).when(quotaEmailConfigurationDaoMock).findByAccountIdAndEmailTemplateId(Mockito.anyLong(), Mockito.anyLong());
+        QuotaAccountVO quotaAccountVoMock = Mockito.mock(QuotaAccountVO.class);
+        Mockito.when(quotaAccountVoMock.getQuotaBalance()).thenReturn(BigDecimal.ONE);
+        Mockito.when(quotaAcc.listAllQuotaAccount()).thenReturn(List.of(quotaAccountVoMock));
+        AccountVO accountVoMock = Mockito.mock(AccountVO.class);
+        Mockito.doReturn(accountVoMock).when(accountDao).findById(Mockito.anyLong());
+        Mockito.doReturn(false).when(alertManager).isQuotaEmailTypeEnabledForAccount(Mockito.any(AccountVO.class), Mockito.any(QuotaConfig.QuotaEmailTemplateTypes.class));
 
         quotaStatement.sendStatement();
 
