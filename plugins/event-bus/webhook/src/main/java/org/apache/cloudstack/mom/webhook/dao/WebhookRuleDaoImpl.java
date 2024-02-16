@@ -57,4 +57,13 @@ public class WebhookRuleDaoImpl extends GenericDaoBase<WebhookRuleVO, Long> impl
         }
         return listBy(sc);
     }
+
+    @Override
+    public void deleteByAccount(long accountId) {
+        SearchBuilder<WebhookRuleVO> sb = createSearchBuilder();
+        sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
+        SearchCriteria<WebhookRuleVO> sc = sb.create();
+        sc.setParameters("accountId", accountId);
+        remove(sc);
+    }
 }

@@ -15,15 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.mom.webhook.dao;
+package org.apache.cloudstack.webhook;
 
-import java.util.List;
-
-import org.apache.cloudstack.mom.webhook.vo.WebhookRuleVO;
-
-import com.cloud.utils.db.GenericDao;
-
-public interface WebhookRuleDao extends GenericDao<WebhookRuleVO, Long> {
-    List<WebhookRuleVO> listByEnabledRulesForDispatch(Long accountId, List<Long> domainIds);
-    void deleteByAccount(long accountId);
+public interface WebhookHelper {
+    void deleteRulesForAccount(long accountId);
 }

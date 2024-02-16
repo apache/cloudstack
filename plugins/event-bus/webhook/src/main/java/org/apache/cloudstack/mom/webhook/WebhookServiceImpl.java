@@ -38,6 +38,7 @@ import org.apache.cloudstack.mom.webhook.dao.WebhookRuleDao;
 import org.apache.cloudstack.mom.webhook.vo.WebhookDispatchVO;
 import org.apache.cloudstack.mom.webhook.vo.WebhookRuleVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.cloudstack.webhook.WebhookHelper;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.log4j.Logger;
@@ -52,7 +53,7 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.GlobalLock;
 
-public class WebhookServiceImpl extends ManagerBase implements WebhookService {
+public class WebhookServiceImpl extends ManagerBase implements WebhookService, WebhookHelper {
     public static final Logger LOGGER = Logger.getLogger(WebhookApiServiceImpl.class.getName());
     public static final String WEBHOOK_JOB_POOL_THREAD_PREFIX = "Webhook-Job-Executor";
     private ExecutorService webhookJobExecutor;
@@ -166,6 +167,11 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService {
                 result.getResult(),  result.getStarTime(), result.getEndTime());
         webhookDispatchDao.persist(dispatchVO);
         return null;
+    }
+
+    @Override
+    public void deleteRulesForAccount(long accountId) {
+        webhookRuleDao.deleteByAccount(accountId);
     }
 
 

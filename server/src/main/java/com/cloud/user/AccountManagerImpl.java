@@ -77,12 +77,14 @@ import org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleDao;
 import org.apache.cloudstack.resourcedetail.UserDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.UserDetailsDao;
 import org.apache.cloudstack.utils.baremetal.BaremetalUtils;
+import org.apache.cloudstack.webhook.WebhookHelper;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.auth.SetupUserTwoFactorAuthenticationCmd;
@@ -169,6 +171,7 @@ import com.cloud.utils.ConstantTimeComparator;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
@@ -1102,8 +1105,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             userDataDao.removeByAccountId(accountId);
 
             // Delete WebhookRules
-            //ToDo: webhook delete
-
+            try {
+                WebhookHelper webhookService = ComponentContext.getComponent(WebhookHelper.class);
+                webhookService.deleteRulesForAccount(accountId);
+            } catch (NoSuchBeanDefinitionException ignored) {
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace("No WebhookHelper bean found");
+                }
+            }
 
             return true;
         } catch (Exception ex) {
