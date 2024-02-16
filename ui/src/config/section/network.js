@@ -337,7 +337,7 @@ export default {
       name: 'vnfapp',
       title: 'label.vnf.appliances',
       icon: 'gateway-outlined',
-      permission: ['listVirtualMachinesMetrics'],
+      permission: ['listVnfTemplates'],
       resourceType: 'UserVm',
       params: () => {
         return { details: 'servoff,tmpl,nics', isvnf: true }
