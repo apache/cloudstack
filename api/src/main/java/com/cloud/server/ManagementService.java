@@ -449,10 +449,11 @@ public interface ManagementService {
      * this method removes the child storage pools and adds the corresponding parent datastore cluster for API response listing
      *
      * @param Long volumeId
+     * @param String keyword if passed, will only return storage pools that contain this keyword in the name
      * @return Pair<List<? extends StoragePool>, List<? extends StoragePool>> List of storage pools in cluster and list
      *         of pools with enough capacity.
      */
-    Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForMigrationOfVolume(Long volumeId);
+    Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForMigrationOfVolume(Long volumeId, String keyword);
 
     Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForSystemMigrationOfVolume(Long volumeId, Long newDiskOfferingId, Long newSize, Long newMinIops, Long newMaxIops, boolean keepSourceStoragePool, boolean bypassStorageTypeCheck);
 
