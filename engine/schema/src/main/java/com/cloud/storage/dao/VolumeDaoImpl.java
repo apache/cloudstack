@@ -16,13 +16,16 @@
 // under the License.
 package com.cloud.storage.dao;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.inject.Inject;
 
@@ -65,6 +68,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     protected final SearchBuilder<VolumeVO> RootDiskStateSearch;
     private final SearchBuilder<VolumeVO> storeAndInstallPathSearch;
     private final SearchBuilder<VolumeVO> volumeIdSearch;
+    private final SearchBuilder<VolumeVO> encryptedIdSearch;
     protected GenericSearchBuilder<VolumeVO, Long> CountByAccount;
     protected GenericSearchBuilder<VolumeVO, SumCount> primaryStorageSearch;
     protected GenericSearchBuilder<VolumeVO, SumCount> primaryStorageSearch2;
@@ -487,6 +491,10 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         volumeIdSearch.and("idIN", volumeIdSearch.entity().getId(), Op.IN);
         volumeIdSearch.done();
 
+        encryptedIdSearch = createSearchBuilder();
+        encryptedIdSearch.and("encryptionMethod", encryptedIdSearch.entity().getId(), Op.NNULL);
+        encryptedIdSearch.done();
+
         poolAndPathSearch = createSearchBuilder();
         poolAndPathSearch.and("poolId", poolAndPathSearch.entity().getPoolId(), Op.EQ);
         poolAndPathSearch.and("path", poolAndPathSearch.entity().getPath(), Op.EQ);
@@ -838,5 +846,22 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         SearchCriteria<VolumeVO> sc = volumeIdSearch.create();
         sc.setParameters("idIN", ids.toArray());
         return listBy(sc, null);
+    }
+
+    @Override
+    public Set<Long> listEncryptedVolumeIds() {
+        String selectSql = "SELECT id FROM volumes WHERE encrypt_format IS NOT NULL";
+        Set<Long> ids = new HashSet<>();
+        Connection conn = TransactionLegacy.getStandaloneConnection();
+        try {
+            PreparedStatement stmt = conn.prepareStatement(selectSql);
+            ResultSet rs = stmt.executeQuery();
+            while (rs != null && rs.next()) {
+                ids.add(rs.getLong(1));
+            }
+        } catch (SQLException ex) {
+            throw new CloudRuntimeException("Error while trying to find ids for encrypted volumes", ex);
+        }
+        return ids;
     }
 }

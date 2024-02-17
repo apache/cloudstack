@@ -2331,7 +2331,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     private Pair<List<VolumeJoinVO>, Integer> searchForVolumesInternal(ListVolumesCmd cmd) {
 
         Account caller = CallContext.current().getCallingAccount();
-        List<Long> permittedAccounts = new ArrayList<Long>();
+        List<Long> permittedAccounts = new ArrayList<>();
 
         Long id = cmd.getId();
         Long vmInstanceId = cmd.getVirtualMachineId();
@@ -2350,8 +2350,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long podId = cmd.getPodId();
 
         List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
+        checkEncrypted(cmd, ids);
 
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(cmd.getDomainId(), cmd.isRecursive(), null);
         accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
@@ -2495,7 +2496,21 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             vrIds[i++] = v.getId();
         }
         List<VolumeJoinVO> vrs = _volumeJoinDao.searchByIds(vrIds);
-        return new Pair<List<VolumeJoinVO>, Integer>(vrs, count);
+        return new Pair<>(vrs, count);
+    }
+
+    private void checkEncrypted(ListVolumesCmd cmd, List<Long> ids) {
+        if (Boolean.TRUE.equals(cmd.isEncrypted())) {
+            Set<Long> encs = volumeDao.listEncryptedVolumeIds();
+            if (encs.contains(cmd.getId())) {
+                return;
+            }
+            for (Long id: ids) {
+                if (! encs.contains(id)) {
+                    ids.remove(id);
+                }
+            }
+        }
     }
 
     private boolean shouldListSystemVms(ListVolumesCmd cmd, Long callerId) {

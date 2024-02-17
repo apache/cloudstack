@@ -18,6 +18,7 @@ package com.cloud.storage.dao;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.ScopeType;
@@ -155,4 +156,6 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
     VolumeVO findByPoolIdAndPath(long id, String path);
 
     List<VolumeVO> listByIds(List<Long> ids);
+
+    Set<Long> listEncryptedVolumeIds();
 }
