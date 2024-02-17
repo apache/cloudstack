@@ -104,16 +104,20 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         return false;
     }
 
-    protected abstract List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo, boolean bypassStorageTypeCheck);
+    protected abstract List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo, boolean bypassStorageTypeCheck, String keyword);
 
     @Override
     public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
-        return allocateToPool(dskCh, vmProfile, plan, avoid, returnUpTo, false);
+        return allocateToPool(dskCh, vmProfile, plan, avoid, returnUpTo, false, null);
     }
 
     @Override
     public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo, boolean bypassStorageTypeCheck) {
-        List<StoragePool> pools = select(dskCh, vmProfile, plan, avoid, returnUpTo, bypassStorageTypeCheck);
+        return allocateToPool(dskCh, vmProfile, plan, avoid, returnUpTo, bypassStorageTypeCheck, null);
+    }
+
+    public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo, boolean bypassStorageTypeCheck, String keyword) {
+        List<StoragePool> pools = select(dskCh, vmProfile, plan, avoid, returnUpTo, bypassStorageTypeCheck, keyword);
         return reorderPools(pools, vmProfile, plan, dskCh);
     }
 

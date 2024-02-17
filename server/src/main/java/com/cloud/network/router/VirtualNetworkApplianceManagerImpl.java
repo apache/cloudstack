@@ -57,7 +57,6 @@ import org.apache.cloudstack.api.command.admin.router.UpgradeRouterTemplateCmd;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -66,7 +65,6 @@ import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.cloudstack.network.router.deployment.RouterDeploymentDefinitionBuilder;
 import org.apache.cloudstack.network.topology.NetworkTopology;
 import org.apache.cloudstack.network.topology.NetworkTopologyContext;
 import org.apache.cloudstack.utils.CloudStackVersion;
@@ -115,13 +113,11 @@ import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ZoneConfig;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
@@ -143,7 +139,6 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddress;
-import com.cloud.network.IpAddressManager;
 import com.cloud.network.MonitoringService;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
@@ -177,17 +172,13 @@ import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.OpRouterMonitorServiceDao;
 import com.cloud.network.dao.OpRouterMonitorServiceVO;
-import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.RouterHealthCheckResultDao;
 import com.cloud.network.dao.RouterHealthCheckResultVO;
 import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
 import com.cloud.network.dao.Site2SiteVpnConnectionDao;
 import com.cloud.network.dao.Site2SiteVpnConnectionVO;
-import com.cloud.network.dao.Site2SiteVpnGatewayDao;
-import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.network.dao.VirtualRouterProviderDao;
-import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRule.LbHealthCheckPolicy;
@@ -216,16 +207,11 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
-import com.cloud.resource.ResourceManager;
 import com.cloud.serializer.GsonHelper;
-import com.cloud.server.ConfigurationServer;
 import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage.ProvisioningType;
-import com.cloud.storage.dao.GuestOSDao;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
@@ -272,9 +258,7 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.NicIpAliasVO;
-import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
-import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 
@@ -300,7 +284,6 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     @Inject private LoadBalancerDao _loadBalancerDao;
     @Inject private LoadBalancerVMMapDao _loadBalancerVMMapDao;
     @Inject protected IPAddressDao _ipAddressDao;
-    @Inject private VMTemplateDao _templateDao;
     @Inject protected DomainRouterDao _routerDao;
     @Inject private UserDao _userDao;
     @Inject protected UserStatisticsDao _userStatsDao;
@@ -311,17 +294,11 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     @Inject protected AgentManager _agentMgr;
     @Inject private AlertManager _alertMgr;
     @Inject private AccountManager _accountMgr;
-    @Inject private ConfigurationManager _configMgr;
-    @Inject private ConfigurationServer _configServer;
     @Inject protected ServiceOfferingDao _serviceOfferingDao;
-    @Inject private UserVmDao _userVmDao;
-    @Inject private VMInstanceDao _vmDao;
     @Inject private NetworkOfferingDao _networkOfferingDao;
-    @Inject private GuestOSDao _guestOSDao;
     @Inject protected NetworkOrchestrationService _networkMgr;
     @Inject protected NetworkModel _networkModel;
     @Inject protected VirtualMachineManager _itMgr;
-    @Inject private VpnUserDao _vpnUsersDao;
     @Inject private RulesManager _rulesMgr;
     @Inject protected NetworkDao _networkDao;
     @Inject private LoadBalancingRulesManager _lbMgr;
@@ -329,21 +306,13 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     @Inject protected RemoteAccessVpnDao _vpnDao;
     @Inject protected NicDao _nicDao;
     @Inject private NicIpAliasDao _nicIpAliasDao;
-    @Inject private VolumeDao _volumeDao;
     @Inject private UserVmDetailsDao _vmDetailsDao;
-    @Inject private ClusterDao _clusterDao;
-    @Inject private ResourceManager _resourceMgr;
-    @Inject private PhysicalNetworkServiceProviderDao _physicalProviderDao;
     @Inject protected VirtualRouterProviderDao _vrProviderDao;
     @Inject private ManagementServerHostDao _msHostDao;
     @Inject private Site2SiteCustomerGatewayDao _s2sCustomerGatewayDao;
-    @Inject private Site2SiteVpnGatewayDao _s2sVpnGatewayDao;
     @Inject private Site2SiteVpnConnectionDao _s2sVpnConnectionDao;
     @Inject private Site2SiteVpnManager _s2sVpnMgr;
-    @Inject private UserIpv6AddressDao _ipv6Dao;
     @Inject private NetworkService _networkSvc;
-    @Inject private IpAddressManager _ipAddrMgr;
-    @Inject private ConfigDepot _configDepot;
     @Inject protected MonitoringServiceDao _monitorServiceDao;
     @Inject private AsyncJobManager _asyncMgr;
     @Inject protected VpcDao _vpcDao;
@@ -370,7 +339,6 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     @Inject protected RouterControlHelper _routerControlHelper;
 
     @Inject protected CommandSetupHelper _commandSetupHelper;
-    @Inject protected RouterDeploymentDefinitionBuilder _routerDeploymentManagerBuilder;
     @Inject private ManagementServer mgr;
 
     private int _routerRamSize;
@@ -2796,28 +2764,43 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             final VirtualMachine vm = profile.getVirtualMachine();
             final DomainRouterVO domR = _routerDao.findById(vm.getId());
             processStopOrRebootAnswer(domR, answer);
-            final List<? extends Nic> routerNics = _nicDao.listByVmId(profile.getId());
-            for (final Nic nic : routerNics) {
-                final Network network = _networkModel.getNetwork(nic.getNetworkId());
-                final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
-
-                if (network.getTrafficType() == TrafficType.Guest && nic.getBroadcastUri() != null && nic.getBroadcastUri().getScheme().equals("pvlan")) {
-                    final NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 0, false, "pvlan-nic");
-
-                    final NetworkTopology networkTopology = _networkTopologyContext.retrieveNetworkTopology(dcVO);
-                    try {
-                        networkTopology.setupDhcpForPvlan(false, domR, domR.getHostId(), nicProfile);
-                    } catch (final ResourceUnavailableException e) {
-                        logger.debug("ERROR in finalizeStop: ", e);
-                    }
-                }
+            if (Boolean.TRUE.equals(RemoveControlIpOnStop.valueIn(profile.getVirtualMachine().getDataCenterId()))) {
+                removeNics(vm, domR);
             }
-
         }
     }
 
     @Override
     public void finalizeExpunge(final VirtualMachine vm) {
+        if (Boolean.FALSE.equals(RemoveControlIpOnStop.valueIn(vm.getDataCenterId()))) {
+            final DomainRouterVO domR = _routerDao.findById(vm.getId());
+            logger.info(String.format("removing nics for VR [%s]", vm));
+            removeNics(vm, domR);
+        }
+    }
+
+    private void removeNics(VirtualMachine vm, DomainRouterVO domR) {
+        final List<? extends Nic> routerNics = _nicDao.listByVmId(vm.getId());
+        final DataCenterVO dcVO = _dcDao.findById(vm.getDataCenterId());
+
+        for (final Nic nic : routerNics) {
+            final Network network = _networkModel.getNetwork(nic.getNetworkId());
+
+            removeDhcpRulesForPvLan(domR, nic, network, dcVO);
+        }
+    }
+
+    private void removeDhcpRulesForPvLan(DomainRouterVO domR, Nic nic, Network network, DataCenterVO dcVO) {
+        if (network.getTrafficType() == TrafficType.Guest && nic.getBroadcastUri() != null && nic.getBroadcastUri().getScheme().equals("pvlan")) {
+            final NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 0, false, "pvlan-nic");
+
+            final NetworkTopology networkTopology = _networkTopologyContext.retrieveNetworkTopology(dcVO);
+            try {
+                networkTopology.setupDhcpForPvlan(false, domR, domR.getHostId(), nicProfile);
+            } catch (final ResourceUnavailableException e) {
+                logger.debug("ERROR in finalizeStop: ", e);
+            }
+        }
     }
 
     @Override
@@ -3339,7 +3322,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 RouterHealthChecksMaxCpuUsageThreshold,
                 RouterHealthChecksMaxMemoryUsageThreshold,
                 ExposeDnsAndBootpServer,
-                RouterLogrotateFrequency
+                RouterLogrotateFrequency,
+                RemoveControlIpOnStop
         };
     }
 
