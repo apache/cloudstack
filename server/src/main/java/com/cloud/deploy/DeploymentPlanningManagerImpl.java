@@ -125,6 +125,7 @@ import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
@@ -730,10 +731,11 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
     protected boolean checkVmProfileAndHost(final VirtualMachineProfile vmProfile, final HostVO host) {
         ServiceOffering offering = vmProfile.getServiceOffering();
-        if (offering.getHostTag() != null) {
+        VirtualMachineTemplate template = vmProfile.getTemplate();
+        if (offering.getHostTag() != null || template.getTemplateTag() != null) {
             _hostDao.loadHostTags(host);
-            if (!host.checkHostServiceOfferingTags(offering)) {
-                logger.debug("Service Offering host tag does not match the last host of this VM");
+            if (!host.checkHostServiceOfferingAndTemplateTags(offering, template)) {
+                logger.debug("Service Offering host tag or template tag does not match the last host of this VM");
                 return false;
             }
         }

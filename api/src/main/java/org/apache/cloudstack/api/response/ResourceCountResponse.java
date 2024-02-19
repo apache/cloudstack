@@ -16,13 +16,12 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.cloud.configuration.Resource;
-import com.google.gson.annotations.SerializedName;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
+import com.cloud.configuration.Resource;
 import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 public class ResourceCountResponse extends BaseResponse implements ControlledEntityResponse {
@@ -54,9 +53,13 @@ public class ResourceCountResponse extends BaseResponse implements ControlledEnt
     @Param(description = "resource type name. Values include user_vm, public_ip, volume, snapshot, template, project, network, vpc, cpu, memory, primary_storage, secondary_storage.")
     private String resourceTypeName;
 
-    @SerializedName("resourcecount")
-    @Param(description = "resource count")
+    @SerializedName(ApiConstants.RESOURCE_COUNT)
+    @Param(description = "The resource count")
     private long resourceCount;
+
+    @SerializedName(ApiConstants.TAG)
+    @Param(description = "Tag for the resource", since = "4.20.0")
+    private String tag;
 
     @Override
     public void setAccountName(String accountName) {
@@ -92,4 +95,7 @@ public class ResourceCountResponse extends BaseResponse implements ControlledEnt
         this.projectName = projectName;
     }
 
+    public void setTag(String tag) {
+        this.tag = tag;
+    }
 }

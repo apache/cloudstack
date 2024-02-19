@@ -137,7 +137,7 @@ public class AbstractStoragePoolAllocatorTest {
 class MockStorapoolAllocater extends AbstractStoragePoolAllocator {
 
     @Override
-    protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, DeploymentPlanner.ExcludeList avoid, int returnUpTo, boolean bypassStorageTypeCheck) {
+    protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, DeploymentPlanner.ExcludeList avoid, int returnUpTo, boolean bypassStorageTypeCheck, String keyword) {
         return null;
     }
 }

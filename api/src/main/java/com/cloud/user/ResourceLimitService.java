@@ -18,13 +18,18 @@ package com.cloud.user;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.framework.config.ConfigKey;
+
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.domain.Domain;
 import com.cloud.exception.ResourceAllocationException;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.user.ResourceReservation;
+import com.cloud.offering.DiskOffering;
+import com.cloud.offering.ServiceOffering;
+import com.cloud.template.VirtualMachineTemplate;
 
 public interface ResourceLimitService {
 
@@ -34,6 +39,13 @@ public interface ResourceLimitService {
             "The default maximum secondary storage space (in GiB) that can be used for a project", false);
     static final ConfigKey<Long> ResourceCountCheckInterval = new ConfigKey<>("Advanced", Long.class, "resourcecount.check.interval", "300",
             "Time (in seconds) to wait before running resource recalculation and fixing task. Default is 300 seconds, Setting this to 0 disables execution of the task", false);
+    static final ConfigKey<String> ResourceLimitHostTags = new ConfigKey<>("Advanced", String.class, "resource.limit.host.tags", "",
+            "A comma-separated list of tags for host resource limits", true);
+    static final ConfigKey<String> ResourceLimitStorageTags = new ConfigKey<>("Advanced", String.class, "resource.limit.storage.tags", "",
+            "A comma-separated list of tags for storage resource limits", true);
+
+    static final List<ResourceType> HostTagsSupportingTypes = List.of(ResourceType.user_vm, ResourceType.cpu, ResourceType.memory);
+    static final List<ResourceType> StorageTagsSupportingTypes = List.of(ResourceType.volume, ResourceType.primary_storage);
 
     /**
      * Updates an existing resource limit with the specified details. If a limit doesn't exist, will create one.
@@ -46,22 +58,27 @@ public interface ResourceLimitService {
      *            TODO
      * @param max
      *            TODO
+     * @param tag
+     *            tag for the resource type
      *
      * @return the updated/created resource limit
      */
-    ResourceLimit updateResourceLimit(Long accountId, Long domainId, Integer resourceType, Long max);
+    ResourceLimit updateResourceLimit(Long accountId, Long domainId, Integer resourceType, Long max, String tag);
 
     /**
      * Updates an existing resource count details for the account/domain
      *
      * @param accountId
-     *            TODO
+     *            Id of the account for which resource recalculation to be done
      * @param domainId
-     *            TODO
+     *            Id of the domain for which resource recalculation to be doneDO
      * @param typeId
-     *            TODO
+     *            type of the resource for which recalculation to be done
+     * @param tag
+     *            tag for the resource type for which recalculation to be done
      * @return the updated/created resource counts
      */
+    List<? extends ResourceCount> recalculateResourceCount(Long accountId, Long domainId, Integer typeId, String tag);
     List<? extends ResourceCount> recalculateResourceCount(Long accountId, Long domainId, Integer typeId);
 
     /**
@@ -77,7 +94,7 @@ public interface ResourceLimitService {
      *            TODO
      * @return a list of limits that match the criteria
      */
-    public List<? extends ResourceLimit> searchForLimits(Long id, Long accountId, Long domainId, ResourceType resourceType, Long startIndex, Long pageSizeVal);
+    public List<? extends ResourceLimit> searchForLimits(Long id, Long accountId, Long domainId, ResourceType resourceType, String tag, Long startIndex, Long pageSizeVal);
 
     /**
      * Finds the resource limit for a specified account and type. If the account has an infinite limit, will check
@@ -85,9 +102,10 @@ public interface ResourceLimitService {
      *
      * @param account
      * @param type
+     * @param tag
      * @return resource limit
      */
-    public long findCorrectResourceLimitForAccount(Account account, ResourceType type);
+    public long findCorrectResourceLimitForAccount(Account account, ResourceType type, String tag);
 
     /**
      * This call should be used when we have already queried resource limit for an account. This is to handle
@@ -105,9 +123,10 @@ public interface ResourceLimitService {
      *
      * @param domain
      * @param type
+     * @param tag
      * @return resource limit
      */
-    public long findCorrectResourceLimitForDomain(Domain domain, ResourceType type);
+    public long findCorrectResourceLimitForDomain(Domain domain, ResourceType type, String tag);
 
     /**
      * Finds the default resource limit for a specified type.
@@ -122,9 +141,10 @@ public interface ResourceLimitService {
      *
      * @param domain
      * @param type
+     * @param tag
      * @return resource limit
      */
-    public long findCorrectResourceLimitForAccountAndDomain(Account account, Domain domain, ResourceType type);
+    public long findCorrectResourceLimitForAccountAndDomain(Account account, Domain domain, ResourceType type, String tag);
 
     /**
      * Increments the resource count
@@ -134,6 +154,7 @@ public interface ResourceLimitService {
      * @param delta
      */
     public void incrementResourceCount(long accountId, ResourceType type, Long... delta);
+    public void incrementResourceCountWithTag(long accountId, ResourceType type, String tag, Long... delta);
 
     /**
      * Decrements the resource count
@@ -143,6 +164,7 @@ public interface ResourceLimitService {
      * @param delta
      */
     public void decrementResourceCount(long accountId, ResourceType type, Long... delta);
+    public void decrementResourceCountWithTag(long accountId, ResourceType type, String tag, Long... delta);
 
     /**
      * Checks if a limit has been exceeded for an account
@@ -155,15 +177,17 @@ public interface ResourceLimitService {
      * @throws ResourceAllocationException
      */
     public void checkResourceLimit(Account account, ResourceCount.ResourceType type, long... count) throws ResourceAllocationException;
+    public void checkResourceLimitWithTag(Account account, ResourceCount.ResourceType type, String tag, long... count) throws ResourceAllocationException;
 
     /**
      * Gets the count of resources for a resource type and account
      *
      * @param account
      * @param type
+     * @param tag
      * @return count of resources
      */
-    public long getResourceCount(Account account, ResourceType type);
+    public long getResourceCount(Account account, ResourceType type, String tag);
 
     /**
      * Checks if a limit has been exceeded for an account if displayResource flag is on
@@ -208,15 +232,25 @@ public interface ResourceLimitService {
      */
     void decrementResourceCount(long accountId, ResourceType type, Boolean displayResource, Long... delta);
 
-    /**
-     * Adds a reservation that will be counted in subsequent calls to {count}getResourceCount{code} until {code}this[code}
-     * is closed. It will create a reservation record that will be counted when resource limits are checked.
-     * @param account The account for which the reservation is.
-     * @param displayResource whether this resource is shown to users at all (if not it is not counted to limits)
-     * @param type resource type
-     * @param delta amount to reserve (will not be <+ 0)
-     * @return a {code}AutoClosable{Code} object representing the resource the user needs
-     */
-    ResourceReservation getReservation(Account account, Boolean displayResource, ResourceType type, Long delta) throws ResourceAllocationException;
+    List<String> getResourceLimitHostTags();
+    List<String> getResourceLimitHostTags(ServiceOffering serviceOffering, VirtualMachineTemplate template);
+    List<String> getResourceLimitStorageTags();
+    List<String> getResourceLimitStorageTags(DiskOffering diskOffering);
+    void updateTaggedResourceLimitsAndCountsForAccounts(List<AccountResponse> responses, String tag);
+    void updateTaggedResourceLimitsAndCountsForDomains(List<DomainResponse> responses, String tag);
+    void checkVolumeResourceLimit(Account owner, Boolean display, Long size, DiskOffering diskOffering) throws ResourceAllocationException;
+    void incrementVolumeResourceCount(long accountId, Boolean display, Long size, DiskOffering diskOffering);
+    void decrementVolumeResourceCount(long accountId, Boolean display, Long size, DiskOffering diskOffering);
+    void incrementVolumePrimaryStorageResourceCount(long accountId, Boolean display, Long size, DiskOffering diskOffering);
+    void decrementVolumePrimaryStorageResourceCount(long accountId, Boolean display, Long size, DiskOffering diskOffering);
+    void checkVmResourceLimit(Account owner, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template) throws ResourceAllocationException;
+    void incrementVmResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template);
+    void decrementVmResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template);
+    void checkVmCpuResourceLimit(Account owner, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long cpu) throws ResourceAllocationException;
+    void incrementVmCpuResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long cpu);
+    void decrementVmCpuResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long cpu);
+    void checkVmMemoryResourceLimit(Account owner, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long memory) throws ResourceAllocationException;
+    void incrementVmMemoryResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long memory);
+    void decrementVmMemoryResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long memory);
 
 }
