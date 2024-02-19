@@ -167,10 +167,10 @@ public class ActionEventUtilsTest {
         });
 
         //Needed to record events published on the bus.
-        Mockito.doAnswer((Answer<List<EventBusException>>) invocation -> {
+        Mockito.doAnswer((Answer<Map<String, EventBusException>>) invocation -> {
             Event event = (Event)invocation.getArguments()[0];
             publishedEvents.add(event);
-            return new ArrayList<>();
+            return new HashMap<>();
         }).when(eventDistributor).publish(Mockito.any(Event.class));
 
         account = new AccountVO("testaccount", 1L, "networkdomain", Account.Type.NORMAL, "uuid");

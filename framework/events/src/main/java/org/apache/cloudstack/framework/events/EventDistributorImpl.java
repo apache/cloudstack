@@ -19,8 +19,9 @@
 
 package org.apache.cloudstack.framework.events;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.annotation.PostConstruct;
 
@@ -45,21 +46,26 @@ public class EventDistributorImpl extends ManagerBase implements EventDistributo
     }
 
     @Override
-    public List<EventBusException> publish(Event event) {
-        if (logger.isTraceEnabled()) {
-            logger.trace(String.format("Publishing event: %s to %d event buses",
-                (event == null ? "<none>" : event.getDescription()), eventBuses.size()));
-        }
-        List<EventBusException> exceptions = new ArrayList<>();
+    public Map<String, EventBusException> publish(Event event) {
+        Map<String, EventBusException> exceptions = new HashMap<>();
         if (event == null) {
             return exceptions;
+        }
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("Publishing event [category: %s, type: %s]: %s to %d event buses",
+                    event.getEventCategory(), event.getEventType(),
+                    event.getDescription(), eventBuses.size()));
         }
         for (EventBus bus : eventBuses) {
             try {
                 bus.publish(event);
             } catch (EventBusException e) {
-                logger.warn(String.format("Failed to publish for bus %s of event %s", bus.getClass().getName(), event.getDescription()));
-                exceptions.add(e);
+                logger.warn(String.format("Failed to publish for bus %s of event [category: %s, type: %s]",
+                        bus.getName(), event.getEventCategory(), event.getEventType()));
+                if (logger.isTraceEnabled()) {
+                    logger.trace(event.getDescription());
+                }
+                exceptions.put(bus.getName(), e);
             }
         }
         return exceptions;

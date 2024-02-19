@@ -19,15 +19,17 @@
 
 package org.apache.cloudstack.framework.events;
 
-import com.cloud.utils.component.Manager;
+import java.util.Map;
 
-import java.util.List;
+import com.cloud.utils.component.Manager;
 
 public interface EventDistributor extends Manager {
     /**
-     * publish an event on to the event buses
+     * Publish an event on to all the available event buses
      *
      * @param event event that needs to be published on the event bus
+     * @return Map of bus names and EventBusException for buses that failed with
+     * exception
      */
-    List<EventBusException> publish(Event event);
+    Map<String, EventBusException> publish(Event event);
 }

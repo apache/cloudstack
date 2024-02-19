@@ -20,14 +20,12 @@ package com.cloud.event;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.events.EventBusException;
 import org.apache.cloudstack.framework.events.EventDistributor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -107,10 +105,6 @@ public class AlertGenerator {
 
         event.setDescription(eventDescription);
 
-        List<EventBusException> exceptions = eventDistributor.publish(event);
-        for (EventBusException ex : exceptions) {
-            String errMsg = "Failed to publish event.";
-            LOGGER.warn(errMsg, ex);
-        }
+        eventDistributor.publish(event);
     }
 }

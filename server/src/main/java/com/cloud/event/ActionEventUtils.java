@@ -22,7 +22,6 @@ import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.annotation.PostConstruct;
@@ -33,12 +32,11 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.events.EventBusException;
 import org.apache.cloudstack.framework.events.EventDistributor;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import com.cloud.configuration.Config;
@@ -253,12 +251,7 @@ public class ActionEventUtils {
 
         event.setDescription(eventDescription);
 
-        List<EventBusException> exceptions = eventDistributor.publish(event);
-        for (EventBusException ex : exceptions) {
-            String errMsg = "Failed to publish event.";
-            LOGGER.warn(errMsg, ex);
-        }
-
+        eventDistributor.publish(event);
     }
 
     private static void publishOnEventBus(Event event, long userId, long accountId, String eventCategory,

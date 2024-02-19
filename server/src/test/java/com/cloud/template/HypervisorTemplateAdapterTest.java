@@ -47,7 +47,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService.Templa
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.Event;
-import org.apache.cloudstack.framework.events.EventBusException;
 import org.apache.cloudstack.framework.events.EventDistributor;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
@@ -167,7 +166,7 @@ public class HypervisorTemplateAdapterTest {
         closeable.close();
     }
 
-    public UsageEventUtils setupUsageUtils() throws EventBusException {
+    public UsageEventUtils setupUsageUtils() {
         Mockito.when(_configDao.getValue(eq("publish.usage.events"))).thenReturn("true");
         Mockito.when(_usageEventDao.persist(Mockito.any(UsageEventVO.class))).then(new Answer<Void>() {
             @Override public Void answer(InvocationOnMock invocation) throws Throwable {
@@ -254,7 +253,7 @@ public class HypervisorTemplateAdapterTest {
     }
 
     //@Test
-    public void testEmitDeleteEventUuid() throws InterruptedException, ExecutionException, EventBusException {
+    public void testEmitDeleteEventUuid() throws InterruptedException, ExecutionException {
         //All the mocks required for this test to work.
         ImageStoreEntity store = mock(ImageStoreEntity.class);
         when(store.getId()).thenReturn(1l);

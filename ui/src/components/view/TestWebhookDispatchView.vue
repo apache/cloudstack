@@ -17,7 +17,7 @@
 
 <template>
   <div class="form-layout">
-    <div>
+    <div v-if="(resource || payloadUrl)">
       <a-divider />
       <a-collapse
         v-model:activeKey="collapseKey">
@@ -39,7 +39,8 @@
                       type="primary"
                       size="small"
                       shape="round"
-                      :style="computedReloadStyle">
+                      :style="computedReloadStyle"
+                      @click.stop="testWebhookDispatch">
                       <render-icon icon="reload-outlined" />
                     </a-button>
                   </div>
@@ -218,37 +219,6 @@ export default {
 </script>
 
 <style scoped lang="scss">
-
-  .response-details {
-    text-align: center;
-    margin-bottom: 20px;
-
-    &__name {
-      display: flex;
-      align-items: center;
-
-      .avatar {
-        margin-right: 20px;
-        overflow: hidden;
-        min-width: 50px;
-        cursor: pointer;
-
-        img {
-          height: 100%;
-          width: 100%;
-        }
-      }
-
-      .name {
-        margin-bottom: 0;
-        font-size: 18px;
-        line-height: 1;
-        word-break: break-all;
-        text-align: left;
-      }
-
-    }
-  }
   .response-detail-item {
     margin-bottom: 20px;
     word-break: break-all;

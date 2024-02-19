@@ -26,7 +26,6 @@ import java.util.Map;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.events.EventBusException;
 import org.apache.cloudstack.framework.events.EventDistributor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -76,11 +75,7 @@ public class EventUtils {
         eventDescription.put("status", state.toString());
         eventDescription.put("details", details);
         event.setDescription(eventDescription);
-        List<EventBusException> exceptions = eventDistributor.publish(event);
-        for (EventBusException ex : exceptions) {
-            String errMsg = "Failed to publish event.";
-            LOGGER.warn(errMsg, ex);
-        }
+        eventDistributor.publish(event);
     }
 
     public static class EventInterceptor implements ComponentMethodInterceptor, MethodInterceptor {

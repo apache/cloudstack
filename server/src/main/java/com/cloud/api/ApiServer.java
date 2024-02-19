@@ -95,7 +95,6 @@ import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.events.EventBusException;
 import org.apache.cloudstack.framework.events.EventDistributor;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
@@ -132,8 +131,8 @@ import org.apache.http.protocol.ResponseConnControl;
 import org.apache.http.protocol.ResponseContent;
 import org.apache.http.protocol.ResponseDate;
 import org.apache.http.protocol.ResponseServer;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.stereotype.Component;
 
@@ -368,11 +367,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             eventDescription.put("domainname", domain.getName());
         }
         event.setDescription(eventDescription);
-        List<EventBusException> exceptions = eventDistributor.publish(event);
-        for (EventBusException ex : exceptions) {
-            String errMsg = "Failed to publish event.";
-            logger.warn(errMsg, ex);
-        }
+        eventDistributor.publish(event);
     }
 
     @Override
