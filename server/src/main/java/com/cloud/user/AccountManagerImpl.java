@@ -1107,8 +1107,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 WebhookHelper webhookService = ComponentContext.getComponent(WebhookHelper.class);
                 webhookService.deleteRulesForAccount(accountId);
             } catch (NoSuchBeanDefinitionException ignored) {
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("No WebhookHelper bean found");
+                if (logger.isTraceEnabled()) {
+                    logger.trace("No WebhookHelper bean found");
                 }
             }
 
