@@ -106,24 +106,6 @@ import org.apache.logging.log4j.ThreadContext;
  *
  **/
 public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater {
-
-    /*public static void main(String[] args) {
-
-        Logger logger1 = LogManager.getLogger(String.class);
-        logger1.error("before");
-        logger1.trace("hello world {}", ()->getName());
-        logger1.error("after");
-    }
-
-    public static String getName() {
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        return "a";
-    }*/
-
     protected Logger logger = LogManager.getLogger(getClass());
 
     public enum ExitStatus {
