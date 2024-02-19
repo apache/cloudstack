@@ -55,6 +55,9 @@ import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class WebhookDispatchThread implements Runnable {
     protected static Logger LOGGER = LogManager.getLogger(WebhookDispatchThread.class);
@@ -75,7 +78,16 @@ public class WebhookDispatchThread implements Runnable {
     AsyncCompletionCallback<WebhookDispatchResult> callback;
 
     protected boolean isValidJson(String json) {
-        return json.startsWith("}") || json.startsWith("["); //ToDo
+        try {
+            new JSONObject(json);
+        } catch (JSONException ex) {
+            try {
+                new JSONArray(json);
+            } catch (JSONException ex1) {
+                return false;
+            }
+        }
+        return true;
     }
 
     protected void setHttpClient() throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
