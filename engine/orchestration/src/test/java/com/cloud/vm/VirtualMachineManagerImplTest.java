@@ -23,6 +23,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -38,27 +39,12 @@ import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 
-import com.cloud.dc.ClusterDetailsDao;
-import com.cloud.dc.ClusterDetailsVO;
-import com.cloud.dc.Pod;
-import com.cloud.deploy.DeployDestination;
-import com.cloud.deploy.DeploymentPlanningManager;
-import com.cloud.hypervisor.HypervisorGuruManager;
-import com.cloud.org.Cluster;
-import com.cloud.template.VirtualMachineTemplate;
-import com.cloud.user.Account;
-import com.cloud.user.User;
-import com.cloud.utils.Journal;
-import com.cloud.utils.Pair;
-import com.cloud.utils.Ternary;
-import com.cloud.utils.db.EntityManager;
-import com.cloud.utils.fsm.StateMachine2;
-import com.cloud.vm.dao.UserVmDetailsDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.collections.MapUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -71,6 +57,7 @@ import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Command;
@@ -78,16 +65,25 @@ import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.api.query.dao.UserVmJoinDao;
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterDetailsVO;
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.Pod;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.deploy.DataCenterDeployment;
+import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
+import com.cloud.deploy.DeploymentPlanningManager;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.org.Cluster;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -105,11 +101,19 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.user.Account;
+import com.cloud.user.User;
+import com.cloud.utils.Journal;
+import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.springframework.test.util.ReflectionTestUtils;
 
 @RunWith(MockitoJUnitRunner.class)
 public class VirtualMachineManagerImplTest {
@@ -183,6 +187,8 @@ public class VirtualMachineManagerImplTest {
     private DeploymentPlanningManager _dpMgr;
     @Mock
     private HypervisorGuruManager _hvGuruMgr;
+    @Mock
+    private ClusterDao clusterDao;
     @Mock
     private ClusterDetailsDao _clusterDetailsDao;
     @Mock
@@ -1116,5 +1122,48 @@ public class VirtualMachineManagerImplTest {
         }
 
         assertNull(vmInstance.getPodIdToDeployIn());
+    }
+
+    @Test
+    public void testIsDiskOfferingSuitableForVmSuccess() {
+        Mockito.doReturn(Mockito.mock(DiskOfferingVO.class)).when(diskOfferingDaoMock).findById(anyLong());
+        List<StoragePool> poolListMock = new ArrayList<>();
+        poolListMock.add(storagePoolVoMock);
+        Mockito.doReturn(poolListMock).when(storagePoolAllocatorMock).allocateToPool(any(DiskProfile.class), any(VirtualMachineProfile.class), any(DeploymentPlan.class),
+                any(ExcludeList.class), Mockito.eq(1));
+        boolean result = virtualMachineManagerImpl.isDiskOfferingSuitableForVm(vmInstanceMock, virtualMachineProfileMock, 1L, 1L,1L, 1L);
+        assertTrue(result);
+    }
+
+    @Test
+    public void testIsDiskOfferingSuitableForVmNegative() {
+        Mockito.doReturn(Mockito.mock(DiskOfferingVO.class)).when(diskOfferingDaoMock).findById(anyLong());
+        Mockito.doReturn(new ArrayList<>()).when(storagePoolAllocatorMock).allocateToPool(any(DiskProfile.class), any(VirtualMachineProfile.class), any(DeploymentPlan.class),
+                any(ExcludeList.class), Mockito.eq(1));
+        boolean result = virtualMachineManagerImpl.isDiskOfferingSuitableForVm(vmInstanceMock, virtualMachineProfileMock, 1L, 1L,1L, 1L);
+        assertFalse(result);
+    }
+
+    @Test
+    public void testGetDiskOfferingSuitabilityForVm() {
+        Mockito.doReturn(vmInstanceMock).when(vmInstanceDaoMock).findById(1L);
+        Mockito.when(vmInstanceMock.getHostId()).thenReturn(1L);
+        Mockito.doReturn(hostMock).when(hostDaoMock).findById(1L);
+        Mockito.when(hostMock.getClusterId()).thenReturn(1L);
+        ClusterVO cluster = Mockito.mock(ClusterVO.class);
+        Mockito.when(cluster.getPodId()).thenReturn(1L);
+        Mockito.doReturn(cluster).when(clusterDao).findById(1L);
+        List<Long> diskOfferingIds = List.of(1L, 2L);
+        Mockito.doReturn(false).when(virtualMachineManagerImpl)
+                .isDiskOfferingSuitableForVm(eq(vmInstanceMock), any(VirtualMachineProfile.class),
+                        eq(1L), eq(1L), eq(1L), eq(1L));
+        Mockito.doReturn(true).when(virtualMachineManagerImpl)
+                .isDiskOfferingSuitableForVm(eq(vmInstanceMock), any(VirtualMachineProfile.class),
+                        eq(1L), eq(1L), eq(1L), eq(2L));
+        Map<Long, Boolean> result = virtualMachineManagerImpl.getDiskOfferingSuitabilityForVm(1L, diskOfferingIds);
+        assertTrue(MapUtils.isNotEmpty(result));
+        assertEquals(2, result.keySet().size());
+        assertFalse(result.get(1L));
+        assertTrue(result.get(2L));
     }
 }

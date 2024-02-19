@@ -179,7 +179,8 @@ jobs:
                 "component/test_project_usage
                   component/test_protocol_number_security_group
                   component/test_public_ip
-                  component/test_resource_limits",
+                  component/test_resource_limits
+                  component/test_resource_limit_tags",
                 "component/test_regions_accounts
                   component/test_routers
                   component/test_snapshots

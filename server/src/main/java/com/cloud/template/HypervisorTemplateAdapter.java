@@ -421,7 +421,6 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                     postUploadAllocation(imageStores, template, payloads);
                 } else {
                     postUploadAllocation(List.of(imageStore), template, payloads);
-
                 }
 
                 if(payloads.isEmpty()) {
@@ -470,7 +469,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             Account account = _accountDao.findById(accountId);
             Domain domain = _domainDao.findById(account.getDomainId());
 
-            payload.setDefaultMaxSecondaryStorageInGB(_resourceLimitMgr.findCorrectResourceLimitForAccountAndDomain(account, domain, ResourceType.secondary_storage));
+            payload.setDefaultMaxSecondaryStorageInGB(_resourceLimitMgr.findCorrectResourceLimitForAccountAndDomain(account, domain, ResourceType.secondary_storage, null));
             payload.setAccountId(accountId);
             payload.setRemoteEndPoint(ep.getPublicAddr());
             payload.setRequiresHvm(template.requiresHvm());
