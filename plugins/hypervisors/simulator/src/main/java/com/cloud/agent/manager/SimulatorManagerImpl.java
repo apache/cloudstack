@@ -114,6 +114,7 @@ import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.ListTemplateCommand;
 import com.cloud.agent.api.storage.ListVolumeCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
+import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.api.commands.CleanupSimulatorMockCmd;
 import com.cloud.api.commands.ConfigureSimulatorCmd;
 import com.cloud.api.commands.ConfigureSimulatorHAProviderState;
@@ -440,6 +441,8 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                     answer = _mockVmMgr.fence((FenceCommand)cmd);
                 } else if (cmd instanceof HandleConfigDriveIsoCommand) {
                     answer = _mockStorageMgr.handleConfigDriveIso((HandleConfigDriveIsoCommand)cmd);
+                } else if (cmd instanceof ResizeVolumeCommand) {
+                    answer = _mockStorageMgr.handleResizeVolume((ResizeVolumeCommand)cmd);
                 } else if (cmd instanceof GetRouterAlertsCommand
                         || cmd instanceof VpnUsersCfgCommand
                         || cmd instanceof RemoteAccessVpnCfgCommand

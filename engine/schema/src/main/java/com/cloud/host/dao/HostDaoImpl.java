@@ -780,7 +780,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     @Override
-    public List<HostVO> listByHostTag(Host.Type type, Long clusterId, Long podId, long dcId, String hostTag) {
+    public List<HostVO> listByHostTag(Host.Type type, Long clusterId, Long podId, Long dcId, String hostTag) {
         SearchBuilder<HostVO> hostSearch = createSearchBuilder();
         HostVO entity = hostSearch.entity();
         hostSearch.and("type", entity.getType(), SearchCriteria.Op.EQ);
@@ -798,7 +798,9 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         if (clusterId != null) {
             sc.setParameters("cluster", clusterId);
         }
-        sc.setParameters("dc", dcId);
+        if (dcId != null) {
+            sc.setParameters("dc", dcId);
+        }
         sc.setParameters("status", Status.Up.toString());
         sc.setParameters("resourceState", ResourceState.Enabled.toString());
 

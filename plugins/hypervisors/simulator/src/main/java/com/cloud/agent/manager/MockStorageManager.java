@@ -50,6 +50,7 @@ import com.cloud.agent.api.storage.ListTemplateCommand;
 import com.cloud.agent.api.storage.ListVolumeCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
+import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.utils.component.Manager;
 
 public interface MockStorageManager extends Manager {
@@ -113,4 +114,6 @@ public interface MockStorageManager extends Manager {
     public UploadStatusAnswer getUploadStatus(UploadStatusCommand cmd);
 
     Answer handleConfigDriveIso(HandleConfigDriveIsoCommand cmd);
+
+    Answer handleResizeVolume(ResizeVolumeCommand cmd);
 }
