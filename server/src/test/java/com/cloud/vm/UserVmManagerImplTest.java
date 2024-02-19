@@ -1454,11 +1454,11 @@ public class UserVmManagerImplTest {
     }
 
     @Test
-    public void updateInstanceDetailsKeepCurrentValueIfNullTestDetailsConstantIsNotNullDoNothing() {
+    public void addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecifiedTestDetailsConstantIsNotNullDoNothing() {
         int currentValue = 123;
 
         for (String detailsConstant : detailsConstants) {
-            userVmManagerImpl.updateInstanceDetailsKeepCurrentValueIfNull(null, customParameters, detailsConstant, currentValue);
+            userVmManagerImpl.addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecified(null, customParameters, detailsConstant, currentValue);
         }
 
         Assert.assertEquals(customParameters.get(VmDetailConstants.MEMORY), "2048");
@@ -1467,12 +1467,12 @@ public class UserVmManagerImplTest {
     }
 
     @Test
-    public void updateInstanceDetailsKeepCurrentValueIfNullTestNewValueIsNotNullDoNothing() {
+    public void addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecifiedTestNewValueIsNotNullDoNothing() {
         Map<String, String> details = new HashMap<>();
         int currentValue = 123;
 
         for (String detailsConstant : detailsConstants) {
-            userVmManagerImpl.updateInstanceDetailsKeepCurrentValueIfNull(321, details, detailsConstant, currentValue);
+            userVmManagerImpl.addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecified(321, details, detailsConstant, currentValue);
         }
 
         Assert.assertNull(details.get(VmDetailConstants.MEMORY));
@@ -1481,12 +1481,12 @@ public class UserVmManagerImplTest {
     }
 
     @Test
-    public void updateInstanceDetailsKeepCurrentValueIfNullTestBothValuesAreNullKeepCurrentValue() {
+    public void addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecifiedTestBothValuesAreNullKeepCurrentValue() {
         Map<String, String> details = new HashMap<>();
         int currentValue = 123;
 
         for (String detailsConstant : detailsConstants) {
-            userVmManagerImpl.updateInstanceDetailsKeepCurrentValueIfNull(null, details, detailsConstant, currentValue);
+            userVmManagerImpl.addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecified(null, details, detailsConstant, currentValue);
         }
 
         Assert.assertEquals(details.get(VmDetailConstants.MEMORY), String.valueOf(currentValue));
@@ -1495,11 +1495,11 @@ public class UserVmManagerImplTest {
     }
 
     @Test
-    public void updateInstanceDetailsKeepCurrentValueIfNullTestNeitherValueIsNullDoNothing() {
+    public void addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecifiedTestNeitherValueIsNullDoNothing() {
         int currentValue = 123;
 
         for (String detailsConstant : detailsConstants) {
-            userVmManagerImpl.updateInstanceDetailsKeepCurrentValueIfNull(321, customParameters, detailsConstant, currentValue);
+            userVmManagerImpl.addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecified(321, customParameters, detailsConstant, currentValue);
         }
 
         Assert.assertEquals(customParameters.get(VmDetailConstants.MEMORY), "2048");
@@ -1508,16 +1508,16 @@ public class UserVmManagerImplTest {
     }
 
     @Test
-    public void updateInstanceDetailsTestAllConstantsAreUpdated() {
+    public void updateInstanceDetailsMapWithCurrentValuesForAbsentDetailsTestAllConstantsAreUpdated() {
         Mockito.doReturn(serviceOffering).when(_serviceOfferingDao).findById(Mockito.anyLong());
         Mockito.doReturn(1L).when(vmInstanceMock).getId();
         Mockito.doReturn(1L).when(vmInstanceMock).getServiceOfferingId();
         Mockito.doReturn(serviceOffering).when(_serviceOfferingDao).findByIdIncludingRemoved(Mockito.anyLong(), Mockito.anyLong());
-        userVmManagerImpl.updateInstanceDetails(null, vmInstanceMock, 0l);
+        userVmManagerImpl.updateInstanceDetailsMapWithCurrentValuesForAbsentDetails(null, vmInstanceMock, 0l);
 
-        Mockito.verify(userVmManagerImpl).updateInstanceDetailsKeepCurrentValueIfNull(Mockito.any(), Mockito.any(), Mockito.eq(VmDetailConstants.CPU_SPEED), Mockito.any());
-        Mockito.verify(userVmManagerImpl).updateInstanceDetailsKeepCurrentValueIfNull(Mockito.any(), Mockito.any(), Mockito.eq(VmDetailConstants.MEMORY), Mockito.any());
-        Mockito.verify(userVmManagerImpl).updateInstanceDetailsKeepCurrentValueIfNull(Mockito.any(), Mockito.any(), Mockito.eq(VmDetailConstants.CPU_NUMBER), Mockito.any());
+        Mockito.verify(userVmManagerImpl).addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecified(Mockito.any(), Mockito.any(), Mockito.eq(VmDetailConstants.CPU_SPEED), Mockito.any());
+        Mockito.verify(userVmManagerImpl).addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecified(Mockito.any(), Mockito.any(), Mockito.eq(VmDetailConstants.MEMORY), Mockito.any());
+        Mockito.verify(userVmManagerImpl).addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecified(Mockito.any(), Mockito.any(), Mockito.eq(VmDetailConstants.CPU_NUMBER), Mockito.any());
     }
 
     @Test
