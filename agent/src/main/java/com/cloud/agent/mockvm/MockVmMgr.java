@@ -87,7 +87,7 @@ public class MockVmMgr implements VmMgr {
 
     @Override
     public String stopVM(String vmName, boolean force) {
-        logger.info("Stop VM. name: " + vmName);
+        logger.info("Stop VM. name: {}", vmName);
 
         synchronized (this) {
             MockVm vm = vms.get(vmName);
@@ -102,7 +102,7 @@ public class MockVmMgr implements VmMgr {
 
     @Override
     public String rebootVM(String vmName) {
-        logger.info("Reboot VM. name: " + vmName);
+        logger.info("Reboot VM. name: {}", vmName);
 
         synchronized (this) {
             MockVm vm = vms.get(vmName);
@@ -114,7 +114,7 @@ public class MockVmMgr implements VmMgr {
 
     @Override
     public boolean migrate(String vmName, String params) {
-        logger.info("Migrate VM. name: " + vmName);
+        logger.info("Migrate VM. name: {}", vmName);
 
         synchronized (this) {
             MockVm vm = vms.get(vmName);

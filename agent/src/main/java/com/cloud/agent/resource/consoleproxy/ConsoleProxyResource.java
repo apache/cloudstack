@@ -278,19 +278,19 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
             disableRpFilter();
         }
 
-        logger.info("Receive proxyVmId in ConsoleProxyResource configuration as " + proxyVmId);
+        logger.info("Receive proxyVmId in ConsoleProxyResource configuration as {}", proxyVmId);
 
         return true;
     }
 
     private void addRouteToInternalIpOrCidr(String localgw, String eth1ip, String eth1mask, String destIpOrCidr) {
-        logger.debug("addRouteToInternalIp: localgw=" + localgw + ", eth1ip=" + eth1ip + ", eth1mask=" + eth1mask + ",destIp=" + destIpOrCidr);
+        logger.debug("addRouteToInternalIp: localgw={}, eth1ip={}, eth1mask={}, destIp={}", localgw, eth1ip, eth1mask, destIpOrCidr);
         if (destIpOrCidr == null) {
             logger.debug("addRouteToInternalIp: destIp is null");
             return;
         }
         if (!NetUtils.isValidIp4(destIpOrCidr) && !NetUtils.isValidIp4Cidr(destIpOrCidr)) {
-            logger.warn(" destIp is not a valid ip address or cidr destIp=" + destIpOrCidr);
+            logger.warn(" destIp is not a valid ip address or cidr destIp={}", destIpOrCidr);
             return;
         }
         boolean inSameSubnet = false;
@@ -298,13 +298,13 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
             if (eth1ip != null && eth1mask != null) {
                 inSameSubnet = NetUtils.sameSubnet(eth1ip, destIpOrCidr, eth1mask);
             } else {
-                logger.warn("addRouteToInternalIp: unable to determine same subnet: eth1ip=" + eth1ip + ", dest ip=" + destIpOrCidr + ", eth1mask=" + eth1mask);
+                logger.warn("addRouteToInternalIp: unable to determine same subnet: eth1ip={}, dest ip={}, eth1mask={}", eth1ip, destIpOrCidr, eth1mask);
             }
         } else {
             inSameSubnet = NetUtils.isNetworkAWithinNetworkB(destIpOrCidr, NetUtils.ipAndNetMaskToCidr(eth1ip, eth1mask));
         }
         if (inSameSubnet) {
-            logger.debug("addRouteToInternalIp: dest ip " + destIpOrCidr + " is in the same subnet as eth1 ip " + eth1ip);
+            logger.debug("addRouteToInternalIp: dest ip {} is in the same subnet as eth1 ip {}", destIpOrCidr, eth1ip);
             return;
         }
         Script command = new Script("/bin/bash", logger);
@@ -316,9 +316,9 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
         command.add("ip route add " + destIpOrCidr + " via " + localgw);
         String result = command.execute();
         if (result != null) {
-            logger.warn("Error in configuring route to internal ip err=" + result);
+            logger.warn("Error in configuring route to internal ip err={}", result);
         } else {
-            logger.debug("addRouteToInternalIp: added route to internal ip=" + destIpOrCidr + " via " + localgw);
+            logger.debug("addRouteToInternalIp: added route to internal ip={} via {}", destIpOrCidr, localgw);
         }
     }
 
@@ -331,7 +331,7 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
         final Object resource = this;
         logger.info("Building class loader for com.cloud.consoleproxy.ConsoleProxy");
         if (consoleProxyMain == null) {
-            logger.info("Running com.cloud.consoleproxy.ConsoleProxy with encryptor password=" + encryptorPassword);
+            logger.info("Running com.cloud.consoleproxy.ConsoleProxy with encryptor password={}", encryptorPassword);
             consoleProxyMain = new Thread(new ManagedContextRunnable() {
                 @Override
                 protected void runInContext() {
@@ -354,7 +354,7 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
                             logger.error("Unable to launch console proxy due to IllegalAccessException", e);
                             System.exit(ExitStatus.Error.value());
                         } catch (InvocationTargetException e) {
-                            logger.error("Unable to launch console proxy due to InvocationTargetException " + e.getTargetException().toString(), e);
+                            logger.error("Unable to launch console proxy due to InvocationTargetException {}", e.getTargetException().toString(), e);
                             System.exit(ExitStatus.Error.value());
                         }
                     } catch (final ClassNotFoundException e) {
@@ -417,10 +417,10 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
                 result.setTunnelUrl(authAnswer.getTunnelUrl());
                 result.setTunnelSession(authAnswer.getTunnelSession());
             } else {
-                logger.error("Authentication failed for vm: " + vmId + " with sid: " + sid);
+                logger.error("Authentication failed for vm: {} with sid: {}", vmId, sid);
             }
         } catch (AgentControlChannelException e) {
-            logger.error("Unable to send out console access authentication request due to " + e.getMessage(), e);
+            logger.error("Unable to send out console access authentication request due to {}", e.getMessage(), e);
         }
 
         return new Gson().toJson(result);
@@ -430,15 +430,15 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
         ConsoleProxyLoadReportCommand cmd = new ConsoleProxyLoadReportCommand(proxyVmId, gsonLoadInfo);
         try {
             getAgentControl().postRequest(cmd);
-            logger.debug("Report proxy load info, proxy : " + proxyVmId + ", load: " + gsonLoadInfo);
+            logger.debug("Report proxy load info, proxy : {}, load: {}", proxyVmId, gsonLoadInfo);
         } catch (AgentControlChannelException e) {
-            logger.error("Unable to send out load info due to " + e.getMessage(), e);
+            logger.error("Unable to send out load info due to {}", e.getMessage(), e);
         }
     }
 
     public void ensureRoute(String address) {
         if (localGateway != null) {
-            logger.debug("Ensure route for " + address + " via " + localGateway);
+            logger.debug("Ensure route for {} via {}", address, localGateway);
 
             // this method won't be called in high frequency, serialize access
             // to script execution
@@ -446,7 +446,7 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
                 try {
                     addRouteToInternalIpOrCidr(localGateway, eth1Ip, eth1Mask, address);
                 } catch (Throwable e) {
-                    logger.warn("Unexpected exception while adding internal route to " + address, e);
+                    logger.warn("Unexpected exception while adding internal route to {}", address, e);
                 }
             }
         }
