@@ -26,4 +26,5 @@ import com.cloud.utils.db.GenericDao;
 public interface WebhookRuleDao extends GenericDao<WebhookRuleVO, Long> {
     List<WebhookRuleVO> listByEnabledRulesForDispatch(Long accountId, List<Long> domainIds);
     void deleteByAccount(long accountId);
+    List<WebhookRuleVO> listByAccount(long accountId);
 }

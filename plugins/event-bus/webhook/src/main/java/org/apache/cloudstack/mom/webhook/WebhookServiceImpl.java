@@ -212,6 +212,11 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
     }
 
     @Override
+    public List<? extends ControlledEntity> listByAccount(long accountId) {
+        return webhookRuleDao.listByAccount(accountId);
+    }
+
+    @Override
     public void handleEvent(Event event) {
         List<Runnable> jobs = getDispatchJobs(event);
         for(Runnable job : jobs) {

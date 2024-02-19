@@ -18,6 +18,9 @@
 package org.apache.cloudstack.mom.webhook.dao;
 
 import java.util.List;
+import java.util.Map;
+
+import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.mom.webhook.WebhookRule;
 import org.apache.cloudstack.mom.webhook.vo.WebhookRuleVO;
@@ -28,6 +31,17 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 public class WebhookRuleDaoImpl extends GenericDaoBase<WebhookRuleVO, Long> implements WebhookRuleDao {
+    SearchBuilder<WebhookRuleVO> accountIdSearch;
+
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        super.configure(name, params);
+
+        accountIdSearch = createSearchBuilder();
+        accountIdSearch.and("accountId", accountIdSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+
+        return true;
+    }
     @Override
     public List<WebhookRuleVO> listByEnabledRulesForDispatch(Long accountId, List<Long> domainIds) {
         SearchBuilder<WebhookRuleVO> sb = createSearchBuilder();
@@ -60,10 +74,15 @@ public class WebhookRuleDaoImpl extends GenericDaoBase<WebhookRuleVO, Long> impl
 
     @Override
     public void deleteByAccount(long accountId) {
-        SearchBuilder<WebhookRuleVO> sb = createSearchBuilder();
-        sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
-        SearchCriteria<WebhookRuleVO> sc = sb.create();
+        SearchCriteria<WebhookRuleVO> sc = accountIdSearch.create();
         sc.setParameters("accountId", accountId);
         remove(sc);
+    }
+
+    @Override
+    public List<WebhookRuleVO> listByAccount(long accountId) {
+        SearchCriteria<WebhookRuleVO> sc = accountIdSearch.create();
+        sc.setParameters("accountId", accountId);
+        return listBy(sc);
     }
 }

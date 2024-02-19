@@ -17,6 +17,12 @@
 
 package org.apache.cloudstack.webhook;
 
+import java.util.List;
+
+import org.apache.cloudstack.acl.ControlledEntity;
+
 public interface WebhookHelper {
     void deleteRulesForAccount(long accountId);
+
+    List<? extends ControlledEntity> listByAccount(long accountId);
 }

@@ -428,6 +428,17 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         _querySelectors = querySelectors;
     }
 
+    protected void deleteWebhooksForAccount(long accountId) {
+        try {
+            WebhookHelper webhookService = ComponentContext.getComponent(WebhookHelper.class);
+            webhookService.deleteRulesForAccount(accountId);
+        } catch (NoSuchBeanDefinitionException ignored) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("No WebhookHelper bean found");
+            }
+        }
+    }
+
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         _systemAccount = _accountDao.findById(Account.ACCOUNT_ID_SYSTEM);
@@ -1103,14 +1114,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             userDataDao.removeByAccountId(accountId);
 
             // Delete WebhookRules
-            try {
-                WebhookHelper webhookService = ComponentContext.getComponent(WebhookHelper.class);
-                webhookService.deleteRulesForAccount(accountId);
-            } catch (NoSuchBeanDefinitionException ignored) {
-                if (logger.isTraceEnabled()) {
-                    logger.trace("No WebhookHelper bean found");
-                }
-            }
+            deleteWebhooksForAccount(accountId);
 
             return true;
         } catch (Exception ex) {
