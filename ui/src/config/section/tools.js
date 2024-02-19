@@ -197,7 +197,7 @@ export default {
       hidden: true,
       permission: ['listWebhookDispatchHistory'],
       columns: () => {
-        const cols = ['eventtype', 'payload', 'webhookrulename', 'success', 'response', 'startdate', 'enddate']
+        const cols = ['eventtype', 'payload', 'webhookrulename', 'success', 'response', 'duration']
         if (['Admin'].includes(store.getters.userInfo.roletype)) {
           cols.splice(3, 0, 'managementservername')
         }

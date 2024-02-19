@@ -32,44 +32,11 @@
                 v-model:value="form.payload"
                 :placeholder="apiParams.payload.description" />
         </a-form-item>
-        <div v-if="response.id">
-          <a-divider />
-            <div class="response-detail-item" v-if="('success' in response)">
-              <div class="response-detail-item__label"><strong>{{ $t('label.success') }}</strong></div>
-              <div class="response-detail-item__details">
-                <status class="status" :text="response.success ? 'success' : 'error'"/>
-              </div>
-            </div>
-            <div class="response-detail-item" v-if="response.managementserverid">
-              <div class="response-detail-item__label"><strong>{{ $t('label.managementserverid') }}</strong></div>
-              <div class="response-detail-item__details">
-                {{ response.managementservername }}
-              </div>
-            </div>
-            <div class="response-detail-item" v-if="response.startdate && response.enddate">
-              <div class="response-detail-item__label"><strong>{{ $t('label.duration') }}</strong></div>
-              <div class="response-detail-item__details">
-                {{ responseDuration }}
-              </div>
-            </div>
-            <div class="response-detail-item" v-if="response.managementserverid">
-              <div class="response-detail-item__label"><strong>{{ $t('label.managementserverid') }}</strong></div>
-              <div class="response-detail-item__details">
-                {{ response.managementservername }}
-              </div>
-            </div>
-            <a-alert
-            class="top-spaced"
-            :type="response.success ? 'success' : 'error'"
-            :showIcon="true"
-            :message="$t('label.response')"
-            :description="response.response ? response.response : 'Empty response'"
-            >
-            <!-- <template #description>
-                <span v-html="response.response" />
-            </template> -->
-            </a-alert>
-        </div>
+        <test-webhook-dispatch-view
+          ref="dispatchview"
+          :resource="resource"
+          :payload="form.payload"
+          @change-loading="updateLoading" />
 
         <a-divider />
 
@@ -84,17 +51,18 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import Status from '@/components/widgets/Status'
+import TestWebhookDispatchView from '@/components/view/TestWebhookDispatchView'
 
 export default {
   name: 'TestWebhookDispatch',
   mixins: [mixinForm],
   components: {
     Status,
-    TooltipLabel
+    TooltipLabel,
+    TestWebhookDispatchView
   },
   props: {
     resource: {
@@ -140,19 +108,12 @@ export default {
       this.formRef.value.validate().then(() => {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
-        this.loading = true
-        this.response = {}
-        api('testWebhookDispatch', {
-          id: this.resource.id,
-          payload: values.payload
-        }).then(response => {
-          this.response = response.testwebhookdispatchresponse.webhookdispatch
-        }).catch(error => {
-          this.$notifyError(error)
-        }).finally(() => {
-          this.loading = false
-        })
+        console.log(values)
+        this.$refs.dispatchview.testWebhookDispatch()
       })
+    },
+    updateLoading (value) {
+      this.loading = value
     }
   }
 }

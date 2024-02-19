@@ -367,9 +367,6 @@
       <template v-if="['startdate', 'enddate'].includes(column.key) && ['vm', 'vnfapp'].includes($route.path.split('/')[1])">
         {{ getDateAtTimeZone(text, record.timezone) }}
       </template>
-      <template v-if="['startdate', 'enddate'].includes(column.key) && ['webhook'].includes($route.path.split('/')[1])">
-        {{ $toLocaleDate(text, record.timezone) }}
-      </template>
       <template v-if="column.key === 'payloadurl'">
         <copy-label :label="text" />
       </template>
@@ -395,6 +392,9 @@
       </template>
       <template v-if="column.key === 'response'">
         <span>  {{ getTrimmedText(text, 48) }} </span>
+      </template>
+      <template v-if="column.key === 'duration' && ['webhook', 'webhookhistory'].includes($route.path.split('/')[1])">
+        <span>  {{ getDuration(record.startdate, record.enddate) }} </span>
       </template>
       <template v-if="column.key === 'order'">
         <div class="shift-btns">
@@ -931,6 +931,13 @@ export default {
         return ''
       }
       return (text.length <= length) ? text : (text.substring(0, length - 3) + '...')
+    },
+    getDuration (startdate, enddate) {
+      if (!startdate || !enddate) {
+        return ''
+      }
+      var duration = Date.parse(enddate) - Date.parse(startdate)
+      return (duration > 0 ? duration / 1000.0 : 0) + ''
     }
   }
 }

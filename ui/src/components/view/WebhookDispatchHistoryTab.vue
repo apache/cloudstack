@@ -71,7 +71,7 @@ export default {
   data () {
     return {
       tabLoading: false,
-      columnKeys: ['eventtype', 'payload', 'success', 'response', 'startdate', 'enddate'],
+      columnKeys: ['eventtype', 'payload', 'success', 'response', 'duration'],
       selectedColumnKeys: [],
       columns: [],
       cols: [],
