@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
@@ -45,8 +46,6 @@ import org.apache.cloudstack.mom.webhook.vo.WebhookRuleVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.webhook.WebhookHelper;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
@@ -66,7 +65,6 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
     public static final String WEBHOOK_JOB_POOL_THREAD_PREFIX = "Webhook-Job-Executor";
     private ExecutorService webhookJobExecutor;
     private ScheduledExecutorService webhookDispatchCleanupExecutor;
-    private CloseableHttpClient closeableHttpClient;
 
     @Inject
     WebhookRuleDao webhookRuleDao;
@@ -86,7 +84,7 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
                 AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().dispatchCompleteCallback(null, null))
                 .setContext(context);
-        WebhookDispatchThread job = new WebhookDispatchThread(closeableHttpClient, rule, event, caller);
+        WebhookDispatchThread job = new WebhookDispatchThread(rule, event, caller);
         job = ComponentContext.inject(job);
         job.setDispatchRetries(configs.first());
         job.setDeliveryTimeout(configs.second());
@@ -104,7 +102,8 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
             domainIds.add(event.getResourceDomainId());
             domainIds.addAll(domainDao.getDomainParentIds(event.getResourceDomainId()));
         }
-        List<WebhookRuleVO> rules = webhookRuleDao.listByEnabledRulesForDispatch(event.getResourceAccountId(), domainIds);
+        List<WebhookRuleVO> rules =
+                webhookRuleDao.listByEnabledRulesForDispatch(event.getResourceAccountId(), domainIds);
         Map<Long, Pair<Integer, Integer>> domainConfigs = new HashMap<>();
         for (WebhookRuleVO rule : rules) {
             if (!domainConfigs.containsKey(rule.getDomainId())) {
@@ -141,7 +140,7 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
                 AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().testDispatchCompleteCallback(null, null))
                 .setContext(context);
-        WebhookDispatchThread job = new WebhookDispatchThread(closeableHttpClient, rule, event, caller);
+        WebhookDispatchThread job = new WebhookDispatchThread(rule, event, caller);
         return job;
     }
 
@@ -167,9 +166,10 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         try {
-            webhookJobExecutor = Executors.newFixedThreadPool(WebhookDispatcherThreadPoolSize.value(), new NamedThreadFactory(WEBHOOK_JOB_POOL_THREAD_PREFIX));
-            webhookDispatchCleanupExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Webhook-Dispatch-Cleanup-Worker"));
-            closeableHttpClient = HttpClients.createDefault();
+            webhookJobExecutor = Executors.newFixedThreadPool(WebhookDispatcherThreadPoolSize.value(),
+                    new NamedThreadFactory(WEBHOOK_JOB_POOL_THREAD_PREFIX));
+            webhookDispatchCleanupExecutor = Executors.newScheduledThreadPool(1,
+                    new NamedThreadFactory("Webhook-Dispatch-Cleanup-Worker"));
         } catch (final Exception e) {
             throw new ConfigurationException("Unable to to configure WebhookServiceImpl");
         }
@@ -252,7 +252,8 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
         final WebhookRule webhookRule;
         final AsyncCallFuture<WebhookDispatchThread.WebhookDispatchResult> future;
 
-        public TestDispatchContext(AsyncCompletionCallback<T> callback, WebhookRule rule, AsyncCallFuture<WebhookDispatchThread.WebhookDispatchResult> future) {
+        public TestDispatchContext(AsyncCompletionCallback<T> callback, WebhookRule rule,
+               AsyncCallFuture<WebhookDispatchThread.WebhookDispatchResult> future) {
             super(callback);
             this.webhookRule = rule;
             this.future = future;
