@@ -47,10 +47,11 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class WebhookDispatchThread implements Runnable {
-    private static final Logger LOGGER = Logger.getLogger(WebhookDispatchThread.class);
+    protected static Logger LOGGER = LogManager.getLogger(WebhookDispatchThread.class);
 
     private static final String HEADER_X_CS_EVENT_ID = "X-CS-Event-ID";
     private static final String HEADER_X_CS_EVENT = "X-CS-Event";

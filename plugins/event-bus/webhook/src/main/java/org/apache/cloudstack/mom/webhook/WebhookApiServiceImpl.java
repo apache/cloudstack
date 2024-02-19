@@ -46,7 +46,6 @@ import org.apache.cloudstack.mom.webhook.vo.WebhookDispatchVO;
 import org.apache.cloudstack.mom.webhook.vo.WebhookRuleJoinVO;
 import org.apache.cloudstack.mom.webhook.vo.WebhookRuleVO;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.cluster.ManagementServerHostVO;
@@ -68,7 +67,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.rest.HttpConstants;
 
 public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiService {
-    public static final Logger LOGGER = Logger.getLogger(WebhookApiServiceImpl.class.getName());
 
     @Inject
     AccountManager accountManager;

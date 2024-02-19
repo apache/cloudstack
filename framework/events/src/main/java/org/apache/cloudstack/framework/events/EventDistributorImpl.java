@@ -25,12 +25,10 @@ import java.util.List;
 import javax.annotation.PostConstruct;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.component.ManagerBase;
 
 public class EventDistributorImpl extends ManagerBase implements EventDistributor {
-    private static final Logger LOGGER = Logger.getLogger(EventDistributorImpl.class);
 
     List<EventBus> eventBuses;
 
@@ -40,16 +38,16 @@ public class EventDistributorImpl extends ManagerBase implements EventDistributo
 
     @PostConstruct
     public void init() {
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(String.format("Found %d event buses : %s", eventBuses.size(),
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("Found %d event buses : %s", eventBuses.size(),
                     StringUtils.join(eventBuses.stream().map(x->x.getClass().getName()).toArray())));
         }
     }
 
     @Override
     public List<EventBusException> publish(Event event) {
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(String.format("Publishing event: %s to %d event buses",
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("Publishing event: %s to %d event buses",
                 (event == null ? "<none>" : event.getDescription()), eventBuses.size()));
         }
         List<EventBusException> exceptions = new ArrayList<>();
@@ -60,7 +58,7 @@ public class EventDistributorImpl extends ManagerBase implements EventDistributo
             try {
                 bus.publish(event);
             } catch (EventBusException e) {
-                LOGGER.warn(String.format("Failed to publish for bus %s of event %s", bus.getClass().getName(), event.getDescription()));
+                logger.warn(String.format("Failed to publish for bus %s of event %s", bus.getClass().getName(), event.getDescription()));
                 exceptions.add(e);
             }
         }

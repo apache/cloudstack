@@ -22,7 +22,8 @@ import groovy.lang.GroovyObject;
 import groovy.util.GroovyScriptEngine;
 import groovy.util.ResourceException;
 import groovy.util.ScriptException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExceptionNoStack;
 
 import java.io.File;
@@ -34,14 +35,14 @@ public class LibvirtKvmAgentHook {
     private final GroovyScriptEngine gse;
     private final Binding binding = new Binding();
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtKvmAgentHook.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     public LibvirtKvmAgentHook(String path, String script, String method) throws IOException {
         this.script = script;
         this.method = method;
         File full_path = new File(path, script);
         if (!full_path.canRead()) {
-            s_logger.warn("Groovy script '" + full_path.toString() + "' is not available. Transformations will not be applied.");
+            logger.warn("Groovy script '" + full_path.toString() + "' is not available. Transformations will not be applied.");
             this.gse = null;
         } else {
             this.gse = new GroovyScriptEngine(path);
@@ -54,21 +55,21 @@ public class LibvirtKvmAgentHook {
 
     public Object handle(Object arg) throws ResourceException, ScriptException {
         if (!isInitialized()) {
-            s_logger.warn("Groovy scripting engine is not initialized. Data transformation skipped.");
+            logger.warn("Groovy scripting engine is not initialized. Data transformation skipped.");
             return arg;
         }
 
         GroovyObject cls = (GroovyObject) this.gse.run(this.script, binding);
         if (null == cls) {
-            s_logger.warn("Groovy object is not received from script '" + this.script + "'.");
+            logger.warn("Groovy object is not received from script '" + this.script + "'.");
             return arg;
         } else {
-            Object[] params = {s_logger, arg};
+            Object[] params = {logger, arg};
             try {
                 Object res = cls.invokeMethod(this.method, params);
                 return res;
             } catch (MissingMethodExceptionNoStack e) {
-                s_logger.error("Error occurred when calling method from groovy script, {}", e);
+                logger.error("Error occurred when calling method from groovy script, {}", e);
                 return arg;
             }
         }

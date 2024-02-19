@@ -24,13 +24,15 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import com.cloud.utils.component.ComponentContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.EventDistributor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.event.EventCategory;
 import com.cloud.network.Network.Event;
 import com.cloud.network.Network.State;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.fsm.StateListener;
 import com.cloud.utils.fsm.StateMachine2;
 
@@ -40,6 +42,8 @@ public class NetworkStateListener implements StateListener<State, Event, Network
     private ConfigurationDao _configDao;
 
     private EventDistributor eventDistributor;
+
+    protected Logger logger = LogManager.getLogger(getClass());
 
     public NetworkStateListener(ConfigurationDao configDao) {
         _configDao = configDao;

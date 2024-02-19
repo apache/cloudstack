@@ -38,6 +38,7 @@ import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.backup.veeam.api.RestoreSession;
 import org.apache.http.HttpResponse;
+import org.apache.logging.log4j.core.Logger;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -70,6 +71,7 @@ public class VeeamClientTest {
                         .withBody("")));
         client = new VeeamClient("http://localhost:9399/api/", 12, adminUsername, adminPassword, true, 60, 600, 5, 120);
         mockClient = Mockito.mock(VeeamClient.class);
+        mockClient.logger = Mockito.mock(Logger.class);
         Mockito.when(mockClient.getRepositoryNameFromJob(Mockito.anyString())).thenCallRealMethod();
         Mockito.when(mockClient.getVeeamServerVersion()).thenCallRealMethod();
     }

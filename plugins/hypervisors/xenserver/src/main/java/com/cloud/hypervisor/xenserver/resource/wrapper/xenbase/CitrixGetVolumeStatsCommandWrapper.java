@@ -21,7 +21,6 @@ package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 
 import java.util.HashMap;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.GetVolumeStatsAnswer;
@@ -35,7 +34,6 @@ import com.xensource.xenapi.VDI;
 
 @ResourceWrapper(handles = GetVolumeStatsCommand.class)
 public final class CitrixGetVolumeStatsCommandWrapper extends CommandWrapper<GetVolumeStatsCommand, Answer, CitrixResourceBase> {
-    private static final Logger s_logger = Logger.getLogger(CitrixGetVolumeStatsCommandWrapper.class);
 
     @Override
     public Answer execute(final GetVolumeStatsCommand cmd, final CitrixResourceBase citrixResourceBase) {
@@ -48,11 +46,11 @@ public final class CitrixGetVolumeStatsCommandWrapper extends CommandWrapper<Get
                     VolumeStatsEntry vse = new VolumeStatsEntry(volumeUuid, vdi.getPhysicalUtilisation(conn), vdi.getVirtualSize(conn));
                     statEntry.put(volumeUuid, vse);
                 } catch (Exception e) {
-                    s_logger.warn("Unable to get volume stats", e);
+                    logger.warn("Unable to get volume stats", e);
                     statEntry.put(volumeUuid, new VolumeStatsEntry(volumeUuid, -1, -1));
                 }
             } else {
-                s_logger.warn("VDI not found for path " + volumeUuid);
+                logger.warn("VDI not found for path " + volumeUuid);
                 statEntry.put(volumeUuid, new VolumeStatsEntry(volumeUuid, -1L, -1L));
             }
         }

@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.admin.vm;
 import java.util.List;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -46,7 +45,6 @@ import com.cloud.vm.VirtualMachine;
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = true)
 public class AssignVMCmd extends BaseCmd  {
-    public static final Logger s_logger = Logger.getLogger(AssignVMCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -133,7 +131,7 @@ public class AssignVMCmd extends BaseCmd  {
             e.printStackTrace();
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         } catch (Exception e) {
-            s_logger.error("Failed to move vm due to: " + e.getStackTrace());
+            logger.error("Failed to move vm due to: " + e.getStackTrace());
             if (e.getMessage() != null) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to move vm due to " + e.getMessage());
             } else if (e.getCause() != null) {

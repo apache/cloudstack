@@ -29,13 +29,10 @@ import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventBusException;
 import org.apache.cloudstack.framework.events.EventSubscriber;
 import org.apache.cloudstack.framework.events.EventTopic;
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.component.ManagerBase;
 
 public class TestEventBus extends ManagerBase implements EventBus {
-
-    private static final Logger s_logger = Logger.getLogger(TestEventBus.class);
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -50,8 +47,8 @@ public class TestEventBus extends ManagerBase implements EventBus {
 
     @Override
     public UUID subscribe(EventTopic topic, EventSubscriber subscriber) throws EventBusException {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug(String.format("subscribing \'%s\' to events of type \'%s\' from \'%s\'",subscriber.toString(), topic.getEventType(), topic.getEventSource()));
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("subscribing \'%s\' to events of type \'%s\' from \'%s\'",subscriber.toString(), topic.getEventType(), topic.getEventSource()));
         }
 
         /* NOOP */
@@ -60,15 +57,15 @@ public class TestEventBus extends ManagerBase implements EventBus {
 
     @Override
     public void unsubscribe(UUID subscriberId, EventSubscriber subscriber) throws EventBusException {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug(String.format("unsubscribing \'%s\'",subscriberId));
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("unsubscribing \'%s\'",subscriberId));
         }
         /* NOOP */
     }
 
     @Override
     public void publish(Event event) throws EventBusException {
-        s_logger.info(String.format("New event: %s", event.getDescription()));
+        logger.info(String.format("New event: %s", event.getDescription()));
     }
 
     @Override

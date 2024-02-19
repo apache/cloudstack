@@ -29,7 +29,8 @@ import javax.inject.Inject;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.EventBusException;
 import org.apache.cloudstack.framework.events.EventDistributor;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.stereotype.Component;
 
@@ -44,7 +45,7 @@ import com.cloud.utils.component.ComponentContext;
 @Component
 public class AlertGenerator {
 
-    private static final Logger s_logger = Logger.getLogger(AlertGenerator.class);
+    protected static Logger LOGGER = LogManager.getLogger(AlertGenerator.class);
     private static DataCenterDao s_dcDao;
     private static HostPodDao s_podDao;
     protected static ConfigurationDao s_configDao;
@@ -106,11 +107,10 @@ public class AlertGenerator {
 
         event.setDescription(eventDescription);
 
-
         List<EventBusException> exceptions = eventDistributor.publish(event);
         for (EventBusException ex : exceptions) {
             String errMsg = "Failed to publish event.";
-            s_logger.warn(errMsg, ex);
+            LOGGER.warn(errMsg, ex);
         }
     }
 }

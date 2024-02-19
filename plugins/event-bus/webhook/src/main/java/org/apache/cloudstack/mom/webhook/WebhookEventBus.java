@@ -30,14 +30,15 @@ import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventBusException;
 import org.apache.cloudstack.framework.events.EventSubscriber;
 import org.apache.cloudstack.framework.events.EventTopic;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.utils.component.ManagerBase;
 import com.google.gson.Gson;
 
 public class WebhookEventBus extends ManagerBase implements EventBus {
 
-    private static final Logger LOGGER = Logger.getLogger(WebhookEventBus.class);
+    protected static Logger LOGGER = LogManager.getLogger(WebhookEventBus.class);
     private static Gson gson;
 
     @Inject

@@ -28,7 +28,8 @@ import org.aopalliance.intercept.MethodInvocation;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.events.EventBusException;
 import org.apache.cloudstack.framework.events.EventDistributor;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.stereotype.Component;
 
@@ -44,7 +45,7 @@ import com.cloud.utils.component.ComponentMethodInterceptor;
 
 @Component
 public class EventUtils {
-    private static final Logger s_logger = Logger.getLogger(EventUtils.class);
+    protected static Logger LOGGER = LogManager.getLogger(EventUtils.class);
 
     private static EventDistributor eventDistributor;
 
@@ -78,13 +79,13 @@ public class EventUtils {
         List<EventBusException> exceptions = eventDistributor.publish(event);
         for (EventBusException ex : exceptions) {
             String errMsg = "Failed to publish event.";
-            s_logger.warn(errMsg, ex);
+            LOGGER.warn(errMsg, ex);
         }
     }
 
     public static class EventInterceptor implements ComponentMethodInterceptor, MethodInterceptor {
 
-        private static final Logger s_logger = Logger.getLogger(EventInterceptor.class);
+    protected Logger LOGGER = LogManager.getLogger(getClass());
 
         public EventInterceptor() {
 
@@ -157,7 +158,7 @@ public class EventUtils {
 
         @Override
         public void interceptException(Method method, Object target, Object event) {
-            s_logger.debug("interceptException");
+            LOGGER.debug("interceptException");
         }
 
         @Override

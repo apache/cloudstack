@@ -46,7 +46,6 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.saml.SAML2AuthManager;
 import org.apache.cloudstack.saml.SAMLUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.domain.Domain;
@@ -62,7 +61,6 @@ import com.cloud.utils.HttpUtils;
 
 @APICommand(name = "listAndSwitchSamlAccount", description = "Lists and switches to other SAML accounts owned by the SAML user", responseObject = SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListAndSwitchSAMLAccountCmd extends BaseCmd implements APIAuthenticator {
-    public static final Logger s_logger = Logger.getLogger(ListAndSwitchSAMLAccountCmd.class.getName());
 
     @Inject
     ApiServerService _apiServer;
@@ -155,7 +153,7 @@ public class ListAndSwitchSAMLAccountCmd extends BaseCmd implements APIAuthentic
                     return ApiResponseSerializer.toSerializedString(loginResponse, responseType);
                 }
             } catch (CloudAuthenticationException | IOException exception) {
-                s_logger.debug("Failed to switch to request SAML user account due to: " + exception.getMessage());
+                logger.debug("Failed to switch to request SAML user account due to: " + exception.getMessage());
             }
         } else {
             List<UserAccountVO> switchableAccounts = _userAccountDao.getAllUsersByNameAndEntity(currentUserAccount.getUsername(), currentUserAccount.getExternalEntity());
@@ -198,7 +196,7 @@ public class ListAndSwitchSAMLAccountCmd extends BaseCmd implements APIAuthentic
             }
         }
         if (_samlAuthManager == null) {
-            s_logger.error("No suitable Pluggable Authentication Manager found for SAML2 listAndSwitchSamlAccount Cmd");
+            logger.error("No suitable Pluggable Authentication Manager found for SAML2 listAndSwitchSamlAccount Cmd");
         }
     }
 

@@ -47,7 +47,6 @@ import org.apache.cloudstack.webhook.WebhookHelper;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.log4j.Logger;
 
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
@@ -64,7 +63,6 @@ import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class WebhookServiceImpl extends ManagerBase implements WebhookService, WebhookHelper {
-    public static final Logger LOGGER = Logger.getLogger(WebhookApiServiceImpl.class.getName());
     public static final String WEBHOOK_JOB_POOL_THREAD_PREFIX = "Webhook-Job-Executor";
     private ExecutorService webhookJobExecutor;
     private ScheduledExecutorService webhookDispatchCleanupExecutor;
@@ -234,7 +232,7 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
                     result.getPayload(), result.isSuccess(), result.getResult(),
                     result.getStarTime(), result.getEndTime());
         } catch (InterruptedException | ExecutionException e) {
-            LOGGER.error(String.format("Failed to execute test webhook dispatch due to: %s", e.getMessage()), e);
+            logger.error(String.format("Failed to execute test webhook dispatch due to: %s", e.getMessage()), e);
             throw new CloudRuntimeException("Failed to execute test webhook dispatch");
         }
         return webhookDispatchVO;
@@ -266,7 +264,7 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
                     try {
                         ManagementServerHostVO msHost = managementServerHostDao.findOneByLongestRuntime();
                         if (msHost == null || (msHost.getMsid() != ManagementServerNode.getManagementServerId())) {
-                            LOGGER.trace("Skipping the webhook dispatch cleanup task on this management server");
+                            logger.trace("Skipping the webhook dispatch cleanup task on this management server");
                             return;
                         }
                         long limit = WebhookDispatchHistoryLimit.value();
