@@ -16,9 +16,13 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
+import org.apache.log4j.Logger;
+
 import com.cloud.upgrade.SystemVmTemplateRegistration;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.log4j.Logger;
+
+import org.jasypt.exceptions.EncryptionOperationNotPossibleException;
 
 import java.io.InputStream;
 import java.sql.Connection;
@@ -71,6 +75,11 @@ public class Upgrade41900to41910 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
     private void addIndexes(Connection conn) {
         DbUpgradeUtils.addIndexIfNeeded(conn, "vm_stats", "vm_id");
+        return new InputStream[] {script};
+    }
+
+    private void initSystemVmTemplateRegistration() {
+        systemVmTemplateRegistration = new SystemVmTemplateRegistration("");
     }
 
     @Override
@@ -82,9 +91,5 @@ public class Upgrade41900to41910 implements DbUpgrade, DbUpgradeSystemVmTemplate
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to find / register SystemVM template(s)");
         }
-    }
-
-    private void initSystemVmTemplateRegistration() {
-        systemVmTemplateRegistration = new SystemVmTemplateRegistration("");
     }
 }
