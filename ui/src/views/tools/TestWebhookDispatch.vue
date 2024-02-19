@@ -37,7 +37,6 @@
           :resource="resource"
           :payload="form.payload"
           @change-loading="updateLoading" />
-
         <a-divider />
 
         <div class="actions">
@@ -50,7 +49,7 @@
 </template>
 
 <script>
-import { ref, reactive, toRaw } from 'vue'
+import { ref, reactive } from 'vue'
 import { mixinForm } from '@/utils/mixin'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import Status from '@/components/widgets/Status'
@@ -106,9 +105,6 @@ export default {
       e.preventDefault()
       if (this.loading) return
       this.formRef.value.validate().then(() => {
-        const formRaw = toRaw(this.form)
-        const values = this.handleRemoveFields(formRaw)
-        console.log(values)
         this.$refs.dispatchview.testWebhookDispatch()
       })
     },

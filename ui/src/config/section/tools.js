@@ -111,21 +111,8 @@ export default {
           label: 'label.create.webhook',
           docHelp: 'adminguide/events.html#creating-webhooks',
           listView: true,
-          args: (record, store) => {
-            var fields = ['name', 'description', 'payloadurl', 'sslverification', 'secretkey', 'state']
-            if (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype)) {
-              fields.push('scope')
-            }
-            return fields
-          },
-          mapping: {
-            state: {
-              options: ['Enabled', 'Disabled']
-            },
-            scope: {
-              options: ['Local', 'Domain', 'Global']
-            }
-          }
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/tools/CreateWebhook.vue')))
         },
         {
           api: 'updateWebhookRule',

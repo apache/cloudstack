@@ -17,50 +17,85 @@
 
 <template>
   <div class="form-layout">
-    <div v-if="response.id">
+    <div>
       <a-divider />
-      <a-row>
-        <a-col :span="8">
-          <div class="response-detail-item" v-if="('success' in response)">
-            <div class="response-detail-item__label"><strong>{{ $t('label.success') }}</strong></div>
-            <div class="response-detail-item__details">
-              <status class="status" :text="response.success ? 'success' : 'error'"/>
+      <a-collapse
+        v-model:activeKey="collapseKey">
+        <a-collapse-panel
+          :showArrow="isResponseNotEmpty"
+          key="1"
+          :collapsible="(resource || payloadUrl) ? 'enabled' : 'disabled'">
+          <template #header>
+            <a-row style="width: 100%;">
+              <a-col :span="22">
+                <tooltip-label :title="$t('label.status')" v-if="isNotShowStatus"/>
+                <status class="status" :text="response.success ? 'success' : 'error'" displayText v-else/>
+              </a-col>
+              <a-col :span="2">
+                <div v-if="showActions">
+                  <a-spin :spinning="loading" size="small" v-if="loading" />
+                  <div v-else>
+                    <a-button
+                      type="primary"
+                      size="small"
+                      shape="round"
+                      :style="computedReloadStyle">
+                      <render-icon icon="reload-outlined" />
+                    </a-button>
+                  </div>
+                </div>
+              </a-col>
+            </a-row>
+          </template>
+          <div v-if="isResponseNotEmpty">
+            <a-row>
+              <a-col :span="8">
+                <div class="response-detail-item" v-if="('success' in response)">
+                  <div class="response-detail-item__label"><strong>{{ $t('label.success') }}</strong></div>
+                  <div class="response-detail-item__details">
+                    <status class="status" :text="response.success ? 'success' : 'error'"/>
+                  </div>
+                </div>
+              </a-col>
+              <a-col :span="8">
+                <div class="response-detail-item" v-if="response.startdate && response.enddate">
+                  <div class="response-detail-item__label"><strong>{{ $t('label.duration') }}</strong></div>
+                  <div class="response-detail-item__details">
+                    {{ responseDuration }}
+                  </div>
+                </div>
+              </a-col>
+              <a-col :span="8">
+                <div class="response-detail-item" v-if="response.managementserverid">
+                  <div class="response-detail-item__label"><strong>{{ $t('label.managementserverid') }}</strong></div>
+                  <div class="response-detail-item__details">
+                    {{ response.managementservername }}
+                  </div>
+                </div>
+              </a-col>
+            </a-row>
+            <a-alert
+              :type="response.success ? 'success' : 'error'"
+              :showIcon="true"
+              :message="$t('label.response')"
+              :description="response.response ? response.response : 'Empty response'" />
             </div>
-          </div>
-        </a-col>
-        <a-col :span="8">
-          <div class="response-detail-item" v-if="response.startdate && response.enddate">
-            <div class="response-detail-item__label"><strong>{{ $t('label.duration') }}</strong></div>
-            <div class="response-detail-item__details">
-              {{ responseDuration }}
-            </div>
-          </div>
-        </a-col>
-        <a-col :span="8">
-          <div class="response-detail-item" v-if="response.managementserverid">
-            <div class="response-detail-item__label"><strong>{{ $t('label.managementserverid') }}</strong></div>
-            <div class="response-detail-item__details">
-              {{ response.managementservername }}
-            </div>
-          </div>
-        </a-col>
-      </a-row>
-      <a-alert
-        :type="response.success ? 'success' : 'error'"
-        :showIcon="true"
-        :message="$t('label.response')"
-        :description="response.response ? response.response : 'Empty response'" />
+        </a-collapse-panel>
+      </a-collapse>
+      <a-divider />
     </div>
   </div>
 </template>
 
 <script>
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 import Status from '@/components/widgets/Status'
 
 export default {
   name: 'TestWebhookDispatchView',
   components: {
+    TooltipLabel,
     Status
   },
   props: {
@@ -70,48 +105,82 @@ export default {
     payload: {
       type: String
     },
-    payloadurl: {
+    payloadUrl: {
       type: String
     },
-    sslverification: {
+    sslVerification: {
       type: Boolean,
       default: false
     },
-    secretkey: {
+    secretKey: {
       type: String
+    },
+    showActions: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
     return {
-      response: {}
+      response: {},
+      collapseKey: undefined,
+      loading: false,
+      testDispatchInterval: null,
+      testDispatchIntervalCouter: 100
+    }
+  },
+  beforeUnmount () {
+    if (this.testDispatchInterval) {
+      clearInterval(this.testDispatchInterval)
+      this.testDispatchIntervalCouter = 100
     }
   },
   computed: {
+    isResponseNotEmpty () {
+      return this.response && Object.keys(this.response).length > 0
+    },
+    isNotShowStatus () {
+      return !this.isResponseNotEmpty ||
+        this.collapseKey === '1' ||
+        (Array.isArray(this.collapseKey) &&
+        this.collapseKey.length > 0 &&
+        this.collapseKey[0] === '1')
+    },
     responseDuration () {
       if (!this.response.startdate || !this.response.enddate) {
         return ''
       }
       var duration = Date.parse(this.response.enddate) - Date.parse(this.response.startdate)
       return (duration > 0 ? duration / 1000.0 : 0) + ''
+    },
+    computedReloadStyle () {
+      return 'opacity: ' + (this.testDispatchIntervalCouter / 100.0) + ';'
     }
   },
   methods: {
     testWebhookDispatch () {
-      this.$emit('change-loading', true)
-      var params = {
-        id: this.resource.id
+      if (this.testDispatchInterval) {
+        clearInterval(this.testDispatchInterval)
+        this.testDispatchIntervalCouter = 100
+      }
+      this.response = {}
+      this.loading = true
+      this.$emit('change-loading', this.loading)
+      var params = {}
+      if (this.resource) {
+        params.id = this.resource.id
       }
       if (this.payload) {
         params.payload = this.payload
       }
-      if (this.payloadurl) {
-        params.payloadurl = this.payloadurl
+      if (this.payloadUrl) {
+        params.payloadUrl = this.payloadUrl
       }
-      if (this.ssllverification) {
-        params.payload = this.ssllverification
+      if (this.sslVerification) {
+        params.payload = this.sslVerification
       }
-      if (this.secretkey) {
-        params.secretkey = this.secretkey
+      if (this.secretKey) {
+        params.secretKey = this.secretKey
       }
       api('testWebhookDispatch', params).then(response => {
         this.response = response.testwebhookdispatchresponse.webhookdispatch
@@ -120,8 +189,29 @@ export default {
         this.$notifyError(error)
       }).finally(() => {
         this.loading = false
-        this.$emit('change-loading', false)
+        this.$emit('change-loading', this.loading)
       })
+    },
+    timedTestWebhookDispatch () {
+      const urlPattern = /^(http|https):\/\/[^ "]+$/
+      clearTimeout(this.testDispatchInterval)
+      this.testDispatchIntervalCouter = 100
+      this.testDispatchInterval = setInterval(() => {
+        if (!this.payloadUrl || !urlPattern.test(this.payloadUrl)) {
+          clearInterval(this.testDispatchInterval)
+          this.testDispatchIntervalCouter = 100
+          return
+        }
+        this.testDispatchIntervalCouter = this.testDispatchIntervalCouter - 5
+        if (this.testDispatchIntervalCouter <= 0) {
+          if (this.payloadUrl && urlPattern.test(this.payloadUrl)) {
+            this.testWebhookDispatch()
+            return
+          }
+          clearInterval(this.testDispatchInterval)
+          this.testDispatchIntervalCouter = 100
+        }
+      }, 250)
     }
   }
 }
