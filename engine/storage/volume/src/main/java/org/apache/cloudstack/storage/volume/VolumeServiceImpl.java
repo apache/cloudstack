@@ -32,6 +32,7 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.VolumeApiServiceImpl;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.command.user.volume.CheckAndRepairVolumeCmd;
@@ -2768,7 +2769,7 @@ public class VolumeServiceImpl implements VolumeService {
     @Override
     public void checkAndRepairVolumeBasedOnConfig(DataObject dataObject, Host host) {
         if (HypervisorType.KVM.equals(host.getHypervisorType()) && DataObjectType.VOLUME.equals(dataObject.getType())) {
-            if (com.cloud.storage.VolumeApiServiceImpl.AllowCheckAndRepairVolume.value()) {
+            if (VolumeApiServiceImpl.AllowCheckAndRepairVolume.value()) {
                 s_logger.info(String.format("Trying to check and repair the volume %d", dataObject.getId()));
                 String repair = CheckAndRepairVolumeCmd.RepairValues.LEAKS.name().toLowerCase();
                 CheckAndRepairVolumePayload payload = new CheckAndRepairVolumePayload(repair);

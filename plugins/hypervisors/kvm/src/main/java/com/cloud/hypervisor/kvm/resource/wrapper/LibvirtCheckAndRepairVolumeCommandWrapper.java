@@ -66,7 +66,7 @@ public class LibvirtCheckAndRepairVolumeCommandWrapper extends CommandWrapper<Ch
         QemuObject.EncryptFormat encryptFormat = QemuObject.EncryptFormat.enumValue(command.getEncryptFormat());
         byte[] passphrase = command.getPassphrase();
         try {
-            String checkVolumeResult = checkAndRepairVolume(vol, repair, encryptFormat, passphrase, serverResource);
+            String checkVolumeResult = checkAndRepairVolume(vol, null, encryptFormat, passphrase, serverResource);
             s_logger.info(String.format("Check Volume result for the volume %s is %s", vol.getName(), checkVolumeResult));
             CheckAndRepairVolumeAnswer answer = new CheckAndRepairVolumeAnswer(command, true, checkVolumeResult);
             answer.setVolumeCheckExecutionResult(checkVolumeResult);
@@ -77,7 +77,7 @@ public class LibvirtCheckAndRepairVolumeCommandWrapper extends CommandWrapper<Ch
                 JsonNode jsonNode = objectMapper.readTree(checkVolumeResult);
                 JsonNode leaksNode = jsonNode.get("leaks");
                 if (leaksNode != null) {
-                    leaks = jsonNode.asInt();
+                    leaks = leaksNode.asInt();
                 }
 
                 if (leaks == 0) {
