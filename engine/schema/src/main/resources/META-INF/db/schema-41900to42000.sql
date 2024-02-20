@@ -28,3 +28,31 @@ DROP INDEX `i_resource_count__type_accountId`,
 DROP INDEX `i_resource_count__type_domaintId`,
 ADD UNIQUE INDEX `i_resource_count__type_tag_accountId` (`type`,`tag`,`account_id`),
 ADD UNIQUE INDEX `i_resource_count__type_tag_domaintId` (`type`,`tag`,`domain_id`);
+
+-- NSX Plugin --
+CREATE TABLE `cloud`.`nsx_providers` (
+                                         `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+                                         `uuid` varchar(40),
+                                         `zone_id` bigint unsigned NOT NULL COMMENT 'Zone ID',
+                                         `host_id` bigint unsigned NOT NULL COMMENT 'Host ID',
+                                         `provider_name` varchar(40),
+                                         `hostname` varchar(255) NOT NULL,
+                                         `port` varchar(255),
+                                         `username` varchar(255) NOT NULL,
+                                         `password` varchar(255) NOT NULL,
+                                         `tier0_gateway` varchar(255),
+                                         `edge_cluster` varchar(255),
+                                         `transport_zone` varchar(255),
+                                         `created` datetime NOT NULL COMMENT 'date created',
+                                         `removed` datetime COMMENT 'date removed if not null',
+                                         PRIMARY KEY (`id`),
+                                         CONSTRAINT `fk_nsx_providers__zone_id` FOREIGN KEY `fk_nsx_providers__zone_id` (`zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
+                                         INDEX `i_nsx_providers__zone_id`(`zone_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- NSX Plugin --
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.network_offerings','for_nsx', 'int(1) unsigned DEFAULT "0" COMMENT "is nsx enabled for the resource"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.network_offerings','nsx_mode', 'varchar(32) COMMENT "mode in which the network would route traffic"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vpc_offerings','for_nsx', 'int(1) unsigned DEFAULT "0" COMMENT "is nsx enabled for the resource"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vpc_offerings','nsx_mode', 'varchar(32) COMMENT "mode in which the network would route traffic"');
+
