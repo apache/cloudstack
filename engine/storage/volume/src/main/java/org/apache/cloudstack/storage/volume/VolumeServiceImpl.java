@@ -126,6 +126,7 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.State;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -206,6 +207,8 @@ public class VolumeServiceImpl implements VolumeService {
     private SnapshotApiService snapshotApiService;
     @Inject
     private PassphraseDao passphraseDao;
+    @Inject
+    private DiskOfferingDao diskOfferingDao;
 
     public VolumeServiceImpl() {
     }
@@ -1610,8 +1613,7 @@ public class VolumeServiceImpl implements VolumeService {
 
         if (vol.getAttachedVM() == null || vol.getAttachedVM().getType() == VirtualMachine.Type.User) {
             // Decrement the resource count for volumes and primary storage belonging user VM's only
-            _resourceLimitMgr.decrementResourceCount(vol.getAccountId(), ResourceType.volume, vol.isDisplay());
-            _resourceLimitMgr.decrementResourceCount(vol.getAccountId(), ResourceType.primary_storage, vol.isDisplay(), new Long(vol.getSize()));
+            _resourceLimitMgr.decrementVolumeResourceCount(vol.getAccountId(), vol.isDisplay(), vol.getSize(), diskOfferingDao.findById(vol.getDiskOfferingId()));
         }
     }
 

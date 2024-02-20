@@ -16,6 +16,55 @@
 // under the License.
 package com.cloud.vm;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
+import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
+import org.apache.cloudstack.api.command.user.vm.DeployVnfApplianceCmd;
+import org.apache.cloudstack.api.command.user.vm.ResetVMUserDataCmd;
+import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
+import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
+import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.template.VnfTemplateManager;
+import org.apache.cloudstack.userdata.UserDataManager;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
+
 import com.cloud.api.query.dao.ServiceOfferingJoinDao;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.configuration.Resource;
@@ -82,55 +131,6 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-
-import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
-import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
-import org.apache.cloudstack.api.command.user.vm.DeployVnfApplianceCmd;
-import org.apache.cloudstack.api.command.user.vm.ResetVMUserDataCmd;
-import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
-import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
-import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.storage.template.VnfTemplateManager;
-import org.apache.cloudstack.userdata.UserDataManager;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.Spy;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.test.util.ReflectionTestUtils;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class UserVmManagerImplTest {
@@ -267,6 +267,9 @@ public class UserVmManagerImplTest {
     @Mock
     ServiceOfferingJoinDao serviceOfferingJoinDao;
 
+    @Mock
+    private VMInstanceVO vmInstanceMock;
+
     private static final long vmId = 1l;
     private static final long zoneId = 2L;
     private static final long accountId = 3L;
@@ -276,6 +279,8 @@ public class UserVmManagerImplTest {
     private static final long GiB_TO_BYTES = 1024 * 1024 * 1024;
 
     private Map<String, String> customParameters = new HashMap<>();
+
+    String[] detailsConstants = {VmDetailConstants.MEMORY, VmDetailConstants.CPU_NUMBER, VmDetailConstants.CPU_SPEED};
 
     private DiskOfferingVO smallerDisdkOffering = prepareDiskOffering(5l * GiB_TO_BYTES, 1l, 1L, 2L);
     private DiskOfferingVO largerDisdkOffering = prepareDiskOffering(10l * GiB_TO_BYTES, 2l, 10L, 20L);
@@ -293,6 +298,10 @@ public class UserVmManagerImplTest {
         CallContext.register(callerUser, callerAccount);
 
         customParameters.put(VmDetailConstants.ROOT_DISK_SIZE, "123");
+        customParameters.put(VmDetailConstants.MEMORY, "2048");
+        customParameters.put(VmDetailConstants.CPU_NUMBER, "4");
+        customParameters.put(VmDetailConstants.CPU_SPEED, "1000");
+
         lenient().doNothing().when(resourceLimitMgr).incrementResourceCount(anyLong(), any(Resource.ResourceType.class));
         lenient().doNothing().when(resourceLimitMgr).decrementResourceCount(anyLong(), any(Resource.ResourceType.class), anyLong());
 
@@ -1442,5 +1451,130 @@ public class UserVmManagerImplTest {
         when(vmSnapshotDaoMock.findByVm(vmId)).thenReturn(vmSnapshots);
 
         userVmManagerImpl.restoreVirtualMachine(accountMock, vmId, newTemplateId);
+    }
+
+    @Test
+    public void addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecifiedTestDetailsConstantIsNotNullDoNothing() {
+        int currentValue = 123;
+
+        for (String detailsConstant : detailsConstants) {
+            userVmManagerImpl.addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecified(null, customParameters, detailsConstant, currentValue);
+        }
+
+        Assert.assertEquals(customParameters.get(VmDetailConstants.MEMORY), "2048");
+        Assert.assertEquals(customParameters.get(VmDetailConstants.CPU_NUMBER), "4");
+        Assert.assertEquals(customParameters.get(VmDetailConstants.CPU_SPEED), "1000");
+    }
+
+    @Test
+    public void addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecifiedTestNewValueIsNotNullDoNothing() {
+        Map<String, String> details = new HashMap<>();
+        int currentValue = 123;
+
+        for (String detailsConstant : detailsConstants) {
+            userVmManagerImpl.addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecified(321, details, detailsConstant, currentValue);
+        }
+
+        Assert.assertNull(details.get(VmDetailConstants.MEMORY));
+        Assert.assertNull(details.get(VmDetailConstants.CPU_NUMBER));
+        Assert.assertNull(details.get(VmDetailConstants.CPU_SPEED));
+    }
+
+    @Test
+    public void addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecifiedTestBothValuesAreNullKeepCurrentValue() {
+        Map<String, String> details = new HashMap<>();
+        int currentValue = 123;
+
+        for (String detailsConstant : detailsConstants) {
+            userVmManagerImpl.addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecified(null, details, detailsConstant, currentValue);
+        }
+
+        Assert.assertEquals(details.get(VmDetailConstants.MEMORY), String.valueOf(currentValue));
+        Assert.assertEquals(details.get(VmDetailConstants.CPU_NUMBER), String.valueOf(currentValue));
+        Assert.assertEquals(details.get(VmDetailConstants.CPU_SPEED),String.valueOf(currentValue));
+    }
+
+    @Test
+    public void addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecifiedTestNeitherValueIsNullDoNothing() {
+        int currentValue = 123;
+
+        for (String detailsConstant : detailsConstants) {
+            userVmManagerImpl.addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecified(321, customParameters, detailsConstant, currentValue);
+        }
+
+        Assert.assertEquals(customParameters.get(VmDetailConstants.MEMORY), "2048");
+        Assert.assertEquals(customParameters.get(VmDetailConstants.CPU_NUMBER), "4");
+        Assert.assertEquals(customParameters.get(VmDetailConstants.CPU_SPEED),"1000");
+    }
+
+    @Test
+    public void updateInstanceDetailsMapWithCurrentValuesForAbsentDetailsTestAllConstantsAreUpdated() {
+        Mockito.doReturn(serviceOffering).when(_serviceOfferingDao).findById(Mockito.anyLong());
+        Mockito.doReturn(1L).when(vmInstanceMock).getId();
+        Mockito.doReturn(1L).when(vmInstanceMock).getServiceOfferingId();
+        Mockito.doReturn(serviceOffering).when(_serviceOfferingDao).findByIdIncludingRemoved(Mockito.anyLong(), Mockito.anyLong());
+        userVmManagerImpl.updateInstanceDetailsMapWithCurrentValuesForAbsentDetails(null, vmInstanceMock, 0l);
+
+        Mockito.verify(userVmManagerImpl).addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecified(Mockito.any(), Mockito.any(), Mockito.eq(VmDetailConstants.CPU_SPEED), Mockito.any());
+        Mockito.verify(userVmManagerImpl).addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecified(Mockito.any(), Mockito.any(), Mockito.eq(VmDetailConstants.MEMORY), Mockito.any());
+        Mockito.verify(userVmManagerImpl).addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecified(Mockito.any(), Mockito.any(), Mockito.eq(VmDetailConstants.CPU_NUMBER), Mockito.any());
+    }
+
+    @Test
+    public void testCheckVolumesLimits() {
+        userVmManagerImpl.resourceLimitService = resourceLimitMgr;
+        long diskOffId1 = 1L;
+        DiskOfferingVO diskOfferingVO1 = Mockito.mock(DiskOfferingVO.class);
+        Mockito.when(diskOfferingDao.findById(diskOffId1)).thenReturn(diskOfferingVO1);
+        Mockito.when(resourceLimitMgr.getResourceLimitStorageTags(diskOfferingVO1)).thenReturn(List.of("tag1", "tag2"));
+        long diskOffId2 = 2L;
+        DiskOfferingVO diskOfferingVO2 = Mockito.mock(DiskOfferingVO.class);
+        Mockito.when(diskOfferingDao.findById(diskOffId2)).thenReturn(diskOfferingVO2);
+        Mockito.when(resourceLimitMgr.getResourceLimitStorageTags(diskOfferingVO2)).thenReturn(List.of("tag2"));
+        long diskOffId3 = 3L;
+        DiskOfferingVO diskOfferingVO3 = Mockito.mock(DiskOfferingVO.class);
+        Mockito.when(diskOfferingDao.findById(diskOffId3)).thenReturn(diskOfferingVO3);
+        Mockito.when(resourceLimitMgr.getResourceLimitStorageTags(diskOfferingVO3)).thenReturn(new ArrayList<>());
+
+        VolumeVO vol1 = Mockito.mock(VolumeVO.class);
+        Mockito.when(vol1.getDiskOfferingId()).thenReturn(diskOffId1);
+        Mockito.when(vol1.getSize()).thenReturn(10L);
+        Mockito.when(vol1.isDisplay()).thenReturn(true);
+        VolumeVO undisplayedVolume = Mockito.mock(VolumeVO.class); // shouldn't be considered for limits
+        Mockito.when(undisplayedVolume.isDisplay()).thenReturn(false);
+        VolumeVO vol3 = Mockito.mock(VolumeVO.class);
+        Mockito.when(vol3.getDiskOfferingId()).thenReturn(diskOffId2);
+        Mockito.when(vol3.getSize()).thenReturn(30L);
+        Mockito.when(vol3.isDisplay()).thenReturn(true);
+        VolumeVO vol4 = Mockito.mock(VolumeVO.class);
+        Mockito.when(vol4.getDiskOfferingId()).thenReturn(diskOffId3);
+        Mockito.when(vol4.getSize()).thenReturn(40L);
+        Mockito.when(vol4.isDisplay()).thenReturn(true);
+        VolumeVO vol5 = Mockito.mock(VolumeVO.class);
+        Mockito.when(vol5.getDiskOfferingId()).thenReturn(diskOffId1);
+        Mockito.when(vol5.getSize()).thenReturn(50L);
+        Mockito.when(vol5.isDisplay()).thenReturn(true);
+
+        List<VolumeVO> volumes = List.of(vol1, undisplayedVolume, vol3, vol4, vol5);
+        Long size = volumes.stream().filter(VolumeVO::isDisplay).mapToLong(VolumeVO::getSize).sum();
+        try {
+            userVmManagerImpl.checkVolumesLimits(account, volumes);
+            Mockito.verify(resourceLimitMgr, Mockito.times(1))
+                    .checkResourceLimit(account, Resource.ResourceType.volume, 4);
+            Mockito.verify(resourceLimitMgr, Mockito.times(1))
+                    .checkResourceLimit(account, Resource.ResourceType.primary_storage, size);
+            Mockito.verify(resourceLimitMgr, Mockito.times(1))
+                    .checkResourceLimitWithTag(account, Resource.ResourceType.volume, "tag1", 2);
+            Mockito.verify(resourceLimitMgr, Mockito.times(1))
+                    .checkResourceLimitWithTag(account, Resource.ResourceType.volume, "tag2", 3);
+            Mockito.verify(resourceLimitMgr, Mockito.times(1))
+                    .checkResourceLimitWithTag(account, Resource.ResourceType.primary_storage, "tag1",
+                            vol1.getSize() + vol5.getSize());
+            Mockito.verify(resourceLimitMgr, Mockito.times(1))
+                    .checkResourceLimitWithTag(account, Resource.ResourceType.primary_storage, "tag2",
+                            vol1.getSize() + vol3.getSize() + vol5.getSize());
+        } catch (ResourceAllocationException e) {
+            Assert.fail(e.getMessage());
+        }
     }
 }

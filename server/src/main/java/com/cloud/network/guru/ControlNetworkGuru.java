@@ -21,6 +21,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.router.VirtualNetworkApplianceManager;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.configuration.Config;
@@ -164,18 +165,24 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         assert nic.getTrafficType() == TrafficType.Control;
         HypervisorType hType = vm.getHypervisorType();
         if ( ( (hType == HypervisorType.VMware) || (hType == HypervisorType.Hyperv) )&& isRouterVm(vm)) {
+            if (!VirtualNetworkApplianceManager.RemoveControlIpOnStop.valueIn(vm.getVirtualMachine().getDataCenterId())) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug(String.format("not releasing %s from %s with reservationId %s, as systemvm.release.control.ip.on.stop is set to false for the data center.", nic, vm, reservationId));
+                }
+                return true;
+            }
             long dcId = vm.getVirtualMachine().getDataCenterId();
             DataCenterVO dcVo = _dcDao.findById(dcId);
             if (dcVo.getNetworkType() != NetworkType.Basic) {
                 super.release(nic, vm, reservationId);
                 if (logger.isDebugEnabled()) {
-                    logger.debug("Released nic: " + nic);
+                    logger.debug(String.format("Released nic: %s for vm %s", nic, vm));
                 }
                 return true;
             } else {
                 nic.deallocate();
                 if (logger.isDebugEnabled()) {
-                    logger.debug("Released nic: " + nic);
+                    logger.debug(String.format("Released nic: %s for vm %s", nic, vm));
                 }
                 return true;
             }
@@ -185,7 +192,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
 
         nic.deallocate();
         if (logger.isDebugEnabled()) {
-            logger.debug("Released nic: " + nic);
+            logger.debug(String.format("Released nic: %s for vm %s", nic, vm));
         }
 
         return true;

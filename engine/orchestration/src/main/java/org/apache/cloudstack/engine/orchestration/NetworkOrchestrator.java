@@ -2308,12 +2308,12 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     @DB
     protected void releaseNic(final VirtualMachineProfile vmProfile, final long nicId) throws ConcurrentOperationException, ResourceUnavailableException {
-        final Pair<Network, NicProfile> networkToRelease = Transaction.execute(new TransactionCallback<Pair<Network, NicProfile>>() {
+        final Pair<Network, NicProfile> networkToRelease = Transaction.execute(new TransactionCallback<>() {
             @Override
             public Pair<Network, NicProfile> doInTransaction(final TransactionStatus status) {
                 final NicVO nic = _nicDao.lockRow(nicId, true);
                 if (nic == null) {
-                    throw new ConcurrentOperationException("Unable to acquire lock on nic " + nic);
+                    throw new ConcurrentOperationException(String.format("Unable to acquire lock on nic id=%d", nicId));
                 }
 
                 final Nic.State originalState = nic.getState();
@@ -2327,6 +2327,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         final NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), null, _networkModel
                                 .isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(vmProfile.getHypervisorType(), network));
                         if (guru.release(profile, vmProfile, nic.getReservationId())) {
+                            if (logger.isDebugEnabled()) {
+                                logger.debug(String.format("The nic %s on %s was released according to %s by guru %s, now updating record.", nic, profile, vmProfile, guru));
+                            }
                             applyProfileToNicForRelease(nic, profile);
                             nic.setState(Nic.State.Allocated);
                             if (originalState == Nic.State.Reserved) {
@@ -2336,7 +2339,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                             }
                         }
                         // Perform release on network elements
-                        return new Pair<Network, NicProfile>(network, profile);
+                        return new Pair<>(network, profile);
                     } else {
                         nic.setState(Nic.State.Allocated);
                         updateNic(nic, network.getId(), -1);
@@ -2433,7 +2436,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             for (final NetworkElement element : networkElements) {
                 if (providersToImplement.contains(element.getProvider())) {
                     if (logger.isDebugEnabled()) {
-                        logger.debug("Asking " + element.getName() + " to release " + nic);
+                        logger.debug(String.format("Asking %s to release %s, according to the reservation strategy %s", element.getName(), nic, nic.getReservationStrategy()));
                     }
                     try {
                         element.release(network, profile, vm, null);
