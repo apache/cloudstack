@@ -52,7 +52,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 
 import com.cloud.utils.exception.ExceptionProxyObject;
-import com.cloud.resourcelimit.CheckedReservation;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -287,6 +286,7 @@ import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
+import com.cloud.resourcelimit.CheckedReservation;
 import com.cloud.server.ManagementService;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.StatsCollector;
