@@ -308,7 +308,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             logger.error(String.format("Can't migrate domain [%s] due to: [%s].", vmName, e.getMessage()), e);
             result = e.getMessage();
             if (result.startsWith("unable to connect to server") && result.endsWith("refused")) {
-                logger.debug(String.format("Migration failed as connection to destination [%s] was refused. Please check libvirt configuration compatibility and firewall rules on the source and destination hosts.", destinationUri));
+                logger.debug("Migration failed as connection to destination [{}] was refused. Please check libvirt configuration compatibility and firewall rules on the source and destination hosts.", destinationUri);
                 result = String.format("Failed to migrate domain [%s].", vmName);
             }
         } catch (final InterruptedException
