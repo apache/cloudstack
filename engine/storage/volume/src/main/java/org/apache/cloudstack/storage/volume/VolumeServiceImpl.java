@@ -2760,6 +2760,36 @@ public class VolumeServiceImpl implements VolumeService {
         return snapshot;
     }
 
+    @Override
+    public Pair<String, String> checkAndRepairVolume(VolumeInfo volume) {
+        Long poolId = volume.getPoolId();
+        StoragePool pool = _storageMgr.getStoragePool(poolId);
+        CheckAndRepairVolumePayload payload = (CheckAndRepairVolumePayload) volume.getpayload();
+        CheckVolumeAndRepairCommand command = new CheckVolumeAndRepairCommand(volume.getPath(), new StorageFilerTO(pool), payload.isRepair(),
+                 volume.getPassphrase(), volume.getEncryptFormat());
+
+        try {
+            CheckVolumeAndRepairAnswer answer = (CheckVolumeAndRepairAnswer) _storageMgr.sendToPool(pool, null, command);
+            if (answer != null && answer.getResult()) {
+                s_logger.debug("Check volume response result: " + answer.getDetails());
+                payload.setVolumeCheckExecutionResult(answer.getVolumeCheckExecutionResult());
+                if (payload.isRepair()) {
+                    payload.setVolumeRepairedExecutionResult(answer.getVolumeRepairedExecutionResult());
+                }
+                return new Pair<>(answer.getVolumeCheckExecutionResult(), answer.getVolumeRepairedExecutionResult());
+            } else {
+                s_logger.debug("Failed to check and repair the volume with error " + answer.getDetails());
+            }
+
+        } catch (Exception e) {
+            s_logger.debug("sending check and repair volume command failed", e);
+        } finally {
+            command.clearPassphrase();
+        }
+
+        return null;
+    }
+
     // For managed storage on Xen and VMware, we need to potentially make space for hypervisor snapshots.
     // The disk offering can collect this information and pass it on to the volume that's about to be created.
     // Ex. if you want a 10 GB CloudStack volume to reside on managed storage on Xen, this leads to an SR

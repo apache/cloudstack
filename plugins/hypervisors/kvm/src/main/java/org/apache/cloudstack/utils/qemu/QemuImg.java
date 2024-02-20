@@ -812,4 +812,43 @@ public class QemuImg {
         Pattern pattern = Pattern.compile("Supported\\sformats:[a-zA-Z0-9-_\\s]*?\\b" + format + "\\b", CASE_INSENSITIVE);
         return pattern.matcher(text).find();
     }
+
+    /**
+     * check for any leaks for an image and repair.
+     *
+     * @param imageOptions
+     *         Qemu style image options to be used in the checking process.
+     * @param qemuObjects
+     *         Qemu style options (e.g. for passing secrets).
+     * @param repair
+     *         Boolean option whether to repair any leaks
+     */
+    public String checkAndRepair(final QemuImgFile file, final QemuImageOptions imageOptions, final List<QemuObject> qemuObjects, final boolean repair) throws QemuImgException {
+        final Script s = new Script(_qemuImgPath);
+        s.add("check");
+        s.add(file.getFileName());
+
+        for (QemuObject o : qemuObjects) {
+            s.add(o.toCommandFlag());
+        }
+
+        if (imageOptions != null) {
+            s.add(imageOptions.toCommandFlag());
+        }
+
+        s.add("--output=json");
+
+        if (repair) {
+            s.add("-r");
+            s.add("leaks");
+        }
+
+        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+        final String result = s.execute(parser);
+        if (result != null) {
+            throw new QemuImgException(result);
+        }
+
+        return (parser.getLines() != null) ? parser.getLines().trim() : null;
+    }
 }
