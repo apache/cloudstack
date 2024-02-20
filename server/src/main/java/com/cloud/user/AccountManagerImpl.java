@@ -2064,13 +2064,20 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_USER_DELETE, eventDescription = "deleting User")
     public boolean deleteUser(DeleteUserCmd deleteUserCmd) {
-        UserVO user = getValidUserVO(deleteUserCmd.getId());
-
+        final Long id = deleteUserCmd.getId();
+        User caller = CallContext.current().getCallingUser();
+        UserVO user = getValidUserVO(id);
         Account account = _accountDao.findById(user.getAccountId());
+
+        if (caller.getId() == id) {
+            Domain domain = _domainDao.findById(account.getDomainId());
+            throw new InvalidParameterValueException(String.format("The caller is requesting to delete itself. As a security measure, ACS will not allow this operation." +
+                    " To delete user %s (ID: %s, Domain: %s), request to another user with permission to execute the operation.", user.getUsername(), user.getUuid(), domain.getUuid()));
+        }
 
         // don't allow to delete the user from the account of type Project
         checkAccountAndAccess(user, account);
-        return _userDao.remove(deleteUserCmd.getId());
+        return _userDao.remove(id);
     }
 
     @Override
