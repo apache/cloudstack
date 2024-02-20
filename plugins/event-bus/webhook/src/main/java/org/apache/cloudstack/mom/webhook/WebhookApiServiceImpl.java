@@ -191,7 +191,7 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         Project.ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
 
-        Filter searchFilter = new Filter(WebhookRuleVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Filter searchFilter = new Filter(WebhookRuleJoinVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<WebhookRuleJoinVO> sb = webhookRuleJoinDao.createSearchBuilder();
         accountManager.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
