@@ -201,7 +201,7 @@ public class VolumeServiceImpl implements VolumeService {
     @Inject
     private VolumeOrchestrationService _volumeMgr;
     @Inject
-    private StorageManager _storageMgr;
+    protected StorageManager _storageMgr;
     @Inject
     private AnnotationDao annotationDao;
     @Inject

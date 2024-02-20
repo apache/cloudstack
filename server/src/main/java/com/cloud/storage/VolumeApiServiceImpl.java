@@ -1886,7 +1886,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
     }
 
-    private void validationsForCheckVolumeOperation(long volumeId) {
+    protected void validationsForCheckVolumeOperation(long volumeId) {
         final VolumeVO volume = _volsDao.findById(volumeId);
         Account caller = CallContext.current().getCallingAccount();
         _accountMgr.checkAccess(caller, null, true, volume);
