@@ -2806,11 +2806,11 @@ public class VolumeServiceImpl implements VolumeService {
             grantAccess(volume, host, volume.getDataStore());
             CheckAndRepairVolumeAnswer answer = (CheckAndRepairVolumeAnswer) _storageMgr.sendToPool(pool, new long[]{host.getId()}, command);
             if (answer != null && answer.getResult()) {
-                s_logger.debug("Check volume response result: " + answer.getDetails());
+                s_logger.debug(String.format("Check volume response result: %s", answer.getDetails()));
                 return new Pair<>(answer.getVolumeCheckExecutionResult(), answer.getVolumeRepairExecutionResult());
             } else {
                 String errMsg = (answer == null) ? null : answer.getDetails();
-                s_logger.debug("Failed to check and repair the volume with error " + errMsg);
+                s_logger.debug(String.format("Failed to check and repair the volume with error %s", errMsg));
             }
 
         } catch (Exception e) {

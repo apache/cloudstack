@@ -848,7 +848,7 @@ public class QemuImg {
 
         final String result = Script.runBashScriptIgnoreExitValue(script.toString(), 3);
         if (result != null) {
-            logger.debug("Check volume execution result " +  result);
+            logger.debug(String.format("Check volume execution result %s", result));
         }
 
         return result;

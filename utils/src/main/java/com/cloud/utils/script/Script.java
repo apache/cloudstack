@@ -334,7 +334,7 @@ public class Script implements Callable<String> {
         String[] command = _command.toArray(new String[_command.size()]);
 
         if (_logger.isDebugEnabled()) {
-            _logger.debug("Executing: " + buildCommandLine(command).split(KeyStoreUtils.KS_FILENAME)[0]);
+            _logger.debug(String.format("Executing: %s", buildCommandLine(command).split(KeyStoreUtils.KS_FILENAME)[0]));
         }
 
         try {
@@ -345,8 +345,8 @@ public class Script implements Callable<String> {
 
             _process = pb.start();
             if (_process == null) {
-                _logger.warn("Unable to execute: " + buildCommandLine(command));
-                return "Unable to execute the command: " + command[0];
+                _logger.warn(String.format("Unable to execute: %s", buildCommandLine(command)));
+                return String.format("Unable to execute the command: %s", command[0]);
             }
 
             BufferedReader ir = new BufferedReader(new InputStreamReader(_process.getInputStream()));
@@ -364,7 +364,7 @@ public class Script implements Callable<String> {
             }
 
             while (true) {
-                _logger.debug("Executing while with timeout : " + _timeout);
+                _logger.debug(String.format("Executing while with timeout : %d" + _timeout));
                 try {
                     //process execution completed within timeout period
                     if (_process.waitFor(_timeout, TimeUnit.MILLISECONDS)) {
@@ -403,15 +403,15 @@ public class Script implements Callable<String> {
 
                 timedoutTask.run();
                 if (!_passwordCommand) {
-                    _logger.warn("Timed out: " + buildCommandLine(command) + ".  Output is: " + timedoutTask.getResult());
+                    _logger.warn(String.format("Timed out: %s.  Output is: %s", buildCommandLine(command), timedoutTask.getResult()));
                 } else {
-                    _logger.warn("Timed out: " + buildCommandLine(command));
+                    _logger.warn(String.format("Timed out: %s", buildCommandLine(command)));
                 }
 
                 return ERR_TIMEOUT;
             }
 
-            _logger.debug("Exit value is " + _process.exitValue());
+            _logger.debug(String.format("Exit value is %d", _process.exitValue()));
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(_process.getInputStream()), 128);
 
@@ -430,7 +430,7 @@ public class Script implements Callable<String> {
             _logger.warn("Security Exception....not running as root?", ex);
             return stackTraceAsString(ex);
         } catch (Exception ex) {
-            _logger.warn("Exception: " + buildCommandLine(command), ex);
+            _logger.warn(String.format("Exception: %s", buildCommandLine(command)), ex);
             return stackTraceAsString(ex);
         } finally {
             if (_process != null) {
