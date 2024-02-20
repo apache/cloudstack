@@ -288,7 +288,6 @@ import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
-import com.cloud.resourcelimit.CheckedReservation;
 import com.cloud.server.ManagementService;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.StatsCollector;
@@ -3317,14 +3316,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     protected void checkExpungeVmPermission (Account callingAccount, Long entityOwnerId) {
         logger.debug(String.format("Checking if [%s] has permission for expunging VMs.", callingAccount));
         if (!_accountMgr.isAdmin(callingAccount.getId()) && !getConfigAllowUserExpungeRecoverVm(entityOwnerId)) {
-            throw new PermissionDeniedException(String.format("Parameter [%s] can only be passed by Admin accounts or when the allow.user.expunge.recover.vm key is set true.",
-                ApiConstants.EXPUNGE));
+            logger.error(String.format("Parameter [%s] can only be passed by Admin accounts or when the allow.user.expunge.recover.vm key is true.", ApiConstants.EXPUNGE));
+            throw new PermissionDeniedException("Account does not have permission for expunging.");
         }
         try {
             _accountMgr.checkApiAccess(callingAccount, BaseCmd.getCommandNameByClass(ExpungeVMCmd.class));
         } catch (UnavailableCommandException ex) {
-            logger.warn(String.format("Role [%s] of [%s] does not have permission for expunging VMs.", callingAccount.getRoleId(), callingAccount));
-            throw new PermissionDeniedException("Account role does not have permission for expunging.");
+            logger.error(String.format("Role [%s] of [%s] does not have permission for expunging VMs.", callingAccount.getRoleId(), callingAccount));
+            throw new PermissionDeniedException("Account does not have permission for expunging.");
         }
     }
 
