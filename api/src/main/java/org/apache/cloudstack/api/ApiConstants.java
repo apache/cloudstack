@@ -285,6 +285,7 @@ public class ApiConstants {
     public static final String LAST_SERVER_STOP = "lastserverstop";
     public static final String LEVEL = "level";
     public static final String LENGTH = "length";
+    public static final String LIMIT = "limit";
     public static final String LIMIT_CPU_USE = "limitcpuuse";
     public static final String LIST_HOSTS = "listhosts";
     public static final String LOCK = "lock";
@@ -380,6 +381,7 @@ public class ApiConstants {
     public static final String RECONNECT = "reconnect";
     public static final String RECOVER = "recover";
     public static final String REQUIRES_HVM = "requireshvm";
+    public static final String RESOURCE_COUNT = "resourcecount";
     public static final String RESOURCE_NAME = "resourcename";
     public static final String RESOURCE_TYPE = "resourcetype";
     public static final String RESOURCE_TYPE_NAME = "resourcetypename";
@@ -420,8 +422,9 @@ public class ApiConstants {
     public static final String SNAPSHOT_POLICY_ID = "snapshotpolicyid";
     public static final String SNAPSHOT_TYPE = "snapshottype";
     public static final String SNAPSHOT_QUIESCEVM = "quiescevm";
-    public static final String SUPPORTS_STORAGE_SNAPSHOT = "supportsstoragesnapshot";
     public static final String SOURCE_ZONE_ID = "sourcezoneid";
+    public static final String SUITABLE_FOR_VM = "suitableforvirtualmachine";
+    public static final String SUPPORTS_STORAGE_SNAPSHOT = "supportsstoragesnapshot";
     public static final String START_DATE = "startdate";
     public static final String START_ID = "startid";
     public static final String START_IP = "startip";
@@ -449,6 +452,7 @@ public class ApiConstants {
     public static final String TIMEOUT = "timeout";
     public static final String TIMEZONE = "timezone";
     public static final String TIMEZONEOFFSET = "timezoneoffset";
+    public static final String TOTAL = "total";
     public static final String TOTAL_SUBNETS = "totalsubnets";
     public static final String TYPE = "type";
     public static final String TRUST_STORE = "truststore";
@@ -719,6 +723,7 @@ public class ApiConstants {
     public static final String POLICY_UUID = "policyuuid";
     public static final String RULE_UUID = "ruleuuid";
     public static final String DIRECTION = "direction";
+    public static final String TAGGED_RESOURCES = "taggedresources";
     public static final String TAG_UUID = "taguuid";
     public static final String TAG_TYPE = "tagtype";
     public static final String TAG_VALUE = "tagvalue";

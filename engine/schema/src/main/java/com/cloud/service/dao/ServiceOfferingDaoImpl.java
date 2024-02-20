@@ -291,4 +291,22 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
         }
         return vos.get(0);
     }
+
+    @Override
+    public List<ServiceOfferingVO> listByHostTag(String tag) {
+        SearchBuilder<ServiceOfferingVO> sb = createSearchBuilder();
+        sb.and("tagNotNull", sb.entity().getHostTag(), SearchCriteria.Op.NNULL);
+        sb.and().op("tagEq", sb.entity().getHostTag(), SearchCriteria.Op.EQ);
+        sb.or("tagStartLike", sb.entity().getHostTag(), SearchCriteria.Op.LIKE);
+        sb.or("tagMidLike", sb.entity().getHostTag(), SearchCriteria.Op.LIKE);
+        sb.or("tagEndLike", sb.entity().getHostTag(), SearchCriteria.Op.LIKE);
+        sb.cp();
+        sb.done();
+        SearchCriteria<ServiceOfferingVO> sc = sb.create();
+        sc.setParameters("tagEq", tag);
+        sc.setParameters("tagStartLike", tag + ",%");
+        sc.setParameters("tagMidLike", "%," + tag + ",%");
+        sc.setParameters("tagEndLike",   "%," + tag);
+        return listBy(sc);
+    }
 }

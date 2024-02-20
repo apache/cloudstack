@@ -40,6 +40,8 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
      */
     List<StoragePoolVO> listBy(long datacenterId, Long podId, Long clusterId, ScopeType scope);
 
+    List<StoragePoolVO> listBy(long datacenterId, Long podId, Long clusterId, ScopeType scope, String keyword);
+
     /**
      * Set capacity of storage pool in bytes
      * @param id pool id.
@@ -115,15 +117,19 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
 
     List<StoragePoolVO> findLocalStoragePoolsByTags(long dcId, long podId, Long clusterId, String[] tags, boolean validateTagRule);
 
+    List<StoragePoolVO> findLocalStoragePoolsByTags(long dcId, long podId, Long clusterId, String[] tags, boolean validateTagRule, String keyword);
+
     List<StoragePoolVO> findZoneWideStoragePoolsByTags(long dcId, String[] tags, boolean validateTagRule);
 
     List<StoragePoolVO> findZoneWideStoragePoolsByHypervisor(long dataCenterId, HypervisorType hypervisorType);
+
+    List<StoragePoolVO> findZoneWideStoragePoolsByHypervisor(long dataCenterId, HypervisorType hypervisorType, String keyword);
 
     List<StoragePoolVO> findLocalStoragePoolsByHostAndTags(long hostId, String[] tags);
 
     List<StoragePoolVO> listLocalStoragePoolByPath(long datacenterId, String path);
 
-    List<StoragePoolVO> findPoolsInClusters(List<Long> clusterIds);
+    List<StoragePoolVO> findPoolsInClusters(List<Long> clusterIds, String keyword);
 
     void deletePoolTags(long poolId);
 

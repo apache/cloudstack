@@ -860,14 +860,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         if (!isPartialUpgrade || StringUtils.isNotBlank(protocol)) {
             networkACLItemVo.setProtocol(protocol);
         }
-        Integer icmpCode = updateNetworkACLItemCmd.getIcmpCode();
-        if (!isPartialUpgrade || icmpCode != null) {
-            networkACLItemVo.setIcmpCode(icmpCode);
-        }
-        Integer icmpType = updateNetworkACLItemCmd.getIcmpType();
-        if (!isPartialUpgrade || icmpType != null) {
-            networkACLItemVo.setIcmpType(icmpType);
-        }
+        updateIcmpCodeAndType(isPartialUpgrade, updateNetworkACLItemCmd, networkACLItemVo);
         String action = updateNetworkACLItemCmd.getAction();
         if (!isPartialUpgrade || StringUtils.isNotBlank(action)) {
             Action aclRuleAction = validateAndCreateNetworkAclRuleAction(action);
@@ -888,6 +881,32 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         String reason = updateNetworkACLItemCmd.getReason();
         if (!isPartialUpgrade || StringUtils.isNotBlank(reason)) {
             networkACLItemVo.setReason(reason);
+        }
+    }
+
+    protected void updateIcmpCodeAndType (boolean isPartialUpgrade, UpdateNetworkACLItemCmd updateNetworkACLItemCmd, NetworkACLItemVO networkACLItemVo) {
+        Integer icmpCode = updateNetworkACLItemCmd.getIcmpCode();
+        Integer icmpType = updateNetworkACLItemCmd.getIcmpType();
+
+        if (!isPartialUpgrade) {
+            updateIcmpCodeAndTypeFullUpgrade(icmpCode, icmpType, networkACLItemVo);
+            return;
+        }
+        if (icmpCode != null) {
+            networkACLItemVo.setIcmpCode(icmpCode);
+        }
+        if (icmpType != null) {
+            networkACLItemVo.setIcmpType(icmpType);
+        }
+    }
+
+    private void updateIcmpCodeAndTypeFullUpgrade (Integer icmpCode, Integer icmpType, NetworkACLItemVO networkACLItemVo) {
+        if (networkACLItemVo.getProtocol().equalsIgnoreCase(NetUtils.ICMP_PROTO)) {
+            networkACLItemVo.setIcmpCode(icmpCode != null ? icmpCode : -1);
+            networkACLItemVo.setIcmpType(icmpType != null ? icmpType : -1);
+        } else {
+            networkACLItemVo.setIcmpCode(null);
+            networkACLItemVo.setIcmpType(null);
         }
     }
 
