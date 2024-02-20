@@ -30,7 +30,7 @@ import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.storage.Volume;
 
-@APICommand(name = "recoverVolume", description = "Recovers a Destroy volume, curr", responseObject = VolumeResponse.class,  responseView = ResponseView.Full, entityType = {Volume.class},
+@APICommand(name = "recoverVolume", description = "Recovers a Destroy volume.", responseObject = VolumeResponse.class,  responseView = ResponseView.Full, entityType = {Volume.class},
             since = "4.14.0",
             authorized = {RoleType.Admin},
             requestHasSensitiveInfo = false,
