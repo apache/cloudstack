@@ -196,23 +196,21 @@
           />
         </template>
         <a-row
-          v-if="!form.useCronFormat"
-          style="margin-bottom: 10px; height: 40px;"
+          style="margin-bottom: 15px; text-align: center;"
           justify="space-around"
+          align="middle"
         >
           <cron-ant
+            v-if="!form.useCronFormat"
             v-model="form.schedule"
             :periods="periods"
             :button-props="{ type: 'primary', size: 'small', disabled: form.useCronFormat }"
             @error="error = $event"
           />
-        </a-row>
-        <a-row
-          v-if="form.useCronFormat"
-          style="margin-bottom: 10px; height: 40px;"
-          justify="space-around"
-        >
-          <label>{{ generateHumanReadableSchedule(form.schedule) }}</label>
+          <label
+            v-if="form.useCronFormat">
+            {{ generateHumanReadableSchedule(form.schedule) }}
+          </label>
         </a-row>
         <a-row
           justify="space-between"
