@@ -2777,9 +2777,9 @@ public class VolumeServiceImpl implements VolumeService {
                 s_logger.debug("Check volume response result: " + answer.getDetails());
                 payload.setVolumeCheckExecutionResult(answer.getVolumeCheckExecutionResult());
                 if (payload.isRepair()) {
-                    payload.setVolumeRepairedExecutionResult(answer.getVolumeRepairedExecutionResult());
+                    payload.setVolumeRepairedExecutionResult(answer.getVolumeRepairExecutionResult());
                 }
-                return new Pair<>(answer.getVolumeCheckExecutionResult(), answer.getVolumeRepairedExecutionResult());
+                return new Pair<>(answer.getVolumeCheckExecutionResult(), answer.getVolumeRepairExecutionResult());
             } else {
                 s_logger.debug("Failed to check and repair the volume with error " + answer.getDetails());
             }

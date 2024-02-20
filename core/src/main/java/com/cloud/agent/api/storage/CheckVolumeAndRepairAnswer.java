@@ -22,55 +22,36 @@ package com.cloud.agent.api.storage;
 import com.cloud.agent.api.Answer;
 
 public class CheckVolumeAndRepairAnswer extends Answer {
-    private long leaks;
-    private boolean repaired;
-    private long leaksFixed;
     private String volumeCheckExecutionResult;
-    private String volumeRepairedExecutionResult;
+    private String volumeRepairExecutionResult;
 
     protected CheckVolumeAndRepairAnswer() {
         super();
     }
 
-    public CheckVolumeAndRepairAnswer(CheckVolumeAndRepairCommand cmd, boolean result, String details, long leaks,
-                                      boolean repaired, long leaksFixed, String volumeCheckExecutionResult, String volumeRepairedExecutionResult) {
+    public CheckVolumeAndRepairAnswer(CheckVolumeAndRepairCommand cmd, boolean result, String details, String volumeCheckExecutionResult, String volumeRepairedExecutionResult) {
         super(cmd, result, details);
-        this.leaks = leaks;
-        this.repaired = repaired;
-        this.leaksFixed = leaksFixed;
         this.volumeCheckExecutionResult = volumeCheckExecutionResult;
-        this.volumeRepairedExecutionResult = volumeRepairedExecutionResult;
+        this.volumeRepairExecutionResult = volumeRepairedExecutionResult;
     }
 
     public CheckVolumeAndRepairAnswer(CheckVolumeAndRepairCommand cmd, boolean result, String details) {
         super(cmd, result, details);
     }
 
-    public long getLeaks() {
-        return leaks;
-    }
-
-    public boolean isRepaired() {
-        return repaired;
-    }
-
-    public long getLeaksFixed() {
-        return leaksFixed;
-    }
-
     public String getVolumeCheckExecutionResult() {
         return volumeCheckExecutionResult;
     }
 
-    public String getVolumeRepairedExecutionResult() {
-        return volumeRepairedExecutionResult;
+    public String getVolumeRepairExecutionResult() {
+        return volumeRepairExecutionResult;
     }
 
     public void setVolumeCheckExecutionResult(String volumeCheckExecutionResult) {
         this.volumeCheckExecutionResult = volumeCheckExecutionResult;
     }
 
-    public void setVolumeRepairedExecutionResult(String volumeRepairedExecutionResult) {
-        this.volumeRepairedExecutionResult = volumeRepairedExecutionResult;
+    public void setVolumeRepairExecutionResult(String volumeRepairExecutionResult) {
+        this.volumeRepairExecutionResult = volumeRepairExecutionResult;
     }
 }

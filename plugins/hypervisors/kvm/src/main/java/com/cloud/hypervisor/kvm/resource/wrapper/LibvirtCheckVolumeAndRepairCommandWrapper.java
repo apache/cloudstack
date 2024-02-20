@@ -78,7 +78,7 @@ public class LibvirtCheckVolumeAndRepairCommandWrapper extends CommandWrapper<Ch
                 s_logger.info(String.format("Repair Volume result for the volume %s is %s", vol.getName(), repairVolumeResult));
 
                 answer = new CheckVolumeAndRepairAnswer(command, true, finalResult);
-                answer.setVolumeRepairedExecutionResult(repairVolumeResult);
+                answer.setVolumeRepairExecutionResult(repairVolumeResult);
                 answer.setVolumeCheckExecutionResult(checkVolumeResult);
             }
             return answer;
