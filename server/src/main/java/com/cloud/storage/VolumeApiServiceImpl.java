@@ -1909,6 +1909,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (!HypervisorType.KVM.equals(hypervisorType)) {
             throw new InvalidParameterValueException(String.format("Check and Repair volumes is supported only for KVM hypervisor"));
         }
+
+        if (!Arrays.asList(ImageFormat.QCOW2, ImageFormat.VDI).contains(volume.getFormat())) {
+            throw new InvalidParameterValueException("Volume format is not supported for checking and repair");
+        }
     }
 
     private void validateVMforCheckVolumeOperation(Long vmId, String volumeName) {

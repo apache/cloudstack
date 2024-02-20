@@ -82,6 +82,7 @@ import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -2775,7 +2776,7 @@ public class VolumeServiceImpl implements VolumeService {
                 String repair = CheckAndRepairVolumeCmd.RepairValues.LEAKS.name().toLowerCase();
                 CheckAndRepairVolumePayload payload = new CheckAndRepairVolumePayload(repair);
                 volumeInfo.addPayload(payload);
-                checkAndRepairVolume(volumeInfo);
+                checkAndRepairVolumeThroughHost(volumeInfo, host);
             }
         }
     }
@@ -2783,13 +2784,27 @@ public class VolumeServiceImpl implements VolumeService {
     @Override
     public Pair<String, String> checkAndRepairVolume(VolumeInfo volume) {
         Long poolId = volume.getPoolId();
+        List<Long> hostIds = _storageMgr.getUpHostsInPool(poolId);
+        if (CollectionUtils.isEmpty(hostIds)) {
+            throw new CloudRuntimeException("Unable to find Up hosts to run the check volume command");
+        }
+        Collections.shuffle(hostIds);
+        Host host = _hostDao.findById(hostIds.get(0));
+
+        return checkAndRepairVolumeThroughHost(volume, host);
+
+    }
+
+    private Pair<String, String> checkAndRepairVolumeThroughHost(VolumeInfo volume, Host host) {
+        Long poolId = volume.getPoolId();
         StoragePool pool = _storageMgr.getStoragePool(poolId);
         CheckAndRepairVolumePayload payload = (CheckAndRepairVolumePayload) volume.getpayload();
         CheckAndRepairVolumeCommand command = new CheckAndRepairVolumeCommand(volume.getPath(), new StorageFilerTO(pool), payload.getRepair(),
-                 volume.getPassphrase(), volume.getEncryptFormat());
+                volume.getPassphrase(), volume.getEncryptFormat());
 
         try {
-            CheckAndRepairVolumeAnswer answer = (CheckAndRepairVolumeAnswer) _storageMgr.sendToPool(pool, null, command);
+            grantAccess(volume, host, volume.getDataStore());
+            CheckAndRepairVolumeAnswer answer = (CheckAndRepairVolumeAnswer) _storageMgr.sendToPool(pool, new long[]{host.getId()}, command);
             if (answer != null && answer.getResult()) {
                 s_logger.debug("Check volume response result: " + answer.getDetails());
                 return new Pair<>(answer.getVolumeCheckExecutionResult(), answer.getVolumeRepairExecutionResult());
@@ -2801,6 +2816,7 @@ public class VolumeServiceImpl implements VolumeService {
         } catch (Exception e) {
             s_logger.debug("sending check and repair volume command failed", e);
         } finally {
+            revokeAccess(volume, host, volume.getDataStore());
             command.clearPassphrase();
         }
 

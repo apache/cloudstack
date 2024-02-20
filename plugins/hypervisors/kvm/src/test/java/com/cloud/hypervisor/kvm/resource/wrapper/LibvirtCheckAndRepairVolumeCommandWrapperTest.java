@@ -23,7 +23,6 @@ import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.storage.Storage;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.junit.Assert;
 import org.junit.Before;
@@ -75,8 +74,7 @@ public class LibvirtCheckAndRepairVolumeCommandWrapperTest {
 
         KVMPhysicalDisk vol = Mockito.mock(KVMPhysicalDisk.class);
         when(pool.getPhysicalDisk("cbac516a-0f1f-4559-921c-1a7c6c408ccf")).thenReturn(vol);
-
-        VolumeInfo volume = Mockito.mock(VolumeInfo.class);
+        Mockito.when(vol.getFormat()).thenReturn(QemuImg.PhysicalDiskFormat.QCOW2);
 
         String checkResult = "{\n" +
                 "    \"image-end-offset\": 6442582016,\n" +

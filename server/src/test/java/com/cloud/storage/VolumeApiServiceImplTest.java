@@ -1647,7 +1647,6 @@ public class VolumeApiServiceImplTest {
             Mockito.when(_diskOfferingDao.findById(1L)).thenReturn(diskOffering);
 
             StoragePoolVO srcStoragePoolVOMock = Mockito.mock(StoragePoolVO.class);
-            StoragePool destPool = Mockito.mock(StoragePool.class);
             PrimaryDataStore dataStore = Mockito.mock(PrimaryDataStore.class);
 
             Mockito.when(vol.getPassphraseId()).thenReturn(1L);
@@ -1680,6 +1679,7 @@ public class VolumeApiServiceImplTest {
         when(volume.getState()).thenReturn(Volume.State.Ready);
         when(volume.getId()).thenReturn(1L);
         when(volumeDaoMock.getHypervisorType(1L)).thenReturn(HypervisorType.KVM);
+        when(volume.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
 
         volumeApiServiceImpl.validationsForCheckVolumeOperation(volume);
     }
@@ -1796,9 +1796,31 @@ public class VolumeApiServiceImplTest {
         String repairResult = null;
         Pair<String, String> result = new Pair<>(checkResult, repairResult);
         when(volumeServiceMock.checkAndRepairVolume(volumeInfo)).thenReturn(result);
+        when(volume.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
 
         Pair<String, String> finalresult = volumeApiServiceImpl.checkAndRepairVolume(cmd);
 
         Assert.assertEquals(result, finalresult);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidationsForCheckVolumeAPIWithInvalidVolumeFormat() {
+        VolumeVO volume = mock(VolumeVO.class);
+        AccountVO account = new AccountVO("admin", 1L, "networkDomain", Account.Type.NORMAL, "uuid");
+        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
+        CallContext.register(user, account);
+
+        lenient().doNothing().when(accountManagerMock).checkAccess(any(Account.class), any(AccessType.class), any(Boolean.class), any(ControlledEntity.class));
+
+        when(volume.getInstanceId()).thenReturn(1L);
+        UserVmVO vm = mock(UserVmVO.class);
+        when(userVmDaoMock.findById(1L)).thenReturn(vm);
+        when(vm.getState()).thenReturn(State.Stopped);
+        when(volume.getState()).thenReturn(Volume.State.Ready);
+        when(volume.getId()).thenReturn(1L);
+        when(volumeDaoMock.getHypervisorType(1L)).thenReturn(HypervisorType.KVM);
+        when(volume.getFormat()).thenReturn(Storage.ImageFormat.RAW);
+
+        volumeApiServiceImpl.validationsForCheckVolumeOperation(volume);
     }
 }

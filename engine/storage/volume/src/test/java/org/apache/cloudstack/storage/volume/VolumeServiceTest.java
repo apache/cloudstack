@@ -23,6 +23,8 @@ import com.cloud.agent.api.storage.CheckAndRepairVolumeAnswer;
 import com.cloud.agent.api.storage.CheckAndRepairVolumeCommand;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.storage.CheckAndRepairVolumePayload;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
@@ -80,6 +82,12 @@ public class VolumeServiceTest extends TestCase{
     @Mock
     VolumeVO volumeVoMock;
 
+    @Mock
+    HostVO hostMock;
+
+    @Mock
+    HostDao hostDaoMock;
+
     @Before
     public void setup(){
         volumeServiceImplSpy = Mockito.spy(new VolumeServiceImpl());
@@ -87,6 +95,7 @@ public class VolumeServiceTest extends TestCase{
         volumeServiceImplSpy.volDao = volumeDaoMock;
         volumeServiceImplSpy.snapshotMgr = snapshotManagerMock;
         volumeServiceImplSpy._storageMgr = storageManagerMock;
+        volumeServiceImplSpy._hostDao = hostDaoMock;
     }
 
     @Test(expected = InterruptedException.class)
@@ -230,6 +239,12 @@ public class VolumeServiceTest extends TestCase{
         Mockito.when(volume.getPoolId()).thenReturn(1L);
         StoragePool pool = Mockito.mock(StoragePool.class);
         Mockito.when(storageManagerMock.getStoragePool(1L)).thenReturn(pool);
+        List<Long> hostIds = new ArrayList<>();
+        hostIds.add(1L);
+        Mockito.when(storageManagerMock.getUpHostsInPool(1L)).thenReturn(hostIds);
+        Mockito.when(hostMock.getId()).thenReturn(1L);
+        Mockito.when(hostDaoMock.findById(1L)).thenReturn(hostMock);
+
         CheckAndRepairVolumePayload payload = new CheckAndRepairVolumePayload(null);
         Mockito.when(volume.getpayload()).thenReturn(payload);
         Mockito.when(volume.getPath()).thenReturn("cbac516a-0f1f-4559-921c-1a7c6c408ccf");
@@ -252,7 +267,7 @@ public class VolumeServiceTest extends TestCase{
 
         CheckAndRepairVolumeAnswer answer = new CheckAndRepairVolumeAnswer(command, true, checkResult);
         answer.setVolumeCheckExecutionResult(checkResult);
-        Mockito.when(storageManagerMock.sendToPool(pool, null, command)).thenReturn(answer);
+        Mockito.when(storageManagerMock.sendToPool(pool, new long[]{1L}, command)).thenReturn(answer);
 
         Pair<String, String> result = volumeServiceImplSpy.checkAndRepairVolume(volume);
 
@@ -266,6 +281,12 @@ public class VolumeServiceTest extends TestCase{
         Mockito.when(volume.getPoolId()).thenReturn(1L);
         StoragePool pool = Mockito.mock(StoragePool.class);
         Mockito.when(storageManagerMock.getStoragePool(1L)).thenReturn(pool);
+        List<Long> hostIds = new ArrayList<>();
+        hostIds.add(1L);
+        Mockito.when(storageManagerMock.getUpHostsInPool(1L)).thenReturn(hostIds);
+        Mockito.when(hostMock.getId()).thenReturn(1L);
+        Mockito.when(hostDaoMock.findById(1L)).thenReturn(hostMock);
+
         CheckAndRepairVolumePayload payload = new CheckAndRepairVolumePayload(null);
         Mockito.when(volume.getpayload()).thenReturn(payload);
         Mockito.when(volume.getPath()).thenReturn("cbac516a-0f1f-4559-921c-1a7c6c408ccf");
@@ -276,7 +297,7 @@ public class VolumeServiceTest extends TestCase{
                 volume.getPassphrase(), volume.getEncryptFormat());
 
         CheckAndRepairVolumeAnswer answer = new CheckAndRepairVolumeAnswer(command, false, "Unable to execute qemu command");
-        Mockito.when(storageManagerMock.sendToPool(pool, null, command)).thenReturn(answer);
+        Mockito.when(storageManagerMock.sendToPool(pool, new long[]{1L}, command)).thenReturn(answer);
 
         Pair<String, String> result = volumeServiceImplSpy.checkAndRepairVolume(volume);
 

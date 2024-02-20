@@ -67,8 +67,19 @@ public class LibvirtCheckAndRepairVolumeCommandWrapper extends CommandWrapper<Ch
         byte[] passphrase = command.getPassphrase();
 
         try {
-            CheckAndRepairVolumeAnswer answer = checkVolume(vol, command, serverResource);
-            String checkVolumeResult =  answer.getVolumeCheckExecutionResult();
+            CheckAndRepairVolumeAnswer answer = null;
+            String checkVolumeResult = null;
+            if (QemuImg.PhysicalDiskFormat.RAW.equals(vol.getFormat())) {
+                checkVolumeResult = "Volume format RAW is not supported to check and repair";
+                String jsonStringFormat = String.format("{ \"message\": \"%s\" }", checkVolumeResult);
+                answer = new CheckAndRepairVolumeAnswer(command, true, checkVolumeResult);
+                answer.setVolumeCheckExecutionResult(jsonStringFormat);
+
+                return answer;
+            } else {
+                answer = checkVolume(vol, command, serverResource);
+                checkVolumeResult =  answer.getVolumeCheckExecutionResult();
+            }
 
             CheckAndRepairVolumeAnswer resultAnswer = checkIfRepairLeaksIsRequired(command, checkVolumeResult, vol.getName());
             // resultAnswer is not null when repair is not required, so return from here
