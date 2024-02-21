@@ -38,10 +38,9 @@
                     <a-button
                       type="primary"
                       size="small"
-                      shape="round"
-                      :style="computedReloadStyle"
                       @click.stop="testWebhookDispatch">
                       <render-icon icon="reload-outlined" />
+                      <div class="ant-btn__progress-overlay" :style="computedOverlayStyle"></div>
                     </a-button>
                   </div>
                 </div>
@@ -130,6 +129,9 @@ export default {
       testDispatchIntervalCouter: 100
     }
   },
+  beforeCreate () {
+    this.timedDispatchWait = 4000
+  },
   beforeUnmount () {
     if (this.testDispatchInterval) {
       clearInterval(this.testDispatchInterval)
@@ -154,16 +156,21 @@ export default {
       var duration = Date.parse(this.response.enddate) - Date.parse(this.response.startdate)
       return (duration > 0 ? duration / 1000.0 : 0) + ''
     },
-    computedReloadStyle () {
-      return 'opacity: ' + (this.testDispatchIntervalCouter / 100.0) + ';'
+    computedOverlayStyle () {
+      var opacity = this.testDispatchIntervalCouter >= 100.0 ? 0 : 0.3
+      var width = this.testDispatchIntervalCouter
+      return 'opacity: ' + opacity + '; width: ' + width + '%;'
     }
   },
   methods: {
-    testWebhookDispatch () {
+    resetTestDispatchInterval () {
       if (this.testDispatchInterval) {
         clearInterval(this.testDispatchInterval)
-        this.testDispatchIntervalCouter = 100
       }
+      this.testDispatchIntervalCouter = 100
+    },
+    testWebhookDispatch () {
+      this.resetTestDispatchInterval()
       this.response = {}
       this.loading = true
       this.$emit('change-loading', this.loading)
@@ -195,24 +202,21 @@ export default {
     },
     timedTestWebhookDispatch () {
       const urlPattern = /^(http|https):\/\/[^ "]+$/
-      clearTimeout(this.testDispatchInterval)
-      this.testDispatchIntervalCouter = 100
+      this.resetTestDispatchInterval()
       this.testDispatchInterval = setInterval(() => {
         if (!this.payloadUrl || !urlPattern.test(this.payloadUrl)) {
-          clearInterval(this.testDispatchInterval)
-          this.testDispatchIntervalCouter = 100
+          this.resetTestDispatchInterval()
           return
         }
-        this.testDispatchIntervalCouter = this.testDispatchIntervalCouter - 5
+        this.testDispatchIntervalCouter = this.testDispatchIntervalCouter - 1
         if (this.testDispatchIntervalCouter <= 0) {
           if (this.payloadUrl && urlPattern.test(this.payloadUrl)) {
             this.testWebhookDispatch()
             return
           }
-          clearInterval(this.testDispatchInterval)
-          this.testDispatchIntervalCouter = 100
+          this.resetTestDispatchInterval()
         }
-      }, 250)
+      }, this.timedDispatchWait / 100)
     }
   }
 }
@@ -246,6 +250,18 @@ export default {
       margin-bottom: 5px;
       font-weight: bold;
     }
+  }
 
+  .ant-btn .ant-btn__progress-overlay {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: 5;
+    opacity: 0.3;
+    transition: all 0s ease;
+    position: absolute;
+    left: 0;
+    top: 0;
+    background-color: #666;
   }
 </style>
