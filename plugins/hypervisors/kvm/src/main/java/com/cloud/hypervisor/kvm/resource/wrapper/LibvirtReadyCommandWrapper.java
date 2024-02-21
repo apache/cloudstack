@@ -25,6 +25,8 @@ import java.util.Map;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
+import com.cloud.agent.properties.AgentProperties;
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
@@ -51,11 +53,12 @@ public final class LibvirtReadyCommandWrapper extends CommandWrapper<ReadyComman
 
     private boolean hostSupportsUefi(boolean isUbuntuHost) {
         String cmd = "rpm -qa | grep -i ovmf";
+        int timeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.AGENT_SCRIPT_TIMEOUT) * 1000; // Get property value & convert to milliseconds
         if (isUbuntuHost) {
             cmd = "dpkg -l ovmf";
         }
-        s_logger.debug("Running command : " + cmd);
-        int result = Script.runSimpleBashScriptForExitValue(cmd);
+        s_logger.debug("Running command : [" + cmd + "] with timeout : " + timeout + " ms");
+        int result = Script.runSimpleBashScriptForExitValue(cmd, timeout);
         s_logger.debug("Got result : " + result);
         return result == 0;
     }

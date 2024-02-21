@@ -511,6 +511,17 @@ public class Script implements Callable<String> {
         return runSimpleBashScriptForExitValue(command, 0);
     }
 
+    /**
+     * Executes a bash script and returns the exit value of the script.
+     *
+     * @param command
+     *         The bash command to be executed.
+     * @param timeout
+     *         The maximum time (in milliseconds) that the script is allowed to run before it is forcibly terminated.
+     *
+     * @return The exit value of the script. Returns -1 if the result is null or empty, or if it cannot be parsed into
+     *         an integer which can happen in case of a timeout.
+     */
     public static int runSimpleBashScriptForExitValue(String command, int timeout) {
 
         Script s = new Script("/bin/bash", timeout);
