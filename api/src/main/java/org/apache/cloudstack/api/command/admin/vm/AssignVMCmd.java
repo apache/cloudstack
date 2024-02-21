@@ -131,7 +131,7 @@ public class AssignVMCmd extends BaseCmd  {
             e.printStackTrace();
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         } catch (Exception e) {
-            logger.error("Failed to move vm due to: " + e.getStackTrace());
+            logger.error("Failed to move vm due to: {}", e.getStackTrace());
             if (e.getMessage() != null) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to move vm due to " + e.getMessage());
             } else if (e.getCause() != null) {

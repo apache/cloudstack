@@ -211,7 +211,7 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
             if (isStart()) {
                 _vpcService.startVpc(getEntityId(), true);
             } else {
-                logger.debug("Not starting VPC as " + ApiConstants.START + "=false was passed to the API");
+                logger.debug("Not starting VPC as {}=false was passed to the API", ApiConstants.START);
              }
             vpc = _entityMgr.findById(Vpc.class, getEntityId());
         } catch (ResourceUnavailableException ex) {
