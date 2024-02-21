@@ -497,8 +497,10 @@ export default {
       this.updateVPCCheckAndFetchNetworkOfferingData()
     },
     fetchDomainData () {
-      this.domain.loading = true
-      this.loadMore('listDomains', 1, this.domain)
+      if ('listDomains' in this.$store.getters.apis) {
+        this.domain.loading = true
+        this.loadMore('listDomains', 1, this.domain)
+      }
     },
     loadMore (apiToCall, page, sema) {
       const params = {}

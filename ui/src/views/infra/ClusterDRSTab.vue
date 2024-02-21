@@ -57,7 +57,8 @@
         :columns="migrationColumns"
         :dataSource="record.migrations"
         :rowKey="(record, index) => index"
-        :pagination="{hideOnSinglePage: true, showSizeChanger: true}">
+        :pagination="{hideOnSinglePage: true, showSizeChanger: true}"
+        @resizeColumn="resizeColumn">
         <template #bodyCell="{ column, text, record }">
           <template v-if="column.key === 'vm'">
             <router-link :to="{ path: '/vm/' + record.virtualmachineid }">
@@ -117,7 +118,8 @@
       :columns="generatedPlanMigrationColumns"
       :dataSource="generatedMigrations"
       :rowKey="(record, index) => index"
-      :pagination="{ showTotal: (total, range) => [range[0], '-', range[1], $t('label.of'), total, $t('label.items')].join(' ') }" >
+      :pagination="{ showTotal: (total, range) => [range[0], '-', range[1], $t('label.of'), total, $t('label.items')].join(' ') }"
+      @resizeColumn="resizeColumn" >
       <template #bodyCell="{ column, text, record }">
         <template v-if="column.key === 'vm'">
           <router-link :to="{ path: '/vm/' + record.virtualmachineid }">
@@ -166,19 +168,22 @@ export default {
         key: 'vm',
         title: this.$t('label.vm'),
         dataIndex: 'vm',
-        ellipsis: true
+        ellipsis: true,
+        resizable: true
       },
       {
         key: 'sourcehost',
         title: this.$t('label.sourcehost'),
         dataIndex: 'sourcehost',
-        ellipsis: true
+        ellipsis: true,
+        resizable: true
       },
       {
         key: 'destinationhost',
         title: this.$t('label.desthost'),
         dataIndex: 'created',
-        ellipsis: true
+        ellipsis: true,
+        resizable: true
       }
     ]
     return {
@@ -291,6 +296,9 @@ export default {
     closeModal () {
       this.showModal = false
       this.generatedMigrations = reactive([])
+    },
+    resizeColumn (w, col) {
+      col.width = w
     }
   }
 }

@@ -16,18 +16,16 @@
 // under the License.
 package com.cloud.hypervisor.kvm.storage;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.StringJoiner;
 
 import javax.annotation.Nonnull;
 
+import com.cloud.storage.Storage;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.storage.datastore.util.LinstorUtil;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
@@ -36,8 +34,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.libvirt.LibvirtException;
 
-import com.cloud.storage.Storage;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.linbit.linstor.api.ApiClient;
 import com.linbit.linstor.api.ApiException;
 import com.linbit.linstor.api.Configuration;
@@ -48,7 +44,6 @@ import com.linbit.linstor.api.model.Properties;
 import com.linbit.linstor.api.model.ProviderKind;
 import com.linbit.linstor.api.model.ResourceDefinition;
 import com.linbit.linstor.api.model.ResourceDefinitionModify;
-import com.linbit.linstor.api.model.ResourceGroup;
 import com.linbit.linstor.api.model.ResourceGroupSpawn;
 import com.linbit.linstor.api.model.ResourceMakeAvailable;
 import com.linbit.linstor.api.model.ResourceWithVolumes;
@@ -73,28 +68,6 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
 
     private static String getLinstorRscName(String name) {
         return LinstorUtil.RSC_PREFIX + name;
-    }
-
-    private String getHostname() {
-        // either there is already some function for that in the agent or a better way.
-        ProcessBuilder pb = new ProcessBuilder("/usr/bin/hostname");
-        try
-        {
-            String result;
-            Process p = pb.start();
-            final BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-
-            StringJoiner sj = new StringJoiner(System.getProperty("line.separator"));
-            reader.lines().iterator().forEachRemaining(sj::add);
-            result = sj.toString();
-
-            p.waitFor();
-            p.destroy();
-            return result.trim();
-        } catch (IOException | InterruptedException exc) {
-            Thread.currentThread().interrupt();
-            throw new CloudRuntimeException("Unable to run '/usr/bin/hostname' command.");
-        }
     }
 
     private void logLinstorAnswer(@Nonnull ApiCallRc answer) {
@@ -127,7 +100,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     }
 
     public LinstorStorageAdaptor() {
-        localNodeName = getHostname();
+        localNodeName = LinstorStoragePool.getHostname();
     }
 
     @Override
@@ -276,27 +249,35 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         }
 
         final DevelopersApi api = getLinstorAPI(pool);
+        String rscName;
         try
         {
-            final String rscName = getLinstorRscName(volumePath);
+            rscName = getLinstorRscName(volumePath);
 
             ResourceMakeAvailable rma = new ResourceMakeAvailable();
             ApiCallRcList answers = api.resourceMakeAvailableOnNode(rscName, localNodeName, rma);
             checkLinstorAnswersThrow(answers);
 
+        } catch (ApiException apiEx) {
+            logger.error(apiEx);
+            throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
+        }
+
+        try
+        {
             // allow 2 primaries for live migration, should be removed by disconnect on the other end
             ResourceDefinitionModify rdm = new ResourceDefinitionModify();
             Properties props = new Properties();
             props.put("DrbdOptions/Net/allow-two-primaries", "yes");
             rdm.setOverrideProps(props);
-            answers = api.resourceDefinitionModify(rscName, rdm);
+            ApiCallRcList answers = api.resourceDefinitionModify(rscName, rdm);
             if (answers.hasError()) {
                 logger.error("Unable to set 'allow-two-primaries' on " + rscName);
-                throw new CloudRuntimeException(answers.get(0).getMessage());
+                // do not fail here as adding allow-two-primaries property is only a problem while live migrating
             }
         } catch (ApiException apiEx) {
             logger.error(apiEx);
-            throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
+            // do not fail here as adding allow-two-primaries property is only a problem while live migrating
         }
         return true;
     }
@@ -358,21 +339,22 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
                     ResourceDefinitionModify rdm = new ResourceDefinitionModify();
                     rdm.deleteProps(Collections.singletonList("DrbdOptions/Net/allow-two-primaries"));
                     ApiCallRcList answers = api.resourceDefinitionModify(rsc.get().getName(), rdm);
-                    if (answers.hasError())
-                    {
-                        logger.error("Failed to remove 'allow-two-primaries' on " + rsc.get().getName());
-                        throw new CloudRuntimeException(answers.get(0).getMessage());
+                    if (answers.hasError()) {
+                        logger.error(
+                                String.format("Failed to remove 'allow-two-primaries' on %s: %s",
+                                        rsc.get().getName(), LinstorUtil.getBestErrorMessage(answers)));
+                        // do not fail here as removing allow-two-primaries property isn't fatal
                     }
 
                     return true;
                 }
                 logger.warn("Linstor: Couldn't find resource for this path: " + localPath);
             } catch (ApiException apiEx) {
-                logger.error(apiEx);
-                throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
+                logger.error(apiEx.getBestMessage());
+                // do not fail here as removing allow-two-primaries property isn't fatal
             }
         }
-        return false;
+        return true;
     }
 
     @Override
@@ -506,25 +488,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         DevelopersApi linstorApi = getLinstorAPI(pool);
         final String rscGroupName = pool.getResourceGroup();
         try {
-            List<ResourceGroup> rscGrps = linstorApi.resourceGroupList(
-                Collections.singletonList(rscGroupName),
-                null,
-                null,
-                null);
-
-            if (rscGrps.isEmpty()) {
-                final String errMsg = String.format("Linstor: Resource group '%s' not found", rscGroupName);
-                logger.error(errMsg);
-                throw new CloudRuntimeException(errMsg);
-            }
-
-            List<StoragePool> storagePools = linstorApi.viewStoragePools(
-                Collections.emptyList(),
-                rscGrps.get(0).getSelectFilter().getStoragePoolList(),
-                null,
-                null,
-                null
-            );
+            List<StoragePool> storagePools = LinstorUtil.getRscGroupStoragePools(linstorApi, rscGroupName);
 
             final long free = storagePools.stream()
                 .filter(sp -> sp.getProviderKind() != ProviderKind.DISKLESS)
@@ -542,25 +506,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         DevelopersApi linstorApi = getLinstorAPI(pool);
         final String rscGroupName = pool.getResourceGroup();
         try {
-            List<ResourceGroup> rscGrps = linstorApi.resourceGroupList(
-                Collections.singletonList(rscGroupName),
-                null,
-                null,
-                null);
-
-            if (rscGrps.isEmpty()) {
-                final String errMsg = String.format("Linstor: Resource group '%s' not found", rscGroupName);
-                logger.error(errMsg);
-                throw new CloudRuntimeException(errMsg);
-            }
-
-            List<StoragePool> storagePools = linstorApi.viewStoragePools(
-                Collections.emptyList(),
-                rscGrps.get(0).getSelectFilter().getStoragePoolList(),
-                null,
-                null,
-                null
-            );
+            List<StoragePool> storagePools = LinstorUtil.getRscGroupStoragePools(linstorApi, rscGroupName);
 
             final long used = storagePools.stream()
                 .filter(sp -> sp.getProviderKind() != ProviderKind.DISKLESS)

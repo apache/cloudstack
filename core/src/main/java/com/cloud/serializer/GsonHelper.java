@@ -54,6 +54,8 @@ public class GsonHelper {
         GsonBuilder LOGGERBuilder = new GsonBuilder();
         LOGGERBuilder.disableHtmlEscaping();
         LOGGERBuilder.setExclusionStrategies(new LoggingExclusionStrategy(LOGGER));
+        LOGGERBuilder.serializeSpecialFloatingPointValues();
+        // maybe add LOGGERBuilder.serializeNulls(); as well?
         s_gogger = setDefaultGsonConfig(LOGGERBuilder);
         LOGGER.info("Default Builder inited.");
     }

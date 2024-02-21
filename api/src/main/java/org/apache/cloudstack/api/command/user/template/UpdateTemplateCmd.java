@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.template;
 
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -44,6 +43,9 @@ public class UpdateTemplateCmd extends BaseUpdateTemplateOrIsoCmd implements Use
             description = "the type of the template. Valid options are: USER/VNF (for all users) and SYSTEM/ROUTING/BUILTIN (for admins only).")
     private String templateType;
 
+    @Parameter(name = ApiConstants.TEMPLATE_TAG, type = CommandType.STRING, description = "the tag for this template.", since = "4.20.0")
+    private String templateTag;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -55,6 +57,10 @@ public class UpdateTemplateCmd extends BaseUpdateTemplateOrIsoCmd implements Use
 
     public String getTemplateType() {
         return templateType;
+    }
+
+    public String getTemplateTag() {
+        return templateTag;
     }
 
     /////////////////////////////////////////////////////
