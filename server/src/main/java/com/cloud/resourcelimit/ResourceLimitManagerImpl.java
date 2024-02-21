@@ -1296,7 +1296,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 vrIds);
     }
 
-    private long calculateReservedResources(List<UserVmJoinVO> vms,long accountId, ResourceType type, String tag) {
+    private long calculateReservedResources(List<UserVmJoinVO> vms, long accountId, ResourceType type, String tag) {
         Set<Long> vmIds = vms.stream().map(UserVmJoinVO::getId).collect(Collectors.toSet());
         List<ReservationVO> reservations = reservationDao.getReservationsForAccount(accountId, type, tag);
         long reserved = 0;

@@ -107,6 +107,7 @@ public class CheckedReservationTest {
 
     @Test
     public void getNoAmount() {
+        Mockito.when(reservationDao.persist(Mockito.any())).thenReturn(reservation);
         try (CheckedReservation cr = new CheckedReservation(account, Resource.ResourceType.cpu,-11l, reservationDao, resourceLimitService) ) {
             Long amount = cr.getReservedAmount();
             assertEquals(Long.valueOf(-11L), amount);
