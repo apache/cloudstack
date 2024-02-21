@@ -1791,16 +1791,14 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             }
             SearchBuilder<UserVmJoinVO> sbvm = userVmJoinDao.createSearchBuilder();
             sbvm.and("networkId", sbvm.entity().getNetworkId(), SearchCriteria.Op.EQ);
+            sbvm.and("state", sbvm.entity().getState(), SearchCriteria.Op.EQ);
             SearchCriteria<UserVmJoinVO> scvm = sbvm.create();
             scvm.setParameters("networkId", routerJoinVO.getNetworkId());
+            scvm.setParameters("state", VirtualMachine.State.Running);
             List<UserVmJoinVO> vms = userVmJoinDao.search(scvm, null);
             boolean isDhcpSupported = _ntwkSrvcDao.areServicesSupportedInNetwork(routerJoinVO.getNetworkId(), Service.Dhcp);
             boolean isDnsSupported = _ntwkSrvcDao.areServicesSupportedInNetwork(routerJoinVO.getNetworkId(), Service.Dns);
             for (UserVmJoinVO vm : vms) {
-                if (vm.getState() != VirtualMachine.State.Running) {
-                    continue;
-                }
-
                 vmsData.append("vmName=").append(vm.getName())
                         .append(",macAddress=").append(vm.getMacAddress())
                         .append(",ip=").append(vm.getIpAddress())
