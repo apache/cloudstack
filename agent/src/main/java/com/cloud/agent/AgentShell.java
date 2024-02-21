@@ -222,7 +222,7 @@ public class AgentShell implements IAgentShell, Daemon {
             throw new ConfigurationException("Unable to find agent.properties.");
         }
 
-        LOGGER.info("agent.properties found at {}", () -> file.getAbsolutePath());
+        LOGGER.info("agent.properties found at {}", file.getAbsolutePath());
 
         try {
             PropertiesUtil.loadFromFile(_properties, file);

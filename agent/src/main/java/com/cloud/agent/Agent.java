@@ -269,8 +269,8 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
 
     public void start() {
         if (!_resource.start()) {
-            logger.error("Unable to start the resource: {}", () -> _resource.getName());
-            throw new CloudRuntimeException("Unable to start the resource: {}" + _resource.getName());
+            logger.error("Unable to start the resource: {}", _resource.getName());
+            throw new CloudRuntimeException("Unable to start the resource: " + _resource.getName());
         }
 
         _keystoreSetupPath = Script.findScript("scripts/util/", KeyStoreUtils.KS_SETUP_SCRIPT);
@@ -286,7 +286,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         try {
             _connection.start();
         } catch (final NioConnectionException e) {
-            logger.warn("NIO Connection Exception {}", () -> e);
+            logger.warn("NIO Connection Exception {}", e);
             logger.info("Attempted to connect to the server, but received an unexpected exception, trying again...");
         }
         while (!_connection.isStartup()) {
@@ -322,7 +322,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                     _link.send(req.toBytes());
                 }
             } catch (final ClosedChannelException e) {
-                logger.warn("Unable to send: {}" + cmd.toString());
+                logger.warn("Unable to send: {}", cmd.toString());
             } catch (final Exception e) {
                 logger.warn("Unable to send: {} due to exception: {}", cmd.toString(), e);
             }
@@ -422,7 +422,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         try {
             _link.send(request.toBytes());
         } catch (final ClosedChannelException e) {
-            logger.warn("Unable to send ping update: {}", () -> request.toString());
+            logger.warn("Unable to send ping update: {}", request.toString());
         }
     }
 
@@ -467,12 +467,12 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
             final Request request = new Request(_id != null ? _id : -1, -1, commands, false, false);
             request.setSequence(getNextSequence());
 
-            logger.debug("Sending Startup: {}", () -> request.toString());
+            logger.debug("Sending Startup: {}", request.toString());
             lockStartupTask(link);
             try {
                 link.send(request.toBytes());
             } catch (final ClosedChannelException e) {
-                logger.warn("Unable to send request: {}", () -> request.toString());
+                logger.warn("Unable to send request: {}", request.toString());
             }
 
             if (_resource instanceof ResourceStatusUpdater) {
@@ -532,7 +532,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
 
         _resource.disconnected();
 
-        logger.info("Lost connection to host: {}. Attempting reconnection while we still have {} commands in progress.", () -> _shell.getConnectedHost(), () -> _inProgress.get());
+        logger.info("Lost connection to host: {}. Attempting reconnection while we still have {} commands in progress.", _shell.getConnectedHost(), _inProgress.get());
 
         _connection.stop();
 
@@ -564,7 +564,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
             _shell.getBackoffAlgorithm().waitBeforeRetry();
         } while (!_connection.isStartup());
         _shell.updateConnectedHost();
-        logger.info("Connected to the host: " + _shell.getConnectedHost());
+        logger.info("Connected to the host: {}", _shell.getConnectedHost());
     }
 
     public void processStartupAnswer(final Answer answer, final Response response, final Link link) {
@@ -579,7 +579,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         }
         final StartupAnswer startup = (StartupAnswer)answer;
         if (!startup.getResult()) {
-            logger.error("Not allowed to connect to the server: {}", () -> answer.getDetails());
+            logger.error("Not allowed to connect to the server: {}", answer.getDetails());
             System.exit(1);
         }
         if (cancelled) {
@@ -587,7 +587,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
             return;
         }
 
-        logger.info("Process agent startup answer, agent id = {}", () -> startup.getHostId());
+        logger.info("Process agent startup answer, agent id = {}", startup.getHostId());
 
         setId(startup.getHostId());
         _pingInterval = (long)startup.getPingInterval() * 1000; // change to ms.
@@ -597,7 +597,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
 
         _ugentTaskPool.setKeepAliveTime(2 * _pingInterval, TimeUnit.MILLISECONDS);
 
-        logger.info("Startup Response Received: agent id = {}", () -> getId());
+        logger.info("Startup Response Received: agent id = {}", getId());
     }
 
     protected void processRequest(final Request request, final Link link) {
@@ -623,7 +623,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                             }
                             requestLogged = true;
                         }
-                        logger.debug("Processing command: {}", () -> cmd.toString());
+                        logger.debug("Processing command: {}", cmd.toString());
                     }
 
                     if (cmd instanceof CronCommand) {
@@ -632,7 +632,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                         answer = new Answer(cmd, true, null);
                     } else if (cmd instanceof ShutdownCommand) {
                         final ShutdownCommand shutdown = (ShutdownCommand)cmd;
-                        logger.debug("Received shutdownCommand, due to: {}", () -> shutdown.getReason());
+                        logger.debug("Received shutdownCommand, due to: {}", shutdown.getReason());
                         cancelTasks();
                         if (shutdown.isRemoveHost()) {
                             cleanupAgentZoneProperties();
@@ -640,7 +640,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                         _reconnectAllowed = false;
                         answer = new Answer(cmd, true, null);
                     } else if (cmd instanceof ReadyCommand && ((ReadyCommand)cmd).getDetails() != null) {
-                        logger.debug("Not ready to connect to mgt server: {}", () -> ((ReadyCommand)cmd).getDetails());
+                        logger.debug("Not ready to connect to mgt server: {}", ((ReadyCommand)cmd).getDetails());
                         System.exit(1);
                         return;
                     } else if (cmd instanceof MaintainCommand) {
@@ -658,7 +658,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                         }
 
                         if (answer == null) {
-                            logger.warn("No handler found to process cmd: {}", () -> cmd.toString());
+                            logger.warn("No handler found to process cmd: {}", cmd.toString());
                             answer = new AgentControlAnswer(cmd);
                         }
                     } else if (cmd instanceof SetupKeyStoreCommand && ((SetupKeyStoreCommand) cmd).isHandleByAgent()) {
@@ -681,7 +681,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                             _inProgress.decrementAndGet();
                         }
                         if (answer == null) {
-                            logger.debug("Response: unsupported command {}", () -> cmd.toString());
+                            logger.debug("Response: unsupported command {}", cmd.toString());
                             answer = Answer.createUnsupportedCommandAnswer(cmd);
                         }
                     }
@@ -827,7 +827,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
 
     public void processResponse(final Response response, final Link link) {
         final Answer answer = response.getAnswer();
-        logger.debug("Received response: {}", () -> response.toString());
+        logger.debug("Received response: {}", response.toString());
         if (answer instanceof StartupAnswer) {
             processStartupAnswer(answer, response, link);
         } else if (answer instanceof AgentControlAnswer) {
@@ -867,21 +867,21 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         final Object obj = task.get();
         if (obj instanceof Response) {
             if (System.currentTimeMillis() - _lastPingResponseTime > _pingInterval * _shell.getPingRetries()) {
-                logger.error("Ping Interval has gone past {}. Won't reconnect to mgt server, as connection is still alive",  () -> _pingInterval * _shell.getPingRetries());
+                logger.error("Ping Interval has gone past {}. Won't reconnect to mgt server, as connection is still alive", _pingInterval * _shell.getPingRetries());
                 return;
             }
 
             final PingCommand ping = _resource.getCurrentStatus(getId());
             final Request request = new Request(_id, -1, ping, false);
             request.setSequence(getNextSequence());
-            logger.debug("Sending ping: {}", () -> request.toString());
+            logger.debug("Sending ping: {}", request.toString());
 
             try {
                 task.getLink().send(request.toBytes());
                 //if i can send pingcommand out, means the link is ok
                 setLastPingResponseTime();
             } catch (final ClosedChannelException e) {
-                logger.warn("Unable to send request: {}", () -> request.toString());
+                logger.warn("Unable to send request: {}", request.toString());
             }
 
         } else if (obj instanceof Request) {
@@ -900,11 +900,11 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
             if (answer != null) {
                 final Response response = new Response(req, answer);
 
-                logger.debug("Watch Sent: {}", () -> response.toString());
+                logger.debug("Watch Sent: {}", response.toString());
                 try {
                     task.getLink().send(response.toBytes());
                 } catch (final ClosedChannelException e) {
-                    logger.warn("Unable to send response: {}", () -> response.toString());
+                    logger.warn("Unable to send response: {}", response.toString());
                 }
             }
         } else {
@@ -970,7 +970,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
             try {
                 _link.send(request.toBytes());
             } catch (final ClosedChannelException e) {
-                logger.warn("Unable to post agent control request: {}", () -> request.toString());
+                logger.warn("Unable to post agent control request: {}", request.toString());
                 throw new AgentControlChannelException("Unable to post agent control request due to " + e.getMessage());
             }
         } else {
