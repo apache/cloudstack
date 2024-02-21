@@ -3308,13 +3308,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     /**
      *  Encapsulates AllowUserExpungeRecoverVm so we can unit test checkExpungeVmPermission.
      */
-    protected boolean getConfigAllowUserExpungeRecoverVm(Long entityOwnerId) {
-        return AllowUserExpungeRecoverVm.valueIn(entityOwnerId);
+    protected boolean getConfigAllowUserExpungeRecoverVm(Long accountId) {
+        return AllowUserExpungeRecoverVm.valueIn(accountId);
     }
 
-    protected void checkExpungeVmPermission (Account callingAccount, Long entityOwnerId) {
+    protected void checkExpungeVmPermission (Account callingAccount) {
         logger.debug(String.format("Checking if [%s] has permission for expunging VMs.", callingAccount));
-        if (!_accountMgr.isAdmin(callingAccount.getId()) && !getConfigAllowUserExpungeRecoverVm(entityOwnerId)) {
+        if (!_accountMgr.isAdmin(callingAccount.getId()) && !getConfigAllowUserExpungeRecoverVm(callingAccount.getId())) {
             logger.error(String.format("Parameter [%s] can only be passed by Admin accounts or when the allow.user.expunge.recover.vm key is true.", ApiConstants.EXPUNGE));
             throw new PermissionDeniedException("Account does not have permission for expunging.");
         }
@@ -3334,7 +3334,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         boolean expunge = cmd.getExpunge();
 
         if (expunge) {
-            checkExpungeVmPermission(ctx.getCallingAccount(), cmd.getEntityOwnerId());
+            checkExpungeVmPermission(ctx.getCallingAccount());
         }
 
         // check if VM exists
