@@ -32,13 +32,13 @@ public interface WebhookService extends PluggableService, Configurable {
             true, ConfigKey.Scope.Domain);
 
     ConfigKey<Integer> WebhookDispatchRetries = new ConfigKey<>("Advanced", Integer.class,
-            "webhook.delivery.retries", "1",
+            "webhook.delivery.retries", "3",
             "Number of tries to be made for a webhook dispatch",
             true, ConfigKey.Scope.Domain);
 
     ConfigKey<Integer> WebhookDispatcherThreadPoolSize = new ConfigKey<>("Advanced", Integer.class,
             "webhook.dispatch.thread.pool.size", "5",
-            "Size of thread pool for webhook dispatchers",
+            "Size of the thread pool for webhook dispatchers",
             false, ConfigKey.Scope.Global);
 
     ConfigKey<Integer> WebhookDispatchHistoryLimit = new ConfigKey<>("Advanced", Integer.class,
