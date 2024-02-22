@@ -509,8 +509,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
         for (PortForwardingRule rule : rules) {
             IPAddressVO publicIp = ApiDBUtils.findIpAddressById(rule.getSourceIpAddressId());
             UserVm vm = ApiDBUtils.findUserVmById(rule.getVirtualMachineId());
-            if ((vm == null && (rule.getState() != FirewallRule.State.Revoke)) ||
-                    (vm != null && networkModel.getNicInNetwork(vm.getId(), network.getId()) == null)) {
+            if (vm == null && rule.getState() != FirewallRule.State.Revoke) {
                 continue;
             }
             NsxOpObject nsxObject = getNsxOpObject(network);
