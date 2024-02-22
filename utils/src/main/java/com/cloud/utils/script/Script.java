@@ -364,7 +364,7 @@ public class Script implements Callable<String> {
             }
 
             while (true) {
-                _logger.debug(String.format("Executing while with timeout : %d" + _timeout));
+                _logger.debug(String.format("Executing while with timeout : %d", _timeout));
                 try {
                     //process execution completed within timeout period
                     if (_process.waitFor(_timeout, TimeUnit.MILLISECONDS)) {
