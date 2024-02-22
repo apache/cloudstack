@@ -663,7 +663,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
                     .setPublicPort(String.valueOf(loadBalancingRule.getSourcePortStart()))
                     .setPrivatePort(String.valueOf(loadBalancingRule.getDefaultPortStart()))
                     .setRuleId(loadBalancingRule.getId())
-                    .setProtocol(loadBalancingRule.getProtocol().toUpperCase(Locale.ROOT))
+                    .setProtocol(loadBalancingRule.getLbProtocol().toUpperCase(Locale.ROOT))
                     .setAlgorithm(loadBalancingRule.getAlgorithm())
                     .build();
             if (loadBalancingRule.getState() == FirewallRule.State.Add) {
