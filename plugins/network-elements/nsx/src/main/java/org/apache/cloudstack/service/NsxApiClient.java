@@ -629,6 +629,8 @@ public class NsxApiClient {
             LBUdpMonitorProfile lbUdpMonitorProfile = new LBUdpMonitorProfile.Builder(UDP_MONITOR_PROFILE)
                     .setDisplayName(lbMonitorProfileId)
                     .setMonitorPort(Long.parseLong(port))
+                    .setSend("")
+                    .setReceive("")
                     .build();
             lbActiveMonitor.patch(lbMonitorProfileId, lbUdpMonitorProfile);
         }
