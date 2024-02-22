@@ -805,12 +805,12 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     private Answer createVolumeSnapshot(StorageSubSystemCommand cmd, Long size, SpConnectionDesc conn,
             String volName, TemplateObjectTO dstTO) {
         Answer answer;
-        SpApiResponse resp2 = StorPoolUtil.volumeSnapshot(volName, dstTO.getUuid(), null, "template", null, conn);
-        if (resp2.getError() != null) {
-            answer = new Answer(cmd, false, String.format("Could not snapshot volume. Error: %s", resp2.getError()));
+        SpApiResponse resp = StorPoolUtil.volumeSnapshot(volName, dstTO.getUuid(), null, "template", null, conn);
+        if (resp.getError() != null) {
+            answer = new Answer(cmd, false, String.format("Could not snapshot volume. Error: %s", resp.getError()));
         } else {
             dstTO.setPath(StorPoolUtil.devPath(
-                    StorPoolUtil.getSnapshotNameFromResponse(resp2, false, StorPoolUtil.GLOBAL_ID)));
+                    StorPoolUtil.getSnapshotNameFromResponse(resp, false, StorPoolUtil.GLOBAL_ID)));
             dstTO.setSize(size);
             answer = new CopyCmdAnswer(dstTO);
         }
@@ -824,16 +824,16 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         VolumeObjectTO dstTO = (VolumeObjectTO) dstData.getTO();
         dstTO.setSize(size);
         dstTO.setPath(StorPoolUtil.devPath(name));
-        StorageSubSystemCommand cmd1 = new StorPoolDownloadTemplateCommand(srcData.getTO(), dstTO, StorPoolHelper.getTimeout(StorPoolHelper.PrimaryStorageDownloadWait, configDao), VirtualMachineManager.ExecuteInSequence.value(), "volume");
+        StorageSubSystemCommand cmd = new StorPoolDownloadTemplateCommand(srcData.getTO(), dstTO, StorPoolHelper.getTimeout(StorPoolHelper.PrimaryStorageDownloadWait, configDao), VirtualMachineManager.ExecuteInSequence.value(), "volume");
 
         EndPoint ep = selector.select(srcData, dstData);
         if (ep == null) {
-            answer = new Answer(cmd1, false, "\"No remote endpoint to send command, check if host or ssvm is down?\"");
+            answer = new Answer(cmd, false, "\"No remote endpoint to send command, check if host or ssvm is down?\"");
         } else {
-            answer = ep.sendMessage(cmd1);
+            answer = ep.sendMessage(cmd);
         }
         if (answer == null || !answer.getResult()) {
-            answer = new Answer(cmd1, false, answer != null ? answer.getDetails() : "Unknown error while downloading template. Null answer returned.");
+            answer = new Answer(cmd, false, answer != null ? answer.getDetails() : "Unknown error while downloading template. Null answer returned.");
         }
         return answer;
     }
