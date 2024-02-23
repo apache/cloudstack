@@ -324,11 +324,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                     + "with requested CPU [%s] and requested RAM [%s].", datacenter, podVO, clusterVO, vmDetails, cpuRequested, toHumanReadableSize(ramRequested));
         });
 
-        if (logger.isDebugEnabled()) {
-            String rootVolumeUuid = getRootVolumeUuid(_volsDao.findByInstance(vm.getId()));
-            String isRootVolumeReadyMsg = plan.getPoolId() != null ? "is ready" : "is not ready";
-            logger.debug("ROOT volume [{}] {} to deploy VM [{}].", rootVolumeUuid, isRootVolumeReadyMsg, vm.getUuid());
-        }
+        logger.debug("ROOT volume [{}] {} to deploy VM [{}].", () -> getRootVolumeUuid(_volsDao.findByInstance(vm.getId())), () -> plan.getPoolId() != null ? "is ready" : "is not ready", vm::getUuid);
 
         avoidDisabledResources(vmProfile, dc, avoids);
 
