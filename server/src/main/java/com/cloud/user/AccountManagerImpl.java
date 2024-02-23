@@ -2152,7 +2152,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
     }
 
-    private void checkAccountAndAccess(UserVO user, Account account) {
+    protected void checkAccountAndAccess(UserVO user, Account account) {
         // don't allow to delete the user from the account of type Project
         if (account.getType() == Account.Type.PROJECT) {
             throw new InvalidParameterValueException("Project users cannot be deleted or moved.");
@@ -2162,7 +2162,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         CallContext.current().putContextParameter(User.class, user.getUuid());
     }
 
-    private UserVO getValidUserVO(long id) {
+    protected UserVO getValidUserVO(long id) {
         UserVO user = _userDao.findById(id);
 
         if (user == null || user.getRemoved() != null) {
