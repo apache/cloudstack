@@ -94,6 +94,9 @@
           <div v-else-if="$route.meta.name === 'computeoffering' && offeringDetails.includes(item)">
             {{ dataResource.serviceofferingdetails[item] }}
           </div>
+          <div v-else-if="item === 'payload'" style="white-space: pre-wrap;">
+            {{ JSON.stringify(JSON.parse(dataResource[item]), null, 4) || dataResource[item] }}
+          </div>
           <div v-else>{{ dataResource[item] }}</div>
         </div>
       </a-list-item>

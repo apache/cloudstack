@@ -17,6 +17,15 @@
 
 <template>
   <div>
+    <a-button
+      v-if="('deleteWebhookDispatchHistory' in $store.getters.apis)"
+      type="danger"
+      danger
+      style="width: 100%; margin-bottom: 15px"
+      @click="clearHistoryConfirmation()">
+      <template #icon><delete-outlined /></template>
+      {{ $t('label.action.clear.webhook.history') }}
+    </a-button>
     <list-view
       :tabLoading="tabLoading"
       :columns="columns"
@@ -95,7 +104,7 @@ export default {
   },
   created () {
     if (isAdmin()) {
-      this.columnKeys.splice(1, 0, 'managementservername')
+      this.columnKeys.splice(2, 0, 'managementservername')
     }
     this.selectedColumnKeys = this.columnKeys
     this.updateSelectedColumns('response')
@@ -163,6 +172,32 @@ export default {
       if (this.columns.length > 0) {
         this.columns[this.columns.length - 1].customFilterDropdown = true
       }
+    },
+    clearHistoryConfirmation () {
+      const self = this
+      this.$confirm({
+        title: this.$t('label.action.clear.webhook.history'),
+        okText: this.$t('label.ok'),
+        okType: 'danger',
+        cancelText: this.$t('label.cancel'),
+        onOk () {
+          self.cleanHistory()
+        }
+      })
+    },
+    cleanHistory () {
+      const params = {
+        webhookruleid: this.resource.id
+      }
+      this.tabLoading = true
+      api('deleteWebhookDispatchHistory', params).then(json => {
+        this.$message.success(this.$t('message.success.clear.webhook.history'))
+        this.fetchData()
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.domainsLoading = false
+      })
     }
   }
 }

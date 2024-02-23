@@ -157,7 +157,7 @@ export default {
       return (duration > 0 ? duration / 1000.0 : 0) + ''
     },
     computedOverlayStyle () {
-      var opacity = this.testDispatchIntervalCouter >= 100.0 ? 0 : 0.3
+      var opacity = this.testDispatchIntervalCouter >= 90.0 ? 0 : 0.3
       var width = this.testDispatchIntervalCouter
       return 'opacity: ' + opacity + '; width: ' + width + '%;'
     }

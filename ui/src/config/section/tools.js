@@ -196,7 +196,19 @@ export default {
           fields.splice(1, 0, 'managementserverid', 'managementservername')
         }
         return fields
-      }
+      },
+      actions: [
+        {
+          api: 'deleteWebhookDispatchHistory',
+          icon: 'delete-outlined',
+          label: 'label.delete.webhook.dispatch.history',
+          message: 'message.delete.webhook.dispatch.history',
+          dataView: true,
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+        }
+      ]
     }
   ]
 }
