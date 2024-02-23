@@ -392,7 +392,7 @@ public class NsxElementTest {
         LoadBalancerVO lb = new LoadBalancerVO(null, null, null, 0L, 8080, 8081, null, 0L, 0L, 1L, null, null);
         lb.setState(FirewallRule.State.Add);
         LoadBalancingRule.LbDestination destination = new LoadBalancingRule.LbDestination(6443, 6443, "172.30.110.11", false);
-        LoadBalancingRule rule = new LoadBalancingRule(lb, List.of(destination), null, null, new Ip("10.1.13.10"));
+        LoadBalancingRule rule = new LoadBalancingRule(lb, List.of(destination), null, null, new Ip("10.1.13.10"), null, "TCP");
 
         VpcVO vpc = Mockito.mock(VpcVO.class);
 
@@ -415,7 +415,7 @@ public class NsxElementTest {
         LoadBalancerVO lb = new LoadBalancerVO(null, null, null, 0L, 8080, 8081, null, 0L, 0L, 1L, null, null);
         lb.setState(FirewallRule.State.Revoke);
         LoadBalancingRule.LbDestination destination = new LoadBalancingRule.LbDestination(6443, 6443, "172.30.110.11", false);
-        LoadBalancingRule rule = new LoadBalancingRule(lb, List.of(destination), null, null, new Ip("10.1.13.10"));
+        LoadBalancingRule rule = new LoadBalancingRule(lb, List.of(destination), null, null, new Ip("10.1.13.10"), null, "TCP");
 
         VpcVO vpc = Mockito.mock(VpcVO.class);
 
