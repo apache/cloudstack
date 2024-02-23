@@ -57,6 +57,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.projects.Project;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ManagerBase;
@@ -237,13 +238,13 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         if (name != null) {
             sc.setParameters("name", name);
         }
-        List<WebhookRuleJoinVO> rules = webhookRuleJoinDao.search(sc, searchFilter);
-        for (WebhookRuleJoinVO rule : rules) {
+        Pair<List<WebhookRuleJoinVO>, Integer> rulesAndCount = webhookRuleJoinDao.searchAndCount(sc, searchFilter);
+        for (WebhookRuleJoinVO rule : rulesAndCount.first()) {
             WebhookRuleResponse response = createWebhookRuleResponse(rule);
             responsesList.add(response);
         }
         ListResponse<WebhookRuleResponse> response = new ListResponse<>();
-        response.setResponses(responsesList);
+        response.setResponses(responsesList, rulesAndCount.second());
         return response;
     }
 
@@ -398,15 +399,15 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         } else {
             webhookRuleIds.addAll(getIdsOfAccessibleWebhookRules(caller));
         }
-        List<WebhookDispatchJoinVO> dispatches =
-                webhookDispatchJoinDao.listByIdWebhookRulesManagementServerKeyword(id, webhookRuleIds,
+        Pair<List<WebhookDispatchJoinVO>, Integer> dispatchesAndCount =
+                webhookDispatchJoinDao.searchAndCountByIdWebhookRulesManagementServerKeyword(id, webhookRuleIds,
                         (host != null ? host.getMsid() : null), keyword, searchFilter);
-        for (WebhookDispatchJoinVO dispatch : dispatches) {
+        for (WebhookDispatchJoinVO dispatch : dispatchesAndCount.first()) {
             WebhookDispatchResponse response = createWebhookDispatchResponse(dispatch);
             responsesList.add(response);
         }
         ListResponse<WebhookDispatchResponse> response = new ListResponse<>();
-        response.setResponses(responsesList);
+        response.setResponses(responsesList, dispatchesAndCount.second());
         return response;
     }
 

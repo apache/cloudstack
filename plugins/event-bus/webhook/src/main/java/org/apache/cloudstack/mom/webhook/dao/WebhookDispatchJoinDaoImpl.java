@@ -22,6 +22,7 @@ import java.util.List;
 import org.apache.cloudstack.mom.webhook.vo.WebhookDispatchJoinVO;
 import org.apache.commons.collections.CollectionUtils;
 
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -29,8 +30,8 @@ import com.cloud.utils.db.SearchCriteria;
 
 public class WebhookDispatchJoinDaoImpl extends GenericDaoBase<WebhookDispatchJoinVO, Long> implements WebhookDispatchJoinDao {
     @Override
-    public List<WebhookDispatchJoinVO> listByIdWebhookRulesManagementServerKeyword(Long id, List<Long> webhookRuleIds,
-              Long managementServerId, String keyword, Filter searchFilter) {
+    public Pair<List<WebhookDispatchJoinVO>, Integer> searchAndCountByIdWebhookRulesManagementServerKeyword(Long id,
+            List<Long> webhookRuleIds, Long managementServerId, String keyword, Filter searchFilter) {
         SearchBuilder<WebhookDispatchJoinVO> sb = createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("webhookRuleId", sb.entity().getWebhookRuleId(), SearchCriteria.Op.IN);
@@ -49,6 +50,6 @@ public class WebhookDispatchJoinDaoImpl extends GenericDaoBase<WebhookDispatchJo
         if (keyword != null) {
             sc.setParameters("keyword", "%" + keyword + "%");
         }
-        return listBy(sc, searchFilter);
+        return searchAndCount(sc, searchFilter);
     }
 }

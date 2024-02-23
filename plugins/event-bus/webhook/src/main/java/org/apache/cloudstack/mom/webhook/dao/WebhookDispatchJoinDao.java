@@ -21,10 +21,11 @@ import java.util.List;
 
 import org.apache.cloudstack.mom.webhook.vo.WebhookDispatchJoinVO;
 
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
 
 public interface WebhookDispatchJoinDao extends GenericDao<WebhookDispatchJoinVO, Long> {
-    List<WebhookDispatchJoinVO> listByIdWebhookRulesManagementServerKeyword(Long id, List<Long> webhookRuleIds,
-           Long managementServerId, final String keyword, Filter searchFilter);
+    Pair<List<WebhookDispatchJoinVO>, Integer> searchAndCountByIdWebhookRulesManagementServerKeyword(Long id,
+             List<Long> webhookRuleIds, Long managementServerId, final String keyword, Filter searchFilter);
 }
