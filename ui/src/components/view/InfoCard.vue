@@ -672,7 +672,7 @@
           <div class="resource-detail-item__label">{{ $t('label.payloadurl') }}</div>
           <div class="resource-detail-item__details">
           <link-outlined/>
-            <router-link v-if="!isStatic" :to="{ path: resource.payloadurl }">{{ resource.payloadurl }}</router-link>
+            <a v-if="!isStatic" :href="resource.payloadurl">{{ resource.payloadurl }}</a>
             <span v-else>{{ resource.payloadurl }}</span>
           </div>
         </div>
