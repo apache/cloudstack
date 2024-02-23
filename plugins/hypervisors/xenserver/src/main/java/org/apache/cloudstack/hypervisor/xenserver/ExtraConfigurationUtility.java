@@ -43,7 +43,7 @@ public class ExtraConfigurationUtility {
             String paramValue = configParams.get(paramKey);
 
             //Map params
-            LOGGER.debug(String.format("Applying [%s] configuration as [%s].", paramKey, paramValue));
+            LOGGER.debug("Applying [{}] configuration as [{}].", paramKey, paramValue);
             if (paramKey.contains(":")) {
                 applyConfigWithNestedKeyValue(conn, vm, recordMap, paramKey, paramValue);
             } else {
@@ -96,7 +96,8 @@ public class ExtraConfigurationUtility {
                     LOGGER.warn(msg);
             }
         } catch (XmlRpcException | Types.XenAPIException e) {
-            LOGGER.error(String.format("Exception caught while setting VM configuration: [%s]", e.getMessage() == null ? e.toString() : e.getMessage()), e);
+            LOGGER.error("Exception caught while setting VM configuration: [{}]", e.getMessage() == null ? e.toString() : e.getMessage());
+            LOGGER.debug("Exception caught while setting VM configuration", e);
             throw new CloudRuntimeException("Exception caught while setting VM configuration", e);
         }
     }
