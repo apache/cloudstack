@@ -33,7 +33,7 @@ import com.cloud.vm.VirtualMachineProfile;
 public class RandomStoragePoolAllocator extends AbstractStoragePoolAllocator {
 
     @Override
-    public List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo, boolean bypassStorageTypeCheck) {
+    public List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo, boolean bypassStorageTypeCheck, String keyword) {
         logStartOfSearch(dskCh, vmProfile, plan, returnUpTo, bypassStorageTypeCheck);
 
         List<StoragePool> suitablePools = new ArrayList<StoragePool>();

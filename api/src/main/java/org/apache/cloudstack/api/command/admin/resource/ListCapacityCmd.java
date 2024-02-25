@@ -71,6 +71,9 @@ public class ListCapacityCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.SORT_BY, type = CommandType.STRING, since = "3.0.0", description = "Sort the results. Available values: Usage")
     private String sortBy;
 
+    @Parameter(name = ApiConstants.TAG, type = CommandType.STRING, description = "Tag for the resource type", since = "4.20.0")
+    private String tag;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -105,6 +108,10 @@ public class ListCapacityCmd extends BaseListCmd {
         }
 
         return null;
+    }
+
+    public String getTag() {
+        return tag;
     }
 
     /////////////////////////////////////////////////////
