@@ -101,8 +101,10 @@
                                 for (template in templateList) {
                                     def data = lines.findAll { it.contains(template) }
                                     if (data != null) {
-                                        def hypervisor =  template.tokenize('-')[-1]
-                                        pom.properties["$hypervisor" + ".checksum"] = data[0].tokenize(' ')[0]
+                                        if (data.size() > 0) {
+                                            def hypervisor =  template.tokenize('-')[-1]
+                                            pom.properties["$hypervisor" + ".checksum"] = data[0].tokenize(' ')[0]
+                                        }
                                     }
                                 }
                             </source>

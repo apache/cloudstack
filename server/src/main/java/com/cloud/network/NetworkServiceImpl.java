@@ -3334,7 +3334,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                             if (NetUtils.isNetworkAWithinNetworkB(network.getCidr(), network.getNetworkCidr())) {
                                 logger.warn(
                                         "Existing IP reservation will become ineffective for the network with id =  " + networkId + " You need to reapply reservation after network reimplementation.");
-                                //set cidr to the newtork cidr
+                                //set cidr to the network cidr
                                 network.setCidr(network.getNetworkCidr());
                                 //set networkCidr to null to bring network back to no IP reservation state
                                 network.setNetworkCidr(null);

@@ -305,6 +305,11 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     @Override
+    public boolean requiresAccessForMigration(DataObject dataObject) {
+        return true;
+    }
+
+    @Override
     public long getUsedBytes(StoragePool storagePool) {
         long usedSpaceBytes = 0;
         // Volumes

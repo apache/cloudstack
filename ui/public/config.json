@@ -14,6 +14,8 @@
   "logo": "assets/logo.svg",
   "minilogo": "assets/mini-logo.svg",
   "banner": "assets/banner.svg",
+  "loginPageTitle": "CloudStack",
+  "loginPageFavicon": "assets/logo.svg",
   "error": {
     "403": "assets/403.png",
     "404": "assets/404.png",

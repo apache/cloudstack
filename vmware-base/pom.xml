@@ -52,6 +52,16 @@
             <artifactId>gson</artifactId>
         </dependency>
         <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+            <version>${cs.jakarta.xml.bind.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.xml.bind</groupId>
+            <artifactId>jaxb-impl</artifactId>
+            <version>${cs.jaxb.impl.version}</version>
+        </dependency>
+        <dependency>
             <groupId>com.cloud.com.vmware</groupId>
             <artifactId>vmware-vim25</artifactId>
             <version>${cs.vmware.api.version}</version>
