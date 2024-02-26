@@ -269,6 +269,19 @@ public class VolumeServiceImpl implements VolumeService {
     }
 
     @Override
+    public boolean requiresAccessForMigration(DataObject dataObject, DataStore dataStore) {
+        DataStoreDriver dataStoreDriver = dataStore != null ? dataStore.getDriver() : null;
+        if (dataStoreDriver == null) {
+            return false;
+        }
+
+        if (dataStoreDriver instanceof PrimaryDataStoreDriver) {
+            return ((PrimaryDataStoreDriver)dataStoreDriver).requiresAccessForMigration(dataObject);
+        }
+        return false;
+    }
+
+    @Override
     public AsyncCallFuture<VolumeApiResult> createVolumeAsync(VolumeInfo volume, DataStore dataStore) {
         AsyncCallFuture<VolumeApiResult> future = new AsyncCallFuture<VolumeApiResult>();
         DataObject volumeOnStore = dataStore.create(volume);
