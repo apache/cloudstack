@@ -15,12 +15,12 @@
 -- specific language governing permissions and limitations
 -- under the License.
 
--- VIEW `cloud`.`vpc_offering_view`;
+-- cloud.vpc_offering_view source
 
 DROP VIEW IF EXISTS `cloud`.`vpc_offering_view`;
 
 CREATE VIEW `cloud`.`vpc_offering_view` AS
-SELECT
+select
     `vpc_offerings`.`id` AS `id`,
     `vpc_offerings`.`uuid` AS `uuid`,
     `vpc_offerings`.`name` AS `name`,
@@ -37,25 +37,28 @@ SELECT
     `vpc_offerings`.`supports_region_level_vpc` AS `supports_region_level_vpc`,
     `vpc_offerings`.`redundant_router_service` AS `redundant_router_service`,
     `vpc_offerings`.`sort_key` AS `sort_key`,
-    GROUP_CONCAT(DISTINCT(domain.id)) AS domain_id,
-    GROUP_CONCAT(DISTINCT(domain.uuid)) AS domain_uuid,
-    GROUP_CONCAT(DISTINCT(domain.name)) AS domain_name,
-    GROUP_CONCAT(DISTINCT(domain.path)) AS domain_path,
-    GROUP_CONCAT(DISTINCT(zone.id)) AS zone_id,
-    GROUP_CONCAT(DISTINCT(zone.uuid)) AS zone_uuid,
-    GROUP_CONCAT(DISTINCT(zone.name)) AS zone_name,
-    `offering_details`.value AS internet_protocol
-FROM
-    `cloud`.`vpc_offerings`
-        LEFT JOIN
-    `cloud`.`vpc_offering_details` AS `domain_details` ON `domain_details`.`offering_id` = `vpc_offerings`.`id` AND `domain_details`.`name`='domainid'
-        LEFT JOIN
-    `cloud`.`domain` AS `domain` ON FIND_IN_SET(`domain`.`id`, `domain_details`.`value`)
-        LEFT JOIN
-    `cloud`.`vpc_offering_details` AS `zone_details` ON `zone_details`.`offering_id` = `vpc_offerings`.`id` AND `zone_details`.`name`='zoneid'
-        LEFT JOIN
-    `cloud`.`data_center` AS `zone` ON FIND_IN_SET(`zone`.`id`, `zone_details`.`value`)
-        LEFT JOIN
-    `cloud`.`vpc_offering_details` AS `offering_details` ON `offering_details`.`offering_id` = `vpc_offerings`.`id` AND `offering_details`.`name`='internetprotocol'
-GROUP BY
+    group_concat(distinct `domain`.`id` separator ',') AS `domain_id`,
+    group_concat(distinct `domain`.`uuid` separator ',') AS `domain_uuid`,
+    group_concat(distinct `domain`.`name` separator ',') AS `domain_name`,
+    group_concat(distinct `domain`.`path` separator ',') AS `domain_path`,
+    group_concat(distinct `zone`.`id` separator ',') AS `zone_id`,
+    group_concat(distinct `zone`.`uuid` separator ',') AS `zone_uuid`,
+    group_concat(distinct `zone`.`name` separator ',') AS `zone_name`,
+    `offering_details`.`value` AS `internet_protocol`
+from
+    (((((`vpc_offerings`
+left join `vpc_offering_details` `domain_details` on
+    (((`domain_details`.`offering_id` = `vpc_offerings`.`id`)
+        and (`domain_details`.`name` = 'domainid'))))
+left join `domain` on
+    ((0 <> find_in_set(`domain`.`id`, `domain_details`.`value`))))
+left join `vpc_offering_details` `zone_details` on
+    (((`zone_details`.`offering_id` = `vpc_offerings`.`id`)
+        and (`zone_details`.`name` = 'zoneid'))))
+left join `data_center` `zone` on
+    ((0 <> find_in_set(`zone`.`id`, `zone_details`.`value`))))
+left join `vpc_offering_details` `offering_details` on
+    (((`offering_details`.`offering_id` = `vpc_offerings`.`id`)
+        and (`offering_details`.`name` = 'internetprotocol'))))
+group by
     `vpc_offerings`.`id`;

@@ -1231,34 +1231,35 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     /**
-     Updates the instance details map with the current values of the instance for the CPU speed, memory, and CPU number if they have not been specified.
+     Updates the instance details map with the current values for absent details. This only applies to details {@value VmDetailConstants#CPU_SPEED},
+     {@value VmDetailConstants#MEMORY}, and {@value VmDetailConstants#CPU_NUMBER}. This method only updates the map passed as parameter, not the database.
      @param details Map containing the instance details.
-     @param vmInstance The virtual machine instance.
+     @param vmInstance The virtual machine instance to retrieve the current values.
      @param newServiceOfferingId The ID of the new service offering.
      */
 
-    protected void updateInstanceDetails (Map<String, String> details, VirtualMachine vmInstance, Long newServiceOfferingId) {
+    protected void updateInstanceDetailsMapWithCurrentValuesForAbsentDetails(Map<String, String> details, VirtualMachine vmInstance, Long newServiceOfferingId) {
         ServiceOfferingVO currentServiceOffering = serviceOfferingDao.findByIdIncludingRemoved(vmInstance.getId(), vmInstance.getServiceOfferingId());
         ServiceOfferingVO newServiceOffering = serviceOfferingDao.findById(newServiceOfferingId);
-        updateInstanceDetailsKeepCurrentValueIfNull(newServiceOffering.getSpeed(), details, VmDetailConstants.CPU_SPEED, currentServiceOffering.getSpeed());
-        updateInstanceDetailsKeepCurrentValueIfNull(newServiceOffering.getRamSize(), details, VmDetailConstants.MEMORY, currentServiceOffering.getRamSize());
-        updateInstanceDetailsKeepCurrentValueIfNull(newServiceOffering.getCpu(), details, VmDetailConstants.CPU_NUMBER, currentServiceOffering.getCpu());
+        addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecified(newServiceOffering.getSpeed(), details, VmDetailConstants.CPU_SPEED, currentServiceOffering.getSpeed());
+        addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecified(newServiceOffering.getRamSize(), details, VmDetailConstants.MEMORY, currentServiceOffering.getRamSize());
+        addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecified(newServiceOffering.getCpu(), details, VmDetailConstants.CPU_NUMBER, currentServiceOffering.getCpu());
     }
 
     /**
-     * Updates a specific instance detail with the current instance value if the new value is null.
+     * Adds the current detail value to the instance details map if a new value was not specified to it.
      *
-     * @param newValue         the new value to be set
-     * @param details          a map of instance details
-     * @param detailsConstant  the name of the detail constant to be updated
-     * @param currentValue     the current value of the detail constant
+     * @param newValue the new value to be set.
+     * @param details a map of instance details.
+     * @param detailKey the detail to be updated.
+     * @param currentValue the current value of the detail constant.
      */
 
-    protected void updateInstanceDetailsKeepCurrentValueIfNull(Integer newValue, Map<String, String> details, String detailsConstant, Integer currentValue) {
-        if (newValue == null && details.get(detailsConstant) == null) {
+    protected void addCurrentDetailValueToInstanceDetailsMapIfNewValueWasNotSpecified(Integer newValue, Map<String, String> details, String detailKey, Integer currentValue) {
+        if (newValue == null && details.get(detailKey) == null) {
             String currentValueString = String.valueOf(currentValue);
-            logger.debug("{} was not specified, keeping the current value: {}.", detailsConstant, currentValueString);
-            details.put(detailsConstant, currentValueString);
+            logger.debug("{} was not specified, keeping the current value: {}.", detailKey, currentValueString);
+            details.put(detailKey, currentValueString);
         }
     }
 
@@ -1931,7 +1932,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         Map<String, String> cmdDetails = cmd.getDetails();
 
-        updateInstanceDetails(cmdDetails, vm, newServiceOfferingId);
+        updateInstanceDetailsMapWithCurrentValuesForAbsentDetails(cmdDetails, vm, newServiceOfferingId);
 
         boolean result = upgradeVirtualMachine(vmId, newServiceOfferingId, cmdDetails);
         if (result) {
