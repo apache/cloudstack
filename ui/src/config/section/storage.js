@@ -509,7 +509,15 @@ export default {
           label: 'label.delete.backup',
           message: 'message.delete.backup',
           dataView: true,
-          show: (record) => { return record.state !== 'Destroyed' }
+          show: (record) => { return record.state !== 'Destroyed' },
+          args: ['forced'],
+          mapping: {
+            forced: {
+              value: false,
+              toggle: true
+            }
+          }
+
         }
       ]
     },
