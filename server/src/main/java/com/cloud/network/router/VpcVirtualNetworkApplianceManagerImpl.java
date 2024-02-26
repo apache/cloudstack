@@ -495,8 +495,9 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 throw new CloudRuntimeException("Cannot find related provider of virtual router provider: " + vrProvider.getType().toString());
             }
 
+            Map<String, String> routerHealthCheckConfig = getRouterHealthChecksConfig(domainRouterVO);
             if (reprogramGuestNtwks && publicNics.size() > 0) {
-                finalizeMonitorService(cmds, profile, domainRouterVO, provider, publicNics.get(0).second().getId(), true);
+                finalizeMonitorService(cmds, profile, domainRouterVO, provider, publicNics.get(0).second().getId(), true, routerHealthCheckConfig);
             }
 
             for (final Pair<Nic, Network> nicNtwk : guestNics) {
@@ -508,7 +509,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 if (reprogramGuestNtwks) {
                     finalizeIpAssocForNetwork(cmds, domainRouterVO, provider, guestNetworkId, vlanMacAddress);
                     finalizeNetworkRulesForNetwork(cmds, domainRouterVO, provider, guestNetworkId);
-                    finalizeMonitorService(cmds, profile, domainRouterVO, provider, guestNetworkId, true);
+                    finalizeMonitorService(cmds, profile, domainRouterVO, provider, guestNetworkId, true, routerHealthCheckConfig);
                 }
 
                 finalizeUserDataAndDhcpOnStart(cmds, domainRouterVO, provider, guestNetworkId);
@@ -567,7 +568,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             finalizeNetworkRulesForNetwork(cmds, router, provider, networkId);
         }
 
-        finalizeMonitorService(cmds, getVirtualMachineProfile(router), router, provider, networkId, false);
+        finalizeMonitorService(cmds, getVirtualMachineProfile(router), router, provider, networkId, false, getRouterHealthChecksConfig(router));
 
         return _nwHelper.sendCommandsToRouter(router, cmds);
     }
