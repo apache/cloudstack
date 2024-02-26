@@ -15,46 +15,121 @@
 -- specific language governing permissions and limitations
 -- under the License.
 
--- cloud.affinity_group_view source
+-- VIEW `cloud`.`domain_view`;
 
+DROP VIEW IF EXISTS `cloud`.`domain_view`;
 
-DROP VIEW IF EXISTS `cloud`.`affinity_group_view`;
-
-CREATE VIEW `cloud`.`affinity_group_view` AS
+CREATE VIEW `cloud`.`domain_view` AS
 select
-    `affinity_group`.`id` AS `id`,
-    `affinity_group`.`name` AS `name`,
-    `affinity_group`.`type` AS `type`,
-    `affinity_group`.`description` AS `description`,
-    `affinity_group`.`uuid` AS `uuid`,
-    `affinity_group`.`acl_type` AS `acl_type`,
-    `account`.`id` AS `account_id`,
-    `account`.`uuid` AS `account_uuid`,
-    `account`.`account_name` AS `account_name`,
-    `account`.`type` AS `account_type`,
-    `domain`.`id` AS `domain_id`,
-    `domain`.`uuid` AS `domain_uuid`,
-    `domain`.`name` AS `domain_name`,
-    `domain`.`path` AS `domain_path`,
-    `projects`.`id` AS `project_id`,
-    `projects`.`uuid` AS `project_uuid`,
-    `projects`.`name` AS `project_name`,
-    `vm_instance`.`id` AS `vm_id`,
-    `vm_instance`.`uuid` AS `vm_uuid`,
-    `vm_instance`.`name` AS `vm_name`,
-    `vm_instance`.`state` AS `vm_state`,
-    `user_vm`.`display_name` AS `vm_display_name`
+    `domain`.`id` AS `id`,
+    `domain`.`parent` AS `parent`,
+    `domain`.`name` AS `name`,
+    `domain`.`uuid` AS `uuid`,
+    `domain`.`owner` AS `owner`,
+    `domain`.`path` AS `path`,
+    `domain`.`level` AS `level`,
+    `domain`.`child_count` AS `child_count`,
+    `domain`.`next_child_seq` AS `next_child_seq`,
+    `domain`.`created` AS `created`,
+    `domain`.`removed` AS `removed`,
+    `domain`.`state` AS `state`,
+    `domain`.`network_domain` AS `network_domain`,
+    `domain`.`type` AS `type`,
+    `vmlimit`.`max` AS `vmLimit`,
+    `vmcount`.`count` AS `vmTotal`,
+    `iplimit`.`max` AS `ipLimit`,
+    `ipcount`.`count` AS `ipTotal`,
+    `volumelimit`.`max` AS `volumeLimit`,
+    `volumecount`.`count` AS `volumeTotal`,
+    `snapshotlimit`.`max` AS `snapshotLimit`,
+    `snapshotcount`.`count` AS `snapshotTotal`,
+    `templatelimit`.`max` AS `templateLimit`,
+    `templatecount`.`count` AS `templateTotal`,
+    `vpclimit`.`max` AS `vpcLimit`,
+    `vpccount`.`count` AS `vpcTotal`,
+    `projectlimit`.`max` AS `projectLimit`,
+    `projectcount`.`count` AS `projectTotal`,
+    `networklimit`.`max` AS `networkLimit`,
+    `networkcount`.`count` AS `networkTotal`,
+    `cpulimit`.`max` AS `cpuLimit`,
+    `cpucount`.`count` AS `cpuTotal`,
+    `memorylimit`.`max` AS `memoryLimit`,
+    `memorycount`.`count` AS `memoryTotal`,
+    `primary_storage_limit`.`max` AS `primaryStorageLimit`,
+    `primary_storage_count`.`count` AS `primaryStorageTotal`,
+    `secondary_storage_limit`.`max` AS `secondaryStorageLimit`,
+    `secondary_storage_count`.`count` AS `secondaryStorageTotal`
 from
-    ((((((`affinity_group`
-join `account` on
-    ((`affinity_group`.`account_id` = `account`.`id`)))
-join `domain` on
-    ((`affinity_group`.`domain_id` = `domain`.`id`)))
-left join `projects` on
-    ((`projects`.`project_account_id` = `account`.`id`)))
-left join `affinity_group_vm_map` on
-    ((`affinity_group`.`id` = `affinity_group_vm_map`.`affinity_group_id`)))
-left join `vm_instance` on
-    ((`vm_instance`.`id` = `affinity_group_vm_map`.`instance_id`)))
-left join `user_vm` on
-    ((`user_vm`.`id` = `vm_instance`.`id`)));
+    `cloud`.`domain`
+        left join
+    `cloud`.`resource_limit` vmlimit ON domain.id = vmlimit.domain_id
+        and vmlimit.type = 'user_vm'
+        left join
+    `cloud`.`resource_count` vmcount ON domain.id = vmcount.domain_id
+        and vmcount.type = 'user_vm'
+        left join
+    `cloud`.`resource_limit` iplimit ON domain.id = iplimit.domain_id
+        and iplimit.type = 'public_ip'
+        left join
+    `cloud`.`resource_count` ipcount ON domain.id = ipcount.domain_id
+        and ipcount.type = 'public_ip'
+        left join
+    `cloud`.`resource_limit` volumelimit ON domain.id = volumelimit.domain_id
+        and volumelimit.type = 'volume'
+        left join
+    `cloud`.`resource_count` volumecount ON domain.id = volumecount.domain_id
+        and volumecount.type = 'volume'
+        left join
+    `cloud`.`resource_limit` snapshotlimit ON domain.id = snapshotlimit.domain_id
+        and snapshotlimit.type = 'snapshot'
+        left join
+    `cloud`.`resource_count` snapshotcount ON domain.id = snapshotcount.domain_id
+        and snapshotcount.type = 'snapshot'
+        left join
+    `cloud`.`resource_limit` templatelimit ON domain.id = templatelimit.domain_id
+        and templatelimit.type = 'template'
+        left join
+    `cloud`.`resource_count` templatecount ON domain.id = templatecount.domain_id
+        and templatecount.type = 'template'
+        left join
+    `cloud`.`resource_limit` vpclimit ON domain.id = vpclimit.domain_id
+        and vpclimit.type = 'vpc'
+        left join
+    `cloud`.`resource_count` vpccount ON domain.id = vpccount.domain_id
+        and vpccount.type = 'vpc'
+        left join
+    `cloud`.`resource_limit` projectlimit ON domain.id = projectlimit.domain_id
+        and projectlimit.type = 'project'
+        left join
+    `cloud`.`resource_count` projectcount ON domain.id = projectcount.domain_id
+        and projectcount.type = 'project'
+        left join
+    `cloud`.`resource_limit` networklimit ON domain.id = networklimit.domain_id
+        and networklimit.type = 'network'
+        left join
+    `cloud`.`resource_count` networkcount ON domain.id = networkcount.domain_id
+        and networkcount.type = 'network'
+        left join
+    `cloud`.`resource_limit` cpulimit ON domain.id = cpulimit.domain_id
+        and cpulimit.type = 'cpu'
+        left join
+    `cloud`.`resource_count` cpucount ON domain.id = cpucount.domain_id
+        and cpucount.type = 'cpu'
+        left join
+    `cloud`.`resource_limit` memorylimit ON domain.id = memorylimit.domain_id
+        and memorylimit.type = 'memory'
+        left join
+    `cloud`.`resource_count` memorycount ON domain.id = memorycount.domain_id
+        and memorycount.type = 'memory'
+        left join
+    `cloud`.`resource_limit` primary_storage_limit ON domain.id = primary_storage_limit.domain_id
+        and primary_storage_limit.type = 'primary_storage'
+        left join
+    `cloud`.`resource_count` primary_storage_count ON domain.id = primary_storage_count.domain_id
+        and primary_storage_count.type = 'primary_storage'
+        left join
+    `cloud`.`resource_limit` secondary_storage_limit ON domain.id = secondary_storage_limit.domain_id
+        and secondary_storage_limit.type = 'secondary_storage'
+        left join
+    `cloud`.`resource_count` secondary_storage_count ON domain.id = secondary_storage_count.domain_id
+        and secondary_storage_count.type = 'secondary_storage';
