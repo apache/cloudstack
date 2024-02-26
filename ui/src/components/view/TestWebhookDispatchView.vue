@@ -126,17 +126,14 @@ export default {
       collapseKey: undefined,
       loading: false,
       testDispatchInterval: null,
-      testDispatchIntervalCouter: 100
+      testDispatchIntervalCouter: 0
     }
   },
   beforeCreate () {
     this.timedDispatchWait = 4000
   },
   beforeUnmount () {
-    if (this.testDispatchInterval) {
-      clearInterval(this.testDispatchInterval)
-      this.testDispatchIntervalCouter = 100
-    }
+    this.resetTestDispatchInterval()
   },
   computed: {
     isResponseNotEmpty () {
@@ -157,7 +154,7 @@ export default {
       return (duration > 0 ? duration / 1000.0 : 0) + ''
     },
     computedOverlayStyle () {
-      var opacity = this.testDispatchIntervalCouter >= 90.0 ? 0 : 0.3
+      var opacity = this.testDispatchIntervalCouter <= 10.0 ? 0 : 0.3
       var width = this.testDispatchIntervalCouter
       return 'opacity: ' + opacity + '; width: ' + width + '%;'
     }
@@ -167,7 +164,7 @@ export default {
       if (this.testDispatchInterval) {
         clearInterval(this.testDispatchInterval)
       }
-      this.testDispatchIntervalCouter = 100
+      this.testDispatchIntervalCouter = 0
     },
     testWebhookDispatch () {
       this.resetTestDispatchInterval()
@@ -208,8 +205,8 @@ export default {
           this.resetTestDispatchInterval()
           return
         }
-        this.testDispatchIntervalCouter = this.testDispatchIntervalCouter - 1
-        if (this.testDispatchIntervalCouter <= 0) {
+        this.testDispatchIntervalCouter = this.testDispatchIntervalCouter + 1
+        if (this.testDispatchIntervalCouter >= 100) {
           if (this.payloadUrl && urlPattern.test(this.payloadUrl)) {
             this.testWebhookDispatch()
             return
