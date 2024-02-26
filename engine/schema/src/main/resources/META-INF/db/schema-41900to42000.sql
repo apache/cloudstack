@@ -28,3 +28,9 @@ DROP INDEX `i_resource_count__type_accountId`,
 DROP INDEX `i_resource_count__type_domaintId`,
 ADD UNIQUE INDEX `i_resource_count__type_tag_accountId` (`type`,`tag`,`account_id`),
 ADD UNIQUE INDEX `i_resource_count__type_tag_domaintId` (`type`,`tag`,`domain_id`);
+
+-- Update Default System offering for Router to 512MiB
+UPDATE `cloud`.`service_offering` SET ram_size = 512 WHERE unique_name IN ("Cloud.Com-SoftwareRouter", "Cloud.Com-SoftwareRouter-Local",
+                                                                           "Cloud.Com-InternalLBVm", "Cloud.Com-InternalLBVm-Local",
+                                                                           "Cloud.Com-ElasticLBVm", "Cloud.Com-ElasticLBVm-Local")
+                                                    AND system_use = 1 AND ram_size < 512;

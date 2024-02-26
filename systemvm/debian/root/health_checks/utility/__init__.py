@@ -16,4 +16,4 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from sharedFunctions import getHealthChecksData, formatPort
+from .sharedFunctions import getHealthChecksData, formatPort
