@@ -216,7 +216,7 @@ public class WebhookDispatchThread implements Runnable {
     public static String generateHMACSignature(String data,  String key)
             throws InvalidKeyException, NoSuchAlgorithmException, DecoderException {
         Mac mac = Mac.getInstance("HMACSHA256");
-        SecretKey secretKey = new SecretKeySpec(Hex.decodeHex(key), mac.getAlgorithm());
+        SecretKey secretKey = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), mac.getAlgorithm());
         mac.init(secretKey);
         byte[] dataAsBytes = data.getBytes(StandardCharsets.UTF_8);
         byte[] encodedText = mac.doFinal(dataAsBytes);
