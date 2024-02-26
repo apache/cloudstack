@@ -35,3 +35,10 @@ ALTER TABLE `cloud`.`resource_reservation`
 
 ALTER TABLE `cloud`.`resource_reservation`
     MODIFY COLUMN `amount` bigint NOT NULL;
+
+
+-- Update Default System offering for Router to 512MiB
+UPDATE `cloud`.`service_offering` SET ram_size = 512 WHERE unique_name IN ("Cloud.Com-SoftwareRouter", "Cloud.Com-SoftwareRouter-Local",
+                                                                           "Cloud.Com-InternalLBVm", "Cloud.Com-InternalLBVm-Local",
+                                                                           "Cloud.Com-ElasticLBVm", "Cloud.Com-ElasticLBVm-Local")
+                                                    AND system_use = 1 AND ram_size < 512;
