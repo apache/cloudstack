@@ -23,5 +23,5 @@ import com.cloud.utils.db.GenericDao;
 
 public interface WebhookDispatchDao extends GenericDao<WebhookDispatchVO, Long> {
     int deleteByIdWebhookRuleManagementServer(Long id, Long webhookRuleId, Long managementServerId);
-    void removeOlderDispatches(long limit);
+    void removeOlderDispatches(long webhookId, long limit);
 }

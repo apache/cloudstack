@@ -48,13 +48,17 @@ public class WebhookDispatchDaoImpl extends GenericDaoBase<WebhookDispatchVO, Lo
     }
 
     @Override
-    public void removeOlderDispatches(long limit) {
+    public void removeOlderDispatches(long webhookId, long limit) {
         Filter searchFilter = new Filter(WebhookDispatchVO.class, "id", false, 0L, limit);
-        List<WebhookDispatchVO> keep = listAll(searchFilter);
         SearchBuilder<WebhookDispatchVO> sb = createSearchBuilder();
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.NOTIN);
+        sb.and("webhookRuleId", sb.entity().getWebhookRuleId(), SearchCriteria.Op.EQ);
         SearchCriteria<WebhookDispatchVO> sc = sb.create();
-        sc.setParameters("id", keep.stream().map(WebhookDispatchVO::getId).toArray());
-        remove(sc);
+        sc.setParameters("webhookRuleId", webhookId);
+        List<WebhookDispatchVO> keep = listBy(sc, searchFilter);
+        SearchBuilder<WebhookDispatchVO> sbDelete = createSearchBuilder();
+        sbDelete.and("id", sbDelete.entity().getId(), SearchCriteria.Op.NOTIN);
+        SearchCriteria<WebhookDispatchVO> scDelete = sbDelete.create();
+        scDelete.setParameters("id", keep.stream().map(WebhookDispatchVO::getId).toArray());
+        remove(scDelete);
     }
 }

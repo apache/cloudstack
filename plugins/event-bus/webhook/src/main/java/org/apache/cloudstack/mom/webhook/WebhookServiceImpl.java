@@ -262,19 +262,27 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
     }
 
     public class WebhookDispatchCleanupWorker extends ManagedContextRunnable {
+
+        protected void runCleanupForLongestRunningManagementServer() {
+            ManagementServerHostVO msHost = managementServerHostDao.findOneByLongestRuntime();
+            if (msHost == null || (msHost.getMsid() != ManagementServerNode.getManagementServerId())) {
+                logger.trace("Skipping the webhook dispatch cleanup task on this management server");
+                return;
+            }
+            long limit = WebhookDispatchHistoryLimit.value();
+            List<WebhookRuleVO> webhooks = webhookRuleDao.listAll();
+            for (WebhookRuleVO webhook : webhooks) {
+                webhookDispatchDao.removeOlderDispatches(webhook.getId(), limit);
+            }
+        }
+
         @Override
         protected void runInContext() {
             GlobalLock gcLock = GlobalLock.getInternLock("WebhookDispatchHistoryCleanup");
             try {
                 if (gcLock.lock(3)) {
                     try {
-                        ManagementServerHostVO msHost = managementServerHostDao.findOneByLongestRuntime();
-                        if (msHost == null || (msHost.getMsid() != ManagementServerNode.getManagementServerId())) {
-                            logger.trace("Skipping the webhook dispatch cleanup task on this management server");
-                            return;
-                        }
-                        long limit = WebhookDispatchHistoryLimit.value();
-                        webhookDispatchDao.removeOlderDispatches(limit);
+                        runCleanupForLongestRunningManagementServer();
                     } finally {
                         gcLock.unlock();
                     }

@@ -42,8 +42,8 @@ public interface WebhookService extends PluggableService, Configurable {
             false, ConfigKey.Scope.Global);
 
     ConfigKey<Integer> WebhookDispatchHistoryLimit = new ConfigKey<>("Advanced", Integer.class,
-            "webhook.dispatch.history.limit", "100",
-            "Limit for number of webhook dispatches to keep in history",
+            "webhook.dispatch.history.limit", "10",
+            "Limit for number of deliveries to keep in history per webhook",
             true, ConfigKey.Scope.Global);
 
     ConfigKey<Integer> WebhookDispatchHistoryCleanupInterval = new ConfigKey<>("Advanced", Integer.class,

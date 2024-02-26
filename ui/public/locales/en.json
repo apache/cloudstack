@@ -2750,6 +2750,7 @@
 "message.disable.vpn": "Are you sure you want to disable VPN?",
 "message.disable.vpn.failed": "Failed to disable VPN.",
 "message.disable.vpn.processing": "Disabling VPN...",
+"message.disable.webhook.ssl.verification": "Disabling SSL verification is not recommended",
 "message.discovering.feature": "Discovering features, please wait...",
 "message.disk.offering.created": "Disk offering created:",
 "message.disk.usage.info.data.points": "Each data point represents the difference in read/write data since the last data point.",

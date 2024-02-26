@@ -68,10 +68,15 @@
             :placeholder="apiParams.payloadurl.description"
             @change="handleParamUpdate"/>
         </a-form-item>
-        <a-form-item name="sslverification" ref="sslverification">
+        <a-form-item name="sslverification" ref="sslverification" v-if="isPayloadUrlHttps">
           <template #label>
             <tooltip-label :title="$t('label.sslverification')" :tooltip="apiParams.sslverification.description"/>
           </template>
+          <a-alert
+            v-if="!form.sslverification"
+            class="ssl-alert"
+            type="warning"
+            :message="$t('message.disable.webhook.ssl.verification')" />
           <a-switch
             v-model:checked="form.sslverification"
             @change="handleParamUpdate" />
@@ -134,12 +139,27 @@ export default {
   created () {
     this.initForm()
   },
+  computed: {
+    isAdminOrDomainAdmin () {
+      return ['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype)
+    },
+    isAdmin () {
+      return ['Admin'].includes(this.$store.getters.userInfo.roletype)
+    },
+    isPayloadUrlHttps () {
+      if (this.form.payloadurl) {
+        return this.form.payloadurl.toLowerCase().startsWith('https://')
+      }
+      return false
+    }
+  },
   methods: {
     initForm () {
       this.formRef = ref()
       this.form = reactive({
         scope: 'Local',
-        state: true
+        state: true,
+        sslverification: true
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.webhook.name') }],
@@ -157,12 +177,6 @@ export default {
     },
     updateTestDispatchLoading (value) {
       this.testDispatchLoading = value
-    },
-    isAdminOrDomainAdmin () {
-      return ['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype)
-    },
-    isAdmin () {
-      return ['Admin'].includes(this.$store.getters.userInfo.roletype)
     },
     handleSubmit (e) {
       e.preventDefault()
@@ -220,5 +234,9 @@ export default {
     @media (min-width: 700px) {
       width: 650px;
     }
+  }
+
+  .ssl-alert {
+    margin: 0 0 10px 0;
   }
 </style>
