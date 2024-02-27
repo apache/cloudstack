@@ -71,7 +71,7 @@
         <dependency>
           <groupId>com.sun.xml.bind</groupId>
           <artifactId>jaxb-impl</artifactId>
-          <version>${cs.jaxb.version}</version>
+          <version>${cs.jaxb.impl.version}</version>
         </dependency>
     </dependencies>
 </project>

@@ -64,7 +64,7 @@ import com.cloud.vm.VirtualMachine.Type;
 @Component
 public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implements VMInstanceDao {
 
-    private static final int MAX_CONSECUTIVE_SAME_STATE_UPDATE_COUNT = 3;
+    static final int MAX_CONSECUTIVE_SAME_STATE_UPDATE_COUNT = 3;
 
     protected SearchBuilder<VMInstanceVO> VMClusterSearch;
     protected SearchBuilder<VMInstanceVO> LHVMClusterSearch;
@@ -895,17 +895,19 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
 
     @Override
     public boolean updatePowerState(final long instanceId, final long powerHostId, final VirtualMachine.PowerState powerState, Date wisdomEra) {
-        return Transaction.execute(new TransactionCallback<Boolean>() {
+        return Transaction.execute(new TransactionCallback<>() {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
                 boolean needToUpdate = false;
                 VMInstanceVO instance = findById(instanceId);
                 if (instance != null
-                &&  (null == instance.getPowerStateUpdateTime()
+                        && (null == instance.getPowerStateUpdateTime()
                         || instance.getPowerStateUpdateTime().before(wisdomEra))) {
                     Long savedPowerHostId = instance.getPowerHostId();
-                    if (instance.getPowerState() != powerState || savedPowerHostId == null
-                            || savedPowerHostId.longValue() != powerHostId) {
+                    if (instance.getPowerState() != powerState
+                            || savedPowerHostId == null
+                            || savedPowerHostId != powerHostId
+                            || !isPowerStateInSyncWithInstanceState(powerState, powerHostId, instance)) {
                         instance.setPowerState(powerState);
                         instance.setPowerHostId(powerHostId);
                         instance.setPowerStateUpdateCount(1);
@@ -925,6 +927,17 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
                 return needToUpdate;
             }
         });
+    }
+
+    private boolean isPowerStateInSyncWithInstanceState(final VirtualMachine.PowerState powerState, final long powerHostId, final VMInstanceVO instance) {
+        State instanceState = instance.getState();
+        if ((powerState == VirtualMachine.PowerState.PowerOff && instanceState == State.Running)
+                || (powerState == VirtualMachine.PowerState.PowerOn && instanceState == State.Stopped)) {
+            logger.debug(String.format("VM id: %d on host id: %d and power host id: %d is in %s state, but power state is %s",
+                    instance.getId(), instance.getHostId(), powerHostId, instanceState, powerState));
+            return false;
+        }
+        return true;
     }
 
     @Override
