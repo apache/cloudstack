@@ -68,31 +68,31 @@ public class NetworkStateListener implements StateListener<State, Event, Network
       return true;
     }
 
-  private void pubishOnEventBus(String event, String status, Network vo, State oldState, State newState) {
-      String configKey = "publish.resource.state.events";
-      String value = _configDao.getValue(configKey);
-      boolean configValue = Boolean.parseBoolean(value);
-      if(!configValue)
-          return;
-      if (eventDistributor == null) {
-          setEventDistributor(ComponentContext.getComponent(EventDistributor.class));
-      }
+    private void pubishOnEventBus(String event, String status, Network vo, State oldState, State newState) {
+        String configKey = "publish.resource.state.events";
+        String value = _configDao.getValue(configKey);
+        boolean configValue = Boolean.parseBoolean(value);
+        if(!configValue)
+            return;
+        if (eventDistributor == null) {
+            setEventDistributor(ComponentContext.getComponent(EventDistributor.class));
+        }
 
-      String resourceName = getEntityFromClassName(Network.class.getName());
-      org.apache.cloudstack.framework.events.Event eventMsg =
+        String resourceName = getEntityFromClassName(Network.class.getName());
+        org.apache.cloudstack.framework.events.Event eventMsg =
               new org.apache.cloudstack.framework.events.Event("management-server", EventCategory.RESOURCE_STATE_CHANGE_EVENT.getName(), event, resourceName, vo.getUuid());
-      Map<String, String> eventDescription = new HashMap<>();
-      eventDescription.put("resource", resourceName);
-      eventDescription.put("id", vo.getUuid());
-      eventDescription.put("old-state", oldState.name());
-      eventDescription.put("new-state", newState.name());
+        Map<String, String> eventDescription = new HashMap<>();
+        eventDescription.put("resource", resourceName);
+        eventDescription.put("id", vo.getUuid());
+        eventDescription.put("old-state", oldState.name());
+        eventDescription.put("new-state", newState.name());
 
-      String eventDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z").format(new Date());
-      eventDescription.put("eventDateTime", eventDate);
+        String eventDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z").format(new Date());
+        eventDescription.put("eventDateTime", eventDate);
 
-      eventMsg.setDescription(eventDescription);
+        eventMsg.setDescription(eventDescription);
 
-      eventDistributor.publish(eventMsg);
+        eventDistributor.publish(eventMsg);
     }
 
     private String getEntityFromClassName(String entityClassName) {
