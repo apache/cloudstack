@@ -2311,7 +2311,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 final PowerState s = convertToPowerState(vms.getInfo().state);
                 return s;
             } catch (final LibvirtException e) {
-                LOGGER.error(String.format("Can't get state for VM [%s] (retry=%s).", vmName, retry), e);
+                LOGGER.error("Could not get state for VM [{}] (retry={}) due to:", vmName, retry, e);
             } finally {
                 try {
                     if (vms != null) {
@@ -4415,11 +4415,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             LibvirtExtendedVmStatsEntry oldStats = vmStats.get(vmName);
 
             VmStatsEntry metrics = calculateVmMetrics(dm, oldStats, newStats);
-
-            String vmAsString = vmToString(dm);
-            LOGGER.info("Saving stats for VM [{}].", vmAsString);
             vmStats.put(vmName, newStats);
-            LOGGER.debug("Saved stats for VM [{}]: [{}].", vmAsString, newStats);
 
             return metrics;
         } finally {
@@ -4454,7 +4450,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * @throws LibvirtException
      */
     protected void getVmCurrentCpuStats(final Domain dm, final LibvirtExtendedVmStatsEntry stats) throws LibvirtException {
-        LOGGER.debug("Getting CPU stats for VM [{}].", vmToString(dm));
+        LOGGER.trace("Getting CPU stats for VM [{}].", vmToString(dm));
         stats.setCpuTime(dm.getInfo().cpuTime);
     }
 
@@ -4466,7 +4462,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      */
     protected void getVmCurrentNetworkStats(final Domain dm, final LibvirtExtendedVmStatsEntry stats) throws LibvirtException {
         final String vmAsString = vmToString(dm);
-        LOGGER.debug("Getting network stats for VM [{}].", vmAsString);
+        LOGGER.trace("Getting network stats for VM [{}].", vmAsString);
         final List<InterfaceDef> vifs = getInterfaces(dm.getConnect(), dm.getName());
         LOGGER.debug("Found [{}] network interface(s) for VM [{}].", vifs.size(), vmAsString);
         double rx = 0;
@@ -4488,7 +4484,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      */
     protected void getVmCurrentDiskStats(final Domain dm, final LibvirtExtendedVmStatsEntry stats) throws LibvirtException {
         final String vmAsString = vmToString(dm);
-        LOGGER.debug("Getting disk stats for VM [{}].", vmAsString);
+        LOGGER.trace("Getting disk stats for VM [{}].", vmAsString);
         final List<DiskDef> disks = getDisks(dm.getConnect(), dm.getName());
         LOGGER.debug("Found [{}] disk(s) for VM [{}].", disks.size(), vmAsString);
         long io_rd = 0;
@@ -4526,17 +4522,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final String vmAsString = vmToString(dm);
 
         metrics.setEntityType("vm");
-        LOGGER.debug("Writing VM [{}]'s CPU and memory information into the metrics.", vmAsString);
+        LOGGER.trace("Writing VM [{}]'s CPU and memory information into the metrics.", vmAsString);
         metrics.setNumCPUs(info.nrVirtCpu);
         metrics.setMemoryKBs(info.maxMem);
         metrics.setTargetMemoryKBs(info.memory);
-        LOGGER.debug("Trying to get free memory for VM [{}].", vmAsString);
+        LOGGER.trace("Trying to get free memory for VM [{}].", vmAsString);
         metrics.setIntFreeMemoryKBs(getMemoryFreeInKBs(dm));
 
         if (oldStats != null) {
             LOGGER.debug("Old stats exist for VM [{}]; therefore, the utilization will be calculated.", vmAsString);
 
-            LOGGER.debug("Calculating CPU utilization for VM [{}].", vmAsString);
+            LOGGER.trace("Calculating CPU utilization for VM [{}].", vmAsString);
             final Calendar now = Calendar.getInstance();
             long elapsedTime = now.getTimeInMillis() - oldStats.getTimestamp().getTimeInMillis();
             double utilization = (info.cpuTime - oldStats.getCpuTime()) / ((double) elapsedTime * 1000000 * info.nrVirtCpu);
@@ -4544,7 +4540,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 metrics.setCPUUtilization(utilization * 100);
             }
 
-            LOGGER.debug("Calculating network utilization for VM [{}].", vmAsString);
+            LOGGER.trace("Calculating network utilization for VM [{}].", vmAsString);
             final double deltarx = newStats.getNetworkReadKBs() - oldStats.getNetworkReadKBs();
             if (deltarx > 0) {
                 metrics.setNetworkReadKBs(deltarx);
@@ -4554,7 +4550,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 metrics.setNetworkWriteKBs(deltatx);
             }
 
-            LOGGER.debug("Calculating disk utilization for VM [{}].", vmAsString);
+            LOGGER.trace("Calculating disk utilization for VM [{}].", vmAsString);
             final double deltaiord = newStats.getDiskReadIOs() - oldStats.getDiskReadIOs();
             if (deltaiord > 0) {
                 metrics.setDiskReadIOs(deltaiord);
