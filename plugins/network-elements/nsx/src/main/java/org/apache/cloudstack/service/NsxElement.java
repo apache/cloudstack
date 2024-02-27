@@ -558,7 +558,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
                     .setRuleId(rule.getId())
                     .setProtocol(rule.getProtocol().toUpperCase(Locale.ROOT))
                     .build();
-            if (rule.getState() == FirewallRule.State.Add) {
+            if (Arrays.asList(FirewallRule.State.Add, FirewallRule.State.Active).contains(rule.getState())) {
                 result &= nsxService.createPortForwardRule(networkRule);
             } else if (rule.getState() == FirewallRule.State.Revoke) {
                 result &= nsxService.deletePortForwardRule(networkRule);
@@ -642,9 +642,6 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
     public boolean applyLBRules(Network network, List<LoadBalancingRule> rules) throws ResourceUnavailableException {
         boolean result = true;
         for (LoadBalancingRule loadBalancingRule : rules) {
-            if (loadBalancingRule.getState() == FirewallRule.State.Active) {
-                continue;
-            }
             IPAddressVO publicIp = ipAddressDao.findByIpAndDcId(network.getDataCenterId(),
                     loadBalancingRule.getSourceIp().addr());
             NsxOpObject nsxObject = getNsxOpObject(network);
@@ -666,7 +663,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
                     .setProtocol(loadBalancingRule.getLbProtocol().toUpperCase(Locale.ROOT))
                     .setAlgorithm(loadBalancingRule.getAlgorithm())
                     .build();
-            if (loadBalancingRule.getState() == FirewallRule.State.Add) {
+            if (Arrays.asList(FirewallRule.State.Add, FirewallRule.State.Active).contains(loadBalancingRule.getState())) {
                 result &= nsxService.createLbRule(networkRule);
             } else if (loadBalancingRule.getState() == FirewallRule.State.Revoke) {
                 result &= nsxService.deleteLbRule(networkRule);

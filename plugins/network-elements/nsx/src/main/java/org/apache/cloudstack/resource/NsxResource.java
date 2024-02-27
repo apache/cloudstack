@@ -387,7 +387,9 @@ public class NsxResource implements ServerResource {
             String privatePort = cmd.getPrivatePort();
             String service = privatePort.contains("-") ? nsxApiClient.getServicePath(ruleName, privatePort, cmd.getProtocol(), null, null) :
                     nsxApiClient.getNsxInfraServices(ruleName, privatePort, cmd.getProtocol(), null, null);
-
+            if (nsxApiClient.doesPfRuleExist(ruleName, tier1GatewayName, cmd.getNetworkResourceName())) {
+                return new NsxAnswer(cmd, true, null);
+            }
             nsxApiClient.createPortForwardingRule(ruleName, tier1GatewayName, cmd.getNetworkResourceName(), cmd.getPublicIp(),
                     cmd.getVmIp(), cmd.getPublicPort(), service);
         } catch (Exception e) {
