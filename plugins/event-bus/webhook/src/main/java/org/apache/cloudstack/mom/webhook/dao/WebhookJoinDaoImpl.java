@@ -19,23 +19,23 @@ package org.apache.cloudstack.mom.webhook.dao;
 
 import java.util.List;
 
-import org.apache.cloudstack.mom.webhook.vo.WebhookRuleJoinVO;
+import org.apache.cloudstack.mom.webhook.vo.WebhookJoinVO;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-public class WebhookRuleJoinDaoImpl extends GenericDaoBase<WebhookRuleJoinVO, Long> implements WebhookRuleJoinDao {
+public class WebhookJoinDaoImpl extends GenericDaoBase<WebhookJoinVO, Long> implements WebhookJoinDao {
     @Override
-    public List<WebhookRuleJoinVO> listByAccountOrDomain(long accountId, String domainPath) {
-        SearchBuilder<WebhookRuleJoinVO> sb = createSearchBuilder();
+    public List<WebhookJoinVO> listByAccountOrDomain(long accountId, String domainPath) {
+        SearchBuilder<WebhookJoinVO> sb = createSearchBuilder();
         sb.and().op("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
         if (StringUtils.isNotBlank(domainPath)) {
             sb.or("domainPath", sb.entity().getDomainPath(), SearchCriteria.Op.LIKE);
         }
         sb.cp();
-        SearchCriteria<WebhookRuleJoinVO> sc = sb.create();
+        SearchCriteria<WebhookJoinVO> sc = sb.create();
         sc.setParameters("accountId", accountId);
         if (StringUtils.isNotBlank(domainPath)) {
             sc.setParameters("domainPath", domainPath);

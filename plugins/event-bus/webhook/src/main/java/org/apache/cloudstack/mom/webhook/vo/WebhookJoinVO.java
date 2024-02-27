@@ -27,7 +27,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.mom.webhook.WebhookRule;
+import org.apache.cloudstack.mom.webhook.Webhook;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import com.cloud.api.query.vo.ControlledViewEntity;
@@ -37,7 +37,7 @@ import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name = "webhook_view")
-public class WebhookRuleJoinVO implements ControlledViewEntity {
+public class WebhookJoinVO implements ControlledViewEntity {
 
     @Id
     @Column(name = "id", updatable = false, nullable = false)
@@ -54,7 +54,7 @@ public class WebhookRuleJoinVO implements ControlledViewEntity {
 
     @Column(name = "state")
     @Enumerated(value = EnumType.STRING)
-    private WebhookRule.State state;
+    private Webhook.State state;
 
     @Column(name = "payload_url")
     private String payloadUrl;
@@ -68,7 +68,7 @@ public class WebhookRuleJoinVO implements ControlledViewEntity {
 
     @Column(name = "scope")
     @Enumerated(value = EnumType.STRING)
-    private WebhookRule.Scope scope;
+    private Webhook.Scope scope;
 
     @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
@@ -136,7 +136,7 @@ public class WebhookRuleJoinVO implements ControlledViewEntity {
         this.description = description;
     }
 
-    public WebhookRule.State getState() {
+    public Webhook.State getState() {
         return state;
     }
 
@@ -152,7 +152,7 @@ public class WebhookRuleJoinVO implements ControlledViewEntity {
         return secretKey;
     }
 
-    public WebhookRule.Scope getScope() {
+    public Webhook.Scope getScope() {
         return scope;
     }
 
@@ -220,14 +220,15 @@ public class WebhookRuleJoinVO implements ControlledViewEntity {
 
     @Override
     public Class<?> getEntityType() {
-        return WebhookRule.class;
+        return Webhook.class;
     }
 
     @Override
     public String toString() {
-        return String.format("WebhookRule [%s]", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "uuid", "name"));
+        return String.format("Webhook [%s]", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                this, "id", "uuid", "name"));
     }
 
-    public WebhookRuleJoinVO() {
+    public WebhookJoinVO() {
     }
 }

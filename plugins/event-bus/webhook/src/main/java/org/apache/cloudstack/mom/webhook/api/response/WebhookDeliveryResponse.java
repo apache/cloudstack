@@ -23,15 +23,15 @@ import java.util.Date;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
-import org.apache.cloudstack.mom.webhook.WebhookDispatch;
+import org.apache.cloudstack.mom.webhook.WebhookDelivery;
 
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value = {WebhookDispatch.class})
-public class WebhookDispatchResponse extends BaseResponse {
+@EntityReference(value = {WebhookDelivery.class})
+public class WebhookDeliveryResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "The ID of the Webhook dispatch")
+    @Param(description = "The ID of the Webhook delivery")
     private String id;
 
     @SerializedName(ApiConstants.EVENT_ID)
@@ -42,40 +42,44 @@ public class WebhookDispatchResponse extends BaseResponse {
     @Param(description = "The type of the event")
     private String eventType;
 
-    @SerializedName(ApiConstants.WEBHOOK_RULE_ID)
-    @Param(description = "The ID of the Webhook rule")
-    private String webhookRuleId;
+    @SerializedName(ApiConstants.WEBHOOK_ID)
+    @Param(description = "The ID of the Webhook")
+    private String webhookId;
 
-    @SerializedName(ApiConstants.WEBHOOK_RULE_NAME)
-    @Param(description = "The name of the Webhook rule")
-    private String webhookRuleName;
+    @SerializedName(ApiConstants.WEBHOOK_NAME)
+    @Param(description = "The name of the Webhook")
+    private String webhookName;
 
     @SerializedName(ApiConstants.MANAGEMENT_SERVER_ID)
-    @Param(description = "The ID of the management server which executed dispatch")
+    @Param(description = "The ID of the management server which executed delivery")
     private String managementServerId;
 
     @SerializedName(ApiConstants.MANAGEMENT_SERVER_NAME)
-    @Param(description = "The name of the management server which executed dispatch")
+    @Param(description = "The name of the management server which executed delivery")
     private String managementServerName;
 
+    @SerializedName(ApiConstants.HEADERS)
+    @Param(description = "The headers of the webhook delivery")
+    private String headers;
+
     @SerializedName(ApiConstants.PAYLOAD)
-    @Param(description = "The payload of the webhook dispatch")
+    @Param(description = "The payload of the webhook delivery")
     private String payload;
 
     @SerializedName(ApiConstants.SUCCESS)
-    @Param(description = "Whether Webhook dispatch succeeded or not")
+    @Param(description = "Whether Webhook delivery succeeded or not")
     private boolean success;
 
     @SerializedName(ApiConstants.RESPONSE)
-    @Param(description = "The response of the webhook dispatch")
+    @Param(description = "The response of the webhook delivery")
     private String response;
 
     @SerializedName(ApiConstants.START_DATE)
-    @Param(description = "The start time of the Webhook dispatch")
+    @Param(description = "The start time of the Webhook delivery")
     private Date startTime;
 
     @SerializedName(ApiConstants.END_DATE)
-    @Param(description = "The end time of the Webhook dispatch")
+    @Param(description = "The end time of the Webhook delivery")
     private Date endTime;
 
     public void setId(String id) {
@@ -90,12 +94,12 @@ public class WebhookDispatchResponse extends BaseResponse {
         this.eventType = eventType;
     }
 
-    public void setWebhookRuleId(String webhookRuleId) {
-        this.webhookRuleId = webhookRuleId;
+    public void setWebhookId(String webhookId) {
+        this.webhookId = webhookId;
     }
 
-    public void setWebhookRuleName(String webhookRuleName) {
-        this.webhookRuleName = webhookRuleName;
+    public void setWebhookName(String webhookName) {
+        this.webhookName = webhookName;
     }
 
     public void setManagementServerId(String managementServerId) {
@@ -104,6 +108,10 @@ public class WebhookDispatchResponse extends BaseResponse {
 
     public void setManagementServerName(String managementServerName) {
         this.managementServerName = managementServerName;
+    }
+
+    public void setHeaders(String headers) {
+        this.headers = headers;
     }
 
     public void setPayload(String payload) {

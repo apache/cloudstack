@@ -56,18 +56,19 @@ CREATE TABLE `cloud`.`webhook` (
   CONSTRAINT `fk_webhook__account_id` FOREIGN KEY (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-DROP TABLE IF EXISTS `cloud`.`webhook_dispatch`;
-CREATE TABLE `cloud`.`webhook_dispatch` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id of the webhook dispatch',
+DROP TABLE IF EXISTS `cloud`.`webhook_delivery`;
+CREATE TABLE `cloud`.`webhook_delivery` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id of the webhook delivery',
   `uuid` varchar(255) COMMENT 'uuid of the webhook',
   `event_id` bigint unsigned NOT NULL COMMENT 'id of the event',
-  `webhook_id` bigint unsigned NOT NULL COMMENT 'id of the webhook rule',
+  `webhook_id` bigint unsigned NOT NULL COMMENT 'id of the webhook',
   `mshost_msid` bigint unsigned NOT NULL COMMENT 'msid of the management server',
-  `payload` TEXT COMMENT 'payload for the webhook dispatch',
-  `success` boolean COMMENT 'webhook dispatch succeeded or not',
-  `response` TEXT COMMENT 'response of the webhook dispatch',
-  `start_time` datetime COMMENT 'start timestamp of the webhook dispatch',
-  `end_time` datetime COMMENT 'end timestamp of the webhook dispatch',
+  `headers` TEXT COMMENT 'headers for the webhook delivery',
+  `payload` TEXT COMMENT 'payload for the webhook delivery',
+  `success` boolean COMMENT 'webhook delivery succeeded or not',
+  `response` TEXT COMMENT 'response of the webhook delivery',
+  `start_time` datetime COMMENT 'start timestamp of the webhook delivery',
+  `end_time` datetime COMMENT 'end timestamp of the webhook delivery',
   PRIMARY KEY(`id`),
   INDEX `i_webhook__event_id`(`event_id`),
   INDEX `i_webhook__webhook_id`(`webhook_id`),

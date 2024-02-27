@@ -140,6 +140,7 @@ import {
   ReconciliationOutlined,
   RedoOutlined,
   ReloadOutlined,
+  RetweetOutlined,
   RightCircleOutlined,
   RightSquareOutlined,
   RocketOutlined,
@@ -301,6 +302,7 @@ export default {
     app.component('ReconciliationOutlined', ReconciliationOutlined)
     app.component('RedoOutlined', RedoOutlined)
     app.component('ReloadOutlined', ReloadOutlined)
+    app.component('RetweetOutlined', RetweetOutlined)
     app.component('RightCircleOutlined', RightCircleOutlined)
     app.component('RightSquareOutlined', RightSquareOutlined)
     app.component('RocketOutlined', RocketOutlined)

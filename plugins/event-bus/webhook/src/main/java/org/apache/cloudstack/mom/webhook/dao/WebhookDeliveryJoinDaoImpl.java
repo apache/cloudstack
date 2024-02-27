@@ -19,7 +19,7 @@ package org.apache.cloudstack.mom.webhook.dao;
 
 import java.util.List;
 
-import org.apache.cloudstack.mom.webhook.vo.WebhookDispatchJoinVO;
+import org.apache.cloudstack.mom.webhook.vo.WebhookDeliveryJoinVO;
 import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.utils.Pair;
@@ -28,21 +28,22 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-public class WebhookDispatchJoinDaoImpl extends GenericDaoBase<WebhookDispatchJoinVO, Long> implements WebhookDispatchJoinDao {
+public class WebhookDeliveryJoinDaoImpl extends GenericDaoBase<WebhookDeliveryJoinVO, Long>
+        implements WebhookDeliveryJoinDao {
     @Override
-    public Pair<List<WebhookDispatchJoinVO>, Integer> searchAndCountByIdWebhookRulesManagementServerKeyword(Long id,
-            List<Long> webhookRuleIds, Long managementServerId, String keyword, Filter searchFilter) {
-        SearchBuilder<WebhookDispatchJoinVO> sb = createSearchBuilder();
+    public Pair<List<WebhookDeliveryJoinVO>, Integer> searchAndCountByIdWebhooksManagementServerKeyword(Long id,
+            List<Long> webhookIds, Long managementServerId, String keyword, Filter searchFilter) {
+        SearchBuilder<WebhookDeliveryJoinVO> sb = createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("webhookRuleId", sb.entity().getWebhookRuleId(), SearchCriteria.Op.IN);
+        sb.and("webhookId", sb.entity().getWebhookId(), SearchCriteria.Op.IN);
         sb.and("managementServerId", sb.entity().getManagementServerMsId(), SearchCriteria.Op.EQ);
         sb.and("keyword", sb.entity().getPayload(), SearchCriteria.Op.LIKE);
-        SearchCriteria<WebhookDispatchJoinVO> sc = sb.create();
+        SearchCriteria<WebhookDeliveryJoinVO> sc = sb.create();
         if (id != null) {
             sc.setParameters("id", id);
         }
-        if (CollectionUtils.isNotEmpty(webhookRuleIds)) {
-            sc.setParameters("webhookRuleId", webhookRuleIds.toArray());
+        if (CollectionUtils.isNotEmpty(webhookIds)) {
+            sc.setParameters("webhookId", webhookIds.toArray());
         }
         if (managementServerId != null) {
             sc.setParameters("managementServerId", managementServerId);

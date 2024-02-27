@@ -15,34 +15,13 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.mom.webhook;
+package org.apache.cloudstack.mom.webhook.dao;
 
-import java.util.Date;
+import org.apache.cloudstack.mom.webhook.vo.WebhookDeliveryVO;
 
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+import com.cloud.utils.db.GenericDao;
 
-public interface WebhookRule extends ControlledEntity, Identity, InternalIdentity {
-    public static final long ID_DUMMY_RULE = 0L;
-    public static final String NAME_DUMMY_RULE = "Test";
-    enum State {
-        Enabled, Disabled;
-    };
-
-    enum Scope {
-        Local, Domain, Global;
-    };
-
-    long getId();
-    String getName();
-    String getDescription();
-    State getState();
-    long getDomainId();
-    long getAccountId();
-    String getPayloadUrl();
-    String getSecretKey();
-    boolean isSslVerification();
-    Scope getScope();
-    Date getCreated();
+public interface WebhookDeliveryDao extends GenericDao<WebhookDeliveryVO, Long> {
+    int deleteByIdWebhookManagementServer(Long id, Long webhookId, Long managementServerId);
+    void removeOlderDeliveries(long webhookId, long limit);
 }

@@ -23,39 +23,39 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 import org.apache.cloudstack.api.response.ControlledViewEntityResponse;
-import org.apache.cloudstack.mom.webhook.WebhookRule;
+import org.apache.cloudstack.mom.webhook.Webhook;
 
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value = {WebhookRule.class})
-public class WebhookRuleResponse extends BaseResponse implements ControlledViewEntityResponse {
+@EntityReference(value = {Webhook.class})
+public class WebhookResponse extends BaseResponse implements ControlledViewEntityResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "The ID of the Webhook rule")
+    @Param(description = "The ID of the Webhook")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "The name of the Webhook rule")
+    @Param(description = "The name of the Webhook")
     private String name;
 
     @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "The description of the Webhook rule")
+    @Param(description = "The description of the Webhook")
     private String description;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "The state of the Webhook rule")
+    @Param(description = "The state of the Webhook")
     private String state;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "The ID of the domain in which the Webhook rule exists")
+    @Param(description = "The ID of the domain in which the Webhook exists")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "The name of the domain in which the Webhook rule exists")
+    @Param(description = "The name of the domain in which the Webhook exists")
     private String domainName;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "The account associated with the Webhook rule")
+    @Param(description = "The account associated with the Webhook")
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
@@ -67,23 +67,23 @@ public class WebhookRuleResponse extends BaseResponse implements ControlledViewE
     private String projectName;
 
     @SerializedName(ApiConstants.PAYLOAD_URL)
-    @Param(description = "The payload URL end point for the Webhook rule")
+    @Param(description = "The payload URL end point for the Webhook")
     private String payloadUrl;
 
     @SerializedName(ApiConstants.SECRET_KEY)
-    @Param(description = "The secret key for the Webhook rule")
+    @Param(description = "The secret key for the Webhook")
     private String secretKey;
 
     @SerializedName(ApiConstants.SSL_VERIFICATION)
-    @Param(description = "Whether SSL verification is enabled for the Webhook rule")
+    @Param(description = "Whether SSL verification is enabled for the Webhook")
     private boolean sslVerification;
 
     @SerializedName(ApiConstants.SCOPE)
-    @Param(description = "The scope of the Webhook rule")
+    @Param(description = "The scope of the Webhook")
     private String scope;
 
     @SerializedName(ApiConstants.CREATED)
-    @Param(description = "The date when this Webhook rule was created")
+    @Param(description = "The date when this Webhook was created")
     private Date created;
 
     public void setId(String id) {

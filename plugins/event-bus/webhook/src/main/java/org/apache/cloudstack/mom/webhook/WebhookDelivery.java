@@ -15,14 +15,25 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.mom.webhook.dao;
+package org.apache.cloudstack.mom.webhook;
 
-import java.util.List;
+import java.util.Date;
 
-import org.apache.cloudstack.mom.webhook.vo.WebhookRuleJoinVO;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-import com.cloud.utils.db.GenericDao;
+public interface WebhookDelivery extends Identity, InternalIdentity {
+    public static final long ID_DUMMY = 0L;
+    public static final String TEST_EVENT_TYPE = "TEST.WEBHOOK";
 
-public interface WebhookRuleJoinDao extends GenericDao<WebhookRuleJoinVO, Long> {
-    List<WebhookRuleJoinVO> listByAccountOrDomain(long accountId, String domainPath);
+    long getId();
+    long getEventId();
+    long getWebhookId();
+    long getManagementServerId();
+    String getHeaders();
+    String getPayload();
+    boolean isSuccess();
+    String getResponse();
+    Date getStartTime();
+    Date getEndTime();
 }

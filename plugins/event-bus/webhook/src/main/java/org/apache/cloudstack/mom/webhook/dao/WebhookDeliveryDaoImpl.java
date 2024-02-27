@@ -19,27 +19,27 @@ package org.apache.cloudstack.mom.webhook.dao;
 
 import java.util.List;
 
-import org.apache.cloudstack.mom.webhook.vo.WebhookDispatchVO;
+import org.apache.cloudstack.mom.webhook.vo.WebhookDeliveryVO;
 
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-public class WebhookDispatchDaoImpl extends GenericDaoBase<WebhookDispatchVO, Long> implements WebhookDispatchDao {
+public class WebhookDeliveryDaoImpl extends GenericDaoBase<WebhookDeliveryVO, Long> implements WebhookDeliveryDao {
     @Override
-    public int deleteByIdWebhookRuleManagementServer(Long id, Long webhookRuleId, Long managementServerId) {
-        SearchBuilder<WebhookDispatchVO> sb = createSearchBuilder();
+    public int deleteByIdWebhookManagementServer(Long id, Long webhookId, Long managementServerId) {
+        SearchBuilder<WebhookDeliveryVO> sb = createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("webhookRuleId", sb.entity().getWebhookRuleId(), SearchCriteria.Op.EQ);
+        sb.and("webhookId", sb.entity().getWebhookId(), SearchCriteria.Op.EQ);
         sb.and("managementServerId", sb.entity().getManagementServerId(), SearchCriteria.Op.EQ);
         sb.and("keyword", sb.entity().getPayload(), SearchCriteria.Op.LIKE);
-        SearchCriteria<WebhookDispatchVO> sc = sb.create();
+        SearchCriteria<WebhookDeliveryVO> sc = sb.create();
         if (id != null) {
             sc.setParameters("id", id);
         }
-        if (webhookRuleId != null) {
-            sc.setParameters("webhookRuleId", webhookRuleId);
+        if (webhookId != null) {
+            sc.setParameters("webhookId", webhookId);
         }
         if (managementServerId != null) {
             sc.setParameters("managementServerId", managementServerId);
@@ -48,17 +48,17 @@ public class WebhookDispatchDaoImpl extends GenericDaoBase<WebhookDispatchVO, Lo
     }
 
     @Override
-    public void removeOlderDispatches(long webhookId, long limit) {
-        Filter searchFilter = new Filter(WebhookDispatchVO.class, "id", false, 0L, limit);
-        SearchBuilder<WebhookDispatchVO> sb = createSearchBuilder();
-        sb.and("webhookRuleId", sb.entity().getWebhookRuleId(), SearchCriteria.Op.EQ);
-        SearchCriteria<WebhookDispatchVO> sc = sb.create();
-        sc.setParameters("webhookRuleId", webhookId);
-        List<WebhookDispatchVO> keep = listBy(sc, searchFilter);
-        SearchBuilder<WebhookDispatchVO> sbDelete = createSearchBuilder();
+    public void removeOlderDeliveries(long webhookId, long limit) {
+        Filter searchFilter = new Filter(WebhookDeliveryVO.class, "id", false, 0L, limit);
+        SearchBuilder<WebhookDeliveryVO> sb = createSearchBuilder();
+        sb.and("webhookId", sb.entity().getWebhookId(), SearchCriteria.Op.EQ);
+        SearchCriteria<WebhookDeliveryVO> sc = sb.create();
+        sc.setParameters("webhookId", webhookId);
+        List<WebhookDeliveryVO> keep = listBy(sc, searchFilter);
+        SearchBuilder<WebhookDeliveryVO> sbDelete = createSearchBuilder();
         sbDelete.and("id", sbDelete.entity().getId(), SearchCriteria.Op.NOTIN);
-        SearchCriteria<WebhookDispatchVO> scDelete = sbDelete.create();
-        scDelete.setParameters("id", keep.stream().map(WebhookDispatchVO::getId).toArray());
+        SearchCriteria<WebhookDeliveryVO> scDelete = sbDelete.create();
+        scDelete.setParameters("id", keep.stream().map(WebhookDeliveryVO::getId).toArray());
         remove(scDelete);
     }
 }

@@ -30,19 +30,19 @@ import org.apache.cloudstack.api.response.ManagementServerResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.mom.webhook.WebhookApiService;
-import org.apache.cloudstack.mom.webhook.WebhookDispatch;
-import org.apache.cloudstack.mom.webhook.api.response.WebhookDispatchResponse;
-import org.apache.cloudstack.mom.webhook.api.response.WebhookRuleResponse;
+import org.apache.cloudstack.mom.webhook.WebhookDelivery;
+import org.apache.cloudstack.mom.webhook.api.response.WebhookDeliveryResponse;
+import org.apache.cloudstack.mom.webhook.api.response.WebhookResponse;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "deleteWebhookDispatchHistory",
-        description = "Deletes Webhook dispatch history",
+@APICommand(name = "deleteWebhookDelivery",
+        description = "Deletes Webhook delivery",
         responseObject = SuccessResponse.class,
-        entityType = {WebhookDispatch.class},
+        entityType = {WebhookDelivery.class},
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
         since = "4.20.0")
-public class DeleteWebhookDispatchHistoryCmd extends BaseCmd {
+public class DeleteWebhookDeliveryCmd extends BaseCmd {
 
     @Inject
     WebhookApiService webhookApiService;
@@ -51,14 +51,14 @@ public class DeleteWebhookDispatchHistoryCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     @Parameter(name = ApiConstants.ID, type = BaseCmd.CommandType.UUID,
-            entityType = WebhookDispatchResponse.class,
-            description = "The ID of the Webhook dispatch")
+            entityType = WebhookDeliveryResponse.class,
+            description = "The ID of the Webhook delivery")
     private Long id;
 
-    @Parameter(name = ApiConstants.WEBHOOK_RULE_ID, type = BaseCmd.CommandType.UUID,
-            entityType = WebhookRuleResponse.class,
-            description = "The ID of the Webhook rule")
-    private Long webhookRuleId;
+    @Parameter(name = ApiConstants.WEBHOOK_ID, type = BaseCmd.CommandType.UUID,
+            entityType = WebhookResponse.class,
+            description = "The ID of the Webhook")
+    private Long webhookId;
 
     @Parameter(name = ApiConstants.MANAGEMENT_SERVER_ID, type = BaseCmd.CommandType.UUID,
             entityType = ManagementServerResponse.class,
@@ -73,8 +73,8 @@ public class DeleteWebhookDispatchHistoryCmd extends BaseCmd {
         return id;
     }
 
-    public Long getWebhookRuleId() {
-        return webhookRuleId;
+    public Long getWebhookId() {
+        return webhookId;
     }
 
     public Long getManagementServerId() {
@@ -92,8 +92,8 @@ public class DeleteWebhookDispatchHistoryCmd extends BaseCmd {
     @Override
     public void execute() throws ServerApiException {
         try {
-            if (!webhookApiService.deleteWebhookDispatchHistory(this)) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete webhook dispatch history");
+            if (!webhookApiService.deleteWebhookDelivery(this)) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete webhook delivery");
             }
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);

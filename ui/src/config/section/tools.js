@@ -75,11 +75,11 @@ export default {
       title: 'label.webhooks',
       icon: 'node-index-outlined',
       docHelp: 'adminguide/webhooks.html',
-      permission: ['listWebhookRules'],
+      permission: ['listWebhooks'],
       columns: () => {
-        const cols = ['name', 'payloadurl', 'state', 'account', 'created']
+        const cols = ['name', 'payloadurl', 'state', 'created']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
-          cols.push('scope')
+          cols.splice(3, 0, 'account', 'domain', 'scope')
         }
         if (store.getters.listAllProjects) {
           cols.push('project')
@@ -100,13 +100,13 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
         },
         {
-          name: 'history',
-          component: shallowRef(defineAsyncComponent(() => import('@/components/view/WebhookDispatchHistoryTab.vue')))
+          name: 'recent.deliveries',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/WebhookDeliveriesTab.vue')))
         }
       ],
       actions: [
         {
-          api: 'createWebhookRule',
+          api: 'createWebhook',
           icon: 'plus-outlined',
           label: 'label.create.webhook',
           docHelp: 'adminguide/events.html#creating-webhooks',
@@ -115,7 +115,7 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/views/tools/CreateWebhook.vue')))
         },
         {
-          api: 'updateWebhookRule',
+          api: 'updateWebhook',
           icon: 'edit-outlined',
           label: 'label.update.webhook',
           dataView: true,
@@ -128,7 +128,7 @@ export default {
           }
         },
         {
-          api: 'updateWebhookRule',
+          api: 'updateWebhook',
           icon: 'play-circle-outlined',
           label: 'label.enable.webhook',
           message: 'message.confirm.enable.webhook',
@@ -140,7 +140,7 @@ export default {
           show: (record) => { return ['Disabled'].includes(record.state) }
         },
         {
-          api: 'updateWebhookRule',
+          api: 'updateWebhook',
           icon: 'pause-circle-outlined',
           label: 'label.disable.webhook',
           message: 'message.confirm.disable.webhook',
@@ -152,16 +152,16 @@ export default {
           show: (record) => { return ['Enabled'].includes(record.state) }
         },
         {
-          api: 'testWebhookDispatch',
+          api: 'executeWebhookDelivery',
           icon: 'right-square-outlined',
-          label: 'label.test.webhook.dispatch',
-          message: 'message.test.webhook.dispatch',
+          label: 'label.test.webhook.delivery',
+          message: 'message.test.webhook.delivery',
           dataView: true,
           popup: true,
-          component: shallowRef(defineAsyncComponent(() => import('@/views/tools/TestWebhookDispatch.vue')))
+          component: shallowRef(defineAsyncComponent(() => import('@/views/tools/TestWebhookDelivery.vue')))
         },
         {
-          api: 'deleteWebhookRule',
+          api: 'deleteWebhook',
           icon: 'delete-outlined',
           label: 'label.delete.webhook',
           message: 'message.delete.webhook',
@@ -178,20 +178,20 @@ export default {
       ]
     },
     {
-      name: 'webhookhistory',
-      title: 'label.webhook.history',
+      name: 'webhookdeliveries',
+      title: 'label.webhook.deliveries',
       icon: 'gateway-outlined',
       hidden: true,
-      permission: ['listWebhookDispatchHistory'],
+      permission: ['listWebhookDeliveries'],
       columns: () => {
-        const cols = ['eventtype', 'payload', 'webhookrulename', 'success', 'response', 'duration']
+        const cols = ['payload', 'eventtype', 'webhookname', 'success', 'response', 'duration']
         if (['Admin'].includes(store.getters.userInfo.roletype)) {
           cols.splice(3, 0, 'managementservername')
         }
         return cols
       },
       details: () => {
-        const fields = ['id', 'eventid', 'eventtype', 'payload', 'success', 'response', 'startdate', 'enddate']
+        const fields = ['id', 'eventid', 'eventtype', 'headers', 'payload', 'success', 'response', 'startdate', 'enddate']
         if (['Admin'].includes(store.getters.userInfo.roletype)) {
           fields.splice(1, 0, 'managementserverid', 'managementservername')
         }
@@ -199,10 +199,18 @@ export default {
       },
       actions: [
         {
-          api: 'deleteWebhookDispatchHistory',
+          api: 'executeWebhookDelivery',
+          icon: 'retweet-outlined',
+          label: 'label.redeliver',
+          message: 'message.redeliver.webhook.delivery',
+          dataView: true,
+          popup: true
+        },
+        {
+          api: 'deleteWebhookDelivery',
           icon: 'delete-outlined',
-          label: 'label.delete.webhook.dispatch.history',
-          message: 'message.delete.webhook.dispatch.history',
+          label: 'label.delete.webhook.delivery',
+          message: 'message.delete.webhook.delivery',
           dataView: true,
           groupAction: true,
           popup: true,

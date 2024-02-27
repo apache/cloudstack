@@ -25,7 +25,10 @@ import java.security.InvalidKeyException;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
@@ -37,9 +40,9 @@ import org.apache.cloudstack.framework.events.Event;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.config.RequestConfig;
@@ -51,6 +54,7 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicHeader;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
@@ -59,23 +63,24 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class WebhookDispatchThread implements Runnable {
-    protected static Logger LOGGER = LogManager.getLogger(WebhookDispatchThread.class);
+public class WebhookDeliveryThread implements Runnable {
+    protected static Logger LOGGER = LogManager.getLogger(WebhookDeliveryThread.class);
 
     private static final String HEADER_X_CS_EVENT_ID = "X-CS-Event-ID";
     private static final String HEADER_X_CS_EVENT = "X-CS-Event";
     private static final String HEADER_X_CS_SIGNATURE = "X-CS-Signature";
     private static final String PREFIX_HEADER_USER_AGENT = "CS-Hookshot/";
-    private final WebhookRule rule;
+    private final Webhook webhook;
     private final Event event;
     private CloseableHttpClient httpClient;
+    private String headers;
     private String payload;
     private String response;
     private Date startTime;
-    private int dispatchRetries = 3;
+    private int deliveryRetries = 3;
     private int deliveryTimeout = 10;
 
-    AsyncCompletionCallback<WebhookDispatchResult> callback;
+    AsyncCompletionCallback<WebhookDeliveryResult> callback;
 
     protected boolean isValidJson(String json) {
         try {
@@ -91,7 +96,7 @@ public class WebhookDispatchThread implements Runnable {
     }
 
     protected void setHttpClient() throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
-        if (rule.isSslVerification()) {
+        if (webhook.isSslVerification()) {
             httpClient = HttpClients.createDefault();
             return;
         }
@@ -104,7 +109,7 @@ public class WebhookDispatchThread implements Runnable {
     }
 
     protected HttpPost getBasicHttpPostRequest() throws URISyntaxException {
-        final URI uri = new URI(rule.getPayloadUrl());
+        final URI uri = new URI(webhook.getPayloadUrl());
         HttpPost request = new HttpPost();
         RequestConfig.Builder requestConfig = RequestConfig.custom();
         requestConfig.setConnectTimeout(deliveryTimeout * 1000);
@@ -117,27 +122,36 @@ public class WebhookDispatchThread implements Runnable {
 
     protected void updateRequestHeaders(HttpPost request) throws DecoderException, NoSuchAlgorithmException,
             InvalidKeyException {
-        request.setHeader(HEADER_X_CS_EVENT_ID, event.getEventUuid());
-        request.setHeader(HEADER_X_CS_EVENT, event.getEventType());
+        request.addHeader(HEADER_X_CS_EVENT_ID, event.getEventUuid());
+        request.addHeader(HEADER_X_CS_EVENT, event.getEventType());
         request.setHeader(HttpHeaders.USER_AGENT, String.format("%s%s", PREFIX_HEADER_USER_AGENT,
                 event.getResourceAccountUuid()));
-        if (StringUtils.isNotBlank(rule.getSecretKey())) {
-            request.setHeader(HEADER_X_CS_SIGNATURE, generateHMACSignature(payload, rule.getSecretKey()));
+        if (StringUtils.isNotBlank(webhook.getSecretKey())) {
+            request.addHeader(HEADER_X_CS_SIGNATURE, generateHMACSignature(payload, webhook.getSecretKey()));
         }
-        if (!isValidJson(payload)) {
-            request.setHeader(HttpHeaders.CONTENT_TYPE, "text/plain; charset=UTF-8");
+        List<Header> headers = new ArrayList<>(Arrays.asList(request.getAllHeaders()));
+        HttpEntity entity = request.getEntity();
+        if (entity.getContentLength() > 0 && !request.containsHeader(HttpHeaders.CONTENT_LENGTH)) {
+            headers.add(new BasicHeader(HttpHeaders.CONTENT_LENGTH, Long.toString(entity.getContentLength())));
         }
+        if (entity.getContentType() != null && !request.containsHeader(HttpHeaders.CONTENT_TYPE)) {
+            headers.add(entity.getContentType());
+        }
+        if (entity.getContentEncoding() != null && !request.containsHeader(HttpHeaders.CONTENT_ENCODING)) {
+            headers.add(entity.getContentEncoding());
+        }
+        this.headers = StringUtils.join(headers, "\n");
     }
 
-    public WebhookDispatchThread(WebhookRule rule, Event event,
-             AsyncCompletionCallback<WebhookDispatchResult> callback) {
-        this.rule = rule;
+    public WebhookDeliveryThread(Webhook webhook, Event event,
+                                 AsyncCompletionCallback<WebhookDeliveryResult> callback) {
+        this.webhook = webhook;
         this.event = event;
         this.callback = callback;
     }
 
-    public void setDispatchRetries(int dispatchRetries) {
-        this.dispatchRetries = dispatchRetries;
+    public void setDeliveryRetries(int deliveryRetries) {
+        this.deliveryRetries = deliveryRetries;
     }
 
     public void setDeliveryTimeout(int deliveryTimeout) {
@@ -147,10 +161,10 @@ public class WebhookDispatchThread implements Runnable {
     @Override
     public void run() {
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug(String.format("Dispatching event: %s for webhook: %s", event.getEventType(), rule.getName()));
+            LOGGER.debug(String.format("Delivering event: %s for %s", event.getEventType(), webhook));
         }
         if (event == null) {
-            LOGGER.warn(String.format("Invalid event received for dispatching webhook: %s", rule.getName()));
+            LOGGER.warn(String.format("Invalid event received for delivering %s", webhook));
             return;
         }
         payload = event.getDescription();
@@ -159,55 +173,56 @@ public class WebhookDispatchThread implements Runnable {
         try {
             setHttpClient();
         } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException e) {
-            response = String.format("Failed to initiate dispatch due to : %s", e.getMessage());
-            callback.complete(new WebhookDispatchResult(payload, success, response, new Date()));
+            response = String.format("Failed to initiate delivery due to : %s", e.getMessage());
+            callback.complete(new WebhookDeliveryResult(headers, payload, success, response, new Date()));
             return;
         }
-        while (attempt < dispatchRetries) {
+        while (attempt < deliveryRetries) {
             attempt++;
-            if (dispatch(attempt)) {
+            if (delivery(attempt)) {
                 success = true;
                 break;
             }
         }
-        callback.complete(new WebhookDispatchResult(payload, success, response, startTime));
+        callback.complete(new WebhookDeliveryResult(headers, payload, success, response, startTime));
     }
 
     protected void updateResponseFromRequest(HttpEntity entity) {
         try {
             this.response =  EntityUtils.toString(entity, StandardCharsets.UTF_8);
         } catch (IOException e) {
-            LOGGER.error(String.format("Failed to parse response for event: %s, webhook: %s having URL: %s",
-                    event.getEventType(), rule.getName(), rule.getPayloadUrl()));
+            LOGGER.error(String.format("Failed to parse response for event: %s, %s",
+                    event.getEventType(), webhook));
             this.response = "";
         }
     }
 
-    protected boolean dispatch(int attempt) {
+    protected boolean delivery(int attempt) {
         startTime = new Date();
         try {
             HttpPost request = getBasicHttpPostRequest();
-            updateRequestHeaders(request);
-            StringEntity input = new StringEntity(payload, ContentType.APPLICATION_JSON);
+            StringEntity input = new StringEntity(payload,
+                    isValidJson(payload) ? ContentType.APPLICATION_JSON : ContentType.TEXT_PLAIN);
             request.setEntity(input);
+            updateRequestHeaders(request);
             if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace(String.format("Dispatching event: %s for webhook: %s on URL: %s with timeout: %d, " +
-                        "attempt #%d", event.getEventType(), rule.getName(), rule.getPayloadUrl(),
+                LOGGER.trace(String.format("Delivering event: %s for %s with timeout: %d, " +
+                        "attempt #%d", event.getEventType(), webhook,
                         deliveryTimeout, attempt));
             }
             final CloseableHttpResponse response = httpClient.execute(request);
             updateResponseFromRequest(response.getEntity());
             if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
                 if (LOGGER.isTraceEnabled()) {
-                    LOGGER.trace(String.format("Successfully dispatched event: %s for webhook: %s",
-                            event.getEventType(), rule.getName()));
+                    LOGGER.trace(String.format("Successfully delivered event: %s for %s",
+                            event.getEventType(), webhook));
                 }
                 return true;
             }
         } catch (URISyntaxException | IOException | DecoderException | NoSuchAlgorithmException |
                  InvalidKeyException e) {
-            LOGGER.warn(String.format("Failed to dispatch webhook: %s having URL: %s, in attempt #%d due to: %s",
-                    rule.getName(), rule.getPayloadUrl(), attempt, e.getMessage()));
+            LOGGER.warn(String.format("Failed to delivery %s, in attempt #%d due to: %s",
+                    webhook, attempt, e.getMessage()));
             response = String.format("Failed due to : %s", e.getMessage());
         }
         return false;
@@ -223,11 +238,11 @@ public class WebhookDispatchThread implements Runnable {
         return new String(Base64.encodeBase64(encodedText)).trim();
     }
 
-    public static class WebhookDispatchContext<T> extends AsyncRpcContext<T> {
+    public static class WebhookDeliveryContext<T> extends AsyncRpcContext<T> {
         private final Long eventId;
         private final Long ruleId;
 
-        public WebhookDispatchContext(AsyncCompletionCallback<T> callback, Long eventId, Long ruleId) {
+        public WebhookDeliveryContext(AsyncCompletionCallback<T> callback, Long eventId, Long ruleId) {
             super(callback);
             this.eventId = eventId;
             this.ruleId = ruleId;
@@ -242,18 +257,24 @@ public class WebhookDispatchThread implements Runnable {
         }
     }
 
-    public static class WebhookDispatchResult extends CommandResult {
+    public static class WebhookDeliveryResult extends CommandResult {
+        private final String headers;
         private final String payload;
         private final Date starTime;
         private final Date endTime;
 
-        public WebhookDispatchResult(String payload, boolean success, String response, Date starTime) {
+        public WebhookDeliveryResult(String headers, String payload, boolean success, String response, Date starTime) {
             super();
+            this.headers = headers;
             this.payload = payload;
             this.setResult(response);
             this.setSuccess(success);
             this.starTime = starTime;
             this.endTime = new Date();
+        }
+
+        public String getHeaders() {
+            return headers;
         }
 
         public String getPayload() {

@@ -28,29 +28,30 @@ public interface WebhookService extends PluggableService, Configurable {
 
     ConfigKey<Integer> WebhookDeliveryTimeout = new ConfigKey<>("Advanced", Integer.class,
             "webhook.delivery.timeout", "10",
-            "Wait timeout (in seconds) for a webhook delivery dispatch",
+            "Wait timeout (in seconds) for a webhook delivery delivery",
             true, ConfigKey.Scope.Domain);
 
-    ConfigKey<Integer> WebhookDispatchRetries = new ConfigKey<>("Advanced", Integer.class,
+    ConfigKey<Integer> WebhookDeliveryRetries = new ConfigKey<>("Advanced", Integer.class,
             "webhook.delivery.retries", "3",
-            "Number of tries to be made for a webhook dispatch",
+            "Number of tries to be made for a webhook delivery",
             true, ConfigKey.Scope.Domain);
 
-    ConfigKey<Integer> WebhookDispatcherThreadPoolSize = new ConfigKey<>("Advanced", Integer.class,
-            "webhook.dispatch.thread.pool.size", "5",
-            "Size of the thread pool for webhook dispatchers",
+    ConfigKey<Integer> WebhookDeliveryThreadPoolSize = new ConfigKey<>("Advanced", Integer.class,
+            "webhook.delivery.thread.pool.size", "5",
+            "Size of the thread pool for webhook deliveries",
             false, ConfigKey.Scope.Global);
 
-    ConfigKey<Integer> WebhookDispatchHistoryLimit = new ConfigKey<>("Advanced", Integer.class,
-            "webhook.dispatch.history.limit", "10",
-            "Limit for number of deliveries to keep in history per webhook",
+    ConfigKey<Integer> WebhookDeliveriesLimit = new ConfigKey<>("Advanced", Integer.class,
+            "webhook.deliveries.limit", "10",
+            "Limit for number of deliveries to keep in DB per webhook",
             true, ConfigKey.Scope.Global);
 
-    ConfigKey<Integer> WebhookDispatchHistoryCleanupInterval = new ConfigKey<>("Advanced", Integer.class,
-            "webhook.dispatch.history.cleanup.interval", "3600",
-            "Interval (in seconds) for cleaning up webhook dispatch history",
+    ConfigKey<Integer> WebhookDeliveriesCleanupInterval = new ConfigKey<>("Advanced", Integer.class,
+            "webhook.deliveries.cleanup.interval", "3600",
+            "Interval (in seconds) for cleaning up webhook deliveries",
             false, ConfigKey.Scope.Global);
 
     void handleEvent(Event event);
-    WebhookDispatch testWebhookDispatch(WebhookRule rule, String payload) throws CloudRuntimeException;
+    WebhookDelivery executeWebhookDelivery(WebhookDelivery delivery, Webhook webhook, String payload)
+            throws CloudRuntimeException;
 }

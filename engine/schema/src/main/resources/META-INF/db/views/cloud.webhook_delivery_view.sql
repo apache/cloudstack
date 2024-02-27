@@ -15,18 +15,19 @@
 -- specific language governing permissions and limitations
 -- under the License.
 
--- VIEW `cloud`.`webhook_dispatch_view`;
+-- VIEW `cloud`.`webhook_delivery_view`;
 
-DROP VIEW IF EXISTS `cloud`.`webhook_dispatch_view`;
-CREATE VIEW `cloud`.`webhook_dispatch_view` AS
+DROP VIEW IF EXISTS `cloud`.`webhook_delivery_view`;
+CREATE VIEW `cloud`.`webhook_delivery_view` AS
     SELECT
-        webhook_dispatch.id,
-        webhook_dispatch.uuid,
-        webhook_dispatch.payload,
-        webhook_dispatch.success,
-        webhook_dispatch.response,
-        webhook_dispatch.start_time,
-        webhook_dispatch.end_time,
+        webhook_delivery.id,
+        webhook_delivery.uuid,
+        webhook_delivery.headers,
+        webhook_delivery.payload,
+        webhook_delivery.success,
+        webhook_delivery.response,
+        webhook_delivery.start_time,
+        webhook_delivery.end_time,
         event.id event_id,
         event.uuid event_uuid,
         event.type event_type,
@@ -38,10 +39,10 @@ CREATE VIEW `cloud`.`webhook_dispatch_view` AS
         mshost.msid mshost_msid,
         mshost.name mshost_name
     FROM
-        `cloud`.`webhook_dispatch`
+        `cloud`.`webhook_delivery`
             INNER JOIN
-        `cloud`.`event` ON webhook_dispatch.event_id = event.id
+        `cloud`.`event` ON webhook_delivery.event_id = event.id
             INNER JOIN
-        `cloud`.`webhook` ON webhook_dispatch.webhook_id = webhook.id
+        `cloud`.`webhook` ON webhook_delivery.webhook_id = webhook.id
             LEFT JOIN
-        `cloud`.`mshost` ON mshost.msid = webhook_dispatch.mshost_msid;
+        `cloud`.`mshost` ON mshost.msid = webhook_delivery.mshost_msid;

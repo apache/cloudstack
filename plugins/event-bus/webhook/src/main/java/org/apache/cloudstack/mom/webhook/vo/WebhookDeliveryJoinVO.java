@@ -19,7 +19,6 @@ package org.apache.cloudstack.mom.webhook.vo;
 
 
 import java.util.Date;
-import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -30,13 +29,15 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-import org.apache.cloudstack.mom.webhook.WebhookDispatch;
-import org.apache.cloudstack.mom.webhook.WebhookRule;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
+import com.cloud.api.query.vo.BaseViewVO;
+
 @Entity
-@Table(name = "webhook_dispatch")
-public class WebhookDispatchVO implements WebhookDispatch {
+@Table(name = "webhook_delivery_view")
+public class WebhookDeliveryJoinVO extends BaseViewVO implements InternalIdentity, Identity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -49,11 +50,35 @@ public class WebhookDispatchVO implements WebhookDispatch {
     @Column(name = "event_id")
     private long eventId;
 
+    @Column(name = "event_uuid")
+    private String eventUuid;
+
+    @Column(name = "event_type")
+    private String eventType;
+
     @Column(name = "webhook_id")
-    private long webhookRuleId;
+    private long webhookId;
+
+    @Column(name = "webhook_uuid")
+    private String webhookUuId;
+
+    @Column(name = "webhook_name")
+    private String webhookName;
+
+    @Column(name = "mshost_id")
+    private long managementServerId;
+
+    @Column(name = "mshost_uuid")
+    private String managementServerUuId;
 
     @Column(name = "mshost_msid")
-    private long mangementServerId;
+    private long managementServerMsId;
+
+    @Column(name = "mshost_name")
+    private String managementServerName;
+
+    @Column(name = "headers", length = 65535)
+    private String headers;
 
     @Column(name = "payload", length = 65535)
     private String payload;
@@ -74,7 +99,7 @@ public class WebhookDispatchVO implements WebhookDispatch {
 
     @Override
     public long getId() {
-        return id;
+        return 0;
     }
 
     @Override
@@ -82,84 +107,76 @@ public class WebhookDispatchVO implements WebhookDispatch {
         return uuid;
     }
 
-    @Override
     public long getEventId() {
         return eventId;
     }
 
-    @Override
-    public long getWebhookRuleId() {
-        return webhookRuleId;
+    public String getEventUuid() {
+        return eventUuid;
     }
 
-    @Override
+    public String getEventType() {
+        return eventType;
+    }
+
+    public long getWebhookId() {
+        return webhookId;
+    }
+
+    public String getWebhookUuId() {
+        return webhookUuId;
+    }
+
+    public String getWebhookName() {
+        return webhookName;
+    }
+
     public long getManagementServerId() {
-        return mangementServerId;
+        return managementServerId;
     }
 
-    @Override
+    public String getManagementServerUuId() {
+        return managementServerUuId;
+    }
+
+    public long getManagementServerMsId() {
+        return managementServerMsId;
+    }
+
+    public String getManagementServerName() {
+        return managementServerName;
+    }
+
+    public String getHeaders() {
+        return headers;
+    }
+
     public String getPayload() {
         return payload;
     }
 
-    @Override
     public boolean isSuccess() {
         return success;
     }
 
-    @Override
     public String getResponse() {
         return response;
     }
 
-    @Override
     public Date getStartTime() {
         return startTime;
     }
 
-    @Override
     public Date getEndTime() {
         return endTime;
     }
 
     @Override
     public String toString() {
-        return String.format("WebhookDispatch [%s]", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "uuid", "webhookRuleId", "endTime", "success"));
+        return String.format("WebhookDelivery [%s]", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                this, "id", "uuid", "webhookId", "startTime", "success"));
     }
 
-    public WebhookDispatchVO() {
-        this.uuid = UUID.randomUUID().toString();
-    }
-
-    public WebhookDispatchVO(long eventId, long webhookRuleId, long managementServerId, String payload, boolean success,
-                             String response, Date startTime, Date endTime) {
-        this.uuid = UUID.randomUUID().toString();
-        this.eventId = eventId;
-        this.webhookRuleId = webhookRuleId;
-        this.mangementServerId = managementServerId;
-        this.payload = payload;
-        this.success = success;
-        this.response = response;
-        this.startTime = startTime;
-        this.endTime = endTime;
-    }
-
-
-
-    /*
-     * For creating a dummy object for testing dispatch
-     */
-    public WebhookDispatchVO(long managementServerId, String payload, boolean success,
-                             String response, Date startTime, Date endTime) {
-        this.id = WebhookRule.ID_DUMMY_RULE;
-        this.uuid = UUID.randomUUID().toString();
-        this.eventId = WebhookRule.ID_DUMMY_RULE;
-        this.webhookRuleId = WebhookRule.ID_DUMMY_RULE;
-        this.mangementServerId = managementServerId;
-        this.payload = payload;
-        this.success = success;
-        this.response = response;
-        this.startTime = startTime;
-        this.endTime = endTime;
+    public WebhookDeliveryJoinVO() {
     }
 }

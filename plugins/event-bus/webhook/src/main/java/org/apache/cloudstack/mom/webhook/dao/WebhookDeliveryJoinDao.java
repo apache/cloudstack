@@ -17,11 +17,15 @@
 
 package org.apache.cloudstack.mom.webhook.dao;
 
-import org.apache.cloudstack.mom.webhook.vo.WebhookDispatchVO;
+import java.util.List;
 
+import org.apache.cloudstack.mom.webhook.vo.WebhookDeliveryJoinVO;
+
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
 
-public interface WebhookDispatchDao extends GenericDao<WebhookDispatchVO, Long> {
-    int deleteByIdWebhookRuleManagementServer(Long id, Long webhookRuleId, Long managementServerId);
-    void removeOlderDispatches(long webhookId, long limit);
+public interface WebhookDeliveryJoinDao extends GenericDao<WebhookDeliveryJoinVO, Long> {
+    Pair<List<WebhookDeliveryJoinVO>, Integer> searchAndCountByIdWebhooksManagementServerKeyword(Long id,
+         List<Long> webhookIds, Long managementServerId, final String keyword, Filter searchFilter);
 }

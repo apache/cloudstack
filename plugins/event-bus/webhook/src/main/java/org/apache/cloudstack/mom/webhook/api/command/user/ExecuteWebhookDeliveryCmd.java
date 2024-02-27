@@ -20,27 +20,33 @@ package org.apache.cloudstack.mom.webhook.api.command.user;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.mom.webhook.WebhookApiService;
-import org.apache.cloudstack.mom.webhook.WebhookRule;
-import org.apache.cloudstack.mom.webhook.api.response.WebhookRuleResponse;
+import org.apache.cloudstack.mom.webhook.WebhookDelivery;
+import org.apache.cloudstack.mom.webhook.api.response.WebhookDeliveryResponse;
+import org.apache.cloudstack.mom.webhook.api.response.WebhookResponse;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "updateWebhookRule",
-        description = "Update a Webhook rule",
-        responseObject = SuccessResponse.class,
-        entityType = {WebhookRule.class},
+
+@APICommand(name = "executeWebhookDelivery",
+        description = "Execute a Webhook delivery",
+        responseObject = WebhookDeliveryResponse.class,
+        entityType = {WebhookDelivery.class},
+        requestHasSensitiveInfo = false,
+        responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
         since = "4.20.0")
-public class UpdateWebhookRuleCmd extends BaseCmd {
+public class ExecuteWebhookDeliveryCmd extends BaseCmd {
 
     @Inject
     WebhookApiService webhookApiService;
@@ -49,51 +55,47 @@ public class UpdateWebhookRuleCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID,
-            entityType = WebhookRuleResponse.class,
-            required = true,
-            description = "The ID of the Webhook rule")
+            entityType = WebhookDeliveryResponse.class,
+            description = "The ID of the Webhook delivery for redelivery")
     private Long id;
-    @Parameter(name = ApiConstants.NAME, type = BaseCmd.CommandType.STRING, description = "Name for the Webhook rule")
-    private String name;
 
-    @Parameter(name = ApiConstants.DESCRIPTION, type = BaseCmd.CommandType.STRING, description = "Description for the Webhook rule")
-    private String description;
-
-    @Parameter(name = ApiConstants.STATE, type = BaseCmd.CommandType.STRING, description = "State of the Webhook rule")
-    private String state;
+    @Parameter(name = ApiConstants.WEBHOOK_ID, type = CommandType.UUID,
+            entityType = WebhookResponse.class,
+            description = "The ID of the Webhook")
+    private Long webhookId;
 
     @Parameter(name = ApiConstants.PAYLOAD_URL,
             type = BaseCmd.CommandType.STRING,
-            description = "Payload URL of the Webhook rule")
+            description = "Payload URL of the Webhook delivery")
     private String payloadUrl;
 
-    @Parameter(name = ApiConstants.SECRET_KEY, type = BaseCmd.CommandType.STRING, description = "Secret key of the Webhook rule")
+    @Parameter(name = ApiConstants.SECRET_KEY, type = BaseCmd.CommandType.STRING, description = "Secret key of the Webhook delivery")
     private String secretKey;
 
-    @Parameter(name = ApiConstants.SSL_VERIFICATION, type = BaseCmd.CommandType.BOOLEAN, description = "If set to true then SSL verification will be done for the Webhook rule otherwise not")
+    @Parameter(name = ApiConstants.SSL_VERIFICATION, type = BaseCmd.CommandType.BOOLEAN, description = "If set to true then SSL verification will be done for the Webhook delivery otherwise not")
     private Boolean sslVerification;
 
-    @Parameter(name = ApiConstants.SCOPE, type = BaseCmd.CommandType.STRING, description = "Scope of the Webhook rule",
-            authorized = {RoleType.Admin, RoleType.DomainAdmin})
-    private String scope;
+    @Parameter(name = ApiConstants.PAYLOAD,
+            type = BaseCmd.CommandType.STRING,
+            description = "Payload of the Webhook delivery")
+    private String payload;
+
+    @ACL(accessType = SecurityChecker.AccessType.UseEntry)
+    @Parameter(name = ApiConstants.PROJECT_ID, type = BaseCmd.CommandType.UUID, entityType = ProjectResponse.class,
+            description = "Project for the Webhook delivery")
+    private Long projectId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
+
+
     public Long getId() {
         return id;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public String getState() {
-        return state;
+    public Long getWebhookId() {
+        return webhookId;
     }
 
     public String getPayloadUrl() {
@@ -108,8 +110,12 @@ public class UpdateWebhookRuleCmd extends BaseCmd {
         return sslVerification;
     }
 
-    public String getScope() {
-        return scope;
+    public String getPayload() {
+        return payload;
+    }
+
+    public Long getProjectId() {
+        return projectId;
     }
 
     @Override
@@ -120,17 +126,19 @@ public class UpdateWebhookRuleCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
+
     @Override
     public void execute() throws ServerApiException {
         try {
-            WebhookRuleResponse response = webhookApiService.updateWebhookRule(this);
+            WebhookDeliveryResponse response = webhookApiService.executeWebhookDelivery(this);
             if (response == null) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update Webhook rule");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to test Webhook delivery");
             }
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } catch (CloudRuntimeException ex) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
+
     }
 }

@@ -39,18 +39,21 @@ import org.apache.cloudstack.framework.async.AsyncRpcContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.events.Event;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.cloudstack.mom.webhook.dao.WebhookDispatchDao;
-import org.apache.cloudstack.mom.webhook.dao.WebhookRuleDao;
-import org.apache.cloudstack.mom.webhook.vo.WebhookDispatchVO;
-import org.apache.cloudstack.mom.webhook.vo.WebhookRuleVO;
+import org.apache.cloudstack.mom.webhook.dao.WebhookDao;
+import org.apache.cloudstack.mom.webhook.dao.WebhookDeliveryDao;
+import org.apache.cloudstack.mom.webhook.vo.WebhookDeliveryVO;
+import org.apache.cloudstack.mom.webhook.vo.WebhookJoinVO;
+import org.apache.cloudstack.mom.webhook.vo.WebhookVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.webhook.WebhookHelper;
 import org.apache.commons.lang3.StringUtils;
 
+import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventCategory;
+import com.cloud.event.dao.EventJoinDao;
 import com.cloud.server.ManagementService;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -58,18 +61,21 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class WebhookServiceImpl extends ManagerBase implements WebhookService, WebhookHelper {
     public static final String WEBHOOK_JOB_POOL_THREAD_PREFIX = "Webhook-Job-Executor";
     private ExecutorService webhookJobExecutor;
-    private ScheduledExecutorService webhookDispatchCleanupExecutor;
+    private ScheduledExecutorService webhookDeliveriesCleanupExecutor;
 
     @Inject
-    WebhookRuleDao webhookRuleDao;
+    EventJoinDao eventJoinDao;
     @Inject
-    protected WebhookDispatchDao webhookDispatchDao;
+    WebhookDao webhookDao;
+    @Inject
+    protected WebhookDeliveryDao webhookDeliveryDao;
     @Inject
     ManagementServerHostDao managementServerHostDao;
     @Inject
@@ -77,21 +83,21 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
     @Inject
     AccountManager accountManager;
 
-    protected WebhookDispatchThread getDispatchJob(Event event, WebhookRule rule, Pair<Integer, Integer> configs) {
-        WebhookDispatchThread.WebhookDispatchContext<WebhookDispatchThread.WebhookDispatchResult> context =
-                new WebhookDispatchThread.WebhookDispatchContext<>(null, event.getEventId(), rule.getId());
-        AsyncCallbackDispatcher<WebhookServiceImpl, WebhookDispatchThread.WebhookDispatchResult> caller =
+    protected WebhookDeliveryThread getDeliveryJob(Event event, Webhook webhook, Pair<Integer, Integer> configs) {
+        WebhookDeliveryThread.WebhookDeliveryContext<WebhookDeliveryThread.WebhookDeliveryResult> context =
+                new WebhookDeliveryThread.WebhookDeliveryContext<>(null, event.getEventId(), webhook.getId());
+        AsyncCallbackDispatcher<WebhookServiceImpl, WebhookDeliveryThread.WebhookDeliveryResult> caller =
                 AsyncCallbackDispatcher.create(this);
-        caller.setCallback(caller.getTarget().dispatchCompleteCallback(null, null))
+        caller.setCallback(caller.getTarget().deliveryCompleteCallback(null, null))
                 .setContext(context);
-        WebhookDispatchThread job = new WebhookDispatchThread(rule, event, caller);
+        WebhookDeliveryThread job = new WebhookDeliveryThread(webhook, event, caller);
         job = ComponentContext.inject(job);
-        job.setDispatchRetries(configs.first());
+        job.setDeliveryRetries(configs.first());
         job.setDeliveryTimeout(configs.second());
         return job;
     }
 
-    protected List<Runnable> getDispatchJobs(Event event) {
+    protected List<Runnable> getDeliveryJobs(Event event) {
         List<Runnable> jobs = new ArrayList<>();
         if (!EventCategory.ACTION_EVENT.getName().equals(event.getEventCategory()) ||
                 event.getResourceAccountId() == null) {
@@ -102,63 +108,76 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
             domainIds.add(event.getResourceDomainId());
             domainIds.addAll(domainDao.getDomainParentIds(event.getResourceDomainId()));
         }
-        List<WebhookRuleVO> rules =
-                webhookRuleDao.listByEnabledRulesForDispatch(event.getResourceAccountId(), domainIds);
+        List<WebhookVO> webhooks =
+                webhookDao.listByEnabledForDelivery(event.getResourceAccountId(), domainIds);
         Map<Long, Pair<Integer, Integer>> domainConfigs = new HashMap<>();
-        for (WebhookRuleVO rule : rules) {
-            if (!domainConfigs.containsKey(rule.getDomainId())) {
-                domainConfigs.put(rule.getDomainId(), new Pair<>(WebhookDispatchRetries.valueIn(rule.getDomainId()),
-                        WebhookDeliveryTimeout.valueIn(rule.getDomainId())));
+        for (WebhookVO webhook : webhooks) {
+            if (!domainConfigs.containsKey(webhook.getDomainId())) {
+                domainConfigs.put(webhook.getDomainId(),
+                        new Pair<>(WebhookDeliveryRetries.valueIn(webhook.getDomainId()),
+                        WebhookDeliveryTimeout.valueIn(webhook.getDomainId())));
             }
-            Pair<Integer, Integer> configs = domainConfigs.get(rule.getDomainId());
-            WebhookDispatchThread job = getDispatchJob(event, rule, configs);
+            Pair<Integer, Integer> configs = domainConfigs.get(webhook.getDomainId());
+            WebhookDeliveryThread job = getDeliveryJob(event, webhook, configs);
             jobs.add(job);
         }
         return jobs;
     }
 
-    protected Runnable getTestDispatchJobs(WebhookRule rule, String payload,
-               AsyncCallFuture<WebhookDispatchThread.WebhookDispatchResult> future) {
+    protected Runnable getManualDeliveryJob(WebhookDelivery existingDelivery, Webhook webhook, String payload,
+                AsyncCallFuture<WebhookDeliveryThread.WebhookDeliveryResult> future) {
         if (StringUtils.isBlank(payload)) {
             payload = "{ \"CloudStack\": \"works!\" }";
         }
+        long eventId = Webhook.ID_DUMMY;
+        String eventType = WebhookDelivery.TEST_EVENT_TYPE;
+        String eventUuid = UUID.randomUUID().toString();
+        String description = payload;
+        String resourceAccountUuid = null;
+        if (existingDelivery != null) {
+            EventJoinVO eventJoinVO = eventJoinDao.findById(existingDelivery.getEventId());
+            eventId = eventJoinVO.getId();
+            eventType = eventJoinVO.getType();
+            eventUuid = eventJoinVO.getUuid();
+            description = existingDelivery.getPayload();
+            resourceAccountUuid = eventJoinVO.getAccountUuid();
+        } else {
+            Account account = accountManager.getAccount(webhook.getAccountId());
+            resourceAccountUuid = account.getUuid();
+        }
         Event event = new Event(ManagementService.Name, EventCategory.ACTION_EVENT.toString(),
-                "TEST.WEBHOOK", null, null);
-        event.setEventId(WebhookRule.ID_DUMMY_RULE);
-        event.setEventUuid(UUID.randomUUID().toString());
-        event.setDescription(payload);
-        Account account = accountManager.getAccount(rule.getAccountId());
-        event.setResourceAccountId(account.getId());
-        event.setResourceAccountUuid(account.getUuid());
-        event.setResourceDomainId(account.getDomainId());
-        Pair<Integer, Integer> configs = new Pair<>(WebhookDispatchRetries.valueIn(rule.getDomainId()),
-                WebhookDeliveryTimeout.valueIn(rule.getDomainId()));
-//        WebhookDispatchThread job = getDispatchJob(event, rule, configs);
-        TestDispatchContext<WebhookDispatchThread.WebhookDispatchResult> context =
-                new TestDispatchContext<>(null, rule, future);
-        AsyncCallbackDispatcher<WebhookServiceImpl, WebhookDispatchThread.WebhookDispatchResult> caller =
+                eventType, null, null);
+        event.setEventId(eventId);
+        event.setEventUuid(eventUuid);
+        event.setDescription(description);
+        event.setResourceAccountUuid(resourceAccountUuid);
+        ManualDeliveryContext<WebhookDeliveryThread.WebhookDeliveryResult> context =
+                new ManualDeliveryContext<>(null, webhook, future);
+        AsyncCallbackDispatcher<WebhookServiceImpl, WebhookDeliveryThread.WebhookDeliveryResult> caller =
                 AsyncCallbackDispatcher.create(this);
-        caller.setCallback(caller.getTarget().testDispatchCompleteCallback(null, null))
+        caller.setCallback(caller.getTarget().manualDeliveryCompleteCallback(null, null))
                 .setContext(context);
-        WebhookDispatchThread job = new WebhookDispatchThread(rule, event, caller);
+        WebhookDeliveryThread job = new WebhookDeliveryThread(webhook, event, caller);
+        job.setDeliveryRetries(WebhookDeliveryRetries.valueIn(webhook.getDomainId()));
+        job.setDeliveryTimeout(WebhookDeliveryTimeout.valueIn(webhook.getDomainId()));
         return job;
     }
 
-    protected Void dispatchCompleteCallback(
-            AsyncCallbackDispatcher<WebhookServiceImpl, WebhookDispatchThread.WebhookDispatchResult> callback,
-            WebhookDispatchThread.WebhookDispatchContext<WebhookRule> context) {
-        WebhookDispatchThread.WebhookDispatchResult result = callback.getResult();
-        WebhookDispatchVO dispatchVO = new WebhookDispatchVO(context.getEventId(), context.getRuleId(),
-                ManagementServerNode.getManagementServerId(), result.getPayload(), result.isSuccess(),
-                result.getResult(), result.getStarTime(), result.getEndTime());
-        webhookDispatchDao.persist(dispatchVO);
+    protected Void deliveryCompleteCallback(
+            AsyncCallbackDispatcher<WebhookServiceImpl, WebhookDeliveryThread.WebhookDeliveryResult> callback,
+            WebhookDeliveryThread.WebhookDeliveryContext<Webhook> context) {
+        WebhookDeliveryThread.WebhookDeliveryResult result = callback.getResult();
+        WebhookDeliveryVO deliveryVO = new WebhookDeliveryVO(context.getEventId(), context.getRuleId(),
+                ManagementServerNode.getManagementServerId(), result.getHeaders(), result.getPayload(),
+                result.isSuccess(), result.getResult(), result.getStarTime(), result.getEndTime());
+        webhookDeliveryDao.persist(deliveryVO);
         return null;
     }
 
-    protected Void testDispatchCompleteCallback(
-            AsyncCallbackDispatcher<WebhookServiceImpl, WebhookDispatchThread.WebhookDispatchResult> callback,
-            TestDispatchContext<WebhookDispatchThread.WebhookDispatchResult> context) {
-        WebhookDispatchThread.WebhookDispatchResult result = callback.getResult();
+    protected Void manualDeliveryCompleteCallback(
+            AsyncCallbackDispatcher<WebhookServiceImpl, WebhookDeliveryThread.WebhookDeliveryResult> callback,
+            ManualDeliveryContext<WebhookDeliveryThread.WebhookDeliveryResult> context) {
+        WebhookDeliveryThread.WebhookDeliveryResult result = callback.getResult();
         context.future.complete(result);
         return null;
     }
@@ -166,10 +185,10 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         try {
-            webhookJobExecutor = Executors.newFixedThreadPool(WebhookDispatcherThreadPoolSize.value(),
+            webhookJobExecutor = Executors.newFixedThreadPool(WebhookDeliveryThreadPoolSize.value(),
                     new NamedThreadFactory(WEBHOOK_JOB_POOL_THREAD_PREFIX));
-            webhookDispatchCleanupExecutor = Executors.newScheduledThreadPool(1,
-                    new NamedThreadFactory("Webhook-Dispatch-Cleanup-Worker"));
+            webhookDeliveriesCleanupExecutor = Executors.newScheduledThreadPool(1,
+                    new NamedThreadFactory("Webhook-Deliveries-Cleanup-Worker"));
         } catch (final Exception e) {
             throw new ConfigurationException("Unable to to configure WebhookServiceImpl");
         }
@@ -178,9 +197,9 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
 
     @Override
     public boolean start() {
-        long webhookDispatchCleanupInterval = WebhookDispatchHistoryCleanupInterval.value();
-        webhookDispatchCleanupExecutor.scheduleWithFixedDelay(new WebhookDispatchCleanupWorker(),
-                (5 * 60), webhookDispatchCleanupInterval, TimeUnit.SECONDS);
+        long webhookDeliveriesCleanupInterval = WebhookDeliveriesCleanupInterval.value();
+        webhookDeliveriesCleanupExecutor.scheduleWithFixedDelay(new WebhookDeliveryCleanupWorker(),
+                (5 * 60), webhookDeliveriesCleanupInterval, TimeUnit.SECONDS);
         return true;
     }
 
@@ -199,48 +218,56 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey[]{
                 WebhookDeliveryTimeout,
-                WebhookDispatchRetries,
-                WebhookDispatcherThreadPoolSize,
-                WebhookDispatchHistoryLimit,
-                WebhookDispatchHistoryCleanupInterval
+                WebhookDeliveryRetries,
+                WebhookDeliveryThreadPoolSize,
+                WebhookDeliveriesLimit,
+                WebhookDeliveriesCleanupInterval
         };
     }
 
     @Override
-    public void deleteRulesForAccount(long accountId) {
-        webhookRuleDao.deleteByAccount(accountId);
+    public void deleteWebhooksForAccount(long accountId) {
+        webhookDao.deleteByAccount(accountId);
     }
 
     @Override
-    public List<? extends ControlledEntity> listByAccount(long accountId) {
-        return webhookRuleDao.listByAccount(accountId);
+    public List<? extends ControlledEntity> listWebhooksByAccount(long accountId) {
+        return webhookDao.listByAccount(accountId);
     }
 
     @Override
     public void handleEvent(Event event) {
-        List<Runnable> jobs = getDispatchJobs(event);
+        List<Runnable> jobs = getDeliveryJobs(event);
         for(Runnable job : jobs) {
             webhookJobExecutor.submit(job);
         }
     }
 
     @Override
-    public WebhookDispatch testWebhookDispatch(WebhookRule rule, String payload) throws CloudRuntimeException {
-        AsyncCallFuture<WebhookDispatchThread.WebhookDispatchResult> future = new AsyncCallFuture<>();
-        Runnable job = getTestDispatchJobs(rule, payload, future);
+    public WebhookDelivery executeWebhookDelivery(WebhookDelivery delivery, Webhook webhook, String payload)
+            throws CloudRuntimeException {
+        AsyncCallFuture<WebhookDeliveryThread.WebhookDeliveryResult> future = new AsyncCallFuture<>();
+        Runnable job = getManualDeliveryJob(delivery, webhook, payload, future);
         webhookJobExecutor.submit(job);
-        WebhookDispatchThread.WebhookDispatchResult result = null;
-        WebhookDispatchVO webhookDispatchVO;
+        WebhookDeliveryThread.WebhookDeliveryResult result = null;
+        WebhookDeliveryVO webhookDeliveryVO;
         try {
             result = future.get();
-            webhookDispatchVO = new WebhookDispatchVO(ManagementServerNode.getManagementServerId(),
-                    result.getPayload(), result.isSuccess(), result.getResult(),
-                    result.getStarTime(), result.getEndTime());
+            if (delivery != null) {
+                webhookDeliveryVO = new WebhookDeliveryVO(delivery.getEventId(), delivery.getWebhookId(),
+                        ManagementServerNode.getManagementServerId(), result.getHeaders(), result.getPayload(),
+                        result.isSuccess(), result.getResult(), result.getStarTime(), result.getEndTime());
+                webhookDeliveryVO = webhookDeliveryDao.persist(webhookDeliveryVO);
+            } else {
+                webhookDeliveryVO = new WebhookDeliveryVO(ManagementServerNode.getManagementServerId(),
+                        result.getHeaders(), result.getPayload(), result.isSuccess(), result.getResult(),
+                        result.getStarTime(), result.getEndTime());
+            }
         } catch (InterruptedException | ExecutionException e) {
-            logger.error(String.format("Failed to execute test webhook dispatch due to: %s", e.getMessage()), e);
-            throw new CloudRuntimeException("Failed to execute test webhook dispatch");
+            logger.error(String.format("Failed to execute test webhook delivery due to: %s", e.getMessage()), e);
+            throw new CloudRuntimeException("Failed to execute test webhook delivery");
         }
-        return webhookDispatchVO;
+        return webhookDeliveryVO;
     }
 
     @Override
@@ -248,37 +275,49 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
         return new ArrayList<>();
     }
 
-    static public class TestDispatchContext<T> extends AsyncRpcContext<T> {
-        final WebhookRule webhookRule;
-        final AsyncCallFuture<WebhookDispatchThread.WebhookDispatchResult> future;
+    static public class ManualDeliveryContext<T> extends AsyncRpcContext<T> {
+        final Webhook webhook;
+        final AsyncCallFuture<WebhookDeliveryThread.WebhookDeliveryResult> future;
 
-        public TestDispatchContext(AsyncCompletionCallback<T> callback, WebhookRule rule,
-               AsyncCallFuture<WebhookDispatchThread.WebhookDispatchResult> future) {
+        public ManualDeliveryContext(AsyncCompletionCallback<T> callback, Webhook webhook,
+                 AsyncCallFuture<WebhookDeliveryThread.WebhookDeliveryResult> future) {
             super(callback);
-            this.webhookRule = rule;
+            this.webhook = webhook;
             this.future = future;
         }
 
     }
 
-    public class WebhookDispatchCleanupWorker extends ManagedContextRunnable {
+    public class WebhookDeliveryCleanupWorker extends ManagedContextRunnable {
 
         protected void runCleanupForLongestRunningManagementServer() {
             ManagementServerHostVO msHost = managementServerHostDao.findOneByLongestRuntime();
             if (msHost == null || (msHost.getMsid() != ManagementServerNode.getManagementServerId())) {
-                logger.trace("Skipping the webhook dispatch cleanup task on this management server");
+                logger.trace("Skipping the webhook delivery cleanup task on this management server");
                 return;
             }
-            long limit = WebhookDispatchHistoryLimit.value();
-            List<WebhookRuleVO> webhooks = webhookRuleDao.listAll();
-            for (WebhookRuleVO webhook : webhooks) {
-                webhookDispatchDao.removeOlderDispatches(webhook.getId(), limit);
-            }
+            long deliveriesLimit = WebhookDeliveriesLimit.value();
+            Filter filter = new Filter(WebhookJoinVO.class, "id", true, 0L, 50L);
+            Pair<List<WebhookVO>, Integer> webhooksAndCount =
+                    webhookDao.searchAndCount(webhookDao.createSearchCriteria(), filter);
+            List<WebhookVO> webhooks = webhooksAndCount.first();
+            long count = webhooksAndCount.second();
+            long processed = 0;
+            do {
+                for (WebhookVO webhook : webhooks) {
+                    webhookDeliveryDao.removeOlderDeliveries(webhook.getId(), deliveriesLimit);
+                    processed++;
+                }
+                if (processed < count) {
+                    filter.setOffset(processed);
+                    webhooks = webhookDao.listAll(filter);
+                }
+            } while (processed < count);
         }
 
         @Override
         protected void runInContext() {
-            GlobalLock gcLock = GlobalLock.getInternLock("WebhookDispatchHistoryCleanup");
+            GlobalLock gcLock = GlobalLock.getInternLock("WebhookDeliveriesCleanup");
             try {
                 if (gcLock.lock(3)) {
                     try {

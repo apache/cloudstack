@@ -38,7 +38,7 @@
                     <a-button
                       type="primary"
                       size="small"
-                      @click.stop="testWebhookDispatch">
+                      @click.stop="testWebhookDelivery">
                       <render-icon icon="reload-outlined" />
                       <div class="ant-btn__progress-overlay" :style="computedOverlayStyle"></div>
                     </a-button>
@@ -93,7 +93,7 @@ import TooltipLabel from '@/components/widgets/TooltipLabel'
 import Status from '@/components/widgets/Status'
 
 export default {
-  name: 'TestWebhookDispatchView',
+  name: 'TestWebhookDeliveryView',
   components: {
     TooltipLabel,
     Status
@@ -125,15 +125,15 @@ export default {
       response: {},
       collapseKey: undefined,
       loading: false,
-      testDispatchInterval: null,
-      testDispatchIntervalCouter: 0
+      testDeliveryInterval: null,
+      testDeliveryIntervalCouter: 0
     }
   },
   beforeCreate () {
-    this.timedDispatchWait = 4000
+    this.timedDeliveryWait = 4000
   },
   beforeUnmount () {
-    this.resetTestDispatchInterval()
+    this.resetTestDeliveryInterval()
   },
   computed: {
     isResponseNotEmpty () {
@@ -154,26 +154,26 @@ export default {
       return (duration > 0 ? duration / 1000.0 : 0) + ''
     },
     computedOverlayStyle () {
-      var opacity = this.testDispatchIntervalCouter <= 10.0 ? 0 : 0.3
-      var width = this.testDispatchIntervalCouter
+      var opacity = this.testDeliveryIntervalCouter <= 10.0 ? 0 : 0.3
+      var width = this.testDeliveryIntervalCouter
       return 'opacity: ' + opacity + '; width: ' + width + '%;'
     }
   },
   methods: {
-    resetTestDispatchInterval () {
-      if (this.testDispatchInterval) {
-        clearInterval(this.testDispatchInterval)
+    resetTestDeliveryInterval () {
+      if (this.testDeliveryInterval) {
+        clearInterval(this.testDeliveryInterval)
       }
-      this.testDispatchIntervalCouter = 0
+      this.testDeliveryIntervalCouter = 0
     },
-    testWebhookDispatch () {
-      this.resetTestDispatchInterval()
+    testWebhookDelivery () {
+      this.resetTestDeliveryInterval()
       this.response = {}
       this.loading = true
       this.$emit('change-loading', this.loading)
       var params = {}
       if (this.resource) {
-        params.id = this.resource.id
+        params.webhookid = this.resource.id
       }
       if (this.payload) {
         params.payload = this.payload
@@ -187,8 +187,8 @@ export default {
       if (this.secretKey) {
         params.secretKey = this.secretKey
       }
-      api('testWebhookDispatch', params).then(response => {
-        this.response = response.testwebhookdispatchresponse.webhookdispatch
+      api('executeWebhookDelivery', params).then(response => {
+        this.response = response.executewebhookdeliveryresponse.webhookdelivery
         this.$emit('update-success', response.success)
       }).catch(error => {
         this.$notifyError(error)
@@ -197,23 +197,23 @@ export default {
         this.$emit('change-loading', this.loading)
       })
     },
-    timedTestWebhookDispatch () {
+    timedTestWebhookDelivery () {
       const urlPattern = /^(http|https):\/\/[^ "]+$/
-      this.resetTestDispatchInterval()
-      this.testDispatchInterval = setInterval(() => {
+      this.resetTestDeliveryInterval()
+      this.testDeliveryInterval = setInterval(() => {
         if (!this.payloadUrl || !urlPattern.test(this.payloadUrl)) {
-          this.resetTestDispatchInterval()
+          this.resetTestDeliveryInterval()
           return
         }
-        this.testDispatchIntervalCouter = this.testDispatchIntervalCouter + 1
-        if (this.testDispatchIntervalCouter >= 100) {
+        this.testDeliveryIntervalCouter = this.testDeliveryIntervalCouter + 1
+        if (this.testDeliveryIntervalCouter >= 100) {
           if (this.payloadUrl && urlPattern.test(this.payloadUrl)) {
-            this.testWebhookDispatch()
+            this.testWebhookDelivery()
             return
           }
-          this.resetTestDispatchInterval()
+          this.resetTestDeliveryInterval()
         }
-      }, this.timedDispatchWait / 100)
+      }, this.timedDeliveryWait / 100)
     }
   }
 }

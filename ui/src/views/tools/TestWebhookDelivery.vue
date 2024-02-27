@@ -32,7 +32,7 @@
                 v-model:value="form.payload"
                 :placeholder="apiParams.payload.description" />
         </a-form-item>
-        <test-webhook-dispatch-view
+        <test-webhook-delivery-view
           ref="dispatchview"
           :resource="resource"
           :payload="form.payload"
@@ -53,15 +53,15 @@ import { ref, reactive } from 'vue'
 import { mixinForm } from '@/utils/mixin'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import Status from '@/components/widgets/Status'
-import TestWebhookDispatchView from '@/components/view/TestWebhookDispatchView'
+import TestWebhookDeliveryView from '@/components/view/TestWebhookDeliveryView'
 
 export default {
-  name: 'TestWebhookDispatch',
+  name: 'TestWebhookDelivery',
   mixins: [mixinForm],
   components: {
     Status,
     TooltipLabel,
-    TestWebhookDispatchView
+    TestWebhookDeliveryView
   },
   props: {
     resource: {
@@ -78,7 +78,7 @@ export default {
   watch: {
   },
   beforeCreate () {
-    this.apiParams = this.$getApiParams('testWebhookDispatch')
+    this.apiParams = this.$getApiParams('executeWebhookDelivery')
   },
   created () {
     this.initForm()
@@ -105,7 +105,7 @@ export default {
       e.preventDefault()
       if (this.loading) return
       this.formRef.value.validate().then(() => {
-        this.$refs.dispatchview.testWebhookDispatch()
+        this.$refs.dispatchview.testWebhookDelivery()
       })
     },
     updateLoading (value) {

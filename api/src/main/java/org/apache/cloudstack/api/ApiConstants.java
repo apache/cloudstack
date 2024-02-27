@@ -209,6 +209,7 @@ public class ApiConstants {
     public static final String HA_PROVIDER = "haprovider";
     public static final String HA_STATE = "hastate";
     public static final String HEALTH = "health";
+    public static final String HEADERS = "headers";
     public static final String HIDE_IP_ADDRESS_USAGE = "hideipaddressusage";
     public static final String HOST_ID = "hostid";
     public static final String HOST_IDS = "hostids";
@@ -1103,8 +1104,8 @@ public class ApiConstants {
 
     public static final String PARAMETER_DESCRIPTION_IS_TAG_A_RULE = "Whether the informed tag is a JS interpretable rule or not.";
 
-    public static final String WEBHOOK_RULE_ID = "webhookruleid";
-    public static final String WEBHOOK_RULE_NAME = "webhookrulename";
+    public static final String WEBHOOK_ID = "webhookid";
+    public static final String WEBHOOK_NAME = "webhookname";
 
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.

@@ -18,27 +18,27 @@
 package org.apache.cloudstack.mom.webhook;
 
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.mom.webhook.api.command.user.CreateWebhookRuleCmd;
-import org.apache.cloudstack.mom.webhook.api.command.user.DeleteWebhookDispatchHistoryCmd;
-import org.apache.cloudstack.mom.webhook.api.command.user.DeleteWebhookRuleCmd;
-import org.apache.cloudstack.mom.webhook.api.command.user.ListWebhookDispatchHistoryCmd;
-import org.apache.cloudstack.mom.webhook.api.command.user.ListWebhookRulesCmd;
-import org.apache.cloudstack.mom.webhook.api.command.user.TestWebhookDispatchCmd;
-import org.apache.cloudstack.mom.webhook.api.command.user.UpdateWebhookRuleCmd;
-import org.apache.cloudstack.mom.webhook.api.response.WebhookDispatchResponse;
-import org.apache.cloudstack.mom.webhook.api.response.WebhookRuleResponse;
+import org.apache.cloudstack.mom.webhook.api.command.user.CreateWebhookCmd;
+import org.apache.cloudstack.mom.webhook.api.command.user.DeleteRuleCmd;
+import org.apache.cloudstack.mom.webhook.api.command.user.DeleteWebhookDeliveryCmd;
+import org.apache.cloudstack.mom.webhook.api.command.user.ExecuteWebhookDeliveryCmd;
+import org.apache.cloudstack.mom.webhook.api.command.user.ListWebhookDeliveries;
+import org.apache.cloudstack.mom.webhook.api.command.user.ListWebhooksCmd;
+import org.apache.cloudstack.mom.webhook.api.command.user.UpdateWebhookCmd;
+import org.apache.cloudstack.mom.webhook.api.response.WebhookDeliveryResponse;
+import org.apache.cloudstack.mom.webhook.api.response.WebhookResponse;
 
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public interface WebhookApiService extends PluggableService {
 
-    ListResponse<WebhookRuleResponse> listWebhookRules(ListWebhookRulesCmd cmd);
-    WebhookRuleResponse createWebhookRule(CreateWebhookRuleCmd cmd) throws CloudRuntimeException;
-    boolean deleteWebhookRule(DeleteWebhookRuleCmd cmd) throws CloudRuntimeException;
-    WebhookRuleResponse updateWebhookRule(UpdateWebhookRuleCmd cmd) throws CloudRuntimeException;
-    WebhookRuleResponse createWebhookRuleResponse(long webhookRuleId);
-    ListResponse<WebhookDispatchResponse> listWebhookDispatchHistory(ListWebhookDispatchHistoryCmd cmd);
-    boolean deleteWebhookDispatchHistory(DeleteWebhookDispatchHistoryCmd cmd) throws CloudRuntimeException;
-    WebhookDispatchResponse testWebhookDispatch(TestWebhookDispatchCmd cmd) throws CloudRuntimeException;
+    ListResponse<WebhookResponse> listWebhooks(ListWebhooksCmd cmd);
+    WebhookResponse createWebhook(CreateWebhookCmd cmd) throws CloudRuntimeException;
+    boolean deleteWebhook(DeleteRuleCmd cmd) throws CloudRuntimeException;
+    WebhookResponse updateWebhook(UpdateWebhookCmd cmd) throws CloudRuntimeException;
+    WebhookResponse createWebhookResponse(long webhookId);
+    ListResponse<WebhookDeliveryResponse> listWebhookDeliveries(ListWebhookDeliveries cmd);
+    boolean deleteWebhookDelivery(DeleteWebhookDeliveryCmd cmd) throws CloudRuntimeException;
+    WebhookDeliveryResponse executeWebhookDelivery(ExecuteWebhookDeliveryCmd cmd) throws CloudRuntimeException;
 }

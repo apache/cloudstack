@@ -30,18 +30,18 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ManagementServerResponse;
 import org.apache.cloudstack.mom.webhook.WebhookApiService;
-import org.apache.cloudstack.mom.webhook.WebhookDispatch;
-import org.apache.cloudstack.mom.webhook.api.response.WebhookDispatchResponse;
-import org.apache.cloudstack.mom.webhook.api.response.WebhookRuleResponse;
+import org.apache.cloudstack.mom.webhook.WebhookDelivery;
+import org.apache.cloudstack.mom.webhook.api.response.WebhookDeliveryResponse;
+import org.apache.cloudstack.mom.webhook.api.response.WebhookResponse;
 
-@APICommand(name = "listWebhookDispatchHistory",
-        description = "Lists Webhook dispatch history",
-        responseObject = WebhookRuleResponse.class,
+@APICommand(name = "listWebhookDeliveries",
+        description = "Lists Webhook deliveries",
+        responseObject = WebhookResponse.class,
         responseView = ResponseObject.ResponseView.Restricted,
-        entityType = {WebhookDispatch.class},
+        entityType = {WebhookDelivery.class},
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
         since = "4.20.0")
-public class ListWebhookDispatchHistoryCmd extends BaseListCmd {
+public class ListWebhookDeliveries extends BaseListCmd {
 
     @Inject
     WebhookApiService webhookApiService;
@@ -50,14 +50,14 @@ public class ListWebhookDispatchHistoryCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     @Parameter(name = ApiConstants.ID, type = BaseCmd.CommandType.UUID,
-            entityType = WebhookDispatchResponse.class,
-            description = "The ID of the Webhook dispatch")
+            entityType = WebhookDeliveryResponse.class,
+            description = "The ID of the Webhook delivery")
     private Long id;
 
-    @Parameter(name = ApiConstants.WEBHOOK_RULE_ID, type = BaseCmd.CommandType.UUID,
-            entityType = WebhookRuleResponse.class,
-            description = "The ID of the Webhook rule")
-    private Long webhookRuleId;
+    @Parameter(name = ApiConstants.WEBHOOK_ID, type = BaseCmd.CommandType.UUID,
+            entityType = WebhookResponse.class,
+            description = "The ID of the Webhook")
+    private Long webhookId;
 
     @Parameter(name = ApiConstants.MANAGEMENT_SERVER_ID, type = BaseCmd.CommandType.UUID,
             entityType = ManagementServerResponse.class,
@@ -72,8 +72,8 @@ public class ListWebhookDispatchHistoryCmd extends BaseListCmd {
         return id;
     }
 
-    public Long getWebhookRuleId() {
-        return webhookRuleId;
+    public Long getWebhookId() {
+        return webhookId;
     }
 
     public Long getManagementServerId() {
@@ -85,7 +85,7 @@ public class ListWebhookDispatchHistoryCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     @Override
     public void execute() throws ServerApiException {
-        ListResponse<WebhookDispatchResponse> response = webhookApiService.listWebhookDispatchHistory(this);
+        ListResponse<WebhookDeliveryResponse> response = webhookApiService.listWebhookDeliveries(this);
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }

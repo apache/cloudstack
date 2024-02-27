@@ -94,6 +94,9 @@
           <div v-else-if="$route.meta.name === 'computeoffering' && offeringDetails.includes(item)">
             {{ dataResource.serviceofferingdetails[item] }}
           </div>
+          <div v-else-if="item === 'headers'" style="white-space: pre-line;">
+            {{ dataResource[item] }}
+          </div>
           <div v-else-if="item === 'payload'" style="white-space: pre-wrap;">
             {{ JSON.stringify(JSON.parse(dataResource[item]), null, 4) || dataResource[item] }}
           </div>
@@ -112,6 +115,13 @@
           <strong>{{ $t('label.' + String(item).toLowerCase()) }}</strong>
           <br/>
           <div>{{ dataResource[item] }}</div>
+        </div>
+      </a-list-item>
+      <a-list-item v-else-if="['startdate', 'enddate'].includes(item)">
+        <div>
+          <strong>{{ $t('label.' + item.replace('date', '.date.and.time'))}}</strong>
+          <br/>
+          <div>{{ $toLocaleDate(dataResource[item]) }}</div>
         </div>
       </a-list-item>
     </template>
@@ -168,7 +178,12 @@ export default {
   },
   computed: {
     customDisplayItems () {
-      return ['ip6routes', 'privatemtu', 'publicmtu', 'provider']
+      var items = ['ip6routes', 'privatemtu', 'publicmtu', 'provider']
+      if (this.$route.meta.name === 'webhookdeliveries') {
+        items.push('startdate')
+        items.push('enddate')
+      }
+      return items
     },
     vnfAccessMethods () {
       if (this.resource.templatetype === 'VNF' && ['vm', 'vnfapp'].includes(this.$route.meta.name)) {

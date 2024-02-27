@@ -612,7 +612,7 @@ export default {
     },
     fetchScopee () {
       const scope = []
-      if (this.apiName.indexOf('listWebhookRules') > -1) {
+      if (this.apiName.indexOf('listWebhooks') > -1) {
         scope.push({
           id: 'Local',
           name: 'label.local'
@@ -659,7 +659,7 @@ export default {
             name: 'label.migrating'
           }
         ]
-      } else if (this.apiName.indexOf('listWebhookRules') > -1) {
+      } else if (this.apiName.indexOf('listWebhooks') > -1) {
         state.push({
           id: 'Enabled',
           name: 'label.enabled'

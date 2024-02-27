@@ -34,21 +34,21 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.mom.webhook.WebhookApiService;
-import org.apache.cloudstack.mom.webhook.WebhookRule;
-import org.apache.cloudstack.mom.webhook.api.response.WebhookRuleResponse;
+import org.apache.cloudstack.mom.webhook.Webhook;
+import org.apache.cloudstack.mom.webhook.api.response.WebhookResponse;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "createWebhookRule",
-        description = "Creates a Webhook rule",
-        responseObject = WebhookRuleResponse.class,
+@APICommand(name = "createWebhook",
+        description = "Creates a Webhook",
+        responseObject = WebhookResponse.class,
         responseView = ResponseObject.ResponseView.Restricted,
-        entityType = {WebhookRule.class},
+        entityType = {Webhook.class},
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = true,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
         since = "4.20.0")
-public class CreateWebhookRuleCmd extends BaseCmd {
+public class CreateWebhookCmd extends BaseCmd {
 
     @Inject
     WebhookApiService webhookApiService;
@@ -57,43 +57,43 @@ public class CreateWebhookRuleCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.NAME, type = BaseCmd.CommandType.STRING, required = true, description = "Name for the Webhook rule")
+    @Parameter(name = ApiConstants.NAME, type = BaseCmd.CommandType.STRING, required = true, description = "Name for the Webhook")
     private String name;
 
-    @Parameter(name = ApiConstants.DESCRIPTION, type = BaseCmd.CommandType.STRING, description = "Description for the Webhook rule")
+    @Parameter(name = ApiConstants.DESCRIPTION, type = BaseCmd.CommandType.STRING, description = "Description for the Webhook")
     private String description;
 
-    @Parameter(name = ApiConstants.STATE, type = BaseCmd.CommandType.STRING, description = "State of the Webhook rule")
+    @Parameter(name = ApiConstants.STATE, type = BaseCmd.CommandType.STRING, description = "State of the Webhook")
     private String state;
 
     @ACL(accessType = SecurityChecker.AccessType.UseEntry)
     @Parameter(name = ApiConstants.ACCOUNT, type = BaseCmd.CommandType.STRING, description = "An optional account for the" +
-            " Webhook rule. Must be used with domainId.")
+            " Webhook. Must be used with domainId.")
     private String accountName;
 
     @ACL(accessType = SecurityChecker.AccessType.UseEntry)
     @Parameter(name = ApiConstants.DOMAIN_ID, type = BaseCmd.CommandType.UUID, entityType = DomainResponse.class,
-            description = "an optional domainId for the Webhook rule. If the account parameter is used, domainId must also be used.")
+            description = "an optional domainId for the Webhook. If the account parameter is used, domainId must also be used.")
     private Long domainId;
 
     @ACL(accessType = SecurityChecker.AccessType.UseEntry)
     @Parameter(name = ApiConstants.PROJECT_ID, type = BaseCmd.CommandType.UUID, entityType = ProjectResponse.class,
-            description = "Project for the Webhook rule")
+            description = "Project for the Webhook")
     private Long projectId;
 
     @Parameter(name = ApiConstants.PAYLOAD_URL,
             type = BaseCmd.CommandType.STRING,
             required = true,
-            description = "Payload URL of the Webhook rule")
+            description = "Payload URL of the Webhook")
     private String payloadUrl;
 
-    @Parameter(name = ApiConstants.SECRET_KEY, type = BaseCmd.CommandType.STRING, description = "Secret key of the Webhook rule")
+    @Parameter(name = ApiConstants.SECRET_KEY, type = BaseCmd.CommandType.STRING, description = "Secret key of the Webhook")
     private String secretKey;
 
-    @Parameter(name = ApiConstants.SSL_VERIFICATION, type = BaseCmd.CommandType.BOOLEAN, description = "If set to true then SSL verification will be done for the Webhook rule otherwise not")
+    @Parameter(name = ApiConstants.SSL_VERIFICATION, type = BaseCmd.CommandType.BOOLEAN, description = "If set to true then SSL verification will be done for the Webhook otherwise not")
     private Boolean sslVerification;
 
-    @Parameter(name = ApiConstants.SCOPE, type = BaseCmd.CommandType.STRING, description = "Scope of the Webhook rule",
+    @Parameter(name = ApiConstants.SCOPE, type = BaseCmd.CommandType.STRING, description = "Scope of the Webhook",
         authorized = {RoleType.Admin, RoleType.DomainAdmin})
     private String scope;
 
@@ -154,15 +154,14 @@ public class CreateWebhookRuleCmd extends BaseCmd {
     @Override
     public void execute() throws ServerApiException {
         try {
-            WebhookRuleResponse response = webhookApiService.createWebhookRule(this);
+            WebhookResponse response = webhookApiService.createWebhook(this);
             if (response == null) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create webhook rule");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create webhook");
             }
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } catch (CloudRuntimeException ex) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
-
     }
 }

@@ -18,13 +18,13 @@
 <template>
   <div>
     <a-button
-      v-if="('deleteWebhookDispatchHistory' in $store.getters.apis)"
+      v-if="('deleteWebhookDelivery' in $store.getters.apis)"
       type="danger"
       danger
       style="width: 100%; margin-bottom: 15px"
-      @click="clearHistoryConfirmation()">
+      @click="clearDeliveriesConfirmation()">
       <template #icon><delete-outlined /></template>
-      {{ $t('label.action.clear.webhook.history') }}
+      {{ $t('label.action.clear.webhook.deliveries') }}
     </a-button>
     <list-view
       :tabLoading="tabLoading"
@@ -63,7 +63,7 @@ import { genericCompare } from '@/utils/sort.js'
 import ListView from '@/components/view/ListView'
 
 export default {
-  name: 'WebhookDispatchHistoryTab',
+  name: 'WebhookDeliveriesTab',
   components: {
     ListView
   },
@@ -80,12 +80,21 @@ export default {
   data () {
     return {
       tabLoading: false,
-      columnKeys: ['eventtype', 'payload', 'success', 'response', 'duration'],
+      columnKeys: ['payload', 'eventtype', 'success', 'response', 'duration'],
       selectedColumnKeys: [],
       columns: [],
       cols: [],
       dispatches: [],
-      actions: [],
+      actions: [
+        {
+          api: 'executeWebhookDelivery',
+          icon: 'retweet-outlined',
+          label: 'label.redeliver',
+          message: 'message.redeliver.webhook.delivery',
+          dataView: true,
+          popup: true
+        }
+      ],
       page: 1,
       pageSize: 20,
       totalCount: 0
@@ -114,15 +123,15 @@ export default {
   watch: {
     resource: {
       handler () {
-        this.fetchDispatches()
+        this.fetchDeliveries()
       }
     }
   },
   methods: {
     fetchData () {
-      this.fetchDispatches()
+      this.fetchDeliveries()
     },
-    fetchDispatches () {
+    fetchDeliveries () {
       this.dispatches = []
       if (!this.resource.id) {
         return
@@ -130,14 +139,14 @@ export default {
       const params = {
         page: this.page,
         pagesize: this.pageSize,
-        webhookruleid: this.resource.id,
+        webhookid: this.resource.id,
         listall: true
       }
       this.tabLoading = true
-      api('listWebhookDispatchHistory', params).then(json => {
+      api('listWebhookDeliveries', params).then(json => {
         this.dispatches = []
-        this.totalCount = json?.listwebhookdispatchhistoryresponse?.count || 0
-        this.dispatches = json?.listwebhookdispatchhistoryresponse?.webhookdispatch || []
+        this.totalCount = json?.listwebhookdeliveriesresponse?.count || 0
+        this.dispatches = json?.listwebhookdeliveriesresponse?.webhookdelivery || []
         this.tabLoading = false
       })
     },
@@ -173,31 +182,63 @@ export default {
         this.columns[this.columns.length - 1].customFilterDropdown = true
       }
     },
-    clearHistoryConfirmation () {
+    clearDeliveriesConfirmation () {
       const self = this
       this.$confirm({
-        title: this.$t('label.action.clear.webhook.history'),
+        title: this.$t('label.action.clear.webhook.deliveries'),
         okText: this.$t('label.ok'),
         okType: 'danger',
         cancelText: this.$t('label.cancel'),
         onOk () {
-          self.cleanHistory()
+          self.clearDeliveries()
         }
       })
     },
-    cleanHistory () {
+    clearDeliveries () {
       const params = {
-        webhookruleid: this.resource.id
+        webhookid: this.resource.id
       }
       this.tabLoading = true
-      api('deleteWebhookDispatchHistory', params).then(json => {
-        this.$message.success(this.$t('message.success.clear.webhook.history'))
+      api('deleteWebhookDelivery', params).then(json => {
+        this.$message.success(this.$t('message.success.clear.webhook.deliveries'))
         this.fetchData()
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
-        this.domainsLoading = false
+        this.tabLoading = false
       })
+    },
+    redeliverDeliveryConfirmation (item) {
+      const self = this
+      this.$confirm({
+        title: this.$t('label.redeliver') + ' ' + item.eventtype,
+        okText: this.$t('label.ok'),
+        okType: 'primary',
+        cancelText: this.$t('label.cancel'),
+        onOk () {
+          self.redeliverDelivery(item)
+        }
+      })
+    },
+    redeliverDelivery (item) {
+      const params = {
+        id: item.id
+      }
+      this.tabLoading = true
+      api('executeWebhookDelivery', params).then(json => {
+        this.$message.success(this.$t('message.success.redeliver.webhook.delivery'))
+        this.fetchData()
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.tabLoading = false
+      })
+    },
+    execAction (action) {
+      console.log('-------------------', action)
+      if (action.api === 'executeWebhookDelivery') {
+        this.redeliverDeliveryConfirmation(action.resource)
+      }
     }
   }
 }

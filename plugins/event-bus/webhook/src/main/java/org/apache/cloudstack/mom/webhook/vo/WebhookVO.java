@@ -30,7 +30,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.mom.webhook.WebhookRule;
+import org.apache.cloudstack.mom.webhook.Webhook;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import com.cloud.utils.db.Encrypt;
@@ -38,7 +38,7 @@ import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name = "webhook")
-public class WebhookRuleVO implements WebhookRule {
+public class WebhookVO implements Webhook {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -186,20 +186,21 @@ public class WebhookRuleVO implements WebhookRule {
 
     @Override
     public Class<?> getEntityType() {
-        return WebhookRule.class;
+        return Webhook.class;
     }
 
     @Override
     public String toString() {
-        return String.format("WebhookRule [%s]", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "uuid", "name"));
+        return String.format("Webhook [%s]",ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                this, "id", "uuid", "name", "payloadUrl"));
     }
 
-    public WebhookRuleVO() {
+    public WebhookVO() {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public WebhookRuleVO(String name, String description, State state, long domainId, long accountId,
-         String payloadUrl, String secretKey, boolean sslVerification, Scope scope) {
+    public WebhookVO(String name, String description, State state, long domainId, long accountId,
+                     String payloadUrl, String secretKey, boolean sslVerification, Scope scope) {
         this.uuid = UUID.randomUUID().toString();
         this.name = name;
         this.description = description;
@@ -213,13 +214,13 @@ public class WebhookRuleVO implements WebhookRule {
     }
 
     /*
-     * For creating a dummy rule for testing dispatch
+     * For creating a dummy rule for testing delivery
      */
-    public WebhookRuleVO(long domainId, long accountId, String payloadUrl, String secretKey, boolean sslVerification) {
+    public WebhookVO(long domainId, long accountId, String payloadUrl, String secretKey, boolean sslVerification) {
         this.uuid = UUID.randomUUID().toString();
-        this.id = ID_DUMMY_RULE;
-        this.name = NAME_DUMMY_RULE;
-        this.description = NAME_DUMMY_RULE;
+        this.id = ID_DUMMY;
+        this.name = NAME_DUMMY;
+        this.description = NAME_DUMMY;
         this.state = State.Enabled;
         this.domainId = domainId;
         this.accountId = accountId;

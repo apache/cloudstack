@@ -431,7 +431,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     protected void deleteWebhooksForAccount(long accountId) {
         try {
             WebhookHelper webhookService = ComponentContext.getComponent(WebhookHelper.class);
-            webhookService.deleteRulesForAccount(accountId);
+            webhookService.deleteWebhooksForAccount(accountId);
         } catch (NoSuchBeanDefinitionException ignored) {
             if (logger.isDebugEnabled()) {
                 logger.debug("No WebhookHelper bean found");
@@ -1113,7 +1113,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             // Delete registered UserData
             userDataDao.removeByAccountId(accountId);
 
-            // Delete WebhookRules
+            // Delete Webhooks
             deleteWebhooksForAccount(accountId);
 
             return true;

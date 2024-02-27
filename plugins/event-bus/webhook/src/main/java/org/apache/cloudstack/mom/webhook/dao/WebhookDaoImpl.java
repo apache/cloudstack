@@ -22,16 +22,16 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.mom.webhook.WebhookRule;
-import org.apache.cloudstack.mom.webhook.vo.WebhookRuleVO;
+import org.apache.cloudstack.mom.webhook.Webhook;
+import org.apache.cloudstack.mom.webhook.vo.WebhookVO;
 import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-public class WebhookRuleDaoImpl extends GenericDaoBase<WebhookRuleVO, Long> implements WebhookRuleDao {
-    SearchBuilder<WebhookRuleVO> accountIdSearch;
+public class WebhookDaoImpl extends GenericDaoBase<WebhookVO, Long> implements WebhookDao {
+    SearchBuilder<WebhookVO> accountIdSearch;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -43,8 +43,8 @@ public class WebhookRuleDaoImpl extends GenericDaoBase<WebhookRuleVO, Long> impl
         return true;
     }
     @Override
-    public List<WebhookRuleVO> listByEnabledRulesForDispatch(Long accountId, List<Long> domainIds) {
-        SearchBuilder<WebhookRuleVO> sb = createSearchBuilder();
+    public List<WebhookVO> listByEnabledForDelivery(Long accountId, List<Long> domainIds) {
+        SearchBuilder<WebhookVO> sb = createSearchBuilder();
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and().op("scopeGlobal", sb.entity().getScope(), SearchCriteria.Op.EQ);
         if (accountId != null) {
@@ -58,15 +58,15 @@ public class WebhookRuleDaoImpl extends GenericDaoBase<WebhookRuleVO, Long> impl
             sb.cp();
         }
         sb.cp();
-        SearchCriteria<WebhookRuleVO> sc = sb.create();
-        sc.setParameters("state", WebhookRule.State.Enabled.name());
-        sc.setParameters("scopeGlobal", WebhookRule.Scope.Global.name());
+        SearchCriteria<WebhookVO> sc = sb.create();
+        sc.setParameters("state", Webhook.State.Enabled.name());
+        sc.setParameters("scopeGlobal", Webhook.Scope.Global.name());
         if (accountId != null) {
-            sc.setParameters("scopeLocal", WebhookRule.Scope.Local.name());
+            sc.setParameters("scopeLocal", Webhook.Scope.Local.name());
             sc.setParameters("accountId", accountId);
         }
         if (CollectionUtils.isNotEmpty(domainIds)) {
-            sc.setParameters("scopeDomain", WebhookRule.Scope.Domain.name());
+            sc.setParameters("scopeDomain", Webhook.Scope.Domain.name());
             sc.setParameters("domainId", domainIds.toArray());
         }
         return listBy(sc);
@@ -74,14 +74,14 @@ public class WebhookRuleDaoImpl extends GenericDaoBase<WebhookRuleVO, Long> impl
 
     @Override
     public void deleteByAccount(long accountId) {
-        SearchCriteria<WebhookRuleVO> sc = accountIdSearch.create();
+        SearchCriteria<WebhookVO> sc = accountIdSearch.create();
         sc.setParameters("accountId", accountId);
         remove(sc);
     }
 
     @Override
-    public List<WebhookRuleVO> listByAccount(long accountId) {
-        SearchCriteria<WebhookRuleVO> sc = accountIdSearch.create();
+    public List<WebhookVO> listByAccount(long accountId) {
+        SearchCriteria<WebhookVO> sc = accountIdSearch.create();
         sc.setParameters("accountId", accountId);
         return listBy(sc);
     }

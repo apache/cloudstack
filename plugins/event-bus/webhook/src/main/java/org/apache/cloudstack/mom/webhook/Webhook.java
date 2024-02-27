@@ -19,18 +19,30 @@ package org.apache.cloudstack.mom.webhook;
 
 import java.util.Date;
 
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-public interface WebhookDispatch extends Identity, InternalIdentity {
+public interface Webhook extends ControlledEntity, Identity, InternalIdentity {
+    public static final long ID_DUMMY = 0L;
+    public static final String NAME_DUMMY = "Test";
+    enum State {
+        Enabled, Disabled;
+    };
+
+    enum Scope {
+        Local, Domain, Global;
+    };
 
     long getId();
-    long getEventId();
-    long getWebhookRuleId();
-    long getManagementServerId();
-    String getPayload();
-    boolean isSuccess();
-    String getResponse();
-    Date getStartTime();
-    Date getEndTime();
+    String getName();
+    String getDescription();
+    State getState();
+    long getDomainId();
+    long getAccountId();
+    String getPayloadUrl();
+    String getSecretKey();
+    boolean isSslVerification();
+    Scope getScope();
+    Date getCreated();
 }

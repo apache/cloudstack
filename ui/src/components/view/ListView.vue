@@ -383,11 +383,17 @@
         <span v-else>{{ text }}</span>
       </template>
       <template v-if="column.key === 'payload'">
-        <router-link v-if="$router.resolve('/webhookhistory/' + record.id).matched[0].redirect !== '/exception/404'" :to="{ path: '/webhookhistory/' + record.id }">{{ getTrimmedText(text, 48) }}</router-link>
+        <router-link v-if="$router.resolve('/webhookdeliveries/' + record.id).matched[0].redirect !== '/exception/404'" :to="{ path: '/webhookdeliveries/' + record.id }">{{ getTrimmedText(text, 48) }}</router-link>
         <span v-else>  {{ getTrimmedText(text, 48) }} </span>
+        <QuickView
+          style="margin-left: 5px"
+          :actions="actions"
+          :resource="record"
+          :enabled="quickViewEnabled() && actions.length > 0"
+          @exec-action="$parent.execAction"/>
       </template>
-      <template v-if="column.key === 'webhookrulename'">
-        <router-link v-if="$router.resolve('/webhook/' + record.webhookruleid).matched[0].redirect !== '/exception/404'" :to="{ path: '/webhook/' + record.webhookruleid }">{{ text }}</router-link>
+      <template v-if="column.key === 'webhookname'">
+        <router-link v-if="$router.resolve('/webhook/' + record.webhookid).matched[0].redirect !== '/exception/404'" :to="{ path: '/webhook/' + record.webhookid }">{{ text }}</router-link>
         <span v-else>  {{ text }} </span>
       </template>
       <template v-if="column.key === 'success'">
@@ -396,7 +402,7 @@
       <template v-if="column.key === 'response'">
         <span>  {{ getTrimmedText(text, 48) }} </span>
       </template>
-      <template v-if="column.key === 'duration' && ['webhook', 'webhookhistory'].includes($route.path.split('/')[1])">
+      <template v-if="column.key === 'duration' && ['webhook', 'webhookdeliveries'].includes($route.path.split('/')[1])">
         <span>  {{ getDuration(record.startdate, record.enddate) }} </span>
       </template>
       <template v-if="column.key === 'order'">
@@ -627,7 +633,7 @@ export default {
         '/project', '/account', 'buckets', 'objectstore',
         '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm', '/annotation',
         '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering',
-        '/tungstenfabric', '/oauthsetting', '/guestos', '/guestoshypervisormapping', '/webhook', 'webhookhistory'].join('|'))
+        '/tungstenfabric', '/oauthsetting', '/guestos', '/guestoshypervisormapping', '/webhook', 'webhookdeliveries'].join('|'))
         .test(this.$route.path)
     },
     enableGroupAction () {
@@ -635,7 +641,7 @@ export default {
         'vmsnapshot', 'backup', 'guestnetwork', 'vpc', 'publicip', 'vpnuser', 'vpncustomergateway', 'vnfapp',
         'project', 'account', 'systemvm', 'router', 'computeoffering', 'systemoffering',
         'diskoffering', 'backupoffering', 'networkoffering', 'vpcoffering', 'ilbvm', 'kubernetes', 'comment', 'buckets',
-        'webhook', 'webhookhistory'
+        'webhook', 'webhookdeliveries'
       ].includes(this.$route.name)
     },
     getDateAtTimeZone (date, timezone) {

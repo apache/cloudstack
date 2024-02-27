@@ -47,7 +47,8 @@
           </template>
           <a-radio-group
             v-model:value="form.scope"
-            buttonStyle="solid">
+            buttonStyle="solid"
+            @change="handleScopeChange">
             <a-radio-button value="Local">
               {{ $t('label.local') }}
             </a-radio-button>
@@ -58,6 +59,47 @@
               {{ $t('label.global') }}
             </a-radio-button>
           </a-radio-group>
+        </a-form-item>
+        <a-form-item name="domainid" ref="domainid" v-if="isAdminOrDomainAdmin && ['Domain', 'Local'].includes(form.scope)">
+          <template #label :title="apiParams.domainid.description">
+            {{ $t('label.domainid') }}
+            <a-tooltip>
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </template>
+          <a-select
+            id="domain-selection"
+            v-model:value="form.domainid"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :loading="domainLoading"
+            :placeholder="apiParams.domainid.description"
+            @change="val => { handleDomainChanged(val) }">
+            <a-select-option v-for="opt in domains" :key="opt.id" :label="opt.path || opt.name || opt.description || ''">
+              {{ opt.path || opt.name || opt.description }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item name="account" ref="account" v-if="isAdminOrDomainAdmin && ['Local'].includes(form.scope) && form.domainid">
+          <template #label>
+            <tooltip-label :title="$t('label.account')" :tooltip="apiParams.account.description"/>
+          </template>
+          <a-select
+            v-model:value="form.account"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :loading="accountLoading"
+            :placeholder="apiParams.account.description">
+            <a-select-option v-for="opt in accounts" :key="opt.id" :label="opt.name">
+              {{ opt.name }}
+            </a-select-option>
+          </a-select>
         </a-form-item>
         <a-form-item name="payloadurl" ref="payloadurl">
           <template #label>
@@ -90,7 +132,7 @@
             :placeholder="apiParams.secretkey.description"
             @change="handleParamUpdate"/>
         </a-form-item>
-        <test-webhook-dispatch-view
+        <test-webhook-delivery-view
           ref="dispatchview"
           :payloadUrl="form.payloadurl"
           :sslVerification="form.sslverification"
@@ -114,30 +156,38 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import _ from 'lodash'
 import { mixinForm } from '@/utils/mixin'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
-import TestWebhookDispatchView from '@/components/view/TestWebhookDispatchView'
+import TestWebhookDeliveryView from '@/components/view/TestWebhookDeliveryView'
 
 export default {
   name: 'CreateWebhook',
   mixins: [mixinForm],
   components: {
     TooltipLabel,
-    TestWebhookDispatchView
+    TestWebhookDeliveryView
   },
   props: {},
   data () {
     return {
+      domains: [],
+      domainLoading: false,
+      accounts: [],
+      accountLoading: false,
       loading: false,
-      testDispatchAllowed: false,
-      testDispatchLoading: false
+      testDeliveryAllowed: false,
+      testDeliveryLoading: false
     }
   },
   beforeCreate () {
-    this.apiParams = this.$getApiParams('createWebhookRule')
+    this.apiParams = this.$getApiParams('createWebhook')
   },
   created () {
     this.initForm()
+    if (['Domain', 'Local'].includes(this.form.scope)) {
+      this.fetchDomainData()
+    }
   },
   computed: {
     isAdminOrDomainAdmin () {
@@ -175,8 +225,48 @@ export default {
     isObjectEmpty (obj) {
       return !(obj !== null && obj !== undefined && Object.keys(obj).length > 0 && obj.constructor === Object)
     },
-    updateTestDispatchLoading (value) {
-      this.testDispatchLoading = value
+    updateTestDeliveryLoading (value) {
+      this.testDeliveryLoading = value
+    },
+    fetchDomainData () {
+      this.domainLoading = true
+      this.domains = [
+        {
+          id: null,
+          name: ''
+        }
+      ]
+      this.form.domainid = null
+      this.form.account = null
+      api('listDomains', {}).then(json => {
+        const listdomains = json.listdomainsresponse.domain
+        this.domains = this.domains.concat(listdomains)
+      }).finally(() => {
+        this.domainLoading = false
+        if (this.arrayHasItems(this.domains)) {
+          this.form.domainid = null
+        }
+      })
+    },
+    fetchAccountData () {
+      this.accounts = []
+      this.form.account = null
+      if (!this.form.domainid) {
+        return
+      }
+      this.accountLoading = true
+      var params = {
+        domainid: this.form.domainid
+      }
+      api('listAccounts', params).then(json => {
+        const listAccounts = json.listaccountsresponse.account || []
+        this.accounts = listAccounts
+      }).finally(() => {
+        this.accountLoading = false
+        if (this.arrayHasItems(this.accounts)) {
+          this.form.account = this.accounts[0].id
+        }
+      })
     },
     handleSubmit (e) {
       e.preventDefault()
@@ -184,7 +274,6 @@ export default {
       this.formRef.value.validate().then(() => {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
-        this.loading = true
         const params = {
           name: values.name,
           description: values.description,
@@ -200,8 +289,24 @@ export default {
         if (this.isValidValueForKey(values, 'secretkey')) {
           params.secretkey = values.secretkey
         }
-
-        api('createWebhookRule', params).then(json => {
+        if (values.domainid) {
+          params.domainid = values.domainid
+        }
+        if (values.scope === 'Local' && values.domainid && !values.account) {
+          this.$notification.error({
+            message: this.$t('message.request.failed'),
+            description: this.$t('message.error.webhook.local.account')
+          })
+          return
+        }
+        if (values.account) {
+          const accountItem = _.find(this.accounts, (option) => option.id === values.account)
+          if (accountItem) {
+            params.account = accountItem.name
+          }
+        }
+        this.loading = true
+        api('createWebhook', params).then(json => {
           this.$emit('refresh-data')
           this.$notification.success({
             message: this.$t('label.webhook.create'),
@@ -221,7 +326,17 @@ export default {
       this.$emit('close-action')
     },
     handleParamUpdate (e) {
-      this.$refs.dispatchview.timedTestWebhookDispatch()
+      this.$refs.dispatchview.timedTestWebhookDelivery()
+    },
+    handleScopeChange (e) {
+      if (['Domain', 'Local'].includes(this.form.scope)) {
+        this.fetchDomainData()
+      }
+    },
+    handleDomainChanged (domainid) {
+      if (domainid) {
+        this.fetchAccountData()
+      }
     }
   }
 }

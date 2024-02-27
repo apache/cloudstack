@@ -19,12 +19,12 @@ package org.apache.cloudstack.mom.webhook.dao;
 
 import java.util.List;
 
-import org.apache.cloudstack.mom.webhook.vo.WebhookRuleVO;
+import org.apache.cloudstack.mom.webhook.vo.WebhookVO;
 
 import com.cloud.utils.db.GenericDao;
 
-public interface WebhookRuleDao extends GenericDao<WebhookRuleVO, Long> {
-    List<WebhookRuleVO> listByEnabledRulesForDispatch(Long accountId, List<Long> domainIds);
+public interface WebhookDao extends GenericDao<WebhookVO, Long> {
+    List<WebhookVO> listByEnabledForDelivery(Long accountId, List<Long> domainIds);
     void deleteByAccount(long accountId);
-    List<WebhookRuleVO> listByAccount(long accountId);
+    List<WebhookVO> listByAccount(long accountId);
 }
