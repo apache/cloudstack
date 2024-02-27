@@ -55,6 +55,7 @@ import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -182,7 +183,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
 
         final String value = _shell.getPersistentProperty(getResourceName(), "id");
         _id = value != null ? Long.parseLong(value) : null;
-        logger.info("id is {}", () -> (_id != null ? _id : ""));
+        logger.info("id is {}", ObjectUtils.defaultIfNull(_id, ""));
 
         final Map<String, Object> params = new HashMap<>();
 
@@ -211,8 +212,8 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                 new ThreadPoolExecutor(_shell.getWorkers(), 5 * _shell.getWorkers(), 1, TimeUnit.DAYS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory(
                         "agentRequest-Handler"));
 
-        logger.info("Agent [id = {} : type = {} : zone = {} : pod = {} : workers = {} : host = {} : port = {}", () -> (_id != null ? _id : "new"), () -> getResourceName(),
-                () -> _shell.getZone(), () -> _shell.getPod(), () -> _shell.getWorkers(), () -> host, () -> _shell.getPort());
+        logger.info("Agent [id = {} : type = {} : zone = {} : pod = {} : workers = {} : host = {} : port = {}", ObjectUtils.defaultIfNull(_id, "new"), getResourceName(),
+                 _shell.getZone(), _shell.getPod(), _shell.getWorkers(), host, _shell.getPort());
     }
 
     public String getVersion() {
@@ -312,7 +313,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
     }
 
     public void stop(final String reason, final String detail) {
-        logger.info("Stopping the agent: Reason = {}", () -> reason + (detail != null ? ": Detail = " + detail : ""));
+        logger.info("Stopping the agent: Reason = {}", reason + ObjectUtils.defaultIfNull(": Detail = " + detail, ""));
         _reconnectAllowed = false;
         if (_connection != null) {
             final ShutdownCommand cmd = new ShutdownCommand(reason, detail);
@@ -1034,7 +1035,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
 
         @Override
         protected void runInContext() {
-            logger.trace("Scheduling {}", () -> (_request instanceof Response ? "Ping" : "Watch Task"));
+            logger.trace("Scheduling {}", (_request instanceof Response ? "Ping" : "Watch Task"));
             try {
                 if (_request instanceof Response) {
                     _ugentTaskPool.submit(new ServerHandler(Task.Type.OTHER, _link, _request));
