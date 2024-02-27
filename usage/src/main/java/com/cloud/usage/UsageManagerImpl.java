@@ -272,11 +272,9 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             }
 
             logger.info("Usage is configured to execute in time zone [{}], at [{}], each [{}] minutes; the current time in that timezone is [{}] and the " +
-                            "next job is scheduled to execute at [{}]. During its execution, Usage will aggregate stats according to the boundaries of a day in time zone [{}].",
-                    jobExecTimeZone.getID(), execTime, aggregationRange,
-                    DateUtil.displayDateInTimezone(jobExecTimeZone, currentDate),
-                    DateUtil.displayDateInTimezone(jobExecTimeZone, _jobExecTime.getTime()),
-                    usageAggregationTimeZone.getID());
+                            "next job is scheduled to execute at [{}]. During its execution, Usage will aggregate stats according to the time zone [{}] defined in global setting [usage.aggregation.timezone].",
+                    jobExecTimeZone.getID(), execTime, aggregationRange, DateUtil.displayDateInTimezone(jobExecTimeZone, currentDate),
+                    DateUtil.displayDateInTimezone(jobExecTimeZone, _jobExecTime.getTime()), usageAggregationTimeZone.getID());
 
             _aggregationDuration = Integer.parseInt(aggregationRange);
             if (_aggregationDuration < UsageUtils.USAGE_AGGREGATION_RANGE_MIN) {

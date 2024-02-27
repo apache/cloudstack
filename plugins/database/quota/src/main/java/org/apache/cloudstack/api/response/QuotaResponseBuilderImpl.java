@@ -376,10 +376,8 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         Long startIndex = cmd.getStartIndex();
         Long pageSize = cmd.getPageSizeVal();
 
-        logger.debug("Listing quota tariffs for parameters [{}] between [{}] and [{}].", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(cmd, "listAll",
-                        "name", "page", "pageSize", "usageType"),
-                DateUtil.displayDateInTimezone(QuotaManagerImpl.getUsageAggregationTimeZone(), startDate),
-                DateUtil.displayDateInTimezone(QuotaManagerImpl.getUsageAggregationTimeZone(), endDate));
+        logger.debug(String.format("Listing quota tariffs for parameters [%s].", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(cmd, "effectiveDate",
+                "endDate", "listAll", "name", "page", "pageSize", "usageType")));
 
         return _quotaTariffDao.listQuotaTariffs(startDate, endDate, usageType, name, null, listAll, startIndex, pageSize);
     }
@@ -475,15 +473,13 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
         if (endDate.compareTo(startDate) < 0) {
             throw new InvalidParameterValueException(String.format("The quota tariff's end date [%s] cannot be less than the start date [%s].",
-                    DateUtil.displayDateInTimezone(QuotaManagerImpl.getUsageAggregationTimeZone(), endDate),
-                    DateUtil.displayDateInTimezone(QuotaManagerImpl.getUsageAggregationTimeZone(), startDate)));
+                    endDate, startDate));
         }
 
         Date now = _quotaService.computeAdjustedTime(new Date());
         if (endDate.compareTo(now) < 0) {
             throw new InvalidParameterValueException(String.format("The quota tariff's end date [%s] cannot be less than now [%s].",
-                    DateUtil.displayDateInTimezone(QuotaManagerImpl.getUsageAggregationTimeZone(), endDate),
-                    DateUtil.displayDateInTimezone(QuotaManagerImpl.getUsageAggregationTimeZone(), now)));
+                    endDate, now));
         }
 
         newQuotaTariff.setEndDate(endDate);
@@ -496,7 +492,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
         if (qb != null) {
             throw new InvalidParameterValueException(String.format("Incorrect deposit date [%s], as there are balance entries after this date.",
-                    DateUtil.displayDateInTimezone(QuotaManagerImpl.getUsageAggregationTimeZone(), despositedOn)));
+                    despositedOn));
         }
 
         QuotaCreditsVO credits = new QuotaCreditsVO(accountId, domainId, new BigDecimal(amount), updatedBy);
@@ -647,9 +643,8 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         }
 
         if (startDate.compareTo(now) < 0) {
-            throw new InvalidParameterValueException(String.format("The quota tariff's start date [%s] cannot be less than now [%s].",
-                    DateUtil.displayDateInTimezone(QuotaManagerImpl.getUsageAggregationTimeZone(), startDate),
-                    DateUtil.displayDateInTimezone(QuotaManagerImpl.getUsageAggregationTimeZone(), now)));
+            throw new InvalidParameterValueException(String.format("The value passed as Quota tariff's start date is in the past: [%s]. " +
+                    "Please, inform a date in the future or do not pass the parameter to use the current date and time.", startDate));
         }
 
         return persistNewQuotaTariff(null, name, usageType, startDate, cmd.getEntityOwnerId(), endDate, value, description, activationRule);
