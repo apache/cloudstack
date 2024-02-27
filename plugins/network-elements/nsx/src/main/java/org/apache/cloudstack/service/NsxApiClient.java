@@ -572,12 +572,13 @@ public class NsxApiClient {
         }
     }
 
-    public boolean doesPfRuleExist(String ruleName, String tier1GatewayName, String networkName) {
+    public boolean doesPfRuleExist(String ruleName, String tier1GatewayName) {
         try {
             NatRules natService = (NatRules) nsxService.apply(NatRules.class);
             PolicyNatRule rule = natService.get(tier1GatewayName, NAT_ID, ruleName);
             return !Objects.isNull(rule);
         } catch (Error error) {
+            LOGGER.debug(String.format("Found a port forward rule named: %s on NSX", ruleName));
             return false;
         }
     }
@@ -781,6 +782,7 @@ public class NsxApiClient {
                 return lbVirtualServer;
             }
         } catch (Exception e) {
+            LOGGER.debug(String.format("Found an LB virtual server named: %s on NSX", lbVSName));
             return null;
         }
         return null;
