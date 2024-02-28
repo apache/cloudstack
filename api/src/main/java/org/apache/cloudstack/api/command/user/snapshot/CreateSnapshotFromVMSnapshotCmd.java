@@ -186,7 +186,7 @@ public class CreateSnapshotFromVMSnapshotCmd extends BaseAsyncCreateCmd {
                 try {
                     _snapshotService.deleteSnapshot(getEntityId(), null);
                 } catch (Exception e) {
-                    logger.debug("Failed to clean failed snapshot{}", getEntityId());
+                    logger.debug("Failed to clean failed snapshot {}", getEntityId());
                 }
             }
         }

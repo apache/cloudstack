@@ -285,7 +285,7 @@ public class CallContext {
             if (sessionIdOnStack.isEmpty() || sessionIdPushedToNDC.equals(sessionIdOnStack)) {
                 break;
             }
-            LOGGER.trace("Popping from NDC: {}", () -> contextId);
+            LOGGER.trace("Popping from NDC: {}", contextId);
         }
 
         Stack<CallContext> stack = s_currentContextStack.get();

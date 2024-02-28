@@ -37,6 +37,7 @@ import javax.xml.transform.stream.StreamResult;
 
 import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
@@ -119,8 +120,7 @@ public class OVFHelper {
         boolean password = StringUtils.isNotBlank(passStr) && passStr.equalsIgnoreCase("true");
         String label = ovfParser.getChildNodeValue(node, "Label");
         String description = ovfParser.getChildNodeValue(node, "Description");
-        logger.debug("Creating OVF property index " + index + (category == null ? "" : " for category " + category)
-                + " with key = " + key);
+        logger.debug("Creating OVF property index {} with key = {}", ObjectUtils.defaultIfNull(index + " for category" + category, index), key);
         return new OVFPropertyTO(key, type, value, qualifiers, userConfigurable,
                 label, description, password, index, category);
     }
@@ -250,7 +250,7 @@ public class OVFHelper {
         int diskNumber = 0;
         for (OVFVirtualHardwareItemTO diskItem : diskHardwareItems) {
             if (StringUtils.isBlank(diskItem.getHostResource())) {
-                logger.error("Missing disk information for hardware item {} {}", () -> diskItem.getElementName(), () -> diskItem.getInstanceId());
+                logger.error("Missing disk information for hardware item {} {}", diskItem.getElementName(), diskItem.getInstanceId());
                 continue;
             }
             String diskId = extractDiskIdFromDiskHostResource(diskItem.getHostResource());
@@ -334,7 +334,7 @@ public class OVFHelper {
             od._controller = getControllerType(items, od._diskId);
             vd.add(od);
         }
-        logger.trace("found {} disk definitions", () -> vd.size());
+        logger.trace("Found {} disk definitions", vd.size());
         return vd;
     }
 
@@ -364,7 +364,7 @@ public class OVFHelper {
                 vf.add(of);
             }
         }
-        logger.trace("found %d file definitions in {}", ()-> vf.size(), () -> ovfFile.getPath());
+        logger.trace("Found {} file definitions in {}", vf.size(), ovfFile.getPath());
         return vf;
     }
 
@@ -502,7 +502,7 @@ public class OVFHelper {
             outfile.write(writer.toString());
             outfile.close();
         } catch (IOException | TransformerException e) {
-            logger.info("Unexpected exception caught while rewriting OVF:" + e.getMessage(), e);
+            logger.info("Unexpected exception caught while rewriting OVF:{}", e.getMessage(), e);
             throw new CloudRuntimeException(e);
         }
     }
@@ -518,7 +518,7 @@ public class OVFHelper {
 
     public List<OVFNetworkTO> getNetPrerequisitesFromDocument(Document doc) throws InternalErrorException {
         if (doc == null) {
-            logger.trace("no document to parse; returning no prerequisite networks");
+            logger.trace("No document to parse; returning no prerequisite networks");
             return Collections.emptyList();
         }
 
@@ -534,7 +534,7 @@ public class OVFHelper {
     private void matchNicsToNets(Map<String, OVFNetworkTO> nets, Node systemElement) {
         final DocumentTraversal traversal = (DocumentTraversal) systemElement;
         final NodeIterator iterator = traversal.createNodeIterator(systemElement, NodeFilter.SHOW_ELEMENT, null, true);
-        logger.trace("starting out with {} network-prerequisites, parsing hardware", () -> nets.size());
+        logger.trace("Starting out with {} network-prerequisites, parsing hardware", nets.size());
         int nicCount = 0;
         for (Node n = iterator.nextNode(); n != null; n = iterator.nextNode()) {
             final Element e = (Element) n;
@@ -542,7 +542,7 @@ public class OVFHelper {
                 nicCount++;
                 String name = e.getTextContent(); // should be in our nets
                 if(nets.get(name) == null) {
-                    logger.info("found a nic definition without a network definition byname {}, adding it to the list.", name);
+                    logger.info("Found a nic definition without a network definition byname {}, adding it to the list.", name);
                     nets.put(name, new OVFNetworkTO());
                 }
                 OVFNetworkTO thisNet = nets.get(name);
@@ -551,7 +551,7 @@ public class OVFHelper {
                 }
             }
         }
-        logger.trace("ending up with %d network-prerequisites, parsed {} nics", () -> nets.size(), () -> nicCount);
+        logger.trace("Ending up with {} network-prerequisites, parsed {} nics", nets.size(), nicCount);
     }
 
     /**
@@ -618,7 +618,7 @@ public class OVFHelper {
 
             nets.put(networkName,network);
         }
-        logger.trace("found {} networks in template", () -> nets.size());
+        logger.trace("Found {} networks in template", nets.size());
         return nets;
     }
 
