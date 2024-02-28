@@ -261,7 +261,7 @@ public class LibvirtDomainXMLParserTest extends TestCase {
     }
 
     @Test
-    public void testDomainXMLParser2() {
+    public void testDomainXMLParserWithoutModelName() {
         String xml = "<domain type='kvm'>\n" +
                 "  <name>testkiran</name>\n" +
                 "  <uuid>aafaaabc-8657-4efc-9c52-3422d4e04088</uuid>\n" +
