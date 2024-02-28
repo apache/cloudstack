@@ -350,6 +350,16 @@ class TestWebhooks(cloudstackTestCase):
             register_sshkeypair_delivery_count,
             "Check sshkeypair webhook deliveries count"
         )
+        self.webhook.delete_deliveries(
+            self.userapiclient
+        )
+        list_deliveries = self.webhook.list_deliveries(
+            self.userapiclient
+        )
+        self.assertTrue(
+            list_deliveries is None or len(list_deliveries) == 0,
+            "Check webhook deliveries list after delete"
+        )
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_13_webhook_execute_delivery(self):

@@ -7265,3 +7265,11 @@ class Webhook:
         cmd.webhookid = self.id
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return apiclient.executeWebhookDelivery(cmd)
+
+    def delete_deliveries(self, apiclient, **kwargs):
+        """Delete Webhook Deliveries"""
+
+        cmd = deleteWebhookDelivery.deleteWebhookDeliveryCmd()
+        cmd.webhookid = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.deleteWebhookDelivery(cmd)
