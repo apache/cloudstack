@@ -7186,7 +7186,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     }
                 }
 
-                if (tags.isEmpty()) {
+                if (StringUtils.isBlank(tags)) {
                     offering.setTags(null);
                 } else {
                     offering.setTags(tags);
