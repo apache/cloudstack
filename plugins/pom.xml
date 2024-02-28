@@ -80,7 +80,6 @@
         <module>event-bus/kafka</module>
         <module>event-bus/rabbitmq</module>
         <module>event-bus/webhook</module>
-        <module>event-bus/testbus</module>
 
         <module>ha-planners/skip-heurestics</module>
 
