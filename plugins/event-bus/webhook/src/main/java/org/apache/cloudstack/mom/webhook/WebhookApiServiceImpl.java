@@ -289,9 +289,8 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         final String secretKey = cmd.getSecretKey();
         final boolean sslVerification = cmd.isSslVerification();
         final String scopeStr = cmd.getScope();
-        final boolean isAdmin = accountManager.isAdmin(owner.getId());
         final String stateStr = cmd.getState();
-        Webhook.Scope scope = isAdmin ? Webhook.Scope.Global : Webhook.Scope.Local;
+        Webhook.Scope scope = Webhook.Scope.Local;
         if (StringUtils.isNotEmpty(scopeStr)) {
             try {
                 scope = Webhook.Scope.valueOf(scopeStr);
