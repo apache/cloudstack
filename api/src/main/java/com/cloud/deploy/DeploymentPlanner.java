@@ -21,8 +21,12 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
+import com.cloud.exception.CloudException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -75,7 +79,7 @@ public interface DeploymentPlanner extends Adapter {
 
     public static class ExcludeList implements Serializable {
         private static final long serialVersionUID = -482175549460148301L;
-
+        protected static Logger LOGGER = LogManager.getLogger(ExcludeList.class);
         private Set<Long> _dcIds;
         private Set<Long> _podIds;
         private Set<Long> _clusterIds;
@@ -104,13 +108,26 @@ public interface DeploymentPlanner extends Adapter {
             }
         }
 
+        private void logAvoid(Class<?> scope, CloudException e) {
+            Long id = null;
+            if (e instanceof InsufficientCapacityException) {
+                id = ((InsufficientCapacityException) e).getId();
+            } else if (e instanceof ResourceUnavailableException) {
+                id = ((ResourceUnavailableException) e).getResourceId();
+            } else {
+                LOGGER.debug("Failed to log avoided component due to unexpected exception type [{}].", e.getMessage());
+                return;
+            }
+            LOGGER.debug("Adding {} [{}] to the avoid set due to [{}].", scope.getSimpleName(), id, e.getMessage());
+        }
+
         public boolean add(InsufficientCapacityException e) {
             Class<?> scope = e.getScope();
 
             if (scope == null) {
                 return false;
             }
-
+            logAvoid(scope, e);
             if (Host.class.isAssignableFrom(scope)) {
                 addHost(e.getId());
             } else if (Pod.class.isAssignableFrom(scope)) {
@@ -128,13 +145,14 @@ public interface DeploymentPlanner extends Adapter {
             return true;
         }
 
+
         public boolean add(ResourceUnavailableException e) {
             Class<?> scope = e.getScope();
 
             if (scope == null) {
                 return false;
             }
-
+            logAvoid(scope, e);
             if (Host.class.isAssignableFrom(scope)) {
                 addHost(e.getResourceId());
             } else if (Pod.class.isAssignableFrom(scope)) {
