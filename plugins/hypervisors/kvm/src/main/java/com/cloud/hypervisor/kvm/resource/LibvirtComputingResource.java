@@ -43,6 +43,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilder;
@@ -4584,7 +4586,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      */
     protected long getMemoryFreeInKBs(Domain dm) throws LibvirtException {
         MemoryStatistic[] memoryStats = dm.memoryStats(NUMMEMSTATS);
-        LOGGER.trace("Retrieved memory statistics (information about tags can be found on the libvirt documentation): [{}].", ArrayUtils.toString(memoryStats));
+        LOGGER.trace("Retrieved memory statistics (information about tags can be found on the libvirt documentation): {}.",
+                () -> Stream.of(memoryStats).map(stat -> stat.toString().trim().replace("\n", ",")).collect(Collectors.joining("},{", "[{", "}]")));
 
         long freeMemory = NumberUtils.LONG_MINUS_ONE;
 
