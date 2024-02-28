@@ -43,6 +43,7 @@ import org.apache.cloudstack.api.command.QuotaStatementCmd;
 import org.apache.cloudstack.api.command.QuotaTariffCreateCmd;
 import org.apache.cloudstack.api.command.QuotaTariffListCmd;
 import org.apache.cloudstack.api.command.QuotaTariffUpdateCmd;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.quota.QuotaManager;
 import org.apache.cloudstack.quota.QuotaService;
 import org.apache.cloudstack.quota.QuotaStatement;
@@ -406,6 +407,9 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         QuotaTariffVO newQuotaTariff = persistNewQuotaTariff(currentQuotaTariff, name, 0, currentQuotaTariffStartDate, cmd.getEntityOwnerId(), endDate, value, description,
                 activationRule);
         _quotaTariffDao.updateQuotaTariff(currentQuotaTariff);
+
+        CallContext.current().setEventResourceId(newQuotaTariff.getId());
+
         return newQuotaTariff;
     }
 
@@ -644,7 +648,11 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             throw new InvalidParameterValueException(String.format("The quota tariff's start date [%s] cannot be less than now [%s]", startDate, now));
         }
 
-        return persistNewQuotaTariff(null, name, usageType, startDate, cmd.getEntityOwnerId(), endDate, value, description, activationRule);
+        QuotaTariffVO newQuotaTariff = persistNewQuotaTariff(null, name, usageType, startDate, cmd.getEntityOwnerId(), endDate, value, description, activationRule);
+
+        CallContext.current().setEventResourceId(newQuotaTariff.getId());
+
+        return newQuotaTariff;
     }
 
     @ActionEvent(eventType = EventTypes.EVENT_QUOTA_TARIFF_DELETE, eventDescription = "removing Quota Tariff")
@@ -656,6 +664,9 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         }
 
         quotaTariff.setRemoved(_quotaService.computeAdjustedTime(new Date()));
+
+        CallContext.current().setEventResourceId(quotaTariff.getId());
+
         return _quotaTariffDao.updateQuotaTariff(quotaTariff);
     }
 }

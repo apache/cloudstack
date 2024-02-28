@@ -17,8 +17,9 @@
 
 package org.apache.cloudstack.quota;
 
+import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-public interface QuotaTariff extends InternalIdentity {
+public interface QuotaTariff extends InternalIdentity, Identity {
 
 }

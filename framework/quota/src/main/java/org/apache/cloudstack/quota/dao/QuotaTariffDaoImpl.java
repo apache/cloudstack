@@ -236,4 +236,9 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
     public QuotaTariffVO findByIdIncludingRemoved(Long id) {
         return Transaction.execute(TransactionLegacy.USAGE_DB, (TransactionCallback<QuotaTariffVO>) status -> super.findByIdIncludingRemoved(id));
     }
+
+    @Override
+    public QuotaTariffVO findByUuidIncludingRemoved(String uuid) {
+        return Transaction.execute(TransactionLegacy.USAGE_DB, (TransactionCallback<QuotaTariffVO>) status -> super.findByUuidIncludingRemoved(uuid));
+    }
 }

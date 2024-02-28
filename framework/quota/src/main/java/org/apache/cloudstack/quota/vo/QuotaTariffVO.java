@@ -240,6 +240,7 @@ public class QuotaTariffVO implements QuotaTariff {
         return description;
     }
 
+    @Override
     public String getUuid() {
         return uuid;
     }
