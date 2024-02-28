@@ -280,7 +280,7 @@ export default {
         if (item === 'groupid' && !('listInstanceGroups' in this.$store.getters.apis)) {
           return true
         }
-        if (['zoneid', 'domainid', 'imagestoreid', 'storageid', 'state', 'level', 'clusterid', 'podid', 'groupid', 'entitytype', 'type'].includes(item)) {
+        if (['zoneid', 'domainid', 'imagestoreid', 'storageid', 'state', 'level', 'clusterid', 'podid', 'groupid', 'entitytype', 'type', 'scope'].includes(item)) {
           type = 'list'
         } else if (item === 'tags') {
           type = 'tag'
@@ -610,7 +610,7 @@ export default {
       }
       return types
     },
-    fetchScopee () {
+    fetchScope () {
       const scope = []
       if (this.apiName.indexOf('listWebhooks') > -1) {
         scope.push({
@@ -631,9 +631,9 @@ export default {
       return scope
     },
     fetchState () {
-      const state = []
+      var state = []
       if (this.apiName.includes('listVolumes')) {
-        return [
+        state = [
           {
             id: 'Allocated',
             name: 'label.allocated'
@@ -660,16 +660,18 @@ export default {
           }
         ]
       } else if (this.apiName.indexOf('listWebhooks') > -1) {
-        state.push({
-          id: 'Enabled',
-          name: 'label.enabled'
-        })
-        state.push({
-          id: 'Disabled',
-          name: 'label.disabled'
-        })
+        state = [
+          {
+            id: 'Enabled',
+            name: 'label.enabled'
+          },
+          {
+            id: 'Disabled',
+            name: 'label.disabled'
+          }
+        ]
       }
-      return []
+      return state
     },
     fetchEntityType () {
       const entityType = []
