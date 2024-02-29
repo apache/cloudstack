@@ -59,7 +59,7 @@ public class ReservationDaoImpl extends GenericDaoBase<ReservationVO, Long> impl
         listDomainAndTypeSearch.done();
 
         listDomainAndTypeAndNoTagSearch = createSearchBuilder();
-        listDomainAndTypeAndNoTagSearch.and(ACCOUNT_ID, listDomainAndTypeAndNoTagSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        listDomainAndTypeAndNoTagSearch.and(DOMAIN_ID, listDomainAndTypeAndNoTagSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
         listDomainAndTypeAndNoTagSearch.and(RESOURCE_TYPE, listDomainAndTypeAndNoTagSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
         listDomainAndTypeAndNoTagSearch.and(RESOURCE_TAG, listDomainAndTypeAndNoTagSearch.entity().getTag(), SearchCriteria.Op.NULL);
         listDomainAndTypeAndNoTagSearch.done();
