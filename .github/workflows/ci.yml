@@ -188,7 +188,7 @@ jobs:
                   component/test_vpc_routers
                   component/test_vpn_users",
                 "component/test_vpc_network_lbrules",
-                "plugins/quota/test_quota_balance.py" ]
+                "plugins/quota/test_quota_balance" ]
 
     steps:
       - uses: actions/checkout@v3
