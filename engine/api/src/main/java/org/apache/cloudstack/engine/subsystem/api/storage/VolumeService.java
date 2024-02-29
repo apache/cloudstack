@@ -117,4 +117,8 @@ public interface VolumeService {
       VolumeInfo sourceVolume, VolumeInfo destinationVolume, boolean retryExpungeVolumeAsync);
 
     void moveVolumeOnSecondaryStorageToAnotherAccount(Volume volume, Account sourceAccount, Account destAccount);
+
+    Pair<String, String> checkAndRepairVolume(VolumeInfo volume);
+
+    void checkAndRepairVolumeBasedOnConfig(DataObject dataObject, Host host);
 }

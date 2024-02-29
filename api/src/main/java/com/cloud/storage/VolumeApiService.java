@@ -24,6 +24,7 @@ import java.util.Map;
 import org.apache.cloudstack.api.command.user.volume.AssignVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ChangeOfferingForVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.CheckAndRepairVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ExtractVolumeCmd;
@@ -36,6 +37,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 
 public interface VolumeApiService {
 
@@ -174,4 +176,6 @@ public interface VolumeApiService {
     Volume changeDiskOfferingForVolume(ChangeOfferingForVolumeCmd cmd) throws ResourceAllocationException;
 
     void publishVolumeCreationUsageEvent(Volume volume);
+
+    Pair<String, String> checkAndRepairVolume(CheckAndRepairVolumeCmd cmd) throws ResourceAllocationException;
 }
