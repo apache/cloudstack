@@ -788,7 +788,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
                         message.append(", Please check the affinity groups provided, there may not be sufficient capacity to follow them");
                     }
                 }
-                logger.info("{}: {}", () -> message.toString(), () -> ex.getLocalizedMessage());
+                logger.info("{}: {}", message.toString(), ex.getLocalizedMessage());
                 logger.debug(message.toString(), ex);
                 throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, message.toString());
             }
