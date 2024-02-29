@@ -1339,14 +1339,10 @@ export default {
           this.overrideDiskOffering = null
         }
 
-        if (iso) {
-          if (this.serviceOffering?.diskofferingid) {
-            this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === this.serviceOffering.diskofferingid)
-          }
-        } else {
-          if (this.diskSelected) {
-            this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.diskofferingid)
-          }
+        if (iso && this.serviceOffering?.diskofferingid) {
+          this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === this.serviceOffering.diskofferingid)
+        } else if (!iso && this.diskSelected) {
+          this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.diskofferingid)
         }
 
         this.zone = _.find(this.options.zones, (option) => option.id === instanceConfig.zoneid)
