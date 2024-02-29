@@ -1015,7 +1015,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 createBackupEvent(event);
             }
         } catch (EntityExistsException e) {
-            s_logger.error(String.format("Failed to create usage event: %d due to %s", event.getId(), e.getMessage()));
+            s_logger.warn(String.format("Failed to create usage event id: %d type: %s due to %s", event.getId(), eventType, e.getMessage()), e);
         }
     }
 
