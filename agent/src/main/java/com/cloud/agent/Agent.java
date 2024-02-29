@@ -312,7 +312,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
     }
 
     public void stop(final String reason, final String detail) {
-        logger.info("Stopping the agent: Reason = {}", reason + ObjectUtils.defaultIfNull(": Detail = " + detail, ""));
+        logger.info("Stopping the agent: Reason = {} {}", reason, () -> ": Detail = "  + ObjectUtils.defaultIfNull(detail, ""));
         _reconnectAllowed = false;
         if (_connection != null) {
             final ShutdownCommand cmd = new ShutdownCommand(reason, detail);
@@ -377,7 +377,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
     }
 
     public void setId(final Long id) {
-        logger.info("Set agent id {}", id);
+        logger.debug("Set agent id {}", id);
         _id = id;
         _shell.setPersistentProperty(getResourceName(), "id", Long.toString(id));
     }
