@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+import javax.persistence.EntityExistsException;
 
 import org.apache.cloudstack.quota.QuotaAlertManager;
 import org.apache.cloudstack.quota.QuotaManager;
@@ -983,34 +984,38 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
 
     private void createHelperRecord(UsageEventVO event) {
         String eventType = event.getType();
-        if (isVMEvent(eventType)) {
-            createVMHelperEvent(event);
-        } else if (isIPEvent(eventType)) {
-            createIPHelperEvent(event);
-        } else if (isVolumeEvent(eventType)) {
-            createVolumeHelperEvent(event);
-        } else if (isTemplateEvent(eventType)) {
-            createTemplateHelperEvent(event);
-        } else if (isISOEvent(eventType)) {
-            createISOHelperEvent(event);
-        } else if (isSnapshotEvent(eventType)) {
-            createSnapshotHelperEvent(event);
-        } else if (isLoadBalancerEvent(eventType)) {
-            createLoadBalancerHelperEvent(event);
-        } else if (isPortForwardingEvent(eventType)) {
-            createPortForwardingHelperEvent(event);
-        } else if (isNetworkOfferingEvent(eventType)) {
-            createNetworkOfferingEvent(event);
-        } else if (isVPNUserEvent(eventType)) {
-            handleVpnUserEvent(event);
-        } else if (isSecurityGroupEvent(eventType)) {
-            createSecurityGroupEvent(event);
-        } else if (isVmSnapshotEvent(eventType)) {
-            handleVMSnapshotEvent(event);
-        } else if (isVmSnapshotOnPrimaryEvent(eventType)) {
-            createVmSnapshotOnPrimaryEvent(event);
-        } else if (isBackupEvent(eventType)) {
-            createBackupEvent(event);
+        try {
+            if (isVMEvent(eventType)) {
+                createVMHelperEvent(event);
+            } else if (isIPEvent(eventType)) {
+                createIPHelperEvent(event);
+            } else if (isVolumeEvent(eventType)) {
+                createVolumeHelperEvent(event);
+            } else if (isTemplateEvent(eventType)) {
+                createTemplateHelperEvent(event);
+            } else if (isISOEvent(eventType)) {
+                createISOHelperEvent(event);
+            } else if (isSnapshotEvent(eventType)) {
+                createSnapshotHelperEvent(event);
+            } else if (isLoadBalancerEvent(eventType)) {
+                createLoadBalancerHelperEvent(event);
+            } else if (isPortForwardingEvent(eventType)) {
+                createPortForwardingHelperEvent(event);
+            } else if (isNetworkOfferingEvent(eventType)) {
+                createNetworkOfferingEvent(event);
+            } else if (isVPNUserEvent(eventType)) {
+                handleVpnUserEvent(event);
+            } else if (isSecurityGroupEvent(eventType)) {
+                createSecurityGroupEvent(event);
+            } else if (isVmSnapshotEvent(eventType)) {
+                handleVMSnapshotEvent(event);
+            } else if (isVmSnapshotOnPrimaryEvent(eventType)) {
+                createVmSnapshotOnPrimaryEvent(event);
+            } else if (isBackupEvent(eventType)) {
+                createBackupEvent(event);
+            }
+        } catch (EntityExistsException e) {
+            s_logger.error(String.format("Failed to create usage event: %d due to %s", event.getId(), e.getMessage()));
         }
     }
 
