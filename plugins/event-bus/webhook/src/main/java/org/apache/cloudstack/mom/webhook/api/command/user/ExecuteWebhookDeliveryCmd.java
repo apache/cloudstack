@@ -39,7 +39,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 
 @APICommand(name = "executeWebhookDelivery",
-        description = "Execute a Webhook delivery",
+        description = "Executes a Webhook delivery",
         responseObject = WebhookDeliveryResponse.class,
         entityType = {WebhookDelivery.class},
         requestHasSensitiveInfo = false,

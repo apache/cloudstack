@@ -35,7 +35,7 @@ import org.apache.cloudstack.mom.webhook.api.response.WebhookResponse;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "updateWebhook",
-        description = "Update a Webhook",
+        description = "Updates a Webhook",
         responseObject = SuccessResponse.class,
         entityType = {Webhook.class},
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},

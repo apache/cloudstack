@@ -19,10 +19,10 @@ package org.apache.cloudstack.mom.webhook;
 
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.mom.webhook.api.command.user.CreateWebhookCmd;
-import org.apache.cloudstack.mom.webhook.api.command.user.DeleteRuleCmd;
+import org.apache.cloudstack.mom.webhook.api.command.user.DeleteWebhookCmd;
 import org.apache.cloudstack.mom.webhook.api.command.user.DeleteWebhookDeliveryCmd;
 import org.apache.cloudstack.mom.webhook.api.command.user.ExecuteWebhookDeliveryCmd;
-import org.apache.cloudstack.mom.webhook.api.command.user.ListWebhookDeliveries;
+import org.apache.cloudstack.mom.webhook.api.command.user.ListWebhookDeliveriesCmd;
 import org.apache.cloudstack.mom.webhook.api.command.user.ListWebhooksCmd;
 import org.apache.cloudstack.mom.webhook.api.command.user.UpdateWebhookCmd;
 import org.apache.cloudstack.mom.webhook.api.response.WebhookDeliveryResponse;
@@ -35,10 +35,10 @@ public interface WebhookApiService extends PluggableService {
 
     ListResponse<WebhookResponse> listWebhooks(ListWebhooksCmd cmd);
     WebhookResponse createWebhook(CreateWebhookCmd cmd) throws CloudRuntimeException;
-    boolean deleteWebhook(DeleteRuleCmd cmd) throws CloudRuntimeException;
+    boolean deleteWebhook(DeleteWebhookCmd cmd) throws CloudRuntimeException;
     WebhookResponse updateWebhook(UpdateWebhookCmd cmd) throws CloudRuntimeException;
     WebhookResponse createWebhookResponse(long webhookId);
-    ListResponse<WebhookDeliveryResponse> listWebhookDeliveries(ListWebhookDeliveries cmd);
+    ListResponse<WebhookDeliveryResponse> listWebhookDeliveries(ListWebhookDeliveriesCmd cmd);
     boolean deleteWebhookDelivery(DeleteWebhookDeliveryCmd cmd) throws CloudRuntimeException;
     WebhookDeliveryResponse executeWebhookDelivery(ExecuteWebhookDeliveryCmd cmd) throws CloudRuntimeException;
 }

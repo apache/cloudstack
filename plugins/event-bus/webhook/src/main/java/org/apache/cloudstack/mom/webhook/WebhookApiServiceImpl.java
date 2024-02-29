@@ -29,10 +29,10 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.mom.webhook.api.command.user.CreateWebhookCmd;
-import org.apache.cloudstack.mom.webhook.api.command.user.DeleteRuleCmd;
+import org.apache.cloudstack.mom.webhook.api.command.user.DeleteWebhookCmd;
 import org.apache.cloudstack.mom.webhook.api.command.user.DeleteWebhookDeliveryCmd;
 import org.apache.cloudstack.mom.webhook.api.command.user.ExecuteWebhookDeliveryCmd;
-import org.apache.cloudstack.mom.webhook.api.command.user.ListWebhookDeliveries;
+import org.apache.cloudstack.mom.webhook.api.command.user.ListWebhookDeliveriesCmd;
 import org.apache.cloudstack.mom.webhook.api.command.user.ListWebhooksCmd;
 import org.apache.cloudstack.mom.webhook.api.command.user.UpdateWebhookCmd;
 import org.apache.cloudstack.mom.webhook.api.response.WebhookDeliveryResponse;
@@ -332,7 +332,7 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
     }
 
     @Override
-    public boolean deleteWebhook(DeleteRuleCmd cmd) throws CloudRuntimeException {
+    public boolean deleteWebhook(DeleteWebhookCmd cmd) throws CloudRuntimeException {
         final Account caller = CallContext.current().getCallingAccount();
         final long id = cmd.getId();
         Webhook webhook = webhookDao.findById(id);
@@ -424,7 +424,7 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
     }
 
     @Override
-    public ListResponse<WebhookDeliveryResponse> listWebhookDeliveries(ListWebhookDeliveries cmd) {
+    public ListResponse<WebhookDeliveryResponse> listWebhookDeliveries(ListWebhookDeliveriesCmd cmd) {
         final CallContext ctx = CallContext.current();
         final Account caller = ctx.getCallingAccount();
         final Long id = cmd.getId();
@@ -524,8 +524,8 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         cmdList.add(CreateWebhookCmd.class);
         cmdList.add(ListWebhooksCmd.class);
         cmdList.add(UpdateWebhookCmd.class);
-        cmdList.add(DeleteRuleCmd.class);
-        cmdList.add(ListWebhookDeliveries.class);
+        cmdList.add(DeleteWebhookCmd.class);
+        cmdList.add(ListWebhookDeliveriesCmd.class);
         cmdList.add(DeleteWebhookDeliveryCmd.class);
         cmdList.add(ExecuteWebhookDeliveryCmd.class);
         return cmdList;

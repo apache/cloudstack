@@ -22,25 +22,26 @@ import javax.inject.Inject;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ManagementServerResponse;
 import org.apache.cloudstack.mom.webhook.WebhookApiService;
-import org.apache.cloudstack.mom.webhook.Webhook;
+import org.apache.cloudstack.mom.webhook.WebhookDelivery;
+import org.apache.cloudstack.mom.webhook.api.response.WebhookDeliveryResponse;
 import org.apache.cloudstack.mom.webhook.api.response.WebhookResponse;
 
-import com.cloud.utils.exception.CloudRuntimeException;
-
-@APICommand(name = "deleteWebhook",
-        description = "Delete a Webhook",
-        responseObject = SuccessResponse.class,
-        entityType = {Webhook.class},
+@APICommand(name = "listWebhookDeliveries",
+        description = "Lists Webhook deliveries",
+        responseObject = WebhookResponse.class,
+        responseView = ResponseObject.ResponseView.Restricted,
+        entityType = {WebhookDelivery.class},
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
         since = "4.20.0")
-public class DeleteRuleCmd extends BaseCmd {
+public class ListWebhookDeliveriesCmd extends BaseListCmd {
 
     @Inject
     WebhookApiService webhookApiService;
@@ -48,11 +49,21 @@ public class DeleteRuleCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID,
-            entityType = WebhookResponse.class,
-            required = true,
-            description = "The ID of the Webhook")
+    @Parameter(name = ApiConstants.ID, type = BaseCmd.CommandType.UUID,
+            entityType = WebhookDeliveryResponse.class,
+            description = "The ID of the Webhook delivery")
     private Long id;
+
+    @Parameter(name = ApiConstants.WEBHOOK_ID, type = BaseCmd.CommandType.UUID,
+            entityType = WebhookResponse.class,
+            description = "The ID of the Webhook")
+    private Long webhookId;
+
+    @Parameter(name = ApiConstants.MANAGEMENT_SERVER_ID, type = BaseCmd.CommandType.UUID,
+            entityType = ManagementServerResponse.class,
+            description = "The ID of the management server",
+            authorized = {RoleType.Admin})
+    private Long managementServerId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -61,9 +72,12 @@ public class DeleteRuleCmd extends BaseCmd {
         return id;
     }
 
-    @Override
-    public long getEntityOwnerId() {
-        return CallContext.current().getCallingAccountId();
+    public Long getWebhookId() {
+        return webhookId;
+    }
+
+    public Long getManagementServerId() {
+        return managementServerId;
     }
 
     /////////////////////////////////////////////////////
@@ -71,14 +85,8 @@ public class DeleteRuleCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     @Override
     public void execute() throws ServerApiException {
-        try {
-            if (!webhookApiService.deleteWebhook(this)) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to delete webhook ID: %d", getId()));
-            }
-            SuccessResponse response = new SuccessResponse(getCommandName());
-            setResponseObject(response);
-        } catch (CloudRuntimeException ex) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
-        }
+        ListResponse<WebhookDeliveryResponse> response = webhookApiService.listWebhookDeliveries(this);
+        response.setResponseName(getCommandName());
+        setResponseObject(response);
     }
 }
