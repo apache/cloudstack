@@ -70,7 +70,7 @@ public class OVFParser {
         try {
             return documentBuilder.parse(new File(ovfFilePath));
         } catch (SAXException | IOException e) {
-            logger.error("Error parsing {} {}", e.getMessage(), e);
+            logger.error("Error parsing {} {}", ovfFilePath, e.getMessage(), e);
             return null;
         }
     }

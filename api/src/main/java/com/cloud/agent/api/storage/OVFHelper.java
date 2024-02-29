@@ -120,7 +120,7 @@ public class OVFHelper {
         boolean password = StringUtils.isNotBlank(passStr) && passStr.equalsIgnoreCase("true");
         String label = ovfParser.getChildNodeValue(node, "Label");
         String description = ovfParser.getChildNodeValue(node, "Description");
-        logger.debug("Creating OVF property index {} with key = {}", ObjectUtils.defaultIfNull(index + " for category" + category, index), key);
+        logger.debug("Creating OVF property index {} {} with key = {}", index, (category == null ? "" : " for category " + category), key);
         return new OVFPropertyTO(key, type, value, qualifiers, userConfigurable,
                 label, description, password, index, category);
     }
