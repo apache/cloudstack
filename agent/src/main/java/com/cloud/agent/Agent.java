@@ -287,8 +287,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         try {
             _connection.start();
         } catch (final NioConnectionException e) {
-            logger.warn("NIO Connection Exception {}", e);
-            logger.info("Attempted to connect to the server, but received an unexpected exception, trying again...");
+            logger.warn("Attempt to connect to server generated NIO Connection Exception {}, trying again", e.getLocalizedMessage());
         }
         while (!_connection.isStartup()) {
             final String host = _shell.getNextHost();
@@ -405,7 +404,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
 
     public void scheduleWatch(final Link link, final Request request, final long delay, final long period) {
         synchronized (_watchList) {
-            logger.debug("Adding a watch list");
+            logger.debug("Adding task with request: {} to watch list", request.toString());
 
             final WatchTask task = new WatchTask(link, request, this);
             _timer.schedule(task, 0, period);
@@ -432,7 +431,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
             for (final WatchTask task : _watchList) {
                 task.cancel();
             }
-            logger.debug("Clearing watch list: {}", _watchList.size());
+            logger.debug("Clearing {} tasks of watch list", _watchList.size());
             _watchList.clear();
         }
     }
