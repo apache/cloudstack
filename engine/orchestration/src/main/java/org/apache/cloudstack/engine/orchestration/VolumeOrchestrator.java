@@ -1873,14 +1873,14 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         List<VolumeTask> tasks = getTasks(vols, dest.getStorageForDisks(), vm);
         Volume vol = null;
-        StoragePool pool;
+        PrimaryDataStore pool;
         for (VolumeTask task : tasks) {
             if (task.type == VolumeTaskType.NOP) {
                 vol = task.volume;
 
                 String volToString = getReflectOnlySelectedFields(vol);
 
-                pool = (StoragePool)dataStoreMgr.getDataStore(task.pool.getId(), DataStoreRole.Primary);
+                pool = (PrimaryDataStore)dataStoreMgr.getDataStore(task.pool.getId(), DataStoreRole.Primary);
 
                 // For zone-wide managed storage, it is possible that the VM can be started in another
                 // cluster. In that case, make sure that the volume is in the right access group.
@@ -1894,22 +1894,19 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                     if (lastClusterId != clusterId) {
                         if (lastHost != null) {
                             storageMgr.removeStoragePoolFromCluster(lastHost.getId(), vol.get_iScsiName(), pool);
-
-                            DataStore storagePool = dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
-
-                            volService.revokeAccess(volFactory.getVolume(vol.getId()), lastHost, storagePool);
+                            volService.revokeAccess(volFactory.getVolume(vol.getId()), lastHost, pool);
                         }
 
                         try {
-                            volService.grantAccess(volFactory.getVolume(vol.getId()), host, (DataStore)pool);
+                            volService.grantAccess(volFactory.getVolume(vol.getId()), host, pool);
                         } catch (Exception e) {
                             throw new StorageAccessException(String.format("Unable to grant access to volume [%s] on host [%s].", volToString, host));
                         }
                     } else {
-                        // This might impact other managed storages, grant access for PowerFlex and Iscsi/Solidfire storage pool only
-                        if (pool.getPoolType() == Storage.StoragePoolType.PowerFlex || pool.getPoolType() == Storage.StoragePoolType.Iscsi) {
+                        PrimaryDataStoreDriver driver = (PrimaryDataStoreDriver) pool.getDriver();
+                        if (driver.volumesRequireGrantAccessWhenUsed()) {
                             try {
-                                volService.grantAccess(volFactory.getVolume(vol.getId()), host, (DataStore)pool);
+                                volService.grantAccess(volFactory.getVolume(vol.getId()), host, pool);
                             } catch (Exception e) {
                                 throw new StorageAccessException(String.format("Unable to grant access to volume [%s] on host [%s].", volToString, host));
                             }
@@ -1919,11 +1916,11 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                     handleCheckAndRepairVolume(vol, vm.getVirtualMachine().getHostId());
                 }
             } else if (task.type == VolumeTaskType.MIGRATE) {
-                pool = (StoragePool)dataStoreMgr.getDataStore(task.pool.getId(), DataStoreRole.Primary);
+                pool = (PrimaryDataStore) dataStoreMgr.getDataStore(task.pool.getId(), DataStoreRole.Primary);
                 vol = migrateVolume(task.volume, pool);
             } else if (task.type == VolumeTaskType.RECREATE) {
                 Pair<VolumeVO, DataStore> result = recreateVolume(task.volume, vm, dest);
-                pool = (StoragePool)dataStoreMgr.getDataStore(result.second().getId(), DataStoreRole.Primary);
+                pool = (PrimaryDataStore) dataStoreMgr.getDataStore(result.second().getId(), DataStoreRole.Primary);
                 vol = result.first();
             }
 
