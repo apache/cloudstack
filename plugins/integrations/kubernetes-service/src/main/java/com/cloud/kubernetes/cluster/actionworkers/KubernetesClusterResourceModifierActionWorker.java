@@ -796,31 +796,31 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
 
     protected KubernetesClusterVO updateKubernetesClusterEntry(final Long cores, final Long memory, final Long size,
                final Long serviceOfferingId, final Boolean autoscaleEnabled, final Long minSize, final Long maxSize) {
-        return Transaction.execute(new TransactionCallback<KubernetesClusterVO>() {
-                @Override
-                public KubernetesClusterVO doInTransaction(TransactionStatus status) {
-                KubernetesClusterVO updatedCluster = kubernetesClusterDao.findById(kubernetesCluster.getId());
-                if (cores != null) {
-                    updatedCluster.setCores(cores);
-                }
-                if (memory != null) {
-                    updatedCluster.setMemory(memory);
-                }
-                if (size != null) {
-                    updatedCluster.setNodeCount(size);
-                }
-                if (serviceOfferingId != null) {
-                    updatedCluster.setServiceOfferingId(serviceOfferingId);
-                }
-                if (autoscaleEnabled != null) {
-                    updatedCluster.setAutoscalingEnabled(autoscaleEnabled.booleanValue());
-                }
-                updatedCluster.setMinSize(minSize);
-                updatedCluster.setMaxSize(maxSize);
-                return kubernetesClusterDao.persist(updatedCluster);
+        return Transaction.execute((TransactionCallback<KubernetesClusterVO>) status -> {
+            KubernetesClusterVO updatedCluster = kubernetesClusterDao.createForUpdate(kubernetesCluster.getId());
+
+            if (cores != null) {
+                updatedCluster.setCores(cores);
             }
+            if (memory != null) {
+                updatedCluster.setMemory(memory);
+            }
+            if (size != null) {
+                updatedCluster.setNodeCount(size);
+            }
+            if (serviceOfferingId != null) {
+                updatedCluster.setServiceOfferingId(serviceOfferingId);
+            }
+            if (autoscaleEnabled != null) {
+                updatedCluster.setAutoscalingEnabled(autoscaleEnabled.booleanValue());
+            }
+            updatedCluster.setMinSize(minSize);
+            updatedCluster.setMaxSize(maxSize);
+            return kubernetesClusterDao.persist(updatedCluster);
         });
     }
+
+
 
     private KubernetesClusterVO updateKubernetesClusterEntry(final Boolean autoscaleEnabled, final Long minSize, final Long maxSize) throws CloudRuntimeException {
         KubernetesClusterVO kubernetesClusterVO = updateKubernetesClusterEntry(null, null, null, null, autoscaleEnabled, minSize, maxSize);
