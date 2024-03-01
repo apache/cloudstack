@@ -571,7 +571,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     protected void provisionVpcTierAllowPortACLRule(final Network network, int startPort, int endPorts) throws NoSuchFieldException,
             IllegalAccessException, ResourceUnavailableException {
         List<NetworkACLItemVO> aclItems = networkACLItemDao.listByACL(network.getNetworkACLId());
-        aclItems = aclItems.stream().filter(x -> !NetworkACLItem.State.Revoke.equals(x.getState())).collect(Collectors.toList());
+        aclItems = aclItems.stream().filter(networkACLItem -> !NetworkACLItem.State.Revoke.equals(networkACLItem.getState())).collect(Collectors.toList());
         CreateNetworkACLCmd networkACLRule = new CreateNetworkACLCmd();
         networkACLRule = ComponentContext.inject(networkACLRule);
 
