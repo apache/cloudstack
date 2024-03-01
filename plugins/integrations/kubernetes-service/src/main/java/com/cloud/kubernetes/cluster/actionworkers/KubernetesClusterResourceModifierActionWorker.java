@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.exception.ResourceAllocationException;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
@@ -308,17 +309,14 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                     if (volumeVO.getVolumeType() == Volume.Type.ROOT) {
                         ResizeVolumeCmd resizeVolumeCmd = new ResizeVolumeCmd();
                         resizeVolumeCmd = ComponentContext.inject(resizeVolumeCmd);
-                        Field f = resizeVolumeCmd.getClass().getDeclaredField("size");
-                        Field f1 = resizeVolumeCmd.getClass().getDeclaredField("id");
-                        f.setAccessible(true);
-                        f1.setAccessible(true);
-                        f1.set(resizeVolumeCmd, volumeVO.getId());
-                        f.set(resizeVolumeCmd, kubernetesCluster.getNodeRootDiskSize());
+                        resizeVolumeCmd.setSize(kubernetesCluster.getNodeRootDiskSize());
+                        resizeVolumeCmd.setId(volumeVO.getId());
+
                         volumeService.resizeVolume(resizeVolumeCmd);
                     }
                 }
             }
-        } catch (IllegalAccessException | NoSuchFieldException e) {
+        } catch (ResourceAllocationException e) {
             throw new ManagementServerException(String.format("Failed to resize volume of  VM in the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
         }
     }
@@ -443,9 +441,6 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         firewallRule.setPublicEndPort(endPort);
 
         firewallRule.setSourceCidrList(sourceCidrList);
-        Field cidrField = firewallRule.getClass().getDeclaredField("cidrlist");
-        cidrField.setAccessible(true);
-        cidrField.set(firewallRule, sourceCidrList);
 
         firewallService.createIngressFirewallRule(firewallRule);
         firewallService.applyIngressFwRules(publicIp.getId(), account);
