@@ -24,16 +24,17 @@ import com.cloud.user.AccountVO;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import org.apache.cloudstack.usage.UsageTypes;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.List;
-import org.apache.log4j.Logger;
 
 @Component
 public class VpcUsageParser {
-    private static final Logger LOGGER = Logger.getLogger(VpcUsageParser.class.getName());
+    protected static Logger LOGGER = LogManager.getLogger(BackupUsageParser.class);
 
     @Inject
     private UsageVpcDao vpcDao;
@@ -49,14 +50,14 @@ public class VpcUsageParser {
     }
 
     public static boolean parse(AccountVO account, Date startDate, Date endDate) {
-        LOGGER.debug(String.format("Parsing all VPC usage events for account [%s].", account.getId()));
+        LOGGER.debug("Parsing all VPC usage events for account [{}].", account.getId());
         if ((endDate == null) || endDate.after(new Date())) {
             endDate = new Date();
         }
 
         final List<UsageVpcVO> usageVPCs = s_usageVpcDao.getUsageRecords(account.getId(), startDate, endDate);
         if (usageVPCs == null || usageVPCs.isEmpty()) {
-            LOGGER.debug(String.format("Cannot find any VPC usage for account [%s] in period between [%s] and [%s].", account, startDate, endDate));
+            LOGGER.debug("Cannot find any VPC usage for account [{}] in period between [{}] and [{}].", account, startDate, endDate);
             return true;
         }
 
