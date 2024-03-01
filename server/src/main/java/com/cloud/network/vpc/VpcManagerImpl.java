@@ -2248,13 +2248,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         });
     }
 
-    /**
-     * Searches for the {@link #VpcMaxNetworks} value in the VPC domain routers cluster and returns the smallest value.
-     * If the VPC does not have any domain routers, it returns the {@link #VpcMaxNetworks} global configuration value.
-     *
-     * @param vpcId ID from VPC.
-     * @return The {@link #VpcMaxNetworks} configuration value.
-     */
     private void CheckAccountsAccess(Vpc vpc, Account networkAccount) {
         Account vpcaccount = _accountMgr.getAccount(vpc.getAccountId());
         try {
