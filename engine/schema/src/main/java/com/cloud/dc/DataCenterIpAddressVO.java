@@ -55,7 +55,7 @@ public class DataCenterIpAddressVO implements InternalIdentity {
     String reservationId;
 
     @Column(name = "nic_id")
-    private Long instanceId;
+    private Long nicId;
 
     @Column(name = "mac_address")
     long macAddress;
@@ -88,12 +88,12 @@ public class DataCenterIpAddressVO implements InternalIdentity {
         return id;
     }
 
-    public Long getInstanceId() {
-        return instanceId;
+    public Long getNicId() {
+        return nicId;
     }
 
-    public void setInstanceId(Long instanceId) {
-        this.instanceId = instanceId;
+    public void setNicId(Long nicId) {
+        this.nicId = nicId;
     }
 
     public long getPodId() {
