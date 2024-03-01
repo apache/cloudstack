@@ -597,13 +597,13 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     protected void removeVpcTierAllowPortACLRule(final Network network, int startPort, int endPort) throws NoSuchFieldException,
             IllegalAccessException, ResourceUnavailableException {
         List<NetworkACLItemVO> aclItems = networkACLItemDao.listByACL(network.getNetworkACLId());
-        aclItems = aclItems.stream().filter(x -> (x.getProtocol() != null &&
-                        x.getProtocol().equals("TCP") &&
-                        x.getSourcePortStart() != null &&
-                        x.getSourcePortStart().equals(startPort) &&
-                        x.getSourcePortEnd() != null &&
-                        x.getSourcePortEnd().equals(endPort) &&
-                        x.getAction().equals(NetworkACLItem.Action.Allow)))
+        aclItems = aclItems.stream().filter(networkACLItem -> (networkACLItem.getProtocol() != null &&
+                        networkACLItem.getProtocol().equals("TCP") &&
+                        networkACLItem.getSourcePortStart() != null &&
+                        networkACLItem.getSourcePortStart().equals(startPort) &&
+                        networkACLItem.getSourcePortEnd() != null &&
+                        networkACLItem.getSourcePortEnd().equals(endPort) &&
+                        networkACLItem.getAction().equals(NetworkACLItem.Action.Allow)))
                 .collect(Collectors.toList());
 
         for (NetworkACLItemVO aclItem : aclItems) {
