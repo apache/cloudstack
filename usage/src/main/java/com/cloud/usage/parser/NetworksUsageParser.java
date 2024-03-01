@@ -26,7 +26,8 @@ import com.cloud.user.AccountVO;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import org.apache.cloudstack.usage.UsageTypes;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import java.text.DecimalFormat;
@@ -35,7 +36,7 @@ import java.util.List;
 
 @Component
 public class NetworksUsageParser {
-    private static final Logger LOGGER = Logger.getLogger(NetworksUsageParser.class.getName());
+    protected static Logger LOGGER = LogManager.getLogger(NetworksUsageParser.class);
 
     @Inject
     private UsageNetworksDao networksDao;
@@ -52,14 +53,14 @@ public class NetworksUsageParser {
     }
 
     public static boolean parse(AccountVO account, Date startDate, Date endDate) {
-        LOGGER.debug(String.format("Parsing all networks usage events for account [%s].", account.getId()));
+        LOGGER.debug("Parsing all networks usage events for account [{}].", account.getId());
         if ((endDate == null) || endDate.after(new Date())) {
             endDate = new Date();
         }
 
         final List<UsageNetworksVO> usageNetworksVO = staticNetworksDao.getUsageRecords(account.getId(), startDate, endDate);
         if (usageNetworksVO == null || usageNetworksVO.isEmpty()) {
-            LOGGER.debug(String.format("Could not find any network usage for account [%s], between [%s] and [%s].", account, startDate, endDate));
+            LOGGER.debug("Could not find any network usage for account [{}], between [{}] and [{}].", account, startDate, endDate);
             return true;
         }
 

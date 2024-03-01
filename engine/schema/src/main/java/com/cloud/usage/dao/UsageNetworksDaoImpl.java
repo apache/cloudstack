@@ -22,7 +22,6 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import java.sql.PreparedStatement;
@@ -34,7 +33,6 @@ import java.util.TimeZone;
 
 @Component
 public class UsageNetworksDaoImpl extends GenericDaoBase<UsageNetworksVO, Long> implements UsageNetworksDao {
-    private static final Logger LOGGER = Logger.getLogger(UsageNetworksDaoImpl.class);
     protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT id, network_id, network_offering_id, zone_id, account_id, domain_id, state, created, removed FROM usage_networks WHERE " +
             " account_id = ? AND ((removed IS NULL AND created <= ?) OR (created BETWEEN ? AND ?) OR (removed BETWEEN ? AND ?) " +
             " OR ((created <= ?) AND (removed >= ?)))";
@@ -55,7 +53,7 @@ public class UsageNetworksDaoImpl extends GenericDaoBase<UsageNetworksVO, Long> 
             }
         } catch (final Exception e) {
             txn.rollback();
-            LOGGER.error(String.format("Error updating usage of network due to [%s].", e.getMessage()), e);
+            logger.error("Error updating usage of network due to [{}].", e.getMessage(), e);
         } finally {
             txn.close();
         }
@@ -76,7 +74,7 @@ public class UsageNetworksDaoImpl extends GenericDaoBase<UsageNetworksVO, Long> 
             }
         } catch (final Exception e) {
             txn.rollback();
-            LOGGER.error(String.format("Error updating usage of network due to [%s].", e.getMessage()), e);
+            logger.error("Error updating usage of network due to [{}].", e.getMessage(), e);
         } finally {
             txn.close();
         }
@@ -124,7 +122,7 @@ public class UsageNetworksDaoImpl extends GenericDaoBase<UsageNetworksVO, Long> 
             }
         } catch (Exception e) {
             txn.rollback();
-            LOGGER.warn("Error getting networks usage records", e);
+            logger.warn("Error getting networks usage records", e);
         } finally {
             txn.close();
         }
