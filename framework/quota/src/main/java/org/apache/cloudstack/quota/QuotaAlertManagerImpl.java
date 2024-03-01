@@ -212,8 +212,6 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         logger.debug("Checking {} with accountBalance [{}], alertDate [{}] and lockable [{}] to see if a quota alert email should be sent.", account,
                 accountBalance, alertDate, lockable);
 
-
-
         boolean shouldSendEmail = alertDate == null || (balanceDate.after(alertDate) && getDifferenceDays(alertDate, new Date()) > 1);
 
         if (accountBalance.compareTo(BigDecimal.ZERO) < 0) {
