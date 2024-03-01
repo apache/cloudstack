@@ -431,30 +431,23 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         List<String> sourceCidrList = new ArrayList<String>();
         sourceCidrList.add("0.0.0.0/0");
 
-        CreateFirewallRuleCmd rule = new CreateFirewallRuleCmd();
-        rule = ComponentContext.inject(rule);
+        CreateFirewallRuleCmd firewallRule = new CreateFirewallRuleCmd();
+        firewallRule = ComponentContext.inject(firewallRule);
 
-        Field addressField = rule.getClass().getDeclaredField("ipAddressId");
-        addressField.setAccessible(true);
-        addressField.set(rule, publicIp.getId());
+        firewallRule.setIpAddressId(publicIp.getId());
 
-        Field protocolField = rule.getClass().getDeclaredField("protocol");
-        protocolField.setAccessible(true);
-        protocolField.set(rule, "TCP");
+        firewallRule.setProtocol("TCP");
 
-        Field startPortField = rule.getClass().getDeclaredField("publicStartPort");
-        startPortField.setAccessible(true);
-        startPortField.set(rule, startPort);
+        firewallRule.setPublicStartPort(startPort);
 
-        Field endPortField = rule.getClass().getDeclaredField("publicEndPort");
-        endPortField.setAccessible(true);
-        endPortField.set(rule, endPort);
+        firewallRule.setPublicEndPort(endPort);
 
-        Field cidrField = rule.getClass().getDeclaredField("cidrlist");
+        firewallRule.setSourceCidrList(sourceCidrList);
+        Field cidrField = firewallRule.getClass().getDeclaredField("cidrlist");
         cidrField.setAccessible(true);
-        cidrField.set(rule, sourceCidrList);
+        cidrField.set(firewallRule, sourceCidrList);
 
-        firewallService.createIngressFirewallRule(rule);
+        firewallService.createIngressFirewallRule(firewallRule);
         firewallService.applyIngressFwRules(publicIp.getId(), account);
     }
 
