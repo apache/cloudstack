@@ -1917,6 +1917,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                             }
                         }
                     }
+                } else {
+                    handleCheckAndRepairVolume(vol, vm.getVirtualMachine().getHostId());
                 }
             } else if (task.type == VolumeTaskType.MIGRATE) {
                 pool = (StoragePool)dataStoreMgr.getDataStore(task.pool.getId(), DataStoreRole.Primary);
@@ -1956,6 +1958,16 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 }
             }
 
+        }
+    }
+
+    private void handleCheckAndRepairVolume(Volume vol, Long hostId) {
+        Host host = _hostDao.findById(hostId);
+        try {
+            volService.checkAndRepairVolumeBasedOnConfig(volFactory.getVolume(vol.getId()), host);
+        } catch (Exception e) {
+            String volumeToString = getReflectOnlySelectedFields(vol);
+            s_logger.debug(String.format("Unable to check and repair volume [%s] on host [%s], due to %s.", volumeToString, host, e.getMessage()));
         }
     }
 
