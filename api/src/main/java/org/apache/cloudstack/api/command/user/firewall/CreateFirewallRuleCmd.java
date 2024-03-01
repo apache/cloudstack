@@ -94,9 +94,33 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
         return ipAddressId;
     }
 
+    public void setIpAddressId(Long ipAddressId) {
+        this.ipAddressId = ipAddressId;
+    }
+
     @Override
     public String getProtocol() {
         return protocol.trim();
+    }
+
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
+    }
+
+    public Integer getPublicStartPort() {
+        return publicStartPort;
+    }
+
+    public void setPublicStartPort(Integer publicStartPort) {
+        this.publicStartPort = publicStartPort;
+    }
+
+    public Integer getPublicEndPort() {
+        return publicEndPort;
+    }
+
+    public void setPublicEndPort(Integer publicEndPort) {
+        this.publicEndPort = publicEndPort;
     }
 
     @Override
