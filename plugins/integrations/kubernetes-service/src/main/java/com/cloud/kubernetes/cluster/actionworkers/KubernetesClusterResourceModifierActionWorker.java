@@ -532,7 +532,6 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                     if (pfRule.getVirtualMachineId() == vmId) {
                         portForwardingRulesDao.remove(pfRule.getId());
                         logger.debug(String.format("The Port forwarding rule [%s] with the id [%s] was removed.", pfRule.getName(), pfRule.getId()));
-
                         break;
                     }
                 }
