@@ -69,11 +69,6 @@ public class QuotaEmailTemplatesDaoImpl extends GenericDaoBase<QuotaEmailTemplat
 
     @Override
     public QuotaEmailTemplatesVO findById(long id) {
-        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<QuotaEmailTemplatesVO>() {
-            @Override
-            public QuotaEmailTemplatesVO doInTransaction(final TransactionStatus status) {
-                return QuotaEmailTemplatesDaoImpl.super.findById(id);
-            }
-        });
+        return Transaction.execute(TransactionLegacy.USAGE_DB, (TransactionCallback<QuotaEmailTemplatesVO>) status -> QuotaEmailTemplatesDaoImpl.super.findById(id));
     }
 }
