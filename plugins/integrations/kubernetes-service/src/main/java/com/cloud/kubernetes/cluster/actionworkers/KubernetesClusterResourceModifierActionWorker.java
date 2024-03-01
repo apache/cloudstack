@@ -322,14 +322,12 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         try {
             StartVMCmd startVm = new StartVMCmd();
             startVm = ComponentContext.inject(startVm);
-            Field f = startVm.getClass().getDeclaredField("id");
-            f.setAccessible(true);
-            f.set(startVm, vm.getId());
+            startVm.setId(vm.getId());
             itMgr.advanceStart(vm.getUuid(), null, null);
             if (logger.isInfoEnabled()) {
                 logger.info(String.format("Started VM : %s in the Kubernetes cluster : %s", vm.getDisplayName(), kubernetesCluster.getName()));
             }
-        } catch (IllegalAccessException | NoSuchFieldException | OperationTimedoutException | ResourceUnavailableException | InsufficientCapacityException ex) {
+        } catch (OperationTimedoutException | ResourceUnavailableException | InsufficientCapacityException ex) {
             throw new ManagementServerException(String.format("Failed to start VM in the Kubernetes cluster : %s", kubernetesCluster.getName()), ex);
         }
 
