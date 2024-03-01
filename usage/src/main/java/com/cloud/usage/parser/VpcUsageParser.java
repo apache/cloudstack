@@ -34,7 +34,7 @@ import java.util.List;
 
 @Component
 public class VpcUsageParser {
-    protected static Logger LOGGER = LogManager.getLogger(BackupUsageParser.class);
+    protected static Logger LOGGER = LogManager.getLogger(VpcUsageParser.class);
 
     @Inject
     private UsageVpcDao vpcDao;
