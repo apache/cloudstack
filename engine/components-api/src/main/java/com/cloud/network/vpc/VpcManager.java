@@ -57,14 +57,8 @@ public interface VpcManager {
             true,
             ConfigKey.Scope.Global,
             null);
-    ConfigKey<Integer> VpcMaxNetworks = new ConfigKey<>(
-            "Advanced",
-            Integer.class,
-            "vpc.max.networks",
-            "3",
-            "Maximum number of networks per VPC. Bear in mind that this value will depend on the hypervisor where the VR was/will be deployed.",
-            true,
-            ConfigKey.Scope.Cluster);
+    ConfigKey<Integer> VpcMaxNetworks = new ConfigKey<>("Advanced", Integer.class, "vpc.max.networks", "3",
+            "Maximum number of networks per VPC. Bear in mind that this value will depend on the hypervisor where the VR was/will be deployed.", true, ConfigKey.Scope.Account);
 
     /**
      * Returns all the Guest networks that are part of VPC

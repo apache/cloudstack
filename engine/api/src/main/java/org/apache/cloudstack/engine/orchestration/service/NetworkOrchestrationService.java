@@ -108,6 +108,14 @@ public interface NetworkOrchestrationService {
 
     ConfigKey<Boolean> TUNGSTEN_ENABLED = new ConfigKey<>(Boolean.class, "tungsten.plugin.enable", "Advanced", "false",
             "Indicates whether to enable the Tungsten plugin", false, ConfigKey.Scope.Zone, null);
+    ConfigKey<Integer> VirtualMachineMaxNicsKvm = new ConfigKey<>("Advanced", Integer.class, "virtual.machine.max.nics.kvm", "23",
+            "The maximum number of NICs supported by the KVM hypervsior.", true, Scope.Cluster);
+
+    ConfigKey<Integer> VirtualMachineMaxNicsVmware = new ConfigKey<>("Advanced", Integer.class, "virtual.machine.max.nics.vmware", "10",
+            "The maximum number of NICs supported by the VMware hypervsior.", true, Scope.Cluster);
+
+    ConfigKey<Integer> VirtualMachineMaxNicsXenserver = new ConfigKey<>("Advanced", Integer.class, "virtual.machine.max.nics.xenserver", "7",
+            "The maximum number of NICs supported by the XenServer hypervsior.", true, Scope.Cluster);
 
     ConfigKey<Boolean> NSX_ENABLED = new ConfigKey<>(Boolean.class, "nsx.plugin.enable", "Advanced", "false",
             "Indicates whether to enable the NSX plugin", false, ConfigKey.Scope.Zone, null);
