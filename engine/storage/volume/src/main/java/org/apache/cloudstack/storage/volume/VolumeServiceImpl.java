@@ -2788,7 +2788,7 @@ public class VolumeServiceImpl implements VolumeService {
         if (HypervisorType.KVM.equals(host.getHypervisorType()) && DataObjectType.VOLUME.equals(dataObject.getType())) {
             VolumeInfo volumeInfo = volFactory.getVolume(dataObject.getId());
             if (VolumeApiServiceImpl.AllowCheckAndRepairVolume.valueIn(volumeInfo.getPoolId())) {
-                s_logger.info(String.format("Trying to check and repair the volume %d", dataObject.getId()));
+                logger.info(String.format("Trying to check and repair the volume %d", dataObject.getId()));
                 String repair = CheckAndRepairVolumeCmd.RepairValues.LEAKS.name().toLowerCase();
                 CheckAndRepairVolumePayload payload = new CheckAndRepairVolumePayload(repair);
                 volumeInfo.addPayload(payload);
@@ -2822,15 +2822,15 @@ public class VolumeServiceImpl implements VolumeService {
             grantAccess(volume, host, volume.getDataStore());
             CheckAndRepairVolumeAnswer answer = (CheckAndRepairVolumeAnswer) _storageMgr.sendToPool(pool, new long[]{host.getId()}, command);
             if (answer != null && answer.getResult()) {
-                s_logger.debug(String.format("Check volume response result: %s", answer.getDetails()));
+                logger.debug(String.format("Check volume response result: %s", answer.getDetails()));
                 return new Pair<>(answer.getVolumeCheckExecutionResult(), answer.getVolumeRepairExecutionResult());
             } else {
                 String errMsg = (answer == null) ? null : answer.getDetails();
-                s_logger.debug(String.format("Failed to check and repair the volume with error %s", errMsg));
+                logger.debug(String.format("Failed to check and repair the volume with error %s", errMsg));
             }
 
         } catch (Exception e) {
-            s_logger.debug("sending check and repair volume command failed", e);
+            logger.debug("sending check and repair volume command failed", e);
         } finally {
             revokeAccess(volume, host, volume.getDataStore());
             command.clearPassphrase();

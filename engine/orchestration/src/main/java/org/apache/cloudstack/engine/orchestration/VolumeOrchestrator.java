@@ -1967,7 +1967,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             volService.checkAndRepairVolumeBasedOnConfig(volFactory.getVolume(vol.getId()), host);
         } catch (Exception e) {
             String volumeToString = getReflectOnlySelectedFields(vol);
-            s_logger.debug(String.format("Unable to check and repair volume [%s] on host [%s], due to %s.", volumeToString, host, e.getMessage()));
+            logger.debug(String.format("Unable to check and repair volume [%s] on host [%s], due to %s.", volumeToString, host, e.getMessage()));
         }
     }
 

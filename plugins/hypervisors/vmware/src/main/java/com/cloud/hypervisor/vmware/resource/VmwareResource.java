@@ -4801,7 +4801,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
             return new MigrateAnswer(cmd, true, "migration succeeded", null);
         } catch (Exception e) {
-            s_logger.info(String.format("migrate command for %s failed due to %s", vmName, e.getLocalizedMessage()));
+            logger.info(String.format("migrate command for %s failed due to %s", vmName, e.getLocalizedMessage()));
             return new MigrateAnswer(cmd, false, createLogMessageException(e, cmd), null);
         }
     }
