@@ -548,24 +548,20 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             if (startPort <= pfRule.getSourcePortStart() && pfRule.getSourcePortStart() <= endPort) {
                 portForwardingRulesDao.remove(pfRule.getId());
                 logger.debug(String.format("The Port forwarding rule [%s] with the id [%s] was removed.", pfRule.getName(), pfRule.getId()));
-
             }
         }
         rulesService.applyPortForwardingRules(publicIp.getId(), account);
+
     }
 
     protected void removeLoadBalancingRule(final IpAddress publicIp, final Network network,
                                            final Account account) throws ResourceUnavailableException {
-        List<LoadBalancerVO> rules = loadBalancerDao.listByIpAddress(publicIp.getId());
-        for (LoadBalancerVO rule : rules) {
-            if (rule.getNetworkId() == network.getId() &&
-                    rule.getAccountId() == account.getId() &&
-                    rule.getSourcePortStart() == CLUSTER_API_PORT &&
-                    rule.getSourcePortEnd() == CLUSTER_API_PORT) {
-                lbService.deleteLoadBalancerRule(rule.getId(), true);
-                break;
-            }
-        }
+        List<LoadBalancerVO> loadBalancerRules = loadBalancerDao.listByIpAddress(publicIp.getId());
+        loadBalancerRules.stream().filter(lbRules -> lbRules.getNetworkId() == network.getId() && lbRules.getAccountId() == account.getId() && lbRules.getSourcePortStart() == CLUSTER_API_PORT
+        && lbRules.getSourcePortEnd() == CLUSTER_API_PORT).forEach(lbRule -> {
+            lbService.deleteLoadBalancerRule(lbRule.getId(), true);
+            logger.debug(String.format("The load balancing rule with the Id: %s was removed",lbRule.getId()));
+        });
     }
 
     protected void provisionVpcTierAllowPortACLRule(final Network network, int startPort, int endPorts) throws NoSuchFieldException,
