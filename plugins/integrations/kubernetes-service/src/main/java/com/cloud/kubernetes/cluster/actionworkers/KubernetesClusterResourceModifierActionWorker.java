@@ -551,7 +551,6 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             }
         }
         rulesService.applyPortForwardingRules(publicIp.getId(), account);
-
     }
 
     protected void removeLoadBalancingRule(final IpAddress publicIp, final Network network,
