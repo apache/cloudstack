@@ -1815,7 +1815,15 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         // If the user is a System user, return an error. We do not allow this
         AccountVO account = _accountDao.findById(accountId);
 
-        if (! isDeleteNeeded(account, accountId, caller)) {
+        if (caller.getId() == accountId) {
+            Domain domain = _domainDao.findById(account.getDomainId());
+            throw new InvalidParameterValueException(String.format("The caller is requesting to delete their own account. As a security measure, ACS will not allow this " +
+                            "operation." +
+                            "To delete account %s (ID: %s, Domain: %s), request to another user with permission to execute the operation.",
+                    account.getAccountName(), account.getUuid(), domain.getUuid()));
+        }
+
+        if (!isDeleteNeeded(account, accountId, caller)) {
             return true;
         }
 
@@ -1829,6 +1837,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
             throw new InvalidParameterValueException("The account id=" + accountId + " manages project(s) with ids " + projectIds + "and can't be removed");
         }
+
 
         CallContext.current().putContextParameter(Account.class, account.getUuid());
 

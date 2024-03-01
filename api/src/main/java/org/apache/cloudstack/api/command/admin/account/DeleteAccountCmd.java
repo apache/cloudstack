@@ -89,12 +89,11 @@ public class DeleteAccountCmd extends BaseAsyncCmd {
         CallContext.current().setEventDetails("Account ID: " + (account != null ? account.getUuid() : getId())); // Account not found is already handled by service
 
         boolean result = _regionService.deleteUserAccount(this);
-        if (result) {
-            SuccessResponse response = new SuccessResponse(getCommandName());
-            setResponseObject(response);
-        } else {
+        if (!result) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete user account and all corresponding users");
         }
+        SuccessResponse response = new SuccessResponse(getCommandName());
+        setResponseObject(response);
     }
 
     @Override
