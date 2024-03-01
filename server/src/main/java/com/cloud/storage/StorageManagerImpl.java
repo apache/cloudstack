@@ -2409,8 +2409,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return false;
     }
 
-    protected boolean storagePoolHasEnoughIops(long requestedIops, StoragePool pool, boolean skipPoolCheck) {
-        if (!skipPoolCheck && checkIfPoolIopsCapacityNull(pool)) {
+    protected boolean storagePoolHasEnoughIops(long requestedIops, StoragePool pool, boolean skipPoolNullIopsCheck) {
+        if (!skipPoolNullIopsCheck && checkIfPoolIopsCapacityNull(pool)) {
             return true;
         }
         StoragePoolVO storagePoolVo = _storagePoolDao.findById(pool.getId());
@@ -2616,7 +2616,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return true;
     }
 
-    private boolean checkPoolforSpace(StoragePool pool, long allocatedSizeWithTemplate, long totalAskingSize) {
+    protected boolean checkPoolforSpace(StoragePool pool, long allocatedSizeWithTemplate, long totalAskingSize) {
         // allocated space includes templates
         StoragePoolVO poolVO = _storagePoolDao.findById(pool.getId());
 

@@ -27,6 +27,7 @@ import java.lang.reflect.Field;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.TimeZone;
 import java.util.UUID;
 
@@ -39,6 +40,7 @@ import org.apache.cloudstack.api.response.UsageRecordResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.usage.UsageService;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -50,6 +52,8 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import com.cloud.capacity.Capacity;
+import com.cloud.configuration.Resource;
 import com.cloud.domain.DomainVO;
 import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.network.as.AutoScaleVmGroupVO;
@@ -368,5 +372,32 @@ public class ApiResponseHelperTest {
         assertNull(response.getUserDataId());
         assertNull(response.getUserDataName());
         assertNull(response.getUserDataDetails());
+    }
+
+    @Test
+    public void testCapacityListingForSingleTag() {
+        Capacity c1 = Mockito.mock(Capacity.class);
+        Mockito.when(c1.getTag()).thenReturn("tag1");
+        Capacity c2 = Mockito.mock(Capacity.class);
+        Mockito.when(c2.getTag()).thenReturn("tag1");
+        Capacity c3 = Mockito.mock(Capacity.class);
+        Mockito.when(c3.getTag()).thenReturn("tag2");
+        Capacity c4 = Mockito.mock(Capacity.class);
+        Assert.assertTrue(apiResponseHelper.capacityListingForSingleTag(List.of(c1, c2)));
+        Assert.assertFalse(apiResponseHelper.capacityListingForSingleTag(List.of(c1, c2, c3)));
+        Assert.assertFalse(apiResponseHelper.capacityListingForSingleTag(List.of(c4, c2, c3)));
+    }
+
+    @Test
+    public void testCapacityListingForSingleNonGpuType() {
+        Capacity c1 = Mockito.mock(Capacity.class);
+        Mockito.when(c1.getCapacityType()).thenReturn((short)Resource.ResourceType.user_vm.getOrdinal());
+        Capacity c2 = Mockito.mock(Capacity.class);
+        Mockito.when(c2.getCapacityType()).thenReturn((short)Resource.ResourceType.user_vm.getOrdinal());
+        Capacity c3 = Mockito.mock(Capacity.class);
+        Mockito.when(c3.getCapacityType()).thenReturn((short)Resource.ResourceType.volume.getOrdinal());
+        Capacity c4 = Mockito.mock(Capacity.class);
+        Assert.assertTrue(apiResponseHelper.capacityListingForSingleNonGpuType(List.of(c1, c2)));
+        Assert.assertFalse(apiResponseHelper.capacityListingForSingleNonGpuType(List.of(c1, c2, c3)));
     }
 }

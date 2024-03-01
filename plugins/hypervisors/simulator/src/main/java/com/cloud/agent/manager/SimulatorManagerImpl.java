@@ -442,7 +442,7 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                 } else if (cmd instanceof FenceCommand) {
                     answer = _mockVmMgr.fence((FenceCommand)cmd);
                 } else if (cmd instanceof HandleConfigDriveIsoCommand) {
-                    answer = _mockStorageMgr.handleConfigDriveIso((HandleConfigDriveIsoCommand)cmd);;
+                    answer = _mockStorageMgr.handleConfigDriveIso((HandleConfigDriveIsoCommand)cmd);
                 } else if (cmd instanceof ResizeVolumeCommand) {
                     answer = _mockStorageMgr.handleResizeVolume((ResizeVolumeCommand)cmd);
                 } else if (cmd instanceof GetRouterAlertsCommand

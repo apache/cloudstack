@@ -128,6 +128,4 @@ public interface UserVmManager extends UserVmService {
 
     Boolean getDestroyRootVolumeOnVmDestruction(Long domainId);
 
-    Map<Long, Boolean> getDiskOfferingSuitabilityForVm(long vmId, List<Long> diskOfferingIds);
-
 }

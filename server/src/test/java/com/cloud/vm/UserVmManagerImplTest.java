@@ -16,25 +16,6 @@
 // under the License.
 package com.cloud.vm;
 
-import com.cloud.dc.dao.DedicatedResourceDao;
-import com.cloud.event.UsageEventUtils;
-import com.cloud.event.dao.UsageEventDao;
-import com.cloud.network.Network;
-import com.cloud.network.dao.NetworkDaoImpl;
-import com.cloud.network.vpc.VpcManager;
-import com.cloud.offering.DiskOffering;
-import com.cloud.offering.NetworkOffering;
-import com.cloud.org.Grouping;
-import com.cloud.resourcelimit.CheckedReservation;
-import com.cloud.storage.GuestOSCategoryVO;
-import com.cloud.storage.Storage;
-import com.cloud.storage.StoragePoolStatus;
-import com.cloud.storage.VMTemplateZoneVO;
-import com.cloud.storage.Volume;
-import com.cloud.storage.dao.GuestOSCategoryDao;
-import com.cloud.storage.dao.VMTemplateZoneDao;
-import com.cloud.storage.dao.VolumeDao;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -61,16 +42,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.template.VirtualMachineTemplate;
-import com.cloud.user.UserData;
-import com.cloud.user.UserDataVO;
-import com.cloud.user.dao.UserDao;
-import com.cloud.user.dao.UserDataDao;
-import com.cloud.utils.db.GlobalLock;
-import com.cloud.utils.db.UUIDManager;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.exception.ExceptionProxyObject;
-import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
@@ -104,6 +75,9 @@ import com.cloud.configuration.Resource;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.DedicatedResourceDao;
+import com.cloud.event.UsageEventUtils;
+import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -111,35 +85,60 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkDaoImpl;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.vpc.VpcManager;
+import com.cloud.offering.DiskOffering;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.org.Grouping;
+import com.cloud.resourcelimit.CheckedReservation;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.Storage;
+import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VMTemplateZoneVO;
+import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateZoneDao;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
+import com.cloud.user.UserData;
+import com.cloud.user.UserDataVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.UserDao;
+import com.cloud.user.dao.UserDataDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.UUIDManager;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.exception.ExceptionProxyObject;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
@@ -287,6 +286,8 @@ public class UserVmManagerImplTest {
 
     @Mock
     private UsageEventDao usageEventDao;
+    @Mock
+    VirtualMachineManager virtualMachineManager;
 
 
     private static final long vmId = 1l;
@@ -1333,5 +1334,63 @@ public class UserVmManagerImplTest {
         when(vmSnapshotDaoMock.findByVm(vmId)).thenReturn(vmSnapshots);
 
         userVmManagerImpl.restoreVirtualMachine(accountMock, vmId, newTemplateId);
+    }
+
+    @Test
+    public void testCheckVolumesLimits() {
+        userVmManagerImpl.resourceLimitService = resourceLimitMgr;
+        long diskOffId1 = 1L;
+        DiskOfferingVO diskOfferingVO1 = Mockito.mock(DiskOfferingVO.class);
+        Mockito.when(diskOfferingDao.findById(diskOffId1)).thenReturn(diskOfferingVO1);
+        Mockito.when(resourceLimitMgr.getResourceLimitStorageTags(diskOfferingVO1)).thenReturn(List.of("tag1", "tag2"));
+        long diskOffId2 = 2L;
+        DiskOfferingVO diskOfferingVO2 = Mockito.mock(DiskOfferingVO.class);
+        Mockito.when(diskOfferingDao.findById(diskOffId2)).thenReturn(diskOfferingVO2);
+        Mockito.when(resourceLimitMgr.getResourceLimitStorageTags(diskOfferingVO2)).thenReturn(List.of("tag2"));
+        long diskOffId3 = 3L;
+        DiskOfferingVO diskOfferingVO3 = Mockito.mock(DiskOfferingVO.class);
+        Mockito.when(diskOfferingDao.findById(diskOffId3)).thenReturn(diskOfferingVO3);
+        Mockito.when(resourceLimitMgr.getResourceLimitStorageTags(diskOfferingVO3)).thenReturn(new ArrayList<>());
+
+        VolumeVO vol1 = Mockito.mock(VolumeVO.class);
+        Mockito.when(vol1.getDiskOfferingId()).thenReturn(diskOffId1);
+        Mockito.when(vol1.getSize()).thenReturn(10L);
+        Mockito.when(vol1.isDisplay()).thenReturn(true);
+        VolumeVO undisplayedVolume = Mockito.mock(VolumeVO.class); // shouldn't be considered for limits
+        Mockito.when(undisplayedVolume.isDisplay()).thenReturn(false);
+        VolumeVO vol3 = Mockito.mock(VolumeVO.class);
+        Mockito.when(vol3.getDiskOfferingId()).thenReturn(diskOffId2);
+        Mockito.when(vol3.getSize()).thenReturn(30L);
+        Mockito.when(vol3.isDisplay()).thenReturn(true);
+        VolumeVO vol4 = Mockito.mock(VolumeVO.class);
+        Mockito.when(vol4.getDiskOfferingId()).thenReturn(diskOffId3);
+        Mockito.when(vol4.getSize()).thenReturn(40L);
+        Mockito.when(vol4.isDisplay()).thenReturn(true);
+        VolumeVO vol5 = Mockito.mock(VolumeVO.class);
+        Mockito.when(vol5.getDiskOfferingId()).thenReturn(diskOffId1);
+        Mockito.when(vol5.getSize()).thenReturn(50L);
+        Mockito.when(vol5.isDisplay()).thenReturn(true);
+
+        List<VolumeVO> volumes = List.of(vol1, undisplayedVolume, vol3, vol4, vol5);
+        Long size = volumes.stream().filter(VolumeVO::isDisplay).mapToLong(VolumeVO::getSize).sum();
+        try {
+            userVmManagerImpl.checkVolumesLimits(account, volumes);
+            Mockito.verify(resourceLimitMgr, Mockito.times(1))
+                    .checkResourceLimit(account, Resource.ResourceType.volume, 4);
+            Mockito.verify(resourceLimitMgr, Mockito.times(1))
+                    .checkResourceLimit(account, Resource.ResourceType.primary_storage, size);
+            Mockito.verify(resourceLimitMgr, Mockito.times(1))
+                    .checkResourceLimitWithTag(account, Resource.ResourceType.volume, "tag1", 2);
+            Mockito.verify(resourceLimitMgr, Mockito.times(1))
+                    .checkResourceLimitWithTag(account, Resource.ResourceType.volume, "tag2", 3);
+            Mockito.verify(resourceLimitMgr, Mockito.times(1))
+                    .checkResourceLimitWithTag(account, Resource.ResourceType.primary_storage, "tag1",
+                            vol1.getSize() + vol5.getSize());
+            Mockito.verify(resourceLimitMgr, Mockito.times(1))
+                    .checkResourceLimitWithTag(account, Resource.ResourceType.primary_storage, "tag2",
+                            vol1.getSize() + vol3.getSize() + vol5.getSize());
+        } catch (ResourceAllocationException e) {
+            Assert.fail(e.getMessage());
+        }
     }
 }

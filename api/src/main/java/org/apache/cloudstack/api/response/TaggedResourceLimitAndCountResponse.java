@@ -71,4 +71,16 @@ public class TaggedResourceLimitAndCountResponse extends BaseResponse {
     public void setAvailable(Long available) {
         this.available = available;
     }
+
+    public Long getLimit() {
+        return limit;
+    }
+
+    public Long getTotal() {
+        return total;
+    }
+
+    public Long getAvailable() {
+        return available;
+    }
 }

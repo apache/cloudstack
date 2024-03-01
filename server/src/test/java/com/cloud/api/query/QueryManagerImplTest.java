@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.collections.CollectionUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,6 +48,8 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.Network;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.projects.Project;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -72,6 +75,8 @@ public class QueryManagerImplTest {
     AccountManager accountManager;
     @Mock
     EventJoinDao eventJoinDao;
+    @Mock
+    VMTemplateDao templateDao;
 
     private AccountVO account;
     private UserVO user;
@@ -186,5 +191,54 @@ public class QueryManagerImplTest {
         Mockito.when(entityManager.findByUuidIncludingRemoved(Network.class, uuid)).thenReturn(network);
         Mockito.doThrow(new PermissionDeniedException("Denied")).when(accountManager).checkAccess(account, SecurityChecker.AccessType.ListEntry, false, network);
         queryManager.searchForEvents(cmd);
+    }
+
+    @Test
+    public void testGetHostTagsFromTemplateForServiceOfferingsListingNoTemplateId() {
+        Assert.assertTrue(CollectionUtils.isEmpty(queryManager.getHostTagsFromTemplateForServiceOfferingsListing(Mockito.mock(AccountVO.class), null)));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testGetHostTagsFromTemplateForServiceOfferingsListingException() {
+        queryManager.getHostTagsFromTemplateForServiceOfferingsListing(Mockito.mock(AccountVO.class), 1L);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testGetHostTagsForServiceOfferingsListingNoAccess() {
+        long templateId = 1L;
+        Account account = Mockito.mock(Account.class);
+        Mockito.when(account.getType()).thenReturn(Account.Type.NORMAL);
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(templateDao.findByIdIncludingRemoved(templateId)).thenReturn(template);
+        Mockito.lenient().doThrow(PermissionDeniedException.class).when(accountManager).checkAccess(account, null, false, template);
+        queryManager.getHostTagsFromTemplateForServiceOfferingsListing(account, templateId);
+    }
+
+    @Test
+    public void testGetHostTagsFromTemplateForServiceOfferingsListingAdmin() {
+        long templateId = 1L;
+        Account account = Mockito.mock(Account.class);
+        Mockito.when(account.getType()).thenReturn(Account.Type.ADMIN);
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(template.getTemplateTag()).thenReturn("tag");
+        Mockito.when(templateDao.findByIdIncludingRemoved(templateId)).thenReturn(template);
+        Mockito.lenient().doThrow(PermissionDeniedException.class).when(accountManager).checkAccess(account, null, false, template);
+        List<String> result = queryManager.getHostTagsFromTemplateForServiceOfferingsListing(account, templateId);
+        Assert.assertTrue(CollectionUtils.isNotEmpty(result));
+    }
+
+    @Test
+    public void testGetHostTagsForServiceOfferingsListingSuccess() {
+        long templateId = 1L;
+        Account account = Mockito.mock(Account.class);
+        Mockito.when(account.getType()).thenReturn(Account.Type.NORMAL);
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(templateDao.findByIdIncludingRemoved(templateId)).thenReturn(template);
+        Mockito.lenient().doNothing().when(accountManager).checkAccess(account, null, false, template);
+        List<String> result = queryManager.getHostTagsFromTemplateForServiceOfferingsListing(account, templateId);
+        Assert.assertTrue(CollectionUtils.isEmpty(result));
+        Mockito.when(template.getTemplateTag()).thenReturn("tag");
+        result = queryManager.getHostTagsFromTemplateForServiceOfferingsListing(account, templateId);
+        Assert.assertTrue(CollectionUtils.isNotEmpty(result));
     }
 }

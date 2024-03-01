@@ -29,6 +29,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -1473,7 +1474,9 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         if (StringUtils.isEmpty(ResourceLimitService.ResourceLimitHostTags.value())) {
             return new ArrayList<>();
         }
-        return Arrays.asList(ResourceLimitService.ResourceLimitHostTags.value().split(","));
+        return Stream.of(ResourceLimitService.ResourceLimitHostTags.value().split(","))
+                .map(String::trim)
+                .collect(Collectors.toList());
     }
 
     @Override

@@ -331,6 +331,7 @@ import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.ConsoleProxyDao;
@@ -474,6 +475,7 @@ public class ApiDBUtils {
     static BackupOfferingDao s_backupOfferingDao;
     static NicDao s_nicDao;
     static ResourceManagerUtil s_resourceManagerUtil;
+    static VirtualMachineManager s_virtualMachineManager;
 
     @Inject
     private ManagementServer ms;
@@ -728,6 +730,8 @@ public class ApiDBUtils {
     private ResourceIconDao resourceIconDao;
     @Inject
     private ResourceManagerUtil resourceManagerUtil;
+    @Inject
+    private VirtualMachineManager virtualMachineManager;
 
     @PostConstruct
     void init() {
@@ -858,6 +862,7 @@ public class ApiDBUtils {
         s_backupOfferingDao = backupOfferingDao;
         s_resourceIconDao = resourceIconDao;
         s_resourceManagerUtil = resourceManagerUtil;
+        s_virtualMachineManager = virtualMachineManager;
     }
 
     // ///////////////////////////////////////////////////////////
@@ -2040,7 +2045,7 @@ public class ApiDBUtils {
         List<DiskOfferingResponse> list = new ArrayList<>();
         Map<Long, Boolean> suitability = null;
         if (vmId != null) {
-            suitability = s_userVmMgr.getDiskOfferingSuitabilityForVm(vmId, offerings.stream().map(DiskOfferingJoinVO::getId).collect(Collectors.toList()));
+            suitability = s_virtualMachineManager.getDiskOfferingSuitabilityForVm(vmId, offerings.stream().map(DiskOfferingJoinVO::getId).collect(Collectors.toList()));
         }
         for (DiskOfferingJoinVO offering : offerings) {
             DiskOfferingResponse response = s_diskOfferingJoinDao.newDiskOfferingResponse(offering);
