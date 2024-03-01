@@ -102,6 +102,10 @@ public class StartVMCmd extends BaseAsyncCmd implements UserCmd {
         return id;
     }
 
+    public void setId(Long id) {
+        this.id = id;
+    }
+
     public Long getHostId() {
         return hostId;
     }
