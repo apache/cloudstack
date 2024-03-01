@@ -503,6 +503,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                     firewallRule.getSourcePortEnd() == CLUSTER_API_PORT) {
                 rule = firewallRule;
                 firewallService.revokeIngressFwRule(firewallRule.getId(), true);
+                logger.debug(String.format("The API firewall rule [%s] with the id [%s] was revoked",firewallRule.getName(),firewallRule.getId()));
                 break;
             }
         }
@@ -516,6 +517,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             if (firewallRule.getSourcePortStart() == CLUSTER_NODES_DEFAULT_START_SSH_PORT) {
                 rule = firewallRule;
                 firewallService.revokeIngressFwRule(firewallRule.getId(), true);
+                logger.debug(String.format("The SSH firewall rule [%s] with the id [%s] was revoked",firewallRule.getName(),firewallRule.getId()));
                 break;
             }
         }
@@ -529,6 +531,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                 for (PortForwardingRuleVO pfRule : pfRules) {
                     if (pfRule.getVirtualMachineId() == vmId) {
                         portForwardingRulesDao.remove(pfRule.getId());
+                        logger.debug(String.format("The Port forwarding rule [%s] with the id [%s] was removed.", pfRule.getName(), pfRule.getId()));
+
                         break;
                     }
                 }
@@ -543,6 +547,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         for (PortForwardingRuleVO pfRule : pfRules) {
             if (startPort <= pfRule.getSourcePortStart() && pfRule.getSourcePortStart() <= endPort) {
                 portForwardingRulesDao.remove(pfRule.getId());
+                logger.debug(String.format("The Port forwarding rule [%s] with the id [%s] was removed.", pfRule.getName(), pfRule.getId()));
+
             }
         }
         rulesService.applyPortForwardingRules(publicIp.getId(), account);
@@ -566,23 +572,24 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             IllegalAccessException, ResourceUnavailableException {
         List<NetworkACLItemVO> aclItems = networkACLItemDao.listByACL(network.getNetworkACLId());
         aclItems = aclItems.stream().filter(x -> !NetworkACLItem.State.Revoke.equals(x.getState())).collect(Collectors.toList());
-        CreateNetworkACLCmd rule = new CreateNetworkACLCmd();
-        rule = ComponentContext.inject(rule);
-        Map<String, Object> fieldValues = Map.of(
-                "protocol", "TCP",
-                "publicStartPort", startPort,
-                "publicEndPort", endPorts,
-                "trafficType", NetworkACLItem.TrafficType.Ingress.toString(),
-                "networkId", network.getId(),
-                "aclId", network.getNetworkACLId(),
-                "action", NetworkACLItem.Action.Allow.toString()
-        );
-        for (Map.Entry<String, Object> entry : fieldValues.entrySet()) {
-            Field field = rule.getClass().getDeclaredField(entry.getKey());
-            field.setAccessible(true);
-            field.set(rule, entry.getValue());
-        }
-        NetworkACLItem aclRule = networkACLService.createNetworkACLItem(rule);
+        CreateNetworkACLCmd networkACLRule = new CreateNetworkACLCmd();
+        networkACLRule = ComponentContext.inject(networkACLRule);
+
+        networkACLRule.setProtocol("TCP");
+
+        networkACLRule.setPublicStartPort(startPort);
+
+        networkACLRule.setPublicEndPort(endPorts);
+
+        networkACLRule.setTrafficType(NetworkACLItem.TrafficType.Ingress.toString());
+
+        networkACLRule.setNetworkId(network.getId());
+
+        networkACLRule.setAclId(network.getNetworkACLId());
+
+        networkACLRule.setAction(NetworkACLItem.Action.Allow.toString());
+
+        NetworkACLItem aclRule = networkACLService.createNetworkACLItem(networkACLRule);
         networkACLService.moveRuleToTheTopInACLList(aclRule);
         networkACLService.applyNetworkACL(aclRule.getAclId());
     }
