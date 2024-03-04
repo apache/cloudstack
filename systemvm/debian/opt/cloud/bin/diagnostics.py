@@ -34,8 +34,8 @@ def run_cmd(command):
             return_code = 1
 
         finally:
-            print('%s&&' % stdout.strip())
-            print('%s&&' % stderr.strip())
+            print('%s&&' % stdout.decode().strip())
+            print('%s&&' % stderr.decode().strip())
             print('%s' % return_code)
 
 

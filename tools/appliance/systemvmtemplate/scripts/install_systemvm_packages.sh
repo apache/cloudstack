@@ -22,7 +22,7 @@ set -x
 function install_vhd_util() {
   [[ -f /bin/vhd-util ]] && return
 
-  wget --no-check-certificate https://github.com/shapeblue/cloudstack-nonoss/raw/main/vhd-util -O /bin/vhd-util
+  wget --no-check-certificate https://download.cloudstack.org/tools/vhd-util -O /bin/vhd-util
   chmod a+x /bin/vhd-util
 }
 
@@ -53,7 +53,7 @@ function install_packages() {
   ${apt_get} install grub-legacy \
     rsyslog logrotate cron net-tools ifupdown tmux vim-tiny htop netbase iptables nftables \
     openssh-server e2fsprogs tcpdump iftop socat wget coreutils systemd \
-    python python3 python3-flask ieee-data \
+    python-is-python3 python3 python3-flask python3-netaddr ieee-data \
     bzip2 sed gawk diffutils grep gzip less tar telnet ftp rsync traceroute psmisc lsof procps \
     inetutils-ping iputils-arping httping curl \
     dnsutils zip unzip ethtool uuid file iproute2 acpid sudo \
@@ -63,10 +63,10 @@ function install_packages() {
     nfs-common \
     samba-common cifs-utils \
     xl2tpd bcrelay ppp tdb-tools \
-    xenstore-utils libxenstore3.0 \
+    xenstore-utils libxenstore4 \
     ipvsadm conntrackd libnetfilter-conntrack3 \
     keepalived irqbalance \
-    openjdk-11-jre-headless \
+    openjdk-17-jre-headless \
     ipcalc ipset \
     iptables-persistent \
     libtcnative-1 libssl-dev libapr1-dev \
@@ -79,10 +79,6 @@ function install_packages() {
     conntrack apt-transport-https ca-certificates curl gnupg  gnupg-agent software-properties-common
 
   apt-get install -y python3-json-pointer python3-jsonschema cloud-init
-
-  # python2-netaddr workaround
-  wget https://github.com/shapeblue/cloudstack-nonoss/raw/main/python-netaddr_0.7.19-1_all.deb
-  dpkg -i python-netaddr_0.7.19-1_all.deb
 
   apt_clean
 
@@ -104,9 +100,9 @@ function install_packages() {
 
   install_vhd_util
   # Install xenserver guest utilities as debian repos don't have it
-  wget https://mirrors.kernel.org/ubuntu/pool/main/x/xe-guest-utilities/xe-guest-utilities_7.10.0-0ubuntu1_amd64.deb
-  dpkg -i xe-guest-utilities_7.10.0-0ubuntu1_amd64.deb
-  rm -f xe-guest-utilities_7.10.0-0ubuntu1_amd64.deb
+  wget --no-check-certificate https://download.cloudstack.org/systemvm/debian/xe-guest-utilities_7.20.2-0ubuntu1_amd64.deb
+  dpkg -i xe-guest-utilities_7.20.2-0ubuntu1_amd64.deb
+  rm -f xe-guest-utilities_7.20.2-0ubuntu1_amd64.deb
 }
 
 return 2>/dev/null || install_packages

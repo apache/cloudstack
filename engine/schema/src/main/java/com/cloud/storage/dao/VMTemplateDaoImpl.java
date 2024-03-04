@@ -687,6 +687,16 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     }
 
     @Override
+    public List<VMTemplateVO> listByTemplateTag(String tag) {
+        SearchBuilder<VMTemplateVO> sb = createSearchBuilder();
+        sb.and("tag", sb.entity().getTemplateTag(), SearchCriteria.Op.EQ);
+        sb.done();
+        SearchCriteria<VMTemplateVO> sc = sb.create();
+        sc.setParameters("tag", tag);
+        return listIncludingRemovedBy(sc);
+    }
+
+    @Override
     public boolean updateState(
             com.cloud.template.VirtualMachineTemplate.State currentState,
             com.cloud.template.VirtualMachineTemplate.Event event,

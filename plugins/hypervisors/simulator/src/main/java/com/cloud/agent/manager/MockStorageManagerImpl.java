@@ -78,6 +78,8 @@ import com.cloud.agent.api.storage.ListVolumeAnswer;
 import com.cloud.agent.api.storage.ListVolumeCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
+import com.cloud.agent.api.storage.ResizeVolumeAnswer;
+import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.StorageFilerTO;
@@ -1306,5 +1308,33 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
         }
 
         return new Answer(cmd);
+    }
+
+    @Override
+    public Answer handleResizeVolume(ResizeVolumeCommand cmd) {
+        Long currentSize = cmd.getCurrentSize();
+        Long newSize = cmd.getNewSize();
+        MockStoragePoolVO storagePool = null;
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
+        try {
+            txn.start();
+            storagePool = _mockStoragePoolDao.findByUuid(cmd.getPoolUuid());
+            txn.commit();
+            if (storagePool == null) {
+                return new ResizeVolumeAnswer(cmd, false, "Failed to find storage pool: " + cmd.getPoolUuid());
+            }
+        } catch (Exception ex) {
+            txn.rollback();
+            throw new CloudRuntimeException("Error when finding storage " + cmd.getPoolUuid(), ex);
+        } finally {
+            txn.close();
+            txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
+            txn.close();
+        }
+
+        if (newSize >= currentSize) {
+            return new ResizeVolumeAnswer(cmd, true, "", newSize);
+        }
+        return new ResizeVolumeAnswer(cmd, false, "Failed to resize");
     }
 }

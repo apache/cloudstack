@@ -27,6 +27,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.domain.Domain;
+import com.cloud.utils.DateUtil;
 import org.apache.cloudstack.api.command.admin.usage.GenerateUsageRecordsCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListUsageRecordsCmd;
 import org.apache.cloudstack.api.command.admin.usage.RemoveRawUsageRecordsCmd;
@@ -36,6 +37,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
@@ -97,7 +99,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
     private ConfigurationDao _configDao;
     @Inject
     private ProjectManager _projectMgr;
-    private TimeZone _usageTimezone;
+    private TimeZone _usageTimezone = TimeZone.getTimeZone("GMT");
     @Inject
     private AccountService _accountService;
     @Inject
@@ -127,10 +129,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-        String timeZoneStr = _configDao.getValue(Config.UsageAggregationTimezone.toString());
-        if (timeZoneStr == null) {
-           timeZoneStr = "GMT";
-        }
+        String timeZoneStr = ObjectUtils.defaultIfNull(_configDao.getValue(Config.UsageAggregationTimezone.toString()), "GMT");
         _usageTimezone = TimeZone.getTimeZone(timeZoneStr);
         return true;
     }
@@ -208,8 +207,9 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
             throw new InvalidParameterValueException("Incorrect Date Range. Start date: " + startDate + " is after end date:" + endDate);
         }
 
-        logger.debug("Getting usage records for account [{}] in domain [{}], between [{}] and [{}], using pageSize [{}] and startIndex [{}].",
-                accountId, domainId, startDate, endDate, cmd.getPageSizeVal(), cmd.getStartIndex());
+        logger.debug("Getting usage records for account ID [{}], domain ID [{}] between [{}] and [{}] using page size [{}] and start index [{}].",
+                accountId, domainId, DateUtil.displayDateInTimezone(_usageTimezone, startDate), DateUtil.displayDateInTimezone(_usageTimezone, endDate),
+                cmd.getPageSizeVal(), cmd.getStartIndex());
 
         Filter usageFilter = new Filter(UsageVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
 
