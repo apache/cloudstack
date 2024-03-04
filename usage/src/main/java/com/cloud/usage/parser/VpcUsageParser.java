@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.usage.parser;
 
+import com.cloud.usage.UsageManagerImpl;
 import com.cloud.usage.UsageVpcVO;
 import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.UsageVO;
@@ -23,6 +24,8 @@ import com.cloud.usage.dao.UsageVpcDao;
 import com.cloud.user.AccountVO;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
+
+import com.cloud.utils.DateUtil;
 import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -77,6 +80,11 @@ public class VpcUsageParser {
             final float usage = duration / 1000f / 60f / 60f;
             DecimalFormat dFormat = new DecimalFormat("#.######");
             String usageDisplay = dFormat.format(usage);
+
+            long vpcId = usageVPC.getVpcId();
+            LOGGER.debug("Creating VPC usage record with id [{}], usage [{}], startDate [{}], and endDate [{}], for account [{}].", vpcId, usageDisplay,
+                    DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), startDate),
+                    DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), endDate), account.getId());
 
             String description = String.format("VPC usage for VPC ID: %d", usageVPC.getVpcId());
             UsageVO usageRecord =
