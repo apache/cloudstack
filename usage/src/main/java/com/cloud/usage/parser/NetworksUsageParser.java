@@ -16,8 +16,7 @@
 // under the License.
 package com.cloud.usage.parser;
 
-
-
+import com.cloud.usage.UsageManagerImpl;
 import com.cloud.usage.UsageNetworksVO;
 import com.cloud.usage.UsageVO;
 import com.cloud.usage.dao.UsageDao;
@@ -25,6 +24,8 @@ import com.cloud.usage.dao.UsageNetworksDao;
 import com.cloud.user.AccountVO;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
+
+import com.cloud.utils.DateUtil;
 import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -80,6 +81,12 @@ public class NetworksUsageParser {
             final float usage = duration / 1000f / 60f / 60f;
             DecimalFormat dFormat = new DecimalFormat("#.######");
             String usageDisplay = dFormat.format(usage);
+
+            long networkId = usageNetwork.getNetworkId();
+            long networkOfferingId = usageNetwork.getNetworkOfferingId();
+            LOGGER.debug("Creating network usage record with id [{}], network offering [{}], usage [{}], startDate [{}], and endDate [{}], for account [{}].",
+                    networkId, networkOfferingId, usageDisplay, DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), startDate),
+                    DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), endDate), account.getId());
 
             String description = String.format("Network usage for network ID: %d, network offering: %d", usageNetwork.getNetworkId(), usageNetwork.getNetworkOfferingId());
             UsageVO usageRecord =
