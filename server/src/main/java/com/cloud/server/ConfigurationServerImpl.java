@@ -619,7 +619,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             // FIXME: take a global database lock here for safety.
             boolean onWindows = isOnWindows();
             if(!onWindows) {
-                Script.runSimpleBashScript("if [ -f " + privkeyfile + " ]; then rm -f " + privkeyfile + "; fi; ssh-keygen -t ed25519 -m PEM -N '' -f " + privkeyfile + " -q 2>/dev/null || ssh-keygen -t ed25519 -N '' -f " + privkeyfile + " -q");
+                Script.runSimpleBashScript("if [ -f " + privkeyfile + " ]; then rm -f " + privkeyfile + "; fi; ssh-keygen -t ecdsa -m PEM -N '' -f " + privkeyfile + " -q 2>/dev/null || ssh-keygen -t ecdsa -N '' -f " + privkeyfile + " -q");
             }
 
             final String privateKey;
