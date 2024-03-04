@@ -48,6 +48,12 @@
           </div>
           <div v-else-if="$route.meta.name === 'backup' && (item === 'size' || item === 'virtualsize')">
             {{ $bytesToHumanReadableSize(dataResource[item]) }}
+            <a-tooltip placement="right">
+              <template #title>
+                {{ dataResource[item] }} bytes
+              </template>
+              <QuestionCircleOutlined />
+            </a-tooltip>
           </div>
           <div v-else-if="$route.meta.name === 'backup' && item === 'volumes'">
             <div v-for="(volume, idx) in JSON.parse(dataResource[item])" :key="idx">
