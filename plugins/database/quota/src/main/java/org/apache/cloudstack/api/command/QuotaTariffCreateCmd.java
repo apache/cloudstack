@@ -58,7 +58,7 @@ public class QuotaTariffCreateCmd extends BaseCmd {
             "value will be applied.", length = 65535)
     private String activationRule;
 
-    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "The effective start date on/after which the quota tariff is effective.Inform null to " +
+    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "The effective start date on/after which the quota tariff is effective. Inform null to " +
             "use the current date. " + ApiConstants.PARAMETER_DESCRIPTION_START_DATE_POSSIBLE_FORMATS)
     private Date startDate;
 
