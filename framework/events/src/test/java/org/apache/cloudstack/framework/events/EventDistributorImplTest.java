@@ -27,12 +27,22 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @RunWith(MockitoJUnitRunner.class)
 public class EventDistributorImplTest {
 
     @InjectMocks
     EventDistributorImpl eventDistributor = new EventDistributorImpl();
+
+    @Test
+    public void testSetEventBuses() {
+        Assert.assertNull(ReflectionTestUtils.getField(eventDistributor, "eventBuses"));
+        EventBus eventBus = Mockito.mock(EventBus.class);
+        EventBus eventBus1 = Mockito.mock(EventBus.class);
+        eventDistributor.setEventBuses(List.of(eventBus, eventBus1));
+        Assert.assertNotNull(ReflectionTestUtils.getField(eventDistributor, "eventBuses"));
+    }
 
     @Test
     public void testPublishNullEvent() {
