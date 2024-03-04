@@ -17,6 +17,9 @@
 package com.cloud.vm;
 
 import static com.cloud.configuration.ConfigurationManagerImpl.VM_USERDATA_MAX_LENGTH;
+import static com.cloud.hypervisor.Hypervisor.HypervisorType.KVM;
+import static com.cloud.hypervisor.Hypervisor.HypervisorType.VMware;
+import static com.cloud.hypervisor.Hypervisor.HypervisorType.XenServer;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 import java.io.IOException;
@@ -670,21 +673,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             "On destroy, force-stop takes this value ", true);
 
     public static final List<HypervisorType> VM_STORAGE_MIGRATION_SUPPORTING_HYPERVISORS = new ArrayList<>(Arrays.asList(
-            HypervisorType.KVM,
+            KVM,
             HypervisorType.VMware,
-            HypervisorType.XenServer,
+            XenServer,
             HypervisorType.Simulator
     ));
 
     protected static final List<HypervisorType> ROOT_DISK_SIZE_OVERRIDE_SUPPORTING_HYPERVISORS = Arrays.asList(
-            HypervisorType.KVM,
-            HypervisorType.XenServer,
+            KVM,
+            XenServer,
             HypervisorType.VMware,
             HypervisorType.Simulator,
             HypervisorType.Custom
     );
 
-    private static final List<HypervisorType> HYPERVISORS_THAT_CAN_DO_STORAGE_MIGRATION_ON_NON_USER_VMS = Arrays.asList(HypervisorType.KVM, HypervisorType.VMware);
+    private static final List<HypervisorType> HYPERVISORS_THAT_CAN_DO_STORAGE_MIGRATION_ON_NON_USER_VMS = Arrays.asList(KVM, HypervisorType.VMware);
 
     @Override
     public UserVmVO getVirtualMachine(long vmId) {
@@ -1987,10 +1990,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Account owner = _accountDao.findById(vmInstance.getAccountId());
 
         Set<HypervisorType> supportedHypervisorTypes = new HashSet<>();
-        supportedHypervisorTypes.add(HypervisorType.XenServer);
+        supportedHypervisorTypes.add(XenServer);
         supportedHypervisorTypes.add(HypervisorType.VMware);
         supportedHypervisorTypes.add(HypervisorType.Simulator);
-        supportedHypervisorTypes.add(HypervisorType.KVM);
+        supportedHypervisorTypes.add(KVM);
 
         HypervisorType vmHypervisorType = vmInstance.getHypervisorType();
 
@@ -3683,7 +3686,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 throw new InvalidParameterValueException("Security group feature is not supported for vmWare hypervisor");
             }
             // Only one network can be specified, and it should be security group enabled
-            if (networkIdList.size() > 1 && template.getHypervisorType() != HypervisorType.KVM && hypervisor != HypervisorType.KVM) {
+            if (networkIdList.size() > 1 && template.getHypervisorType() != KVM && hypervisor != KVM) {
                 throw new InvalidParameterValueException("Only support one network per VM if security group enabled");
             }
 
@@ -4033,7 +4036,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         DiskOfferingVO rootdiskOffering = _diskOfferingDao.findById(rootDiskOfferingId);
         long volumesSize = configureCustomRootDiskSize(customParameters, template, hypervisorType, rootdiskOffering);
 
-        if (rootdiskOffering.getEncrypt() && hypervisorType != HypervisorType.KVM) {
+        if (rootdiskOffering.getEncrypt() && hypervisorType != KVM) {
             throw new InvalidParameterValueException("Root volume encryption is not supported for hypervisor type " + hypervisorType);
         }
 
@@ -4587,7 +4590,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 continue;
             }
 
-            if (!hypervisorType.equals(HypervisorType.KVM)) {
+            if (!hypervisorType.equals(KVM)) {
                 if (key.equalsIgnoreCase(VmDetailConstants.IOTHREADS)) {
                     vm.details.remove(VmDetailConstants.IOTHREADS);
                     continue;
@@ -6359,19 +6362,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         String decodedUrl = decodeExtraConfig(extraConfig);
         HypervisorType hypervisorType = vm.getHypervisorType();
 
-        switch (hypervisorType) {
-            case XenServer:
-                persistExtraConfigXenServer(decodedUrl, vm);
-                break;
-            case KVM:
-                persistExtraConfigKvm(decodedUrl, vm);
-                break;
-            case VMware:
-                persistExtraConfigVmware(decodedUrl, vm);
-                break;
-            default:
-                String msg = String.format("This hypervisor %s is not supported for use with this feature", hypervisorType.toString());
-                throw new CloudRuntimeException(msg);
+        if (hypervisorType.equals(XenServer)) {
+            persistExtraConfigXenServer(decodedUrl, vm);
+        } else if (hypervisorType.equals(KVM)) {
+            persistExtraConfigKvm(decodedUrl, vm);
+        } else if (hypervisorType.equals(VMware)) {
+            persistExtraConfigVmware(decodedUrl, vm);
+        } else {
+            String msg = String.format("This hypervisor %s is not supported for use with this feature", hypervisorType.toString());
+            throw new CloudRuntimeException(msg);
         }
     }
 
@@ -6748,9 +6747,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private boolean isOnSupportedHypevisorForMigration(VMInstanceVO vm) {
-        return (vm.getHypervisorType().equals(HypervisorType.XenServer) ||
+        return (vm.getHypervisorType().equals(XenServer) ||
                 vm.getHypervisorType().equals(HypervisorType.VMware) ||
-                vm.getHypervisorType().equals(HypervisorType.KVM) ||
+                vm.getHypervisorType().equals(KVM) ||
                 vm.getHypervisorType().equals(HypervisorType.Ovm) ||
                 vm.getHypervisorType().equals(HypervisorType.Hyperv) ||
                 vm.getHypervisorType().equals(HypervisorType.LXC) ||
@@ -7047,7 +7046,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
-        if (HypervisorType.KVM.equals(srcHost.getHypervisorType())) {
+        if (KVM.equals(srcHost.getHypervisorType())) {
             if (srcHostVersion == null) {
                 srcHostVersion = "";
             }
@@ -8093,7 +8092,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 final Command cmd;
 
-                if (host.getHypervisorType() == HypervisorType.XenServer) {
+                if (host.getHypervisorType() == XenServer) {
                     DiskTO disk = new DiskTO(volumeInfo.getTO(), root.getDeviceId(), root.getPath(), root.getVolumeType());
 
                     // it's OK in this case to send a detach command to the host for a root volume as this
@@ -8123,7 +8122,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                     cmd = new DeleteCommand(volumeInfo.getTO());
                 }
-                else if (host.getHypervisorType() == HypervisorType.KVM) {
+                else if (host.getHypervisorType() == KVM) {
                     cmd = null;
                 }
                 else {
