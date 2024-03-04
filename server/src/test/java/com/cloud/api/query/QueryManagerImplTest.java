@@ -348,7 +348,7 @@ public class QueryManagerImplTest {
 
     @Test
     public void testGetHostTagsFromTemplateForServiceOfferingsListingNoTemplateId() {
-        CollectionUtils.isEmpty(queryManager.getHostTagsFromTemplateForServiceOfferingsListing(Mockito.mock(AccountVO.class), null));
+        Assert.assertTrue(CollectionUtils.isEmpty(queryManager.getHostTagsFromTemplateForServiceOfferingsListing(Mockito.mock(AccountVO.class), null)));
     }
 
     @Test(expected = InvalidParameterValueException.class)

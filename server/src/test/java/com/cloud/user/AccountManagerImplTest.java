@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.api.response.UserTwoFactorAuthenticationSetupResponse;
@@ -95,6 +96,12 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
 
     @Mock
     private Account accountMock;
+
+    @Mock
+    private DomainVO domainVoMock;
+
+    @Mock
+    private AccountVO accountVoMock;
 
     @Mock
     private ProjectAccountVO projectAccountVO;
@@ -170,6 +177,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.when(_sshKeyPairDao.listKeyPairs(Mockito.anyLong(), Mockito.anyLong())).thenReturn(sshkeyList);
         Mockito.when(_sshKeyPairDao.remove(Mockito.anyLong())).thenReturn(true);
         Mockito.when(userDataDao.removeByAccountId(Mockito.anyLong())).thenReturn(222);
+        Mockito.doNothing().when(accountManagerImpl).deleteWebhooksForAccount(Mockito.anyLong());
 
         Assert.assertTrue(accountManagerImpl.deleteUserAccount(42l));
         // assert that this was a clean delete
@@ -189,10 +197,47 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.when(_vmMgr.expunge(Mockito.any(UserVmVO.class))).thenReturn(false);
         Mockito.lenient().when(_domainMgr.getDomain(Mockito.anyLong())).thenReturn(domain);
         Mockito.lenient().when(securityChecker.checkAccess(Mockito.any(Account.class), Mockito.any(Domain.class))).thenReturn(true);
+        Mockito.doNothing().when(accountManagerImpl).deleteWebhooksForAccount(Mockito.anyLong());
 
         Assert.assertTrue(accountManagerImpl.deleteUserAccount(42l));
         // assert that this was NOT a clean delete
         Mockito.verify(_accountDao, Mockito.atLeastOnce()).markForCleanup(Mockito.eq(42l));
+    }
+
+    @Test (expected = InvalidParameterValueException.class)
+    public void deleteUserTestIfUserIdIsEqualToCallerIdShouldThrowException() {
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            DeleteUserCmd cmd = Mockito.mock(DeleteUserCmd.class);
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+
+            Mockito.doReturn(userVoMock).when(callContextMock).getCallingUser();
+            Mockito.doReturn(1L).when(cmd).getId();
+            Mockito.doReturn(userVoMock).when(accountManagerImpl).getValidUserVO(Mockito.anyLong());
+            Mockito.doReturn(accountVoMock).when(_accountDao).findById(Mockito.anyLong());
+            Mockito.doReturn(domainVoMock).when(_domainDao).findById(Mockito.anyLong());
+            Mockito.doReturn(1L).when(userVoMock).getId();
+
+            accountManagerImpl.deleteUser(cmd);
+        }
+    }
+
+    @Test
+    public void deleteUserTestIfUserIdIsNotEqualToCallerIdShouldNotThrowException() {
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            DeleteUserCmd cmd = Mockito.mock(DeleteUserCmd.class);
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+
+            Mockito.doReturn(userVoMock).when(callContextMock).getCallingUser();
+            Mockito.doReturn(1L).when(cmd).getId();
+            Mockito.doReturn(userVoMock).when(accountManagerImpl).getValidUserVO(Mockito.anyLong());
+            Mockito.doReturn(accountVoMock).when(_accountDao).findById(Mockito.anyLong());
+            Mockito.doReturn(2L).when(userVoMock).getId();
+
+            Mockito.doNothing().when(accountManagerImpl).checkAccountAndAccess(Mockito.any(), Mockito.any());
+            accountManagerImpl.deleteUser(cmd);
+        }
     }
 
     @Test

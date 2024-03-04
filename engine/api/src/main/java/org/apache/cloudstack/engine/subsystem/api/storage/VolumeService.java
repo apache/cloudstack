@@ -57,6 +57,8 @@ public interface VolumeService {
 
     void revokeAccess(DataObject dataObject, Host host, DataStore dataStore);
 
+    boolean requiresAccessForMigration(DataObject dataObject, DataStore dataStore);
+
     /**
      * Creates the volume based on the given criteria
      *
@@ -115,4 +117,8 @@ public interface VolumeService {
       VolumeInfo sourceVolume, VolumeInfo destinationVolume, boolean retryExpungeVolumeAsync);
 
     void moveVolumeOnSecondaryStorageToAnotherAccount(Volume volume, Account sourceAccount, Account destAccount);
+
+    Pair<String, String> checkAndRepairVolume(VolumeInfo volume);
+
+    void checkAndRepairVolumeBasedOnConfig(DataObject dataObject, Host host);
 }
