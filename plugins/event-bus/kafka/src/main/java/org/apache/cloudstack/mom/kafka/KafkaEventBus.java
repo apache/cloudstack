@@ -88,7 +88,7 @@ public class KafkaEventBus extends ManagerBase implements EventBus {
     @Override
     public UUID subscribe(EventTopic topic, EventSubscriber subscriber) throws EventBusException {
         if (logger.isDebugEnabled()) {
-            logger.debug(String.format("subscribing \'%s\' to events of type \'%s\' from \'%s\'",subscriber.toString(), topic.getEventType(), topic.getEventSource()));
+            logger.debug("subscribing '{}' to events of type '{}' from '{}'", subscriber.toString(), topic.getEventType(), topic.getEventSource());
         }
 
         /* NOOP */
@@ -98,7 +98,7 @@ public class KafkaEventBus extends ManagerBase implements EventBus {
     @Override
     public void unsubscribe(UUID subscriberId, EventSubscriber subscriber) throws EventBusException {
         if (logger.isDebugEnabled()) {
-            logger.debug(String.format("unsubscribing \'%s\'",subscriberId));
+            logger.debug("unsubscribing '{}'", subscriberId);
         }
         /* NOOP */
     }
@@ -106,7 +106,7 @@ public class KafkaEventBus extends ManagerBase implements EventBus {
     @Override
     public void publish(Event event) throws EventBusException {
         if (logger.isTraceEnabled()) {
-            logger.trace(String.format("publish \'%s\'", event.getDescription()));
+            logger.trace("publish '{}'", event.getDescription());
         }
         ProducerRecord<String, String> newRecord = new ProducerRecord<>(_topic, event.getResourceUUID(), event.getDescription());
         _producer.send(newRecord);

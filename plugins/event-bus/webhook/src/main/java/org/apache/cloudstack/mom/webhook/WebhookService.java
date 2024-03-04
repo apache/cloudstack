@@ -20,6 +20,7 @@ package org.apache.cloudstack.mom.webhook;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.events.Event;
+import org.apache.cloudstack.framework.events.EventBusException;
 
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -51,7 +52,7 @@ public interface WebhookService extends PluggableService, Configurable {
             "Interval (in seconds) for cleaning up webhook deliveries",
             false, ConfigKey.Scope.Global);
 
-    void handleEvent(Event event);
+    void handleEvent(Event event) throws EventBusException;
     WebhookDelivery executeWebhookDelivery(WebhookDelivery delivery, Webhook webhook, String payload)
             throws CloudRuntimeException;
 }

@@ -161,10 +161,10 @@ public class WebhookDeliveryThread implements Runnable {
     @Override
     public void run() {
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug(String.format("Delivering event: %s for %s", event.getEventType(), webhook));
+            LOGGER.debug("Delivering event: {} for {}", event.getEventType(), webhook);
         }
         if (event == null) {
-            LOGGER.warn(String.format("Invalid event received for delivering %s", webhook));
+            LOGGER.warn("Invalid event received for delivering to {}", webhook);
             return;
         }
         payload = event.getDescription();
@@ -191,8 +191,8 @@ public class WebhookDeliveryThread implements Runnable {
         try {
             this.response =  EntityUtils.toString(entity, StandardCharsets.UTF_8);
         } catch (IOException e) {
-            LOGGER.error(String.format("Failed to parse response for event: %s, %s",
-                    event.getEventType(), webhook));
+            LOGGER.error("Failed to parse response for event: {} for {}",
+                    event.getEventType(), webhook);
             this.response = "";
         }
     }
@@ -206,23 +206,23 @@ public class WebhookDeliveryThread implements Runnable {
             request.setEntity(input);
             updateRequestHeaders(request);
             if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace(String.format("Delivering event: %s for %s with timeout: %d, " +
-                        "attempt #%d", event.getEventType(), webhook,
-                        deliveryTimeout, attempt));
+                LOGGER.trace("Delivering event: {} for {} with timeout: {}, " +
+                        "attempt #{}", event.getEventType(), webhook,
+                        deliveryTimeout, attempt);
             }
             final CloseableHttpResponse response = httpClient.execute(request);
             updateResponseFromRequest(response.getEntity());
             if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
                 if (LOGGER.isTraceEnabled()) {
-                    LOGGER.trace(String.format("Successfully delivered event: %s for %s",
-                            event.getEventType(), webhook));
+                    LOGGER.trace("Successfully delivered event: {} for {}",
+                            event.getEventType(), webhook);
                 }
                 return true;
             }
         } catch (URISyntaxException | IOException | DecoderException | NoSuchAlgorithmException |
                  InvalidKeyException e) {
-            LOGGER.warn(String.format("Failed to delivery %s, in attempt #%d due to: %s",
-                    webhook, attempt, e.getMessage()));
+            LOGGER.warn("Failed to delivery {}, in attempt #{} due to: {}",
+                    webhook, attempt, e.getMessage());
             response = String.format("Failed due to : %s", e.getMessage());
         }
         return false;

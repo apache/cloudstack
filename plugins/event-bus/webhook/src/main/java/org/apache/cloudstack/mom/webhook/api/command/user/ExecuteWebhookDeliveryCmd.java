@@ -80,11 +80,6 @@ public class ExecuteWebhookDeliveryCmd extends BaseCmd {
             description = "Payload of the Webhook delivery")
     private String payload;
 
-    @ACL(accessType = SecurityChecker.AccessType.UseEntry)
-    @Parameter(name = ApiConstants.PROJECT_ID, type = BaseCmd.CommandType.UUID, entityType = ProjectResponse.class,
-            description = "Project for the Webhook delivery")
-    private Long projectId;
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -112,10 +107,6 @@ public class ExecuteWebhookDeliveryCmd extends BaseCmd {
 
     public String getPayload() {
         return payload;
-    }
-
-    public Long getProjectId() {
-        return projectId;
     }
 
     @Override

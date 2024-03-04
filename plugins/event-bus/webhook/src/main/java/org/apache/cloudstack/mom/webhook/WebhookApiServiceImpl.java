@@ -477,7 +477,7 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         final String secretKey = cmd.getSecretKey();
         final Boolean sslVerification = cmd.isSslVerification();
         final String payload = cmd.getPayload();
-        final Account owner = accountManager.finalizeOwner(caller, null, null, cmd.getProjectId());
+        final Account owner = accountManager.finalizeOwner(caller, null, null, null);
 
         if (ObjectUtils.allNull(deliveryId, webhookId) && StringUtils.isBlank(payloadUrl)) {
             throw new InvalidParameterValueException(String.format("One of the %s, %s or %s must be specified",

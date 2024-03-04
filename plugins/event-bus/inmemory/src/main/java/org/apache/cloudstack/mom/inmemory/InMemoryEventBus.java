@@ -61,7 +61,7 @@ public class InMemoryEventBus extends ManagerBase implements EventBus {
             throw new EventBusException("Invalid EventSubscriber/EventTopic object passed.");
         }
         if (logger.isDebugEnabled()) {
-            logger.debug(String.format("subscribing \'%s\' to events of type \'%s\' from \'%s\'",subscriber.toString(), topic.getEventType(), topic.getEventSource()));
+            logger.debug("subscribing '{}' to events of type '{}' from '{}'", subscriber.toString(), topic.getEventType(), topic.getEventSource());
         }
 
         UUID subscriberId = UUID.randomUUID();
@@ -73,7 +73,7 @@ public class InMemoryEventBus extends ManagerBase implements EventBus {
     @Override
     public void unsubscribe(UUID subscriberId, EventSubscriber subscriber) throws EventBusException {
         if (logger.isDebugEnabled()) {
-            logger.debug(String.format("unsubscribing \'%s\'",subscriberId));
+            logger.debug("unsubscribing '{}'", subscriberId);
         }
         if (subscriberId == null) {
             throw new EventBusException("Cannot unregister a null subscriberId.");
@@ -93,7 +93,7 @@ public class InMemoryEventBus extends ManagerBase implements EventBus {
     @Override
     public void publish(Event event) throws EventBusException {
         if (logger.isTraceEnabled()) {
-            logger.trace(String.format("publish \'%s\'", event.getDescription()));
+            logger.trace("publish '{}'", event.getDescription());
         }
         if (subscribers == null || subscribers.isEmpty()) {
             logger.trace("no subscribers, no publish");

@@ -38,6 +38,7 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.events.Event;
+import org.apache.cloudstack.framework.events.EventBusException;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.mom.webhook.dao.WebhookDao;
 import org.apache.cloudstack.mom.webhook.dao.WebhookDeliveryDao;
@@ -97,11 +98,13 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
         return job;
     }
 
-    protected List<Runnable> getDeliveryJobs(Event event) {
+    protected List<Runnable> getDeliveryJobs(Event event) throws EventBusException {
         List<Runnable> jobs = new ArrayList<>();
-        if (!EventCategory.ACTION_EVENT.getName().equals(event.getEventCategory()) ||
-                event.getResourceAccountId() == null) {
+        if (!EventCategory.ACTION_EVENT.getName().equals(event.getEventCategory())) {
             return jobs;
+        }
+        if (event.getResourceAccountId() == null) {
+            throw new EventBusException(String.format("Account missing for the event ID: %s", event.getEventUuid()));
         }
         List<Long> domainIds = new ArrayList<>();
         if (event.getResourceDomainId() != null) {
@@ -236,7 +239,7 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
     }
 
     @Override
-    public void handleEvent(Event event) {
+    public void handleEvent(Event event) throws EventBusException {
         List<Runnable> jobs = getDeliveryJobs(event);
         for(Runnable job : jobs) {
             webhookJobExecutor.submit(job);

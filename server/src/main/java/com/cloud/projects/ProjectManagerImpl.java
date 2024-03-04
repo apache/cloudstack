@@ -168,7 +168,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
     private String senderAddress;
     protected SMTPMailSender mailSender;
 
-    protected List<? extends ControlledEntity> listWebhooksForAccount(Project project) {
+    protected List<? extends ControlledEntity> listWebhooksForProject(Project project) {
         List<? extends ControlledEntity> webhooks = new ArrayList<>();
         try {
             WebhookHelper webhookService = ComponentContext.getComponent(WebhookHelper.class);
@@ -357,7 +357,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
             List<VolumeVO> volumes = _volumeDao.findDetachedByAccount(project.getProjectAccountId());
             List<NetworkVO> networks = _networkDao.listByOwner(project.getProjectAccountId());
             List<? extends Vpc> vpcs = _vpcMgr.getVpcsForAccount(project.getProjectAccountId());
-            List<? extends ControlledEntity> webhooks = listWebhooksForAccount(project);
+            List<? extends ControlledEntity> webhooks = listWebhooksForProject(project);
 
             Optional<String> message = Stream.of(userTemplates, vmSnapshots, vms, volumes, networks, vpcs, webhooks)
                     .filter(entity -> !entity.isEmpty())

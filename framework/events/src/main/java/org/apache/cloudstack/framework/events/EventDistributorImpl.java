@@ -40,8 +40,8 @@ public class EventDistributorImpl extends ManagerBase implements EventDistributo
     @PostConstruct
     public void init() {
         if (logger.isTraceEnabled()) {
-            logger.trace(String.format("Found %d event buses : %s", eventBuses.size(),
-                    StringUtils.join(eventBuses.stream().map(x->x.getClass().getName()).toArray())));
+            logger.trace("Found {} event buses : {}", eventBuses.size(),
+                    StringUtils.join(eventBuses.stream().map(x->x.getClass().getName()).toArray()));
         }
     }
 
@@ -52,16 +52,16 @@ public class EventDistributorImpl extends ManagerBase implements EventDistributo
             return exceptions;
         }
         if (logger.isTraceEnabled()) {
-            logger.trace(String.format("Publishing event [category: %s, type: %s]: %s to %d event buses",
+            logger.trace("Publishing event [category: {}, type: {}]: {} to {} event buses",
                     event.getEventCategory(), event.getEventType(),
-                    event.getDescription(), eventBuses.size()));
+                    event.getDescription(), eventBuses.size());
         }
         for (EventBus bus : eventBuses) {
             try {
                 bus.publish(event);
             } catch (EventBusException e) {
-                logger.warn(String.format("Failed to publish for bus %s of event [category: %s, type: %s]",
-                        bus.getName(), event.getEventCategory(), event.getEventType()));
+                logger.warn("Failed to publish for bus {} of event [category: {}, type: {}]",
+                        bus.getName(), event.getEventCategory(), event.getEventType());
                 if (logger.isTraceEnabled()) {
                     logger.trace(event.getDescription());
                 }
