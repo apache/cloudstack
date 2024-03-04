@@ -343,6 +343,15 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-form-item ref="templatetag" name="templatetag" v-if="isAdminRole">
+          <template #label>
+            <tooltip-label :title="$t('label.templatetag')" :tooltip="apiParams.templatetag.description"/>
+          </template>
+          <a-input
+            v-model:value="form.templatetag"
+            :placeholder="apiParams.templatetag.description"
+            v-focus="currentForm !== 'Create'"/>
+        </a-form-item>
         <a-row :gutter="12">
           <a-col :md="24" :lg="12">
             <a-form-item

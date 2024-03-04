@@ -252,7 +252,9 @@ public class DeploymentPlanningManagerImplTest {
         Mockito.when(template.isDeployAsIs()).thenReturn(false);
         Mockito.when(templateDao.findById(Mockito.anyLong())).thenReturn(template);
 
-        VMInstanceVO vm = new VMInstanceVO();
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vm.getType()).thenReturn(Type.Instance);
+        Mockito.when(vm.getLastHostId()).thenReturn(null);
         Mockito.when(vmProfile.getVirtualMachine()).thenReturn(vm);
         Mockito.when(vmProfile.getId()).thenReturn(instanceId);
 

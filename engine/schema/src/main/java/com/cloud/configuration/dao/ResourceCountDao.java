@@ -26,18 +26,20 @@ import com.cloud.utils.db.GenericDao;
 
 public interface ResourceCountDao extends GenericDao<ResourceCountVO, Long> {
     /**
-     * @param domainId the id of the domain to get the resource count
+     * @param ownerId the id of the owner to get the resource count
      * @param type the type of resource (e.g. user_vm, public_ip, volume)
+     * @param tag for the type of resource
      * @return the count of resources in use for the given type and domain
      */
-    long getResourceCount(long ownerId, ResourceOwnerType ownerType, ResourceType type);
+    long getResourceCount(long ownerId, ResourceOwnerType ownerType, ResourceType type, String tag);
 
     /**
-     * @param domainId the id of the domain to set the resource count
+     * @param ownerId the id of the owner to set the resource count
      * @param type the type of resource (e.g. user_vm, public_ip, volume)
-     * @param the count of resources in use for the given type and domain
+     * @param tag the tag for the type of resource
+     * @param count the count of resources in use for the given type and domain
      */
-    void setResourceCount(long ownerId, ResourceOwnerType ownerType, ResourceType type, long count);
+    void setResourceCount(long ownerId, ResourceOwnerType ownerType, ResourceType type, String tag, long count);
 
     boolean updateById(long id, boolean increment, long delta);
 
@@ -45,13 +47,13 @@ public interface ResourceCountDao extends GenericDao<ResourceCountVO, Long> {
 
     List<ResourceCountVO> listByOwnerId(long ownerId, ResourceOwnerType ownerType);
 
-    ResourceCountVO findByOwnerAndType(long ownerId, ResourceOwnerType ownerType, ResourceType type);
+    ResourceCountVO findByOwnerAndTypeAndTag(long ownerId, ResourceOwnerType ownerType, ResourceType type, String tag);
 
     List<ResourceCountVO> listResourceCountByOwnerType(ResourceOwnerType ownerType);
 
-    Set<Long> listAllRowsToUpdate(long ownerId, ResourceOwnerType ownerType, ResourceType type);
+    Set<Long> listAllRowsToUpdate(long ownerId, ResourceOwnerType ownerType, ResourceType type, String tag);
 
-    Set<Long> listRowsToUpdateForDomain(long domainId, ResourceType type);
+    Set<Long> listRowsToUpdateForDomain(long domainId, ResourceType type, String tag);
 
     long removeEntriesByOwner(long ownerId, ResourceOwnerType ownerType);
 
@@ -68,4 +70,6 @@ public interface ResourceCountDao extends GenericDao<ResourceCountVO, Long> {
      * Side note: This method is not using the "resource_count" table. It is executing the actual count instead.
      */
     long countMemoryAllocatedToAccount(long accountId);
+
+    void removeResourceCountsForNonMatchingTags(Long ownerId, ResourceOwnerType ownerType, List<ResourceType> types, List<String> tags);
 }

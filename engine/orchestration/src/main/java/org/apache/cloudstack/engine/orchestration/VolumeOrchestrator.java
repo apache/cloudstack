@@ -130,6 +130,7 @@ import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
@@ -245,6 +246,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     PassphraseDao passphraseDao;
     @Inject
     StoragePoolHostDao storagePoolHostDao;
+    @Inject
+    DiskOfferingDao diskOfferingDao;
 
     @Inject
     protected SnapshotHelper snapshotHelper;
@@ -872,9 +875,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         if (vm.getType() == VirtualMachine.Type.User) {
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(), offering.getId(), null, size,
                     Volume.class.getName(), vol.getUuid(), vol.isDisplayVolume());
-
-            _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.volume, vol.isDisplayVolume());
-            _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.primary_storage, vol.isDisplayVolume(), new Long(vol.getSize()));
+            _resourceLimitMgr.incrementVolumeResourceCount(vm.getAccountId(), vol.isDisplayVolume(), vol.getSize(), offering);
         }
         DiskProfile diskProfile = toDiskProfile(vol, offering);
 
@@ -956,8 +957,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(), offeringId, vol.getTemplateId(), size,
                     Volume.class.getName(), vol.getUuid(), vol.isDisplayVolume());
 
-            _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.volume, vol.isDisplayVolume());
-            _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.primary_storage, vol.isDisplayVolume(), new Long(vol.getSize()));
+            _resourceLimitMgr.incrementVolumeResourceCount(vm.getAccountId(), vol.isDisplayVolume(), vol.getSize(), offering);
         }
         return toDiskProfile(vol, offering);
     }
@@ -1132,6 +1132,10 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 // Moving of Volume is successful, decrement the volume resource count from secondary for an account and increment it into primary storage under same account.
                 _resourceLimitMgr.decrementResourceCount(volumeInfo.getAccountId(), ResourceType.secondary_storage, volumeInfo.getSize());
                 _resourceLimitMgr.incrementResourceCount(volumeInfo.getAccountId(), ResourceType.primary_storage, volumeInfo.getSize());
+                List<String> tags = _resourceLimitMgr.getResourceLimitStorageTags(diskVO);
+                for (String tag : tags) {
+                    _resourceLimitMgr.incrementResourceCountWithTag(volumeInfo.getAccountId(), ResourceType.primary_storage, tag,  volumeInfo.getSize());
+                }
             }
         }
 
@@ -1212,8 +1216,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 DataStore dataStore = dataStoreMgr.getDataStore(volumeForVm.getPoolId(), DataStoreRole.Primary);
                 PrimaryDataStore primaryDataStore = (PrimaryDataStore)dataStore;
 
-                // This might impact other managed storages, grant access for PowerFlex storage pool only
-                if (primaryDataStore.isManaged() && primaryDataStore.getPoolType() == Storage.StoragePoolType.PowerFlex) {
+                // This might impact other managed storages, enable requires access for migration in relevant datastore driver (currently enabled for PowerFlex storage pool only)
+                if (primaryDataStore.isManaged() && volService.requiresAccessForMigration(volumeInfo, dataStore)) {
                     volService.revokeAccess(volumeInfo, host, dataStore);
                 }
             }
@@ -1483,8 +1487,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             disk.setDetails(getDetails(volumeInfo, dataStore));
 
             PrimaryDataStore primaryDataStore = (PrimaryDataStore)dataStore;
-            // This might impact other managed storages, grant access for PowerFlex storage pool only
-            if (primaryDataStore.isManaged() && primaryDataStore.getPoolType() == Storage.StoragePoolType.PowerFlex) {
+            // This might impact other managed storages, enable requires access for migration in relevant datastore driver (currently enabled for PowerFlex storage pool only)
+            if (primaryDataStore.isManaged() && volService.requiresAccessForMigration(volumeInfo, dataStore)) {
                 volService.grantAccess(volFactory.getVolume(vol.getId()), dest.getHost(), dataStore);
             }
 
@@ -1881,6 +1885,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                             }
                         }
                     }
+                } else {
+                    handleCheckAndRepairVolume(vol, vm.getVirtualMachine().getHostId());
                 }
             } else if (task.type == VolumeTaskType.MIGRATE) {
                 pool = (StoragePool)dataStoreMgr.getDataStore(task.pool.getId(), DataStoreRole.Primary);
@@ -1920,6 +1926,16 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 }
             }
 
+        }
+    }
+
+    private void handleCheckAndRepairVolume(Volume vol, Long hostId) {
+        Host host = _hostDao.findById(hostId);
+        try {
+            volService.checkAndRepairVolumeBasedOnConfig(volFactory.getVolume(vol.getId()), host);
+        } catch (Exception e) {
+            String volumeToString = getReflectOnlySelectedFields(vol);
+            logger.debug(String.format("Unable to check and repair volume [%s] on host [%s], due to %s.", volumeToString, host, e.getMessage()));
         }
     }
 
@@ -2070,8 +2086,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             if (volume.getState() == Volume.State.Allocated) {
                 _volsDao.remove(volume.getId());
                 stateTransitTo(volume, Volume.Event.DestroyRequested);
-                _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.volume, volume.isDisplay());
-                _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, volume.isDisplay(), new Long(volume.getSize()));
+                _resourceLimitMgr.decrementVolumeResourceCount(volume.getAccountId(), volume.isDisplay(), volume.getSize(), diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId()));
             } else {
                 destroyVolumeInContext(volume);
             }

@@ -18,16 +18,17 @@
 //
 package org.apache.cloudstack.reservation;
 
-import com.cloud.configuration.Resource;
-import org.apache.cloudstack.user.ResourceReservation;
-import com.cloud.utils.exception.CloudRuntimeException;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+
+import org.apache.cloudstack.user.ResourceReservation;
+
+import com.cloud.configuration.Resource;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Entity
 @Table(name = "resource_reservation")
@@ -47,20 +48,28 @@ public class ReservationVO implements ResourceReservation {
     @Column(name = "resource_type", nullable = false)
     Resource.ResourceType resourceType;
 
+    @Column(name = "tag")
+    String tag;
+
     @Column(name = "amount")
     long amount;
 
-    protected ReservationVO()
-    {}
+    protected ReservationVO() {
+    }
 
-    public ReservationVO(Long accountId, Long domainId, Resource.ResourceType resourceType, Long delta) {
+    public ReservationVO(Long accountId, Long domainId, Resource.ResourceType resourceType, String tag, Long delta) {
         if (delta == null || delta <= 0) {
             throw new CloudRuntimeException("resource reservations can not be made for no resources");
         }
         this.accountId = accountId;
         this.domainId = domainId;
         this.resourceType = resourceType;
+        this.tag = tag;
         this.amount = delta;
+    }
+
+    public ReservationVO(Long accountId, Long domainId, Resource.ResourceType resourceType, Long delta) {
+        this(accountId, domainId, resourceType, null, delta);
     }
 
     @Override
@@ -81,6 +90,11 @@ public class ReservationVO implements ResourceReservation {
     @Override
     public Resource.ResourceType getResourceType() {
         return resourceType;
+    }
+
+    @Override
+    public String getTag() {
+        return tag;
     }
 
     @Override

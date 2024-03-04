@@ -25,15 +25,9 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.configuration.dao.ResourceCountDao;
-import com.cloud.dc.DedicatedResourceVO;
-import com.cloud.dc.dao.DedicatedResourceDao;
-import com.cloud.host.HostStats;
-import com.cloud.host.HostTagVO;
-import com.cloud.user.Account;
-import com.cloud.user.dao.AccountDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
@@ -43,16 +37,21 @@ import com.cloud.api.query.vo.DomainJoinVO;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
-import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.CapacityState;
+import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.capacity.dao.CapacityDaoImpl;
 import com.cloud.configuration.Resource;
+import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
+import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.host.Host;
+import com.cloud.host.HostStats;
+import com.cloud.host.HostTagVO;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
@@ -63,7 +62,8 @@ import com.cloud.storage.StorageStats;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
-import org.apache.commons.lang3.StringUtils;
+import com.cloud.user.Account;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
@@ -438,13 +438,13 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
             }
 
             long memoryUsed = _resourceCountDao.getResourceCount(domain.getId(), Resource.ResourceOwnerType.Domain,
-                    Resource.ResourceType.memory);
+                    Resource.ResourceType.memory, null);
             long cpuUsed = _resourceCountDao.getResourceCount(domain.getId(), Resource.ResourceOwnerType.Domain,
-                    Resource.ResourceType.cpu);
+                    Resource.ResourceType.cpu, null);
             long primaryStorageUsed = _resourceCountDao.getResourceCount(domain.getId(), Resource.ResourceOwnerType.Domain,
-                    Resource.ResourceType.primary_storage);
+                    Resource.ResourceType.primary_storage, null);
             long secondaryStorageUsed = _resourceCountDao.getResourceCount(domain.getId(), Resource.ResourceOwnerType.Domain,
-                    Resource.ResourceType.secondary_storage);
+                    Resource.ResourceType.secondary_storage, null);
 
             metricsList.add(new ItemPerDomainResourceCount(memoryUsed, domain.getPath(), Resource.ResourceType.memory.getName()));
             metricsList.add(new ItemPerDomainResourceCount(cpuUsed, domain.getPath(), Resource.ResourceType.cpu.getName()));

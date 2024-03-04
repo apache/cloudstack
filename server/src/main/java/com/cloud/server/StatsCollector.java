@@ -1710,17 +1710,21 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                             storagePoolStats.put(pool.getId(), (StorageStats)answer);
 
                             boolean poolNeedsUpdating = false;
+                            long capacityBytes = ((StorageStats)answer).getCapacityBytes();
+                            long usedBytes = ((StorageStats)answer).getByteUsed();
                             // Seems like we have dynamically updated the pool size since the prev. size and the current do not match
-                            if (_storagePoolStats.get(poolId) != null && _storagePoolStats.get(poolId).getCapacityBytes() != ((StorageStats)answer).getCapacityBytes()) {
-                                if (((StorageStats)answer).getCapacityBytes() > 0) {
-                                    pool.setCapacityBytes(((StorageStats)answer).getCapacityBytes());
+                            if ((_storagePoolStats.get(poolId) != null && _storagePoolStats.get(poolId).getCapacityBytes() != capacityBytes)
+                                    || pool.getCapacityBytes() != capacityBytes) {
+                                if (capacityBytes > 0) {
+                                    pool.setCapacityBytes(capacityBytes);
                                     poolNeedsUpdating = true;
                                 } else {
                                     logger.warn("Not setting capacity bytes, received " + ((StorageStats)answer).getCapacityBytes()  + " capacity for pool ID " + poolId);
                                 }
                             }
-                            if (pool.getUsedBytes() != ((StorageStats)answer).getByteUsed() && (pool.getStorageProviderName().equalsIgnoreCase(DataStoreProvider.DEFAULT_PRIMARY) || _storageManager.canPoolProvideStorageStats(pool))) {
-                                pool.setUsedBytes(((StorageStats) answer).getByteUsed());
+                            if (((_storagePoolStats.get(poolId) != null && _storagePoolStats.get(poolId).getByteUsed() != usedBytes)
+                                    || pool.getUsedBytes() != usedBytes) && (pool.getStorageProviderName().equalsIgnoreCase(DataStoreProvider.DEFAULT_PRIMARY) || _storageManager.canPoolProvideStorageStats(pool))) {
+                                pool.setUsedBytes(usedBytes);
                                 poolNeedsUpdating = true;
                             }
                             if (poolNeedsUpdating) {

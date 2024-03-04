@@ -331,6 +331,118 @@ public class Script implements Callable<String> {
         }
     }
 
+    public String executeIgnoreExitValue(OutputInterpreter interpreter, int exitValue) {
+        String[] command = _command.toArray(new String[_command.size()]);
+
+        if (_logger.isDebugEnabled()) {
+            _logger.debug(String.format("Executing: %s", buildCommandLine(command).split(KeyStoreUtils.KS_FILENAME)[0]));
+        }
+
+        try {
+            ProcessBuilder pb = new ProcessBuilder(command);
+            pb.redirectErrorStream(true);
+            if (_workDir != null)
+                pb.directory(new File(_workDir));
+
+            _process = pb.start();
+            if (_process == null) {
+                _logger.warn(String.format("Unable to execute: %s", buildCommandLine(command)));
+                return String.format("Unable to execute the command: %s", command[0]);
+            }
+
+            BufferedReader ir = new BufferedReader(new InputStreamReader(_process.getInputStream()));
+
+            _thread = Thread.currentThread();
+            ScheduledFuture<String> future = null;
+            if (_timeout > 0) {
+                future = s_executors.schedule(this, _timeout, TimeUnit.MILLISECONDS);
+            }
+
+            Task task = null;
+            if (interpreter != null && interpreter.drain()) {
+                task = new Task(interpreter, ir);
+                s_executors.execute(task);
+            }
+
+            while (true) {
+                _logger.debug(String.format("Executing while with timeout : %d", _timeout));
+                try {
+                    //process execution completed within timeout period
+                    if (_process.waitFor(_timeout, TimeUnit.MILLISECONDS)) {
+                        //process completed successfully
+                        if (_process.exitValue() == 0 || _process.exitValue() == exitValue) {
+                            _logger.debug("Execution is successful.");
+                            if (interpreter != null) {
+                                return interpreter.drain() ? task.getResult() : interpreter.interpret(ir);
+                            } else {
+                                // null return exitValue apparently
+                                return String.valueOf(_process.exitValue());
+                            }
+                        } else { //process failed
+                            break;
+                        }
+                    } //timeout
+                } catch (InterruptedException e) {
+                    if (!_isTimeOut) {
+                        /*
+                         * This is not timeout, we are interrupted by others,
+                         * continue
+                         */
+                        _logger.debug("We are interrupted but it's not a timeout, just continue");
+                        continue;
+                    }
+                } finally {
+                    if (future != null) {
+                        future.cancel(false);
+                    }
+                    Thread.interrupted();
+                }
+
+                //timeout without completing the process
+                TimedOutLogger log = new TimedOutLogger(_process);
+                Task timedoutTask = new Task(log, ir);
+
+                timedoutTask.run();
+                if (!_passwordCommand) {
+                    _logger.warn(String.format("Timed out: %s.  Output is: %s", buildCommandLine(command), timedoutTask.getResult()));
+                } else {
+                    _logger.warn(String.format("Timed out: %s", buildCommandLine(command)));
+                }
+
+                return ERR_TIMEOUT;
+            }
+
+            _logger.debug(String.format("Exit value is %d", _process.exitValue()));
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(_process.getInputStream()), 128);
+
+            String error;
+            if (interpreter != null) {
+                error = interpreter.processError(reader);
+            } else {
+                error = String.valueOf(_process.exitValue());
+            }
+
+            if (_logger.isDebugEnabled()) {
+                _logger.debug(error);
+            }
+            return error;
+        } catch (SecurityException ex) {
+            _logger.warn("Security Exception....not running as root?", ex);
+            return stackTraceAsString(ex);
+        } catch (Exception ex) {
+            _logger.warn(String.format("Exception: %s", buildCommandLine(command)), ex);
+            return stackTraceAsString(ex);
+        } finally {
+            if (_process != null) {
+                IOUtils.closeQuietly(_process.getErrorStream());
+                IOUtils.closeQuietly(_process.getOutputStream());
+                IOUtils.closeQuietly(_process.getInputStream());
+                _process.destroyForcibly();
+            }
+        }
+    }
+
     @Override
     public String call() {
         try {
@@ -564,4 +676,24 @@ public class Script implements Callable<String> {
         }
     }
 
+    public static String runBashScriptIgnoreExitValue(String command, int exitValue) {
+        return runBashScriptIgnoreExitValue(command, exitValue, 0);
+    }
+
+    public static String runBashScriptIgnoreExitValue(String command, int exitValue, int timeout) {
+
+        Script s = new Script("/bin/bash", timeout);
+        s.add("-c");
+        s.add(command);
+
+        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+        s.executeIgnoreExitValue(parser, exitValue);
+
+        String result = parser.getLines();
+        if (result == null || result.trim().isEmpty()) {
+            return null;
+        } else {
+            return result.trim();
+        }
+    }
 }
