@@ -105,7 +105,7 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
 
     @Override
     public void routeToAgent(final byte[] data) throws AgentUnavailableException {
-        logger.debug(LOG_SEQ_FORMATTED_STRING, Request.getSequence(data), "Routing from " + Request.getManagementServerId(data)));
+        logger.debug(LOG_SEQ_FORMATTED_STRING, Request.getSequence(data), "Routing from " + Request.getManagementServerId(data));
 
         if (_link == null) {
             logger.debug(LOG_SEQ_FORMATTED_STRING, Request.getSequence(data), "Link is closed");

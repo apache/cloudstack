@@ -71,7 +71,7 @@ public class SynchronousListener implements Listener {
 
     @Override
     public synchronized boolean processDisconnect(long agentId, Status state) {
-        logger.trace("Agent disconnected, agent id: " + agentId + ", state: " + state + ". Will notify waiters");
+        logger.trace("Agent disconnected, agent id: {}, state: {}. Will notify waiters", agentId, state);
 
         _disconnected = true;
         notifyAll();
@@ -127,7 +127,7 @@ public class SynchronousListener implements Listener {
         }
         profiler.stop();
 
-        logger.trace("Synchronized command - sending completed, time: " + profiler.getDurationInMillis() + ", answer: " +
+        logger.trace("Synchronized command - sending completed, time: {}, answer: {}", profiler.getDurationInMillis(),
             (_answers != null ? _answers[0].toString() : "null"));
         return _answers;
     }

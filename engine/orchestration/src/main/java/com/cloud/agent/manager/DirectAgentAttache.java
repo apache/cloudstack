@@ -60,7 +60,7 @@ public class DirectAgentAttache extends AgentAttache {
 
     @Override
     public void disconnect(Status state) {
-        logger.debug("Processing disconnect " + _id + "(" + _name + ")");
+        logger.debug("Processing disconnect {}({})", _id, _name);
 
         for (ScheduledFuture<?> future : _futures) {
             future.cancel(false);
