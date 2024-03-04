@@ -70,7 +70,7 @@ public class Hypervisor {
                 return null;
             }
 
-            HypervisorType storage = hypervisorTypeMap.get(name);
+            HypervisorType storage = hypervisorTypeMap.get(name.toLowerCase(Locale.ROOT));
             if (storage == null) {
                 throw new IllegalArgumentException("HypervisorType '" + name + "' not found");
             }
