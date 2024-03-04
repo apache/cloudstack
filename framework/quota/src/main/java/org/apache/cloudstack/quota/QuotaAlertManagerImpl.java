@@ -211,7 +211,7 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         BigDecimal thresholdBalance = quotaAccount.getQuotaMinBalance();
 
         logger.debug("Checking {} with accountBalance [{}], alertDate [{}] and lockable [{}] to see if a quota alert email should be sent.", account,
-                accountBalance, alertDate, lockable);
+                accountBalance, DateUtil.displayDateInTimezone(QuotaManagerImpl.getUsageAggregationTimeZone(), alertDate), lockable);
 
         boolean shouldSendEmail = alertDate == null || (balanceDate.after(alertDate) && getDifferenceDays(alertDate, new Date()) > 1);
 
