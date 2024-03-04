@@ -234,7 +234,7 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
                 return;
             }
         }
-            logger.debug("{} will not receive any quota alert emails in this round.", account);
+        logger.debug("{} will not receive any quota alert emails in this round.", account);
     }
 
     @Override
