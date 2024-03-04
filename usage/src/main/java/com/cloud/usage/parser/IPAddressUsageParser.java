@@ -25,6 +25,8 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.usage.UsageManagerImpl;
+import com.cloud.utils.DateUtil;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
@@ -149,10 +151,9 @@ public class IPAddressUsageParser {
         DecimalFormat dFormat = new DecimalFormat("#.######");
         String usageDisplay = dFormat.format(usage);
 
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Creating IP usage record with id: " + ipId + ", usage: " + usageDisplay + ", startDate: " + startDate + ", endDate: " + endDate +
-                ", for account: " + account.getId());
-        }
+        LOGGER.debug("Creating IP usage record with id [{}], usage [{}], startDate [{}], and endDate [{}], for account [{}].",
+                ipId, usageDisplay, DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), startDate),
+                DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), endDate), account.getId());
 
         String usageDesc = "IPAddress: " + ipAddress;
 
