@@ -42,6 +42,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.volume.AssignVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ChangeOfferingForVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.CheckAndRepairVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ExtractVolumeCmd;
@@ -216,6 +217,7 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.VmWork;
 import com.cloud.vm.VmWorkAttachVolume;
+import com.cloud.vm.VmWorkCheckAndRepairVolume;
 import com.cloud.vm.VmWorkConstants;
 import com.cloud.vm.VmWorkDetachVolume;
 import com.cloud.vm.VmWorkExtractVolume;
@@ -376,6 +378,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     public static ConfigKey<Long> storageTagRuleExecutionTimeout = new ConfigKey<>("Advanced", Long.class, "storage.tag.rule.execution.timeout", "2000", "The maximum runtime,"
             + " in milliseconds, to execute a storage tag rule; if it is reached, a timeout will happen.", true);
+
+    public static final ConfigKey<Boolean> AllowCheckAndRepairVolume = new ConfigKey<Boolean>("Advanced", Boolean.class, "volume.check.and.repair.leaks.before.use", "false",
+            "To check and repair the volume if it has any leaks before performing volume attach or VM start operations", true, ConfigKey.Scope.StoragePool);
 
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
 
@@ -1333,7 +1338,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     outcome.get();
                 } catch (InterruptedException e) {
                     throw new RuntimeException("Operation was interrupted", e);
-                } catch (java.util.concurrent.ExecutionException e) {
+                } catch (ExecutionException e) {
                     throw new RuntimeException("Execution exception", e);
                 }
 
@@ -1816,7 +1821,158 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         logger.debug(String.format("Volume [%s] has been successfully recovered, thus a new usage event %s has been published.", volume.getUuid(), EventTypes.EVENT_VOLUME_CREATE));
     }
 
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_CHECK, eventDescription = "checking volume and repair if needed", async = true)
+    public Pair<String, String> checkAndRepairVolume(CheckAndRepairVolumeCmd cmd) throws ResourceAllocationException {
+        long volumeId = cmd.getId();
+        String repair = cmd.getRepair();
 
+        final VolumeVO volume = _volsDao.findById(volumeId);
+        validationsForCheckVolumeOperation(volume);
+
+        Long vmId = volume.getInstanceId();
+        if (vmId != null) {
+            // serialize VM operation
+            return handleCheckAndRepairVolumeJob(vmId, volumeId, repair);
+        } else {
+            return handleCheckAndRepairVolume(volumeId, repair);
+        }
+    }
+
+    private Pair<String, String> handleCheckAndRepairVolume(Long volumeId, String repair) {
+        CheckAndRepairVolumePayload payload = new CheckAndRepairVolumePayload(repair);
+        VolumeInfo volumeInfo = volFactory.getVolume(volumeId);
+        volumeInfo.addPayload(payload);
+
+        Pair<String, String> result = volService.checkAndRepairVolume(volumeInfo);
+        return result;
+    }
+
+    private Pair<String, String> handleCheckAndRepairVolumeJob(Long vmId, Long volumeId, String repair) throws ResourceAllocationException {
+        AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
+        if (jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
+            // avoid re-entrance
+            VmWorkJobVO placeHolder = null;
+            placeHolder = createPlaceHolderWork(vmId);
+            try {
+                Pair<String, String> result = orchestrateCheckAndRepairVolume(volumeId, repair);
+                return result;
+            } finally {
+                _workJobDao.expunge(placeHolder.getId());
+            }
+        } else {
+            Outcome<Pair> outcome = checkAndRepairVolumeThroughJobQueue(vmId, volumeId, repair);
+            try {
+                outcome.get();
+            } catch (InterruptedException e) {
+                throw new RuntimeException("Operation is interrupted", e);
+            } catch (ExecutionException e) {
+                throw new RuntimeException("Execution exception--", e);
+            }
+
+            Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
+            if (jobResult != null) {
+                if (jobResult instanceof ConcurrentOperationException) {
+                    throw (ConcurrentOperationException)jobResult;
+                } else if (jobResult instanceof ResourceAllocationException) {
+                    throw (ResourceAllocationException)jobResult;
+                } else if (jobResult instanceof Throwable) {
+                    throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
+                }
+            }
+
+            // retrieve the entity url from job result
+            if (jobResult != null && jobResult instanceof Pair) {
+                return (Pair<String, String>) jobResult;
+            }
+
+            return null;
+        }
+    }
+
+    protected void validationsForCheckVolumeOperation(VolumeVO volume) {
+        Account caller = CallContext.current().getCallingAccount();
+        _accountMgr.checkAccess(caller, null, true, volume);
+
+        String volumeName = volume.getName();
+        Long vmId = volume.getInstanceId();
+        if (vmId != null) {
+            validateVMforCheckVolumeOperation(vmId, volumeName);
+        }
+
+        if (volume.getState() != Volume.State.Ready) {
+            throw new InvalidParameterValueException(String.format("Volume: %s is not in Ready state", volumeName));
+        }
+
+        HypervisorType hypervisorType = _volsDao.getHypervisorType(volume.getId());
+        if (!HypervisorType.KVM.equals(hypervisorType)) {
+            throw new InvalidParameterValueException(String.format("Check and Repair volumes is supported only for KVM hypervisor"));
+        }
+
+        if (!Arrays.asList(ImageFormat.QCOW2, ImageFormat.VDI).contains(volume.getFormat())) {
+            throw new InvalidParameterValueException("Volume format is not supported for checking and repair");
+        }
+    }
+
+    private void validateVMforCheckVolumeOperation(Long vmId, String volumeName) {
+        Account caller = CallContext.current().getCallingAccount();
+        UserVmVO vm = _userVmDao.findById(vmId);
+        if (vm == null) {
+            throw new InvalidParameterValueException(String.format("VM not found, please check the VM to which this volume %s is attached", volumeName));
+        }
+
+        _accountMgr.checkAccess(caller, null, true, vm);
+
+        if (vm.getState() != State.Stopped) {
+            throw new InvalidParameterValueException(String.format("VM to which the volume %s is attached should be in stopped state", volumeName));
+        }
+    }
+
+    private Pair<String, String> orchestrateCheckAndRepairVolume(Long volumeId, String repair) {
+
+        VolumeInfo volume = volFactory.getVolume(volumeId);
+
+        if (volume == null) {
+            throw new InvalidParameterValueException("Checking volume and repairing failed due to volume:" + volumeId + " doesn't exist");
+        }
+
+        CheckAndRepairVolumePayload payload = new CheckAndRepairVolumePayload(repair);
+        volume.addPayload(payload);
+
+        return volService.checkAndRepairVolume(volume);
+    }
+
+    public Outcome<Pair> checkAndRepairVolumeThroughJobQueue(final Long vmId, final Long volumeId, String repair) {
+
+        final CallContext context = CallContext.current();
+        final User callingUser = context.getCallingUser();
+        final Account callingAccount = context.getCallingAccount();
+
+        final VMInstanceVO vm = _vmInstanceDao.findById(vmId);
+
+        VmWorkJobVO workJob = new VmWorkJobVO(context.getContextId());
+
+        workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
+        workJob.setCmd(VmWorkCheckAndRepairVolume.class.getName());
+
+        workJob.setAccountId(callingAccount.getId());
+        workJob.setUserId(callingUser.getId());
+        workJob.setStep(VmWorkJobVO.Step.Starting);
+        workJob.setVmType(VirtualMachine.Type.Instance);
+        workJob.setVmInstanceId(vm.getId());
+        workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
+
+        // save work context info (there are some duplications)
+        VmWorkCheckAndRepairVolume workInfo = new VmWorkCheckAndRepairVolume(callingUser.getId(), callingAccount.getId(), vm.getId(),
+                VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId, repair);
+        workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+
+        _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
+
+        AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(workJob.getId());
+
+        return new VmJobCheckAndRepairVolumeOutcome(workJob);
+    }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_CHANGE_DISK_OFFERING, eventDescription = "Changing disk offering of a volume")
@@ -1986,7 +2142,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     outcome.get();
                 } catch (InterruptedException e) {
                     throw new RuntimeException("Operation was interrupted", e);
-                } catch (java.util.concurrent.ExecutionException e) {
+                } catch (ExecutionException e) {
                     throw new RuntimeException("Execution exception", e);
                 }
 
@@ -2773,7 +2929,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 outcome.get();
             } catch (InterruptedException e) {
                 throw new RuntimeException("Operation is interrupted", e);
-            } catch (java.util.concurrent.ExecutionException e) {
+            } catch (ExecutionException e) {
                 throw new RuntimeException("Execution excetion", e);
             }
 
@@ -3181,7 +3337,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     outcome.get();
                 } catch (InterruptedException e) {
                     throw new RuntimeException("Operation is interrupted", e);
-                } catch (java.util.concurrent.ExecutionException e) {
+                } catch (ExecutionException e) {
                     throw new RuntimeException("Execution excetion", e);
                 }
 
@@ -3510,7 +3666,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     outcome.get();
                 } catch (InterruptedException e) {
                     throw new RuntimeException("Operation is interrupted", e);
-                } catch (java.util.concurrent.ExecutionException e) {
+                } catch (ExecutionException e) {
                     throw new RuntimeException("Execution excetion", e);
                 }
 
@@ -3827,7 +3983,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     outcome.get();
                 } catch (InterruptedException e) {
                     throw new RuntimeException("Operation is interrupted", e);
-                } catch (java.util.concurrent.ExecutionException e) {
+                } catch (ExecutionException e) {
                     throw new RuntimeException("Execution excetion", e);
                 }
 
@@ -4250,6 +4406,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             // if we don't have a host, the VM we are attaching the disk to has never been started before
             if (host != null) {
                 try {
+                    volService.checkAndRepairVolumeBasedOnConfig(volFactory.getVolume(volumeToAttach.getId()), host);
+                } catch (Exception e) {
+                    logger.debug(String.format("Unable to check and repair volume [%s] on host [%s], due to %s.", volumeToAttach.getName(), host, e.getMessage()));
+                }
+
+                try {
                     volService.grantAccess(volFactory.getVolume(volumeToAttach.getId()), host, dataStore);
                 } catch (Exception e) {
                     volService.revokeAccess(volFactory.getVolume(volumeToAttach.getId()), host, dataStore);
@@ -4594,6 +4756,24 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
     }
 
+    public class VmJobCheckAndRepairVolumeOutcome extends OutcomeImpl<Pair> {
+
+        public VmJobCheckAndRepairVolumeOutcome(final AsyncJob job) {
+            super(Pair.class, job, VmJobCheckInterval.value(), new Predicate() {
+                @Override
+                public boolean checkCondition() {
+                    AsyncJobVO jobVo = _entityMgr.findById(AsyncJobVO.class, job.getId());
+                    assert (jobVo != null);
+                    if (jobVo == null || jobVo.getStatus() != JobInfo.Status.IN_PROGRESS) {
+                        return true;
+                    }
+
+                    return false;
+                }
+            }, AsyncJob.Topics.JOB_STATE);
+        }
+    }
+
     public Outcome<Volume> attachVolumeToVmThroughJobQueue(final Long vmId, final Long volumeId, final Long deviceId) {
 
         final CallContext context = CallContext.current();
@@ -4831,6 +5011,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, _jobMgr.marshallResultObject(work.getSnapshotId()));
     }
 
+    @ReflectionUse
+    private Pair<JobInfo.Status, String> orchestrateCheckAndRepairVolume(VmWorkCheckAndRepairVolume work) throws Exception {
+        Account account = _accountDao.findById(work.getAccountId());
+        Pair<String, String> result = orchestrateCheckAndRepairVolume(work.getVolumeId(), work.getRepair());
+        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, _jobMgr.marshallResultObject(result));
+    }
+
     @Override
     public Pair<JobInfo.Status, String> handleVmWorkJob(VmWork work) throws Exception {
         return _jobHandlerProxy.handleVmWorkJob(work);
@@ -4867,7 +5054,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 AllowUserExpungeRecoverVolume,
                 MatchStoragePoolTagsWithDiskOffering,
                 UseHttpsToUpload,
-                WaitDetachDevice
+                WaitDetachDevice,
+                AllowCheckAndRepairVolume
         };
     }
 }

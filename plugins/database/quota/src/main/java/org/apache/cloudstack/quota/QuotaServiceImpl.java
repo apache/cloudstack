@@ -53,7 +53,7 @@ import org.apache.cloudstack.quota.dao.QuotaUsageDao;
 import org.apache.cloudstack.quota.vo.QuotaAccountVO;
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.apache.cloudstack.quota.vo.QuotaUsageVO;
-import org.apache.cloudstack.utils.usage.UsageUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Config;
@@ -85,7 +85,6 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
     private QuotaResponseBuilder _respBldr;
 
     private TimeZone _usageTimezone;
-    private int _aggregationDuration = 0;
 
     public QuotaServiceImpl() {
         super();
@@ -94,21 +93,10 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-        String timeZoneStr = _configDao.getValue(Config.UsageAggregationTimezone.toString());
-        String aggregationRange = _configDao.getValue(Config.UsageStatsJobAggregationRange.toString());
-        if (timeZoneStr == null) {
-            timeZoneStr = "GMT";
-        }
+
+        String timeZoneStr = ObjectUtils.defaultIfNull(_configDao.getValue(Config.UsageAggregationTimezone.toString()), "GMT");
         _usageTimezone = TimeZone.getTimeZone(timeZoneStr);
 
-        _aggregationDuration = Integer.parseInt(aggregationRange);
-        if (_aggregationDuration < UsageUtils.USAGE_AGGREGATION_RANGE_MIN) {
-            logger.warn("Usage stats job aggregation range is to small, using the minimum value of " + UsageUtils.USAGE_AGGREGATION_RANGE_MIN);
-            _aggregationDuration = UsageUtils.USAGE_AGGREGATION_RANGE_MIN;
-        }
-        if (logger.isDebugEnabled()) {
-            logger.debug("Usage timezone = " + _usageTimezone + " AggregationDuration=" + _aggregationDuration);
-        }
         return true;
     }
 
