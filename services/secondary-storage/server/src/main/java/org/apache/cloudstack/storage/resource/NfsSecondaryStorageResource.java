@@ -2290,6 +2290,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         String intf = "eth1";
         String rule =  String.format("OUTPUT -o %s -d %s -p tcp -m state --state NEW -m tcp  -j ACCEPT", intf, destCidr);
 
+        s_logger.info(String.format("Adding rule if required: {}" , rule));
         if (ruleNeedsAdding(rule)) {
             Script command = new Script("/bin/bash", s_logger);
             command.add("-c");
