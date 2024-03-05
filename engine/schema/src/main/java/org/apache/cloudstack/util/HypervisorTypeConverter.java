@@ -23,8 +23,6 @@ import javax.persistence.Converter;
 
 /**
  * Converts {@link com.cloud.hypervisor.Hypervisor.HypervisorType} to and from {@link String} using {@link com.cloud.hypervisor.Hypervisor.HypervisorType#name()}.
- *
- * @author mprokopchuk
  */
 @Converter
 public class HypervisorTypeConverter implements AttributeConverter<Hypervisor.HypervisorType, String> {
