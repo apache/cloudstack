@@ -104,6 +104,7 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
             return jobs;
         }
         if (event.getResourceAccountId() == null) {
+            logger.warn("Skipping delivering event [ID: {}, description: {}] to any webhook as account ID is missing");
             throw new EventBusException(String.format("Account missing for the event ID: %s", event.getEventUuid()));
         }
         List<Long> domainIds = new ArrayList<>();

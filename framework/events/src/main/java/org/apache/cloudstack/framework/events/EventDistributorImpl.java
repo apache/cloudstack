@@ -60,8 +60,8 @@ public class EventDistributorImpl extends ManagerBase implements EventDistributo
             try {
                 bus.publish(event);
             } catch (EventBusException e) {
-                logger.warn("Failed to publish for bus {} of event [category: {}, type: {}]",
-                        bus.getName(), event.getEventCategory(), event.getEventType());
+                logger.warn("Failed to publish event [category: {}, type: {}] on bus {}",
+                        event.getEventCategory(), event.getEventType(), bus.getName());
                 if (logger.isTraceEnabled()) {
                     logger.trace(event.getDescription());
                 }

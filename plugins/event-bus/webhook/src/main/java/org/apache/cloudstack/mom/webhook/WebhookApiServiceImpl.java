@@ -434,7 +434,7 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         List<WebhookDeliveryResponse> responsesList = new ArrayList<>();
         ManagementServerHostVO host = basicWebhookDeliveryApiCheck(caller, id, webhookId, managementServerId);
 
-        Filter searchFilter = new Filter(WebhookDeliveryVO.class, "id", false, cmd.getStartIndex(),
+        Filter searchFilter = new Filter(WebhookDeliveryJoinVO.class, "id", false, cmd.getStartIndex(),
                 cmd.getPageSizeVal());
         List<Long> webhookIds = new ArrayList<>();
         if (webhookId != null) {
