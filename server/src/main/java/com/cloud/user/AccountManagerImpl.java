@@ -1817,9 +1817,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         if (caller.getId() == accountId) {
             Domain domain = _domainDao.findById(account.getDomainId());
-            throw new InvalidParameterValueException(String.format("The caller is requesting to delete their own account. As a security measure, ACS will not allow this " +
-                            "operation." +
-                            "To delete account %s (ID: %s, Domain: %s), request to another user with permission to execute the operation.",
+            throw new InvalidParameterValueException(String.format("Deletion of your own account is not allowed. To delete account %s (ID: %s, Domain: %s), " +
+                            "request to another user with permissions to perform the operation.",
                     account.getAccountName(), account.getUuid(), domain.getUuid()));
         }
 
@@ -1843,7 +1842,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return deleteAccount(account, callerUserId, caller);
     }
 
-    private boolean isDeleteNeeded(AccountVO account, long accountId, Account caller) {
+    protected boolean isDeleteNeeded(AccountVO account, long accountId, Account caller) {
         if (account == null) {
             logger.info(String.format("The account, identified by id %d, doesn't exist", accountId ));
             return false;
