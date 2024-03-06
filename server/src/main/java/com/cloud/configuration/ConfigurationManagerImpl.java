@@ -535,7 +535,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return true;
     }
 
-    private void populateConfigValuesForValidationSet() {
+    protected void populateConfigValuesForValidationSet() {
         configValuesForValidation = new HashSet<String>();
         configValuesForValidation.add("event.purge.interval");
         configValuesForValidation.add("account.cleanup.interval");
@@ -565,7 +565,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         configValuesForValidation.add(VM_USERDATA_MAX_LENGTH_STRING);
     }
 
-    private void weightBasedParametersForValidation() {
+    protected void weightBasedParametersForValidation() {
         weightBasedParametersForValidation = new HashSet<String>();
         weightBasedParametersForValidation.add(AlertManager.CPUCapacityThreshold.key());
         weightBasedParametersForValidation.add(AlertManager.StorageAllocatedCapacityThreshold.key());
@@ -589,7 +589,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     }
 
-    private void overProvisioningFactorsForValidation() {
+    protected void overProvisioningFactorsForValidation() {
         overprovisioningFactorsForValidation = new HashSet<String>();
         overprovisioningFactorsForValidation.add(CapacityManager.MemOverprovisioningFactor.key());
         overprovisioningFactorsForValidation.add(CapacityManager.CpuOverprovisioningFactor.key());
@@ -640,7 +640,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
         if (err) {
-            throw new InvalidParameterValueException("Invalid IP address value(s) specified for the config value");
+            throw new InvalidParameterValueException("Invalid IP address value(s) specified for the config value.");
         }
     }
 
@@ -682,9 +682,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @DB
     public String updateConfiguration(final long userId, final String name, final String category, String value, final String scope, final Long resourceId) {
         final String validationMsg = validateConfigurationValue(name, value, scope);
-
         if (validationMsg != null) {
-            logger.error("Invalid configuration option, name: " + name + ", value:" + value);
+            logger.error("Invalid value [%s] for configuration [%s] due to [%s].", value, name, validationMsg);
             throw new InvalidParameterValueException(validationMsg);
         }
 
@@ -944,8 +943,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             category = config.getCategory();
         }
 
-        validateIpAddressRelatedConfigValues(name, value);
-
         if (value == null) {
             return _configDao.findByName(name);
         }
@@ -1177,15 +1174,21 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return new Pair<Configuration, String>(_configDao.findByName(name), newValue);
     }
 
-    private String validateConfigurationValue(final String name, String value, final String scope) {
-
+    /**
+     * Validates whether a value is valid for the specified configuration. This includes type and range validation.
+     * @param name name of the configuration.
+     * @param value value to validate.
+     * @param scope scope of the configuration.
+     * @return null if the value is valid; otherwise, returns an error message.
+     */
+    protected String validateConfigurationValue(String name, String value, String scope) {
         final ConfigurationVO cfg = _configDao.findByName(name);
         if (cfg == null) {
             logger.error("Missing configuration variable " + name + " in configuration table");
             return "Invalid configuration variable.";
         }
 
-        final String configScope = cfg.getScope();
+        String configScope = cfg.getScope();
         if (scope != null) {
             if (!configScope.contains(scope) &&
                     !(ENABLE_ACCOUNT_SETTINGS_FOR_DOMAIN.value() && configScope.contains(ConfigKey.Scope.Account.toString()) &&
@@ -1194,11 +1197,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 return "Invalid scope id provided for the parameter " + name;
             }
         }
-        Class<?> type = null;
-        final Config configuration = Config.getConfig(name);
+        Class<?> type;
+        Config configuration = Config.getConfig(name);
         if (configuration == null) {
             logger.warn("Did not find configuration " + name + " in Config.java. Perhaps moved to ConfigDepot");
-            final ConfigKey<?> configKey = _configDepot.get(name);
+            ConfigKey<?> configKey = _configDepot.get(name);
             if(configKey == null) {
                 logger.warn("Did not find configuration " + name + " in ConfigDepot too.");
                 return null;
@@ -1207,130 +1210,136 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         } else {
             type = configuration.getType();
         }
-        //no need to validate further if a
-        //config can have null value.
-        String errMsg = null;
+
+        boolean isTypeValid = validateValueType(value, type);
+        if (!isTypeValid) {
+            return String.format("Value [%s] is not a valid [%s].", value, type);
+        }
+
+        return validateValueRange(name, value, type, configuration);
+    }
+
+    /**
+     * Returns whether a value is valid for a configuration of the provided type.
+     * Valid configuration values are:
+     *
+     * <ul>
+     *     <li>String: any value, including null;</li>
+     *     <li>Character: any value, including null;</li>
+     *     <li>Boolean: strings that contain "true" or "false" (case-sensitive);</li>
+     *     <li>Integer: strings that contain exactly an integer. Values that contain a decimal aren't valid;</li>
+     *     <li>Short, Long, Float and Double: strings that contain an integer or a decimal.</li>
+     * </ul>
+     *
+     * If a type isn't listed here, then the value will be considered invalid.
+     * @param value value to validate.
+     * @param type type of the configuration.
+     * @return boolean indicating whether the value is valid.
+     */
+    protected boolean validateValueType(String value, Class<?> type) {
+        if (type == String.class || type == Character.class) {
+            return true;
+        }
+
         try {
-            if (type.equals(Integer.class)) {
-                errMsg = "There was error in trying to parse value: " + value + ". Please enter a valid integer value for parameter " + name;
+            if (type == Boolean.class) {
+                return value.equals("true") || value.equals("false");
+            } else if (type == Integer.class || type == Long.class || type == Short.class) {
                 Integer.parseInt(value);
-            } else if (type.equals(Float.class)) {
-                errMsg = "There was error in trying to parse value: " + value + ". Please enter a valid float value for parameter " + name;
-                Float.parseFloat(value);
-            } else if (type.equals(Long.class)) {
-                errMsg = "There was error in trying to parse value: " + value + ". Please enter a valid long value for parameter " + name;
-                Long.parseLong(value);
+            } else if (type == Float.class || type == Double.class) {
+                Double.parseDouble(value);
+            } else {
+                return false;
             }
-        } catch (final Exception e) {
-            // catching generic exception as some throws NullPointerException and some throws NumberFormatExcpeion
-            logger.error(errMsg);
-            return errMsg;
+            return true;
+        } catch (NullPointerException | NumberFormatException e) {
+            return false;
+        }
+    }
+
+    /**
+     * If the specified configuration contains a range, validates if the value is in that range. If it doesn't contain
+     * a range, any value is considered valid.
+     * The value must be previously checked by `validateValueType` so there aren't casting exceptions here.
+     * @param name name of the configuration.
+     * @param value value to validate.
+     * @param type type of the value.
+     * @param configuration if the configuration uses Config instead of ConfigKey, the Config object; null otherwise.
+     * @return if the value is valid, returns null; if not, returns an error message.
+     */
+    protected String validateValueRange(String name, String value, Class<?> type, Config configuration) {
+        if (type.equals(Float.class)) {
+            Float val = Float.parseFloat(value);
+            if (overprovisioningFactorsForValidation.contains(name) && val <= 0f) {
+                return String.format("Value for configuration [%s] should be greater than 0.", name);
+            } else if (weightBasedParametersForValidation.contains(name) && (val < 0f || val > 1f)) {
+                return String.format("Please enter a value between 0 and 1 for the configuration parameter: [%s].", name);
+            }
         }
 
-        if (value == null) {
-            if (type.equals(Boolean.class)) {
-                return "Please enter either 'true' or 'false'.";
-            }
-            if (overprovisioningFactorsForValidation.contains(name)) {
-                final String msg = "value cannot be null for the parameter " + name;
-                logger.error(msg);
-                return msg;
-            }
-            return null;
-        }
-
-        value = value.trim();
-        try {
-            if (overprovisioningFactorsForValidation.contains(name) && Float.parseFloat(value) <= 0f) {
-                final String msg = name + " should be greater than 0";
-                logger.error(msg);
-                throw new InvalidParameterValueException(msg);
-            }
-        } catch (final NumberFormatException e) {
-            final String msg = "There was an error trying to parse the float value for: " + name;
-            logger.error(msg);
-            throw new InvalidParameterValueException(msg);
-        }
-
-        if (type.equals(Boolean.class)) {
-            if (!(value.equals("true") || value.equals("false"))) {
-                logger.error("Configuration variable " + name + " is expecting true or false instead of " + value);
-                return "Please enter either 'true' or 'false'.";
-            }
-            return null;
-        }
-
-        if (type.equals(Integer.class) && NetworkModel.MACIdentifier.key().equalsIgnoreCase(name)) {
-            try {
-                final int val = Integer.parseInt(value);
+        if (type.equals(Integer.class)) {
+            int val = Integer.parseInt(value);
+            if (NetworkModel.MACIdentifier.key().equalsIgnoreCase(name)) {
                 //The value need to be between 0 to 255 because the mac generation needs a value of 8 bit
                 //0 value is considered as disable.
-                if(val < 0 || val > 255){
-                    throw new InvalidParameterValueException(name+" value should be between 0 and 255. 0 value will disable this feature");
+                if (val < 0 || val > 255){
+                    return String.format("[%s] value should be between 0 and 255. 0 value will disable this feature.", name);
                 }
-            } catch (final NumberFormatException e) {
-                logger.error("There was an error trying to parse the integer value for:" + name);
-                throw new InvalidParameterValueException("There was an error trying to parse the integer value for:" + name);
-            }
-        }
-
-        if (type.equals(Integer.class) && configValuesForValidation.contains(name)) {
-            try {
-                final int val = Integer.parseInt(value);
+            } else if (configValuesForValidation.contains(name)) {
                 if (val <= 0) {
-                    throw new InvalidParameterValueException("Please enter a positive value for the configuration parameter:" + name);
+                    return String.format("Please enter a positive value for the configuration parameter: [%s].", name);
                 }
                 if ("vm.password.length".equalsIgnoreCase(name) && val < 6) {
-                    throw new InvalidParameterValueException("Please enter a value greater than 5 for the configuration parameter:" + name);
+                    return String.format("Please enter a value greater than 5 for the configuration parameter: [%s].",  name);
                 }
-                if ("remote.access.vpn.psk.length".equalsIgnoreCase(name)) {
-                    if (val < 8) {
-                        throw new InvalidParameterValueException("Please enter a value greater than 7 for the configuration parameter:" + name);
-                    }
-                    if (val > 256) {
-                        throw new InvalidParameterValueException("Please enter a value less than 257 for the configuration parameter:" + name);
-                    }
+                if ("remote.access.vpn.psk.length".equalsIgnoreCase(name) && (val < 8 || val > 256)) {
+                    return String.format("Please enter a value greater than 7 and less than 257 for the configuration parameter: [%s].", name);
                 }
-                if (VM_USERDATA_MAX_LENGTH_STRING.equalsIgnoreCase(name)) {
-                    if (val > 1048576) {
-                        throw new InvalidParameterValueException("Please enter a value less than 1048576 for the configuration parameter:" + name);
-                    }
+                if (VM_USERDATA_MAX_LENGTH_STRING.equalsIgnoreCase(name) && val > 1048576) {
+                    return String.format("Please enter a value less than 1048577 for the configuration parameter: [%s].", name);
                 }
-            } catch (final NumberFormatException e) {
-                logger.error("There was an error trying to parse the integer value for:" + name);
-                throw new InvalidParameterValueException("There was an error trying to parse the integer value for:" + name);
             }
         }
 
-        if (type.equals(Float.class)) {
-            try {
-                final Float val = Float.parseFloat(value);
-                if (weightBasedParametersForValidation.contains(name) && (val < 0f || val > 1f)) {
-                    throw new InvalidParameterValueException("Please enter a value between 0 and 1 for the configuration parameter: " + name);
-                }
-            } catch (final NumberFormatException e) {
-                logger.error("There was an error trying to parse the float value for:" + name);
-                throw new InvalidParameterValueException("There was an error trying to parse the float value for:" + name);
-            }
-        }
+        validateIpAddressRelatedConfigValues(name, value);
 
-        if (configuration == null ) {
-            //range validation has to be done per case basis, for now
-            //return in case of Configkey parameters
+        if (!shouldValidateConfigRange(name, value, configuration)) {
             return null;
+        }
+
+        String[] range = configuration.getRange().split(",");
+        if (type.equals(Integer.class)) {
+            return validateIfIntValueIsInRange(name, value, range[0]);
+        }
+        return validateIfStringValueIsInRange(name, value, range);
+    }
+
+    /**
+     * Returns a boolean indicating whether a Config's range should be validated. It should not be validated when:</br>
+     * <ul>
+     *  <li>The value is null;</li>
+     *  <li>The configuration uses ConfigKey instead of Config;</li>
+     *  <li>The Config does not have a specified range.</li>
+     * </ul>
+     */
+    protected boolean shouldValidateConfigRange(String name, String value, Config configuration) {
+        if (value == null) {
+            logger.debug("Not proceeding with configuration [{}]'s range validation, as its provided value is null.", name);
+            return false;
+        }
+
+        if (configuration == null) {
+            logger.debug("Not proceeding with configuration [{}]'s range validation, as it uses ConfigKey instead of Config.", name);
+            return false;
         }
 
         if (configuration.getRange() == null) {
-            return null;
+            logger.debug("Not proceeding with configuration [{}]'s range validation, as it does not have a specified range.", name);
+            return false;
         }
-        String[] range = configuration.getRange().split(",");
 
-        if (type.equals(String.class)) {
-            return validateIfStringValueIsInRange(name, value, range);
-        } else if (type.equals(Integer.class)) {
-            return validateIfIntValueIsInRange(name, value, range[0]);
-        }
-        return String.format("Invalid value for configuration [%s].", name);
+        logger.debug("Proceeding with configuration [{}]'s range validation.", name);
+        return true;
     }
 
     /**

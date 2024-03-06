@@ -49,6 +49,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
@@ -60,7 +61,6 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.SearchCriteria;
 import org.apache.cloudstack.api.command.admin.offering.UpdateDiskOfferingCmd;
 import org.apache.cloudstack.resourcedetail.DiskOfferingDetailVO;
-import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -94,10 +94,12 @@ import static org.mockito.Mockito.times;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ConfigurationManagerImplTest {
+
+    @InjectMocks
+    @Spy
+    ConfigurationManagerImpl configurationManagerImplSpy;
     @Mock
     ConfigDepot configDepot;
-    @InjectMocks
-    ConfigurationManagerImpl configurationManagerImplSpy = Mockito.spy(new ConfigurationManagerImpl());
     @Mock
     SearchCriteria<DiskOfferingDetailVO> searchCriteriaDiskOfferingDetailMock;
     @Mock
@@ -113,12 +115,13 @@ public class ConfigurationManagerImplTest {
     @Mock
     EntityManager entityManagerMock;
     @Mock
-    DiskOfferingDetailsDao diskOfferingDetailsDao;
+    ConfigurationVO configurationVOMock;
+    @Mock
+    ConfigKey configKeyMock;
     @Spy
     DiskOfferingVO diskOfferingVOSpy;
     @Mock
     UpdateDiskOfferingCmd updateDiskOfferingCmdMock;
-
     @Mock
     NsxProviderDao nsxProviderDao;
     @Mock
@@ -173,24 +176,13 @@ public class ConfigurationManagerImplTest {
 
     @Before
     public void setUp() throws Exception {
-        configurationManagerImplSpy._configDepot = configDepot;
-        configurationManagerImplSpy.nsxProviderDao = nsxProviderDao;
-        configurationManagerImplSpy._zoneDao = zoneDao;
-        configurationManagerImplSpy._hostDao = hostDao;
-        configurationManagerImplSpy._podDao = podDao;
-        configurationManagerImplSpy._privateIpAddressDao = ipAddressDao;
-        configurationManagerImplSpy._publicIpAddressDao = publicIpAddressDao;
-        configurationManagerImplSpy._vmInstanceDao = vmInstanceDao;
-        configurationManagerImplSpy._volumeDao = volumeDao;
-        configurationManagerImplSpy._physicalNetworkDao = physicalNetworkDao;
-        configurationManagerImplSpy._imageStoreDao = imageStoreDao;
-        configurationManagerImplSpy._vlanDao = vlanDao;
-        configurationManagerImplSpy._capacityDao = capacityDao;
-        configurationManagerImplSpy._dedicatedDao = dedicatedResourceDao;
-        configurationManagerImplSpy._configDao = configDao;
-        configurationManagerImplSpy._networkOfferingDao = networkOfferingDao;
-        configurationManagerImplSpy._networkSvc = networkService;
-        configurationManagerImplSpy._networkModel = networkModel;
+        Mockito.when(configurationVOMock.getScope()).thenReturn(ConfigKey.Scope.Global.name());
+        Mockito.when(configDao.findByName(Mockito.anyString())).thenReturn(configurationVOMock);
+        Mockito.when(configDepot.get(Mockito.anyString())).thenReturn(configKeyMock);
+
+        configurationManagerImplSpy.populateConfigValuesForValidationSet();
+        configurationManagerImplSpy.weightBasedParametersForValidation();
+        configurationManagerImplSpy.overProvisioningFactorsForValidation();
         ReflectionTestUtils.setField(configurationManagerImplSpy, "templateZoneDao", vmTemplateZoneDao);
         ReflectionTestUtils.setField(configurationManagerImplSpy, "annotationDao", annotationDao);
 
@@ -203,7 +195,6 @@ public class ConfigurationManagerImplTest {
         String testVariable = configurationManagerImplSpy.validateIfIntValueIsInRange("String name", "3", "1-5");
         Assert.assertNull(testVariable);
     }
-
 
     @Test
     public void validateIfIntValueIsInRangeTestInvalidValueReturnString() {
@@ -563,5 +554,217 @@ public class ConfigurationManagerImplTest {
         Mockito.doReturn(domainMock).when(entityManagerMock).findById(Domain.class, 1L);
 
         Assert.assertThrows(InvalidParameterValueException.class, () -> configurationManagerImplSpy.checkIfDomainIsChildDomain(diskOfferingMock, accountMock, userMock, filteredDomainIds));
+    }
+
+    @Test
+    public void validateConfigurationValueTestValidatesValueType() {
+        Mockito.when(configKeyMock.type()).thenReturn(Integer.class);
+        configurationManagerImplSpy.validateConfigurationValue("validate.type", "100", ConfigKey.Scope.Global.name());
+        Mockito.verify(configurationManagerImplSpy).validateValueType("100", Integer.class);
+    }
+
+    @Test
+    public void validateConfigurationValueTestValidatesValueRange() {
+        Mockito.when(configKeyMock.type()).thenReturn(Integer.class);
+        configurationManagerImplSpy.validateConfigurationValue("validate.range", "100", ConfigKey.Scope.Global.name());
+        Mockito.verify(configurationManagerImplSpy).validateValueRange("validate.range", "100", Integer.class, null);
+    }
+
+    @Test
+    public void validateValueTypeTestReturnsTrueWhenValueIsNullAndTypeIsString() {
+        Assert.assertTrue(configurationManagerImplSpy.validateValueType(null, String.class));
+    }
+
+    @Test
+    public void validateValueTypeTestReturnsTrueWhenValueIsNumericAndTypeIsString() {
+        Assert.assertTrue(configurationManagerImplSpy.validateValueType("1", String.class));
+    }
+
+    @Test
+    public void validateValueTypeTestReturnsTrueWhenValueIsStringAndTypeIsString() {
+        Assert.assertTrue(configurationManagerImplSpy.validateValueType("test", String.class));
+    }
+
+    @Test
+    public void validateValueTypeTestReturnsFalseWhenValueIsNullAndTypeIsBoolean() {
+        Assert.assertFalse(configurationManagerImplSpy.validateValueType(null, Boolean.class));
+    }
+
+    @Test
+    public void validateValueTypeTestReturnsFalseWhenValueIsNumericAndTypeIsBoolean() {
+        Assert.assertFalse(configurationManagerImplSpy.validateValueType("1", Boolean.class));
+    }
+
+    @Test
+    public void validateValueTypeTestReturnsFalseWhenValueIsStringAndTypeIsBoolean() {
+        Assert.assertFalse(configurationManagerImplSpy.validateValueType("test", Boolean.class));
+    }
+
+    @Test
+    public void validateValueTypeTestReturnsTrueWhenValueIsTrueAndTypeIsBoolean() {
+        Assert.assertTrue(configurationManagerImplSpy.validateValueType("true", Boolean.class));
+
+    }
+
+    @Test
+    public void validateValueTypeTestReturnsTrueWhenValueIsFalseAndTypeIsBoolean() {
+        Assert.assertTrue(configurationManagerImplSpy.validateValueType("false", Boolean.class));
+    }
+
+    @Test
+    public void validateValueTypeTestReturnsFalseWhenValueIsNullAndTypeIsInteger() {
+        Assert.assertFalse(configurationManagerImplSpy.validateValueType(null, Integer.class));
+    }
+
+    @Test
+    public void validateValueTypeTestReturnsTrueWhenValueIsIntegerAndTypeIsInteger() {
+        Assert.assertTrue(configurationManagerImplSpy.validateValueType("1", Integer.class));
+    }
+
+    @Test
+    public void validateValueTypeTestReturnsFalseWhenValueIsDecimalAndTypeIsInteger() {
+        Assert.assertFalse(configurationManagerImplSpy.validateValueType("1.1", Integer.class));
+    }
+
+    @Test
+    public void validateValueTypeTestReturnsFalseWhenValueIsStringAndTypeIsInteger() {
+        Assert.assertFalse(configurationManagerImplSpy.validateValueType("test", Integer.class));
+    }
+
+    @Test
+    public void validateValueTypeTestReturnsFalseWhenValueIsNullAndTypeIsShort() {
+        Assert.assertFalse(configurationManagerImplSpy.validateValueType(null, Short.class));
+    }
+
+    @Test
+    public void validateValueTypeTestReturnsTrueWhenValueIsIntegerAndTypeIsShort() {
+        Assert.assertTrue(configurationManagerImplSpy.validateValueType("1", Short.class));
+    }
+
+    @Test
+    public void validateValueTypeTestReturnsFalseWhenValueIsDecimalAndTypeIsShort() {
+        Assert.assertFalse(configurationManagerImplSpy.validateValueType("1.1", Short.class));
+    }
+
+    @Test
+    public void validateValueTypeTestReturnsFalseWhenValueIsStringAndTypeIsShort() {
+        Assert.assertFalse(configurationManagerImplSpy.validateValueType("test", Short.class));
+    }
+
+    @Test
+    public void validateValueTypeTestReturnsFalseWhenValueIsNullAndTypeIsLong() {
+        Assert.assertFalse(configurationManagerImplSpy.validateValueType(null, Long.class));
+    }
+
+    @Test
+    public void validateValueTypeTestReturnsTrueWhenValueIsIntegerAndTypeIsLong() {
+        Assert.assertTrue(configurationManagerImplSpy.validateValueType("1", Long.class));
+    }
+
+    @Test
+    public void validateValueTypeTestReturnsFalseWhenValueIsDecimalAndTypeIsLong() {
+        Assert.assertFalse(configurationManagerImplSpy.validateValueType("1.1", Long.class));
+    }
+
+    @Test
+    public void validateValueTypeTestReturnsFalseWhenValueIsStringAndTypeIsLong() {
+        Assert.assertFalse(configurationManagerImplSpy.validateValueType("test", Long.class));
+    }
+
+    @Test
+    public void validateValueTypeTestReturnsFalseWhenValueIsNullAndTypeIsFloat() {
+        Assert.assertFalse(configurationManagerImplSpy.validateValueType(null, Float.class));
+    }
+
+    @Test
+    public void validateValueTypeTestReturnsTrueWhenValueIsNumericAndTypeIsFloat() {
+        Assert.assertTrue(configurationManagerImplSpy.validateValueType("1.1", Float.class));
+    }
+
+    @Test
+    public void validateValueTypeTestReturnsFalseWhenValueIsStringAndTypeIsFloat() {
+        Assert.assertFalse(configurationManagerImplSpy.validateValueType("test", Float.class));
+    }
+
+    @Test
+    public void validateValueTypeTestReturnsFalseWhenValueIsNullAndTypeIsDouble() {
+        Assert.assertFalse(configurationManagerImplSpy.validateValueType(null, Double.class));
+    }
+
+    @Test
+    public void validateValueTypeTestReturnsTrueWhenValueIsNumericAndTypeIsDouble() {
+        Assert.assertTrue(configurationManagerImplSpy.validateValueType("1.1", Double.class));
+    }
+
+    @Test
+    public void validateValueTypeTestReturnsFalseWhenValueIsStringAndTypeIsDouble() {
+        Assert.assertFalse(configurationManagerImplSpy.validateValueType("test", Double.class));
+    }
+
+    @Test
+    public void validateValueRangeTestReturnsNullWhenConfigKeyHasNoRange() {
+        Assert.assertNull(configurationManagerImplSpy.validateValueRange("configkey.without.range", "0", Integer.class, null));
+    }
+
+    @Test
+    public void validateValueRangeTestReturnsNullWhenConfigKeyHasRangeAndValueIsValid() {
+        Assert.assertNull(configurationManagerImplSpy.validateValueRange(NetworkModel.MACIdentifier.key(), "100", Integer.class, null));
+    }
+
+    @Test
+    public void validateValueRangeTestReturnsNotNullWhenConfigKeyHasRangeAndValueIsInvalid() {
+        Assert.assertNotNull(configurationManagerImplSpy.validateValueRange(NetworkModel.MACIdentifier.key(), "-1", Integer.class, null));
+    }
+
+    @Test
+    public void validateValueRangeTestValidatesValueWhenConfigHasRange() {
+        Config config = Config.SecStorageEncryptCopy;
+        String name = config.name();
+        String value = "value";
+        String expectedResult = "expectedResult";
+
+        Mockito.doReturn(expectedResult).when(configurationManagerImplSpy).validateIfStringValueIsInRange(name, value, config.getRange().split(","));
+
+        String result = configurationManagerImplSpy.validateValueRange(name, value, config.getType(), config);
+
+        Assert.assertEquals(expectedResult, result);
+    }
+
+    @Test
+    public void validateValueRangeTestValidatesIntValueWhenConfigHasNumericRange() {
+        Config config = Config.RouterExtraPublicNics;
+        String name = config.name();
+        String value = "1";
+        String expectedResult = "expectedResult";
+
+        Mockito.doReturn(expectedResult).when(configurationManagerImplSpy).validateIfIntValueIsInRange(name, value, config.getRange());
+
+        String result = configurationManagerImplSpy.validateValueRange(name, value, config.getType(), config);
+
+        Assert.assertEquals(expectedResult, result);
+    }
+
+    @Test
+    public void shouldValidateConfigRangeTestValueIsNullReturnFalse() {
+        boolean result = configurationManagerImplSpy.shouldValidateConfigRange(Config.ConsoleProxyUrlDomain.name(), null, Config.ConsoleProxyUrlDomain);
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void shouldValidateConfigRangeTestConfigIsNullReturnFalse() {
+        boolean result = configurationManagerImplSpy.shouldValidateConfigRange("", "test", null);
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void shouldValidateConfigRangeTestConfigDoesNotHaveARangeReturnFalse() {
+        boolean result = configurationManagerImplSpy.shouldValidateConfigRange(Config.ConsoleProxySessionMax.name(), "test", Config.ConsoleProxySessionMax);
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void shouldValidateConfigRangeTestValueIsNotNullAndConfigHasRangeReturnTrue() {
+        boolean result = configurationManagerImplSpy.shouldValidateConfigRange(Config.ConsoleProxySessionMax.name(), "test", Config.ConsoleProxyUrlDomain);
+        Assert.assertTrue(result);
     }
 }
