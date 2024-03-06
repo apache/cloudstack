@@ -2353,7 +2353,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {AllowPublicUserTemplates, TemplatePreloaderPoolSize};
+        return new ConfigKey<?>[] {AllowPublicUserTemplates, TemplatePreloaderPoolSize, ValidateUrlIsResolvableBeforeRegisteringTemplate};
     }
 
     public List<TemplateAdapter> getTemplateAdapters() {
