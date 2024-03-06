@@ -124,6 +124,7 @@ public class NsxApiClient {
     protected static final String NSX_LB_PASSIVE_MONITOR = "/infra/lb-monitor-profiles/default-passive-lb-monitor";
     protected static final String TCP_MONITOR_PROFILE = "LBTcpMonitorProfile";
     protected static final String UDP_MONITOR_PROFILE = "LBUdpMonitorProfile";
+    protected static final String NAT_ID = "USER";
 
     private enum PoolAllocation { ROUTING, LB_SMALL, LB_MEDIUM, LB_LARGE, LB_XLARGE }
 
@@ -342,15 +343,14 @@ public class NsxApiClient {
 
     private void removeTier1GatewayNatRules(String tier1Id) {
         NatRules natRulesService = (NatRules) nsxService.apply(NatRules.class);
-        String natId = "USER";
-        PolicyNatRuleListResult result = natRulesService.list(tier1Id, natId, null, false, null, null, null, null);
+        PolicyNatRuleListResult result = natRulesService.list(tier1Id, NAT_ID, null, false, null, null, null, null);
         List<PolicyNatRule> natRules = result.getResults();
         if (CollectionUtils.isEmpty(natRules)) {
             logger.debug(String.format("Didn't find any NAT rule to remove on the Tier 1 Gateway %s", tier1Id));
         } else {
             for (PolicyNatRule natRule : natRules) {
                 logger.debug(String.format("Removing NAT rule %s from Tier 1 Gateway %s", natRule.getId(), tier1Id));
-                natRulesService.delete(tier1Id, natId, natRule.getId());
+                natRulesService.delete(tier1Id, NAT_ID, natRule.getId());
             }
         }
 
@@ -566,10 +566,21 @@ public class NsxApiClient {
             natService.patch(tier1GatewayName, NatId.USER.name(), ruleName, rule);
         } catch (Error error) {
             ApiError ae = error.getData()._convertTo(ApiError.class);
-            String msg = String.format("Failed to delete NSX Port-forward rule %s for network: %s, due to %s",
+            String msg = String.format("Failed to add NSX Port-forward rule %s for network: %s, due to %s",
                     ruleName, networkName, ae.getErrorMessage());
             logger.error(msg);
             throw new CloudRuntimeException(msg);
+        }
+    }
+
+    public boolean doesPfRuleExist(String ruleName, String tier1GatewayName) {
+        try {
+            NatRules natService = (NatRules) nsxService.apply(NatRules.class);
+            PolicyNatRule rule = natService.get(tier1GatewayName, NAT_ID, ruleName);
+            return !Objects.isNull(rule);
+        } catch (Error error) {
+            logger.debug(String.format("Found a port forward rule named: %s on NSX", ruleName));
+            return false;
         }
     }
 
@@ -629,6 +640,8 @@ public class NsxApiClient {
             LBUdpMonitorProfile lbUdpMonitorProfile = new LBUdpMonitorProfile.Builder(UDP_MONITOR_PROFILE)
                     .setDisplayName(lbMonitorProfileId)
                     .setMonitorPort(Long.parseLong(port))
+                    .setSend("")
+                    .setReceive("")
                     .build();
             lbActiveMonitor.patch(lbMonitorProfileId, lbUdpMonitorProfile);
         }
@@ -676,6 +689,9 @@ public class NsxApiClient {
             String lbVirtualServerName = getVirtualServerName(tier1GatewayName, lbId);
             String lbServiceName = getLoadBalancerName(tier1GatewayName);
             LbVirtualServers lbVirtualServers = (LbVirtualServers) nsxService.apply(LbVirtualServers.class);
+            if (Objects.nonNull(getLbVirtualServerService(lbVirtualServers, lbServiceName))) {
+                return;
+            }
             LBVirtualServer lbVirtualServer = new LBVirtualServer.Builder()
                     .setId(lbVirtualServerName)
                     .setDisplayName(lbVirtualServerName)
@@ -692,6 +708,19 @@ public class NsxApiClient {
             logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
+    }
+
+    private LBVirtualServer getLbVirtualServerService(LbVirtualServers lbVirtualServers, String lbVSName) {
+        try {
+            LBVirtualServer lbVirtualServer = lbVirtualServers.get(lbVSName);
+            if (Objects.nonNull(lbVirtualServer)) {
+                return lbVirtualServer;
+            }
+        } catch (Exception e) {
+            logger.debug(String.format("Found an LB virtual server named: %s on NSX", lbVSName));
+            return null;
+        }
+        return null;
     }
 
     public void deleteNsxLbResources(String tier1GatewayName, long lbId) {
