@@ -171,7 +171,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
     protected List<? extends ControlledEntity> listWebhooksForProject(Project project) {
         List<? extends ControlledEntity> webhooks = new ArrayList<>();
         try {
-            WebhookHelper webhookService = ComponentContext.getComponent(WebhookHelper.class);
+            WebhookHelper webhookService = ComponentContext.getDelegateComponentOfType(WebhookHelper.class);
             webhooks = webhookService.listWebhooksByAccount(project.getProjectAccountId());
         } catch (NoSuchBeanDefinitionException ignored) {
             if (logger.isDebugEnabled()) {

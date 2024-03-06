@@ -109,8 +109,8 @@ public class ProjectManagerImplTest {
             List<ControlledEntity> webhooks = List.of(Mockito.mock(ControlledEntity.class),
                     Mockito.mock(ControlledEntity.class));
             Mockito.doReturn(webhooks).when(webhookHelper).listWebhooksByAccount(Mockito.anyLong());
-            mockedComponentContext.when(() -> ComponentContext.getComponent(WebhookHelper.class)).thenReturn(
-                    webhookHelper);
+            mockedComponentContext.when(() -> ComponentContext.getDelegateComponentOfType(WebhookHelper.class))
+                    .thenReturn(webhookHelper);
             Project project = Mockito.mock(Project.class);
             Mockito.when(project.getProjectAccountId()).thenReturn(1L);
             List<? extends ControlledEntity> result = projectManager.listWebhooksForProject(project);
@@ -121,8 +121,8 @@ public class ProjectManagerImplTest {
     @Test
     public void testDeleteWebhooksForAccountNoBean() {
         try (MockedStatic<ComponentContext> mockedComponentContext = Mockito.mockStatic(ComponentContext.class)) {
-            mockedComponentContext.when(() -> ComponentContext.getComponent(WebhookHelper.class)).thenThrow(
-                    NoSuchBeanDefinitionException.class);
+            mockedComponentContext.when(() -> ComponentContext.getDelegateComponentOfType(WebhookHelper.class))
+                    .thenThrow(NoSuchBeanDefinitionException.class);
             List<? extends ControlledEntity> result =
                     projectManager.listWebhooksForProject(Mockito.mock(Project.class));
             Assert.assertTrue(CollectionUtils.isEmpty(result));
