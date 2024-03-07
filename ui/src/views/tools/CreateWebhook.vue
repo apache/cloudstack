@@ -309,7 +309,7 @@ export default {
         api('createWebhook', params).then(json => {
           this.$emit('refresh-data')
           this.$notification.success({
-            message: this.$t('label.webhook.create'),
+            message: this.$t('label.create.webhook'),
             description: `${this.$t('message.success.create.webhook')} ${params.name}`
           })
           this.closeAction()
