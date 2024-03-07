@@ -17,6 +17,9 @@
 
 package com.cloud.kubernetes.cluster.actionworkers;
 
+import static com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType.CONTROL;
+import static com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType.ETCD;
+import static com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType.WORKER;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 import java.io.File;
@@ -31,6 +34,8 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType;
+import com.cloud.network.rules.FirewallManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import org.apache.cloudstack.api.ApiConstants;
@@ -135,6 +140,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     protected LoadBalancingRulesService lbService;
     @Inject
     protected RulesService rulesService;
+    @Inject
+    protected FirewallManager firewallManager;
     @Inject
     protected PortForwardingRulesDao portForwardingRulesDao;
     @Inject
@@ -376,7 +383,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             ResourceUnavailableException, InsufficientCapacityException {
         UserVm nodeVm = null;
         DataCenter zone = dataCenterDao.findById(kubernetesCluster.getZoneId());
-        ServiceOffering serviceOffering = serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId());
+        ServiceOffering serviceOffering = getServiceOfferingForNodeTypeOnCluster(WORKER, kubernetesCluster);
         List<Long> networkIds = new ArrayList<Long>();
         networkIds.add(kubernetesCluster.getNetworkId());
         Account owner = accountDao.findById(kubernetesCluster.getAccountId());
@@ -406,12 +413,12 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         if (zone.isSecurityGroupEnabled()) {
             List<Long> securityGroupIds = new ArrayList<>();
             securityGroupIds.add(kubernetesCluster.getSecurityGroupId());
-            nodeVm = userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, securityGroupIds, owner,
+            nodeVm = userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, workerNodeTemplate, networkIds, securityGroupIds, owner,
                     hostName, hostName, null, null, null, Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST,base64UserData, null, null, keypairs,
                     null, addrs, null, null, null, customParameterMap, null, null, null,
                     null, true, null, UserVmManager.CKS_NODE);
         } else {
-            nodeVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
+            nodeVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, workerNodeTemplate, networkIds, owner,
                     hostName, hostName, null, null, null,
                     Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, null, null, keypairs,
                     null, addrs, null, null, null, customParameterMap, null, null, null, null, true, UserVmManager.CKS_NODE, null);
@@ -532,16 +539,22 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
 
     protected void removePortForwardingRules(final IpAddress publicIp, final Network network, final Account account, final List<Long> removedVMIds) throws ResourceUnavailableException {
         if (!CollectionUtils.isEmpty(removedVMIds)) {
+            List<PortForwardingRuleVO> pfRules = new ArrayList<>();
+            List<PortForwardingRuleVO> revokedRules = new ArrayList<>();
             for (Long vmId : removedVMIds) {
-                List<PortForwardingRuleVO> pfRules = portForwardingRulesDao.listByNetwork(network.getId());
+                pfRules.addAll(portForwardingRulesDao.listByNetwork(network.getId()));
                 for (PortForwardingRuleVO pfRule : pfRules) {
                     if (pfRule.getVirtualMachineId() == vmId) {
                         portForwardingRulesDao.remove(pfRule.getId());
+                        LOGGER.trace("Marking PF rule " + pfRule + " with Revoke state");
+                        pfRule.setState(FirewallRule.State.Revoke);
+                        revokedRules.add(pfRule);
                         break;
                     }
                 }
             }
-            rulesService.applyPortForwardingRules(publicIp.getId(), account);
+
+            firewallManager.applyRules(revokedRules, false, true);
         }
     }
 
@@ -784,7 +797,11 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     }
 
     protected KubernetesClusterVO updateKubernetesClusterEntry(final Long cores, final Long memory, final Long size,
-               final Long serviceOfferingId, final Boolean autoscaleEnabled, final Long minSize, final Long maxSize) {
+                                                               final Long serviceOfferingId, final Boolean autoscaleEnabled,
+                                                               final Long minSize, final Long maxSize,
+                                                               final KubernetesClusterNodeType nodeType,
+                                                               final boolean updateNodeOffering,
+                                                               final boolean updateClusterOffering) {
         return Transaction.execute(new TransactionCallback<KubernetesClusterVO>() {
                 @Override
                 public KubernetesClusterVO doInTransaction(TransactionStatus status) {
@@ -798,7 +815,16 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                 if (size != null) {
                     updatedCluster.setNodeCount(size);
                 }
-                if (serviceOfferingId != null) {
+                if (updateNodeOffering && serviceOfferingId != null && nodeType != null) {
+                    if (WORKER == nodeType) {
+                        updatedCluster.setWorkerServiceOfferingId(serviceOfferingId);
+                    } else if (CONTROL == nodeType) {
+                        updatedCluster.setControlServiceOfferingId(serviceOfferingId);
+                    } else if (ETCD == nodeType) {
+                        updatedCluster.setEtcdServiceOfferingId(serviceOfferingId);
+                    }
+                }
+                if (updateClusterOffering && serviceOfferingId != null) {
                     updatedCluster.setServiceOfferingId(serviceOfferingId);
                 }
                 if (autoscaleEnabled != null) {
@@ -812,7 +838,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     }
 
     private KubernetesClusterVO updateKubernetesClusterEntry(final Boolean autoscaleEnabled, final Long minSize, final Long maxSize) throws CloudRuntimeException {
-        KubernetesClusterVO kubernetesClusterVO = updateKubernetesClusterEntry(null, null, null, null, autoscaleEnabled, minSize, maxSize);
+        KubernetesClusterVO kubernetesClusterVO = updateKubernetesClusterEntry(null, null, null, null, autoscaleEnabled, minSize, maxSize, null, false, false);
         if (kubernetesClusterVO == null) {
             logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster %s failed, unable to update Kubernetes cluster",
                     kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);

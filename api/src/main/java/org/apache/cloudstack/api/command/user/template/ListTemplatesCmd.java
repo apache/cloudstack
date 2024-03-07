@@ -104,6 +104,11 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
             since = "4.19.0")
     private Boolean isVnf;
 
+    @Parameter(name = ApiConstants.FOR_CKS, type = CommandType.BOOLEAN,
+            description = "list templates that can be used to deploy CKS clusters",
+            since = "4.20.0")
+    private Boolean forCks;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -190,6 +195,8 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
     public Boolean getVnf() {
         return isVnf;
     }
+
+    public Boolean getForCks() { return forCks; }
 
     @Override
     public String getCommandName() {

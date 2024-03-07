@@ -19,8 +19,17 @@ package com.cloud.kubernetes.cluster;
 import com.cloud.utils.component.Adapter;
 import org.apache.cloudstack.acl.ControlledEntity;
 
+import java.util.Map;
+
 public interface KubernetesClusterHelper extends Adapter {
+
+    enum KubernetesClusterNodeType {
+        CONTROL, WORKER, ETCD, DEFAULT
+    }
 
     ControlledEntity findByUuid(String uuid);
     ControlledEntity findByVmId(long vmId);
+    boolean isValidNodeType(String nodeType);
+    Map<String, Long> getServiceOfferingNodeTypeMap(Map<String, Map<String, String>> serviceOfferingNodeTypeMap);
+    Map<String, Long> getTemplateNodeTypeMap(Map<String, Map<String, String>> templateNodeTypeMap);
 }

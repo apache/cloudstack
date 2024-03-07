@@ -142,4 +142,11 @@ public interface KubernetesCluster extends ControlledEntity, com.cloud.utils.fsm
     Long getMaxSize();
     Long getSecurityGroupId();
     ClusterType getClusterType();
+    Long getControlServiceOfferingId();
+    Long getWorkerServiceOfferingId();
+    Long getEtcdServiceOfferingId();
+    Long getControlTemplateId();
+    Long getWorkerTemplateId();
+    Long getEtcdTemplateId();
+    Long getEtcdNodeCount();
 }

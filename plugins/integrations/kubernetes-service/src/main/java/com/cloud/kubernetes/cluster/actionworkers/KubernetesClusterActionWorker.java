@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -34,6 +35,8 @@ import javax.inject.Inject;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType;
+import com.cloud.offering.ServiceOffering;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
@@ -166,6 +169,9 @@ public class KubernetesClusterActionWorker {
     protected KubernetesCluster kubernetesCluster;
     protected Account owner;
     protected VirtualMachineTemplate clusterTemplate;
+    protected VirtualMachineTemplate controlNodeTemplate;
+    protected VirtualMachineTemplate workerNodeTemplate;
+    protected VirtualMachineTemplate etcdTemplate;
     protected File sshKeyFile;
     protected String publicIpAddress;
     protected int sshPort;
@@ -197,7 +203,10 @@ public class KubernetesClusterActionWorker {
         DataCenterVO dataCenterVO = dataCenterDao.findById(zoneId);
         VMTemplateVO template = templateDao.findById(templateId);
         Hypervisor.HypervisorType type = template.getHypervisorType();
-        this.clusterTemplate = manager.getKubernetesServiceTemplate(dataCenterVO, type);
+        this.clusterTemplate = manager.getKubernetesServiceTemplate(dataCenterVO, type, null, KubernetesClusterNodeType.DEFAULT);
+        this.controlNodeTemplate = templateDao.findById(this.kubernetesCluster.getControlTemplateId());
+        this.workerNodeTemplate = templateDao.findById(this.kubernetesCluster.getWorkerTemplateId());
+        this.etcdTemplate = templateDao.findById(this.kubernetesCluster.getEtcdTemplateId());
         this.sshKeyFile = getManagementServerSshPublicKeyFile();
     }
 
@@ -270,7 +279,7 @@ public class KubernetesClusterActionWorker {
     }
 
     protected void deleteTemplateLaunchPermission() {
-        if (clusterTemplate != null && owner != null) {
+        if (isDefaultTemplateUsed() && owner != null) {
             logger.info("Revoking launch permission for systemVM template");
             launchPermissionDao.removePermissions(clusterTemplate.getId(), Collections.singletonList(owner.getId()));
         }
@@ -689,5 +698,35 @@ public class KubernetesClusterActionWorker {
 
     public void setKeys(String[] keys) {
         this.keys = keys;
+    }
+
+    protected ServiceOffering getServiceOfferingForNodeTypeOnCluster(KubernetesClusterNodeType nodeType,
+                                                                     KubernetesCluster cluster) {
+        Long offeringId = null;
+        Long defaultOfferingId = cluster.getServiceOfferingId();
+        Long controlOfferingId = cluster.getControlServiceOfferingId();
+        Long workerOfferingId = cluster.getWorkerServiceOfferingId();
+        Long etcdOfferingId = cluster.getEtcdServiceOfferingId();
+        if (KubernetesClusterNodeType.CONTROL == nodeType) {
+            offeringId = controlOfferingId != null ? controlOfferingId : defaultOfferingId;
+        } else if (KubernetesClusterNodeType.WORKER == nodeType) {
+            offeringId = workerOfferingId != null ? workerOfferingId : defaultOfferingId;
+        } else if (KubernetesClusterNodeType.ETCD == nodeType && cluster.getEtcdNodeCount() != null && cluster.getEtcdNodeCount() > 0) {
+            offeringId = etcdOfferingId != null ? etcdOfferingId : defaultOfferingId;
+        }
+
+        if (offeringId == null) {
+            String msg = String.format("Cannot find a service offering for the %s nodes on the Kubernetes cluster %s", nodeType.name(), cluster.getName());
+            logger.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+        return serviceOfferingDao.findById(offeringId);
+    }
+
+    protected boolean isDefaultTemplateUsed() {
+        if (Arrays.asList(kubernetesCluster.getControlTemplateId(), kubernetesCluster.getWorkerTemplateId(), kubernetesCluster.getEtcdTemplateId()).contains(kubernetesCluster.getTemplateId())) {
+            return true;
+        }
+        return false;
     }
 }

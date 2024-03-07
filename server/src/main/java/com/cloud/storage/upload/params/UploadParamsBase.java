@@ -45,6 +45,7 @@ public abstract class UploadParamsBase implements UploadParams {
     private boolean isDynamicallyScalable;
     private boolean isRoutingType;
     private boolean deployAsIs;
+    private boolean forCks;
 
     UploadParamsBase(long userId, String name, String displayText,
                                Integer bits, boolean passwordEnabled, boolean requiresHVM,
@@ -53,7 +54,7 @@ public abstract class UploadParamsBase implements UploadParams {
                                Long zoneId, Hypervisor.HypervisorType hypervisorType, String checksum,
                                String templateTag, long templateOwnerId,
                                Map details, boolean sshkeyEnabled,
-                               boolean isDynamicallyScalable, boolean isRoutingType, boolean deployAsIs) {
+                               boolean isDynamicallyScalable, boolean isRoutingType, boolean deployAsIs, boolean forCks) {
         this.userId = userId;
         this.name = name;
         this.displayText = displayText;
@@ -227,6 +228,10 @@ public abstract class UploadParamsBase implements UploadParams {
 
     void setBootable(boolean bootable) {
         this.bootable = bootable;
+    }
+
+    void setForCks(boolean forCks) {
+        this.forCks = forCks;
     }
 
     void setBits(Integer bits) {
