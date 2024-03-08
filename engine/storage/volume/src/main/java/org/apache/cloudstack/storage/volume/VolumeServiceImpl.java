@@ -32,8 +32,10 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.VolumeApiServiceImpl;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.api.command.user.volume.CheckAndRepairVolumeCmd;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
@@ -80,6 +82,7 @@ import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -88,9 +91,12 @@ import org.springframework.stereotype.Component;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ModifyTargetsCommand;
+import com.cloud.agent.api.storage.CheckAndRepairVolumeAnswer;
+import com.cloud.agent.api.storage.CheckAndRepairVolumeCommand;
 import com.cloud.agent.api.storage.ListVolumeAnswer;
 import com.cloud.agent.api.storage.ListVolumeCommand;
 import com.cloud.agent.api.storage.ResizeVolumeCommand;
+import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.alert.AlertManager;
@@ -111,6 +117,7 @@ import com.cloud.org.Cluster;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.resource.ResourceState;
 import com.cloud.server.ManagementService;
+import com.cloud.storage.CheckAndRepairVolumePayload;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.RegisterVolumePayload;
 import com.cloud.storage.ScopeType;
@@ -126,6 +133,7 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.State;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -199,13 +207,15 @@ public class VolumeServiceImpl implements VolumeService {
     @Inject
     private VolumeOrchestrationService _volumeMgr;
     @Inject
-    private StorageManager _storageMgr;
+    protected StorageManager _storageMgr;
     @Inject
     private AnnotationDao annotationDao;
     @Inject
     private SnapshotApiService snapshotApiService;
     @Inject
     private PassphraseDao passphraseDao;
+    @Inject
+    private DiskOfferingDao diskOfferingDao;
 
     public VolumeServiceImpl() {
     }
@@ -263,6 +273,19 @@ public class VolumeServiceImpl implements VolumeService {
         if (dataStoreDriver instanceof PrimaryDataStoreDriver) {
             ((PrimaryDataStoreDriver)dataStoreDriver).revokeAccess(dataObject, host, dataStore);
         }
+    }
+
+    @Override
+    public boolean requiresAccessForMigration(DataObject dataObject, DataStore dataStore) {
+        DataStoreDriver dataStoreDriver = dataStore != null ? dataStore.getDriver() : null;
+        if (dataStoreDriver == null) {
+            return false;
+        }
+
+        if (dataStoreDriver instanceof PrimaryDataStoreDriver) {
+            return ((PrimaryDataStoreDriver)dataStoreDriver).requiresAccessForMigration(dataObject);
+        }
+        return false;
     }
 
     @Override
@@ -1610,8 +1633,7 @@ public class VolumeServiceImpl implements VolumeService {
 
         if (vol.getAttachedVM() == null || vol.getAttachedVM().getType() == VirtualMachine.Type.User) {
             // Decrement the resource count for volumes and primary storage belonging user VM's only
-            _resourceLimitMgr.decrementResourceCount(vol.getAccountId(), ResourceType.volume, vol.isDisplay());
-            _resourceLimitMgr.decrementResourceCount(vol.getAccountId(), ResourceType.primary_storage, vol.isDisplay(), new Long(vol.getSize()));
+            _resourceLimitMgr.decrementVolumeResourceCount(vol.getAccountId(), vol.isDisplay(), vol.getSize(), diskOfferingDao.findById(vol.getDiskOfferingId()));
         }
     }
 
@@ -2759,6 +2781,62 @@ public class VolumeServiceImpl implements VolumeService {
         }
 
         return snapshot;
+    }
+
+    @Override
+    public void checkAndRepairVolumeBasedOnConfig(DataObject dataObject, Host host) {
+        if (HypervisorType.KVM.equals(host.getHypervisorType()) && DataObjectType.VOLUME.equals(dataObject.getType())) {
+            VolumeInfo volumeInfo = volFactory.getVolume(dataObject.getId());
+            if (VolumeApiServiceImpl.AllowCheckAndRepairVolume.valueIn(volumeInfo.getPoolId())) {
+                logger.info(String.format("Trying to check and repair the volume %d", dataObject.getId()));
+                String repair = CheckAndRepairVolumeCmd.RepairValues.LEAKS.name().toLowerCase();
+                CheckAndRepairVolumePayload payload = new CheckAndRepairVolumePayload(repair);
+                volumeInfo.addPayload(payload);
+                checkAndRepairVolumeThroughHost(volumeInfo, host);
+            }
+        }
+    }
+
+    @Override
+    public Pair<String, String> checkAndRepairVolume(VolumeInfo volume) {
+        Long poolId = volume.getPoolId();
+        List<Long> hostIds = _storageMgr.getUpHostsInPool(poolId);
+        if (CollectionUtils.isEmpty(hostIds)) {
+            throw new CloudRuntimeException("Unable to find Up hosts to run the check volume command");
+        }
+        Collections.shuffle(hostIds);
+        Host host = _hostDao.findById(hostIds.get(0));
+
+        return checkAndRepairVolumeThroughHost(volume, host);
+
+    }
+
+    private Pair<String, String> checkAndRepairVolumeThroughHost(VolumeInfo volume, Host host) {
+        Long poolId = volume.getPoolId();
+        StoragePool pool = _storageMgr.getStoragePool(poolId);
+        CheckAndRepairVolumePayload payload = (CheckAndRepairVolumePayload) volume.getpayload();
+        CheckAndRepairVolumeCommand command = new CheckAndRepairVolumeCommand(volume.getPath(), new StorageFilerTO(pool), payload.getRepair(),
+                volume.getPassphrase(), volume.getEncryptFormat());
+
+        try {
+            grantAccess(volume, host, volume.getDataStore());
+            CheckAndRepairVolumeAnswer answer = (CheckAndRepairVolumeAnswer) _storageMgr.sendToPool(pool, new long[]{host.getId()}, command);
+            if (answer != null && answer.getResult()) {
+                logger.debug(String.format("Check volume response result: %s", answer.getDetails()));
+                return new Pair<>(answer.getVolumeCheckExecutionResult(), answer.getVolumeRepairExecutionResult());
+            } else {
+                String errMsg = (answer == null) ? null : answer.getDetails();
+                logger.debug(String.format("Failed to check and repair the volume with error %s", errMsg));
+            }
+
+        } catch (Exception e) {
+            logger.debug("sending check and repair volume command failed", e);
+        } finally {
+            revokeAccess(volume, host, volume.getDataStore());
+            command.clearPassphrase();
+        }
+
+        return null;
     }
 
     // For managed storage on Xen and VMware, we need to potentially make space for hypervisor snapshots.

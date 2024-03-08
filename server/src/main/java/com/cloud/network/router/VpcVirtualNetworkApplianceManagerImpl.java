@@ -23,10 +23,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.vpc.dao.VpcDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
@@ -127,6 +130,10 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     private EntityManager _entityMgr;
     @Inject
     protected HypervisorGuruManager _hvGuruMgr;
+    @Inject
+    protected NetworkDao networkDao;
+    @Inject
+    protected VpcDao vpcDao;
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
@@ -358,7 +365,12 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 } else if (network.getTrafficType() == TrafficType.Public) {
                     final Pair<Nic, Network> publicNic = new Pair<Nic, Network>(routerNic, network);
                     publicNics.add(publicNic);
-                    final String vlanTag = BroadcastDomainType.getValue(routerNic.getBroadcastUri());
+                    String vlanTag = null;
+                    if (Objects.nonNull(routerNic.getBroadcastUri())) {
+                        vlanTag = BroadcastDomainType.getValue(routerNic.getBroadcastUri());
+                    } else {
+                        vlanTag = "nsx-"+routerNic.getIPv4Address();
+                    }
                     vlanMacAddress.put(vlanTag, routerNic.getMacAddress());
                 }
             }
@@ -388,7 +400,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                             _routerDao.update(routerVO.getId(), routerVO);
                         }
                     }
-                    final PlugNicCommand plugNicCmd = new PlugNicCommand(_nwHelper.getNicTO(domainRouterVO, publicNic.getNetworkId(), publicNic.getBroadcastUri().toString()),
+                    String broadcastURI = publicNic.getBroadcastUri() != null ? publicNic.getBroadcastUri().toString() : null;
+                    final PlugNicCommand plugNicCmd = new PlugNicCommand(_nwHelper.getNicTO(domainRouterVO, publicNic.getNetworkId(), broadcastURI),
                             domainRouterVO.getInstanceName(), domainRouterVO.getType(), details);
                     cmds.addCommand(plugNicCmd);
                     final VpcVO vpc = _vpcDao.findById(domainRouterVO.getVpcId());
@@ -495,8 +508,9 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 throw new CloudRuntimeException("Cannot find related provider of virtual router provider: " + vrProvider.getType().toString());
             }
 
+            Map<String, String> routerHealthCheckConfig = getRouterHealthChecksConfig(domainRouterVO);
             if (reprogramGuestNtwks && publicNics.size() > 0) {
-                finalizeMonitorService(cmds, profile, domainRouterVO, provider, publicNics.get(0).second().getId(), true);
+                finalizeMonitorService(cmds, profile, domainRouterVO, provider, publicNics.get(0).second().getId(), true, routerHealthCheckConfig);
             }
 
             for (final Pair<Nic, Network> nicNtwk : guestNics) {
@@ -508,7 +522,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 if (reprogramGuestNtwks) {
                     finalizeIpAssocForNetwork(cmds, domainRouterVO, provider, guestNetworkId, vlanMacAddress);
                     finalizeNetworkRulesForNetwork(cmds, domainRouterVO, provider, guestNetworkId);
-                    finalizeMonitorService(cmds, profile, domainRouterVO, provider, guestNetworkId, true);
+                    finalizeMonitorService(cmds, profile, domainRouterVO, provider, guestNetworkId, true, routerHealthCheckConfig);
                 }
 
                 finalizeUserDataAndDhcpOnStart(cmds, domainRouterVO, provider, guestNetworkId);
@@ -567,7 +581,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             finalizeNetworkRulesForNetwork(cmds, router, provider, networkId);
         }
 
-        finalizeMonitorService(cmds, getVirtualMachineProfile(router), router, provider, networkId, false);
+        finalizeMonitorService(cmds, getVirtualMachineProfile(router), router, provider, networkId, false, getRouterHealthChecksConfig(router));
 
         return _nwHelper.sendCommandsToRouter(router, cmds);
     }

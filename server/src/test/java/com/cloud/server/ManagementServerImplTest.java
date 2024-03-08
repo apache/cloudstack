@@ -252,7 +252,7 @@ public class ManagementServerImplTest {
         Mockito.verify(sc, Mockito.times(1)).setParameters("display", false);
         Mockito.verify(sc, Mockito.times(1)).setParameters("sourceNetworkId", 10L);
         Mockito.verify(sc, Mockito.times(1)).setParameters("state", "Free");
-        Mockito.verify(sc, Mockito.never()).setParameters("forsystemvms", false);
+        Mockito.verify(sc, Mockito.times(1)).setParameters("forsystemvms", false);
     }
 
     @Test
@@ -274,7 +274,7 @@ public class ManagementServerImplTest {
         Mockito.verify(sc, Mockito.times(1)).setJoinParameters("vlanSearch", "vlanType", VlanType.VirtualNetwork);
         Mockito.verify(sc, Mockito.times(1)).setParameters("display", false);
         Mockito.verify(sc, Mockito.times(1)).setParameters("sourceNetworkId", 10L);
-        Mockito.verify(sc, Mockito.never()).setParameters("forsystemvms", false);
+        Mockito.verify(sc, Mockito.times(1)).setParameters("forsystemvms", false);
     }
 
     @Test
@@ -296,7 +296,7 @@ public class ManagementServerImplTest {
         Mockito.verify(sc, Mockito.times(1)).setJoinParameters("vlanSearch", "vlanType", VlanType.VirtualNetwork);
         Mockito.verify(sc, Mockito.times(1)).setParameters("display", false);
         Mockito.verify(sc, Mockito.times(1)).setParameters("sourceNetworkId", 10L);
-        Mockito.verify(sc, Mockito.never()).setParameters("forsystemvms", false);
+        Mockito.verify(sc, Mockito.times(1)).setParameters("forsystemvms", false);
     }
 
     @Test

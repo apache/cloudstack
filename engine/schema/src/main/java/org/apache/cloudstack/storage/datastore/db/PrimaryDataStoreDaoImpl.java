@@ -244,6 +244,11 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
 
     @Override
     public List<StoragePoolVO> listBy(long datacenterId, Long podId, Long clusterId, ScopeType scope) {
+        return listBy(datacenterId, podId, clusterId, scope, null);
+    }
+
+    @Override
+    public List<StoragePoolVO> listBy(long datacenterId, Long podId, Long clusterId, ScopeType scope, String keyword) {
         SearchCriteria<StoragePoolVO> sc = null;
         if (clusterId != null) {
             sc = DcPodSearch.create();
@@ -255,6 +260,9 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         sc.setParameters("datacenterId", datacenterId);
         sc.setParameters("podId", podId);
         sc.setParameters("status", Status.Up);
+        if (keyword != null) {
+            sc.addAnd("name", Op.LIKE,  "%" + keyword + "%");
+        }
         if (scope != null) {
             sc.setParameters("scope", scope);
         }
@@ -444,9 +452,14 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
 
     @Override
     public List<StoragePoolVO> findLocalStoragePoolsByTags(long dcId, long podId, Long clusterId, String[] tags, boolean validateTagRule) {
+        return findLocalStoragePoolsByTags(dcId, podId, clusterId, tags, validateTagRule, null);
+    }
+
+    @Override
+    public List<StoragePoolVO> findLocalStoragePoolsByTags(long dcId, long podId, Long clusterId, String[] tags, boolean validateTagRule, String keyword) {
         List<StoragePoolVO> storagePools = null;
         if (tags == null || tags.length == 0) {
-            storagePools = listBy(dcId, podId, clusterId, ScopeType.HOST);
+            storagePools = listBy(dcId, podId, clusterId, ScopeType.HOST, keyword);
 
             if (validateTagRule) {
                 storagePools = getPoolsWithoutTagRule(storagePools);
@@ -583,11 +596,19 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
 
     @Override
     public List<StoragePoolVO> findZoneWideStoragePoolsByHypervisor(long dataCenterId, HypervisorType hypervisorType) {
+        return findZoneWideStoragePoolsByHypervisor(dataCenterId, hypervisorType, null);
+    }
+
+    @Override
+    public List<StoragePoolVO> findZoneWideStoragePoolsByHypervisor(long dataCenterId, HypervisorType hypervisorType, String keyword) {
         QueryBuilder<StoragePoolVO> sc = QueryBuilder.create(StoragePoolVO.class);
         sc.and(sc.entity().getDataCenterId(), Op.EQ, dataCenterId);
         sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
         sc.and(sc.entity().getScope(), Op.EQ, ScopeType.ZONE);
         sc.and(sc.entity().getHypervisor(), Op.EQ, hypervisorType);
+        if (keyword != null) {
+            sc.and(sc.entity().getName(), Op.LIKE,  "%" + keyword + "%");
+        }
         return sc.list();
     }
 
@@ -612,10 +633,13 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     }
 
     @Override
-    public List<StoragePoolVO> findPoolsInClusters(List<Long> clusterIds) {
+    public List<StoragePoolVO> findPoolsInClusters(List<Long> clusterIds, String keyword) {
         SearchCriteria<StoragePoolVO> sc = ClustersSearch.create();
         sc.setParameters("clusterIds", clusterIds.toArray());
         sc.setParameters("status", StoragePoolStatus.Up);
+        if (keyword != null) {
+            sc.addAnd("name", Op.LIKE, "%" + keyword + "%");
+        }
         return listBy(sc);
     }
 

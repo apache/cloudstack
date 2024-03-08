@@ -16,15 +16,14 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.cloud.configuration.Resource;
-import com.google.gson.annotations.SerializedName;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
+import com.cloud.configuration.Resource;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = ResourceLimit.class)
 @SuppressWarnings("unused")
@@ -61,6 +60,10 @@ public class ResourceLimitResponse extends BaseResponse implements ControlledEnt
     @Param(description = "the project name of the resource limit")
     private String projectName;
 
+    @SerializedName(ApiConstants.TAG)
+    @Param(description = "The tag for the resource limit", since = "4.20.0")
+    private String tag;
+
     @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
@@ -93,5 +96,9 @@ public class ResourceLimitResponse extends BaseResponse implements ControlledEnt
     @Override
     public void setProjectId(String projectId) {
         this.projectId = projectId;
+    }
+
+    public void setTag(String tag) {
+        this.tag = tag;
     }
 }

@@ -244,11 +244,18 @@ export default {
     },
     fetchDiskOfferings (zoneId) {
       this.loading = true
-      api('listDiskOfferings', {
+      var params = {
         zoneid: zoneId,
         listall: true
-      }).then(json => {
+      }
+      if (this.createVolumeFromVM) {
+        params.virtualmachineid = this.resource.id
+      }
+      api('listDiskOfferings', params).then(json => {
         this.offerings = json.listdiskofferingsresponse.diskoffering || []
+        if (this.createVolumeFromVM) {
+          this.offerings = this.offerings.filter(x => x.suitableforvirtualmachine)
+        }
         if (!this.createVolumeFromSnapshot) {
           this.form.diskofferingid = this.offerings[0].id || ''
         }

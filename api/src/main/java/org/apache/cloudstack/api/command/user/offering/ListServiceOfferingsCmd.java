@@ -16,15 +16,15 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.offering;
 
-import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
-import org.apache.cloudstack.api.response.ZoneResponse;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 
 @APICommand(name = "listServiceOfferings", description = "Lists all available service offerings.", responseObject = ServiceOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -92,6 +92,14 @@ public class ListServiceOfferingsCmd extends BaseListProjectAndAccountResourcesC
             since = "4.19")
     private String storageType;
 
+    @Parameter(name = ApiConstants.TEMPLATE_ID,
+            type = CommandType.UUID,
+            entityType = TemplateResponse.class,
+            description = "The ID of the template that listed offerings must support",
+            since = "4.20.0")
+    private Long templateId;
+
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -136,6 +144,10 @@ public class ListServiceOfferingsCmd extends BaseListProjectAndAccountResourcesC
 
     public String getStorageType() {
         return storageType;
+    }
+
+    public Long getTemplateId() {
+        return templateId;
     }
 
     /////////////////////////////////////////////////////
