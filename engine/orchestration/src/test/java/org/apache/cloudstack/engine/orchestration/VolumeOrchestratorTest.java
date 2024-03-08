@@ -39,7 +39,6 @@ import org.mockito.stubbing.Answer;
 
 import com.cloud.configuration.Resource;
 import com.cloud.exception.StorageAccessException;
-import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.storage.VolumeVO;
