@@ -75,8 +75,7 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
                 return;
             }
 
-            if (logger.isDebugEnabled())
-                logger.debug("Run VM work job: " + cmd + " for VM " + work.getVmId() + ", job origin: " + job.getRelated());
+            logger.debug("Run VM work job: " + cmd + " for VM " + work.getVmId() + ", job origin: " + job.getRelated());
             try {
                 if (_handlers == null || _handlers.isEmpty()) {
                     logger.error("Invalid startup configuration, no work job handler is found. cmd: " + job.getCmd() + ", job info: " + job.getCmdInfo()
@@ -103,8 +102,7 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
                     CallContext.unregister();
                 }
             } finally {
-                if (logger.isDebugEnabled())
-                    logger.debug("Done with run of VM work job: " + cmd + " for VM " + work.getVmId() + ", job origin: " + job.getRelated());
+                logger.debug("Done with run of VM work job: " + cmd + " for VM " + work.getVmId() + ", job origin: " + job.getRelated());
             }
         } catch(InvalidParameterValueException e) {
             logger.error("Unable to complete " + job + ", job origin:" + job.getRelated());

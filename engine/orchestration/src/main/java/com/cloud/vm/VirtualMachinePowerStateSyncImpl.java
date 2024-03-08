@@ -61,8 +61,7 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
 
     @Override
     public void processHostVmStatePingReport(long hostId, Map<String, HostVmStateReportEntry> report, boolean force) {
-        if (logger.isDebugEnabled())
-            logger.debug("Process host VM state report from ping process. host: " + hostId);
+        logger.debug("Process host VM state report from ping process. host: " + hostId);
 
         Map<Long, VirtualMachine.PowerState> translatedInfo = convertVmStateReport(report);
         processReport(hostId, translatedInfo, force);
@@ -70,25 +69,18 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
 
     private void processReport(long hostId, Map<Long, VirtualMachine.PowerState> translatedInfo, boolean force) {
 
-        if (logger.isDebugEnabled()) {
-            logger.debug("Process VM state report. host: " + hostId + ", number of records in report: " + translatedInfo.size());
-        }
+        logger.debug("Process VM state report. host: " + hostId + ", number of records in report: " + translatedInfo.size());
 
         for (Map.Entry<Long, VirtualMachine.PowerState> entry : translatedInfo.entrySet()) {
 
-            if (logger.isDebugEnabled())
-                logger.debug("VM state report. host: " + hostId + ", vm id: " + entry.getKey() + ", power state: " + entry.getValue());
+            logger.debug("VM state report. host: " + hostId + ", vm id: " + entry.getKey() + ", power state: " + entry.getValue());
 
             if (_instanceDao.updatePowerState(entry.getKey(), hostId, entry.getValue(), DateUtil.currentGMTTime())) {
-                if (logger.isInfoEnabled()) {
-                    logger.debug("VM state report is updated. host: " + hostId + ", vm id: " + entry.getKey() + ", power state: " + entry.getValue());
-                }
+                logger.debug("VM state report is updated. host: " + hostId + ", vm id: " + entry.getKey() + ", power state: " + entry.getValue());
 
                 _messageBus.publish(null, VirtualMachineManager.Topics.VM_POWER_STATE, PublishScope.GLOBAL, entry.getKey());
             } else {
-                if (logger.isTraceEnabled()) {
-                    logger.trace("VM power state does not change, skip DB writing. vm id: " + entry.getKey());
-                }
+                logger.trace("VM power state does not change, skip DB writing. vm id: " + entry.getKey());
             }
         }
 
@@ -107,9 +99,7 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
         // here we need to be wary of out of band migration as opposed to other, more unexpected state changes
         if (vmsThatAreMissingReport.size() > 0) {
             Date currentTime = DateUtil.currentGMTTime();
-            if (logger.isDebugEnabled()) {
-                logger.debug("Run missing VM report. current time: " + currentTime.getTime());
-            }
+            logger.debug("Run missing VM report. current time: " + currentTime.getTime());
 
             // 2 times of sync-update interval for graceful period
             long milliSecondsGracefullPeriod = mgmtServiceConf.getPingInterval() * 2000L;
@@ -138,16 +128,14 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
                     }
                 }
 
-                if (logger.isInfoEnabled()) {
-                    String lastTime = new SimpleDateFormat("yyyy/MM/dd'T'HH:mm:ss.SSS'Z'").format(vmStateUpdateTime);
-                    logger.debug(
-                            String.format("Detected missing VM. host: %d, vm id: %d(%s), power state: %s, last state update: %s"
-                                    , hostId
-                                    , instance.getId()
-                                    , instance.getUuid()
-                                    , VirtualMachine.PowerState.PowerReportMissing
-                                    , lastTime));
-                }
+                String lastTime = new SimpleDateFormat("yyyy/MM/dd'T'HH:mm:ss.SSS'Z'").format(vmStateUpdateTime);
+                logger.debug(
+                        String.format("Detected missing VM. host: %d, vm id: %d(%s), power state: %s, last state update: %s"
+                                , hostId
+                                , instance.getId()
+                                , instance.getUuid()
+                                , VirtualMachine.PowerState.PowerReportMissing
+                                , lastTime));
 
                 long milliSecondsSinceLastStateUpdate = currentTime.getTime() - vmStateUpdateTime.getTime();
 
@@ -158,15 +146,11 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
                     // between the startime of this job and the currentTime of this missing-branch
                     // an update might have occurred that we should not override in case of out of band migration
                     if (_instanceDao.updatePowerState(instance.getId(), hostId, VirtualMachine.PowerState.PowerReportMissing, startTime)) {
-                        if (logger.isDebugEnabled()) {
-                            logger.debug("VM state report is updated. host: " + hostId + ", vm id: " + instance.getId() + ", power state: PowerReportMissing ");
-                        }
+                        logger.debug("VM state report is updated. host: " + hostId + ", vm id: " + instance.getId() + ", power state: PowerReportMissing ");
 
                         _messageBus.publish(null, VirtualMachineManager.Topics.VM_POWER_STATE, PublishScope.GLOBAL, instance.getId());
                     } else {
-                        if (logger.isDebugEnabled()) {
-                            logger.debug("VM power state does not change, skip DB writing. vm id: " + instance.getId());
-                        }
+                        logger.debug("VM power state does not change, skip DB writing. vm id: " + instance.getId());
                     }
                 } else {
                     logger.debug("vm id: " + instance.getId() + " - time since last state update(" + milliSecondsSinceLastStateUpdate + "ms) has not passed graceful period yet");
@@ -174,8 +158,7 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
             }
         }
 
-        if (logger.isDebugEnabled())
-            logger.debug("Done with process of VM state report. host: " + hostId);
+        logger.debug("Done with process of VM state report. host: " + hostId);
     }
 
     @Override

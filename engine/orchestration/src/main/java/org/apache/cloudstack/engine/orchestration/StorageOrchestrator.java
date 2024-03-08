@@ -159,7 +159,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         }
         storageCapacities.put(srcDataStoreId, new Pair<>(null, null));
         if (migrationPolicy == MigrationPolicy.COMPLETE) {
-            logger.debug(String.format("Setting source image store: %s to read-only", srcDatastore.getId()));
+            logger.debug("Setting source image store: {} to read-only", srcDatastore.getId());
             storageService.updateImageStoreStatus(srcDataStoreId, true);
         }
 
@@ -200,7 +200,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
             }
 
             if (chosenFileForMigration.getPhysicalSize() > storageCapacities.get(destDatastoreId).first()) {
-                logger.debug(String.format("%s: %s too large to be migrated to %s",  chosenFileForMigration.getType().name() , chosenFileForMigration.getUuid(), destDatastoreId));
+                logger.debug("{}: {} too large to be migrated to {}",  chosenFileForMigration.getType().name() , chosenFileForMigration.getUuid(), destDatastoreId);
                 skipped += 1;
                 continue;
             }
@@ -267,7 +267,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
             }
 
             if (chosenFileForMigration.getPhysicalSize() > storageCapacities.get(destImgStoreId).first()) {
-                logger.debug(String.format("%s: %s too large to be migrated to %s", chosenFileForMigration.getType().name(), chosenFileForMigration.getUuid(), destImgStoreId));
+                logger.debug("{}: %s too large to be migrated to {}", chosenFileForMigration.getType().name(), chosenFileForMigration.getUuid(), destImgStoreId);
                 continue;
             }
 

@@ -97,15 +97,15 @@ public class DataMigrationUtility {
         boolean isReady = true;
         for (TemplateDataStoreVO template : templates) {
             isReady &= (Arrays.asList(validStates).contains(template.getState()));
-            logger.trace(String.format("template state: %s", template.getState()));
+            logger.trace("template state: {}", template.getState());
         }
         for (SnapshotDataStoreVO snapshot : snapshots) {
             isReady &= (Arrays.asList(validStates).contains(snapshot.getState()));
-            logger.trace(String.format("snapshot state: %s", snapshot.getState()));
+            logger.trace("snapshot state: {}", snapshot.getState());
         }
         for (VolumeDataStoreVO volume : volumes) {
             isReady &= (Arrays.asList(validStates).contains(volume.getState()));
-            logger.trace(String.format("volume state: %s", volume.getState()));
+            logger.trace("volume state: {}", volume.getState());
         }
         return isReady;
     }
