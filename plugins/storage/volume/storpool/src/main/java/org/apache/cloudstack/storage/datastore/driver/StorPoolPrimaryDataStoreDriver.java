@@ -378,7 +378,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             VolumeObject vol = (VolumeObject)data;
             path = vol.getPath();
 
-            err = resizeVolume(data, path, err, vol);
+            err = resizeVolume(data, path, vol);
         } else {
             err = String.format("Invalid object type \"%s\"  passed to resize", data.getType());
         }
@@ -388,7 +388,8 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         callback.complete(res);
     }
 
-    private String resizeVolume(DataObject data, String path, String err, VolumeObject vol) {
+    private String resizeVolume(DataObject data, String path, VolumeObject vol) {
+        String err = null;
         ResizeVolumePayload payload = (ResizeVolumePayload)vol.getpayload();
         boolean needResize = vol.getSize() != payload.newSize;
 
@@ -399,7 +400,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         try {
             SpConnectionDesc conn = StorPoolUtil.getSpConnection(data.getDataStore().getUuid(), data.getDataStore().getId(), storagePoolDetailsDao, primaryStoreDao);
 
-            err = updateStorPoolVolume(err, vol, payload, conn);
+            err = updateStorPoolVolume(vol, payload, conn);
             if (err == null && needResize) {
                 err = notifyQemuForTheNewSize(data, err, vol, payload);
             }
@@ -432,7 +433,8 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         return err;
     }
 
-    private String updateStorPoolVolume(String err, VolumeObject vol, ResizeVolumePayload payload, SpConnectionDesc conn) {
+    private String updateStorPoolVolume(VolumeObject vol, ResizeVolumePayload payload, SpConnectionDesc conn) {
+        String err = null;
         String name = StorPoolStorageAdaptor.getVolumeNameFromPath(vol.getPath(), true);
         Long newDiskOfferingId = payload.getNewDiskOfferingId();
         String tier = null;
