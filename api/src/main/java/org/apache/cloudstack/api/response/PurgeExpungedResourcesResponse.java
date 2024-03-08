@@ -15,15 +15,25 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloud.network.dao;
+package org.apache.cloudstack.api.response;
 
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseResponse;
 
-import java.util.List;
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
-import com.cloud.utils.db.GenericDao;
+public class PurgeExpungedResourcesResponse extends BaseResponse {
 
-public interface OpRouterMonitorServiceDao extends GenericDao<OpRouterMonitorServiceVO, Long> {
+    @SerializedName(ApiConstants.RESOURCE_COUNT)
+    @Param(description = "The count of the purged expunged resources")
+    private Long resourceCount;
 
-    int expungeByVmList(List<Long> vmIds, Long batchSize);
+    public Long getResourceCount() {
+        return resourceCount;
+    }
 
+    public void setResourceCount(Long resourceCount) {
+        this.resourceCount = resourceCount;
+    }
 }

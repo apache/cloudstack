@@ -21,13 +21,16 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.api.ResourceDetail;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
 
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.TransactionLegacy;
 
 public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends GenericDaoBase<R, Long> implements ResourceDetailsDao<R> {
     private SearchBuilder<R> AllFieldsSearch;
@@ -200,5 +203,26 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
         sc.setParameters("value", values);
 
         return customSearch(sc, null);
+    }
+
+    @Override
+    public long batchExpungeForResources(List<Long> ids, Long batchSize) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return 0;
+        }
+        SearchBuilder<R> sb = createSearchBuilder();
+        sb.and("ids", sb.entity().getResourceId(), Op.IN);
+        sb.done();
+        SearchCriteria<R> sc = sb.create();
+        sc.setParameters("ids", ids.toArray());
+        int removed = 0;
+        long totalRemoved = 0;
+        Filter filter = new Filter(_entityBeanType, "id", true, null, batchSize);
+        final long batchSizeFinal = ObjectUtils.defaultIfNull(batchSize, 0L);
+        do {
+            removed = expunge(sc, filter);
+            totalRemoved += removed;
+        } while (batchSizeFinal > 0 && removed >= batchSizeFinal);
+        return totalRemoved;
     }
 }

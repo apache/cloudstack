@@ -285,4 +285,13 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         sc.setParameters("status", (Object[]) status);
         return listBy(sc, null);
     }
+
+    @Override
+    public List<SnapshotVO> searchByVolumes(List<Long> volumeIds) {
+        SearchBuilder<SnapshotVO> sb = createSearchBuilder();
+        sb.and("volumeIds", sb.entity().getVolumeId(), SearchCriteria.Op.IN);
+        SearchCriteria<SnapshotVO> sc = sb.create();
+        sc.setParameters("volumeIds", volumeIds.toArray());
+        return search(sc, null);
+    }
 }

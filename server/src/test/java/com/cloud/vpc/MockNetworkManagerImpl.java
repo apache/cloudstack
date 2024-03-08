@@ -1108,4 +1108,8 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     public List<InternalLoadBalancerElementService> getInternalLoadBalancerElements() {
         return null;
     }
+
+    @Override
+    public void expungeLbVmRefs(List<Long> vmIds, Long batchSize) {
+    }
 }

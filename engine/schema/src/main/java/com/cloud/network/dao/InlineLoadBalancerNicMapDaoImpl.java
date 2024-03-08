@@ -17,9 +17,12 @@
 package com.cloud.network.dao;
 
 
+import java.util.List;
+
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
@@ -41,4 +44,12 @@ public class InlineLoadBalancerNicMapDaoImpl extends GenericDaoBase<InlineLoadBa
         return findOneBy(sc);
     }
 
+    @Override
+    public int expungeByNicList(List<Long> nicIds, Long batchSize) {
+        SearchBuilder<InlineLoadBalancerNicMapVO> sb = createSearchBuilder();
+        sb.and("nicIds", sb.entity().getNicId(), SearchCriteria.Op.IN);
+        SearchCriteria<InlineLoadBalancerNicMapVO> sc = sb.create();
+        sc.setParameters("nicIds", nicIds.toArray());
+        return batchExpunge(sc, batchSize);
+    }
 }

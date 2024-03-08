@@ -428,4 +428,15 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         sc.setParameters("vmType", vmType);
         return listBy(sc);
     }
+
+    @Override
+    public List<NicVO> searchRemovedByVms(List<Long> vmIds, Long batchSize) {
+        SearchBuilder<NicVO> sb = createSearchBuilder();
+        sb.and("vmIds", sb.entity().getInstanceId(), SearchCriteria.Op.IN);
+        sb.and("removed", sb.entity().getRemoved(), SearchCriteria.Op.NNULL);
+        SearchCriteria<NicVO> sc = sb.create();
+        sc.setParameters("vmIds", vmIds.toArray());
+        Filter filter = new Filter(NicVO.class, "id", true, null, batchSize);
+        return searchIncludingRemoved(sc, filter, null, false);
+    }
 }

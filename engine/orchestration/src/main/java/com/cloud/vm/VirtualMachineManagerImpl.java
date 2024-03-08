@@ -89,6 +89,7 @@ import org.apache.cloudstack.framework.messagebus.MessageHandler;
 import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.reservation.dao.ReservationDao;
+import org.apache.cloudstack.resource.ResourceCleanupService;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -401,6 +402,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     private VpcDao vpcDao;
     @Inject
     private DomainDao domainDao;
+    @Inject
+    ResourceCleanupService resourceCleanupService;
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
@@ -690,6 +693,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (logger.isDebugEnabled()) {
             logger.debug("Expunged " + vm);
         }
+        resourceCleanupService.purgeExpungedVmResourcesLaterIfNeeded(vm);
     }
 
     private void handleUnsuccessfulExpungeOperation(List<Command> finalizeExpungeCommands, List<Command> nicExpungeCommands,

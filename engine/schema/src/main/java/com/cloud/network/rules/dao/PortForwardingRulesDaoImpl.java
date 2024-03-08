@@ -170,4 +170,13 @@ public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRul
         sc.setParameters("dstIp", secondaryIp);
         return findOneBy(sc);
     }
+
+    @Override
+    public int expungeByVmList(List<Long> vmIds, Long batchSize) {
+        SearchBuilder<PortForwardingRuleVO> sb = createSearchBuilder();
+        sb.and("vmIds", sb.entity().getVirtualMachineId(), SearchCriteria.Op.IN);
+        SearchCriteria<PortForwardingRuleVO> sc = sb.create();
+        sc.setParameters("vmIds", vmIds.toArray());
+        return batchExpunge(sc, batchSize);
+    }
 }

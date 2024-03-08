@@ -18,11 +18,11 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
-
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 
@@ -134,5 +134,14 @@ public class LoadBalancerVMMapDaoImpl extends GenericDaoBase<LoadBalancerVMMapVO
         sc.addAnd("loadBalancerId", SearchCriteria.Op.EQ, loadBalancerId);
         sc.addAnd("instanceId", SearchCriteria.Op.EQ, instanceId);
         return listBy(sc);
+    }
+
+    @Override
+    public int expungeByVmList(List<Long> vmIds, Long batchSize) {
+        SearchBuilder<LoadBalancerVMMapVO> sb = createSearchBuilder();
+        sb.and("vmIds", sb.entity().getInstanceId(), SearchCriteria.Op.IN);
+        SearchCriteria<LoadBalancerVMMapVO> sc = sb.create();
+        sc.setParameters("vmIds", vmIds.toArray());
+        return batchExpunge(sc, batchSize);
     }
 }

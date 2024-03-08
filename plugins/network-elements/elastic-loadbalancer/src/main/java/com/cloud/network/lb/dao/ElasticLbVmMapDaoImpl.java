@@ -136,4 +136,13 @@ public class ElasticLbVmMapDaoImpl extends GenericDaoBase<ElasticLbVmMapVO, Long
         return _loadbalancerDao.search(sc, null);
     }
 
+    @Override
+    public int expungeByLbVmList(List<Long> vmIds, Long batchSize) {
+        SearchBuilder<ElasticLbVmMapVO> sb = createSearchBuilder();
+        sb.and("vmIds", sb.entity().getElbVmId(), SearchCriteria.Op.IN);
+        SearchCriteria<ElasticLbVmMapVO> sc = sb.create();
+        sc.setParameters("vmIds", vmIds.toArray());
+        return batchExpunge(sc, batchSize);
+    }
+
 }

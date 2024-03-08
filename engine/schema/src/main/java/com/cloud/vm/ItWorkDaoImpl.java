@@ -18,7 +18,6 @@ package com.cloud.vm;
 
 import java.util.List;
 
-
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.GenericDaoBase;
@@ -102,5 +101,14 @@ public class ItWorkDaoImpl extends GenericDaoBase<ItWorkVO, String> implements I
 
         return search(sc, null);
 
+    }
+
+    @Override
+    public int expungeByVmList(List<Long> vmIds, Long batchSize) {
+        SearchBuilder<ItWorkVO> sb = createSearchBuilder();
+        sb.and("vmIds", sb.entity().getInstanceId(), SearchCriteria.Op.IN);
+        SearchCriteria<ItWorkVO> sc = sb.create();
+        sc.setParameters("vmIds", vmIds.toArray());
+        return batchExpunge(sc, batchSize);
     }
 }
