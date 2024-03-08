@@ -730,7 +730,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         HostMO hostMO = new HostMO(context, host.getMor());
 
         try {
-            prepareNetworkFromNicInfo(hostMO, cmd.getNic(), false, null);
+            prepareNetworkFromNicInfo(hostMO, cmd.getNic(), false, null, null);
             hostname =  host.getHyperHostName();
         } catch (Exception e) {
             return new SetupPersistentNetworkAnswer(cmd, false, "failed to setup port-group due to: "+ e.getLocalizedMessage());
@@ -1472,7 +1472,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         deviceNumber++;
 
         VirtualDevice nic;
-        Pair<ManagedObjectReference, String> networkInfo = prepareNetworkFromNicInfo(vmMo.getRunningHost(), nicTo, false, vmType);
+        Pair<ManagedObjectReference, String> networkInfo = prepareNetworkFromNicInfo(vmMo.getRunningHost(), nicTo, false, nicTo.getNetworkSegmentName(), vmType);
         String dvSwitchUuid = null;
         if (VmwareHelper.isDvPortGroup(networkInfo.first())) {
             ManagedObjectReference dcMor = hyperHost.getHyperHostDatacenter();
@@ -1534,7 +1534,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 return new ReplugNicAnswer(cmd, false, "Nic to replug not found");
             }
 
-            Pair<ManagedObjectReference, String> networkInfo = prepareNetworkFromNicInfo(vmMo.getRunningHost(), nicTo, false, cmd.getVMType());
+            Pair<ManagedObjectReference, String> networkInfo = prepareNetworkFromNicInfo(vmMo.getRunningHost(), nicTo, false, null, cmd.getVMType());
             String dvSwitchUuid = null;
             if (VmwareHelper.isDvPortGroup(networkInfo.first())) {
                 ManagedObjectReference dcMor = hyperHost.getHyperHostDatacenter();
@@ -1616,7 +1616,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         } else {
             networkInfo =
                     HypervisorHostHelper.prepareNetwork(_publicTrafficInfo.getVirtualSwitchName(), "cloud.public", vmMo.getRunningHost(), vlanId, null, ipAddressTO.getNetworkRate(), null,
-                            _opsTimeout, vSwitchType, _portsPerDvPortGroup, null, false, BroadcastDomainType.Vlan, _vsmCredentials, null);
+                            _opsTimeout, vSwitchType, _portsPerDvPortGroup, null, false, BroadcastDomainType.Vlan, _vsmCredentials, null, null);
         }
 
         int nicIndex = allocPublicNicIndex(vmMo);
@@ -2525,7 +2525,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 }
                 boolean configureVServiceInNexus = (nicTo.getType() == TrafficType.Guest) && (vmSpec.getDetails().containsKey("ConfigureVServiceInNexus"));
                 VirtualMachine.Type vmType = cmd.getVirtualMachine().getType();
-                Pair<ManagedObjectReference, String> networkInfo = prepareNetworkFromNicInfo(vmMo.getRunningHost(), nicTo, configureVServiceInNexus, vmType);
+                Pair<ManagedObjectReference, String> networkInfo = prepareNetworkFromNicInfo(vmMo.getRunningHost(), nicTo, configureVServiceInNexus,
+                        vmSpec.getNetworkIdToNetworkNameMap().getOrDefault(nicTo.getNetworkId(), null), vmType);
                 if ((nicTo.getBroadcastType() != BroadcastDomainType.Lswitch)
                         || (nicTo.getBroadcastType() == BroadcastDomainType.Lswitch && NiciraNvpApiVersion.isApiVersionLowerThan("4.2"))) {
                     if (VmwareHelper.isDvPortGroup(networkInfo.first())) {
@@ -3981,7 +3982,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         return defaultVlan;
     }
 
-    private Pair<ManagedObjectReference, String> prepareNetworkFromNicInfo(HostMO hostMo, NicTO nicTo, boolean configureVServiceInNexus, VirtualMachine.Type vmType)
+    private Pair<ManagedObjectReference, String> prepareNetworkFromNicInfo(HostMO hostMo, NicTO nicTo, boolean configureVServiceInNexus, String networkName, VirtualMachine.Type vmType)
             throws Exception {
 
         Ternary<String, String, String> switchDetails = getTargetSwitch(nicTo);
@@ -4011,7 +4012,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             }
             networkInfo = HypervisorHostHelper.prepareNetwork(switchName, namePrefix, hostMo, vlanId, svlanId,
                     nicTo.getNetworkRateMbps(), nicTo.getNetworkRateMulticastMbps(), _opsTimeout, switchType,
-                    _portsPerDvPortGroup, nicTo.getGateway(), configureVServiceInNexus, nicTo.getBroadcastType(), _vsmCredentials, nicTo.getDetails());
+                    _portsPerDvPortGroup, nicTo.getGateway(), configureVServiceInNexus, nicTo.getBroadcastType(), _vsmCredentials, nicTo.getDetails(), networkName);
         }
 
         return networkInfo;
@@ -4602,7 +4603,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             NicTO[] nics = vm.getNics();
             for (NicTO nic : nics) {
                 // prepare network on the host
-                prepareNetworkFromNicInfo(new HostMO(getServiceContext(), _morHyperHost), nic, false, cmd.getVirtualMachine().getType());
+                prepareNetworkFromNicInfo(new HostMO(getServiceContext(), _morHyperHost), nic, false,
+                        vm.getNetworkIdToNetworkNameMap().getOrDefault(nic.getNetworkId(), null), cmd.getVirtualMachine().getType());
             }
 
             List<Pair<String, Long>> secStoreUrlAndIdList = mgr.getSecondaryStorageStoresUrlAndIdList(Long.parseLong(_dcId));
@@ -5680,7 +5682,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
     }
 
     protected Answer execute(MaintainCommand cmd) {
-        return new MaintainAnswer(cmd, "Put host in maintaince");
+        return new MaintainAnswer(cmd, "Put host in maintenance");
     }
 
     protected Answer execute(PingTestCommand cmd) {
@@ -7326,7 +7328,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 NicTO[] nics = vmTo.getNics();
                 for (NicTO nic : nics) {
                     // prepare network on the host
-                    prepareNetworkFromNicInfo((HostMO)targetHyperHost, nic, false, vmTo.getType());
+                    prepareNetworkFromNicInfo((HostMO)targetHyperHost, nic, false,
+                            vmTo.getNetworkIdToNetworkNameMap().get(nic.getNetworkId()), vmTo.getType());
                 }
 
                 if (targetHyperHost == null) {
