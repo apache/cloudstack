@@ -34,6 +34,7 @@ import java.util.function.Consumer;
 
 import javax.inject.Inject;
 
+import com.cloud.utils.DateUtil;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.QuotaBalanceCmd;
@@ -44,6 +45,7 @@ import org.apache.cloudstack.api.command.QuotaTariffCreateCmd;
 import org.apache.cloudstack.api.command.QuotaTariffListCmd;
 import org.apache.cloudstack.api.command.QuotaTariffUpdateCmd;
 import org.apache.cloudstack.quota.QuotaManager;
+import org.apache.cloudstack.quota.QuotaManagerImpl;
 import org.apache.cloudstack.quota.QuotaService;
 import org.apache.cloudstack.quota.QuotaStatement;
 import org.apache.cloudstack.quota.constant.QuotaConfig;
@@ -470,12 +472,14 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         }
 
         if (endDate.compareTo(startDate) < 0) {
-            throw new InvalidParameterValueException(String.format("The quota tariff's end date [%s] cannot be less than the start date [%s]", endDate, startDate));
+            throw new InvalidParameterValueException(String.format("The quota tariff's end date [%s] cannot be less than the start date [%s].",
+                    endDate, startDate));
         }
 
         Date now = _quotaService.computeAdjustedTime(new Date());
         if (endDate.compareTo(now) < 0) {
-            throw new InvalidParameterValueException(String.format("The quota tariff's end date [%s] cannot be less than now [%s].", endDate, now));
+            throw new InvalidParameterValueException(String.format("The quota tariff's end date [%s] cannot be less than now [%s].",
+                    endDate, now));
         }
 
         newQuotaTariff.setEndDate(endDate);
@@ -487,7 +491,8 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         QuotaBalanceVO qb = _quotaBalanceDao.findLaterBalanceEntry(accountId, domainId, despositedOn);
 
         if (qb != null) {
-            throw new InvalidParameterValueException("Incorrect deposit date: " + despositedOn + " there are balance entries after this date");
+            throw new InvalidParameterValueException(String.format("Incorrect deposit date [%s], as there are balance entries after this date.",
+                    despositedOn));
         }
 
         QuotaCreditsVO credits = new QuotaCreditsVO(accountId, domainId, new BigDecimal(amount), updatedBy);
@@ -500,9 +505,8 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         }
         final boolean lockAccountEnforcement = "true".equalsIgnoreCase(QuotaConfig.QuotaEnableEnforcement.value());
         final BigDecimal currentAccountBalance = _quotaBalanceDao.lastQuotaBalance(accountId, domainId, startOfNextDay(new Date(despositedOn.getTime())));
-        if (logger.isDebugEnabled()) {
-            logger.debug("AddQuotaCredits: Depositing " + amount + " on adjusted date " + despositedOn + ", current balance " + currentAccountBalance);
-        }
+        logger.debug("Depositing [{}] credits on adjusted date [{}]; current balance is [{}].", amount,
+                DateUtil.displayDateInTimezone(QuotaManagerImpl.getUsageAggregationTimeZone(), despositedOn), currentAccountBalance);
         // update quota account with the balance
         _quotaService.saveQuotaAccount(account, currentAccountBalance, despositedOn);
         if (lockAccountEnforcement) {
@@ -581,9 +585,10 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         QuotaBalanceResponse resp = new QuotaBalanceResponse();
         BigDecimal lastCredits = new BigDecimal(0);
         for (QuotaBalanceVO entry : quotaBalance) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("createQuotaLastBalanceResponse Date=" + entry.getUpdatedOn() + " balance=" + entry.getCreditBalance() + " credit=" + entry.getCreditsId());
-            }
+            logger.debug("createQuotaLastBalanceResponse Date={} balance={} credit={}",
+                    DateUtil.displayDateInTimezone(QuotaManagerImpl.getUsageAggregationTimeZone(), entry.getUpdatedOn()),
+                    entry.getCreditBalance(), entry.getCreditsId());
+
             lastCredits = lastCredits.add(entry.getCreditBalance());
         }
         resp.setStartQuota(lastCredits);
@@ -638,7 +643,8 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         }
 
         if (startDate.compareTo(now) < 0) {
-            throw new InvalidParameterValueException(String.format("The quota tariff's start date [%s] cannot be less than now [%s]", startDate, now));
+            throw new InvalidParameterValueException(String.format("The value passed as Quota tariff's start date is in the past: [%s]. " +
+                    "Please, inform a date in the future or do not pass the parameter to use the current date and time.", startDate));
         }
 
         return persistNewQuotaTariff(null, name, usageType, startDate, cmd.getEntityOwnerId(), endDate, value, description, activationRule);

@@ -84,11 +84,10 @@ public class DeleteUserCmd extends BaseCmd {
     public void execute() {
         CallContext.current().setEventDetails("UserId: " + getId());
         boolean result = _regionService.deleteUser(this);
-        if (result) {
-            SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
-        } else {
+        if (!result) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete user");
         }
+        SuccessResponse response = new SuccessResponse(getCommandName());
+        this.setResponseObject(response);
     }
 }

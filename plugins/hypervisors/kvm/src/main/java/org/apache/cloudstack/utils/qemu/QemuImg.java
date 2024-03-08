@@ -813,4 +813,45 @@ public class QemuImg {
         Pattern pattern = Pattern.compile("Supported\\sformats:[a-zA-Z0-9-_\\s]*?\\b" + format + "\\b", CASE_INSENSITIVE);
         return pattern.matcher(text).find();
     }
+
+    /**
+     * check for any leaks for an image and repair.
+     *
+     * @param imageOptions
+     *         Qemu style image options to be used in the checking process.
+     * @param qemuObjects
+     *         Qemu style options (e.g. for passing secrets).
+     * @param repair
+     *         Boolean option whether to repair any leaks
+     */
+    public String checkAndRepair(final QemuImgFile file, final QemuImageOptions imageOptions, final List<QemuObject> qemuObjects, final String repair) throws QemuImgException {
+        final Script script = new Script(_qemuImgPath);
+        script.add("check");
+        if (imageOptions == null) {
+            script.add(file.getFileName());
+        }
+
+        for (QemuObject o : qemuObjects) {
+            script.add(o.toCommandFlag());
+        }
+
+        if (imageOptions != null) {
+            script.add(imageOptions.toCommandFlag());
+        }
+
+        if (StringUtils.isNotEmpty(repair)) {
+            script.add("-r");
+            script.add(repair);
+        }
+
+        script.add("--output=json");
+        script.add("2>/dev/null");
+
+        final String result = Script.runBashScriptIgnoreExitValue(script.toString(), 3);
+        if (result != null) {
+            logger.debug(String.format("Check volume execution result %s", result));
+        }
+
+        return result;
+    }
 }
