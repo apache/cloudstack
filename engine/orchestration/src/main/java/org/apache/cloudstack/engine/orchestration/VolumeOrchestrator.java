@@ -1856,6 +1856,18 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         return _volsDao.persist(volume);
     }
 
+    protected void grantVolumeAccessToHostIfNeeded(PrimaryDataStore volumeStore, long volumeId, Host host, String volToString) {
+        PrimaryDataStoreDriver driver = (PrimaryDataStoreDriver)volumeStore.getDriver();
+        if (!driver.volumesRequireGrantAccessWhenUsed()) {
+            return;
+        }
+        try {
+            volService.grantAccess(volFactory.getVolume(volumeId), host, volumeStore);
+        } catch (Exception e) {
+            throw new StorageAccessException(String.format("Unable to grant access to volume [%s] on host [%s].", volToString, host));
+        }
+    }
+
     @Override
     public void prepare(VirtualMachineProfile vm, DeployDestination dest) throws StorageUnavailableException, InsufficientStorageCapacityException, ConcurrentOperationException, StorageAccessException {
         if (dest == null) {
@@ -1873,18 +1885,18 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         List<VolumeTask> tasks = getTasks(vols, dest.getStorageForDisks(), vm);
         Volume vol = null;
-        PrimaryDataStore pool;
+        PrimaryDataStore store;
         for (VolumeTask task : tasks) {
             if (task.type == VolumeTaskType.NOP) {
                 vol = task.volume;
 
                 String volToString = getReflectOnlySelectedFields(vol);
 
-                pool = (PrimaryDataStore)dataStoreMgr.getDataStore(task.pool.getId(), DataStoreRole.Primary);
+                store = (PrimaryDataStore)dataStoreMgr.getDataStore(task.pool.getId(), DataStoreRole.Primary);
 
                 // For zone-wide managed storage, it is possible that the VM can be started in another
                 // cluster. In that case, make sure that the volume is in the right access group.
-                if (pool.isManaged()) {
+                if (store.isManaged()) {
                     Host lastHost = _hostDao.findById(vm.getVirtualMachine().getLastHostId());
                     Host host = _hostDao.findById(vm.getVirtualMachine().getHostId());
 
@@ -1893,34 +1905,27 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
                     if (lastClusterId != clusterId) {
                         if (lastHost != null) {
-                            storageMgr.removeStoragePoolFromCluster(lastHost.getId(), vol.get_iScsiName(), pool);
-                            volService.revokeAccess(volFactory.getVolume(vol.getId()), lastHost, pool);
+                            storageMgr.removeStoragePoolFromCluster(lastHost.getId(), vol.get_iScsiName(), store);
+                            volService.revokeAccess(volFactory.getVolume(vol.getId()), lastHost, store);
                         }
 
                         try {
-                            volService.grantAccess(volFactory.getVolume(vol.getId()), host, pool);
+                            volService.grantAccess(volFactory.getVolume(vol.getId()), host, store);
                         } catch (Exception e) {
                             throw new StorageAccessException(String.format("Unable to grant access to volume [%s] on host [%s].", volToString, host));
                         }
                     } else {
-                        PrimaryDataStoreDriver driver = (PrimaryDataStoreDriver) pool.getDriver();
-                        if (driver.volumesRequireGrantAccessWhenUsed()) {
-                            try {
-                                volService.grantAccess(volFactory.getVolume(vol.getId()), host, pool);
-                            } catch (Exception e) {
-                                throw new StorageAccessException(String.format("Unable to grant access to volume [%s] on host [%s].", volToString, host));
-                            }
-                        }
+                        grantVolumeAccessToHostIfNeeded(store, vol.getId(), host, volToString);
                     }
                 } else {
                     handleCheckAndRepairVolume(vol, vm.getVirtualMachine().getHostId());
                 }
             } else if (task.type == VolumeTaskType.MIGRATE) {
-                pool = (PrimaryDataStore) dataStoreMgr.getDataStore(task.pool.getId(), DataStoreRole.Primary);
-                vol = migrateVolume(task.volume, pool);
+                store = (PrimaryDataStore) dataStoreMgr.getDataStore(task.pool.getId(), DataStoreRole.Primary);
+                vol = migrateVolume(task.volume, store);
             } else if (task.type == VolumeTaskType.RECREATE) {
                 Pair<VolumeVO, DataStore> result = recreateVolume(task.volume, vm, dest);
-                pool = (PrimaryDataStore) dataStoreMgr.getDataStore(result.second().getId(), DataStoreRole.Primary);
+                store = (PrimaryDataStore) dataStoreMgr.getDataStore(result.second().getId(), DataStoreRole.Primary);
                 vol = result.first();
             }
 
