@@ -17,6 +17,7 @@
 package com.cloud.kubernetes.cluster;
 
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
+import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
 import com.cloud.utils.component.AdapterBase;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -24,16 +25,28 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import java.util.Objects;
 
 @Component
 public class KubernetesClusterHelperImpl extends AdapterBase implements KubernetesClusterHelper, Configurable {
 
     @Inject
     private KubernetesClusterDao kubernetesClusterDao;
+    @Inject
+    private KubernetesClusterVmMapDao kubernetesClusterVmMapDao;
 
     @Override
     public ControlledEntity findByUuid(String uuid) {
         return kubernetesClusterDao.findByUuid(uuid);
+    }
+
+    @Override
+    public ControlledEntity findByVmId(long vmId) {
+        KubernetesClusterVmMapVO clusterVmMapVO = kubernetesClusterVmMapDao.getClusterMapFromVmId(vmId);
+        if (Objects.isNull(clusterVmMapVO)) {
+            return null;
+        }
+        return kubernetesClusterDao.findById(clusterVmMapVO.getClusterId());
     }
 
     @Override

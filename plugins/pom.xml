@@ -114,6 +114,7 @@
         <module>network-elements/brocade-vcs</module>
         <module>network-elements/vxlan</module>
         <module>network-elements/tungsten</module>
+        <module>network-elements/nsx</module>
 
         <module>outofbandmanagement-drivers/ipmitool</module>
         <module>outofbandmanagement-drivers/nested-cloudstack</module>

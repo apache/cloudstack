@@ -16,11 +16,13 @@
 //under the License.
 package org.apache.cloudstack.quota.vo;
 
+import com.cloud.utils.DateUtil;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import com.cloud.utils.db.GenericDao;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -33,6 +35,7 @@ import javax.persistence.TemporalType;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.TimeZone;
 import java.util.UUID;
 
 @Entity
@@ -261,6 +264,12 @@ public class QuotaTariffVO implements InternalIdentity {
 
     @Override
     public String toString() {
-        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "uuid", "name", "effectiveOn", "endDate");
-    };
+        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "uuid", "name", "usageName");
+    }
+
+    public String toString(TimeZone timeZone) {
+        String startDateString = DateUtil.displayDateInTimezone(timeZone, getEffectiveOn());
+        String endDateString = DateUtil.displayDateInTimezone(timeZone, getEndDate());
+        return String.format("%s,\"startDate\":\"%s\",\"endDate\":\"%s\"}", StringUtils.chop(this.toString()), startDateString, endDateString);
+    }
 }
