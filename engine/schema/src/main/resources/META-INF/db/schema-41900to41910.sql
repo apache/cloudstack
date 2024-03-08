@@ -30,3 +30,8 @@ UPDATE cloud_usage.quota_tariff
 SET usage_unit = 'IOPS', updated_on = NOW()
 WHERE effective_on = '2010-05-04 00:00:00'
 AND name IN ('VM_DISK_IO_READ', 'VM_DISK_IO_WRITE');
+
+-- Update options for config - host.allocators.order
+UPDATE `cloud`.`configuration` SET
+    `options` = 'FirstFitRouting,RandomAllocator,TestingAllocator,FirstFitAllocator,RecreateHostAllocator'
+where `name` = 'host.allocators.order' ;
