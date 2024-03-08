@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -84,8 +85,11 @@ public class VpcNetworkHelperImpl extends NetworkHelperImpl {
 
         final TreeSet<String> publicVlans = new TreeSet<String>();
         if (vpcRouterDeploymentDefinition.isPublicNetwork()) {
-            publicVlans.add(vpcRouterDeploymentDefinition.getSourceNatIP()
-                                                         .getVlanTag());
+            String vlanTag = "";
+            if (Objects.nonNull(vpcRouterDeploymentDefinition.getSourceNatIP().getVlanTag())) {
+                vlanTag = vpcRouterDeploymentDefinition.getSourceNatIP().getVlanTag();
+            }
+            publicVlans.add(vlanTag);
         }
 
         //1) allocate nic for control and source nat public ip

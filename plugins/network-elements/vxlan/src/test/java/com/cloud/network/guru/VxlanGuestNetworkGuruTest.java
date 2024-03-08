@@ -138,7 +138,7 @@ public class VxlanGuestNetworkGuruTest {
         Network network = mock(Network.class);
         Account account = mock(Account.class);
 
-        Network designednetwork = guru.design(offering, plan, network, account);
+        Network designednetwork = guru.design(offering, plan, network, "", 1L, account);
         assertTrue(designednetwork != null);
         assertTrue(designednetwork.getBroadcastDomainType() == BroadcastDomainType.Vxlan);
     }
