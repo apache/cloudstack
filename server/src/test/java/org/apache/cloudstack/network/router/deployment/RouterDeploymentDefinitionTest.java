@@ -31,6 +31,7 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.VirtualRouterProvider.Type;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.element.VirtualRouterProviderVO;
 import com.cloud.network.router.VirtualRouter.Role;
@@ -73,6 +74,8 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
 
     @Mock
     protected NetworkVO mockNw;
+    @Mock
+    protected NsxProviderDao nsxProviderDao;
 
     protected RouterDeploymentDefinition deployment;
 

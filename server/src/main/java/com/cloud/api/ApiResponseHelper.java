@@ -31,6 +31,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.function.Consumer;
@@ -38,6 +39,8 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.dc.VlanDetailsVO;
+import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.BucketVO;
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -482,6 +485,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     FirewallRulesDao firewallRulesDao;
     @Inject
     UserDataDao userDataDao;
+    @Inject
+    VlanDetailsDao vlanDetailsDao;
 
     @Inject
     ObjectStoreDao _objectStoreDao;
@@ -959,6 +964,8 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
             }
             vlanResponse.setForSystemVms(isForSystemVms(vlan.getId()));
+            VlanDetailsVO vlanDetail = vlanDetailsDao.findDetail(vlan.getId(), ApiConstants.NSX_DETAIL_KEY);
+            vlanResponse.setForNsx(Objects.nonNull(vlanDetail) && vlanDetail.getValue().equals("true"));
             vlanResponse.setObjectName("vlan");
             return vlanResponse;
         } catch (InstantiationException | IllegalAccessException e) {
@@ -1112,6 +1119,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         ipResponse.setForDisplay(ipAddr.isDisplay());
 
         ipResponse.setPortable(ipAddr.isPortable());
+        ipResponse.setForSystemVms(ipAddr.isForSystemVms());
 
         //set tag information
         List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(ResourceObjectType.PublicIpAddress, ipAddr.getId());
@@ -2373,6 +2381,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         response.setForVpc(_configMgr.isOfferingForVpc(offering));
         response.setForTungsten(offering.isForTungsten());
+        response.setForNsx(offering.isForNsx());
+        response.setNsxMode(offering.getNsxMode());
         response.setServices(serviceResponses);
         //set network offering details
         Map<Detail, String> details = _ntwkModel.getNtwkOffDetails(offering.getId());

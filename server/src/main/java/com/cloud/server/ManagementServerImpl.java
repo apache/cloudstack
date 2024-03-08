@@ -839,6 +839,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 public class ManagementServerImpl extends ManagerBase implements ManagementServer, Configurable {
     protected StateMachine2<State, VirtualMachine.Event, VirtualMachine> _stateMachine;
 
+    static final String FOR_SYSTEMVMS = "forsystemvms";
     static final ConfigKey<Integer> vmPasswordLength = new ConfigKey<Integer>("Advanced", Integer.class, "vm.password.length", "6", "Specifies the length of a randomly generated password", false);
     static final ConfigKey<Integer> sshKeyLength = new ConfigKey<Integer>("Advanced", Integer.class, "ssh.key.length", "2048", "Specifies custom SSH key length (bit)", true, ConfigKey.Scope.Global);
     static final ConfigKey<Boolean> humanReadableSizes = new ConfigKey<Boolean>("Advanced", Boolean.class, "display.human.readable.sizes", "true", "Enables outputting human readable byte sizes to logs and usage records.", false, ConfigKey.Scope.Global);
@@ -2568,7 +2569,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         sb.and("vpcId", sb.entity().getVpcId(), SearchCriteria.Op.EQ);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("display", sb.entity().isDisplay(), SearchCriteria.Op.EQ);
-        sb.and("forsystemvms", sb.entity().isForSystemVms(), SearchCriteria.Op.EQ);
+        sb.and(FOR_SYSTEMVMS, sb.entity().isForSystemVms(), SearchCriteria.Op.EQ);
 
         if (forLoadBalancing != null && forLoadBalancing) {
             final SearchBuilder<LoadBalancerVO> lbSearch = _loadbalancerDao.createSearchBuilder();
@@ -2614,6 +2615,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Boolean staticNat = cmd.isStaticNat();
         final Boolean forDisplay = cmd.getDisplay();
         final String state = cmd.getState();
+        final Boolean forSystemVms = cmd.getForSystemVMs();
         final Map<String, String> tags = cmd.getTags();
 
         sc.setJoinParameters("vlanSearch", "vlanType", vlanType);
@@ -2675,7 +2677,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (IpAddressManagerImpl.getSystemvmpublicipreservationmodestrictness().value() && IpAddress.State.Free.name().equalsIgnoreCase(state)) {
-            sc.setParameters("forsystemvms", false);
+            sc.setParameters(FOR_SYSTEMVMS, false);
+        } else {
+            sc.setParameters(FOR_SYSTEMVMS, forSystemVms);
         }
     }
 
