@@ -354,10 +354,10 @@ public class NetUtilsTest {
         final String[] invalidCidrs = {"172.33.1.0/16", "100.128.1.0/10"};
 
         for (String cidr: validCidrs) {
-            assertTrue(NetUtils.validateGuestCidr(cidr));
+            assertTrue(NetUtils.validateGuestCidr(cidr, true));
         }
         for (String cidr: invalidCidrs) {
-            assertFalse(NetUtils.validateGuestCidr(cidr));
+            assertFalse(NetUtils.validateGuestCidr(cidr, true));
         }
     }
 

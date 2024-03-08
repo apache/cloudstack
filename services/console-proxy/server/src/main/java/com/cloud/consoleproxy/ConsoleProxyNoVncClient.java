@@ -16,19 +16,19 @@
 // under the License.
 package com.cloud.consoleproxy;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
-import org.eclipse.jetty.websocket.api.Session;
-import org.eclipse.jetty.websocket.api.WebSocketException;
-import org.eclipse.jetty.websocket.api.extensions.Frame;
-
 import java.awt.Image;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.eclipse.jetty.websocket.api.Session;
+import org.eclipse.jetty.websocket.api.WebSocketException;
+import org.eclipse.jetty.websocket.api.extensions.Frame;
 
 import com.cloud.consoleproxy.vnc.NoVncClient;
 
@@ -115,11 +115,6 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                                 updateFrontEndActivityTime();
                             }
                             connectionAlive = session.isOpen();
-                            try {
-                                Thread.sleep(1);
-                            } catch (InterruptedException e) {
-                                logger.error("Error on sleep for vnc over websocket", e);
-                            }
                         } else if (client.isVncOverNioSocket()) {
                             byte[] bytesArr;
                             int nextBytes = client.getNextBytes();
@@ -139,6 +134,11 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                             if (readBytes == -1 || (readBytes > 0 && !sendReadBytesToNoVNC(b, readBytes))) {
                                 connectionAlive = false;
                             }
+                        }
+                        try {
+                            Thread.sleep(1);
+                        } catch (InterruptedException e) {
+                            logger.error("Error on sleep for vnc sessions", e);
                         }
                     }
                     logger.info(String.format("Connection with client [%s] is dead.", clientId));

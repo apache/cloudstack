@@ -42,6 +42,11 @@ export default {
     name: 'guestnetwork',
     title: 'label.guest.networks',
     param: 'physicalnetworkid'
+  },
+  {
+    name: 'publicip',
+    title: 'label.public.ip.addresses',
+    param: 'physicalnetworkid'
   }],
   actions: [
     {

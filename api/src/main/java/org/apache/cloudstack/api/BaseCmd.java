@@ -38,7 +38,6 @@ import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerService;
 import org.apache.cloudstack.network.lb.InternalLoadBalancerVMService;
 import org.apache.cloudstack.query.QueryService;
@@ -200,8 +199,6 @@ public abstract class BaseCmd {
     public ApplicationLoadBalancerService _appLbService;
     @Inject
     public AffinityGroupService _affinityGroupService;
-    @Inject
-    public InternalLoadBalancerElementService _internalLbElementSvc;
     @Inject
     public InternalLoadBalancerVMService _internalLbSvc;
     @Inject
