@@ -1531,13 +1531,13 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return userVm;
     }
 
-    private UnmanagedInstanceTO cloneSourceVmwareUnmanagedInstance(String vcenter, String datacenterName, String username, String password, String clusterName, String sourceHostName, String sourceVM) {
+    private UnmanagedInstanceTO cloneSourceVmwareUnmanagedInstance(String vcenter, String datacenterName, String username, String password, String clusterName, String sourceHostName, String sourceVM, DataStoreTO convertLocation) {
         HypervisorGuru vmwareGuru = hypervisorGuruManager.getGuru(Hypervisor.HypervisorType.VMware);
 
         Map<String, String> params = createParamsForTemplateFromVmwareVmMigration(vcenter, datacenterName,
                 username, password, clusterName, sourceHostName, sourceVM);
 
-        return vmwareGuru.cloneHypervisorVMOutOfBand(sourceHostName, sourceVM, params);
+        return vmwareGuru.cloneHypervisorVMOutOfBand(sourceHostName, sourceVM, params, convertLocation);
     }
 
     protected UserVm importUnmanagedInstanceFromVmwareToKvm(DataCenter zone, Cluster destinationCluster, VMTemplateVO template,
@@ -1581,19 +1581,21 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         UnmanagedInstanceTO clonedInstance = null;
         try {
             String instanceName = getGeneratedInstanceName(owner);
+            DataStoreTO temporaryConvertLocation = selectInstanceConversionTemporaryLocation(destinationCluster, convertStoragePoolId, null);
             clonedInstance = cloneSourceVmwareUnmanagedInstance(vcenter, datacenterName, username, password,
-                    clusterName, sourceHostName, sourceVM);
-            checkNetworkingBeforeConvertingVmwareInstance(zone, owner, instanceName, hostName, clonedInstance, nicNetworkMap, nicIpAddressMap, forced);
-            UnmanagedInstanceTO convertedInstance = convertVmwareInstanceToKVM(vcenter, datacenterName, clusterName, username, password,
-                    sourceHostName, clonedInstance, destinationCluster, convertInstanceHostId, convertStoragePoolId);
-            sanitizeConvertedInstance(convertedInstance, clonedInstance);
-            UserVm userVm = importVirtualMachineInternal(convertedInstance, instanceName, zone, destinationCluster, null,
-                    template, displayName, hostName, caller, owner, userId,
-                    serviceOffering, dataDiskOfferingMap,
-                    nicNetworkMap, nicIpAddressMap,
-                    details, false, forced, false);
-            LOGGER.debug(String.format("VM %s imported successfully", sourceVM));
-            return userVm;
+                    clusterName, sourceHostName, sourceVM, temporaryConvertLocation);
+            return null;
+//            checkNetworkingBeforeConvertingVmwareInstance(zone, owner, instanceName, hostName, clonedInstance, nicNetworkMap, nicIpAddressMap, forced);
+//            UnmanagedInstanceTO convertedInstance = convertVmwareInstanceToKVM(vcenter, datacenterName, clusterName, username, password,
+//                    sourceHostName, clonedInstance, destinationCluster, convertInstanceHostId, convertStoragePoolId);
+//            sanitizeConvertedInstance(convertedInstance, clonedInstance);
+//            UserVm userVm = importVirtualMachineInternal(convertedInstance, instanceName, zone, destinationCluster, null,
+//                    template, displayName, hostName, caller, owner, userId,
+//                    serviceOffering, dataDiskOfferingMap,
+//                    nicNetworkMap, nicIpAddressMap,
+//                    details, false, forced, false);
+//            LOGGER.debug(String.format("VM %s imported successfully", sourceVM));
+//            return userVm;
         } catch (CloudRuntimeException e) {
             LOGGER.error(String.format("Error importing VM: %s", e.getMessage()), e);
             ActionEventUtils.onCompletedActionEvent(userId, owner.getId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_IMPORT,

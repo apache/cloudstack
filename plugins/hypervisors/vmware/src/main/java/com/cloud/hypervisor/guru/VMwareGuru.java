@@ -18,6 +18,7 @@ package com.cloud.hypervisor.guru;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
+import java.io.File;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Date;
@@ -28,10 +29,12 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.agent.api.to.NfsTO;
 import com.cloud.hypervisor.vmware.mo.DatastoreMO;
 import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.util.VmwareClient;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
+import com.cloud.utils.script.Script;
 import com.cloud.vm.VmDetailConstants;
 import com.vmware.vim25.VirtualMachinePowerState;
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -42,12 +45,14 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.storage.NfsMountManager;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
@@ -195,6 +200,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     @Inject DiskOfferingDao diskOfferingDao;
     @Inject PhysicalNetworkDao physicalNetworkDao;
     @Inject StoragePoolHostDao storagePoolHostDao;
+    @Inject NfsMountManager mountManager;
 
     protected VMwareGuru() {
         super();
@@ -1339,7 +1345,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     }
 
     private VirtualMachineMO createCloneFromSourceVM(String vmName, VirtualMachineMO vmMo,
-                                                     DatacenterMO dataCenterMO) throws Exception {
+                                                     DatacenterMO dataCenterMO, DataStoreTO convertLocation) throws Exception {
         HostMO sourceHost = vmMo.getRunningHost();
         String cloneName = UUID.randomUUID().toString();
         DatastoreMO datastoreMO = vmMo.getAllDatastores().get(0); //pick the first datastore
@@ -1351,13 +1357,49 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             s_logger.error(err);
             throw new CloudRuntimeException(err);
         }
+
+        String datastorePath = datastoreMO.getDatastorePathOnHost(sourceHost.getMor().getValue());
+        s_logger.info("Host datastore path: " + datastorePath);
+
+        String dataStoreUrl = null;
+        if (convertLocation instanceof NfsTO) {
+            NfsTO nfsStore = (NfsTO) convertLocation;
+            dataStoreUrl = nfsStore.getUrl();
+        } else if (convertLocation instanceof PrimaryDataStoreTO) {
+            PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO) convertLocation;
+            if (primaryDataStoreTO.getPoolType().equals(Storage.StoragePoolType.NetworkFilesystem)) {
+                String psHost = primaryDataStoreTO.getHost();
+                String psPath = primaryDataStoreTO.getPath();
+                dataStoreUrl = "nfs://" + psHost + File.separator + psPath;
+            }
+        }
+
+        String mountPoint = mountManager.getMountPoint(dataStoreUrl, null);
+        s_logger.info("Convert storage location - dataStoreUrl: " + dataStoreUrl + ", mountPoint: " + mountPoint);
+
+        String vmOvaName = UUID.randomUUID().toString();
+        String vmOvaCreationPath = mountPoint + "/" + vmOvaName;
+        synchronized (vmOvaCreationPath.intern()) {
+            Script command = new Script("mkdir", s_logger);
+            command.add("-p");
+            command.add(vmOvaCreationPath);
+            String cmdResult = command.execute();
+            if (cmdResult != null) {
+                String msg = "Unable to prepare VM's OVA directory: " + vmOvaCreationPath + ", storage: " + dataStoreUrl + ", error msg: " + cmdResult;
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
+        }
+        s_logger.info("Creating OVA - " + vmOvaName);
+        clonedVM.exportVm(vmOvaCreationPath, vmOvaName, true, true);
+        s_logger.info("Created OVA - " + vmOvaName);
         relocateClonedVMToSourceHost(clonedVM, sourceHost);
         return clonedVM;
     }
 
     @Override
     public UnmanagedInstanceTO cloneHypervisorVMOutOfBand(String hostIp, String vmName,
-                                                                 Map<String, String> params) {
+                                                                 Map<String, String> params, DataStoreTO convertLocation) {
         s_logger.debug(String.format("Cloning VM %s on external vCenter %s", vmName, hostIp));
         String vcenter = params.get(VmDetailConstants.VMWARE_VCENTER_HOST);
         String datacenter = params.get(VmDetailConstants.VMWARE_DATACENTER_NAME);
@@ -1380,7 +1422,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                         vmName));
             }
 
-            VirtualMachineMO clonedVM = createCloneFromSourceVM(vmName, vmMo, dataCenterMO);
+            VirtualMachineMO clonedVM = createCloneFromSourceVM(vmName, vmMo, dataCenterMO, convertLocation);
             s_logger.debug(String.format("VM %s cloned successfully", vmName));
             UnmanagedInstanceTO clonedInstance = VmwareHelper.getUnmanagedInstance(vmMo.getRunningHost(), clonedVM);
             setNicsFromSourceVM(clonedInstance, vmMo);
