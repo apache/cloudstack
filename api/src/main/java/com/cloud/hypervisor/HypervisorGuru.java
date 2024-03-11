@@ -23,6 +23,7 @@ import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -115,7 +116,7 @@ public interface HypervisorGuru extends Adapter {
      * @return a reference to the cloned VM
      */
     UnmanagedInstanceTO cloneHypervisorVMOutOfBand(String hostIp, String vmName,
-                                                   Map<String, String> params);
+                                                   Map<String, String> params, DataStoreTO convertLocation);
 
     /**
      * Removes a VM created as a clone of a VM on an external host

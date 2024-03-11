@@ -467,4 +467,18 @@ public class DatastoreMO extends BaseMO {
         DatastoreSummary summary = _context.getVimClient().getDynamicProperty(getMor(), "summary");
         return summary.getType() == null ? "" : summary.getType();
     }
+
+    public String getDatastorePathOnHost(String hostValue) throws Exception {
+        String datastorePath = null;
+        List<DatastoreHostMount> hostMounts = getHostMounts();
+        for (DatastoreHostMount hostMount : hostMounts) {
+            String hostMountValue = hostMount.getKey().getValue();
+            if (hostMountValue.equalsIgnoreCase(hostValue)) {
+                HostMountInfo mountInfo = hostMount.getMountInfo();
+                datastorePath = mountInfo.getPath();
+                break;
+            }
+        }
+        return datastorePath;
+    }
 }
