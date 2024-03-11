@@ -551,9 +551,12 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         for (PortForwardingRuleVO pfRule : pfRules) {
             if (startPort <= pfRule.getSourcePortStart() && pfRule.getSourcePortStart() <= endPort) {
                 portForwardingRulesDao.remove(pfRule.getId());
+                LOGGER.trace("Marking PF rule " + pfRule + " with Revoke state");
+                pfRule.setState(FirewallRule.State.Revoke);
+
             }
         }
-        rulesService.applyPortForwardingRules(publicIp.getId(), account);
+        firewallManager.applyRules(pfRules, false, true);
     }
 
     protected void removeLoadBalancingRule(final IpAddress publicIp, final Network network,
