@@ -27,14 +27,12 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.QuotaResponseBuilder;
 import org.apache.cloudstack.api.response.QuotaTariffResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
 @APICommand(name = "quotaTariffDelete", description = "Marks a quota tariff as removed.", responseObject = SuccessResponse.class, requestHasSensitiveInfo = false,
 responseHasSensitiveInfo = false, since = "4.18.0.0", authorized = {RoleType.Admin})
 public class QuotaTariffDeleteCmd extends BaseCmd {
-    protected Logger logger = Logger.getLogger(getClass());
 
     @Inject
     QuotaResponseBuilder responseBuilder;

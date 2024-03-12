@@ -48,6 +48,9 @@ public class CreateRoleCmd extends RoleCmd {
             description = "ID of the role to be cloned from. Either roleid or type must be passed in")
     private Long roleId;
 
+    @Parameter(name = ApiConstants.IS_PUBLIC, type = CommandType.BOOLEAN, description = "Indicates whether the role will be visible to all users (public) or only to root admins (private). Default is true.")
+    private boolean publicRole = true;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -60,6 +63,9 @@ public class CreateRoleCmd extends RoleCmd {
         return roleId;
     }
 
+    public boolean isPublicRole() {
+        return publicRole;
+    }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -81,10 +87,10 @@ public class CreateRoleCmd extends RoleCmd {
             }
 
             CallContext.current().setEventDetails("Role: " + getRoleName() + ", from role: " + getRoleId() + ", description: " + getRoleDescription());
-            role = roleService.createRole(getRoleName(), existingRole, getRoleDescription());
+            role = roleService.createRole(getRoleName(), existingRole, getRoleDescription(), isPublicRole());
         } else {
             CallContext.current().setEventDetails("Role: " + getRoleName() + ", type: " + getRoleType() + ", description: " + getRoleDescription());
-            role = roleService.createRole(getRoleName(), getRoleType(), getRoleDescription());
+            role = roleService.createRole(getRoleName(), getRoleType(), getRoleDescription(), isPublicRole());
         }
 
         if (role == null) {

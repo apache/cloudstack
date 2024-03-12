@@ -30,7 +30,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.commons.collections.MapUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.domain.PartOf;
 import com.cloud.event.ActionEvent;
@@ -69,7 +68,6 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class TaggedResourceManagerImpl extends ManagerBase implements TaggedResourceService {
-    public static final Logger s_logger = Logger.getLogger(TaggedResourceManagerImpl.class);
 
     @Inject
     EntityManager _entityMgr;
@@ -167,14 +165,14 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
 
     protected void checkTagsDeletePermission(List<ResourceTag> tagsToDelete, Account caller) {
         for (ResourceTag resourceTag : tagsToDelete) {
-            if(s_logger.isDebugEnabled()) {
-                s_logger.debug("Resource Tag Id: " + resourceTag.getResourceId());
-                s_logger.debug("Resource Tag AccountId: " + resourceTag.getAccountId());
+            if(logger.isDebugEnabled()) {
+                logger.debug("Resource Tag Id: " + resourceTag.getResourceId());
+                logger.debug("Resource Tag AccountId: " + resourceTag.getAccountId());
             }
             if (caller.getAccountId() != resourceTag.getAccountId()) {
                 Account owner = _accountMgr.getAccount(resourceTag.getAccountId());
-                if(s_logger.isDebugEnabled()) {
-                    s_logger.debug("Resource Owner: " + owner);
+                if(logger.isDebugEnabled()) {
+                    logger.debug("Resource Owner: " + owner);
                 }
                 _accountMgr.checkAccess(caller, null, false, owner);
             }
@@ -249,8 +247,8 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
     @ActionEvent(eventType = EventTypes.EVENT_TAGS_DELETE, eventDescription = "deleting resource tags")
     public boolean deleteTags(List<String> resourceIds, ResourceObjectType resourceType, Map<String, String> tags) {
         Account caller = CallContext.current().getCallingAccount();
-        if(s_logger.isDebugEnabled()) {
-            s_logger.debug("ResourceIds to Find " + String.join(", ", resourceIds));
+        if(logger.isDebugEnabled()) {
+            logger.debug("ResourceIds to Find " + String.join(", ", resourceIds));
         }
         List<? extends ResourceTag> resourceTags = searchResourceTags(resourceIds, resourceType);
         final List<ResourceTag> tagsToDelete = new ArrayList<>();
@@ -291,7 +289,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
             public void doInTransactionWithoutResult(TransactionStatus status) {
                 for (ResourceTag tagToRemove : tagsToDelete) {
                     _resourceTagDao.remove(tagToRemove.getId());
-                    s_logger.debug("Removed the tag '" + tagToRemove + "' for resources (" +
+                    logger.debug("Removed the tag '" + tagToRemove + "' for resources (" +
                             String.join(", ", resourceIds) + ")");
                     if (ResourceObjectType.UserVm.equals(resourceType)) {
                         informStoragePoolForVmTags(tagToRemove.getResourceId(), tagToRemove.getKey(), tagToRemove.getValue());
@@ -321,7 +319,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
             Long poolId = volume.getPoolId();
             DataStore dataStore = retrieveDatastore(poolId);
             if (dataStore == null || !(dataStore.getDriver() instanceof PrimaryDataStoreDriver)) {
-                s_logger.info(String.format("No data store found for VM %d with pool ID %d.", vmId, poolId));
+                logger.info(String.format("No data store found for VM %d with pool ID %d.", vmId, poolId));
                 continue;
             }
             PrimaryDataStoreDriver dataStoreDriver = (PrimaryDataStoreDriver) dataStore.getDriver();

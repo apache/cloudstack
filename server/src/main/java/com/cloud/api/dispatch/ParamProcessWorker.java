@@ -50,7 +50,8 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
@@ -62,7 +63,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 public class ParamProcessWorker implements DispatchWorker {
 
-    private static final Logger s_logger = Logger.getLogger(ParamProcessWorker.class.getName());
+    protected Logger logger = LogManager.getLogger(getClass());
     private static final String inputFormatString = "yyyy-MM-dd";
     private static final String newInputFormatString = "yyyy-MM-dd HH:mm:ss";
     public static final DateFormat inputFormat = new SimpleDateFormat(inputFormatString);
@@ -184,16 +185,16 @@ public class ParamProcessWorker implements DispatchWorker {
                 validateField(paramObj, parameterAnnotation);
                 setFieldValue(field, cmd, paramObj, parameterAnnotation);
             } catch (final IllegalArgumentException argEx) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Unable to execute API command " + cmd.getCommandName() + " due to invalid value " + paramObj + " for parameter " +
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Unable to execute API command " + cmd.getCommandName() + " due to invalid value " + paramObj + " for parameter " +
                             parameterAnnotation.name());
                 }
                 throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to execute API command " +
                         cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8) + " due to invalid value " + paramObj + " for parameter " +
                         parameterAnnotation.name());
             } catch (final ParseException parseEx) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Invalid date parameter " + paramObj + " passed to command " + cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8));
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Invalid date parameter " + paramObj + " passed to command " + cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8));
                 }
                 throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to parse date " + paramObj + " for command " +
                         cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8) + ", please pass dates in the format mentioned in the api documentation");
@@ -201,7 +202,7 @@ public class ParamProcessWorker implements DispatchWorker {
                 throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to execute API command " +
                         cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8) + " due to invalid value. " + invEx.getMessage());
             } catch (final CloudRuntimeException cloudEx) {
-                s_logger.error("CloudRuntimeException", cloudEx);
+                logger.error("CloudRuntimeException", cloudEx);
                 // FIXME: Better error message? This only happens if the API command is not executable, which typically
                 //means
                 // there was
@@ -296,8 +297,8 @@ public class ParamProcessWorker implements DispatchWorker {
             owners = entityOwners.stream().map(id -> _accountMgr.getAccount(id)).toArray(Account[]::new);
         } else {
             if (cmd.getEntityOwnerId() == Account.ACCOUNT_ID_SYSTEM && cmd instanceof BaseAsyncCmd && ((BaseAsyncCmd)cmd).getApiResourceType() == ApiCommandResourceType.Network) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Skipping access check on the network owner if the owner is ROOT/system.");
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Skipping access check on the network owner if the owner is ROOT/system.");
                 }
                 owners = new Account[]{};
             } else {
@@ -404,7 +405,7 @@ public class ParamProcessWorker implements DispatchWorker {
             case STRING:
                 if ((paramObj != null)) {
                     if (paramObj.toString().length() > annotation.length()) {
-                        s_logger.error("Value greater than max allowed length " + annotation.length() + " for param: " + field.getName());
+                        logger.error("Value greater than max allowed length " + annotation.length() + " for param: " + field.getName());
                         throw new InvalidParameterValueException("Value greater than max allowed length " + annotation.length() + " for param: " + field.getName());
                     } else {
                         field.set(cmdObj, paramObj.toString());
@@ -417,7 +418,7 @@ public class ParamProcessWorker implements DispatchWorker {
                 break;
             }
         } catch (final IllegalAccessException ex) {
-            s_logger.error("Error initializing command " + cmdObj.getCommandName() + ", field " + field.getName() + " is not accessible.");
+            logger.error("Error initializing command " + cmdObj.getCommandName() + ", field " + field.getName() + " is not accessible.");
             throw new CloudRuntimeException("Internal error initializing parameters for command " + cmdObj.getCommandName() + " [field " + field.getName() +
                     " is not accessible]");
         }
@@ -427,16 +428,16 @@ public class ParamProcessWorker implements DispatchWorker {
             field.set(cmdObj, DateUtil.parseTZDateString(paramObj.toString()));
             return;
         } catch (ParseException parseException) {
-            s_logger.debug(String.format("Could not parse date [%s] with timezone parser, trying to parse without timezone.", paramObj));
+            logger.debug(String.format("Could not parse date [%s] with timezone parser, trying to parse without timezone.", paramObj));
         }
         if (isObjInNewDateFormat(paramObj.toString())) {
-            s_logger.debug(String.format("Parsing date [%s] using the [%s] format.", paramObj, newInputFormatString));
+            logger.debug(String.format("Parsing date [%s] using the [%s] format.", paramObj, newInputFormatString));
             final DateFormat newFormat = newInputFormat;
             synchronized (newFormat) {
                 field.set(cmdObj, newFormat.parse(paramObj.toString()));
             }
         } else {
-            s_logger.debug(String.format("Parsing date [%s] using the [%s] format.", paramObj, inputFormatString));
+            logger.debug(String.format("Parsing date [%s] using the [%s] format.", paramObj, inputFormatString));
             final DateFormat format = inputFormat;
             synchronized (format) {
                 Date date = format.parse(paramObj.toString());
@@ -523,8 +524,8 @@ public class ParamProcessWorker implements DispatchWorker {
             }
         }
         if (internalId == null) {
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("Object entity uuid = " + uuid + " does not exist in the database.");
+            if (logger.isDebugEnabled())
+                logger.debug("Object entity uuid = " + uuid + " does not exist in the database.");
             throw new InvalidParameterValueException("Invalid parameter " + annotation.name() + " value=" + uuid +
                     " due to incorrect long value format, or entity does not exist or due to incorrect parameter annotation for the field in api cmd class.");
         }

@@ -15,22 +15,27 @@
 
 package com.cloud.network.vpc;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
-import javax.inject.Inject;
-
+import com.cloud.configuration.ConfigurationManager;
+import com.cloud.network.Network;
+import com.cloud.network.NetworkModel;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkServiceMapDao;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.element.NetworkACLServiceProvider;
+import com.cloud.network.vpc.NetworkACLItem.State;
+import com.cloud.network.vpc.dao.NetworkACLDao;
+import com.cloud.network.vpc.dao.VpcGatewayDao;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.server.ResourceTag;
+import com.cloud.tags.dao.ResourceTagDao;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
+import com.cloud.user.User;
+import com.cloud.user.UserVO;
+import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.db.EntityManager;
+import junit.framework.TestCase;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
@@ -39,7 +44,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -52,27 +57,19 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
-import com.cloud.configuration.ConfigurationManager;
-import com.cloud.network.Network;
-import com.cloud.network.NetworkModel;
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkServiceMapDao;
-import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.element.NetworkACLServiceProvider;
-import com.cloud.network.vpc.NetworkACLItem.State;
-import com.cloud.network.vpc.dao.NetworkACLDao;
-import com.cloud.network.vpc.dao.VpcGatewayDao;
-import com.cloud.offerings.dao.NetworkOfferingDao;
-import com.cloud.tags.dao.ResourceTagDao;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.AccountVO;
-import com.cloud.user.User;
-import com.cloud.user.UserVO;
-import com.cloud.utils.component.ComponentContext;
-import com.cloud.utils.db.EntityManager;
+import javax.inject.Inject;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
-import junit.framework.TestCase;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
@@ -126,7 +123,7 @@ public class NetworkACLManagerTest extends TestCase {
 
     @Test
     public void testCreateACL() throws Exception {
-        Mockito.when(_networkACLDao.persist(Matchers.any(NetworkACLVO.class))).thenReturn(acl);
+        Mockito.when(_networkACLDao.persist(ArgumentMatchers.any(NetworkACLVO.class))).thenReturn(acl);
         assertNotNull(_aclMgr.createNetworkACL("acl_new", "acl desc", 1L, true));
     }
 
@@ -136,8 +133,8 @@ public class NetworkACLManagerTest extends TestCase {
         final NetworkVO network = Mockito.mock(NetworkVO.class);
         Mockito.when(_networkDao.findById(anyLong())).thenReturn(network);
         Mockito.when(networkOfferingDao.isIpv6Supported(anyLong())).thenReturn(false);
-        Mockito.when(_networkModel.isProviderSupportServiceInNetwork(anyLong(), Matchers.any(Network.Service.class), Matchers.any(Network.Provider.class))).thenReturn(true);
-        Mockito.when(_networkAclElements.get(0).applyNetworkACLs(Matchers.any(Network.class), Matchers.anyList())).thenReturn(true);
+        Mockito.when(_networkModel.isProviderSupportServiceInNetwork(anyLong(), ArgumentMatchers.any(Network.Service.class), ArgumentMatchers.any(Network.Provider.class))).thenReturn(true);
+        Mockito.when(_networkAclElements.get(0).applyNetworkACLs(ArgumentMatchers.any(Network.class), ArgumentMatchers.anyList())).thenReturn(true);
         assertTrue(_aclMgr.applyACLToNetwork(1L));
     }
 

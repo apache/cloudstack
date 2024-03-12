@@ -30,7 +30,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.KubernetesClusterResponse;
 import org.apache.cloudstack.api.response.KubernetesSupportedVersionResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
@@ -38,7 +37,7 @@ import com.cloud.kubernetes.cluster.KubernetesClusterEventTypes;
 import com.cloud.kubernetes.cluster.KubernetesClusterService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "upgradeKubernetesCluster", description = "Upgrades a running Kubernetes cluster",
+@APICommand(name = "upgradeKubernetesCluster", description = "Upgrades a running CloudManaged Kubernetes cluster",
         responseObject = KubernetesClusterResponse.class,
         responseView = ResponseObject.ResponseView.Restricted,
         entityType = {KubernetesCluster.class},
@@ -46,7 +45,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
         responseHasSensitiveInfo = true,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class UpgradeKubernetesClusterCmd extends BaseAsyncCmd {
-    public static final Logger LOGGER = Logger.getLogger(UpgradeKubernetesClusterCmd.class.getName());
 
     @Inject
     public KubernetesClusterService kubernetesClusterService;

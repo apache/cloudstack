@@ -37,45 +37,47 @@
       :dataSource="hosts"
       :pagination="false"
       :rowKey="record => record.id">
-      <template #name="{ record }">
-        {{ record.name }}
-        <a-tooltip v-if="record.name === $t('label.auto.assign')" :title="$t('message.migrate.instance.host.auto.assign')" placement="top">
-          <info-circle-outlined class="table-tooltip-icon" />
-        </a-tooltip>
-      </template>
-      <template #suitability="{ record }">
-        <check-circle-two-tone
-          class="host-item__suitability-icon"
-          twoToneColor="#52c41a"
-          v-if="record.suitableformigration" />
-        <close-circle-two-tone
-          class="host-item__suitability-icon"
-          twoToneColor="#f5222d"
-          v-else />
-      </template>
-      <template #memused="{ record }">
-        <span v-if="record.memoryused">
-          {{ $bytesToHumanReadableSize(record.memoryused) }}
-        </span>
-      </template>
-      <template #memoryallocatedpercentage="{ record }">
-        {{ record.memoryallocatedpercentage }}
-      </template>
-      <template #cluster="{ record }">
-        {{ record.clustername }}
-      </template>
-      <template #pod="{ record }">
-        {{ record.podname }}
-      </template>
-      <template #requiresstoragemigration="{ record }">
-        {{ record.requiresStorageMotion ? $t('label.yes') : $t('label.no') }}
-      </template>
-      <template #select="{record}">
-        <a-radio
-          class="host-item__radio"
-          @click="handleSelectedHostChange(record)"
-          :checked="record.id === selectedHost.id"
-          :disabled="!record.suitableformigration"></a-radio>
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'name'">
+          {{ record.name }}
+          <a-tooltip v-if="record.name === $t('label.auto.assign')" :title="$t('message.migrate.instance.host.auto.assign')" placement="top">
+            <info-circle-outlined class="table-tooltip-icon" />
+          </a-tooltip>
+        </template>
+        <template v-if="column.key === 'suitability'">
+          <check-circle-two-tone
+            class="host-item__suitability-icon"
+            twoToneColor="#52c41a"
+            v-if="record.suitableformigration" />
+          <close-circle-two-tone
+            class="host-item__suitability-icon"
+            twoToneColor="#f5222d"
+            v-else />
+        </template>
+        <template v-if="column.key === 'memused'">
+          <span v-if="record.memoryused">
+            {{ $bytesToHumanReadableSize(record.memoryused) }}
+          </span>
+        </template>
+        <template v-if="column.key === 'memoryallocatedpercentage'">
+          {{ record.memoryallocatedpercentage }}
+        </template>
+        <template v-if="column.key === 'cluster'">
+          {{ record.clustername }}
+        </template>
+        <template v-if="column.key === 'pod'">
+          {{ record.podname }}
+        </template>
+        <template v-if="column.key === 'requiresstoragemigration'">
+          {{ record.requiresStorageMotion ? $t('label.yes') : $t('label.no') }}
+        </template>
+        <template v-if="column.key === 'select'">
+          <a-radio
+            class="host-item__radio"
+            @click="handleSelectedHostChange(record)"
+            :checked="record.id === selectedHost.id"
+            :disabled="!record.suitableformigration"></a-radio>
+        </template>
       </template>
     </a-table>
     <a-pagination
@@ -149,44 +151,45 @@ export default {
       pageSize: 10,
       columns: [
         {
-          title: this.$t('label.hostid'),
-          slots: { customRender: 'name' }
+          key: 'name',
+          title: this.$t('label.hostid')
         },
         {
-          title: this.$t('label.suitability'),
-          slots: { customRender: 'suitability' }
+          key: 'suitability',
+          title: this.$t('label.suitability')
         },
         {
           title: this.$t('label.cpuused'),
           dataIndex: 'cpuused'
         },
         {
-          title: this.$t('label.memoryallocated'),
-          slots: { customRender: 'memoryallocatedpercentage' }
+          key: 'memoryallocatedpercentage',
+          title: this.$t('label.memoryallocated')
         },
         {
-          title: this.$t('label.memused'),
-          slots: { customRender: 'memused' }
+          key: 'memused',
+          title: this.$t('label.memused')
         },
         {
-          title: this.$t('label.cluster'),
-          slots: { customRender: 'cluster' }
+          key: 'cluster',
+          title: this.$t('label.cluster')
         },
         {
-          title: this.$t('label.pod'),
-          slots: { customRender: 'pod' }
+          key: 'pod',
+          title: this.$t('label.pod')
         },
         {
-          title: this.$t('label.storage.migration.required'),
-          slots: { customRender: 'requiresstoragemigration' }
+          key: 'requiresstoragemigration',
+          title: this.$t('label.storage.migration.required')
         },
         {
-          title: this.$t('label.select'),
-          slots: { customRender: 'select' }
+          key: 'select',
+          title: this.$t('label.select')
         }
       ],
       migrateWithStorage: false,
-      volumeToPoolSelection: []
+      volumeToPoolSelection: [],
+      volumes: []
     }
   },
   created () {
@@ -194,7 +197,7 @@ export default {
   },
   computed: {
     isUserVm () {
-      return this.$route.meta.name === 'vm'
+      return this.$route.meta.resourceType === 'UserVm'
     }
   },
   watch: {
@@ -246,6 +249,7 @@ export default {
     handleSelectedHostChange (host) {
       if (host.id === -1) {
         this.migrateWithStorage = false
+        this.fetchVolumes()
       }
       this.selectedHost = host
       this.selectedVolumeForStoragePoolSelection = {}
@@ -256,6 +260,31 @@ export default {
     },
     handleVolumeToPoolChange (volumeToPool) {
       this.volumeToPoolSelection = volumeToPool
+    },
+    fetchVolumes () {
+      this.loading = true
+      this.volumes = []
+      api('listVolumes', {
+        listAll: true,
+        virtualmachineid: this.resource.id
+      }).then(response => {
+        this.volumes = response.listvolumesresponse.volume
+      }).finally(() => {
+        this.loading = false
+      })
+    },
+    requiresStorageMigration () {
+      if (this.selectedHost.requiresStorageMotion || this.volumeToPoolSelection.length > 0) {
+        return true
+      }
+      if (this.selectedHost.id === -1 && this.volumes && this.volumes.length > 0) {
+        for (var volume of this.volumes) {
+          if (volume.storagetype === 'local') {
+            return true
+          }
+        }
+      }
+      return false
     },
     handleKeyboardSubmit () {
       if (this.selectedHost.id) {
@@ -269,7 +298,7 @@ export default {
       if (this.loading) return
       this.loading = true
       const migrateApi = this.isUserVm
-        ? (this.selectedHost.requiresStorageMotion || this.volumeToPoolSelection.length > 0)
+        ? this.requiresStorageMigration()
           ? 'migrateVirtualMachineWithVolume'
           : 'migrateVirtualMachine'
         : 'migrateSystemVm'

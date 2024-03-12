@@ -205,6 +205,8 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         //Add Tungsten Fabric provider
         public static final Provider Tungsten = new Provider("Tungsten", false);
 
+        public static final Provider Nsx = new Provider("Nsx", false);
+
         private final String name;
         private final boolean isExternal;
 
@@ -256,7 +258,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
 
     public static class Capability {
 
-        private static List<Capability> supportedCapabilities = new ArrayList<Capability>();
+        private static List<Capability> supportedCapabilities = new ArrayList<>();
 
         public static final Capability SupportedProtocols = new Capability("SupportedProtocols");
         public static final Capability SupportedLBAlgorithms = new Capability("SupportedLbAlgorithms");
@@ -426,6 +428,8 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
     String getIp6Cidr();
 
     long getDataCenterId();
+
+    long getAccountId();
 
     long getNetworkOfferingId();
 

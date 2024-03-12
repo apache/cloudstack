@@ -16,9 +16,6 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import static org.mockito.AdditionalMatchers.not;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -31,9 +28,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 
-import org.apache.cloudstack.utils.linux.MemStat;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -42,11 +37,9 @@ import org.libvirt.Domain;
 import org.libvirt.LibvirtException;
 import org.mockito.BDDMockito;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ReplugNicCommand;
@@ -59,9 +52,7 @@ import com.cloud.network.Networks;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.VirtualMachine;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(value = {Script.class, MemStat.class})
-@PowerMockIgnore({"javax.xml.*", "org.w3c.dom.*", "org.apache.xerces.*", "org.xml.*"})
+@RunWith(MockitoJUnitRunner.class)
 public class LibvirtReplugNicCommandWrapperTest {
 
     @Mock
@@ -206,8 +197,6 @@ public class LibvirtReplugNicCommandWrapperTest {
 
     @Before
     public void setUp() throws Exception {
-        Scanner scanner = new Scanner(memInfo);
-        PowerMockito.whenNew(Scanner.class).withAnyArguments().thenReturn(scanner);
 
         // Use a spy because we only want to override getVifDriverClass
         LibvirtComputingResource resReal = new LibvirtComputingResource();
@@ -219,10 +208,9 @@ public class LibvirtReplugNicCommandWrapperTest {
         when(_domain.getXMLDesc(0))
                 .thenReturn(fullfile)
                 .thenReturn(part_1 + part_3);
-        when(conn.domainLookupByName(anyString())).thenReturn(_domain);
-        when(helper.getConnectionByVmName(anyString())).thenReturn(conn);
-        PowerMockito.mockStatic(Script.class);
-        BDDMockito.given(Script.findScript(anyString(), anyString())).willReturn("dummypath/tofile.sh");
+        when(conn.domainLookupByName(Mockito.anyString())).thenReturn(_domain);
+        when(helper.getConnectionByVmName(Mockito.anyString())).thenReturn(conn);
+
 
         Map<String, String> pifs = new HashMap<>();
         pifs.put(GUEST_BR, "eth0");
@@ -238,13 +226,18 @@ public class LibvirtReplugNicCommandWrapperTest {
         doNothing().when(ovsVifDriver).getPifs();
 
         doReturn(helper).when(res).getLibvirtUtilitiesHelper();
-        doReturn(bridgeVifDriver).when(res).getVifDriver(eq(Networks.TrafficType.Guest), anyString());
         doReturn(ovsVifDriver).when(res).getVifDriver(Networks.TrafficType.Guest, GUEST_BR);
-        doReturn(bridgeVifDriver).when(res).getVifDriver(not(eq(Networks.TrafficType.Guest)));
         doReturn(Arrays.asList(bridgeVifDriver, ovsVifDriver)).when(res).getAllVifDrivers();
 
-        bridgeVifDriver.configure(params);
-        ovsVifDriver.configure(params);
+        try (MockedStatic<Script> ignored = Mockito.mockStatic(Script.class)) {
+            BDDMockito.given(Script.findScript(Mockito.anyString(), Mockito.anyString())).willReturn(
+                    "dummypath/tofile.sh");
+
+            bridgeVifDriver.configure(params);
+            ovsVifDriver.configure(params);
+        }
+
+        LibvirtVMDef.setGlobalLibvirtVersion(6400000L);
     }
 
     @Test
@@ -255,6 +248,10 @@ public class LibvirtReplugNicCommandWrapperTest {
                         + "<target dev='vnet10'/>\n"
                         + "<mac address='02:00:7c:98:00:02'/>\n"
                         + "<model type='virtio'/>\n"
+                        + "<bandwidth>\n"
+                        + "<inbound average='25600' peak='25600'/>\n"
+                        + "<outbound average='25600' peak='25600'/>\n"
+                        + "</bandwidth>\n"
                         + "<link state='up'/>\n"
                         + "</interface>\n";
         final String expectedAttachXml =
@@ -292,7 +289,6 @@ public class LibvirtReplugNicCommandWrapperTest {
 
         final Connect conn = Mockito.mock(Connect.class);
 
-        when(libvirtComputingResource.getInterfaces(conn, "")).thenReturn(ifaces);
         final LibvirtReplugNicCommandWrapper wrapper = new LibvirtReplugNicCommandWrapper();
         final NicTO nic = new NicTO();
         nic.setType(Networks.TrafficType.Guest);

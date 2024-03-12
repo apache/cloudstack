@@ -16,11 +16,9 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
-import org.apache.log4j.Logger;
 
-public abstract class LegacyDbUpgrade implements DbUpgrade{
+public abstract class LegacyDbUpgrade extends DbUpgradeAbstractImpl{
 
-    final static Logger s_logger = Logger.getLogger(LegacyDbUpgrade.class);
 
     public LegacyDbUpgrade() {
         super();
@@ -34,7 +32,7 @@ public abstract class LegacyDbUpgrade implements DbUpgrade{
             try {
                 closable.close();
             } catch (Exception e) {
-                s_logger.info("[ignored]",e);
+                logger.info("[ignored]",e);
             }
         }
     }

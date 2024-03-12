@@ -21,16 +21,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.acl.SecurityChecker;
-import org.apache.cloudstack.api.command.user.UserCmd;
-import org.apache.cloudstack.api.response.GuestOSResponse;
-import org.apache.cloudstack.api.response.SnapshotResponse;
-import org.apache.cloudstack.api.response.TemplateResponse;
-import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.api.response.VolumeResponse;
-import org.apache.cloudstack.api.response.ProjectResponse;
-
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -39,13 +29,22 @@ import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.UserCmd;
+import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.GuestOSResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
+import org.apache.cloudstack.api.response.SnapshotResponse;
+import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
-import com.cloud.projects.Project;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate;
@@ -55,7 +54,6 @@ import com.cloud.user.Account;
         + "A template created from this command is automatically designated as a private template visible to the account that created it.", responseView = ResponseView.Restricted,
     requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateTemplateCmd.class.getName());
     private static final String s_name = "createtemplateresponse";
 
     // ///////////////////////////////////////////////////
@@ -67,8 +65,7 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.DISPLAY_TEXT,
                type = CommandType.STRING,
-               required = true,
-               description = "the display text of the template. This is usually used for display purposes.",
+               description = "The display text of the template, defaults to the 'name'.",
                length = 4096)
     private String displayText;
 
@@ -135,6 +132,22 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "create template for the project")
     private Long projectId;
 
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the zone for the template. Can be specified with snapshot only", since = "4.19.0")
+    private Long zoneId;
+
+    @Parameter(name = ApiConstants.DOMAIN_ID,
+          type = CommandType.UUID,
+          entityType = DomainResponse.class,
+          description = "an optional domainId. If the account parameter is used, domainId must also be used.",
+          since = "4.19.0")
+    private Long domainId;
+
+    @Parameter(name = ApiConstants.ACCOUNT,
+          type = CommandType.STRING,
+          description = "an optional accountName. Must be used with domainId.",
+          since = "4.19.0")
+    private String accountName;
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
@@ -144,7 +157,7 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
     }
 
     public String getDisplayText() {
-        return displayText;
+        return StringUtils.isEmpty(displayText) ? templateName : displayText;
     }
 
     public Boolean isFeatured() {
@@ -209,6 +222,18 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
         return isDynamicallyScalable == null ? false : isDynamicallyScalable;
     }
 
+    public Long getZoneId() {
+        return zoneId;
+    }
+
+    public Long getDomainId() {
+        return domainId;
+    }
+
+    public String getAccountName() {
+        return accountName;
+    }
+
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
@@ -224,46 +249,11 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long volumeId = getVolumeId();
-        Long snapshotId = getSnapshotId();
         Account callingAccount = CallContext.current().getCallingAccount();
-        if (volumeId != null) {
-            Volume volume = _entityMgr.findById(Volume.class, volumeId);
-            if (volume != null) {
-                _accountService.checkAccess(callingAccount, SecurityChecker.AccessType.UseEntry, false, volume);
-            } else {
-                throw new InvalidParameterValueException("Unable to find volume by id=" + volumeId);
-            }
-        } else {
-            Snapshot snapshot = _entityMgr.findById(Snapshot.class, snapshotId);
-            if (snapshot != null) {
-                _accountService.checkAccess(callingAccount, SecurityChecker.AccessType.UseEntry, false, snapshot);
-            } else {
-                throw new InvalidParameterValueException("Unable to find snapshot by id=" + snapshotId);
-            }
-        }
-
-        if(projectId != null){
-            final Project project = _projectService.getProject(projectId);
-            if (project != null) {
-                if (project.getState() == Project.State.Active) {
-                    Account projectAccount= _accountService.getAccount(project.getProjectAccountId());
-                    _accountService.checkAccess(callingAccount, SecurityChecker.AccessType.UseEntry, false, projectAccount);
-                    return project.getProjectAccountId();
-                } else {
-                    final PermissionDeniedException ex =
-                            new PermissionDeniedException("Can't add resources to the project with specified projectId in state=" + project.getState() +
-                                    " as it's no longer active");
-                    ex.addProxyObject(project.getUuid(), "projectId");
-                    throw ex;
-                }
-            } else {
-                throw new InvalidParameterValueException("Unable to find project by id");
-            }
-        }
-
-        return callingAccount.getId();
+        ensureAccessCheck(callingAccount);
+        return findAccountIdToUse(callingAccount);
     }
+
 
     @Override
     public String getEventType() {
@@ -321,5 +311,48 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create private template");
         }
 
+    }
+
+    /***
+     * Performs access check on volume and snapshot for given account
+     * @param account
+     */
+    private void ensureAccessCheck(Account account) {
+        if (volumeId != null) {
+            Volume volume = _entityMgr.findById(Volume.class, volumeId);
+            if (volume != null) {
+                _accountService.checkAccess(account, SecurityChecker.AccessType.UseEntry, false, volume);
+            } else {
+                throw new InvalidParameterValueException("Unable to find volume by id=" + volumeId);
+            }
+        } else {
+            Snapshot snapshot = _entityMgr.findById(Snapshot.class, snapshotId);
+            if (snapshot != null) {
+                _accountService.checkAccess(account, SecurityChecker.AccessType.UseEntry, false, snapshot);
+            } else {
+                throw new InvalidParameterValueException("Unable to find snapshot by id=" + snapshotId);
+            }
+        }
+    }
+
+    /***
+     * Find accountId based on accountName and domainId or projectId
+     * if not found, return callingAccountId for further use
+     * @param callingAccount
+     * @return accountId
+     */
+    private Long findAccountIdToUse(Account callingAccount) {
+        Long accountIdToUse = null;
+        try {
+            accountIdToUse = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
+        } catch (InvalidParameterValueException | PermissionDeniedException ex) {
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("An exception occurred while finalizing account id with accountName, domainId and projectId" +
+                      "using callingAccountId=%s", callingAccount.getUuid()), ex);
+            }
+            logger.warn("Unable to find accountId associated with accountName=" + accountName + " and domainId="
+                  + domainId + " or projectId=" + projectId + ", using callingAccountId=" + callingAccount.getUuid());
+        }
+        return accountIdToUse != null ? accountIdToUse : callingAccount.getAccountId();
     }
 }

@@ -44,11 +44,14 @@ const getters = {
   countNotify: state => state.user.countNotify,
   customColumns: state => state.user.customColumns,
   logoutFlag: state => state.user.logoutFlag,
+  shutdownTriggered: state => state.user.shutdownTriggered,
   twoFaEnabled: state => state.user.twoFaEnabled,
   twoFaProvider: state => state.user.twoFaProvider,
   twoFaIssuer: state => state.user.twoFaIssuer,
   loginFlag: state => state.user.loginFlag,
-  allProjects: (state) => state.app.allProjects
+  allProjects: (state) => state.app.allProjects,
+  customHypervisorName: state => state.user.customHypervisorName,
+  readyForShutdownPollingJob: state => state.user.readyForShutdownPollingJob
 }
 
 export default getters

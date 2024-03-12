@@ -18,9 +18,11 @@ package com.cloud.projects;
 
 import java.io.UnsupportedEncodingException;
 import java.security.SecureRandom;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.Executors;
@@ -33,27 +35,20 @@ import javax.inject.Inject;
 import javax.mail.MessagingException;
 import javax.naming.ConfigurationException;
 
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.vpc.Vpc;
-import com.cloud.network.vpc.VpcManager;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.vm.UserVmVO;
-import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.snapshot.VMSnapshotVO;
-import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import org.apache.cloudstack.acl.ProjectRole;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.acl.dao.ProjectRoleDao;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.utils.mailing.MailAddress;
+import org.apache.cloudstack.utils.mailing.SMTPMailProperties;
+import org.apache.cloudstack.utils.mailing.SMTPMailSender;
+import org.apache.commons.lang3.BooleanUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
@@ -72,11 +67,19 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcManager;
 import com.cloud.projects.Project.State;
 import com.cloud.projects.ProjectAccount.Role;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.projects.dao.ProjectInvitationDao;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -95,18 +98,13 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
-import java.util.HashSet;
-import java.util.Set;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.utils.mailing.MailAddress;
-import org.apache.cloudstack.utils.mailing.SMTPMailProperties;
-import org.apache.cloudstack.utils.mailing.SMTPMailSender;
-import org.apache.commons.lang3.BooleanUtils;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 @Component
 public class ProjectManagerImpl extends ManagerBase implements ProjectManager, Configurable {
-    public static final Logger s_logger = Logger.getLogger(ProjectManagerImpl.class);
 
     private static final SecureRandom secureRandom = new SecureRandom();
 
@@ -364,7 +362,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
         boolean updateResult = Transaction.execute(new TransactionCallback<Boolean>() {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
-        s_logger.debug("Marking project id=" + project.getId() + " with state " + State.Disabled + " as a part of project delete...");
+        logger.debug("Marking project id=" + project.getId() + " with state " + State.Disabled + " as a part of project delete...");
         project.setState(State.Disabled);
         boolean updateResult = _projectDao.update(project.getId(), project);
         //owner can be already removed at this point, so adding the conditional check
@@ -380,7 +378,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
         if (updateResult) {
             //pass system caller when clenaup projects account
             if (!cleanupProject(project, _accountDao.findById(Account.ACCOUNT_ID_SYSTEM), User.UID_SYSTEM)) {
-                s_logger.warn("Failed to cleanup project's id=" + project.getId() + " resources, not removing the project yet");
+                logger.warn("Failed to cleanup project's id=" + project.getId() + " resources, not removing the project yet");
                 return false;
             } else {
                 //check if any Tungsten-Fabric provider exists and delete the project from Tungsten-Fabric providers
@@ -388,7 +386,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
                 return _projectDao.remove(project.getId());
             }
         } else {
-            s_logger.warn("Failed to mark the project id=" + project.getId() + " with state " + State.Disabled);
+            logger.warn("Failed to mark the project id=" + project.getId() + " with state " + State.Disabled);
             return false;
         }
     }
@@ -398,7 +396,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
         boolean result = true;
         //Delete project's account
         AccountVO account = _accountDao.findById(project.getProjectAccountId());
-        s_logger.debug("Deleting projects " + project + " internal account id=" + account.getId() + " as a part of project cleanup...");
+        logger.debug("Deleting projects " + project + " internal account id=" + account.getId() + " as a part of project cleanup...");
 
         result = result && _accountMgr.deleteAccount(account, callerUserId, caller);
 
@@ -408,22 +406,22 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
                 @Override
                 public Boolean doInTransaction(TransactionStatus status) {
                     boolean result = true;
-            s_logger.debug("Unassigning all accounts from project " + project + " as a part of project cleanup...");
+            logger.debug("Unassigning all accounts from project " + project + " as a part of project cleanup...");
             List<? extends ProjectAccount> projectAccounts = _projectAccountDao.listByProjectId(project.getId());
             for (ProjectAccount projectAccount : projectAccounts) {
                 result = result && unassignAccountFromProject(projectAccount.getProjectId(), projectAccount.getAccountId());
             }
 
-            s_logger.debug("Removing all invitations for the project " + project + " as a part of project cleanup...");
+            logger.debug("Removing all invitations for the project " + project + " as a part of project cleanup...");
             _projectInvitationDao.cleanupInvitations(project.getId());
                     return result;
                 }
             });
             if (result) {
-                s_logger.debug("Accounts are unassign successfully from project " + project + " as a part of project cleanup...");
+                logger.debug("Accounts are unassign successfully from project " + project + " as a part of project cleanup...");
             }
         } else {
-            s_logger.warn("Failed to cleanup project's internal account");
+            logger.warn("Failed to cleanup project's internal account");
         }
 
         return result;
@@ -433,14 +431,14 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
     public boolean unassignAccountFromProject(long projectId, long accountId) {
         ProjectAccountVO projectAccount = _projectAccountDao.findByProjectIdAccountId(projectId, accountId);
         if (projectAccount == null) {
-            s_logger.debug("Account id=" + accountId + " is not assigned to project id=" + projectId + " so no need to unassign");
+            logger.debug("Account id=" + accountId + " is not assigned to project id=" + projectId + " so no need to unassign");
             return true;
         }
 
         if (_projectAccountDao.remove(projectAccount.getId())) {
             return true;
         } else {
-            s_logger.warn("Failed to unassign account id=" + accountId + " from the project id=" + projectId);
+            logger.warn("Failed to unassign account id=" + accountId + " from the project id=" + projectId);
             return false;
         }
     }
@@ -479,7 +477,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
 
         //remove all invitations for account
         if (success) {
-            s_logger.debug("Removed account " + accountId + " from project " + projectId + " , cleaning up old invitations for account/project...");
+            logger.debug("Removed account " + accountId + " from project " + projectId + " , cleaning up old invitations for account/project...");
             ProjectInvitation invite = _projectInvitationDao.findByAccountIdProjectId(accountId, projectId);
             if (invite != null) {
                 success = success && _projectInvitationDao.remove(invite.getId());
@@ -557,7 +555,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
 
         ProjectAccount projectAccountUser = _projectAccountDao.findByProjectIdUserId(projectId, user.getAccountId(), user.getId());
         if (projectAccountUser != null) {
-            s_logger.info("User with id: " + user.getId() + " is already added to the project with id: " + projectId);
+            logger.info("User with id: " + user.getId() + " is already added to the project with id: " + projectId);
             return true;
         }
 
@@ -583,7 +581,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
                     Optional.ofNullable(role).map(ProjectRole::getId).orElse(null)) != null) {
                 return true;
             }
-            s_logger.warn("Failed to add user to project with id: " + projectId);
+            logger.warn("Failed to add user to project with id: " + projectId);
             return false;
         }
     }
@@ -650,7 +648,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_PROJECT_UPDATE, eventDescription = "updating project", async = true)
-    public Project updateProject(final long projectId, final String displayText, final String newOwnerName) throws ResourceAllocationException {
+    public Project updateProject(final long projectId, String name, final String displayText, final String newOwnerName) throws ResourceAllocationException {
         Account caller = CallContext.current().getCallingAccount();
 
         //check that the project exists
@@ -666,10 +664,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
         Transaction.execute(new TransactionCallbackWithExceptionNoReturn<ResourceAllocationException>() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) throws ResourceAllocationException {
-                if (displayText != null) {
-                    project.setDisplayText(displayText);
-                    _projectDao.update(projectId, project);
-                }
+                updateProjectNameAndDisplayText(project, name, displayText);
 
                 if (newOwnerName != null) {
                     //check that the new owner exists
@@ -679,7 +674,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
                     }
                     Account currentOwnerAccount = getProjectOwner(projectId);
                     if (currentOwnerAccount == null) {
-                        s_logger.error("Unable to find the current owner for the project id=" + projectId);
+                        logger.error("Unable to find the current owner for the project id=" + projectId);
                         throw new InvalidParameterValueException("Unable to find the current owner for the project id=" + projectId);
                     }
                     if (currentOwnerAccount.getId() != futureOwnerAccount.getId()) {
@@ -704,7 +699,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
                         _resourceLimitMgr.incrementResourceCount(futureOwnerAccount.getId(), ResourceType.project);
 
                     } else {
-                        s_logger.trace("Future owner " + newOwnerName + "is already the owner of the project id=" + projectId);
+                        logger.trace("Future owner " + newOwnerName + "is already the owner of the project id=" + projectId);
                     }
                 }
             }
@@ -717,7 +712,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_PROJECT_UPDATE, eventDescription = "updating project", async = true)
-    public Project updateProject(final long projectId, final String displayText, final String newOwnerName, Long userId,
+    public Project updateProject(final long projectId, String name, final String displayText, final String newOwnerName, Long userId,
                                  Role newRole) throws ResourceAllocationException {
         Account caller = CallContext.current().getCallingAccount();
 
@@ -737,10 +732,8 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
         Transaction.execute(new TransactionCallbackWithExceptionNoReturn<ResourceAllocationException>() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) throws ResourceAllocationException {
-                if (displayText != null) {
-                    project.setDisplayText(displayText);
-                    _projectDao.update(projectId, project);
-                }
+                updateProjectNameAndDisplayText(project, name, displayText);
+
                 if (newOwnerName != null) {
                     //check that the new owner exists
                     Account updatedAcc = _accountMgr.getActiveAccountByName(newOwnerName, project.getDomainId());
@@ -825,7 +818,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
             //Check if the account already added to the project
             ProjectAccount projectAccount =  _projectAccountDao.findByProjectIdAccountId(projectId, account.getId());
             if (projectAccount != null) {
-                s_logger.debug("Account " + accountName + " already added to the project id=" + projectId);
+                logger.debug("Account " + accountName + " already added to the project id=" + projectId);
                 return true;
             }
         }
@@ -852,7 +845,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
                     Optional.ofNullable(projectRole).map(ProjectRole::getId).orElse(null)) != null) {
                 return true;
             } else {
-                s_logger.warn("Failed to add account " + accountName + " to project id=" + projectId);
+                logger.warn("Failed to add account " + accountName + " to project id=" + projectId);
                 return false;
             }
         }
@@ -864,7 +857,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
                     Optional.ofNullable(projectRole).map(ProjectRole::getId).orElse(null)) != null) {
                 return true;
             } else {
-                s_logger.warn("Failed to generate invitation for account " + account.getAccountName() + " to project id=" + project);
+                logger.warn("Failed to generate invitation for account " + account.getAccountName() + " to project id=" + project);
                 return false;
             }
         }
@@ -876,7 +869,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
                     Optional.ofNullable(projectRole).map(ProjectRole::getId).orElse(null)) != null) {
                 return true;
             } else {
-                s_logger.warn("Failed to generate invitation for email " + email + " to project id=" + project);
+                logger.warn("Failed to generate invitation for email " + email + " to project id=" + project);
                 return false;
             }
         }
@@ -890,7 +883,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
                     Optional.ofNullable(projectRole).map(ProjectRole::getId).orElse(null)) != null) {
                 return true;
             } else {
-                s_logger.warn("Failed to generate invitation for account " + user.getUsername()  + " to project id=" + project);
+                logger.warn("Failed to generate invitation for account " + user.getUsername()  + " to project id=" + project);
                 return false;
             }
         } else {
@@ -900,7 +893,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
                     Optional.ofNullable(projectRole).map(ProjectRole::getId).orElse(null)) != null) {
                 return true;
             } else {
-                s_logger.warn("Failed to generate invitation for email " + email + " to project id=" + project);
+                logger.warn("Failed to generate invitation for email " + email + " to project id=" + project);
                 return false;
             }
         }
@@ -1018,9 +1011,9 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
         if (invite != null) {
             boolean success = _projectInvitationDao.remove(invite.getId());
             if (success){
-                s_logger.info("Successfully deleted invite pending for the user : "+user.getUsername());
+                logger.info("Successfully deleted invite pending for the user : "+user.getUsername());
             } else {
-                s_logger.info("Failed to delete project invite for user: "+ user.getUsername());
+                logger.info("Failed to delete project invite for user: "+ user.getUsername());
             }
         }
     }
@@ -1035,7 +1028,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
                 success = _projectAccountDao.remove(projectAccount.getId());
 
                 if (success) {
-                    s_logger.debug("Removed user " + user.getId() + " from project. Removing any invite sent to the user");
+                    logger.debug("Removed user " + user.getId() + " from project. Removing any invite sent to the user");
                     ProjectInvitation invite = _projectInvitationDao.findByUserIdProjectId(user.getId(), user.getAccountId(),  projectId);
                     if (invite != null) {
                         success = success && _projectInvitationDao.remove(invite.getId());
@@ -1089,11 +1082,11 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
                 }
                 //remove the expired/declined invitation
                 if (accountId != null) {
-                    s_logger.debug("Removing invitation in state " + invite.getState() + " for account id=" + accountId + " to project " + project);
+                    logger.debug("Removing invitation in state " + invite.getState() + " for account id=" + accountId + " to project " + project);
                 } else if (userId != null) {
-                    s_logger.debug("Removing invitation in state " + invite.getState() + " for user id=" + userId + " to project " + project);
+                    logger.debug("Removing invitation in state " + invite.getState() + " for user id=" + userId + " to project " + project);
                 } else if (email != null) {
-                    s_logger.debug("Removing invitation in state " + invite.getState() + " for email " + email + " to project " + project);
+                    logger.debug("Removing invitation in state " + invite.getState() + " for email " + email + " to project " + project);
                 }
 
                 _projectInvitationDao.expunge(invite.getId());
@@ -1126,7 +1119,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
         try {
             sendInvite(token, email, project.getId());
         } catch (Exception ex) {
-            s_logger.warn("Failed to send project id=" + project + " invitation to the email " + email + "; removing the invitation record from the db", ex);
+            logger.warn("Failed to send project id=" + project + " invitation to the email " + email + "; removing the invitation record from the db", ex);
             _projectInvitationDao.remove(projectInvitation.getId());
             return null;
         }
@@ -1156,7 +1149,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
     }
 
     private boolean expireInvitation(ProjectInvitationVO invite) {
-        s_logger.debug("Expiring invitation id=" + invite.getId());
+        logger.debug("Expiring invitation id=" + invite.getId());
         invite.setState(ProjectInvitation.State.Expired);
         return _projectInvitationDao.update(invite.getId(), invite);
     }
@@ -1231,7 +1224,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
                         ProjectInvitation.State newState = accept ? ProjectInvitation.State.Completed : ProjectInvitation.State.Declined;
 
                         //update invitation
-                        s_logger.debug("Marking invitation " + inviteFinal + " with state " + newState);
+                        logger.debug("Marking invitation " + inviteFinal + " with state " + newState);
                         inviteFinal.setState(newState);
                         result = _projectInvitationDao.update(inviteFinal.getId(), inviteFinal);
 
@@ -1240,20 +1233,20 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
                             if (inviteFinal.getForUserId() == -1) {
                                 ProjectAccount projectAccount = _projectAccountDao.findByProjectIdAccountId(projectId, accountIdFinal);
                                 if (projectAccount != null) {
-                                    s_logger.debug("Account " + accountNameFinal + " already added to the project id=" + projectId);
+                                    logger.debug("Account " + accountNameFinal + " already added to the project id=" + projectId);
                                 } else {
                                     assignAccountToProject(project, accountIdFinal, inviteFinal.getAccountRole(), null, inviteFinal.getProjectRoleId());
                                 }
                             } else {
                                 ProjectAccount projectAccount = _projectAccountDao.findByProjectIdUserId(projectId, finalUser.getAccountId(), finalUser.getId());
                                 if (projectAccount != null) {
-                                    s_logger.debug("User " + finalUser.getId() + "has already been added to the project id=" + projectId);
+                                    logger.debug("User " + finalUser.getId() + "has already been added to the project id=" + projectId);
                                 } else {
                                     assignUserToProject(project, inviteFinal.getForUserId(), finalUser.getAccountId(), inviteFinal.getAccountRole(), inviteFinal.getProjectRoleId());
                                 }
                             }
                         } else {
-                            s_logger.warn("Failed to update project invitation " + inviteFinal + " with state " + newState);
+                            logger.warn("Failed to update project invitation " + inviteFinal + " with state " + newState);
                         }
                         return result;
                     }
@@ -1302,7 +1295,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
         Project.State currentState = project.getState();
 
         if (currentState == State.Active) {
-            s_logger.debug("The project id=" + projectId + " is already active, no need to activate it again");
+            logger.debug("The project id=" + projectId + " is already active, no need to activate it again");
             return project;
         }
 
@@ -1340,7 +1333,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
         _accountMgr.checkAccess(caller, AccessType.ModifyProject, true, _accountMgr.getAccount(project.getProjectAccountId()));
 
         if (suspendProject(project)) {
-            s_logger.debug("Successfully suspended project id=" + projectId);
+            logger.debug("Successfully suspended project id=" + projectId);
             return _projectDao.findById(projectId);
         } else {
             CloudRuntimeException ex = new CloudRuntimeException("Failed to suspend project with specified id");
@@ -1352,14 +1345,14 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
 
     private boolean suspendProject(ProjectVO project) throws ConcurrentOperationException, ResourceUnavailableException {
 
-        s_logger.debug("Marking project " + project + " with state " + State.Suspended + " as a part of project suspend...");
+        logger.debug("Marking project " + project + " with state " + State.Suspended + " as a part of project suspend...");
         project.setState(State.Suspended);
         boolean updateResult = _projectDao.update(project.getId(), project);
 
         if (updateResult) {
             long projectAccountId = project.getProjectAccountId();
             if (!_accountMgr.disableAccount(projectAccountId)) {
-                s_logger.warn("Failed to suspend all project's " + project + " resources; the resources will be suspended later by background thread");
+                logger.warn("Failed to suspend all project's " + project + " resources; the resources will be suspended later by background thread");
             }
         } else {
             throw new CloudRuntimeException("Failed to mark the project " + project + " with state " + State.Suspended);
@@ -1396,10 +1389,10 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
         _accountMgr.checkAccess(caller, AccessType.ModifyProject, true, _accountMgr.getAccount(project.getProjectAccountId()));
 
         if (_projectInvitationDao.remove(id)) {
-            s_logger.debug("Project Invitation id=" + id + " is removed");
+            logger.debug("Project Invitation id=" + id + " is removed");
             return true;
         } else {
-            s_logger.debug("Failed to remove project invitation id=" + id);
+            logger.debug("Failed to remove project invitation id=" + id);
             return false;
         }
     }
@@ -1411,15 +1404,15 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
                 TimeZone.getDefault();
                 List<ProjectInvitationVO> invitationsToExpire = _projectInvitationDao.listInvitationsToExpire(_invitationTimeOut);
                 if (!invitationsToExpire.isEmpty()) {
-                    s_logger.debug("Found " + invitationsToExpire.size() + " projects to expire");
+                    logger.debug("Found " + invitationsToExpire.size() + " projects to expire");
                     for (ProjectInvitationVO invitationToExpire : invitationsToExpire) {
                         invitationToExpire.setState(ProjectInvitation.State.Expired);
                         _projectInvitationDao.update(invitationToExpire.getId(), invitationToExpire);
-                        s_logger.trace("Expired project invitation id=" + invitationToExpire.getId());
+                        logger.trace("Expired project invitation id=" + invitationToExpire.getId());
                     }
                 }
             } catch (Exception ex) {
-                s_logger.warn("Exception while running expired invitations cleanup", ex);
+                logger.warn("Exception while running expired invitations cleanup", ex);
             }
         }
     }
@@ -1442,5 +1435,18 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {ProjectSmtpEnabledSecurityProtocols, ProjectSmtpUseStartTLS};
+    }
+
+    protected void updateProjectNameAndDisplayText(final ProjectVO project, String name, String displayText) {
+        if (name == null && displayText == null){
+            return;
+        }
+        if (name != null) {
+            project.setName(name);
+        }
+        if (displayText != null) {
+            project.setDisplayText(displayText);
+        }
+        _projectDao.update(project.getId(), project);
     }
 }

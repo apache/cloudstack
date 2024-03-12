@@ -33,7 +33,6 @@ import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.SystemVmResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.commons.collections.MapUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -52,7 +51,6 @@ import com.cloud.vm.VirtualMachine;
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = true)
 public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(MigrateVirtualMachineWithVolumeCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -82,6 +80,12 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
                "migrateto[1].volume=<88de0173-55c0-4c1c-a269-83d0279eeedf>&migrateto[1].pool=<95d6e97c-6766-4d67-9a30-c449c15011d1>&migrateto[2].volume=" +
                "<1b331390-59f2-4796-9993-bf11c6e76225>&migrateto[2].pool=<41fdb564-9d3b-447d-88ed-7628f7640cbc>")
     private Map migrateVolumeTo;
+
+    @Parameter(name = ApiConstants.AUTO_SELECT,
+            since = "4.19.0",
+            type = CommandType.BOOLEAN,
+            description = "Automatically select a destination host for a running instance, if hostId is not specified. false by default")
+    private Boolean autoSelect;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -144,31 +148,39 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
         return ApiCommandResourceType.VirtualMachine;
     }
 
+    private Host getDestinationHost() {
+        if (getHostId() == null) {
+            return null;
+        }
+        Host destinationHost = _resourceService.getHost(getHostId());
+        // OfflineVmwareMigration: destination host would have to not be a required parameter for stopped VMs
+        if (destinationHost == null) {
+            logger.error(String.format("Unable to find the host with ID [%s].", getHostId()));
+            throw new InvalidParameterValueException("Unable to find the specified host to migrate the VM.");
+        }
+        return destinationHost;
+    }
+
     @Override
     public void execute() {
-        if (hostId == null && MapUtils.isEmpty(migrateVolumeTo)) {
-            throw new InvalidParameterValueException(String.format("Either %s or %s must be passed for migrating the VM.", ApiConstants.HOST_ID, ApiConstants.MIGRATE_TO));
+        if (hostId == null && MapUtils.isEmpty(migrateVolumeTo) && !Boolean.TRUE.equals(autoSelect)) {
+            throw new InvalidParameterValueException(String.format("Either %s or %s must be passed or %s must be true for migrating the VM.", ApiConstants.HOST_ID, ApiConstants.MIGRATE_TO, ApiConstants.AUTO_SELECT));
         }
 
         VirtualMachine virtualMachine = _userVmService.getVm(getVirtualMachineId());
-        if (!VirtualMachine.State.Running.equals(virtualMachine.getState()) && hostId != null) {
+        if (!VirtualMachine.State.Running.equals(virtualMachine.getState()) && (hostId != null || Boolean.TRUE.equals(autoSelect))) {
             throw new InvalidParameterValueException(String.format("%s is not in the Running state to migrate it to the new host.", virtualMachine));
         }
 
-        if (!VirtualMachine.State.Stopped.equals(virtualMachine.getState()) && hostId == null) {
-            throw new InvalidParameterValueException(String.format("%s is not in the Stopped state to migrate, use the %s parameter to migrate it to a new host.",
-                    virtualMachine, ApiConstants.HOST_ID));
+        if (!VirtualMachine.State.Stopped.equals(virtualMachine.getState()) && hostId == null && Boolean.FALSE.equals(autoSelect)) {
+            throw new InvalidParameterValueException(String.format("%s is not in the Stopped state to migrate, use the %s or %s parameter to migrate it to a new host.",
+                    virtualMachine, ApiConstants.HOST_ID,ApiConstants.AUTO_SELECT));
         }
 
         try {
             VirtualMachine migratedVm = null;
-            if (hostId != null) {
-                Host destinationHost = _resourceService.getHost(getHostId());
-                // OfflineVmwareMigration: destination host would have to not be a required parameter for stopped VMs
-                if (destinationHost == null) {
-                    s_logger.error(String.format("Unable to find the host with ID [%s].", getHostId()));
-                    throw new InvalidParameterValueException("Unable to find the specified host to migrate the VM.");
-                }
+            if (getHostId() != null || Boolean.TRUE.equals(autoSelect)) {
+                Host destinationHost = getDestinationHost();
                 migratedVm = _userVmService.migrateVirtualMachineWithVolume(getVirtualMachineId(), destinationHost, getVolumeToPool());
             } else if (MapUtils.isNotEmpty(migrateVolumeTo)) {
                 migratedVm = _userVmService.vmStorageMigration(getVirtualMachineId(), getVolumeToPool());
@@ -179,10 +191,10 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to migrate vm");
             }
         } catch (ResourceUnavailableException ex) {
-            s_logger.warn("Exception: ", ex);
+            logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
         } catch (ConcurrentOperationException | ManagementServerException | VirtualMachineMigrationException e) {
-            s_logger.warn("Exception: ", e);
+            logger.warn("Exception: ", e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }

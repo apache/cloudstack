@@ -20,7 +20,6 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.PodResponse;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
@@ -34,7 +33,6 @@ import com.cloud.vm.VirtualMachine;
 @APICommand(name = "deployVirtualMachine", description = "Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.", responseObject = UserVmResponse.class, responseView = ResponseView.Full, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class DeployVMCmdByAdmin extends DeployVMCmd implements AdminCmd {
-    public static final Logger s_logger = Logger.getLogger(DeployVMCmdByAdmin.class.getName());
 
 
     @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "destination Pod ID to deploy the VM to - parameter available for root admin only", since = "4.13")

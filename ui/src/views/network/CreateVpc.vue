@@ -88,10 +88,10 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             @change="handleVpcOfferingChange" >
-            <a-select-option :value="offering.id" v-for="offering in vpcOfferings" :key="offering.id">
+            <a-select-option :value="offering.id" v-for="offering in vpcOfferings" :key="offering.id" :label="offering.name">
               {{ offering.name }}
             </a-select-option>
           </a-select>
@@ -155,6 +155,14 @@
             </a-form-item>
           </a-col>
         </a-row>
+        <a-form-item v-if="selectedNetworkOfferingSupportsSourceNat && !isNsxNetwork" name="sourcenatipaddress" ref="sourcenatipaddress">
+          <template #label>
+            <tooltip-label :title="$t('label.routerip')" :tooltip="apiParams.sourcenatipaddress?.description"/>
+          </template>
+          <a-input
+            v-model:value="form.sourcenatipaddress"
+            :placeholder="apiParams.sourcenatipaddress?.description"/>
+        </a-form-item>
         <a-form-item name="start" ref="start">
           <template #label>
             <tooltip-label :title="$t('label.start')" :tooltip="apiParams.start.description"/>
@@ -193,7 +201,8 @@ export default {
       publicMtuMax: 1500,
       minMTU: 68,
       errorPublicMtu: '',
-      selectedVpcOffering: {}
+      selectedVpcOffering: {},
+      isNsxNetwork: false
     }
   },
   beforeCreate () {
@@ -212,6 +221,14 @@ export default {
         return dnsServices && dnsServices.length === 1
       }
       return false
+    },
+    selectedNetworkOfferingSupportsSourceNat () {
+      if (this.selectedVpcOffering) {
+        const services = this.selectedVpcOffering?.service || []
+        const sourcenatService = services.filter(service => service.name === 'SourceNat')
+        return sourcenatService && sourcenatService.length === 1
+      }
+      return false
     }
   },
   methods: {
@@ -222,7 +239,6 @@ export default {
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.required.input') }],
-        displaytext: [{ required: true, message: this.$t('message.error.required.input') }],
         zoneid: [{ required: true, message: this.$t('label.required') }],
         cidr: [{ required: true, message: this.$t('message.error.required.input') }],
         vpcofferingid: [{ required: true, message: this.$t('label.required') }]
@@ -263,6 +279,7 @@ export default {
         if (zone.id === value) {
           this.setMTU = zone?.allowuserspecifyvrmtu || false
           this.publicMtuMax = zone?.routerpublicinterfacemaxmtu || 1500
+          this.isNsxNetwork = zone?.isnsxenabled || false
         }
       }
       this.fetchOfferings()
@@ -275,6 +292,10 @@ export default {
         this.selectedVpcOffering = this.vpcOfferings[0] || {}
       }).finally(() => {
         this.loadingOffering = false
+        if (this.vpcOfferings.length > 0) {
+          this.form.vpcofferingid = 0
+          this.handleVpcOfferingChange(this.vpcOfferings[0].id)
+        }
       })
     },
     handleVpcOfferingChange (value) {
@@ -285,6 +306,7 @@ export default {
       for (var offering of this.vpcOfferings) {
         if (offering.id === value) {
           this.selectedVpcOffering = offering
+          this.form.vpcofferingid = offering.id
           return
         }
       }

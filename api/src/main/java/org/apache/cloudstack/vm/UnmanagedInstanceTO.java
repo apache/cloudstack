@@ -33,6 +33,8 @@ public class UnmanagedInstanceTO {
 
     private PowerState powerState;
 
+    private PowerState cloneSourcePowerState;
+
     private Integer cpuCores;
 
     private Integer cpuCoresPerSocket;
@@ -45,9 +47,15 @@ public class UnmanagedInstanceTO {
 
     private String operatingSystem;
 
+    private String clusterName;
+
+    private String hostName;
+
     private List<Disk> disks;
 
     private List<Nic> nics;
+
+    private String vncPassword;
 
     public String getName() {
         return name;
@@ -71,6 +79,14 @@ public class UnmanagedInstanceTO {
 
     public void setPowerState(PowerState powerState) {
         this.powerState = powerState;
+    }
+
+    public PowerState getCloneSourcePowerState() {
+        return cloneSourcePowerState;
+    }
+
+    public void setCloneSourcePowerState(PowerState cloneSourcePowerState) {
+        this.cloneSourcePowerState = cloneSourcePowerState;
     }
 
     public Integer getCpuCores() {
@@ -121,6 +137,22 @@ public class UnmanagedInstanceTO {
         this.operatingSystem = operatingSystem;
     }
 
+    public String getClusterName() {
+        return clusterName;
+    }
+
+    public void setClusterName(String clusterName) {
+        this.clusterName = clusterName;
+    }
+
+    public String getHostName() {
+        return hostName;
+    }
+
+    public void setHostName(String hostName) {
+        this.hostName = hostName;
+    }
+
     public List<Disk> getDisks() {
         return disks;
     }
@@ -135,6 +167,14 @@ public class UnmanagedInstanceTO {
 
     public void setNics(List<Nic> nics) {
         this.nics = nics;
+    }
+
+    public String getVncPassword() {
+        return vncPassword;
+    }
+
+    public void setVncPassword(String vncPassword) {
+        this.vncPassword = vncPassword;
     }
 
     public static class Disk {
@@ -161,6 +201,8 @@ public class UnmanagedInstanceTO {
         private String datastoreHost;
 
         private String datastorePath;
+
+        private int datastorePort;
 
         private String datastoreType;
 
@@ -266,6 +308,14 @@ public class UnmanagedInstanceTO {
 
         public void setDatastoreType(String datastoreType) {
             this.datastoreType = datastoreType;
+        }
+
+        public void setDatastorePort(int datastorePort) {
+            this.datastorePort = datastorePort;
+        }
+
+        public int getDatastorePort() {
+            return datastorePort;
         }
     }
 

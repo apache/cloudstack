@@ -16,9 +16,12 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -129,6 +132,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @SerializedName("templatename")
     @Param(description = "the name of the template for the virtual machine")
     private String templateName;
+
+    @SerializedName(ApiConstants.TEMPLATE_TYPE)
+    @Param(description = "the type of the template for the virtual machine", since = "4.19.0")
+    private String templateType;
 
     @SerializedName("templatedisplaytext")
     @Param(description = " an alternate display text of the template for the virtual machine")
@@ -359,6 +366,14 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     @SerializedName(ApiConstants.USER_DATA_DETAILS) @Param(description="list of variables and values for the variables declared in userdata", since = "4.18.0")
     private String userDataDetails;
+
+    @SerializedName(ApiConstants.VNF_NICS)
+    @Param(description = "NICs of the VNF appliance", since = "4.19.0")
+    private List<VnfNicResponse> vnfNics;
+
+    @SerializedName(ApiConstants.VNF_DETAILS)
+    @Param(description = "VNF details", since = "4.19.0")
+    private Map<String, String> vnfDetails;
 
     public UserVmResponse() {
         securityGroupList = new LinkedHashSet<>();
@@ -1045,4 +1060,49 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         this.userDataDetails = userDataDetails;
     }
 
+    public Long getBytesReceived() {
+        return bytesReceived;
+    }
+
+    public Long getBytesSent() {
+        return bytesSent;
+    }
+
+    public String getTemplateType() {
+        return templateType;
+    }
+
+    public void setTemplateType(String templateType) {
+        this.templateType = templateType;
+    }
+
+    public List<VnfNicResponse> getVnfNics() {
+        return vnfNics;
+    }
+
+    public void setVnfNics(List<VnfNicResponse> vnfNics) {
+        this.vnfNics = vnfNics;
+    }
+
+    public Map<String, String> getVnfDetails() {
+        return vnfDetails;
+    }
+
+    public void setVnfDetails(Map<String, String> vnfDetails) {
+        this.vnfDetails = vnfDetails;
+    }
+
+    public void addVnfNic(VnfNicResponse vnfNic) {
+        if (this.vnfNics == null) {
+            this.vnfNics = new ArrayList<>();
+        }
+        this.vnfNics.add(vnfNic);
+    }
+
+    public void addVnfDetail(String key, String value) {
+        if (this.vnfDetails == null) {
+            this.vnfDetails = new LinkedHashMap<>();
+        }
+        this.vnfDetails.put(key,value);
+    }
 }

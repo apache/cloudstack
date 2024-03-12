@@ -153,7 +153,7 @@
                         }"
                         @change="onSelectTemplateConfigurationId"
                       >
-                        <a-select-option v-for="opt in templateConfigurations" :key="opt.id">
+                        <a-select-option v-for="opt in templateConfigurations" :key="opt.id" :label="opt.name || opt.description">
                           {{ opt.name || opt.description }}
                         </a-select-option>
                       </a-select>
@@ -421,11 +421,11 @@
                         <span v-else-if="property.type && property.type==='string' && property.qualifiers && property.qualifiers.startsWith('ValueMap')">
                           <a-select
                             showSearch
-                            optionFilterProp="label"
+                            optionFilterProp="value"
                             v-model:value="form['properties.' + escapePropertyKey(property.key)]"
                             :placeholder="property.description"
                             :filterOption="(input, option) => {
-                              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
                             }"
                           >
                             <a-select-option v-for="opt in getPropertyQualifiers(property.qualifiers, 'select')" :key="opt">
@@ -464,11 +464,12 @@
                       showSearch
                       optionFilterProp="label"
                       :filterOption="(input, option) => {
-                        return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                        return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                       }" >
                       <a-select-option
                         v-for="policy in this.scaleUpPolicies"
-                        :key="policy.id">
+                        :key="policy.id"
+                        :label="policy.name">
                         {{ policy.name }}
                       </a-select-option>
                     </a-select>
@@ -517,11 +518,15 @@
                         showSearch
                         optionFilterProp="label"
                         :filterOption="(input, option) => {
-                          return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                          return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                         }"
                         v-focus="true"
                         v-model:value="newScaleUpCondition.counterid">
-                        <a-select-option v-for="(counter, index) in countersList" :value="counter.id" :key="index">
+                        <a-select-option
+                          v-for="(counter, index) in countersList"
+                          :value="counter.id"
+                          :key="index"
+                          :label="counter.name">
                           {{ counter.name }}
                         </a-select-option>
                       </a-select>
@@ -535,9 +540,9 @@
                       <a-select
                         v-model:value="newScaleUpCondition.relationaloperator"
                         style="width: 100%;"
-                        optionFilterProp="label"
+                        optionFilterProp="value"
                         :filterOption="(input, option) => {
-                          return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                          return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
                         }" >
                         <a-select-option value="GT">{{ getOperator('GT') }}</a-select-option>
                       </a-select>
@@ -569,20 +574,16 @@
                       :dataSource="scaleUpConditions"
                       :pagination="false"
                       :rowKey="record => record.counterid">
-                      <template #countername="{ record }">
-                        {{ record.countername }}
-                      </template>
-                      <template #relationaloperator="{ record }">
-                        {{ getOperator(record.relationaloperator) }}
-                      </template>
-                      <template #threshold="{ record }">
-                        {{ record.threshold }}
-                      </template>
-                      <template #actions="{ record }">
+                      <template #bodyCell="{ column, record }">
+                        <template v-if="column.key === 'relationaloperator'">
+                          {{ getOperator(record.relationaloperator) }}
+                        </template>
+                        <template v-if="column.key === 'actions'">
                           <a-button ref="submit" type="primary" :danger="true" @click="deleteScaleUpCondition(record.counterid)">
                             <template #icon><delete-outlined /></template>
                             {{ $t('label.delete') }}
                           </a-button>
+                        </template>
                       </template>
                     </a-table>
                   </div>
@@ -604,11 +605,12 @@
                       showSearch
                       optionFilterProp="label"
                       :filterOption="(input, option) => {
-                        return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                        return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                       }" >
                       <a-select-option
                         v-for="policy in this.scaleDownPolicies"
-                        :key="policy.id">
+                        :key="policy.id"
+                        :label="policy.name">
                         {{ policy.name }}
                       </a-select-option>
                     </a-select>
@@ -657,11 +659,15 @@
                         showSearch
                         optionFilterProp="label"
                         :filterOption="(input, option) => {
-                          return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                          return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                         }"
                         v-focus="true"
                         v-model:value="newScaleDownCondition.counterid">
-                        <a-select-option v-for="(counter, index) in countersList" :value="counter.id" :key="index">
+                        <a-select-option
+                          v-for="(counter, index) in countersList"
+                          :value="counter.id"
+                          :key="index"
+                          :label="counter.name">
                           {{ counter.name }}
                         </a-select-option>
                       </a-select>
@@ -675,9 +681,9 @@
                       <a-select
                         v-model:value="newScaleDownCondition.relationaloperator"
                         style="width: 100%;"
-                        optionFilterProp="label"
+                        optionFilterProp="value"
                         :filterOption="(input, option) => {
-                          return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                          return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
                         }" >
                         <a-select-option value="LT">{{ getOperator('LT') }}</a-select-option>
                       </a-select>
@@ -700,7 +706,7 @@
                     </div>
                   </div>
                   <a-divider/>
-                  <div>
+                  <div style="display: block">
                     <a-table
                       size="small"
                       style="overflow-y: auto"
@@ -709,20 +715,16 @@
                       :dataSource="scaleDownConditions"
                       :pagination="false"
                       :rowKey="record => record.counterid">
-                      <template #countername="{ record }">
-                        {{ record.countername }}
-                      </template>
-                      <template #relationaloperator="{ record }">
-                        {{ getOperator(record.relationaloperator) }}
-                      </template>
-                      <template #threshold="{ record }">
-                        {{ record.threshold }}
-                      </template>
-                      <template #actions="{ record }">
-                        <a-button ref="submit" type="primary" :danger="true" @click="deleteScaleDownCondition(record.counterid)">
-                          <template #icon><delete-outlined /></template>
-                          {{ $t('label.delete') }}
-                        </a-button>
+                      <template #bodyCell="{ column, record }">
+                        <template v-if="column.key === 'relationaloperator'">
+                          {{ getOperator(record.relationaloperator) }}
+                        </template>
+                        <template v-if="column.key === 'actions'">
+                          <a-button ref="submit" type="primary" :danger="true" @click="deleteScaleDownCondition(record.counterid)">
+                            <template #icon><delete-outlined /></template>
+                            {{ $t('label.delete') }}
+                          </a-button>
+                        </template>
                       </template>
                     </a-table>
                   </div>
@@ -878,11 +880,15 @@
                         showSearch
                         optionFilterProp="label"
                         :filterOption="(input, option) => {
-                          return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                          return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                         }"
                         v-focus="true"
                         v-model:value="form.autoscaleuserid">
-                        <a-select-option v-for="(user, index) in usersList" :value="user.id" :key="index">
+                        <a-select-option
+                          v-for="(user, index) in usersList"
+                          :value="user.id"
+                          :key="index"
+                          :label="user.username">
                           {{ user.username }}
                         </a-select-option>
                       </a-select>
@@ -1175,15 +1181,15 @@ export default {
         },
         {
           title: this.$t('label.relationaloperator'),
-          slots: { customRender: 'relationaloperator' }
+          key: 'relationaloperator'
         },
         {
           title: this.$t('label.threshold'),
-          slots: { customRender: 'threshold' }
+          dataIndex: 'threshold'
         },
         {
-          title: this.$t('label.action'),
-          slots: { customRender: 'actions' }
+          title: this.$t('label.actions'),
+          key: 'actions'
         }
       ],
       scaleDownPolicies: [],
@@ -1203,15 +1209,15 @@ export default {
         },
         {
           title: this.$t('label.relationaloperator'),
-          slots: { customRender: 'relationaloperator' }
+          key: 'relationaloperator'
         },
         {
           title: this.$t('label.threshold'),
-          slots: { customRender: 'threshold' }
+          dataIndex: 'threshold'
         },
         {
-          title: this.$t('label.action'),
-          slots: { customRender: 'actions' }
+          title: this.$t('label.actions'),
+          key: 'actions'
         }
       ],
       usersList: [],

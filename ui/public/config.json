@@ -14,6 +14,8 @@
   "logo": "assets/logo.svg",
   "minilogo": "assets/mini-logo.svg",
   "banner": "assets/banner.svg",
+  "loginPageTitle": "CloudStack",
+  "loginPageFavicon": "assets/logo.svg",
   "error": {
     "403": "assets/403.png",
     "404": "assets/404.png",
@@ -58,6 +60,36 @@
     "fr": "label.french.azerty.keyboard",
     "jp": "label.japanese.keyboard",
     "sc": "label.simplified.chinese.keyboard"
+  },
+  "userCard": {
+    "title": "label.help",
+    "icon": "question-circle-outlined",
+    "links": [
+      {
+        "title": "Documentation",
+        "text": "CloudStack documentation website",
+        "link": "https://docs.cloudstack.apache.org/en/latest/",
+        "icon": "read-outlined"
+      },
+      {
+        "title": "API Documentation",
+        "text": "Refer to API documentation",
+        "link": "https://cloudstack.apache.org/api.html",
+        "icon": "api-outlined"
+      },
+      {
+        "title": "Email Support",
+        "text": "Join CloudStack users mailing list to seek and provide support",
+        "link": "mailto:users-subscribe@cloudstack.apache.org",
+        "icon": "mail-outlined"
+      },
+      {
+        "title": "Report Issue",
+        "text": "Submit a bug or improvement request",
+        "link": "https://github.com/apache/cloudstack/issues/new",
+        "icon": "bug-outlined"
+      }
+    ]
   },
   "plugins": [],
   "basicZoneEnabled": true,

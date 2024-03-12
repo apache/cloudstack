@@ -17,29 +17,6 @@
 
 package com.cloud.network;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.when;
-
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
-import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
-import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
-import org.apache.cloudstack.api.command.admin.network.ReleaseDedicatedGuestVlanRangeCmd;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-
 import com.cloud.dc.DataCenterVnetVO;
 import com.cloud.dc.dao.DataCenterVnetDao;
 import com.cloud.network.dao.AccountGuestVlanMapDao;
@@ -54,12 +31,31 @@ import com.cloud.user.User;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.TransactionLegacy;
-
 import junit.framework.Assert;
+import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
+import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
+import org.apache.cloudstack.api.command.admin.network.ReleaseDedicatedGuestVlanRangeCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.when;
 
 public class DedicateGuestVlanRangesTest {
 
-    private static final Logger s_logger = Logger.getLogger(DedicateGuestVlanRangesTest.class);
 
     NetworkServiceImpl networkService = new NetworkServiceImpl();
 
@@ -84,10 +80,11 @@ public class DedicateGuestVlanRangesTest {
     DataCenterVnetDao _dataCenterVnetDao;
     @Mock
     AccountGuestVlanMapDao _accountGuestVlanMapDao;
+    private AutoCloseable closeable;
 
     @Before
     public void setup() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
 
         networkService._accountMgr = _accountMgr;
         networkService._accountDao = _accountDao;
@@ -126,13 +123,13 @@ public class DedicateGuestVlanRangesTest {
     }
 
     @After
-    public void tearDown() {
+    public void tearDown() throws Exception {
         CallContext.unregister();
+        closeable.close();
     }
 
     @Test
     public void testDedicateGuestVlanRange() throws Exception {
-        s_logger.info("Running tests for DedicateGuestVlanRange API");
 
         /*
          * TEST 1: given valid parameters DedicateGuestVlanRange should succeed
@@ -168,7 +165,6 @@ public class DedicateGuestVlanRangesTest {
     @Test
     public void testReleaseDedicatedGuestVlanRange() throws Exception {
 
-        s_logger.info("Running tests for ReleaseDedicatedGuestVlanRange API");
 
         /*
          * TEST 1: given valid parameters ReleaseDedicatedGuestVlanRange should succeed
@@ -211,7 +207,6 @@ public class DedicateGuestVlanRangesTest {
             GuestVlanRange result = networkService.dedicateGuestVlanRange(dedicateGuestVlanRangesCmd);
             Assert.assertNotNull(result);
         } catch (Exception e) {
-            s_logger.info("exception in testing runDedicateGuestVlanRangePostiveTest message: " + e.toString());
         } finally {
             txn.close("runDedicateGuestRangePostiveTest");
         }
@@ -356,7 +351,6 @@ public class DedicateGuestVlanRangesTest {
             Boolean result = networkService.releaseDedicatedGuestVlanRange(releaseDedicatedGuestVlanRangesCmd.getId());
             Assert.assertTrue(result);
         } catch (Exception e) {
-            s_logger.info("exception in testing runReleaseGuestVlanRangePostiveTest1 message: " + e.toString());
         } finally {
             txn.close("runReleaseDedicatedGuestVlanRangePostiveTest");
         }

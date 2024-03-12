@@ -29,7 +29,6 @@ import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
 
 import com.cloud.host.Host;
 import com.cloud.host.Status;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
@@ -89,7 +88,7 @@ public class HostResponse extends BaseResponseWithAnnotations {
 
     @SerializedName(ApiConstants.HYPERVISOR)
     @Param(description = "the host hypervisor")
-    private HypervisorType hypervisor;
+    private String hypervisor;
 
     @SerializedName("cpusockets")
     @Param(description = "the number of CPU sockets on the host")
@@ -222,6 +221,10 @@ public class HostResponse extends BaseResponseWithAnnotations {
     @Param(description = "comma-separated list of tags for the host")
     private String hostTags;
 
+    @SerializedName(ApiConstants.IS_TAG_A_RULE)
+    @Param(description = ApiConstants.PARAMETER_DESCRIPTION_IS_TAG_A_RULE)
+    private Boolean isTagARule;
+
     @SerializedName("hasenoughcapacity")
     @Param(description = "true if this host has enough CPU and RAM capacity to migrate a VM to it, false otherwise")
     private Boolean hasEnoughCapacity;
@@ -335,7 +338,7 @@ public class HostResponse extends BaseResponseWithAnnotations {
         this.version = version;
     }
 
-    public void setHypervisor(HypervisorType hypervisor) {
+    public void setHypervisor(String hypervisor) {
         this.hypervisor = hypervisor;
     }
 
@@ -602,7 +605,7 @@ public class HostResponse extends BaseResponseWithAnnotations {
         return version;
     }
 
-    public HypervisorType getHypervisor() {
+    public String getHypervisor() {
         return hypervisor;
     }
 
@@ -732,5 +735,13 @@ public class HostResponse extends BaseResponseWithAnnotations {
 
     public void setEncryptionSupported(Boolean encryptionSupported) {
         this.encryptionSupported = encryptionSupported;
+    }
+
+    public Boolean getIsTagARule() {
+        return isTagARule;
+    }
+
+    public void setIsTagARule(Boolean tagARule) {
+        isTagARule = tagARule;
     }
 }

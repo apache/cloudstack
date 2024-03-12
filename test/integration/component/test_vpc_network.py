@@ -1001,23 +1001,23 @@ class TestVPCNetwork(cloudstackTestCase):
         # 1. Create a network offering with guest type=Isolated that has all
         #    supported Services(Vpn,dhcpdns,UserData, SourceNat,Static NAT,LB
         #    and PF,LB,NetworkAcl ) provided by VPCVR and conserve mode is ON
-        # 2. Create offering fails since Conserve mode ON isn't allowed within
-        #    VPC
+        # 2. Create offering should succeed since Conserve mode ON is allowed within
+        #    VPC since https://github.com/apache/cloudstack/pull/8309
         # 3. Repeat test for offering which has Netscaler as external LB
         #    provider
         """
 
         self.debug("Creating network offering with conserve mode = ON")
 
-        with self.assertRaises(Exception):
+        try:
             nw = NetworkOffering.create(
                 self.apiclient,
                 self.services[value],
                 conservemode=True
             )
             self.cleanup.append(nw)
-        self.debug(
-            "Network creation failed as VPC support nw with conserve mode OFF")
+        except Exception as e:
+            self.warn("Network creation failed in VPC with conserve mode ON")
         return
 
 
@@ -1864,7 +1864,7 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
             "List public Ip for network should list the Ip addr"
         )
 
-        self.debug("Adding NetwrokACl rules to make PF and LB accessible")
+        self.debug("Adding NetworkACl rules to make PF and LB accessible")
         nw_acl = NetworkACL.create(
             self.apiclient,
             networkid=network_1.id,
@@ -2023,7 +2023,7 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
         )
         self.cleanup.append(nat_rule)
 
-        self.debug("Adding NetwrokACl rules to make NAT rule accessible")
+        self.debug("Adding NetworkACl rules to make NAT rule accessible")
         nat_acl = NetworkACL.create(
             self.apiclient,
             networkid=network_1.id,

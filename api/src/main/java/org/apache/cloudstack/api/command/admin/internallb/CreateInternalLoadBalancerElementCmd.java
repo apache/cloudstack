@@ -16,12 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.internallb;
 
-import java.util.List;
-
-import javax.inject.Inject;
-
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -45,10 +39,6 @@ import com.cloud.user.Account;
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
 public class CreateInternalLoadBalancerElementCmd extends BaseAsyncCreateCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateInternalLoadBalancerElementCmd.class.getName());
-
-    @Inject
-    private List<InternalLoadBalancerElementService> _service;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -85,7 +75,8 @@ public class CreateInternalLoadBalancerElementCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute() {
         CallContext.current().setEventDetails("Virtual router element Id: " + getEntityId());
-        VirtualRouterProvider result = _service.get(0).getInternalLoadBalancerElement(getEntityId());
+        InternalLoadBalancerElementService service = _networkService.getInternalLoadBalancerElementByNetworkServiceProviderId(getNspId());
+        VirtualRouterProvider result = service.getInternalLoadBalancerElement(getEntityId());
         if (result != null) {
             InternalLoadBalancerElementResponse response = _responseGenerator.createInternalLbElementResponse(result);
             response.setResponseName(getCommandName());
@@ -97,7 +88,8 @@ public class CreateInternalLoadBalancerElementCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void create() throws ResourceAllocationException {
-        VirtualRouterProvider result = _service.get(0).addInternalLoadBalancerElement(getNspId());
+        InternalLoadBalancerElementService service = _networkService.getInternalLoadBalancerElementByNetworkServiceProviderId(getNspId());
+        VirtualRouterProvider result = service.addInternalLoadBalancerElement(getNspId());
         if (result != null) {
             setEntityId(result.getId());
             setEntityUuid(result.getUuid());

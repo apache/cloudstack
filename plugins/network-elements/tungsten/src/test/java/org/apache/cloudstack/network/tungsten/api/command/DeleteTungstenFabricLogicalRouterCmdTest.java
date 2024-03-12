@@ -18,6 +18,7 @@ package org.apache.cloudstack.network.tungsten.api.command;
 
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,16 +27,13 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.reflect.Whitebox;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(DeleteTungstenFabricLogicalRouterCmd.class)
+@RunWith(MockitoJUnitRunner.class)
 public class DeleteTungstenFabricLogicalRouterCmdTest {
 
     @Mock
@@ -43,25 +41,30 @@ public class DeleteTungstenFabricLogicalRouterCmdTest {
 
     DeleteTungstenFabricLogicalRouterCmd deleteTungstenFabricLogicalRouterCmd;
 
+    AutoCloseable closeable;
+
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         deleteTungstenFabricLogicalRouterCmd = new DeleteTungstenFabricLogicalRouterCmd();
         deleteTungstenFabricLogicalRouterCmd.tungstenService = tungstenService;
-        Whitebox.setInternalState(deleteTungstenFabricLogicalRouterCmd, "zoneId", 1L);
-        Whitebox.setInternalState(deleteTungstenFabricLogicalRouterCmd, "logicalRouterUuid", "test");
+        ReflectionTestUtils.setField(deleteTungstenFabricLogicalRouterCmd, "zoneId", 1L);
+        ReflectionTestUtils.setField(deleteTungstenFabricLogicalRouterCmd, "logicalRouterUuid", "test");
+    }
+
+    @After
+    public void close() throws Exception {
+        closeable.close();
     }
 
     @Test
     public void executeTest() throws Exception {
-        SuccessResponse successResponse = Mockito.mock(SuccessResponse.class);
         List<String> networkList = new ArrayList<>();
         Mockito.when(tungstenService.listConnectedNetworkFromLogicalRouter(ArgumentMatchers.anyLong(),
                 ArgumentMatchers.anyString())).thenReturn(networkList);
         Mockito.when(tungstenService.deleteLogicalRouter(ArgumentMatchers.anyLong(),
                 ArgumentMatchers.anyString())).thenReturn(true);
-        PowerMockito.whenNew(SuccessResponse.class).withAnyArguments().thenReturn(successResponse);
         deleteTungstenFabricLogicalRouterCmd.execute();
-        Assert.assertEquals(successResponse, deleteTungstenFabricLogicalRouterCmd.getResponseObject());
+        Assert.assertTrue(((SuccessResponse) deleteTungstenFabricLogicalRouterCmd.getResponseObject()).getSuccess());
     }
 }

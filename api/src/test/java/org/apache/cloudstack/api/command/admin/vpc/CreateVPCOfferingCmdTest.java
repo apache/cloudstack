@@ -25,6 +25,8 @@ import org.junit.Test;
 
 import org.apache.cloudstack.api.ApiCmdTestUtil;
 import org.apache.cloudstack.api.ApiConstants;
+import org.springframework.test.util.ReflectionTestUtils;
+
 
 public class CreateVPCOfferingCmdTest {
 
@@ -50,15 +52,23 @@ public class CreateVPCOfferingCmdTest {
             IllegalAccessException {
         CreateVPCOfferingCmd cmd = new CreateVPCOfferingCmd();
         ApiCmdTestUtil.set(cmd, ApiConstants.SERVICE_PROVIDER_LIST, new HashMap<String, Map<String, String>>());
-        Assert.assertNull(cmd.getServiceProviders());
+        Assert.assertTrue(cmd.getServiceProviders().isEmpty());
     }
 
     @Test
-    public void getDetailsNull() throws IllegalArgumentException,
+    public void getDetailsEmpty() throws IllegalArgumentException,
             IllegalAccessException {
         CreateVPCOfferingCmd cmd = new CreateVPCOfferingCmd();
         ApiCmdTestUtil.set(cmd, ApiConstants.SERVICE_PROVIDER_LIST, null);
-        Assert.assertNull(cmd.getServiceProviders());
+        Assert.assertTrue(cmd.getServiceProviders().isEmpty());
+    }
+
+    @Test
+    public void testCreateVPCOfferingWithEmptyDisplayText() {
+        CreateVPCOfferingCmd cmd = new CreateVPCOfferingCmd();
+        String netName = "net-vpc";
+        ReflectionTestUtils.setField(cmd,"vpcOfferingName", netName);
+        Assert.assertEquals(cmd.getDisplayText(), netName);
     }
 
 }

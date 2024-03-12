@@ -19,11 +19,14 @@
 package com.cloud.storage;
 
 import java.net.MalformedURLException;
+import java.util.List;
 import java.util.Map;
 
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.command.user.volume.AssignVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ChangeOfferingForVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.CheckAndRepairVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ExtractVolumeCmd;
@@ -36,6 +39,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.user.Account;
+import com.cloud.utils.fsm.NoTransitionException;
 
 public interface VolumeApiService {
 
@@ -104,10 +108,10 @@ public interface VolumeApiService {
 
     Volume detachVolumeFromVM(DetachVolumeCmd cmd);
 
-    Snapshot takeSnapshot(Long volumeId, Long policyId, Long snapshotId, Account account, boolean quiescevm, Snapshot.LocationType locationType, boolean asyncBackup, Map<String, String> tags)
+    Snapshot takeSnapshot(Long volumeId, Long policyId, Long snapshotId, Account account, boolean quiescevm, Snapshot.LocationType locationType, boolean asyncBackup, Map<String, String> tags, List<Long> zoneIds)
             throws ResourceAllocationException;
 
-    Snapshot allocSnapshot(Long volumeId, Long policyId, String snapshotName, Snapshot.LocationType locationType) throws ResourceAllocationException;
+    Snapshot allocSnapshot(Long volumeId, Long policyId, String snapshotName, Snapshot.LocationType locationType, List<Long> zoneIds) throws ResourceAllocationException;
 
     Volume updateVolume(long volumeId, String path, String state, Long storageId, Boolean displayVolume, String customId, long owner, String chainInfo, String name);
 
@@ -174,4 +178,8 @@ public interface VolumeApiService {
     Volume changeDiskOfferingForVolume(ChangeOfferingForVolumeCmd cmd) throws ResourceAllocationException;
 
     void publishVolumeCreationUsageEvent(Volume volume);
+
+    boolean stateTransitTo(Volume vol, Volume.Event event) throws NoTransitionException;
+
+    Pair<String, String> checkAndRepairVolume(CheckAndRepairVolumeCmd cmd) throws ResourceAllocationException;
 }

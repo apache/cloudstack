@@ -72,9 +72,6 @@ logger.addHandler(stream_handler)
 
 class TestPublicIP(cloudstackTestCase):
 
-    def setUp(self):
-        self.apiclient = self.testClient.getApiClient()
-
     @classmethod
     def setUpClass(cls):
         testClient = super(TestPublicIP, cls).getClsTestClient()
@@ -85,6 +82,7 @@ class TestPublicIP(cloudstackTestCase):
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
+        cls._cleanup = []
         # Create Accounts & networks
         cls.account = Account.create(
             cls.apiclient,
@@ -92,18 +90,21 @@ class TestPublicIP(cloudstackTestCase):
             admin=True,
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account)
 
         cls.user = Account.create(
             cls.apiclient,
             cls.services["account"],
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.user)
         cls.services["network"]["zoneid"] = cls.zone.id
 
         cls.network_offering = NetworkOffering.create(
             cls.apiclient,
             cls.services["network_offering"],
         )
+        cls._cleanup.append(cls.network_offering)
         # Enable Network offering
         cls.network_offering.update(cls.apiclient, state='Enabled')
 
@@ -114,17 +115,20 @@ class TestPublicIP(cloudstackTestCase):
             cls.account.name,
             cls.account.domainid
         )
+        cls._cleanup.append(cls.account_network)
         cls.user_network = Network.create(
             cls.apiclient,
             cls.services["network"],
             cls.user.name,
             cls.user.domainid
         )
+        cls._cleanup.append(cls.user_network)
 
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["service_offerings"]["tiny"],
         )
+        cls._cleanup.append(cls.service_offering)
 
         cls.hypervisor = testClient.getHypervisorInfo()
         cls.template = get_test_template(
@@ -146,6 +150,7 @@ class TestPublicIP(cloudstackTestCase):
             networkids=cls.account_network.id,
             serviceofferingid=cls.service_offering.id
         )
+        cls._cleanup.append(cls.account_vm)
 
         cls.user_vm = VirtualMachine.create(
             cls.apiclient,
@@ -156,6 +161,7 @@ class TestPublicIP(cloudstackTestCase):
             networkids=cls.user_network.id,
             serviceofferingid=cls.service_offering.id
         )
+        cls._cleanup.append(cls.user_vm)
 
         # Create Source NAT IP addresses
         PublicIPAddress.create(
@@ -170,25 +176,11 @@ class TestPublicIP(cloudstackTestCase):
             cls.zone.id,
             cls.user.domainid
         )
-        cls._cleanup = [
-            cls.account_vm,
-            cls.user_vm,
-            cls.account_network,
-            cls.user_network,
-            cls.account,
-            cls.user,
-            cls.network_offering
-        ]
         return
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            # Cleanup resources used
-            cleanup_resources(cls.apiclient, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestPublicIP, cls).tearDownClass()
 
     @attr(tags=["advanced", "advancedns", "smoke", "dvs"], required_hardware="false")
     def test_public_ip_admin_account(self):
@@ -879,11 +871,71 @@ class TestReleaseIP(cloudstackTestCase):
 
     @attr(tags=["advanced", "advancedns", "smoke", "dvs"], required_hardware="false")
     def test_releaseIP(self):
-        """Test for release public IP address"""
+        """Test for release public IP address using the ID"""
 
         logger.debug("Deleting Public IP : %s" % self.ip_addr.id)
 
         self.ip_address.delete(self.apiclient)
+
+        retriesCount = 10
+        isIpAddressDisassociated = False
+        while retriesCount > 0:
+            listResponse = list_publicIP(
+                self.apiclient,
+                id=self.ip_addr.id,
+                state="Allocated"
+            )
+            if listResponse is None:
+                isIpAddressDisassociated = True
+                break
+            retriesCount -= 1
+            time.sleep(60)
+        # End while
+
+        self.assertTrue(
+            isIpAddressDisassociated,
+            "Failed to disassociate IP address")
+
+        # ListPortForwardingRules should not list
+        # associated rules with Public IP address
+        try:
+            list_nat_rule = list_nat_rules(
+                self.apiclient,
+                id=self.nat_rule.id
+            )
+            logger.debug("List NAT Rule response" + str(list_nat_rule))
+        except CloudstackAPIException:
+            logger.debug("Port Forwarding Rule is deleted")
+
+        # listLoadBalancerRules should not list
+        # associated rules with Public IP address
+        try:
+            list_lb_rule = list_lb_rules(
+                self.apiclient,
+                id=self.lb_rule.id
+            )
+            logger.debug("List LB Rule response" + str(list_lb_rule))
+        except CloudstackAPIException:
+            logger.debug("Port Forwarding Rule is deleted")
+
+        # SSH Attempt though public IP should fail
+        with self.assertRaises(Exception):
+            SshClient(
+                self.ip_addr.ipaddress,
+                self.services["natrule"]["publicport"],
+                self.virtual_machine.username,
+                self.virtual_machine.password,
+                retries=2,
+                delay=0
+            )
+        return
+
+    @attr(tags=["advanced", "advancedns", "smoke", "dvs"], required_hardware="false")
+    def test_releaseIP_using_IP(self):
+        """Test for release public IP address using the address"""
+
+        logger.debug("Deleting Public IP : %s" % self.ip_addr.ipaddress)
+        self.ip_address.delete_by_ip(self.apiclient)
 
         retriesCount = 10
         isIpAddressDisassociated = False

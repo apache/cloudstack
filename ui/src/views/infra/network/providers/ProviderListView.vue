@@ -28,69 +28,73 @@
       :rowKey="record => record.id || record.name || record.nvpdeviceid || record.resourceid"
       :pagination="false"
       :scroll="scrollable">
-      <template #name="{text, record}">
-        <span v-if="record.role==='VIRTUAL_ROUTER'">
-          <router-link :to="{ path: '/router' + '/' + record.id }" v-if="record.id">{{ text }}</router-link>
-          <label v-else>{{ text }}</label>
-        </span>
-        <span v-else>{{ text }}</span>
-      </template>
-      <template #hostname="{text, record}">
-        <span v-if="record.role==='VIRTUAL_ROUTER'">
-          <router-link :to="{ path: '/host' + '/' + record.hostid }" v-if="record.hostid">{{ text }}</router-link>
-          <label v-else>{{ text }}</label>
-        </span>
-        <span v-else>{{ text }}</span>
-      </template>
-      <template #zonename="{text, record}">
-        <span v-if="record.role==='VIRTUAL_ROUTER'">
-          <router-link :to="{ path: '/zone' + '/' + record.zoneid }" v-if="record.zoneid">{{ text }}</router-link>
-          <label v-else>{{ text }}</label>
-        </span>
-        <span v-else>{{ text }}</span>
-      </template>
-      <template #action="{record}">
-        <a-tooltip placement="top">
-          <template #title>
-            <span v-if="resource.name==='BigSwitchBcf'">{{ $t('label.delete.bigswitchbcf') }}</span>
-            <span v-else-if="resource.name==='BrocadeVcs'">{{ $t('label.delete.brocadevcs') }}</span>
-            <span v-else-if="resource.name==='NiciraNvp'">{{ $t('label.delete.niciranvp') }}</span>
-            <span v-else-if="resource.name==='Netscaler'">{{ $t('label.delete.netscaler') }}</span>
-            <span v-else-if="resource.name==='Opendaylight'">{{ $t('label.delete.opendaylight.device') }}</span>
-            <span v-else-if="resource.name==='PaloAlto'">{{ $t('label.delete.pa') }}</span>
-            <span v-else-if="resource.name==='CiscoVnmc' && title==='listCiscoVnmcResources'">
-              {{ $t('label.delete.ciscovnmc.resource') }}
-            </span>
-            <span v-else-if="resource.name==='CiscoVnmc' && title==='listCiscoAsa1000vResources'">
-              {{ $t('label.delete.ciscoasa1000v') }}
-            </span>
-          </template>
-          <tooltip-button
-            v-if="resource.name==='Ovs'"
-            :tooltip="$t('label.configure')"
-            icon="setting-outlined"
-            size="small"
-            :loading="actionLoading"
-            @onClick="onConfigureOvs(record)"/>
-          <tooltip-button
-            v-else
-            :tooltip="$t('label.delete')"
-            type="primary"
-            :danger="true"
-            icon="close-outlined"
-            size="small"
-            :loading="actionLoading"
-            @onClick="onDelete(record)"/>
-        </a-tooltip>
-      </template>
-      <template #lbdevicestate="{text}">
-        <status :text="text ? text : ''" displayText />
-      </template>
-      <template #status="{text}">
-        <status :text="text ? text : ''" displayText />
-      </template>
-      <template #state="{text}">
-        <status :text="text ? text : ''" displayText />
+      <template #bodyCell="{ column, text, record }">
+        <template v-if="column.key === 'name'">
+          <span v-if="record.role==='VIRTUAL_ROUTER'">
+            <router-link :to="{ path: '/router' + '/' + record.id }" v-if="record.id">{{ text }}</router-link>
+            <label v-else>{{ text }}</label>
+          </span>
+          <span v-else>{{ text }}</span>
+        </template>
+        <template v-if="column.key === 'hostname'">
+          <span v-if="record.role==='VIRTUAL_ROUTER'">
+            <router-link :to="{ path: '/host' + '/' + record.hostid }" v-if="record.hostid">{{ text }}</router-link>
+            <label v-else>{{ text }}</label>
+          </span>
+          <span v-else>{{ text }}</span>
+        </template>
+        <template v-if="column.key === 'zonename'">
+          <span v-if="record.role==='VIRTUAL_ROUTER'">
+            <router-link :to="{ path: '/zone' + '/' + record.zoneid }" v-if="record.zoneid">{{ text }}</router-link>
+            <label v-else>{{ text }}</label>
+          </span>
+          <span v-else>{{ text }}</span>
+        </template>
+        <template v-if="column.key === 'actions'">
+          <a-tooltip placement="top">
+            <template #title>
+              <span v-if="resource.name==='BigSwitchBcf'">{{ $t('label.delete.bigswitchbcf') }}</span>
+              <span v-else-if="resource.name==='BrocadeVcs'">{{ $t('label.delete.brocadevcs') }}</span>
+              <span v-else-if="resource.name==='NiciraNvp'">{{ $t('label.delete.niciranvp') }}</span>
+              <span v-else-if="resource.name==='F5BigIp'">{{ $t('label.delete.f5') }}</span>
+              <span v-else-if="resource.name==='JuniperSRX'">{{ $t('label.delete.srx') }}</span>
+              <span v-else-if="resource.name==='Netscaler'">{{ $t('label.delete.netscaler') }}</span>
+              <span v-else-if="resource.name==='Opendaylight'">{{ $t('label.delete.opendaylight.device') }}</span>
+              <span v-else-if="resource.name==='PaloAlto'">{{ $t('label.delete.pa') }}</span>
+              <span v-else-if="resource.name==='CiscoVnmc' && title==='listCiscoVnmcResources'">
+                {{ $t('label.delete.ciscovnmc.resource') }}
+              </span>
+              <span v-else-if="resource.name==='CiscoVnmc' && title==='listCiscoAsa1000vResources'">
+                {{ $t('label.delete.ciscoasa1000v') }}
+              </span>
+            </template>
+            <tooltip-button
+              v-if="resource.name==='Ovs'"
+              :tooltip="$t('label.configure')"
+              icon="setting-outlined"
+              size="small"
+              :loading="actionLoading"
+              @onClick="onConfigureOvs(record)"/>
+            <tooltip-button
+              v-else
+              :tooltip="$t('label.delete')"
+              type="primary"
+              :danger="true"
+              icon="close-outlined"
+              size="small"
+              :loading="actionLoading"
+              @onClick="onDelete(record)"/>
+          </a-tooltip>
+        </template>
+        <template v-if="column.key === 'lbdevicestate'">
+          <status :text="text ? text : ''" displayText />
+        </template>
+        <template v-if="column.key === 'status'">
+          <status :text="text ? text : ''" displayText />
+        </template>
+        <template v-if="column.key === 'state'">
+          <status :text="text ? text : ''" displayText />
+        </template>
       </template>
     </a-table>
     <a-pagination

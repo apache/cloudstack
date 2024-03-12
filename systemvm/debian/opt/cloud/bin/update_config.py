@@ -62,7 +62,7 @@ def is_guestnet_configured(guestnet_dict, keys):
     existing_keys = []
     new_eth_key = None
 
-    for k1, v1 in guestnet_dict.iteritems():
+    for k1, v1 in guestnet_dict.items():
         if k1 in keys and len(v1) > 0:
             existing_keys.append(k1)
 

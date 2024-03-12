@@ -287,6 +287,34 @@
         </div>
       </chart-card>
     </a-col>
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }" class="dashboard-card">
+      <chart-card :loading="loading" class="dashboard-card">
+        <template #title>
+          <div class="center">
+            <h3><render-icon :icon="$config.userCard.icon" /> {{ $t($config.userCard.title) }}</h3>
+          </div>
+        </template>
+        <a-divider style="margin: 6px 0px; border-width: 0px"/>
+        <a-list item-layout="horizontal" :data-source="$config.userCard.links">
+          <template #renderItem="{ item }">
+            <a-list-item>
+              <a-list-item-meta :description="item.text">
+                <template #title>
+                  <a :href="item.link" target="_blank"><h4>{{ item.title }}</h4></a>
+                </template>
+                <template #avatar>
+                  <a-avatar :style="{ backgroundColor: $config.theme['@primary-color'] }">
+                    <template #icon>
+                      <render-icon :icon="item.icon" />
+                    </template>
+                  </a-avatar>
+                </template>
+              </a-list-item-meta>
+            </a-list-item>
+          </template>
+        </a-list>
+      </chart-card>
+    </a-col>
     <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }">
       <chart-card :loading="loading" class="dashboard-card dashboard-event">
         <template #title>

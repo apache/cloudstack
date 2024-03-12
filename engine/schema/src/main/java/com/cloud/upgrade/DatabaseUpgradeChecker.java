@@ -22,18 +22,23 @@ import static com.google.common.collect.ObjectArrays.concat;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.upgrade.dao.Upgrade41900to42000;
+import com.cloud.utils.FileUtil;
 import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.upgrade.dao.DbUpgrade;
 import com.cloud.upgrade.dao.DbUpgradeSystemVmTemplate;
@@ -81,6 +86,7 @@ import com.cloud.upgrade.dao.Upgrade41700to41710;
 import com.cloud.upgrade.dao.Upgrade41710to41720;
 import com.cloud.upgrade.dao.Upgrade41720to41800;
 import com.cloud.upgrade.dao.Upgrade41800to41810;
+import com.cloud.upgrade.dao.Upgrade41810to41900;
 import com.cloud.upgrade.dao.Upgrade420to421;
 import com.cloud.upgrade.dao.Upgrade421to430;
 import com.cloud.upgrade.dao.Upgrade430to440;
@@ -120,8 +126,9 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.common.annotations.VisibleForTesting;
 
 public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
-    private static final Logger s_logger = Logger.getLogger(DatabaseUpgradeChecker.class);
+    protected static Logger LOGGER = LogManager.getLogger(DatabaseUpgradeChecker.class);
     private final DatabaseVersionHierarchy hierarchy;
+    private static final String VIEWS_DIRECTORY = Paths.get("META-INF", "db", "views").toString();
 
     @Inject
     VersionDao _dao;
@@ -218,6 +225,8 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 .next("4.17.1.0", new Upgrade41710to41720())
                 .next("4.17.2.0", new Upgrade41720to41800())
                 .next("4.18.0.0", new Upgrade41800to41810())
+                .next("4.18.1.0", new Upgrade41810to41900())
+                .next("4.19.0.0", new Upgrade41900to42000())
                 .build();
     }
 
@@ -227,10 +236,10 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             ScriptRunner runner = new ScriptRunner(conn, false, true);
             runner.runScript(reader);
         } catch (IOException e) {
-            s_logger.error("Unable to read upgrade script", e);
+            LOGGER.error("Unable to read upgrade script", e);
             throw new CloudRuntimeException("Unable to read upgrade script", e);
         } catch (SQLException e) {
-            s_logger.error("Unable to execute upgrade script", e);
+            LOGGER.error("Unable to execute upgrade script", e);
             throw new CloudRuntimeException("Unable to execute upgrade script", e);
         }
 
@@ -269,7 +278,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                         conn = txn.getConnection();
                     } catch (SQLException e) {
                         String errorMessage = "Unable to upgrade the database";
-                        s_logger.error(errorMessage, e);
+                        LOGGER.error(errorMessage, e);
                         throw new CloudRuntimeException(errorMessage, e);
                     }
                     ((DbUpgradeSystemVmTemplate)upgrade).updateSystemVmTemplates(conn);
@@ -277,7 +286,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                     break;
                 } catch (CloudRuntimeException e) {
                     String errorMessage = "Unable to upgrade the database";
-                    s_logger.error(errorMessage, e);
+                    LOGGER.error(errorMessage, e);
                     throw new CloudRuntimeException(errorMessage, e);
                 } finally {
                     txn.close();
@@ -287,13 +296,13 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
     }
 
     protected void upgrade(CloudStackVersion dbVersion, CloudStackVersion currentVersion) {
-        s_logger.info("Database upgrade must be performed from " + dbVersion + " to " + currentVersion);
+        LOGGER.info("Database upgrade must be performed from " + dbVersion + " to " + currentVersion);
 
         final DbUpgrade[] upgrades = calculateUpgradePath(dbVersion, currentVersion);
 
         for (DbUpgrade upgrade : upgrades) {
             VersionVO version;
-            s_logger.debug("Running upgrade " + upgrade.getClass().getSimpleName() + " to upgrade from " + upgrade.getUpgradableVersionRange()[0] + "-" + upgrade
+            LOGGER.debug("Running upgrade " + upgrade.getClass().getSimpleName() + " to upgrade from " + upgrade.getUpgradableVersionRange()[0] + "-" + upgrade
                 .getUpgradableVersionRange()[1] + " to " + upgrade.getUpgradedVersion());
             TransactionLegacy txn = TransactionLegacy.open("Upgrade");
             txn.start();
@@ -303,7 +312,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                     conn = txn.getConnection();
                 } catch (SQLException e) {
                     String errorMessage = "Unable to upgrade the database";
-                    s_logger.error(errorMessage, e);
+                    LOGGER.error(errorMessage, e);
                     throw new CloudRuntimeException(errorMessage, e);
                 }
                 InputStream[] scripts = upgrade.getPrepareScripts();
@@ -321,7 +330,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 txn.commit();
             } catch (CloudRuntimeException e) {
                 String errorMessage = "Unable to upgrade the database";
-                s_logger.error(errorMessage, e);
+                LOGGER.error(errorMessage, e);
                 throw new CloudRuntimeException(errorMessage, e);
             } finally {
                 txn.close();
@@ -330,7 +339,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             // Run the corresponding '-cleanup.sql' script
             txn = TransactionLegacy.open("Cleanup");
             try {
-                s_logger.info("Cleanup upgrade " + upgrade.getClass().getSimpleName() + " to upgrade from " + upgrade.getUpgradableVersionRange()[0] + "-" + upgrade
+                LOGGER.info("Cleanup upgrade " + upgrade.getClass().getSimpleName() + " to upgrade from " + upgrade.getUpgradableVersionRange()[0] + "-" + upgrade
                     .getUpgradableVersionRange()[1] + " to " + upgrade.getUpgradedVersion());
 
                 txn.start();
@@ -338,7 +347,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 try {
                     conn = txn.getConnection();
                 } catch (SQLException e) {
-                    s_logger.error("Unable to cleanup the database", e);
+                    LOGGER.error("Unable to cleanup the database", e);
                     throw new CloudRuntimeException("Unable to cleanup the database", e);
                 }
 
@@ -346,7 +355,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 if (scripts != null) {
                     for (InputStream script : scripts) {
                         runScript(conn, script);
-                        s_logger.debug("Cleanup script " + upgrade.getClass().getSimpleName() + " is executed successfully");
+                        LOGGER.debug("Cleanup script " + upgrade.getClass().getSimpleName() + " is executed successfully");
                     }
                 }
                 txn.commit();
@@ -356,19 +365,43 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 version.setUpdated(new Date());
                 _dao.update(version.getId(), version);
                 txn.commit();
-                s_logger.debug("Upgrade completed for version " + version.getVersion());
+                LOGGER.debug("Upgrade completed for version " + version.getVersion());
             } finally {
                 txn.close();
             }
         }
+
+        executeViewScripts();
         updateSystemVmTemplates(upgrades);
+    }
+
+    protected void executeViewScripts() {
+        LOGGER.info(String.format("Executing VIEW scripts that are under resource directory [%s].", VIEWS_DIRECTORY));
+        List<String> filesPathUnderViewsDirectory = FileUtil.getFilesPathsUnderResourceDirectory(VIEWS_DIRECTORY);
+
+        try (TransactionLegacy txn = TransactionLegacy.open("execute-view-scripts")) {
+            Connection conn = txn.getConnection();
+
+            for (String filePath : filesPathUnderViewsDirectory) {
+                LOGGER.debug(String.format("Executing VIEW script [%s].", filePath));
+
+                InputStream viewScript = Thread.currentThread().getContextClassLoader().getResourceAsStream(filePath);
+                runScript(conn, viewScript);
+            }
+
+            LOGGER.info(String.format("Finished execution of VIEW scripts that are under resource directory [%s].", VIEWS_DIRECTORY));
+        } catch (SQLException e) {
+            String message = String.format("Unable to execute VIEW scripts due to [%s].", e.getMessage());
+            LOGGER.error(message, e);
+            throw new CloudRuntimeException(message, e);
+        }
     }
 
     @Override
     public void check() {
         GlobalLock lock = GlobalLock.getInternLock("DatabaseUpgrade");
         try {
-            s_logger.info("Grabbing lock to check for database upgrade.");
+            LOGGER.info("Grabbing lock to check for database upgrade.");
             if (!lock.lock(20 * 60)) {
                 throw new CloudRuntimeException("Unable to acquire lock to check for database integrity.");
             }
@@ -389,14 +422,14 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 SystemVmTemplateRegistration.CS_MAJOR_VERSION  = String.valueOf(sysVmVersion.getMajorRelease()) + "." + String.valueOf(sysVmVersion.getMinorRelease());
                 SystemVmTemplateRegistration.CS_TINY_VERSION = String.valueOf(sysVmVersion.getPatchRelease());
 
-                s_logger.info("DB version = " + dbVersion + " Code Version = " + currentVersion);
+                LOGGER.info("DB version = " + dbVersion + " Code Version = " + currentVersion);
 
                 if (dbVersion.compareTo(currentVersion) > 0) {
                     throw new CloudRuntimeException("Database version " + dbVersion + " is higher than management software version " + currentVersionValue);
                 }
 
                 if (dbVersion.compareTo(currentVersion) == 0) {
-                    s_logger.info("DB version and code version matches so no upgrade needed.");
+                    LOGGER.info("DB version and code version matches so no upgrade needed.");
                     return;
                 }
 
@@ -419,13 +452,13 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             decryptInit(conn);
             txn.commit();
         } catch (CloudRuntimeException e) {
-            s_logger.error(e.getMessage());
+            LOGGER.error(e.getMessage());
             errorMessage = String.format("Unable to initialize the database encryptors due to %s. " +
                     "Please check if database encryption key and database encryptor version are correct.", errorMessage);
-            s_logger.error(errorMessage);
+            LOGGER.error(errorMessage);
             throw new CloudRuntimeException(errorMessage, e);
         } catch (SQLException e) {
-            s_logger.error(errorMessage, e);
+            LOGGER.error(errorMessage, e);
             throw new CloudRuntimeException(errorMessage, e);
         } finally {
             txn.close();
@@ -438,7 +471,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
              ResultSet result = pstmt.executeQuery()) {
             if (result.next()) {
                 String init = result.getString(1);
-                s_logger.info("init = " + DBEncryptionUtil.decrypt(init));
+                LOGGER.info("init = " + DBEncryptionUtil.decrypt(init));
             }
         }
     }
@@ -495,7 +528,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
 
         @Override
         public void updateSystemVmTemplates(Connection conn) {
-            s_logger.debug("Updating System Vm template IDs");
+            LOGGER.debug("Updating System Vm template IDs");
             initSystemVmTemplateRegistration();
             try {
                 systemVmTemplateRegistration.updateSystemVmTemplates(conn);

@@ -34,17 +34,19 @@
       :rowKey="record => record.id"
       :pagination="false"
     >
-      <template #name="{record}">
-        <div>{{ returnPodName(record.podid) }}</div>
-      </template>
-      <template #actions="{record}">
-        <tooltip-button
-          :tooltip="$t('label.remove.ip.range')"
-          :disabled="!('deleteStorageNetworkIpRange' in $store.getters.apis)"
-          icon="delete-outlined"
-          type="primary"
-          :danger="true"
-          @onClick="handleDeleteIpRange(record.id)" />
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'name'">
+          <div>{{ returnPodName(record.podid) }}</div>
+        </template>
+        <template v-if="column.key === 'actions'">
+          <tooltip-button
+            :tooltip="$t('label.remove.ip.range')"
+            :disabled="!('deleteStorageNetworkIpRange' in $store.getters.apis)"
+            icon="delete-outlined"
+            type="primary"
+            :danger="true"
+            @onClick="handleDeleteIpRange(record.id)" />
+        </template>
       </template>
     </a-table>
     <a-pagination
@@ -88,9 +90,9 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option v-for="pod in pods" :key="pod.id" :value="pod.id">{{ pod.name }}</a-select-option>
+            <a-select-option v-for="pod in pods" :key="pod.id" :value="pod.id" :label="pod.name">{{ pod.name }}</a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item name="gateway" ref="gateway" :label="$t('label.gateway')" class="form__item">
@@ -151,8 +153,8 @@ export default {
       defaultSelectedPod: null,
       columns: [
         {
-          title: this.$t('label.podid'),
-          slots: { customRender: 'name' }
+          key: 'name',
+          title: this.$t('label.podid')
         },
         {
           title: this.$t('label.gateway'),
@@ -175,8 +177,8 @@ export default {
           dataIndex: 'endip'
         },
         {
-          title: this.$t('label.action'),
-          slots: { customRender: 'actions' }
+          key: 'actions',
+          title: this.$t('label.actions')
         }
       ],
       page: 1,

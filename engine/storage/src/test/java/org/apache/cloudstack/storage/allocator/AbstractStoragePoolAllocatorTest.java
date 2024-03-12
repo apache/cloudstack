@@ -17,13 +17,13 @@
 package org.apache.cloudstack.storage.allocator;
 
 
-import com.cloud.deploy.DeploymentPlan;
-import com.cloud.deploy.DeploymentPlanner;
-import com.cloud.storage.Storage;
-import com.cloud.storage.StoragePool;
-import com.cloud.user.Account;
-import com.cloud.vm.DiskProfile;
-import com.cloud.vm.VirtualMachineProfile;
+import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.junit.After;
 import org.junit.Assert;
@@ -34,10 +34,14 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import com.cloud.deploy.DeploymentPlan;
+import com.cloud.deploy.DeploymentPlanner;
+import com.cloud.storage.Storage;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.user.Account;
+import com.cloud.vm.DiskProfile;
+import com.cloud.vm.VirtualMachineProfile;
 
 @RunWith(MockitoJUnitRunner.class)
 public class AbstractStoragePoolAllocatorTest {
@@ -50,6 +54,9 @@ public class AbstractStoragePoolAllocatorTest {
     @Mock
     Account account;
     private List<StoragePool> pools;
+
+    @Mock
+    VolumeDao volumeDao;
 
     @Before
     public void setUp() {
@@ -84,6 +91,29 @@ public class AbstractStoragePoolAllocatorTest {
     }
 
     @Test
+    public void reorderStoragePoolsBasedOnAlgorithm_userdispersing_reorder_check() {
+        allocator.allocationAlgorithm = "userdispersing";
+        allocator.volumeDao = volumeDao;
+
+        when(plan.getDataCenterId()).thenReturn(1l);
+        when(plan.getPodId()).thenReturn(1l);
+        when(plan.getClusterId()).thenReturn(1l);
+        when(account.getAccountId()).thenReturn(1l);
+        List<Long> poolIds = new ArrayList<>();
+        poolIds.add(1l);
+        poolIds.add(9l);
+        when(volumeDao.listPoolIdsByVolumeCount(1l,1l,1l,1l)).thenReturn(poolIds);
+
+        List<StoragePool> reorderedPools = allocator.reorderStoragePoolsBasedOnAlgorithm(pools, plan, account);
+        Assert.assertEquals(poolIds.size(),reorderedPools.size());
+
+        Mockito.verify(allocator, Mockito.times(0)).reorderPoolsByCapacity(plan, pools);
+        Mockito.verify(allocator, Mockito.times(1)).reorderPoolsByNumberOfVolumes(plan, pools, account);
+        Mockito.verify(allocator, Mockito.times(0)).reorderRandomPools(pools);
+        Mockito.verify(volumeDao, Mockito.times(1)).listPoolIdsByVolumeCount(1l,1l,1l,1l);
+    }
+
+    @Test
     public void reorderStoragePoolsBasedOnAlgorithm_firstfitleastconsumed() {
         allocator.allocationAlgorithm = "firstfitleastconsumed";
         Mockito.doReturn(pools).when(allocator).reorderPoolsByCapacity(plan, pools);
@@ -107,7 +137,7 @@ public class AbstractStoragePoolAllocatorTest {
 class MockStorapoolAllocater extends AbstractStoragePoolAllocator {
 
     @Override
-    protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, DeploymentPlanner.ExcludeList avoid, int returnUpTo, boolean bypassStorageTypeCheck) {
+    protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, DeploymentPlanner.ExcludeList avoid, int returnUpTo, boolean bypassStorageTypeCheck, String keyword) {
         return null;
     }
 }

@@ -42,13 +42,16 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.naming.ConfigurationException;
+import javax.persistence.AttributeConverter;
 import javax.persistence.AttributeOverride;
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.EmbeddedId;
 import javax.persistence.EntityExistsException;
 import javax.persistence.EnumType;
@@ -56,7 +59,6 @@ import javax.persistence.Enumerated;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
@@ -118,11 +120,11 @@ import net.sf.ehcache.Element;
  **/
 @DB
 public abstract class GenericDaoBase<T, ID extends Serializable> extends ComponentLifecycleBase implements GenericDao<T, ID>, ComponentMethodInterceptable {
-    private final static Logger s_logger = Logger.getLogger(GenericDaoBase.class);
 
     protected final static TimeZone s_gmtTimeZone = TimeZone.getTimeZone("GMT");
 
     protected final static Map<Class<?>, GenericDao<?, ? extends Serializable>> s_daoMaps = new ConcurrentHashMap<Class<?>, GenericDao<?, ? extends Serializable>>(71);
+    private final ConversionSupport _conversionSupport;
 
     protected Class<T> _entityBeanType;
     protected String _table;
@@ -264,29 +266,30 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         _searchEnhancer.setSuperclass(_entityBeanType);
         _searchEnhancer.setCallback(new UpdateBuilder(this));
 
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("Select SQL: " + _partialSelectSql.first().toString());
-            s_logger.trace("Remove SQL: " + (_removeSql != null ? _removeSql.first() : "No remove sql"));
-            s_logger.trace("Select by Id SQL: " + _selectByIdSql);
-            s_logger.trace("Table References: " + _tables);
-            s_logger.trace("Insert SQLs:");
+        if (logger.isTraceEnabled()) {
+            logger.trace("Select SQL: " + _partialSelectSql.first().toString());
+            logger.trace("Remove SQL: " + (_removeSql != null ? _removeSql.first() : "No remove sql"));
+            logger.trace("Select by Id SQL: " + _selectByIdSql);
+            logger.trace("Table References: " + _tables);
+            logger.trace("Insert SQLs:");
             for (final Pair<String, Attribute[]> insertSql : _insertSqls) {
-                s_logger.trace(insertSql.first());
+                logger.trace(insertSql.first());
             }
 
-            s_logger.trace("Delete SQLs");
+            logger.trace("Delete SQLs");
             for (final Pair<String, Attribute[]> deletSql : _deleteSqls) {
-                s_logger.trace(deletSql.first());
+                logger.trace(deletSql.first());
             }
 
-            s_logger.trace("Collection SQLs");
+            logger.trace("Collection SQLs");
             for (Attribute attr : _ecAttributes) {
                 EcInfo info = (EcInfo)attr.attache;
-                s_logger.trace(info.insertSql);
-                s_logger.trace(info.selectSql);
+                logger.trace(info.insertSql);
+                logger.trace(info.selectSql);
             }
         }
 
+        _conversionSupport = new ConversionSupport();
         setRunLevel(ComponentLifecycle.RUN_LEVEL_SYSTEM);
     }
 
@@ -412,7 +415,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                 }
             }
 
-            if (s_logger.isDebugEnabled() && lock != null) {
+            if (logger.isDebugEnabled() && lock != null) {
                 txn.registerLock(pstmt.toString());
             }
             final ResultSet rs = pstmt.executeQuery();
@@ -422,7 +425,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             return result;
         } catch (final SQLException e) {
             throw new CloudRuntimeException("DB Exception on: " + pstmt, e);
-        } catch (final Throwable e) {
+        } catch (final Exception e) {
             throw new CloudRuntimeException("Caught: " + pstmt, e);
         }
     }
@@ -499,7 +502,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             return results;
         } catch (final SQLException e) {
             throw new CloudRuntimeException("DB Exception on: " + pstmt, e);
-        } catch (final Throwable e) {
+        } catch (final Exception e) {
             throw new CloudRuntimeException("Caught: " + pstmt, e);
         }
     }
@@ -649,6 +652,9 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                 }
             } else if (type == byte[].class) {
                 field.set(entity, rs.getBytes(index));
+            } else if (field.getDeclaredAnnotation(Convert.class) != null) {
+                Object val = _conversionSupport.convertToEntityAttribute(field, rs.getObject(index));
+                field.set(entity, val);
             } else {
                 field.set(entity, rs.getObject(index));
             }
@@ -776,8 +782,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             }
         }
 
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("join search statement is " + pstmt);
+        if (logger.isTraceEnabled()) {
+            logger.trace("join search statement is " + pstmt);
         }
         return count;
     }
@@ -874,7 +880,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         if (_idField.getAnnotation(EmbeddedId.class) == null) {
             sql.append(_table).append(".").append(DbUtil.getColumnName(_idField, null)).append(" = ? ");
         } else {
-            final Class<?> clazz = _idField.getClass();
+            logger.debug(String.format("field type vs declarator : %s vs %s", _idField.getType(), _idField.getDeclaringClass()));
+            final Class<?> clazz = _idField.getType();
             final AttributeOverride[] overrides = DbUtil.getAttributeOverrides(_idField);
             for (final Field field : clazz.getDeclaredFields()) {
                 sql.append(_table).append(".").append(DbUtil.getColumnName(field, overrides)).append(" = ? AND ");
@@ -906,6 +913,15 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         return findOneIncludingRemovedBy(sc);
     }
 
+    @Override
+    @DB()
+    public T findOneBy(SearchCriteria<T> sc, final Filter filter) {
+        sc = checkAndSetRemovedIsNull(sc);
+        filter.setLimit(1L);
+        List<T> results = searchIncludingRemoved(sc, filter, null, false);
+        return results.isEmpty() ? null : results.get(0);
+    }
+
     @DB()
     protected List<T> listBy(SearchCriteria<T> sc, final Filter filter) {
         sc = checkAndSetRemovedIsNull(sc);
@@ -919,7 +935,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     }
 
     @DB()
-    protected List<T> listBy(final SearchCriteria<T> sc) {
+    public List<T> listBy(final SearchCriteria<T> sc) {
         return listBy(sc, null);
     }
 
@@ -1144,7 +1160,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             return result;
         } catch (final SQLException e) {
             throw new CloudRuntimeException("DB Exception on: " + pstmt, e);
-        } catch (final Throwable e) {
+        } catch (final Exception e) {
             throw new CloudRuntimeException("Caught: " + pstmt, e);
         }
     }
@@ -1226,7 +1242,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             return pstmt.executeUpdate();
         } catch (final SQLException e) {
             throw new CloudRuntimeException("DB Exception on: " + pstmt, e);
-        } catch (final Throwable e) {
+        } catch (final Exception e) {
             throw new CloudRuntimeException("Caught: " + pstmt, e);
         }
     }
@@ -1263,6 +1279,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
     @DB()
     protected void addJoins(StringBuilder str, Collection<JoinBuilder<SearchCriteria<?>>> joins) {
+        addJoins(str, joins, new HashMap<>());
+    }
+
+    @DB()
+    protected void addJoins(StringBuilder str, Collection<JoinBuilder<SearchCriteria<?>>> joins, Map<String, Integer> joinedTableNames) {
         boolean hasWhereClause = true;
         int fromIndex = str.lastIndexOf("WHERE");
         if (fromIndex == -1) {
@@ -1273,18 +1294,27 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         }
 
         for (JoinBuilder<SearchCriteria<?>> join : joins) {
+            String joinTableName = join.getSecondAttribute().table;
+            String joinTableAlias = findNextJoinTableName(joinTableName, joinedTableNames);
             StringBuilder onClause = new StringBuilder();
             onClause.append(" ")
             .append(join.getType().getName())
             .append(" ")
-            .append(join.getSecondAttribute().table)
-            .append(" ON ")
+            .append(joinTableName);
+            if (!joinTableAlias.equals(joinTableName)) {
+                onClause.append(" ").append(joinTableAlias);
+            }
+            onClause.append(" ON ")
             .append(join.getFirstAttribute().table)
             .append(".")
             .append(join.getFirstAttribute().columnName)
-            .append("=")
-            .append(join.getSecondAttribute().table)
-            .append(".")
+            .append("=");
+            if(!joinTableAlias.equals(joinTableName)) {
+                onClause.append(joinTableAlias);
+            } else {
+                onClause.append(joinTableName);
+            }
+            onClause.append(".")
             .append(join.getSecondAttribute().columnName)
             .append(" ");
             str.insert(fromIndex, onClause);
@@ -1305,9 +1335,20 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
         for (JoinBuilder<SearchCriteria<?>> join : joins) {
             if (join.getT().getJoins() != null) {
-                addJoins(str, join.getT().getJoins());
+                addJoins(str, join.getT().getJoins(), joinedTableNames);
             }
         }
+    }
+
+    protected static String findNextJoinTableName(String tableName, Map<String, Integer> usedTableNames) {
+        if (usedTableNames.containsKey(tableName)) {
+            Integer tableCounter = usedTableNames.get(tableName);
+            usedTableNames.put(tableName, ++tableCounter);
+            tableName = tableName + tableCounter;
+        } else {
+            usedTableNames.put(tableName, 0);
+        }
+        return tableName;
     }
 
     private void removeAndClause(StringBuilder sql) {
@@ -1351,9 +1392,9 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         }
 
         String stackTrace = ExceptionUtils.getStackTrace(new CloudRuntimeException(String.format("The query to count all the records of [%s] resulted in a value smaller than"
-                + " the result set's size [count of records: %s, result set's size: %s]. Using the result set's size instead.", _entityBeanType,
+                        + " the result set's size [count of records: %s, result set's size: %s]. Using the result set's size instead.", _entityBeanType,
                 count, resultSetSize)));
-        s_logger.warn(stackTrace);
+        logger.warn(stackTrace);
 
         return resultSetSize;
     }
@@ -1560,7 +1601,10 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                 return;
             }
         }
-        if (attr.field.getType() == String.class) {
+        if(attr.field.getDeclaredAnnotation(Convert.class) != null) {
+            Object val = _conversionSupport.convertToDatabaseColumn(attr.field, value);
+            pstmt.setObject(j, val);
+        } else if (attr.field.getType() == String.class) {
             final String str = (String)value;
             if (str == null) {
                 pstmt.setString(j, null);
@@ -1684,7 +1728,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             try {
                 _cache.put(new Element(_idField.get(entity), entity));
             } catch (final Exception e) {
-                s_logger.debug("Can't put it in the cache", e);
+                logger.debug("Can't put it in the cache", e);
             }
         }
 
@@ -1706,7 +1750,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             try {
                 _cache.put(new Element(_idField.get(entity), entity));
             } catch (final Exception e) {
-                s_logger.debug("Can't put it in the cache", e);
+                logger.debug("Can't put it in the cache", e);
             }
         }
 
@@ -1913,7 +1957,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             final int idle = NumbersUtil.parseInt((String)params.get("cache.time.to.idle"), 300);
             _cache = new Cache(getName(), maxElements, false, live == -1, live == -1 ? Integer.MAX_VALUE : live, idle);
             cm.addCache(_cache);
-            s_logger.info("Cache created: " + _cache.toString());
+            logger.info("Cache created: " + _cache.toString());
         } else {
             _cache = null;
         }
@@ -2024,7 +2068,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             return 0;
         } catch (final SQLException e) {
             throw new CloudRuntimeException("DB Exception on: " + pstmt, e);
-        } catch (final Throwable e) {
+        } catch (final Exception e) {
             throw new CloudRuntimeException("Caught: " + pstmt, e);
         }
     }
@@ -2075,7 +2119,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             return 0;
         } catch (final SQLException e) {
             throw new CloudRuntimeException("DB Exception in executing: " + sql, e);
-        } catch (final Throwable e) {
+        } catch (final Exception e) {
             throw new CloudRuntimeException("Caught exception in : " + sql, e);
         }
     }
@@ -2132,7 +2176,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             return 0;
         } catch (final SQLException e) {
             throw new CloudRuntimeException("DB Exception on: " + pstmt, e);
-        } catch (final Throwable e) {
+        } catch (final Exception e) {
             throw new CloudRuntimeException("Caught: " + pstmt, e);
         }
     }
@@ -2186,4 +2230,50 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
         return sql;
     }
+
+    /**
+     * Support conversion between DB and Entity values.
+     * Detects whether field is annotated with {@link Convert} annotation and use converter instance from the annotation.
+     */
+    static class ConversionSupport {
+        /**
+         * Contains cache of {@link AttributeConverter} instances.
+         */
+        private static final Map<Class<?>, AttributeConverter<?, ?>> s_converterCacheMap = new ConcurrentHashMap<>();
+
+        /**
+         * Checks whether field annotated with {@link Convert} annotation and tries to convert source value with converter.
+         *
+         * @param field Entity field
+         * @param value DB value
+         * @return converted value if field is annotated with {@link Convert} or original value otherwise
+         */
+        private <T> T convertToEntityAttribute(Field field, Object value) {
+            return (T) getConverter(field).map(converter -> converter.convertToEntityAttribute(value)).orElse(value);
+        }
+
+        /**
+         * Checks whether field annotated with {@link Convert} annotation and tries to convert source value with converter.
+         *
+         * @param field Entity field
+         * @param value Entity value
+         * @return converted value if field is annotated with {@link Convert} or original value otherwise
+         */
+        private <T> T convertToDatabaseColumn(Field field, Object value) {
+            return (T) getConverter(field).map(converter -> converter.convertToDatabaseColumn(value)).orElse(value);
+        }
+
+        private Optional<AttributeConverter<Object, Object>> getConverter(Field field) {
+            return Optional.of(field).map(f -> f.getAnnotation(Convert.class)).map(Convert::converter).filter(AttributeConverter.class::isAssignableFrom).map(converterType -> {
+                return (AttributeConverter<Object, Object>) s_converterCacheMap.computeIfAbsent(converterType, ct -> {
+                    try {
+                        return (AttributeConverter<?, ?>) ct.getDeclaredConstructor().newInstance();
+                    } catch (ReflectiveOperationException e) {
+                        throw new CloudRuntimeException("Unable to create converter for the class " + converterType, e);
+                    }
+                });
+            });
+        }
+    }
+
 }

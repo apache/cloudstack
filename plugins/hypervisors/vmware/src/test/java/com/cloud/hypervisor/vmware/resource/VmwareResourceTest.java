@@ -18,41 +18,60 @@ package com.cloud.hypervisor.vmware.resource;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockConstruction;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.hypervisor.vmware.mo.DatastoreMO;
+import com.cloud.hypervisor.vmware.mo.HostDatastoreBrowserMO;
+import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
+import com.cloud.hypervisor.vmware.util.VmwareHelper;
+import com.vmware.vim25.FileInfo;
+import com.vmware.vim25.HostDatastoreBrowserSearchResults;
+import com.vmware.vim25.HostDatastoreBrowserSearchSpec;
 import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsAnswer;
+import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.CheckGuestOsMappingAnswer;
+import com.cloud.agent.api.CheckGuestOsMappingCommand;
+import com.cloud.agent.api.GetHypervisorGuestOsNamesAnswer;
+import com.cloud.agent.api.GetHypervisorGuestOsNamesCommand;
 import com.cloud.agent.api.ScaleVmAnswer;
 import com.cloud.agent.api.ScaleVmCommand;
 import com.cloud.agent.api.routing.GetAutoScaleMetricsAnswer;
@@ -79,6 +98,7 @@ import com.cloud.storage.resource.VmwareStorageSubsystemCommandHandler;
 import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VmDetailConstants;
+import com.vmware.vim25.GuestOsDescriptor;
 import com.vmware.vim25.HostCapability;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.VimPortType;
@@ -87,8 +107,7 @@ import com.vmware.vim25.VirtualDeviceConfigSpec;
 import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualMachineVideoCard;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({CopyCommand.class})
+@RunWith(MockitoJUnitRunner.class)
 public class VmwareResourceTest {
 
     private static final String VOLUME_PATH = "XXXXXXXXXXXX";
@@ -182,10 +201,12 @@ public class VmwareResourceTest {
 
     private Map<String,String> specsArray = new HashMap<String,String>();
 
+    AutoCloseable closeable;
+
     @Before
     public void setup() throws Exception {
-        MockitoAnnotations.initMocks(this);
-        storageCmd = PowerMockito.mock(CopyCommand.class);
+        closeable = MockitoAnnotations.openMocks(this);
+        storageCmd = mock(CopyCommand.class);
         doReturn(context).when(_resource).getServiceContext(null);
         when(cmd.getVirtualMachine()).thenReturn(vmSpec);
 
@@ -213,19 +234,17 @@ public class VmwareResourceTest {
         when(hostCapability.isNestedHVSupported()).thenReturn(true);
     }
 
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
+    }
+
     //Test successful scaling up the vm
     @Test
     public void testScaleVMF1() throws Exception {
         when(_resource.getHyperHost(context, null)).thenReturn(hyperHost);
         doReturn("i-2-3-VM").when(cmd).getVmName();
         when(hyperHost.findVmOnHyperHost("i-2-3-VM")).thenReturn(vmMo);
-        doReturn(536870912L).when(vmSpec).getMinRam();
-        doReturn(1).when(vmSpec).getCpus();
-        doReturn(1000).when(vmSpec).getMinSpeed();
-        doReturn(1000).when(vmSpec).getMaxSpeed();
-        doReturn(536870912L).when(vmSpec).getMaxRam();
-        doReturn(false).when(vmSpec).getLimitCpuUse();
-        when(vmMo.configureVm(vmConfigSpec)).thenReturn(true);
 
         _resource.execute(cmd);
         verify(_resource).execute(cmd);
@@ -246,7 +265,7 @@ public class VmwareResourceTest {
         final NicTO[] nics = new NicTO[] {nicTo1, nicTo2};
 
         String macSequence = _resource.generateMacSequence(nics);
-        assertEquals(macSequence, "02:00:65:b5:00:03|01:23:45:67:89:AB");
+        assertEquals("02:00:65:b5:00:03|01:23:45:67:89:AB", macSequence);
     }
 
     @Test
@@ -399,8 +418,8 @@ public class VmwareResourceTest {
     @Test
     public void checkStorageProcessorAndHandlerNfsVersionAttributeVersionNotSet(){
         _resource.checkStorageProcessorAndHandlerNfsVersionAttribute(storageCmd);
-        verify(_resource).examineStorageSubSystemCommandNfsVersion(Matchers.eq(storageCmd), any(EnumMap.class));
-        verify(_resource).examineStorageSubSystemCommandFullCloneFlagForVmware(Matchers.eq(storageCmd), any(EnumMap.class));
+        verify(_resource).examineStorageSubSystemCommandNfsVersion(eq(storageCmd), any(EnumMap.class));
+        verify(_resource).examineStorageSubSystemCommandFullCloneFlagForVmware(eq(storageCmd), any(EnumMap.class));
         verify(_resource).reconfigureProcessorByHandler(any(EnumMap.class));
         assertEquals(NFS_VERSION, _resource.storageNfsVersion);
     }
@@ -410,24 +429,26 @@ public class VmwareResourceTest {
     public void checkStorageProcessorAndHandlerNfsVersionAttributeVersionSet(){
         _resource.storageNfsVersion = NFS_VERSION;
         _resource.checkStorageProcessorAndHandlerNfsVersionAttribute(storageCmd);
-        verify(_resource, never()).examineStorageSubSystemCommandNfsVersion(Matchers.eq(storageCmd), any(EnumMap.class));
+        verify(_resource, never()).examineStorageSubSystemCommandNfsVersion(eq(storageCmd), any(EnumMap.class));
     }
 
-    @Test(expected= CloudRuntimeException.class)
+    @Test(expected=CloudRuntimeException.class)
     public void testFindVmOnDatacenterNullHyperHostReference() throws Exception {
-        when(hyperHost.getMor()).thenReturn(null);
-        _resource.findVmOnDatacenter(context, hyperHost, volume);
+        try (MockedConstruction<DatacenterMO> ignored = mockConstruction(DatacenterMO.class)) {
+            _resource.findVmOnDatacenter(context, hyperHost, volume);
+        }
     }
 
     @Test
-    @PrepareForTest({DatacenterMO.class, VmwareResource.class})
     public void testFindVmOnDatacenter() throws Exception {
         when(hyperHost.getHyperHostDatacenter()).thenReturn(mor);
-        when(datacenter.getMor()).thenReturn(mor);
-        when(datacenter.findVm(VOLUME_PATH)).thenReturn(vmMo);
-        whenNew(DatacenterMO.class).withArguments(context, mor).thenReturn(datacenter);
-        VirtualMachineMO result = _resource.findVmOnDatacenter(context, hyperHost, volume);
-        assertEquals(vmMo, result);
+        try (MockedConstruction<DatacenterMO> ignored = mockConstruction(DatacenterMO.class, (mock, context) -> {
+            when(mock.findVm(VOLUME_PATH)).thenReturn(vmMo);
+            when(mock.getMor()).thenReturn(mor);
+        })) {
+            VirtualMachineMO result = _resource.findVmOnDatacenter(context, hyperHost, volume);
+            assertEquals(vmMo, result);
+        }
     }
 
     @Test
@@ -462,7 +483,7 @@ public class VmwareResourceTest {
 
         GetAutoScaleMetricsCommand getAutoScaleMetricsCommand = new GetAutoScaleMetricsCommand("192.168.10.1", true, "10.10.10.10", 8080, metrics);
 
-        doReturn(vpcStats).when(vmwareResource).getVPCNetworkStats(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
+        doReturn(vpcStats).when(vmwareResource).getVPCNetworkStats(anyString(), anyString(), anyString(), anyString());
         doReturn(lbStats).when(vmwareResource).getNetworkLbStats(Mockito.nullable(String.class), Mockito.nullable(String.class), Mockito.nullable(Integer.class));
 
         Answer answer = vmwareResource.executeRequest(getAutoScaleMetricsCommand);
@@ -492,7 +513,7 @@ public class VmwareResourceTest {
 
         GetAutoScaleMetricsCommand getAutoScaleMetricsCommand = new GetAutoScaleMetricsCommand("192.168.10.1", false, "10.10.10.10", 8080, metrics);
 
-        doReturn(networkStats).when(vmwareResource).getNetworkStats(Mockito.anyString(), Mockito.anyString());
+        doReturn(networkStats).when(vmwareResource).getNetworkStats(anyString(), anyString());
         doReturn(lbStats).when(vmwareResource).getNetworkLbStats(Mockito.nullable(String.class), Mockito.nullable(String.class), Mockito.nullable(Integer.class));
 
         Answer answer = vmwareResource.executeRequest(getAutoScaleMetricsCommand);
@@ -553,5 +574,272 @@ public class VmwareResourceTest {
 
         assertEquals(1, stats.length);
         assertEquals(lbStats[0], stats[0]);
+    }
+
+    @Test
+    public void testCheckGuestOsMappingCommandFailure() throws Exception {
+        CheckGuestOsMappingCommand cmd = mock(CheckGuestOsMappingCommand.class);
+        when(cmd.getGuestOsName()).thenReturn("CentOS 7.2");
+        when(cmd.getGuestOsHypervisorMappingName()).thenReturn("centosWrongName");
+        when(_resource.getHyperHost(context, null)).thenReturn(hyperHost);
+        when(hyperHost.getGuestOsDescriptor("centosWrongName")).thenReturn(null);
+
+        CheckGuestOsMappingAnswer answer = _resource.execute(cmd);
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testCheckGuestOsMappingCommandSuccess() throws Exception {
+        CheckGuestOsMappingCommand cmd = mock(CheckGuestOsMappingCommand.class);
+        when(cmd.getGuestOsName()).thenReturn("CentOS 7.2");
+        when(cmd.getGuestOsHypervisorMappingName()).thenReturn("centos64Guest");
+        when(_resource.getHyperHost(context, null)).thenReturn(hyperHost);
+        GuestOsDescriptor guestOsDescriptor = mock(GuestOsDescriptor.class);
+        when(hyperHost.getGuestOsDescriptor("centos64Guest")).thenReturn(guestOsDescriptor);
+        when(guestOsDescriptor.getFullName()).thenReturn("centos64Guest");
+
+        CheckGuestOsMappingAnswer answer = _resource.execute(cmd);
+
+        assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testCheckGuestOsMappingCommandException() {
+        CheckGuestOsMappingCommand cmd = mock(CheckGuestOsMappingCommand.class);
+        when(cmd.getGuestOsName()).thenReturn("CentOS 7.2");
+        when(cmd.getGuestOsHypervisorMappingName()).thenReturn("centos64Guest");
+        when(_resource.getHyperHost(context, null)).thenReturn(null);
+
+        CheckGuestOsMappingAnswer answer = _resource.execute(cmd);
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testGetHypervisorGuestOsNamesCommandFailure() throws Exception {
+        GetHypervisorGuestOsNamesCommand cmd = mock(GetHypervisorGuestOsNamesCommand.class);
+        when(cmd.getKeyword()).thenReturn("CentOS");
+        when(_resource.getHyperHost(context, null)).thenReturn(hyperHost);
+        when(hyperHost.getGuestOsDescriptors()).thenReturn(null);
+
+        GetHypervisorGuestOsNamesAnswer answer = _resource.execute(cmd);
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testGetHypervisorGuestOsNamesCommandSuccessWithKeyword() throws Exception {
+        GetHypervisorGuestOsNamesCommand cmd = mock(GetHypervisorGuestOsNamesCommand.class);
+        when(cmd.getKeyword()).thenReturn("CentOS");
+        when(_resource.getHyperHost(context, null)).thenReturn(hyperHost);
+        GuestOsDescriptor guestOsDescriptor = mock(GuestOsDescriptor.class);
+        when(guestOsDescriptor.getFullName()).thenReturn("centos64Guest");
+        when(guestOsDescriptor.getId()).thenReturn("centos64Guest");
+        List<GuestOsDescriptor> guestOsDescriptors = new ArrayList<>();
+        guestOsDescriptors.add(guestOsDescriptor);
+        when(hyperHost.getGuestOsDescriptors()).thenReturn(guestOsDescriptors);
+
+        GetHypervisorGuestOsNamesAnswer answer = _resource.execute(cmd);
+
+        assertTrue(answer.getResult());
+        assertEquals("centos64Guest", answer.getHypervisorGuestOsNames().get(0).first());
+    }
+
+    @Test
+    public void testGetHypervisorGuestOsNamesCommandSuccessWithoutKeyword() throws Exception {
+        GetHypervisorGuestOsNamesCommand cmd = mock(GetHypervisorGuestOsNamesCommand.class);
+        when(_resource.getHyperHost(context, null)).thenReturn(hyperHost);
+        GuestOsDescriptor guestOsDescriptor = mock(GuestOsDescriptor.class);
+        when(guestOsDescriptor.getFullName()).thenReturn("centos64Guest");
+        when(guestOsDescriptor.getId()).thenReturn("centos64Guest");
+        List<GuestOsDescriptor> guestOsDescriptors = new ArrayList<>();
+        guestOsDescriptors.add(guestOsDescriptor);
+        when(hyperHost.getGuestOsDescriptors()).thenReturn(guestOsDescriptors);
+
+        GetHypervisorGuestOsNamesAnswer answer = _resource.execute(cmd);
+
+        assertTrue(answer.getResult());
+        assertEquals("centos64Guest", answer.getHypervisorGuestOsNames().get(0).first());
+    }
+
+    @Test
+    public void testGetHypervisorGuestOsNamesCommandException() {
+        GetHypervisorGuestOsNamesCommand cmd = mock(GetHypervisorGuestOsNamesCommand.class);
+        when(cmd.getKeyword()).thenReturn("CentOS");
+        when(_resource.getHyperHost(context, null)).thenReturn(null);
+
+        GetHypervisorGuestOsNamesAnswer answer = _resource.execute(cmd);
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testExecuteWithValidPath() throws Exception {
+        // Setup
+        ListDataStoreObjectsCommand cmd = new ListDataStoreObjectsCommand(destDataStoreTO, "valid/path", 0, 10);
+        HostDatastoreBrowserMO browserMo = mock(HostDatastoreBrowserMO.class);
+        HostDatastoreBrowserSearchResults results = mock(HostDatastoreBrowserSearchResults.class);
+        FileInfo fileInfo = mock(FileInfo.class);
+        List<FileInfo> fileInfoList = new ArrayList<>();
+        fileInfoList.add(fileInfo);
+        Date date = new Date();
+
+        doReturn(context).when(vmwareResource).getServiceContext(any());
+        doReturn(hyperHost).when(vmwareResource).getHyperHost(context);
+        when(browserMo.searchDatastore(anyString(), any(HostDatastoreBrowserSearchSpec.class))).thenReturn(results);
+        when(results.getFile()).thenReturn(fileInfoList);
+        when(fileInfo.getPath()).thenReturn("file.txt");
+        when(fileInfo.getFileSize()).thenReturn(1L);
+        when(fileInfo.getModification()).thenReturn(VmwareHelper.getXMLGregorianCalendar(date, 0));
+
+        // Execute
+        ListDataStoreObjectsAnswer answer;
+        try (MockedStatic<HypervisorHostHelper> ignored = mockStatic(HypervisorHostHelper.class);
+             MockedConstruction<DatastoreMO> ignored2 = mockConstruction(DatastoreMO.class, (mock, context1) -> {
+                 when(mock.getName()).thenReturn("datastore");
+                 when(mock.getHostDatastoreBrowserMO()).thenReturn(browserMo);
+             })
+        ) {
+            when(HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(any(), any())).thenReturn(mor);
+
+            answer = vmwareResource.execute(cmd);
+
+        }
+        // Verify
+        assertNotNull(answer);
+        assertTrue(answer.getResult());
+        assertEquals(1, answer.getCount());
+        assertEquals(Collections.singletonList("file.txt"), answer.getNames());
+        assertEquals(Collections.singletonList("valid/path/file.txt"), answer.getPaths());
+        assertEquals(Collections.singletonList("[datastore] valid/path/file.txt"), answer.getAbsPaths());
+        assertEquals(Collections.singletonList(false), answer.getIsDirs());
+        assertEquals(Collections.singletonList(1L), answer.getSizes());
+        assertEquals(Collections.singletonList(date.getTime()), answer.getLastModified());
+    }
+
+    @Test
+    public void testExecuteWithInvalidPath() throws Exception {
+        // Setup
+        ListDataStoreObjectsCommand cmd = new ListDataStoreObjectsCommand(destDataStoreTO, "invalid/path", 0, 10);
+        HostDatastoreBrowserMO browserMo = mock(HostDatastoreBrowserMO.class);
+        doReturn(context).when(vmwareResource).getServiceContext();
+        doReturn(hyperHost).when(vmwareResource).getHyperHost(context);
+        when(browserMo.searchDatastore(anyString(), any(HostDatastoreBrowserSearchSpec.class))).thenThrow(new Exception("was not found"));
+
+        ListDataStoreObjectsAnswer answer;
+        try (MockedStatic<HypervisorHostHelper> ignored = mockStatic(HypervisorHostHelper.class);
+             MockedConstruction<DatastoreMO> ignored2 = mockConstruction(DatastoreMO.class, (mock, context1) -> {
+                 when(mock.getName()).thenReturn("datastore");
+                 when(mock.fileExists(anyString())).thenReturn(false);
+                 when(mock.getHostDatastoreBrowserMO()).thenReturn(browserMo);
+             })
+        ) {
+            when(HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(any(), any())).thenReturn(mor);
+
+            // Execute
+            answer = vmwareResource.execute(cmd);
+        }
+
+        // Verify
+        assertNotNull(answer);
+        assertTrue(answer.getResult());
+        assertEquals(0, answer.getCount());
+        assertEquals(Collections.emptyList(), answer.getNames());
+        assertEquals(Collections.emptyList(), answer.getPaths());
+        assertEquals(Collections.emptyList(), answer.getAbsPaths());
+        assertEquals(Collections.emptyList(), answer.getIsDirs());
+        assertEquals(Collections.emptyList(), answer.getSizes());
+        assertEquals(Collections.emptyList(), answer.getLastModified());
+    }
+
+    @Test
+    public void testExecuteWithRootPath() throws Exception {
+        // Setup
+        ListDataStoreObjectsCommand cmd = new ListDataStoreObjectsCommand(destDataStoreTO, "/", 0, 10);
+        HostDatastoreBrowserMO browserMo = mock(HostDatastoreBrowserMO.class);
+        HostDatastoreBrowserSearchResults results = mock(HostDatastoreBrowserSearchResults.class);
+        FileInfo fileInfo = mock(FileInfo.class);
+        List<FileInfo> fileInfoList = new ArrayList<>();
+        fileInfoList.add(fileInfo);
+        Date date = new Date();
+
+        doReturn(context).when(vmwareResource).getServiceContext();
+        doReturn(hyperHost).when(vmwareResource).getHyperHost(context);
+        when(browserMo.searchDatastore(anyString(), any(HostDatastoreBrowserSearchSpec.class))).thenReturn(results);
+        when(results.getFile()).thenReturn(fileInfoList);
+        when(fileInfo.getPath()).thenReturn("file.txt");
+        when(fileInfo.getFileSize()).thenReturn(1L);
+        when(fileInfo.getModification()).thenReturn(VmwareHelper.getXMLGregorianCalendar(date, 0));
+
+        // Execute
+        ListDataStoreObjectsAnswer answer;
+        try (MockedStatic<HypervisorHostHelper> ignored = mockStatic(HypervisorHostHelper.class);
+             MockedConstruction<DatastoreMO> ignored2 = mockConstruction(DatastoreMO.class, (mock, context1) -> {
+                 when(mock.getName()).thenReturn("datastore");
+                 when(mock.getHostDatastoreBrowserMO()).thenReturn(browserMo);
+             })
+        ) {
+            when(HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(any(), any())).thenReturn(mor);
+
+            // Execute
+            answer = vmwareResource.execute(cmd);
+        }
+
+        // Verify
+        assertNotNull(answer);
+        assertTrue(answer.getResult());
+        assertEquals(1, answer.getCount());
+        assertEquals(Collections.singletonList("file.txt"), answer.getNames());
+        assertEquals(Collections.singletonList("/file.txt"), answer.getPaths());
+        assertEquals(Collections.singletonList("[datastore] /file.txt"), answer.getAbsPaths());
+        assertEquals(Collections.singletonList(false), answer.getIsDirs());
+        assertEquals(Collections.singletonList(1L), answer.getSizes());
+        assertEquals(Collections.singletonList(date.getTime()), answer.getLastModified());
+    }
+
+    @Test
+    public void testExecuteWithEmptyPath() throws Exception {
+        // Setup
+        ListDataStoreObjectsCommand cmd = new ListDataStoreObjectsCommand(destDataStoreTO, "", 0, 10);
+        HostDatastoreBrowserMO browserMo = mock(HostDatastoreBrowserMO.class);
+        HostDatastoreBrowserSearchResults results = mock(HostDatastoreBrowserSearchResults.class);
+        FileInfo fileInfo = mock(FileInfo.class);
+        List<FileInfo> fileInfoList = new ArrayList<>();
+        fileInfoList.add(fileInfo);
+        Date date = new Date();
+
+        doReturn(context).when(vmwareResource).getServiceContext();
+        doReturn(hyperHost).when(vmwareResource).getHyperHost(context);
+        when(browserMo.searchDatastore(anyString(), any(HostDatastoreBrowserSearchSpec.class))).thenReturn(results);
+        when(results.getFile()).thenReturn(fileInfoList);
+        when(fileInfo.getPath()).thenReturn("file.txt");
+        when(fileInfo.getFileSize()).thenReturn(1L);
+        when(fileInfo.getModification()).thenReturn(VmwareHelper.getXMLGregorianCalendar(date, 0));
+
+        ListDataStoreObjectsAnswer answer;
+        try (MockedStatic<HypervisorHostHelper> ignored = mockStatic(HypervisorHostHelper.class);
+             MockedConstruction<DatastoreMO> ignored2 = mockConstruction(DatastoreMO.class, (mock, context1) -> {
+                 when(mock.getName()).thenReturn("datastore");
+                 when(mock.getHostDatastoreBrowserMO()).thenReturn(browserMo);
+             })
+        ) {
+            when(HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(any(), any())).thenReturn(mor);
+
+            // Execute
+            answer = vmwareResource.execute(cmd);
+
+        }
+
+        // Verify
+        assertNotNull(answer);
+        assertTrue(answer.getResult());
+        assertEquals(1, answer.getCount());
+        assertEquals(Collections.singletonList("file.txt"), answer.getNames());
+        assertEquals(Collections.singletonList("/file.txt"), answer.getPaths());
+        assertEquals(Collections.singletonList("[datastore] /file.txt"), answer.getAbsPaths());
+        assertEquals(Collections.singletonList(false), answer.getIsDirs());
+        assertEquals(Collections.singletonList(1L), answer.getSizes());
+        assertEquals(Collections.singletonList(date.getTime()), answer.getLastModified());
     }
 }

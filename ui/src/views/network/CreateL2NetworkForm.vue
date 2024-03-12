@@ -18,7 +18,14 @@
 <template>
   <a-spin :spinning="loading">
     <div class="form-layout" v-ctrl-enter="handleSubmit">
-      <div class="form">
+      <div v-if="isNsxEnabled">
+        <a-alert type="warning">
+          <template #message>
+            <span v-html="$t('message.l2.network.unsupported.for.nsx')" />
+          </template>
+        </a-alert>
+      </div>
+      <div v-else class="form">
         <a-form
           :ref="formRef"
           :model="form"
@@ -117,12 +124,12 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="networkOfferingLoading"
               :placeholder="apiParams.networkofferingid.description"
               @change="val => { handleNetworkOfferingChange(networkOfferings[val]) }">
-              <a-select-option v-for="(opt, optIndex) in networkOfferings" :key="optIndex">
+              <a-select-option v-for="(opt, optIndex) in networkOfferings" :key="optIndex" :label="opt.displaytext || opt.name || opt.description">
                 {{ opt.displaytext || opt.name || opt.description }}
               </a-select-option>
             </a-select>
@@ -248,7 +255,8 @@ export default {
       networkOfferings: [],
       networkOfferingLoading: false,
       selectedNetworkOffering: {},
-      isolatePvlanType: 'none'
+      isolatePvlanType: 'none',
+      isNsxEnabled: false
     }
   },
   watch: {
@@ -328,6 +336,7 @@ export default {
     },
     handleZoneChange (zone) {
       this.selectedZone = zone
+      this.isNsxEnabled = zone?.isnsxenabled || false
       this.updateVPCCheckAndFetchNetworkOfferingData()
     },
     fetchDomainData () {

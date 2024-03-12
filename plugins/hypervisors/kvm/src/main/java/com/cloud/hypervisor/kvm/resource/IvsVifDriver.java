@@ -26,7 +26,6 @@ import java.util.regex.Pattern;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 import org.libvirt.LibvirtException;
 
 import com.cloud.agent.api.to.NicTO;
@@ -41,7 +40,6 @@ import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 
 public class IvsVifDriver extends VifDriverBase {
-    private static final Logger s_logger = Logger.getLogger(IvsVifDriver.class);
     private int _timeout;
 
     private final Object _vnetBridgeMonitor = new Object();
@@ -100,7 +98,7 @@ public class IvsVifDriver extends VifDriverBase {
             if ((nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan || nic.getBroadcastType() == Networks.BroadcastDomainType.Pvlan) &&
                     !vlanId.equalsIgnoreCase("untagged")) {
                 if (trafficLabel != null && !trafficLabel.isEmpty()) {
-                    s_logger.debug("creating a vlan dev and bridge for guest traffic per traffic label " + trafficLabel);
+                    logger.debug("creating a vlan dev and bridge for guest traffic per traffic label " + trafficLabel);
                     intf.defEthernet("ivsnet-" + nic.getUuid().substring(0, 5), nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), _ivsIfUpPath, networkRateKBps);
                 } else {
                     throw new InternalErrorException("no traffic label ");
@@ -114,7 +112,7 @@ public class IvsVifDriver extends VifDriverBase {
             if ((nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan) && (vNetId != null) && (protocol != null) && (!vNetId.equalsIgnoreCase("untagged")) ||
                     (nic.getBroadcastType() == Networks.BroadcastDomainType.Vxlan)) {
                 if (trafficLabel != null && !trafficLabel.isEmpty()) {
-                    s_logger.debug("creating a vNet dev and bridge for public traffic per traffic label " + trafficLabel);
+                    logger.debug("creating a vNet dev and bridge for public traffic per traffic label " + trafficLabel);
                     String brName = createVnetBr(vNetId, trafficLabel, protocol);
                     intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), networkRateKBps);
                 } else {
@@ -180,7 +178,7 @@ public class IvsVifDriver extends VifDriverBase {
             if (protocol.equals(Networks.BroadcastDomainType.Vxlan.scheme())) {
                 script = _modifyVxlanPath;
             }
-            final Script command = new Script(script, _timeout, s_logger);
+            final Script command = new Script(script, _timeout, logger);
             command.add("-v", vnetId);
             command.add("-p", pif);
             command.add("-b", brName);
@@ -226,7 +224,7 @@ public class IvsVifDriver extends VifDriverBase {
             }
 
             if (vNetId == null || vNetId.isEmpty()) {
-                s_logger.debug("unable to get a vNet ID from name " + brName);
+                logger.debug("unable to get a vNet ID from name " + brName);
                 return;
             }
 
@@ -237,7 +235,7 @@ public class IvsVifDriver extends VifDriverBase {
                 scriptPath = _modifyVlanPath;
             }
 
-            final Script command = new Script(scriptPath, _timeout, s_logger);
+            final Script command = new Script(scriptPath, _timeout, logger);
             command.add("-o", "delete");
             command.add("-v", vNetId);
             command.add("-p", pName);
@@ -245,7 +243,7 @@ public class IvsVifDriver extends VifDriverBase {
 
             final String result = command.execute();
             if (result != null) {
-                s_logger.debug("Delete bridge " + brName + " failed: " + result);
+                logger.debug("Delete bridge " + brName + " failed: " + result);
             }
         }
     }

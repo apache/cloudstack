@@ -61,11 +61,12 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
               <a-select-option
                 v-for="opt in networkDeviceType"
-                :key="opt.id">{{ $t(opt.description) }}</a-select-option>
+                :key="opt.id"
+                :label="$t(opt.description)">{{ $t(opt.description) }}</a-select-option>
             </a-select>
           </a-form-item>
         </a-col>

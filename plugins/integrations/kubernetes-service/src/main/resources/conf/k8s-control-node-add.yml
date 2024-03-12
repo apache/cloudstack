@@ -221,6 +221,10 @@ write_files:
       fi
       kubeadm join {{ k8s_control_node.join_ip }}:6443 --token {{ k8s_control_node.cluster.token }} --control-plane --certificate-key {{ k8s_control_node.cluster.ha.certificate.key }} --discovery-token-unsafe-skip-ca-verification
 
+      mkdir -p /root/.kube
+      cp -i /etc/kubernetes/admin.conf /root/.kube/config
+      chown $(id -u):$(id -g) /root/.kube/config
+
       sudo touch /home/cloud/success
       echo "true" > /home/cloud/success
 

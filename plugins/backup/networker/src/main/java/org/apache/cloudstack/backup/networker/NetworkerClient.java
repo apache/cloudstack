@@ -42,7 +42,8 @@ import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509TrustManager;
@@ -64,7 +65,7 @@ import java.util.List;
 import static org.apache.cloudstack.backup.NetworkerBackupProvider.BACKUP_IDENTIFIER;
 
 public class NetworkerClient {
-    private static final Logger LOG = Logger.getLogger(NetworkerClient.class);
+    private static final Logger LOG = LogManager.getLogger(NetworkerClient.class);
     private final URI apiURI;
     private final String apiName;
     private final String apiPassword;
@@ -211,7 +212,7 @@ public class NetworkerClient {
 
         SimpleDateFormat formatterDate = new SimpleDateFormat("yyyy-MM-dd");
         SimpleDateFormat formatterTime = new SimpleDateFormat("HH:mm:ss");
-        SimpleDateFormat formatterDateTime = new SimpleDateFormat("yyy-MM-dd'T'HH:mm:ss");
+        SimpleDateFormat formatterDateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 
         String startDate = formatterDate.format(backupJobStart);
         String startTime = formatterTime.format(backupJobStart);
@@ -252,7 +253,13 @@ public class NetworkerClient {
             backup.setVmId(vm.getId());
             backup.setExternalId(networkerLatestBackup.getId());
             backup.setType(networkerLatestBackup.getType());
-            backup.setDate(networkerLatestBackup.getCreationTime());
+            try {
+                backup.setDate(formatterDateTime.parse(networkerLatestBackup.getCreationTime()));
+            } catch (ParseException e) {
+                String msg = String.format("Unable to parse date [%s].", networkerLatestBackup.getCreationTime());
+                LOG.error(msg, e);
+                throw new CloudRuntimeException(msg, e);
+            }
             backup.setSize(networkerLatestBackup.getSize().getValue());
             backup.setProtectedSize(networkerLatestBackup.getSize().getValue());
             backup.setStatus(org.apache.cloudstack.backup.Backup.Status.BackedUp);

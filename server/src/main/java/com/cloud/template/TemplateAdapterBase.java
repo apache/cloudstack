@@ -33,7 +33,6 @@ import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplat
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
@@ -84,7 +83,6 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;
 
 public abstract class TemplateAdapterBase extends AdapterBase implements TemplateAdapter {
-    private final static Logger s_logger = Logger.getLogger(TemplateAdapterBase.class);
     protected @Inject
     DomainDao _domainDao;
     protected @Inject
@@ -171,7 +169,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                 requiresHVM = true;
             }
             if (deployAsIs) {
-                s_logger.info("Setting default guest OS for deploy-as-is template while the template registration is not completed");
+                logger.info("Setting default guest OS for deploy-as-is template while the template registration is not completed");
                 guestOSId = getDefaultDeployAsIsGuestOsId();
             }
         }
@@ -214,7 +212,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         try {
             imgfmt = ImageFormat.valueOf(format.toUpperCase());
         } catch (IllegalArgumentException e) {
-            s_logger.debug("ImageFormat IllegalArgumentException: " + e.getMessage());
+            logger.debug("ImageFormat IllegalArgumentException: " + e.getMessage());
             throw new IllegalArgumentException("Image format: " + format + " is incorrect. Supported formats are " + EnumUtils.listValues(ImageFormat.values()));
         }
 
@@ -275,7 +273,8 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
         _accountMgr.checkAccess(caller, null, true, owner);
 
-        boolean isRouting = (cmd.isRoutingType() == null) ? false : cmd.isRoutingType();
+        TemplateType templateType = templateMgr.validateTemplateType(cmd, _accountMgr.isAdmin(caller.getAccountId()),
+                CollectionUtils.isEmpty(cmd.getZoneIds()));
 
         List<Long> zoneId = cmd.getZoneIds();
         // ignore passed zoneId if we are using region wide image store
@@ -294,18 +293,18 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         if (cmd.isDeployAsIs()) {
             if (MapUtils.isNotEmpty(details)) {
                 if (details.containsKey(VmDetailConstants.ROOT_DISK_CONTROLLER)) {
-                    s_logger.info("Ignoring the rootDiskController detail provided, as we honour what is defined in the template");
+                    logger.info("Ignoring the rootDiskController detail provided, as we honour what is defined in the template");
                     details.remove(VmDetailConstants.ROOT_DISK_CONTROLLER);
                 }
                 if (details.containsKey(VmDetailConstants.NIC_ADAPTER)) {
-                    s_logger.info("Ignoring the nicAdapter detail provided, as we honour what is defined in the template");
+                    logger.info("Ignoring the nicAdapter detail provided, as we honour what is defined in the template");
                     details.remove(VmDetailConstants.NIC_ADAPTER);
                 }
             }
         }
         return prepare(false, CallContext.current().getCallingUserId(), cmd.getTemplateName(), cmd.getDisplayText(), cmd.getBits(), cmd.isPasswordEnabled(), cmd.getRequiresHvm(),
                 cmd.getUrl(), cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), cmd.getFormat(), cmd.getOsTypeId(), zoneId, hypervisorType, cmd.getChecksum(), true,
-                cmd.getTemplateTag(), owner, details, cmd.isSshKeyEnabled(), null, cmd.isDynamicallyScalable(), isRouting ? TemplateType.ROUTING : TemplateType.USER,
+                cmd.getTemplateTag(), owner, details, cmd.isSshKeyEnabled(), null, cmd.isDynamicallyScalable(), templateType,
                 cmd.isDirectDownload(), cmd.isDeployAsIs());
 
     }
@@ -349,7 +348,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
     public TemplateProfile prepare(GetUploadParamsForTemplateCmd cmd) throws ResourceAllocationException {
         Long osTypeId = cmd.getOsTypeId();
         if (osTypeId == null) {
-            s_logger.info("Setting the default guest OS for deploy-as-is templates while the template upload is not completed");
+            logger.info("Setting the default guest OS for deploy-as-is templates while the template upload is not completed");
             osTypeId = getDefaultDeployAsIsGuestOsId();
         }
         UploadParams params = new TemplateUploadParams(CallContext.current().getCallingUserId(), cmd.getName(),

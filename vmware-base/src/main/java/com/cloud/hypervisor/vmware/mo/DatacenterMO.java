@@ -21,8 +21,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import com.cloud.hypervisor.vmware.util.VmwareHelper;
+import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
 
 import com.vmware.vim25.CustomFieldStringValue;
 import com.vmware.vim25.DatacenterConfigInfo;
@@ -42,7 +43,6 @@ import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.utils.Pair;
 
 public class DatacenterMO extends BaseMO {
-    private static final Logger s_logger = Logger.getLogger(DatacenterMO.class);
 
     public DatacenterMO(VmwareContext context, ManagedObjectReference morDc) {
         super(context, morDc);
@@ -57,7 +57,7 @@ public class DatacenterMO extends BaseMO {
 
         _mor = _context.getVimClient().getDecendentMoRef(_context.getRootFolder(), "Datacenter", dcName);
         if (_mor == null) {
-            s_logger.error("Unable to locate DC " + dcName);
+            logger.error("Unable to locate DC " + dcName);
         }
     }
 
@@ -86,7 +86,7 @@ public class DatacenterMO extends BaseMO {
     public VirtualMachineMO findVm(String vmName) throws Exception {
         int key = getCustomFieldKey("VirtualMachine", CustomFieldConstants.CLOUD_VM_INTERNAL_NAME);
         if (key == 0) {
-            s_logger.warn("Custom field " + CustomFieldConstants.CLOUD_VM_INTERNAL_NAME + " is not registered ?!");
+            logger.warn("Custom field " + CustomFieldConstants.CLOUD_VM_INTERNAL_NAME + " is not registered ?!");
         }
         String instanceNameCustomField = "value[" + key + "]";
         List<ObjectContent> ocs = getVmPropertiesOnDatacenterVmFolder(new String[] {"name", instanceNameCustomField});
@@ -130,7 +130,7 @@ public class DatacenterMO extends BaseMO {
     public VirtualMachineMO checkIfVmAlreadyExistsInVcenter(String vmNameOnVcenter, String vmNameInCS) throws Exception {
         int key = getCustomFieldKey("VirtualMachine", CustomFieldConstants.CLOUD_VM_INTERNAL_NAME);
         if (key == 0) {
-            s_logger.warn("Custom field " + CustomFieldConstants.CLOUD_VM_INTERNAL_NAME + " is not registered ?!");
+            logger.warn("Custom field " + CustomFieldConstants.CLOUD_VM_INTERNAL_NAME + " is not registered ?!");
         }
 
         List<ObjectContent> ocs = getVmPropertiesOnDatacenterVmFolder(new String[] {"name", String.format("value[%d]", key)});
@@ -159,14 +159,24 @@ public class DatacenterMO extends BaseMO {
         return null;
     }
 
-    public List<Pair<ManagedObjectReference, String>> getAllVmsOnDatacenter() throws Exception {
-        List<Pair<ManagedObjectReference, String>> vms = new ArrayList<Pair<ManagedObjectReference, String>>();
-
+    public List<UnmanagedInstanceTO> getAllVmsOnDatacenter() throws Exception {
+        List<UnmanagedInstanceTO> vms = new ArrayList<>();
         List<ObjectContent> ocs = getVmPropertiesOnDatacenterVmFolder(new String[] {"name"});
         if (ocs != null) {
             for (ObjectContent oc : ocs) {
-                String vmName = oc.getPropSet().get(0).getVal().toString();
-                vms.add(new Pair<ManagedObjectReference, String>(oc.getObj(), vmName));
+                ManagedObjectReference vmMor = oc.getObj();
+                if (vmMor != null) {
+                    VirtualMachineMO vmMo = new VirtualMachineMO(_context, vmMor);
+                    try {
+                        if (!vmMo.isTemplate()) {
+                            HostMO hostMO = vmMo.getRunningHost();
+                            UnmanagedInstanceTO unmanagedInstance = VmwareHelper.getUnmanagedInstance(hostMO, vmMo);
+                            vms.add(unmanagedInstance);
+                        }
+                    } catch (Exception e) {
+                        logger.debug(String.format("Unexpected error checking unmanaged instance %s, excluding it: %s", vmMo.getVmName(), e.getMessage()), e);
+                    }
+                }
             }
         }
 

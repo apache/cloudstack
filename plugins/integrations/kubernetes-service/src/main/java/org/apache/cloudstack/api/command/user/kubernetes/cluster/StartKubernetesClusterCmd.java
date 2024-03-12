@@ -28,7 +28,6 @@ import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.KubernetesClusterResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
@@ -36,7 +35,7 @@ import com.cloud.kubernetes.cluster.KubernetesClusterEventTypes;
 import com.cloud.kubernetes.cluster.KubernetesClusterService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "startKubernetesCluster", description = "Starts a stopped Kubernetes cluster",
+@APICommand(name = "startKubernetesCluster", description = "Starts a stopped CloudManaged Kubernetes cluster",
         responseObject = KubernetesClusterResponse.class,
         responseView = ResponseObject.ResponseView.Restricted,
         entityType = {KubernetesCluster.class},
@@ -44,7 +43,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
         responseHasSensitiveInfo = true,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class StartKubernetesClusterCmd extends BaseAsyncCmd {
-    public static final Logger LOGGER = Logger.getLogger(StartKubernetesClusterCmd.class.getName());
 
     @Inject
     public KubernetesClusterService kubernetesClusterService;
@@ -98,6 +96,10 @@ public class StartKubernetesClusterCmd extends BaseAsyncCmd {
         final KubernetesCluster kubernetesCluster = kubernetesClusterService.findById(getId());
         if (kubernetesCluster == null) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Given Kubernetes cluster was not found");
+        }
+        if (!kubernetesClusterService.isCommandSupported(kubernetesCluster, getActualCommandName())) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+                    String.format("Start kubernetes cluster is not supported for an externally managed cluster (%s)", kubernetesCluster.getName()));
         }
         return kubernetesCluster;
     }

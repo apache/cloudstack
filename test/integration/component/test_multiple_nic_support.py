@@ -52,11 +52,11 @@ import logging
 import random
 import time
 
-class TestMulipleNicSupport(cloudstackTestCase):
+class TestMultipleNicSupport(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         cls.testClient = super(
-            TestMulipleNicSupport,
+            TestMultipleNicSupport,
             cls).getClsTestClient()
         cls.apiclient = cls.testClient.getApiClient()
         cls.testdata = cls.testClient.getParsedTestDataConfig()
@@ -70,7 +70,7 @@ class TestMulipleNicSupport(cloudstackTestCase):
             cls.skip = True
             return
 
-        cls.logger = logging.getLogger("TestMulipleNicSupport")
+        cls.logger = logging.getLogger("TestMultipleNicSupport")
         cls.stream_handler = logging.StreamHandler()
         cls.logger.setLevel(logging.DEBUG)
         cls.logger.addHandler(cls.stream_handler)
@@ -255,7 +255,7 @@ class TestMulipleNicSupport(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(self):
-        super(TestMulipleNicSupport, self).tearDownClass()
+        super(TestMultipleNicSupport, self).tearDownClass()
 
     def setUp(self):
         if self.skip:
@@ -265,7 +265,7 @@ class TestMulipleNicSupport(cloudstackTestCase):
         return
 
     def tearDown(self):
-        super(TestMulipleNicSupport, self).tearDown()
+        super(TestMultipleNicSupport, self).tearDown()
 
     def verify_network_rules(self, vm_id):
         virtual_machine = VirtualMachine.list(

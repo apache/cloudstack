@@ -43,7 +43,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -119,7 +119,6 @@ public class NexentaStorApplianceTest {
         when(client.execute(ListOfStringsNmsResponse.class, "stmf", "list_targetgroups")).thenReturn(null);
         assertFalse(appliance.isIscsiTargetGroupExists(targetGroup));
 
-        when(client.execute(ListOfIscsiTargetsNmsResponse.class, "stmf", "list_targetgroups")).thenReturn(new ListOfIscsiTargetsNmsResponse());
         assertFalse(appliance.isIscsiTargetGroupExists(targetGroup));
 
         LinkedList<String> result = new LinkedList<String>();

@@ -30,14 +30,15 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.util.LoginInfo;
 import org.apache.cloudstack.util.vmware.VMwareUtil;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.hypervisor.vmware.VmwareDatacenterVO;
+import com.cloud.dc.VmwareDatacenterVO;
 import com.cloud.hypervisor.vmware.VmwareDatacenterZoneMapVO;
-import com.cloud.hypervisor.vmware.dao.VmwareDatacenterDao;
+import com.cloud.dc.dao.VmwareDatacenterDao;
 import com.cloud.hypervisor.vmware.dao.VmwareDatacenterZoneMapDao;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineDiskInfoBuilder;
 import com.cloud.storage.Storage.StoragePoolType;
@@ -63,7 +64,7 @@ import com.vmware.vim25.VirtualMachineConfigSpec;
 
 @Component
 public class SiocManagerImpl implements SiocManager {
-    private static final Logger LOGGER = Logger.getLogger(SiocManagerImpl.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     private static final int LOCK_TIME_IN_SECONDS = 3;
     private static final int ONE_GB_IN_BYTES = 1000000000;
     private static final int LOWEST_SHARES_PER_VIRTUAL_DISK = 2000; // We want this to be greater than 1,000, which is the VMware default value.
@@ -82,7 +83,7 @@ public class SiocManagerImpl implements SiocManager {
 
     @Override
     public void updateSiocInfo(long zoneId, long storagePoolId, int sharesPerGB, int limitIopsPerGB, int iopsNotifyThreshold) throws Exception {
-        LOGGER.info("'SiocManagerImpl.updateSiocInfo(long, long, int, int, int)' method invoked");
+        logger.info("'SiocManagerImpl.updateSiocInfo(long, long, int, int, int)' method invoked");
 
         DataCenterVO zone = zoneDao.findById(zoneId);
 
@@ -250,7 +251,7 @@ public class SiocManagerImpl implements SiocManager {
 
                             tasks.add(task);
 
-                            LOGGER.info(getInfoMsg(volumeVO, newShares, newLimitIops));
+                            logger.info(getInfoMsg(volumeVO, newShares, newLimitIops));
                         } catch (Exception ex) {
                             throw new Exception("Error: " + ex.getMessage());
                         }
@@ -321,7 +322,7 @@ public class SiocManagerImpl implements SiocManager {
 
                                 tasks.add(task);
 
-                                LOGGER.info(getInfoMsgForWorkerVm(newLimitIops));
+                                logger.info(getInfoMsgForWorkerVm(newLimitIops));
                             } catch (Exception ex) {
                                 throw new Exception("Error: " + ex.getMessage());
                             }

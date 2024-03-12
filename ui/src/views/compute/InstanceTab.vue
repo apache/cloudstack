@@ -124,6 +124,11 @@
           :routerlinks="(record) => { return { name: '/securitygroups/' + record.id } }"
           :showSearch="false"/>
       </a-tab-pane>
+      <a-tab-pane :tab="$t('label.schedules')" key="schedules" v-if="'listVMSchedule' in $store.getters.apis">
+        <InstanceSchedules
+          :virtualmachine="vm"
+          :loading="loading"/>
+      </a-tab-pane>
       <a-tab-pane :tab="$t('label.settings')" key="settings">
         <DetailSettings :resource="dataResource" :loading="loading" />
       </a-tab-pane>
@@ -210,9 +215,9 @@
             :loading="listIps.loading"
             v-focus="editNicResource.type==='Shared'"
             showSearch
-            optionFilterProp="label"
+            optionFilterProp="value"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }">
             <a-select-option v-for="ip in listIps.opts" :key="ip.ipaddress">
               {{ ip.ipaddress }}
@@ -253,9 +258,9 @@
             :loading="listIps.loading"
             v-focus="editNicResource.type==='Shared'"
             showSearch
-            optionFilterProp="label"
+            optionFilterProp="value"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }">
             <a-select-option v-for="ip in listIps.opts" :key="ip.ipaddress">
               {{ ip.ipaddress }}
@@ -309,6 +314,7 @@ import EventsTab from '@/components/view/EventsTab'
 import DetailSettings from '@/components/view/DetailSettings'
 import CreateVolume from '@/views/storage/CreateVolume'
 import NicsTable from '@/views/network/NicsTable'
+import InstanceSchedules from '@/views/compute/InstanceSchedules.vue'
 import ListResourceTable from '@/components/view/ListResourceTable'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
@@ -325,6 +331,7 @@ export default {
     DetailSettings,
     CreateVolume,
     NicsTable,
+    InstanceSchedules,
     ListResourceTable,
     TooltipButton,
     ResourceIcon,

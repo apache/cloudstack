@@ -40,7 +40,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -70,6 +70,21 @@ public class QuotaAlertManagerImplTest extends TestCase {
     private QuotaEmailTemplatesDao quotaEmailTemplateDao;
     @Mock
     private ConfigurationDao configDao;
+
+    @Mock
+    private QuotaAccountVO quotaAccountVOMock;
+
+    @Mock
+    private List<QuotaAlertManagerImpl.DeferredQuotaEmail> deferredQuotaEmailListMock;
+
+    @Mock
+    private QuotaManagerImpl quotaManagerMock;
+
+    @Mock
+    private Date balanceDateMock;
+
+    @Mock
+    private AccountVO accountMock;
 
     @Spy
     @InjectMocks
@@ -162,8 +177,20 @@ public class QuotaAlertManagerImplTest extends TestCase {
         quotaAlertManager.sendQuotaAlert(email);
         assertTrue(email.getSendDate() != null);
 
-        Mockito.verify(quotaAlertManager, Mockito.times(1)).sendQuotaAlert(Mockito.anyString(), Mockito.anyListOf(String.class), Mockito.anyString(), Mockito.anyString());
+        Mockito.verify(quotaAlertManager, Mockito.times(1)).sendQuotaAlert(Mockito.any(), Mockito.anyList(), Mockito.anyString(), Mockito.anyString());
         Mockito.verify(quotaAlertManager.mailSender, Mockito.times(1)).sendMail(Mockito.any(SMTPMailProperties.class));
+    }
+
+    @Test
+    public void addHeaderAndFooterTestIfHeaderAndFootersAreAdded() {
+        String body = quotaAlertManager.addHeaderAndFooter("body", "Header", "Footer");
+        assertEquals("HeaderbodyFooter", body);
+    }
+
+    @Test
+    public void addHeaderAndFooterTestIfHeaderAndFootersAreNotAddedIfEmpty() {
+        String body = quotaAlertManager.addHeaderAndFooter("body", "", "");
+        assertEquals("body", body);
     }
 
     @Test

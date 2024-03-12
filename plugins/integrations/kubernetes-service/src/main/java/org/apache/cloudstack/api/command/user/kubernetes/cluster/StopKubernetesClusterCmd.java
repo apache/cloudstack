@@ -29,7 +29,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.KubernetesClusterResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
@@ -37,7 +36,7 @@ import com.cloud.kubernetes.cluster.KubernetesClusterEventTypes;
 import com.cloud.kubernetes.cluster.KubernetesClusterService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "stopKubernetesCluster", description = "Stops a running Kubernetes cluster",
+@APICommand(name = "stopKubernetesCluster", description = "Stops a running CloudManaged Kubernetes cluster",
         responseObject = SuccessResponse.class,
         responseView = ResponseObject.ResponseView.Restricted,
         entityType = {KubernetesCluster.class},
@@ -45,7 +44,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
         responseHasSensitiveInfo = true,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class StopKubernetesClusterCmd extends BaseAsyncCmd {
-    public static final Logger LOGGER = Logger.getLogger(StopKubernetesClusterCmd.class.getName());
 
     @Inject
     public KubernetesClusterService kubernetesClusterService;
@@ -95,7 +93,7 @@ public class StopKubernetesClusterCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ServerApiException, ConcurrentOperationException {
         try {
-            if (!kubernetesClusterService.stopKubernetesCluster(getId())) {
+            if (!kubernetesClusterService.stopKubernetesCluster(this)) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to start Kubernetes cluster ID: %d", getId()));
             }
             final SuccessResponse response = new SuccessResponse(getCommandName());

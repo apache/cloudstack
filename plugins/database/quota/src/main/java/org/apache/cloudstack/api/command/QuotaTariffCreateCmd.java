@@ -28,7 +28,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.QuotaResponseBuilder;
 import org.apache.cloudstack.api.response.QuotaTariffResponse;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
@@ -37,7 +36,6 @@ import java.util.Date;
 @APICommand(name = "quotaTariffCreate", responseObject = QuotaTariffResponse.class, description = "Creates a quota tariff for a resource.", since = "4.18.0.0",
 requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin})
 public class QuotaTariffCreateCmd extends BaseCmd {
-    protected Logger logger = Logger.getLogger(getClass());
 
     @Inject
     QuotaResponseBuilder responseBuilder;

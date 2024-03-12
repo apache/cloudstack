@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.vm;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -404,10 +405,7 @@ public interface UserVmService {
     /**
      * Creates a vm group.
      *
-     * @param name
-     *            - name of the group
-     * @param accountId
-     *            - accountId
+     * @param cmd The command specifying domain ID, account name, group name, and project ID
      */
     InstanceGroup createVmGroup(CreateVMGroupCmd cmd);
 
@@ -446,16 +444,10 @@ public interface UserVmService {
 
     /**
      * Migrate the given VM to the destination host provided. The API returns the migrated VM if migration succeeds.
-     * Only Root
-     * Admin can migrate a VM.
+     * Only Root Admin can migrate a VM.
      *
-     * @param destinationStorage
-     *            TODO
-     * @param Long
-     *            vmId
-     *            vmId of The VM to migrate
-     * @param Host
-     *            destinationHost to migrate the VM
+     * @param vmId The ID of the VM to be migrated
+     * @param destinationHost The destination host to where the VM will be migrated
      *
      * @return VirtualMachine migrated VM
      * @throws ManagementServerException
@@ -474,14 +466,9 @@ public interface UserVmService {
      * Migrate the given VM with its volumes to the destination host. The API returns the migrated VM if it succeeds.
      * Only root admin can migrate a VM.
      *
-     * @param destinationStorage
-     *            TODO
-     * @param Long
-     *            vmId of The VM to migrate
-     * @param Host
-     *            destinationHost to migrate the VM
-     * @param Map
-     *            A map of volume to which pool it should be migrated
+     * @param vmId The ID of the VM to be migrated
+     * @param destinationHost The destination host to where the VM will be migrated
+     * @param volumeToPool A map of volume to which pool it should be migrated
      *
      * @return VirtualMachine migrated VM
      * @throws ManagementServerException
@@ -515,7 +502,7 @@ public interface UserVmService {
     /**
      * Finds and returns an encrypted password for a VM.
      *
-     * @param  userVmId
+     * @param  vmId
      * @return Base64 encoded userdata
      */
     String getVmUserData(long vmId);
@@ -532,7 +519,8 @@ public interface UserVmService {
 
     UserVm importVM(final DataCenter zone, final Host host, final VirtualMachineTemplate template, final String instanceName, final String displayName, final Account owner, final String userData, final Account caller, final Boolean isDisplayVm, final String keyboard,
                     final long accountId, final long userId, final ServiceOffering serviceOffering, final String sshPublicKey,
-                    final String hostName, final HypervisorType hypervisorType, final Map<String, String> customParameters, final VirtualMachine.PowerState powerState) throws InsufficientCapacityException;
+                    final String hostName, final HypervisorType hypervisorType, final Map<String, String> customParameters,
+                    final VirtualMachine.PowerState powerState, final LinkedHashMap<String, List<NicProfile>> networkNicMap) throws InsufficientCapacityException;
 
     /**
      * Unmanage a guest VM from CloudStack

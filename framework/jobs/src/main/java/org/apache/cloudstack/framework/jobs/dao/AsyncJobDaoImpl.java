@@ -22,7 +22,6 @@ import java.util.Date;
 import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.jobs.JobInfo;
@@ -37,7 +36,6 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 
 public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements AsyncJobDao {
-    private static final Logger s_logger = Logger.getLogger(AsyncJobDaoImpl.class.getName());
 
     private final SearchBuilder<AsyncJobVO> pendingAsyncJobSearch;
     private final SearchBuilder<AsyncJobVO> pendingAsyncJobsSearch;
@@ -48,6 +46,7 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
     private final SearchBuilder<AsyncJobVO> expiringCompletedAsyncJobSearch;
     private final SearchBuilder<AsyncJobVO> failureMsidAsyncJobSearch;
     private final GenericSearchBuilder<AsyncJobVO, Long> asyncJobTypeSearch;
+    private final GenericSearchBuilder<AsyncJobVO, Long> pendingNonPseudoAsyncJobsSearch;
 
     public AsyncJobDaoImpl() {
         pendingAsyncJobSearch = createSearchBuilder();
@@ -103,6 +102,11 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         asyncJobTypeSearch.and("status", asyncJobTypeSearch.entity().getStatus(), SearchCriteria.Op.EQ);
         asyncJobTypeSearch.done();
 
+        pendingNonPseudoAsyncJobsSearch = createSearchBuilder(Long.class);
+        pendingNonPseudoAsyncJobsSearch.select(null, SearchCriteria.Func.COUNT, pendingNonPseudoAsyncJobsSearch.entity().getId());
+        pendingNonPseudoAsyncJobsSearch.and("instanceTypeNEQ", pendingNonPseudoAsyncJobsSearch.entity().getInstanceType(), SearchCriteria.Op.NEQ);
+        pendingNonPseudoAsyncJobsSearch.and("jobStatusEQ", pendingNonPseudoAsyncJobsSearch.entity().getStatus(), SearchCriteria.Op.EQ);
+        pendingNonPseudoAsyncJobsSearch.and("executingMsidIN", pendingNonPseudoAsyncJobsSearch.entity().getExecutingMsid(), SearchCriteria.Op.IN);
     }
 
     @Override
@@ -115,7 +119,7 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         List<AsyncJobVO> l = listIncludingRemovedBy(sc);
         if (l != null && l.size() > 0) {
             if (l.size() > 1) {
-                s_logger.warn("Instance " + instanceType + "-" + instanceId + " has multiple pending async-job");
+                logger.warn("Instance " + instanceType + "-" + instanceId + " has multiple pending async-job");
             }
 
             return l.get(0);
@@ -202,9 +206,9 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
             pstmt.setLong(6, msid);
             pstmt.execute();
         } catch (SQLException e) {
-            s_logger.warn("Unable to reset job status for management server " + msid, e);
+            logger.warn("Unable to reset job status for management server " + msid, e);
         } catch (Throwable e) {
-            s_logger.warn("Unable to reset job status for management server " + msid, e);
+            logger.warn("Unable to reset job status for management server " + msid, e);
         }
     }
 
@@ -235,6 +239,20 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         sc.setParameters("status", AsyncJobVO.Status.FAILED);
         sc.setParameters("job_cmd", (Object[])cmds);
         return listBy(sc);
+    }
+
+    // Returns the number of pending jobs for the given Management server msids.
+    // NOTE: This is the msid and NOT the id
+    @Override
+    public long countPendingNonPseudoJobs(Long... msIds) {
+        SearchCriteria<Long> sc = pendingNonPseudoAsyncJobsSearch.create();
+        sc.setParameters("instanceTypeNEQ", AsyncJobVO.PSEUDO_JOB_INSTANCE_TYPE);
+        sc.setParameters("jobStatusEQ", JobInfo.Status.IN_PROGRESS);
+        if (msIds != null) {
+            sc.setParameters("executingMsidIN", (Object[])msIds);
+        }
+        List<Long> results = customSearch(sc, null);
+        return results.get(0);
     }
 
     @Override

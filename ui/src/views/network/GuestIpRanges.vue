@@ -56,9 +56,10 @@
               icon="delete-outlined" />
           </a-popconfirm>
         </template>
-
       </a-table>
+
       <a-divider/>
+
       <a-pagination
         class="row-element pagination"
         size="small"
@@ -187,8 +188,8 @@ export default {
           dataIndex: 'netmask'
         },
         {
-          title: '',
-          slots: { customRender: 'action' }
+          key: 'actions',
+          title: ''
         }
       ]
     }

@@ -68,6 +68,7 @@ export default {
       api: 'registerUserKeys',
       icon: 'file-protect-outlined',
       label: 'label.action.generate.keys',
+      hoverLabel: 'label.action.generate.api.secret.keys',
       message: 'message.generate.keys',
       dataView: true
     },
@@ -80,7 +81,7 @@ export default {
       show: (record, store) => {
         return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && !record.isdefault &&
           !(record.domain === 'ROOT' && record.account === 'admin' && record.accounttype === 1) &&
-          record.state === 'disabled'
+          ['disabled', 'locked'].includes(record.state)
       }
     },
     {
@@ -89,6 +90,20 @@ export default {
       label: 'label.action.disable.user',
       message: 'message.disable.user',
       dataView: true,
+      show: (record, store) => {
+        return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && !record.isdefault &&
+          !(record.domain === 'ROOT' && record.account === 'admin' && record.accounttype === 1) &&
+          record.state === 'enabled'
+      }
+    },
+    {
+      api: 'lockUser',
+      icon: 'LockOutlined',
+      label: 'label.action.lock.user',
+      message: (record) => ['message.lock.user', { user: record.username }],
+      successMessage: (record) => ['message.lock.user.success', { user: record.username }],
+      dataView: true,
+      popup: true,
       show: (record, store) => {
         return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && !record.isdefault &&
           !(record.domain === 'ROOT' && record.account === 'admin' && record.accounttype === 1) &&
@@ -144,9 +159,8 @@ export default {
       label: 'label.action.delete.user',
       message: 'message.delete.user',
       dataView: true,
-      show: (record, store) => {
-        return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && !record.isdefault &&
-          !(record.domain === 'ROOT' && record.account === 'admin' && record.accounttype === 1)
+      disabled: (record, store) => {
+        return record.id !== 'undefined' && store.userInfo.id === record.id
       }
     }
   ]

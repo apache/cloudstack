@@ -24,7 +24,6 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.acl.RolePermissionEntity.Permission;
 
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.UnavailableCommandException;
@@ -49,7 +48,6 @@ public class ProjectRoleBasedApiAccessChecker  extends AdapterBase implements AP
     AccountService accountService;
 
     private List<PluggableService> services;
-    private static final Logger LOGGER = Logger.getLogger(ProjectRoleBasedApiAccessChecker.class.getName());
     protected ProjectRoleBasedApiAccessChecker() {
         super();
     }
@@ -61,7 +59,7 @@ public class ProjectRoleBasedApiAccessChecker  extends AdapterBase implements AP
     @Override
     public boolean isEnabled() {
         if (!roleService.isEnabled()) {
-            LOGGER.trace("RoleService is disabled. We will not use ProjectRoleBasedApiAccessChecker.");
+            logger.trace("RoleService is disabled. We will not use ProjectRoleBasedApiAccessChecker.");
         }
         return roleService.isEnabled();
     }
@@ -74,7 +72,7 @@ public class ProjectRoleBasedApiAccessChecker  extends AdapterBase implements AP
 
         Project project = CallContext.current().getProject();
         if (project == null) {
-            LOGGER.warn(String.format("Project is null, ProjectRoleBasedApiAccessChecker only applies to projects, returning APIs [%s] for user [%s] as allowed.", apiNames, user));
+            logger.warn(String.format("Project is null, ProjectRoleBasedApiAccessChecker only applies to projects, returning APIs [%s] for user [%s] as allowed.", apiNames, user));
             return apiNames;
         }
 
@@ -84,8 +82,8 @@ public class ProjectRoleBasedApiAccessChecker  extends AdapterBase implements AP
             if (projectUser.getAccountRole() != ProjectAccount.Role.Admin) {
                 apiNames.removeIf(apiName -> !isPermitted(project, projectUser, apiName));
             }
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace(String.format("Returning APIs [%s] as allowed for user [%s].", apiNames, user));
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("Returning APIs [%s] as allowed for user [%s].", apiNames, user));
             }
             return apiNames;
         }
@@ -98,8 +96,8 @@ public class ProjectRoleBasedApiAccessChecker  extends AdapterBase implements AP
         if (projectAccount.getAccountRole() != ProjectAccount.Role.Admin) {
             apiNames.removeIf(apiName -> !isPermitted(project, projectAccount, apiName));
         }
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(String.format("Returning APIs [%s] as allowed for user [%s].", apiNames, user));
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("Returning APIs [%s] as allowed for user [%s].", apiNames, user));
         }
         return apiNames;
     }
@@ -112,14 +110,14 @@ public class ProjectRoleBasedApiAccessChecker  extends AdapterBase implements AP
 
         Project project = CallContext.current().getProject();
         if (project == null) {
-            LOGGER.warn(String.format("Project is null, ProjectRoleBasedApiAccessChecker only applies to projects, returning API [%s] for user [%s] as allowed.", apiCommandName,
+            logger.warn(String.format("Project is null, ProjectRoleBasedApiAccessChecker only applies to projects, returning API [%s] for user [%s] as allowed.", apiCommandName,
                 user));
             return true;
         }
 
         Account userAccount = accountService.getAccount(user.getAccountId());
         if (accountService.isRootAdmin(userAccount.getId()) || accountService.isDomainAdmin(userAccount.getAccountId())) {
-            LOGGER.info(String.format("Account [%s] is Root Admin or Domain Admin, all APIs are allowed.", userAccount.getAccountName()));
+            logger.info(String.format("Account [%s] is Root Admin or Domain Admin, all APIs are allowed.", userAccount.getAccountName()));
             return true;
         }
 

@@ -83,6 +83,9 @@ public interface VirtualMachineManager extends Manager {
     ConfigKey<Boolean> AllowExposeDomainInMetadata = new ConfigKey<>("Advanced", Boolean.class, "metadata.allow.expose.domain",
             "false", "If set to true, it allows the VM's domain to be seen in metadata.", true, ConfigKey.Scope.Domain);
 
+    ConfigKey<String> MetadataCustomCloudName = new ConfigKey<>("Advanced", String.class, "metadata.custom.cloud.name", "",
+            "If provided, a custom cloud-name in cloud-init metadata", true, ConfigKey.Scope.Zone);
+
     interface Topics {
         String VM_POWER_STATE = "vm.powerstate";
     }
@@ -286,5 +289,7 @@ public interface VirtualMachineManager extends Manager {
     HashMap<Long, List<? extends VmDiskStats>> getVmDiskStatistics(long hostId, String hostName, Map<Long, ? extends VirtualMachine> vmMap);
 
     HashMap<Long, List<? extends VmNetworkStats>> getVmNetworkStatistics(long hostId, String hostName, Map<Long, ? extends VirtualMachine> vmMap);
+
+    Map<Long, Boolean> getDiskOfferingSuitabilityForVm(long vmId, List<Long> diskOfferingIds);
 
 }

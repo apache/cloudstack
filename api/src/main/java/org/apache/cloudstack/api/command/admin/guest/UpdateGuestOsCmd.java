@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.guest;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.collections.MapUtils;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -41,7 +41,6 @@ import java.util.Map;
         since = "4.4.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateGuestOsCmd extends BaseAsyncCmd {
 
-    public static final Logger s_logger = Logger.getLogger(UpdateGuestOsCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -54,7 +53,7 @@ public class UpdateGuestOsCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.OS_DISPLAY_NAME, type = CommandType.STRING, required = true, description = "Unique display name for Guest OS")
     private String osDisplayName;
 
-    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, required = true, description = "Map of (key/value pairs)")
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, required = false, description = "Map of (key/value pairs)")
     private Map details;
 
     @Parameter(name="forDisplay", type=CommandType.BOOLEAN, description="whether this guest OS is available for end users", authorized = {RoleType.Admin})
@@ -74,7 +73,7 @@ public class UpdateGuestOsCmd extends BaseAsyncCmd {
 
     public Map getDetails() {
         Map<String, String> detailsMap = new HashMap<>();;
-        if (!details.isEmpty()) {
+        if (MapUtils.isNotEmpty(detailsMap)) {
             Collection<?> servicesCollection = details.values();
             Iterator<?> iter = servicesCollection.iterator();
             while (iter.hasNext()) {

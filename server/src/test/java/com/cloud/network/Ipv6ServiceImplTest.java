@@ -16,39 +16,6 @@
 // under the License.
 package com.cloud.network;
 
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.UUID;
-
-import javax.management.InstanceAlreadyExistsException;
-import javax.management.MBeanRegistrationException;
-import javax.management.MalformedObjectNameException;
-import javax.management.NotCompliantMBeanException;
-
-import org.apache.cloudstack.api.command.user.ipv6.CreateIpv6FirewallRuleCmd;
-import org.apache.cloudstack.api.command.user.ipv6.UpdateIpv6FirewallRuleCmd;
-import org.apache.cloudstack.api.response.Ipv6RouteResponse;
-import org.apache.cloudstack.api.response.VpcResponse;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.commons.collections.CollectionUtils;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.mockito.stubbing.Answer;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-
 import com.cloud.api.ApiDBUtils;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterGuestIpv6PrefixVO;
@@ -94,10 +61,38 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.googlecode.ipv6.IPv6Network;
 import com.googlecode.ipv6.IPv6NetworkMask;
+import org.apache.cloudstack.api.command.user.ipv6.CreateIpv6FirewallRuleCmd;
+import org.apache.cloudstack.api.command.user.ipv6.UpdateIpv6FirewallRuleCmd;
+import org.apache.cloudstack.api.response.Ipv6RouteResponse;
+import org.apache.cloudstack.api.response.VpcResponse;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.commons.collections.CollectionUtils;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
 
-@PowerMockIgnore("javax.management.*")
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ApiDBUtils.class, ActionEventUtils.class, UsageEventUtils.class})
+import javax.management.InstanceAlreadyExistsException;
+import javax.management.MBeanRegistrationException;
+import javax.management.MalformedObjectNameException;
+import javax.management.NotCompliantMBeanException;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.UUID;
+
+@RunWith(MockitoJUnitRunner.class)
 public class Ipv6ServiceImplTest {
 
     @Mock
@@ -149,11 +144,18 @@ public class Ipv6ServiceImplTest {
     private AccountVO account;
     private UserVO user;
 
+    private MockedStatic<ApiDBUtils> apiDBUtilsMocked;
+    private MockedStatic<ActionEventUtils> actionEventUtilsMocked;
+
+    private MockedStatic<UsageEventUtils> usageEventUtilsMocked;
+
+    private AutoCloseable closeable;
+
     @Before
     public void setup() {
         updatedPrefixSubnetMap = new ArrayList<>();
         persistedPrefixSubnetMap = new ArrayList<>();
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         ipv6Service.firewallManager = firewallManager;
         Mockito.when(ipv6GuestPrefixSubnetNetworkMapDao.update(Mockito.anyLong(), Mockito.any(Ipv6GuestPrefixSubnetNetworkMapVO.class))).thenAnswer((Answer<Boolean>) invocation -> {
             Ipv6GuestPrefixSubnetNetworkMapVO map = (Ipv6GuestPrefixSubnetNetworkMapVO)invocation.getArguments()[1];
@@ -165,8 +167,18 @@ public class Ipv6ServiceImplTest {
             persistedPrefixSubnetMap.add(map);
             return map;
         });
-        PowerMockito.mockStatic(ApiDBUtils.class);
-        Mockito.when(ApiDBUtils.findZoneById(Mockito.anyLong())).thenReturn(Mockito.mock(DataCenterVO.class));
+        apiDBUtilsMocked = Mockito.mockStatic(ApiDBUtils.class);
+        apiDBUtilsMocked.when(() -> ApiDBUtils.findZoneById(Mockito.anyLong())).thenReturn(Mockito.mock(DataCenterVO.class));
+        actionEventUtilsMocked = Mockito.mockStatic(ActionEventUtils.class);
+        usageEventUtilsMocked = Mockito.mockStatic(UsageEventUtils.class);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        apiDBUtilsMocked.close();
+        actionEventUtilsMocked.close();
+        usageEventUtilsMocked.close();
+        closeable.close();
     }
 
     private DataCenterGuestIpv6PrefixVO prepareMocksForIpv6Subnet() {
@@ -396,7 +408,6 @@ public class Ipv6ServiceImplTest {
         Nic nic = Mockito.mock(Nic.class);
         Mockito.when(nic.getIPv6Address()).thenReturn(null);
         Mockito.when(nic.getBroadcastUri()).thenReturn(URI.create(vlan));
-        Mockito.when(vlanDao.listIpv6RangeByZoneIdAndVlanId(1L, "vlan")).thenReturn(new ArrayList<>());
         try (TransactionLegacy txn = TransactionLegacy.open("testNewErrorAssignPublicIpv6ToNetwork")) {
            ipv6Service.assignPublicIpv6ToNetwork(Mockito.mock(Network.class), nic);
         }
@@ -417,7 +428,6 @@ public class Ipv6ServiceImplTest {
         VlanVO vlanVO = Mockito.mock(VlanVO.class);
         Mockito.when(vlanVO.getIp6Cidr()).thenReturn(cidr);
         Mockito.when(vlanVO.getIp6Gateway()).thenReturn(gateway);
-        Mockito.when(vlanVO.getVlanType()).thenReturn(Vlan.VlanType.VirtualNetwork);
         List<VlanVO> vlans = new ArrayList<>();
         vlans.add(vlanVO);
         Mockito.when(vlanDao.listIpv6RangeByZoneIdAndVlanId(Mockito.anyLong(), Mockito.anyString())).thenReturn(vlans);
@@ -427,9 +437,7 @@ public class Ipv6ServiceImplTest {
         }
         Mockito.when(nicDao.listPlaceholderNicsByNetworkIdAndVmType(networkId, VirtualMachine.Type.DomainRouter)).thenReturn(placeholderNics);
         Mockito.when(nicDao.createForUpdate(nicId)).thenReturn(new NicVO(publicReserver, 100L, 1L, VirtualMachine.Type.DomainRouter));
-        PowerMockito.mockStatic(ActionEventUtils.class);
         Mockito.when(ActionEventUtils.onCompletedActionEvent(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyLong())).thenReturn(1L);
-        PowerMockito.mockStatic(UsageEventUtils.class);
     }
 
     @Test
@@ -765,15 +773,12 @@ public class Ipv6ServiceImplTest {
             removedNics.add((Long)invocation.getArguments()[0]);
             return true;
         });
-        PowerMockito.mockStatic(ActionEventUtils.class);
-        Mockito.when(ActionEventUtils.onCompletedActionEvent(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyLong())).thenReturn(1L);
-        PowerMockito.mockStatic(UsageEventUtils.class);
+        actionEventUtilsMocked.when(() -> ActionEventUtils.onCompletedActionEvent(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyLong())).thenReturn(1L);
         ipv6Service.removePublicIpv6PlaceholderNics(network);
         Assert.assertEquals(1, removedNics.size());
         Assert.assertEquals(nicId, removedNics.get(0));
         removedNics.clear();
         NicVO nic1 = Mockito.mock(NicVO.class);
-        Mockito.when(nic1.getId()).thenReturn(nicId);
         Mockito.when(nic1.getIPv6Address()).thenReturn(null);
         Mockito.when(nicDao.listPlaceholderNicsByNetworkId(Mockito.anyLong())).thenReturn(List.of(nic1));
         ipv6Service.removePublicIpv6PlaceholderNics(network);

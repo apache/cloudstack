@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`keystore` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `name` varchar(64) NOT NULL COMMENT 'unique name for the certifiation',
   `certificate` text NOT NULL COMMENT 'the actual certificate being stored in the db',
-  `key` text NOT NULL COMMENT 'private key associated wih the certificate',
+  `key` text NOT NULL COMMENT 'private key associated with the certificate',
   `domain_suffix` varchar(256) NOT NULL COMMENT 'DNS domain suffix associated with the certificate',
   PRIMARY KEY (`id`),
   UNIQUE(name)
@@ -164,5 +164,3 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Console Proxy', 'DEFAULT', 'AgentManager', 'consoleproxy.management.state', 'Auto', 'console proxy service management state');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Console Proxy', 'DEFAULT', 'AgentManager', 'consoleproxy.management.state.last', 'Auto', 'last console proxy service management state');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'cluster.message.timeout.seconds', '300', 'Time (in seconds) to wait before a inter-management server message post times out.');
-
-

@@ -26,7 +26,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenter;
@@ -55,7 +54,6 @@ import com.cloud.utils.db.TransactionLegacy;
  **/
 @Component
 public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implements DataCenterDao {
-    private static final Logger s_logger = Logger.getLogger(DataCenterDaoImpl.class);
 
     protected SearchBuilder<DataCenterVO> NameSearch;
     protected SearchBuilder<DataCenterVO> ListZonesByDomainIdSearch;
@@ -405,7 +403,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
                     Long dcId = Long.parseLong(tokenOrIdOrName);
                     return findById(dcId);
                 } catch (NumberFormatException nfe) {
-                    s_logger.debug("Cannot parse " + tokenOrIdOrName + " into long. " + nfe);
+                    logger.debug("Cannot parse " + tokenOrIdOrName + " into long. " + nfe);
                 }
             }
         }
@@ -432,5 +430,15 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         List<DataCenterVO> dcs = listBy(sc);
 
         return dcs;
+    }
+
+    @Override
+    public List<DataCenterVO> listByIds(List<Long> ids) {
+        SearchBuilder<DataCenterVO> idsSearch = createSearchBuilder();
+        idsSearch.and("ids", idsSearch.entity().getId(), SearchCriteria.Op.IN);
+        idsSearch.done();
+        SearchCriteria<DataCenterVO> sc = idsSearch.create();
+        sc.setParameters("ids", ids.toArray());
+        return listBy(sc);
     }
 }

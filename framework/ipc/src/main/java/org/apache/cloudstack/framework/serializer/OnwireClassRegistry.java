@@ -32,7 +32,8 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 
 //
@@ -40,7 +41,7 @@ import org.apache.log4j.Logger;
 // Credit: http://internna.blogspot.com/2007/11/java-5-retrieving-all-classes-from.html
 //
 public class OnwireClassRegistry {
-    private static final Logger s_logger = Logger.getLogger(OnwireClassRegistry.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private List<String> packages = new ArrayList<String>();
     private final Map<String, Class<?>> registry = new HashMap<String, Class<?>>();
@@ -89,7 +90,7 @@ public class OnwireClassRegistry {
         return registry.get(onwireName);
     }
 
-    static Set<Class<?>> getClasses(String packageName) {
+    private Set<Class<?>> getClasses(String packageName) {
         ClassLoader loader = Thread.currentThread().getContextClassLoader();
         return getClasses(loader, packageName);
     }
@@ -98,7 +99,7 @@ public class OnwireClassRegistry {
     // Following helper methods can be put in a separated helper class,
     // will do that later
     //
-    static Set<Class<?>> getClasses(ClassLoader loader, String packageName) {
+    private Set<Class<?>> getClasses(ClassLoader loader, String packageName) {
         Set<Class<?>> classes = new HashSet<Class<?>>();
         String path = packageName.replace('.', '/');
         try {
@@ -123,14 +124,14 @@ public class OnwireClassRegistry {
                 }
             }
         } catch (IOException e) {
-            s_logger.debug("Encountered IOException", e);
+            logger.debug("Encountered IOException", e);
         } catch (ClassNotFoundException e) {
-            s_logger.info("[ignored] class not found", e);
+            logger.info("[ignored] class not found", e);
         }
         return classes;
     }
 
-    static Set<Class<?>> getFromDirectory(File directory, String packageName) throws ClassNotFoundException {
+    private Set<Class<?>> getFromDirectory(File directory, String packageName) throws ClassNotFoundException {
         Set<Class<?>> classes = new HashSet<Class<?>>();
         if (directory.exists()) {
             for (String file : directory.list()) {
@@ -140,9 +141,9 @@ public class OnwireClassRegistry {
                         Class<?> clazz = Class.forName(name);
                         classes.add(clazz);
                     } catch (ClassNotFoundException e) {
-                        s_logger.info("[ignored] class not found in directory " + directory, e);
+                        logger.info("[ignored] class not found in directory " + directory, e);
                     } catch (Exception e) {
-                        s_logger.debug("Encountered unexpect exception! ", e);
+                        logger.debug("Encountered unexpect exception! ", e);
                     }
                 } else {
                     File f = new File(directory.getPath() + "/" + file);
@@ -155,7 +156,7 @@ public class OnwireClassRegistry {
         return classes;
     }
 
-    static Set<Class<?>> getFromJARFile(String jar, String packageName) throws IOException, ClassNotFoundException {
+    private Set<Class<?>> getFromJARFile(String jar, String packageName) throws IOException, ClassNotFoundException {
         Set<Class<?>> classes = new HashSet<Class<?>>();
         try (JarInputStream jarFile = new JarInputStream(new FileInputStream(jar));) {
             JarEntry jarEntry;
@@ -170,7 +171,7 @@ public class OnwireClassRegistry {
                                 Class<?> clz = Class.forName(className.replace('/', '.'));
                                 classes.add(clz);
                             } catch (ClassNotFoundException | NoClassDefFoundError e) {
-                                s_logger.warn("Unable to load class from jar file", e);
+                                logger.warn("Unable to load class from jar file", e);
                             }
                         }
                     }

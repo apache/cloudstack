@@ -52,11 +52,11 @@
           showSearch
           optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }"
           :loading="osTypes.loading"
           v-model:value="form.ostypeid">
-          <a-select-option v-for="(ostype) in osTypes.opts" :key="ostype.id">
+          <a-select-option v-for="(ostype) in osTypes.opts" :key="ostype.id" :label="ostype.description">
             {{ ostype.description }}
           </a-select-option>
         </a-select>
@@ -103,7 +103,7 @@
           }"
           :loading="securitygroups.loading"
           v-focus="true">
-          <a-select-option v-for="securitygroup in securitygroups.opts" :key="securitygroup.id" :label="securitygroup.name">
+          <a-select-option v-for="securitygroup in securitygroups.opts" :key="securitygroup.id" :label="securitygroup.name ||  securitygroup.id">
             <div>
               {{ securitygroup.name ||  securitygroup.id }}
             </div>

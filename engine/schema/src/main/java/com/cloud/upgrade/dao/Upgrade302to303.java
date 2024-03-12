@@ -28,14 +28,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.UUID;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class Upgrade302to303 extends LegacyDbUpgrade {
-    final static Logger s_logger = Logger.getLogger(Upgrade302to303.class);
 
     @Override
     public String[] getUpgradableVersionRange() {
@@ -142,7 +140,7 @@ public class Upgrade302to303 extends LegacyDbUpgrade {
     private void addF5LoadBalancer(Connection conn, long hostId, long physicalNetworkId) {
         PreparedStatement pstmtUpdate = null;
         try {
-            s_logger.debug("Adding F5 Big IP load balancer with host id " + hostId + " in to physical network" + physicalNetworkId);
+            logger.debug("Adding F5 Big IP load balancer with host id " + hostId + " in to physical network" + physicalNetworkId);
             String insertF5 =
                 "INSERT INTO `cloud`.`external_load_balancer_devices` (physical_network_id, host_id, provider_name, "
                     + "device_name, capacity, is_dedicated, device_state, allocation_state, is_inline, is_managed, uuid) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -169,7 +167,7 @@ public class Upgrade302to303 extends LegacyDbUpgrade {
     private void addSrxFirewall(Connection conn, long hostId, long physicalNetworkId) {
         PreparedStatement pstmtUpdate = null;
         try {
-            s_logger.debug("Adding SRX firewall device with host id " + hostId + " in to physical network" + physicalNetworkId);
+            logger.debug("Adding SRX firewall device with host id " + hostId + " in to physical network" + physicalNetworkId);
             String insertSrx =
                 "INSERT INTO `cloud`.`external_firewall_devices` (physical_network_id, host_id, provider_name, "
                     + "device_name, capacity, is_dedicated, device_state, allocation_state, uuid) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -195,7 +193,7 @@ public class Upgrade302to303 extends LegacyDbUpgrade {
         PreparedStatement pstmtUpdate = null;
         try {
             // add physical network service provider - F5BigIp
-            s_logger.debug("Adding PhysicalNetworkServiceProvider F5BigIp" + " in to physical network" + physicalNetworkId);
+            logger.debug("Adding PhysicalNetworkServiceProvider F5BigIp" + " in to physical network" + physicalNetworkId);
             String insertPNSP =
                 "INSERT INTO `cloud`.`physical_network_service_providers` (`uuid`, `physical_network_id` , `provider_name`, `state` ,"
                     + "`destination_physical_network_id`, `vpn_service_provided`, `dhcp_service_provided`, `dns_service_provided`, `gateway_service_provided`,"
@@ -219,7 +217,7 @@ public class Upgrade302to303 extends LegacyDbUpgrade {
         PreparedStatement pstmtUpdate = null;
         try {
             // add physical network service provider - JuniperSRX
-            s_logger.debug("Adding PhysicalNetworkServiceProvider JuniperSRX");
+            logger.debug("Adding PhysicalNetworkServiceProvider JuniperSRX");
             String insertPNSP =
                 "INSERT INTO `cloud`.`physical_network_service_providers` (`uuid`, `physical_network_id` , `provider_name`, `state` ,"
                     + "`destination_physical_network_id`, `vpn_service_provided`, `dhcp_service_provided`, `dns_service_provided`, `gateway_service_provided`,"
@@ -241,7 +239,7 @@ public class Upgrade302to303 extends LegacyDbUpgrade {
 
     private void encryptConfig(Connection conn) {
         //Encrypt config params and change category to Hidden
-        s_logger.debug("Encrypting Config values");
+        logger.debug("Encrypting Config values");
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
@@ -268,7 +266,7 @@ public class Upgrade302to303 extends LegacyDbUpgrade {
             closeAutoCloseable(rs);
             closeAutoCloseable(pstmt);
         }
-        s_logger.debug("Done encrypting Config values");
+        logger.debug("Done encrypting Config values");
     }
 
     @Override

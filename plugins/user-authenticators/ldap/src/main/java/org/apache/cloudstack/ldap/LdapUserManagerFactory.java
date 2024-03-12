@@ -18,7 +18,8 @@
  */
 package org.apache.cloudstack.ldap;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.ApplicationContext;
@@ -30,7 +31,7 @@ import java.util.Map;
 public class LdapUserManagerFactory implements ApplicationContextAware {
 
 
-    public static final Logger s_logger = Logger.getLogger(LdapUserManagerFactory.class.getName());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     static Map<LdapUserManager.Provider, LdapUserManager> ldapUserManagerMap = new HashMap<>();
 

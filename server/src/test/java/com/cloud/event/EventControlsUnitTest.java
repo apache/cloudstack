@@ -16,18 +16,15 @@
 // under the License.
 package com.cloud.event;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.when;
-
-import java.util.Date;
-import java.util.List;
-
+import com.cloud.event.dao.EventDao;
+import com.cloud.server.ManagementServerImpl;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import junit.framework.TestCase;
-
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,16 +32,17 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import java.util.Date;
+import java.util.List;
 
-import com.cloud.event.dao.EventDao;
-import com.cloud.server.ManagementServerImpl;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.when;
 
 public class EventControlsUnitTest extends TestCase {
-    private static final Logger s_logger = Logger.getLogger(EventControlsUnitTest.class);
+    private Logger logger = LogManager.getLogger(EventControlsUnitTest.class);
 
     @Spy
     ManagementServerImpl _mgmtServer = new ManagementServerImpl();
@@ -53,11 +51,12 @@ public class EventControlsUnitTest extends TestCase {
     @Mock
     EventDao _eventDao;
     List<EventVO> _events = null;
+    private AutoCloseable closeable;
 
     @Override
     @Before
-    protected void setUp() {
-        MockitoAnnotations.initMocks(this);
+    public void setUp() {
+        closeable = MockitoAnnotations.openMocks(this);
         _mgmtServer._eventDao = _eventDao;
         _mgmtServer._accountMgr = _accountMgr;
         doNothing().when(_accountMgr).checkAccess(any(Account.class), any(AccessType.class), any(Boolean.class), any(ControlledEntity.class));
@@ -67,14 +66,15 @@ public class EventControlsUnitTest extends TestCase {
     @Override
     @After
     public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test
     public void testInjected() throws Exception {
-        s_logger.info("Starting test to archive and delete events");
+        logger.info("Starting test to archive and delete events");
         archiveEvents();
         deleteEvents();
-        s_logger.info("archive/delete events: TEST PASSED");
+        logger.info("archive/delete events: TEST PASSED");
     }
 
     protected void archiveEvents() {

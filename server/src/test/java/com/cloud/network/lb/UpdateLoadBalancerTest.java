@@ -16,23 +16,6 @@
 // under the License.
 package com.cloud.network.lb;
 
-import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.when;
-
-import java.util.ArrayList;
-import java.util.UUID;
-
-import org.apache.cloudstack.api.command.user.loadbalancer.UpdateLoadBalancerRuleCmd;
-import org.apache.cloudstack.context.CallContext;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.InOrder;
-import org.mockito.Mockito;
-
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
@@ -55,6 +38,22 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.MockAccountManagerImpl;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
+import org.apache.cloudstack.api.command.user.loadbalancer.UpdateLoadBalancerRuleCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.InOrder;
+import org.mockito.Mockito;
+
+import java.util.ArrayList;
+import java.util.UUID;
+
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 
 public class UpdateLoadBalancerTest {
 

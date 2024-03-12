@@ -38,15 +38,17 @@ public interface RoleService {
      *  Moreover, we will check if the requested role is of 'Admin' type; roles with 'Admin' type should only be visible to 'root admins'.
      *  Therefore, if a non-'root admin' user tries to search for an 'Admin' role, this method will return null.
      */
+    Role findRole(Long id, boolean removePrivateRoles);
+
     Role findRole(Long id);
 
-    Role createRole(String name, RoleType roleType, String description);
+    Role createRole(String name, RoleType roleType, String description, boolean publicRole);
 
-    Role createRole(String name, Role role, String description);
+    Role createRole(String name, Role role, String description, boolean publicRole);
 
-    Role importRole(String name, RoleType roleType, String description, List<Map<String, Object>> rules, boolean forced);
+    Role importRole(String name, RoleType roleType, String description, List<Map<String, Object>> rules, boolean forced, boolean isPublicRole);
 
-    Role updateRole(Role role, String name, RoleType roleType, String description);
+    Role updateRole(Role role, String name, RoleType roleType, String description, Boolean publicRole);
 
     boolean deleteRole(Role role);
 

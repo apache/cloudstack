@@ -26,11 +26,11 @@ import 'nprogress/nprogress.css' // progress bar style
 import message from 'ant-design-vue/es/message'
 import notification from 'ant-design-vue/es/notification'
 import { setDocumentTitle } from '@/utils/domUtil'
-import { ACCESS_TOKEN, APIS, SERVER_MANAGER } from '@/store/mutation-types'
+import { ACCESS_TOKEN, APIS, SERVER_MANAGER, CURRENT_PROJECT } from '@/store/mutation-types'
 
 NProgress.configure({ showSpinner: false }) // NProgress Configuration
 
-const allowList = ['login'] // no redirect allowlist
+const allowList = ['login', 'VerifyOauth'] // no redirect allowlist
 
 router.beforeEach((to, from, next) => {
   // start progress bar
@@ -56,6 +56,14 @@ router.beforeEach((to, from, next) => {
 
   const validLogin = vueProps.$localStorage.get(ACCESS_TOKEN) || Cookies.get('userid') || Cookies.get('userid', { path: '/client' })
   if (validLogin) {
+    var currentURL = new URL(window.location.href)
+    var urlParams = new URLSearchParams(currentURL.search)
+    var code = urlParams.get('code')
+    if (code != null) {
+      urlParams.delete('code')
+    }
+    currentURL.search = ''
+    window.history.replaceState(null, null, currentURL.toString())
     if (to.path === '/user/login') {
       next({ path: '/dashboard' })
       NProgress.done()
@@ -104,7 +112,8 @@ router.beforeEach((to, from, next) => {
               } else {
                 next({ path: redirect })
               }
-              store.dispatch('ToggleTheme', 'light')
+              const project = vueProps.$localStorage.get(CURRENT_PROJECT)
+              store.dispatch('ToggleTheme', project.id === undefined ? 'light' : 'dark')
             })
           })
           .catch(() => {
@@ -133,7 +142,16 @@ router.beforeEach((to, from, next) => {
       }
     }
   } else {
-    if (allowList.includes(to.name)) {
+    if (window.location.href.includes('verifyOauth') && to.name === undefined) {
+      currentURL = new URL(window.location.href)
+      urlParams = new URLSearchParams(currentURL.search)
+      code = urlParams.get('code')
+      urlParams.delete('verifyOauth')
+      urlParams.delete('state')
+      currentURL.search = '?code=' + code
+      window.history.replaceState(null, null, currentURL.toString())
+      next({ path: '/verifyOauth', query: { redirect: to.fullPath } })
+    } else if (allowList.includes(to.name)) {
       next()
     } else {
       next({ path: '/user/login', query: { redirect: to.fullPath } })

@@ -37,7 +37,6 @@ import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.offering.ServiceOffering;
@@ -47,7 +46,6 @@ import com.cloud.user.Account;
 @APICommand(name = "createServiceOffering", description = "Creates a service offering.", responseObject = ServiceOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateServiceOfferingCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateServiceOfferingCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -59,7 +57,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.CPU_SPEED, type = CommandType.INTEGER, required = false, description = "the CPU speed of the service offering in MHz.")
     private Integer cpuSpeed;
 
-    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, required = true, description = "the display text of the service offering")
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "The display text of the service offering, defaults to 'name'.")
     private String displayText;
 
     @Parameter(name = ApiConstants.PROVISIONINGTYPE, type = CommandType.STRING, description = "provisioning type used to create volumes. Valid values are thin, sparse, fat.")
@@ -258,10 +256,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     }
 
     public String getDisplayText() {
-        if (StringUtils.isEmpty(displayText)) {
-            throw new InvalidParameterValueException("Failed to create service offering because the offering display text has not been spified.");
-        }
-        return displayText;
+        return StringUtils.isEmpty(displayText) ? serviceOfferingName : displayText;
     }
 
     public String getProvisioningType() {

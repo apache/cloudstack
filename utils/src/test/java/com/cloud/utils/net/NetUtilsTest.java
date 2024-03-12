@@ -52,15 +52,12 @@ import com.googlecode.ipv6.IPv6Address;
 import com.googlecode.ipv6.IPv6Network;
 
 import org.junit.runner.RunWith;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 
-@RunWith(PowerMockRunner.class)
-@PowerMockIgnore({"jdk.xml.internal.*", "javax.xml.parsers.*", "org.xml.sax.*", "org.w3c.dom.*"})
+@RunWith(MockitoJUnitRunner.class)
 public class NetUtilsTest {
     private static final String WIDE_SHARED_NET_CIDR_IP = "10.20.0.0";
     private static final List<String> WIDE_SHARED_NET_USED_IPS = List.of("10.20.0.22", "10.20.1.22", "10.20.2.22");
@@ -357,10 +354,10 @@ public class NetUtilsTest {
         final String[] invalidCidrs = {"172.33.1.0/16", "100.128.1.0/10"};
 
         for (String cidr: validCidrs) {
-            assertTrue(NetUtils.validateGuestCidr(cidr));
+            assertTrue(NetUtils.validateGuestCidr(cidr, true));
         }
         for (String cidr: invalidCidrs) {
-            assertFalse(NetUtils.validateGuestCidr(cidr));
+            assertFalse(NetUtils.validateGuestCidr(cidr, true));
         }
     }
 
@@ -719,6 +716,7 @@ public class NetUtilsTest {
         NetUtils.isIpv4("2001:db8:300::/64");
     }
 
+    @Test
     public void testAllIpsOfDefaultNic() {
         final String defaultHostIp = NetUtils.getDefaultHostIp();
         if (defaultHostIp != null) {
@@ -815,34 +813,80 @@ public class NetUtilsTest {
     }
 
     @Test
-    @PrepareForTest(NetUtils.class)
     public void getNetworkInterfaceTestReturnNullWhenGetByNameReturnsNull() throws SocketException {
-        PowerMockito.mockStatic(NetworkInterface.class);
-        PowerMockito.when(NetworkInterface.getByName(Mockito.anyString())).thenReturn(null);
+        MockedStatic<NetworkInterface> networkInterfaceMocked = Mockito.mockStatic(NetworkInterface.class);
+        Mockito.when(NetworkInterface.getByName(Mockito.anyString())).thenReturn(null);
         NetworkInterface result = NetUtils.getNetworkInterface("  test   ");
 
         Assert.assertNull(result);
+        networkInterfaceMocked.close();
     }
 
     @Test
-    @PrepareForTest(NetUtils.class)
     public void getNetworkInterfaceTestReturnNullWhenGetByNameThrowsException() throws SocketException {
-        PowerMockito.mockStatic(NetworkInterface.class);
-        PowerMockito.when(NetworkInterface.getByName(Mockito.anyString())).thenThrow(SocketException.class);
+        MockedStatic<NetworkInterface> networkInterfaceMocked = Mockito.mockStatic(NetworkInterface.class);
+        Mockito.when(NetworkInterface.getByName(Mockito.anyString())).thenThrow(SocketException.class);
         NetworkInterface result = NetUtils.getNetworkInterface("  test   ");
 
         Assert.assertNull(result);
+        networkInterfaceMocked.close();
     }
 
     @Test
-    @PrepareForTest(NetUtils.class)
     public void getNetworkInterfaceTestReturnInterfaceReturnedByGetByName() throws SocketException {
-        NetworkInterface expected = PowerMockito.mock(NetworkInterface.class);
-        PowerMockito.mockStatic(NetworkInterface.class);
-        PowerMockito.when(NetworkInterface.getByName(Mockito.anyString())).thenReturn(expected);
+        MockedStatic<NetworkInterface> networkInterfaceMocked = Mockito.mockStatic(NetworkInterface.class);
+        NetworkInterface expected = Mockito.mock(NetworkInterface.class);
+        Mockito.when(NetworkInterface.getByName(Mockito.anyString())).thenReturn(expected);
 
         NetworkInterface result = NetUtils.getNetworkInterface("  test   ");
 
         Assert.assertEquals(expected, result);
+        networkInterfaceMocked.close();
+    }
+
+    @Test
+    public void validateIcmpTypeAndCodesGood1() {
+        NetUtils.validateIcmpTypeAndCode(-1, -1);
+    }
+    @Test
+    public void validateIcmpTypeAndCodesGood2() {
+        NetUtils.validateIcmpTypeAndCode(3, 2);
+    }
+
+    @Test(expected=CloudRuntimeException.class)
+    public void validateIcmpTypeAndCodesThrowsException1() {
+        NetUtils.validateIcmpTypeAndCode(null, null);
+    }
+    @Test(expected=CloudRuntimeException.class)
+    public void validateIcmpTypeAndCodesThrowsException2() {
+        NetUtils.validateIcmpTypeAndCode(null, -1);
+    }
+    @Test(expected=CloudRuntimeException.class)
+    public void validateIcmpTypeAndCodesThrowsException3() {
+        NetUtils.validateIcmpTypeAndCode(-1, null);
+    }
+    @Test(expected=CloudRuntimeException.class)
+    public void validateIcmpTypeAndCodesThrowsException4() {
+        NetUtils.validateIcmpTypeAndCode(-1, 2);
+    }
+    @Test(expected=CloudRuntimeException.class)
+    public void validateIcmpTypeAndCodesThrowsException5() {
+        NetUtils.validateIcmpTypeAndCode(3, -1);
+    }
+    @Test(expected=CloudRuntimeException.class)
+    public void validateIcmpTypeAndCodesThrowsException6() {
+        NetUtils.validateIcmpTypeAndCode(-2, 2);
+    }
+    @Test(expected=CloudRuntimeException.class)
+    public void validateIcmpTypeAndCodesThrowsException7() {
+        NetUtils.validateIcmpTypeAndCode(257, 2);
+    }
+    @Test(expected=CloudRuntimeException.class)
+    public void validateIcmpTypeAndCodesThrowsException8() {
+        NetUtils.validateIcmpTypeAndCode(3, -2);
+    }
+    @Test(expected=CloudRuntimeException.class)
+    public void validateIcmpTypeAndCodesThrowsException9() {
+        NetUtils.validateIcmpTypeAndCode(3, -257);
     }
 }

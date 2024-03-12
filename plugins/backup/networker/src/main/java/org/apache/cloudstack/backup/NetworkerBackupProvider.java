@@ -44,13 +44,16 @@ import org.apache.cloudstack.backup.networker.NetworkerClient;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.xml.utils.URI;
 import org.apache.cloudstack.backup.networker.api.NetworkerBackup;
 import javax.inject.Inject;
 import java.net.URISyntaxException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -66,7 +69,7 @@ import com.cloud.utils.script.Script;
 public class NetworkerBackupProvider extends AdapterBase implements BackupProvider, Configurable {
 
     public static final String BACKUP_IDENTIFIER = "-CSBKP-";
-    private static final Logger LOG = Logger.getLogger(NetworkerBackupProvider.class);
+    private static final Logger LOG = LogManager.getLogger(NetworkerBackupProvider.class);
 
     public ConfigKey<String> NetworkerUrl = new ConfigKey<>("Advanced", String.class,
             "backup.plugin.networker.url", "https://localhost:9090/nwrestapi/v3",
@@ -605,7 +608,14 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
                         strayBackup.setVmId(vm.getId());
                         strayBackup.setExternalId(strayNetworkerBackup.getId());
                         strayBackup.setType(strayNetworkerBackup.getType());
-                        strayBackup.setDate(strayNetworkerBackup.getSaveTime());
+                        SimpleDateFormat formatterDateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+                        try {
+                            strayBackup.setDate(formatterDateTime.parse(strayNetworkerBackup.getSaveTime()));
+                        } catch (ParseException e) {
+                            String msg = String.format("Unable to parse date [%s].", strayNetworkerBackup.getSaveTime());
+                            LOG.error(msg, e);
+                            throw new CloudRuntimeException(msg, e);
+                        }
                         strayBackup.setStatus(Backup.Status.BackedUp);
                         for ( Backup.VolumeInfo thisVMVol : vm.getBackupVolumeList()) {
                             vmBackupSize += (thisVMVol.getSize() / 1024L /1024L);

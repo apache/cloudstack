@@ -75,12 +75,12 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="kubernetesVersionLoading"
             :placeholder="apiParams.kubernetesversionid.description"
             @change="val => { handleKubernetesVersionChange(kubernetesVersions[val]) }">
-            <a-select-option v-for="(opt, optIndex) in kubernetesVersions" :key="optIndex">
+            <a-select-option v-for="(opt, optIndex) in kubernetesVersions" :key="optIndex" :label="opt.name || opt.description">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -95,11 +95,11 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="serviceOfferingLoading"
             :placeholder="apiParams.serviceofferingid.description">
-            <a-select-option v-for="(opt, optIndex) in serviceOfferings" :key="optIndex">
+            <a-select-option v-for="(opt, optIndex) in serviceOfferings" :key="optIndex" :label="opt.name || opt.description">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -122,11 +122,11 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="networkLoading"
             :placeholder="apiParams.networkid.description">
-            <a-select-option v-for="(opt, optIndex) in networks" :key="optIndex">
+            <a-select-option v-for="(opt, optIndex) in networks" :key="optIndex" :label="opt.name || opt.description">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -171,11 +171,11 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="keyPairLoading"
             :placeholder="apiParams.keypair.description">
-            <a-select-option v-for="(opt, optIndex) in keyPairs" :key="optIndex">
+            <a-select-option v-for="(opt, optIndex) in keyPairs" :key="optIndex" :label="opt.name || opt.description">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -259,18 +259,12 @@ export default {
     this.apiParams = this.$getApiParams('createKubernetesCluster')
   },
   created () {
-    this.networks = [
-      {
-        id: null,
-        name: ''
-      }
-    ]
-    this.keyPairs = [
-      {
-        id: null,
-        name: ''
-      }
-    ]
+    this.emptyEntry = {
+      id: null,
+      name: ''
+    }
+    this.networks = [this.emptyEntry]
+    this.keyPairs = [this.emptyEntry]
     this.initForm()
     this.fetchData()
   },
@@ -284,7 +278,6 @@ export default {
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.kubecluster.name') }],
-        description: [{ required: true, message: this.$t('message.error.cluster.description') }],
         zoneid: [{ required: true, message: this.$t('message.error.zone.for.cluster') }],
         kubernetesversionid: [{ required: true, message: this.$t('message.error.version.for.cluster') }],
         serviceofferingid: [{ required: true, message: this.$t('message.error.serviceoffering.for.cluster') }],
@@ -323,7 +316,6 @@ export default {
     },
     fetchData () {
       this.fetchZoneData()
-      this.fetchNetworkData()
       this.fetchKeyPairData()
     },
     isValidValueForKey (obj, key) {
@@ -418,14 +410,16 @@ export default {
         params.zoneid = this.selectedZone.id
       }
       this.networkLoading = true
+      this.networks = []
       api('listNetworks', params).then(json => {
         var listNetworks = json.listnetworksresponse.network
         if (this.arrayHasItems(listNetworks)) {
           listNetworks = listNetworks.filter(n => n.type !== 'L2')
-          this.networks = this.networks.concat(listNetworks)
+          this.networks = listNetworks
         }
       }).finally(() => {
         this.networkLoading = false
+        this.networks = [this.emptyEntry].concat(this.networks)
         if (this.arrayHasItems(this.networks)) {
           this.form.networkid = 0
         }
@@ -464,7 +458,8 @@ export default {
           zoneid: this.zones[values.zoneid].id,
           kubernetesversionid: this.kubernetesVersions[values.kubernetesversionid].id,
           serviceofferingid: this.serviceOfferings[values.serviceofferingid].id,
-          size: values.size
+          size: values.size,
+          clustertype: 'CloudManaged'
         }
         if (this.isValidValueForKey(values, 'noderootdisksize') && values.noderootdisksize > 0) {
           params.noderootdisksize = values.noderootdisksize

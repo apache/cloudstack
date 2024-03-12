@@ -27,18 +27,6 @@
       @focus="fetchData"
       showSearch>
 
-      <template #suffixIcon>
-        <a-tooltip placement="bottom">
-          <template #title>
-            <span>{{ $t('label.projects') }}</span>
-          </template>
-          <span class="custom-suffix-icon">
-            <ProjectOutlined v-if="!loading" class="ant-select-suffix" />
-            <LoadingOutlined v-else />
-          </span>
-        </a-tooltip>
-      </template>
-
       <a-select-option
         v-for="(project, index) in projects"
         :key="index"
@@ -93,7 +81,7 @@ export default {
       const projects = []
       const getNextPage = () => {
         this.loading = true
-        api('listProjects', { listAll: true, details: 'min', page: page, pageSize: 500, showIcon: true }).then(json => {
+        api('listProjects', { listAll: true, page: page, pageSize: 500, showIcon: true }).then(json => {
           if (json?.listprojectsresponse?.project) {
             projects.push(...json.listprojectsresponse.project)
           }
@@ -142,7 +130,7 @@ export default {
 <style lang="less" scoped>
 .project {
   &-select {
-    width: 30vw;
+    width: 27vw;
   }
 
   &-icon {

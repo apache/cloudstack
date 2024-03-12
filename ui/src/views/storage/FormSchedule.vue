@@ -74,8 +74,10 @@
                 name="timeSelect"
                 ref="timeSelect">
                 <a-time-picker
-                  format="HH:mm"
-                  v-model:value="form.timeSelect" />
+                  use12Hours
+                  format="h:mm A"
+                  v-model:value="form.timeSelect"
+                  style="width: 100%;" />
               </a-form-item>
             </a-col>
             <a-col :md="24" :lg="12" v-if="form.intervaltype==='weekly'">
@@ -85,9 +87,9 @@
                   showSearch
                   optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }" >
-                  <a-select-option v-for="(opt, optIndex) in dayOfWeek" :key="optIndex">
+                  <a-select-option v-for="(opt, optIndex) in dayOfWeek" :key="optIndex" :label="opt.name || opt.description">
                     {{ opt.name || opt.description }}
                   </a-select-option>
                 </a-select>
@@ -98,9 +100,9 @@
                 <a-select
                   v-model:value="form['day-of-month']"
                   showSearch
-                  optionFilterProp="label"
+                  optionFilterProp="value"
                   :filterOption="(input, option) => {
-                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }" >
                   <a-select-option v-for="opt in dayOfMonth" :key="opt.name">
                     {{ opt.name }}
@@ -128,10 +130,41 @@
                   showSearch
                   optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }" >
-                  <a-select-option v-for="opt in timeZoneMap" :key="opt.id">
+                  <a-select-option v-for="opt in timeZoneMap" :key="opt.id" :label="opt.name || opt.description">
                     {{ opt.name || opt.description }}
+                  </a-select-option>
+                </a-select>
+              </a-form-item>
+            </a-col>
+            <a-col :md="24" :lg="24" v-if="resourceType === 'Volume'">
+              <a-form-item ref="zoneids" name="zoneids">
+                <template #label>
+                  <tooltip-label :title="$t('label.zones')" :tooltip="''"/>
+                </template>
+                <a-alert type="info" style="margin-bottom: 2%">
+                  <template #message>
+                    <div v-html="formattedAdditionalZoneMessage"/>
+                  </template>
+                </a-alert>
+                <a-select
+                  id="zone-selection"
+                  v-model:value="form.zoneids"
+                  mode="multiple"
+                  showSearch
+                  optionFilterProp="label"
+                  :filterOption="(input, option) => {
+                    return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }"
+                  :loading="zoneLoading"
+                  :placeholder="''">
+                  <a-select-option v-for="opt in this.zones" :key="opt.id" :label="opt.name || opt.description">
+                    <span>
+                      <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                      <global-outlined v-else style="margin-right: 5px"/>
+                      {{ opt.name || opt.description }}
+                    </span>
                   </a-select-option>
                 </a-select>
               </a-form-item>
@@ -192,6 +225,7 @@
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 import { timeZone } from '@/utils/timezone'
 import { mixinForm } from '@/utils/mixin'
 import debounce from 'lodash/debounce'
@@ -200,7 +234,8 @@ export default {
   name: 'FormSchedule',
   mixins: [mixinForm],
   components: {
-    TooltipButton
+    TooltipButton,
+    TooltipLabel
   },
   props: {
     loading: {
@@ -214,6 +249,10 @@ export default {
     resource: {
       type: Object,
       required: true
+    },
+    resourceType: {
+      type: String,
+      default: null
     }
   },
   data () {
@@ -232,13 +271,19 @@ export default {
       dayOfMonth: [],
       timeZoneMap: [],
       fetching: false,
-      listDayOfWeek: ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+      listDayOfWeek: ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'],
+      zones: []
     }
   },
   created () {
     this.initForm()
     this.volumeId = this.resource.id
     this.fetchTimeZone()
+  },
+  computed: {
+    formattedAdditionalZoneMessage () {
+      return `${this.$t('message.snapshot.additional.zones').replace('%x', this.resource.zonename)}`
+    }
   },
   methods: {
     initForm () {
@@ -259,6 +304,23 @@ export default {
         'day-of-month': [{ required: true, message: `${this.$t('message.error.select')}` }],
         maxsnaps: [{ required: true, message: this.$t('message.error.required.input') }],
         timezone: [{ required: true, message: `${this.$t('message.error.select')}` }]
+      })
+      if (this.resourceType === 'Volume') {
+        this.fetchZoneData()
+      }
+    },
+    fetchZoneData () {
+      const params = {}
+      params.showicon = true
+      this.zoneLoading = true
+      api('listZones', params).then(json => {
+        const listZones = json.listzonesresponse.zone
+        if (listZones) {
+          this.zones = listZones
+          this.zones = this.zones.filter(zone => zone.type !== 'Edge' && zone.id !== this.resource.zoneid)
+        }
+      }).finally(() => {
+        this.zoneLoading = false
       })
     },
     fetchTimeZone (value) {
@@ -357,6 +419,9 @@ export default {
         params.intervaltype = values.intervaltype
         params.timezone = values.timezone
         params.maxsnaps = values.maxsnaps
+        if (values.zoneids && values.zoneids.length > 0) {
+          params.zoneids = values.zoneids.join()
+        }
         switch (values.intervaltype) {
           case 'hourly':
             params.schedule = values.time

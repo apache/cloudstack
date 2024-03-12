@@ -49,6 +49,8 @@ public interface ResourceService {
      */
     Host updateHost(UpdateHostCmd cmd) throws NoTransitionException;
 
+    Host autoUpdateHostAllocationState(Long hostId, ResourceState.Event resourceEvent) throws NoTransitionException;
+
     Host cancelMaintenance(CancelMaintenanceCmd cmd);
 
     Host reconnectHost(ReconnectHostCmd cmd) throws AgentUnavailableException;

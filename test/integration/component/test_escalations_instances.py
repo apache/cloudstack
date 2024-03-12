@@ -1244,7 +1244,7 @@ class TestListInstances(cloudstackTestCase):
                 status[0],
                 "Listing VM's by name and zone failed"
             )
-            # Verifying Verifying that the size of the list is 1
+            # Verifying that the size of the list is 1
             self.assertEqual(
                 1,
                 len(list_vms),
@@ -1404,7 +1404,7 @@ class TestListInstances(cloudstackTestCase):
             status[0],
             "Listing VM's by name and zone failed"
         )
-        # Verifying Verifying that the size of the list is 1
+        # Verifying that the size of the list is 1
         self.assertEqual(
             1,
             len(list_vms),
@@ -1474,7 +1474,7 @@ class TestListInstances(cloudstackTestCase):
             status[0],
             "Listing VM's by name, account and zone failed"
         )
-        # Verifying Verifying that the size of the list is 1
+        # Verifying that the size of the list is 1
         self.assertEqual(
             1,
             len(list_vms),
@@ -4194,7 +4194,7 @@ class TestInstances(cloudstackTestCase):
             "Isolated Network Offerings with sourceNat enabled are not found"
         )
         """
-        Create Isolated netwrok with ip range
+        Create Isolated network with ip range
         """
         self.services["network"]["startip"] = "10.1.1.2"
         self.services["network"]["endip"] = "10.1.1.254"
@@ -4312,7 +4312,7 @@ class TestInstances(cloudstackTestCase):
             "Isolated Network Offerings with sourceNat enabled are not found"
         )
         """
-        Create Isolated netwrok with ip range
+        Create Isolated network with ip range
         """
         self.services["network"]["startip"] = "10.1.1.2"
         self.services["network"]["endip"] = "10.1.1.254"

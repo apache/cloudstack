@@ -27,7 +27,8 @@ import javax.inject.Inject;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventBusException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import com.cloud.event.EventCategory;
@@ -44,7 +45,7 @@ public class NetworkStateListener implements StateListener<State, Event, Network
 
     private static EventBus s_eventBus = null;
 
-    private static final Logger s_logger = Logger.getLogger(NetworkStateListener.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     public NetworkStateListener(ConfigurationDao configDao) {
         _configDao = configDao;
@@ -94,7 +95,7 @@ public class NetworkStateListener implements StateListener<State, Event, Network
         try {
             s_eventBus.publish(eventMsg);
         } catch (EventBusException e) {
-            s_logger.warn("Failed to publish state change event on the the event bus.");
+            logger.warn("Failed to publish state change event on the event bus.");
         }
     }
 

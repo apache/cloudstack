@@ -52,7 +52,7 @@ intelligent IaaS cloud implementation.
 
 %package management
 Summary:   CloudStack management server UI
-Requires: java-11-openjdk
+Requires: java-17-openjdk
 Requires: (tzdata-java or timezone-java)
 Requires: python3
 Requires: bash
@@ -98,7 +98,7 @@ The Apache CloudStack files shared between agent and management server
 %package agent
 Summary: CloudStack Agent for KVM hypervisors
 Requires: (openssh-clients or openssh)
-Requires: java-11-openjdk
+Requires: java-17-openjdk
 Requires: tzdata-java
 Requires: %{name}-common = %{_ver}
 Requires: libvirt
@@ -135,7 +135,7 @@ The CloudStack baremetal agent
 
 %package usage
 Summary: CloudStack Usage calculation server
-Requires: java-11-openjdk
+Requires: java-17-openjdk
 Requires: tzdata-java
 Group: System Environment/Libraries
 %description usage
@@ -259,6 +259,9 @@ install -D client/target/utilities/bin/cloud-setup-management ${RPM_BUILD_ROOT}%
 install -D client/target/utilities/bin/cloud-setup-baremetal ${RPM_BUILD_ROOT}%{_bindir}/%{name}-setup-baremetal
 install -D client/target/utilities/bin/cloud-sysvmadm ${RPM_BUILD_ROOT}%{_bindir}/%{name}-sysvmadm
 install -D client/target/utilities/bin/cloud-update-xenserver-licenses ${RPM_BUILD_ROOT}%{_bindir}/%{name}-update-xenserver-licenses
+# Bundle cmk in cloudstack-management
+wget https://github.com/apache/cloudstack-cloudmonkey/releases/download/6.3.0/cmk.linux.x86-64 -O ${RPM_BUILD_ROOT}%{_bindir}/cmk
+chmod +x ${RPM_BUILD_ROOT}%{_bindir}/cmk
 
 cp -r client/target/utilities/scripts/db/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup
 
@@ -280,11 +283,11 @@ do
   cp client/target/conf/$name ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/$name
 done
 
-ln -sf log4j-cloud.xml  ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/log4j.xml
+ln -sf log4j-cloud.xml  ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/log4j2.xml
 
 install python/bindir/cloud-external-ipallocator.py ${RPM_BUILD_ROOT}%{_bindir}/%{name}-external-ipallocator.py
 install -D client/target/pythonlibs/jasypt-1.9.3.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/lib/jasypt-1.9.3.jar
-install -D utils/target/cloud-utils-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/lib/%{name}-utils.jar
+install -D utils/target/cloud-utils-%{_maventag}-bundled.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/lib/%{name}-utils.jar
 
 install -D packaging/centos8/cloud-ipallocator.rc ${RPM_BUILD_ROOT}%{_initrddir}/%{name}-ipallocator
 install -D packaging/centos8/cloud.limits ${RPM_BUILD_ROOT}%{_sysconfdir}/security/limits.d/cloud
@@ -553,8 +556,8 @@ if [ -f "/usr/share/cloudstack-common/scripts/installer/cloudstack-help-text" ];
 fi
 
 %post marvin
-pip install --upgrade https://files.pythonhosted.org/packages/08/1f/42d74bae9dd6dcfec67c9ed0f3fa482b1ae5ac5f117ca82ab589ecb3ca19/mysql_connector_python-8.0.31-py2.py3-none-any.whl
-pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
+pip3 install --upgrade https://files.pythonhosted.org/packages/08/1f/42d74bae9dd6dcfec67c9ed0f3fa482b1ae5ac5f117ca82ab589ecb3ca19/mysql_connector_python-8.0.31-py2.py3-none-any.whl
+pip3 install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 
 #No default permission as the permission setup is complex
 %files management
@@ -571,7 +574,7 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %config(noreplace) %attr(0640,root,cloud) %{_sysconfdir}/%{name}/management/server.properties
 %config(noreplace) %attr(0640,root,cloud) %{_sysconfdir}/%{name}/management/config.json
 %config(noreplace) %{_sysconfdir}/%{name}/management/log4j-cloud.xml
-%config(noreplace) %{_sysconfdir}/%{name}/management/log4j.xml
+%config(noreplace) %{_sysconfdir}/%{name}/management/log4j2.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/environment.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/java.security.ciphers
 %attr(0644,root,root) %{_unitdir}/%{name}-management.service
@@ -588,6 +591,7 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %attr(0755,root,root) %{_bindir}/%{name}-set-guest-sshkey
 %attr(0755,root,root) %{_bindir}/%{name}-sysvmadm
 %attr(0755,root,root) %{_bindir}/%{name}-setup-encryption
+%attr(0755,root,root) %{_bindir}/cmk
 %{_datadir}/%{name}-management/setup/*.sql
 %{_datadir}/%{name}-management/setup/*.sh
 %{_datadir}/%{name}-management/setup/server-setup.xml

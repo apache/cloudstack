@@ -22,9 +22,11 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 
@@ -32,7 +34,8 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.persistence.TableGenerator;
 
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.utils.jsinterpreter.TagAsRuleHelper;
+import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.cluster.agentlb.HostTransferMapVO;
@@ -70,18 +73,16 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
+
 import java.util.Arrays;
 
 @DB
 @TableGenerator(name = "host_req_sq", table = "op_host", pkColumnName = "id", valueColumnName = "sequence", allocationSize = 1)
 public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao { //FIXME: , ExternalIdDao {
-    private static final Logger s_logger = Logger.getLogger(HostDaoImpl.class);
-    private static final Logger status_logger = Logger.getLogger(Status.class);
-    private static final Logger state_logger = Logger.getLogger(ResourceState.class);
 
     private static final String LIST_HOST_IDS_BY_COMPUTETAGS = "SELECT filtered.host_id, COUNT(filtered.tag) AS tag_count "
-                                                             + "FROM (SELECT host_id, tag FROM host_tags GROUP BY host_id,tag) AS filtered "
-                                                             + "WHERE tag IN(%s) "
+                                                             + "FROM (SELECT host_id, tag, is_tag_a_rule FROM host_tags GROUP BY host_id,tag) AS filtered "
+                                                             + "WHERE tag IN(%s) AND is_tag_a_rule = 0 "
                                                              + "GROUP BY host_id "
                                                              + "HAVING tag_count = %s ";
     private static final String SEPARATOR = ",";
@@ -116,6 +117,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected SearchBuilder<HostVO> ResourceStateSearch;
     protected SearchBuilder<HostVO> NameLikeSearch;
     protected SearchBuilder<HostVO> NameSearch;
+    protected SearchBuilder<HostVO> hostHypervisorTypeAndVersionSearch;
     protected SearchBuilder<HostVO> SequenceSearch;
     protected SearchBuilder<HostVO> DirectlyConnectedSearch;
     protected SearchBuilder<HostVO> UnmanagedDirectConnectSearch;
@@ -146,6 +148,10 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected GenericSearchBuilder<HostVO, Long> ClustersForHostsNotOwnedByAnyMSSearch;
     protected GenericSearchBuilder<ClusterVO, Long> AllClustersSearch;
     protected SearchBuilder<HostVO> HostsInClusterSearch;
+
+    protected SearchBuilder<HostVO> searchBuilderFindByIdTypeClusterIdPodIdDcIdAndWithoutRuleTag;
+
+    protected SearchBuilder<HostTagVO> searchBuilderFindByRuleTag;
 
     protected Attribute _statusAttr;
     protected Attribute _resourceStateAttr;
@@ -311,6 +317,13 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
         NameSearch.done();
 
+        hostHypervisorTypeAndVersionSearch = createSearchBuilder();
+        hostHypervisorTypeAndVersionSearch.and("hypervisorType", hostHypervisorTypeAndVersionSearch.entity().getHypervisorType(), SearchCriteria.Op.EQ);
+        hostHypervisorTypeAndVersionSearch.and("hypervisorVersion", hostHypervisorTypeAndVersionSearch.entity().getHypervisorVersion(), SearchCriteria.Op.EQ);
+        hostHypervisorTypeAndVersionSearch.and("type", hostHypervisorTypeAndVersionSearch.entity().getType(), SearchCriteria.Op.EQ);
+        hostHypervisorTypeAndVersionSearch.and("status", hostHypervisorTypeAndVersionSearch.entity().getStatus(), SearchCriteria.Op.EQ);
+        hostHypervisorTypeAndVersionSearch.done();
+
         SequenceSearch = createSearchBuilder();
         SequenceSearch.and("id", SequenceSearch.entity().getId(), SearchCriteria.Op.EQ);
         // SequenceSearch.addRetrieve("sequence", SequenceSearch.entity().getSequence());
@@ -339,7 +352,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         try {
             HostTransferSearch = _hostTransferDao.createSearchBuilder();
         } catch (Throwable e) {
-            s_logger.debug("error", e);
+            logger.debug("error", e);
         }
         HostTransferSearch.and("id", HostTransferSearch.entity().getId(), SearchCriteria.Op.NULL);
         UnmanagedDirectConnectSearch.join("hostTransferSearch", HostTransferSearch, HostTransferSearch.entity().getId(), UnmanagedDirectConnectSearch.entity().getId(),
@@ -446,6 +459,22 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         HostIdSearch.selectFields(HostIdSearch.entity().getId());
         HostIdSearch.and("dataCenterId", HostIdSearch.entity().getDataCenterId(), Op.EQ);
         HostIdSearch.done();
+
+        searchBuilderFindByRuleTag = _hostTagsDao.createSearchBuilder();
+        searchBuilderFindByRuleTag.and("is_tag_a_rule", searchBuilderFindByRuleTag.entity().getIsTagARule(), Op.EQ);
+        searchBuilderFindByRuleTag.or("tagDoesNotExist", searchBuilderFindByRuleTag.entity().getIsTagARule(), Op.NULL);
+
+        searchBuilderFindByIdTypeClusterIdPodIdDcIdAndWithoutRuleTag = createSearchBuilder();
+        searchBuilderFindByIdTypeClusterIdPodIdDcIdAndWithoutRuleTag.and("id", searchBuilderFindByIdTypeClusterIdPodIdDcIdAndWithoutRuleTag.entity().getId(), Op.EQ);
+        searchBuilderFindByIdTypeClusterIdPodIdDcIdAndWithoutRuleTag.and("type", searchBuilderFindByIdTypeClusterIdPodIdDcIdAndWithoutRuleTag.entity().getType(), Op.EQ);
+        searchBuilderFindByIdTypeClusterIdPodIdDcIdAndWithoutRuleTag.and("cluster_id", searchBuilderFindByIdTypeClusterIdPodIdDcIdAndWithoutRuleTag.entity().getClusterId(), Op.EQ);
+        searchBuilderFindByIdTypeClusterIdPodIdDcIdAndWithoutRuleTag.and("pod_id", searchBuilderFindByIdTypeClusterIdPodIdDcIdAndWithoutRuleTag.entity().getPodId(), Op.EQ);
+        searchBuilderFindByIdTypeClusterIdPodIdDcIdAndWithoutRuleTag.and("data_center_id", searchBuilderFindByIdTypeClusterIdPodIdDcIdAndWithoutRuleTag.entity().getDataCenterId(), Op.EQ);
+        searchBuilderFindByIdTypeClusterIdPodIdDcIdAndWithoutRuleTag.join("id", searchBuilderFindByRuleTag, searchBuilderFindByRuleTag.entity().getHostId(),
+                searchBuilderFindByIdTypeClusterIdPodIdDcIdAndWithoutRuleTag.entity().getId(), JoinType.LEFTOUTER);
+
+        searchBuilderFindByRuleTag.done();
+        searchBuilderFindByIdTypeClusterIdPodIdDcIdAndWithoutRuleTag.done();
 
         _statusAttr = _allAttributes.get("status");
         _msIdAttr = _allAttributes.get("managementServerId");
@@ -561,8 +590,8 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
             sb.append(" ");
         }
 
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("Following hosts got reset: " + sb.toString());
+        if (logger.isTraceEnabled()) {
+            logger.trace("Following hosts got reset: " + sb.toString());
         }
     }
 
@@ -610,19 +639,19 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     public List<HostVO> findAndUpdateDirectAgentToLoad(long lastPingSecondsAfter, Long limit, long managementServerId) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Resetting hosts suitable for reconnect");
+        if (logger.isDebugEnabled()) {
+            logger.debug("Resetting hosts suitable for reconnect");
         }
         // reset hosts that are suitable candidates for reconnect
         resetHosts(managementServerId, lastPingSecondsAfter);
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Completed resetting hosts suitable for reconnect");
+        if (logger.isDebugEnabled()) {
+            logger.debug("Completed resetting hosts suitable for reconnect");
         }
 
         List<HostVO> assignedHosts = new ArrayList<HostVO>();
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Acquiring hosts for clusters already owned by this management server");
+        if (logger.isDebugEnabled()) {
+            logger.debug("Acquiring hosts for clusters already owned by this management server");
         }
         List<Long> clusters = findClustersOwnedByManagementServer(managementServerId);
         txn.start();
@@ -641,17 +670,17 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
                 sb.append(host.getId());
                 sb.append(" ");
             }
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Following hosts got acquired for clusters already owned: " + sb.toString());
+            if (logger.isTraceEnabled()) {
+                logger.trace("Following hosts got acquired for clusters already owned: " + sb.toString());
             }
         }
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Completed acquiring hosts for clusters already owned by this management server");
+        if (logger.isDebugEnabled()) {
+            logger.debug("Completed acquiring hosts for clusters already owned by this management server");
         }
 
         if (assignedHosts.size() < limit) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Acquiring hosts for clusters not owned by any management server");
+            if (logger.isDebugEnabled()) {
+                logger.debug("Acquiring hosts for clusters not owned by any management server");
             }
             // for remaining hosts not owned by any MS check if they can be owned (by owning full cluster)
             clusters = findClustersForHostsNotOwnedByAnyManagementServer();
@@ -691,12 +720,12 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
                         break;
                     }
                 }
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("Following hosts got acquired from newly owned clusters: " + sb.toString());
+                if (logger.isTraceEnabled()) {
+                    logger.trace("Following hosts got acquired from newly owned clusters: " + sb.toString());
                 }
             }
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Completed acquiring hosts for clusters not owned by any management server");
+            if (logger.isDebugEnabled()) {
+                logger.debug("Completed acquiring hosts for clusters not owned by any management server");
             }
         }
         txn.commit();
@@ -751,7 +780,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     @Override
-    public List<HostVO> listByHostTag(Host.Type type, Long clusterId, Long podId, long dcId, String hostTag) {
+    public List<HostVO> listByHostTag(Host.Type type, Long clusterId, Long podId, Long dcId, String hostTag) {
         SearchBuilder<HostVO> hostSearch = createSearchBuilder();
         HostVO entity = hostSearch.entity();
         hostSearch.and("type", entity.getType(), SearchCriteria.Op.EQ);
@@ -769,7 +798,9 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         if (clusterId != null) {
             sc.setParameters("cluster", clusterId);
         }
-        sc.setParameters("dc", dcId);
+        if (dcId != null) {
+            sc.setParameters("dc", dcId);
+        }
         sc.setParameters("status", Status.Up.toString());
         sc.setParameters("resourceState", ResourceState.Enabled.toString());
 
@@ -784,9 +815,12 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
     @Override
     public List<HostVO> listAllUpAndEnabledNonHAHosts(Type type, Long clusterId, Long podId, long dcId, String haTag) {
-        SearchBuilder<HostTagVO> hostTagSearch = null;
+        SearchBuilder<HostTagVO> hostTagSearch = _hostTagsDao.createSearchBuilder();
+        hostTagSearch.and();
+        hostTagSearch.op("isTagARule", hostTagSearch.entity().getIsTagARule(), Op.EQ);
+        hostTagSearch.or("tagDoesNotExist", hostTagSearch.entity().getIsTagARule(), Op.NULL);
+        hostTagSearch.cp();
         if (haTag != null && !haTag.isEmpty()) {
-            hostTagSearch = _hostTagsDao.createSearchBuilder();
             hostTagSearch.and().op("tag", hostTagSearch.entity().getTag(), SearchCriteria.Op.NEQ);
             hostTagSearch.or("tagNull", hostTagSearch.entity().getTag(), SearchCriteria.Op.NULL);
             hostTagSearch.cp();
@@ -801,11 +835,13 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         hostSearch.and("status", hostSearch.entity().getStatus(), SearchCriteria.Op.EQ);
         hostSearch.and("resourceState", hostSearch.entity().getResourceState(), SearchCriteria.Op.EQ);
 
-        if (haTag != null && !haTag.isEmpty()) {
-            hostSearch.join("hostTagSearch", hostTagSearch, hostSearch.entity().getId(), hostTagSearch.entity().getHostId(), JoinBuilder.JoinType.LEFTOUTER);
-        }
+
+        hostSearch.join("hostTagSearch", hostTagSearch, hostSearch.entity().getId(), hostTagSearch.entity().getHostId(), JoinBuilder.JoinType.LEFTOUTER);
+
 
         SearchCriteria<HostVO> sc = hostSearch.create();
+
+        sc.setJoinParameters("hostTagSearch", "isTagARule", false);
 
         if (haTag != null && !haTag.isEmpty()) {
             sc.setJoinParameters("hostTagSearch", "tag", haTag);
@@ -838,8 +874,13 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
     @Override
     public void loadHostTags(HostVO host) {
-        List<String> hostTags = _hostTagsDao.getHostTags(host.getId());
-        host.setHostTags(hostTags);
+        List<HostTagVO> hostTagVOList = _hostTagsDao.getHostTags(host.getId());
+        if (CollectionUtils.isNotEmpty(hostTagVOList)) {
+            List<String> hostTagList = hostTagVOList.parallelStream().map(HostTagVO::getTag).collect(Collectors.toList());
+            host.setHostTags(hostTagList, hostTagVOList.get(0).getIsTagARule());
+        } else {
+            host.setHostTags(null, null);
+        }
     }
 
     @DB
@@ -857,7 +898,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
                 }
             }
         } catch (SQLException e) {
-            s_logger.warn("Exception: ", e);
+            logger.warn("Exception: ", e);
         }
         return result;
     }
@@ -873,10 +914,10 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
     protected void saveHostTags(HostVO host) {
         List<String> hostTags = host.getHostTags();
-        if (hostTags == null || (hostTags != null && hostTags.isEmpty())) {
+        if (CollectionUtils.isEmpty(hostTags)) {
             return;
         }
-        _hostTagsDao.persist(host.getId(), hostTags);
+        _hostTagsDao.persist(host.getId(), hostTags, host.getIsTagARule());
     }
 
     protected void saveGpuRecords(HostVO host) {
@@ -967,15 +1008,15 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
                 l.add(info);
             }
         } catch (SQLException e) {
-            s_logger.debug("SQLException caught", e);
+            logger.debug("SQLException caught", e);
         }
         return l;
     }
 
     @Override
     public long getNextSequence(long hostId) {
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("getNextSequence(), hostId: " + hostId);
+        if (logger.isTraceEnabled()) {
+            logger.trace("getNextSequence(), hostId: " + hostId);
         }
 
         TableGenerator tg = _tgs.get("host_req_sq");
@@ -1045,7 +1086,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
             HostVO ho = findById(host.getId());
             assert ho != null : "How how how? : " + host.getId();
 
-            if (status_logger.isDebugEnabled()) {
+            if (logger.isDebugEnabled()) {
 
                 StringBuilder str = new StringBuilder("Unable to update host for event:").append(event.toString());
                 str.append(". Name=").append(host.getName());
@@ -1055,7 +1096,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
                 .append("]");
                 str.append("; DB=[status=").append(vo.getStatus().toString()).append(":msid=").append(vo.getManagementServerId()).append(":lastpinged=").append(vo.getLastPinged())
                 .append(":old update count=").append(oldUpdateCount).append("]");
-                status_logger.debug(str.toString());
+                logger.debug(str.toString());
             } else {
                 StringBuilder msg = new StringBuilder("Agent status update: [");
                 msg.append("id = " + host.getId());
@@ -1065,11 +1106,11 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
                 msg.append("; new status = " + newStatus);
                 msg.append("; old update count = " + oldUpdateCount);
                 msg.append("; new update count = " + newUpdateCount + "]");
-                status_logger.debug(msg.toString());
+                logger.debug(msg.toString());
             }
 
             if (ho.getState() == newStatus) {
-                status_logger.debug("Host " + ho.getName() + " state has already been updated to " + newStatus);
+                logger.debug("Host " + ho.getName() + " state has already been updated to " + newStatus);
                 return true;
             }
         }
@@ -1095,7 +1136,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         int result = update(ub, sc, null);
         assert result <= 1 : "How can this update " + result + " rows? ";
 
-        if (state_logger.isDebugEnabled() && result == 0) {
+        if (logger.isDebugEnabled() && result == 0) {
             HostVO ho = findById(host.getId());
             assert ho != null : "How how how? : " + host.getId();
 
@@ -1105,7 +1146,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
             str.append("; old state = " + oldState);
             str.append("; event = " + event);
             str.append("; new state = " + newState + "]");
-            state_logger.debug(str.toString());
+            logger.debug(str.toString());
         } else {
             StringBuilder msg = new StringBuilder("Resource state update: [");
             msg.append("id = " + host.getId());
@@ -1113,7 +1154,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
             msg.append("; old state = " + oldState);
             msg.append("; event = " + event);
             msg.append("; new state = " + newState + "]");
-            state_logger.debug(msg.toString());
+            logger.debug(msg.toString());
         }
 
         return result > 0;
@@ -1237,6 +1278,26 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     @Override
+    public List<HostVO> listAllHostsThatHaveNoRuleTag(Type type, Long clusterId, Long podId, Long dcId) {
+        SearchCriteria<HostVO> sc = searchBuilderFindByIdTypeClusterIdPodIdDcIdAndWithoutRuleTag.create();
+        if (type != null) {
+            sc.setParameters("type", type);
+        }
+        if (clusterId != null) {
+            sc.setParameters("cluster_id", clusterId);
+        }
+        if (podId != null) {
+            sc.setParameters("pod_id", podId);
+        }
+        if (dcId != null) {
+            sc.setParameters("data_center_id", dcId);
+        }
+        sc.setJoinParameters("id", "is_tag_a_rule", false);
+
+        return search(sc, null);
+    }
+
+    @Override
     public List<Long> listClustersByHostTag(String computeOfferingTags) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         String sql = this.LIST_CLUSTERID_FOR_HOST_TAG;
@@ -1258,9 +1319,6 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
                 result.add(rs.getLong(1));
             }
             pstmt.close();
-            if(result.isEmpty()){
-                throw new CloudRuntimeException("No suitable host found for follow compute offering tags: " + computeOfferingTags);
-            }
             return result;
         } catch (SQLException e) {
             throw new CloudRuntimeException("DB Exception on: " + sql, e);
@@ -1285,13 +1343,31 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
                 result.add(rs.getLong(1));
             }
             pstmt.close();
-            if(result.isEmpty()){
-                throw new CloudRuntimeException("No suitable host found for follow compute offering tags: " + computeOfferingTags);
-            }
             return result;
         } catch (SQLException e) {
             throw new CloudRuntimeException("DB Exception on: " + select, e);
         }
+    }
+
+    public List<HostVO> findHostsWithTagRuleThatMatchComputeOferringTags(String computeOfferingTags) {
+        List<HostTagVO> hostTagVOList = _hostTagsDao.findHostRuleTags();
+        List<HostVO> result = new ArrayList<>();
+        for (HostTagVO rule: hostTagVOList) {
+            if (TagAsRuleHelper.interpretTagAsRule(rule.getTag(), computeOfferingTags, HostTagsDao.hostTagRuleExecutionTimeout.value())) {
+                result.add(findById(rule.getHostId()));
+            }
+        }
+
+        return result;
+    }
+
+    public List<Long> findClustersThatMatchHostTagRule(String computeOfferingTags) {
+        Set<Long> result = new HashSet<>();
+        List<HostVO> hosts = findHostsWithTagRuleThatMatchComputeOferringTags(computeOfferingTags);
+        for (HostVO host: hosts) {
+            result.add(host.getClusterId());
+        }
+        return new ArrayList<>(result);
     }
 
     private String getHostIdsByComputeTags(List<String> offeringTags){
@@ -1342,7 +1418,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
                 result.add(resultSet.getString(1));
             }
         } catch (SQLException e) {
-            s_logger.error("Error trying to obtain hypervisor version on datacenter", e);
+            logger.error("Error trying to obtain hypervisor version on datacenter", e);
         }
         return result;
     }
@@ -1443,6 +1519,16 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     public HostVO findByName(String name) {
         SearchCriteria<HostVO> sc = NameSearch.create();
         sc.setParameters("name", name);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public HostVO findHostByHypervisorTypeAndVersion(HypervisorType hypervisorType, String hypervisorVersion) {
+        SearchCriteria<HostVO> sc = hostHypervisorTypeAndVersionSearch.create();
+        sc.setParameters("hypervisorType", hypervisorType);
+        sc.setParameters("hypervisorVersion", hypervisorVersion);
+        sc.setParameters("type", Host.Type.Routing);
+        sc.setParameters("status", Status.Up);
         return findOneBy(sc);
     }
 

@@ -77,7 +77,10 @@ public enum ApiCommandResourceType {
     Pod(com.cloud.dc.Pod.class),
     VmSnapshot(com.cloud.vm.snapshot.VMSnapshot.class),
     Role(org.apache.cloudstack.acl.Role.class),
-    VpnCustomerGateway(com.cloud.network.Site2SiteCustomerGateway.class);
+    VpnCustomerGateway(com.cloud.network.Site2SiteCustomerGateway.class),
+    ManagementServer(org.apache.cloudstack.management.ManagementServerHost.class),
+    ObjectStore(org.apache.cloudstack.storage.object.ObjectStore.class),
+    Bucket(org.apache.cloudstack.storage.object.Bucket.class);
 
     private final Class<?> clazz;
 

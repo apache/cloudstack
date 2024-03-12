@@ -35,7 +35,7 @@
           v-model:value="form.name"
           :placeholder="apiParams.name.description" />
       </a-form-item>
-      <a-form-item ref="zoneid" name="zoneid" v-if="!createVolumeFromVM && !createVolumeFromSnapshot">
+      <a-form-item ref="zoneid" name="zoneid" v-if="!createVolumeFromVM">
         <template #label>
           <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
         </template>
@@ -74,12 +74,13 @@
           showSearch
           optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option
             v-for="(offering, index) in offerings"
             :value="offering.id"
-            :key="index">
+            :key="index"
+            :label="offering.displaytext || offering.name">
             {{ offering.displaytext || offering.name }}
           </a-select-option>
         </a-select>
@@ -142,6 +143,7 @@ export default {
   },
   data () {
     return {
+      snapshotZoneIds: [],
       zones: [],
       offerings: [],
       customDiskOffering: false,
@@ -194,10 +196,23 @@ export default {
       }
     },
     fetchData () {
+      if (this.createVolumeFromSnapshot) {
+        this.fetchSnapshotZones()
+        return
+      }
+      let zoneId = null
+      if (this.createVolumeFromVM) {
+        zoneId = this.resource.zoneid
+      }
+      this.fetchZones(zoneId)
+    },
+    fetchZones (id) {
       this.loading = true
       const params = { showicon: true }
-      if (this.createVolumeFromVM) {
-        params.id = this.resource.zoneid
+      if (Array.isArray(id)) {
+        params.ids = id.join()
+      } else if (id !== null) {
+        params.id = id
       }
       api('listZones', params).then(json => {
         this.zones = json.listzonesresponse.zone || []
@@ -207,13 +222,40 @@ export default {
         this.loading = false
       })
     },
+    fetchSnapshotZones () {
+      this.loading = true
+      this.snapshotZoneIds = []
+      const params = {
+        showunique: false,
+        id: this.resource.id
+      }
+      api('listSnapshots', params).then(json => {
+        const snapshots = json.listsnapshotsresponse.snapshot || []
+        for (const snapshot of snapshots) {
+          if (!this.snapshotZoneIds.includes(snapshot.zoneid)) {
+            this.snapshotZoneIds.push(snapshot.zoneid)
+          }
+        }
+      }).finally(() => {
+        if (this.snapshotZoneIds && this.snapshotZoneIds.length > 0) {
+          this.fetchZones(this.snapshotZoneIds)
+        }
+      })
+    },
     fetchDiskOfferings (zoneId) {
       this.loading = true
-      api('listDiskOfferings', {
+      var params = {
         zoneid: zoneId,
         listall: true
-      }).then(json => {
+      }
+      if (this.createVolumeFromVM) {
+        params.virtualmachineid = this.resource.id
+      }
+      api('listDiskOfferings', params).then(json => {
         this.offerings = json.listdiskofferingsresponse.diskoffering || []
+        if (this.createVolumeFromVM) {
+          this.offerings = this.offerings.filter(x => x.suitableforvirtualmachine)
+        }
         if (!this.createVolumeFromSnapshot) {
           this.form.diskofferingid = this.offerings[0].id || ''
         }

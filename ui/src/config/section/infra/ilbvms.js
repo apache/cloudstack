@@ -20,6 +20,7 @@ export default {
   name: 'ilbvm',
   title: 'label.internal.lb',
   icon: 'share-alt-outlined',
+  docHelp: 'adminguide/networking_and_traffic.html#creating-an-internal-lb-rule',
   permission: ['listInternalLoadBalancerVMs'],
   params: { projectid: '-1' },
   columns: ['name', 'state', 'publicip', 'guestnetworkname', 'vpcname', 'version', 'softwareversion', 'hostname', 'account', 'zonename', 'requiresupgrade'],

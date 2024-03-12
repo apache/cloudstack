@@ -26,7 +26,8 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.commons.collections.MapUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -46,7 +47,7 @@ public class UsageEventUtils {
     private static UsageEventDao s_usageEventDao;
     private static AccountDao s_accountDao;
     private static DataCenterDao s_dcDao;
-    private static final Logger s_logger = Logger.getLogger(UsageEventUtils.class);
+    protected static Logger LOGGER = LogManager.getLogger(UsageEventUtils.class);
     protected static EventBus s_eventBus = null;
     protected static ConfigurationDao s_configDao;
 
@@ -240,7 +241,7 @@ public class UsageEventUtils {
         try {
             s_eventBus.publish(event);
         } catch (EventBusException e) {
-            s_logger.warn("Failed to publish usage event on the the event bus.");
+            LOGGER.warn("Failed to publish usage event on the event bus.");
         }
     }
 

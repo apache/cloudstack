@@ -46,4 +46,8 @@ public interface AsyncJobDao extends GenericDao<AsyncJobVO, Long> {
     List<AsyncJobVO> getFailureJobsSinceLastMsStart(long msId, String... cmds);
 
     long countPendingJobs(String havingInfo, String... cmds);
+
+    // Returns the number of pending jobs for the given Management server msids.
+    // NOTE: This is the msid and NOT the id
+    long countPendingNonPseudoJobs(Long... msIds);
 }

@@ -19,6 +19,7 @@
 
 package com.cloud.resource;
 
+import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.NetworkInterface;
@@ -33,9 +34,11 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsAnswer;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
@@ -45,19 +48,19 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
 
 public abstract class ServerResourceBase implements ServerResource {
-    private static final Logger s_logger = Logger.getLogger(ServerResourceBase.class);
-    protected String _name;
-    private ArrayList<String> _warnings = new ArrayList<String>();
-    private ArrayList<String> _errors = new ArrayList<String>();
-    protected NetworkInterface _publicNic;
-    protected NetworkInterface _privateNic;
-    protected NetworkInterface _storageNic;
-    protected NetworkInterface _storageNic2;
-    protected IAgentControl _agentControl;
+    protected Logger logger = LogManager.getLogger(getClass());
+    protected String name;
+    private ArrayList<String> warnings = new ArrayList<String>();
+    private ArrayList<String> errors = new ArrayList<String>();
+    protected NetworkInterface publicNic;
+    protected NetworkInterface privateNic;
+    protected NetworkInterface storageNic;
+    protected NetworkInterface storageNic2;
+    protected IAgentControl agentControl;
 
     @Override
     public String getName() {
-        return _name;
+        return name;
     }
 
     protected String findScript(String script) {
@@ -68,17 +71,17 @@ public abstract class ServerResourceBase implements ServerResource {
 
     @Override
     public boolean configure(final String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
+        this.name = name;
 
         defineResourceNetworkInterfaces(params);
 
-        if (_privateNic == null) {
+        if (privateNic == null) {
             tryToAutoDiscoverResourcePrivateNetworkInterface();
         }
 
-        String infos[] = NetUtils.getNetworkParams(_privateNic);
+        String infos[] = NetUtils.getNetworkParams(privateNic);
         if (infos == null) {
-            s_logger.warn("Incorrect details for private Nic during initialization of ServerResourceBase");
+            logger.warn("Incorrect details for private Nic during initialization of ServerResourceBase");
             return false;
         }
         params.put("host.ip", infos[0]);
@@ -97,14 +100,14 @@ public abstract class ServerResourceBase implements ServerResource {
         String storageNic = (String) params.get("storage.network.device");
         String storageNic2 = (String) params.get("storage.network.device.2");
 
-        _privateNic = NetUtils.getNetworkInterface(privateNic);
-        _publicNic = NetUtils.getNetworkInterface(publicNic);
-        _storageNic = NetUtils.getNetworkInterface(storageNic);
-        _storageNic2 = NetUtils.getNetworkInterface(storageNic2);
+        this.privateNic = NetUtils.getNetworkInterface(privateNic);
+        this.publicNic = NetUtils.getNetworkInterface(publicNic);
+        this.storageNic = NetUtils.getNetworkInterface(storageNic);
+        this.storageNic2 = NetUtils.getNetworkInterface(storageNic2);
     }
 
     protected void tryToAutoDiscoverResourcePrivateNetworkInterface() throws ConfigurationException {
-        s_logger.info("Trying to autodiscover this resource's private network interface.");
+        logger.info("Trying to autodiscover this resource's private network interface.");
 
         List<NetworkInterface> nics;
         try {
@@ -116,12 +119,12 @@ public abstract class ServerResourceBase implements ServerResource {
             throw new ConfigurationException(String.format("Could not retrieve the environment NICs due to [%s].", e.getMessage()));
         }
 
-        s_logger.debug(String.format("Searching the private NIC along the environment NICs [%s].", Arrays.toString(nics.toArray())));
+        logger.debug(String.format("Searching the private NIC along the environment NICs [%s].", Arrays.toString(nics.toArray())));
 
         for (NetworkInterface nic : nics) {
             if (isValidNicToUseAsPrivateNic(nic))  {
-                s_logger.info(String.format("Using NIC [%s] as private NIC.", nic));
-                _privateNic = nic;
+                logger.info(String.format("Using NIC [%s] as private NIC.", nic));
+                privateNic = nic;
                 return;
             }
         }
@@ -132,31 +135,64 @@ public abstract class ServerResourceBase implements ServerResource {
     protected boolean isValidNicToUseAsPrivateNic(NetworkInterface nic) {
         String nicName = nic.getName();
 
-        s_logger.debug(String.format("Verifying if NIC [%s] can be used as private NIC.", nic));
+        logger.debug(String.format("Verifying if NIC [%s] can be used as private NIC.", nic));
 
         String[] nicNameStartsToAvoid = {"vnif", "vnbr", "peth", "vif", "virbr"};
         if (nic.isVirtual() || StringUtils.startsWithAny(nicName, nicNameStartsToAvoid) || nicName.contains(":")) {
-            s_logger.debug(String.format("Not using NIC [%s] because it is either virtual, starts with %s, or contains \":\"" +
+            logger.debug(String.format("Not using NIC [%s] because it is either virtual, starts with %s, or contains \":\"" +
              " in its name.", Arrays.toString(nicNameStartsToAvoid), nic));
             return false;
         }
 
         String[] info = NetUtils.getNicParams(nicName);
         if (info == null || info[0] == null) {
-            s_logger.debug(String.format("Not using NIC [%s] because it does not have a valid IP to use as the private IP.", nic));
+            logger.debug(String.format("Not using NIC [%s] because it does not have a valid IP to use as the private IP.", nic));
             return false;
         }
 
         return true;
     }
 
+     protected Answer listFilesAtPath(String nfsMountPoint, String relativePath, int startIndex, int pageSize) {
+        int count = 0;
+        File file = new File(nfsMountPoint, relativePath);
+        List<String> names = new ArrayList<>();
+        List<String> paths = new ArrayList<>();
+        List<String> absPaths = new ArrayList<>();
+        List<Boolean> isDirs = new ArrayList<>();
+        List<Long> sizes = new ArrayList<>();
+        List<Long> modifiedList = new ArrayList<>();
+        if (file.isFile()) {
+            count = 1;
+            names.add(file.getName());
+            paths.add(file.getPath().replace(nfsMountPoint, ""));
+            absPaths.add(file.getPath());
+            isDirs.add(file.isDirectory());
+            sizes.add(file.length());
+            modifiedList.add(file.lastModified());
+        } else if (file.isDirectory()) {
+            String[] files = file.list();
+            count = files.length;
+            for (int i = startIndex; i < startIndex + pageSize && i < count; i++) {
+                File f = new File(nfsMountPoint, relativePath + '/' + files[i]);
+                names.add(f.getName());
+                paths.add(f.getPath().replace(nfsMountPoint, ""));
+                absPaths.add(f.getPath());
+                isDirs.add(f.isDirectory());
+                sizes.add(f.length());
+                modifiedList.add(f.lastModified());
+            }
+        }
+         return new ListDataStoreObjectsAnswer(file.exists(), count, names, paths, absPaths, isDirs, sizes, modifiedList);
+    }
+
     protected void fillNetworkInformation(final StartupCommand cmd) {
         String[] info = null;
-        if (_privateNic != null) {
-            info = NetUtils.getNetworkParams(_privateNic);
+        if (privateNic != null) {
+            info = NetUtils.getNetworkParams(privateNic);
             if (info != null) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Parameters for private nic: " + info[0] + " - " + info[1] + "-" + info[2]);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Parameters for private nic: " + info[0] + " - " + info[1] + "-" + info[2]);
                 }
                 cmd.setPrivateIpAddress(info[0]);
                 cmd.setPrivateMacAddress(info[1]);
@@ -164,28 +200,28 @@ public abstract class ServerResourceBase implements ServerResource {
             }
         }
 
-        if (_storageNic != null) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Storage has its now nic: " + _storageNic.getName());
+        if (storageNic != null) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Storage has its now nic: " + storageNic.getName());
             }
-            info = NetUtils.getNetworkParams(_storageNic);
+            info = NetUtils.getNetworkParams(storageNic);
         }
 
         // NOTE: In case you're wondering, this is not here by mistake.
         if (info != null) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Parameters for storage nic: " + info[0] + " - " + info[1] + "-" + info[2]);
+            if (logger.isDebugEnabled()) {
+                logger.debug("Parameters for storage nic: " + info[0] + " - " + info[1] + "-" + info[2]);
             }
             cmd.setStorageIpAddress(info[0]);
             cmd.setStorageMacAddress(info[1]);
             cmd.setStorageNetmask(info[2]);
         }
 
-        if (_publicNic != null) {
-            info = NetUtils.getNetworkParams(_publicNic);
+        if (publicNic != null) {
+            info = NetUtils.getNetworkParams(publicNic);
             if (info != null) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Parameters for public nic: " + info[0] + " - " + info[1] + "-" + info[2]);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Parameters for public nic: " + info[0] + " - " + info[1] + "-" + info[2]);
                 }
                 cmd.setPublicIpAddress(info[0]);
                 cmd.setPublicMacAddress(info[1]);
@@ -193,11 +229,11 @@ public abstract class ServerResourceBase implements ServerResource {
             }
         }
 
-        if (_storageNic2 != null) {
-            info = NetUtils.getNetworkParams(_storageNic2);
+        if (storageNic2 != null) {
+            info = NetUtils.getNetworkParams(storageNic2);
             if (info != null) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Parameters for storage nic 2: " + info[0] + " - " + info[1] + "-" + info[2]);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Parameters for storage nic 2: " + info[0] + " - " + info[1] + "-" + info[2]);
                 }
                 cmd.setStorageIpAddressDeux(info[0]);
                 cmd.setStorageMacAddressDeux(info[1]);
@@ -212,18 +248,18 @@ public abstract class ServerResourceBase implements ServerResource {
 
     @Override
     public IAgentControl getAgentControl() {
-        return _agentControl;
+        return agentControl;
     }
 
     @Override
     public void setAgentControl(IAgentControl agentControl) {
-        _agentControl = agentControl;
+        this.agentControl = agentControl;
     }
 
     protected void recordWarning(final String msg, final Throwable th) {
         final String str = getLogStr(msg, th);
-        synchronized (_warnings) {
-            _warnings.add(str);
+        synchronized (warnings) {
+            warnings.add(str);
         }
     }
 
@@ -232,25 +268,25 @@ public abstract class ServerResourceBase implements ServerResource {
     }
 
     protected List<String> getWarnings() {
-        synchronized (_warnings) {
-            final List<String> results = new LinkedList<String>(_warnings);
-            _warnings.clear();
+        synchronized (warnings) {
+            final List<String> results = new LinkedList<String>(warnings);
+            warnings.clear();
             return results;
         }
     }
 
     protected List<String> getErrors() {
-        synchronized (_errors) {
-            final List<String> result = new LinkedList<String>(_errors);
-            _errors.clear();
+        synchronized (errors) {
+            final List<String> result = new LinkedList<String>(errors);
+            errors.clear();
             return result;
         }
     }
 
     protected void recordError(final String msg, final Throwable th) {
         final String str = getLogStr(msg, th);
-        synchronized (_errors) {
-            _errors.add(str);
+        synchronized (errors) {
+            errors.add(str);
         }
     }
 

@@ -25,7 +25,7 @@
       <a-tab-pane :tab="$t('label.details')" key="details">
         <DetailsTab :resource="resource" :loading="loading" />
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.access')" key="access">
+      <a-tab-pane v-if="resource.clustertype == 'CloudManaged'" :tab="$t('label.access')" key="access">
         <a-card :title="$t('label.kubeconfig.cluster')" :loading="versionLoading">
           <div v-if="clusterConfig !== ''">
             <a-textarea :value="clusterConfig" :rows="5" readonly />
@@ -106,36 +106,37 @@
           :rowKey="item => item.id"
           :pagination="false"
         >
-          <template #name="{ text, record }" :name="text">
-            <router-link :to="{ path: '/vm/' + record.id }">{{ record.name }}</router-link>
-          </template>
-          <template #state="{ text }">
-            <status :text="text ? text : ''" displayText />
-          </template>
-          <template #port="{ text, record, index }" :name="text" :record="record">
-            {{ cksSshStartingPort + index }}
-          </template>
-          <template #action="{record}">
-            <a-tooltip placement="bottom" >
-              <template #title>
-                {{ $t('label.action.delete.node') }}
-              </template>
-              <a-popconfirm
-                :title="$t('message.action.delete.node')"
-                @confirm="deleteNode(record)"
-                :okText="$t('label.yes')"
-                :cancelText="$t('label.no')"
-                :disabled="!['Created', 'Running'].includes(resource.state) || resource.autoscalingenabled"
-              >
-                <a-button
-                  danger
-                  type="primary"
-                  shape="circle"
-                  :disabled="!['Created', 'Running'].includes(resource.state) || resource.autoscalingenabled">
-                  <template #icon><delete-outlined /></template>
-                </a-button>
-              </a-popconfirm>
-            </a-tooltip>
+          <template #bodyCell="{ column, text, record, index }">
+            <template v-if="column.key === 'name'" :name="text">
+              <router-link :to="{ path: '/vm/' + record.id }">{{ record.name }}</router-link>
+            </template>
+            <template v-if="column.key === 'state'">
+              <status :text="text ? text : ''" displayText />
+            </template>
+            <template v-if="column.key === 'port'" :name="text" :record="record">
+              {{ cksSshStartingPort + index }}
+            </template>
+            <template v-if="column.key === 'actions'">
+              <a-tooltip placement="bottom" >
+                <template #title>
+                  {{ $t('label.action.delete.node') }}
+                </template>
+                <a-popconfirm
+                  :title="$t('message.action.delete.node')"
+                  @confirm="deleteNode(record)"
+                  :okText="$t('label.yes')"
+                  :cancelText="$t('label.no')"
+                  :disabled="!['Created', 'Running'].includes(resource.state) || resource.autoscalingenabled"
+                >
+                  <a-button
+                    type="danger"
+                    shape="circle"
+                    :disabled="!['Created', 'Running'].includes(resource.state) || resource.autoscalingenabled">
+                    <template #icon><delete-outlined /></template>
+                  </a-button>
+                </a-popconfirm>
+              </a-tooltip>
+            </template>
           </template>
         </a-table>
       </a-tab-pane>
@@ -214,14 +215,14 @@ export default {
   created () {
     this.vmColumns = [
       {
+        key: 'name',
         title: this.$t('label.name'),
-        dataIndex: 'name',
-        slots: { customRender: 'name' }
+        dataIndex: 'name'
       },
       {
+        key: 'state',
         title: this.$t('label.state'),
-        dataIndex: 'state',
-        slots: { customRender: 'state' }
+        dataIndex: 'state'
       },
       {
         title: this.$t('label.instancename'),
@@ -232,9 +233,9 @@ export default {
         dataIndex: 'ipaddress'
       },
       {
+        key: 'port',
         title: this.$t('label.ssh.port'),
-        dataIndex: 'port',
-        slots: { customRender: 'port' }
+        dataIndex: 'port'
       },
       {
         title: this.$t('label.zonename'),
@@ -243,6 +244,9 @@ export default {
     ]
     if (!isAdmin()) {
       this.vmColumns = this.vmColumns.filter(x => x.dataIndex !== 'instancename')
+    }
+    if (this.resource.clustertype === 'ExternalManaged') {
+      this.vmColumns = this.vmColumns.filter(x => x.dataIndex !== 'port')
     }
     this.handleFetchData()
     const self = this
@@ -271,9 +275,9 @@ export default {
   mounted () {
     if (this.$store.getters.apis.scaleKubernetesCluster.params.filter(x => x.name === 'nodeids').length > 0) {
       this.vmColumns.push({
-        title: this.$t('label.action'),
-        dataIndex: 'action',
-        slots: { customRender: 'action' }
+        key: 'actions',
+        title: this.$t('label.actions'),
+        dataIndex: 'actions'
       })
     }
     this.handleFetchData()

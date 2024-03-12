@@ -23,7 +23,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -40,7 +39,6 @@ import com.cloud.server.ResourceTag.ResourceObjectType;
 @APICommand(name = "deleteTags", description = "Deleting resource tag(s)", responseObject = SuccessResponse.class, since = "4.0.0", entityType = {ResourceTag.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteTagsCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteTagsCmd.class.getName());
 
 
     // ///////////////////////////////////////////////////

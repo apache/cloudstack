@@ -16,22 +16,11 @@
 // under the License.
 package com.cloud.api.query.dao;
 
-import com.cloud.api.ApiDBUtils;
-import com.cloud.api.query.vo.StoragePoolJoinVO;
-import com.cloud.capacity.CapacityManager;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.ScopeType;
-import com.cloud.storage.Storage;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.StoragePoolStatus;
-import com.cloud.storage.StorageStats;
-import com.cloud.user.AccountManager;
-import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
-import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.inject.Inject;
+
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
@@ -44,16 +33,29 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.utils.jsinterpreter.TagAsRuleHelper;
 import org.springframework.stereotype.Component;
 
-import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.List;
+import com.cloud.api.ApiDBUtils;
+import com.cloud.api.query.vo.StoragePoolJoinVO;
+import com.cloud.capacity.CapacityManager;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolStatus;
+import com.cloud.storage.StorageStats;
+import com.cloud.storage.VolumeApiServiceImpl;
+import com.cloud.user.AccountManager;
+import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 
 @Component
 public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Long> implements StoragePoolJoinDao {
-    public static final Logger s_logger = Logger.getLogger(StoragePoolJoinDaoImpl.class);
 
     @Inject
     private ConfigurationDao _configDao;
@@ -71,9 +73,12 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
     @Inject
     private StoragePoolDetailsDao storagePoolDetailsDao;
 
+
     private final SearchBuilder<StoragePoolJoinVO> spSearch;
 
     private final SearchBuilder<StoragePoolJoinVO> spIdSearch;
+
+    private final SearchBuilder<StoragePoolJoinVO> findByDatacenterAndScopeSb;
 
     protected StoragePoolJoinDaoImpl() {
 
@@ -84,6 +89,15 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         spIdSearch = createSearchBuilder();
         spIdSearch.and("id", spIdSearch.entity().getId(), SearchCriteria.Op.EQ);
         spIdSearch.done();
+
+        findByDatacenterAndScopeSb = createSearchBuilder();
+        findByDatacenterAndScopeSb.and("zoneId", findByDatacenterAndScopeSb.entity().getZoneId(), SearchCriteria.Op.EQ);
+        findByDatacenterAndScopeSb.and("clusterId", findByDatacenterAndScopeSb.entity().getClusterId(), SearchCriteria.Op.EQ);
+        findByDatacenterAndScopeSb.and("podId", findByDatacenterAndScopeSb.entity().getPodId(), SearchCriteria.Op.EQ);
+        findByDatacenterAndScopeSb.and("scope", findByDatacenterAndScopeSb.entity().getScope(), SearchCriteria.Op.EQ);
+        findByDatacenterAndScopeSb.and("status", findByDatacenterAndScopeSb.entity().getStatus(), SearchCriteria.Op.EQ);
+        findByDatacenterAndScopeSb.and("is_tag_a_rule", findByDatacenterAndScopeSb.entity().getIsTagARule(), SearchCriteria.Op.EQ);
+        findByDatacenterAndScopeSb.done();
 
         _count = "select count(distinct id) from storage_pool_view WHERE ";
     }
@@ -110,7 +124,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
             poolResponse.setScope(pool.getScope().toString());
         }
         if (pool.getHypervisor() != null) {
-            poolResponse.setHypervisor(pool.getHypervisor().toString());
+            poolResponse.setHypervisor(pool.getHypervisor().getHypervisorDisplayName());
         }
 
         StoragePoolDetailVO poolType = storagePoolDetailsDao.findDetail(pool.getId(), "pool_type");
@@ -149,6 +163,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         poolResponse.setClusterName(pool.getClusterName());
         poolResponse.setProvider(pool.getStorageProviderName());
         poolResponse.setTags(pool.getTag());
+        poolResponse.setIsTagARule(pool.getIsTagARule());
         poolResponse.setOverProvisionFactor(Double.toString(CapacityManager.StorageOverprovisioningFactor.valueIn(pool.getId())));
 
         // set async job
@@ -201,7 +216,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         poolResponse.setCreated(pool.getCreated());
         poolResponse.setScope(pool.getScope().toString());
         if (pool.getHypervisor() != null) {
-            poolResponse.setHypervisor(pool.getHypervisor().toString());
+            poolResponse.setHypervisor(pool.getHypervisor().getHypervisorDisplayName());
         }
 
         long allocatedSize = pool.getUsedCapacity();
@@ -221,6 +236,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         poolResponse.setClusterName(pool.getClusterName());
         poolResponse.setProvider(pool.getStorageProviderName());
         poolResponse.setTags(pool.getTag());
+        poolResponse.setIsTagARule(pool.getIsTagARule());
 
         // set async job
         poolResponse.setJobId(pool.getJobUuid());
@@ -321,7 +337,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         if (keyword != null) {
             SearchCriteria<StoragePoolJoinVO> ssc = createSearchCriteria();
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("poolType", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("poolType", SearchCriteria.Op.LIKE, new Storage.StoragePoolType("%" + keyword + "%"));
 
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
         }
@@ -366,4 +382,46 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         sc.setParameters("parent", 0);
         return sc;
     }
+    @Override
+    public List<StoragePoolVO> findStoragePoolByScopeAndRuleTags(Long datacenterId, Long podId, Long clusterId, ScopeType scopeType, List<String> tags) {
+        SearchCriteria<StoragePoolJoinVO> sc =  findByDatacenterAndScopeSb.create();
+        if (datacenterId != null) {
+            sc.setParameters("zoneId", datacenterId);
+        }
+        if (clusterId != null) {
+            sc.setParameters("clusterId", clusterId);
+        }
+        if (podId != null) {
+            sc.setParameters("podId", podId);
+        }
+
+        sc.setParameters("scope", scopeType);
+        sc.setParameters("status", "Up");
+        sc.setParameters("is_tag_a_rule", true);
+        List<StoragePoolJoinVO> storagePools = search(sc, null, false, false);
+
+        List<StoragePoolVO> filteredPools = new ArrayList<>();
+
+        StringBuilder injectableTagsBuilder = new StringBuilder();
+        for (String tag : tags) {
+            injectableTagsBuilder.append(tag).append(",");
+        }
+        if (!tags.isEmpty()) {
+            injectableTagsBuilder.deleteCharAt(injectableTagsBuilder.length() - 1);
+        }
+        String injectableTag = injectableTagsBuilder.toString();
+
+        for (StoragePoolJoinVO storagePoolJoinVO : storagePools) {
+            if (TagAsRuleHelper.interpretTagAsRule(storagePoolJoinVO.getTag(), injectableTag, VolumeApiServiceImpl.storageTagRuleExecutionTimeout.value())) {
+                StoragePoolVO storagePoolVO = storagePoolDao.findById(storagePoolJoinVO.getId());
+                if (storagePoolVO != null) {
+                    filteredPools.add(storagePoolVO);
+                } else {
+                    logger.warn(String.format("Unable to find Storage Pool [%s] in the DB.", storagePoolJoinVO.getUuid()));
+                }
+            }
+        }
+        return filteredPools;
+    }
+
 }

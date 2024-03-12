@@ -90,6 +90,8 @@ public interface AsyncJob extends JobInfo {
     @Override
     Long getExecutingMsid();
 
+    void setExecutingMsid(Long msid);
+
     @Override
     Long getCompleteMsid();
 

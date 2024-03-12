@@ -26,13 +26,14 @@ import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
 
 public class LibvirtVMDef {
-    private static final Logger s_logger = Logger.getLogger(LibvirtVMDef.class);
+    protected static Logger LOGGER = LogManager.getLogger(LibvirtVMDef.class);
 
     private String _hvsType;
     private static long s_libvirtVersion;
@@ -609,7 +610,7 @@ public class LibvirtVMDef {
             }
         }
 
-        enum DiskType {
+        public enum DiskType {
             FILE("file"), BLOCK("block"), DIRECTROY("dir"), NETWORK("network");
             String _diskType;
 
@@ -861,7 +862,7 @@ public class LibvirtVMDef {
 
         public void defISODisk(String volPath, Integer devId, String diskLabel) {
             if (devId == null && StringUtils.isBlank(diskLabel)) {
-                s_logger.debug(String.format("No ID or label informed for volume [%s].", volPath));
+                LOGGER.debug(String.format("No ID or label informed for volume [%s].", volPath));
                 defISODisk(volPath);
                 return;
             }
@@ -871,11 +872,11 @@ public class LibvirtVMDef {
             _sourcePath = volPath;
 
             if (StringUtils.isNotBlank(diskLabel)) {
-                s_logger.debug(String.format("Using informed label [%s] for volume [%s].", diskLabel, volPath));
+                LOGGER.debug(String.format("Using informed label [%s] for volume [%s].", diskLabel, volPath));
                 _diskLabel = diskLabel;
             } else {
                 _diskLabel = getDevLabel(devId, DiskBus.IDE, true);
-                s_logger.debug(String.format("Using device ID [%s] to define the label [%s] for volume [%s].", devId, _diskLabel, volPath));
+                LOGGER.debug(String.format("Using device ID [%s] to define the label [%s] for volume [%s].", devId, _diskLabel, volPath));
             }
 
             _diskFmtType = DiskFmtType.RAW;
@@ -1071,6 +1072,18 @@ public class LibvirtVMDef {
         public void setLibvirtDiskEncryptDetails(LibvirtDiskEncryptDetails details) { this.encryptDetails = details; }
 
         public LibvirtDiskEncryptDetails getLibvirtDiskEncryptDetails() { return this.encryptDetails; }
+
+        public String getSourceHost() {
+            return _sourceHost;
+        }
+
+        public int getSourceHostPort() {
+            return _sourcePort;
+        }
+
+        public String getSourcePath() {
+            return _sourcePath;
+        }
 
         @Override
         public String toString() {
@@ -1280,6 +1293,8 @@ public class LibvirtVMDef {
             DIRECT_ATTACHED_WITHOUT_DHCP, DIRECT_ATTACHED_WITH_DHCP, VNET, VLAN;
         }
 
+        public static final int MULTI_QUEUE_NUMBER_MEANS_CPU_CORES = -1;
+
         private GuestNetType _netType; /*
          * bridge, ethernet, network, user,
          * internal, vhostuser
@@ -1305,6 +1320,8 @@ public class LibvirtVMDef {
         private String _interfaceMode;
         private String _userIp4Network;
         private Integer _userIp4Prefix;
+        private Integer _multiQueueNumber;
+        private Boolean _packedVirtQueues;
 
         public void defBridgeNet(String brName, String targetBrName, String macAddr, NicModel model) {
             defBridgeNet(brName, targetBrName, macAddr, model, 0);
@@ -1493,6 +1510,14 @@ public class LibvirtVMDef {
             _interfaceMode = mode;
         }
 
+        public void setMultiQueueNumber(Integer multiQueueNumber) {
+            this._multiQueueNumber = multiQueueNumber;
+        }
+
+        public void setPackedVirtQueues(Boolean packedVirtQueues) {
+            this._packedVirtQueues = packedVirtQueues;
+        }
+
         public String getContent() {
             StringBuilder netBuilder = new StringBuilder();
             if (_netType == GuestNetType.BRIDGE) {
@@ -1514,6 +1539,21 @@ public class LibvirtVMDef {
             }
             if (_model != null) {
                 netBuilder.append("<model type='" + _model + "'/>\n");
+            }
+            if (NicModel.VIRTIO.equals(_model)) {
+                boolean isMultiQueueNumberSpecified = _multiQueueNumber != null;
+                boolean isPackedVirtQueuesEnabled = _packedVirtQueues != null && _packedVirtQueues
+                        && s_qemuVersion >= 4200000 && s_libvirtVersion >= 6300000;
+                if (isMultiQueueNumberSpecified || isPackedVirtQueuesEnabled) {
+                    netBuilder.append("<driver");
+                    if (isMultiQueueNumberSpecified) {
+                        netBuilder.append(" queues='" + _multiQueueNumber + "'");
+                    }
+                    if (isPackedVirtQueuesEnabled) {
+                        netBuilder.append(" packed='on'");
+                    }
+                    netBuilder.append("/>\n");
+                }
             }
             if ((s_libvirtVersion >= 9004) && (_networkRateKBps > 0)) { // supported from libvirt 0.9.4
                 netBuilder.append("<bandwidth>\n");
@@ -1710,6 +1750,10 @@ public class LibvirtVMDef {
             modeBuilder.append("</cpu>");
             return modeBuilder.toString();
         }
+
+        public int getCoresPerSocket() {
+            return _coresPerSocket;
+        }
     }
 
     public static class SerialDef {
@@ -1766,7 +1810,7 @@ public class LibvirtVMDef {
 
     public final static class ChannelDef {
         enum ChannelType {
-            UNIX("unix"), SERIAL("serial");
+            UNIX("unix"), SERIAL("serial"), SPICEVMC("spicevmc");
             String type;
 
             ChannelType(String type) {
@@ -2026,7 +2070,7 @@ public class LibvirtVMDef {
         }
     }
 
-    public static class MetadataDef {
+    public class MetadataDef {
         Map<String, Object> customNodes = new HashMap<>();
 
         public <T> T getMetadataNode(Class<T> fieldClass) {
@@ -2036,7 +2080,7 @@ public class LibvirtVMDef {
                     field = fieldClass.newInstance();
                     customNodes.put(field.getClass().getName(), field);
                 } catch (InstantiationException | IllegalAccessException e) {
-                    s_logger.debug("No default constructor available in class " + fieldClass.getName() + ", ignoring exception", e);
+                    LOGGER.debug("No default constructor available in class " + fieldClass.getName() + ", ignoring exception", e);
                 }
             }
             return field;
@@ -2086,14 +2130,14 @@ public class LibvirtVMDef {
         private String path = "/dev/random";
         private RngModel rngModel = RngModel.VIRTIO;
         private RngBackendModel rngBackendModel = RngBackendModel.RANDOM;
-        private int rngRateBytes = 2048;
-        private int rngRatePeriod = 1000;
+        private Integer rngRateBytes = 2048;
+        private Integer rngRatePeriod = 1000;
 
         public RngDef(String path) {
             this.path = path;
         }
 
-        public RngDef(String path, int rngRateBytes, int rngRatePeriod) {
+        public RngDef(String path, Integer rngRateBytes, Integer rngRatePeriod) {
             this.path = path;
             this.rngRateBytes = rngRateBytes;
             this.rngRatePeriod = rngRatePeriod;
@@ -2112,7 +2156,7 @@ public class LibvirtVMDef {
             this.rngBackendModel = rngBackendModel;
         }
 
-        public RngDef(String path, RngBackendModel rngBackendModel, int rngRateBytes, int rngRatePeriod) {
+        public RngDef(String path, RngBackendModel rngBackendModel, Integer rngRateBytes, Integer rngRatePeriod) {
             this.path = path;
             this.rngBackendModel = rngBackendModel;
             this.rngRateBytes = rngRateBytes;
@@ -2137,11 +2181,11 @@ public class LibvirtVMDef {
         }
 
         public int getRngRateBytes() {
-            return rngRateBytes;
+            return rngRateBytes != null ? rngRateBytes : 0;
         }
 
         public int getRngRatePeriod() {
-            return rngRatePeriod;
+            return rngRatePeriod != null ? rngRatePeriod : 0;
         }
 
         @Override

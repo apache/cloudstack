@@ -22,7 +22,9 @@ export default {
   name: 'managementserver',
   title: 'label.management.servers',
   icon: 'CloudServerOutlined',
+  docHelp: 'conceptsandterminology/concepts.html#management-server-overview',
   permission: ['listManagementServersMetrics'],
+  resourceType: 'ManagementServer',
   columns: () => {
     const fields = ['name', 'state', 'version']
     const metricsFields = ['collectiontime', 'availableprocessors', 'cpuload', 'heapmemoryused', 'agentcount']
@@ -36,6 +38,53 @@ export default {
     {
       name: 'details',
       component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+    },
+    {
+      name: 'pending.jobs',
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/AsyncJobsTab.vue')))
+    },
+    {
+      name: 'comments',
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
+    }
+  ],
+  actions: [
+    {
+      api: 'prepareForShutdown',
+      icon: 'exclamation-circle-outlined',
+      label: 'label.prepare.for.shutdown',
+      message: 'message.prepare.for.shutdown',
+      dataView: true,
+      popup: true,
+      confirmationText: 'SHUTDOWN',
+      show: (record, store) => { return record.state === 'Up' },
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/Confirmation.vue')))
+    },
+    {
+      api: 'triggerShutdown',
+      icon: 'poweroff-outlined',
+      label: 'label.trigger.shutdown',
+      message: 'message.trigger.shutdown',
+      dataView: true,
+      popup: true,
+      confirmationText: 'SHUTDOWN',
+      show: (record, store) => { return ['Up', 'PreparingToShutDown', 'ReadyToShutDown'].includes(record.state) },
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/Confirmation.vue')))
+    },
+    {
+      api: 'cancelShutdown',
+      icon: 'close-circle-outlined',
+      label: 'label.cancel.shutdown',
+      message: 'message.cancel.shutdown',
+      docHelp: 'installguide/configuration.html#adding-a-zone',
+      dataView: true,
+      popup: true,
+      show: (record, store) => { return ['PreparingToShutDown', 'ReadyToShutDown', 'ShuttingDown'].includes(record.state) },
+      mapping: {
+        managementserverid: {
+          value: (record, params) => { return record.id }
+        }
+      }
     }
   ]
 }

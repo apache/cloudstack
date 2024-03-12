@@ -844,7 +844,7 @@ public enum Config {
             "The interval (in milliseconds) when vm stats are retrieved from agents.",
             null),
     VmDiskStatsInterval("Advanced", ManagementServer.class, Integer.class, "vm.disk.stats.interval", "0", "Interval (in seconds) to report vm disk statistics.", null),
-    VolumeStatsInterval("Advanced", ManagementServer.class, Integer.class, "volume.stats.interval", "60000", "Interval (in miliseconds) to report volume statistics.", null),
+    VolumeStatsInterval("Advanced", ManagementServer.class, Integer.class, "volume.stats.interval", "60000", "Interval (in milliseconds) to report volume statistics.", null),
     VmTransitionWaitInterval(
             "Advanced",
             ManagementServer.class,
@@ -959,7 +959,7 @@ public enum Config {
             ManagementServer.class,
             Integer.class,
             "network.loadbalancer.basiczone.elb.vm.ram.size",
-            "128",
+            "512",
             "Memory in MB for the elastic load balancer vm",
             null),
     ElasticLoadBalancerVmCpuMhz(
@@ -1291,7 +1291,7 @@ public enum Config {
             "The allowable clock difference in milliseconds between when an SSO login request is made and when it is received.",
             null),
     //NetworkType("Hidden", ManagementServer.class, String.class, "network.type", "vlan", "The type of network that this deployment will use.", "vlan,direct"),
-    RouterRamSize("Hidden", NetworkOrchestrationService.class, Integer.class, "router.ram.size", "256", "Default RAM for router VM (in MB).", null),
+    RouterRamSize("Hidden", NetworkOrchestrationService.class, Integer.class, "router.ram.size", "512", "Default RAM for router VM (in MB).", null),
 
     DefaultPageSize("Advanced", ManagementServer.class, Long.class, "default.page.size", "500", "Default page size for API list* commands", null),
 
@@ -1621,7 +1621,7 @@ public enum Config {
             String.class,
             "implicit.host.tags",
             "GPU",
-            "Tag hosts at the time of host disovery based on the host properties/capabilities",
+            "Tag hosts at the time of host discovery based on the host properties/capabilities",
             null),
     VpcCleanupInterval(
             "Advanced",
@@ -1729,7 +1729,7 @@ public enum Config {
             String.class,
             "baremetal.ipmi.fail.retry",
             "5",
-            "ipmi interface will be temporary out of order after power opertions(e.g. cycle, on), it leads following commands fail immediately. The value specifies retry times before accounting it as real failure",
+            "ipmi interface will be temporary out of order after power operations(e.g. cycle, on), it leads following commands fail immediately. The value specifies retry times before accounting it as real failure",
             null),
 
     ApiLimitEnabled("Advanced", ManagementServer.class, Boolean.class, "api.throttling.enabled", "false", "Enable/disable Api rate limit", null),
