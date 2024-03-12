@@ -89,7 +89,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     }
 
     @Override
-    public Network design(NetworkOffering offering, DeploymentPlan plan, Network specifiedConfig, Account owner) {
+    public Network design(NetworkOffering offering, DeploymentPlan plan, Network specifiedConfig, String name, Long vpcId, Account owner) {
         if (!canHandle(offering)) {
             return null;
         }
@@ -101,6 +101,11 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         config.setGateway(_gateway);
 
         return config;
+    }
+
+    @Override
+    public void setup(Network network, long networkId) {
+        // do nothing
     }
 
     protected ControlNetworkGuru() {

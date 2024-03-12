@@ -18,6 +18,7 @@ package com.cloud.vpc;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.vpc.NetworkACLItemDao;
 import com.cloud.network.vpc.NetworkACLItemVO;
 import com.cloud.network.vpc.NetworkACLManager;
@@ -78,6 +79,8 @@ public class NetworkACLServiceTest extends TestCase {
     private NetworkACLItemDao _networkACLItemDao;
     @Inject
     private EntityManager _entityMgr;
+    @Inject
+    private NsxProviderDao nsxProviderDao;
 
     private NetworkACLVO acl;
     private NetworkACLItemVO aclItem;
@@ -183,6 +186,9 @@ public class NetworkACLServiceTest extends TestCase {
         public VpcService vpcService() {
             return Mockito.mock(VpcService.class);
         }
+
+        @Bean
+        public NsxProviderDao nsxProviderDao() { return Mockito.mock(NsxProviderDao.class); }
 
         public static class Library implements TypeFilter {
             @Override

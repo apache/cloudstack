@@ -72,6 +72,8 @@
     <bean id="PassphraseDaoImpl" class="org.apache.cloudstack.secret.dao.PassphraseDaoImpl" />
     <bean id="configurationGroupDaoImpl" class="org.apache.cloudstack.framework.config.dao.ConfigurationGroupDaoImpl" />
     <bean id="configurationSubGroupDaoImpl" class="org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDaoImpl" />
+    <bean id="nsxControllerDaoImpl" class="com.cloud.network.dao.NsxProviderDaoImpl" />
+    <bean id="vlanDetailsDao" class="com.cloud.dc.dao.VlanDetailsDaoImpl" />
     <bean id="publicIpQuarantineDaoImpl" class="com.cloud.network.dao.PublicIpQuarantineDaoImpl" />
     <bean id="reservationDao" class="org.apache.cloudstack.reservation.dao.ReservationDaoImpl" />
 </beans>

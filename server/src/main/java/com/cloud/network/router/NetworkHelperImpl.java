@@ -28,6 +28,8 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.utils.validation.ChecksumUtil;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -102,7 +104,6 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.utils.validation.ChecksumUtil;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
@@ -173,6 +174,8 @@ public class NetworkHelperImpl implements NetworkHelper {
     Ipv6Service ipv6Service;
     @Inject
     CapacityManager capacityMgr;
+    @Inject
+    VpcDao vpcDao;
 
     protected final Map<HypervisorType, ConfigKey<String>> hypervisorsMap = new HashMap<>();
 
@@ -709,8 +712,8 @@ public class NetworkHelperImpl implements NetworkHelper {
                 defaultNic.setIsolationUri(BroadcastDomainType.Vxlan.toUri(sourceNatIp.getVlanTag()));
             } else {
                 defaultNic.setBroadcastType(BroadcastDomainType.Vlan);
-                defaultNic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(sourceNatIp.getVlanTag()));
-                defaultNic.setIsolationUri(IsolationType.Vlan.toUri(sourceNatIp.getVlanTag()));
+                defaultNic.setBroadcastUri(sourceNatIp.getVlanTag() != null ? BroadcastDomainType.Vlan.toUri(sourceNatIp.getVlanTag()) : null);
+                defaultNic.setIsolationUri(sourceNatIp.getVlanTag() != null ?  IsolationType.Vlan.toUri(sourceNatIp.getVlanTag()) : null);
             }
 
             //If guest nic has already been added we will have 2 devices in the list.
