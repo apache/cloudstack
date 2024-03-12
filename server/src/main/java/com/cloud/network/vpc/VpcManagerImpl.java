@@ -1430,6 +1430,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 _ipAddrMgr.updateSourceNatIpAddress(requestedIp, userIps);
                 if (isVpcForNsx(vpc)) {
                     VpcProvider nsxElement = (VpcProvider) _ntwkModel.getElementImplementingProvider(Provider.Nsx.getName());
+                    if (nsxElement == null) {
+                        return true;
+                    }
                     nsxElement.updateVpcSourceNatIp(vpc, requestedIp);
                     // The NSX source NAT IP change does not require to update the VPC VR
                     return false;
