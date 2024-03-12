@@ -36,14 +36,16 @@
         :rowKey="item => item.id"
         :pagination="false" >
 
-        <template #action="{ record }">
+        <template #bodyCell="{ column, record }">
           <tooltip-button
+            v-if="column.key === 'actions'"
             tooltipPlacement="bottom"
             :tooltip="$t('label.edit')"
             type="primary"
             @click="() => { handleUpdateIpRangeModal(record) }"
             icon="swap-outlined" />
           <a-popconfirm
+            v-if="column.key === 'actions'"
             :title="$t('message.confirm.remove.ip.range')"
             @confirm="removeIpRange(record.id)"
             :okText="$t('label.yes')"
