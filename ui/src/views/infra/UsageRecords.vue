@@ -29,10 +29,10 @@
                 <template #title>{{ $t('label.refresh') }}</template>
                 <a-button
                   style="margin-top: 4px"
-                  :loading="loading"
+                  :loading="serverMetricsLoading"
                   shape="round"
                   size="small"
-                  @click="fetchDetails()"
+                  @click="fetchData(); listUsageRecords()"
                 >
                   <template #icon>
                     <ReloadOutlined />
@@ -70,7 +70,7 @@
     </a-card>
   </a-affix>
   <a-col>
-    <a-card size="small">
+    <a-card size="small" :loading="serverMetricsLoading">
       <a-row justify="space-around">
         <a-card-grid style="width: 30%; text-align: center; font-size: small;">
           <a-statistic
@@ -119,13 +119,13 @@
                   ref="domain"
                   name="domain"
                 >
-                  <a-select
+                  <a-auto-complete
                     v-model:value="form.domain"
                     :options="domains"
                     :placeholder="$t('label.domain')"
                     :filter-option="filterOption"
                     style="width: 100%;"
-                    @change="getAccounts"
+                    @select="getAccounts"
                     :dropdownMatchSelectWidth="400"
                   />
                 </a-form-item>
@@ -148,7 +148,7 @@
               ref="account"
               name="account"
             >
-              <a-select
+            <a-auto-complete
                 v-model:value="form.account"
                 :options="accounts"
                 :placeholder="$t('label.account')"
@@ -181,6 +181,8 @@
               <a-input
                 v-model:value="form.id"
                 :placeholder="$t('label.resourceid')"
+                :allowClear="true"
+                @change="handleResourceIdChange"
               />
             </a-form-item>
           </a-col>
@@ -426,12 +428,13 @@ export default {
     this.rangePresets[this.$t('label.range.last.1month')] = [dayjs().add(-1, 'M'), dayjs()]
     this.rangePresets[this.$t('label.range.last.3month')] = [dayjs().add(-90, 'M'), dayjs()]
     this.initForm()
-    this.updateColumns()
     this.fetchData()
+    this.updateColumns()
   },
   methods: {
     clearFilters () {
       this.formRef.value.resetFields()
+      this.rules.type = {}
       this.domain = null
       this.account = null
       this.usageType = null
@@ -449,9 +452,17 @@ export default {
     initForm () {
       this.purgeDays = ref(365)
       this.formRef = ref()
-      this.form = reactive({})
+      this.form = reactive({
+        domain: null,
+        account: null,
+        type: null,
+        id: null,
+        dateRange: [],
+        isRecursive: false
+      })
       this.rules = reactive({
-        dateRange: [{ required: true, message: this.$t('label.required') }]
+        dateRange: [{ type: 'array', required: true, message: this.$t('label.required') }],
+        type: { type: 'string', required: false, message: this.$t('label.usage.records.usagetype.required') }
       })
     },
     fetchData () {
@@ -460,10 +471,21 @@ export default {
       this.getAllUsageRecordColumns()
       this.getDomains()
       this.getAccounts()
+      if (!this.$store.getters.customColumns[this.$store.getters.userInfo.id]) {
+        this.$store.getters.customColumns[this.$store.getters.userInfo.id] = {}
+        this.$store.getters.customColumns[this.$store.getters.userInfo.id][this.$route.path] = this.selectedColumnKeys
+      } else {
+        this.selectedColumnKeys = this.$store.getters.customColumns[this.$store.getters.userInfo.id][this.$route.path] || this.selectedColumnKeys
+        this.updateSelectedColumns()
+      }
+      this.updateSelectedColumns()
     },
     viewUsageRecord (record) {
       this.viewModal = true
       this.recordView = record
+    },
+    handleResourceIdChange () {
+      this.rules.type.required = this.form.id && this.form.id.trim()
     },
     handleTableChange (page, pageSize) {
       if (this.pageSize !== pageSize) {
@@ -489,6 +511,7 @@ export default {
     },
     handleSearch () {
       if (this.loading) return
+      this.formRef.value.clearValidate()
       this.formRef.value.validate().then(() => {
         this.page = 1
         this.listUsageRecords()
@@ -556,10 +579,12 @@ export default {
       const formRaw = toRaw(this.form)
       const values = this.handleRemoveFields(formRaw)
       var params = {
-        startdate: dayjs(values.dateRange[0]).format('YYYY-MM-DD'),
-        enddate: dayjs(values.dateRange[1]).format('YYYY-MM-DD'),
         page: page || this.page,
         pagesize: pageSize || this.pageSize
+      }
+      if (values.dateRange) {
+        params.startdate = dayjs(values.dateRange[0]).format('YYYY-MM-DD')
+        params.enddate = dayjs(values.dateRange[1]).format('YYYY-MM-DD')
       }
       if (values.domain) {
         params.domainid = this.domain.id
@@ -581,12 +606,12 @@ export default {
     listUsageRecords () {
       this.tableLoading = true
       var params = this.getParams()
-      if (params.startdate === undefined || params.enddate === undefined) {
+      if (!(params.startdate && params.enddate)) {
         this.tableLoading = false
         return
       }
       api('listUsageRecords', params).then(json => {
-        if (json && json.listusagerecordsresponse && json.listusagerecordsresponse.usagerecord) {
+        if (json && json.listusagerecordsresponse) {
           this.usageRecords = json.listusagerecordsresponse.usagerecord
           this.totalUsageRecords = json.listusagerecordsresponse.count
         }
@@ -625,6 +650,11 @@ export default {
         this.selectedColumnKeys.push(key)
       }
       this.updateColumns()
+      if (!this.$store.getters.customColumns[this.$store.getters.userInfo.id]) {
+        this.$store.getters.customColumns[this.$store.getters.userInfo.id] = {}
+      }
+      this.$store.getters.customColumns[this.$store.getters.userInfo.id][this.$route.path] = this.selectedColumnKeys
+      this.$store.dispatch('SetCustomColumns', this.$store.getters.customColumns)
     },
     updateColumns () {
       this.columns = []
