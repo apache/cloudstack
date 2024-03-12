@@ -2300,7 +2300,7 @@
 "label.usage.records.generate": "Generate usage records",
 "label.usage.records.generate.after": "Usage records will be created for the period after ",
 "label.usage.records.generated": "A job has been created to generate usage records.",
-"label.usage.records.generate.description": "This will generate records only if there any records to be generated. i.e if the scheduled usage job was not run or failed",
+"label.usage.records.generate.description": "If the scheduled usage job was not run or failed, this will generate records(only if there any records to be generated)",
 "label.usage.records.purge": "Purge usage records",
 "label.usage.records.purge.days": "Purge records older than",
 "label.usage.records.purge.days.description": "Purge records older than the specified number of days.",
