@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.TaggedResourceLimitAndCountResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -102,6 +103,8 @@ public class ResourceLimitManagerImplTest {
     ProjectDao projectDao;
     @Mock
     ResourceCountDao resourceCountDao;
+    @Mock
+    private ReservationDao reservationDao;
     @Mock
     UserVmJoinDao userVmJoinDao;
     @Mock

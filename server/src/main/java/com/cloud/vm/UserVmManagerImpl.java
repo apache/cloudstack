@@ -5581,37 +5581,47 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         boolean status;
         State vmState = vm.getState();
 
-        try {
-            VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
-            status = vmEntity.destroy(expunge);
-        } catch (CloudException e) {
-            CloudRuntimeException ex = new CloudRuntimeException("Unable to destroy with specified vmId", e);
-            ex.addProxyObject(vm.getUuid(), "vmId");
-            throw ex;
-        }
+        Account owner = _accountMgr.getAccount(vm.getAccountId());
 
-        if (status) {
-            // Mark the account's volumes as destroyed
-            List<VolumeVO> volumes = _volsDao.findByInstance(vmId);
-            for (VolumeVO volume : volumes) {
-                if (volume.getVolumeType().equals(Volume.Type.ROOT)) {
-                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
-                            Volume.class.getName(), volume.getUuid(), volume.isDisplayVolume());
+        ServiceOfferingVO offering = serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId());
+
+        try (CheckedReservation vmReservation = new CheckedReservation(owner, ResourceType.user_vm, vmId, null, -1L, reservationDao, resourceLimitService);
+             CheckedReservation cpuReservation = new CheckedReservation(owner, ResourceType.cpu, vmId, null, -1 * Long.valueOf(offering.getCpu()), reservationDao, resourceLimitService);
+             CheckedReservation memReservation = new CheckedReservation(owner, ResourceType.memory, vmId, null, -1 * Long.valueOf(offering.getRamSize()), reservationDao, resourceLimitService);
+        ) {
+            try {
+                VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
+                status = vmEntity.destroy(expunge);
+            } catch (CloudException e) {
+                CloudRuntimeException ex = new CloudRuntimeException("Unable to destroy with specified vmId", e);
+                ex.addProxyObject(vm.getUuid(), "vmId");
+                throw ex;
+            }
+
+            if (status) {
+                // Mark the account's volumes as destroyed
+                List<VolumeVO> volumes = _volsDao.findByInstance(vmId);
+                for (VolumeVO volume : volumes) {
+                    if (volume.getVolumeType().equals(Volume.Type.ROOT)) {
+                        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
+                                Volume.class.getName(), volume.getUuid(), volume.isDisplayVolume());
+                    }
                 }
-            }
 
-            if (vmState != State.Error) {
-                // Get serviceOffering and template for Virtual Machine
-                ServiceOfferingVO offering = serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId());
-                VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
-                //Update Resource Count for the given account
-                resourceCountDecrement(vm.getAccountId(), vm.isDisplayVm(),offering, template);
+                if (vmState != State.Error) {
+                    // Get serviceOffering and template for Virtual Machine
+                    VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
+                    //Update Resource Count for the given account
+                    resourceCountDecrement(vm.getAccountId(), vm.isDisplayVm(), offering, template);
+                }
+                return _vmDao.findById(vmId);
+            } else {
+                CloudRuntimeException ex = new CloudRuntimeException("Failed to destroy vm with specified vmId");
+                ex.addProxyObject(vm.getUuid(), "vmId");
+                throw ex;
             }
-            return _vmDao.findById(vmId);
-        } else {
-            CloudRuntimeException ex = new CloudRuntimeException("Failed to destroy vm with specified vmId");
-            ex.addProxyObject(vm.getUuid(), "vmId");
-            throw ex;
+        } catch (Exception e) {
+                throw new CloudRuntimeException("Failed to destroy vm with specified vmId", e);
         }
 
     }

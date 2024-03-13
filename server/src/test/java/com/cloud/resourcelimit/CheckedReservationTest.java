@@ -19,7 +19,6 @@
 package com.cloud.resourcelimit;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -40,6 +39,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.stubbing.Answer;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -53,6 +53,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({GlobalLock.class, CheckedReservation.class})
+@PowerMockIgnore({"javax.xml.*", "org.w3c.dom.*", "org.apache.xerces.*", "org.xml.*"})
 public class CheckedReservationTest {
 
     @Mock
@@ -107,7 +108,7 @@ public class CheckedReservationTest {
         boolean fail = false;
         try (CheckedReservation cr = new CheckedReservation(account, Resource.ResourceType.cpu,-11l, reservationDao, resourceLimitService); ) {
             Long amount = cr.getReservedAmount();
-            assertNull(amount);
+            assertEquals(Long.valueOf(-11L), amount);
         } catch (NullPointerException npe) {
             fail("NPE caught");
         } catch (ResourceAllocationException rae) {

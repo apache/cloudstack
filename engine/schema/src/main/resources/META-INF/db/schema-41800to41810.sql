@@ -329,3 +329,9 @@ from
     `cloud`.`async_job` ON async_job.instance_id = account.id
         and async_job.instance_type = 'Account'
         and async_job.job_status = 0;
+
+ALTER TABLE `cloud`.`resource_reservation`
+    ADD COLUMN `resource_id` bigint unsigned NULL;
+
+ALTER TABLE `cloud`.`resource_reservation`
+    MODIFY COLUMN `amount` bigint NOT NULL;
