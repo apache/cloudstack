@@ -986,7 +986,7 @@ export default {
         }
         this.itemCount = apiItemCount
 
-        if (this.dataView && this.$route.path.includes('/zone/')) {
+        if (this.dataView && this.$route.path.includes('/zone/') && 'listVmwareDcs' in this.$store.getters.apis) {
           api('listVmwareDcs', { zoneid: this.items[0].id }).then(response => {
             this.items[0].vmwaredc = response.listvmwaredcsresponse.VMwareDC
           })
