@@ -69,8 +69,8 @@ public class Upgrade41900to41910 implements DbUpgrade, DbUpgradeSystemVmTemplate
         return new InputStream[]{script};
     }
 
-    private void initSystemVmTemplateRegistration() {
-        systemVmTemplateRegistration = new SystemVmTemplateRegistration("");
+    private void addIndexes(Connection conn) {
+        DbUpgradeUtils.addIndexIfNeeded(conn, "vm_stats", "vm_id", "timestamp");
     }
 
     @Override
@@ -84,8 +84,7 @@ public class Upgrade41900to41910 implements DbUpgrade, DbUpgradeSystemVmTemplate
         }
     }
 
-    private void addIndexes(Connection conn) {
-        DbUpgradeUtils.addIndexIfNeeded(conn, "vm_stats", "vm_id", "timestamp");
-        DbUpgradeUtils.addIndexIfNeeded(conn, "vm_stats", "timestamp");
+    private void initSystemVmTemplateRegistration() {
+        systemVmTemplateRegistration = new SystemVmTemplateRegistration("");
     }
 }
