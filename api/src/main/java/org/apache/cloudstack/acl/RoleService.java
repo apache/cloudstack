@@ -40,6 +40,8 @@ public interface RoleService {
      */
     Role findRole(Long id);
 
+    List<Role> findRoles(List<Long> ids, boolean ignorePrivateRoles);
+
     Role createRole(String name, RoleType roleType, String description);
 
     Role createRole(String name, Role role, String description);

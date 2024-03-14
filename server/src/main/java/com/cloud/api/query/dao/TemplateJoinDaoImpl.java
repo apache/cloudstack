@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -171,13 +172,17 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         List<ImageStoreVO> storesInZone = dataStoreDao.listStoresByZoneId(template.getDataCenterId());
         Long[] storeIds = storesInZone.stream().map(ImageStoreVO::getId).toArray(Long[]::new);
         List<TemplateDataStoreVO> templatesInStore = _templateStoreDao.listByTemplateNotBypassed(template.getId(), storeIds);
+
+        List<Long> dataStoreIdList = templatesInStore.stream().map(TemplateDataStoreVO::getDataStoreId).collect(Collectors.toList());
+        Map<Long, ImageStoreVO> imageStoreMap = dataStoreDao.listByIds(dataStoreIdList).stream().collect(Collectors.toMap(ImageStoreVO::getId, imageStore -> imageStore));
+
         List<Map<String, String>> downloadProgressDetails = new ArrayList<>();
         HashMap<String, String> downloadDetailInImageStores = null;
         for (TemplateDataStoreVO templateInStore : templatesInStore) {
             downloadDetailInImageStores = new HashMap<>();
-            ImageStoreVO datastore = dataStoreDao.findById(templateInStore.getDataStoreId());
-            if (datastore != null) {
-                downloadDetailInImageStores.put("datastore", datastore.getName());
+            ImageStoreVO imageStore = imageStoreMap.get(templateInStore.getDataStoreId());
+            if (imageStore != null) {
+                downloadDetailInImageStores.put("datastore", imageStore.getName());
                 downloadDetailInImageStores.put("downloadPercent", Integer.toString(templateInStore.getDownloadPercent()));
                 downloadDetailInImageStores.put("downloadState", (templateInStore.getDownloadState() != null ? templateInStore.getDownloadState().toString() : ""));
                 downloadProgressDetails.add(downloadDetailInImageStores);

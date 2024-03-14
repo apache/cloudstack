@@ -28,16 +28,23 @@ import org.apache.cloudstack.acl.RoleVO;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
+import java.util.Collections;
 import java.util.List;
 
 @Component
 public class RoleDaoImpl extends GenericDaoBase<RoleVO, Long> implements RoleDao {
+
+    private final SearchBuilder<RoleVO> RoleByIdsSearch;
     private final SearchBuilder<RoleVO> RoleByNameSearch;
     private final SearchBuilder<RoleVO> RoleByTypeSearch;
     private final SearchBuilder<RoleVO> RoleByNameAndTypeSearch;
 
     public RoleDaoImpl() {
         super();
+
+        RoleByIdsSearch = createSearchBuilder();
+        RoleByIdsSearch.and("idIN", RoleByIdsSearch.entity().getId(), SearchCriteria.Op.IN);
+        RoleByIdsSearch.done();
 
         RoleByNameSearch = createSearchBuilder();
         RoleByNameSearch.and("roleName", RoleByNameSearch.entity().getName(), SearchCriteria.Op.LIKE);
@@ -95,5 +102,15 @@ public class RoleDaoImpl extends GenericDaoBase<RoleVO, Long> implements RoleDao
         sc.setParameters("roleName", roleName);
         sc.setParameters("roleType", type);
         return findOneBy(sc);
+    }
+
+    @Override
+    public List<RoleVO> searchByIds(Long... ids) {
+        if (ids == null || ids.length == 0) {
+            return Collections.emptyList();
+        }
+        SearchCriteria<RoleVO> sc = RoleByIdsSearch.create();
+        sc.setParameters("idIN", ids);
+        return listBy(sc);
     }
 }

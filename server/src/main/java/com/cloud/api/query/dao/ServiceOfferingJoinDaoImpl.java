@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.api.query.dao;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -28,6 +29,7 @@ import com.cloud.storage.DiskOfferingVO;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -50,9 +52,13 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
     @Inject
     private AnnotationDao annotationDao;
     @Inject
+    private ConfigurationDao configDao;
+    @Inject
     private AccountManager accountManager;
 
     private SearchBuilder<ServiceOfferingJoinVO> sofIdSearch;
+
+    private SearchBuilder<ServiceOfferingJoinVO> srvOfferingSearch;
 
     /**
      * Constant used to convert GB into Bytes (or the other way around).
@@ -66,6 +72,10 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         sofIdSearch = createSearchBuilder();
         sofIdSearch.and("id", sofIdSearch.entity().getId(), SearchCriteria.Op.EQ);
         sofIdSearch.done();
+
+        srvOfferingSearch = createSearchBuilder();
+        srvOfferingSearch.and("idIN", srvOfferingSearch.entity().getId(), SearchCriteria.Op.IN);
+        srvOfferingSearch.done();
 
         this._count = "select count(distinct service_offering_view.id) from service_offering_view WHERE ";
     }
@@ -164,5 +174,49 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         List<ServiceOfferingJoinVO> offerings = searchIncludingRemoved(sc, null, null, false);
         assert offerings != null && offerings.size() == 1 : "No service offering found for offering id " + offering.getId();
         return offerings.get(0);
+    }
+
+    @Override
+    public List<ServiceOfferingJoinVO> searchByIds(Long... offeringIds) {
+        // set detail batch query size
+        int DETAILS_BATCH_SIZE = 2000;
+        String batchCfg = configDao.getValue("detail.batch.query.size");
+        if (batchCfg != null) {
+            DETAILS_BATCH_SIZE = Integer.parseInt(batchCfg);
+        }
+
+        List<ServiceOfferingJoinVO> uvList = new ArrayList<>();
+        // query details by batches
+        int curr_index = 0;
+        if (offeringIds.length > DETAILS_BATCH_SIZE) {
+            while ((curr_index + DETAILS_BATCH_SIZE) <= offeringIds.length) {
+                Long[] ids = new Long[DETAILS_BATCH_SIZE];
+                for (int k = 0, j = curr_index; j < curr_index + DETAILS_BATCH_SIZE; j++, k++) {
+                    ids[k] = offeringIds[j];
+                }
+                SearchCriteria<ServiceOfferingJoinVO> sc = srvOfferingSearch.create();
+                sc.setParameters("idIN", ids);
+                List<ServiceOfferingJoinVO> accounts = searchIncludingRemoved(sc, null, null, false);
+                if (accounts != null) {
+                    uvList.addAll(accounts);
+                }
+                curr_index += DETAILS_BATCH_SIZE;
+            }
+        }
+        if (curr_index < offeringIds.length) {
+            int batch_size = (offeringIds.length - curr_index);
+            // set the ids value
+            Long[] ids = new Long[batch_size];
+            for (int k = 0, j = curr_index; j < curr_index + batch_size; j++, k++) {
+                ids[k] = offeringIds[j];
+            }
+            SearchCriteria<ServiceOfferingJoinVO> sc = srvOfferingSearch.create();
+            sc.setParameters("idIN", ids);
+            List<ServiceOfferingJoinVO> accounts = searchIncludingRemoved(sc, null, null, false);
+            if (accounts != null) {
+                uvList.addAll(accounts);
+            }
+        }
+        return uvList;
     }
 }

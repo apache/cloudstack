@@ -16,75 +16,6 @@
 // under the License.
 package com.cloud.api;
 
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
-
-import org.apache.cloudstack.acl.Role;
-import org.apache.cloudstack.acl.RoleService;
-import org.apache.cloudstack.affinity.AffinityGroup;
-import org.apache.cloudstack.affinity.AffinityGroupResponse;
-import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
-import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.cloudstack.api.ApiConstants.DomainDetails;
-import org.apache.cloudstack.api.ApiConstants.HostDetails;
-import org.apache.cloudstack.api.ApiConstants.VMDetails;
-import org.apache.cloudstack.api.ResponseObject.ResponseView;
-import org.apache.cloudstack.api.response.AccountResponse;
-import org.apache.cloudstack.api.response.AsyncJobResponse;
-import org.apache.cloudstack.api.response.BackupOfferingResponse;
-import org.apache.cloudstack.api.response.BackupResponse;
-import org.apache.cloudstack.api.response.BackupScheduleResponse;
-import org.apache.cloudstack.api.response.DiskOfferingResponse;
-import org.apache.cloudstack.api.response.DomainResponse;
-import org.apache.cloudstack.api.response.DomainRouterResponse;
-import org.apache.cloudstack.api.response.EventResponse;
-import org.apache.cloudstack.api.response.HostForMigrationResponse;
-import org.apache.cloudstack.api.response.HostResponse;
-import org.apache.cloudstack.api.response.HostTagResponse;
-import org.apache.cloudstack.api.response.ImageStoreResponse;
-import org.apache.cloudstack.api.response.InstanceGroupResponse;
-import org.apache.cloudstack.api.response.NetworkOfferingResponse;
-import org.apache.cloudstack.api.response.ProjectAccountResponse;
-import org.apache.cloudstack.api.response.ProjectInvitationResponse;
-import org.apache.cloudstack.api.response.ProjectResponse;
-import org.apache.cloudstack.api.response.ResourceIconResponse;
-import org.apache.cloudstack.api.response.ResourceTagResponse;
-import org.apache.cloudstack.api.response.SecurityGroupResponse;
-import org.apache.cloudstack.api.response.ServiceOfferingResponse;
-import org.apache.cloudstack.api.response.StoragePoolResponse;
-import org.apache.cloudstack.api.response.StorageTagResponse;
-import org.apache.cloudstack.api.response.TemplateResponse;
-import org.apache.cloudstack.api.response.UserResponse;
-import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.api.response.VolumeResponse;
-import org.apache.cloudstack.api.response.VpcOfferingResponse;
-import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.cloudstack.backup.Backup;
-import org.apache.cloudstack.backup.BackupOffering;
-import org.apache.cloudstack.backup.BackupSchedule;
-import org.apache.cloudstack.backup.dao.BackupDao;
-import org.apache.cloudstack.backup.dao.BackupOfferingDao;
-import org.apache.cloudstack.backup.dao.BackupScheduleDao;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.jobs.AsyncJob;
-import org.apache.cloudstack.framework.jobs.AsyncJobManager;
-import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
-import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.api.query.dao.AccountJoinDao;
 import com.cloud.api.query.dao.AffinityGroupJoinDao;
@@ -344,6 +275,75 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import org.apache.cloudstack.acl.Role;
+import org.apache.cloudstack.acl.RoleService;
+import org.apache.cloudstack.affinity.AffinityGroup;
+import org.apache.cloudstack.affinity.AffinityGroupResponse;
+import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
+import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.api.ApiConstants.DomainDetails;
+import org.apache.cloudstack.api.ApiConstants.HostDetails;
+import org.apache.cloudstack.api.ApiConstants.VMDetails;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.AsyncJobResponse;
+import org.apache.cloudstack.api.response.BackupOfferingResponse;
+import org.apache.cloudstack.api.response.BackupResponse;
+import org.apache.cloudstack.api.response.BackupScheduleResponse;
+import org.apache.cloudstack.api.response.DiskOfferingResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.DomainRouterResponse;
+import org.apache.cloudstack.api.response.EventResponse;
+import org.apache.cloudstack.api.response.HostForMigrationResponse;
+import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.HostTagResponse;
+import org.apache.cloudstack.api.response.ImageStoreResponse;
+import org.apache.cloudstack.api.response.InstanceGroupResponse;
+import org.apache.cloudstack.api.response.NetworkOfferingResponse;
+import org.apache.cloudstack.api.response.ProjectAccountResponse;
+import org.apache.cloudstack.api.response.ProjectInvitationResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
+import org.apache.cloudstack.api.response.ResourceIconResponse;
+import org.apache.cloudstack.api.response.ResourceTagResponse;
+import org.apache.cloudstack.api.response.SecurityGroupResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.StoragePoolResponse;
+import org.apache.cloudstack.api.response.StorageTagResponse;
+import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.cloudstack.api.response.UserResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.api.response.VpcOfferingResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.backup.BackupOffering;
+import org.apache.cloudstack.backup.BackupSchedule;
+import org.apache.cloudstack.backup.dao.BackupDao;
+import org.apache.cloudstack.backup.dao.BackupOfferingDao;
+import org.apache.cloudstack.backup.dao.BackupScheduleDao;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.jobs.AsyncJob;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
+import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class ApiDBUtils {
     private static ManagementServer s_ms;
@@ -792,7 +792,7 @@ public class ApiDBUtils {
         s_configDao = configDao;
         s_consoleProxyDao = consoleProxyDao;
         s_firewallCidrsDao = firewallCidrsDao;
-        s_firewallDcidrsDao  = firewalDcidrsDao;
+        s_firewallDcidrsDao = firewalDcidrsDao;
         s_vmDao = vmDao;
         s_resourceLimitMgr = resourceLimitMgr;
         s_projectMgr = projectMgr;
@@ -917,7 +917,8 @@ public class ApiDBUtils {
         return s_resourceLimitMgr.findCorrectResourceLimitForDomain(domain, type, null);
     }
 
-    public static long findCorrectResourceLimitForDomain(Long limit, boolean isRootDomain, ResourceType type, long domainId) {
+    public static long findCorrectResourceLimitForDomain(Long limit, boolean isRootDomain, ResourceType type,
+            long domainId) {
         long max = Resource.RESOURCE_UNLIMITED; // if resource limit is not found, then we treat it as unlimited
 
         // No limits for Root domain
@@ -997,7 +998,7 @@ public class ApiDBUtils {
         return s_statsCollector.getManagementServerHostStats(mgmtSrvrUuid);
     }
 
-    public static Map<String,Object> getDbStatistics() {
+    public static Map<String, Object> getDbStatistics() {
         return s_statsCollector.getDbStats();
     }
 
@@ -1077,6 +1078,7 @@ public class ApiDBUtils {
         ServiceOfferingVO off = s_serviceOfferingDao.findServiceOfferingByComputeOnlyDiskOffering(diskOfferingId);
         return off;
     }
+
     public static DomainVO findDomainById(Long domainId) {
         return s_domainDao.findByIdIncludingRemoved(domainId);
     }
@@ -1249,7 +1251,7 @@ public class ApiDBUtils {
         return s_volumeDao.getHypervisorType(volumeId);
     }
 
-    public static HypervisorType getHypervisorTypeFromFormat(long dcId, ImageFormat format){
+    public static HypervisorType getHypervisorTypeFromFormat(long dcId, ImageFormat format) {
         HypervisorType type = s_storageMgr.getHypervisorTypeFromFormat(format);
         if (format == ImageFormat.VHD) {
             // Xenserver and Hyperv both support vhd format. Additionally hyperv is only supported
@@ -1260,7 +1262,8 @@ public class ApiDBUtils {
             if (xenClusters.isEmpty()) {
                 type = HypervisorType.Hyperv;
             }
-        } if (format == ImageFormat.RAW) {
+        }
+        if (format == ImageFormat.RAW) {
             // Currently, KVM only supports RBD and PowerFlex images of type RAW.
             // This results in a weird collision with OVM volumes which
             // can only be raw, thus making KVM RBD volumes show up as OVM
@@ -1271,16 +1274,16 @@ public class ApiDBUtils {
             // This would be better implemented at a cluster level.
             List<StoragePoolVO> pools = s_storagePoolDao.listByDataCenterId(dcId);
             ListIterator<StoragePoolVO> itr = pools.listIterator();
-            while(itr.hasNext()) {
+            while (itr.hasNext()) {
                 StoragePoolVO pool = itr.next();
-                if(pool.getPoolType() == StoragePoolType.RBD ||
-                    pool.getPoolType() == StoragePoolType.PowerFlex ||
-                    pool.getPoolType() == StoragePoolType.CLVM ||
-                    pool.getPoolType() == StoragePoolType.Linstor) {
-                  // This case will note the presence of non-qcow2 primary stores, suggesting KVM without NFS. Otherwse,
-                  // If this check is not passed, the hypervisor type will remain OVM.
-                  type = HypervisorType.KVM;
-                  break;
+                if (pool.getPoolType() == StoragePoolType.RBD ||
+                        pool.getPoolType() == StoragePoolType.PowerFlex ||
+                        pool.getPoolType() == StoragePoolType.CLVM ||
+                        pool.getPoolType() == StoragePoolType.Linstor) {
+                    // This case will note the presence of non-qcow2 primary stores, suggesting KVM without NFS. Otherwse,
+                    // If this check is not passed, the hypervisor type will remain OVM.
+                    type = HypervisorType.KVM;
+                    break;
                 } else if (pool.getHypervisor() == HypervisorType.Custom) {
                     type = HypervisorType.Custom;
                     break;
@@ -1428,7 +1431,7 @@ public class ApiDBUtils {
 
     public static boolean isExtractionDisabled() {
         String disableExtractionString = s_configDao.getValue(Config.DisableExtraction.toString());
-        boolean disableExtraction  = (disableExtractionString == null) ? false : Boolean.parseBoolean(disableExtractionString);
+        boolean disableExtraction = (disableExtractionString == null) ? false : Boolean.parseBoolean(disableExtractionString);
         return disableExtraction;
     }
 
@@ -1444,7 +1447,7 @@ public class ApiDBUtils {
         return s_firewallCidrsDao.getSourceCidrs(id);
     }
 
-    public static List<String> findFirewallDestCidrs(long id){
+    public static List<String> findFirewallDestCidrs(long id) {
         return s_firewallDcidrsDao.getDestCidrs(id);
     }
 
@@ -1554,7 +1557,8 @@ public class ApiDBUtils {
         return conditions;
     }
 
-    public static void getAutoScaleVmGroupPolicyIds(long vmGroupId, List<Long> scaleUpPolicyIds, List<Long> scaleDownPolicyIds) {
+    public static void getAutoScaleVmGroupPolicyIds(long vmGroupId, List<Long> scaleUpPolicyIds,
+            List<Long> scaleDownPolicyIds) {
         List<AutoScaleVmGroupPolicyMapVO> vos = s_asVmGroupPolicyMapDao.listByVmGroupId(vmGroupId);
         for (AutoScaleVmGroupPolicyMapVO vo : vos) {
             AutoScalePolicy autoScalePolicy = s_asPolicyDao.findById(vo.getPolicyId());
@@ -1575,11 +1579,12 @@ public class ApiDBUtils {
         return null;
     }
 
-    public static UserVmDetailVO  findPublicKeyByVmId(long vmId) {
+    public static UserVmDetailVO findPublicKeyByVmId(long vmId) {
         return s_userVmDetailsDao.findDetail(vmId, VmDetailConstants.SSH_PUBLIC_KEY);
     }
 
-    public static void getAutoScaleVmGroupPolicies(long vmGroupId, List<AutoScalePolicy> scaleUpPolicies, List<AutoScalePolicy> scaleDownPolicies) {
+    public static void getAutoScaleVmGroupPolicies(long vmGroupId, List<AutoScalePolicy> scaleUpPolicies,
+            List<AutoScalePolicy> scaleDownPolicies) {
         List<AutoScaleVmGroupPolicyMapVO> vos = s_asVmGroupPolicyMapDao.listByVmGroupId(vmGroupId);
         for (AutoScaleVmGroupPolicyMapVO vo : vos) {
             AutoScalePolicy autoScalePolicy = s_asPolicyDao.findById(vo.getPolicyId());
@@ -1691,7 +1696,7 @@ public class ApiDBUtils {
                 jobInstanceId = template.getUuid();
             }
         } else if (jobInstanceType == ApiCommandResourceType.VirtualMachine || jobInstanceType == ApiCommandResourceType.ConsoleProxy ||
-            jobInstanceType == ApiCommandResourceType.SystemVm || jobInstanceType == ApiCommandResourceType.DomainRouter) {
+                jobInstanceType == ApiCommandResourceType.SystemVm || jobInstanceType == ApiCommandResourceType.DomainRouter) {
             VMInstanceVO vm = ApiDBUtils.findVMInstanceById(job.getInstanceId());
             if (vm != null) {
                 jobInstanceId = vm.getUuid();
@@ -1788,7 +1793,7 @@ public class ApiDBUtils {
             }
         } else if (jobInstanceType == ApiCommandResourceType.Network) {
             NetworkVO networkVO = ApiDBUtils.findNetworkById(job.getInstanceId());
-            if(networkVO != null) {
+            if (networkVO != null) {
                 jobInstanceId = networkVO.getUuid();
             }
         } else if (jobInstanceType != ApiCommandResourceType.None) {
@@ -1815,11 +1820,13 @@ public class ApiDBUtils {
         return s_domainRouterJoinDao.newDomainRouterView(vr);
     }
 
-    public static UserVmResponse newUserVmResponse(ResponseView view, String objectName, UserVmJoinVO userVm, Set<VMDetails> details, Account caller) {
+    public static UserVmResponse newUserVmResponse(ResponseView view, String objectName, UserVmJoinVO userVm,
+            Set<VMDetails> details, Account caller) {
         return s_userVmJoinDao.newUserVmResponse(view, objectName, userVm, details, null, null, caller);
     }
 
-    public static UserVmResponse newUserVmResponse(ResponseView view, String objectName, UserVmJoinVO userVm, Set<VMDetails> details, Boolean accumulateStats,
+    public static UserVmResponse newUserVmResponse(ResponseView view, String objectName, UserVmJoinVO userVm,
+            Set<VMDetails> details, Boolean accumulateStats,
             Boolean showUserData, Account caller) {
         return s_userVmJoinDao.newUserVmResponse(view, objectName, userVm, details, accumulateStats, showUserData, caller);
     }
@@ -1836,7 +1843,8 @@ public class ApiDBUtils {
         return s_securityGroupJoinDao.newSecurityGroupResponse(vsg, caller);
     }
 
-    public static SecurityGroupResponse fillSecurityGroupDetails(SecurityGroupResponse vsgData, SecurityGroupJoinVO sg) {
+    public static SecurityGroupResponse fillSecurityGroupDetails(SecurityGroupResponse vsgData,
+            SecurityGroupJoinVO sg) {
         return s_securityGroupJoinDao.setSecurityGroupResponse(vsgData, sg);
     }
 
@@ -1886,12 +1894,12 @@ public class ApiDBUtils {
 
     public static UserResponse newUserResponse(UserAccountJoinVO usr, Long domainId) {
         UserResponse response = s_userAccountJoinDao.newUserResponse(usr);
-        if(!AccountManager.UseSecretKeyInResponse.value()){
+        if (!AccountManager.UseSecretKeyInResponse.value()) {
             response.setSecretKey(null);
         }
         // Populate user account role information
         if (usr.getAccountRoleId() != null) {
-            Role role = s_roleService.findRole( usr.getAccountRoleId());
+            Role role = s_roleService.findRole(usr.getAccountRoleId());
             if (role != null) {
                 response.setRoleId(role.getUuid());
                 response.setRoleType(role.getRoleType());
@@ -1987,7 +1995,8 @@ public class ApiDBUtils {
         return s_poolJoinDao.newStoragePoolForMigrationResponse(vr);
     }
 
-    public static StoragePoolResponse fillStoragePoolForMigrationDetails(StoragePoolResponse vrData, StoragePoolJoinVO vr) {
+    public static StoragePoolResponse fillStoragePoolForMigrationDetails(StoragePoolResponse vrData,
+            StoragePoolJoinVO vr) {
         return s_poolJoinDao.setStoragePoolForMigrationResponse(vrData, vr);
     }
 
@@ -2011,7 +2020,8 @@ public class ApiDBUtils {
         return s_domainJoinDao.newDomainResponse(view, details, ve);
     }
 
-    public static AccountResponse newAccountResponse(ResponseView view, EnumSet<DomainDetails> details, AccountJoinVO ve) {
+    public static AccountResponse newAccountResponse(ResponseView view, EnumSet<DomainDetails> details,
+            AccountJoinVO ve) {
         AccountResponse response = s_accountJoinDao.newAccountResponse(view, details, ve);
         // Populate account role information
         if (ve.getRoleId() != null) {
@@ -2023,6 +2033,30 @@ public class ApiDBUtils {
             }
         }
         return response;
+    }
+
+    public static List<AccountResponse> newAccountResponses(ResponseView view, EnumSet<DomainDetails> details,
+            AccountJoinVO... accounts) {
+        List<AccountResponse> responseList = new ArrayList<>();
+
+        List<Long> roleIdList = Arrays.stream(accounts).map(AccountJoinVO::getRoleId).collect(Collectors.toList());
+        Map<Long, Role> roleIdMap = s_roleService.findRoles(roleIdList, false).stream().collect(Collectors.toMap(Role::getId, Function.identity()));
+
+        for (AccountJoinVO account : accounts) {
+            AccountResponse response = s_accountJoinDao.newAccountResponse(view, details, account);
+            // Populate account role information
+            if (account.getRoleId() != null) {
+                Role role = roleIdMap.get(account.getRoleId());
+                if (role != null) {
+                    response.setRoleId(role.getUuid());
+                    response.setRoleType(role.getRoleType());
+                    response.setRoleName(role.getName());
+                }
+            }
+            responseList.add(response);
+        }
+
+        return responseList;
     }
 
     public static AccountJoinVO newAccountView(Account e) {
@@ -2073,7 +2107,8 @@ public class ApiDBUtils {
         return s_serviceOfferingJoinDao.newServiceOfferingView(offering);
     }
 
-    public static ZoneResponse newDataCenterResponse(ResponseView view, DataCenterJoinVO dc, Boolean showCapacities, Boolean showResourceImage) {
+    public static ZoneResponse newDataCenterResponse(ResponseView view, DataCenterJoinVO dc, Boolean showCapacities,
+            Boolean showResourceImage) {
         return s_dcJoinDao.newDataCenterResponse(view, dc, showCapacities, showResourceImage);
     }
 
@@ -2093,7 +2128,8 @@ public class ApiDBUtils {
         return s_templateJoinDao.newUpdateResponse(vr);
     }
 
-    public static TemplateResponse newTemplateResponse(EnumSet<DomainDetails> detailsView, ResponseView view, TemplateJoinVO vr) {
+    public static TemplateResponse newTemplateResponse(EnumSet<DomainDetails> detailsView, ResponseView view,
+            TemplateJoinVO vr) {
         return s_templateJoinDao.newTemplateResponse(detailsView, view, vr);
     }
 
@@ -2101,7 +2137,8 @@ public class ApiDBUtils {
         return s_templateJoinDao.newIsoResponse(vr);
     }
 
-    public static TemplateResponse fillTemplateDetails(EnumSet<DomainDetails> detailsView, ResponseView view, TemplateResponse vrData, TemplateJoinVO vr) {
+    public static TemplateResponse fillTemplateDetails(EnumSet<DomainDetails> detailsView, ResponseView view,
+            TemplateResponse vrData, TemplateJoinVO vr) {
         return s_templateJoinDao.setTemplateResponse(detailsView, view, vrData, vr);
     }
 
@@ -2121,7 +2158,8 @@ public class ApiDBUtils {
         return s_affinityGroupJoinDao.newAffinityGroupResponse(group);
     }
 
-    public static AffinityGroupResponse fillAffinityGroupDetails(AffinityGroupResponse resp, AffinityGroupJoinVO group) {
+    public static AffinityGroupResponse fillAffinityGroupDetails(AffinityGroupResponse resp,
+            AffinityGroupJoinVO group) {
         return s_affinityGroupJoinDao.setAffinityGroupResponse(resp, group);
     }
 
@@ -2149,7 +2187,8 @@ public class ApiDBUtils {
         return s_accountService.isAdmin(account.getId());
     }
 
-    public static List<ResourceTagJoinVO> listResourceTagViewByResourceUUID(String resourceUUID, ResourceObjectType resourceType) {
+    public static List<ResourceTagJoinVO> listResourceTagViewByResourceUUID(String resourceUUID,
+            ResourceObjectType resourceType) {
         return s_tagJoinDao.listBy(resourceUUID, resourceType);
     }
 

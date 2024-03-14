@@ -91,8 +91,14 @@ public class DatabaseAccessObjectTest {
 
     @Test
     public void generateIndexNameTest() {
-        String indexName = dao.generateIndexName("mytable","mycolumn");
-        Assert.assertEquals( "i_mytable__mycolumn", indexName);
+        String indexName = dao.generateIndexName("mytable","mycolumn1", "mycolumn2");
+        Assert.assertEquals( "i_mytable__mycolumn1__mycolumn2", indexName);
+    }
+
+    @Test
+    public void generateIndexNameTestSingleColumn() {
+        String indexName = dao.generateIndexName("mytable","mycolumn1");
+        Assert.assertEquals( "i_mytable__mycolumn1", indexName);
     }
 
     @Test
@@ -134,10 +140,11 @@ public class DatabaseAccessObjectTest {
 
         Connection conn = connectionMock;
         String tableName = "mytable";
-        String columnName = "mycolumn";
+        String columnName1 = "mycolumn1";
+        String columnName2 = "mycolumn2";
         String indexName = "myindex";
 
-        dao.createIndex(conn, tableName, columnName, indexName);
+        dao.createIndex(conn, tableName, indexName, columnName1, columnName2);
         verify(connectionMock, times(1)).prepareStatement(anyString());
         verify(preparedStatementMock, times(1)).execute();
         verify(preparedStatementMock, times(1)).close();

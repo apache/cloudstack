@@ -31,4 +31,6 @@ public interface ServiceOfferingJoinDao extends GenericDao<ServiceOfferingJoinVO
     ServiceOfferingResponse newServiceOfferingResponse(ServiceOfferingJoinVO offering);
 
     ServiceOfferingJoinVO newServiceOfferingView(ServiceOffering offering);
+
+    List<ServiceOfferingJoinVO> searchByIds(Long... id);
 }

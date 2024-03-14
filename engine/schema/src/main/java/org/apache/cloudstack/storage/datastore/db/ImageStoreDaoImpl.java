@@ -18,12 +18,14 @@
  */
 package org.apache.cloudstack.storage.datastore.db;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
 import com.cloud.utils.db.Filter;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
@@ -42,6 +44,7 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
     private SearchBuilder<ImageStoreVO> storeSearch;
     private SearchBuilder<ImageStoreVO> protocolSearch;
     private SearchBuilder<ImageStoreVO> zoneProtocolSearch;
+    private SearchBuilder<ImageStoreVO> IdsSearch;
 
     public ImageStoreDaoImpl() {
         super();
@@ -55,6 +58,10 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
         zoneProtocolSearch.and("protocol", zoneProtocolSearch.entity().getProtocol(), SearchCriteria.Op.EQ);
         zoneProtocolSearch.and("role", zoneProtocolSearch.entity().getRole(), SearchCriteria.Op.EQ);
         zoneProtocolSearch.done();
+
+        IdsSearch = createSearchBuilder();
+        IdsSearch.and("ids", IdsSearch.entity().getId(), SearchCriteria.Op.IN);
+        IdsSearch.done();
     }
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -190,5 +197,15 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
         Filter filter = new Filter(1);
         List<ImageStoreVO> results =  listBy(sc, filter);
         return results.size() == 0 ? null : results.get(0);
+    }
+
+    @Override
+    public List<ImageStoreVO> listByIds(List<Long> ids) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return Collections.emptyList();
+        }
+        SearchCriteria<ImageStoreVO> sc = IdsSearch.create();
+        sc.setParameters("ids", ids.toArray());
+        return listBy(sc);
     }
 }

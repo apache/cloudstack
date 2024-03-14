@@ -27,9 +27,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.dc.ClusterVO;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ListClustersMetricsCmd;
 import org.apache.cloudstack.api.ListDbMetricsCmd;
@@ -626,6 +628,7 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
     @Override
     public List<StoragePoolMetricsResponse> listStoragePoolMetrics(List<StoragePoolResponse> poolResponses) {
         final List<StoragePoolMetricsResponse> metricsResponses = new ArrayList<>();
+        Map<String, Long> clusterUuidToIdMap = clusterDao.findByUuids(poolResponses.stream().map(StoragePoolResponse::getClusterId).toArray(String[]::new)).stream().collect(Collectors.toMap(ClusterVO::getUuid, ClusterVO::getId));
         for (final StoragePoolResponse poolResponse: poolResponses) {
             StoragePoolMetricsResponse metricsResponse = new StoragePoolMetricsResponse();
 
@@ -635,11 +638,7 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to generate storagepool metrics response");
             }
 
-            Long poolClusterId = null;
-            final Cluster cluster = clusterDao.findByUuid(poolResponse.getClusterId());
-            if (cluster != null) {
-                poolClusterId = cluster.getId();
-            }
+            Long poolClusterId = clusterUuidToIdMap.get(poolResponse.getClusterId());
             final Double storageThreshold = AlertManager.StorageCapacityThreshold.valueIn(poolClusterId);
             final Double storageDisableThreshold = CapacityManager.StorageCapacityDisableThreshold.valueIn(poolClusterId);
 

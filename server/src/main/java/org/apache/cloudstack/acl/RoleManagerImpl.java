@@ -94,6 +94,33 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
         return RoleService.EnableDynamicApiChecker.value();
     }
 
+    private boolean isCallerRootAdmin() {
+        return accountManager.isRootAdmin(getCurrentAccount().getId());
+    }
+
+    @Override
+    public List<Role> findRoles(List<Long> ids, boolean ignorePrivateRoles) {
+        List<Role> result = new ArrayList<>();
+        if (CollectionUtils.isEmpty(ids)) {
+            logger.trace(String.format("Role IDs are invalid [%s]", ids));
+            return result;
+        }
+
+        List<RoleVO> roles = roleDao.searchByIds(ids.toArray(new Long[0]));
+        if (CollectionUtils.isEmpty(roles)) {
+            logger.trace(String.format("Roles not found [ids=%s]", ids));
+            return result;
+        }
+        for (Role role : roles) {
+            if (!isCallerRootAdmin() && (RoleType.Admin == role.getRoleType() || ignorePrivateRoles)) {
+                logger.debug(String.format("Role [id=%s, name=%s] is either of 'Admin' type or is private and is only visible to 'Root admins'.", role.getId(), role.getName()));
+                continue;
+            }
+            result.add(role);
+        }
+        return result;
+    }
+
     @Override
     public Role findRole(Long id) {
         if (id == null || id < 1L) {
