@@ -1525,9 +1525,9 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                                 } else {
                                     _idField.set(entity, id);
                                 }
-                            } else {
-                                id = (ID)_idField.get(entity);
                             }
+
+                            id = (ID)_idField.get(entity);
                         }
                     } catch (final IllegalAccessException e) {
                         throw new CloudRuntimeException("Yikes! ", e);
