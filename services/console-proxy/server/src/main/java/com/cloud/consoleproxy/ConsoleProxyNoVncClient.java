@@ -101,13 +101,9 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                     String tunnelUrl = param.getClientTunnelUrl();
                     String tunnelSession = param.getClientTunnelSession();
                     String websocketUrl = param.getWebsocketUrl();
-                    String sourceIp = param.getSourceIP();
-                    s_logger.info("SOURCE IP = " + sourceIp);
-                    s_logger.info("CLIENT HOST ADDRESS = " + param.getClientHostAddress());
 
-                    connectClientToVNCServer(tunnelUrl, tunnelSession, websocketUrl, sourceIp);
-
-                    authenticateToVNCServer(sourceIp);
+                    connectClientToVNCServer(tunnelUrl, tunnelSession, websocketUrl);
+                    authenticateToVNCServer();
 
                     int readBytes;
                     byte[] b;
@@ -176,7 +172,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
      *
      * Reference: https://github.com/rfbproto/rfbproto/blob/master/rfbproto.rst#7protocol-messages
      */
-    private void authenticateToVNCServer(String sourceIp) throws IOException {
+    private void authenticateToVNCServer() throws IOException {
         if (client.isVncOverWebSocketConnection()) {
             return;
         }
@@ -191,7 +187,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
         } else {
             authenticateVNCServerThroughNioSocket();
         }
-        s_logger.debug(String.format("Client %s has been authenticated successfully to VNC server", sourceIp));
+        s_logger.debug("Client %s has been authenticated successfully to VNC server");
     }
 
     /**
@@ -285,27 +281,22 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
      * - When websocketUrl is not empty -> connect to websocket
      * - Otherwise -> connect to TCP port on host directly
      */
-    private void connectClientToVNCServer(String tunnelUrl, String tunnelSession, String websocketUrl, String sourceIp) {
-        s_logger.info("TUNNEL URL = " + tunnelUrl);
-        s_logger.info("TUNNEL SESSION = " + tunnelSession);
-        s_logger.info("WEBSOCKET URL = " + websocketUrl);
-        s_logger.info("SOURCE IP = " + sourceIp);
-
+    private void connectClientToVNCServer(String tunnelUrl, String tunnelSession, String websocketUrl) {
         try {
             if (StringUtils.isNotBlank(websocketUrl)) {
-                logger.info(String.format("Connect to VNC over websocket URL: %s, source IP: %s", websocketUrl, sourceIp));
+                logger.info(String.format("Connect to VNC over websocket URL: %s", websocketUrl));
                 client.connectToWebSocket(websocketUrl, session);
             } else if (StringUtils.isNotBlank(tunnelUrl) && StringUtils.isNotBlank(tunnelSession)) {
                 URI uri = new URI(tunnelUrl);
-                logger.info(String.format("Connect to VNC server via tunnel. url: %s, session: %s, source IP: %s",
-                        tunnelUrl, tunnelSession, sourceIp));
+                logger.info(String.format("Connect to VNC server via tunnel. url: %s, session: %s",
+                        tunnelUrl, tunnelSession));
 
                 ConsoleProxy.ensureRoute(uri.getHost());
                 client.connectTo(uri.getHost(), uri.getPort(), uri.getPath() + "?" + uri.getQuery(),
                         tunnelSession, "https".equalsIgnoreCase(uri.getScheme()));
             } else {
-                logger.info(String.format("Connect to VNC server directly. host: %s, port: %s, source IP: %s",
-                        getClientHostAddress(), getClientHostPort(), sourceIp));
+                logger.info(String.format("Connect to VNC server directly. host: %s, port: %s",
+                        getClientHostAddress(), getClientHostPort()));
                 ConsoleProxy.ensureRoute(getClientHostAddress());
                 client.connectTo(getClientHostAddress(), getClientHostPort());
             }
