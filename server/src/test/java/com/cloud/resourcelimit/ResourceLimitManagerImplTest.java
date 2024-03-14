@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.TaggedResourceLimitAndCountResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -105,6 +106,8 @@ public class ResourceLimitManagerImplTest extends TestCase {
     ProjectDao projectDao;
     @Mock
     ResourceCountDao resourceCountDao;
+    @Mock
+    private ReservationDao reservationDao;
     @Mock
     UserVmJoinDao userVmJoinDao;
     @Mock
@@ -675,7 +678,9 @@ public class ResourceLimitManagerImplTest extends TestCase {
         Assert.assertEquals(2L, resourceLimitManager.calculateVmCountForAccount(accountId, tag));
 
         tag = "tag";
-        Mockito.doReturn(List.of(UserVmJoinVO.class)).when(resourceLimitManager).getVmsWithAccountAndTag(accountId, tag);
+        UserVmJoinVO vm = Mockito.mock(UserVmJoinVO.class);
+        Mockito.when(vm.getId()).thenReturn(1L);
+        Mockito.doReturn(List.of(vm)).when(resourceLimitManager).getVmsWithAccountAndTag(accountId, tag);
         Assert.assertEquals(1L, resourceLimitManager.calculateVmCountForAccount(accountId, tag));
     }
 
