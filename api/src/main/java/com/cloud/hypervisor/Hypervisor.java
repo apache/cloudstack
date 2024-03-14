@@ -50,8 +50,8 @@ public class Hypervisor {
 
         public HypervisorType(String name, ImageFormat imageFormat) {
             this.name = name;
-            hypervisorTypeMap.putIfAbsent(name.toLowerCase(Locale.ROOT), this);
             this.imageFormat = imageFormat;
+            hypervisorTypeMap.putIfAbsent(name.toLowerCase(Locale.ROOT), this);
         }
 
         public static HypervisorType getType(String hypervisor) {
@@ -70,11 +70,11 @@ public class Hypervisor {
                 return null;
             }
 
-            HypervisorType storage = hypervisorTypeMap.get(name.toLowerCase(Locale.ROOT));
-            if (storage == null) {
+            HypervisorType hypervisorType = hypervisorTypeMap.get(name.toLowerCase(Locale.ROOT));
+            if (hypervisorType == null) {
                 throw new IllegalArgumentException("HypervisorType '" + name + "' not found");
             }
-            return storage;
+            return hypervisorType;
         }
 
         /**

@@ -720,7 +720,7 @@ public class SystemVmTemplateRegistration {
 
     private void validateTemplates(Set<Hypervisor.HypervisorType> hypervisorsInUse) {
         Set<String> hypervisors = hypervisorsInUse.stream().
-                map(Hypervisor.HypervisorType::name).map(this::getHypervisorName).collect(Collectors.toSet());
+                map(Hypervisor.HypervisorType::name).map(name -> name.toLowerCase(Locale.ROOT)).map(this::getHypervisorName).collect(Collectors.toSet());
         List<String> templates = new ArrayList<>();
         for (Hypervisor.HypervisorType hypervisorType : hypervisorsInUse) {
             templates.add(FileNames.get(hypervisorType));

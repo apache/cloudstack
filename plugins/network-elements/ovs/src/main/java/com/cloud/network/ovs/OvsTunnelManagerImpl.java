@@ -243,12 +243,12 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
         String label = null;
         if (hvType.equals(HypervisorType.XenServer)) {
             label = physNetTT.getXenNetworkLabel();
-            if (StringUtils.isNotEmpty(label)) {
+            if (StringUtils.isNotBlank(label)) {
                 physNetLabel = label;
             }
         } else if (hvType.equals(HypervisorType.KVM)) {
             label = physNetTT.getKvmNetworkLabel();
-            if (StringUtils.isNotEmpty(label)) {
+            if (StringUtils.isNotBlank(label)) {
                 physNetLabel = label;
             }
         } else {
