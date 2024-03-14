@@ -174,9 +174,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
             WebhookHelper webhookService = ComponentContext.getDelegateComponentOfType(WebhookHelper.class);
             webhooks = webhookService.listWebhooksByAccount(project.getProjectAccountId());
         } catch (NoSuchBeanDefinitionException ignored) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("No WebhookHelper bean found");
-            }
+            logger.debug("No WebhookHelper bean found");
         }
         return webhooks;
     }

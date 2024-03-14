@@ -160,9 +160,7 @@ public class WebhookDeliveryThread implements Runnable {
 
     @Override
     public void run() {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Delivering event: {} for {}", event.getEventType(), webhook);
-        }
+        LOGGER.debug("Delivering event: {} for {}", event.getEventType(), webhook);
         if (event == null) {
             LOGGER.warn("Invalid event received for delivering to {}", webhook);
             return;
@@ -205,18 +203,14 @@ public class WebhookDeliveryThread implements Runnable {
                     isValidJson(payload) ? ContentType.APPLICATION_JSON : ContentType.TEXT_PLAIN);
             request.setEntity(input);
             updateRequestHeaders(request);
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace("Delivering event: {} for {} with timeout: {}, " +
-                        "attempt #{}", event.getEventType(), webhook,
-                        deliveryTimeout, attempt);
-            }
+            LOGGER.trace("Delivering event: {} for {} with timeout: {}, " +
+                            "attempt #{}", event.getEventType(), webhook,
+                    deliveryTimeout, attempt);
             final CloseableHttpResponse response = httpClient.execute(request);
             updateResponseFromRequest(response.getEntity());
             if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-                if (LOGGER.isTraceEnabled()) {
-                    LOGGER.trace("Successfully delivered event: {} for {}",
-                            event.getEventType(), webhook);
-                }
+                LOGGER.trace("Successfully delivered event: {} for {}",
+                        event.getEventType(), webhook);
                 return true;
             }
         } catch (URISyntaxException | IOException | DecoderException | NoSuchAlgorithmException |

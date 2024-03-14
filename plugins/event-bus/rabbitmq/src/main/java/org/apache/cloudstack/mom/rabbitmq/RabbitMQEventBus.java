@@ -253,9 +253,7 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
 
     @Override
     public void unsubscribe(UUID subscriberId, EventSubscriber subscriber) throws EventBusException {
-        if (logger.isDebugEnabled()) {
-            logger.debug("unsubscribing '{}'", subscriberId);
-        }
+        logger.debug("unsubscribing '{}'", subscriberId);
         try {
             String classname = subscriber.getClass().getName();
             String queueName = UUID.nameUUIDFromBytes(classname.getBytes()).toString();
@@ -271,9 +269,7 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
     // publish event on to the exchange created on AMQP server
     @Override
     public void publish(Event event) throws EventBusException {
-        if (logger.isTraceEnabled()) {
-            logger.trace("publish '{}'", event.getDescription());
-        }
+        logger.trace("publish '{}'", event.getDescription());
 
         String routingKey = createRoutingKey(event);
         String eventDescription = event.getDescription();

@@ -49,7 +49,7 @@ public class ListWebhooksCmd extends BaseListProjectAndAccountResourcesCmd {
     /////////////////////////////////////////////////////
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID,
             entityType = WebhookResponse.class,
-            description = "The ID of the Webhooks")
+            description = "The ID of the Webhook")
     private Long id;
 
     @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "The state of the Webhook")
