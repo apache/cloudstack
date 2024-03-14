@@ -136,4 +136,20 @@ public interface PrimaryDataStoreDriver extends DataStoreDriver {
      * @param tagValue The value of the VM's tag
      */
     void provideVmTags(long vmId, long volumeId, String tagValue);
+
+    /**
+     * Data store driver needs its grantAccess() method called for volumes in order for them to be used with a host.
+     * @return true if we should call grantAccess() to use a volume
+     */
+    default boolean volumesRequireGrantAccessWhenUsed() {
+        return false;
+    }
+
+    /**
+     * Zone-wide data store supports using a volume across clusters without the need for data motion
+     * @return true if we don't need to data motion volumes across clusters for zone-wide use
+     */
+    default boolean zoneWideVolumesAvailableWithoutClusterMotion() {
+        return false;
+    }
 }

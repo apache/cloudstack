@@ -257,4 +257,9 @@ public class NexentaPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Override
     public void provideVmTags(long vmId, long volumeId, String tagValue) {
     }
+
+    @Override
+    public boolean volumesRequireGrantAccessWhenUsed() {
+        return true;
+    }
 }

@@ -583,6 +583,9 @@ import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.config.ConfigurationGroup;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -942,6 +945,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private DpdkHelper dpdkHelper;
     @Inject
     private PrimaryDataStoreDao _primaryDataStoreDao;
+    @Inject
+    private DataStoreManager dataStoreManager;
     @Inject
     private VolumeDataStoreDao _volumeStoreDao;
     @Inject
@@ -1350,6 +1355,20 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return new Pair<>(true, filteredHosts);
     }
 
+    protected boolean zoneWideVolumeRequiresStorageMotion(PrimaryDataStore volumeDataStore,
+                                                          final Host sourceHost, final Host destinationHost) {
+        if (volumeDataStore.isManaged() && sourceHost.getClusterId() != destinationHost.getClusterId()) {
+            PrimaryDataStoreDriver driver = (PrimaryDataStoreDriver)volumeDataStore.getDriver();
+            // Depends on the storage driver. For some storages simply
+            // changing volume access to host should work: grant access on destination
+            // host and revoke access on source host. For others, we still have to perform a storage migration
+            // because we need to create a new target volume and copy the contents of the
+            // source volume into it before deleting the source volume.
+            return !driver.zoneWideVolumesAvailableWithoutClusterMotion();
+        }
+        return false;
+    }
+
     @Override
     public Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> listHostsForMigrationOfVM(final Long vmId, final Long startIndex, final Long pageSize,
             final String keyword) {
@@ -1449,8 +1468,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             filteredHosts = new ArrayList<>(allHosts);
 
             for (final VolumeVO volume : volumes) {
-                StoragePool storagePool = _poolDao.findById(volume.getPoolId());
-                Long volClusterId = storagePool.getClusterId();
+                PrimaryDataStore primaryDataStore = (PrimaryDataStore)dataStoreManager.getPrimaryDataStore(volume.getPoolId());
+                Long volClusterId = primaryDataStore.getClusterId();
 
                 for (Iterator<HostVO> iterator = filteredHosts.iterator(); iterator.hasNext();) {
                     final Host host = iterator.next();
@@ -1460,8 +1479,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                     }
 
                     if (volClusterId != null) {
-                        if (storagePool.isLocal() || !host.getClusterId().equals(volClusterId) || usesLocal) {
-                            if (storagePool.isManaged()) {
+                        if (primaryDataStore.isLocal() || !host.getClusterId().equals(volClusterId) || usesLocal) {
+                            if (primaryDataStore.isManaged()) {
                                 // At the time being, we do not support storage migration of a volume from managed storage unless the managed storage
                                 // is at the zone level and the source and target storage pool is the same.
                                 // If the source and target storage pool is the same and it is managed, then we still have to perform a storage migration
@@ -1479,18 +1498,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                             }
                         }
                     } else {
-                        if (storagePool.isManaged()) {
-                            if (srcHost.getClusterId() != host.getClusterId()) {
-                                if (storagePool.getPoolType() == Storage.StoragePoolType.PowerFlex) {
-                                    // No need of new volume creation for zone wide PowerFlex/ScaleIO pool
-                                    // Simply, changing volume access to host should work: grant access on dest host and revoke access on source host
-                                    continue;
-                                }
-                                // If the volume's storage pool is managed and at the zone level, then we still have to perform a storage migration
-                                // because we need to create a new target volume and copy the contents of the source volume into it before deleting
-                                // the source volume.
-                                requiresStorageMotion.put(host, true);
-                            }
+                        if (zoneWideVolumeRequiresStorageMotion(primaryDataStore, srcHost, host)) {
+                            requiresStorageMotion.put(host, true);
                         }
                     }
                 }
