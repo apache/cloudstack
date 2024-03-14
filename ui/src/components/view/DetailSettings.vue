@@ -26,7 +26,7 @@
         <a-button
           type="dashed"
           style="width: 100%"
-          :disabled="!(isAdminOrOwner() && hasAPIPermission())"
+          :disabled="!(isAdminOrOwner() && hasSettingUpdatePermission())"
           @click="onShowAddDetail">
           <template #icon><plus-outlined /></template>
           {{ $t('label.add.setting') }}
@@ -96,7 +96,7 @@
         </a-list-item-meta>
         <template #actions>
           <div
-            v-if="!disableSettings && isAdminOrOwner() && allowEditOfDetail(item.name) && hasAPIPermission()">
+            v-if="!disableSettings && isAdminOrOwner() && allowEditOfDetail(item.name) && hasSettingUpdatePermission()">
             <tooltip-button
               :tooltip="$t('label.edit')"
               icon="edit-outlined"
@@ -105,7 +105,7 @@
               @onClick="showEditDetail(index)" />
           </div>
           <div
-            v-if="!disableSettings && isAdminOrOwner() && allowEditOfDetail(item.name) && hasAPIPermission()">
+            v-if="!disableSettings && isAdminOrOwner() && allowEditOfDetail(item.name) && hasSettingUpdatePermission()">
             <a-popconfirm
               :title="`${$t('label.delete.setting')}?`"
               @confirm="deleteDetail(index)"
@@ -332,7 +332,7 @@ export default {
       this.error = false
       this.showAddDetail = false
     },
-    hasAPIPermission () {
+    hasSettingUpdatePermission () {
       return (
         (this.resourceType === 'Template' && 'updateTemplate' in this.$store.getters.apis) ||
         (this.resourceType === 'UserVm' && 'updateVirtualMachine' in this.$store.getters.apis)
