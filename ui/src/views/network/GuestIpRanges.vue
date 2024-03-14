@@ -228,6 +228,10 @@ export default {
     },
     removeIpRange (id) {
       api('deleteVlanIpRange', { id: id }).then(json => {
+        const message = `${this.$t('message.success.delete')} ${this.$t('label.ip.range')}`
+        this.$message.success(message)
+      }).catch((error) => {
+        this.$notifyError(error)
       }).finally(() => {
         this.fetchData()
       })
