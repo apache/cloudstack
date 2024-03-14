@@ -175,8 +175,8 @@ public class NoVncClient {
                 is.readFully(buf);
                 String reason = new String(buf, RfbConstants.CHARSET);
 
-                logger.error("Authentication to VNC server is failed. Reason: " + reason);
-                throw new RuntimeException("Authentication to VNC server is failed. Reason: " + reason);
+                logger.error("Authentication to VNC server has failed. Reason: " + reason);
+                throw new RuntimeException("Authentication to VNC server has failed. Reason: " + reason);
             }
 
             case RfbConstants.NO_AUTH: {
@@ -373,7 +373,7 @@ public class NoVncClient {
     public ByteBuffer handshakeProtocolVersion() {
         ByteBuffer verStr = ByteBuffer.allocate(12);
 
-        logger.debug("Reading RFB protocol version");
+        s_logger.debug("Reading RFB protocol version");
 
         nioSocketConnection.readBytes(verStr, 12);
 
