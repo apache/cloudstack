@@ -15,24 +15,14 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# Do not modify this file as your changes will be lost in the next CSM update.
-# If you need to add specific dependencies to this service unit do it in the
-# /etc/systemd/system/cloudstack-management.service.d/ directory
-
-[Unit]
-Description=CloudStack Agent
-Documentation=http://www.cloudstack.org/
-Requires=libvirtd.service
-After=libvirtd.service
-
-[Service]
-Type=simple
-EnvironmentFile=/etc/default/cloudstack-agent
-ExecStart=/usr/bin/java $JAVA_OPTS $JAVA_DEBUG -cp $CLASSPATH $JAVA_CLASS
-Restart=always
-RestartSec=10s
-StandardOutput=append:/var/log/cloudstack/agent/agent.out
-StandardError=append:/var/log/cloudstack/agent/agent.err
-
-[Install]
-WantedBy=multi-user.target
+/var/log/cloudstack/usage/usage.out /var/log/cloudstack/usage/usage.err {
+    su root root
+    copytruncate
+    daily
+    rotate 5
+    compress
+    missingok
+    size 10M
+    dateext
+    dateformat -%Y-%m-%d
+}
