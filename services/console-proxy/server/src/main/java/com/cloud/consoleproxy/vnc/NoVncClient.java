@@ -79,6 +79,7 @@ public class NoVncClient {
                 port = 80;
         }
 
+        s_logger.info(String.format("Connecting to VNC server %s:%s ...", host, port));
         RawHTTP tunnel = new RawHTTP("CONNECT", host, port, path, session, useSSL);
         socket = tunnel.connect();
         setTunnelSocketStreams();
@@ -175,8 +176,9 @@ public class NoVncClient {
                 is.readFully(buf);
                 String reason = new String(buf, RfbConstants.CHARSET);
 
-                logger.error("Authentication to VNC server has failed. Reason: " + reason);
-                throw new RuntimeException("Authentication to VNC server has failed. Reason: " + reason);
+                String msg = String.format("Authentication to VNC server has failed. Reason: %s", reason);
+                s_logger.error(msg);
+                throw new RuntimeException(msg);
             }
 
             case RfbConstants.NO_AUTH: {
@@ -191,9 +193,9 @@ public class NoVncClient {
             }
 
             default:
-                logger.error("Unsupported VNC protocol authorization scheme, scheme code: " + authType + ".");
-                throw new RuntimeException(
-                        "Unsupported VNC protocol authorization scheme, scheme code: " + authType + ".");
+                String msg = String.format("Unsupported VNC protocol authorization scheme, scheme code: %d.", authType);
+                s_logger.error(msg);
+                throw new RuntimeException(msg);
         }
         // Since we've taken care of the auth, we tell the client that there's no auth
         // going on
