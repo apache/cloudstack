@@ -104,7 +104,7 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
         try {
             port = Integer.parseInt(portStr);
         } catch (NumberFormatException e) {
-            logger.warn(String.format("Invalid port value in query string: %s. Expected a number.", portStr));
+            logger.error(String.format("Invalid port value in query string: %s. Expected a number.", portStr), e);
             throw new IllegalArgumentException(e);
         }
 
@@ -112,7 +112,7 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
             try {
                 ajaxSessionId = Long.parseLong(ajaxSessionIdStr);
             } catch (NumberFormatException e) {
-                logger.warn(String.format("Invalid ajaxSessionId (sess) value in query string: %s. Expected a number.", ajaxSessionIdStr));
+                logger.error(String.format("Invalid ajaxSessionId (sess) value in query string: %s. Expected a number.", ajaxSessionIdStr), e);
                 throw new IllegalArgumentException(e);
             }
         }
@@ -147,7 +147,7 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
             viewer = ConsoleProxy.getNoVncViewer(param, ajaxSessionIdStr, session);
             s_logger.debug("Viewer has been created successfully.");
         } catch (Exception e) {
-            s_logger.warn("Failed to create viewer due to " + e.getMessage(), e);
+            s_logger.error("Failed to create viewer due to " + e.getMessage(), e);
             return;
         } finally {
             if (viewer == null) {
