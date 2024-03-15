@@ -51,7 +51,11 @@ public class Hypervisor {
         public HypervisorType(String name, ImageFormat imageFormat) {
             this.name = name;
             this.imageFormat = imageFormat;
-            hypervisorTypeMap.putIfAbsent(name.toLowerCase(Locale.ROOT), this);
+            if (name.equals("Parralels")){ // typo in the original code
+                hypervisorTypeMap.put("parallels", this);
+            } else {
+                hypervisorTypeMap.putIfAbsent(name.toLowerCase(Locale.ROOT), this);
+            }
         }
 
         public static HypervisorType getType(String hypervisor) {
