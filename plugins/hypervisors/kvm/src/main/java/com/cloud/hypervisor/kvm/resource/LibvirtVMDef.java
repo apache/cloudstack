@@ -699,6 +699,18 @@ public class LibvirtVMDef {
 
         }
 
+        public enum BlockIOSize {
+            SIZE_512("512"), SIZE_4K("4096");
+            final String blockSize;
+
+            BlockIOSize(String size) { this.blockSize = size; }
+
+            @Override
+            public String toString() {
+                return blockSize;
+            }
+        }
+
         private DeviceType _deviceType; /* floppy, disk, cdrom */
         private DiskType _diskType;
         private DiskProtocol _diskProtocol;
@@ -732,6 +744,8 @@ public class LibvirtVMDef {
         private IoDriverPolicy ioDriver;
         private LibvirtDiskEncryptDetails encryptDetails;
         private boolean isIothreadsEnabled;
+        private BlockIOSize logicalBlockIOSize = null;
+        private BlockIOSize physicalBlockIOSize = null;
 
         public DiscardType getDiscard() {
             return _discard;
@@ -756,6 +770,10 @@ public class LibvirtVMDef {
         public void isIothreadsEnabled(boolean isIothreadsEnabled) {
             this.isIothreadsEnabled = isIothreadsEnabled;
         }
+
+        public void setPhysicalBlockIOSize(BlockIOSize size) { this.physicalBlockIOSize = size; }
+
+        public void setLogicalBlockIOSize(BlockIOSize size) { this.logicalBlockIOSize = size; }
 
         public void defFileBasedDisk(String filePath, String diskLabel, DiskBus bus, DiskFmtType diskFmtType) {
             _diskType = DiskType.FILE;
@@ -1142,6 +1160,17 @@ public class LibvirtVMDef {
                 diskBuilder.append(" bus='" + _bus + "'");
             }
             diskBuilder.append("/>\n");
+
+            if (logicalBlockIOSize != null || physicalBlockIOSize != null) {
+                diskBuilder.append("<blockio ");
+                if (logicalBlockIOSize != null) {
+                    diskBuilder.append(String.format("logical_block_size='%s' ", logicalBlockIOSize));
+                }
+                if (physicalBlockIOSize != null) {
+                    diskBuilder.append(String.format("physical_block_size='%s' ", physicalBlockIOSize));
+                }
+                diskBuilder.append("/>\n");
+            }
 
             if (_serial != null && !_serial.isEmpty() && _deviceType != DeviceType.LUN) {
                 diskBuilder.append("<serial>" + _serial + "</serial>\n");

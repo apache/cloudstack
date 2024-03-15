@@ -19,6 +19,7 @@ package com.cloud.hypervisor.kvm.storage;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 
 import com.cloud.storage.Storage;
@@ -74,4 +75,12 @@ public interface KVMStoragePool {
     public boolean supportsConfigDriveIso();
 
     public Map<String, String> getDetails();
+
+    default LibvirtVMDef.DiskDef.BlockIOSize getSupportedLogicalBlockSize() {
+        return null;
+    }
+
+    default LibvirtVMDef.DiskDef.BlockIOSize getSupportedPhysicalBlockSize() {
+        return null;
+    }
 }
