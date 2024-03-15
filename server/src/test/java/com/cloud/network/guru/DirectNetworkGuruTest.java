@@ -142,7 +142,7 @@ public class DirectNetworkGuruTest {
 
         when(networkModel.areServicesSupportedByNetworkOffering(offering.getId(), Network.Service.SecurityGroup)).thenReturn(true);
 
-        assertNotNull(guru.design(offering, plan, network, owner));
+        assertNotNull(guru.design(offering, plan, network, "", 1L, owner));
     }
 
     @Test
@@ -159,7 +159,7 @@ public class DirectNetworkGuruTest {
 
         when(networkModel.areServicesSupportedByNetworkOffering(offering.getId(), Network.Service.SecurityGroup)).thenReturn(false);
 
-        Network config = guru.design(offering, plan, network, owner);
+        Network config = guru.design(offering, plan, network, "", 1L, owner);
         assertNotNull(config);
         assertEquals(ip4Dns[0], config.getDns1());
         assertEquals(ip4Dns[1], config.getDns2());
