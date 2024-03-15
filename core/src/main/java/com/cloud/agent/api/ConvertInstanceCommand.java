@@ -28,16 +28,18 @@ public class ConvertInstanceCommand extends Command {
     private Hypervisor.HypervisorType destinationHypervisorType;
     private List<String> destinationStoragePools;
     private DataStoreTO conversionTemporaryLocation;
+    private String templateOnConversionLocation;
 
     public ConvertInstanceCommand() {
     }
 
     public ConvertInstanceCommand(RemoteInstanceTO sourceInstance, Hypervisor.HypervisorType destinationHypervisorType,
-                                  List<String> destinationStoragePools, DataStoreTO conversionTemporaryLocation) {
+                                  List<String> destinationStoragePools, DataStoreTO conversionTemporaryLocation, String templateOnConversionLocation) {
         this.sourceInstance = sourceInstance;
         this.destinationHypervisorType = destinationHypervisorType;
         this.destinationStoragePools = destinationStoragePools;
         this.conversionTemporaryLocation = conversionTemporaryLocation;
+        this.templateOnConversionLocation = templateOnConversionLocation;
     }
 
     public RemoteInstanceTO getSourceInstance() {
@@ -54,6 +56,10 @@ public class ConvertInstanceCommand extends Command {
 
     public DataStoreTO getConversionTemporaryLocation() {
         return conversionTemporaryLocation;
+    }
+
+    public String getTemplateOnConversionLocation() {
+        return templateOnConversionLocation;
     }
 
     @Override

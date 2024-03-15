@@ -115,8 +115,8 @@ public interface HypervisorGuru extends Adapter {
      * @param params hypervisor specific additional parameters
      * @return a reference to the cloned VM
      */
-    UnmanagedInstanceTO cloneHypervisorVMOutOfBand(String hostIp, String vmName,
-                                                   Map<String, String> params, DataStoreTO convertLocation);
+    Pair<UnmanagedInstanceTO, String> cloneHypervisorVMAndCreateTemplateFileOutOfBand(String hostIp, String vmName,
+                                                                        Map<String, String> params, DataStoreTO convertLocation);
 
     /**
      * Removes a VM created as a clone of a VM on an external host
@@ -125,6 +125,6 @@ public interface HypervisorGuru extends Adapter {
      * @param params hypervisor specific additional parameters
      * @return true if the operation succeeds, false if not
      */
-    boolean removeClonedHypervisorVMOutOfBand(String hostIp, String vmName,
-                                              Map<String, String> params);
+    boolean removeClonedHypervisorVMAandTemplateFileOutOfBand(String hostIp, String vmName,
+                                                              Map<String, String> params, DataStoreTO convertLocation, String templateOnConvertLocation);
 }

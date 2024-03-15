@@ -75,6 +75,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         Hypervisor.HypervisorType destinationHypervisorType = cmd.getDestinationHypervisorType();
         List<String> destinationStoragePools = cmd.getDestinationStoragePools();
         DataStoreTO conversionTemporaryLocation = cmd.getConversionTemporaryLocation();
+        String ovaTemplateOnConversionLocation = cmd.getTemplateOnConversionLocation();
         long timeout = (long) cmd.getWait() * 1000;
 
         if (!isInstanceConversionSupportedOnHost()) {
@@ -101,14 +102,17 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         final String temporaryConvertUuid = UUID.randomUUID().toString();
         final String temporaryPasswordFilePath = createTemporaryPasswordFileAndRetrievePath(sourceInstance);
         final String temporaryConvertPath = temporaryStoragePool.getLocalPath();
+        final String sourceOVAFile = String.format("%s/%s/%s.ova", temporaryConvertPath, ovaTemplateOnConversionLocation, ovaTemplateOnConversionLocation);
         boolean verboseModeEnabled = serverResource.isConvertInstanceVerboseModeEnabled();
 
         try {
-            boolean result = performInstanceConversion(convertInstanceUrl, sourceInstanceName, temporaryPasswordFilePath,
-                    temporaryConvertPath, temporaryConvertUuid, timeout, verboseModeEnabled);
+            boolean result = performInstanceConversionUsingOVA(sourceOVAFile, temporaryConvertPath, temporaryConvertUuid,
+                    timeout, verboseModeEnabled);
+//            boolean result = performInstanceConversion(convertInstanceUrl, sourceInstanceName, temporaryPasswordFilePath,
+//                    temporaryConvertPath, temporaryConvertUuid, timeout, verboseModeEnabled);
             if (!result) {
-                String err = String.format("The virt-v2v conversion of the instance %s failed. " +
-                                "Please check the agent logs for the virt-v2v output", sourceInstanceName);
+                String err = String.format("The virt-v2v conversion for the ova %s failed. " +
+                                "Please check the agent logs for the virt-v2v output", sourceOVAFile);
                 s_logger.error(err);
                 return new ConvertInstanceAnswer(cmd, false, err);
             }
@@ -336,6 +340,37 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         }
 
         String logPrefix = String.format("virt-v2v source: %s %s progress", convertInstanceUrl, sourceInstanceName);
+        OutputInterpreter.LineByLineOutputLogger outputLogger = new OutputInterpreter.LineByLineOutputLogger(s_logger, logPrefix);
+        script.execute(outputLogger);
+        int exitValue = script.getExitValue();
+        return exitValue == 0;
+    }
+
+    protected boolean performInstanceConversionUsingOVA(String sourceOVAFile,
+                                                String temporaryConvertFolder,
+                                                String temporaryConvertUuid,
+                                                long timeout, boolean verboseModeEnabled) {
+        //virt-v2v
+        // -i ova
+        // /mnt/2ba00d9f-8cb0-3f8a-89ec-7910b043eac0/18a88711-0db7-4b25-b5c8-816cd28d61c5/testova2-18a88711-0db7-4b25-b5c8-816cd28d61c5.ova
+        // -o local
+        // -os /tmp/testvms/test3
+        // -of qcow2
+        // -on test3vm
+        // -v
+        Script script = new Script("virt-v2v", timeout, s_logger);
+        script.add("--root", "first");
+        script.add("-i", "ova");
+        script.add(sourceOVAFile);
+        script.add("-o", "local");
+        script.add("-os", temporaryConvertFolder);
+        script.add("-of", "qcow2");
+        script.add("-on", temporaryConvertUuid);
+        if (verboseModeEnabled) {
+            script.add("-v");
+        }
+
+        String logPrefix = String.format("virt-v2v ova source: %s progress", sourceOVAFile);
         OutputInterpreter.LineByLineOutputLogger outputLogger = new OutputInterpreter.LineByLineOutputLogger(s_logger, logPrefix);
         script.execute(outputLogger);
         int exitValue = script.getExitValue();
