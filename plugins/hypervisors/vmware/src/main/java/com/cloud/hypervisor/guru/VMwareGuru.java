@@ -1345,7 +1345,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     }
 
     private VirtualMachineMO createCloneFromSourceVM(String vmName, VirtualMachineMO vmMo,
-                                                     DatacenterMO dataCenterMO, DataStoreTO convertLocation) throws Exception {
+                                                     DatacenterMO dataCenterMO) throws Exception {
         HostMO sourceHost = vmMo.getRunningHost();
         String cloneName = UUID.randomUUID().toString();
         DatastoreMO datastoreMO = vmMo.getAllDatastores().get(0); //pick the first datastore
@@ -1361,45 +1361,23 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         String datastorePath = datastoreMO.getDatastorePathOnHost(sourceHost.getMor().getValue());
         s_logger.info("Host datastore path: " + datastorePath);
 
-        String dataStoreUrl = null;
-        if (convertLocation instanceof NfsTO) {
-            NfsTO nfsStore = (NfsTO) convertLocation;
-            dataStoreUrl = nfsStore.getUrl();
-        } else if (convertLocation instanceof PrimaryDataStoreTO) {
-            PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO) convertLocation;
-            if (primaryDataStoreTO.getPoolType().equals(Storage.StoragePoolType.NetworkFilesystem)) {
-                String psHost = primaryDataStoreTO.getHost();
-                String psPath = primaryDataStoreTO.getPath();
-                dataStoreUrl = "nfs://" + psHost + File.separator + psPath;
-            }
-        }
-
-        String mountPoint = mountManager.getMountPoint(dataStoreUrl, null);
-        s_logger.info("Convert storage location - dataStoreUrl: " + dataStoreUrl + ", mountPoint: " + mountPoint);
-
-        String vmOvaName = UUID.randomUUID().toString();
-        String vmOvaCreationPath = mountPoint + "/" + vmOvaName;
-        synchronized (vmOvaCreationPath.intern()) {
-            Script command = new Script("mkdir", s_logger);
-            command.add("-p");
-            command.add(vmOvaCreationPath);
-            String cmdResult = command.execute();
-            if (cmdResult != null) {
-                String msg = "Unable to prepare VM's OVA directory: " + vmOvaCreationPath + ", storage: " + dataStoreUrl + ", error msg: " + cmdResult;
-                s_logger.error(msg);
-                throw new Exception(msg);
-            }
-        }
-        s_logger.info("Creating OVA - " + vmOvaName);
-        clonedVM.exportVm(vmOvaCreationPath, vmOvaName, true, true);
-        s_logger.info("Created OVA - " + vmOvaName);
         relocateClonedVMToSourceHost(clonedVM, sourceHost);
         return clonedVM;
     }
 
+    private String createOVATemplateFileOfVM(VirtualMachineMO vmMO, DataStoreTO convertLocation) throws Exception {
+        String dataStoreUrl = getDataStoreUrlForConversion(convertLocation);
+        String vmOvaName = UUID.randomUUID().toString();
+        String vmOvaCreationPath = createDirOnStorage(vmOvaName, dataStoreUrl, null);
+        s_logger.info("Creating OVA - " + vmOvaName + " at " + vmOvaCreationPath);
+        vmMO.exportVm(vmOvaCreationPath, vmOvaName, true, true);
+        s_logger.info("Created OVA - " + vmOvaName + " at " + vmOvaCreationPath);
+        return vmOvaName;
+    }
+
     @Override
-    public UnmanagedInstanceTO cloneHypervisorVMOutOfBand(String hostIp, String vmName,
-                                                                 Map<String, String> params, DataStoreTO convertLocation) {
+    public Pair<UnmanagedInstanceTO, String> cloneHypervisorVMAndCreateTemplateFileOutOfBand(String hostIp, String vmName,
+                                                                               Map<String, String> params, DataStoreTO convertLocation) {
         s_logger.debug(String.format("Cloning VM %s on external vCenter %s", vmName, hostIp));
         String vcenter = params.get(VmDetailConstants.VMWARE_VCENTER_HOST);
         String datacenter = params.get(VmDetailConstants.VMWARE_DATACENTER_NAME);
@@ -1422,12 +1400,13 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                         vmName));
             }
 
-            VirtualMachineMO clonedVM = createCloneFromSourceVM(vmName, vmMo, dataCenterMO, convertLocation);
+            VirtualMachineMO clonedVM = createCloneFromSourceVM(vmName, vmMo, dataCenterMO);
             s_logger.debug(String.format("VM %s cloned successfully", vmName));
+            String ovaTemplateName = createOVATemplateFileOfVM(clonedVM, convertLocation);
             UnmanagedInstanceTO clonedInstance = VmwareHelper.getUnmanagedInstance(vmMo.getRunningHost(), clonedVM);
             setNicsFromSourceVM(clonedInstance, vmMo);
             clonedInstance.setCloneSourcePowerState(sourceVmPowerState == VirtualMachinePowerState.POWERED_ON ? UnmanagedInstanceTO.PowerState.PowerOn : UnmanagedInstanceTO.PowerState.PowerOff);
-            return clonedInstance;
+            return new Pair<> (clonedInstance, ovaTemplateName);
         } catch (Exception e) {
             String err = String.format("Error cloning VM: %s from external vCenter %s: %s", vmName, vcenter, e.getMessage());
             s_logger.error(err, e);
@@ -1452,7 +1431,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     }
 
     @Override
-    public boolean removeClonedHypervisorVMOutOfBand(String hostIp, String vmName, Map<String, String> params) {
+    public boolean removeClonedHypervisorVMAandTemplateFileOutOfBand(String hostIp, String vmName, Map<String, String> params, DataStoreTO convertLocation, String templateOnConvertLocation) {
         s_logger.debug(String.format("Removing VM %s on external vCenter %s", vmName, hostIp));
         String vcenter = params.get(VmDetailConstants.VMWARE_VCENTER_HOST);
         String datacenter = params.get(VmDetailConstants.VMWARE_DATACENTER_NAME);
@@ -1468,11 +1447,80 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 s_logger.error(err);
                 return false;
             }
-            return vmMo.destroy();
+            if (!vmMo.destroy()) {
+                return false;
+            }
+            String dataStoreUrl = getDataStoreUrlForConversion(convertLocation);
+            deleteDirOnStorage(templateOnConvertLocation, dataStoreUrl, null);
+            return true;
         } catch (Exception e) {
             String err = String.format("Error destroying external VM %s: %s", vmName, e.getMessage());
             s_logger.error(err, e);
             return false;
+        }
+    }
+
+    private String getDataStoreUrlForConversion(DataStoreTO convertLocation) {
+        String dataStoreUrl = null;
+        if (convertLocation instanceof NfsTO) {
+            NfsTO nfsStore = (NfsTO) convertLocation;
+            dataStoreUrl = nfsStore.getUrl();
+        } else if (convertLocation instanceof PrimaryDataStoreTO) {
+            PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO) convertLocation;
+            if (primaryDataStoreTO.getPoolType().equals(Storage.StoragePoolType.NetworkFilesystem)) {
+                String psHost = primaryDataStoreTO.getHost();
+                String psPath = primaryDataStoreTO.getPath();
+                dataStoreUrl = "nfs://" + psHost + File.separator + psPath;
+            }
+        }
+
+        if (dataStoreUrl == null) {
+            throw new CloudRuntimeException("Only NFS storages are supported for conversion");
+        }
+
+        return dataStoreUrl;
+    }
+
+    private String createDirOnStorage(String dirName, String nfsStorageUrl, String nfsVersion) throws Exception {
+        String mountPoint = mountManager.getMountPoint(nfsStorageUrl, nfsVersion);
+        s_logger.info("Create dir storage location - url: " + nfsStorageUrl + ", mount point: " + mountPoint + ", dir: " + dirName);
+        String dirMountPath = mountPoint + File.separator + dirName;
+        createDir(dirMountPath);
+        return dirMountPath;
+    }
+
+    private void createDir(String dirName) throws Exception {
+        synchronized (dirName.intern()) {
+            Script command = new Script("mkdir", s_logger);
+            command.add("-p");
+            command.add(dirName);
+            String cmdResult = command.execute();
+            if (cmdResult != null) {
+                String msg = "Unable to create directory: " + dirName + ", error msg: " + cmdResult;
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
+        }
+    }
+
+    private void deleteDirOnStorage(String dirName, String nfsStorageUrl, String nfsVersion) throws Exception {
+        String mountPoint = mountManager.getMountPoint(nfsStorageUrl, nfsVersion);
+        s_logger.info("Delete dir storage location - url: " + nfsStorageUrl + ", mount point: " + mountPoint + ", dir: " + dirName);
+        String dirMountPath = mountPoint + File.separator + dirName;
+        deleteDir(dirMountPath);
+    }
+
+    private void deleteDir(String dirName) throws Exception {
+        synchronized (dirName.intern()) {
+            Script command = new Script("rm", s_logger);
+            command.add("-rf");
+            command.add(dirName);
+            String cmdResult = command.execute();
+            if (cmdResult != null) {
+                String msg = "Unable to delete directory: " + dirName + ", error msg: " + cmdResult;
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
         }
     }
 }
