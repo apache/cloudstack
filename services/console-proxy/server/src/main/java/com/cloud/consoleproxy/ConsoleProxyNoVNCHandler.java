@@ -82,9 +82,9 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
         String ticket = queryMap.get("ticket");
         String displayName = queryMap.get("displayname");
         String ajaxSessionIdStr = queryMap.get("sess");
-        String console_url = queryMap.get("consoleurl");
-        String console_host_session = queryMap.get("sessionref");
-        String vm_locale = queryMap.get("locale");
+        String consoleUrl = queryMap.get("consoleurl");
+        String consoleHostSession = queryMap.get("sessionref");
+        String vmLocale = queryMap.get("locale");
         String hypervHost = queryMap.get("hypervHost");
         String username = queryMap.get("username");
         String password = queryMap.get("password");
@@ -104,7 +104,7 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
         try {
             port = Integer.parseInt(portStr);
         } catch (NumberFormatException e) {
-            logger.warn("Invalid number parameter in query string: " + portStr);
+            logger.warn(String.format("Invalid port value in query string: %s. Expected a number", portStr));
             throw new IllegalArgumentException(e);
         }
 
@@ -112,12 +112,12 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
             try {
                 ajaxSessionId = Long.parseLong(ajaxSessionIdStr);
             } catch (NumberFormatException e) {
-                logger.warn("Invalid number parameter in query string: " + ajaxSessionIdStr);
+                logger.warn(String.format("Invalid ajaxSessionId (sess) value in query string: %s. Expected a number", ajaxSessionIdStr));
                 throw new IllegalArgumentException(e);
             }
         }
 
-        if (! checkSessionSourceIp(session, sourceIP)) {
+        if (!checkSessionSourceIp(session, sourceIP)) {
             return;
         }
 
@@ -129,9 +129,9 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
             param.setClientTag(tag);
             param.setTicket(ticket);
             param.setClientDisplayName(displayName);
-            param.setClientTunnelUrl(console_url);
-            param.setClientTunnelSession(console_host_session);
-            param.setLocale(vm_locale);
+            param.setClientTunnelUrl(consoleUrl);
+            param.setClientTunnelSession(consoleHostSession);
+            param.setLocale(vmLocale);
             param.setHypervHost(hypervHost);
             param.setUsername(username);
             param.setPassword(password);
@@ -144,8 +144,9 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
                 param.setClientProvidedExtraSecurityToken(queryMap.get("extra"));
             }
             viewer = ConsoleProxy.getNoVncViewer(param, ajaxSessionIdStr, session);
+            s_logger.debug("Viewer has been created successfully");
         } catch (Exception e) {
-            logger.warn("Failed to create viewer due to " + e.getMessage(), e);
+            s_logger.warn("Failed to create viewer due to " + e.getMessage(), e);
             return;
         } finally {
             if (viewer == null) {
@@ -155,31 +156,35 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
     }
 
     private boolean checkSessionSourceIp(final Session session, final String sourceIP) throws IOException {
-        // Verify source IP
+        s_logger.debug("Verifying session source IP");
         String sessionSourceIP = session.getRemoteAddress().getAddress().getHostAddress();
         logger.info("Get websocket connection request from remote IP : " + sessionSourceIP);
-        if (ConsoleProxy.isSourceIpCheckEnabled && (sessionSourceIP == null || ! sessionSourceIP.equals(sourceIP))) {
+        if (ConsoleProxy.isSourceIpCheckEnabled && (sessionSourceIP == null || !sessionSourceIP.equals(sourceIP))) {
             logger.warn("Failed to access console as the source IP to request the console is " + sourceIP);
             session.disconnect();
             return false;
         }
+        s_logger.debug("Session source IP has been verified successfully");
         return true;
     }
 
     @OnWebSocketClose
     public void onClose(Session session, int statusCode, String reason) throws IOException, InterruptedException {
+        s_logger.debug("Closing WebSocket session");
         if (viewer != null) {
             ConsoleProxy.removeViewer(viewer);
         }
+        s_logger.debug("WebSocket session closed successfully");
     }
 
     @OnWebSocketFrame
     public void onFrame(Frame f) throws IOException {
+        s_logger.trace(String.format("Sending client frame of %d bytes", f.getPayloadLength()));
         viewer.sendClientFrame(f);
     }
 
     @OnWebSocketError
     public void onError(Throwable cause) {
-        logger.error("Error on websocket", cause);
+        logger.error("Error on WebSocket", cause);
     }
 }
