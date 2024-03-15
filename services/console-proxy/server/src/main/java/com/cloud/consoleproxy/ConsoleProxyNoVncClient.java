@@ -108,8 +108,10 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                     int readBytes;
                     byte[] b;
                     while (connectionAlive) {
+                        s_logger.trace(String.format("Connection with client [%s] is alive", clientId));
                         if (client.isVncOverWebSocketConnection()) {
                             if (client.isVncOverWebSocketConnectionOpen()) {
+                                s_logger.trace("WebSocket connection to VNC server is open");
                                 updateFrontEndActivityTime();
                             }
                             connectionAlive = session.isOpen();
@@ -367,6 +369,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
     }
 
     public void updateFrontEndActivityTime() {
+        s_logger.trace("Updating last front end activity time");
         lastFrontEndActivityTime = System.currentTimeMillis();
     }
 
