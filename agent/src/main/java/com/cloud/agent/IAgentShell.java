@@ -37,13 +37,11 @@ public interface IAgentShell {
 
     String getNextHost();
 
-    String getPrivateIp();
+
 
     int getPort();
 
     int getWorkers();
-
-    int getProxyPort();
 
     String getGuid();
 

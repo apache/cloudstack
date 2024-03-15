@@ -1,8 +1,7 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
+// regarding copyright ownership. The ASF licenses this file
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
@@ -37,19 +36,22 @@ public class DirectDownloadHelper {
     public static DirectTemplateDownloader getDirectTemplateDownloaderFromCommand(DirectDownloadCommand cmd,
                                                                                   String destPoolLocalPath,
                                                                                   String temporaryDownloadPath) {
+        String url = cmd.getUrl();
+        String checksum = cmd.getChecksum();
+        Integer connectTimeout = cmd.getConnectTimeout();
+        Integer soTimeout = cmd.getSoTimeout();
+        Integer connectionRequestTimeout = (cmd instanceof HttpsDirectDownloadCommand) ? ((HttpsDirectDownloadCommand) cmd).getConnectionRequestTimeout() : null;
+
         if (cmd instanceof HttpDirectDownloadCommand) {
-            return new HttpDirectTemplateDownloader(cmd.getUrl(), cmd.getTemplateId(), destPoolLocalPath, cmd.getChecksum(), cmd.getHeaders(),
-                    cmd.getConnectTimeout(), cmd.getSoTimeout(), temporaryDownloadPath);
+            return new HttpDirectTemplateDownloader(url, cmd.getTemplateId(), destPoolLocalPath, checksum, cmd.getHeaders(), connectTimeout, soTimeout, temporaryDownloadPath);
         } else if (cmd instanceof HttpsDirectDownloadCommand) {
-            return new HttpsDirectTemplateDownloader(cmd.getUrl(), cmd.getTemplateId(), destPoolLocalPath, cmd.getChecksum(), cmd.getHeaders(),
-                    cmd.getConnectTimeout(), cmd.getSoTimeout(), cmd.getConnectionRequestTimeout(), temporaryDownloadPath);
+            return new HttpsDirectTemplateDownloader(url, cmd.getTemplateId(), destPoolLocalPath, checksum, cmd.getHeaders(), connectTimeout, soTimeout, connectionRequestTimeout, temporaryDownloadPath);
         } else if (cmd instanceof NfsDirectDownloadCommand) {
-            return new NfsDirectTemplateDownloader(cmd.getUrl(), destPoolLocalPath, cmd.getTemplateId(), cmd.getChecksum(), temporaryDownloadPath);
+            return new NfsDirectTemplateDownloader(url, destPoolLocalPath, cmd.getTemplateId(), checksum, temporaryDownloadPath);
         } else if (cmd instanceof MetalinkDirectDownloadCommand) {
-            return new MetalinkDirectTemplateDownloader(cmd.getUrl(), destPoolLocalPath, cmd.getTemplateId(), cmd.getChecksum(), cmd.getHeaders(),
-                    cmd.getConnectTimeout(), cmd.getSoTimeout(), temporaryDownloadPath);
+            return new MetalinkDirectTemplateDownloader(url, destPoolLocalPath, cmd.getTemplateId(), checksum, cmd.getHeaders(), connectTimeout, soTimeout, temporaryDownloadPath);
         } else {
-            throw new IllegalArgumentException("Unsupported protocol, please provide HTTP(S), NFS or a metalink");
+            throw new IllegalArgumentException("Unsupported protocol, please provide HTTP(S), NFS, or a metalink");
         }
     }
 

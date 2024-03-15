@@ -52,6 +52,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 public class AgentShell implements IAgentShell, Daemon {
     protected static Logger LOGGER = LogManager.getLogger(AgentShell.class);
@@ -163,8 +164,8 @@ public class AgentShell implements IAgentShell, Daemon {
         }
     }
 
-    @Override
-    public String getPrivateIp() {
+
+    private String getPrivateIp() {
         return _privateIp;
     }
 
@@ -173,7 +174,7 @@ public class AgentShell implements IAgentShell, Daemon {
         return _port;
     }
 
-    @Override
+
     public int getProxyPort() {
         return _proxyPort;
     }
@@ -234,50 +235,47 @@ public class AgentShell implements IAgentShell, Daemon {
     }
 
     protected boolean parseCommand(final String[] args) throws ConfigurationException {
-        String host = null;
-        String workers = null;
-        String port = null;
-        String zone = null;
-        String pod = null;
-        String guid = null;
+        Map<String, Consumer<String>> paramHandlers = new HashMap<>();
+
+        paramHandlers.put("port", paramValue -> _port = getPortOrWorkers(paramValue, AgentProperties.PORT));
+        paramHandlers.put("threads", paramValue -> _workers = getWorkers(paramValue));
+        paramHandlers.put("workers", paramValue -> _workers = getWorkers(paramValue));
+        paramHandlers.put("host", paramValue -> {
+            try {
+                setHost(paramValue);
+            } catch (ConfigurationException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        paramHandlers.put("zone", paramValue -> _zone = getZoneOrPod(paramValue, AgentProperties.ZONE));
+        paramHandlers.put("pod", paramValue -> _pod = getZoneOrPod(paramValue, AgentProperties.POD));
+        paramHandlers.put("guid", paramValue -> {
+            try {
+                _guid = getGuid(paramValue);
+            } catch (ConfigurationException e) {
+                throw new RuntimeException(e);
+            }
+            _properties.setProperty(AgentProperties.GUID.getName(), _guid);
+        });
+        paramHandlers.put("eth1ip", paramValue -> _privateIp = paramValue);
+
         for (String param : args) {
-            final String[] tokens = param.split("=");
+            String[] tokens = param.split("=");
             if (tokens.length != 2) {
                 System.out.println("Invalid Parameter: " + param);
                 continue;
             }
-            final String paramName = tokens[0];
-            final String paramValue = tokens[1];
 
-            // save command line properties
+            String paramName = tokens[0];
+            String paramValue = tokens[1];
+
             _cmdLineProperties.put(paramName, paramValue);
 
-            if (paramName.equalsIgnoreCase("port")) {
-                port = paramValue;
-            } else if (paramName.equalsIgnoreCase("threads") || paramName.equalsIgnoreCase("workers")) {
-                workers = paramValue;
-            } else if (paramName.equalsIgnoreCase("host")) {
-                host = paramValue;
-            } else if (paramName.equalsIgnoreCase("zone")) {
-                zone = paramValue;
-            } else if (paramName.equalsIgnoreCase("pod")) {
-                pod = paramValue;
-            } else if (paramName.equalsIgnoreCase("guid")) {
-                guid = paramValue;
-            } else if (paramName.equalsIgnoreCase("eth1ip")) {
-                _privateIp = paramValue;
+            Consumer<String> handler = paramHandlers.get(paramName.toLowerCase());
+            if (handler != null) {
+                handler.accept(paramValue);
             }
         }
-
-        setHost(host);
-
-        _guid = getGuid(guid);
-        _properties.setProperty(AgentProperties.GUID.getName(), _guid);
-
-        _port = getPortOrWorkers(port, AgentProperties.PORT);
-        _workers = getWorkers(workers);
-        _zone = getZoneOrPod(zone, AgentProperties.ZONE);
-        _pod = getZoneOrPod(pod, AgentProperties.POD);
 
         _proxyPort = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.CONSOLEPROXY_HTTPLISTENPORT);
         _pingRetries = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.PING_RETRIES);
@@ -285,6 +283,7 @@ public class AgentShell implements IAgentShell, Daemon {
 
         return true;
     }
+
 
     protected void setHost(String host) throws ConfigurationException {
         if (host == null) {
