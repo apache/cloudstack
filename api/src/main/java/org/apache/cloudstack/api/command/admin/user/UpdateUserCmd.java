@@ -66,7 +66,7 @@ public class UpdateUserCmd extends BaseCmd {
     @Parameter(name = ApiConstants.CURRENT_PASSWORD, type = CommandType.STRING, description = "Current password that was being used by the user. You must inform the current password when updating the password.", acceptedOnAdminPort = false)
     private String currentPassword;
 
-    @Parameter(name = ApiConstants.SECRET_KEY, type = CommandType.STRING, description = "The secret key for the user. Must be specified with userApiKey")
+    @Parameter(name = ApiConstants.USER_SECRET_KEY, type = CommandType.STRING, description = "The secret key for the user. Must be specified with userApiKey")
     private String secretKey;
 
     @Parameter(name = ApiConstants.TIMEZONE,

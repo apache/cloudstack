@@ -29,7 +29,8 @@ import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.Event;
-import org.apache.cloudstack.framework.events.EventBus;
+import org.apache.cloudstack.framework.events.EventBusException;
+import org.apache.cloudstack.framework.events.EventDistributor;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -97,7 +98,7 @@ public class ActionEventUtilsTest {
     protected ConfigurationDao configDao;
 
     @Mock
-    protected EventBus eventBus;
+    protected EventDistributor eventDistributor;
 
     private AccountVO account;
     private UserVO user;
@@ -149,7 +150,7 @@ public class ActionEventUtilsTest {
         //Some basic mocks.
         Mockito.when(configDao.getValue(Config.PublishActionEvent.key())).thenReturn("true");
         componentContextMocked = Mockito.mockStatic(ComponentContext.class);
-        componentContextMocked.when(() -> ComponentContext.getComponent(EventBus.class)).thenReturn(eventBus);
+        componentContextMocked.when(() -> ComponentContext.getComponent(EventDistributor.class)).thenReturn(eventDistributor);
 
         //Needed for persist to actually set an ID that can be returned from the ActionEventUtils
         //methods.
@@ -166,14 +167,11 @@ public class ActionEventUtilsTest {
         });
 
         //Needed to record events published on the bus.
-        Mockito.doAnswer(new Answer<Void>() {
-            @Override public Void answer(InvocationOnMock invocation) throws Throwable {
-                Event event = (Event)invocation.getArguments()[0];
-                publishedEvents.add(event);
-                return null;
-            }
-
-        }).when(eventBus).publish(Mockito.any(Event.class));
+        Mockito.doAnswer((Answer<Map<String, EventBusException>>) invocation -> {
+            Event event = (Event)invocation.getArguments()[0];
+            publishedEvents.add(event);
+            return new HashMap<>();
+        }).when(eventDistributor).publish(Mockito.any(Event.class));
 
         account = new AccountVO("testaccount", 1L, "networkdomain", Account.Type.NORMAL, "uuid");
         account.setId(ACCOUNT_ID);

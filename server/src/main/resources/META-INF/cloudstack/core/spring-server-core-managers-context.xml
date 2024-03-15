@@ -145,6 +145,10 @@
         <property name="staticNatElements" value="#{staticNatServiceProvidersRegistry.registered}" />
     </bean>
 
+    <bean id="eventDistributor" class="org.apache.cloudstack.framework.events.EventDistributorImpl" >
+        <property name="eventBuses" value="#{eventBusRegistry.registered}" />
+    </bean>
+
     <bean id="hypervisorGuruManagerImpl" class="com.cloud.hypervisor.HypervisorGuruManagerImpl" >
         <property name="hvGuruList" value="#{hypervisorGurusRegistry.registered}" />
     </bean>
