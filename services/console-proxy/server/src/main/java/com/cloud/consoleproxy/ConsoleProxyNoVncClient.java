@@ -75,7 +75,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
     public boolean isFrontEndAlive() {
         long unusedTime = System.currentTimeMillis() - getClientLastFrontEndActivityTime();
         if (!connectionAlive || unusedTime > ConsoleProxy.VIEWER_LINGER_SECONDS * 1000) {
-            logger.info(String.format("Front end has been idle for too long (%dms)", unusedTime));
+            logger.info(String.format("Front end has been idle for too long (%dms).", unusedTime));
             return false;
         }
         return true;
@@ -110,7 +110,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                     int readBytes;
                     byte[] b;
                     while (connectionAlive) {
-                        s_logger.trace(String.format("Connection with client [%s] [IP: %s] is alive", clientId, clientSourceIp));
+                        s_logger.trace(String.format("Connection with client [%s] [IP: %s] is alive.", clientId, clientSourceIp));
                         if (client.isVncOverWebSocketConnection()) {
                             if (client.isVncOverWebSocketConnectionOpen()) {
                                 updateFrontEndActivityTime();
@@ -121,7 +121,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                             int nextBytes = client.getNextBytes();
                             bytesArr = new byte[nextBytes];
                             client.readBytes(bytesArr, nextBytes);
-                            logger.trace(String.format("Read [%s] bytes from client [%s]", nextBytes, clientId));
+                            logger.trace(String.format("Read [%s] bytes from client [%s].", nextBytes, clientId));
                             if (nextBytes > 0) {
                                 session.getRemote().sendBytes(ByteBuffer.wrap(bytesArr));
                                 updateFrontEndActivityTime();
@@ -131,7 +131,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                         } else {
                             b = new byte[100];
                             readBytes = client.read(b);
-                            logger.trace(String.format("Read [%s] bytes from client [%s]", readBytes, clientId));
+                            logger.trace(String.format("Read [%s] bytes from client [%s].", readBytes, clientId));
                             if (readBytes == -1 || (readBytes > 0 && !sendReadBytesToNoVNC(b, readBytes))) {
                                 connectionAlive = false;
                             }
@@ -157,7 +157,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
             session.getRemote().sendBytes(ByteBuffer.wrap(b, 0, readBytes));
             updateFrontEndActivityTime();
         } catch (WebSocketException | IOException e) {
-            logger.error("VNC server connection exception", e);
+            logger.error("VNC server connection exception.", e);
             return false;
         }
         return true;
@@ -177,22 +177,22 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
      */
     private void authenticateToVNCServer() throws IOException {
         if (client.isVncOverWebSocketConnection()) {
-            s_logger.debug("Skipping authentication to VNC server since WebSocket protocol is being used");
+            s_logger.debug("Skipping authentication to VNC server since WebSocket protocol is being used.");
             return;
         }
 
         if (!client.isVncOverNioSocket()) {
-            s_logger.debug("Authenticating to VNC server");
+            s_logger.debug("Authenticating to VNC server.");
             String ver = client.handshake();
             session.getRemote().sendBytes(ByteBuffer.wrap(ver.getBytes(), 0, ver.length()));
 
             byte[] b = client.authenticateTunnel(getClientHostPassword());
             session.getRemote().sendBytes(ByteBuffer.wrap(b, 0, 4));
         } else {
-            s_logger.debug("Authenticating to VNC server through NIO Socket");
+            s_logger.debug("Authenticating to VNC server through NIO Socket.");
             authenticateVNCServerThroughNioSocket();
         }
-        s_logger.debug(String.format("Client %s has been authenticated successfully to VNC server", clientId));
+        s_logger.debug(String.format("Client %s has been authenticated successfully to VNC server.", clientId));
     }
 
     /**
@@ -303,9 +303,9 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                 client.connectTo(getClientHostAddress(), getClientHostPort());
             }
 
-            s_logger.info("Connection to VNC server has been established successfully");
+            s_logger.info("Connection to VNC server has been established successfully.");
         } catch (Throwable e) {
-            logger.error("Unexpected exception while connecting to VNC server", e);
+            logger.error("Unexpected exception while connecting to VNC server.", e);
         }
     }
 
@@ -370,7 +370,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
     }
 
     public void updateFrontEndActivityTime() {
-        s_logger.trace("Updating last front end activity time");
+        s_logger.trace("Updating last front end activity time.");
         lastFrontEndActivityTime = System.currentTimeMillis();
     }
 
