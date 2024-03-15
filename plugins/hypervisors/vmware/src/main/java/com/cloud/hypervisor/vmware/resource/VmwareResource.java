@@ -4766,7 +4766,13 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         final String vmName = cmd.getVmName();
         try {
             VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
+            if (hyperHost == null) {
+                throw new CloudRuntimeException("no hypervisor host found for migrate command");
+            }
             ManagedObjectReference morDc = hyperHost.getHyperHostDatacenter();
+            if (morDc == null) {
+                throw new CloudRuntimeException("no Managed Object Reference for the Data Center found for migrate command");
+            }
 
             // find VM through datacenter (VM is not at the target host yet)
             VirtualMachineMO vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
@@ -4777,6 +4783,9 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             }
 
             VmwareHypervisorHost destHyperHost = getTargetHyperHost(new DatacenterMO(hyperHost.getContext(), morDc), cmd.getDestinationIp());
+            if (destHyperHost == null) {
+                throw new CloudRuntimeException("no destination Hypervisor Host found for migrate command");
+            }
 
             ManagedObjectReference morTargetPhysicalHost = destHyperHost.findMigrationTarget(vmMo);
             if (morTargetPhysicalHost == null) {
@@ -4788,7 +4797,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             }
 
             return new MigrateAnswer(cmd, true, "migration succeeded", null);
-        } catch (Throwable e) {
+        } catch (Exception e) {
+            s_logger.info(String.format("migrate command for %s failed due to %s", vmName, e.getLocalizedMessage()));
             return new MigrateAnswer(cmd, false, createLogMessageException(e, cmd), null);
         }
     }

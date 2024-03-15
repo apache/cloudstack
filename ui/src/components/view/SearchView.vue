@@ -339,7 +339,8 @@ export default {
           { value: 'Template' },
           { value: 'User' },
           { value: 'VirtualMachine' },
-          { value: 'Volume' }
+          { value: 'Volume' },
+          { value: 'QuotaTariff' }
         ]
         this.fields[resourceTypeIndex].loading = false
       }

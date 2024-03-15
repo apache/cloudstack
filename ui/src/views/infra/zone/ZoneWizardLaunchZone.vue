@@ -466,6 +466,9 @@ export default {
           if (physicalNetwork.isolationMethod) {
             params.isolationmethods = physicalNetwork.isolationMethod
           }
+          if (physicalNetwork.tags) {
+            params.tags = physicalNetwork.tags
+          }
 
           try {
             if (!this.stepData.stepMove.includes('createPhysicalNetwork' + index)) {

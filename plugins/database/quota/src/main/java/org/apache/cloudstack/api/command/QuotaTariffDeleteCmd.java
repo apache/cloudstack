@@ -21,12 +21,14 @@ import com.cloud.user.Account;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiArgValidator;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.QuotaResponseBuilder;
 import org.apache.cloudstack.api.response.QuotaTariffResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
@@ -49,6 +51,7 @@ public class QuotaTariffDeleteCmd extends BaseCmd {
 
     @Override
     public void execute() {
+        CallContext.current().setEventDetails(String.format("Tariff id: %s", getId()));
         boolean result = responseBuilder.deleteQuotaTariff(getId());
         SuccessResponse response = new SuccessResponse(getCommandName());
         response.setSuccess(result);
@@ -60,4 +63,8 @@ public class QuotaTariffDeleteCmd extends BaseCmd {
         return Account.ACCOUNT_ID_SYSTEM;
     }
 
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.QuotaTariff;
+    }
 }

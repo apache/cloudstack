@@ -20,6 +20,8 @@ import com.linbit.linstor.api.ApiClient;
 import com.linbit.linstor.api.ApiException;
 import com.linbit.linstor.api.Configuration;
 import com.linbit.linstor.api.DevelopersApi;
+import com.linbit.linstor.api.model.ApiCallRc;
+import com.linbit.linstor.api.model.ApiCallRcList;
 import com.linbit.linstor.api.model.ProviderKind;
 import com.linbit.linstor.api.model.ResourceGroup;
 import com.linbit.linstor.api.model.StoragePool;
@@ -45,6 +47,15 @@ public class LinstorUtil {
         ApiClient client = Configuration.getDefaultApiClient();
         client.setBasePath(linstorUrl);
         return new DevelopersApi(client);
+    }
+
+    public static String getBestErrorMessage(ApiCallRcList answers) {
+        return answers != null && !answers.isEmpty() ?
+                answers.stream()
+                        .filter(ApiCallRc::isError)
+                        .findFirst()
+                        .map(ApiCallRc::getMessage)
+                        .orElse((answers.get(0)).getMessage()) : null;
     }
 
     public static long getCapacityBytes(String linstorUrl, String rscGroupName) {

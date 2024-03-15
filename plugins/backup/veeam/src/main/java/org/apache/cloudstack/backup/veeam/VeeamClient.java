@@ -604,6 +604,7 @@ public class VeeamClient {
             joiner.add("PowerShell Add-PSSnapin VeeamPSSnapin");
         } else {
             joiner.add("PowerShell Import-Module Veeam.Backup.PowerShell -WarningAction SilentlyContinue");
+            joiner.add("$ProgressPreference='SilentlyContinue'");
         }
         for (String cmd : cmds) {
             joiner.add(cmd);
@@ -646,9 +647,7 @@ public class VeeamClient {
                 String.format("$job = Get-VBRJob -Name '%s'", jobName),
                 "if ($job) { Remove-VBRJob -Job $job -Confirm:$false }",
                 String.format("$backup = Get-VBRBackup -Name '%s'", jobName),
-                "if ($backup) { Remove-VBRBackup -Backup $backup -FromDisk -Confirm:$false }",
-                "$repo = Get-VBRBackupRepository",
-                "Sync-VBRBackupRepository -Repository $repo"
+                "if ($backup) { Remove-VBRBackup -Backup $backup -FromDisk -Confirm:$false }"
         ));
         return result != null && result.first() && !result.second().contains(FAILED_TO_DELETE);
     }
@@ -658,14 +657,23 @@ public class VeeamClient {
         Pair<Boolean, String> result = executePowerShellCommands(Arrays.asList(
                 String.format("$restorePoint = Get-VBRRestorePoint ^| Where-Object { $_.Id -eq '%s' }", restorePointId),
                 "if ($restorePoint) { Remove-VBRRestorePoint -Oib $restorePoint -Confirm:$false",
-                    "$repo = Get-VBRBackupRepository",
-                    "Sync-VBRBackupRepository -Repository $repo",
                 "} else { ",
                     " Write-Output 'Failed to delete'",
                     " Exit 1",
                 "}"
         ));
         return result != null && result.first() && !result.second().contains(FAILED_TO_DELETE);
+    }
+
+    public boolean syncBackupRepository() {
+        LOG.debug("Trying to sync backup repository.");
+        Pair<Boolean, String> result = executePowerShellCommands(Arrays.asList(
+                "$repo = Get-VBRBackupRepository",
+                "$Syncs = Sync-VBRBackupRepository -Repository $repo",
+                "while ((Get-VBRSession -ID $Syncs.ID).Result -ne 'Success') { Start-Sleep -Seconds 10 }"
+        ));
+        LOG.debug("Done syncing backup repository.");
+        return result != null && result.first();
     }
 
     public Map<String, Backup.Metric> getBackupMetrics() {

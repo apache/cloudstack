@@ -181,6 +181,12 @@ class CsCmdLine(CsDataBag):
             return False
         return "%s/%s" % (self.idata()[ipkey], self.idata()[prelenkey])
 
+    def get_source_nat_ip(self):
+        if "source_nat_ip" in self.idata():
+            return self.idata()['source_nat_ip']
+        return False
+
+
 class CsGuestNetwork(CsDataBag):
     """ Get guestnetwork config parameters """
 
