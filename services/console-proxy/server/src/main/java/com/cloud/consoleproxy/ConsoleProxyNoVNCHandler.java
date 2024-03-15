@@ -137,6 +137,7 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
             param.setPassword(password);
             param.setWebsocketUrl(websocketUrl);
             param.setSessionUuid(sessionUuid);
+            param.setSourceIP(sourceIP);
             if (queryMap.containsKey("extraSecurityToken")) {
                 param.setExtraSecurityToken(queryMap.get("extraSecurityToken"));
             }

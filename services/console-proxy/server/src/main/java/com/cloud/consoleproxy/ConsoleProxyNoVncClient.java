@@ -93,6 +93,8 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
         client = new NoVncClient();
         connectionAlive = true;
         this.sessionUuid = param.getSessionUuid();
+        String clientSourceIp = param.getSourceIP();
+        s_logger.debug(String.format("Initializing client from IP %s", clientSourceIp));
 
         updateFrontEndActivityTime();
         Thread worker = new Thread(new Runnable() {
@@ -108,7 +110,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                     int readBytes;
                     byte[] b;
                     while (connectionAlive) {
-                        s_logger.trace(String.format("Connection with client [%s] is alive", clientId));
+                        s_logger.trace(String.format("Connection with client [%s] [IP: %s] is alive", clientId, clientSourceIp));
                         if (client.isVncOverWebSocketConnection()) {
                             if (client.isVncOverWebSocketConnectionOpen()) {
                                 updateFrontEndActivityTime();
@@ -140,7 +142,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                             logger.error("Error on sleep for vnc sessions", e);
                         }
                     }
-                    logger.info(String.format("Connection with client [%s] is dead.", clientId));
+                    logger.info(String.format("Connection with client [%s] [IP: %s] is dead.", clientId, clientSourceIp));
                 } catch (IOException e) {
                     logger.error("Error on VNC client", e);
                 }
