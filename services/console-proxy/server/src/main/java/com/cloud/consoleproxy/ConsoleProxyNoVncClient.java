@@ -105,7 +105,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                     String websocketUrl = param.getWebsocketUrl();
 
                     connectClientToVNCServer(tunnelUrl, tunnelSession, websocketUrl);
-                    authenticateToVNCServer();
+                    authenticateToVNCServer(clientSourceIp);
 
                     int readBytes;
                     byte[] b;
@@ -175,7 +175,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
      *
      * Reference: https://github.com/rfbproto/rfbproto/blob/master/rfbproto.rst#7protocol-messages
      */
-    private void authenticateToVNCServer() throws IOException {
+    private void authenticateToVNCServer(String clientSourceIp) throws IOException {
         if (client.isVncOverWebSocketConnection()) {
             s_logger.debug("Skipping authentication to VNC server since WebSocket protocol is being used.");
             return;
@@ -192,7 +192,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
             s_logger.debug("Authenticating to VNC server through NIO Socket.");
             authenticateVNCServerThroughNioSocket();
         }
-        s_logger.debug(String.format("Client %s has been authenticated successfully to VNC server.", clientId));
+        s_logger.debug(String.format("Client [%s] [IP: %s] has been authenticated successfully to VNC server.", clientId, clientSourceIp));
     }
 
     /**
