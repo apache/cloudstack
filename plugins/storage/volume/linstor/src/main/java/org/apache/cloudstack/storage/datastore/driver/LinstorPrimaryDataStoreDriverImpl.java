@@ -231,7 +231,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
 
         try
         {
-            ApiCallRcList answers = linstorApi.resourceSnapshotDelete(rscDefName, snapshotName);
+            ApiCallRcList answers = linstorApi.resourceSnapshotDelete(rscDefName, snapshotName, Collections.emptyList());
             if (answers.hasError())
             {
                 for (ApiCallRc answer : answers)
