@@ -270,10 +270,11 @@ jobs:
 
           TESTS=($(echo $TESTS | tr -d '\n' | tr -s ' '))
           for suite in "${TESTS[@]}" ; do
-            echo -e "Currently running test: $suite\n"
             if [[ "$suite" == *"quota"* ]]; then
+              echo -e "Currently running test with quota config: $suite\n"
               time nosetests-3.4 --with-xunit --xunit-file=integration-test-results/$suite.xml --with-marvin --marvin-config=setup/dev/advanced-with-quota-enabled.cfg test/integration/$suite.py -s -a tags=advanced,required_hardware=false --zone=Sandbox-simulator --hypervisor=simulator || true ;
             else
+              echo -e "Currently running test: $suite\n"
               time nosetests-3.4 --with-xunit --xunit-file=integration-test-results/$suite.xml --with-marvin --marvin-config=setup/dev/advanced.cfg test/integration/$suite.py -s -a tags=advanced,required_hardware=false --zone=Sandbox-simulator --hypervisor=simulator || true ;
             fi
           done
