@@ -75,7 +75,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         Hypervisor.HypervisorType destinationHypervisorType = cmd.getDestinationHypervisorType();
         List<String> destinationStoragePools = cmd.getDestinationStoragePools();
         DataStoreTO conversionTemporaryLocation = cmd.getConversionTemporaryLocation();
-        String ovaTemplateOnConversionLocation = cmd.getTemplateOnConversionLocation();
+        String ovaTemplateDirAndNameOnConversionLocation = cmd.getTemplateDirAndNameOnConversionLocation();
         long timeout = (long) cmd.getWait() * 1000;
 
         if (!isInstanceConversionSupportedOnHost()) {
@@ -98,18 +98,14 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
 
         s_logger.info(String.format("Attempting to convert the instance %s from %s to KVM",
                 sourceInstanceName, sourceHypervisorType));
-        final String convertInstanceUrl = getConvertInstanceUrl(sourceInstance);
         final String temporaryConvertUuid = UUID.randomUUID().toString();
-        final String temporaryPasswordFilePath = createTemporaryPasswordFileAndRetrievePath(sourceInstance);
         final String temporaryConvertPath = temporaryStoragePool.getLocalPath();
-        final String sourceOVAFile = String.format("%s/%s/%s.ova", temporaryConvertPath, ovaTemplateOnConversionLocation, ovaTemplateOnConversionLocation);
+        final String sourceOVAFile = String.format("%s/%s/%s.ova", temporaryConvertPath, ovaTemplateDirAndNameOnConversionLocation, ovaTemplateDirAndNameOnConversionLocation);
         boolean verboseModeEnabled = serverResource.isConvertInstanceVerboseModeEnabled();
 
         try {
             boolean result = performInstanceConversionUsingOVA(sourceOVAFile, temporaryConvertPath, temporaryConvertUuid,
                     timeout, verboseModeEnabled);
-//            boolean result = performInstanceConversion(convertInstanceUrl, sourceInstanceName, temporaryPasswordFilePath,
-//                    temporaryConvertPath, temporaryConvertUuid, timeout, verboseModeEnabled);
             if (!result) {
                 String err = String.format("The virt-v2v conversion for the ova %s failed. " +
                                 "Please check the agent logs for the virt-v2v output", sourceOVAFile);
@@ -137,8 +133,6 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
             s_logger.error(error, e);
             return new ConvertInstanceAnswer(cmd, false, error);
         } finally {
-            s_logger.debug("Cleaning up instance conversion temporary password file");
-            Script.runSimpleBashScript(String.format("rm -rf %s", temporaryPasswordFilePath));
             if (conversionTemporaryLocation instanceof NfsTO) {
                 s_logger.debug("Cleaning up secondary storage temporary location");
                 storagePoolMgr.deleteStoragePool(temporaryStoragePool.getType(), temporaryStoragePool.getUuid());
@@ -321,43 +315,10 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         return new Pair<>(sourceHostIp, sourcePath);
     }
 
-    protected boolean performInstanceConversion(String convertInstanceUrl, String sourceInstanceName,
-                                              String temporaryPasswordFilePath,
-                                              String temporaryConvertFolder,
-                                              String temporaryConvertUuid,
-                                              long timeout, boolean verboseModeEnabled) {
-        Script script = new Script("virt-v2v", timeout, s_logger);
-        script.add("--root", "first");
-        script.add("-ic", convertInstanceUrl);
-        script.add(sourceInstanceName);
-        script.add("--password-file", temporaryPasswordFilePath);
-        script.add("-o", "local");
-        script.add("-os", temporaryConvertFolder);
-        script.add("-of", "qcow2");
-        script.add("-on", temporaryConvertUuid);
-        if (verboseModeEnabled) {
-            script.add("-v");
-        }
-
-        String logPrefix = String.format("virt-v2v source: %s %s progress", convertInstanceUrl, sourceInstanceName);
-        OutputInterpreter.LineByLineOutputLogger outputLogger = new OutputInterpreter.LineByLineOutputLogger(s_logger, logPrefix);
-        script.execute(outputLogger);
-        int exitValue = script.getExitValue();
-        return exitValue == 0;
-    }
-
     protected boolean performInstanceConversionUsingOVA(String sourceOVAFile,
                                                 String temporaryConvertFolder,
                                                 String temporaryConvertUuid,
                                                 long timeout, boolean verboseModeEnabled) {
-        //virt-v2v
-        // -i ova
-        // /mnt/2ba00d9f-8cb0-3f8a-89ec-7910b043eac0/18a88711-0db7-4b25-b5c8-816cd28d61c5/testova2-18a88711-0db7-4b25-b5c8-816cd28d61c5.ova
-        // -o local
-        // -os /tmp/testvms/test3
-        // -of qcow2
-        // -on test3vm
-        // -v
         Script script = new Script("virt-v2v", timeout, s_logger);
         script.add("--root", "first");
         script.add("-i", "ova");
@@ -377,37 +338,6 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         return exitValue == 0;
     }
 
-    private String createTemporaryPasswordFileAndRetrievePath(RemoteInstanceTO sourceInstance) {
-        String password = null;
-        if (sourceInstance.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
-            password = sourceInstance.getVcenterPassword();
-        }
-        String passwordFile = String.format("/tmp/vmw-%s", UUID.randomUUID());
-        String msg = String.format("Creating a temporary password file for VMware instance %s conversion on: %s", sourceInstance.getInstanceName(), passwordFile);
-        s_logger.debug(msg);
-        Script.runSimpleBashScriptForExitValueAvoidLogging(String.format("echo \"%s\" > %s", password, passwordFile));
-        return passwordFile;
-    }
-
-    private String getConvertInstanceUrl(RemoteInstanceTO sourceInstance) {
-        String url = null;
-        if (sourceInstance.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
-            url = getConvertInstanceUrlFromVmware(sourceInstance);
-        }
-        return url;
-    }
-
-    private String getConvertInstanceUrlFromVmware(RemoteInstanceTO vmwareInstance) {
-        String vcenter = vmwareInstance.getVcenterHost();
-        String datacenter = vmwareInstance.getDatacenterName();
-        String username = vmwareInstance.getVcenterUsername();
-        String host = vmwareInstance.getHostName();
-        String cluster = vmwareInstance.getClusterName();
-
-        String encodedUsername = encodeUsername(username);
-        return String.format("vpx://%s@%s/%s/%s/%s?no_verify=1",
-                encodedUsername, vcenter, datacenter, cluster, host);
-    }
     protected LibvirtDomainXMLParser parseMigratedVMXmlDomain(String installPath) throws IOException {
         String xmlPath = String.format("%s.xml", installPath);
         if (!new File(xmlPath).exists()) {
