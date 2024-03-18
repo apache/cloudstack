@@ -1589,8 +1589,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             ovaTemplateDirAndNameOnConvertLocation = clonedInstanceAndOvaTemplate.second();
             String instanceName = getGeneratedInstanceName(owner);
             checkNetworkingBeforeConvertingVmwareInstance(zone, owner, instanceName, hostName, clonedInstance, nicNetworkMap, nicIpAddressMap, forced);
-            UnmanagedInstanceTO convertedInstance = convertVmwareInstanceToKVM(vcenter, datacenterName, clusterName, username, password,
-                    sourceHostName, clonedInstance, destinationCluster, convertInstanceHostId, temporaryConvertLocation, ovaTemplateDirAndNameOnConvertLocation);
+            UnmanagedInstanceTO convertedInstance = convertVmwareInstanceToKVM(clonedInstance, destinationCluster, convertInstanceHostId, temporaryConvertLocation, ovaTemplateDirAndNameOnConvertLocation);
             sanitizeConvertedInstance(convertedInstance, clonedInstance);
             UserVm userVm = importVirtualMachineInternal(convertedInstance, instanceName, zone, destinationCluster, null,
                     template, displayName, hostName, caller, owner, userId,
@@ -1753,9 +1752,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return filteredHosts.get(new Random().nextInt(filteredHosts.size()));
     }
 
-    private UnmanagedInstanceTO convertVmwareInstanceToKVM(String vcenter, String datacenterName, String clusterName,
-                                                           String username, String password, String hostName,
-                                                           UnmanagedInstanceTO clonedInstance, Cluster destinationCluster,
+    private UnmanagedInstanceTO convertVmwareInstanceToKVM(UnmanagedInstanceTO clonedInstance, Cluster destinationCluster,
                                                            Long convertInstanceHostId, DataStoreTO temporaryConvertLocation, String ovaTemplateDirAndNameOnConvertLocation) {
         HostVO convertHost = selectInstanceConvertionKVMHostInCluster(destinationCluster, convertInstanceHostId);
         String vmName = clonedInstance.getName();
@@ -1790,7 +1787,11 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
     private List<String> selectInstanceConvertionStoragePools(Cluster destinationCluster, List<UnmanagedInstanceTO.Disk> disks) {
         List<String> storagePools = new ArrayList<>(disks.size());
-        List<StoragePoolVO> pools = primaryDataStoreDao.listPoolsByCluster(destinationCluster.getId());
+        List<StoragePoolVO> pools = new ArrayList<>();
+        List<StoragePoolVO> clusterPools = primaryDataStoreDao.listPoolsByCluster(destinationCluster.getId());
+        pools.addAll(clusterPools);
+        List<StoragePoolVO> zonePools = primaryDataStoreDao.findZoneWideStoragePoolsByHypervisor(destinationCluster.getDataCenterId(), Hypervisor.HypervisorType.KVM);
+        pools.addAll(zonePools);
         //TODO: Choose pools by capacity
         for (UnmanagedInstanceTO.Disk disk : disks) {
             Long capacity = disk.getCapacity();
