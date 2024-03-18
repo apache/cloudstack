@@ -22,6 +22,7 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
 
 import com.cloud.host.Host;
+import com.cloud.offering.DiskOffering;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Storage.StoragePoolType;
@@ -142,4 +143,10 @@ public interface PrimaryDataStoreDriver extends DataStoreDriver {
     boolean isStorageSupportHA(StoragePoolType type);
 
     void detachVolumeFromAllStorageNodes(Volume volume);
+
+    default boolean informStorageForDiskOfferingChange() {
+        return false;
+    }
+
+    default void updateStorageWithTheNewDiskOffering(Volume volume, DiskOffering newDiskOffering) {}
 }

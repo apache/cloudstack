@@ -1470,6 +1470,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         ResizeVolumePayload payload = new ResizeVolumePayload(newSize, newMinIops, newMaxIops, newHypervisorSnapshotReserve, shrinkOk, instanceName, hosts, isManaged);
+        payload.setNewDiskOfferingId(newDiskOfferingId);
 
         try {
             VolumeInfo vol = volFactory.getVolume(volume.getId());
@@ -2058,6 +2059,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (!volumeMigrateRequired && !volumeResizeRequired) {
             _volsDao.updateDiskOffering(volume.getId(), newDiskOffering.getId());
             volume = _volsDao.findById(volume.getId());
+            updateStorageWithTheNewDiskOffering(volume, newDiskOffering);
+
             return volume;
         }
 
@@ -2092,6 +2095,18 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         return volume;
+    }
+
+    private void updateStorageWithTheNewDiskOffering(VolumeVO volume, DiskOfferingVO newDiskOffering) {
+        DataStore dataStore = dataStoreMgr.getDataStore(volume.getPoolId(), DataStoreRole.Primary);
+        DataStoreDriver dataStoreDriver = dataStore != null ? dataStore.getDriver() : null;
+
+        if (dataStoreDriver instanceof PrimaryDataStoreDriver) {
+            PrimaryDataStoreDriver storageDriver = (PrimaryDataStoreDriver)dataStoreDriver;
+            if (storageDriver.informStorageForDiskOfferingChange()) {
+                storageDriver.updateStorageWithTheNewDiskOffering(volume, newDiskOffering);
+            }
+        }
     }
 
     /**
@@ -2324,7 +2339,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
              * the actual disk size.
              */
             if (currentSize > newSize) {
-                if (volume != null && ImageFormat.QCOW2.equals(volume.getFormat()) && !Volume.State.Allocated.equals(volume.getState())) {
+                if (volume != null && ImageFormat.QCOW2.equals(volume.getFormat()) && !Volume.State.Allocated.equals(volume.getState()) && !StoragePoolType.StorPool.equals(volume.getPoolType())) {
                     String message = "Unable to shrink volumes of type QCOW2";
                     logger.warn(message);
                     throw new InvalidParameterValueException(message);
