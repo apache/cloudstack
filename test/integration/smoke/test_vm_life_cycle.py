@@ -984,6 +984,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                            {"rule":"expungeVirtualMachine", "permission":"deny","description":"Expunge virtual machine"}]
             },
         )
+        self.cleanup.append(role)
 
         domadm = Account.create(
             self.apiclient,
@@ -992,8 +993,7 @@ class TestVMLifeCycle(cloudstackTestCase):
             roleid=role.id,
             domainid=self.domain.id
         )
-
-        self.cleanup.append(domadm)
+        self.cleanup[-1]=domadm
         self.cleanup.append(role)
 
         domadm_apiclient = self.testClient.getUserApiClient(UserName=domadm.name, DomainName=self.domain.name, type=1)
