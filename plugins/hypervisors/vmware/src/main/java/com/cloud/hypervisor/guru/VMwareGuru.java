@@ -1366,23 +1366,23 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     }
 
     private String createOVATemplateFileOfVM(VirtualMachineMO vmMO, DataStoreTO convertLocation) throws Exception {
-        String dataStoreUrl = getDataStoreUrlForConversion(convertLocation);
-        String vmOvaName = UUID.randomUUID().toString();
-        String vmOvaCreationPath = createDirOnStorage(vmOvaName, dataStoreUrl, null);
-        s_logger.info("Creating OVA - " + vmOvaName + " at " + vmOvaCreationPath);
-        vmMO.exportVm(vmOvaCreationPath, vmOvaName, true, true);
-        s_logger.info("Created OVA - " + vmOvaName + " at " + vmOvaCreationPath);
-        return vmOvaName;
+        String dataStoreUrl = getDataStoreUrlForTemplate(convertLocation);
+        String vmOvaDirAndName = UUID.randomUUID().toString();
+        String vmOvaCreationPath = createDirOnStorage(vmOvaDirAndName, dataStoreUrl, null);
+        s_logger.debug(String.format("Creating OVA %s.ova for the VM %s at %s", vmOvaDirAndName, vmMO.getName(), vmOvaCreationPath));
+        vmMO.exportVm(vmOvaCreationPath, vmOvaDirAndName, true, true);
+        s_logger.debug(String.format("Created OVA %s.ova for the VM %s at %s", vmOvaDirAndName, vmMO.getName(), vmOvaCreationPath));
+        return vmOvaDirAndName;
     }
 
     @Override
     public Pair<UnmanagedInstanceTO, String> cloneHypervisorVMAndCreateTemplateFileOutOfBand(String hostIp, String vmName,
-                                                                               Map<String, String> params, DataStoreTO convertLocation) {
-        s_logger.debug(String.format("Cloning VM %s on external vCenter %s", vmName, hostIp));
+                                                                               Map<String, String> params, DataStoreTO templateLocation) {
         String vcenter = params.get(VmDetailConstants.VMWARE_VCENTER_HOST);
         String datacenter = params.get(VmDetailConstants.VMWARE_DATACENTER_NAME);
         String username = params.get(VmDetailConstants.VMWARE_VCENTER_USERNAME);
         String password = params.get(VmDetailConstants.VMWARE_VCENTER_PASSWORD);
+        s_logger.debug(String.format("Cloning VM %s at VMware host %s on vCenter %s", vmName, hostIp, vcenter));
 
         try {
             VmwareContext context = connectToVcenter(vcenter, username, password);
@@ -1402,11 +1402,12 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
 
             VirtualMachineMO clonedVM = createCloneFromSourceVM(vmName, vmMo, dataCenterMO);
             s_logger.debug(String.format("VM %s cloned successfully", vmName));
-            String ovaTemplateName = createOVATemplateFileOfVM(clonedVM, convertLocation);
+            String ovaTemplateDirAndName = createOVATemplateFileOfVM(clonedVM, templateLocation);
+            s_logger.debug(String.format("OVA %s/%s.ova created successfully on the datastore", ovaTemplateDirAndName, ovaTemplateDirAndName));
             UnmanagedInstanceTO clonedInstance = VmwareHelper.getUnmanagedInstance(vmMo.getRunningHost(), clonedVM);
             setNicsFromSourceVM(clonedInstance, vmMo);
             clonedInstance.setCloneSourcePowerState(sourceVmPowerState == VirtualMachinePowerState.POWERED_ON ? UnmanagedInstanceTO.PowerState.PowerOn : UnmanagedInstanceTO.PowerState.PowerOff);
-            return new Pair<> (clonedInstance, ovaTemplateName);
+            return new Pair<> (clonedInstance, ovaTemplateDirAndName);
         } catch (Exception e) {
             String err = String.format("Error cloning VM: %s from external vCenter %s: %s", vmName, vcenter, e.getMessage());
             s_logger.error(err, e);
@@ -1431,12 +1432,14 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     }
 
     @Override
-    public boolean removeClonedHypervisorVMAandTemplateFileOutOfBand(String hostIp, String vmName, Map<String, String> params, DataStoreTO convertLocation, String templateOnConvertLocation) {
-        s_logger.debug(String.format("Removing VM %s on external vCenter %s", vmName, hostIp));
+    public boolean removeClonedHypervisorVMAandTemplateFileOutOfBand(String hostIp, String vmName, Map<String, String> params,
+                                                                     DataStoreTO templateLocation, String templateDirAndName) {
         String vcenter = params.get(VmDetailConstants.VMWARE_VCENTER_HOST);
         String datacenter = params.get(VmDetailConstants.VMWARE_DATACENTER_NAME);
         String username = params.get(VmDetailConstants.VMWARE_VCENTER_USERNAME);
         String password = params.get(VmDetailConstants.VMWARE_VCENTER_PASSWORD);
+        s_logger.debug(String.format("Removing cloned VM %s at VMware host %s on vCenter %s", vmName, hostIp, vcenter));
+
         try {
             VmwareContext context = connectToVcenter(vcenter, username, password);
             DatacenterMO dataCenterMO = new DatacenterMO(context, datacenter);
@@ -1447,26 +1450,25 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 s_logger.error(err);
                 return false;
             }
-            if (!vmMo.destroy()) {
-                return false;
-            }
-            String dataStoreUrl = getDataStoreUrlForConversion(convertLocation);
-            deleteDirOnStorage(templateOnConvertLocation, dataStoreUrl, null);
-            return true;
+
+            boolean clonedVMDestroyed = vmMo.destroy();
+            String dataStoreUrl = getDataStoreUrlForTemplate(templateLocation);
+            boolean templateDirDeleted = deleteDirOnStorage(templateDirAndName, dataStoreUrl, null);
+            return clonedVMDestroyed && templateDirDeleted;
         } catch (Exception e) {
-            String err = String.format("Error destroying external VM %s: %s", vmName, e.getMessage());
+            String err = String.format("Error destroying cloned VM %s or template %s/%s.ova: %s", vmName, templateDirAndName, templateDirAndName, e.getMessage());
             s_logger.error(err, e);
             return false;
         }
     }
 
-    private String getDataStoreUrlForConversion(DataStoreTO convertLocation) {
+    private String getDataStoreUrlForTemplate(DataStoreTO templateLocation) {
         String dataStoreUrl = null;
-        if (convertLocation instanceof NfsTO) {
-            NfsTO nfsStore = (NfsTO) convertLocation;
+        if (templateLocation instanceof NfsTO) {
+            NfsTO nfsStore = (NfsTO) templateLocation;
             dataStoreUrl = nfsStore.getUrl();
-        } else if (convertLocation instanceof PrimaryDataStoreTO) {
-            PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO) convertLocation;
+        } else if (templateLocation instanceof PrimaryDataStoreTO) {
+            PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO) templateLocation;
             if (primaryDataStoreTO.getPoolType().equals(Storage.StoragePoolType.NetworkFilesystem)) {
                 String psHost = primaryDataStoreTO.getHost();
                 String psPath = primaryDataStoreTO.getPath();
@@ -1475,7 +1477,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         }
 
         if (dataStoreUrl == null) {
-            throw new CloudRuntimeException("Only NFS storages are supported for conversion");
+            throw new CloudRuntimeException("Only NFS storage is supported for template creation");
         }
 
         return dataStoreUrl;
@@ -1483,7 +1485,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
 
     private String createDirOnStorage(String dirName, String nfsStorageUrl, String nfsVersion) throws Exception {
         String mountPoint = mountManager.getMountPoint(nfsStorageUrl, nfsVersion);
-        s_logger.info("Create dir storage location - url: " + nfsStorageUrl + ", mount point: " + mountPoint + ", dir: " + dirName);
+        s_logger.debug("Create dir storage location - url: " + nfsStorageUrl + ", mount point: " + mountPoint + ", dir: " + dirName);
         String dirMountPath = mountPoint + File.separator + dirName;
         createDir(dirMountPath);
         return dirMountPath;
@@ -1503,11 +1505,18 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         }
     }
 
-    private void deleteDirOnStorage(String dirName, String nfsStorageUrl, String nfsVersion) throws Exception {
-        String mountPoint = mountManager.getMountPoint(nfsStorageUrl, nfsVersion);
-        s_logger.info("Delete dir storage location - url: " + nfsStorageUrl + ", mount point: " + mountPoint + ", dir: " + dirName);
-        String dirMountPath = mountPoint + File.separator + dirName;
-        deleteDir(dirMountPath);
+    private boolean deleteDirOnStorage(String dirName, String nfsStorageUrl, String nfsVersion) throws Exception {
+        try {
+            String mountPoint = mountManager.getMountPoint(nfsStorageUrl, nfsVersion);
+            s_logger.debug("Delete dir storage location - url: " + nfsStorageUrl + ", mount point: " + mountPoint + ", dir: " + dirName);
+            String dirMountPath = mountPoint + File.separator + dirName;
+            deleteDir(dirMountPath);
+            return true;
+        } catch (Exception e) {
+            String err = String.format("Unable to delete dir %s: %s", dirName, e.getMessage());
+            s_logger.error(err, e);
+            return false;
+        }
     }
 
     private void deleteDir(String dirName) throws Exception {

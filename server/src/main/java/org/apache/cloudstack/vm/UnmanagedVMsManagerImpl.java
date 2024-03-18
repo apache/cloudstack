@@ -1580,17 +1580,17 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
         UnmanagedInstanceTO clonedInstance = null;
         DataStoreTO temporaryConvertLocation = null;
-        String ovaTemplateOnConvertLocation = null;
+        String ovaTemplateDirAndNameOnConvertLocation = null;
         try {
             temporaryConvertLocation = selectInstanceConversionTemporaryLocation(destinationCluster, convertStoragePoolId, null);
             Pair<UnmanagedInstanceTO, String> clonedInstanceAndOvaTemplate = cloneSourceVmwareUnmanagedInstanceAndCreateOvaTemplateFile(vcenter, datacenterName, username, password,
                     clusterName, sourceHostName, sourceVM, temporaryConvertLocation);
             clonedInstance = clonedInstanceAndOvaTemplate.first();
-            ovaTemplateOnConvertLocation = clonedInstanceAndOvaTemplate.second();
+            ovaTemplateDirAndNameOnConvertLocation = clonedInstanceAndOvaTemplate.second();
             String instanceName = getGeneratedInstanceName(owner);
             checkNetworkingBeforeConvertingVmwareInstance(zone, owner, instanceName, hostName, clonedInstance, nicNetworkMap, nicIpAddressMap, forced);
             UnmanagedInstanceTO convertedInstance = convertVmwareInstanceToKVM(vcenter, datacenterName, clusterName, username, password,
-                    sourceHostName, clonedInstance, destinationCluster, convertInstanceHostId, temporaryConvertLocation, ovaTemplateOnConvertLocation);
+                    sourceHostName, clonedInstance, destinationCluster, convertInstanceHostId, temporaryConvertLocation, ovaTemplateDirAndNameOnConvertLocation);
             sanitizeConvertedInstance(convertedInstance, clonedInstance);
             UserVm userVm = importVirtualMachineInternal(convertedInstance, instanceName, zone, destinationCluster, null,
                     template, displayName, hostName, caller, owner, userId,
@@ -1605,7 +1605,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                     cmd.getEventDescription(), null, null, 0);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         } finally {
-            removeClonedInstanceAndTemplateFile(vcenter, datacenterName, username, password, sourceHostName, clonedInstance.getName(), sourceVM, temporaryConvertLocation, ovaTemplateOnConvertLocation);
+            removeClonedInstanceAndTemplateFile(vcenter, datacenterName, username, password, sourceHostName, clonedInstance.getName(), sourceVM, temporaryConvertLocation, ovaTemplateDirAndNameOnConvertLocation);
         }
     }
 
@@ -1756,18 +1756,16 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     private UnmanagedInstanceTO convertVmwareInstanceToKVM(String vcenter, String datacenterName, String clusterName,
                                                            String username, String password, String hostName,
                                                            UnmanagedInstanceTO clonedInstance, Cluster destinationCluster,
-                                                           Long convertInstanceHostId, DataStoreTO temporaryConvertLocation, String ovaTemplateOnConvertLocation) {
+                                                           Long convertInstanceHostId, DataStoreTO temporaryConvertLocation, String ovaTemplateDirAndNameOnConvertLocation) {
         HostVO convertHost = selectInstanceConvertionKVMHostInCluster(destinationCluster, convertInstanceHostId);
         String vmName = clonedInstance.getName();
         LOGGER.debug(String.format("The host %s (%s) is selected to execute the conversion of the instance %s" +
                 " from VMware to KVM ", convertHost.getId(), convertHost.getName(), vmName));
 
-        RemoteInstanceTO remoteInstanceTO = new RemoteInstanceTO(hostName, vmName,
-                vcenter, datacenterName, clusterName, username, password);
-//        DataStoreTO temporaryConvertLocation = selectInstanceConversionTemporaryLocation(destinationCluster, convertStoragePoolId, convertHost);
+        RemoteInstanceTO remoteInstanceTO = new RemoteInstanceTO(vmName);
         List<String> destinationStoragePools = selectInstanceConvertionStoragePools(destinationCluster, clonedInstance.getDisks());
         ConvertInstanceCommand cmd = new ConvertInstanceCommand(remoteInstanceTO,
-                Hypervisor.HypervisorType.KVM, destinationStoragePools, temporaryConvertLocation, ovaTemplateOnConvertLocation);
+                Hypervisor.HypervisorType.KVM, destinationStoragePools, temporaryConvertLocation, ovaTemplateDirAndNameOnConvertLocation);
         int timeoutSeconds = StorageManager.ConvertVmwareInstanceToKvmTimeout.value() * 60 * 60;
         cmd.setWait(timeoutSeconds);
 
