@@ -28,10 +28,12 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.QuotaBalanceCmd;
+import org.apache.cloudstack.api.command.QuotaConfigureEmailCmd;
 import org.apache.cloudstack.api.command.QuotaCreditsCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateListCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateUpdateCmd;
 import org.apache.cloudstack.api.command.QuotaEnabledCmd;
+import org.apache.cloudstack.api.command.QuotaListEmailConfigurationCmd;
 import org.apache.cloudstack.api.command.QuotaStatementCmd;
 import org.apache.cloudstack.api.command.QuotaSummaryCmd;
 import org.apache.cloudstack.api.command.QuotaTariffCreateCmd;
@@ -116,6 +118,8 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
         cmdList.add(QuotaEmailTemplateUpdateCmd.class);
         cmdList.add(QuotaTariffCreateCmd.class);
         cmdList.add(QuotaTariffDeleteCmd.class);
+        cmdList.add(QuotaConfigureEmailCmd.class);
+        cmdList.add(QuotaListEmailConfigurationCmd.class);
         return cmdList;
     }
 
@@ -128,7 +132,7 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {QuotaPluginEnabled, QuotaEnableEnforcement, QuotaCurrencySymbol, QuotaCurrencyLocale, QuotaStatementPeriod, QuotaSmtpHost, QuotaSmtpPort, QuotaSmtpTimeout,
                 QuotaSmtpUser, QuotaSmtpPassword, QuotaSmtpAuthType, QuotaSmtpSender, QuotaSmtpEnabledSecurityProtocols, QuotaSmtpUseStartTLS, QuotaActivationRuleTimeout, QuotaAccountEnabled,
-                QuotaEmailHeader, QuotaEmailFooter};
+                QuotaEmailHeader, QuotaEmailFooter, QuotaEnableEmails};
     }
 
     @Override
