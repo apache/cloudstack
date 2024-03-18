@@ -257,7 +257,7 @@ jobs:
           while ! nc -vzw 5 localhost 8096 2>&1 > /dev/null; do grep Exception /tmp/jetty-log; sleep 10; done
           set -e
           echo -e "\nStarting Advanced Zone DataCenter deployment"
-          python3 tools/marvin/marvin/deployDataCenter.py -i setup/dev/advanced.cfg 2>&1 || true
+          python3 tools/marvin/marvin/deployDataCenter.py -i setup/dev/advanced-with-quota-enabled.cfg 2>&1 || true
 
       - name: Run Integration Tests with Simulator
         run: |
