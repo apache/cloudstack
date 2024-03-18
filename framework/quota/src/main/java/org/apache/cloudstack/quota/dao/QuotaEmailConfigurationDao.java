@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,20 +14,23 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
-package org.apache.cloudstack.reservation.dao;
+package org.apache.cloudstack.quota.dao;
 
-import org.apache.cloudstack.reservation.ReservationVO;
-
-import com.cloud.configuration.Resource;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.quota.constant.QuotaConfig;
+import org.apache.cloudstack.quota.vo.QuotaEmailConfigurationVO;
 
 import java.util.List;
 
-public interface ReservationDao extends GenericDao<ReservationVO, Long> {
-    long getAccountReservation(Long account, Resource.ResourceType resourceType, String tag);
-    long getDomainReservation(Long domain, Resource.ResourceType resourceType, String tag);
-    void setResourceId(Resource.ResourceType type, Long resourceId);
-    List<Long> getResourceIds(long accountId, Resource.ResourceType type);
-    List<ReservationVO> getReservationsForAccount(long accountId, Resource.ResourceType type, String tag);
+public interface QuotaEmailConfigurationDao extends GenericDao<QuotaEmailConfigurationVO, Long> {
+
+    QuotaEmailConfigurationVO findByAccountIdAndEmailTemplateId(long accountId, long emailTemplateId);
+
+    QuotaEmailConfigurationVO updateQuotaEmailConfiguration(QuotaEmailConfigurationVO quotaEmailConfigurationVO);
+
+    void persistQuotaEmailConfiguration(QuotaEmailConfigurationVO quotaEmailConfigurationVO);
+
+    List<QuotaEmailConfigurationVO> listByAccount(long accountId);
+
+    QuotaEmailConfigurationVO findByAccountIdAndEmailTemplateType(long accountId, QuotaConfig.QuotaEmailTemplateTypes quotaEmailTemplateType);
 }

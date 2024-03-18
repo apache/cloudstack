@@ -1006,6 +1006,7 @@ public class VirtualMachineManagerImplTest {
     public void testOrchestrateStartNonNullPodId() throws Exception {
         VMInstanceVO vmInstance = new VMInstanceVO();
         ReflectionTestUtils.setField(vmInstance, "id", 1L);
+        ReflectionTestUtils.setField(vmInstance, "accountId", 1L);
         ReflectionTestUtils.setField(vmInstance, "uuid", "vm-uuid");
         ReflectionTestUtils.setField(vmInstance, "serviceOfferingId", 2L);
         ReflectionTestUtils.setField(vmInstance, "instanceName", "myVm");
@@ -1019,6 +1020,7 @@ public class VirtualMachineManagerImplTest {
         User user = mock(User.class);
 
         Account account = mock(Account.class);
+        Account owner = mock(Account.class);
 
         ReservationContext ctx = mock(ReservationContext.class);
 
@@ -1042,12 +1044,13 @@ public class VirtualMachineManagerImplTest {
         doReturn(vmGuru).when(virtualMachineManagerImpl).getVmGuru(vmInstance);
 
         Ternary<VMInstanceVO, ReservationContext, ItWorkVO> start = new Ternary<>(vmInstance, ctx, work);
-        Mockito.doReturn(start).when(virtualMachineManagerImpl).changeToStartState(vmGuru, vmInstance, user, account);
+        Mockito.doReturn(start).when(virtualMachineManagerImpl).changeToStartState(vmGuru, vmInstance, user, account, owner, serviceOffering, template);
 
         when(ctx.getJournal()).thenReturn(Mockito.mock(Journal.class));
 
         when(serviceOfferingDaoMock.findById(vmInstance.getId(), vmInstance.getServiceOfferingId())).thenReturn(serviceOffering);
 
+        when(_entityMgr.findById(Account.class, vmInstance.getAccountId())).thenReturn(owner);
         when(_entityMgr.findByIdIncludingRemoved(VirtualMachineTemplate.class, vmInstance.getTemplateId())).thenReturn(template);
 
         Host destHost = mock(Host.class);
@@ -1099,6 +1102,7 @@ public class VirtualMachineManagerImplTest {
     public void testOrchestrateStartNullPodId() throws Exception {
         VMInstanceVO vmInstance = new VMInstanceVO();
         ReflectionTestUtils.setField(vmInstance, "id", 1L);
+        ReflectionTestUtils.setField(vmInstance, "accountId", 1L);
         ReflectionTestUtils.setField(vmInstance, "uuid", "vm-uuid");
         ReflectionTestUtils.setField(vmInstance, "serviceOfferingId", 2L);
         ReflectionTestUtils.setField(vmInstance, "instanceName", "myVm");
@@ -1112,6 +1116,7 @@ public class VirtualMachineManagerImplTest {
         User user = mock(User.class);
 
         Account account = mock(Account.class);
+        Account owner = mock(Account.class);
 
         ReservationContext ctx = mock(ReservationContext.class);
 
@@ -1135,12 +1140,13 @@ public class VirtualMachineManagerImplTest {
         doReturn(vmGuru).when(virtualMachineManagerImpl).getVmGuru(vmInstance);
 
         Ternary<VMInstanceVO, ReservationContext, ItWorkVO> start = new Ternary<>(vmInstance, ctx, work);
-        Mockito.doReturn(start).when(virtualMachineManagerImpl).changeToStartState(vmGuru, vmInstance, user, account);
+        Mockito.doReturn(start).when(virtualMachineManagerImpl).changeToStartState(vmGuru, vmInstance, user, account, owner, serviceOffering, template);
 
         when(ctx.getJournal()).thenReturn(Mockito.mock(Journal.class));
 
         when(serviceOfferingDaoMock.findById(vmInstance.getId(), vmInstance.getServiceOfferingId())).thenReturn(serviceOffering);
 
+        when(_entityMgr.findById(Account.class, vmInstance.getAccountId())).thenReturn(owner);
         when(_entityMgr.findByIdIncludingRemoved(VirtualMachineTemplate.class, vmInstance.getTemplateId())).thenReturn(template);
 
         Host destHost = mock(Host.class);
