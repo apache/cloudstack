@@ -48,8 +48,6 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.ScopeType;
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
@@ -1264,18 +1262,6 @@ public class UserVmManagerImplTest {
         when(cmd.getTemplateId()).thenReturn(2L);
         when(userVmDao.findById(vmId)).thenReturn(userVmVoMock);
 
-        List<VolumeVO> volumes = new ArrayList<>();
-        long rootVolumeId = 1l;
-        VolumeVO rootVolumeOfVm = Mockito.mock(VolumeVO.class);
-        Mockito.when(rootVolumeOfVm.getId()).thenReturn(rootVolumeId);
-        volumes.add(rootVolumeOfVm);
-        when(volumeDaoMock.findByInstanceAndType(vmId, Volume.Type.ROOT)).thenReturn(volumes);
-
-        List<SnapshotVO> snapshots = new ArrayList<>();
-        SnapshotVO snapshot = Mockito.mock(SnapshotVO.class);
-        snapshots.add(snapshot);
-        when(snapshotDaoMock.listByStatus(rootVolumeId, Snapshot.State.Creating, Snapshot.State.CreatedOnPrimary, Snapshot.State.BackingUp)).thenReturn(snapshots);
-
         userVmManagerImpl.restoreVM(cmd);
     }
 
@@ -1289,7 +1275,7 @@ public class UserVmManagerImplTest {
         when(userVmVoMock.getAccountId()).thenReturn(accountId);
         when(accountDao.findById(accountId)).thenReturn(null);
 
-        userVmManagerImpl.restoreVirtualMachine(accountMock, vmId, newTemplateId);
+        userVmManagerImpl.restoreVirtualMachine(accountMock, vmId, newTemplateId, null, null);
     }
 
     @Test(expected = PermissionDeniedException.class)
@@ -1303,7 +1289,7 @@ public class UserVmManagerImplTest {
         when(accountDao.findById(accountId)).thenReturn(callerAccount);
         when(callerAccount.getState()).thenReturn(Account.State.DISABLED);
 
-        userVmManagerImpl.restoreVirtualMachine(accountMock, vmId, newTemplateId);
+        userVmManagerImpl.restoreVirtualMachine(accountMock, vmId, newTemplateId, null, null);
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -1318,7 +1304,7 @@ public class UserVmManagerImplTest {
         when(accountDao.findById(accountId)).thenReturn(callerAccount);
         when(userVmVoMock.getState()).thenReturn(VirtualMachine.State.Starting);
 
-        userVmManagerImpl.restoreVirtualMachine(accountMock, vmId, newTemplateId);
+        userVmManagerImpl.restoreVirtualMachine(accountMock, vmId, newTemplateId, null, null);
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -1339,7 +1325,7 @@ public class UserVmManagerImplTest {
         when(templateDao.findById(currentTemplateId)).thenReturn(currentTemplate);
         when(volumeDaoMock.findByInstanceAndType(vmId, Volume.Type.ROOT)).thenReturn(new ArrayList<VolumeVO>());
 
-        userVmManagerImpl.restoreVirtualMachine(accountMock, vmId, newTemplateId);
+        userVmManagerImpl.restoreVirtualMachine(accountMock, vmId, newTemplateId, null, null);
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -1366,7 +1352,7 @@ public class UserVmManagerImplTest {
         volumes.add(rootVolume2);
         when(volumeDaoMock.findByInstanceAndType(vmId, Volume.Type.ROOT)).thenReturn(volumes);
 
-        userVmManagerImpl.restoreVirtualMachine(accountMock, vmId, newTemplateId);
+        userVmManagerImpl.restoreVirtualMachine(accountMock, vmId, newTemplateId, null, null);
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -1393,6 +1379,6 @@ public class UserVmManagerImplTest {
         vmSnapshots.add(vmSnapshot);
         when(vmSnapshotDaoMock.findByVm(vmId)).thenReturn(vmSnapshots);
 
-        userVmManagerImpl.restoreVirtualMachine(accountMock, vmId, newTemplateId);
+        userVmManagerImpl.restoreVirtualMachine(accountMock, vmId, newTemplateId, null, null);
     }
 }

@@ -492,7 +492,7 @@ public interface UserVmService {
 
     UserVm restoreVM(RestoreVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException;
 
-    UserVm restoreVirtualMachine(Account caller, long vmId, Long newTemplateId) throws InsufficientCapacityException, ResourceUnavailableException;
+    UserVm restoreVirtualMachine(Account caller, long vmId, Long newTemplateId, Long diskOfferingId, Long rootDiskSize) throws InsufficientCapacityException, ResourceUnavailableException;
 
     UserVm upgradeVirtualMachine(ScaleVMCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
         VirtualMachineMigrationException;

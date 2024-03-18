@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.user.vm;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -59,6 +60,18 @@ public class RestoreVMCmd extends BaseAsyncCmd implements UserCmd {
                entityType = TemplateResponse.class,
                description = "an optional template Id to restore vm from the new template. This can be an ISO id in case of restore vm deployed using ISO")
     private Long templateId;
+
+    @Parameter(name = ApiConstants.DISK_OFFERING_ID,
+               type = CommandType.UUID,
+               entityType = DiskOfferingResponse.class,
+               description = "Override root volume's diskoffering.", since = "4.19.1")
+    private Long diskOfferingId;
+
+    @Parameter(name = ApiConstants.ROOT_DISK_SIZE,
+               type = CommandType.LONG,
+               description = "Override root volume's size (in GB).",
+               since = "4.19.1")
+    private Long rootDiskSize;
 
     @Override
     public String getEventType() {
@@ -110,6 +123,14 @@ public class RestoreVMCmd extends BaseAsyncCmd implements UserCmd {
     // TODO - Remove vmid param and make it "id" in 5.0 so that we don't have two getters
     public Long getId() {
         return getVmId();
+    }
+
+    public Long getDiskOfferingId() {
+        return diskOfferingId;
+    }
+
+    public Long getRootDiskSize() {
+        return rootDiskSize != null ? rootDiskSize * 1024L * 1024L * 1024L : null;
     }
 
     @Override

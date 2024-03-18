@@ -566,6 +566,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Inject
     private VmStatsDao vmStatsDao;
     @Inject
+    private DataCenterDao dataCenterDao;
+    @Inject
     private MessageBus messageBus;
     @Inject
     protected CommandSetupHelper commandSetupHelper;
@@ -3241,7 +3243,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         ServiceOfferingVO offering = serviceOfferingDao.findById(vmInstance.getId(), serviceOfferingId);
         if (offering != null && offering.getRemoved() == null) {
             if (offering.isVolatileVm()) {
-                return restoreVMInternal(caller, vmInstance, null);
+                return restoreVMInternal(caller, vmInstance);
             }
         } else {
             throw new InvalidParameterValueException("Unable to find service offering: " + serviceOfferingId + " corresponding to the vm");
@@ -7642,6 +7644,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         long vmId = cmd.getVmId();
         Long newTemplateId = cmd.getTemplateId();
+        Long diskOfferingId = cmd.getDiskOfferingId();
+        Long rootDiskSize = cmd.getRootDiskSize();
+
+        if (rootDiskSize != null && rootDiskSize < 0) {
+            throw new InvalidParameterValueException("Invalid disk size " + rootDiskSize);
+        }
 
         UserVmVO vm = _vmDao.findById(vmId);
         if (vm == null) {
@@ -7649,8 +7657,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             ex.addProxyObject(String.valueOf(vmId), "vmId");
             throw ex;
         }
-
         _accountMgr.checkAccess(caller, null, true, vm);
+
+        DiskOffering diskOffering;
+        if (diskOfferingId != null) {
+            diskOffering = _diskOfferingDao.findById(diskOfferingId);
+            if (diskOffering == null) {
+                throw new InvalidParameterValueException("Cannot find disk offering with ID " + diskOfferingId);
+            }
+            DataCenterVO zone = dataCenterDao.findById(vm.getDataCenterId());
+            _accountMgr.checkAccess(caller, diskOffering, zone);
+        }
 
         //check if there are any active snapshots on volumes associated with the VM
         s_logger.debug("Checking if there are any ongoing snapshots on the ROOT volumes associated with VM with ID " + vmId);
@@ -7658,11 +7675,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new CloudRuntimeException("There is/are unbacked up snapshot(s) on ROOT volume, Re-install VM is not permitted, please try again later.");
         }
         s_logger.debug("Found no ongoing snapshots on volume of type ROOT, for the vm with id " + vmId);
-        return restoreVMInternal(caller, vm, newTemplateId);
+        return restoreVMInternal(caller, vm, newTemplateId, diskOfferingId, rootDiskSize);
     }
 
-    public UserVm restoreVMInternal(Account caller, UserVmVO vm, Long newTemplateId) throws InsufficientCapacityException, ResourceUnavailableException {
-        return _itMgr.restoreVirtualMachine(vm.getId(), newTemplateId);
+    public UserVm restoreVMInternal(Account caller, UserVmVO vm, Long newTemplateId, Long diskOfferingId, Long rootDiskSize) throws InsufficientCapacityException, ResourceUnavailableException {
+        return _itMgr.restoreVirtualMachine(vm.getId(), newTemplateId, diskOfferingId, rootDiskSize);
+    }
+
+
+    public UserVm restoreVMInternal(Account caller, UserVmVO vm) throws InsufficientCapacityException, ResourceUnavailableException {
+        return restoreVMInternal(caller, vm, null, null, null);
     }
 
     private VMTemplateVO getRestoreVirtualMachineTemplate(Account caller, Long newTemplateId, List<VolumeVO> rootVols, UserVmVO vm) {
@@ -7707,7 +7729,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
-    public UserVm restoreVirtualMachine(final Account caller, final long vmId, final Long newTemplateId) throws InsufficientCapacityException, ResourceUnavailableException {
+    public UserVm restoreVirtualMachine(final Account caller, final long vmId, final Long newTemplateId, final Long diskOfferingId, final Long rootDiskSize) throws InsufficientCapacityException, ResourceUnavailableException {
         Long userId = caller.getId();
         _userDao.findById(userId);
         UserVmVO vm = _vmDao.findById(vmId);
@@ -7764,7 +7786,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
-        List<Volume> newVols = new ArrayList<>();
+        DiskOffering diskOffering = diskOfferingId != null ? _diskOfferingDao.findById(diskOfferingId) : null;
         for (VolumeVO root : rootVols) {
             if ( !Volume.State.Allocated.equals(root.getState()) || newTemplateId != null ) {
                 final UserVmVO userVm = vm;
@@ -7797,15 +7819,22 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         } else {
                             newVol = volumeMgr.allocateDuplicateVolume(root, null);
                         }
-                        newVols.add(newVol);
+
+                        VolumeVO resizedVolume = (VolumeVO) newVol;
 
                         if (userVmDetailsDao.findDetail(userVm.getId(), VmDetailConstants.ROOT_DISK_SIZE) == null && !newVol.getSize().equals(template.getSize())) {
-                            VolumeVO resizedVolume = (VolumeVO) newVol;
                             if (template.getSize() != null) {
                                 resizedVolume.setSize(template.getSize());
-                                _volsDao.update(resizedVolume.getId(), resizedVolume);
                             }
                         }
+                        if (diskOffering != null) {
+                            resizedVolume.setDiskOfferingId(diskOffering.getId());
+                            resizedVolume.setSize(diskOffering.getDiskSize());
+                        }
+                        if (rootDiskSize != null) {
+                            resizedVolume.setSize(rootDiskSize);
+                        }
+                        _volsDao.update(resizedVolume.getId(), resizedVolume);
 
                         // 1. Save usage event and update resource count for user vm volumes
                         try {

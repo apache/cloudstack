@@ -5623,20 +5623,20 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public UserVm restoreVirtualMachine(final long vmId, final Long newTemplateId) throws ResourceUnavailableException, InsufficientCapacityException {
+    public UserVm restoreVirtualMachine(final long vmId, final Long newTemplateId, Long diskOfferingId, Long rootDiskSize) throws ResourceUnavailableException, InsufficientCapacityException {
         final AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
             VmWorkJobVO placeHolder = null;
             placeHolder = createPlaceHolderWork(vmId);
             try {
-                return orchestrateRestoreVirtualMachine(vmId, newTemplateId);
+                return orchestrateRestoreVirtualMachine(vmId, newTemplateId, diskOfferingId, rootDiskSize);
             } finally {
                 if (placeHolder != null) {
                     _workJobDao.expunge(placeHolder.getId());
                 }
             }
         } else {
-            final Outcome<VirtualMachine> outcome = restoreVirtualMachineThroughJobQueue(vmId, newTemplateId);
+            final Outcome<VirtualMachine> outcome = restoreVirtualMachineThroughJobQueue(vmId, newTemplateId, diskOfferingId, rootDiskSize);
 
             retrieveVmFromJobOutcome(outcome, String.valueOf(vmId), "restoreVirtualMachine");
 
@@ -5653,14 +5653,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    private UserVm orchestrateRestoreVirtualMachine(final long vmId, final Long newTemplateId) throws ResourceUnavailableException, InsufficientCapacityException {
-        s_logger.debug("Restoring vm " + vmId + " with new templateId " + newTemplateId);
+    private UserVm orchestrateRestoreVirtualMachine(final long vmId, final Long newTemplateId, final Long diskOfferingId, final Long rootDiskSize) throws ResourceUnavailableException, InsufficientCapacityException {
+        s_logger.debug("Restoring vm " + vmId + " with templateId : " + newTemplateId + " diskOfferingId : " + diskOfferingId + " rootDiskSize: " + rootDiskSize);
         final CallContext context = CallContext.current();
         final Account account = context.getCallingAccount();
-        return _userVmService.restoreVirtualMachine(account, vmId, newTemplateId);
+        return _userVmService.restoreVirtualMachine(account, vmId, newTemplateId, diskOfferingId, rootDiskSize);
     }
 
-    public Outcome<VirtualMachine> restoreVirtualMachineThroughJobQueue(final long vmId, final Long newTemplateId) {
+    public Outcome<VirtualMachine> restoreVirtualMachineThroughJobQueue(final long vmId, final Long newTemplateId, final Long diskOfferingId, final Long rootDiskSize) {
         String commandName = VmWorkRestore.class.getName();
         Pair<VmWorkJobVO, Long> pendingWorkJob = retrievePendingWorkJob(vmId, commandName);
 
@@ -5670,7 +5670,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             Pair<VmWorkJobVO, VmWork> newVmWorkJobAndInfo = createWorkJobAndWorkInfo(commandName, vmId);
 
             workJob = newVmWorkJobAndInfo.first();
-            VmWorkRestore workInfo = new VmWorkRestore(newVmWorkJobAndInfo.second(), newTemplateId);
+            VmWorkRestore workInfo = new VmWorkRestore(newVmWorkJobAndInfo.second(), newTemplateId, diskOfferingId, rootDiskSize);
 
             setCmdInfoAndSubmitAsyncJob(workJob, workInfo, vmId);
         }
@@ -5682,7 +5682,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @ReflectionUse
     private Pair<JobInfo.Status, String> orchestrateRestoreVirtualMachine(final VmWorkRestore work) throws Exception {
         VMInstanceVO vm = findVmById(work.getVmId());
-        UserVm uservm = orchestrateRestoreVirtualMachine(vm.getId(), work.getTemplateId());
+        UserVm uservm = orchestrateRestoreVirtualMachine(vm.getId(), work.getTemplateId(), work.getDiskOfferingId(), work.getRootDiskSize());
         HashMap<Long, String> passwordMap = new HashMap<>();
         passwordMap.put(uservm.getId(), uservm.getPassword());
         return new Pair<>(JobInfo.Status.SUCCEEDED, _jobMgr.marshallResultObject(passwordMap));
