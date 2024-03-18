@@ -406,9 +406,10 @@ export default {
       usageTypeMap: {},
       usageRecordKeys: {},
       generateModal: false,
-      purgeModal: false,
       downloadModal: false,
       viewModal: false,
+      purgeModal: false,
+      purgeDays: ref(365),
       downloadPercent: 0,
       downloadedRecords: 0,
       downloadTotalRecords: 0,
@@ -450,7 +451,6 @@ export default {
       return option.value.toUpperCase().indexOf(input.toUpperCase()) >= 0
     },
     initForm () {
-      this.purgeDays = ref(365)
       this.formRef = ref()
       this.form = reactive({
         domain: null,
