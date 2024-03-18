@@ -23,7 +23,8 @@ import com.cloud.network.dao.TungstenProviderDao;
 import com.cloud.network.element.TungstenProviderVO;
 import org.apache.cloudstack.network.tungsten.agent.api.TungstenAnswer;
 import org.apache.cloudstack.network.tungsten.agent.api.TungstenCommand;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -31,7 +32,7 @@ import javax.inject.Inject;
 @Component
 public class TungstenFabricUtils {
 
-    private static final Logger s_logger = Logger.getLogger(TungstenFabricUtils.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
     AgentManager agentMgr;
@@ -42,14 +43,14 @@ public class TungstenFabricUtils {
 
         TungstenProviderVO tungstenProviderVO = tungstenProviderDao.findByZoneId(zoneId);
         if (tungstenProviderVO == null) {
-            s_logger.error("No Tungsten-Fabric provider have been found!");
+            logger.error("No Tungsten-Fabric provider have been found!");
             throw new InvalidParameterValueException("Failed to find a Tungsten-Fabric provider");
         }
 
         Answer answer = agentMgr.easySend(tungstenProviderVO.getHostId(), cmd);
 
         if (answer == null || !answer.getResult()) {
-            s_logger.error("Tungsten-Fabric API Command failed");
+            logger.error("Tungsten-Fabric API Command failed");
             throw new InvalidParameterValueException("Failed API call to Tungsten-Fabric Network plugin");
         }
 

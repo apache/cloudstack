@@ -25,7 +25,6 @@ import java.util.Map;
 import javax.naming.ConfigurationException;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.trilead.ssh2.SCPClient;
 
@@ -40,7 +39,6 @@ import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SSHCmdHelper;
 
 public class BaremetalKickStartPxeResource extends BaremetalPxeResourceBase {
-    private static final Logger s_logger = Logger.getLogger(BaremetalKickStartPxeResource.class);
     private static final String Name = "BaremetalKickStartPxeResource";
     String _tftpDir;
 
@@ -54,11 +52,11 @@ public class BaremetalKickStartPxeResource extends BaremetalPxeResourceBase {
 
         com.trilead.ssh2.Connection sshConnection = new com.trilead.ssh2.Connection(_ip, 22);
 
-        s_logger.debug(String.format("Trying to connect to kickstart PXE server(IP=%1$s, username=%2$s, password=%3$s", _ip, _username, "******"));
+        logger.debug(String.format("Trying to connect to kickstart PXE server(IP=%1$s, username=%2$s, password=%3$s", _ip, _username, "******"));
         try {
             sshConnection.connect(null, 60000, 60000);
             if (!sshConnection.authenticateWithPassword(_username, _password)) {
-                s_logger.debug("SSH Failed to authenticate");
+                logger.debug("SSH Failed to authenticate");
                 throw new ConfigurationException(String.format("Cannot connect to kickstart PXE server(IP=%1$s, username=%2$s, password=%3$s", _ip, _username, "******"));
             }
 
@@ -132,7 +130,7 @@ public class BaremetalKickStartPxeResource extends BaremetalPxeResourceBase {
 
             sshConnection.connect(null, 60000, 60000);
             if (!sshConnection.authenticateWithPassword(_username, _password)) {
-                s_logger.debug("SSH Failed to authenticate");
+                logger.debug("SSH Failed to authenticate");
                 throw new ConfigurationException(String.format("Cannot connect to PING PXE server(IP=%1$s, username=%2$s, password=%3$s", _ip, _username, _password));
             }
 
@@ -143,7 +141,7 @@ public class BaremetalKickStartPxeResource extends BaremetalPxeResourceBase {
 
             return new Answer(cmd, true, "Success");
         } catch (Exception e) {
-            s_logger.debug("Prepare for creating baremetal template failed", e);
+            logger.debug("Prepare for creating baremetal template failed", e);
             return new Answer(cmd, false, e.getMessage());
         } finally {
             if (sshConnection != null) {
@@ -168,7 +166,7 @@ public class BaremetalKickStartPxeResource extends BaremetalPxeResourceBase {
         try {
             sshConnection.connect(null, 60000, 60000);
             if (!sshConnection.authenticateWithPassword(_username, _password)) {
-                s_logger.debug("SSH Failed to authenticate");
+                logger.debug("SSH Failed to authenticate");
                 throw new ConfigurationException(String.format("Cannot connect to PING PXE server(IP=%1$s, username=%2$s, password=%3$s", _ip, _username, _password));
             }
 
@@ -188,10 +186,10 @@ public class BaremetalKickStartPxeResource extends BaremetalPxeResourceBase {
                 return new Answer(cmd, false, "prepare kickstart at pxe server " + _ip + " failed, command:" + script);
             }
 
-            s_logger.debug("Prepare kickstart PXE server successfully");
+            logger.debug("Prepare kickstart PXE server successfully");
             return new Answer(cmd, true, "Success");
         } catch (Exception e) {
-            s_logger.debug("Prepare for kickstart server failed", e);
+            logger.debug("Prepare for kickstart server failed", e);
             return new Answer(cmd, false, e.getMessage());
         } finally {
             if (sshConnection != null) {

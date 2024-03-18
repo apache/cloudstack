@@ -73,6 +73,12 @@ public interface Backup extends ControlledEntity, InternalIdentity, Identity {
             this.paths = paths;
         }
 
+        public RestorePoint(String id, Date created, String type) {
+            this.id = id;
+            this.created = created;
+            this.type = type;
+        }
+
         public String getId() {
             return id;
         }

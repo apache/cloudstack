@@ -19,7 +19,8 @@
 
 package com.cloud.utils;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
@@ -29,7 +30,7 @@ import java.util.Map;
 
 public class HttpUtils {
 
-    public static final Logger s_logger = Logger.getLogger(HttpUtils.class);
+    protected static Logger LOGGER = LogManager.getLogger(HttpUtils.class);
 
     public static final String UTF_8 = "UTF-8";
     public static final String RESPONSE_TYPE_JSON = "json";
@@ -81,12 +82,12 @@ public class HttpUtils {
             addSecurityHeaders(resp);
             resp.getWriter().print(response);
         } catch (final IOException ioex) {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Exception writing http response: " + ioex);
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("Exception writing http response: " + ioex);
             }
         } catch (final Exception ex) {
             if (!(ex instanceof IllegalStateException)) {
-                s_logger.error("Unknown exception writing http response", ex);
+                LOGGER.error("Unknown exception writing http response", ex);
             }
         }
     }

@@ -21,6 +21,7 @@ import java.util.Map;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.utils.db.GenericDao;
 
@@ -38,6 +39,8 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
      * @param datacenterId -- the id of the datacenter (availability zone)
      */
     List<StoragePoolVO> listBy(long datacenterId, Long podId, Long clusterId, ScopeType scope);
+
+    List<StoragePoolVO> listBy(long datacenterId, Long podId, Long clusterId, ScopeType scope, String keyword);
 
     /**
      * Set capacity of storage pool in bytes
@@ -114,15 +117,19 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
 
     List<StoragePoolVO> findLocalStoragePoolsByTags(long dcId, long podId, Long clusterId, String[] tags, boolean validateTagRule);
 
+    List<StoragePoolVO> findLocalStoragePoolsByTags(long dcId, long podId, Long clusterId, String[] tags, boolean validateTagRule, String keyword);
+
     List<StoragePoolVO> findZoneWideStoragePoolsByTags(long dcId, String[] tags, boolean validateTagRule);
 
     List<StoragePoolVO> findZoneWideStoragePoolsByHypervisor(long dataCenterId, HypervisorType hypervisorType);
+
+    List<StoragePoolVO> findZoneWideStoragePoolsByHypervisor(long dataCenterId, HypervisorType hypervisorType, String keyword);
 
     List<StoragePoolVO> findLocalStoragePoolsByHostAndTags(long hostId, String[] tags);
 
     List<StoragePoolVO> listLocalStoragePoolByPath(long datacenterId, String path);
 
-    List<StoragePoolVO> findPoolsInClusters(List<Long> clusterIds);
+    List<StoragePoolVO> findPoolsInClusters(List<Long> clusterIds, String keyword);
 
     void deletePoolTags(long poolId);
 
@@ -130,7 +137,7 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
 
     Integer countAll();
 
-    List<StoragePoolVO> findPoolsByStorageType(String storageType);
+    List<StoragePoolVO> findPoolsByStorageType(Storage.StoragePoolType storageType);
 
     List<StoragePoolVO> listStoragePoolsWithActiveVolumesByOfferingId(long offeringid);
 

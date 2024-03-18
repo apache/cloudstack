@@ -41,12 +41,10 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.HeadMethod;
 import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.storage.StorageLayer;
 
 public class SimpleHttpMultiFileDownloader extends ManagedContextRunnable implements TemplateDownloader {
-    public static final Logger s_logger = Logger.getLogger(SimpleHttpMultiFileDownloader.class.getName());
     private static final MultiThreadedHttpConnectionManager s_httpClientManager = new MultiThreadedHttpConnectionManager();
 
     private static final int CHUNK_SIZE = 1024 * 1024; //1M
@@ -108,7 +106,7 @@ public class SimpleHttpMultiFileDownloader extends ManagedContextRunnable implem
         } catch (IOException ex) {
             errorString = "Unable to start download -- check url? ";
             currentStatus = TemplateDownloader.Status.UNRECOVERABLE_ERROR;
-            s_logger.warn("Exception in constructor -- " + ex.toString());
+            logger.warn("Exception in constructor -- " + ex.toString());
         }
     }
 
@@ -151,7 +149,7 @@ public class SimpleHttpMultiFileDownloader extends ManagedContextRunnable implem
                 }
                 totalRemoteSize += Long.parseLong(contentLengthHeader.getValue());
             } catch (IOException e) {
-                s_logger.warn(String.format("Cannot reach URL: %s while trying to get remote sizes due to: %s", downloadUrl, e.getMessage()), e);
+                logger.warn(String.format("Cannot reach URL: %s while trying to get remote sizes due to: %s", downloadUrl, e.getMessage()), e);
             } finally {
                 headMethod.releaseConnection();
             }
@@ -159,7 +157,7 @@ public class SimpleHttpMultiFileDownloader extends ManagedContextRunnable implem
     }
 
     private long downloadFile(String downloadUrl) {
-        s_logger.debug("Starting download for " + downloadUrl);
+        logger.debug("Starting download for " + downloadUrl);
         currentTotalBytes = 0;
         currentRemoteSize = 0;
         File file = null;
@@ -178,7 +176,7 @@ public class SimpleHttpMultiFileDownloader extends ManagedContextRunnable implem
                  RandomAccessFile out = new RandomAccessFile(file, "rw");
             ) {
                 out.seek(localFileSize);
-                s_logger.info("Starting download from " + downloadUrl + " to " + currentToFile + " remoteSize=" + toHumanReadableSize(currentRemoteSize) + " , max size=" + toHumanReadableSize(maxTemplateSizeInBytes));
+                logger.info("Starting download from " + downloadUrl + " to " + currentToFile + " remoteSize=" + toHumanReadableSize(currentRemoteSize) + " , max size=" + toHumanReadableSize(maxTemplateSizeInBytes));
                 if (copyBytes(file, in, out)) return 0;
                 checkDownloadCompletion();
             }
@@ -207,11 +205,11 @@ public class SimpleHttpMultiFileDownloader extends ManagedContextRunnable implem
     public long download(boolean resume, DownloadCompleteCallback callback) {
         if (skipDownloadOnStatus()) return 0;
         if (resume) {
-            s_logger.error("Resume not allowed for this downloader");
+            logger.error("Resume not allowed for this downloader");
             status = Status.UNRECOVERABLE_ERROR;
             return 0;
         }
-        s_logger.debug("Starting downloads");
+        logger.debug("Starting downloads");
         status = Status.IN_PROGRESS;
         Date start = new Date();
         tryAndGetTotalRemoteSize();
@@ -270,7 +268,7 @@ public class SimpleHttpMultiFileDownloader extends ManagedContextRunnable implem
 
     private boolean canHandleDownloadSize() {
         if (currentRemoteSize > maxTemplateSizeInBytes) {
-            s_logger.info("Remote size is too large: " + toHumanReadableSize(currentRemoteSize) + " , max=" + toHumanReadableSize(maxTemplateSizeInBytes));
+            logger.info("Remote size is too large: " + toHumanReadableSize(currentRemoteSize) + " , max=" + toHumanReadableSize(maxTemplateSizeInBytes));
             currentStatus = Status.UNRECOVERABLE_ERROR;
             errorString = "Download file size is too large";
             return false;
@@ -341,7 +339,7 @@ public class SimpleHttpMultiFileDownloader extends ManagedContextRunnable implem
         long localFileSize = 0;
         if (file.exists() && resume) {
             localFileSize = file.length();
-            s_logger.info("Resuming download to file (current size)=" + toHumanReadableSize(localFileSize));
+            logger.info("Resuming download to file (current size)=" + toHumanReadableSize(localFileSize));
         }
         return localFileSize;
     }
@@ -425,7 +423,7 @@ public class SimpleHttpMultiFileDownloader extends ManagedContextRunnable implem
         try {
             download(resume, completionCallback);
         } catch (Throwable t) {
-            s_logger.warn("Caught exception during download " + t.getMessage(), t);
+            logger.warn("Caught exception during download " + t.getMessage(), t);
             errorString = "Failed to install: " + t.getMessage();
             currentStatus = TemplateDownloader.Status.UNRECOVERABLE_ERROR;
         }

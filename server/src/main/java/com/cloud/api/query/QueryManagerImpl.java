@@ -178,7 +178,6 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.query.dao.AccountJoinDao;
@@ -282,6 +281,7 @@ import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolTagVO;
 import com.cloud.storage.VMTemplateVO;
@@ -332,7 +332,6 @@ import static com.cloud.vm.VmDetailConstants.SSH_PUBLIC_KEY;
 @Component
 public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements QueryService, Configurable {
 
-    public static final Logger s_logger = Logger.getLogger(QueryManagerImpl.class);
 
     private static final String ID_FIELD = "id";
 
@@ -523,6 +522,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private ResourceIconDao resourceIconDao;
+    @Inject
+    StorageManager storageManager;
 
     @Inject
     private ManagementServerHostDao msHostDao;
@@ -2156,10 +2157,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         // FIXME: do we need to support list hosts with VmId, maybe we should
         // create another command just for this
         // Right now it is handled separately outside this QueryService
-        s_logger.debug(">>>Searching for hosts>>>");
+        logger.debug(">>>Searching for hosts>>>");
         Pair<List<HostJoinVO>, Integer> hosts = searchForServersInternal(cmd);
         ListResponse<HostResponse> response = new ListResponse<HostResponse>();
-        s_logger.debug(">>>Generating Response>>>");
+        logger.debug(">>>Generating Response>>>");
         List<HostResponse> hostResponses = ViewResponseHelper.createHostResponse(cmd.getDetails(), hosts.first().toArray(new HostJoinVO[hosts.first().size()]));
         response.setResponses(hostResponses, hosts.second());
         return response;
@@ -3155,8 +3156,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Override
     public ListResponse<DiskOfferingResponse> searchForDiskOfferings(ListDiskOfferingsCmd cmd) {
         Pair<List<DiskOfferingJoinVO>, Integer> result = searchForDiskOfferingsInternal(cmd);
-        ListResponse<DiskOfferingResponse> response = new ListResponse<DiskOfferingResponse>();
-        List<DiskOfferingResponse> offeringResponses = ViewResponseHelper.createDiskOfferingResponse(result.first().toArray(new DiskOfferingJoinVO[result.first().size()]));
+        ListResponse<DiskOfferingResponse> response = new ListResponse<>();
+        List<DiskOfferingResponse> offeringResponses = ViewResponseHelper.createDiskOfferingResponses(cmd.getVirtualMachineId(), result.first());
         response.setResponses(offeringResponses, result.second());
         return response;
     }
@@ -3191,6 +3192,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long storagePoolId = cmd.getStoragePoolId();
         Boolean encrypt = cmd.getEncrypt();
         String storageType = cmd.getStorageType();
+        final Long vmId = cmd.getVirtualMachineId();
 
         // Keeping this logic consistent with domain specific zones
         // if a domainId is provided, we just return the disk offering
@@ -3298,6 +3300,16 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.addAnd("domainId", SearchCriteria.Op.SC, scc);
         }
 
+        if (vmId != null) {
+            UserVmVO vm = userVmDao.findById(vmId);
+            if (vm == null) {
+                throw new InvalidParameterValueException("Unable to find the VM instance with the specified ID");
+            }
+            if (!isRootAdmin) {
+                accountMgr.checkAccess(account, null, false, vm);
+            }
+        }
+
         Pair<List<DiskOfferingJoinVO>, Integer> result = _diskOfferingJoinDao.searchAndCount(sc, searchFilter);
         String[] requiredTagsArray = new String[0];
         if (CollectionUtils.isNotEmpty(result.first()) && VolumeApiServiceImpl.MatchStoragePoolTagsWithDiskOffering.valueIn(zoneId)) {
@@ -3356,6 +3368,24 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         return response;
     }
 
+    protected List<String> getHostTagsFromTemplateForServiceOfferingsListing(Account caller, Long templateId) {
+        List<String> hostTags = new ArrayList<>();
+        if (templateId == null) {
+            return hostTags;
+        }
+        VMTemplateVO template = _templateDao.findByIdIncludingRemoved(templateId);
+        if (template == null) {
+            throw new InvalidParameterValueException("Unable to find template with the specified ID");
+        }
+        if (caller.getType() != Account.Type.ADMIN) {
+            accountMgr.checkAccess(caller, null, false, template);
+        }
+        if (StringUtils.isNotEmpty(template.getTemplateTag())) {
+            hostTags.add(template.getTemplateTag());
+        }
+        return hostTags;
+    }
+
     private Pair<List<ServiceOfferingJoinVO>, Integer> searchForServiceOfferingsInternal(ListServiceOfferingsCmd cmd) {
         // Note
         // The filteredOfferings method for offerings is being modified in accordance with
@@ -3387,6 +3417,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Integer cpuSpeed = cmd.getCpuSpeed();
         Boolean encryptRoot = cmd.getEncryptRoot();
         String storageType = cmd.getStorageType();
+        final Long templateId = cmd.getTemplateId();
 
         final Account owner = accountMgr.finalizeOwner(caller, accountName, domainId, projectId);
         SearchCriteria<ServiceOfferingJoinVO> sc = _srvOfferingJoinDao.createSearchCriteria();
@@ -3581,6 +3612,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.addAnd("domainId", SearchCriteria.Op.SC, scc);
         }
 
+        List<String> hostTags = getHostTagsFromTemplateForServiceOfferingsListing(caller, templateId);
+
         if (currentVmOffering != null) {
             DiskOfferingVO diskOffering = _diskOfferingDao.findByIdIncludingRemoved(currentVmOffering.getDiskOfferingId());
             List<String> storageTags = com.cloud.utils.StringUtils.csvTagsToList(diskOffering.getTags());
@@ -3598,25 +3631,28 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 sc.addAnd("storageTags", SearchCriteria.Op.SC, scc);
             }
 
-            List<String> hostTags = com.cloud.utils.StringUtils.csvTagsToList(currentVmOffering.getHostTag());
-            if (!hostTags.isEmpty()) {
-                SearchBuilder<ServiceOfferingJoinVO> hostTagsSearchBuilder = _srvOfferingJoinDao.createSearchBuilder();
-                for(String tag : hostTags) {
-                    hostTagsSearchBuilder.and(tag, hostTagsSearchBuilder.entity().getHostTag(), Op.FIND_IN_SET);
-                }
-                hostTagsSearchBuilder.done();
-
-                SearchCriteria<ServiceOfferingJoinVO> hostTagsSearchCriteria = hostTagsSearchBuilder.create();
-                for(String tag : hostTags) {
-                    hostTagsSearchCriteria.setParameters(tag, tag);
-                }
-
-                SearchCriteria<ServiceOfferingJoinVO> finalHostTagsSearchCriteria = _srvOfferingJoinDao.createSearchCriteria();
-                finalHostTagsSearchCriteria.addOr("hostTag", Op.NULL);
-                finalHostTagsSearchCriteria.addOr("hostTag", Op.SC, hostTagsSearchCriteria);
-
-                sc.addAnd("hostTagsConstraint", SearchCriteria.Op.SC, finalHostTagsSearchCriteria);
+            List<String> offeringHostTags = com.cloud.utils.StringUtils.csvTagsToList(currentVmOffering.getHostTag());
+            if (!offeringHostTags.isEmpty()) {
+                hostTags.addAll(offeringHostTags);
             }
+        }
+        if (CollectionUtils.isNotEmpty(hostTags)) {
+            SearchBuilder<ServiceOfferingJoinVO> hostTagsSearchBuilder = _srvOfferingJoinDao.createSearchBuilder();
+            for(String tag : hostTags) {
+                hostTagsSearchBuilder.and(tag, hostTagsSearchBuilder.entity().getHostTag(), Op.FIND_IN_SET);
+            }
+            hostTagsSearchBuilder.done();
+
+            SearchCriteria<ServiceOfferingJoinVO> hostTagsSearchCriteria = hostTagsSearchBuilder.create();
+            for(String tag : hostTags) {
+                hostTagsSearchCriteria.setParameters(tag, tag);
+            }
+
+            SearchCriteria<ServiceOfferingJoinVO> finalHostTagsSearchCriteria = _srvOfferingJoinDao.createSearchCriteria();
+            finalHostTagsSearchCriteria.addOr("hostTag", Op.NULL);
+            finalHostTagsSearchCriteria.addOr("hostTag", Op.SC, hostTagsSearchCriteria);
+
+            sc.addAnd("hostTagsConstraint", SearchCriteria.Op.SC, finalHostTagsSearchCriteria);
         }
 
         return _srvOfferingJoinDao.searchAndCount(sc, searchFilter);
@@ -3715,7 +3751,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 List<Long> domainIds = new ArrayList<Long>();
                 DomainVO domainRecord = _domainDao.findById(account.getDomainId());
                 if (domainRecord == null) {
-                    s_logger.error("Could not find the domainId for account:" + account.getAccountName());
+                    logger.error("Could not find the domainId for account:" + account.getAccountName());
                     throw new CloudAuthenticationException("Could not find the domainId for account:" + account.getAccountName());
                 }
                 domainIds.add(domainRecord.getId());
@@ -3755,7 +3791,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 List<Long> domainIds = new ArrayList<Long>();
                 DomainVO domainRecord = _domainDao.findById(account.getDomainId());
                 if (domainRecord == null) {
-                    s_logger.error("Could not find the domainId for account:" + account.getAccountName());
+                    logger.error("Could not find the domainId for account:" + account.getAccountName());
                     throw new CloudAuthenticationException("Could not find the domainId for account:" + account.getAccountName());
                 }
                 domainIds.add(domainRecord.getId());
@@ -3981,13 +4017,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 throw new InvalidParameterValueException("Please specify a valid template ID.");
             }// If ISO requested then it should be ISO.
             if (isIso && template.getFormat() != ImageFormat.ISO) {
-                s_logger.error("Template Id " + templateId + " is not an ISO");
+                logger.error("Template Id " + templateId + " is not an ISO");
                 InvalidParameterValueException ex = new InvalidParameterValueException("Specified Template Id is not an ISO");
                 ex.addProxyObject(template.getUuid(), "templateId");
                 throw ex;
             }// If ISO not requested then it shouldn't be an ISO.
             if (!isIso && template.getFormat() == ImageFormat.ISO) {
-                s_logger.error("Incorrect format of the template id " + templateId);
+                logger.error("Incorrect format of the template id " + templateId);
                 InvalidParameterValueException ex = new InvalidParameterValueException("Incorrect format " + template.getFormat() + " of the specified template id");
                 ex.addProxyObject(template.getUuid(), "templateId");
                 throw ex;
@@ -4123,7 +4159,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
      */
     protected void applyPublicTemplateSharingRestrictions(SearchCriteria<TemplateJoinVO> sc, Account caller) {
         if (caller.getType() == Account.Type.ADMIN) {
-            s_logger.debug(String.format("Account [%s] is a root admin. Therefore, it has access to all public templates.", caller));
+            logger.debug(String.format("Account [%s] is a root admin. Therefore, it has access to all public templates.", caller));
             return;
         }
 
@@ -4135,7 +4171,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (!unsharableDomainIds.isEmpty()) {
-            s_logger.info(String.format("The public templates belonging to the domains [%s] will not be listed to account [%s] as they have the configuration [%s] marked as 'false'.", unsharableDomainIds, caller, QueryService.SharePublicTemplatesWithOtherDomains.key()));
+            logger.info(String.format("The public templates belonging to the domains [%s] will not be listed to account [%s] as they have the configuration [%s] marked as 'false'.", unsharableDomainIds, caller, QueryService.SharePublicTemplatesWithOtherDomains.key()));
             sc.addAnd("domainId", SearchCriteria.Op.NOTIN, unsharableDomainIds.toArray());
         }
     }
@@ -4147,17 +4183,17 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
      */
     protected void addDomainIdToSetIfDomainDoesNotShareTemplates(long domainId, Account account, Set<Long> unsharableDomainIds) {
         if (domainId == account.getDomainId()) {
-            s_logger.trace(String.format("Domain [%s] will not be added to the set of domains with unshared templates since the account [%s] belongs to it.", domainId, account));
+            logger.trace(String.format("Domain [%s] will not be added to the set of domains with unshared templates since the account [%s] belongs to it.", domainId, account));
             return;
         }
 
         if (unsharableDomainIds.contains(domainId)) {
-            s_logger.trace(String.format("Domain [%s] is already on the set of domains with unshared templates.", domainId));
+            logger.trace(String.format("Domain [%s] is already on the set of domains with unshared templates.", domainId));
             return;
         }
 
         if (!checkIfDomainSharesTemplates(domainId)) {
-            s_logger.debug(String.format("Domain [%s] will be added to the set of domains with unshared templates as configuration [%s] is false.", domainId, QueryService.SharePublicTemplatesWithOtherDomains.key()));
+            logger.debug(String.format("Domain [%s] will be added to the set of domains with unshared templates as configuration [%s] is false.", domainId, QueryService.SharePublicTemplatesWithOtherDomains.key()));
             unsharableDomainIds.add(domainId);
         }
     }
@@ -4791,7 +4827,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Override
     public List<RouterHealthCheckResultResponse> listRouterHealthChecks(GetRouterHealthCheckResultsCmd cmd) {
-        s_logger.info("Executing health check command " + cmd);
+        logger.info("Executing health check command " + cmd);
         long routerId = cmd.getRouterId();
         if (!VirtualNetworkApplianceManager.RouterHealthChecksEnabled.value()) {
             throw new CloudRuntimeException("Router health checks are not enabled for router " + routerId);

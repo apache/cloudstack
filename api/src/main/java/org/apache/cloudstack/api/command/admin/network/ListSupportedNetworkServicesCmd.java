@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.admin.network;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -40,7 +39,6 @@ import com.cloud.user.Account;
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
 public class ListSupportedNetworkServicesCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListSupportedNetworkServicesCmd.class.getName());
 
     @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "network service provider name")
     private String providerName;

@@ -61,7 +61,8 @@ import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.AccountJoinVO;
@@ -101,7 +102,7 @@ import com.cloud.user.Account;
  */
 public class ViewResponseHelper {
 
-    public static final Logger s_logger = Logger.getLogger(ViewResponseHelper.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     public static List<UserResponse> createUserResponse(UserAccountJoinVO... users) {
         return createUserResponse(null, users);
@@ -556,12 +557,8 @@ public class ViewResponseHelper {
         return respList;
     }
 
-    public static List<DiskOfferingResponse> createDiskOfferingResponse(DiskOfferingJoinVO... offerings) {
-        List<DiskOfferingResponse> respList = new ArrayList<DiskOfferingResponse>();
-        for (DiskOfferingJoinVO vt : offerings) {
-            respList.add(ApiDBUtils.newDiskOfferingResponse(vt));
-        }
-        return respList;
+    public static List<DiskOfferingResponse> createDiskOfferingResponses(Long vmId, List<DiskOfferingJoinVO> offerings) {
+        return ApiDBUtils.newDiskOfferingResponses(vmId, offerings);
     }
 
     public static List<ServiceOfferingResponse> createServiceOfferingResponse(ServiceOfferingJoinVO... offerings) {

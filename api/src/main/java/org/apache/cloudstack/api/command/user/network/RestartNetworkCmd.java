@@ -27,7 +27,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -43,7 +42,6 @@ import com.cloud.network.Network;
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
 public class RestartNetworkCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(RestartNetworkCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

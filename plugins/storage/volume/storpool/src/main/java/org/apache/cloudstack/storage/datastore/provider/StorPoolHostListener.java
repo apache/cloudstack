@@ -40,7 +40,8 @@ import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpConnectionDes
 import org.apache.cloudstack.storage.snapshot.StorPoolConfigurationManager;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -62,7 +63,7 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class StorPoolHostListener implements HypervisorHostListener {
-    private static final Logger log = Logger.getLogger(StorPoolHostListener .class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
     private AgentManager agentMgr;
@@ -151,7 +152,7 @@ public class StorPoolHostListener implements HypervisorHostListener {
             List<StoragePoolVO> localStoragePools = primaryStoreDao.listLocalStoragePoolByPath(pool.getDataCenterId(), datastoreName);
             for (StoragePoolVO localStoragePool : localStoragePools) {
                 if (datastoreName.equals(localStoragePool.getPath())) {
-                    log.warn("Storage pool: " + pool.getId() + " has already been added as local storage: " + localStoragePool.getName());
+                    logger.warn("Storage pool: " + pool.getId() + " has already been added as local storage: " + localStoragePool.getName());
                     throw new StorageConflictException("Cannot add shared storage pool: " + pool.getId() + " because it has already been added as local storage:"
                             + localStoragePool.getName());
                 }
@@ -259,7 +260,7 @@ public class StorPoolHostListener implements HypervisorHostListener {
         } catch (IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException e) {
             String err = "Could not add StorPoolModifyStoragePoolCommand to s_commandsAllowedInMaintenanceMode array due to: %s";
             StorPoolUtil.spLog(err, e.getMessage());
-            log.warn(String.format(err, e.getMessage()));
+            logger.warn(String.format(err, e.getMessage()));
         }
     }
 

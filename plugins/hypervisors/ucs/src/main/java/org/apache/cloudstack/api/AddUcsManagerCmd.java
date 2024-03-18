@@ -19,7 +19,6 @@ package org.apache.cloudstack.api;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.response.UcsManagerResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
@@ -35,7 +34,6 @@ import com.cloud.user.Account;
 @APICommand(name = "addUcsManager", description = "Adds a Ucs manager", responseObject = UcsManagerResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddUcsManagerCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(AddUcsManagerCmd.class);
 
     @Inject
     private UcsManager mgr;
@@ -64,7 +62,7 @@ public class AddUcsManagerCmd extends BaseCmd {
             rsp.setResponseName(getCommandName());
             this.setResponseObject(rsp);
         } catch (Exception e) {
-            s_logger.warn("Exception: ", e);
+            logger.warn("Exception: ", e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }

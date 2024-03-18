@@ -20,13 +20,11 @@ package com.cloud.hypervisor.vmware.mo;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.StoragePodSummary;
-import org.apache.log4j.Logger;
 
 import java.util.List;
 
 public class StoragepodMO extends BaseMO {
 
-    private static final Logger LOGGER = Logger.getLogger(StoragepodMO.class);
 
     public StoragepodMO(VmwareContext context, ManagedObjectReference mor) {
         super(context, mor);

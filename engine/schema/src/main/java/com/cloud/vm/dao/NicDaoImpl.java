@@ -176,12 +176,21 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         return findOneIncludingRemovedBy(sc);
     }
 
-    @Override
-    public NicVO findByNetworkIdAndType(long networkId, VirtualMachine.Type vmType) {
+    private NicVO findByNetworkIdAndTypeInternal(long networkId, VirtualMachine.Type vmType, boolean includingRemoved) {
         SearchCriteria<NicVO> sc = AllFieldsSearch.create();
         sc.setParameters("network", networkId);
         sc.setParameters("vmType", vmType);
-        return findOneBy(sc);
+        return includingRemoved ? findOneIncludingRemovedBy(sc) : findOneBy(sc);
+    }
+
+    @Override
+    public NicVO findByNetworkIdAndType(long networkId, VirtualMachine.Type vmType) {
+        return findByNetworkIdAndTypeInternal(networkId, vmType, false);
+    }
+
+    @Override
+    public NicVO findByNetworkIdAndTypeIncludingRemoved(long networkId, VirtualMachine.Type vmType) {
+        return findByNetworkIdAndTypeInternal(networkId, vmType, true);
     }
 
     @Override

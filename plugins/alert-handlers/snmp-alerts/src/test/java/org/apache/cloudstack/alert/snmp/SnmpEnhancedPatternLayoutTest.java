@@ -20,56 +20,57 @@ package org.apache.cloudstack.alert.snmp;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.message.Message;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 
-import javax.naming.ConfigurationException;
-
-import org.apache.log4j.spi.LoggingEvent;
-import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
 
+@RunWith(MockitoJUnitRunner.class)
 public class SnmpEnhancedPatternLayoutTest {
-    SnmpEnhancedPatternLayout _snmpEnhancedPatternLayout = new SnmpEnhancedPatternLayout();
 
-    @Before
-    public void setUp() throws ConfigurationException {
-        _snmpEnhancedPatternLayout.setKeyValueDelimiter("::");
-        _snmpEnhancedPatternLayout.setPairDelimiter("//");
-    }
+    @Mock
+    Message messageMock;
+    @Mock
+    LogEvent eventMock;
+
+    @Spy
+    @InjectMocks
+    SnmpEnhancedPatternLayout _snmpEnhancedPatternLayout = new SnmpEnhancedPatternLayout();
 
     @Test
     public void parseAlertTest() {
-        LoggingEvent event = mock(LoggingEvent.class);
         setMessage(" alertType:: 14 // dataCenterId:: 1 // podId:: 1 // " + "clusterId:: null // message:: Management"
-            + " network CIDR is not configured originally. Set it default to 10.102.192.0/22", event);
-        SnmpTrapInfo info = _snmpEnhancedPatternLayout.parseEvent(event);
+            + " network CIDR is not configured originally. Set it default to 10.102.192.0/22", eventMock);
+        SnmpTrapInfo info = _snmpEnhancedPatternLayout.parseEvent(eventMock);
         commonAssertions(info, "Management network CIDR is not configured originally. Set it default to 10.102.192" + ".0/22");
     }
 
     @Test
     public void ParseAlertWithPairDelimeterInMessageTest() {
-        LoggingEvent event = mock(LoggingEvent.class);
         setMessage(" alertType:: 14 // dataCenterId:: 1 // podId:: 1 // " + "clusterId:: null // message:: Management"
-            + " //network CIDR is not configured originally. Set it default to 10.102.192.0/22", event);
-        SnmpTrapInfo info = _snmpEnhancedPatternLayout.parseEvent(event);
+            + " //network CIDR is not configured originally. Set it default to 10.102.192.0/22", eventMock);
+        SnmpTrapInfo info = _snmpEnhancedPatternLayout.parseEvent(eventMock);
         commonAssertions(info, "Management //network CIDR is not configured originally. Set it default to 10.102.192" + ".0/22");
     }
 
     @Test
     public void ParseAlertWithKeyValueDelimeterInMessageTest() {
-        LoggingEvent event = mock(LoggingEvent.class);
         setMessage(" alertType:: 14 // dataCenterId:: 1 // podId:: 1 // " + "clusterId:: null // message:: Management"
-            + " ::network CIDR is not configured originally. Set it default to 10.102.192.0/22", event);
-        SnmpTrapInfo info = _snmpEnhancedPatternLayout.parseEvent(event);
+            + " ::network CIDR is not configured originally. Set it default to 10.102.192.0/22", eventMock);
+        SnmpTrapInfo info = _snmpEnhancedPatternLayout.parseEvent(eventMock);
         commonAssertions(info, "Management ::network CIDR is not configured originally. Set it default to 10.102.192" + ".0/22");
     }
 
     @Test
     public void parseRandomTest() {
-        LoggingEvent event = mock(LoggingEvent.class);
-        when(event.getRenderedMessage()).thenReturn("Problem clearing email alert");
-        assertNull(" Null value was expected ", _snmpEnhancedPatternLayout.parseEvent(event));
+        setMessage("Problem clearing email alert", eventMock);
+        assertNull(" Null value was expected ", _snmpEnhancedPatternLayout.parseEvent(eventMock));
     }
 
     private void commonAssertions(SnmpTrapInfo info, String message) {
@@ -81,7 +82,8 @@ public class SnmpEnhancedPatternLayoutTest {
         assertEquals(" message is not as expected ", message, info.getMessage());
     }
 
-    private void setMessage(String message, LoggingEvent event) {
-        when(event.getRenderedMessage()).thenReturn(message);
+    private void setMessage(String message, LogEvent eventMock) {
+        Mockito.doReturn(messageMock).when(eventMock).getMessage();
+        Mockito.doReturn(message).when(messageMock).getFormattedMessage();
     }
 }

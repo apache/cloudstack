@@ -31,6 +31,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.function.Consumer;
@@ -38,6 +39,8 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.dc.VlanDetailsVO;
+import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.BucketVO;
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -219,7 +222,8 @@ import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.api.query.ViewResponseHelper;
@@ -420,7 +424,7 @@ import sun.security.x509.X509CertImpl;
 
 public class ApiResponseHelper implements ResponseGenerator {
 
-    private static final Logger s_logger = Logger.getLogger(ApiResponseHelper.class);
+    protected Logger logger = LogManager.getLogger(ApiResponseHelper.class);
     private static final DecimalFormat s_percentFormat = new DecimalFormat("##.##");
 
     @Inject
@@ -481,6 +485,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     FirewallRulesDao firewallRulesDao;
     @Inject
     UserDataDao userDataDao;
+    @Inject
+    VlanDetailsDao vlanDetailsDao;
 
     @Inject
     ObjectStoreDao _objectStoreDao;
@@ -558,6 +564,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         } else {
             resourceLimitResponse.setMax(limit.getMax());
         }
+        resourceLimitResponse.setTag(limit.getTag());
         resourceLimitResponse.setObjectName("resourcelimit");
 
         return resourceLimitResponse;
@@ -579,7 +586,10 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         resourceCountResponse.setResourceType(resourceCount.getType());
         resourceCountResponse.setResourceCount(resourceCount.getCount());
-        resourceCountResponse.setObjectName("resourcecount");
+        resourceCountResponse.setObjectName(ApiConstants.RESOURCE_COUNT);
+        if (StringUtils.isNotEmpty(resourceCount.getTag())) {
+            resourceCountResponse.setTag(resourceCount.getTag());
+        }
         return resourceCountResponse;
     }
 
@@ -695,7 +705,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         if (snapshotInfo == null) {
-            s_logger.debug("Unable to find info for image store snapshot with uuid " + snapshot.getUuid());
+            logger.debug("Unable to find info for image store snapshot with uuid " + snapshot.getUuid());
             snapshotResponse.setRevertable(false);
         } else {
         snapshotResponse.setRevertable(snapshotInfo.isRevertable());
@@ -954,6 +964,8 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
             }
             vlanResponse.setForSystemVms(isForSystemVms(vlan.getId()));
+            VlanDetailsVO vlanDetail = vlanDetailsDao.findDetail(vlan.getId(), ApiConstants.NSX_DETAIL_KEY);
+            vlanResponse.setForNsx(Objects.nonNull(vlanDetail) && vlanDetail.getValue().equals("true"));
             vlanResponse.setObjectName("vlan");
             return vlanResponse;
         } catch (InstantiationException | IllegalAccessException e) {
@@ -1107,6 +1119,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         ipResponse.setForDisplay(ipAddr.isDisplay());
 
         ipResponse.setPortable(ipAddr.isPortable());
+        ipResponse.setForSystemVms(ipAddr.isForSystemVms());
 
         //set tag information
         List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(ResourceObjectType.PublicIpAddress, ipAddr.getId());
@@ -1133,7 +1146,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                     _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, false, vpc);
                     vpcUuidSetter.accept(vpc.getUuid());
                 } catch (PermissionDeniedException e) {
-                    s_logger.debug("Not setting the vpcId to the response because the caller does not have access to the VPC");
+                    logger.debug("Not setting the vpcId to the response because the caller does not have access to the VPC");
                 }
                 vpcNameSetter.accept(vpc.getName());
             }
@@ -2006,6 +2019,21 @@ public class ApiResponseHelper implements ResponseGenerator {
         return ApiDBUtils.newEventResponse(vEvent);
     }
 
+    protected boolean capacityListingForSingleTag(List<? extends Capacity> capacities) {
+        String tag = capacities.get(0).getTag();
+        if (tag == null) {
+            return false;
+        }
+        List<? extends Capacity> taggedCapacities = capacities.stream().filter(x -> tag.equals(x.getTag())).collect(Collectors.toList());
+        return taggedCapacities.size() == capacities.size();
+    }
+
+    protected boolean capacityListingForSingleNonGpuType(List<? extends Capacity> capacities) {
+        short type = capacities.get(0).getCapacityType();
+        List<? extends Capacity> typeCapacities = capacities.stream().filter(x -> x.getCapacityType() == type).collect(Collectors.toList());
+        return typeCapacities.size() == capacities.size();
+    }
+
     @Override
     public List<CapacityResponse> createCapacityResponse(List<? extends Capacity> result, DecimalFormat format) {
         List<CapacityResponse> capacityResponses = new ArrayList<CapacityResponse>();
@@ -2051,13 +2079,18 @@ public class ApiResponseHelper implements ResponseGenerator {
             } else {
                 capacityResponse.setPercentUsed(format.format(0L));
             }
+            capacityResponse.setTag(summedCapacity.getTag());
 
             capacityResponse.setObjectName("capacity");
             capacityResponses.add(capacityResponse);
         }
 
         List<VgpuTypesInfo> gpuCapacities;
-        if (result.size() > 1 && (gpuCapacities = ApiDBUtils.getGpuCapacites(result.get(0).getDataCenterId(), result.get(0).getPodId(), result.get(0).getClusterId())) != null) {
+        if (result.size() > 1 &&
+                !capacityListingForSingleTag(result) &&
+                !capacityListingForSingleNonGpuType(result) &&
+                (gpuCapacities = ApiDBUtils.getGpuCapacites(result.get(0).getDataCenterId(),
+                        result.get(0).getPodId(), result.get(0).getClusterId())) != null) {
             HashMap<String, Long> vgpuVMs = ApiDBUtils.getVgpuVmsCount(result.get(0).getDataCenterId(), result.get(0).getPodId(), result.get(0).getClusterId());
 
             float capacityUsed = 0;
@@ -2131,7 +2164,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         for (String accountName : accountNames) {
             Account account = ApiDBUtils.findAccountByNameDomain(accountName, templateOwner.getDomainId());
             if (account == null) {
-                s_logger.error("Missing Account " + accountName + " in domain " + templateOwner.getDomainId());
+                logger.error("Missing Account " + accountName + " in domain " + templateOwner.getDomainId());
                 continue;
             }
 
@@ -2348,6 +2381,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         response.setForVpc(_configMgr.isOfferingForVpc(offering));
         response.setForTungsten(offering.isForTungsten());
+        response.setForNsx(offering.isForNsx());
+        response.setNsxMode(offering.getNsxMode());
         response.setServices(serviceResponses);
         //set network offering details
         Map<Detail, String> details = _ntwkModel.getNtwkOffDetails(offering.getId());
@@ -2898,7 +2933,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     private void populateAccount(ControlledEntityResponse response, long accountId) {
         Account account = ApiDBUtils.findAccountById(accountId);
         if (account == null) {
-            s_logger.debug("Unable to find account with id: " + accountId);
+            logger.debug("Unable to find account with id: " + accountId);
         } else if (account.getType() == Account.Type.PROJECT) {
             // find the project
             Project project = ApiDBUtils.findProjectByProjectAccountId(account.getId());
@@ -2907,7 +2942,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 response.setProjectName(project.getName());
                 response.setAccountName(account.getAccountName());
             } else {
-                s_logger.debug("Unable to find project with id: " + account.getId());
+                logger.debug("Unable to find project with id: " + account.getId());
             }
         } else {
             response.setAccountName(account.getAccountName());
@@ -3827,7 +3862,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         try {
             return _resourceTagDao.listTags();
         } catch(Exception ex) {
-            s_logger.warn("Failed to get resource details for Usage data due to exception : ", ex);
+            logger.warn("Failed to get resource details for Usage data due to exception : ", ex);
         }
         return null;
     }
@@ -5002,7 +5037,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 response.setValidity(String.format("From: [%s] - To: [%s]", certificate.getNotBefore(), certificate.getNotAfter()));
             }
         } catch (CertificateException e) {
-            s_logger.error("Error parsing direct download certificate: " + certStr, e);
+            logger.error("Error parsing direct download certificate: " + certStr, e);
         }
     }
 

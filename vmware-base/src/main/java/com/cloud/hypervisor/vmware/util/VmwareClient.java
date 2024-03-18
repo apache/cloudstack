@@ -44,7 +44,8 @@ import com.vmware.pbm.PbmService;
 import com.vmware.pbm.PbmServiceInstanceContent;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.w3c.dom.Element;
 
 import com.vmware.vim25.DynamicProperty;
@@ -81,7 +82,7 @@ import com.vmware.vim25.WaitOptions;
  *
  */
 public class VmwareClient {
-    private static final Logger s_logger = Logger.getLogger(VmwareClient.class);
+    protected static Logger LOGGER = LogManager.getLogger(VmwareClient.class);
 
     private static class TrustAllTrustManager implements javax.net.ssl.TrustManager, javax.net.ssl.X509TrustManager {
 
@@ -115,7 +116,7 @@ public class VmwareClient {
             vimService = new VimService();
             pbmService = new PbmService();
         } catch (Exception e) {
-            s_logger.info("[ignored]"
+            LOGGER.info("[ignored]"
                     + "failed to trust all certificates blindly: ", e);
         }
     }
@@ -187,7 +188,7 @@ public class VmwareClient {
             cookies = responseHeaders.get("Set-cookie");
             if (cookies == null) {
                 String msg = "Login successful, but failed to get server cookies from url :[" + url + "]";
-                s_logger.error(msg);
+                LOGGER.error(msg);
                 throw new Exception(msg);
             }
         }
@@ -427,15 +428,15 @@ public class VmwareClient {
                 }
             }
         } catch (WebServiceException we) {
-            s_logger.warn("Session to vCenter failed with: " + we.getLocalizedMessage());
+            LOGGER.warn("Session to vCenter failed with: " + we.getLocalizedMessage());
 
             TaskInfo taskInfo = (TaskInfo)getDynamicProperty(task, "info");
             if (!taskInfo.isCancelable()) {
-                s_logger.warn("vCenter task: " + taskInfo.getName() + "(" + taskInfo.getKey() + ")" + " will continue to run on vCenter because the task cannot be cancelled");
+                LOGGER.warn("vCenter task: " + taskInfo.getName() + "(" + taskInfo.getKey() + ")" + " will continue to run on vCenter because the task cannot be cancelled");
                 throw new RuntimeException(we.getLocalizedMessage());
             }
 
-            s_logger.debug("Cancelling vCenter task: " + taskInfo.getName() + "(" + taskInfo.getKey() + ")");
+            LOGGER.debug("Cancelling vCenter task: " + taskInfo.getName() + "(" + taskInfo.getKey() + ")");
             getService().cancelTask(task);
 
             // Since task cancellation is asynchronous, wait for the task to be cancelled
@@ -444,14 +445,14 @@ public class VmwareClient {
 
             if (result != null && result.length == 2) { //result for 2 properties: info.state, info.error
                 if (result[0].equals(TaskInfoState.SUCCESS)) {
-                    s_logger.warn("Failed to cancel vCenter task: " + taskInfo.getName() + "(" + taskInfo.getKey() + ")" + " and the task successfully completed");
+                    LOGGER.warn("Failed to cancel vCenter task: " + taskInfo.getName() + "(" + taskInfo.getKey() + ")" + " and the task successfully completed");
                     retVal = true;
                 }
 
                 if (result[1] instanceof LocalizedMethodFault) {
                     MethodFault fault = ((LocalizedMethodFault)result[1]).getFault();
                     if (fault instanceof RequestCanceled) {
-                        s_logger.debug("vCenter task " + taskInfo.getName() + "(" + taskInfo.getKey() + ")" + " was successfully cancelled");
+                        LOGGER.debug("vCenter task " + taskInfo.getName() + "(" + taskInfo.getKey() + ")" + " was successfully cancelled");
                         throw new RuntimeException(we.getLocalizedMessage());
                     }
                 } else {
@@ -747,10 +748,10 @@ public class VmwareClient {
                 }
             }
         } catch (InvalidPropertyFaultMsg invalidPropertyException) {
-            s_logger.debug("Failed to get Vmware ManagedObjectReference for name: " + name + " and type: " + type + " due to " + invalidPropertyException.getMessage());
+            LOGGER.debug("Failed to get Vmware ManagedObjectReference for name: " + name + " and type: " + type + " due to " + invalidPropertyException.getMessage());
             throw invalidPropertyException;
         } catch (RuntimeFaultFaultMsg runtimeFaultException) {
-            s_logger.debug("Failed to get Vmware ManagedObjectReference for name: " + name + " and type: " + type + " due to " + runtimeFaultException.getMessage());
+            LOGGER.debug("Failed to get Vmware ManagedObjectReference for name: " + name + " and type: " + type + " due to " + runtimeFaultException.getMessage());
             throw runtimeFaultException;
         }
 
@@ -784,7 +785,7 @@ public class VmwareClient {
     public void cancelTask(ManagedObjectReference task) throws Exception {
         TaskInfo info = (TaskInfo)(getDynamicProperty(task, "info"));
         if (info == null) {
-            s_logger.warn("Unable to get the task info, so couldn't cancel the task");
+            LOGGER.warn("Unable to get the task info, so couldn't cancel the task");
             return;
         }
 
@@ -794,22 +795,22 @@ public class VmwareClient {
         String entityName = StringUtils.isNotBlank(info.getEntityName()) ? info.getEntityName() : "";
 
         if (info.getState().equals(TaskInfoState.SUCCESS)) {
-            s_logger.debug(taskName + " task successfully completed for the entity " + entityName + ", can't cancel it");
+            LOGGER.debug(taskName + " task successfully completed for the entity " + entityName + ", can't cancel it");
             return;
         }
 
         if (info.getState().equals(TaskInfoState.ERROR)) {
-            s_logger.debug(taskName + " task execution failed for the entity " + entityName + ", can't cancel it");
+            LOGGER.debug(taskName + " task execution failed for the entity " + entityName + ", can't cancel it");
             return;
         }
 
-        s_logger.debug(taskName + " task pending for the entity " + entityName + ", trying to cancel");
+        LOGGER.debug(taskName + " task pending for the entity " + entityName + ", trying to cancel");
         if (!info.isCancelable()) {
-            s_logger.warn(taskName + " task will continue to run on vCenter because it can't be cancelled");
+            LOGGER.warn(taskName + " task will continue to run on vCenter because it can't be cancelled");
             return;
         }
 
-        s_logger.debug("Cancelling task " + taskName + " of the entity " + entityName);
+        LOGGER.debug("Cancelling task " + taskName + " of the entity " + entityName);
         getService().cancelTask(task);
 
         // Since task cancellation is asynchronous, wait for the task to be cancelled
@@ -818,16 +819,16 @@ public class VmwareClient {
 
         if (result != null && result.length == 2) { //result for 2 properties: info.state, info.error
             if (result[0].equals(TaskInfoState.SUCCESS)) {
-                s_logger.warn("Failed to cancel" + taskName + " task of the entity " + entityName + ", the task successfully completed");
+                LOGGER.warn("Failed to cancel" + taskName + " task of the entity " + entityName + ", the task successfully completed");
             }
 
             if (result[1] instanceof LocalizedMethodFault) {
                 MethodFault fault = ((LocalizedMethodFault)result[1]).getFault();
                 if (fault instanceof RequestCanceled) {
-                    s_logger.debug(taskName + " task of the entity " + entityName + " was successfully cancelled");
+                    LOGGER.debug(taskName + " task of the entity " + entityName + " was successfully cancelled");
                 }
             } else {
-                s_logger.warn("Couldn't cancel " + taskName + " task of the entity " + entityName + " due to " + ((LocalizedMethodFault)result[1]).getLocalizedMessage());
+                LOGGER.warn("Couldn't cancel " + taskName + " task of the entity " + entityName + " due to " + ((LocalizedMethodFault)result[1]).getLocalizedMessage());
             }
         }
     }

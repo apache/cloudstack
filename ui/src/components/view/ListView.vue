@@ -337,10 +337,13 @@
       <template v-if="column.key === 'templateversion'">
         <span>  {{ record.version }} </span>
       </template>
+      <template v-if="column.key === 'drsimbalance'">
+        <span>  {{ record.drsimbalance }} </span>
+      </template>
       <template v-if="column.key === 'softwareversion'">
         <span>  {{ record.softwareversion ? record.softwareversion : 'N/A' }} </span>
       </template>
-      <template v-if="column.key === 'access'">
+      <template v-if="column.key === 'readonly'">
         <status :text="record.readonly ? 'ReadOnly' : 'ReadWrite'" displayText />
       </template>
       <template v-if="column.key === 'requiresupgrade'">
@@ -600,7 +603,7 @@ export default {
     },
     enableGroupAction () {
       return ['vm', 'alert', 'vmgroup', 'ssh', 'userdata', 'affinitygroup', 'autoscalevmgroup', 'volume', 'snapshot',
-        'vmsnapshot', 'guestnetwork', 'vpc', 'publicip', 'vpnuser', 'vpncustomergateway', 'vnfapp',
+        'vmsnapshot', 'backup', 'guestnetwork', 'vpc', 'publicip', 'vpnuser', 'vpncustomergateway', 'vnfapp',
         'project', 'account', 'systemvm', 'router', 'computeoffering', 'systemoffering',
         'diskoffering', 'backupoffering', 'networkoffering', 'vpcoffering', 'ilbvm', 'kubernetes', 'comment', 'buckets'
       ].includes(this.$route.name)

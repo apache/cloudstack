@@ -29,7 +29,6 @@ import org.apache.cloudstack.api.response.RegisterResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 
 import java.util.Map;
-import org.apache.log4j.Logger;
 
 @APICommand(name = "getUserKeys",
             description = "This command allows the user to query the seceret and API keys for the account",
@@ -44,7 +43,6 @@ public class GetUserKeysCmd extends BaseCmd{
     @Parameter(name= ApiConstants.ID, type = CommandType.UUID, entityType = UserResponse.class, required = true, description = "ID of the user whose keys are required")
     private Long id;
 
-    public static final Logger s_logger = Logger.getLogger(GetUserKeysCmd.class.getName());
 
     public Long getID(){
         return id;

@@ -23,7 +23,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 
 import org.apache.cloudstack.api.command.user.account.AddAccountToProjectCmd;
@@ -101,9 +101,9 @@ public class AddAccountToProjectCmdTest extends TestCase {
         Account account = Mockito.mock(Account.class);
 
         Mockito.when(account.getId()).thenReturn(2L);
-        Mockito.when(projectService.getProject(Matchers.anyLong())).thenReturn(project);
+        Mockito.when(projectService.getProject(ArgumentMatchers.anyLong())).thenReturn(project);
 
-        Mockito.when(projectService.getProjectOwner(Matchers.anyLong())).thenReturn(account);
+        Mockito.when(projectService.getProjectOwner(ArgumentMatchers.anyLong())).thenReturn(account);
         addAccountToProjectCmd._projectService = projectService;
 
         Assert.assertEquals(2L, addAccountToProjectCmd.getEntityOwnerId());

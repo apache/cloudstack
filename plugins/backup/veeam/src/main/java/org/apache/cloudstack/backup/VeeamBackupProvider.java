@@ -32,6 +32,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.google.gson.Gson;
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.backup.Backup.Metric;
 import org.apache.cloudstack.backup.dao.BackupDao;
@@ -41,13 +42,18 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.log4j.Logger;
 
+import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
+import com.cloud.event.ActionEventUtils;
+import com.cloud.event.EventTypes;
+import com.cloud.event.EventVO;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.dc.VmwareDatacenter;
 import com.cloud.hypervisor.vmware.VmwareDatacenterZoneMap;
 import com.cloud.dc.dao.VmwareDatacenterDao;
 import com.cloud.hypervisor.vmware.dao.VmwareDatacenterZoneMapDao;
+import com.cloud.user.User;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.Transaction;
@@ -56,16 +62,20 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class VeeamBackupProvider extends AdapterBase implements BackupProvider, Configurable {
 
-    private static final Logger LOG = Logger.getLogger(VeeamBackupProvider.class);
     public static final String BACKUP_IDENTIFIER = "-CSBKP-";
 
     public ConfigKey<String> VeeamUrl = new ConfigKey<>("Advanced", String.class,
             "backup.plugin.veeam.url", "https://localhost:9398/api/",
             "The Veeam backup and recovery URL.", true, ConfigKey.Scope.Zone);
+
+    public ConfigKey<Integer> VeeamVersion = new ConfigKey<>("Advanced", Integer.class,
+            "backup.plugin.veeam.version", "0",
+            "The version of Veeam backup and recovery. CloudStack will get Veeam server version via PowerShell commands if it is 0 or not set", true, ConfigKey.Scope.Zone);
 
     private ConfigKey<String> VeeamUsername = new ConfigKey<>("Advanced", String.class,
             "backup.plugin.veeam.username", "administrator",
@@ -84,6 +94,12 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     private static ConfigKey<Integer> VeeamRestoreTimeout = new ConfigKey<>("Advanced", Integer.class, "backup.plugin.veeam.restore.timeout", "600",
             "The Veeam B&R API restore backup timeout in seconds.", true, ConfigKey.Scope.Zone);
 
+    private static ConfigKey<Integer> VeeamTaskPollInterval = new ConfigKey<>("Advanced", Integer.class, "backup.plugin.veeam.task.poll.interval", "5",
+            "The time interval in seconds when the management server polls for Veeam task status.", true, ConfigKey.Scope.Zone);
+
+    private static ConfigKey<Integer> VeeamTaskPollMaxRetry = new ConfigKey<>("Advanced", Integer.class, "backup.plugin.veeam.task.poll.max.retry", "120",
+            "The max number of retrying times when the management server polls for Veeam task status.", true, ConfigKey.Scope.Zone);
+
     @Inject
     private VmwareDatacenterZoneMapDao vmwareDatacenterZoneMapDao;
     @Inject
@@ -93,16 +109,21 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     @Inject
     private VMInstanceDao vmInstanceDao;
     @Inject
+    private AgentManager agentMgr;
+    @Inject
+    private VirtualMachineManager virtualMachineManager;
+    @Inject
     private VolumeDao volumeDao;
 
     protected VeeamClient getClient(final Long zoneId) {
         try {
-            return new VeeamClient(VeeamUrl.valueIn(zoneId), VeeamUsername.valueIn(zoneId), VeeamPassword.valueIn(zoneId),
-                    VeeamValidateSSLSecurity.valueIn(zoneId), VeeamApiRequestTimeout.valueIn(zoneId), VeeamRestoreTimeout.valueIn(zoneId));
+            return new VeeamClient(VeeamUrl.valueIn(zoneId), VeeamVersion.valueIn(zoneId), VeeamUsername.valueIn(zoneId), VeeamPassword.valueIn(zoneId),
+                    VeeamValidateSSLSecurity.valueIn(zoneId), VeeamApiRequestTimeout.valueIn(zoneId), VeeamRestoreTimeout.valueIn(zoneId),
+                    VeeamTaskPollInterval.valueIn(zoneId), VeeamTaskPollMaxRetry.valueIn(zoneId));
         } catch (URISyntaxException e) {
             throw new CloudRuntimeException("Failed to parse Veeam API URL: " + e.getMessage());
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
-            LOG.error("Failed to build Veeam API client due to: ", e);
+            logger.error("Failed to build Veeam API client due to: ", e);
         }
         throw new CloudRuntimeException("Failed to build Veeam API client");
     }
@@ -157,7 +178,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
         final String clonedJobName = getGuestBackupName(vm.getInstanceName(), backupOffering.getUuid());
 
         if (!client.cloneVeeamJob(parentJob, clonedJobName)) {
-            LOG.error("Failed to clone pre-defined Veeam job (backup offering) for backup offering ID: " + backupOffering.getExternalId() + " but will check the list of jobs again if it was eventually succeeded.");
+            logger.error("Failed to clone pre-defined Veeam job (backup offering) for backup offering ID: " + backupOffering.getExternalId() + " but will check the list of jobs again if it was eventually succeeded.");
         }
 
         for (final BackupOffering job : client.listJobs()) {
@@ -166,7 +187,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
                 if (BooleanUtils.isTrue(clonedJob.getScheduleConfigured()) && !clonedJob.getScheduleEnabled()) {
                     client.toggleJobSchedule(clonedJob.getId());
                 }
-                LOG.debug("Veeam job (backup offering) for backup offering ID: " + backupOffering.getExternalId() + " found, now trying to assign the VM to the job.");
+                logger.debug("Veeam job (backup offering) for backup offering ID: " + backupOffering.getExternalId() + " found, now trying to assign the VM to the job.");
                 final VmwareDatacenter vmwareDC = findVmwareDatacenterForVM(vm);
                 if (client.addVMToVeeamJob(job.getExternalId(), vm.getInstanceName(), vmwareDC.getVcenterHost())) {
                     ((VMInstanceVO) vm).setBackupExternalId(job.getExternalId());
@@ -193,9 +214,10 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
         }
 
         if (!result) {
-            LOG.warn(String.format("Failed to remove Veeam %s for job: [name: %s].", removeBackups ? "job and backup" : "job", clonedJobName));
+            logger.warn(String.format("Failed to remove Veeam %s for job: [name: %s].", removeBackups ? "job and backup" : "job", clonedJobName));
             throw new CloudRuntimeException("Failed to delete Veeam B&R job, an operation may be in progress. Please try again after some time.");
         }
+        client.syncBackupRepository();
         return true;
     }
 
@@ -217,7 +239,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
             throw new CloudRuntimeException(String.format("Could not find any VM associated with the Backup [uuid: %s, externalId: %s].", backup.getUuid(), backup.getExternalId()));
         }
         if (!forced) {
-            LOG.debug(String.format("Veeam backup provider does not have a safe way to remove a single restore point, which results in all backup chain being removed. "
+            logger.debug(String.format("Veeam backup provider does not have a safe way to remove a single restore point, which results in all backup chain being removed. "
                     + "More information about this limitation can be found in the links: [%s, %s].", "https://forums.veeam.com/powershell-f26/removing-a-single-restorepoint-t21061.html",
                     "https://helpcenter.veeam.com/docs/backup/vsphere/retention_separate_vms.html?ver=110"));
             throw new CloudRuntimeException("Veeam backup provider does not have a safe way to remove a single restore point, which results in all backup chain being removed. "
@@ -228,6 +250,8 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
         if (BooleanUtils.isFalse(result)) {
             return false;
         }
+
+        client.syncBackupRepository();
 
         List<Backup> allBackups = backupDao.listByVmId(backup.getZoneId(), backup.getVmId());
         for (Backup b : allBackups) {
@@ -241,7 +265,36 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     @Override
     public boolean restoreVMFromBackup(VirtualMachine vm, Backup backup) {
         final String restorePointId = backup.getExternalId();
-        return getClient(vm.getDataCenterId()).restoreFullVM(vm.getInstanceName(), restorePointId);
+        try {
+            return getClient(vm.getDataCenterId()).restoreFullVM(vm.getInstanceName(), restorePointId);
+        } catch (Exception ex) {
+            logger.error(String.format("Failed to restore Full VM due to: %s. Retrying after some preparation", ex.getMessage()));
+            prepareForBackupRestoration(vm);
+            return getClient(vm.getDataCenterId()).restoreFullVM(vm.getInstanceName(), restorePointId);
+        }
+    }
+
+    private void prepareForBackupRestoration(VirtualMachine vm) {
+        if (!Hypervisor.HypervisorType.VMware.equals(vm.getHypervisorType())) {
+            return;
+        }
+        logger.info("Preparing for restoring VM " + vm);
+        PrepareForBackupRestorationCommand command = new PrepareForBackupRestorationCommand(vm.getInstanceName());
+        Long hostId = virtualMachineManager.findClusterAndHostIdForVm(vm.getId()).second();
+        if (hostId == null) {
+            throw new CloudRuntimeException("Cannot find a host to prepare for restoring VM " + vm);
+        }
+        try {
+            Answer answer = agentMgr.easySend(hostId, command);
+            if (answer != null && answer.getResult()) {
+                logger.info("Succeeded to prepare for restoring VM " + vm);
+            } else {
+                throw new CloudRuntimeException(String.format("Failed to prepare for restoring VM %s. details: %s", vm,
+                        (answer != null ? answer.getDetails() : null)));
+            }
+        } catch (Exception e) {
+            throw new CloudRuntimeException(String.format("Failed to prepare for restoring VM %s due to exception %s", vm, e));
+        }
     }
 
     @Override
@@ -255,12 +308,12 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     public Map<VirtualMachine, Backup.Metric> getBackupMetrics(final Long zoneId, final List<VirtualMachine> vms) {
         final Map<VirtualMachine, Backup.Metric> metrics = new HashMap<>();
         if (CollectionUtils.isEmpty(vms)) {
-            LOG.warn("Unable to get VM Backup Metrics because the list of VMs is empty.");
+            logger.warn("Unable to get VM Backup Metrics because the list of VMs is empty.");
             return metrics;
         }
 
         List<String> vmUuids = vms.stream().filter(Objects::nonNull).map(VirtualMachine::getUuid).collect(Collectors.toList());
-        LOG.debug(String.format("Get Backup Metrics for VMs: [%s].", String.join(", ", vmUuids)));
+        logger.debug(String.format("Get Backup Metrics for VMs: [%s].", String.join(", ", vmUuids)));
 
         final Map<String, Backup.Metric> backendMetrics = getClient(zoneId).getBackupMetrics();
         for (final VirtualMachine vm : vms) {
@@ -269,7 +322,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
             }
 
             Metric metric = backendMetrics.get(vm.getInstanceName());
-            LOG.debug(String.format("Metrics for VM [uuid: %s, name: %s] is [backup size: %s, data size: %s].", vm.getUuid(),
+            logger.debug(String.format("Metrics for VM [uuid: %s, name: %s] is [backup size: %s, data size: %s].", vm.getUuid(),
                     vm.getInstanceName(), metric.getBackupSize(), metric.getDataSize()));
             metrics.put(vm, metric);
         }
@@ -284,7 +337,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
         for (final Backup backup : backupsInDb) {
             if (restorePoint.getId().equals(backup.getExternalId())) {
                 if (metric != null) {
-                    LOG.debug(String.format("Update backup with [uuid: %s, external id: %s] from [size: %s, protected size: %s] to [size: %s, protected size: %s].",
+                    logger.debug(String.format("Update backup with [uuid: %s, external id: %s] from [size: %s, protected size: %s] to [size: %s, protected size: %s].",
                             backup.getUuid(), backup.getExternalId(), backup.getSize(), backup.getProtectedSize(), metric.getBackupSize(), metric.getDataSize()));
 
                     ((BackupVO) backup).setSize(metric.getBackupSize());
@@ -301,7 +354,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     public void syncBackups(VirtualMachine vm, Backup.Metric metric) {
         List<Backup.RestorePoint> restorePoints = listRestorePoints(vm);
         if (CollectionUtils.isEmpty(restorePoints)) {
-            LOG.debug(String.format("Can't find any restore point to VM: [uuid: %s, name: %s].", vm.getUuid(), vm.getInstanceName()));
+            logger.debug(String.format("Can't find any restore point to VM: [uuid: %s, name: %s].", vm.getUuid(), vm.getInstanceName()));
             return;
         }
         Transaction.execute(new TransactionCallbackNoReturn() {
@@ -333,14 +386,18 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
                         backup.setDomainId(vm.getDomainId());
                         backup.setZoneId(vm.getDataCenterId());
 
-                        LOG.debug(String.format("Creating a new entry in backups: [uuid: %s, vm_id: %s, external_id: %s, type: %s, date: %s, backup_offering_id: %s, account_id: %s, "
+                        logger.debug(String.format("Creating a new entry in backups: [uuid: %s, vm_id: %s, external_id: %s, type: %s, date: %s, backup_offering_id: %s, account_id: %s, "
                                         + "domain_id: %s, zone_id: %s].", backup.getUuid(), backup.getVmId(), backup.getExternalId(), backup.getType(), backup.getDate(),
                                 backup.getBackupOfferingId(), backup.getAccountId(), backup.getDomainId(), backup.getZoneId()));
                         backupDao.persist(backup);
+
+                        ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_BACKUP_CREATE,
+                                String.format("Created backup %s for VM ID: %s", backup.getUuid(), vm.getUuid()),
+                                vm.getId(), ApiCommandResourceType.VirtualMachine.toString(),0);
                     }
                 }
                 for (final Long backupIdToRemove : removeList) {
-                    LOG.warn(String.format("Removing backup with ID: [%s].", backupIdToRemove));
+                    logger.warn(String.format("Removing backup with ID: [%s].", backupIdToRemove));
                     backupDao.remove(backupIdToRemove);
                 }
             }
@@ -363,9 +420,9 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
             return new Gson().toJson(list.toArray(), Backup.VolumeInfo[].class);
         } catch (Exception e) {
             if (CollectionUtils.isEmpty(vmVolumes) || vmVolumes.get(0).getInstanceId() == null) {
-                LOG.error(String.format("Failed to create VolumeInfo of VM [id: null] volumes due to: [%s].", e.getMessage()), e);
+                logger.error(String.format("Failed to create VolumeInfo of VM [id: null] volumes due to: [%s].", e.getMessage()), e);
             } else {
-                LOG.error(String.format("Failed to create VolumeInfo of VM [id: %s] volumes due to: [%s].", vmVolumes.get(0).getInstanceId(), e.getMessage()), e);
+                logger.error(String.format("Failed to create VolumeInfo of VM [id: %s] volumes due to: [%s].", vmVolumes.get(0).getInstanceId(), e.getMessage()), e);
             }
             throw e;
         }
@@ -380,11 +437,14 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey[]{
                 VeeamUrl,
+                VeeamVersion,
                 VeeamUsername,
                 VeeamPassword,
                 VeeamValidateSSLSecurity,
                 VeeamApiRequestTimeout,
-                VeeamRestoreTimeout
+                VeeamRestoreTimeout,
+                VeeamTaskPollInterval,
+                VeeamTaskPollMaxRetry
         };
     }
 

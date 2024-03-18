@@ -40,10 +40,8 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
-import org.apache.log4j.Logger;
 
 public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements BackupDao {
-    public static final Logger LOGGER = Logger.getLogger(BackupDaoImpl.class.getName());
     private static final Gson GSON = new Gson();
     @Inject
     AccountDao accountDao;
@@ -172,7 +170,7 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
             response.setObjectName("backup");
             return response;
         } catch (Exception e) {
-            LOGGER.error(String.format("Failed to create backup response from Backup [id: %s, vmId: %s] due to: [%s].", backup.getId(), backup.getVmId(), e.getMessage()), e);
+            logger.error(String.format("Failed to create backup response from Backup [id: %s, vmId: %s] due to: [%s].", backup.getId(), backup.getVmId(), e.getMessage()), e);
             return null;
         }
     }

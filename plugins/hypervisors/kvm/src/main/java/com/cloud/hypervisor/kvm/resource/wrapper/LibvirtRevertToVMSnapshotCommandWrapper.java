@@ -22,7 +22,6 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 import java.util.List;
 
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainSnapshot;
@@ -40,7 +39,6 @@ import com.cloud.vm.snapshot.VMSnapshot;
 @ResourceWrapper(handles =  RevertToVMSnapshotCommand.class)
 public final class LibvirtRevertToVMSnapshotCommandWrapper extends CommandWrapper<RevertToVMSnapshotCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtRevertToVMSnapshotCommandWrapper.class);
 
     @Override
     public Answer execute(final RevertToVMSnapshotCommand cmd, final LibvirtComputingResource libvirtComputingResource) {
@@ -80,14 +78,14 @@ public final class LibvirtRevertToVMSnapshotCommandWrapper extends CommandWrappe
             return new RevertToVMSnapshotAnswer(cmd, listVolumeTo, vmState);
         } catch (LibvirtException e) {
             String msg = " Revert to VM snapshot failed due to " + e.toString();
-            s_logger.warn(msg, e);
+            logger.warn(msg, e);
             return new RevertToVMSnapshotAnswer(cmd, false, msg);
         } finally {
             if (dm != null) {
                 try {
                     dm.free();
                 } catch (LibvirtException l) {
-                    s_logger.trace("Ignoring libvirt error.", l);
+                    logger.trace("Ignoring libvirt error.", l);
                 };
             }
         }

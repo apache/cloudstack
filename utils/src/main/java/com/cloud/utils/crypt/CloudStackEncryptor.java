@@ -24,12 +24,13 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class CloudStackEncryptor {
-    public static final Logger s_logger = Logger.getLogger(CloudStackEncryptor.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     private Base64Encryptor encryptor = null;
     private LegacyBase64Encryptor encryptorV1;
     private AeadBase64Encryptor encryptorV2;
@@ -73,7 +74,7 @@ public class CloudStackEncryptor {
         try {
             if (encryptor == null) {
                 encryptor = encryptorV2;
-                s_logger.debug(String.format("CloudStack will encrypt and decrypt values using default encryptor : %s for class %s",
+                logger.debug(String.format("CloudStack will encrypt and decrypt values using default encryptor : %s for class %s",
                         encryptor.getClass().getSimpleName(), callerClass.getSimpleName()));
             }
             return encryptor.encrypt(plain);
@@ -108,12 +109,12 @@ public class CloudStackEncryptor {
     private String decrypt(Base64Encryptor encryptorToUse, String encrypted) {
         try {
             String result = encryptorToUse.decrypt(encrypted);
-            s_logger.debug(String.format("CloudStack will encrypt and decrypt values using encryptor : %s for class %s",
+            logger.debug(String.format("CloudStack will encrypt and decrypt values using encryptor : %s for class %s",
                     encryptorToUse.getClass().getSimpleName(), callerClass.getSimpleName()));
             encryptor = encryptorToUse;
             return result;
         } catch (EncryptionException ex) {
-            s_logger.warn(String.format("Failed to decrypt value using %s: %s", encryptorToUse.getClass().getSimpleName(), hideValueWithAsterisks(encrypted)));
+            logger.warn(String.format("Failed to decrypt value using %s: %s", encryptorToUse.getClass().getSimpleName(), hideValueWithAsterisks(encrypted)));
         }
         return null;
     }
@@ -128,20 +129,20 @@ public class CloudStackEncryptor {
     }
 
     protected void initialize() {
-        s_logger.debug("Calling to initialize for class " + callerClass.getName());
+        logger.debug("Calling to initialize for class " + callerClass.getName());
         encryptor = null;
         if (EncryptorVersion.V1.equals(version)) {
             encryptorV1 = new LegacyBase64Encryptor(password);
             encryptor = encryptorV1;
-            s_logger.debug("Initialized with encryptor : " + encryptorV1.getClass().getSimpleName());
+            logger.debug("Initialized with encryptor : " + encryptorV1.getClass().getSimpleName());
         } else if (EncryptorVersion.V2.equals(version)) {
             encryptorV2 = new AeadBase64Encryptor(password.getBytes(StandardCharsets.UTF_8));
             encryptor = encryptorV2;
-            s_logger.debug("Initialized with encryptor : " + encryptorV2.getClass().getSimpleName());
+            logger.debug("Initialized with encryptor : " + encryptorV2.getClass().getSimpleName());
         } else {
             encryptorV1 = new LegacyBase64Encryptor(password);
             encryptorV2 = new AeadBase64Encryptor(password.getBytes(StandardCharsets.UTF_8));
-            s_logger.debug("Initialized with all possible encryptors");
+            logger.debug("Initialized with all possible encryptors");
         }
     }
 }
