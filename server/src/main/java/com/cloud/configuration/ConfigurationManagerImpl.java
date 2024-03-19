@@ -7232,7 +7232,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     }
                 }
 
-                offering.setTags(tags);
+                if (StringUtils.isBlank(tags)) {
+                    offering.setTags(null);
+                } else {
+                    offering.setTags(tags);
+                }
             }
 
             // Verify availability
@@ -7539,7 +7543,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             networkRate = offering.getRateMbps();
         } else {
             // for domain router service offering, get network rate from
-            if (offering.getSystemVmType() != null && offering.getSystemVmType().equalsIgnoreCase(VirtualMachine.Type.DomainRouter.toString())) {
+            if (offering.getVmType() != null && offering.getVmType().equalsIgnoreCase(VirtualMachine.Type.DomainRouter.toString())) {
                 networkRate = NetworkOrchestrationService.NetworkThrottlingRate.valueIn(dataCenterId);
             } else {
                 networkRate = Integer.parseInt(_configDao.getValue(Config.VmNetworkThrottlingRate.key()));
