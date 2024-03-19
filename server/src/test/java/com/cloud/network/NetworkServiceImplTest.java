@@ -40,6 +40,7 @@ import java.util.UUID;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.dao.PublicIpQuarantineDao;
 import com.cloud.network.vo.PublicIpQuarantineVO;
 import com.cloud.user.dao.AccountDao;
@@ -212,6 +213,8 @@ public class NetworkServiceImplTest {
 
     @Mock
     private Ip ipMock;
+    @Mock
+    private NsxProviderDao nsxProviderDao;
 
     private static Date beforeDate;
 
@@ -295,6 +298,7 @@ public class NetworkServiceImplTest {
         service.commandSetupHelper = commandSetupHelper;
         service.networkHelper = networkHelper;
         service._ipAddrMgr = ipAddressManagerMock;
+        service.nsxProviderDao = nsxProviderDao;
         callContextMocked = Mockito.mockStatic(CallContext.class);
         CallContext callContextMock = Mockito.mock(CallContext.class);
         callContextMocked.when(CallContext::current).thenReturn(callContextMock);
@@ -789,10 +793,10 @@ public class NetworkServiceImplTest {
     public void validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouterTestMustThrowInvalidParameterValueExceptionWhenSystemVmTypeIsNotDomainRouter() {
         doReturn(serviceOfferingVoMock).when(serviceOfferingDaoMock).findById(anyLong());
         doReturn(ServiceOffering.State.Active).when(serviceOfferingVoMock).getState();
-        doReturn(VirtualMachine.Type.ElasticLoadBalancerVm.toString()).when(serviceOfferingVoMock).getSystemVmType();
+        doReturn(VirtualMachine.Type.ElasticLoadBalancerVm.toString()).when(serviceOfferingVoMock).getVmType();
 
         String expectedMessage = String.format("The specified service offering [%s] is of type [%s]. Virtual routers can only be created with service offering of type [%s].",
-                serviceOfferingVoMock, serviceOfferingVoMock.getSystemVmType(), VirtualMachine.Type.DomainRouter.toString().toLowerCase());
+                serviceOfferingVoMock, serviceOfferingVoMock.getVmType(), VirtualMachine.Type.DomainRouter.toString().toLowerCase());
         InvalidParameterValueException assertThrows = Assert.assertThrows(expectedException, () -> {
             service.validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouter(1l);
         });

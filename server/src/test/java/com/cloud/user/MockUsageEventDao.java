@@ -298,6 +298,11 @@ public class MockUsageEventDao implements UsageEventDao{
     }
 
     @Override
+    public List<UsageEventVO> findByUuids(String... uuids) {
+        return null;
+    }
+
+    @Override
     public List<UsageEventVO> listLatestEvents(Date endDate) {
         return null;
     }

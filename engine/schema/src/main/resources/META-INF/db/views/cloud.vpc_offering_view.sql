@@ -17,7 +17,6 @@
 
 -- cloud.vpc_offering_view source
 
-
 DROP VIEW IF EXISTS `cloud`.`vpc_offering_view`;
 
 CREATE VIEW `cloud`.`vpc_offering_view` AS
@@ -29,6 +28,8 @@ select
     `vpc_offerings`.`display_text` AS `display_text`,
     `vpc_offerings`.`state` AS `state`,
     `vpc_offerings`.`default` AS `default`,
+    `vpc_offerings`.`for_nsx` AS `for_nsx`,
+    `vpc_offerings`.`nsx_mode` AS `nsx_mode`,
     `vpc_offerings`.`created` AS `created`,
     `vpc_offerings`.`removed` AS `removed`,
     `vpc_offerings`.`service_offering_id` AS `service_offering_id`,

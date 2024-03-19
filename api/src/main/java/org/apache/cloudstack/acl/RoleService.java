@@ -38,7 +38,9 @@ public interface RoleService {
      *  Moreover, we will check if the requested role is of 'Admin' type; roles with 'Admin' type should only be visible to 'root admins'.
      *  Therefore, if a non-'root admin' user tries to search for an 'Admin' role, this method will return null.
      */
-    Role findRole(Long id, boolean removePrivateRoles);
+    Role findRole(Long id, boolean ignorePrivateRoles);
+
+    List<Role> findRoles(List<Long> ids, boolean ignorePrivateRoles);
 
     Role findRole(Long id);
 

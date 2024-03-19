@@ -25,6 +25,8 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.usage.UsageManagerImpl;
+import com.cloud.utils.DateUtil;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
@@ -103,10 +105,10 @@ public class NetworkUsageParser {
             long totalBytesReceived = networkInfo.getBytesRcvd();
 
             if ((totalBytesSent > 0L) || (totalBytesReceived > 0L)) {
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Creating usage record, total bytes sent: " + toHumanReadableSize(totalBytesSent) + ", total bytes received: " + toHumanReadableSize(totalBytesReceived) + " for account: " +
-                        account.getId() + " in availability zone " + networkInfo.getZoneId() + ", start: " + startDate + ", end: " + endDate);
-                }
+                LOGGER.debug("Creating usage record, total bytes sent [{}], total bytes received [{}], startDate [{}], and endDate [{}], for account [{}] in " +
+                                "availability zone [{}].", toHumanReadableSize(totalBytesSent), toHumanReadableSize(totalBytesReceived),
+                        DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), startDate),
+                        DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), endDate), account.getId(), networkInfo.getZoneId());
 
                 Long hostId = null;
 

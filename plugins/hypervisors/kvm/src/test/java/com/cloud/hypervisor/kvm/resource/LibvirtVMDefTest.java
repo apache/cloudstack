@@ -281,6 +281,43 @@ public class LibvirtVMDefTest extends TestCase {
     }
 
     @Test
+    public void testDiskDefWithBlockIO() {
+        String filePath = "/var/lib/libvirt/images/disk.qcow2";
+        String diskLabel = "vda";
+
+        DiskDef disk = new DiskDef();
+        DiskDef.DiskBus bus = DiskDef.DiskBus.VIRTIO;
+        DiskDef.DiskFmtType type = DiskDef.DiskFmtType.QCOW2;
+        DiskDef.DiskCacheMode cacheMode = DiskDef.DiskCacheMode.WRITEBACK;
+
+        disk.defFileBasedDisk(filePath, diskLabel, bus, type);
+        disk.setCacheMode(cacheMode);
+        disk.setLogicalBlockIOSize(DiskDef.BlockIOSize.SIZE_4K);
+
+        assertEquals(filePath, disk.getDiskPath());
+        assertEquals(diskLabel, disk.getDiskLabel());
+        assertEquals(bus, disk.getBusType());
+        assertEquals(DiskDef.DeviceType.DISK, disk.getDeviceType());
+
+        String expectedXmlLogical = "<disk  device='disk' type='file'>\n<driver name='qemu' type='" + type.toString() + "' cache='" + cacheMode.toString() + "' />\n" +
+                "<source file='" + filePath + "'/>\n<target dev='" + diskLabel + "' bus='" + bus.toString() + "'/>\n<blockio logical_block_size='4096' />\n</disk>\n";
+
+        assertEquals(expectedXmlLogical, disk.toString());
+
+        String expectedXmlPhysical = "<disk  device='disk' type='file'>\n<driver name='qemu' type='" + type.toString() + "' cache='" + cacheMode.toString() + "' />\n" +
+                "<source file='" + filePath + "'/>\n<target dev='" + diskLabel + "' bus='" + bus.toString() + "'/>\n<blockio physical_block_size='4096' />\n</disk>\n";
+
+        disk.setLogicalBlockIOSize(null);
+        disk.setPhysicalBlockIOSize(DiskDef.BlockIOSize.SIZE_4K);
+        assertEquals(expectedXmlPhysical, disk.toString());
+
+        disk.setLogicalBlockIOSize(DiskDef.BlockIOSize.SIZE_512);
+        String expectedXml = "<disk  device='disk' type='file'>\n<driver name='qemu' type='" + type.toString() + "' cache='" + cacheMode.toString() + "' />\n" +
+                "<source file='" + filePath + "'/>\n<target dev='" + diskLabel + "' bus='" + bus.toString() + "'/>\n<blockio logical_block_size='512' physical_block_size='4096' />\n</disk>\n";
+        assertEquals(expectedXml, disk.toString());
+    }
+
+    @Test
     public void testDiskDefWithMultipleHosts() {
         String path = "/mnt/primary1";
         String host = "10.11.12.13,10.11.12.14,10.11.12.15";

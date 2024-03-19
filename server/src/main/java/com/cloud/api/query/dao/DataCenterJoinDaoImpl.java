@@ -17,9 +17,12 @@
 package com.cloud.api.query.dao;
 
 import java.util.List;
+import java.util.Objects;
 
 import javax.inject.Inject;
 
+import com.cloud.network.dao.NsxProviderDao;
+import com.cloud.network.element.NsxProviderVO;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
@@ -51,6 +54,8 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
     public AccountManager _accountMgr;
     @Inject
     private AnnotationDao annotationDao;
+    @Inject
+    private NsxProviderDao nsxProviderDao;
 
     protected DataCenterJoinDaoImpl() {
 
@@ -115,6 +120,11 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
                 ResourceIconResponse iconResponse = ApiDBUtils.newResourceIconResponse(resourceIcon);
                 zoneResponse.setResourceIconResponse(iconResponse);
             }
+        }
+
+        NsxProviderVO nsxProviderVO = nsxProviderDao.findByZoneId(dataCenter.getId());
+        if (Objects.nonNull(nsxProviderVO)) {
+            zoneResponse.setNsxEnabled(true);
         }
 
         zoneResponse.setResourceDetails(ApiDBUtils.getResourceDetails(dataCenter.getId(), ResourceObjectType.Zone));

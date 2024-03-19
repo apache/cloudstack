@@ -417,6 +417,7 @@ export const resourceTypePlugin = {
         case 'AffinityGroup':
         case 'VpnCustomerGateway':
         case 'AutoScaleVmGroup':
+        case 'QuotaTariff':
           return resourceType.toLowerCase()
       }
       return ''

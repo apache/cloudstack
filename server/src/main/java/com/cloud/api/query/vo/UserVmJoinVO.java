@@ -955,5 +955,4 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     public String getUserDataDetails() {
         return userDataDetails;
     }
-
 }

@@ -143,7 +143,7 @@ public class BigSwitchBcfGuestNetworkGuru extends GuestNetworkGuru implements Ne
     }
 
     @Override
-    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
+    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, String name, Long vpcId, Account owner) {
         // Check if the isolation type of the physical network is BCF_SEGMENT, then delegate GuestNetworkGuru to design
         PhysicalNetworkVO physnet = _physicalNetworkDao.findById(plan.getPhysicalNetworkId());
         if (physnet == null || physnet.getIsolationMethods() == null || !physnet.getIsolationMethods().contains("BCF_SEGMENT")) {
@@ -162,7 +162,7 @@ public class BigSwitchBcfGuestNetworkGuru extends GuestNetworkGuru implements Ne
         }
 
         logger.debug("Physical isolation type is BCF_SEGMENT, asking GuestNetworkGuru to design this network");
-        NetworkVO networkObject = (NetworkVO)super.design(offering, plan, userSpecified, owner);
+        NetworkVO networkObject = (NetworkVO)super.design(offering, plan, userSpecified, name, vpcId, owner);
         if (networkObject == null) {
             return null;
         }

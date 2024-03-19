@@ -19,7 +19,6 @@
 package com.cloud.resourcelimit;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
@@ -108,9 +107,10 @@ public class CheckedReservationTest {
 
     @Test
     public void getNoAmount() {
+        Mockito.when(reservationDao.persist(Mockito.any())).thenReturn(reservation);
         try (CheckedReservation cr = new CheckedReservation(account, Resource.ResourceType.cpu,-11l, reservationDao, resourceLimitService) ) {
             Long amount = cr.getReservedAmount();
-            assertNull(amount);
+            assertEquals(Long.valueOf(-11L), amount);
         } catch (NullPointerException npe) {
             fail("NPE caught");
         } catch (ResourceAllocationException rae) {

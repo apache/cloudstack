@@ -51,6 +51,9 @@ public class ReservationVO implements ResourceReservation {
     @Column(name = "tag")
     String tag;
 
+    @Column(name = "resource_id")
+    Long resourceId;
+
     @Column(name = "amount")
     long amount;
 
@@ -58,8 +61,8 @@ public class ReservationVO implements ResourceReservation {
     }
 
     public ReservationVO(Long accountId, Long domainId, Resource.ResourceType resourceType, String tag, Long delta) {
-        if (delta == null || delta <= 0) {
-            throw new CloudRuntimeException("resource reservations can not be made for no resources");
+        if (delta == null) {
+            throw new CloudRuntimeException("resource reservations can not be made for null resources");
         }
         this.accountId = accountId;
         this.domainId = domainId;
@@ -101,4 +104,14 @@ public class ReservationVO implements ResourceReservation {
     public Long getReservedAmount() {
         return amount;
     }
+
+    @Override
+    public Long getResourceId() {
+        return resourceId;
+    }
+
+    public void setResourceId(long resourceId) {
+        this.resourceId = resourceId;
+    }
+
 }

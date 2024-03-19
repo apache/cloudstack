@@ -28,10 +28,13 @@ import org.apache.cloudstack.acl.RoleVO;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
+import java.util.Collections;
 import java.util.List;
 
 @Component
 public class RoleDaoImpl extends GenericDaoBase<RoleVO, Long> implements RoleDao {
+
+    private final SearchBuilder<RoleVO> RoleByIdsSearch;
     private final SearchBuilder<RoleVO> RoleByNameSearch;
     private final SearchBuilder<RoleVO> RoleByTypeSearch;
     private final SearchBuilder<RoleVO> RoleByNameAndTypeSearch;
@@ -39,6 +42,10 @@ public class RoleDaoImpl extends GenericDaoBase<RoleVO, Long> implements RoleDao
 
     public RoleDaoImpl() {
         super();
+
+        RoleByIdsSearch = createSearchBuilder();
+        RoleByIdsSearch.and("idIN", RoleByIdsSearch.entity().getId(), SearchCriteria.Op.IN);
+        RoleByIdsSearch.done();
 
         RoleByNameSearch = createSearchBuilder();
         RoleByNameSearch.and("roleName", RoleByNameSearch.entity().getName(), SearchCriteria.Op.LIKE);
@@ -114,6 +121,16 @@ public class RoleDaoImpl extends GenericDaoBase<RoleVO, Long> implements RoleDao
         SearchCriteria<RoleVO> sc = RoleByIsPublicSearch.create();
         filterPrivateRolesIfNeeded(sc, showPrivateRole);
         return searchAndCount(sc, new Filter(RoleVO.class, "id", true, startIndex, limit));
+    }
+
+    @Override
+    public List<RoleVO> searchByIds(Long... ids) {
+        if (ids == null || ids.length == 0) {
+            return Collections.emptyList();
+        }
+        SearchCriteria<RoleVO> sc = RoleByIdsSearch.create();
+        sc.setParameters("idIN", ids);
+        return listBy(sc);
     }
 
     public void filterPrivateRolesIfNeeded(SearchCriteria<RoleVO> sc, boolean showPrivateRole) {

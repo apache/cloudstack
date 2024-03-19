@@ -23,6 +23,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.inject.Inject;
@@ -790,7 +791,10 @@ public class CommandSetupHelper {
         // vlan1, then all ip addresses of vlan2, etc..
         final Map<String, ArrayList<PublicIpAddress>> vlanIpMap = new HashMap<String, ArrayList<PublicIpAddress>>();
         for (final PublicIpAddress ipAddress : ips) {
-            final String vlanTag = ipAddress.getVlanTag();
+            String vlanTag = ipAddress.getVlanTag();
+            if (Objects.isNull(vlanTag)) {
+                vlanTag = "nsx-"+ipAddress.getAddress().addr();
+            }
             ArrayList<PublicIpAddress> ipList = vlanIpMap.get(vlanTag);
             if (ipList == null) {
                 ipList = new ArrayList<PublicIpAddress>();
@@ -841,10 +845,18 @@ public class CommandSetupHelper {
 
             for (final PublicIpAddress ipAddr : ipAddrList) {
                 final boolean add = ipAddr.getState() == IpAddress.State.Releasing ? false : true;
+                String vlanTag = ipAddr.getVlanTag();
+                String key = null;
+                if (Objects.isNull(vlanTag)) {
+                    key = "nsx-" + ipAddr.getAddress().addr();
+                } else {
+                    key = BroadcastDomainType.getValue(BroadcastDomainType.fromString(ipAddr.getVlanTag()));
+                }
 
-                final String macAddress = vlanMacAddress.get(BroadcastDomainType.getValue(BroadcastDomainType.fromString(ipAddr.getVlanTag())));
+                final String macAddress = vlanMacAddress.get(key);
 
-                final IpAddressTO ip = new IpAddressTO(ipAddr.getAccountId(), ipAddr.getAddress().addr(), add, firstIP, ipAddr.isSourceNat(), BroadcastDomainType.fromString(ipAddr.getVlanTag()).toString(), ipAddr.getGateway(),
+                final IpAddressTO ip = new IpAddressTO(ipAddr.getAccountId(), ipAddr.getAddress().addr(), add, firstIP, ipAddr.isSourceNat(),
+                        Objects.isNull(vlanTag) ? null : BroadcastDomainType.fromString(ipAddr.getVlanTag()).toString(), ipAddr.getGateway(),
                         ipAddr.getNetmask(), macAddress, networkRate, ipAddr.isOneToOneNat());
                 setIpAddressNetworkParams(ip, network, router);
                 if (network.getPublicMtu() != null) {
@@ -1048,6 +1060,9 @@ public class CommandSetupHelper {
         }
         for (IPAddressVO ip : userIps) {
             String vlanTag = _vlanDao.findById(ip.getVlanId()).getVlanTag();
+            if (Objects.isNull(vlanTag)) {
+                vlanTag = "nsx-" + ip.getAddress().addr();
+            }
             Boolean lastIp = vlanLastIpMap.get(vlanTag);
             if (lastIp != null && !lastIp) {
                 continue;
@@ -1145,7 +1160,7 @@ public class CommandSetupHelper {
 
     public SetupGuestNetworkCommand createSetupGuestNetworkCommand(final DomainRouterVO router, final boolean add, final NicProfile guestNic) {
         final Network network = _networkModel.getNetwork(guestNic.getNetworkId());
-
+        final NetworkOfferingVO networkOfferingVO = _networkOfferingDao.findById(network.getNetworkOfferingId());
         String defaultDns1 = null;
         String defaultDns2 = null;
         String defaultIp6Dns1 = null;
@@ -1182,6 +1197,7 @@ public class CommandSetupHelper {
         final SetupGuestNetworkCommand setupCmd = new SetupGuestNetworkCommand(dhcpRange, networkDomain, router.getIsRedundantRouter(), defaultDns1, defaultDns2, add, _itMgr.toNicTO(nicProfile,
                 router.getHypervisorType()));
 
+        setupCmd.setVrGuestGateway(networkOfferingVO.isForNsx());
         NicVO publicNic = _nicDao.findDefaultNicForVM(router.getId());
         if (publicNic != null) {
             updateSetupGuestNetworkCommandIpv6(setupCmd, network, publicNic, defaultIp6Dns1, defaultIp6Dns2);
@@ -1345,7 +1361,8 @@ public class CommandSetupHelper {
         nicTO.setMac(ipAddress.getVifMacAddress());
         nicTO.setType(ipAddress.getTrafficType());
         nicTO.setGateway(ipAddress.getVlanGateway());
-        nicTO.setBroadcastUri(BroadcastDomainType.fromString(ipAddress.getBroadcastUri()));
+        URI broadcastUri = ipAddress.getBroadcastUri() != null ? BroadcastDomainType.fromString(ipAddress.getBroadcastUri()) : null;
+        nicTO.setBroadcastUri(broadcastUri);
         nicTO.setType(network.getTrafficType());
         nicTO.setName(_networkModel.getNetworkTag(router.getHypervisorType(), network));
         nicTO.setBroadcastType(network.getBroadcastDomainType());

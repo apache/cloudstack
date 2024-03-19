@@ -204,6 +204,7 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
             final List<NetworkACLItemVO> aclItems = _networkACLItemDao.listByACL(acl.getId());
             if (aclItems == null || aclItems.isEmpty()) {
                 logger.debug("New network ACL is empty. Revoke existing rules before applying ACL");
+            } else {
                 if (!revokeACLItemsForNetwork(network.getId())) {
                     throw new CloudRuntimeException("Failed to replace network ACL. Error while removing existing ACL items for network: " + network.getId());
                 }
@@ -365,6 +366,20 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
         final VpcGatewayVO vpcGatewayVO = _vpcGatewayDao.findById(gateway.getId());
         final List<? extends NetworkACLItem> rules = _networkACLItemDao.listByACL(vpcGatewayVO.getNetworkACLId());
         return applyACLToPrivateGw(gateway, rules);
+    }
+
+    @Override
+    public boolean reorderAclRules(VpcVO vpc, List<? extends Network> networks, List<? extends NetworkACLItem> networkACLItems) {
+        List<NetworkACLServiceProvider> nsxElements = new ArrayList<>();
+        nsxElements.add((NetworkACLServiceProvider) _ntwkModel.getElementImplementingProvider(Network.Provider.Nsx.getName()));
+        try {
+            for (final NetworkACLServiceProvider provider : nsxElements) {
+                return provider.reorderAclRules(vpc, networks, networkACLItems);
+            }
+        } catch (final Exception ex) {
+            logger.debug("Failed to reorder ACLs on NSX due to: " + ex.getLocalizedMessage());
+        }
+        return false;
     }
 
     private boolean applyACLToPrivateGw(final PrivateGateway gateway, final List<? extends NetworkACLItem> rules) throws ResourceUnavailableException {

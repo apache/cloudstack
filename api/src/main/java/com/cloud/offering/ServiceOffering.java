@@ -102,7 +102,7 @@ public interface ServiceOffering extends InfrastructureEntity, InternalIdentity,
 
     boolean getDefaultUse();
 
-    String getSystemVmType();
+    String getVmType();
 
     String getDeploymentPlanner();
 

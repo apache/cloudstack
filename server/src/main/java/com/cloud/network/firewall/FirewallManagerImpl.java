@@ -22,12 +22,18 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.DataCenter;
+import com.cloud.network.dao.NsxProviderDao;
+import com.cloud.network.element.NsxProviderVO;
+import com.cloud.utils.db.EntityManager;
 import org.apache.cloudstack.api.command.user.firewall.IListFirewallRulesCmd;
 import org.apache.cloudstack.api.command.user.ipv6.ListIpv6FirewallRulesCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -135,6 +141,10 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     NetworkDao _networkDao;
     @Inject
     VpcManager _vpcMgr;
+    @Inject
+    EntityManager entityManager;
+    @Inject
+    NsxProviderDao nsxProviderDao;
     List<FirewallServiceProvider> _firewallElements;
 
     List<PortForwardingServiceProvider> _pfElements;
@@ -687,6 +697,9 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         }
 
         for (FirewallRuleVO rule : rules) {
+            // validate rule - for NSX
+            long networkId = rule.getNetworkId();
+            validateNsxConstraints(networkId, rule);
             // load cidrs if any
             rule.setSourceCidrList(_firewallCidrsDao.getSourceCidrs(rule.getId()));
             rule.setDestinationCidrsList(_firewallDcidrsDao.getDestCidrs(rule.getId()));
@@ -706,6 +719,31 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         }
 
         return true;
+    }
+
+    private void validateNsxConstraints(long networkId, FirewallRuleVO rule) {
+        String protocol = rule.getProtocol();
+        final Network network = entityManager.findById(Network.class, networkId);
+        final DataCenter dc = entityManager.findById(DataCenter.class, network.getDataCenterId());
+        final NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(dc.getId());
+        if (Objects.isNull(nsxProvider)) {
+            return;
+        }
+
+        if (NetUtils.ICMP_PROTO.equals(protocol.toLowerCase(Locale.ROOT)) && (rule.getIcmpType() == -1 || rule.getIcmpCode() == -1)
+                && State.Add.equals(rule.getState())) {
+            String errorMsg = "Passing -1 for ICMP type is not supported for NSX enabled zones";
+            logger.error(errorMsg);
+            throw new InvalidParameterValueException(errorMsg);
+        }
+
+        if (List.of(NetUtils.TCP_PROTO, NetUtils.UDP_PROTO).contains(protocol.toLowerCase(Locale.ROOT)) &&
+                (Objects.isNull(rule.getSourcePortStart()) || Objects.isNull(rule.getSourcePortEnd())) &&
+            State.Add.equals(rule.getState())) {
+            String errorMsg = "Source start and end ports are required to be passed";
+            logger.error(errorMsg);
+            throw new InvalidParameterValueException(errorMsg);
+        }
     }
 
     @Override

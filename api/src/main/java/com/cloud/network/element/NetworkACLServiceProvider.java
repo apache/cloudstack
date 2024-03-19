@@ -21,6 +21,7 @@ import java.util.List;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.vpc.NetworkACLItem;
+import com.cloud.network.vpc.Vpc;
 
 public interface NetworkACLServiceProvider extends NetworkElement {
 
@@ -31,5 +32,7 @@ public interface NetworkACLServiceProvider extends NetworkElement {
      * @throws ResourceUnavailableException
      */
     boolean applyNetworkACLs(Network config, List<? extends NetworkACLItem> rules) throws ResourceUnavailableException;
+
+    boolean reorderAclRules(Vpc vpc, List<? extends Network> networks, List<? extends NetworkACLItem> networkACLItems);
 
 }

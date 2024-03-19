@@ -460,7 +460,7 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
         DataCenterDeployment plan = new DataCenterDeployment(network.getDataCenterId(), null, null, null, null, newPhysicalNetworkId);
         for (final NetworkGuru guru : _networkMgr.getNetworkGurus()) {
 
-            final Network designedNetwork = guru.design(newOffering, plan, network, networkAccount);
+            final Network designedNetwork = guru.design(newOffering, plan, network, network.getName(), vpcId, networkAccount);
             if (designedNetwork == null) {
                 continue;
             }

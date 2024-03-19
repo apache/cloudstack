@@ -40,7 +40,7 @@ class CsGuestNetwork:
             return self.config.get_dns()
 
         dns = []
-        if 'router_guest_gateway' in self.data and not self.config.use_extdns():
+        if 'router_guest_gateway' in self.data and not self.config.use_extdns() and 'is_vr_guest_gateway' not in self.data:
             dns.append(self.data['router_guest_gateway'])
 
         if 'dns' in self.data:

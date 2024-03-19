@@ -82,6 +82,7 @@ public class VirtualMachineTO {
 
     Map<String, String> guestOsDetails = new HashMap<String, String>();
     Map<String, String> extraConfig = new HashMap<>();
+    Map<Long, String> networkIdToNetworkNameMap = new HashMap<>();
     DeployAsIsInfoTO deployAsIsInfo;
 
     public VirtualMachineTO(long id, String instanceName, VirtualMachine.Type type, int cpus, Integer speed, long minRam, long maxRam, BootloaderType bootloader,
@@ -390,6 +391,14 @@ public class VirtualMachineTO {
     }
     public Map<String, String> getExtraConfig() {
         return extraConfig;
+    }
+
+    public Map<Long, String> getNetworkIdToNetworkNameMap() {
+        return networkIdToNetworkNameMap;
+    }
+
+    public void setNetworkIdToNetworkNameMap(Map<Long, String> networkIdToNetworkNameMap) {
+        this.networkIdToNetworkNameMap = networkIdToNetworkNameMap;
     }
 
     public String getBootType() {

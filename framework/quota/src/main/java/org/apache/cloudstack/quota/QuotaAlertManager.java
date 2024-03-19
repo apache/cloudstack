@@ -16,11 +16,14 @@
 //under the License.
 package org.apache.cloudstack.quota;
 
+import com.cloud.user.AccountVO;
 import com.cloud.utils.component.Manager;
 
 import org.apache.cloudstack.quota.QuotaAlertManagerImpl.DeferredQuotaEmail;
+import org.apache.cloudstack.quota.constant.QuotaConfig;
 
 public interface QuotaAlertManager extends Manager {
+    boolean isQuotaEmailTypeEnabledForAccount(AccountVO account, QuotaConfig.QuotaEmailTemplateTypes quotaEmailTemplateType);
     void checkAndSendQuotaAlertEmails();
     void sendQuotaAlert(DeferredQuotaEmail emailToBeSent);
 }

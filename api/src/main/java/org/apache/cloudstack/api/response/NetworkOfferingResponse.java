@@ -99,9 +99,17 @@ public class NetworkOfferingResponse extends BaseResponseWithAnnotations {
     @Param(description = "true if network offering can be used by VPC networks only")
     private Boolean forVpc;
 
+    @SerializedName(ApiConstants.FOR_NSX)
+    @Param(description = "true if network offering can be used by NSX networks only")
+    private Boolean forNsx;
+
     @SerializedName(ApiConstants.FOR_TUNGSTEN)
     @Param(description = "true if network offering can be used by Tungsten-Fabric networks only")
     private Boolean forTungsten;
+
+    @SerializedName(ApiConstants.NSX_MODE)
+    @Param(description = "Mode in which the network will operate. This parameter is only relevant for NSX offerings")
+    private String nsxMode;
 
     @SerializedName(ApiConstants.IS_PERSISTENT)
     @Param(description = "true if network offering supports persistent networks, false otherwise")
@@ -126,6 +134,10 @@ public class NetworkOfferingResponse extends BaseResponseWithAnnotations {
     @SerializedName(ApiConstants.SUPPORTS_PUBLIC_ACCESS)
     @Param(description = "true if network offering supports public access for guest networks", since = "4.10.0")
     private Boolean supportsPublicAccess;
+
+    @SerializedName(ApiConstants.SUPPORTS_INTERNAL_LB)
+    @Param(description = "true if network offering supports public access for guest networks", since = "4.20.0")
+    private Boolean supportsInternalLb;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "the domain ID(s) this disk offering belongs to. Ignore this information as it is not currently applicable.")
@@ -215,8 +227,16 @@ public class NetworkOfferingResponse extends BaseResponseWithAnnotations {
         this.forVpc = forVpc;
     }
 
+    public void setForNsx(Boolean forNsx) {
+        this.forNsx = forNsx;
+    }
+
     public void setForTungsten(Boolean forTungsten) {
         this.forTungsten = forTungsten;
+    }
+
+    public void setNsxMode(String nsxMode) {
+        this.nsxMode = nsxMode;
     }
 
     public void setIsPersistent(Boolean isPersistent) {
@@ -241,6 +261,10 @@ public class NetworkOfferingResponse extends BaseResponseWithAnnotations {
 
     public void setSupportsPublicAccess(Boolean supportsPublicAccess) {
         this.supportsPublicAccess = supportsPublicAccess;
+    }
+
+    public void setSupportsInternalLb(Boolean supportsInternalLb) {
+        this.supportsInternalLb = supportsInternalLb;
     }
 
     public String getDomainId() {

@@ -72,6 +72,9 @@ public interface QuotaConfig {
     ConfigKey<String> QuotaEmailFooter = new ConfigKey<>("Advanced", String.class, "quota.email.footer", "",
             "Text to be added as a footer for quota emails. Line breaks are not automatically inserted between this section and the body.", true, ConfigKey.Scope.Domain);
 
+    ConfigKey<Boolean> QuotaEnableEmails = new ConfigKey<>("Advanced", Boolean.class, "quota.enable.emails", "true",
+            "Indicates whether Quota emails should be sent or not to accounts. When enabled, the behavior for each account can be overridden through the API quotaConfigureEmail.", true, ConfigKey.Scope.Account);
+
     enum QuotaEmailTemplateTypes {
         QUOTA_LOW, QUOTA_EMPTY, QUOTA_UNLOCK_ACCOUNT, QUOTA_STATEMENT
     }

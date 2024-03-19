@@ -43,7 +43,7 @@
           <br/>
           <div v-if="Array.isArray(dataResource[item]) && item === 'service'">
             <div v-for="(service, idx) in dataResource[item]" :key="idx">
-              {{ service.name }} : {{ service.provider[0].name }}
+              {{ service.name }} : {{ service.provider?.[0]?.name }}
             </div>
           </div>
           <div v-else-if="$route.meta.name === 'backup' && item === 'volumes'">

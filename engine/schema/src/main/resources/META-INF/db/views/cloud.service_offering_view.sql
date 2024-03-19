@@ -84,7 +84,7 @@ SELECT
 FROM
     `cloud`.`service_offering`
         INNER JOIN
-    `cloud`.`disk_offering_view` AS `disk_offering` ON service_offering.disk_offering_id = disk_offering.id
+    `cloud`.`disk_offering` ON service_offering.disk_offering_id = disk_offering.id AND `disk_offering`.`state`='Active'
         LEFT JOIN
     `cloud`.`service_offering_details` AS `domain_details` ON `domain_details`.`service_offering_id` = `service_offering`.`id` AND `domain_details`.`name`='domainid'
         LEFT JOIN

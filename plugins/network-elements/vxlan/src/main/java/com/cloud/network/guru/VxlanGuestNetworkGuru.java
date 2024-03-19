@@ -66,8 +66,8 @@ public class VxlanGuestNetworkGuru extends GuestNetworkGuru {
     }
 
     @Override
-    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
-        NetworkVO network = (NetworkVO)super.design(offering, plan, userSpecified, owner);
+    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, String name, Long vpcId, Account owner) {
+        NetworkVO network = (NetworkVO)super.design(offering, plan, userSpecified, name, vpcId, owner);
         if (network == null) {
             return null;
         }

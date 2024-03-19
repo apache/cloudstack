@@ -160,7 +160,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
+    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, String name, Long vpcId, Account owner) {
         DataCenter dc = _dcDao.findById(plan.getDataCenterId());
         PhysicalNetworkVO physnet = _physicalNetworkDao.findById(plan.getPhysicalNetworkId());
 
@@ -247,6 +247,11 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
         }
 
         return config;
+    }
+
+    @Override
+    public void setup(Network network, long networkId) {
+        // do nothing
     }
 
     protected DirectNetworkGuru() {

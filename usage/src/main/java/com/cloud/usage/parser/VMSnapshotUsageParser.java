@@ -25,6 +25,8 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.usage.UsageManagerImpl;
+import com.cloud.utils.DateUtil;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
@@ -134,10 +136,9 @@ public class VMSnapshotUsageParser {
         DecimalFormat dFormat = new DecimalFormat("#.######");
         String usageDisplay = dFormat.format(usage);
 
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Creating VMSnapshot Id:" + vmSnapshotId + " Volume usage record for vol: " + volId + ", usage: " + usageDisplay + ", startDate: " + startDate + ", endDate: " +
-                endDate + ", for account: " + account.getId());
-        }
+        LOGGER.debug("Creating usage record for VMSnapshot with id [{}], vol [{}], usage [{}], startDate [{}], and endDate [{}], for account [{}].",
+                vmSnapshotId, volId, usageDisplay, DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), startDate),
+                DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), endDate), account.getId());
 
         // Create the usage record
         String usageDesc = "VMSnapshot Id: " + vmSnapshotId + " Usage: " + "VM Id: " + vmId + " Volume Id: " + volId + " ";

@@ -17,6 +17,7 @@
 package com.cloud.api.query.dao;
 
 import java.util.EnumSet;
+import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants.DomainDetails;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
@@ -35,4 +36,5 @@ public interface DomainJoinDao extends GenericDao<DomainJoinVO, Long> {
 
     void setResourceLimits(DomainJoinVO domain, boolean isRootDomain, ResourceLimitAndCountResponse response);
 
+    List<DomainJoinVO> searchByIds(Long... domainIds);
 }

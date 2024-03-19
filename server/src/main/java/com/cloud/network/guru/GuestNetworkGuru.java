@@ -114,9 +114,9 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     @Inject
     ConfigurationServer _configServer;
     @Inject
-    IpAddressManager _ipAddrMgr;
+    protected IpAddressManager _ipAddrMgr;
     @Inject
-    NetworkOfferingDao networkOfferingDao;
+    protected NetworkOfferingDao networkOfferingDao;
     @Inject
     Ipv6AddressManager ipv6AddressManager;
     @Inject
@@ -144,6 +144,11 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     protected GuestNetworkGuru() {
         super();
         _isolationMethods = null;
+    }
+
+    @Override
+    public void setup(Network network, long networkId) {
+        // do nothing
     }
 
     private void updateNicIpv6(Network network, NicProfile nic, VirtualMachineProfile vm, DataCenter dc, boolean isGateway) throws InsufficientAddressCapacityException {
@@ -217,7 +222,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     protected abstract boolean canHandle(NetworkOffering offering, final NetworkType networkType, PhysicalNetwork physicalNetwork);
 
     @Override
-    public Network design(final NetworkOffering offering, final DeploymentPlan plan, final Network userSpecified, final Account owner) {
+    public Network design(final NetworkOffering offering, final DeploymentPlan plan, final Network userSpecified, String name, Long vpcId, final Account owner) {
         final DataCenter dc = _dcDao.findById(plan.getDataCenterId());
         final PhysicalNetworkVO physnet = _physicalNetworkDao.findById(plan.getPhysicalNetworkId());
 

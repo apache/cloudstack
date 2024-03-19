@@ -74,7 +74,7 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
+    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, String name, Long vpcId, Account owner) {
         TrafficType type = offering.getTrafficType();
 
         if (!isMyTrafficType(type)) {
@@ -85,6 +85,11 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
             new NetworkVO(type, Mode.Static, BroadcastDomainType.Native, offering.getId(), Network.State.Setup, plan.getDataCenterId(),
                     plan.getPhysicalNetworkId(), offering.isRedundantRouter());
         return config;
+    }
+
+    @Override
+    public void setup(Network network, long networkId) {
+        // do nothing
     }
 
     protected PodBasedNetworkGuru() {

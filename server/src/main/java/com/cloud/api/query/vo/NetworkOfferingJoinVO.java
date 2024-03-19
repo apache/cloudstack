@@ -157,6 +157,12 @@ public class NetworkOfferingJoinVO extends BaseViewVO implements NetworkOffering
     @Column(name = "for_tungsten")
     boolean forTungsten;
 
+    @Column(name = "for_nsx")
+    boolean forNsx;
+
+    @Column(name = "nsx_mode")
+    String nsxMode;
+
     @Column(name = "service_package_id")
     private String servicePackageUuid = null;
 
@@ -348,6 +354,24 @@ public class NetworkOfferingJoinVO extends BaseViewVO implements NetworkOffering
     }
 
     public void setForVpc(boolean forVpc) { this.forVpc = forVpc; }
+
+    @Override
+    public boolean isForNsx() {
+        return forNsx;
+    }
+
+    public void setForNsx(boolean forNsx) {
+        this.forNsx = forNsx;
+    }
+
+    @Override
+    public String getNsxMode() {
+        return nsxMode;
+    }
+
+    public void setNsxMode(String nsxMode) {
+        this.nsxMode = nsxMode;
+    }
 
     public String getServicePackage() {
         return servicePackageUuid;

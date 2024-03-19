@@ -699,6 +699,11 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
     }
 
     @Override
+    public boolean reorderAclRules(Vpc vpc, List<? extends Network> networks, List<? extends NetworkACLItem> networkACLItems) {
+        return true;
+    }
+
+    @Override
     public boolean applyFWRules(Network network,
             List<? extends FirewallRule> rules)
             throws ResourceUnavailableException {

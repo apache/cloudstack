@@ -37,6 +37,7 @@ public class GuestNetwork extends ConfigBase {
     private String routerIp6;
     private String routerIp6Gateway;
     private String routerIp6Cidr;
+    private boolean isVrGuestGateway;
 
     private Integer mtu;
 
@@ -201,5 +202,13 @@ public class GuestNetwork extends ConfigBase {
 
     public Integer getMtu() {
         return mtu;
+    }
+
+    public boolean isVrGuestGateway() {
+        return isVrGuestGateway;
+    }
+
+    public void setVrGuestGateway(boolean vrGuestGateway) {
+        isVrGuestGateway = vrGuestGateway;
     }
 }

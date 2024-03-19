@@ -26,6 +26,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.network.PublicIpQuarantine;
+import com.cloud.network.VirtualRouterProvider;
 import com.cloud.utils.fsm.NoTransitionException;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.command.admin.address.ReleasePodIpCmdByAdmin;
@@ -46,6 +47,7 @@ import org.apache.cloudstack.api.command.user.network.UpdateNetworkCmd;
 import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
 import org.apache.cloudstack.api.response.AcquirePodIpCmdResponse;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 import org.springframework.stereotype.Component;
 
 import com.cloud.deploy.DataCenterDeployment;
@@ -178,6 +180,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
 
     @Override
     public IpAddress reserveIpAddress(Account account, Boolean displayIp, Long ipAddressId) throws ResourceAllocationException {
+        return null;
+    }
+
+    @Override
+    public IpAddress reserveIpAddressWithVlanDetail(Account account, DataCenter zone, Boolean displayIp, String vlanDetailKey) throws ResourceAllocationException {
         return null;
     }
 
@@ -1080,5 +1087,25 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     @Override
     public void removePublicIpAddressFromQuarantine(RemoveQuarantinedIpCmd cmd) {
 
+    }
+
+    @Override
+    public InternalLoadBalancerElementService getInternalLoadBalancerElementByType(VirtualRouterProvider.Type type) {
+        return null;
+    }
+
+    @Override
+    public InternalLoadBalancerElementService getInternalLoadBalancerElementByNetworkServiceProviderId(long networkProviderId) {
+        return null;
+    }
+
+    @Override
+    public InternalLoadBalancerElementService getInternalLoadBalancerElementById(long providerId) {
+        return null;
+    }
+
+    @Override
+    public List<InternalLoadBalancerElementService> getInternalLoadBalancerElements() {
+        return null;
     }
 }

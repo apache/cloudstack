@@ -170,7 +170,7 @@ public class BrocadeVcsGuestNetworkGuruTest {
         final Network network = mock(Network.class);
         final Account account = mock(Account.class);
 
-        final Network designednetwork = guru.design(offering, plan, network, account);
+        final Network designednetwork = guru.design(offering, plan, network, "", 1L, account);
         assertTrue(designednetwork != null);
         assertTrue(designednetwork.getBroadcastDomainType() == BroadcastDomainType.Vcs);
     }
@@ -191,7 +191,7 @@ public class BrocadeVcsGuestNetworkGuruTest {
         final Network network = mock(Network.class);
         final Account account = mock(Account.class);
 
-        final Network designednetwork = guru.design(offering, plan, network, account);
+        final Network designednetwork = guru.design(offering, plan, network, "", 1L, account);
         assertTrue(designednetwork == null);
     }
 
@@ -213,7 +213,7 @@ public class BrocadeVcsGuestNetworkGuruTest {
         final Network network = mock(Network.class);
         final Account account = mock(Account.class);
 
-        final Network designednetwork = guru.design(offering, plan, network, account);
+        final Network designednetwork = guru.design(offering, plan, network, "", 1L, account);
         assertTrue(designednetwork == null);
     }
 

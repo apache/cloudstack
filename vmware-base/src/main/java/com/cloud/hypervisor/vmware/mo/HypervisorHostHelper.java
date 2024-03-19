@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -550,7 +551,8 @@ public class HypervisorHostHelper {
 
     public static Pair<ManagedObjectReference, String> prepareNetwork(String physicalNetwork, String namePrefix, HostMO hostMo, String vlanId, String secondaryvlanId,
                                                                       Integer networkRateMbps, Integer networkRateMulticastMbps, long timeOutMs, VirtualSwitchType vSwitchType, int numPorts, String gateway,
-                                                                      boolean configureVServiceInNexus, BroadcastDomainType broadcastDomainType, Map<String, String> vsmCredentials, Map<NetworkOffering.Detail, String> details) throws Exception {
+                                                                      boolean configureVServiceInNexus, BroadcastDomainType broadcastDomainType, Map<String, String> vsmCredentials,
+                                                                      Map<NetworkOffering.Detail, String> details, String netName) throws Exception {
         ManagedObjectReference morNetwork = null;
         VmwareContext context = hostMo.getContext();
         ManagedObjectReference dcMor = hostMo.getHyperHostDatacenter();
@@ -574,7 +576,7 @@ public class HypervisorHostHelper {
          */
         BroadcastDomainType[] supportedBroadcastTypes =
                 new BroadcastDomainType[] {BroadcastDomainType.Lswitch, BroadcastDomainType.LinkLocal, BroadcastDomainType.Native, BroadcastDomainType.Pvlan,
-                BroadcastDomainType.Storage, BroadcastDomainType.UnDecided, BroadcastDomainType.Vlan};
+                BroadcastDomainType.Storage, BroadcastDomainType.UnDecided, BroadcastDomainType.Vlan, BroadcastDomainType.NSX};
 
         if (!Arrays.asList(supportedBroadcastTypes).contains(broadcastDomainType)) {
             throw new InvalidParameterException("BroadcastDomainType " + broadcastDomainType + " it not supported on a VMWare hypervisor at this time.");
@@ -636,6 +638,9 @@ public class HypervisorHostHelper {
                 if (!dataCenterMo.hasDvPortGroup(networkName)) {
                     throw new InvalidParameterException("NVP integration port-group " + networkName + " does not exist on the DVS " + dvSwitchName);
                 }
+                bWaitPortGroupReady = false;
+            } else if (BroadcastDomainType.NSX == broadcastDomainType && Objects.nonNull(netName)){
+                networkName = netName;
                 bWaitPortGroupReady = false;
             } else {
                 boolean dvSwitchSupportNewPolicies = (isFeatureSupportedInVcenterApiVersion(vcApiVersion, MINIMUM_VCENTER_API_VERSION_WITH_DVS_NEW_POLICIES_SUPPORT)
@@ -1282,7 +1287,8 @@ public class HypervisorHostHelper {
     }
 
     public static Pair<ManagedObjectReference, String> prepareNetwork(String vSwitchName, String namePrefix, HostMO hostMo, String vlanId, Integer networkRateMbps,
-                                                                      Integer networkRateMulticastMbps, long timeOutMs, boolean syncPeerHosts, BroadcastDomainType broadcastDomainType, String nicUuid, Map<NetworkOffering.Detail, String> nicDetails) throws Exception {
+                                                                      Integer networkRateMulticastMbps, long timeOutMs, boolean syncPeerHosts, BroadcastDomainType broadcastDomainType,
+                                                                      String nicUuid, Map<NetworkOffering.Detail, String> nicDetails) throws Exception {
 
         HostVirtualSwitch vSwitch;
         if (vSwitchName == null) {
@@ -1306,7 +1312,7 @@ public class HypervisorHostHelper {
          */
         BroadcastDomainType[] supportedBroadcastTypes =
                 new BroadcastDomainType[] {BroadcastDomainType.Lswitch, BroadcastDomainType.LinkLocal, BroadcastDomainType.Native, BroadcastDomainType.Pvlan,
-                BroadcastDomainType.Storage, BroadcastDomainType.UnDecided, BroadcastDomainType.Vlan};
+                BroadcastDomainType.Storage, BroadcastDomainType.UnDecided, BroadcastDomainType.Vlan, BroadcastDomainType.NSX};
 
         if (!Arrays.asList(supportedBroadcastTypes).contains(broadcastDomainType)) {
             throw new InvalidParameterException("BroadcastDomainType " + broadcastDomainType + " it not supported on a VMWare hypervisor at this time.");

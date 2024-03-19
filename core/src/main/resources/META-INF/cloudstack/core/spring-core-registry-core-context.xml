@@ -350,4 +350,12 @@
     <bean id="clusterDrsAlgorithmRegistry"
           class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
     </bean>
+
+    <bean id="internalLoadBalancerElementServiceRegistry" class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
+        <property name="preRegistered">
+            <list>
+                <ref bean="InternalLbVm" />
+            </list>
+        </property>
+    </bean>
 </beans>

@@ -168,7 +168,7 @@ public class NiciraNvpGuestNetworkGuruTest {
         final Network network = mock(Network.class);
         final Account account = mock(Account.class);
 
-        final Network designednetwork = guru.design(offering, plan, network, account);
+        final Network designednetwork = guru.design(offering, plan, network, "", 1L, account);
         assertTrue(designednetwork != null);
         assertTrue(designednetwork.getBroadcastDomainType() == BroadcastDomainType.Lswitch);
     }
@@ -192,7 +192,7 @@ public class NiciraNvpGuestNetworkGuruTest {
         final Network network = mock(Network.class);
         final Account account = mock(Account.class);
 
-        final Network designednetwork = guru.design(offering, plan, network, account);
+        final Network designednetwork = guru.design(offering, plan, network, "", 1L, account);
         assertTrue(designednetwork == null);
     }
 
@@ -215,7 +215,7 @@ public class NiciraNvpGuestNetworkGuruTest {
         final Network network = mock(Network.class);
         final Account account = mock(Account.class);
 
-        final Network designednetwork = guru.design(offering, plan, network, account);
+        final Network designednetwork = guru.design(offering, plan, network, "", 1L, account);
         assertTrue(designednetwork == null);
     }
 
@@ -241,7 +241,7 @@ public class NiciraNvpGuestNetworkGuruTest {
         final Network network = mock(Network.class);
         final Account account = mock(Account.class);
 
-        final Network designednetwork = guru.design(offering, plan, network, account);
+        final Network designednetwork = guru.design(offering, plan, network, "", 1L, account);
         assertTrue(designednetwork == null);
     }
 

@@ -1119,7 +1119,7 @@ public class NetUtils {
         return false;
     }
 
-    public static boolean validateGuestCidr(final String cidr) {
+    public static boolean validateGuestCidr(final String cidr, boolean checkCompliance) {
         // RFC 1918 - The Internet Assigned Numbers Authority (IANA) has reserved the
         // following three blocks of the IP address space for private internets:
         // 10.0.0.0 - 10.255.255.255 (10/8 prefix)
@@ -1136,6 +1136,9 @@ public class NetUtils {
             return false;
         }
 
+        if (!checkCompliance) {
+            return true;
+        }
         for (String block: allowedNetBlocks) {
             if (isNetworkAWithinNetworkB(cidr, block)) {
                 return true;
@@ -1238,9 +1241,9 @@ public class NetUtils {
         return true;
     }
 
-    public static boolean validateGuestCidrList(final String guestCidrList) {
+    public static boolean validateGuestCidrList(final String guestCidrList, boolean checkCompliance) {
         for (final String guestCidr : guestCidrList.split(",")) {
-            if (!validateGuestCidr(guestCidr)) {
+            if (!validateGuestCidr(guestCidr, checkCompliance)) {
                 return false;
             }
         }

@@ -20,11 +20,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.inject.Inject;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.network.dao.NsxProviderDao;
+import com.cloud.network.element.NsxProviderVO;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
@@ -97,6 +102,8 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
     private VpcDao _vpcDao;
     @Inject
     private VpcService _vpcSvc;
+    @Inject
+    private NsxProviderDao nsxProviderDao;
 
     private String supportedProtocolsForAclRules = "tcp,udp,icmp,all";
 
@@ -336,6 +343,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         if (isGlobalAcl(acl.getVpcId()) && !Account.Type.ADMIN.equals(caller.getType())) {
             throw new PermissionDeniedException("Only Root Admins can create rules for a global ACL.");
         }
+        validateNsxConstraints(acl.getVpcId(), protocol, icmpType, icmpCode, sourcePortStart, sourcePortEnd);
         validateAclRuleNumber(createNetworkACLCmd, acl);
 
         NetworkACLItem.Action ruleAction = validateAndCreateNetworkAclRuleAction(action);
@@ -423,6 +431,32 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         Long aclVpcId = acl.getVpcId();
         if (!isGlobalAcl(aclVpcId)) {
             validateAclAssociatedToVpc(aclVpcId, CallContext.current().getCallingAccount(), acl.getUuid());
+        }
+    }
+
+    private void validateNsxConstraints(long vpcId, String protocol, Integer icmpType,
+                                        Integer icmpCode, Integer sourcePortStart, Integer sourcePortEnd) {
+        VpcVO vpc = _vpcDao.findById(vpcId);
+        if (Objects.isNull(vpc)) {
+            return;
+        }
+        final DataCenter dc = _entityMgr.findById(DataCenter.class, vpc.getZoneId());
+        final NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(dc.getId());
+        if (Objects.isNull(nsxProvider)) {
+            return;
+        }
+
+        if (NetUtils.ICMP_PROTO.equals(protocol.toLowerCase(Locale.ROOT)) && (icmpType == -1 || icmpCode == -1)) {
+            String errorMsg = "Passing -1 for ICMP type is not supported for NSX enabled zones";
+            logger.error(errorMsg);
+            throw new InvalidParameterValueException(errorMsg);
+        }
+
+        if (List.of(NetUtils.TCP_PROTO, NetUtils.UDP_PROTO).contains(protocol.toLowerCase(Locale.ROOT)) &&
+                (Objects.isNull(sourcePortStart) || Objects.isNull(sourcePortEnd))) {
+            String errorMsg = "Source start and end ports are required to be passed";
+            logger.error(errorMsg);
+            throw new InvalidParameterValueException(errorMsg);
         }
     }
 
@@ -815,7 +849,8 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
         NetworkACL acl = _networkAclMgr.getNetworkACL(networkACLItemVo.getAclId());
         validateNetworkAcl(acl);
-
+        validateNsxConstraints(acl.getVpcId(), networkACLItemVo.getProtocol(), networkACLItemVo.getIcmpType(),
+                networkACLItemVo.getIcmpCode(), networkACLItemVo.getSourcePortStart(), networkACLItemVo.getSourcePortEnd());
         Account account = CallContext.current().getCallingAccount();
         validateGlobalAclPermissionAndAclAssociatedToVpc(acl, account, "Only Root Admins can update global ACLs.");
 
@@ -975,14 +1010,26 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             NetworkACLVO lockedAcl = _networkACLDao.acquireInLockTable(ruleBeingMoved.getAclId());
             List<NetworkACLItemVO> allAclRules = getAllAclRulesSortedByNumber(lockedAcl.getId());
             validateAclConsistency(moveNetworkAclItemCmd, lockedAcl, allAclRules);
-
+            NetworkACLItem networkACLItem = null;
             if (previousRule == null) {
-                return moveRuleToTheTop(ruleBeingMoved, allAclRules);
+                networkACLItem = moveRuleToTheTop(ruleBeingMoved, allAclRules);
+            } else if (nextRule == null) {
+                networkACLItem = moveRuleToTheBottom(ruleBeingMoved, allAclRules);
+            } else {
+                networkACLItem = moveRuleBetweenAclRules(ruleBeingMoved, allAclRules, previousRule, nextRule);
             }
-            if (nextRule == null) {
-                return moveRuleToTheBottom(ruleBeingMoved, allAclRules);
+            VpcVO vpc = _vpcDao.findById(lockedAcl.getVpcId());
+            if (Objects.isNull(vpc)) {
+                return networkACLItem;
             }
-            return moveRuleBetweenAclRules(ruleBeingMoved, allAclRules, previousRule, nextRule);
+            final DataCenter dc = _entityMgr.findById(DataCenter.class, vpc.getZoneId());
+            final NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(dc.getId());
+            List<NetworkVO> networks = _networkDao.listByAclId(lockedAcl.getId());
+            if (Objects.nonNull(nsxProvider) && !networks.isEmpty()) {
+                allAclRules = getAllAclRulesSortedByNumber(lockedAcl.getId());
+                _networkAclMgr.reorderAclRules(vpc, networks, allAclRules);
+            }
+            return networkACLItem;
         } finally {
             _networkACLDao.releaseFromLockTable(ruleBeingMoved.getAclId());
         }
