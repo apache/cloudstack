@@ -1,0 +1,295 @@
+#!/usr/bin/env python
+
+# A plugin for migrating unattached disks across clusters
+
+import socket
+import logging
+from random import randint
+
+import XenAPIPlugin
+import XenAPI
+
+import cloudstack_pluginlib as lib
+
+lib.setup_logging('/var/log/cloud/migrate-unattached-disk.log')
+
+
+def log_info(func_name, info_type, args):
+    logging.info(
+        '[%s] %s %s: %s',
+        LOGID,
+        func_name,
+        info_type,
+        args if isinstance(args, str)
+        else 'args: %s' % ['%s: %s' % (k, v) for k, v in args.items()
+              if k not in ['remote_username', 'remote_password']]
+    )
+
+
+def log_errors(func):
+    def _wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except XenAPI.Failure, exc:
+            logging.error(
+                '[%s] %s: XenAPI.Failure: %s',
+                LOGID, func.__name__, str(exc)
+            )
+            raise
+        except lib.PluginError, exc:
+            logging.error(
+                '[%s] %s: %s: %s',
+                LOGID, func.__name__, exc.__class__.__name__, str(exc)
+            )
+            raise
+        except Exception, exc:
+            logging.error(
+                '[%s] %s: %s: %s',
+                LOGID, func.__name__, exc.__class__.__name__, str(exc)
+            )
+            raise
+    return _wrapper
+
+
+def ignore_failure(func, *args, **kwargs):
+    try:
+        return func(*args, **kwargs)
+    except XenAPI.Failure:
+        return None
+
+
+def get_remote_connection(args):
+    protocol = get_protocol(args)
+    remote_host = args['remote_host']
+    remote_port = get_port(protocol)
+    remote_username = args['remote_username']
+    remote_password = args['remote_password']
+    return protocol, remote_host, remote_port, remote_username, remote_password
+
+
+def get_protocol(args):
+    protocol = args['protocol']
+    if protocol not in ['http', 'https']:
+        raise ValueError('Invalid protocol %s' % protocol)
+    return protocol
+
+
+def get_port(protocol):
+    return 443 if protocol == 'https' else 80
+
+
+def login(protocol, remote_host, remote_port, remote_username, remote_password):
+    try:
+        remote_session = \
+            XenAPI.Session('%s://%s:%s/' % (protocol, remote_host, remote_port))
+        remote_session.login_with_password(remote_username, remote_password)
+        return remote_session
+    except socket.gaierror, exn:
+        logging.debug('gaierror logging in: %s', exn)
+
+
+@log_errors
+def migrate_vdi(session, args):
+    """
+    Live migrate a VDI to a remote SR by attaching it to a temporary transport VM.
+    """
+    log_info('migrate_vdi', '## RECEIVED ##', args)
+    local_vdi_uuid = args['local_vdi_uuid']
+    remote_sr_uuid = args['remote_sr_uuid']
+    network_uuid = args['network_uuid']
+    dest_host_uuid = args['dest_host_uuid']
+    vdi_ref = session.xenapi.VDI.get_by_uuid(local_vdi_uuid)
+    vdi_records = session.xenapi.VDI.get_record(vdi_ref)
+    log_info('migrate_vdi',
+             '',
+             'VDI: "%s" will be migrated' % vdi_records['name_label'])
+    new_vm = None
+    migrated_vm = None
+    try:
+        new_vm = session.xenapi.VM.get_by_uuid(create_vm(session))
+        create_vbd(session, new_vm, vdi_ref, 'autodetect')
+        protocol, remote_host, remote_port, remote_username, remote_password = \
+            get_remote_connection(args)
+
+        # recreate session each time cause of 400 sessions limits in xenserver
+        remote_session = login(protocol, remote_host, remote_port,
+                               remote_username, remote_password)
+        migrated_vm = migrate(session, remote_session, dest_host_uuid,
+                              network_uuid, new_vm, remote_sr_uuid)
+
+        remote_session = login(protocol, remote_host, remote_port,
+                               remote_username, remote_password)
+        new_vdi_uuid = find_migrated_vdi_uuid(remote_session, migrated_vm)
+    finally:
+        if new_vm is not None:
+            ignore_failure(cleanup, session, new_vm)
+        if migrated_vm is not None:
+            remote_session = ignore_failure(login, protocol, remote_host, remote_port,
+                                            remote_username, remote_password)
+            ignore_failure(cleanup, remote_session, migrated_vm)
+    log_info('migrate_vdi', '## SUCCESS ##', args['local_vdi_uuid'])
+    return new_vdi_uuid
+
+
+def migrate_rcv(remote_session, dest_host_uuid, network_uuid, opts):
+    host_ref = remote_session.xenapi.host.get_by_uuid(dest_host_uuid)
+    network_ref = remote_session.xenapi.network.get_by_uuid(network_uuid)
+    return remote_session.xenapi.host.migrate_receive(host_ref, network_ref, opts)
+
+
+def migrate(local_session, remote_session, dest_host_uuid, network_uuid, vm_ref, remote_sr_uuid):
+    opts = {
+        'live': 'true',
+        'force': 'true',
+        'copy': 'false',
+    }
+    sr_ref = remote_session.xenapi.SR.get_by_uuid(remote_sr_uuid)
+    recv = migrate_rcv(remote_session, dest_host_uuid, network_uuid, opts)
+    vdi_map = map_all_vdis(local_session, vm_ref, sr_ref)
+
+    local_session.xenapi.VM.assert_can_migrate(vm_ref, recv, True, vdi_map, {}, opts)
+    return local_session.xenapi.VM.migrate_send(vm_ref, recv, True, vdi_map, {}, opts)
+
+
+def cleanup(session, vm_ref):
+    session.xenapi.VM.destroy(vm_ref)
+
+
+@log_errors
+def create_n_attach(session, args):
+    """
+    Create a transport VM and attach a VDI to it.
+    """
+    log_info('create_n_attach', '## RECEIVED ##', args)
+    local_vdi_uuid = args['local_vdi_uuid']
+    vdi_ref = session.xenapi.VDI.get_by_uuid(local_vdi_uuid)
+    vm_uuid = create_vm(session)
+    vm_ref = session.xenapi.VM.get_by_uuid(vm_uuid)
+    vm_name = 'migration-vm-%s' % local_vdi_uuid
+    session.xenapi.VM.set_name_label(vm_ref, vm_name)
+    log_info('create_n_attach',
+             '',
+             'VM %s has been created' % vm_name)
+
+    # Create a fake root disk for the migration vm
+    sr_ref = session.xenapi.VDI.get_SR(vdi_ref)
+    sr_uuid = session.xenapi.SR.get_uuid(sr_ref)
+    root_vdi_ref = session.xenapi.VDI.create({'name_label': 'root',
+                                              'name_description': 'migration-vm-root',
+                                              'SR': sr_ref,
+                                              'virtual_size': 1024,
+                                              'type': 'User',
+                                              'sharable': False,
+                                              'read_only': False,
+                                              'other_config': {}})
+
+    root_vdi_uuid = session.xenapi.VDI.get_uuid(root_vdi_ref)
+    create_vbd(session, vm_ref, root_vdi_ref, '0')
+
+    # Create a second VBD to attach the local VDI
+    log_info('create_n_attach',
+             '',
+             'Attaching VDI %s to %s' % (local_vdi_uuid, vm_name))
+    create_vbd(session, vm_ref, vdi_ref, '2')
+
+    log_info('create_n_attach', '## SUCCESS ##', vm_name + ' ' + root_vdi_uuid)
+    return vm_name + ' ' + root_vdi_uuid
+
+
+@log_errors
+def create_vbd(session, vm_ref, vdi_ref, userdevice):
+    try:
+        session.xenapi.VBD.create({'VM': vm_ref,
+                                   'VDI': vdi_ref,
+                                   'userdevice': userdevice,
+                                   'bootable': True if userdevice == '0' else False,
+                                   'mode': 'RW',
+                                   'type': 'Disk',
+                                   'unpluggable': False,
+                                   'empty': False,
+                                   'other_config': {},
+                                   'qos_algorithm_type': '',
+                                   'qos_algorithm_params': {}})
+    except Exception, exc:
+        cleanup(session, vm_ref)
+        raise exc
+
+
+@log_errors
+def create_vm(session):
+    vm_ref = session.xenapi.VM.create({'actions_after_crash': 'destroy',
+                                       'actions_after_reboot': 'restart',
+                                       'actions_after_shutdown': 'destroy',
+                                       'affinity': '',
+                                       'HVM_boot_params': {},
+                                       'HVM_boot_policy': '',
+                                       'is_a_template': False,
+                                       'memory_dynamic_min': '0',
+                                       'memory_dynamic_max': '0',
+                                       'memory_static_min': '0',
+                                       'memory_static_max': '0',
+                                       'memory_target': '0',
+                                       'name_description': (u'Temporary VM used to migrate'
+                                                            'unattached volumes across clusters'),
+                                       'name_label': 'migration-vm',
+                                       'other_config': {},
+                                       'PCI_bus': '',
+                                       'platform': {'acpi': 'true', 'apic': 'true', 'pae': 'true',
+                                                    'viridian': 'true', 'timeoffset': '0'},
+                                       'PV_args': '',
+                                       'PV_bootloader': '',
+                                       'PV_bootloader_args': '',
+                                       'PV_kernel': '',
+                                       'PV_legacy_args': '',
+                                       'PV_ramdisk': '',
+                                       'recommendations': '',
+                                       'user_version': '1',
+                                       'VCPUs_at_startup': 1,
+                                       'VCPUs_max': 1,
+                                       'VCPUs_params': {}})
+
+    vm_records = session.xenapi.VM.get_record(vm_ref)
+    return vm_records['uuid']
+
+
+def map_all_vdis(session, vm_ref, sr_ref_dest):
+    vdi_map = {}
+    for vbd in session.xenapi.VM.get_VBDs(vm_ref):
+        if session.xenapi.VBD.get_type(vbd) == 'CD':
+            continue
+        vdi_ref = ignore_failure(session.xenapi.VBD.get_VDI, vbd)
+        if not vdi_ref:
+            continue
+        vdi_map[vdi_ref] = sr_ref_dest
+    return vdi_map
+
+
+def find_migrated_vdi_uuid(session, vm_ref):
+    for vbd in session.xenapi.VM.get_VBDs(vm_ref):
+        if session.xenapi.VBD.get_type(vbd) == 'CD':
+            continue
+        if session.xenapi.VBD.get_userdevice(vbd) == 'xvda':
+            continue
+        vdi_ref = ignore_failure(session.xenapi.VBD.get_VDI, vbd)
+        if not vdi_ref:
+            continue
+        return session.xenapi.VDI.get_record(vdi_ref)['uuid']
+    return None
+
+
+@log_errors
+def migrated_vdi_uuid(session, args):
+    vm_uuid = args['vm_uuid']
+    vm_ref = session.xenapi.VM.get_by_uuid(vm_uuid)
+    return find_migrated_vdi_uuid(session, vm_ref)
+
+
+LOGID = randint(000000, 999999)
+
+
+if __name__ == '__main__':
+    XenAPIPlugin.dispatch({
+        'migrate_vdi': migrate_vdi,
+        'create_n_attach': create_n_attach,
+        'migrated_vdi_uuid': migrated_vdi_uuid,
+    })

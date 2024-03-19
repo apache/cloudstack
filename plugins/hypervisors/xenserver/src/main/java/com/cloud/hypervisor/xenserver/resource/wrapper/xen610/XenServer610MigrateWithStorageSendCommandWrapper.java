@@ -46,7 +46,7 @@ import com.xensource.xenapi.VDI;
 import com.xensource.xenapi.VIF;
 import com.xensource.xenapi.VM;
 
-@ResourceWrapper(handles =  MigrateWithStorageSendCommand.class)
+@ResourceWrapper(handles = MigrateWithStorageSendCommand.class)
 public final class XenServer610MigrateWithStorageSendCommandWrapper extends CommandWrapper<MigrateWithStorageSendCommand, Answer, XenServer610Resource> {
 
     private static final Logger s_logger = Logger.getLogger(XenServer610MigrateWithStorageSendCommandWrapper.class);
@@ -73,6 +73,9 @@ public final class XenServer610MigrateWithStorageSendCommandWrapper extends Comm
             // the answer object. It'll be deserialzed and object created in migrate with
             // storage send command execution.
             final Map<String, String> other = new HashMap<String, String>();
+            if (vmSpec.getDetails().containsKey("forcemigrate")) {
+                other.put("force", vmSpec.getDetails().get("forcemigrate"));
+            }
             other.put("live", "true");
 
             // Create the vdi map which tells what volumes of the vm need to go
@@ -80,7 +83,7 @@ public final class XenServer610MigrateWithStorageSendCommandWrapper extends Comm
             final Map<VDI, SR> vdiMap = new HashMap<VDI, SR>();
             for (final Pair<VolumeTO, Object> entry : volumeToSr) {
                 if (entry.second() instanceof SR) {
-                    final SR sr = (SR)entry.second();
+                    final SR sr = (SR) entry.second();
                     final VDI vdi = xenServer610Resource.getVDIbyUuid(connection, entry.first().getPath());
                     vdiMap.put(vdi, sr);
                 } else {
@@ -98,7 +101,7 @@ public final class XenServer610MigrateWithStorageSendCommandWrapper extends Comm
             final Map<VIF, Network> vifMap = new HashMap<VIF, Network>();
             for (final Pair<NicTO, Object> entry : nicToNetwork) {
                 if (entry.second() instanceof Network) {
-                    final Network network = (Network)entry.second();
+                    final Network network = (Network) entry.second();
                     final VIF vif = xenServer610Resource.getVifByMac(connection, vmToMigrate, entry.first().getMac());
                     vifMap.put(vif, network);
                 } else {
