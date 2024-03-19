@@ -104,7 +104,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         boolean verboseModeEnabled = serverResource.isConvertInstanceVerboseModeEnabled();
 
         try {
-            boolean result = performInstanceConversionUsingOVA(sourceOVAFile, temporaryConvertPath, temporaryConvertUuid,
+            boolean result = performInstanceConversion(sourceOVAFile, temporaryConvertPath, temporaryConvertUuid,
                     timeout, verboseModeEnabled);
             if (!result) {
                 String err = String.format("The virt-v2v conversion for the ova %s failed. " +
@@ -315,7 +315,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         return new Pair<>(sourceHostIp, sourcePath);
     }
 
-    protected boolean performInstanceConversionUsingOVA(String sourceOVAFile,
+    protected boolean performInstanceConversion(String sourceOVAFile,
                                                 String temporaryConvertFolder,
                                                 String temporaryConvertUuid,
                                                 long timeout, boolean verboseModeEnabled) {
