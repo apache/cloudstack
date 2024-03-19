@@ -1713,12 +1713,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
          * ("No redunant router support when network belnogs to VPC"); }
          */
 
-        // 4) Conserve mode should be off
-        if (guestNtwkOff.isConserveMode()) {
-            throw new InvalidParameterValueException("Only networks with conserve mode Off can belong to VPC");
-        }
-
-        // 5) If Netscaler is LB provider make sure it is in dedicated mode
+        // 4) If Netscaler is LB provider make sure it is in dedicated mode
         if (providers.contains(Provider.Netscaler) && !guestNtwkOff.isDedicatedLB()) {
             throw new InvalidParameterValueException("Netscaler only with Dedicated LB can belong to VPC");
         }
