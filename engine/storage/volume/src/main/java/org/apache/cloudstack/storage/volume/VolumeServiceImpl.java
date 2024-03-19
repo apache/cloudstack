@@ -2475,7 +2475,7 @@ public class VolumeServiceImpl implements VolumeService {
     }
 
     @Override
-    public void resizeVolumeOnHypervisor(long volumeId, long newSize, long destHostId, String instanceName) {
+    public void resizeVolumeOnHypervisor(long volumeId, long currentSize, long newSize, long destHostId, String instanceName) {
         final String errMsg = "Resize command failed";
 
         try {
@@ -2486,7 +2486,7 @@ public class VolumeServiceImpl implements VolumeService {
             if (ep != null) {
                 VolumeVO volume = volDao.findById(volumeId);
                 PrimaryDataStore primaryDataStore = this.dataStoreMgr.getPrimaryDataStore(volume.getPoolId());
-                ResizeVolumeCommand resizeCmd = new ResizeVolumeCommand(volume.getPath(), new StorageFilerTO(primaryDataStore), volume.getSize(), newSize, true, instanceName,
+                ResizeVolumeCommand resizeCmd = new ResizeVolumeCommand(volume.getPath(), new StorageFilerTO(primaryDataStore), currentSize, newSize, (newSize < currentSize), instanceName,
                         primaryDataStore.isManaged(), volume.get_iScsiName());
 
                 answer = ep.sendMessage(resizeCmd);
