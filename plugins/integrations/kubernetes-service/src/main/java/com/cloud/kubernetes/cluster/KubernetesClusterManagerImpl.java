@@ -1287,13 +1287,13 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (name != null) {
             sc.setParameters("name", name);
         }
-        List<KubernetesClusterVO> kubernetesClusters = kubernetesClusterDao.search(sc, searchFilter);
-        for (KubernetesClusterVO cluster : kubernetesClusters) {
+        Pair<List<KubernetesClusterVO>, Integer> kubernetesClustersAndCount = kubernetesClusterDao.searchAndCount(sc, searchFilter);
+        for (KubernetesClusterVO cluster : kubernetesClustersAndCount.first()) {
             KubernetesClusterResponse clusterResponse = createKubernetesClusterResponse(cluster.getId());
             responsesList.add(clusterResponse);
         }
-        ListResponse<KubernetesClusterResponse> response = new ListResponse<KubernetesClusterResponse>();
-        response.setResponses(responsesList);
+        ListResponse<KubernetesClusterResponse> response = new ListResponse<>();
+        response.setResponses(responsesList, kubernetesClustersAndCount.second());
         return response;
     }
 

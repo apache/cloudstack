@@ -30,10 +30,14 @@ import org.apache.cloudstack.api.command.admin.kubernetes.version.UpdateKubernet
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.version.ListKubernetesSupportedVersionsCmd;
+import org.apache.cloudstack.api.response.KubernetesSupportedVersionResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.commons.collections.CollectionUtils;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -64,6 +68,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
@@ -140,8 +145,13 @@ public class KubernetesVersionServiceTest {
         when(versionVO.getSemanticVersion()).thenReturn(KubernetesVersionService.MIN_KUBERNETES_VERSION);
         versionVOs.add(versionVO);
         when(kubernetesSupportedVersionDao.findById(Mockito.anyLong())).thenReturn(versionVO);
-        when(kubernetesSupportedVersionDao.search(Mockito.any(SearchCriteria.class), Mockito.any(Filter.class))).thenReturn(versionVOs);
-        kubernetesVersionService.listKubernetesSupportedVersions(cmd);
+        when(kubernetesSupportedVersionDao.searchAndCount(Mockito.any(SearchCriteria.class),
+                Mockito.any(Filter.class))).thenReturn(new Pair<>(versionVOs, versionVOs.size()));
+        ListResponse<KubernetesSupportedVersionResponse> versionsResponse =
+                kubernetesVersionService.listKubernetesSupportedVersions(cmd);
+        Assert.assertEquals(versionVOs.size(), versionsResponse.getCount().intValue());
+        Assert.assertTrue(CollectionUtils.isNotEmpty(versionsResponse.getResponses()));
+        Assert.assertEquals(versionVOs.size(), versionsResponse.getResponses().size());
     }
 
     @Test(expected = InvalidParameterValueException.class)
