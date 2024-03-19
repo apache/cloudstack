@@ -37,4 +37,6 @@ public interface RoleDao extends GenericDao<RoleVO, Long> {
     Pair<List<RoleVO>, Integer> findAllByRoleType(RoleType type, Long offset, Long limit, boolean showPrivateRole);
 
     Pair<List<RoleVO>, Integer> listAllRoles(Long startIndex, Long limit, boolean showPrivateRole);
+
+    List<RoleVO> searchByIds(Long... ids);
 }

@@ -793,10 +793,10 @@ public class NetworkServiceImplTest {
     public void validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouterTestMustThrowInvalidParameterValueExceptionWhenSystemVmTypeIsNotDomainRouter() {
         doReturn(serviceOfferingVoMock).when(serviceOfferingDaoMock).findById(anyLong());
         doReturn(ServiceOffering.State.Active).when(serviceOfferingVoMock).getState();
-        doReturn(VirtualMachine.Type.ElasticLoadBalancerVm.toString()).when(serviceOfferingVoMock).getSystemVmType();
+        doReturn(VirtualMachine.Type.ElasticLoadBalancerVm.toString()).when(serviceOfferingVoMock).getVmType();
 
         String expectedMessage = String.format("The specified service offering [%s] is of type [%s]. Virtual routers can only be created with service offering of type [%s].",
-                serviceOfferingVoMock, serviceOfferingVoMock.getSystemVmType(), VirtualMachine.Type.DomainRouter.toString().toLowerCase());
+                serviceOfferingVoMock, serviceOfferingVoMock.getVmType(), VirtualMachine.Type.DomainRouter.toString().toLowerCase());
         InvalidParameterValueException assertThrows = Assert.assertThrows(expectedException, () -> {
             service.validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouter(1l);
         });
