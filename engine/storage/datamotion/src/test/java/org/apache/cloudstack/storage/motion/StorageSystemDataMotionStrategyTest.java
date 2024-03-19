@@ -20,6 +20,8 @@ package org.apache.cloudstack.storage.motion;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
@@ -29,6 +31,11 @@ import static org.mockito.MockitoAnnotations.initMocks;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplatePoolDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
@@ -83,6 +90,10 @@ public class StorageSystemDataMotionStrategyTest {
     private ImageStore destinationStore;
     @Mock
     private PrimaryDataStoreDao primaryDataStoreDao;
+    @Mock
+    private VMTemplateDao vmTemplateDao;
+    @Mock
+    private VMTemplatePoolDao templatePoolDao;
 
     @Mock
     StoragePoolVO sourceStoragePoolVoMock, destinationStoragePoolVoMock;
@@ -91,6 +102,13 @@ public class StorageSystemDataMotionStrategyTest {
     Map<String, Storage.StoragePoolType> mapStringStoragePoolTypeMock;
 
     List<ScopeType> scopeTypes = Arrays.asList(ScopeType.CLUSTER, ScopeType.ZONE);
+
+    @Mock
+    private VolumeInfo srcVolumeInfo;
+    @Mock
+    private VMTemplateVO template;
+    @Mock
+    private VMTemplateStoragePoolVO ref;
 
     @Before
     public void setUp() throws Exception {
@@ -439,5 +457,82 @@ public class StorageSystemDataMotionStrategyTest {
         Mockito.verify(sourceStoragePoolVoMock, times).getPoolType();
         Mockito.verify(mapStringStoragePoolTypeMock, times).put(Mockito.anyString(), Mockito.any());
         Mockito.verifyNoMoreInteractions(mapStringStoragePoolTypeMock, sourceStoragePoolVoMock, destinationStoragePoolVoMock);
+    }
+
+    private void setUpGetVolumeBackingFileTest() {
+        Mockito.when(srcVolumeInfo.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        Mockito.when(srcVolumeInfo.getTemplateId()).thenReturn(0l);
+        Mockito.when(srcVolumeInfo.getPoolId()).thenReturn(0l);
+
+        Mockito.when(vmTemplateDao.findById(Mockito.anyLong())).thenReturn(template);
+        Mockito.when(template.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+
+        Mockito.when(templatePoolDao.findByPoolTemplate(Mockito.anyLong(), Mockito.anyLong(), nullable(String.class))).thenReturn(ref);
+        Mockito.when(ref.getInstallPath()).thenReturn("");
+    }
+
+    @Test
+    public void getVolumeBackingFileTestReturnBackingFile() {
+        setUpGetVolumeBackingFileTest();
+        strategy.getVolumeBackingFile(srcVolumeInfo);
+
+        Mockito.verify(ref,atLeastOnce()).getInstallPath();
+    }
+
+    @Test
+    public void getVolumeBackingFileTestHypervisorNotKVM() {
+        setUpGetVolumeBackingFileTest();
+        Mockito.when(srcVolumeInfo.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.BareMetal);
+        strategy.getVolumeBackingFile(srcVolumeInfo);
+
+        Mockito.verify(ref,never()).getInstallPath();
+    }
+
+    @Test
+    public void getVolumeBackingFileTestNullTemplateId() {
+        setUpGetVolumeBackingFileTest();
+        Mockito.when(srcVolumeInfo.getTemplateId()).thenReturn(null);
+        strategy.getVolumeBackingFile(srcVolumeInfo);
+
+        Mockito.verify(ref,never()).getInstallPath();
+    }
+
+    @Test
+    public void getVolumeBackingFileTestNullStoragePoolId() {
+        setUpGetVolumeBackingFileTest();
+        Mockito.when(srcVolumeInfo.getPoolId()).thenReturn(null);
+        strategy.getVolumeBackingFile(srcVolumeInfo);
+
+        Mockito.verify(ref,never()).getInstallPath();
+    }
+
+    @Test
+    public void getVolumeBackingFileTestTemplateRemoved() {
+        setUpGetVolumeBackingFileTest();
+        Mockito.when(vmTemplateDao.findById(Mockito.anyLong())).thenReturn(null);
+        strategy.getVolumeBackingFile(srcVolumeInfo);
+
+        Mockito.verify(ref,never()).getInstallPath();
+    }
+
+    @Test
+    public void getVolumeBackingFileTestInvalidTemplateFormat() {
+        setUpGetVolumeBackingFileTest();
+        Storage.ImageFormat[] invalidFormats = {null, Storage.ImageFormat.ISO};
+
+        for (Storage.ImageFormat format : invalidFormats) {
+            Mockito.when(template.getFormat()).thenReturn(format);
+            strategy.getVolumeBackingFile(srcVolumeInfo);
+            Mockito.verify(ref,never()).getInstallPath();
+        }
+    }
+
+    @Test
+    public void getVolumeBackingFileTestBackingFileNotFound() {
+        setUpGetVolumeBackingFileTest();
+        Mockito.when(templatePoolDao.findByPoolTemplate(Mockito.anyLong(), Mockito.anyLong(), nullable(String.class))).thenReturn(null);
+        strategy.getVolumeBackingFile(srcVolumeInfo);
+
+        Mockito.verify(ref, never()).getInstallPath();
     }
 }
