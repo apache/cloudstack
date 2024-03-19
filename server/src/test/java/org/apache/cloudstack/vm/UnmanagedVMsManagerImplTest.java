@@ -798,7 +798,7 @@ public class UnmanagedVMsManagerImplTest {
 
         long poolId = 1L;
         when(primaryDataStoreDao.findById(poolId)).thenReturn(null);
-        unmanagedVMsManager.selectInstanceConversionTemporaryLocation(cluster, poolId, null);
+        unmanagedVMsManager.selectInstanceConversionTemporaryLocation(cluster, poolId);
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -809,7 +809,7 @@ public class UnmanagedVMsManagerImplTest {
         Mockito.when(pool.getScope()).thenReturn(ScopeType.CLUSTER);
         Mockito.when(pool.getClusterId()).thenReturn(100L);
         when(primaryDataStoreDao.findById(poolId)).thenReturn(pool);
-        unmanagedVMsManager.selectInstanceConversionTemporaryLocation(cluster, poolId, null);
+        unmanagedVMsManager.selectInstanceConversionTemporaryLocation(cluster, poolId);
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -819,9 +819,7 @@ public class UnmanagedVMsManagerImplTest {
         StoragePoolVO pool = mock(StoragePoolVO.class);
         Mockito.when(pool.getScope()).thenReturn(ScopeType.HOST);
         when(primaryDataStoreDao.findById(poolId)).thenReturn(pool);
-        HostVO convertHost = Mockito.mock(HostVO.class);
-        Mockito.when(convertHost.getId()).thenReturn(1L);
-        unmanagedVMsManager.selectInstanceConversionTemporaryLocation(cluster, poolId, convertHost);
+        unmanagedVMsManager.selectInstanceConversionTemporaryLocation(cluster, poolId);
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -832,15 +830,14 @@ public class UnmanagedVMsManagerImplTest {
         Mockito.when(pool.getScope()).thenReturn(ScopeType.CLUSTER);
         Mockito.when(pool.getClusterId()).thenReturn(1L);
         when(primaryDataStoreDao.findById(poolId)).thenReturn(pool);
-        HostVO convertHost = Mockito.mock(HostVO.class);
         Mockito.when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.RBD);
-        unmanagedVMsManager.selectInstanceConversionTemporaryLocation(cluster, poolId, convertHost);
+        unmanagedVMsManager.selectInstanceConversionTemporaryLocation(cluster, poolId);
     }
 
     @Test(expected = CloudRuntimeException.class)
     public void testSelectInstanceConversionTemporaryLocationNoPoolAvailable() {
         ClusterVO cluster = getClusterForTests();
         Mockito.when(imageStoreDao.findOneByZoneAndProtocol(anyLong(), anyString())).thenReturn(null);
-        unmanagedVMsManager.selectInstanceConversionTemporaryLocation(cluster, null, null);
+        unmanagedVMsManager.selectInstanceConversionTemporaryLocation(cluster, null);
     }
 }
