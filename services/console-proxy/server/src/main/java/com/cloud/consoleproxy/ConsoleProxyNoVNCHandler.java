@@ -147,7 +147,7 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
             viewer = ConsoleProxy.getNoVncViewer(param, ajaxSessionIdStr, session);
             s_logger.debug("Viewer has been created successfully.");
         } catch (Exception e) {
-            s_logger.error("Failed to create viewer due to " + e.getMessage(), e);
+            s_logger.error(String.format("Failed to create viewer due to %s", e.getMessage()), e);
             return;
         } finally {
             if (viewer == null) {
