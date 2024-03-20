@@ -42,15 +42,14 @@ class TestQuotaTariffOrder(cloudstackTestCase):
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
 
+        cls._cleanup = []
         # Create Account
         cls.account = Account.create(
             cls.api_client,
             cls.services["account"],
             domainid=cls.domain.id
         )
-        cls._cleanup = [
-            cls.account,
-        ]
+        cls._cleanup.append(cls.account)
 
         cls.services["account"] = cls.account.name
 
@@ -58,12 +57,7 @@ class TestQuotaTariffOrder(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            # Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestQuotaTariffOrder, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -73,12 +67,8 @@ class TestQuotaTariffOrder(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            cleanup_resources(self.api_client, self.cleanup)
-            self.delete_tariffs()
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        self.delete_tariffs()
+        super(TestQuotaTariffOrder, self).tearDown()
 
     def delete_tariffs(self):
         for tariff in self.tariffs:
