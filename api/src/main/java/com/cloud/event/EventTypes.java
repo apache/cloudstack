@@ -316,6 +316,8 @@ public class EventTypes {
     public static final String EVENT_VOLUME_UPDATE = "VOLUME.UPDATE";
     public static final String EVENT_VOLUME_DESTROY = "VOLUME.DESTROY";
     public static final String EVENT_VOLUME_RECOVER = "VOLUME.RECOVER";
+    public static final String EVENT_VOLUME_IMPORT = "VOLUME.IMPORT";
+    public static final String EVENT_VOLUME_UNMANAGE = "VOLUME.UNMANAGE";
     public static final String EVENT_VOLUME_CHANGE_DISK_OFFERING = "VOLUME.CHANGE.DISK.OFFERING";
 
     // Domains

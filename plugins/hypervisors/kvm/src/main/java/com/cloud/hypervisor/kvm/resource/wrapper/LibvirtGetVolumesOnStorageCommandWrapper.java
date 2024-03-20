@@ -1,0 +1,149 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+//
+
+package com.cloud.hypervisor.kvm.resource.wrapper;
+
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.GetVolumesOnStorageAnswer;
+import com.cloud.agent.api.GetVolumesOnStorageCommand;
+import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
+import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
+import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
+import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
+import com.cloud.storage.Storage.StoragePoolType;
+import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
+import org.apache.cloudstack.utils.qemu.QemuImg;
+import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.apache.cloudstack.utils.qemu.QemuImgException;
+import org.apache.cloudstack.utils.qemu.QemuImgFile;
+import org.apache.commons.lang3.StringUtils;
+import org.libvirt.LibvirtException;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
+@ResourceWrapper(handles = GetVolumesOnStorageCommand.class)
+public final class LibvirtGetVolumesOnStorageCommandWrapper extends CommandWrapper<GetVolumesOnStorageCommand, Answer, LibvirtComputingResource> {
+
+    static final List<StoragePoolType> SUPPORTED_STORAGE_POOL_TYPES = Arrays.asList(StoragePoolType.NetworkFilesystem,
+            StoragePoolType.Filesystem, StoragePoolType.RBD);
+
+    @Override
+    public Answer execute(final GetVolumesOnStorageCommand command, final LibvirtComputingResource libvirtComputingResource) {
+
+        final StorageFilerTO pool = command.getPool();
+        if (!SUPPORTED_STORAGE_POOL_TYPES.contains(pool.getType())) {
+            return new GetVolumesOnStorageAnswer(command, false, String.format("pool type %s is unsupported", pool.getType()));
+        }
+        final String volumePath = command.getVolumePath();
+
+        List<VolumeOnStorageTO> volumes = new ArrayList<>();
+
+        final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
+        KVMStoragePool storagePool = storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid(), true);
+
+        if (volumePath != null) {
+            KVMPhysicalDisk disk = storagePool.getPhysicalDisk(volumePath);
+            if (disk != null) {
+                if (!isDiskFormatSupported(disk)) {
+                    return new GetVolumesOnStorageAnswer(command, false, String.format("disk format %s is unsupported", disk.getFormat()));
+                }
+                Map<String, String> info = getDiskFileInfo(storagePool, disk, true);
+                if (info == null) {
+                    return new GetVolumesOnStorageAnswer(command, false, "failed to get information of disk file. The disk might be locked or unsupported");
+                }
+                VolumeOnStorageTO volumeOnStorageTO = new VolumeOnStorageTO(Hypervisor.HypervisorType.KVM, disk.getName(), disk.getName(), disk.getPath(),
+                        disk.getFormat().toString(), disk.getSize(), disk.getVirtualSize());
+                if (disk.getQemuEncryptFormat() != null) {
+                    volumeOnStorageTO.setQemuEncryptFormat(disk.getQemuEncryptFormat().toString());
+                }
+                String backingFilePath = info.get(QemuImg.BACKING_FILE);
+                if (StringUtils.isNotBlank(backingFilePath)) {
+                    volumeOnStorageTO.addDetail(VolumeOnStorageTO.Detail.BACKING_FILE, backingFilePath);
+                }
+                String backingFileFormat = info.get(QemuImg.BACKING_FILE_FORMAT);
+                if (StringUtils.isNotBlank(backingFileFormat)) {
+                    volumeOnStorageTO.addDetail(VolumeOnStorageTO.Detail.BACKING_FILE_FORMAT, backingFileFormat);
+                }
+                String clusterSize = info.get(QemuImg.CLUSTER_SIZE);
+                if (StringUtils.isNotBlank(clusterSize)) {
+                    volumeOnStorageTO.addDetail(VolumeOnStorageTO.Detail.CLUSTER_SIZE, clusterSize);
+                }
+                String fileFormat = info.get(QemuImg.FILE_FORMAT);
+                if (StringUtils.isNotBlank(clusterSize)) {
+                    volumeOnStorageTO.addDetail(VolumeOnStorageTO.Detail.FILE_FORMAT, fileFormat);
+                }
+                Boolean isLocked = isDiskFileLocked(storagePool, disk);
+                volumeOnStorageTO.addDetail(VolumeOnStorageTO.Detail.IS_LOCKED, String.valueOf(isLocked));
+                volumes.add(volumeOnStorageTO);
+            }
+        } else {
+            for (KVMPhysicalDisk disk: storagePool.listPhysicalDisks()) {
+                if (!isDiskFormatSupported(disk)) {
+                    continue;
+                }
+                VolumeOnStorageTO volumeOnStorageTO = new VolumeOnStorageTO(Hypervisor.HypervisorType.KVM, disk.getName(), disk.getName(), disk.getPath(),
+                        disk.getFormat().toString(), disk.getSize(), disk.getVirtualSize());
+                if (disk.getQemuEncryptFormat() != null) {
+                    volumeOnStorageTO.setQemuEncryptFormat(disk.getQemuEncryptFormat().toString());
+                }
+                volumes.add(volumeOnStorageTO);
+            }
+        }
+
+        return new GetVolumesOnStorageAnswer(command, volumes);
+    }
+
+    private boolean isDiskFormatSupported(KVMPhysicalDisk disk) {
+        return PhysicalDiskFormat.QCOW2.equals(disk.getFormat()) || PhysicalDiskFormat.RAW.equals(disk.getFormat());
+    }
+
+    private boolean isDiskFileLocked(KVMStoragePool pool, KVMPhysicalDisk disk) {
+        if (PhysicalDiskFormat.QCOW2.equals(disk.getFormat())) {
+            Map<String, String> info = getDiskFileInfo(pool, disk, false);
+            return info == null;
+        }
+        return false; // unknown
+    }
+
+    private Map<String, String> getDiskFileInfo(KVMStoragePool pool, KVMPhysicalDisk disk, boolean secure) {
+        try {
+            QemuImg qemu = new QemuImg(0);
+            QemuImgFile qemuFile = new QemuImgFile(disk.getPath(), disk.getFormat());
+            if (StoragePoolType.RBD.equals(pool.getType())) {
+                String rbdDestFile = KVMPhysicalDisk.RBDStringBuilder(pool.getSourceHost(),
+                        pool.getSourcePort(),
+                        pool.getAuthUserName(),
+                        pool.getAuthSecret(),
+                        disk.getPath());
+                qemuFile = new QemuImgFile(rbdDestFile, disk.getFormat());
+            }
+            return qemu.info(qemuFile, secure);
+        } catch (QemuImgException | LibvirtException ex) {
+            logger.error("Failed to get info of disk file: " + ex.getMessage());
+        }
+        return null;
+    }
+}

@@ -48,6 +48,8 @@ import java.util.stream.Collectors;
 import javax.naming.ConfigurationException;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import com.cloud.agent.api.GetVolumesOnStorageAnswer;
+import com.cloud.agent.api.GetVolumesOnStorageCommand;
 import com.cloud.hypervisor.vmware.mo.HostDatastoreBrowserMO;
 import com.vmware.vim25.FileInfo;
 import com.vmware.vim25.FileQueryFlags;
@@ -66,6 +68,7 @@ import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.CollectionUtils;
@@ -527,6 +530,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 answer = execute((DeleteStoragePoolCommand) cmd);
             } else if (clz == CopyVolumeCommand.class) {
                 answer = execute((CopyVolumeCommand) cmd);
+            } else if (clz == GetVolumesOnStorageCommand.class) {
+                answer = execute((GetVolumesOnStorageCommand) cmd);
             } else if (clz == AttachIsoCommand.class) {
                 answer = execute((AttachIsoCommand) cmd);
             } else if (clz == ValidateSnapshotCommand.class) {
@@ -5933,6 +5938,55 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         } catch (Throwable e) {
             return new CopyVolumeAnswer(cmd, false, createLogMessageException(e, cmd), null, null);
         }
+    }
+
+    private GetVolumesOnStorageAnswer execute(GetVolumesOnStorageCommand cmd) {
+        List<VolumeOnStorageTO> volumes = new ArrayList<>();
+        try {
+            VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
+            StorageFilerTO pool = cmd.getPool();
+
+            if (!Arrays.asList(StoragePoolType.NetworkFilesystem, StoragePoolType.VMFS,  StoragePoolType.PreSetup,
+                    StoragePoolType.DatastoreCluster).contains(pool.getType())) {
+                throw new Exception("Unsupported storage pool type " + pool.getType());
+            }
+
+            ManagedObjectReference morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, pool.getUuid());
+
+            if (morDatastore == null) {
+                boolean vmfsDatastore = Arrays.asList(StoragePoolType.VMFS,  StoragePoolType.PreSetup, StoragePoolType.DatastoreCluster).contains(pool.getType());
+                morDatastore = hyperHost.mountDatastore(vmfsDatastore, pool.getHost(), pool.getPort(), pool.getPath(), pool.getUuid().replace("-", ""), true);
+            }
+
+            assert (morDatastore != null);
+
+            DatastoreMO dsMo = new DatastoreMO(getServiceContext(), morDatastore);
+
+            HostDatastoreBrowserMO browserMo = dsMo.getHostDatastoreBrowserMO();
+            FileQueryFlags fqf = new FileQueryFlags();
+            fqf.setFileSize(true);
+            fqf.setFileType(true);
+            fqf.setModification(true);
+            fqf.setFileOwner(false);
+
+            HostDatastoreBrowserSearchSpec spec = new HostDatastoreBrowserSearchSpec();
+            spec.setSearchCaseInsensitive(true);
+            spec.setDetails(fqf);
+
+            String dsPath = String.format("[%s]", dsMo.getName());
+
+            HostDatastoreBrowserSearchResults results = browserMo.searchDatastore(dsPath, spec);
+            List<FileInfo> fileInfoList = results.getFile();
+            for (FileInfo file : fileInfoList) {
+                VolumeOnStorageTO volumeOnStorageTO = new VolumeOnStorageTO(HypervisorType.VMware, file.getPath(),
+                        file.getFriendlyName(), file.getFileSize());
+                volumes.add(volumeOnStorageTO);
+            }
+        } catch (Exception e) {
+            return new GetVolumesOnStorageAnswer(cmd, false, e.getMessage());
+
+        }
+        return new GetVolumesOnStorageAnswer(cmd, volumes);
     }
 
     @Override

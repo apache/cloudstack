@@ -554,9 +554,13 @@ public class QemuImg {
      * @return A HashMap with string key-value information as returned by 'qemu-img info'.
      */
     public Map<String, String> info(final QemuImgFile file) throws QemuImgException {
+        return info(file, true);
+    }
+
+    public Map<String, String> info(final QemuImgFile file, boolean secure) throws QemuImgException {
         final Script s = new Script(_qemuImgPath);
         s.add("info");
-        if (this.version >= QEMU_2_10) {
+        if (this.version >= QEMU_2_10 && secure) {
             s.add("-U");
         }
         s.add(file.getFileName());
