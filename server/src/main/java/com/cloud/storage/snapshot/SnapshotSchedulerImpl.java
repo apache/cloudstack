@@ -417,7 +417,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
         }
 
         if (_volsDao.findById(policy.getVolumeId()) == null) {
-            s_logger.warn("Found snapshot policy ID: " + policyId + " for volume ID: " + policy.getVolumeId() + " that does not exist or has been removed");
+            logger.warn("Found snapshot policy ID: " + policyId + " for volume ID: " + policy.getVolumeId() + " that does not exist or has been removed");
             removeSchedule(policy.getVolumeId(), policy.getId());
             return null;
         }
