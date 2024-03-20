@@ -74,8 +74,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class VolumeImportUnmanagedManagerImpl implements VolumeImportUnmanageService {
-    protected Logger logger = LogManager.getLogger(VolumeImportUnmanagedManagerImpl.class);
+public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageService {
+    protected Logger logger = LogManager.getLogger(VolumeImportUnmanageManagerImpl.class);
 
     private static final List<Hypervisor.HypervisorType> volumeImportUnmanageSupportedHypervisors =
             Arrays.asList(Hypervisor.HypervisorType.KVM);

@@ -361,5 +361,5 @@
 
     <bean id="vnfTemplateManager" class="org.apache.cloudstack.storage.template.VnfTemplateManagerImpl" />
 
-    <bean id="volumeImportUnmanagedManager" class="org.apache.cloudstack.storage.volume.VolumeImportUnmanagedManagerImpl" />
+    <bean id="volumeImportUnmanageManager" class="org.apache.cloudstack.storage.volume.VolumeImportUnmanageManagerImpl" />
 </beans>
