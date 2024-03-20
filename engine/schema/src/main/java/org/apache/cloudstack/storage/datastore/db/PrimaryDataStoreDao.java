@@ -23,6 +23,8 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePoolStatus;
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
 
 /**
@@ -152,4 +154,10 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
      * If clusterId is not informed, try to find by name in specified zone.
      */
     StoragePoolVO findPoolByName(String datastore, Long datacenterId, Long clusterId);
+
+    Pair<List<Long>, Integer> searchForIdsAndCount(Long storagePoolId, String storagePoolName, Long zoneId,
+            String path, Long podId, Long clusterId, String address, ScopeType scopeType, StoragePoolStatus status,
+            String keyword, Filter searchFilter);
+
+    List<StoragePoolVO> listByIds(List<Long> ids);
 }
