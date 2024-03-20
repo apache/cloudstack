@@ -26,6 +26,19 @@ log_it() {
 # Restart journald for setting changes to apply
 systemctl restart systemd-journald
 
+# Restore the persistent iptables nat, rules and filters for IPv4 and IPv6 if they exist
+ipv4="/etc/iptables/rules.v4"
+if [ -e $ipv4 ]
+then
+  iptables-restore < $ipv4
+fi
+
+ipv6="/etc/iptables/rules.v6"
+if [ -e $ipv6 ]
+then
+  ip6tables-restore < $ipv6
+fi
+
 CMDLINE=/var/cache/cloud/cmdline
 TYPE=$(grep -Po 'type=\K[a-zA-Z]*' $CMDLINE)
 if [ "$TYPE" == "router" ] || [ "$TYPE" == "vpcrouter" ] || [ "$TYPE" == "dhcpsrvr" ]
@@ -51,18 +64,5 @@ for svc in $(cat /var/cache/cloud/disabled_svcs)
 do
   systemctl disable --now --no-block $svc
 done
-
-# Restore the persistent iptables nat, rules and filters for IPv4 and IPv6 if they exist
-ipv4="/etc/iptables/rules.v4"
-if [ -e $ipv4 ]
-then
-  iptables-restore < $ipv4
-fi
-
-ipv6="/etc/iptables/rules.v6"
-if [ -e $ipv6 ]
-then
-  ip6tables-restore < $ipv6
-fi
 
 date > /var/cache/cloud/boot_up_done
