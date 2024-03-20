@@ -521,7 +521,7 @@ public class VeeamClient {
                         parentJob.getId(), parentJob.getUid(), parentJob.getBackupServerId(), parentJob.getName()));
             }
             if (checkIfBackupAlreadyExistsAndIsDisabled(clonedJobName)) {
-                logger.debug(String.format("Job with name [%s] already exists in Veeam, but it is disable. Enabling it now.", clonedJobName));
+                logger.debug("Job with name [{}] already exists in Veeam, but it is disable. Enabling it now.", clonedJobName);
                 return enableJob(clonedJobName);
             }
             final BackupJobCloneInfo cloneInfo = new BackupJobCloneInfo();
@@ -562,11 +562,11 @@ public class VeeamClient {
             final String heirarchyId = findDCHierarchy(vmwareDcName);
             final String veeamVmRefId = lookupVM(heirarchyId, vmwareInstanceName);
             if (checkIfVmAlreadyExistsInJob(jobId, vmwareInstanceName)) {
-                logger.debug(String.format("VM [name: %s] is already assigned to the Backup Job [%s].", vmwareInstanceName, jobId));
+                logger.debug("VM [name: {}] is already assigned to the Backup Job [{}].", vmwareInstanceName, jobId);
                 return true;
             }
 
-            logger.debug(String.format("Trying to add VM [name: %s] to job [%s].", vmwareInstanceName, jobId));
+            logger.debug("Trying to add VM [name: {}] to job [{}].", vmwareInstanceName, jobId);
             final CreateObjectInJobSpec vmToBackupJob = new CreateObjectInJobSpec();
             vmToBackupJob.setObjName(vmwareInstanceName);
             vmToBackupJob.setObjRef(veeamVmRefId);
@@ -581,7 +581,7 @@ public class VeeamClient {
 
     private boolean checkIfVmAlreadyExistsInJob(String jobId, String vmwareInstanceName) {
         jobId = jobId.replace("urn:veeam:Job:", "");
-        logger.debug(String.format("Checking if VM [name: %s] is already assigned to the Backup Job [name: %s].", vmwareInstanceName, jobId));
+        logger.debug("Checking if VM [name: {}] is already assigned to the Backup Job [name: {}].", vmwareInstanceName, jobId));
         List<String> cmds = Arrays.asList(
                 String.format("$job = (Get-VBRJob ^| Where-Object { $_.Id -eq '%s' })", jobId),
                 "if ($job) { ",

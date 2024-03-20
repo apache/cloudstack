@@ -170,7 +170,7 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
             response.setObjectName("backup");
             return response;
         } catch (Exception e) {
-            logger.error(String.format("Failed to create backup response from Backup [id: %s, vmId: %s] due to: [%s].", backup.getId(), backup.getVmId(), e.getMessage()), e);
+            logger.error("Failed to create backup response from Backup [id: {}, vmId: {}] due to: [{}].", backup.getId(), backup.getVmId(), e.getMessage(), e);
             return null;
         }
     }

@@ -2534,21 +2534,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     protected void removeBackupOfferingBeforeDeleteVmIfNeeded(UserVmVO vm) {
         if (vm.getBackupOfferingId() == null) {
-            logger.debug(String.format("VM [%s] does not have a Backup Offering. Don't need to remove then.",
-                    ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "uuid", "instanceName")));
+            logger.debug("VM [{}] does not have a Backup Offering. Don't need to remove then.",
+                    ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "uuid", "instanceName"));
             return;
         }
-        logger.debug(String.format("VM [%s] has backup offering with id [%s]. Trying to remove this backup offering.",
-                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "uuid", "instanceName"), vm.getBackupOfferingId()));
+        logger.debug("VM [{}] has backup offering with id [%s]. Trying to remove this backup offering.",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "uuid", "instanceName"), vm.getBackupOfferingId());
         List<Backup> backupsForVm = backupDao.listByVmId(vm.getDataCenterId(), vm.getId());
         if (CollectionUtils.isEmpty(backupsForVm)) {
-            logger.debug(String.format("VM [%s] with backup offering [id: %s] does not have any backups. Trying to delete job.",
-                    ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "uuid", "instanceName"), vm.getBackupOfferingId()));
+            logger.debug("VM [{}] with backup offering [id: {}] does not have any backups. Trying to delete job.",
+                    ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "uuid", "instanceName"), vm.getBackupOfferingId());
             backupManager.removeVMFromBackupOffering(vm.getId(), true);
         } else if (backupManager.getName().equalsIgnoreCase("veeam")){
-            logger.debug(String.format("VM [uuid: %s, name: %s] has a Backup Offering [id: %s, external id: %s] with %s backups. "
+            logger.debug("VM [uuid: {}, name: {}] has a Backup Offering [id: {}, external id: {}] with {} backups. "
                             + "Trying to disable/remove only the job, but keeping the backups.", vm.getUuid(), vm.getInstanceName(), vm.getBackupOfferingId(),
-                    vm.getBackupExternalId(), backupsForVm.size()));
+                    vm.getBackupExternalId(), backupsForVm.size());
             backupManager.removeVMFromBackupOffering(vm.getId(), false);
         } else {
             throw new CloudRuntimeException(String.format("This VM [uuid: %s, name: %s] has a "

@@ -214,7 +214,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
         }
 
         if (!result) {
-            logger.warn(String.format("Failed to remove Veeam %s for job: [name: %s].", removeBackups ? "job and backup" : "job", clonedJobName));
+            logger.warn("Failed to remove Veeam {} for job: [name: {}].", removeBackups ? "job and backup" : "job", clonedJobName);
             throw new CloudRuntimeException("Failed to delete Veeam B&R job, an operation may be in progress. Please try again after some time.");
         }
         client.syncBackupRepository();
@@ -420,9 +420,9 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
             return new Gson().toJson(list.toArray(), Backup.VolumeInfo[].class);
         } catch (Exception e) {
             if (CollectionUtils.isEmpty(vmVolumes) || vmVolumes.get(0).getInstanceId() == null) {
-                logger.error(String.format("Failed to create VolumeInfo of VM [id: null] volumes due to: [%s].", e.getMessage()), e);
+                logger.error("Failed to create VolumeInfo of VM [id: null] volumes due to: [{}].", e.getMessage(), e);
             } else {
-                logger.error(String.format("Failed to create VolumeInfo of VM [id: %s] volumes due to: [%s].", vmVolumes.get(0).getInstanceId(), e.getMessage()), e);
+                logger.error("Failed to create VolumeInfo of VM [id: {}] volumes due to: [{}].", vmVolumes.get(0).getInstanceId(), e.getMessage(), e);
             }
             throw e;
         }
