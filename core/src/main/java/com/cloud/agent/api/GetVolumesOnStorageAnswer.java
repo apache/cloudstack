@@ -22,12 +22,12 @@ import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
 import java.util.List;
 
 public class GetVolumesOnStorageAnswer extends Answer {
-    private List<? extends VolumeOnStorageTO> volumes;
+    private List<VolumeOnStorageTO> volumes;
 
     GetVolumesOnStorageAnswer() {
     }
 
-    public GetVolumesOnStorageAnswer(GetVolumesOnStorageCommand cmd, List<? extends VolumeOnStorageTO> volumes) {
+    public GetVolumesOnStorageAnswer(GetVolumesOnStorageCommand cmd, List<VolumeOnStorageTO> volumes) {
         super(cmd, true, null);
         this.volumes = volumes;
     }
@@ -36,7 +36,7 @@ public class GetVolumesOnStorageAnswer extends Answer {
         super(cmd, success, details);
     }
 
-    public List<? extends VolumeOnStorageTO> getVolumes() {
+    public List<VolumeOnStorageTO> getVolumes() {
         return volumes;
     }
 }

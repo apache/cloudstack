@@ -58,6 +58,14 @@ public class VolumeForImportResponse extends BaseResponse {
     @Param(description = "the encrypt format of the volume")
     private String qemuEncryptFormat;
 
+    @SerializedName(ApiConstants.STORAGE_ID)
+    @Param(description = "id of the primary storage hosting the volume")
+    private String storagePoolId;
+
+    @SerializedName(ApiConstants.STORAGE)
+    @Param(description = "name of the primary storage hosting the volume")
+    private String storagePoolName;
+
     @SerializedName(ApiConstants.DETAILS)
     @Param(description = "volume details in key/value pairs.")
     private Map details;
@@ -120,6 +128,22 @@ public class VolumeForImportResponse extends BaseResponse {
 
     public void setQemuEncryptFormat(String qemuEncryptFormat) {
         this.qemuEncryptFormat = qemuEncryptFormat;
+    }
+
+    public String getStoragePoolId() {
+        return storagePoolId;
+    }
+
+    public void setStoragePoolId(String storagePoolId) {
+        this.storagePoolId = storagePoolId;
+    }
+
+    public String getStoragePoolName() {
+        return storagePoolName;
+    }
+
+    public void setStoragePoolName(String storagePoolName) {
+        this.storagePoolName = storagePoolName;
     }
 
     public Map getDetails() {

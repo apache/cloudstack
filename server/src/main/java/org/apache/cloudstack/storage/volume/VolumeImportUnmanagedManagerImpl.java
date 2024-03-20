@@ -128,8 +128,8 @@ public class VolumeImportUnmanagedManagerImpl implements VolumeImportUnmanageSer
     public ListResponse<VolumeForImportResponse> listVolumesForImport(ListVolumesForImportCmd cmd) {
         Long poolId = cmd.getStorageId();
 
-        List<? extends VolumeOnStorageTO> volumes = listVolumesForImportInternal(poolId, null);
         StoragePoolVO pool = checkIfPoolAvailable(poolId);
+        List<VolumeOnStorageTO> volumes = listVolumesForImportInternal(poolId, null);
 
         List<VolumeForImportResponse> responses = new ArrayList<>();
         for (VolumeOnStorageTO volume : volumes) {
@@ -169,7 +169,7 @@ public class VolumeImportUnmanagedManagerImpl implements VolumeImportUnmanageSer
         }
 
         // 4. send a command to hypervisor to check
-        List<? extends VolumeOnStorageTO> volumes = listVolumesForImportInternal(poolId, volumePath);
+        List<VolumeOnStorageTO> volumes = listVolumesForImportInternal(poolId, volumePath);
         if (CollectionUtils.isEmpty(volumes)) {
             logFailureAndThrowException("Cannot find volume on storage pool: " + volumePath);
         }
@@ -194,7 +194,7 @@ public class VolumeImportUnmanagedManagerImpl implements VolumeImportUnmanageSer
         return responseGenerator.createVolumeResponse(ResponseObject.ResponseView.Full, volumeVO);
     }
 
-    private List<? extends VolumeOnStorageTO> listVolumesForImportInternal(Long poolId, String volumePath) {
+    private List<VolumeOnStorageTO> listVolumesForImportInternal(Long poolId, String volumePath) {
         StoragePoolVO pool = checkIfPoolAvailable(poolId);
 
         Pair<HostVO, String> hostAndLocalPath = findHostAndLocalPathForVolumeImport(pool);
@@ -212,8 +212,7 @@ public class VolumeImportUnmanagedManagerImpl implements VolumeImportUnmanageSer
         if (!answer.getResult()) {
             logFailureAndThrowException("Volume cannot be imported due to " + answer.getDetails());
         }
-        List<? extends VolumeOnStorageTO> volumes = ((GetVolumesOnStorageAnswer) answer).getVolumes();
-        return volumes;
+        return  ((GetVolumesOnStorageAnswer) answer).getVolumes();
     }
 
     @Override
@@ -279,12 +278,13 @@ public class VolumeImportUnmanagedManagerImpl implements VolumeImportUnmanageSer
         response.setPath(volume.getPath());
         response.setName(volume.getName());
         response.setFullPath(volume.getFullPath());
-        response.setFormat(volume.getFormat()); // TODO: always qcow2 for kvm, which is incorrect
+        response.setFormat(volume.getFormat());
         response.setSize(volume.getSize());
         response.setVirtualSize(volume.getVirtualSize());
         response.setQemuEncryptFormat(volume.getQemuEncryptFormat());
-        // TODO: add more information of storage pool
-
+        response.setStoragePoolId(pool.getUuid());
+        response.setStoragePoolName(pool.getName());
+        response.setDetails(volume.getDetails());
         response.setObjectName("volumeforimport");
         return response;
     }
@@ -302,7 +302,7 @@ public class VolumeImportUnmanagedManagerImpl implements VolumeImportUnmanageSer
             // check if disk offering exists and active
             DiskOfferingVO diskOfferingVO = diskOfferingDao.findById(diskOfferingId);
             if (diskOfferingVO == null) {
-                logFailureAndThrowException(String.format("Disk offering does not exist", diskOfferingId));
+                logFailureAndThrowException(String.format("Disk offering %s does not exist", diskOfferingId));
             }
             if (!DiskOffering.State.Active.equals(diskOfferingVO.getState())) {
                 logFailureAndThrowException(String.format("Disk offering with ID %s is not active", diskOfferingId));
