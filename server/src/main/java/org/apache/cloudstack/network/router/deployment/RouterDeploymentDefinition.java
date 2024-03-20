@@ -19,9 +19,14 @@ package org.apache.cloudstack.network.router.deployment;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.Vlan;
 import com.cloud.network.dao.NetworkDetailVO;
 import com.cloud.network.dao.NetworkDetailsDao;
+import com.cloud.network.dao.NsxProviderDao;
+import com.cloud.network.element.NsxProviderVO;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -87,6 +92,7 @@ public class RouterDeploymentDefinition {
 
     protected NetworkDao networkDao;
     protected DomainRouterDao routerDao;
+    protected NsxProviderDao nsxProviderDao;
     protected PhysicalNetworkServiceProviderDao physicalProviderDao;
     protected NetworkModel networkModel;
     protected VirtualRouterProviderDao vrProviderDao;
@@ -384,8 +390,19 @@ public class RouterDeploymentDefinition {
 
     protected void findSourceNatIP() throws InsufficientAddressCapacityException, ConcurrentOperationException {
         sourceNatIp = null;
+        DataCenter zone = dest.getDataCenter();
+        Long zoneId = null;
+        if (Objects.nonNull(zone)) {
+            zoneId = zone.getId();
+        }
+        NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(zoneId);
+
         if (isPublicNetwork) {
-            sourceNatIp = ipAddrMgr.assignSourceNatIpAddressToGuestNetwork(owner, guestNetwork);
+            if (Objects.isNull(nsxProvider)) {
+                sourceNatIp = ipAddrMgr.assignSourceNatIpAddressToGuestNetwork(owner, guestNetwork);
+            } else {
+                sourceNatIp = ipAddrMgr.assignPublicIpAddress(zoneId, getPodId(), owner, Vlan.VlanType.VirtualNetwork, null, null, false, true);
+            }
         }
     }
 
