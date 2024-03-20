@@ -28,11 +28,11 @@ import org.apache.cloudstack.quota.constant.QuotaTypes;
 public class Value extends GenericPresetVariable {
 
     @PresetVariableDefinition(description = "ID of the resource.", supportedTypes = {QuotaTypes.ALLOCATED_VM, QuotaTypes.RUNNING_VM, QuotaTypes.VOLUME, QuotaTypes.TEMPLATE,
-            QuotaTypes.ISO, QuotaTypes.SNAPSHOT, QuotaTypes.NETWORK, QuotaTypes.NETWORK_OFFERING, QuotaTypes.VM_SNAPSHOT, QuotaTypes.BACKUP_OBJECT})
+            QuotaTypes.ISO, QuotaTypes.SNAPSHOT, QuotaTypes.NETWORK_OFFERING, QuotaTypes.VM_SNAPSHOT})
     private String id;
 
     @PresetVariableDefinition(description = "Name of the resource.", supportedTypes = {QuotaTypes.ALLOCATED_VM, QuotaTypes.RUNNING_VM, QuotaTypes.VOLUME, QuotaTypes.TEMPLATE,
-            QuotaTypes.ISO, QuotaTypes.SNAPSHOT, QuotaTypes.NETWORK, QuotaTypes.NETWORK_OFFERING, QuotaTypes.VM_SNAPSHOT, QuotaTypes.BACKUP_OBJECT})
+            QuotaTypes.ISO, QuotaTypes.SNAPSHOT, QuotaTypes.NETWORK_OFFERING, QuotaTypes.VM_SNAPSHOT})
     private String name;
 
     @PresetVariableDefinition(description = "Host where the VM is running.", supportedTypes = {QuotaTypes.RUNNING_VM})
@@ -53,10 +53,10 @@ public class Value extends GenericPresetVariable {
     private String tag;
 
     @PresetVariableDefinition(description = "Size of the resource (in MiB).", supportedTypes = {QuotaTypes.TEMPLATE, QuotaTypes.ISO, QuotaTypes.VOLUME, QuotaTypes.SNAPSHOT,
-            QuotaTypes.BACKUP, QuotaTypes.BACKUP_OBJECT})
+            QuotaTypes.BACKUP})
     private Long size;
 
-    @PresetVariableDefinition(description = "Virtual size of the backup.", supportedTypes = {QuotaTypes.BACKUP, QuotaTypes.BACKUP_OBJECT})
+    @PresetVariableDefinition(description = "Virtual size of the backup.", supportedTypes = {QuotaTypes.BACKUP})
     private Long virtualSize;
 
     @PresetVariableDefinition(description = "Provisioning type of the resource. Values can be: thin, sparse or fat.", supportedTypes = {QuotaTypes.VOLUME})
@@ -84,7 +84,7 @@ public class Value extends GenericPresetVariable {
     @PresetVariableDefinition(description = "Computing resources consumed by the VM.", supportedTypes = {QuotaTypes.RUNNING_VM})
     private ComputingResources computingResources;
 
-    @PresetVariableDefinition(description = "Backup offering of the backup.", supportedTypes = {QuotaTypes.BACKUP, QuotaTypes.BACKUP_OBJECT})
+    @PresetVariableDefinition(description = "Backup offering of the backup.", supportedTypes = {QuotaTypes.BACKUP})
     private BackupOffering backupOffering;
 
     @PresetVariableDefinition(description = "The hypervisor where the resource was deployed. Values can be: XenServer, KVM, VMware, Hyperv, BareMetal, Ovm, Ovm3 and LXC.",
@@ -93,10 +93,6 @@ public class Value extends GenericPresetVariable {
 
     @PresetVariableDefinition(description = "The volume format. Values can be: RAW, VHD, VHDX, OVA and QCOW2.", supportedTypes = {QuotaTypes.VOLUME, QuotaTypes.VOLUME_SECONDARY})
     private String volumeFormat;
-
-    @PresetVariableDefinition(description = "The network state. Values can be: Allocated, Setup, Implementing, Implemented, Shutdown and " +
-            "Destroy.", supportedTypes = {QuotaTypes.NETWORK})
-    private String state;
 
     public Host getHost() {
         return host;
