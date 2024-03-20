@@ -108,7 +108,9 @@ public class VolumeImportUnmanagedManagerImpl implements VolumeImportUnmanageSer
     private VMTemplatePoolDao templatePoolDao;
 
     private static final String DEFAULT_DISK_OFFERING_NAME = "Default Custom Offering for Volume Import";
-    private static final String DEFAULT_DISK_OFFERING_UNIQUE_NAME = "Custom-Offering-Volume-Import";
+    private static final String DEFAULT_DISK_OFFERING_UNIQUE_NAME = "Custom-Volume-Import";
+    private static final String DEFAULT_DISK_OFFERING_NAME_LOCAL = DEFAULT_DISK_OFFERING_NAME + " - Local Storage";
+    private static final String DEFAULT_DISK_OFFERING_UNIQUE_NAME_LOCAL = DEFAULT_DISK_OFFERING_UNIQUE_NAME + "-Local";
 
     private void logFailureAndThrowException(String msg) {
         logger.error(msg);
@@ -180,7 +182,7 @@ public class VolumeImportUnmanagedManagerImpl implements VolumeImportUnmanageSer
         checkResourceLimitForImportVolume(owner, volume);
 
         // 6. get disk offering
-        DiskOfferingVO diskOffering = getOrCreateDiskOffering(owner, cmd.getDiskOfferingId(), pool.getDataCenterId());
+        DiskOfferingVO diskOffering = getOrCreateDiskOffering(owner, cmd.getDiskOfferingId(), pool.getDataCenterId(), pool.isLocal());
 
         // 7. create records
         VolumeVO volumeVO = createRecordsForVolumeImport(volume, diskOffering, owner, pool);
@@ -284,6 +286,7 @@ public class VolumeImportUnmanagedManagerImpl implements VolumeImportUnmanageSer
         response.setQemuEncryptFormat(volume.getQemuEncryptFormat());
         response.setStoragePoolId(pool.getUuid());
         response.setStoragePoolName(pool.getName());
+        response.setStoragePoolType(String.valueOf(pool.getPoolType()));
         response.setDetails(volume.getDetails());
         response.setObjectName("volumeforimport");
         return response;
@@ -297,7 +300,7 @@ public class VolumeImportUnmanagedManagerImpl implements VolumeImportUnmanageSer
         return templatePoolDao.findByPoolPath(pool.getId(), volumePath) != null;
     }
 
-    private DiskOfferingVO getOrCreateDiskOffering(Account owner, Long diskOfferingId, Long zoneId) {
+    private DiskOfferingVO getOrCreateDiskOffering(Account owner, Long diskOfferingId, Long zoneId, boolean isLocal) {
         if (diskOfferingId != null) {
             // check if disk offering exists and active
             DiskOfferingVO diskOfferingVO = diskOfferingDao.findById(diskOfferingId);
@@ -307,28 +310,43 @@ public class VolumeImportUnmanagedManagerImpl implements VolumeImportUnmanageSer
             if (!DiskOffering.State.Active.equals(diskOfferingVO.getState())) {
                 logFailureAndThrowException(String.format("Disk offering with ID %s is not active", diskOfferingId));
             }
+            if (diskOfferingVO.isUseLocalStorage() != isLocal) {
+                logFailureAndThrowException(String.format("Disk offering with ID %s should use %s storage", diskOfferingId, isLocal ? "local": "shared"));
+            }
             // check if disk offering is accessible by the account/owner
             try {
                 configMgr.checkDiskOfferingAccess(owner, diskOfferingVO, dcDao.findById(zoneId));
                 return diskOfferingVO;
-            } catch (PermissionDeniedException ignored) {
-                logFailureAndThrowException(String.format("Disk offering with ID %s is not accessible by account %s", diskOfferingId, owner.getAccountName()));
+            } catch (PermissionDeniedException ex) {
+                logFailureAndThrowException(String.format("Disk offering with ID %s is not accessible by owner %s", diskOfferingId, owner));
             }
         }
-        return getOrCreateDefaultDiskOfferingIdForVolumeImport();
+        return getOrCreateDefaultDiskOfferingIdForVolumeImport(isLocal);
     }
 
-
-    private DiskOfferingVO getOrCreateDefaultDiskOfferingIdForVolumeImport() {
-        DiskOfferingVO diskOffering = diskOfferingDao.findByUniqueName(DEFAULT_DISK_OFFERING_UNIQUE_NAME);
-        if (diskOffering != null) {
-            return diskOffering;
+    private DiskOfferingVO getOrCreateDefaultDiskOfferingIdForVolumeImport(boolean isLocalStorage) {
+        if (isLocalStorage) {
+            DiskOfferingVO diskOffering = diskOfferingDao.findByUniqueName(DEFAULT_DISK_OFFERING_UNIQUE_NAME_LOCAL);
+            if (diskOffering != null) {
+                return diskOffering;
+            }
+            DiskOfferingVO newDiskOffering = new DiskOfferingVO(DEFAULT_DISK_OFFERING_NAME_LOCAL, DEFAULT_DISK_OFFERING_NAME_LOCAL,
+                    Storage.ProvisioningType.THIN, 0, null, true, null, null, null);
+            newDiskOffering.setUseLocalStorage(true);
+            newDiskOffering.setUniqueName(DEFAULT_DISK_OFFERING_UNIQUE_NAME_LOCAL);
+            newDiskOffering = diskOfferingDao.persistDefaultDiskOffering(newDiskOffering);
+            return newDiskOffering;
+        } else {
+            DiskOfferingVO diskOffering = diskOfferingDao.findByUniqueName(DEFAULT_DISK_OFFERING_UNIQUE_NAME);
+            if (diskOffering != null) {
+                return diskOffering;
+            }
+            DiskOfferingVO newDiskOffering = new DiskOfferingVO(DEFAULT_DISK_OFFERING_NAME, DEFAULT_DISK_OFFERING_NAME,
+                    Storage.ProvisioningType.THIN, 0, null, true, null, null, null);
+            newDiskOffering.setUniqueName(DEFAULT_DISK_OFFERING_UNIQUE_NAME);
+            newDiskOffering = diskOfferingDao.persistDefaultDiskOffering(newDiskOffering);
+            return newDiskOffering;
         }
-        DiskOfferingVO newDiskOffering = new DiskOfferingVO(DEFAULT_DISK_OFFERING_NAME, DEFAULT_DISK_OFFERING_NAME,
-                Storage.ProvisioningType.THIN, 0, null, true, null, null, null);
-        newDiskOffering.setUniqueName(DEFAULT_DISK_OFFERING_UNIQUE_NAME);
-        newDiskOffering = diskOfferingDao.persistDefaultDiskOffering(newDiskOffering);
-        return newDiskOffering;
     }
 
     private VolumeVO createRecordsForVolumeImport(VolumeOnStorageTO volume, DiskOfferingVO diskOffering,

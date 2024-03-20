@@ -66,6 +66,10 @@ public class VolumeForImportResponse extends BaseResponse {
     @Param(description = "name of the primary storage hosting the volume")
     private String storagePoolName;
 
+    @SerializedName(ApiConstants.STORAGE_TYPE)
+    @Param(description = "type of the primary storage hosting the volume")
+    private String storagePoolType;
+
     @SerializedName(ApiConstants.DETAILS)
     @Param(description = "volume details in key/value pairs.")
     private Map details;
@@ -144,6 +148,14 @@ public class VolumeForImportResponse extends BaseResponse {
 
     public void setStoragePoolName(String storagePoolName) {
         this.storagePoolName = storagePoolName;
+    }
+
+    public String getStoragePoolType() {
+        return storagePoolType;
+    }
+
+    public void setStoragePoolType(String storagePoolType) {
+        this.storagePoolType = storagePoolType;
     }
 
     public Map getDetails() {
