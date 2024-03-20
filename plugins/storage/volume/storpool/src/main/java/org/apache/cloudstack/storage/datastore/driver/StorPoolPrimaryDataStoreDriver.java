@@ -191,6 +191,15 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     @Override
     public void revokeAccess(DataObject data, Host host, DataStore dataStore) {
+        if (DataObjectType.VOLUME == data.getType()) {
+            final VolumeVO volume = volumeDao.findById(data.getId());
+            if (volume.getInstanceId() == null) {
+                StorPoolUtil.spLog("Removing tags from detached volume=%s", volume.toString());
+                SpConnectionDesc conn = StorPoolUtil.getSpConnection(dataStore.getUuid(), dataStore.getId(), storagePoolDetailsDao, primaryStoreDao);
+                StorPoolUtil.volumeRemoveTags(StorPoolStorageAdaptor.getVolumeNameFromPath(volume.getPath(), true), conn);
+            }
+        }
+
     }
 
     private void updateStoragePool(final long poolId, final long deltaUsedBytes) {
@@ -1039,7 +1048,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
 
         if (vinfo.getMaxIops() != null) {
-            response = StorPoolUtil.volumeUpdateTags(volumeName, null, vinfo.getMaxIops(), conn, null);
+            response = StorPoolUtil.volumeUpdateIopsAndTags(volumeName, null, vinfo.getMaxIops(), conn, null);
             if (response.getError() != null) {
                 StorPoolUtil.spLog("Volume was reverted successfully but max iops could not be set due to %s", response.getError().getDescr());
             }
@@ -1128,13 +1137,16 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Override
     public void provideVmInfo(long vmId, long volumeId) {
         VolumeVO volume = volumeDao.findById(volumeId);
+        if (volume.getInstanceId() == null) {
+            return;
+        }
         StoragePoolVO poolVO = primaryStoreDao.findById(volume.getPoolId());
         if (poolVO != null) {
             try {
                 SpConnectionDesc conn = StorPoolUtil.getSpConnection(poolVO.getUuid(), poolVO.getId(), storagePoolDetailsDao, primaryStoreDao);
                 String volName = StorPoolStorageAdaptor.getVolumeNameFromPath(volume.getPath(), true);
                 VMInstanceVO userVM = vmInstanceDao.findById(vmId);
-                SpApiResponse resp = StorPoolUtil.volumeUpdateTags(volName, volume.getInstanceId() != null ? userVM.getUuid() : "", null, conn, getVcPolicyTag(vmId));
+                SpApiResponse resp = StorPoolUtil.volumeUpdateIopsAndTags(volName, volume.getInstanceId() != null ? userVM.getUuid() : "", null, conn, getVcPolicyTag(vmId));
                 if (resp.getError() != null) {
                     logger.warn(String.format("Could not update VC policy tags of a volume with id [%s]", volume.getUuid()));
                 }

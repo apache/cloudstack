@@ -101,3 +101,4 @@ then
   exit 1
 fi
 setup_router
+. /opt/cloud/bin/setup/patch.sh && patch_router

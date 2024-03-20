@@ -96,7 +96,7 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
+    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, String name, Long vpcId, Account owner) {
         DataCenter dc = _entityMgr.findById(DataCenter.class, plan.getDataCenterId());
         if (!canHandle(offering, dc)) {
             return null;
@@ -133,6 +133,11 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
         }
 
         return network;
+    }
+
+    @Override
+    public void setup(Network network, long networkId) {
+        // do nothing
     }
 
     @Override

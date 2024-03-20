@@ -542,11 +542,7 @@ public class ViewResponseHelper {
     }
 
     public static List<AccountResponse> createAccountResponse(ResponseView view, EnumSet<DomainDetails> details, AccountJoinVO... accounts) {
-        List<AccountResponse> respList = new ArrayList<AccountResponse>();
-        for (AccountJoinVO vt : accounts){
-            respList.add(ApiDBUtils.newAccountResponse(view, details, vt));
-        }
-        return respList;
+        return ApiDBUtils.newAccountResponses(view, details, accounts);
     }
 
     public static List<AsyncJobResponse> createAsyncJobResponse(AsyncJobJoinVO... jobs) {
@@ -557,12 +553,8 @@ public class ViewResponseHelper {
         return respList;
     }
 
-    public static List<DiskOfferingResponse> createDiskOfferingResponse(DiskOfferingJoinVO... offerings) {
-        List<DiskOfferingResponse> respList = new ArrayList<DiskOfferingResponse>();
-        for (DiskOfferingJoinVO vt : offerings) {
-            respList.add(ApiDBUtils.newDiskOfferingResponse(vt));
-        }
-        return respList;
+    public static List<DiskOfferingResponse> createDiskOfferingResponses(Long vmId, List<DiskOfferingJoinVO> offerings) {
+        return ApiDBUtils.newDiskOfferingResponses(vmId, offerings);
     }
 
     public static List<ServiceOfferingResponse> createServiceOfferingResponse(ServiceOfferingJoinVO... offerings) {

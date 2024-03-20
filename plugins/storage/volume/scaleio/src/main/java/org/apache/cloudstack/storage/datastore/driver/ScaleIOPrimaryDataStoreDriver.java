@@ -305,6 +305,11 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     @Override
+    public boolean requiresAccessForMigration(DataObject dataObject) {
+        return true;
+    }
+
+    @Override
     public long getUsedBytes(StoragePool storagePool) {
         long usedSpaceBytes = 0;
         // Volumes
@@ -1425,5 +1430,15 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     @Override
     public void detachVolumeFromAllStorageNodes(Volume volume) {
+    }
+
+    @Override
+    public boolean volumesRequireGrantAccessWhenUsed() {
+        return true;
+    }
+
+    @Override
+    public boolean zoneWideVolumesAvailableWithoutClusterMotion() {
+        return true;
     }
 }
