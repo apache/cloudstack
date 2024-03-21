@@ -59,7 +59,7 @@ public class NetworksUsageParser {
 
         final List<UsageNetworksVO> usageNetworksVO = staticNetworksDao.getUsageRecords(account.getId(), startDate, endDate);
         if (usageNetworksVO == null || usageNetworksVO.isEmpty()) {
-            LOGGER.debug(String.format("Cannot find any VPC usage for account [%s] in period between [%s] and [%s].", account, startDate, endDate));
+            LOGGER.debug(String.format("Could not find any network usage for account [%s], between [%s] and [%s].", account, startDate, endDate));
             return true;
         }
 
