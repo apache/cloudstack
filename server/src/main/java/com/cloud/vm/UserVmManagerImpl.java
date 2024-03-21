@@ -7644,8 +7644,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         long vmId = cmd.getVmId();
         Long newTemplateId = cmd.getTemplateId();
-        Long diskOfferingId = cmd.getDiskOfferingId();
+        Long rootDiskOfferingId = cmd.getRootDiskOfferingId();
         Long rootDiskSize = cmd.getRootDiskSize();
+        boolean expunge = cmd.getExpungeRootDisk();
 
         if (rootDiskSize != null && rootDiskSize < 0) {
             throw new InvalidParameterValueException("Invalid disk size " + rootDiskSize);
@@ -7660,10 +7661,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         _accountMgr.checkAccess(caller, null, true, vm);
 
         DiskOffering diskOffering;
-        if (diskOfferingId != null) {
-            diskOffering = _diskOfferingDao.findById(diskOfferingId);
+        if (rootDiskOfferingId != null) {
+            diskOffering = _diskOfferingDao.findById(rootDiskOfferingId);
             if (diskOffering == null) {
-                throw new InvalidParameterValueException("Cannot find disk offering with ID " + diskOfferingId);
+                throw new InvalidParameterValueException("Cannot find disk offering with ID " + rootDiskOfferingId);
             }
             DataCenterVO zone = dataCenterDao.findById(vm.getDataCenterId());
             _accountMgr.checkAccess(caller, diskOffering, zone);
@@ -7675,16 +7676,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new CloudRuntimeException("There is/are unbacked up snapshot(s) on ROOT volume, Re-install VM is not permitted, please try again later.");
         }
         s_logger.debug("Found no ongoing snapshots on volume of type ROOT, for the vm with id " + vmId);
-        return restoreVMInternal(caller, vm, newTemplateId, diskOfferingId, rootDiskSize);
+        return restoreVMInternal(caller, vm, newTemplateId, rootDiskOfferingId, rootDiskSize, expunge);
     }
 
-    public UserVm restoreVMInternal(Account caller, UserVmVO vm, Long newTemplateId, Long diskOfferingId, Long rootDiskSize) throws InsufficientCapacityException, ResourceUnavailableException {
-        return _itMgr.restoreVirtualMachine(vm.getId(), newTemplateId, diskOfferingId, rootDiskSize);
+    public UserVm restoreVMInternal(Account caller, UserVmVO vm, Long newTemplateId, Long rootDiskOfferingId, Long rootDiskSize, boolean expunge) throws InsufficientCapacityException, ResourceUnavailableException {
+        return _itMgr.restoreVirtualMachine(vm.getId(), newTemplateId, rootDiskOfferingId, rootDiskSize, expunge);
     }
 
 
     public UserVm restoreVMInternal(Account caller, UserVmVO vm) throws InsufficientCapacityException, ResourceUnavailableException {
-        return restoreVMInternal(caller, vm, null, null, null);
+        return restoreVMInternal(caller, vm, null, null, null, false);
     }
 
     private VMTemplateVO getRestoreVirtualMachineTemplate(Account caller, Long newTemplateId, List<VolumeVO> rootVols, UserVmVO vm) {
@@ -7729,7 +7730,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
-    public UserVm restoreVirtualMachine(final Account caller, final long vmId, final Long newTemplateId, final Long diskOfferingId, final Long rootDiskSize) throws InsufficientCapacityException, ResourceUnavailableException {
+    public UserVm restoreVirtualMachine(final Account caller, final long vmId, final Long newTemplateId,
+            final Long rootDiskOfferingId, final Long rootDiskSize,
+            final boolean expunge) throws InsufficientCapacityException, ResourceUnavailableException {
         Long userId = caller.getId();
         _userDao.findById(userId);
         UserVmVO vm = _vmDao.findById(vmId);
@@ -7786,7 +7789,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
-        DiskOffering diskOffering = diskOfferingId != null ? _diskOfferingDao.findById(diskOfferingId) : null;
+        DiskOffering diskOffering = rootDiskOfferingId != null ? _diskOfferingDao.findById(rootDiskOfferingId) : null;
         for (VolumeVO root : rootVols) {
             if ( !Volume.State.Allocated.equals(root.getState()) || newTemplateId != null ) {
                 final UserVmVO userVm = vm;
@@ -7865,6 +7868,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 // Detach, destroy and create the usage event for the old root volume.
                 _volsDao.detachVolume(root.getId());
                 volumeMgr.destroyVolume(root);
+                if (expunge) {
+                    AsyncCallFuture<VolumeApiResult> future = _volService.expungeVolumeAsync(volFactory.getVolume(root.getId()));
+                    try {
+                        future.get();
+                    } catch (InterruptedException | java.util.concurrent.ExecutionException e) {
+                        s_logger.error(String.format("Failed to expunge volume [uuid: %s name: %s] due to [%s].", root.getUuid(), root.getName(), e.getMessage()), e);
+                    }
+                }
 
                 // For VMware hypervisor since the old root volume is replaced by the new root volume, force expunge old root volume if it has been created in storage
                 if (vm.getHypervisorType() == HypervisorType.VMware) {

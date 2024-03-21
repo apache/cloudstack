@@ -65,13 +65,19 @@ public class RestoreVMCmd extends BaseAsyncCmd implements UserCmd {
                type = CommandType.UUID,
                entityType = DiskOfferingResponse.class,
                description = "Override root volume's diskoffering.", since = "4.19.1")
-    private Long diskOfferingId;
+    private Long rootDiskOfferingId;
 
     @Parameter(name = ApiConstants.ROOT_DISK_SIZE,
                type = CommandType.LONG,
                description = "Override root volume's size (in GB).",
                since = "4.19.1")
     private Long rootDiskSize;
+
+    @Parameter(name = ApiConstants.EXPUNGE,
+               type = CommandType.BOOLEAN,
+               description = "Optional field to expunge old root volume after restore.",
+               since = "4.19.1")
+    private Boolean expungeRootDisk;
 
     @Override
     public String getEventType() {
@@ -125,12 +131,16 @@ public class RestoreVMCmd extends BaseAsyncCmd implements UserCmd {
         return getVmId();
     }
 
-    public Long getDiskOfferingId() {
-        return diskOfferingId;
+    public Long getRootDiskOfferingId() {
+        return rootDiskOfferingId;
     }
 
     public Long getRootDiskSize() {
         return rootDiskSize != null ? rootDiskSize * 1024L * 1024L * 1024L : null;
+    }
+
+    public Boolean getExpungeRootDisk() {
+        return expungeRootDisk != null && expungeRootDisk;
     }
 
     @Override

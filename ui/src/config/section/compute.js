@@ -164,7 +164,7 @@ export default {
           label: 'label.reinstall.vm',
           message: 'message.reinstall.vm',
           dataView: true,
-          args: ['virtualmachineid', 'templateid', 'diskofferingid', 'rootdisksize'],
+          args: ['virtualmachineid', 'templateid', 'diskofferingid', 'rootdisksize', 'expunge'],
           filters: (record) => {
             var filters = {}
             var filterParams = {}
