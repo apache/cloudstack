@@ -59,9 +59,6 @@ public class QuotaTypes extends UsageTypes {
         quotaTypeList.put(VM_SNAPSHOT_ON_PRIMARY, new QuotaTypes(VM_SNAPSHOT_ON_PRIMARY, "VM_SNAPSHOT_ON_PRIMARY", UsageUnitTypes.GB_MONTH.toString(), "VM Snapshot primary storage usage"));
         quotaTypeList.put(BACKUP, new QuotaTypes(BACKUP, "BACKUP", UsageUnitTypes.GB_MONTH.toString(), "Backup storage usage"));
         quotaTypeList.put(BUCKET, new QuotaTypes(BUCKET, "BUCKET", UsageUnitTypes.GB_MONTH.toString(), "Object Store bucket usage"));
-        quotaTypeList.put(NETWORK, new QuotaTypes(NETWORK, "NETWORK", UsageUnitTypes.COMPUTE_MONTH.toString(), "Network usage"));
-        quotaTypeList.put(VPC, new QuotaTypes(VPC, "VPC", UsageUnitTypes.COMPUTE_MONTH.toString(), "VPC usage"));
-        quotaTypeList.put(BACKUP_OBJECT, new QuotaTypes(BACKUP_OBJECT, "BACKUP_OBJECT", UsageUnitTypes.GB_MONTH.toString(), "Backup object usage."));
         quotaTypeMap = Collections.unmodifiableMap(quotaTypeList);
     }
 
@@ -107,20 +104,6 @@ public class QuotaTypes extends UsageTypes {
 
     static public QuotaTypes getQuotaType(int quotaType) {
         return quotaTypeMap.get(quotaType);
-    }
-
-    static public QuotaTypes getQuotaTypeByName(String name) {
-        if (StringUtils.isBlank(name)) {
-            throw new CloudRuntimeException("Could not retrieve Quota type by name because the value passed as parameter is null, empty, or blank.");
-        }
-
-        for (QuotaTypes type : quotaTypeMap.values()) {
-            if (type.getQuotaName().equals(name)) {
-                return type;
-            }
-        }
-
-        throw new CloudRuntimeException(String.format("Could not find Quota type with name [%s].", name));
     }
 
     @Override
