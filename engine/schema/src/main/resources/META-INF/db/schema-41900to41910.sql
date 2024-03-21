@@ -31,8 +31,6 @@ SET usage_unit = 'IOPS', updated_on = NOW()
 WHERE effective_on = '2010-05-04 00:00:00'
 AND name IN ('VM_DISK_IO_READ', 'VM_DISK_IO_WRITE');
 
-CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.guest_os', 'display', 'tinyint(1) DEFAULT ''1'' COMMENT ''should this guest_os be shown to the end user'' ');
-
 -- PR #7236 - [Usage] Create network billing
 CREATE TABLE IF NOT EXISTS `cloud_usage`.`usage_networks` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
