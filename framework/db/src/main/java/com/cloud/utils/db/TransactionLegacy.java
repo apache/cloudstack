@@ -82,6 +82,8 @@ public class TransactionLegacy implements Closeable {
 
     public static final short CONNECTED_DB = -1;
 
+    public static final String CONNECTION_PARAMS = "scrollTolerantForwardOnly=true";
+
     private static AtomicLong s_id = new AtomicLong();
     private static final TransactionMBeanImpl s_mbean = new TransactionMBeanImpl();
     static {
@@ -1079,7 +1081,7 @@ public class TransactionLegacy implements Closeable {
             }
 
             final String cloudConnectionUri = cloudDriver + "://" + cloudHost + (s_dbHAEnabled ? "," + cloudReplicas : "") + ":" + cloudPort + "/" + cloudDbName +
-                    "?autoReconnect=" + cloudAutoReconnect + (url != null ? "&" + url : "") + (useSSL ? "&useSSL=true" : "") +
+                    "?" + CONNECTION_PARAMS + "&autoReconnect=" + cloudAutoReconnect + (url != null ? "&" + url : "") + (useSSL ? "&useSSL=true" : "") +
                     (s_dbHAEnabled ? "&" + cloudDbHAParams : "") + (s_dbHAEnabled ? "&loadBalanceStrategy=" + loadBalanceStrategy : "");
             DriverLoader.loadDriver(cloudDriver);
 
@@ -1102,7 +1104,7 @@ public class TransactionLegacy implements Closeable {
             final String usageUrl = dbProps.getProperty("db.usage.url.params");
 
             final String usageConnectionUri = usageDriver + "://" + usageHost + (s_dbHAEnabled ? "," + dbProps.getProperty("db.cloud.replicas") : "") + ":" + usagePort +
-                    "/" + usageDbName + "?autoReconnect=" + usageAutoReconnect + (usageUrl != null ? "&" + usageUrl : "") +
+                    "/" + usageDbName + "?" + CONNECTION_PARAMS + "&autoReconnect=" + usageAutoReconnect + (usageUrl != null ? "&" + usageUrl : "") +
                     (s_dbHAEnabled ? "&" + getDBHAParams("usage", dbProps) : "") + (s_dbHAEnabled ? "&loadBalanceStrategy=" + loadBalanceStrategy : "");
             DriverLoader.loadDriver(usageDriver);
 
@@ -1124,7 +1126,7 @@ public class TransactionLegacy implements Closeable {
                 final String simulatorDbName = dbProps.getProperty("db.simulator.name");
                 final boolean simulatorAutoReconnect = Boolean.parseBoolean(dbProps.getProperty("db.simulator.autoReconnect"));
 
-                final String simulatorConnectionUri = simulatorDriver + "://" + simulatorHost + ":" + simulatorPort + "/" + simulatorDbName + "?autoReconnect=" +
+                final String simulatorConnectionUri = simulatorDriver + "://" + simulatorHost + ":" + simulatorPort + "/" + simulatorDbName + "?" + CONNECTION_PARAMS + "&autoReconnect=" +
                         simulatorAutoReconnect;
                 DriverLoader.loadDriver(simulatorDriver);
 
@@ -1204,7 +1206,7 @@ public class TransactionLegacy implements Closeable {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private static DataSource getDefaultDataSource(final String database) {
-        final ConnectionFactory connectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://localhost:3306/" + database, "cloud", "cloud");
+        final ConnectionFactory connectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://localhost:3306/" + database + "?" + CONNECTION_PARAMS, "cloud", "cloud");
         final PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(connectionFactory, null);
         final GenericObjectPool connectionPool = new GenericObjectPool(poolableConnectionFactory);
         return new PoolingDataSource(connectionPool);
