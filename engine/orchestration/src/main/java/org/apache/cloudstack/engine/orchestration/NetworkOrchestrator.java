@@ -1141,10 +1141,11 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     @Override
     public Pair<NicProfile, Integer> allocateNic(final NicProfile requested, final Network network, final Boolean isDefaultNic, int deviceId, final VirtualMachineProfile vm)
             throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException, ConcurrentOperationException {
-        Integer virtualMachineMaxNicsValue = getVirtualMachineMaxNicsValue(vm);
+
+        int virtualMachineMaxNicsValue = getVirtualMachineMaxNicsValue(vm.getVirtualMachine());
         List<NicVO> nics = _nicDao.listByVmId(vm.getId());
 
-        if (nics.size() > virtualMachineMaxNicsValue) {
+        if (nics.size() >= virtualMachineMaxNicsValue) {
             throw new CloudRuntimeException(String.format("Failed to allocate NIC on network [%s] because VM [%s] has reached its maximum NIC capacity [%s].", network.getUuid(), vm.getUuid(), virtualMachineMaxNicsValue));
         }
 
@@ -1200,24 +1201,15 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return isForProvider && !ip.isForSystemVms();
     }
 
-    /**
-     * Returns the maximum number of NICs that the given virtual machine can have considering its hypervisor.
-     * <br/><br/>
-     * First we try to retrieve the setting value from the cluster where the virtual machine is deployed. If the cluster does not exist, we try to retrieve the setting value from the virtual machine hypervisor type.
-     * In last case, if the virtual machine does not have a hypervisor type, we retrieve the smallest value between the {@link NetworkOrchestrationService#VirtualMachineMaxNicsKvm}, {@link NetworkOrchestrationService#VirtualMachineMaxNicsVmware}
-     * and {@link NetworkOrchestrationService#VirtualMachineMaxNicsXenserver} global settings.
-     *
-     * @param virtualMachine Virtual machine to get the maximum number of NICs.
-     * @return The maximum number of NICs that the virtual machine can have.
-     */
-    protected Integer getVirtualMachineMaxNicsValue(VirtualMachineProfile virtualMachine) {
+    @Override
+    public int getVirtualMachineMaxNicsValue(VirtualMachine virtualMachine) {
         Integer virtualMachineMaxNicsValue = getVirtualMachineMaxNicsValueFromCluster(virtualMachine);
 
         if (virtualMachineMaxNicsValue != null) {
             return virtualMachineMaxNicsValue;
         }
 
-        if (virtualMachine.getVirtualMachine().getHypervisorType() == null) {
+        if (virtualMachine.getHypervisorType() == null) {
             logger.debug("Using the smallest setting global value between {}, {} and {} as the VM {} does not have a hypervisor type and is not deployed on either a host or a cluster.", VirtualMachineMaxNicsKvm, VirtualMachineMaxNicsVmware, VirtualMachineMaxNicsXenserver, virtualMachine.getUuid());
             return NumberUtils.min(VirtualMachineMaxNicsKvm.value(), VirtualMachineMaxNicsVmware.value(), VirtualMachineMaxNicsXenserver.value());
         }
@@ -1231,7 +1223,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
      * @param virtualMachine Virtual machine to get the cluster.
      * @return The maximum number of NICs that the virtual machine can have.
      */
-    protected Integer getVirtualMachineMaxNicsValueFromCluster(VirtualMachineProfile virtualMachine) {
+    protected Integer getVirtualMachineMaxNicsValueFromCluster(VirtualMachine virtualMachine) {
         HostVO host  = _hostDao.findById(virtualMachine.getHostId());
         if (host == null) {
             return null;
@@ -1265,8 +1257,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
      * @param virtualMachine Virtual machine to get the hypervisor type.
      * @return The maximum number of NICs that the virtual machine can have.
      */
-    protected Integer getVirtualMachineMaxNicsValueFromVmHypervisorType(VirtualMachineProfile virtualMachine) {
-        HypervisorType virtualMachineHypervisorType = virtualMachine.getVirtualMachine().getHypervisorType();
+    protected int getVirtualMachineMaxNicsValueFromVmHypervisorType(VirtualMachine virtualMachine) {
+        HypervisorType virtualMachineHypervisorType = virtualMachine.getHypervisorType();
 
         if (HypervisorType.KVM.equals(virtualMachineHypervisorType)) {
             logger.debug("Using the {} setting global value {} as the VM {} has the {} hypervisor type and is not deployed on either a host or a cluster.", VirtualMachineMaxNicsKvm, VirtualMachineMaxNicsKvm.value(), virtualMachine.getUuid(), virtualMachineHypervisorType);

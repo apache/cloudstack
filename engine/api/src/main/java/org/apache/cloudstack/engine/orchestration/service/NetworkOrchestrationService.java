@@ -372,4 +372,16 @@ public interface NetworkOrchestrationService {
     void unmanageNics(VirtualMachineProfile vm);
 
     void expungeLbVmRefs(List<Long> vmIds, Long batchSize);
+
+    /**
+     * Returns the maximum number of NICs that the given virtual machine can have considering its hypervisor.
+     * <br/><br/>
+     * First we try to retrieve the setting value from the cluster where the virtual machine is deployed. If the cluster does not exist, we try to retrieve the setting value from the virtual machine hypervisor type.
+     * In last case, if the virtual machine does not have a hypervisor type, we retrieve the smallest value between the {@link NetworkOrchestrationService#VirtualMachineMaxNicsKvm}, {@link NetworkOrchestrationService#VirtualMachineMaxNicsVmware}
+     * and {@link NetworkOrchestrationService#VirtualMachineMaxNicsXenserver} global settings.
+     *
+     * @param virtualMachine Virtual machine to get the maximum number of NICs.
+     * @return The maximum number of NICs that the virtual machine can have.
+     */
+    int getVirtualMachineMaxNicsValue(VirtualMachine virtualMachine);
 }

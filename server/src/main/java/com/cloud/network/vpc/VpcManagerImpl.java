@@ -299,6 +299,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     AlertManager alertManager;
     @Inject
     CommandSetupHelper commandSetupHelper;
+    @Inject
+    NetworkOrchestrationService networkOrchestrationService;
     @Autowired
     @Qualifier("networkHelper")
     protected NetworkHelper networkHelper;
@@ -2193,18 +2195,25 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(final TransactionStatus status) {
-                final Vpc locked = vpcDao.acquireInLockTable(vpc.getId());
+                long vpcId = vpc.getId();
+                final Vpc locked = vpcDao.acquireInLockTable(vpcId);
                 if (locked == null) {
                     throw new CloudRuntimeException("Unable to acquire lock on " + vpc);
                 }
 
                 _maxNetworks = VpcMaxNetworks.valueIn(vpc.getAccountId());
+                Account account = _accountMgr.getAccount(vpc.getAccountId());
 
                 try {
                     // check number of active networks in vpc
-                    if (_ntwkDao.countVpcNetworks(vpc.getId()) >= _maxNetworks) {
+                    if (_ntwkDao.countVpcNetworks(vpcId) >= _maxNetworks) {
                         logger.warn("Failed to create a new VPC Guest Network because the number of networks per VPC has reached its maximum capacity of {}. Increase it by modifying global or account config {}.", _maxNetworks, VpcMaxNetworks);
-                        throw new CloudRuntimeException(String.format("Number of networks per VPC cannot surpass [%s].", _maxNetworks));
+                        throw new CloudRuntimeException(String.format("Number of networks per VPC cannot surpass [%s] for account [%s].", _maxNetworks, account.getAccountName()));
+                    }
+
+                    if (!existsVpcDomainRouterWithSufficientNicCapacity(vpc.getId())) {
+                        logger.warn("Failed to create a new VPC Guest Network because no virtual routers were found with sufficient NIC capacity. The number of VPC Guest networks cannot exceed the number of NICs a virtual router can have.");
+                        throw new CloudRuntimeException(String.format("No available virtual router found to deploy new Guest Network on VPC [%s].", vpc.getName()));
                     }
 
                     // 1) CIDR is required
@@ -2219,7 +2228,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
                     // 3) Network cidr shouldn't cross the cidr of other vpc
                     // network cidrs
-                    final List<? extends Network> ntwks = _ntwkDao.listByVpc(vpc.getId());
+                    final List<? extends Network> ntwks = _ntwkDao.listByVpc(vpcId);
                     for (final Network ntwk : ntwks) {
                         assert cidr != null : "Why the network cidr is null when it belongs to vpc?";
 
@@ -2246,6 +2255,21 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 }
             }
         });
+    }
+
+    protected boolean existsVpcDomainRouterWithSufficientNicCapacity(long vpcId) {
+        long countVpcNetworks = _ntwkDao.countVpcNetworks(vpcId);
+        List<DomainRouterVO> vpcDomainRoutersVO = routerDao.listByVpcId(vpcId);
+        int availableRouters = vpcDomainRoutersVO.size();
+
+        for (DomainRouterVO domainRouter : vpcDomainRoutersVO) {
+            if (countVpcNetworks >= networkOrchestrationService.getVirtualMachineMaxNicsValue(domainRouter)) {
+                logger.debug("Virtual router [%s] is unable to reserve the NIC for the new VPC Guest Network.", domainRouter.getName());
+                availableRouters--;
+            }
+        }
+
+        return availableRouters > 0;
     }
 
     private void CheckAccountsAccess(Vpc vpc, Account networkAccount) {
