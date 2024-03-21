@@ -93,8 +93,13 @@ public final class LibvirtGetVolumesOnStorageCommandWrapper extends CommandWrapp
                 if (StringUtils.isNotBlank(clusterSize)) {
                     volumeOnStorageTO.addDetail(VolumeOnStorageTO.Detail.FILE_FORMAT, fileFormat);
                 }
+                String encrypted = info.get(QemuImg.ENCRYPTED);
+                if (StringUtils.isNotBlank(encrypted) && encrypted.toLowerCase().equals("yes")) {
+                    volumeOnStorageTO.addDetail(VolumeOnStorageTO.Detail.IS_ENCRYPTED, String.valueOf(Boolean.TRUE));
+                }
                 Boolean isLocked = isDiskFileLocked(storagePool, disk);
                 volumeOnStorageTO.addDetail(VolumeOnStorageTO.Detail.IS_LOCKED, String.valueOf(isLocked));
+
                 volumes.add(volumeOnStorageTO);
             }
         } else {

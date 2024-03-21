@@ -36,7 +36,7 @@ public class VolumeOnStorageTO {
     private Map<Detail, String> details = new HashMap<>();
 
     public enum Detail {
-        BACKING_FILE, BACKING_FILE_FORMAT, CLUSTER_SIZE, FILE_FORMAT, IS_LOCKED
+        BACKING_FILE, BACKING_FILE_FORMAT, CLUSTER_SIZE, FILE_FORMAT, IS_LOCKED, IS_ENCRYPTED
     }
 
     public VolumeOnStorageTO() {

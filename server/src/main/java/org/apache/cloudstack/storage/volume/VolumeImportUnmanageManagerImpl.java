@@ -182,6 +182,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
 
         // check if volume is locked
         checkIfVolumeIsLocked(volume);
+        checkIfVolumeIsEncrypted(volume);
 
         // 5. check resource limitation
         checkResourceLimitForImportVolume(owner, volume);
@@ -310,7 +311,17 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         if (volumeDetails != null && volumeDetails.containsKey(VolumeOnStorageTO.Detail.IS_LOCKED)) {
             String isLocked = volumeDetails.get(VolumeOnStorageTO.Detail.IS_LOCKED);
             if (Boolean.parseBoolean(isLocked)) {
-                logFailureAndThrowException("Volume is locked");
+                logFailureAndThrowException("Locked volume cannot be imported.");
+            }
+        }
+    }
+
+    private void checkIfVolumeIsEncrypted(VolumeOnStorageTO volume) {
+        Map<VolumeOnStorageTO.Detail, String> volumeDetails = volume.getDetails();
+        if (volumeDetails != null && volumeDetails.containsKey(VolumeOnStorageTO.Detail.IS_ENCRYPTED)) {
+            String isEncrypted = volumeDetails.get(VolumeOnStorageTO.Detail.IS_ENCRYPTED);
+            if (Boolean.parseBoolean(isEncrypted)) {
+                logFailureAndThrowException("Encrypted volume cannot be imported for now.");
             }
         }
     }

@@ -106,7 +106,7 @@ class TestImportAndUnmanageVolumes(cloudstackTestCase):
 
     @attr(tags=['advanced', 'basic', 'sg'], required_hardware=False)
     def test_01_detach_unmanage_import_volume(self):
-        """Test listing Volumes with account & domain filter
+        """Test attach/detach/unmanage/import volume
         """
         # Create DATA volume
         volume = Volume.create(
