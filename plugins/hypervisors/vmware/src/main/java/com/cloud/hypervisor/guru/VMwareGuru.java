@@ -1266,9 +1266,6 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             throw new CloudRuntimeException(err);
         }
 
-        String datastorePath = datastoreMO.getDatastorePathOnHost(sourceHost.getMor().getValue());
-        s_logger.info("Host datastore path: " + datastorePath);
-
         relocateClonedVMToSourceHost(clonedVM, sourceHost);
         return clonedVM;
     }
