@@ -44,4 +44,4 @@ CREATE TABLE IF NOT EXISTS `cloud_usage`.`usage_vpc` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB CHARSET=utf8;
 
-ALTER TABLE `cloud_usage`.`cloud_usage` ADD state VARCHAR(100) DEFAULT NULL;
+CALL `cloud_usage`.`IDEMPOTENT_ADD_COLUMN`('cloud_usage.cloud_usage', 'state', 'VARCHAR(100) DEFAULT NULL');
