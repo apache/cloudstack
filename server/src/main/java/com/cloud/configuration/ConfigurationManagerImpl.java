@@ -201,6 +201,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Ipv6GuestPrefixSubnetNetworkMapVO;
@@ -3243,6 +3244,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     }
                 }
                 if (detailEntry.getKey().startsWith(ApiConstants.EXTRA_CONFIG)) {
+                    validateExtraConfigInServiceOfferingDetail(detailEntry.getKey());
                     try {
                         detailEntryValue = URLDecoder.decode(detailEntry.getValue(), "UTF-8");
                     } catch (UnsupportedEncodingException | IllegalArgumentException e) {
@@ -3305,6 +3307,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             return serviceOffering;
         } else {
             return null;
+        }
+    }
+
+    @Override
+    public void validateExtraConfigInServiceOfferingDetail(String detailName) {
+        if (!detailName.equals(DpdkHelper.DPDK_NUMA) && !detailName.equals(DpdkHelper.DPDK_HUGE_PAGES)
+                && !detailName.startsWith(DpdkHelper.DPDK_INTERFACE_PREFIX)) {
+            throw new InvalidParameterValueException("Only extraconfig for DPDK are supported in service offering details");
         }
     }
 

@@ -13,6 +13,7 @@
 "error.release.dedicate.host": "Failed to release dedicated host.",
 "error.release.dedicate.pod": "Failed to release dedicated pod.",
 "error.release.dedicate.zone": "Failed to release dedicated zone.",
+"error.unable.to.add.setting.extraconfig": "It is not allowed to add setting for extraconfig. Please update VirtualMachine with extraconfig parameter.",
 "error.unable.to.proceed": "Unable to proceed. Please contact your administrator.",
 "firewall.close": "Firewall",
 "icmp.code.desc": "Please specify -1 if you want to allow all ICMP codes.",
