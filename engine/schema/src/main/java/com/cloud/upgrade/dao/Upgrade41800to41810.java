@@ -251,5 +251,7 @@ public class Upgrade41800to41810 implements DbUpgrade, DbUpgradeSystemVmTemplate
         DbUpgradeUtils.addIndexIfNeeded(conn, "event", "resource_type", "resource_id");
 
         DbUpgradeUtils.addIndexIfNeeded(conn, "cluster_details", "name");
+
+        DbUpgradeUtils.addIndexIfNeeded(conn, "vm_stats", "vm_id");
     }
 }
