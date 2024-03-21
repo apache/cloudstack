@@ -41,6 +41,7 @@ import org.libvirt.LibvirtException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -54,9 +55,6 @@ public final class LibvirtGetVolumesOnStorageCommandWrapper extends CommandWrapp
     public Answer execute(final GetVolumesOnStorageCommand command, final LibvirtComputingResource libvirtComputingResource) {
 
         final StorageFilerTO pool = command.getPool();
-        if (!SUPPORTED_STORAGE_POOL_TYPES.contains(pool.getType())) {
-            return new GetVolumesOnStorageAnswer(command, false, String.format("pool type %s is unsupported", pool.getType()));
-        }
         final String volumePath = command.getVolumePath();
 
         List<VolumeOnStorageTO> volumes = new ArrayList<>();
@@ -64,7 +62,7 @@ public final class LibvirtGetVolumesOnStorageCommandWrapper extends CommandWrapp
         final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
         KVMStoragePool storagePool = storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid(), true);
 
-        if (volumePath != null) {
+        if (StringUtils.isNotBlank(volumePath)) {
             KVMPhysicalDisk disk = storagePool.getPhysicalDisk(volumePath);
             if (disk != null) {
                 if (!isDiskFormatSupported(disk)) {
@@ -121,14 +119,14 @@ public final class LibvirtGetVolumesOnStorageCommandWrapper extends CommandWrapp
     }
 
     private boolean isDiskFileLocked(KVMStoragePool pool, KVMPhysicalDisk disk) {
-        if (PhysicalDiskFormat.QCOW2.equals(disk.getFormat())) {
-            Map<String, String> info = getDiskFileInfo(pool, disk, false);
-            return info == null;
-        }
-        return false; // unknown
+        Map<String, String> info = getDiskFileInfo(pool, disk, false);
+        return info == null;
     }
 
     private Map<String, String> getDiskFileInfo(KVMStoragePool pool, KVMPhysicalDisk disk, boolean secure) {
+        if (!SUPPORTED_STORAGE_POOL_TYPES.contains(pool.getType())) {
+            return new HashMap<>(); // unknown
+        }
         try {
             QemuImg qemu = new QemuImg(0);
             QemuImgFile qemuFile = new QemuImgFile(disk.getPath(), disk.getFormat());
@@ -143,7 +141,7 @@ public final class LibvirtGetVolumesOnStorageCommandWrapper extends CommandWrapp
             return qemu.info(qemuFile, secure);
         } catch (QemuImgException | LibvirtException ex) {
             logger.error("Failed to get info of disk file: " + ex.getMessage());
+            return null;
         }
-        return null;
     }
 }

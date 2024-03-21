@@ -129,9 +129,10 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
     @Override
     public ListResponse<VolumeForImportResponse> listVolumesForImport(ListVolumesForImportCmd cmd) {
         Long poolId = cmd.getStorageId();
+        String path = cmd.getPath();
 
         StoragePoolVO pool = checkIfPoolAvailable(poolId);
-        List<VolumeOnStorageTO> volumes = listVolumesForImportInternal(poolId, null);
+        List<VolumeOnStorageTO> volumes = listVolumesForImportInternal(poolId, path);
 
         List<VolumeForImportResponse> responses = new ArrayList<>();
         for (VolumeOnStorageTO volume : volumes) {

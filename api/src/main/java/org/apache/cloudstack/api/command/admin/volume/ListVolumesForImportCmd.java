@@ -65,12 +65,21 @@ public class ListVolumesForImportCmd extends BaseListCmd {
             description = "the ID of the storage pool")
     private Long storageId;
 
+    @Parameter(name = ApiConstants.PATH,
+            type = BaseCmd.CommandType.STRING,
+            description = "the path of the volume on the storage pool")
+    private String path;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
     public Long getStorageId() {
         return storageId;
+    }
+
+    public String getPath() {
+        return path;
     }
 
     /////////////////////////////////////////////////////
