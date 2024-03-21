@@ -2258,18 +2258,16 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
 
     protected boolean existsVpcDomainRouterWithSufficientNicCapacity(long vpcId) {
+        int countRouterDefaultNics = 2;
         long countVpcNetworks = _ntwkDao.countVpcNetworks(vpcId);
         List<DomainRouterVO> vpcDomainRoutersVO = routerDao.listByVpcId(vpcId);
-        int availableRouters = vpcDomainRoutersVO.size();
+        int totalNicsAvailable = 0;
 
         for (DomainRouterVO domainRouter : vpcDomainRoutersVO) {
-            if (countVpcNetworks >= networkOrchestrationService.getVirtualMachineMaxNicsValue(domainRouter)) {
-                logger.debug("Virtual router [%s] is unable to reserve the NIC for the new VPC Guest Network.", domainRouter.getName());
-                availableRouters--;
-            }
+            totalNicsAvailable += networkOrchestrationService.getVirtualMachineMaxNicsValue(domainRouter) - countRouterDefaultNics;
         }
 
-        return availableRouters > 0;
+        return totalNicsAvailable > countVpcNetworks;
     }
 
     private void CheckAccountsAccess(Vpc vpc, Account networkAccount) {
