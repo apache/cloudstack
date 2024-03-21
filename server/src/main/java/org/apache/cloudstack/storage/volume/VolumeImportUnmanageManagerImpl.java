@@ -73,6 +73,7 @@ import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageService {
     protected Logger logger = LogManager.getLogger(VolumeImportUnmanageManagerImpl.class);
@@ -178,6 +179,9 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         }
 
         VolumeOnStorageTO volume = volumes.get(0);
+
+        // check if volume is locked
+        checkIfVolumeIsLocked(volume);
 
         // 5. check resource limitation
         checkResourceLimitForImportVolume(owner, volume);
@@ -299,6 +303,16 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
 
     private boolean checkIfVolumeForTemplate(StoragePoolVO pool, String volumePath) {
         return templatePoolDao.findByPoolPath(pool.getId(), volumePath) != null;
+    }
+
+    private void checkIfVolumeIsLocked(VolumeOnStorageTO volume) {
+        Map<VolumeOnStorageTO.Detail, String> volumeDetails = volume.getDetails();
+        if (volumeDetails != null && volumeDetails.containsKey(VolumeOnStorageTO.Detail.IS_LOCKED)) {
+            String isLocked = volumeDetails.get(VolumeOnStorageTO.Detail.IS_LOCKED);
+            if (Boolean.parseBoolean(isLocked)) {
+                logFailureAndThrowException("Volume is locked");
+            }
+        }
     }
 
     private DiskOfferingVO getOrCreateDiskOffering(Account owner, Long diskOfferingId, Long zoneId, boolean isLocal) {
