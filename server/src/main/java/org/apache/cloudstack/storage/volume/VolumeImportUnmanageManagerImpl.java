@@ -109,9 +109,9 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
     private VMTemplatePoolDao templatePoolDao;
 
     private static final String DEFAULT_DISK_OFFERING_NAME = "Default Custom Offering for Volume Import";
-    private static final String DEFAULT_DISK_OFFERING_UNIQUE_NAME = "Custom-Volume-Import";
-    private static final String DEFAULT_DISK_OFFERING_NAME_LOCAL = DEFAULT_DISK_OFFERING_NAME + " - Local Storage";
-    private static final String DEFAULT_DISK_OFFERING_UNIQUE_NAME_LOCAL = DEFAULT_DISK_OFFERING_UNIQUE_NAME + "-Local";
+    private static final String DEFAULT_DISK_OFFERING_UNIQUE_NAME = "Volume-Import";
+    private static final String DISK_OFFERING_NAME_SUFFIX_LOCAL = " - Local Storage";
+    private static final String DISK_OFFERING_UNIQUE_NAME_SUFFIX_LOCAL = "-Local";
 
     private void logFailureAndThrowException(String msg) {
         logger.error(msg);
@@ -351,28 +351,24 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
     }
 
     private DiskOfferingVO getOrCreateDefaultDiskOfferingIdForVolumeImport(boolean isLocalStorage) {
+        final StringBuilder diskOfferingNameBuilder = new StringBuilder(DEFAULT_DISK_OFFERING_NAME);
+        final StringBuilder uniqueNameBuilder = new StringBuilder(DEFAULT_DISK_OFFERING_UNIQUE_NAME);
         if (isLocalStorage) {
-            DiskOfferingVO diskOffering = diskOfferingDao.findByUniqueName(DEFAULT_DISK_OFFERING_UNIQUE_NAME_LOCAL);
-            if (diskOffering != null) {
-                return diskOffering;
-            }
-            DiskOfferingVO newDiskOffering = new DiskOfferingVO(DEFAULT_DISK_OFFERING_NAME_LOCAL, DEFAULT_DISK_OFFERING_NAME_LOCAL,
-                    Storage.ProvisioningType.THIN, 0, null, true, null, null, null);
-            newDiskOffering.setUseLocalStorage(true);
-            newDiskOffering.setUniqueName(DEFAULT_DISK_OFFERING_UNIQUE_NAME_LOCAL);
-            newDiskOffering = diskOfferingDao.persistDefaultDiskOffering(newDiskOffering);
-            return newDiskOffering;
-        } else {
-            DiskOfferingVO diskOffering = diskOfferingDao.findByUniqueName(DEFAULT_DISK_OFFERING_UNIQUE_NAME);
-            if (diskOffering != null) {
-                return diskOffering;
-            }
-            DiskOfferingVO newDiskOffering = new DiskOfferingVO(DEFAULT_DISK_OFFERING_NAME, DEFAULT_DISK_OFFERING_NAME,
-                    Storage.ProvisioningType.THIN, 0, null, true, null, null, null);
-            newDiskOffering.setUniqueName(DEFAULT_DISK_OFFERING_UNIQUE_NAME);
-            newDiskOffering = diskOfferingDao.persistDefaultDiskOffering(newDiskOffering);
-            return newDiskOffering;
+            diskOfferingNameBuilder.append(DISK_OFFERING_NAME_SUFFIX_LOCAL);
+            uniqueNameBuilder.append(DISK_OFFERING_UNIQUE_NAME_SUFFIX_LOCAL);
         }
+        final String diskOfferingName = diskOfferingNameBuilder.toString();
+        final String uniqueName = uniqueNameBuilder.toString();
+        DiskOfferingVO diskOffering = diskOfferingDao.findByUniqueName(uniqueName);
+        if (diskOffering != null) {
+            return diskOffering;
+        }
+        DiskOfferingVO newDiskOffering = new DiskOfferingVO(diskOfferingName, diskOfferingName,
+                Storage.ProvisioningType.THIN, 0, null, true, null, null, null);
+        newDiskOffering.setUseLocalStorage(isLocalStorage);
+        newDiskOffering.setUniqueName(uniqueName);
+        newDiskOffering = diskOfferingDao.persistDefaultDiskOffering(newDiskOffering);
+        return newDiskOffering;
     }
 
     private VolumeVO createRecordsForVolumeImport(VolumeOnStorageTO volume, DiskOfferingVO diskOffering,
