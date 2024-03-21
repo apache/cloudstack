@@ -37,6 +37,7 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.gpu.GPU;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -59,6 +60,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
@@ -96,6 +98,10 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     @Inject
     protected
     HostDao hostDao;
+    @Inject
+    private UserVmManager userVmManager;
+    @Inject
+    private ConfigurationManager configurationManager;
 
     public static ConfigKey<Boolean> VmMinMemoryEqualsMemoryDividedByMemOverprovisioningFactor = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.min.memory.equals.memory.divided.by.mem.overprovisioning.factor", "true",
             "If we set this to 'true', a minimum memory (memory/ mem.overprovisioning.factor) will be set to the VM, independent of using a scalable service offering or not.", true, ConfigKey.Scope.Cluster);
@@ -180,10 +186,12 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     /**
      * Add extra configuration from VM details. Extra configuration is stored as details starting with 'extraconfig'
      */
-    private void addExtraConfig(Map<String, String> details, VirtualMachineTO to) {
+    private void addExtraConfig(Map<String, String> details, VirtualMachineTO to, long accountId, Hypervisor.HypervisorType hypervisorType) {
         for (String key : details.keySet()) {
             if (key.startsWith(ApiConstants.EXTRA_CONFIG)) {
-                to.addExtraConfig(key, details.get(key));
+                String extraConfig = details.get(key);
+                userVmManager.validateExtraConfig(accountId, hypervisorType, extraConfig);
+                to.addExtraConfig(key, extraConfig);
             }
         }
     }
@@ -199,6 +207,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         if (CollectionUtils.isNotEmpty(details)) {
             for (ServiceOfferingDetailsVO detail : details) {
                 if (detail.getName().startsWith(ApiConstants.EXTRA_CONFIG)) {
+                    configurationManager.validateExtraConfigInServiceOfferingDetail(detail.getName());
                     to.addExtraConfig(detail.getName(), detail.getValue());
                 }
             }
@@ -262,7 +271,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         Map<String, String> detailsInVm = _userVmDetailsDao.listDetailsKeyPairs(vm.getId());
         if (detailsInVm != null) {
             to.setDetails(detailsInVm);
-            addExtraConfig(detailsInVm, to);
+            addExtraConfig(detailsInVm, to, vm.getAccountId(), vm.getHypervisorType());
         }
 
         addServiceOfferingExtraConfiguration(offering, to);
