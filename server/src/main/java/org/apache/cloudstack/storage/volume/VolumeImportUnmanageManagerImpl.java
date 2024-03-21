@@ -423,14 +423,16 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         if (!Volume.State.Ready.equals(volumeVO.getState())) {
             logFailureAndThrowException(String.format("Volume (ID: %s) is not ready", volumeId));
         }
+        if (volumeVO.getEncryptFormat() != null) {
+            logFailureAndThrowException(String.format("Volume (ID: %s) is encrypted", volumeId));
+        }
         if (volumeVO.getAttached() != null || volumeVO.getInstanceId() != null) {
             logFailureAndThrowException(String.format("Volume (ID: %s) is attached to VM (ID: %s)", volumeId, volumeVO.getInstanceId()));
         }
         return volumeVO;
     }
 
-    private boolean unmanageVolumeFromDatabase(VolumeVO volume) {
+    private void unmanageVolumeFromDatabase(VolumeVO volume) {
         volumeDao.remove(volume.getId());
-        return true;
     }
 }
