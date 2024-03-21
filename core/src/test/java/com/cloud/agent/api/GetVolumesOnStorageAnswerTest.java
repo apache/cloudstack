@@ -63,4 +63,11 @@ public class GetVolumesOnStorageAnswerTest {
         Assert.assertEquals(path, volume.getPath());
     }
 
+    @Test
+    public void testGetVolumesOnStorageAnswer2() {
+        String details = "details";
+        GetVolumesOnStorageAnswer answer = new GetVolumesOnStorageAnswer(command, false, details);
+        Assert.assertFalse(answer.getResult());
+        Assert.assertEquals(details, answer.getDetails());
+    }
 }

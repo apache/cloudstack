@@ -34,5 +34,6 @@ public class GetVolumesOnStorageCommandTest {
 
         Assert.assertEquals(pool, command.getPool());
         Assert.assertEquals(volumePath, command.getVolumePath());
+        Assert.assertFalse(command.executeInSequence());
     }
 }

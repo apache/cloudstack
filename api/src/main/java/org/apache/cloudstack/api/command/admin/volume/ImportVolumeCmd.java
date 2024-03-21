@@ -105,48 +105,24 @@ public class ImportVolumeCmd extends BaseAsyncCmd {
         return path;
     }
 
-    public void setPath(String path) {
-        this.path = path;
-    }
-
     public Long getStorageId() {
         return storageId;
-    }
-
-    public void setStorageId(Long storageId) {
-        this.storageId = storageId;
     }
 
     public Long getDiskOfferingId() {
         return diskOfferingId;
     }
 
-    public void setDiskOfferingId(Long diskOfferingId) {
-        this.diskOfferingId = diskOfferingId;
-    }
-
     public String getAccountName() {
         return accountName;
-    }
-
-    public void setAccountName(String accountName) {
-        this.accountName = accountName;
     }
 
     public Long getDomainId() {
         return domainId;
     }
 
-    public void setDomainId(Long domainId) {
-        this.domainId = domainId;
-    }
-
     public Long getProjectId() {
         return projectId;
-    }
-
-    public void setProjectId(Long projectId) {
-        this.projectId = projectId;
     }
 
     @Override

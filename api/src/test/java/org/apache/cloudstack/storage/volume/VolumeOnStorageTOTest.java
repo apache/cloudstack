@@ -20,6 +20,9 @@ import com.cloud.hypervisor.Hypervisor;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class VolumeOnStorageTOTest {
 
     private static String path = "path";
@@ -29,13 +32,51 @@ public class VolumeOnStorageTOTest {
     private static long size = 10;
     private static long virtualSize = 20;
     private static String encryptFormat = "LUKS";
+    private static Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType.KVM;
+    private static String BACKING_FILE = "backing file";
+    private static String BACKING_FILE_FORMAT = "qcow2";
 
     @Test
     public void testVolumeOnStorageTO() {
-        VolumeOnStorageTO volumeOnStorageTO = new VolumeOnStorageTO(Hypervisor.HypervisorType.KVM, path, name, fullPath,
+        VolumeOnStorageTO volumeOnStorageTO = new VolumeOnStorageTO(hypervisorType, path, name, fullPath,
                 format, size, virtualSize);
+
+        Assert.assertEquals(hypervisorType, volumeOnStorageTO.getHypervisorType());
+        Assert.assertEquals(path, volumeOnStorageTO.getPath());
+        Assert.assertEquals(name, volumeOnStorageTO.getName());
+        Assert.assertEquals(fullPath, volumeOnStorageTO.getFullPath());
+        Assert.assertEquals(format, volumeOnStorageTO.getFormat());
+        Assert.assertEquals(size, volumeOnStorageTO.getSize());
+        Assert.assertEquals(virtualSize, volumeOnStorageTO.getVirtualSize());
+    }
+
+    @Test
+    public void testVolumeOnStorageTO2() {
+        VolumeOnStorageTO volumeOnStorageTO = new VolumeOnStorageTO(hypervisorType, path, name, size);
+        Assert.assertEquals(hypervisorType, volumeOnStorageTO.getHypervisorType());
+        Assert.assertEquals(path, volumeOnStorageTO.getPath());
+        Assert.assertEquals(name, volumeOnStorageTO.getName());
+        Assert.assertEquals(size, volumeOnStorageTO.getSize());
+    }
+
+    @Test
+    public void testVolumeOnStorageTO3() {
+        VolumeOnStorageTO volumeOnStorageTO = new VolumeOnStorageTO();
+        volumeOnStorageTO.setHypervisorType(hypervisorType);
+        volumeOnStorageTO.setPath(path);
+        volumeOnStorageTO.setFullPath(fullPath);
+        volumeOnStorageTO.setName(name);
+        volumeOnStorageTO.setFormat(format);
+        volumeOnStorageTO.setSize(size);
+        volumeOnStorageTO.setVirtualSize(virtualSize);
         volumeOnStorageTO.setQemuEncryptFormat(encryptFormat);
 
+        Map<VolumeOnStorageTO.Detail, String> details = new HashMap<>();
+        details.put(VolumeOnStorageTO.Detail.BACKING_FILE, BACKING_FILE);
+        volumeOnStorageTO.setDetails(details);
+        volumeOnStorageTO.addDetail(VolumeOnStorageTO.Detail.BACKING_FILE_FORMAT, BACKING_FILE_FORMAT);
+
+        Assert.assertEquals(hypervisorType, volumeOnStorageTO.getHypervisorType());
         Assert.assertEquals(path, volumeOnStorageTO.getPath());
         Assert.assertEquals(name, volumeOnStorageTO.getName());
         Assert.assertEquals(fullPath, volumeOnStorageTO.getFullPath());
@@ -43,6 +84,10 @@ public class VolumeOnStorageTOTest {
         Assert.assertEquals(size, volumeOnStorageTO.getSize());
         Assert.assertEquals(virtualSize, volumeOnStorageTO.getVirtualSize());
         Assert.assertEquals(encryptFormat, volumeOnStorageTO.getQemuEncryptFormat());
-        Assert.assertEquals(path, volumeOnStorageTO.getPath());
+
+        details = volumeOnStorageTO.getDetails();
+        Assert.assertEquals(2, details.size());
+        Assert.assertEquals(BACKING_FILE, details.get(VolumeOnStorageTO.Detail.BACKING_FILE));
+        Assert.assertEquals(BACKING_FILE_FORMAT, details.get(VolumeOnStorageTO.Detail.BACKING_FILE_FORMAT));
     }
 }
