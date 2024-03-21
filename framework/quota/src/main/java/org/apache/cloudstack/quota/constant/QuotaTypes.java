@@ -20,11 +20,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.cloudstack.usage.UsageUnitTypes;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
-import org.apache.commons.lang3.StringUtils;
 
 public class QuotaTypes extends UsageTypes {
     private final Integer quotaType;
