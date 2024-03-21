@@ -32,6 +32,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import com.cloud.network.Network;
+import com.cloud.usage.dao.UsageNetworksDao;
+import com.cloud.usage.parser.NetworksUsageParser;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
@@ -166,6 +169,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     private QuotaAlertManager _alertManager;
     @Inject
     private QuotaStatement _quotaStatement;
+    @Inject
+    private UsageNetworksDao usageNetworksDao;
 
     @Inject
     private BucketStatisticsDao _bucketStatisticsDao;
@@ -1031,6 +1036,10 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 s_logger.debug("Bucket usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
             }
         }
+        parsed = NetworksUsageParser.parse(account, currentStartDate, currentEndDate);
+        if (!parsed) {
+            s_logger.debug(String.format("Networks usage not parsed for account [%s].", account));
+        }
         return parsed;
     }
 
@@ -1065,6 +1074,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 createVmSnapshotOnPrimaryEvent(event);
             } else if (isBackupEvent(eventType)) {
                 createBackupEvent(event);
+            } else if (EventTypes.isNetworkEvent(eventType)) {
+                handleNetworkEvent(event);
             }
         } catch (EntityExistsException e) {
             s_logger.warn(String.format("Failed to create usage event id: %d type: %s due to %s", event.getId(), eventType, e.getMessage()), e);
@@ -2107,6 +2118,21 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             usageBackupDao.removeUsage(accountId, vmId, event.getCreateDate());
         } else if (EventTypes.EVENT_VM_BACKUP_USAGE_METRIC.equals(event.getType())) {
             usageBackupDao.updateMetrics(vmId, event.getSize(), event.getVirtualSize());
+        }
+    }
+
+    private void handleNetworkEvent(UsageEventVO event) {
+        Account account = _accountDao.findByIdIncludingRemoved(event.getAccountId());
+        long domainId = account.getDomainId();
+        if (EventTypes.EVENT_NETWORK_DELETE.equals(event.getType())) {
+            usageNetworksDao.remove(event.getResourceId(), event.getCreateDate());
+        } else if (EventTypes.EVENT_NETWORK_CREATE.equals(event.getType())) {
+            UsageNetworksVO usageNetworksVO = new UsageNetworksVO(event.getResourceId(), event.getOfferingId(), event.getZoneId(), event.getAccountId(), domainId, Network.State.Allocated.name(), event.getCreateDate(), null);
+            usageNetworksDao.persist(usageNetworksVO);
+        } else if (EventTypes.EVENT_NETWORK_UPDATE.equals(event.getType())) {
+            usageNetworksDao.update(event.getResourceId(), event.getOfferingId(), event.getResourceType());
+        } else {
+            s_logger.error(String.format("Unknown event type [%s] in Networks event parser. Skipping it.", event.getType()));
         }
     }
 

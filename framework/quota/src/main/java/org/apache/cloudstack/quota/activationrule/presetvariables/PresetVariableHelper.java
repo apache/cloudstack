@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.cloud.host.HostTagVO;
+import com.cloud.network.dao.NetworkVO;
 import javax.inject.Inject;
 
 import com.cloud.hypervisor.Hypervisor;
@@ -36,6 +37,7 @@ import org.apache.cloudstack.backup.BackupOfferingVO;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
+import org.apache.cloudstack.quota.dao.NetworkDao;
 import org.apache.cloudstack.quota.dao.VmTemplateDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
@@ -170,6 +172,9 @@ public class PresetVariableHelper {
     @Inject
     BackupOfferingDao backupOfferingDao;
 
+    @Inject
+    NetworkDao networkDao;
+
     protected boolean backupSnapshotAfterTakingSnapshot = SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value();
 
     private List<Integer> runningAndAllocatedVmUsageTypes = Arrays.asList(UsageTypes.RUNNING_VM, UsageTypes.ALLOCATED_VM);
@@ -273,6 +278,7 @@ public class PresetVariableHelper {
         loadPresetVariableValueForNetworkOffering(usageRecord, value);
         loadPresetVariableValueForVmSnapshot(usageRecord, value);
         loadPresetVariableValueForBackup(usageRecord, value);
+        loadPresetVariableValueForNetwork(usageRecord, value);
 
         return value;
     }
@@ -687,6 +693,22 @@ public class PresetVariableHelper {
         backupOffering.setExternalId(backupOfferingVo.getExternalId());
 
         return backupOffering;
+    }
+
+    protected void loadPresetVariableValueForNetwork(UsageVO usageRecord, Value value) {
+        int usageType = usageRecord.getUsageType();
+        if (usageType != QuotaTypes.NETWORK) {
+            logNotLoadingMessageInTrace("Network", usageType);
+            return;
+        }
+
+        Long networkId = usageRecord.getUsageId();
+        NetworkVO network = networkDao.findByIdIncludingRemoved(networkId);
+        validateIfObjectIsNull(network, networkId, "Network");
+
+        value.setId(network.getUuid());
+        value.setName(network.getName());
+        value.setState(usageRecord.getState());
     }
 
     /**
