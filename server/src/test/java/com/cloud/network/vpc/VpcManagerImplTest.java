@@ -611,7 +611,7 @@ public class VpcManagerImplTest {
     @Test
     public void existsVpcDomainRouterWithSufficientNicCapacityTestUnavailableRoutersReturnsFalse() {
         Mockito.when(networkDao.countVpcNetworks(vpcId)).thenReturn(8L);
-        Mockito.when(routerDao.listNoRedundantRouterByVpcId(vpcId)).thenReturn(List.of(domainRouter1VOMock, domainRouter2VOMock));
+        Mockito.when(routerDao.listDistinctRouterByVpcId(vpcId)).thenReturn(List.of(domainRouter1VOMock, domainRouter2VOMock));
         Mockito.when(networkOrchestrationServiceMock.getVirtualMachineMaxNicsValue(domainRouter1VOMock)).thenReturn(6);
         Mockito.when(networkOrchestrationServiceMock.getVirtualMachineMaxNicsValue(domainRouter2VOMock)).thenReturn(6);
 
@@ -623,7 +623,7 @@ public class VpcManagerImplTest {
     @Test
     public void existsVpcDomainRouterWithSufficientNicCapacityTestAvailableRouterReturnsTrue() {
         Mockito.when(networkDao.countVpcNetworks(vpcId)).thenReturn(7L);
-        Mockito.when(routerDao.listNoRedundantRouterByVpcId(vpcId)).thenReturn(List.of(domainRouter1VOMock, domainRouter2VOMock));
+        Mockito.when(routerDao.listDistinctRouterByVpcId(vpcId)).thenReturn(List.of(domainRouter1VOMock, domainRouter2VOMock));
         Mockito.when(networkOrchestrationServiceMock.getVirtualMachineMaxNicsValue(domainRouter1VOMock)).thenReturn(6);
         Mockito.when(networkOrchestrationServiceMock.getVirtualMachineMaxNicsValue(domainRouter2VOMock)).thenReturn(6);
 

@@ -2260,7 +2260,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     protected boolean existsVpcDomainRouterWithSufficientNicCapacity(long vpcId) {
         int countRouterDefaultNics = 2;
         long countVpcNetworks = _ntwkDao.countVpcNetworks(vpcId);
-        List<DomainRouterVO> vpcDomainRoutersVO = routerDao.listNoRedundantRouterByVpcId(vpcId);
+        List<DomainRouterVO> vpcDomainRoutersVO = routerDao.listDistinctRouterByVpcId(vpcId);
         int totalNicsAvailable = 0;
 
         for (DomainRouterVO domainRouter : vpcDomainRoutersVO) {
