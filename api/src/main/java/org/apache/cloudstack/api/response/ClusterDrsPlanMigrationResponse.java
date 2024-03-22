@@ -50,11 +50,11 @@ public class ClusterDrsPlanMigrationResponse extends BaseResponse {
     @Param(description = "Destination host for VM migration")
     String destHostName;
 
-    @SerializedName(ApiConstants.JOB_ID)
+    @SerializedName(ApiConstants.MIGRATION_JOB_ID)
     @Param(description = "id of VM migration async job")
     private Long migrationJobId;
 
-    @SerializedName(ApiConstants.JOB_STATUS)
+    @SerializedName(ApiConstants.MIGRATION_JOB_STATUS)
     @Param(description = "Job status of VM migration async job")
     private JobInfo.Status migrationJobStatus;
 
