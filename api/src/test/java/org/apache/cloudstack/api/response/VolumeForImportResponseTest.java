@@ -40,6 +40,7 @@ public final class VolumeForImportResponseTest {
     private static String storagePoolId = "storage pool uuid";
     private static String storagePoolName = "storage pool 1";
     private static String storagePoolType = Storage.StoragePoolType.NetworkFilesystem.name();
+    private static String chainInfo = "chain info";
 
     @Test
     public void testVolumeForImportResponse() {
@@ -55,6 +56,7 @@ public final class VolumeForImportResponseTest {
         response.setStoragePoolType(storagePoolType);
         response.setStoragePoolName(storagePoolName);
         response.setStoragePoolId(storagePoolId);
+        response.setChainInfo(chainInfo);
         Map<String, String> details = new HashMap<>();
         details.put("key", "value");
         response.setDetails(details);
@@ -69,6 +71,7 @@ public final class VolumeForImportResponseTest {
         Assert.assertEquals(storagePoolType, response.getStoragePoolType());
         Assert.assertEquals(storagePoolName, response.getStoragePoolName());
         Assert.assertEquals(storagePoolId, response.getStoragePoolId());
+        Assert.assertEquals(chainInfo, response.getChainInfo());
         Assert.assertEquals(details, response.getDetails());
     }
 }

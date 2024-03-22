@@ -22,7 +22,6 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.user.Account;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -34,7 +33,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.VolumeForImportResponse;
-import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.volume.VolumeImportUnmanageService;
 import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
 
@@ -91,14 +89,5 @@ public class ListVolumesForImportCmd extends BaseListCmd {
         ListResponse<VolumeForImportResponse> response = volumeImportService.listVolumesForImport(this);
         response.setResponseName(getCommandName());
         setResponseObject(response);
-    }
-
-    @Override
-    public long getEntityOwnerId() {
-        Account account = CallContext.current().getCallingAccount();
-        if (account != null) {
-            return account.getId();
-        }
-        return Account.ACCOUNT_ID_SYSTEM;
     }
 }
