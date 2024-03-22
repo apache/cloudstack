@@ -144,7 +144,7 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru implements Networ
     }
 
     @Override
-    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
+    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, String name, Long vpcId, Account owner) {
 
         PhysicalNetworkVO physnet = _physicalNetworkDao.findById(plan.getPhysicalNetworkId());
         DataCenter dc = _dcDao.findById(plan.getDataCenterId());
@@ -154,7 +154,7 @@ public class TungstenGuestNetworkGuru extends GuestNetworkGuru implements Networ
             return null;
         }
 
-        NetworkVO network = (NetworkVO) super.design(offering, plan, userSpecified, owner);
+        NetworkVO network = (NetworkVO) super.design(offering, plan, userSpecified, name, vpcId, owner);
 
         if (network == null) {
             return null;

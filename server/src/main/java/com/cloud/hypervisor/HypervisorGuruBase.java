@@ -18,10 +18,20 @@ package com.cloud.hypervisor;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.domain.Domain;
+import com.cloud.domain.dao.DomainDao;
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -75,6 +85,14 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     @Inject
     protected
     NetworkDao networkDao;
+    @Inject
+    protected VpcDao vpcDao;
+    @Inject
+    protected AccountManager accountManager;
+    @Inject
+    private DomainDao domainDao;
+    @Inject
+    private DataCenterDao dcDao;
     @Inject
     private NetworkOfferingDetailsDao networkOfferingDetailsDao;
     @Inject
@@ -145,9 +163,27 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         to.setMtu(profile.getMtu());
         to.setIp6Dns1(profile.getIPv6Dns1());
         to.setIp6Dns2(profile.getIPv6Dns2());
+        to.setNetworkId(profile.getNetworkId());
 
         NetworkVO network = networkDao.findById(profile.getNetworkId());
         to.setNetworkUuid(network.getUuid());
+        Account account = accountManager.getAccount(network.getAccountId());
+        Domain domain = domainDao.findById(network.getDomainId());
+        DataCenter zone = dcDao.findById(network.getDataCenterId());
+        if (Objects.isNull(zone)) {
+            throw new CloudRuntimeException(String.format("Failed to find zone with ID: %s", network.getDataCenterId()));
+        }
+        if (Objects.isNull(account)) {
+            throw new CloudRuntimeException(String.format("Failed to find account with ID: %s", network.getAccountId()));
+        }
+        if (Objects.isNull(domain)) {
+            throw new CloudRuntimeException(String.format("Failed to find domain with ID: %s", network.getDomainId()));
+        }
+        VpcVO vpc = null;
+        if (Objects.nonNull(network.getVpcId())) {
+            vpc = vpcDao.findById(network.getVpcId());
+        }
+        to.setNetworkSegmentName(getNetworkName(zone.getId(), domain.getId(), account.getId(), vpc, network.getId()));
 
         // Workaround to make sure the TO has the UUID we need for Nicira integration
         NicVO nicVO = nicDao.findById(profile.getId());
@@ -175,6 +211,15 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         // configuration. Use full when vm stop/start
         return to;
     }
+
+    private String getNetworkName(long zoneId, long domainId, long accountId, VpcVO vpc, long networkId) {
+        String prefix = String.format("D%s-A%s-Z%s", domainId, accountId, zoneId);
+        if (Objects.isNull(vpc)) {
+            return prefix + "-S" + networkId;
+        }
+        return prefix + "-V" + vpc.getId() + "-S" + networkId;
+    }
+
 
     /**
      * Add extra configuration from VM details. Extra configuration is stored as details starting with 'extraconfig'

@@ -3058,6 +3058,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     disk.setBusType(DiskDef.DiskBus.SCSI);
                 }
             } else {
+                if (pool == null) {
+                    throw new CloudRuntimeException(String.format("Found null pool for volume %s", volume));
+                }
+
+                disk.setLogicalBlockIOSize(pool.getSupportedLogicalBlockSize());
+                disk.setPhysicalBlockIOSize(pool.getSupportedPhysicalBlockSize());
+
                 if (diskBusType == DiskDef.DiskBus.SCSI ) {
                     disk.setQemuDriver(true);
                     disk.setDiscard(DiscardType.UNMAP);
@@ -3486,6 +3493,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 if (cacheMode != null) {
                     diskdef.setCacheMode(DiskDef.DiskCacheMode.valueOf(cacheMode.toUpperCase()));
                 }
+
+                diskdef.setPhysicalBlockIOSize(attachingPool.getSupportedPhysicalBlockSize());
+                diskdef.setLogicalBlockIOSize(attachingPool.getSupportedLogicalBlockSize());
             }
 
             final String xml = diskdef.toString();

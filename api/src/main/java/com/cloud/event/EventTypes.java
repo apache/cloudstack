@@ -31,6 +31,7 @@ import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.ha.HAConfig;
 import org.apache.cloudstack.storage.object.Bucket;
 import org.apache.cloudstack.storage.object.ObjectStore;
+import org.apache.cloudstack.quota.QuotaTariff;
 import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.vm.schedule.VMSchedule;
 
@@ -303,6 +304,7 @@ public class EventTypes {
     public static final String EVENT_VOLUME_CREATE = "VOLUME.CREATE";
     public static final String EVENT_VOLUME_DELETE = "VOLUME.DELETE";
     public static final String EVENT_VOLUME_ATTACH = "VOLUME.ATTACH";
+    public static final String EVENT_VOLUME_CHECK = "VOLUME.CHECK";
     public static final String EVENT_VOLUME_DETACH = "VOLUME.DETACH";
     public static final String EVENT_VOLUME_EXTRACT = "VOLUME.EXTRACT";
     public static final String EVENT_VOLUME_UPLOAD = "VOLUME.UPLOAD";
@@ -727,6 +729,11 @@ public class EventTypes {
     public static final String EVENT_BUCKET_CREATE = "BUCKET.CREATE";
     public static final String EVENT_BUCKET_DELETE = "BUCKET.DELETE";
     public static final String EVENT_BUCKET_UPDATE = "BUCKET.UPDATE";
+
+    // Quota
+    public static final String EVENT_QUOTA_TARIFF_CREATE = "QUOTA.TARIFF.CREATE";
+    public static final String EVENT_QUOTA_TARIFF_DELETE = "QUOTA.TARIFF.DELETE";
+    public static final String EVENT_QUOTA_TARIFF_UPDATE = "QUOTA.TARIFF.UPDATE";
 
     static {
 
@@ -1177,6 +1184,11 @@ public class EventTypes {
         entityEventDetails.put(EVENT_BUCKET_CREATE, Bucket.class);
         entityEventDetails.put(EVENT_BUCKET_UPDATE, Bucket.class);
         entityEventDetails.put(EVENT_BUCKET_DELETE, Bucket.class);
+
+        // Quota
+        entityEventDetails.put(EVENT_QUOTA_TARIFF_CREATE, QuotaTariff.class);
+        entityEventDetails.put(EVENT_QUOTA_TARIFF_DELETE, QuotaTariff.class);
+        entityEventDetails.put(EVENT_QUOTA_TARIFF_UPDATE, QuotaTariff.class);
     }
 
     public static String getEntityForEvent(String eventName) {

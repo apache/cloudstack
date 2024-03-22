@@ -101,8 +101,10 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcGatewayVO;
 import com.cloud.network.vpc.dao.PrivateIpDao;
+import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Detail;
@@ -178,6 +180,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     ProjectDao projectDao;
     @Inject
     NetworkPermissionDao _networkPermissionDao;
+    @Inject
+    VpcDao vpcDao;
 
     private List<NetworkElement> networkElements;
 
@@ -489,7 +493,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     @Override
     public Map<Provider, ArrayList<PublicIpAddress>> getProviderToIpList(Network network, Map<PublicIpAddress, Set<Service>> ipToServices) {
         NetworkOffering offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-        if (!offering.isConserveMode()) {
+        if (!offering.isConserveMode() && !offering.isForNsx()) {
             for (PublicIpAddress ip : ipToServices.keySet()) {
                 Set<Service> services = new HashSet<Service>();
                 services.addAll(ipToServices.get(ip));
@@ -1615,7 +1619,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         if (!canIpUsedForService(publicIp, service, networkId)) {
             return false;
         }
-        if (!offering.isConserveMode()) {
+        if (!offering.isConserveMode() && !offering.isForNsx()) {
             return canIpUsedForNonConserveService(publicIp, service);
         }
         return true;
@@ -2713,6 +2717,12 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         if (StringUtils.isNotBlank(network.getDns1())) {
             return new Pair<>(network.getDns1(), network.getDns2());
         }
+        if (network.getVpcId() != null) {
+            Vpc vpc = vpcDao.findById(network.getVpcId());
+            if (vpc != null && StringUtils.isNotBlank(vpc.getIp4Dns1())) {
+                return new Pair<>(vpc.getIp4Dns1(), vpc.getIp4Dns2());
+            }
+        }
         return new Pair<>(zone.getDns1(), zone.getDns2());
     }
 
@@ -2720,6 +2730,12 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     public Pair<String, String> getNetworkIp6Dns(final Network network, final DataCenter zone) {
         if (StringUtils.isNotBlank(network.getIp6Dns1())) {
             return new Pair<>(network.getIp6Dns1(), network.getIp6Dns2());
+        }
+        if (network.getVpcId() != null) {
+            Vpc vpc = vpcDao.findById(network.getVpcId());
+            if (vpc != null && StringUtils.isNotBlank(vpc.getIp6Dns1())) {
+                return new Pair<>(vpc.getIp6Dns1(), vpc.getIp6Dns2());
+            }
         }
         return new Pair<>(zone.getIp6Dns1(), zone.getIp6Dns2());
     }
