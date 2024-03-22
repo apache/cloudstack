@@ -4607,10 +4607,16 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         final NicVO vo = Transaction.execute(new TransactionCallback<NicVO>() {
             @Override
             public NicVO doInTransaction(TransactionStatus status) {
-                NicVO existingNic = _nicDao.findByNetworkIdAndMacAddress(network.getId(), macAddress);
-                String macAddressToPersist = macAddress;
+                if (StringUtils.isBlank(macAddress)) {
+                    throw new CloudRuntimeException("Mac address not specified");
+                }
+                String macAddressToPersist = macAddress.trim();
+                if (!NetUtils.isValidMac(macAddressToPersist)) {
+                    throw new CloudRuntimeException("Invalid mac address: " + macAddressToPersist);
+                }
+                NicVO existingNic = _nicDao.findByNetworkIdAndMacAddress(network.getId(), macAddressToPersist);
                 if (existingNic != null) {
-                    macAddressToPersist = generateNewMacAddressIfForced(network, macAddress, forced);
+                    macAddressToPersist = generateNewMacAddressIfForced(network, macAddressToPersist, forced);
                 }
                 NicVO vo = new NicVO(network.getGuruName(), vm.getId(), network.getId(), vm.getType());
                 vo.setMacAddress(macAddressToPersist);

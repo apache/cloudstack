@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.Storage;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
 import org.apache.commons.collections.CollectionUtils;
@@ -618,6 +619,28 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         if (keyword != null) {
             sc.and(sc.entity().getName(), Op.LIKE,  "%" + keyword + "%");
         }
+        return sc.list();
+    }
+
+    @Override
+    public List<StoragePoolVO> findZoneWideStoragePoolsByHypervisorAndPoolType(long dataCenterId, HypervisorType hypervisorType, Storage.StoragePoolType poolType) {
+        QueryBuilder<StoragePoolVO> sc = QueryBuilder.create(StoragePoolVO.class);
+        sc.and(sc.entity().getDataCenterId(), Op.EQ, dataCenterId);
+        sc.and(sc.entity().getStatus(), Op.EQ, StoragePoolStatus.Up);
+        sc.and(sc.entity().getScope(), Op.EQ, ScopeType.ZONE);
+        sc.and(sc.entity().getHypervisor(), Op.EQ, hypervisorType);
+        sc.and(sc.entity().getPoolType(), Op.EQ, poolType);
+        return sc.list();
+    }
+
+    @Override
+    public List<StoragePoolVO> findClusterWideStoragePoolsByHypervisorAndPoolType(long clusterId, HypervisorType hypervisorType, Storage.StoragePoolType poolType) {
+        QueryBuilder<StoragePoolVO> sc = QueryBuilder.create(StoragePoolVO.class);
+        sc.and(sc.entity().getClusterId(), Op.EQ, clusterId);
+        sc.and(sc.entity().getStatus(), Op.EQ, StoragePoolStatus.Up);
+        sc.and(sc.entity().getScope(), Op.EQ, ScopeType.CLUSTER);
+        sc.and(sc.entity().getHypervisor(), Op.EQ, hypervisorType);
+        sc.and(sc.entity().getPoolType(), Op.EQ, poolType);
         return sc.list();
     }
 

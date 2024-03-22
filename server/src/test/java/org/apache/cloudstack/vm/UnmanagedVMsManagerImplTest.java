@@ -651,9 +651,9 @@ public class UnmanagedVMsManagerImplTest {
             when(imageStoreDao.findOneByZoneAndProtocol(zoneId, "nfs")).thenReturn(imageStoreVO);
             when(dataStoreManager.getDataStore(1L, DataStoreRole.Image)).thenReturn(dataStore);
         }
-        when(primaryDataStoreDao.listPoolsByCluster(clusterId)).thenReturn(List.of(destPool));
         when(primaryDataStoreDao.listPoolByHostPath(Mockito.anyString(), Mockito.anyString())).thenReturn(List.of(destPool));
-        when(primaryDataStoreDao.findZoneWideStoragePoolsByHypervisor(zoneId, Hypervisor.HypervisorType.KVM)).thenReturn(List.of(zoneDestPool));
+        when(primaryDataStoreDao.findClusterWideStoragePoolsByHypervisorAndPoolType(clusterId, Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.NetworkFilesystem)).thenReturn(List.of(destPool));
+        when(primaryDataStoreDao.findZoneWideStoragePoolsByHypervisorAndPoolType(zoneId, Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.NetworkFilesystem)).thenReturn(List.of(zoneDestPool));
 
         if (VcenterParameter.EXISTING == vcenterParameter) {
             VmwareDatacenterVO datacenterVO = mock(VmwareDatacenterVO.class);

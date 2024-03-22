@@ -76,6 +76,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         List<String> destinationStoragePools = cmd.getDestinationStoragePools();
         DataStoreTO conversionTemporaryLocation = cmd.getConversionTemporaryLocation();
         String ovaTemplateDirAndNameOnConversionLocation = cmd.getTemplateDirAndNameOnConversionLocation();
+        String sourceOVAFile = ovaTemplateDirAndNameOnConversionLocation + ".ova";
         long timeout = (long) cmd.getWait() * 1000;
 
         if (!isInstanceConversionSupportedOnHost()) {
@@ -96,18 +97,17 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         final KVMStoragePoolManager storagePoolMgr = serverResource.getStoragePoolMgr();
         KVMStoragePool temporaryStoragePool = getTemporaryStoragePool(conversionTemporaryLocation, storagePoolMgr);
 
-        s_logger.info(String.format("Attempting to convert the instance %s from %s to KVM",
-                sourceInstanceName, sourceHypervisorType));
+        s_logger.info(String.format("Attempting to convert the OVA %s of the instance %s from %s to KVM", sourceOVAFile, sourceInstanceName, sourceHypervisorType));
         final String temporaryConvertUuid = UUID.randomUUID().toString();
         final String temporaryConvertPath = temporaryStoragePool.getLocalPath();
-        final String sourceOVAFile = String.format("%s/%s/%s.ova", temporaryConvertPath, ovaTemplateDirAndNameOnConversionLocation, ovaTemplateDirAndNameOnConversionLocation);
+        final String sourceOVAFilePath = String.format("%s/%s/%s", temporaryConvertPath, ovaTemplateDirAndNameOnConversionLocation, sourceOVAFile);
         boolean verboseModeEnabled = serverResource.isConvertInstanceVerboseModeEnabled();
 
         try {
-            boolean result = performInstanceConversion(sourceOVAFile, temporaryConvertPath, temporaryConvertUuid,
+            boolean result = performInstanceConversion(sourceOVAFilePath, temporaryConvertPath, temporaryConvertUuid,
                     timeout, verboseModeEnabled);
             if (!result) {
-                String err = String.format("The virt-v2v conversion for the ova %s failed. " +
+                String err = String.format("The virt-v2v conversion for the OVA %s failed. " +
                                 "Please check the agent logs for the virt-v2v output", sourceOVAFile);
                 s_logger.error(err);
                 return new ConvertInstanceAnswer(cmd, false, err);
@@ -235,6 +235,11 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
                 s_logger.error(err);
                 continue;
             }
+            if (destinationPool.getType() != Storage.StoragePoolType.NetworkFilesystem) {
+                String err = String.format("Storage pool by URI: %s is not an NFS storage", poolPath);
+                s_logger.error(err);
+                continue;
+            }
             KVMPhysicalDisk sourceDisk = temporaryDisks.get(i);
             if (s_logger.isDebugEnabled()) {
                 String msg = String.format("Trying to copy converted instance disk number %s from the temporary location %s" +
@@ -306,23 +311,26 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         String sourceHostIp = null;
         String sourcePath = null;
         String storagePoolMountPoint = Script.runSimpleBashScript(String.format("mount | grep %s", storagePool.getLocalPath()));
+        s_logger.debug(String.format("NFS Storage pool: %s - local path: %s, mount point: %s", storagePool.getUuid(), storagePool.getLocalPath(), storagePoolMountPoint));
         if (StringUtils.isNotEmpty(storagePoolMountPoint)) {
             String[] res = storagePoolMountPoint.strip().split(" ");
             res = res[0].split(":");
-            sourceHostIp = res[0].strip();
-            sourcePath = res[1].strip();
+            if (res.length > 1) {
+                sourceHostIp = res[0].strip();
+                sourcePath = res[1].strip();
+            }
         }
         return new Pair<>(sourceHostIp, sourcePath);
     }
 
-    protected boolean performInstanceConversion(String sourceOVAFile,
+    protected boolean performInstanceConversion(String sourceOVAFilePath,
                                                 String temporaryConvertFolder,
                                                 String temporaryConvertUuid,
                                                 long timeout, boolean verboseModeEnabled) {
         Script script = new Script("virt-v2v", timeout, s_logger);
         script.add("--root", "first");
         script.add("-i", "ova");
-        script.add(sourceOVAFile);
+        script.add(sourceOVAFilePath);
         script.add("-o", "local");
         script.add("-os", temporaryConvertFolder);
         script.add("-of", "qcow2");
@@ -331,7 +339,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
             script.add("-v");
         }
 
-        String logPrefix = String.format("virt-v2v ova source: %s progress", sourceOVAFile);
+        String logPrefix = String.format("virt-v2v ova source: %s progress", sourceOVAFilePath);
         OutputInterpreter.LineByLineOutputLogger outputLogger = new OutputInterpreter.LineByLineOutputLogger(s_logger, logPrefix);
         script.execute(outputLogger);
         int exitValue = script.getExitValue();
