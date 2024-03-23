@@ -52,7 +52,7 @@ public class MockStoragePoolDaoImpl extends GenericDaoBase<MockStoragePoolVO, Lo
     public MockStoragePoolVO findByHost(String hostUuid) {
         SearchCriteria<MockStoragePoolVO> sc = hostguidSearch.create();
         sc.setParameters("hostguid", hostUuid);
-        sc.setParameters("type", StoragePoolType.Filesystem.toString());
+        sc.setParameters("type", StoragePoolType.Filesystem);
         return findOneBy(sc);
     }
 

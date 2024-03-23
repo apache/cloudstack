@@ -44,7 +44,6 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -62,8 +61,6 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class RoleManagerImpl extends ManagerBase implements RoleService, Configurable, PluggableService {
-
-    private Logger logger = Logger.getLogger(getClass());
 
     @Inject
     private AccountDao accountDao;
@@ -94,7 +91,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
     }
 
     @Override
-    public Role findRole(Long id, boolean removePrivateRoles) {
+    public Role findRole(Long id, boolean ignorePrivateRoles) {
         if (id == null || id < 1L) {
             logger.trace(String.format("Role ID is invalid [%s]", id));
             return null;
@@ -104,11 +101,34 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
             logger.trace(String.format("Role not found [id=%s]", id));
             return null;
         }
-        if (!isCallerRootAdmin() && (RoleType.Admin == role.getRoleType() || (!role.isPublicRole() && removePrivateRoles))) {
+        if (!isCallerRootAdmin() && (RoleType.Admin == role.getRoleType() || (!role.isPublicRole() && ignorePrivateRoles))) {
             logger.debug(String.format("Role [id=%s, name=%s] is either of 'Admin' type or is private and is only visible to 'Root admins'.", id, role.getName()));
             return null;
         }
         return role;
+    }
+
+    @Override
+    public List<Role> findRoles(List<Long> ids, boolean ignorePrivateRoles) {
+        List<Role> result = new ArrayList<>();
+        if (CollectionUtils.isEmpty(ids)) {
+            logger.trace(String.format("Role IDs are invalid [%s]", ids));
+            return result;
+        }
+
+        List<RoleVO> roles = roleDao.searchByIds(ids.toArray(new Long[0]));
+        if (CollectionUtils.isEmpty(roles)) {
+            logger.trace(String.format("Roles not found [ids=%s]", ids));
+            return result;
+        }
+        for (Role role : roles) {
+            if (!isCallerRootAdmin() && (RoleType.Admin == role.getRoleType() || (!role.isPublicRole() && ignorePrivateRoles))) {
+                logger.debug(String.format("Role [id=%s, name=%s] is either of 'Admin' type or is private and is only visible to 'Root admins'.", role.getId(), role.getName()));
+                continue;
+            }
+            result.add(role);
+        }
+        return result;
     }
 
     @Override

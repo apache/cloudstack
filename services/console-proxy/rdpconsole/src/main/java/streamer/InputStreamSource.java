@@ -20,7 +20,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.log4j.Logger;
 
 import streamer.debug.FakeSink;
 
@@ -28,7 +27,6 @@ import streamer.debug.FakeSink;
  * Source element, which reads data from InputStream.
  */
 public class InputStreamSource extends BaseElement {
-    private static final Logger s_logger = Logger.getLogger(InputStreamSource.class);
 
     protected InputStream is;
     protected SocketWrapperImpl socketWrapper;
@@ -151,13 +149,13 @@ public class InputStreamSource extends BaseElement {
         try {
             is.close();
         } catch (IOException e) {
-            s_logger.info("[ignored]"
+            logger.info("[ignored]"
                     + "io error on input stream: " + e.getLocalizedMessage());
         }
         try {
             sendEventToAllPads(Event.STREAM_CLOSE, Direction.OUT);
         } catch (Exception e) {
-            s_logger.info("[ignored]"
+            logger.info("[ignored]"
                     + "error sending an event to all pods: " + e.getLocalizedMessage());
         }
     }

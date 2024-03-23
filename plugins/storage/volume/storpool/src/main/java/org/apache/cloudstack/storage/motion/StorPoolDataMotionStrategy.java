@@ -59,7 +59,8 @@ import org.apache.cloudstack.storage.snapshot.StorPoolConfigurationManager;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.commons.collections.MapUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
@@ -99,7 +100,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
 public class StorPoolDataMotionStrategy implements DataMotionStrategy {
-    private static final Logger log = Logger.getLogger(StorPoolDataMotionStrategy.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
     private SnapshotDataFactory _snapshotDataFactory;
@@ -189,7 +190,7 @@ public class StorPoolDataMotionStrategy implements DataMotionStrategy {
         CopyCmdAnswer answer = null;
         String err = null;
         if (res.getError() != null) {
-            log.debug(String.format("Could not create volume from snapshot with ID=%s", snapshot.getId()));
+            logger.debug(String.format("Could not create volume from snapshot with ID=%s", snapshot.getId()));
             StorPoolUtil.spLog("Volume create failed with error=%s", res.getError().getDescr());
             err = res.getError().getDescr();
         } else {
@@ -217,7 +218,7 @@ public class StorPoolDataMotionStrategy implements DataMotionStrategy {
                     if (answer != null && answer.getResult()) {
                         SpApiResponse resSnapshot = StorPoolUtil.volumeFreeze(volumeName, conn);
                         if (resSnapshot.getError() != null) {
-                            log.debug(String.format("Could not snapshot volume with ID=%s", snapshot.getId()));
+                            logger.debug(String.format("Could not snapshot volume with ID=%s", snapshot.getId()));
                             StorPoolUtil.spLog("Volume freeze failed with error=%s", resSnapshot.getError().getDescr());
                             err = resSnapshot.getError().getDescr();
                             StorPoolUtil.volumeDelete(volumeName, conn);
@@ -385,7 +386,7 @@ public class StorPoolDataMotionStrategy implements DataMotionStrategy {
             errMsg = String.format(
                     "Copy volume(s) of VM [%s] to storage(s) [%s] and VM to host [%s] failed in StorPoolDataMotionStrategy.copyAsync. Error message: [%s].",
                     vmTO.getId(), srcHost.getId(), destHost.getId(), ex.getMessage());
-            log.error(errMsg, ex);
+            logger.error(errMsg, ex);
 
             throw new CloudRuntimeException(errMsg);
         } finally {
@@ -441,7 +442,7 @@ public class StorPoolDataMotionStrategy implements DataMotionStrategy {
                     throw new AgentUnavailableException(msg, destHost.getId());
                 }
             } catch (Exception e) {
-                log.debug("Failed to disconnect one or more (original) dest volumes", e);
+                logger.debug("Failed to disconnect one or more (original) dest volumes", e);
             }
         }
 
@@ -469,10 +470,10 @@ public class StorPoolDataMotionStrategy implements DataMotionStrategy {
                     AsyncCallFuture<VolumeApiResult> destroyFuture = _volumeService.expungeVolumeAsync(srcVolumeInfo);
 
                     if (destroyFuture.get().isFailed()) {
-                        log.debug("Failed to clean up source volume on storage");
+                        logger.debug("Failed to clean up source volume on storage");
                     }
                 } catch (Exception e) {
-                    log.debug("Failed to clean up source volume on storage", e);
+                    logger.debug("Failed to clean up source volume on storage", e);
                 }
 
                 // Update the volume ID for snapshots on secondary storage
@@ -484,13 +485,13 @@ public class StorPoolDataMotionStrategy implements DataMotionStrategy {
                 try {
                     disconnectHostFromVolume(destHost, destVolumeInfo.getPoolId(), destVolumeInfo.getPath());
                 } catch (Exception e) {
-                    log.debug("Failed to disconnect (new) dest volume", e);
+                    logger.debug("Failed to disconnect (new) dest volume", e);
                 }
 
                 try {
                     _volumeService.revokeAccess(destVolumeInfo, destHost, destVolumeInfo.getDataStore());
                 } catch (Exception e) {
-                    log.debug("Failed to revoke access from dest volume", e);
+                    logger.debug("Failed to revoke access from dest volume", e);
                 }
 
                 destVolumeInfo.processEvent(Event.OperationFailed);
@@ -504,10 +505,10 @@ public class StorPoolDataMotionStrategy implements DataMotionStrategy {
                     AsyncCallFuture<VolumeApiResult> destroyFuture = _volumeService.expungeVolumeAsync(destVolumeInfo);
 
                     if (destroyFuture.get().isFailed()) {
-                        log.debug("Failed to clean up dest volume on storage");
+                        logger.debug("Failed to clean up dest volume on storage");
                     }
                 } catch (Exception e) {
-                    log.debug("Failed to clean up dest volume on storage", e);
+                    logger.debug("Failed to clean up dest volume on storage", e);
                 }
             }
         }

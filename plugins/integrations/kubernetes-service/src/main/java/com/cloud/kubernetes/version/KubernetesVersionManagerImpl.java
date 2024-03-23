@@ -31,10 +31,11 @@ import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.version.ListKubernetesSupportedVersionsCmd;
 import org.apache.cloudstack.api.response.KubernetesSupportedVersionResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.log4j.Logger;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.api.query.vo.TemplateJoinVO;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.ActionEvent;
@@ -56,10 +57,8 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.commons.lang3.StringUtils;
 
 public class KubernetesVersionManagerImpl extends ManagerBase implements KubernetesVersionService {
-    public static final Logger LOGGER = Logger.getLogger(KubernetesVersionManagerImpl.class.getName());
 
     @Inject
     private KubernetesSupportedVersionDao kubernetesSupportedVersionDao;
@@ -103,7 +102,10 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         if (template != null) {
             response.setIsoId(template.getUuid());
             response.setIsoName(template.getName());
-            response.setIsoState(template.getState().toString());
+            if (template.getState() != null) {
+                response.setIsoState(template.getState().toString());
+            }
+            response.setDirectDownload(template.isDirectDownload());
         }
         response.setCreated(kubernetesSupportedVersion.getCreated());
         return response;
@@ -139,7 +141,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
                         versions.remove(i);
                     }
                 } catch (IllegalArgumentException e) {
-                    LOGGER.warn(String.format("Unable to compare Kubernetes version for supported version ID: %s with %s", version.getUuid(), minimumSemanticVersion));
+                    logger.warn(String.format("Unable to compare Kubernetes version for supported version ID: %s with %s", version.getUuid(), minimumSemanticVersion));
                     versions.remove(i);
                 }
             }
@@ -147,7 +149,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         return versions;
     }
 
-    private VirtualMachineTemplate registerKubernetesVersionIso(final Long zoneId, final String versionName, final String isoUrl, final String isoChecksum)throws IllegalAccessException, NoSuchFieldException,
+    private VirtualMachineTemplate registerKubernetesVersionIso(final Long zoneId, final String versionName, final String isoUrl, final String isoChecksum, final boolean directDownload) throws IllegalAccessException, NoSuchFieldException,
             IllegalArgumentException, ResourceAllocationException {
         String isoName = String.format("%s-Kubernetes-Binaries-ISO", versionName);
         RegisterIsoCmd registerIsoCmd = new RegisterIsoCmd();
@@ -163,6 +165,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         if (StringUtils.isNotEmpty(isoChecksum)) {
             registerIsoCmd.setChecksum(isoChecksum);
         }
+        registerIsoCmd.setDirectDownload(directDownload);
         registerIsoCmd.setAccountName(accountManager.getSystemAccount().getAccountName());
         registerIsoCmd.setDomainId(accountManager.getSystemAccount().getDomainId());
         return templateService.registerIso(registerIsoCmd);
@@ -288,6 +291,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         final String isoChecksum = cmd.getChecksum();
         final Integer minimumCpu = cmd.getMinimumCpu();
         final Integer minimumRamSize = cmd.getMinimumRamSize();
+        final boolean isDirectDownload = cmd.isDirectDownload();
         if (minimumCpu == null || minimumCpu < KubernetesClusterService.MIN_KUBERNETES_CLUSTER_NODE_CPU) {
             throw new InvalidParameterValueException(String.format("Invalid value for %s parameter. Minimum %d vCPUs required.", ApiConstants.MIN_CPU_NUMBER, KubernetesClusterService.MIN_KUBERNETES_CLUSTER_NODE_CPU));
         }
@@ -297,8 +301,14 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         if (compareSemanticVersions(semanticVersion, MIN_KUBERNETES_VERSION) < 0) {
             throw new InvalidParameterValueException(String.format("New supported Kubernetes version cannot be added as %s is minimum version supported by Kubernetes Service", MIN_KUBERNETES_VERSION));
         }
-        if (zoneId != null && dataCenterDao.findById(zoneId) == null) {
-            throw new InvalidParameterValueException("Invalid zone specified");
+        if (zoneId != null) {
+            DataCenter zone = dataCenterDao.findById(zoneId);
+            if (zone == null) {
+                throw new InvalidParameterValueException("Invalid zone specified");
+            }
+            if (DataCenter.Type.Edge.equals(zone.getType()) && !isDirectDownload) {
+                throw new InvalidParameterValueException(String.format("Zone: %s supports only direct download Kubernetes versions", zone.getName()));
+            }
         }
         if (StringUtils.isEmpty(isoUrl)) {
             throw new InvalidParameterValueException(String.format("Invalid URL for ISO specified, %s", isoUrl));
@@ -312,10 +322,10 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
 
         VMTemplateVO template = null;
         try {
-            VirtualMachineTemplate vmTemplate = registerKubernetesVersionIso(zoneId, name, isoUrl, isoChecksum);
+            VirtualMachineTemplate vmTemplate = registerKubernetesVersionIso(zoneId, name, isoUrl, isoChecksum, isDirectDownload);
             template = templateDao.findById(vmTemplate.getId());
         } catch (IllegalAccessException | NoSuchFieldException | IllegalArgumentException | ResourceAllocationException ex) {
-            LOGGER.error(String.format("Unable to register binaries ISO for supported kubernetes version, %s, with url: %s", name, isoUrl), ex);
+            logger.error(String.format("Unable to register binaries ISO for supported kubernetes version, %s, with url: %s", name, isoUrl), ex);
             throw new CloudRuntimeException(String.format("Unable to register binaries ISO for supported kubernetes version, %s, with url: %s", name, isoUrl));
         }
 
@@ -343,13 +353,13 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
 
         VMTemplateVO template = templateDao.findByIdIncludingRemoved(version.getIsoId());
         if (template == null) {
-            LOGGER.warn(String.format("Unable to find ISO associated with supported Kubernetes version ID: %s", version.getUuid()));
+            logger.warn(String.format("Unable to find ISO associated with supported Kubernetes version ID: %s", version.getUuid()));
         }
         if (template != null && template.getRemoved() == null) { // Delete ISO
             try {
                 deleteKubernetesVersionIso(template.getId());
             } catch (IllegalAccessException | NoSuchFieldException | IllegalArgumentException ex) {
-                LOGGER.error(String.format("Unable to delete binaries ISO ID: %s associated with supported kubernetes version ID: %s", template.getUuid(), version.getUuid()), ex);
+                logger.error(String.format("Unable to delete binaries ISO ID: %s associated with supported kubernetes version ID: %s", template.getUuid(), version.getUuid()), ex);
                 throw new CloudRuntimeException(String.format("Unable to delete binaries ISO ID: %s associated with supported kubernetes version ID: %s", template.getUuid(), version.getUuid()));
             }
         }

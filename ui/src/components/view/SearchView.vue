@@ -339,7 +339,8 @@ export default {
           { value: 'Template' },
           { value: 'User' },
           { value: 'VirtualMachine' },
-          { value: 'Volume' }
+          { value: 'Volume' },
+          { value: 'QuotaTariff' }
         ]
         this.fields[resourceTypeIndex].loading = false
       }
@@ -603,30 +604,35 @@ export default {
       return types
     },
     fetchState () {
-      const state = []
-      if (this.apiName.indexOf('listVolumes') > -1) {
-        state.push({
-          id: 'Allocated',
-          name: 'label.allocated'
-        })
-        state.push({
-          id: 'Ready',
-          name: 'label.isready'
-        })
-        state.push({
-          id: 'Destroy',
-          name: 'label.destroy'
-        })
-        state.push({
-          id: 'Expunging',
-          name: 'label.expunging'
-        })
-        state.push({
-          id: 'Expunged',
-          name: 'label.expunged'
-        })
+      if (this.apiName.includes('listVolumes')) {
+        return [
+          {
+            id: 'Allocated',
+            name: 'label.allocated'
+          },
+          {
+            id: 'Ready',
+            name: 'label.isready'
+          },
+          {
+            id: 'Destroy',
+            name: 'label.destroy'
+          },
+          {
+            id: 'Expunging',
+            name: 'label.expunging'
+          },
+          {
+            id: 'Expunged',
+            name: 'label.expunged'
+          },
+          {
+            id: 'Migrating',
+            name: 'label.migrating'
+          }
+        ]
       }
-      return state
+      return []
     },
     fetchEntityType () {
       const entityType = []

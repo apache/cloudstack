@@ -19,8 +19,12 @@ package org.apache.cloudstack.network.router.deployment;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
-import org.apache.log4j.Logger;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.Vlan;
+import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.element.NsxProviderVO;
 
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
@@ -44,7 +48,6 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.VirtualMachineProfile.Param;
 
 public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
-    private static final Logger logger = Logger.getLogger(VpcRouterDeploymentDefinition.class);
 
     protected VpcDao vpcDao;
     protected VpcOfferingDao vpcOffDao;
@@ -120,8 +123,26 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
     @Override
     protected void findSourceNatIP() throws InsufficientAddressCapacityException, ConcurrentOperationException {
         sourceNatIp = null;
+        DataCenter zone = dest.getDataCenter();
+        Long zoneId = null;
+        if (Objects.nonNull(zone)) {
+            zoneId = zone.getId();
+        }
+        NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(zoneId);
+
         if (isPublicNetwork) {
-            sourceNatIp = vpcMgr.assignSourceNatIpAddressToVpc(owner, vpc);
+            if (Objects.isNull(nsxProvider)) {
+                sourceNatIp = vpcMgr.assignSourceNatIpAddressToVpc(owner, vpc);
+            } else {
+                // NSX deploys VRs with Public NIC != to the source NAT, the source NAT IP is on the NSX Public range
+                sourceNatIp = ipAddrMgr.assignPublicIpAddress(zoneId, getPodId(), owner, Vlan.VlanType.VirtualNetwork, null, null, false, true);
+                if (vpc != null) {
+                    IPAddressVO routerPublicIp = ipAddressDao.findByIp(sourceNatIp.getAddress().toString());
+                    routerPublicIp.setVpcId(vpc.getId());
+                    routerPublicIp.setSourceNat(true);
+                    ipAddressDao.persist(routerPublicIp);
+                }
+            }
         }
     }
 

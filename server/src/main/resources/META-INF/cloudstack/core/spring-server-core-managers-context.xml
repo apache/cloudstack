@@ -106,8 +106,9 @@
 
     <bean id="configurationServerImpl" class="com.cloud.server.ConfigurationServerImpl" />
 
-
-    <bean id="userVmManagerImpl" class="com.cloud.vm.UserVmManagerImpl" />
+    <bean id="userVmManagerImpl" class="com.cloud.vm.UserVmManagerImpl">
+        <property name="kubernetesClusterHelpers" value="#{kubernetesClusterHelperRegistry.registered}" />
+    </bean>
 
     <bean id="consoleProxyManagerImpl" class="com.cloud.consoleproxy.ConsoleProxyManagerImpl">
         <property name="consoleProxyAllocators"
@@ -164,6 +165,7 @@
 
     <bean id="networkServiceImpl" class="com.cloud.network.NetworkServiceImpl" >
         <property name="networkGurus" value="#{networkGurusRegistry.registered}" />
+        <property name="internalLoadBalancerElementServices" value="#{internalLoadBalancerElementServiceRegistry.registered}" />
     </bean>
 
     <bean id="networkUsageManagerImpl" class="com.cloud.network.NetworkUsageManagerImpl" />
@@ -352,6 +354,7 @@
           class="com.cloud.tags.ResourceManagerUtilImpl"/>
 
     <bean id="resourceIconManager" class="com.cloud.resourceicon.ResourceIconManagerImpl" />
+    <bean id="bucketApiServiceImpl" class="org.apache.cloudstack.storage.object.BucketApiServiceImpl" />
 
     <bean id="VMScheduleManagerImpl" class="org.apache.cloudstack.vm.schedule.VMScheduleManagerImpl" />
     <bean id="VMSchedulerImpl" class="org.apache.cloudstack.vm.schedule.VMSchedulerImpl">

@@ -180,14 +180,12 @@ public class ClusterDrsServiceImplTest {
         Mockito.when(hostJoin1.getCpuUsedCapacity()).thenReturn(1000L);
         Mockito.when(hostJoin1.getCpuReservedCapacity()).thenReturn(0L);
         Mockito.when(hostJoin1.getMemUsedCapacity()).thenReturn(1024L);
-        Mockito.when(hostJoin1.getMemReservedCapacity()).thenReturn(512L);
 
         HostJoinVO hostJoin2 = Mockito.mock(HostJoinVO.class);
         Mockito.when(hostJoin2.getId()).thenReturn(2L);
         Mockito.when(hostJoin2.getCpuUsedCapacity()).thenReturn(1000L);
         Mockito.when(hostJoin2.getCpuReservedCapacity()).thenReturn(0L);
         Mockito.when(hostJoin2.getMemUsedCapacity()).thenReturn(1024L);
-        Mockito.when(hostJoin2.getMemReservedCapacity()).thenReturn(512L);
 
         List<VMInstanceVO> vmList = new ArrayList<>();
         vmList.add(vm1);
@@ -268,7 +266,7 @@ public class ClusterDrsServiceImplTest {
         Mockito.when(cluster.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
         Mockito.when(clusterDao.findById(1L)).thenReturn(cluster);
         Mockito.when(clusterDrsService.getDrsPlan(cluster, 5)).thenThrow(new ConfigurationException("test"));
-        Mockito.when(cmd.getMaxMigrations()).thenReturn(1);
+        Mockito.when(cmd.getMaxMigrations()).thenReturn(5);
 
         clusterDrsService.generateDrsPlan(cmd);
     }
@@ -299,7 +297,7 @@ public class ClusterDrsServiceImplTest {
         Mockito.when(clusterDrsService.getResponseObjectForMigrations(Mockito.anyList())).thenReturn(
                 List.of(migrationResponse));
 
-        try(MockedStatic<ActionEventUtils> ignored = Mockito.mockStatic(ActionEventUtils.class)) {
+        try (MockedStatic<ActionEventUtils> ignored = Mockito.mockStatic(ActionEventUtils.class)) {
             Mockito.when(ActionEventUtils.onActionEvent(Mockito.anyLong(), Mockito.anyLong(),
                     Mockito.anyLong(),
                     Mockito.anyString(), Mockito.anyString(),
@@ -350,7 +348,7 @@ public class ClusterDrsServiceImplTest {
     }
 
     @Test
-    public void testGetBestMigration() {
+    public void testGetBestMigration() throws ConfigurationException {
         ClusterVO cluster = Mockito.mock(ClusterVO.class);
         Mockito.when(cluster.getId()).thenReturn(1L);
 

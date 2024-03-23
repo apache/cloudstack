@@ -25,10 +25,15 @@ import com.cloud.utils.db.GenericDao;
 
 public interface StoragePoolTagsDao extends GenericDao<StoragePoolTagVO, Long> {
 
-    void persist(long poolId, List<String> storagePoolTags);
+    void persist(long poolId, List<String> storagePoolTags, Boolean isTagARule);
+
+    void persist(List<StoragePoolTagVO> storagePoolTags);
     List<String> getStoragePoolTags(long poolId);
     void deleteTags(long poolId);
     List<StoragePoolTagVO> searchByIds(Long... stIds);
     StorageTagResponse newStorageTagResponse(StoragePoolTagVO tag);
+
+    List<StoragePoolTagVO> findStoragePoolTags(long poolId);
+    List<Long> listPoolIdsByTag(String tag);
 
 }

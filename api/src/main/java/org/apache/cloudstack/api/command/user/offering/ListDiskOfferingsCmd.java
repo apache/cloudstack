@@ -16,22 +16,20 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.offering;
 
-import org.apache.cloudstack.api.response.StoragePoolResponse;
-import org.apache.cloudstack.api.response.VolumeResponse;
-import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseListDomainResourcesCmd;
+import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.StoragePoolResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 
 @APICommand(name = "listDiskOfferings", description = "Lists all available disk offerings.", responseObject = DiskOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ListDiskOfferingsCmd extends BaseListDomainResourcesCmd {
-    public static final Logger s_logger = Logger.getLogger(ListDiskOfferingsCmd.class.getName());
+public class ListDiskOfferingsCmd extends BaseListProjectAndAccountResourcesCmd {
 
 
     /////////////////////////////////////////////////////
@@ -60,6 +58,19 @@ public class ListDiskOfferingsCmd extends BaseListDomainResourcesCmd {
     @Parameter(name = ApiConstants.ENCRYPT, type = CommandType.BOOLEAN, description = "listed offerings support disk encryption", since = "4.18")
     private Boolean encrypt;
 
+    @Parameter(name = ApiConstants.STORAGE_TYPE,
+            type = CommandType.STRING,
+            description = "the storage type of the service offering. Values are local and shared.",
+            since = "4.19")
+    private String storageType;
+
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
+            type = CommandType.UUID,
+            entityType = UserVmResponse.class,
+            description = "The ID of a virtual machine. Pass this in if you want to see the suitable disk offering that can be used to create and add a disk to the virtual machine. Suitability is returned with suitableforvirtualmachine flag in the response",
+            since = "4.20.0")
+    private Long virtualMachineId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -84,13 +95,20 @@ public class ListDiskOfferingsCmd extends BaseListDomainResourcesCmd {
 
     public Boolean getEncrypt() { return encrypt; }
 
+    public String getStorageType() {
+        return storageType;
+    }
+
+    public Long getVirtualMachineId() {
+        return virtualMachineId;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
     @Override
     public void execute() {
-
         ListResponse<DiskOfferingResponse> response = _queryService.searchForDiskOfferings(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);

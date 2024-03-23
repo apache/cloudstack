@@ -17,7 +17,7 @@
 
 <template>
   <div
-    class="form-layout"
+    :class="'form-layout'"
     @keyup.ctrl.enter="handleSubmit">
     <span v-if="uploadPercentage > 0">
       <loading-outlined />
@@ -42,7 +42,7 @@
               :placeholder="apiParams.url.description" />
           </a-form-item>
         </div>
-        <div v-if="currentForm === 'Upload'">
+        <div v-else-if="currentForm === 'Upload'">
           <a-form-item :label="$t('label.templatefileupload')" name="file" ref="file">
             <a-upload-dragger
               :multiple="false"
@@ -66,7 +66,7 @@
           <a-input
             v-model:value="form.name"
             :placeholder="apiParams.name.description"
-            v-focus="currentForm !== 'Create'"/>
+            v-focus="currentForm === 'Upload'"/>
         </a-form-item>
         <a-form-item ref="displaytext" name="displaytext">
           <template #label>
@@ -214,7 +214,7 @@
             </a-form-item>
           </a-col>
         </a-row>
-        <a-row :gutter="12" v-if="allowed && (hyperKVMShow || hyperCustomShow) && currentForm !== 'Upload'">
+        <a-row :gutter="12" v-if="allowed && (hyperKVMShow || hyperCustomShow) && currentForm === 'Create'">
           <a-col :md="24" :lg="12">
             <a-form-item ref="directdownload" name="directdownload">
               <template #label>
@@ -343,6 +343,15 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-form-item ref="templatetag" name="templatetag" v-if="isAdminRole">
+          <template #label>
+            <tooltip-label :title="$t('label.templatetag')" :tooltip="apiParams.templatetag.description"/>
+          </template>
+          <a-input
+            v-model:value="form.templatetag"
+            :placeholder="apiParams.templatetag.description"
+            v-focus="currentForm !== 'Create'"/>
+        </a-form-item>
         <a-row :gutter="12">
           <a-col :md="24" :lg="12">
             <a-form-item
@@ -429,7 +438,6 @@
             </a-form-item>
           </a-col>
         </a-row>
-
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
           <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -674,7 +682,7 @@ export default {
         if (listResponse) {
           listhyperVisors = listhyperVisors.concat(listResponse)
         }
-        if (this.currentForm !== 'Upload') {
+        if (this.currentForm === 'Create') {
           listhyperVisors.push({
             name: 'Simulator'
           })
@@ -1087,7 +1095,7 @@ export default {
           }).finally(() => {
             this.loading = false
           })
-        } else {
+        } else if (this.currentForm === 'Upload') {
           this.loading = true
           if (this.fileList.length > 1) {
             this.$notification.error({

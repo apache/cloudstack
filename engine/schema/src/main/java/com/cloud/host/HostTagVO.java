@@ -24,6 +24,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.commons.lang3.BooleanUtils;
 
 @Entity
 @Table(name = "host_tags")
@@ -39,12 +40,22 @@ public class HostTagVO implements InternalIdentity {
     @Column(name = "tag")
     private String tag;
 
+    @Column(name = "is_tag_a_rule")
+    private boolean isTagARule;
+
     protected HostTagVO() {
     }
 
     public HostTagVO(long hostId, String tag) {
         this.hostId = hostId;
         this.tag = tag;
+        this.isTagARule = false;
+    }
+
+    public HostTagVO(long hostId, String tag, Boolean isTagARule) {
+        this.hostId = hostId;
+        this.tag = tag;
+        this.isTagARule = BooleanUtils.toBooleanDefaultIfNull(isTagARule, false);
     }
 
     public long getHostId() {
@@ -58,6 +69,11 @@ public class HostTagVO implements InternalIdentity {
     public void setTag(String tag) {
         this.tag = tag;
     }
+
+    public boolean getIsTagARule() {
+        return isTagARule;
+    }
+
 
     @Override
     public long getId() {

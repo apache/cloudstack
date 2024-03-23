@@ -117,6 +117,8 @@ SP_API_HTTP - address of StorPool Api
 SP_AUTH_TOKEN - StorPool's token
 SP_TEMPLATE - name of StorPool's template
 
+> **NOTE:** You can use the alternative format option for the URL - storpool://{SP_AUTH_TOKEN}@{SP_API_HTTP}:{SP_API_HTTP_PORT}/{SP_TEMPLATE}
+
 Storage Tags: If left blank, the StorPool storage plugin will use the pool name to create a corresponding storage tag.
 This storage tag may be used later, when defining service or disk offerings.
 

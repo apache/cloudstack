@@ -19,7 +19,6 @@ package com.cloud.test.utils;
 import java.io.BufferedReader;
 import java.io.IOException;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
@@ -29,11 +28,10 @@ public class ConsoleProxy implements Runnable {
     private String command;
     private int connectionsMade;
     private long responseTime;
-    public static final Logger s_logger = Logger.getLogger(ConsoleProxy.class.getClass());
 
     public ConsoleProxy(String port, String sid, String host) {
         this.command = "https://" + proxyIp + ".realhostip.com:8000/getscreen?w=100&h=75&host=" + host + "&port=" + port + "&sid=" + sid;
-        s_logger.info("Command for a console proxy is " + this.command);
+        logger.info("Command for a console proxy is " + this.command);
         this.connectionsMade = 0;
         this.responseTime = 0;
     }
@@ -58,7 +56,7 @@ public class ConsoleProxy implements Runnable {
             String response = myScript.execute(process);
             long end = process.getEnd();
             if (response != null) {
-                s_logger.info("Content lenght is incorrect: " + response);
+                logger.info("Content lenght is incorrect: " + response);
             }
 
             long duration = (end - begin);
@@ -67,7 +65,7 @@ public class ConsoleProxy implements Runnable {
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
-                s_logger.debug("[ignored] interrupted.");
+                logger.debug("[ignored] interrupted.");
             }
 
         }

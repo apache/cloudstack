@@ -279,6 +279,9 @@
       <template v-if="column.key === 'clustername'">
         <router-link :to="{ path: '/cluster/' + record.clusterid }">{{ text }}</router-link>
       </template>
+      <template v-if="column.key === 'objectstore'">
+        <router-link :to="{ path: '/objectstore/' + record.objectstorageid }">{{ text }}</router-link>
+      </template>
       <template v-if="column.key === 'podname'">
         <router-link :to="{ path: '/pod/' + record.podid }">{{ text }}</router-link>
       </template>
@@ -327,13 +330,20 @@
         <router-link v-if="record.roleid && $router.resolve('/role/' + record.roleid).matched[0].redirect !== '/exception/404'" :to="{ path: '/role/' + record.roleid }">{{ text }}</router-link>
         <span v-else>{{ text }}</span>
       </template>
+      <template v-if="column.key === 'project'">
+        <router-link v-if="$router.resolve('/project/' + record.projectid).matched[0].redirect !== '/exception/404'" :to="{ path: '/project/' + record.projectid }">{{ text }}</router-link>
+        <span v-else>{{ text }}</span>
+      </template>
       <template v-if="column.key === 'templateversion'">
         <span>  {{ record.version }} </span>
+      </template>
+      <template v-if="column.key === 'drsimbalance'">
+        <span>  {{ record.drsimbalance }} </span>
       </template>
       <template v-if="column.key === 'softwareversion'">
         <span>  {{ record.softwareversion ? record.softwareversion : 'N/A' }} </span>
       </template>
-      <template v-if="column.key === 'access'">
+      <template v-if="column.key === 'readonly'">
         <status :text="record.readonly ? 'ReadOnly' : 'ReadWrite'" displayText />
       </template>
       <template v-if="column.key === 'requiresupgrade'">
@@ -585,7 +595,7 @@ export default {
         '/volume', '/snapshot', '/vmsnapshot', '/backup',
         '/guestnetwork', '/vpc', '/vpncustomergateway', '/vnfapp',
         '/template', '/iso',
-        '/project', '/account',
+        '/project', '/account', 'buckets', 'objectstore',
         '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm', '/annotation',
         '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering',
         '/tungstenfabric', '/oauthsetting', '/guestos', '/guestoshypervisormapping'].join('|'))
@@ -593,9 +603,9 @@ export default {
     },
     enableGroupAction () {
       return ['vm', 'alert', 'vmgroup', 'ssh', 'userdata', 'affinitygroup', 'autoscalevmgroup', 'volume', 'snapshot',
-        'vmsnapshot', 'guestnetwork', 'vpc', 'publicip', 'vpnuser', 'vpncustomergateway', 'vnfapp',
+        'vmsnapshot', 'backup', 'guestnetwork', 'vpc', 'publicip', 'vpnuser', 'vpncustomergateway', 'vnfapp',
         'project', 'account', 'systemvm', 'router', 'computeoffering', 'systemoffering',
-        'diskoffering', 'backupoffering', 'networkoffering', 'vpcoffering', 'ilbvm', 'kubernetes', 'comment'
+        'diskoffering', 'backupoffering', 'networkoffering', 'vpcoffering', 'ilbvm', 'kubernetes', 'comment', 'buckets'
       ].includes(this.$route.name)
     },
     getDateAtTimeZone (date, timezone) {

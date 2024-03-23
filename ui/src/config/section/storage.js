@@ -49,12 +49,14 @@ export default {
         if (store.getters.metrics) {
           fields.push(...metricsFields)
         }
-
         if (store.getters.userInfo.roletype === 'Admin') {
-          fields.push('account')
           fields.push('storage')
+          fields.push('account')
         } else if (store.getters.userInfo.roletype === 'DomainAdmin') {
           fields.push('account')
+        }
+        if (store.getters.listAllProjects) {
+          fields.push('project')
         }
         fields.push('zonename')
 
@@ -164,8 +166,8 @@ export default {
           dataView: true,
           show: (record, store) => {
             return record.state === 'Ready' && (record.hypervisor !== 'KVM' ||
-              record.hypervisor === 'KVM' && record.vmstate === 'Running' && store.features.kvmsnapshotenabled ||
-              record.hypervisor === 'KVM' && record.vmstate !== 'Running')
+                record.hypervisor === 'KVM' && record.vmstate === 'Running' && store.features.kvmsnapshotenabled ||
+                record.hypervisor === 'KVM' && record.vmstate !== 'Running')
           },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/TakeSnapshot.vue')))
@@ -178,8 +180,8 @@ export default {
           dataView: true,
           show: (record, store) => {
             return record.state === 'Ready' && (record.hypervisor !== 'KVM' ||
-              record.hypervisor === 'KVM' && record.vmstate === 'Running' && store.features.kvmsnapshotenabled ||
-              record.hypervisor === 'KVM' && record.vmstate !== 'Running')
+                record.hypervisor === 'KVM' && record.vmstate === 'Running' && store.features.kvmsnapshotenabled ||
+                record.hypervisor === 'KVM' && record.vmstate !== 'Running')
           },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/RecurringSnapshotVolume.vue'))),
@@ -250,10 +252,17 @@ export default {
           dataView: true,
           show: (record) => {
             return !['Destroy', 'Destroyed', 'Expunging', 'Expunged', 'Migrating', 'Uploading', 'UploadError', 'Creating'].includes(record.state) &&
-            ((record.type === 'ROOT' && record.vmstate === 'Stopped') ||
-            (record.type !== 'ROOT' && !record.virtualmachineid && !['Allocated', 'Uploaded'].includes(record.state)))
+                ((record.type === 'ROOT' && record.vmstate === 'Stopped') ||
+                    (record.type !== 'ROOT' && !record.virtualmachineid && !['Allocated', 'Uploaded'].includes(record.state)))
           },
-          args: ['volumeid', 'name', 'displaytext', 'ostypeid', 'ispublic', 'isfeatured', 'isdynamicallyscalable', 'requireshvm', 'passwordenabled'],
+          args: (record, store) => {
+            var fields = ['volumeid', 'name', 'displaytext', 'ostypeid', 'ispublic', 'isfeatured', 'isdynamicallyscalable', 'requireshvm', 'passwordenabled']
+            if (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype)) {
+              fields.push('domainid')
+              fields.push('account')
+            }
+            return fields
+          },
           mapping: {
             volumeid: {
               value: (record) => { return record.id }
@@ -278,8 +287,8 @@ export default {
           dataView: true,
           show: (record, store) => {
             return ['Expunging', 'Expunged', 'UploadError'].includes(record.state) ||
-              ['Allocated', 'Uploaded'].includes(record.state) && record.type !== 'ROOT' && !record.virtualmachineid ||
-              ((['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) || store.features.allowuserexpungerecovervolume) && record.state === 'Destroy')
+                ['Allocated', 'Uploaded'].includes(record.state) && record.type !== 'ROOT' && !record.virtualmachineid ||
+                ((['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) || store.features.allowuserexpungerecovervolume) && record.state === 'Destroy')
           },
           groupAction: true,
           popup: true,
@@ -313,7 +322,12 @@ export default {
         var fields = ['name', 'state', 'volumename', 'intervaltype', 'physicalsize', 'created']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('account')
+          if (store.getters.listAllProjects) {
+            fields.push('project')
+          }
           fields.push('domain')
+        } else if (store.getters.listAllProjects) {
+          fields.push('project')
         }
         fields.push('zonename')
         return fields
@@ -437,7 +451,70 @@ export default {
           label: 'label.delete.backup',
           message: 'message.delete.backup',
           dataView: true,
+          show: (record) => { return record.state !== 'Destroyed' },
+          groupAction: true,
+          popup: true,
+          groupMap: (selection, values) => { return selection.map(x => { return { id: x, forced: values.forced } }) },
+          args: ['forced']
+        }
+      ]
+    },
+    {
+      name: 'buckets',
+      title: 'label.buckets',
+      icon: 'funnel-plot-outlined',
+      permission: ['listBuckets'],
+      columns: ['name', 'state', 'objectstore', 'size', 'account'],
+      details: ['id', 'name', 'state', 'objectstore', 'size', 'url', 'accesskey', 'usersecretkey', 'account', 'domain', 'created', 'quota', 'encryption', 'versioning', 'objectlocking', 'policy'],
+      tabs: [
+        {
+          name: 'details',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'browser',
+          resourceType: 'Bucket',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/ObjectStoreBrowser.vue'))),
+          show: (record) => { return record.provider !== 'Simulator' }
+
+        },
+        {
+          name: 'events',
+          resourceType: 'Bucket',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+          show: () => { return 'listEvents' in store.getters.apis }
+        }
+      ],
+      actions: [
+        {
+          api: 'createBucket',
+          icon: 'plus-outlined',
+          docHelp: 'installguide/configuration.html#create-bucket',
+          label: 'label.create.bucket',
+          listView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/CreateBucket.vue')))
+        },
+        {
+          api: 'updateBucket',
+          icon: 'edit-outlined',
+          docHelp: 'adminguide/object_storage.html#update-bucket',
+          label: 'label.bucket.update',
+          dataView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/UpdateBucket.vue'))),
           show: (record) => { return record.state !== 'Destroyed' }
+        },
+        {
+          api: 'deleteBucket',
+          icon: 'delete-outlined',
+          label: 'label.bucket.delete',
+          message: 'message.bucket.delete',
+          dataView: true,
+          show: (record) => { return record.state !== 'Destroyed' },
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         }
       ]
     }

@@ -26,13 +26,14 @@ import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
 
 public class LibvirtVMDef {
-    private static final Logger s_logger = Logger.getLogger(LibvirtVMDef.class);
+    protected static Logger LOGGER = LogManager.getLogger(LibvirtVMDef.class);
 
     private String _hvsType;
     private static long s_libvirtVersion;
@@ -609,7 +610,7 @@ public class LibvirtVMDef {
             }
         }
 
-        enum DiskType {
+        public enum DiskType {
             FILE("file"), BLOCK("block"), DIRECTROY("dir"), NETWORK("network");
             String _diskType;
 
@@ -699,6 +700,18 @@ public class LibvirtVMDef {
 
         }
 
+        public enum BlockIOSize {
+            SIZE_512("512"), SIZE_4K("4096");
+            final String blockSize;
+
+            BlockIOSize(String size) { this.blockSize = size; }
+
+            @Override
+            public String toString() {
+                return blockSize;
+            }
+        }
+
         private DeviceType _deviceType; /* floppy, disk, cdrom */
         private DiskType _diskType;
         private DiskProtocol _diskProtocol;
@@ -732,6 +745,8 @@ public class LibvirtVMDef {
         private IoDriverPolicy ioDriver;
         private LibvirtDiskEncryptDetails encryptDetails;
         private boolean isIothreadsEnabled;
+        private BlockIOSize logicalBlockIOSize = null;
+        private BlockIOSize physicalBlockIOSize = null;
 
         public DiscardType getDiscard() {
             return _discard;
@@ -756,6 +771,10 @@ public class LibvirtVMDef {
         public void isIothreadsEnabled(boolean isIothreadsEnabled) {
             this.isIothreadsEnabled = isIothreadsEnabled;
         }
+
+        public void setPhysicalBlockIOSize(BlockIOSize size) { this.physicalBlockIOSize = size; }
+
+        public void setLogicalBlockIOSize(BlockIOSize size) { this.logicalBlockIOSize = size; }
 
         public void defFileBasedDisk(String filePath, String diskLabel, DiskBus bus, DiskFmtType diskFmtType) {
             _diskType = DiskType.FILE;
@@ -861,7 +880,7 @@ public class LibvirtVMDef {
 
         public void defISODisk(String volPath, Integer devId, String diskLabel) {
             if (devId == null && StringUtils.isBlank(diskLabel)) {
-                s_logger.debug(String.format("No ID or label informed for volume [%s].", volPath));
+                LOGGER.debug(String.format("No ID or label informed for volume [%s].", volPath));
                 defISODisk(volPath);
                 return;
             }
@@ -871,11 +890,11 @@ public class LibvirtVMDef {
             _sourcePath = volPath;
 
             if (StringUtils.isNotBlank(diskLabel)) {
-                s_logger.debug(String.format("Using informed label [%s] for volume [%s].", diskLabel, volPath));
+                LOGGER.debug(String.format("Using informed label [%s] for volume [%s].", diskLabel, volPath));
                 _diskLabel = diskLabel;
             } else {
                 _diskLabel = getDevLabel(devId, DiskBus.IDE, true);
-                s_logger.debug(String.format("Using device ID [%s] to define the label [%s] for volume [%s].", devId, _diskLabel, volPath));
+                LOGGER.debug(String.format("Using device ID [%s] to define the label [%s] for volume [%s].", devId, _diskLabel, volPath));
             }
 
             _diskFmtType = DiskFmtType.RAW;
@@ -1072,6 +1091,18 @@ public class LibvirtVMDef {
 
         public LibvirtDiskEncryptDetails getLibvirtDiskEncryptDetails() { return this.encryptDetails; }
 
+        public String getSourceHost() {
+            return _sourceHost;
+        }
+
+        public int getSourceHostPort() {
+            return _sourcePort;
+        }
+
+        public String getSourcePath() {
+            return _sourcePath;
+        }
+
         @Override
         public String toString() {
             StringBuilder diskBuilder = new StringBuilder();
@@ -1142,6 +1173,17 @@ public class LibvirtVMDef {
                 diskBuilder.append(" bus='" + _bus + "'");
             }
             diskBuilder.append("/>\n");
+
+            if (logicalBlockIOSize != null || physicalBlockIOSize != null) {
+                diskBuilder.append("<blockio ");
+                if (logicalBlockIOSize != null) {
+                    diskBuilder.append(String.format("logical_block_size='%s' ", logicalBlockIOSize));
+                }
+                if (physicalBlockIOSize != null) {
+                    diskBuilder.append(String.format("physical_block_size='%s' ", physicalBlockIOSize));
+                }
+                diskBuilder.append("/>\n");
+            }
 
             if (_serial != null && !_serial.isEmpty() && _deviceType != DeviceType.LUN) {
                 diskBuilder.append("<serial>" + _serial + "</serial>\n");
@@ -1737,6 +1779,10 @@ public class LibvirtVMDef {
             modeBuilder.append("</cpu>");
             return modeBuilder.toString();
         }
+
+        public int getCoresPerSocket() {
+            return _coresPerSocket;
+        }
     }
 
     public static class SerialDef {
@@ -1793,7 +1839,7 @@ public class LibvirtVMDef {
 
     public final static class ChannelDef {
         enum ChannelType {
-            UNIX("unix"), SERIAL("serial");
+            UNIX("unix"), SERIAL("serial"), SPICEVMC("spicevmc");
             String type;
 
             ChannelType(String type) {
@@ -2053,7 +2099,7 @@ public class LibvirtVMDef {
         }
     }
 
-    public static class MetadataDef {
+    public class MetadataDef {
         Map<String, Object> customNodes = new HashMap<>();
 
         public <T> T getMetadataNode(Class<T> fieldClass) {
@@ -2063,7 +2109,7 @@ public class LibvirtVMDef {
                     field = fieldClass.newInstance();
                     customNodes.put(field.getClass().getName(), field);
                 } catch (InstantiationException | IllegalAccessException e) {
-                    s_logger.debug("No default constructor available in class " + fieldClass.getName() + ", ignoring exception", e);
+                    LOGGER.debug("No default constructor available in class " + fieldClass.getName() + ", ignoring exception", e);
                 }
             }
             return field;
@@ -2113,14 +2159,14 @@ public class LibvirtVMDef {
         private String path = "/dev/random";
         private RngModel rngModel = RngModel.VIRTIO;
         private RngBackendModel rngBackendModel = RngBackendModel.RANDOM;
-        private int rngRateBytes = 2048;
-        private int rngRatePeriod = 1000;
+        private Integer rngRateBytes = 2048;
+        private Integer rngRatePeriod = 1000;
 
         public RngDef(String path) {
             this.path = path;
         }
 
-        public RngDef(String path, int rngRateBytes, int rngRatePeriod) {
+        public RngDef(String path, Integer rngRateBytes, Integer rngRatePeriod) {
             this.path = path;
             this.rngRateBytes = rngRateBytes;
             this.rngRatePeriod = rngRatePeriod;
@@ -2139,7 +2185,7 @@ public class LibvirtVMDef {
             this.rngBackendModel = rngBackendModel;
         }
 
-        public RngDef(String path, RngBackendModel rngBackendModel, int rngRateBytes, int rngRatePeriod) {
+        public RngDef(String path, RngBackendModel rngBackendModel, Integer rngRateBytes, Integer rngRatePeriod) {
             this.path = path;
             this.rngBackendModel = rngBackendModel;
             this.rngRateBytes = rngRateBytes;
@@ -2164,11 +2210,11 @@ public class LibvirtVMDef {
         }
 
         public int getRngRateBytes() {
-            return rngRateBytes;
+            return rngRateBytes != null ? rngRateBytes : 0;
         }
 
         public int getRngRatePeriod() {
-            return rngRatePeriod;
+            return rngRatePeriod != null ? rngRatePeriod : 0;
         }
 
         @Override
@@ -2184,7 +2230,7 @@ public class LibvirtVMDef {
 
     public static class WatchDogDef {
         enum WatchDogModel {
-            I6300ESB("i6300esb"), IB700("ib700"), DIAG288("diag288");
+            I6300ESB("i6300esb"), IB700("ib700"), DIAG288("diag288"), ITCO("itco");
             String model;
 
             WatchDogModel(String model) {
@@ -2198,7 +2244,7 @@ public class LibvirtVMDef {
         }
 
         enum WatchDogAction {
-            RESET("reset"), SHUTDOWN("shutdown"), POWEROFF("poweroff"), PAUSE("pause"), NONE("none"), DUMP("dump");
+            RESET("reset"), SHUTDOWN("shutdown"), POWEROFF("poweroff"), PAUSE("pause"), NONE("none"), DUMP("dump"), INJECT_NMI("inject-nmi");
             String action;
 
             WatchDogAction(String action) {
