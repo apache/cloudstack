@@ -56,7 +56,7 @@ repos:
       - id: mixed-line-ending
         exclude: \.(cs|xml)$
       - id: trailing-whitespace
-        files: \.(java|md|py|sh|vue|yaml|yml)$
+        files: \.(in|java|md|py|rb|sh|vue|yaml|yml)$
         args: [--markdown-linebreak-ext=md]
   - repo: https://github.com/pycqa/flake8
     rev: 6.1.0
