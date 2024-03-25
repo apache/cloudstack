@@ -836,7 +836,6 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     }
 
 
-
     private KubernetesClusterVO updateKubernetesClusterEntry(final Boolean autoscaleEnabled, final Long minSize, final Long maxSize) throws CloudRuntimeException {
         KubernetesClusterVO kubernetesClusterVO = updateKubernetesClusterEntry(null, null, null, null, autoscaleEnabled, minSize, maxSize);
         if (kubernetesClusterVO == null) {
