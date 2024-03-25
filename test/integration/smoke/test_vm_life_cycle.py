@@ -95,17 +95,21 @@ class TestDeployVM(cloudstackTestCase):
 
         cls.services["iso1"]["zoneid"] = cls.zone.id
 
+        cls._cleanup = []
+
         cls.account = Account.create(
             cls.apiclient,
             cls.services["account"],
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account)
         cls.debug(cls.account.id)
 
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["service_offerings"]["tiny"]
         )
+        cls._cleanup.append(cls.service_offering)
 
         cls.virtual_machine = VirtualMachine.create(
             cls.apiclient,
@@ -116,17 +120,9 @@ class TestDeployVM(cloudstackTestCase):
             mode=cls.services['mode']
         )
 
-        cls.cleanup = [
-            cls.service_offering,
-            cls.account
-        ]
-
     @classmethod
     def tearDownClass(cls):
-        try:
-            cleanup_resources(cls.apiclient, cls.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestDeployVM, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -263,11 +259,7 @@ class TestDeployVM(cloudstackTestCase):
         )
 
     def tearDown(self):
-        try:
-            # Clean up, terminate the created instance, volumes and snapshots
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestDeployVM, self).tearDown()
 
 
 class TestVMLifeCycle(cloudstackTestCase):
@@ -363,6 +355,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         self.cleanup = []
 
     def tearDown(self):
+        # This should be a super call instead (like tearDownClass), which reverses cleanup order. Kept for now since fixing requires adjusting test 12.
         try:
             # Clean up, terminate the created ISOs
             cleanup_resources(self.apiclient, self.cleanup)
@@ -930,7 +923,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                 domainid=self.account.domainid,
                 diskofferingid=custom_disk_offering.id
             )
-            self.cleanup.append(volume)
+            self.cleanup.append(volume)    # Needs adjusting when changing tearDown to a super call, since it will try to delete an attached volume.
             VirtualMachine.attach_volume(vm, self.apiclient, volume)
 
         # Start the VM
@@ -993,8 +986,8 @@ class TestVMLifeCycle(cloudstackTestCase):
             roleid=role.id,
             domainid=self.domain.id
         )
-        self.cleanup[-1]=domadm
-        self.cleanup.append(role)
+        self.cleanup[-1]=domadm    # Hacky way to reverse cleanup order to avoid deleting the role before account. Remove this line when tearDown is changed to call super().
+        self.cleanup.append(role)    # Should be self.cleanup.append(domadm) when tearDown is changed to call super().
 
         domadm_apiclient = self.testClient.getUserApiClient(UserName=domadm.name, DomainName=self.domain.name, type=1)
 
