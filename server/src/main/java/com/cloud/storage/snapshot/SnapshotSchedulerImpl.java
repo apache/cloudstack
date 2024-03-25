@@ -175,7 +175,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
 
     private void scheduleNextSnapshotJobsIfNecessary() {
         List<SnapshotScheduleVO> snapshotSchedules = _snapshotScheduleDao.getSchedulesAssignedWithAsyncJob();
-        logger.info(String.format("Verifying the current state of [%s] snapshot schedules and scheduling next jobs, if necessary.", snapshotSchedules.size()));
+        logger.info("Verifying the current state of [{}] snapshot schedules and scheduling next jobs, if necessary.", snapshotSchedules.size());
         for (SnapshotScheduleVO snapshotSchedule : snapshotSchedules) {
             scheduleNextSnapshotJobIfNecessary(snapshotSchedule);
         }
@@ -186,8 +186,8 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
         AsyncJobVO asyncJob = _asyncJobDao.findByIdIncludingRemoved(asyncJobId);
 
         if (asyncJob == null) {
-            logger.debug(String.format("The async job [%s] of snapshot schedule [%s] does not exist anymore. Considering it as finished and scheduling the next snapshot job.",
-                    asyncJobId, snapshotSchedule));
+            logger.debug("The async job [{}] of snapshot schedule [{}] does not exist anymore. Considering it as finished and scheduling the next snapshot job.",
+                    asyncJobId, snapshotSchedule);
             scheduleNextSnapshotJob(snapshotSchedule);
             return;
         }
@@ -195,11 +195,11 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
         JobInfo.Status status = asyncJob.getStatus();
 
         if (JobInfo.Status.SUCCEEDED.equals(status)) {
-            logger.debug(String.format("Last job of schedule [%s] succeeded; scheduling the next snapshot job.", snapshotSchedule));
+            logger.debug("Last job of schedule [{}] succeeded; scheduling the next snapshot job.", snapshotSchedule);
         } else if (JobInfo.Status.FAILED.equals(status)) {
-            logger.debug(String.format("Last job of schedule [%s] failed with [%s]; scheduling a new snapshot job.", snapshotSchedule, asyncJob.getResult()));
+            logger.debug("Last job of schedule [{}] failed with [{}]; scheduling a new snapshot job.", snapshotSchedule, asyncJob.getResult());
         } else {
-            logger.debug(String.format("Schedule [%s] is still in progress, skipping next job scheduling.", snapshotSchedule));
+            logger.debug("Schedule [{}] is still in progress, skipping next job scheduling.", snapshotSchedule);
             return;
         }
 
