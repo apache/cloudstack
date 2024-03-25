@@ -483,4 +483,14 @@ public class VolumeImportUnmanageManagerImplTest {
             verify(diskOfferingVOMock).setUniqueName(uniqueName);
         }
     }
+
+    @Test
+    public void testLogFailureAndThrowException() {
+        String message = "error message";
+        try {
+            volumeImportUnmanageManager.logFailureAndThrowException(message);
+        } catch (CloudRuntimeException ex) {
+            Assert.assertEquals(message, ex.getMessage());
+        }
+    }
 }

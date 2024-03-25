@@ -113,7 +113,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
     static final String DISK_OFFERING_NAME_SUFFIX_LOCAL = " - Local Storage";
     static final String DISK_OFFERING_UNIQUE_NAME_SUFFIX_LOCAL = "-Local";
 
-    private void logFailureAndThrowException(String msg) {
+    protected void logFailureAndThrowException(String msg) {
         logger.error(msg);
         throw new CloudRuntimeException(msg);
     }
