@@ -327,7 +327,7 @@ public class VolumeImportUnmanageManagerImplTest {
 
         verify(resourceLimitService).decrementResourceCount(volumeVO.getAccountId(), Resource.ResourceType.volume);
         verify(resourceLimitService).decrementResourceCount(volumeVO.getAccountId(), Resource.ResourceType.primary_storage, virtualSize);
-        verify(volumeDao).remove(volumeId);
+        verify(volumeDao).update(eq(volumeId), any());
     }
 
     @Test(expected = CloudRuntimeException.class)

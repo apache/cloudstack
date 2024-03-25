@@ -72,6 +72,7 @@ import org.apache.logging.log4j.Logger;
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -437,6 +438,8 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
     }
 
     private void unmanageVolumeFromDatabase(VolumeVO volume) {
-        volumeDao.remove(volume.getId());
+        volume.setState(Volume.State.Destroy);
+        volume.setRemoved(new Date());
+        volumeDao.update(volume.getId(), volume);
     }
 }
