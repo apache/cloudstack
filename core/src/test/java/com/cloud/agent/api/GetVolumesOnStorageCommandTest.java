@@ -27,13 +27,15 @@ public class GetVolumesOnStorageCommandTest {
 
     final String localPath = "localPath";
     final String volumePath = "volumePath";
+    final String keyword = "keyword";
 
     @Test
     public void testGetVolumesOnStorageCommand() {
-        GetVolumesOnStorageCommand command = new GetVolumesOnStorageCommand(pool, volumePath);
+        GetVolumesOnStorageCommand command = new GetVolumesOnStorageCommand(pool, volumePath, keyword);
 
         Assert.assertEquals(pool, command.getPool());
         Assert.assertEquals(volumePath, command.getVolumePath());
+        Assert.assertEquals(keyword, command.getKeyword());
         Assert.assertFalse(command.executeInSequence());
     }
 }

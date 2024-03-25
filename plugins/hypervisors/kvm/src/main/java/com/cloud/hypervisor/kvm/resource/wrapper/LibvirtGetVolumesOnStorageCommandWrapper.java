@@ -45,6 +45,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @ResourceWrapper(handles = GetVolumesOnStorageCommand.class)
 public final class LibvirtGetVolumesOnStorageCommandWrapper extends CommandWrapper<GetVolumesOnStorageCommand, Answer, LibvirtComputingResource> {
@@ -57,6 +58,7 @@ public final class LibvirtGetVolumesOnStorageCommandWrapper extends CommandWrapp
 
         final StorageFilerTO pool = command.getPool();
         final String volumePath = command.getVolumePath();
+        final String keyword = command.getKeyword();
 
         List<VolumeOnStorageTO> volumes = new ArrayList<>();
 
@@ -105,6 +107,9 @@ public final class LibvirtGetVolumesOnStorageCommandWrapper extends CommandWrapp
             }
         } else {
             List<KVMPhysicalDisk> disks = storagePool.listPhysicalDisks();
+            if (StringUtils.isNotBlank(keyword)) {
+                disks = disks.stream().filter(disk -> disk.getName().contains(keyword)).collect(Collectors.toList());
+            }
             disks.sort(Comparator.comparing(KVMPhysicalDisk::getName));
             for (KVMPhysicalDisk disk: disks) {
                 if (!isDiskFormatSupported(disk)) {

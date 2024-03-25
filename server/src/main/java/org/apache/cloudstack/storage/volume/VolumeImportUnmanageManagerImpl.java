@@ -131,9 +131,13 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
     public ListResponse<VolumeForImportResponse> listVolumesForImport(ListVolumesForImportCmd cmd) {
         Long poolId = cmd.getStorageId();
         String path = cmd.getPath();
+        String keyword = cmd.getKeyword();
+        if (StringUtils.isNotBlank(keyword)) {
+            keyword = keyword.trim();
+        }
 
         StoragePoolVO pool = checkIfPoolAvailable(poolId);
-        List<VolumeOnStorageTO> volumes = listVolumesForImportInternal(poolId, path);
+        List<VolumeOnStorageTO> volumes = listVolumesForImportInternal(poolId, path, keyword);
 
         List<VolumeForImportResponse> responses = new ArrayList<>();
         for (VolumeOnStorageTO volume : volumes) {
@@ -176,7 +180,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         }
 
         // 4. send a command to hypervisor to check
-        List<VolumeOnStorageTO> volumes = listVolumesForImportInternal(poolId, volumePath);
+        List<VolumeOnStorageTO> volumes = listVolumesForImportInternal(poolId, volumePath, null);
         if (CollectionUtils.isEmpty(volumes)) {
             logFailureAndThrowException("Cannot find volume on storage pool: " + volumePath);
         }
@@ -206,7 +210,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         return responseGenerator.createVolumeResponse(ResponseObject.ResponseView.Full, volumeVO);
     }
 
-    protected List<VolumeOnStorageTO> listVolumesForImportInternal(Long poolId, String volumePath) {
+    protected List<VolumeOnStorageTO> listVolumesForImportInternal(Long poolId, String volumePath, String keyword) {
         StoragePoolVO pool = checkIfPoolAvailable(poolId);
 
         Pair<HostVO, String> hostAndLocalPath = findHostAndLocalPathForVolumeImport(pool);
@@ -216,7 +220,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         }
 
         StorageFilerTO storageTO = new StorageFilerTO(pool);
-        GetVolumesOnStorageCommand command = new GetVolumesOnStorageCommand(storageTO, volumePath);
+        GetVolumesOnStorageCommand command = new GetVolumesOnStorageCommand(storageTO, volumePath, keyword);
         Answer answer = agentManager.easySend(host.getId(), command);
         if (answer == null || !(answer instanceof GetVolumesOnStorageAnswer)) {
             logFailureAndThrowException("Cannot get volumes on storage pool via host " + host.getName());

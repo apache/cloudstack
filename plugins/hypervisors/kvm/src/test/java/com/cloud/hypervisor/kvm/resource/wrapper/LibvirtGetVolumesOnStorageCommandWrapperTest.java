@@ -75,6 +75,7 @@ public class LibvirtGetVolumesOnStorageCommandWrapperTest {
     private final String clusterSize = "4096";
     private final String fileFormat = "QCOW2";
     private final String encrypted = "yes";
+    private final String diskNamePrefix = "disk-";
 
     @Spy
     LibvirtGetVolumesOnStorageCommandWrapper libvirtGetVolumesOnStorageCommandWrapper = new LibvirtGetVolumesOnStorageCommandWrapper();
@@ -103,12 +104,12 @@ public class LibvirtGetVolumesOnStorageCommandWrapperTest {
 
     @Test
     public void testLibvirtGetVolumesOnStorageCommandWrapperForAllVolumes() {
-        GetVolumesOnStorageCommand command = new GetVolumesOnStorageCommand(pool, null);
+        GetVolumesOnStorageCommand command = new GetVolumesOnStorageCommand(pool, null, diskNamePrefix);
         List<KVMPhysicalDisk> physicalDisks = new ArrayList<>();
         int numberDisks = 3;
         for (int i = 0; i < numberDisks; i++) {
             KVMPhysicalDisk disk = Mockito.mock(KVMPhysicalDisk.class);
-            Mockito.when(disk.getName()).thenReturn("name-" + (numberDisks - i));
+            Mockito.when(disk.getName()).thenReturn(diskNamePrefix + (numberDisks - i));
             Mockito.when(disk.getFormat()).thenReturn(QemuImg.PhysicalDiskFormat.QCOW2);
             Mockito.when(disk.getQemuEncryptFormat()).thenReturn(QemuObject.EncryptFormat.LUKS);
             physicalDisks.add(disk);
@@ -137,7 +138,7 @@ public class LibvirtGetVolumesOnStorageCommandWrapperTest {
         Mockito.when(qemuImgInfo.get(QemuImg.FILE_FORMAT)).thenReturn(fileFormat);
         Mockito.when(qemuImgInfo.get(QemuImg.ENCRYPTED)).thenReturn(encrypted);
 
-        GetVolumesOnStorageCommand command = new GetVolumesOnStorageCommand(pool, volumePath);
+        GetVolumesOnStorageCommand command = new GetVolumesOnStorageCommand(pool, volumePath, null);
         Answer answer = libvirtGetVolumesOnStorageCommandWrapper.execute(command, libvirtComputingResource);
         Assert.assertTrue(answer instanceof GetVolumesOnStorageAnswer);
         Assert.assertTrue(answer.getResult());

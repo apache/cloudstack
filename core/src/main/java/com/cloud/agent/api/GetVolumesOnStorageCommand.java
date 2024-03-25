@@ -24,14 +24,16 @@ import com.cloud.agent.api.to.StorageFilerTO;
 public class GetVolumesOnStorageCommand extends Command {
 
     StorageFilerTO pool;
-    private String volumePath;    //filter by file path
+    private String volumePath;    //search by file path
+    private String keyword;       //filter by keyword
 
     public GetVolumesOnStorageCommand() {
     }
 
-    public GetVolumesOnStorageCommand(StorageFilerTO pool, String filePath) {
+    public GetVolumesOnStorageCommand(StorageFilerTO pool, String filePath, String keyword) {
         this.pool = pool;
         this.volumePath = filePath;
+        this.keyword = keyword;
     }
 
     public StorageFilerTO getPool() {
@@ -40,6 +42,10 @@ public class GetVolumesOnStorageCommand extends Command {
 
     public String getVolumePath() {
         return volumePath;
+    }
+
+    public String getKeyword() {
+        return keyword;
     }
 
     @Override
