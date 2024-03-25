@@ -20,9 +20,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.upgrade.SystemVmTemplateRegistration;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.log4j.Logger;
-
-import org.jasypt.exceptions.EncryptionOperationNotPossibleException;
 
 import java.io.InputStream;
 import java.sql.Connection;
