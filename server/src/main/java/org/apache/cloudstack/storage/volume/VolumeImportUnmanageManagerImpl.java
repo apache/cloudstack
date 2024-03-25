@@ -34,7 +34,6 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.offering.DiskOffering;
 import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.Volume;
@@ -265,20 +264,15 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
 
     protected Pair<HostVO, String> findHostAndLocalPathForVolumeImport(StoragePoolVO pool) {
         List<HostVO> hosts = new ArrayList<>();
-        if (ScopeType.HOST.equals(pool.getScope())) {
-            List<StoragePoolHostVO> storagePoolHostVOs = storagePoolHostDao.listByPoolId(pool.getId());
-            if (CollectionUtils.isNotEmpty(storagePoolHostVOs)) {
-                for (StoragePoolHostVO storagePoolHostVO : storagePoolHostVOs) {
-                    HostVO host = hostDao.findById(storagePoolHostVO.getHostId());
-                    if (host != null) {
-                        return new Pair<>(host, storagePoolHostVO.getLocalPath());
-                    }
-                }
-            }
-        } else if (ScopeType.CLUSTER.equals(pool.getScope())) {
-            hosts = hostDao.findHypervisorHostInCluster((pool.getClusterId()));
-        } else if (ScopeType.ZONE.equals(pool.getScope())) {
-            hosts = hostDao.listAllHostsUpByZoneAndHypervisor(pool.getDataCenterId(), pool.getHypervisor());
+        switch (pool.getScope()) {
+            case HOST:
+                return findHostAndLocalPathForVolumeImportForHostScope(pool.getId());
+            case CLUSTER:
+                hosts = hostDao.findHypervisorHostInCluster((pool.getClusterId()));
+                break;
+            case ZONE:
+                hosts = hostDao.listAllHostsUpByZoneAndHypervisor(pool.getDataCenterId(), pool.getHypervisor());
+                break;
         }
         for (HostVO host : hosts) {
             StoragePoolHostVO storagePoolHostVO = storagePoolHostDao.findByPoolHost(pool.getId(), host.getId());
@@ -287,6 +281,20 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
             }
         }
         logFailureAndThrowException("No host found to perform volume import");
+        return null;
+    }
+
+    private Pair<HostVO, String> findHostAndLocalPathForVolumeImportForHostScope(Long poolId) {
+        List<StoragePoolHostVO> storagePoolHostVOs = storagePoolHostDao.listByPoolId(poolId);
+        if (CollectionUtils.isNotEmpty(storagePoolHostVOs)) {
+            for (StoragePoolHostVO storagePoolHostVO : storagePoolHostVOs) {
+                HostVO host = hostDao.findById(storagePoolHostVO.getHostId());
+                if (host != null) {
+                    return new Pair<>(host, storagePoolHostVO.getLocalPath());
+                }
+            }
+        }
+        logFailureAndThrowException("No host found to perform volume import on pool: " + poolId);
         return null;
     }
 
