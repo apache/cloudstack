@@ -44,6 +44,9 @@ class TestImportAndUnmanageVolumes(cloudstackTestCase):
 
         cls.services = testClient.getParsedTestDataConfig()
         cls.hypervisor = testClient.getHypervisorInfo()
+        if cls.testClient.getHypervisorInfo().lower() != "kvm":
+            raise unittest.SkipTest("This is only available for KVM")
+
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient)
         cls._cleanup = []
@@ -99,10 +102,6 @@ class TestImportAndUnmanageVolumes(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         super(TestImportAndUnmanageVolumes, cls).tearDownClass()
-
-    def setUp(self):
-        if self.testClient.getHypervisorInfo().lower() != "kvm":
-            raise unittest.SkipTest("This is only available for KVM")
 
     @attr(tags=['advanced', 'basic', 'sg'], required_hardware=False)
     def test_01_detach_unmanage_import_volume(self):
