@@ -32,7 +32,7 @@ public class ApiSessionListener implements HttpSessionListener {
     private static Map<String, HttpSession> sessions = new ConcurrentHashMap<>();
 
     /**
-     * @return the internal adminstered session count
+     * @return the internal administered session count
      */
     public static long getSessionCount() {
         return sessions.size();
