@@ -108,10 +108,10 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
     @Inject
     private VMTemplatePoolDao templatePoolDao;
 
-    private static final String DEFAULT_DISK_OFFERING_NAME = "Default Custom Offering for Volume Import";
-    private static final String DEFAULT_DISK_OFFERING_UNIQUE_NAME = "Volume-Import";
-    private static final String DISK_OFFERING_NAME_SUFFIX_LOCAL = " - Local Storage";
-    private static final String DISK_OFFERING_UNIQUE_NAME_SUFFIX_LOCAL = "-Local";
+    static final String DEFAULT_DISK_OFFERING_NAME = "Default Custom Offering for Volume Import";
+    static final String DEFAULT_DISK_OFFERING_UNIQUE_NAME = "Volume-Import";
+    static final String DISK_OFFERING_NAME_SUFFIX_LOCAL = " - Local Storage";
+    static final String DISK_OFFERING_UNIQUE_NAME_SUFFIX_LOCAL = "-Local";
 
     private void logFailureAndThrowException(String msg) {
         logger.error(msg);
@@ -206,7 +206,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         return responseGenerator.createVolumeResponse(ResponseObject.ResponseView.Full, volumeVO);
     }
 
-    private List<VolumeOnStorageTO> listVolumesForImportInternal(Long poolId, String volumePath) {
+    protected List<VolumeOnStorageTO> listVolumesForImportInternal(Long poolId, String volumePath) {
         StoragePoolVO pool = checkIfPoolAvailable(poolId);
 
         Pair<HostVO, String> hostAndLocalPath = findHostAndLocalPathForVolumeImport(pool);
@@ -247,7 +247,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         return true;
     }
 
-    private StoragePoolVO checkIfPoolAvailable(Long poolId) {
+    protected StoragePoolVO checkIfPoolAvailable(Long poolId) {
         StoragePoolVO pool = primaryDataStoreDao.findById(poolId);
         if (pool == null) {
             logFailureAndThrowException("Storage pool does not exist: ID = " + poolId);
@@ -258,7 +258,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         return pool;
     }
 
-    private Pair<HostVO, String> findHostAndLocalPathForVolumeImport(StoragePoolVO pool) {
+    protected Pair<HostVO, String> findHostAndLocalPathForVolumeImport(StoragePoolVO pool) {
         List<HostVO> hosts = new ArrayList<>();
         if (ScopeType.HOST.equals(pool.getScope())) {
             List<StoragePoolHostVO> storagePoolHostVOs = storagePoolHostDao.listByPoolId(pool.getId());
@@ -285,7 +285,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         return null;
     }
 
-    private VolumeForImportResponse createVolumeForImportResponse(VolumeOnStorageTO volume, StoragePoolVO pool) {
+    protected VolumeForImportResponse createVolumeForImportResponse(VolumeOnStorageTO volume, StoragePoolVO pool) {
         VolumeForImportResponse response = new VolumeForImportResponse();
         response.setPath(volume.getPath());
         response.setName(volume.getName());
@@ -310,7 +310,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         return templatePoolDao.findByPoolPath(pool.getId(), volumePath) != null;
     }
 
-    private void checkIfVolumeIsLocked(VolumeOnStorageTO volume) {
+    protected void checkIfVolumeIsLocked(VolumeOnStorageTO volume) {
         Map<VolumeOnStorageTO.Detail, String> volumeDetails = volume.getDetails();
         if (volumeDetails != null && volumeDetails.containsKey(VolumeOnStorageTO.Detail.IS_LOCKED)) {
             String isLocked = volumeDetails.get(VolumeOnStorageTO.Detail.IS_LOCKED);
@@ -320,7 +320,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         }
     }
 
-    private void checkIfVolumeIsEncrypted(VolumeOnStorageTO volume) {
+    protected void checkIfVolumeIsEncrypted(VolumeOnStorageTO volume) {
         Map<VolumeOnStorageTO.Detail, String> volumeDetails = volume.getDetails();
         if (volumeDetails != null && volumeDetails.containsKey(VolumeOnStorageTO.Detail.IS_ENCRYPTED)) {
             String isEncrypted = volumeDetails.get(VolumeOnStorageTO.Detail.IS_ENCRYPTED);
@@ -330,7 +330,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         }
     }
 
-    private DiskOfferingVO getOrCreateDiskOffering(Account owner, Long diskOfferingId, Long zoneId, boolean isLocal) {
+    protected DiskOfferingVO getOrCreateDiskOffering(Account owner, Long diskOfferingId, Long zoneId, boolean isLocal) {
         if (diskOfferingId != null) {
             // check if disk offering exists and active
             DiskOfferingVO diskOfferingVO = diskOfferingDao.findById(diskOfferingId);
@@ -383,10 +383,10 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         return volumeDao.findById(diskProfile.getVolumeId());
     }
 
-    private void checkResourceLimitForImportVolume(Account owner, VolumeOnStorageTO volume) {
-        Long volumeSize = volume.getSize();
+    protected void checkResourceLimitForImportVolume(Account owner, VolumeOnStorageTO volume) {
+        Long volumeSize = volume.getVirtualSize();
         try {
-            resourceLimitService.checkResourceLimit(owner, Resource.ResourceType.volume, 1);
+            resourceLimitService.checkResourceLimit(owner, Resource.ResourceType.volume);
             resourceLimitService.checkResourceLimit(owner, Resource.ResourceType.primary_storage, volumeSize);
         } catch (ResourceAllocationException e) {
             logger.error(String.format("VM resource allocation error for account: %s", owner.getUuid()), e);

@@ -47,7 +47,7 @@ public class GetVolumesOnStorageAnswerTest {
         volumesOnStorageTO.add(volumeOnStorageTO);
 
         GetVolumesOnStorageAnswer answer = new GetVolumesOnStorageAnswer(command, volumesOnStorageTO);
-        List<? extends VolumeOnStorageTO> volumes = answer.getVolumes();
+        List<VolumeOnStorageTO> volumes = answer.getVolumes();
 
         Assert.assertEquals(1, volumes.size());
         VolumeOnStorageTO volume = volumes.get(0);
