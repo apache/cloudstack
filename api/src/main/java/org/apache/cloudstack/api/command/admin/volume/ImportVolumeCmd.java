@@ -86,19 +86,19 @@ public class ImportVolumeCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.ACCOUNT,
             type = BaseCmd.CommandType.STRING,
-            description = "an optional account for the virtual machine. Must be used with domainId.")
+            description = "an optional account for the volume. Must be used with domainId.")
     private String accountName;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
             type = BaseCmd.CommandType.UUID,
             entityType = DomainResponse.class,
-            description = "import instance to the domain specified")
+            description = "import volume to the domain specified")
     private Long domainId;
 
     @Parameter(name = ApiConstants.PROJECT_ID,
             type = BaseCmd.CommandType.UUID,
             entityType = ProjectResponse.class,
-            description = "import instance for the project")
+            description = "import volume for the project")
     private Long projectId;
 
     /////////////////////////////////////////////////////
