@@ -444,7 +444,8 @@
           <div class="resource-detail-item__label">{{ $t('label.volume') }}</div>
           <div class="resource-detail-item__details">
             <hdd-outlined />
-            <router-link :to="{ path: '/volume/' + resource.volumeid }">{{ resource.volumename || resource.volume || resource.volumeid }} </router-link>
+            <router-link v-if="validLinks.volume" :to="{ path: '/volume/' + resource.volumeid }">{{ resource.volumename || resource.volume || resource.volumeid }} </router-link>
+            <span v-else>{{ resource.volumename || resource.volume || resource.volumeid }}</span>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.associatednetworkid">
@@ -849,7 +850,10 @@ export default {
         vpc: '',
         network: ''
       },
-      newResource: {}
+      newResource: {},
+      validLinks: {
+        volume: false
+      }
     }
   },
   watch: {
@@ -866,6 +870,7 @@ export default {
         this.newResource = newData
         this.showKeys = false
         this.setData()
+        this.validateLinks()
 
         if ('apikey' in this.resource) {
           this.getUserKeys()
@@ -1137,6 +1142,16 @@ export default {
       }
 
       return query
+    },
+    validateLinks () {
+      if (this.isStatic) {
+        return
+      }
+      if (this.resource.volumeid && this.$router.resolve('/volume/' + this.resource.volumeid).matched[0].redirect !== '/exception/404') {
+        api('listVolumesMetrics', { id: this.resource.volumeid }).then(json => {
+          this.validLinks.volume = json?.listvolumesresponse?.volume?.length > 0
+        })
+      }
     }
   }
 }
