@@ -898,7 +898,12 @@ export default {
         var fields = ['name', 'id']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('account')
+          if (store.getters.listAllProjects) {
+            fields.push('project')
+          }
           fields.push('domain')
+        } else if (store.getters.listAllProjects) {
+          fields.push('project')
         }
         return fields
       },
