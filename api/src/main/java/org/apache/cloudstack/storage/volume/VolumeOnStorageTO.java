@@ -52,13 +52,6 @@ public class VolumeOnStorageTO {
         this.virtualSize = virtualSize;
     }
 
-    public VolumeOnStorageTO(Hypervisor.HypervisorType hypervisorType, String path, String name, long size) {
-        this.hypervisorType = hypervisorType;
-        this.path = path;
-        this.name = name;
-        this.size = size;
-    }
-
     public Hypervisor.HypervisorType getHypervisorType() {
         return hypervisorType;
     }

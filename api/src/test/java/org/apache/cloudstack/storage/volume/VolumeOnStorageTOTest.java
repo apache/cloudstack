@@ -51,15 +51,6 @@ public class VolumeOnStorageTOTest {
     }
 
     @Test
-    public void testVolumeOnStorageTO2() {
-        VolumeOnStorageTO volumeOnStorageTO = new VolumeOnStorageTO(hypervisorType, path, name, size);
-        Assert.assertEquals(hypervisorType, volumeOnStorageTO.getHypervisorType());
-        Assert.assertEquals(path, volumeOnStorageTO.getPath());
-        Assert.assertEquals(name, volumeOnStorageTO.getName());
-        Assert.assertEquals(size, volumeOnStorageTO.getSize());
-    }
-
-    @Test
     public void testVolumeOnStorageTO3() {
         VolumeOnStorageTO volumeOnStorageTO = new VolumeOnStorageTO();
         volumeOnStorageTO.setHypervisorType(hypervisorType);
