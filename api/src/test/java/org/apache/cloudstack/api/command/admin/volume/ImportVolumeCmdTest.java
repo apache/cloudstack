@@ -37,6 +37,7 @@ public class ImportVolumeCmdTest {
 
     @Test
     public void testImportVolumeCmd() {
+        String name = "volume name";
         String path = "file path";
         Long storageId = 2L;
         Long diskOfferingId = 3L;
@@ -49,6 +50,7 @@ public class ImportVolumeCmdTest {
 
         ImportVolumeCmd cmd = new ImportVolumeCmd();
         ReflectionTestUtils.setField(cmd, "path", path);
+        ReflectionTestUtils.setField(cmd, "name", name);
         ReflectionTestUtils.setField(cmd, "storageId", storageId);
         ReflectionTestUtils.setField(cmd, "diskOfferingId", diskOfferingId);
         ReflectionTestUtils.setField(cmd, "accountName", accountName);
@@ -58,6 +60,7 @@ public class ImportVolumeCmdTest {
         ReflectionTestUtils.setField(cmd, "_accountService", accountService);
 
         Assert.assertEquals(path, cmd.getPath());
+        Assert.assertEquals(name, cmd.getName());
         Assert.assertEquals(storageId, cmd.getStorageId());
         Assert.assertEquals(diskOfferingId, cmd.getDiskOfferingId());
         Assert.assertEquals(accountName, cmd.getAccountName());

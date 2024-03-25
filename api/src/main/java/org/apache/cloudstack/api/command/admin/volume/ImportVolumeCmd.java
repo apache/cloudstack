@@ -66,6 +66,11 @@ public class ImportVolumeCmd extends BaseAsyncCmd {
             description = "the path of the volume")
     private String path;
 
+    @Parameter(name = ApiConstants.NAME,
+            type = BaseCmd.CommandType.STRING,
+            description = "the name of the volume. If not set, it will be set to the path of the volume.")
+    private String name;
+
     @Parameter(name = ApiConstants.STORAGE_ID,
             type = BaseCmd.CommandType.UUID,
             required = true,
@@ -102,6 +107,10 @@ public class ImportVolumeCmd extends BaseAsyncCmd {
 
     public String getPath() {
         return path;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public Long getStorageId() {

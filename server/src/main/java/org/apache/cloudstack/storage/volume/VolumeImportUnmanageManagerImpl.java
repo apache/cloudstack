@@ -165,6 +165,9 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
 
         // 3. check if the volume already exists in cloudstack by path
         String volumePath = cmd.getPath();
+        if (StringUtils.isBlank(volumePath)) {
+            logFailureAndThrowException("Volume path is null or blank: " + volumePath);
+        }
         if (checkIfVolumeManaged(pool, volumePath)){
             logFailureAndThrowException("Volume is already managed by CloudStack: " + volumePath);
         }
@@ -191,7 +194,8 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         DiskOfferingVO diskOffering = getOrCreateDiskOffering(owner, cmd.getDiskOfferingId(), pool.getDataCenterId(), pool.isLocal());
 
         // 7. create records
-        VolumeVO volumeVO = createRecordsForVolumeImport(volume, diskOffering, owner, pool);
+        String volumeName = StringUtils.isNotBlank(cmd.getName()) ? cmd.getName().trim() : volumePath;
+        VolumeVO volumeVO = importVolumeInternal(volume, diskOffering, owner, pool, volumeName);
 
         // 8. Update resource count
         updateResourceLimitForVolumeImport(volumeVO);
@@ -371,10 +375,10 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         return newDiskOffering;
     }
 
-    private VolumeVO createRecordsForVolumeImport(VolumeOnStorageTO volume, DiskOfferingVO diskOffering,
-                                                  Account owner, StoragePoolVO pool) {
-        DiskProfile diskProfile = volumeManager.importVolume(Volume.Type.DATADISK, volume.getName(), diskOffering,
-                volume.getVirtualSize(), null, null, pool.getDataCenterId(), pool.getHypervisor(), null, null,
+    private VolumeVO importVolumeInternal(VolumeOnStorageTO volume, DiskOfferingVO diskOffering,
+                                          Account owner, StoragePoolVO pool, String volumeName) {
+        DiskProfile diskProfile = volumeManager.importVolume(Volume.Type.DATADISK, volumeName, diskOffering,
+                volume.getVirtualSize(), null, null, pool.getDataCenterId(), volume.getHypervisorType(), null, null,
                 owner, null, pool.getId(), volume.getPath(), null);
         return volumeDao.findById(diskProfile.getVolumeId());
     }
