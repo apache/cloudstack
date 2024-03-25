@@ -108,6 +108,7 @@ public class LibvirtGetVolumesOnStorageCommandWrapperTest {
         int numberDisks = 3;
         for (int i = 0; i < numberDisks; i++) {
             KVMPhysicalDisk disk = Mockito.mock(KVMPhysicalDisk.class);
+            Mockito.when(disk.getName()).thenReturn("name-" + (numberDisks - i));
             Mockito.when(disk.getFormat()).thenReturn(QemuImg.PhysicalDiskFormat.QCOW2);
             Mockito.when(disk.getQemuEncryptFormat()).thenReturn(QemuObject.EncryptFormat.LUKS);
             physicalDisks.add(disk);

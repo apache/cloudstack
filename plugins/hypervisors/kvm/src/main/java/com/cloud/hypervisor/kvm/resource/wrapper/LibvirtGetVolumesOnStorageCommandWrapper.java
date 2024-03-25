@@ -41,6 +41,7 @@ import org.libvirt.LibvirtException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -103,7 +104,9 @@ public final class LibvirtGetVolumesOnStorageCommandWrapper extends CommandWrapp
                 volumes.add(volumeOnStorageTO);
             }
         } else {
-            for (KVMPhysicalDisk disk: storagePool.listPhysicalDisks()) {
+            List<KVMPhysicalDisk> disks = storagePool.listPhysicalDisks();
+            disks.sort(Comparator.comparing(KVMPhysicalDisk::getName));
+            for (KVMPhysicalDisk disk: disks) {
                 if (!isDiskFormatSupported(disk)) {
                     continue;
                 }
