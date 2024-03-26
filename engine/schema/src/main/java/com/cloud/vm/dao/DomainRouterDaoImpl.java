@@ -61,7 +61,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     protected SearchBuilder<DomainRouterVO> OutsidePodSearch;
     protected SearchBuilder<DomainRouterVO> clusterSearch;
     protected SearchBuilder<DomainRouterVO> SearchByStateAndManagementServerId;
-    protected SearchBuilder<DomainRouterVO> VpcDistinctRouterSearch;
+    protected SearchBuilder<DomainRouterVO> VpcSingleRouterSearch;
     @Inject
     HostDao _hostsDao;
     @Inject
@@ -99,11 +99,11 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         VpcSearch.and("vpcId", VpcSearch.entity().getVpcId(), Op.EQ);
         VpcSearch.done();
 
-        VpcDistinctRouterSearch = createSearchBuilder();
-        VpcDistinctRouterSearch.and("role", VpcDistinctRouterSearch.entity().getRole(), Op.EQ);
-        VpcDistinctRouterSearch.and("vpcId", VpcDistinctRouterSearch.entity().getVpcId(), Op.EQ);
-        VpcDistinctRouterSearch.groupBy(VpcDistinctRouterSearch.entity().getPublicMacAddress());
-        VpcDistinctRouterSearch.done();
+        VpcSingleRouterSearch = createSearchBuilder();
+        VpcSingleRouterSearch.and("role", VpcSingleRouterSearch.entity().getRole(), Op.EQ);
+        VpcSingleRouterSearch.and("vpcId", VpcSingleRouterSearch.entity().getVpcId(), Op.EQ);
+        VpcSingleRouterSearch.groupBy(VpcSingleRouterSearch.entity().getVpcId());
+        VpcSingleRouterSearch.done();
 
         IdNetworkIdStatesSearch = createSearchBuilder();
         IdNetworkIdStatesSearch.and("id", IdNetworkIdStatesSearch.entity().getId(), Op.EQ);
@@ -459,10 +459,10 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     }
 
     @Override
-    public List<DomainRouterVO> listDistinctRouterByVpcId(final long vpcId) {
-        final SearchCriteria<DomainRouterVO> sc = VpcDistinctRouterSearch.create();
+    public DomainRouterVO findOneByVpcId(final long vpcId) {
+        final SearchCriteria<DomainRouterVO> sc = VpcSingleRouterSearch.create();
         sc.setParameters("vpcId", vpcId);
         sc.setParameters("role", Role.VIRTUAL_ROUTER);
-        return listBy(sc);
+        return findOneBy(sc);
     }
 }
