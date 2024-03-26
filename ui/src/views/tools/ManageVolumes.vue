@@ -766,6 +766,8 @@ export default {
       if (['zoneid', 'podid', 'clusterid', 'hostid', 'poolid'].includes(field)) {
         query.managedpage = 1
         query.unmanagedpage = 1
+        this.searchParams.managed.keyword = null
+        this.searchParams.unmanaged.keyword = null
       }
       this.$router.push({ query })
     },
