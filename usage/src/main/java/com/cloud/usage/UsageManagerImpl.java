@@ -1038,7 +1038,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         }
         parsed = NetworksUsageParser.parse(account, currentStartDate, currentEndDate);
         if (!parsed) {
-            logger.debug("Networks usage not parsed for account [{}].", account);
+            s_logger.debug(String.format("Networks usage not parsed for account [%s].", account));
         }
         return parsed;
     }
@@ -2132,7 +2132,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         } else if (EventTypes.EVENT_NETWORK_UPDATE.equals(event.getType())) {
             usageNetworksDao.update(event.getResourceId(), event.getOfferingId(), event.getResourceType());
         } else {
-            logger.error("Unknown event type [{}] in Networks event parser. Skipping it.", event.getType());
+            s_logger.error(String.format("Unknown event type [%s] in Networks event parser. Skipping it.", event.getType()));
         }
     }
 

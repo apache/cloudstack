@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.usage.parser;
 
-import com.cloud.usage.UsageManagerImpl;
 import com.cloud.usage.UsageNetworksVO;
 import com.cloud.usage.UsageVO;
 import com.cloud.usage.dao.UsageDao;
@@ -25,10 +24,8 @@ import com.cloud.user.AccountVO;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import com.cloud.utils.DateUtil;
 import org.apache.cloudstack.usage.UsageTypes;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import java.text.DecimalFormat;
@@ -37,7 +34,7 @@ import java.util.List;
 
 @Component
 public class NetworksUsageParser {
-    protected static Logger LOGGER = LogManager.getLogger(NetworksUsageParser.class);
+    private static final Logger LOGGER = Logger.getLogger(NetworksUsageParser.class.getName());
 
     @Inject
     private UsageNetworksDao networksDao;
@@ -54,14 +51,14 @@ public class NetworksUsageParser {
     }
 
     public static boolean parse(AccountVO account, Date startDate, Date endDate) {
-        LOGGER.debug("Parsing all networks usage events for account [{}].", account.getId());
+        LOGGER.debug(String.format("Parsing all networks usage events for account [%s].", account.getId()));
         if ((endDate == null) || endDate.after(new Date())) {
             endDate = new Date();
         }
 
         final List<UsageNetworksVO> usageNetworksVO = staticNetworksDao.getUsageRecords(account.getId(), startDate, endDate);
         if (usageNetworksVO == null || usageNetworksVO.isEmpty()) {
-            LOGGER.debug("Could not find any network usage for account [{}], between [{}] and [{}].", account, startDate, endDate);
+            LOGGER.debug(String.format("Cannot find any VPC usage for account [%s] in period between [%s] and [%s].", account, startDate, endDate));
             return true;
         }
 
@@ -84,9 +81,8 @@ public class NetworksUsageParser {
 
             long networkId = usageNetwork.getNetworkId();
             long networkOfferingId = usageNetwork.getNetworkOfferingId();
-            LOGGER.debug("Creating network usage record with id [{}], network offering [{}], usage [{}], startDate [{}], and endDate [{}], for account [{}].",
-                    networkId, networkOfferingId, usageDisplay, DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), startDate),
-                    DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), endDate), account.getId());
+            LOGGER.debug(String.format("Creating network usage record with id [%s], network offering [%s], usage [%s], startDate [%s], and endDate [%s], for account [%s].",
+                    networkId, networkOfferingId, usageDisplay, startDate, endDate, account.getId()));
 
             String description = String.format("Network usage for network ID: %d, network offering: %d", usageNetwork.getNetworkId(), usageNetwork.getNetworkOfferingId());
             UsageVO usageRecord =
@@ -99,5 +95,4 @@ public class NetworksUsageParser {
 
         return true;
     }
-
 }
