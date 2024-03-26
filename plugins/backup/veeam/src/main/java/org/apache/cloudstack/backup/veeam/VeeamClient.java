@@ -57,6 +57,8 @@ import org.apache.cloudstack.backup.veeam.api.HierarchyItems;
 import org.apache.cloudstack.backup.veeam.api.Job;
 import org.apache.cloudstack.backup.veeam.api.JobCloneSpec;
 import org.apache.cloudstack.backup.veeam.api.Link;
+import org.apache.cloudstack.backup.veeam.api.ObjectInJob;
+import org.apache.cloudstack.backup.veeam.api.ObjectsInJob;
 import org.apache.cloudstack.backup.veeam.api.Ref;
 import org.apache.cloudstack.backup.veeam.api.RestoreSession;
 import org.apache.cloudstack.backup.veeam.api.Task;
