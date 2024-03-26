@@ -124,8 +124,9 @@
         </dependency>
         <!-- Test dependency in mysql for db tests -->
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>${cs.mysql.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

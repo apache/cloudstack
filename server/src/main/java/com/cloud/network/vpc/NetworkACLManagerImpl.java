@@ -169,7 +169,7 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
         final List<NetworkACLItemVO> aclItems = _networkACLItemDao.listByACL(acl.getId());
         if (aclItems == null || aclItems.isEmpty()) {
             //Revoke ACL Items of the existing ACL if the new network acl is empty
-            //Other wise existing rules will not be removed on the router elelment
+            //Otherwise existing rules will not be removed on the router element
             logger.debug("New network ACL is empty. Revoke existing rules before applying ACL");
             if (!revokeACLItemsForPrivateGw(gateway)) {
                 throw new CloudRuntimeException("Failed to replace network ACL. Error while removing existing ACL " + "items for privatewa gateway: " + gateway.getId());
