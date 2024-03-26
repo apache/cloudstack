@@ -191,6 +191,10 @@ public interface StorageManager extends StorageService {
             true,
             ConfigKey.Scope.Global,
             null);
+    static final ConfigKey<Boolean> DataStoreDownloadFollowRedirects = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED,
+            Boolean.class, "store.download.follow.redirects", "false",
+            "Whether HTTP redirect is followed during store downloads for objects such as template, volume etc.",
+            true, ConfigKey.Scope.Global);
 
     /**
      * should we execute in sequence not involving any storages?

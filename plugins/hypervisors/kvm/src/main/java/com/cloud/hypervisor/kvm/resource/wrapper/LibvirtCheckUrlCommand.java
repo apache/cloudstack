@@ -37,9 +37,9 @@ public class LibvirtCheckUrlCommand extends CommandWrapper<CheckUrlCommand, Chec
         final String url = cmd.getUrl();
         s_logger.info("Checking URL: " + url);
         Long remoteSize = null;
-        boolean checkResult = DirectDownloadHelper.checkUrlExistence(url);
+        boolean checkResult = DirectDownloadHelper.checkUrlExistence(url, cmd.isFollowRedirects());
         if (checkResult) {
-            remoteSize = DirectDownloadHelper.getFileSize(url, cmd.getFormat());
+            remoteSize = DirectDownloadHelper.getFileSize(url, cmd.getFormat(), cmd.isFollowRedirects());
             if (remoteSize == null || remoteSize < 0) {
                 s_logger.error(String.format("Couldn't properly retrieve the remote size of the template on " +
                         "url %s, obtained size = %s", url, remoteSize));

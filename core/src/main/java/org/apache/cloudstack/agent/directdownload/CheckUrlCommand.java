@@ -25,6 +25,7 @@ public class CheckUrlCommand extends Command {
 
     private String format;
     private String url;
+    private boolean followRedirects;
 
     public String getFormat() {
         return format;
@@ -34,10 +35,15 @@ public class CheckUrlCommand extends Command {
         return url;
     }
 
-    public CheckUrlCommand(final String format,final String url) {
+    public boolean isFollowRedirects() {
+        return followRedirects;
+    }
+
+    public CheckUrlCommand(final String format, final String url, final boolean followRedirects) {
         super();
         this.format = format;
         this.url = url;
+        this.followRedirects = followRedirects;
     }
 
     @Override

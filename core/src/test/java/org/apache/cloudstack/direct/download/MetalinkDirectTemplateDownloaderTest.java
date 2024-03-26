@@ -25,7 +25,7 @@ import org.mockito.InjectMocks;
 public class MetalinkDirectTemplateDownloaderTest extends BaseDirectTemplateDownloaderTest {
 
     @InjectMocks
-    protected MetalinkDirectTemplateDownloader metalinkDownloader = new MetalinkDirectTemplateDownloader(httpsUrl);
+    protected MetalinkDirectTemplateDownloader metalinkDownloader = new MetalinkDirectTemplateDownloader(httpsUrl, false);
     @Test
     public void testCheckUrlMetalink() {
         metalinkDownloader.downloader = httpsDownloader;

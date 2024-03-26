@@ -56,7 +56,7 @@ public class BaseDirectTemplateDownloaderTest {
     private HttpEntity httpEntity;
 
     @InjectMocks
-    protected HttpsDirectTemplateDownloader httpsDownloader = new HttpsDirectTemplateDownloader(httpUrl);
+    protected HttpsDirectTemplateDownloader httpsDownloader = new HttpsDirectTemplateDownloader(httpUrl, false);
 
     @Before
     public void init() throws IOException {
