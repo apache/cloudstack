@@ -581,7 +581,7 @@ public class VeeamClient {
 
     private boolean checkIfVmAlreadyExistsInJob(String jobId, String vmwareInstanceName) {
         jobId = jobId.replace("urn:veeam:Job:", "");
-        logger.debug("Checking if VM [name: {}] is already assigned to the Backup Job [name: {}].", vmwareInstanceName, jobId));
+        logger.debug("Checking if VM [name: {}] is already assigned to the Backup Job [name: {}].", vmwareInstanceName, jobId);
         List<String> cmds = Arrays.asList(
                 String.format("$job = (Get-VBRJob ^| Where-Object { $_.Id -eq '%s' })", jobId),
                 "if ($job) { ",
