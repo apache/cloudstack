@@ -87,6 +87,7 @@ import com.cloud.server.StatsCollector;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.TemplateProfile;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
@@ -156,7 +157,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
      * Validate on random running KVM host that URL is reachable
      * @param url url
      */
-    private Long performDirectDownloadUrlValidation(final String format, final String url, final List<Long> zoneIds) {
+    private Long performDirectDownloadUrlValidation(final String format, final String url, final List<Long> zoneIds,
+                boolean followRedirects) {
         HostVO host = null;
         if (zoneIds != null && !zoneIds.isEmpty()) {
             for (Long zoneId : zoneIds) {
@@ -175,7 +177,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         Integer socketTimeout = DirectDownloadManager.DirectDownloadSocketTimeout.value();
         Integer connectRequestTimeout = DirectDownloadManager.DirectDownloadConnectionRequestTimeout.value();
         Integer connectTimeout = DirectDownloadManager.DirectDownloadConnectTimeout.value();
-        CheckUrlCommand cmd = new CheckUrlCommand(format, url, connectTimeout, connectRequestTimeout, socketTimeout);
+        CheckUrlCommand cmd = new CheckUrlCommand(format, url, connectTimeout, connectRequestTimeout, socketTimeout,
+                followRedirects);
         s_logger.debug("Performing URL " + url + " validation on host " + host.getId());
         Answer answer = _agentMgr.easySend(host.getId(), cmd);
         if (answer == null || !answer.getResult()) {
@@ -199,6 +202,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         TemplateProfile profile = super.prepare(cmd);
         String url = profile.getUrl();
         UriUtils.validateUrl(ImageFormat.ISO.getFileExtension(), url);
+        boolean followRedirects = StorageManager.DataStoreDownloadFollowRedirects.value();
         if (cmd.isDirectDownload()) {
             DigestHelper.validateChecksumString(cmd.getChecksum());
             List<Long> zoneIds = null;
@@ -206,12 +210,15 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                 zoneIds =  new ArrayList<>();
                 zoneIds.add(cmd.getZoneId());
             }
-            Long templateSize = performDirectDownloadUrlValidation(ImageFormat.ISO.getFileExtension(), url, zoneIds);
+            Long templateSize = performDirectDownloadUrlValidation(ImageFormat.ISO.getFileExtension(), url, zoneIds,
+                    followRedirects);
             profile.setSize(templateSize);
         }
         profile.setUrl(url);
         // Check that the resource limit for secondary storage won't be exceeded
-        _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(cmd.getEntityOwnerId()), ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
+        _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(cmd.getEntityOwnerId()),
+                ResourceType.secondary_storage,
+                UriUtils.getRemoteSize(url, followRedirects));
         return profile;
     }
 
@@ -229,14 +236,18 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         TemplateProfile profile = super.prepare(cmd);
         String url = profile.getUrl();
         UriUtils.validateUrl(cmd.getFormat(), url, cmd.isDirectDownload());
+        boolean followRedirects = StorageManager.DataStoreDownloadFollowRedirects.value();
         if (cmd.isDirectDownload()) {
             DigestHelper.validateChecksumString(cmd.getChecksum());
-            Long templateSize = performDirectDownloadUrlValidation(cmd.getFormat(), url, cmd.getZoneIds());
+            Long templateSize = performDirectDownloadUrlValidation(cmd.getFormat(), url, cmd.getZoneIds(),
+                    followRedirects);
             profile.setSize(templateSize);
         }
         profile.setUrl(url);
         // Check that the resource limit for secondary storage won't be exceeded
-        _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(cmd.getEntityOwnerId()), ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
+        _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(cmd.getEntityOwnerId()),
+                ResourceType.secondary_storage,
+                UriUtils.getRemoteSize(url, followRedirects));
         return profile;
     }
 
