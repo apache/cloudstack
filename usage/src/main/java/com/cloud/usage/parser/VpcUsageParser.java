@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.usage.parser;
 
-import com.cloud.usage.UsageManagerImpl;
 import com.cloud.usage.UsageVpcVO;
 import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.UsageVO;
@@ -24,20 +23,17 @@ import com.cloud.usage.dao.UsageVpcDao;
 import com.cloud.user.AccountVO;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
-
-import com.cloud.utils.DateUtil;
 import org.apache.cloudstack.usage.UsageTypes;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.List;
+import org.apache.log4j.Logger;
 
 @Component
 public class VpcUsageParser {
-    protected static Logger LOGGER = LogManager.getLogger(VpcUsageParser.class);
+    private static final Logger LOGGER = Logger.getLogger(VpcUsageParser.class.getName());
 
     @Inject
     private UsageVpcDao vpcDao;
@@ -53,14 +49,14 @@ public class VpcUsageParser {
     }
 
     public static boolean parse(AccountVO account, Date startDate, Date endDate) {
-        LOGGER.debug("Parsing all VPC usage events for account [{}].", account.getId());
+        LOGGER.debug(String.format("Parsing all VPC usage events for account [%s].", account.getId()));
         if ((endDate == null) || endDate.after(new Date())) {
             endDate = new Date();
         }
 
         final List<UsageVpcVO> usageVPCs = s_usageVpcDao.getUsageRecords(account.getId(), startDate, endDate);
         if (usageVPCs == null || usageVPCs.isEmpty()) {
-            LOGGER.debug("Cannot find any VPC usage for account [{}] in period between [{}] and [{}].", account, startDate, endDate);
+            LOGGER.debug(String.format("Cannot find any VPC usage for account [%s] in period between [%s] and [%s].", account, startDate, endDate));
             return true;
         }
 
@@ -82,9 +78,8 @@ public class VpcUsageParser {
             String usageDisplay = dFormat.format(usage);
 
             long vpcId = usageVPC.getVpcId();
-            LOGGER.debug("Creating VPC usage record with id [{}], usage [{}], startDate [{}], and endDate [{}], for account [{}].", vpcId, usageDisplay,
-                    DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), startDate),
-                    DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), endDate), account.getId());
+            LOGGER.debug(String.format("Creating VPC usage record with id [%s], usage [%s], startDate [%s], and endDate [%s], for account [%s].",
+                    vpcId, usageDisplay, startDate, endDate, account.getId()));
 
             String description = String.format("VPC usage for VPC ID: %d", usageVPC.getVpcId());
             UsageVO usageRecord =
