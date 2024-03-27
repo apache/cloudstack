@@ -326,9 +326,14 @@
           :maskClosable="false"
           :footer="null"
           :cancelText="$t('label.cancel')"
-          @cancel="showImportForm = false"
+          @cancel="onCloseImportVolumeForm"
           centered
           width="auto">
+          <a-alert type="warning" style="margin-bottom: 20px">
+            <template #message>
+              <label v-html="$t('message.import.volume')"></label>
+            </template>
+          </a-alert>
           <a-form
             :ref="importFormRef"
             :model="importForm"
@@ -337,13 +342,102 @@
             class="import-form"
           >
             <a-form-item
-              name="mode"
-              ref="mode"
+              name="name"
+              ref="name"
               :label="$t('label.name')">
               <a-input v-model:value="importForm.name" />
             </a-form-item>
+
+            <a-form-item
+              name="accounttype"
+              ref="accounttype"
+              :label="$t('label.accounttype')">
+              <a-select
+                v-model:value="importForm.selectedAccountType"
+                v-focus="true"
+                showSearch
+                optionFilterProp="value"
+                :filterOption="(input, option) => {
+                  return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }">
+                <a-select-option :value="null"></a-select-option>
+                <a-select-option :value="$t('label.account')">{{ $t('label.account') }}</a-select-option>
+                <a-select-option :value="$t('label.project')">{{ $t('label.project') }}</a-select-option>
+              </a-select>
+            </a-form-item>
+
+            <a-form-item
+              v-if="importForm.selectedAccountType === $t('label.account') || importForm.selectedAccountType === $t('label.project')"
+              name="domain"
+              ref="domain"
+              :label="$t('label.domain')">
+              <a-select
+                @change="changeDomain"
+                v-model:value="importForm.selectedDomain"
+                showSearch
+                optionFilterProp="label"
+                :filterOption="(input, option) => {
+                  return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }" >
+                <a-select-option v-for="domain in domains" :key="domain.name" :value="domain.id" :label="domain.path || domain.name || domain.description">
+                <span>
+                  <resource-icon v-if="domain && domain.icon" :image="domain.icon.base64image" size="1x" style="margin-right: 5px"/>
+                  <block-outlined v-else style="margin-right: 5px" />
+                  {{ domain.path || domain.name || domain.description }}
+                </span>
+                </a-select-option>
+              </a-select>
+            </a-form-item>
+
+            <a-form-item
+              v-if="importForm.selectedAccountType === $t('label.account')"
+              name="account"
+              ref="account"
+              :label="$t('label.account')">
+              <a-select
+                @change="changeAccount"
+                v-model:value="importForm.selectedAccount"
+                showSearch
+                optionFilterProp="value"
+                :filterOption="(input, option) => {
+                    return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }" >
+                <a-select-option v-for="account in accounts" :key="account.name" :value="account.name">
+                  <span>
+                    <resource-icon v-if="account && account.icon" :image="account.icon.base64image" size="1x" style="margin-right: 5px"/>
+                    <team-outlined v-else style="margin-right: 5px" />
+                    {{ account.name }}
+                  </span>
+                </a-select-option>
+              </a-select>
+              <span v-if="importForm.accountError" class="required">{{ $t('label.required') }}</span>
+            </a-form-item>
+
+            <a-form-item
+              v-if="importForm.selectedAccountType === $t('label.project')"
+              name="project"
+              ref="project"
+              :label="$t('label.project')">
+              <a-select
+                @change="changeProject"
+                v-model:value="importForm.selectedProject"
+                showSearch
+                optionFilterProp="label"
+                :filterOption="(input, option) => {
+                  return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }" >
+                <a-select-option v-for="project in projects" :key="project.id" :value="project.id" :label="project.name">
+                <span>
+                  <resource-icon v-if="project && project.icon" :image="project.icon.base64image" size="1x" style="margin-right: 5px"/>
+                  <project-outlined v-else style="margin-right: 5px" />
+                  {{ project.name }}
+                </span>
+                </a-select-option>
+              </a-select>
+              <span v-if="importForm.projectError" class="required">{{ $t('label.required') }}</span>
+            </a-form-item>
             <div :span="24" class="action-button">
-              <a-button @click="showImportForm = false">{{ $t('label.cancel') }}</a-button>
+              <a-button @click="onCloseImportVolumeForm">{{ $t('label.cancel') }}</a-button>
               <a-button type="primary" ref="submit" @click="handleSubmitImportVolumeForm">{{ $t('label.ok') }}</a-button>
             </div>
           </a-form>
@@ -419,6 +513,9 @@ export default {
       }
     ]
     return {
+      domains: [],
+      accounts: [],
+      projects: [],
       options: {
         zones: [],
         pods: [],
@@ -485,6 +582,7 @@ export default {
     this.page.managed = parseInt(this.$route.query.managedpage || 1)
     this.initForm()
     this.fetchData()
+    this.fetchDomains()
   },
   computed: {
     isPageAllowed () {
@@ -842,6 +940,65 @@ export default {
       this.updateQuery('scope', value)
       this.fetchOptions(this.params.zones, 'zones', value)
     },
+    fetchDomains () {
+      api('listDomains', {
+        response: 'json',
+        listAll: true,
+        showicon: true,
+        details: 'min'
+      }).then(response => {
+        this.domains = response.listdomainsresponse.domain || []
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.loading = false
+      })
+    },
+    fetchAccounts () {
+      this.loading = true
+      api('listAccounts', {
+        response: 'json',
+        domainId: this.importForm.selectedDomain,
+        showicon: true,
+        state: 'Enabled',
+        isrecursive: false
+      }).then(response => {
+        this.accounts = response.listaccountsresponse.account || []
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.loading = false
+      })
+    },
+    fetchProjects () {
+      this.loading = true
+      api('listProjects', {
+        response: 'json',
+        domainId: this.importForm.selectedDomain,
+        state: 'Active',
+        showicon: true,
+        details: 'min',
+        isrecursive: false
+      }).then(response => {
+        this.projects = response.listprojectsresponse.project || []
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.loading = false
+      })
+    },
+    changeDomain () {
+      this.importForm.selectedAccount = null
+      this.importForm.selectedProject = null
+      this.fetchAccounts()
+      this.fetchProjects()
+    },
+    changeAccount () {
+      this.importForm.selectedProject = null
+    },
+    changeProject () {
+      this.importForm.selectedAccount = null
+    },
     fetchVolumes () {
       this.fetchUnmanagedVolumes()
       this.fetchManagedVolumes()
@@ -961,7 +1118,28 @@ export default {
       }
       this.values = toRaw(this.importForm)
       const volumeName = this.selectedUnmanagedVolume.name
+
+      let variableKey = ''
+      let variableValue = ''
+      if (this.values.selectedAccountType === 'Account') {
+        if (!this.values.selectedAccount) {
+          this.importForm.accountError = true
+          return
+        }
+        variableKey = 'account'
+        variableValue = this.values.selectedAccount
+      } else if (this.values.selectedAccountType === 'Project') {
+        if (!this.values.selectedProject) {
+          this.importForm.projectError = true
+          return
+        }
+        variableKey = 'projectid'
+        variableValue = this.values.selectedProject
+      }
+
       var params = {
+        domainid: this.importForm.selectedDomain,
+        [variableKey]: variableValue,
         storageid: this.poolId,
         path: this.selectedUnmanagedVolume.path,
         name: this.values.name
@@ -985,7 +1163,14 @@ export default {
         this.loading = false
       })
       this.selectedUnmanagedVolume = null
+      this.onCloseImportVolumeForm()
+    },
+    onCloseImportVolumeForm () {
       this.showImportForm = false
+      this.importForm.selectedAccountType = null
+      this.importForm.selectedDomain = null
+      this.importForm.selectedAccount = null
+      this.importForm.selectedProject = null
     },
     onUnmanageVolumeAction () {
       const self = this
@@ -1044,11 +1229,32 @@ export default {
 }
 
 .import-form {
-  width: 80vw;
+  width: 85vw;
 
-  @media (min-width: 500px) {
-    min-width: 400px;
+  @media (min-width: 760px) {
+    width: 500px;
+  }
+
+  display: flex;
+  flex-direction: column;
+
+  &__item {
+    display: flex;
+    flex-direction: column;
     width: 100%;
+    margin-bottom: 10px;
+  }
+
+  &__label {
+    display: flex;
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+
+  .required {
+    margin-right: 2px;
+    color: red;
+    font-weight: bold;
   }
 }
 .volumes-card {
