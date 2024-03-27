@@ -203,6 +203,7 @@
   <bean id="usageStorageDaoImpl" class="com.cloud.usage.dao.UsageStorageDaoImpl" />
   <bean id="usageVMInstanceDaoImpl" class="com.cloud.usage.dao.UsageVMInstanceDaoImpl" />
   <bean id="usageVPNUserDaoImpl" class="com.cloud.usage.dao.UsageVPNUserDaoImpl" />
+  <bean id="usageVpcDaoImpl" class="com.cloud.usage.dao.UsageVpcDaoImpl" />
   <bean id="usageVolumeDaoImpl" class="com.cloud.usage.dao.UsageVolumeDaoImpl" />
   <bean id="usageVmDiskDaoImpl" class="com.cloud.usage.dao.UsageVmDiskDaoImpl" />
   <bean id="usageBackupDaoImpl" class="com.cloud.usage.dao.UsageBackupDaoImpl" />
