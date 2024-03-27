@@ -455,7 +455,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
         LinkType linkType = LdapManager.LinkType.valueOf(cmd.getType().toUpperCase());
         Account account = accountDao.findActiveAccount(cmd.getAccountName(),cmd.getDomainId());
         if (account == null) {
-            account = new AccountVO(cmd.getAccountName(), cmd.getDomainId(), null, cmd.getAccountType(), UUID.randomUUID().toString());
+            account = new AccountVO(cmd.getAccountName(), cmd.getDomainId(), null, cmd.getAccountType(), cmd.getRoleId(), UUID.randomUUID().toString());
             accountDao.persist((AccountVO)account);
         }
 
