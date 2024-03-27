@@ -97,6 +97,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -239,6 +240,7 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.JoinBuilder;
@@ -382,6 +384,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Inject
     protected BucketDao _bucketDao;
+    @Inject
+    ConfigDepot configDepot;
+    @Inject
+    ConfigurationDao configurationDao;
+
     protected List<StoragePoolDiscoverer> _discoverers;
 
     public List<StoragePoolDiscoverer> getDiscoverers() {
@@ -439,6 +446,23 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             return false;
         } else {
             return true;
+        }
+    }
+
+    protected void enableDefaultDatastoreDownloadRedirectionForExistingInstallations() {
+        if (!configDepot.isNewConfig(DataStoreDownloadFollowRedirects)) {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace(String.format("%s is not a new configuration, skipping updating its value",
+                        DataStoreDownloadFollowRedirects.key()));
+            }
+            return;
+        }
+        List<DataCenterVO> zones =
+                _dcDao.listAll(new Filter(1));
+        if (CollectionUtils.isNotEmpty(zones)) {
+            s_logger.debug(String.format("Updating value for configuration: %s to true",
+                DataStoreDownloadFollowRedirects.key()));
+            configurationDao.update(DataStoreDownloadFollowRedirects.key(), "true");
         }
     }
 
@@ -673,7 +697,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         _executor.scheduleWithFixedDelay(new DownloadURLGarbageCollector(), _downloadUrlCleanupInterval, _downloadUrlCleanupInterval, TimeUnit.SECONDS);
-
+        enableDefaultDatastoreDownloadRedirectionForExistingInstallations();
         return true;
     }
 
@@ -3719,7 +3743,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 MountDisabledStoragePool,
                 VmwareCreateCloneFull,
                 VmwareAllowParallelExecution,
-                ConvertVmwareInstanceToKvmTimeout
+                ConvertVmwareInstanceToKvmTimeout,
+                DataStoreDownloadFollowRedirects
         };
     }
 

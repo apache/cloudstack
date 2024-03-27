@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,18 +14,17 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
-package org.apache.cloudstack.agent.directdownload;
 
-import java.util.Map;
+package org.apache.cloudstack.storage.to;
 
-import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+public class DownloadableObjectTO {
+    protected boolean followRedirects = false;
 
-public class NfsDirectDownloadCommand extends DirectDownloadCommand {
-
-    public NfsDirectDownloadCommand(final String url, final Long templateId, final PrimaryDataStoreTO destPool,
-                final String checksum, final Map<String, String> headers) {
-        super(url, templateId, destPool, checksum, headers, null, null, null, false);
+    public boolean isFollowRedirects() {
+        return followRedirects;
     }
 
+    public void setFollowRedirects(boolean followRedirects) {
+        this.followRedirects = followRedirects;
+    }
 }
