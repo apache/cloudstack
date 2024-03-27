@@ -71,12 +71,6 @@ public class LibvirtConvertInstanceCommandWrapperTest {
 
     private static final String secondaryPoolUrl = "nfs://192.168.1.1/secondary";
     private static final String vmName = "VmToImport";
-    private static final String hostName = "VmwareHost1";
-    private static final String vmwareVcenter = "192.168.1.2";
-    private static final String vmwareDatacenter = "Datacenter";
-    private static final String vmwareCluster = "Cluster";
-    private static final String vmwareUsername = "administrator@vsphere.local";
-    private static final String vmwarePassword = "password";
 
     @Before
     public void setUp() {
@@ -191,6 +185,7 @@ public class LibvirtConvertInstanceCommandWrapperTest {
         Mockito.when(destDisk.getPath()).thenReturn("xyz");
         Mockito.when(storagePoolManager.getStoragePool(Storage.StoragePoolType.NetworkFilesystem, destinationPoolUuid))
                 .thenReturn(destinationPool);
+        Mockito.when(destinationPool.getType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
         Mockito.when(storagePoolManager.copyPhysicalDisk(Mockito.eq(sourceDisk), Mockito.anyString(), Mockito.eq(destinationPool), Mockito.anyInt()))
                 .thenReturn(destDisk);
 
@@ -243,12 +238,6 @@ public class LibvirtConvertInstanceCommandWrapperTest {
         RemoteInstanceTO remoteInstanceTO = Mockito.mock(RemoteInstanceTO.class);
         Mockito.when(remoteInstanceTO.getHypervisorType()).thenReturn(hypervisorType);
         Mockito.when(remoteInstanceTO.getInstanceName()).thenReturn(vmName);
-        Mockito.when(remoteInstanceTO.getHostName()).thenReturn(hostName);
-        Mockito.when(remoteInstanceTO.getVcenterHost()).thenReturn(vmwareVcenter);
-        Mockito.when(remoteInstanceTO.getDatacenterName()).thenReturn(vmwareDatacenter);
-        Mockito.when(remoteInstanceTO.getClusterName()).thenReturn(vmwareCluster);
-        Mockito.when(remoteInstanceTO.getVcenterUsername()).thenReturn(vmwareUsername);
-        Mockito.when(remoteInstanceTO.getVcenterPassword()).thenReturn(vmwarePassword);
         return remoteInstanceTO;
     }
 
@@ -303,8 +292,7 @@ public class LibvirtConvertInstanceCommandWrapperTest {
             Answer answer = convertInstanceCommandWrapper.execute(cmd, libvirtComputingResourceMock);
             Assert.assertFalse(answer.getResult());
             Mockito.verify(convertInstanceCommandWrapper).performInstanceConversion(Mockito.anyString(),
-                    Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyBoolean());
+                    Mockito.anyString(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyBoolean());
         }
     }
-
 }

@@ -1892,7 +1892,9 @@ public class VirtualMachineMO extends BaseMO {
                             command.add("-cf", exportName + ".ova");
                             command.add(exportName + ".ovf");        // OVF file should be the first file in OVA archive
                             for (String name : fileNames) {
-                                command.add((new File(name).getName()));
+                                if (!name.endsWith(".ovf")) {
+                                    command.add((new File(name).getName()));
+                                }
                             }
 
                             s_logger.info("Package OVA with command: " + command.toString());

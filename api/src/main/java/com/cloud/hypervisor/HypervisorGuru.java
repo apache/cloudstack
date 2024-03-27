@@ -23,6 +23,7 @@ import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -112,18 +113,21 @@ public interface HypervisorGuru extends Adapter {
      * @param hostIp VM's source host IP
      * @param vmName name of the source VM to clone from
      * @param params hypervisor specific additional parameters
-     * @return a reference to the cloned VM
+     * @param templateLocation datastore to create the template file
+     * @return a reference to the cloned VM and created template dir/name
      */
-    UnmanagedInstanceTO cloneHypervisorVMOutOfBand(String hostIp, String vmName,
-                                                   Map<String, String> params);
+    Pair<UnmanagedInstanceTO, String> cloneHypervisorVMAndCreateTemplateFileOutOfBand(String hostIp, String vmName,
+                                                                        Map<String, String> params, DataStoreTO templateLocation);
 
     /**
      * Removes a VM created as a clone of a VM on an external host
      * @param hostIp VM's source host IP
      * @param vmName name of the VM to remove
      * @param params hypervisor specific additional parameters
+     * @param templateLocation datastore to remove the template file
+     * @param templateDirAndName the template dir to remove from datastore
      * @return true if the operation succeeds, false if not
      */
-    boolean removeClonedHypervisorVMOutOfBand(String hostIp, String vmName,
-                                              Map<String, String> params);
+    boolean removeClonedHypervisorVMAandTemplateFileOutOfBand(String hostIp, String vmName,
+                                                              Map<String, String> params, DataStoreTO templateLocation, String templateDirAndName);
 }

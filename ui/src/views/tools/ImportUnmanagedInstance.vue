@@ -911,7 +911,7 @@ export default {
       if (this.selectedStorageOptionForConversion === 'primary') {
         api('listStoragePools', {
           zoneid: this.cluster.zoneid,
-          state: 'Up'
+          status: 'Up'
         }).then(json => {
           this.storagePoolsForConversion = json.liststoragepoolsresponse.storagepool || []
         })
@@ -920,7 +920,7 @@ export default {
         api('listStoragePools', {
           scope: 'HOST',
           ipaddress: kvmHost.ipaddress,
-          state: 'Up'
+          status: 'Up'
         }).then(json => {
           this.storagePoolsForConversion = json.liststoragepoolsresponse.storagepool || []
         })

@@ -35,6 +35,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -368,14 +369,14 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     }
 
     @Override
-    public UnmanagedInstanceTO cloneHypervisorVMOutOfBand(String hostIp, String vmName, Map<String, String> params) {
-        s_logger.error("Unsupported operation: cannot clone external VM");
+    public Pair<UnmanagedInstanceTO, String> cloneHypervisorVMAndCreateTemplateFileOutOfBand(String hostIp, String vmName, Map<String, String> params, DataStoreTO templateLocation) {
+        s_logger.error("Unsupported operation: cannot clone external VM / create template file");
         return null;
     }
 
     @Override
-    public boolean removeClonedHypervisorVMOutOfBand(String hostIp, String vmName, Map<String, String> params) {
-        s_logger.error("Unsupported operation: cannot remove external VM");
+    public boolean removeClonedHypervisorVMAandTemplateFileOutOfBand(String hostIp, String vmName, Map<String, String> params, DataStoreTO templateLocation, String templateDirAndName) {
+        s_logger.error("Unsupported operation: cannot remove external VM and template file");
         return false;
     }
 }
