@@ -304,7 +304,7 @@ public class StatsCollectorTest {
 
         statsCollector.cleanUpVirtualMachineStats();
 
-        Mockito.verify(vmStatsDaoMock, Mockito.never()).removeAllByTimestampLessThan(Mockito.any());
+        Mockito.verify(vmStatsDaoMock, Mockito.never()).removeAllByTimestampLessThan(Mockito.any(), Mockito.any());
     }
 
     @Test
@@ -313,7 +313,7 @@ public class StatsCollectorTest {
 
         statsCollector.cleanUpVirtualMachineStats();
 
-        Mockito.verify(vmStatsDaoMock).removeAllByTimestampLessThan(Mockito.any());
+        Mockito.verify(vmStatsDaoMock).removeAllByTimestampLessThan(Mockito.any(), Mockito.any());
     }
 
     @Test
