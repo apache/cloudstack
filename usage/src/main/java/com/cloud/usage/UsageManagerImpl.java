@@ -16,6 +16,36 @@
 // under the License.
 package com.cloud.usage;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
+import java.net.InetAddress;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import javax.persistence.EntityExistsException;
+
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.quota.QuotaAlertManager;
+import org.apache.cloudstack.quota.QuotaManager;
+import org.apache.cloudstack.quota.QuotaStatement;
+import org.apache.cloudstack.usage.UsageTypes;
+import org.apache.cloudstack.utils.usage.UsageUtils;
+import org.apache.commons.collections.CollectionUtils;
+import org.springframework.stereotype.Component;
+
 import com.cloud.alert.AlertManager;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventDetailsVO;
@@ -71,33 +101,6 @@ import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.cloudstack.quota.QuotaAlertManager;
-import org.apache.cloudstack.quota.QuotaManager;
-import org.apache.cloudstack.quota.QuotaStatement;
-import org.apache.cloudstack.usage.UsageTypes;
-import org.apache.cloudstack.utils.usage.UsageUtils;
-import org.apache.commons.collections.CollectionUtils;
-import org.springframework.stereotype.Component;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.net.InetAddress;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 @Component
 public class UsageManagerImpl extends ManagerBase implements UsageManager, Runnable {
@@ -1036,34 +1039,38 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
 
     private void createHelperRecord(UsageEventVO event) {
         String eventType = event.getType();
-        if (isVMEvent(eventType)) {
-            createVMHelperEvent(event);
-        } else if (isIPEvent(eventType)) {
-            createIPHelperEvent(event);
-        } else if (isVolumeEvent(eventType)) {
-            createVolumeHelperEvent(event);
-        } else if (isTemplateEvent(eventType)) {
-            createTemplateHelperEvent(event);
-        } else if (isISOEvent(eventType)) {
-            createISOHelperEvent(event);
-        } else if (isSnapshotEvent(eventType)) {
-            createSnapshotHelperEvent(event);
-        } else if (isLoadBalancerEvent(eventType)) {
-            createLoadBalancerHelperEvent(event);
-        } else if (isPortForwardingEvent(eventType)) {
-            createPortForwardingHelperEvent(event);
-        } else if (isNetworkOfferingEvent(eventType)) {
-            createNetworkOfferingEvent(event);
-        } else if (isVPNUserEvent(eventType)) {
-            handleVpnUserEvent(event);
-        } else if (isSecurityGroupEvent(eventType)) {
-            createSecurityGroupEvent(event);
-        } else if (isVmSnapshotEvent(eventType)) {
-            handleVMSnapshotEvent(event);
-        } else if (isVmSnapshotOnPrimaryEvent(eventType)) {
-            createVmSnapshotOnPrimaryEvent(event);
-        } else if (isBackupEvent(eventType)) {
-            createBackupEvent(event);
+        try {
+            if (isVMEvent(eventType)) {
+                createVMHelperEvent(event);
+            } else if (isIPEvent(eventType)) {
+                createIPHelperEvent(event);
+            } else if (isVolumeEvent(eventType)) {
+                createVolumeHelperEvent(event);
+            } else if (isTemplateEvent(eventType)) {
+                createTemplateHelperEvent(event);
+            } else if (isISOEvent(eventType)) {
+                createISOHelperEvent(event);
+            } else if (isSnapshotEvent(eventType)) {
+                createSnapshotHelperEvent(event);
+            } else if (isLoadBalancerEvent(eventType)) {
+                createLoadBalancerHelperEvent(event);
+            } else if (isPortForwardingEvent(eventType)) {
+                createPortForwardingHelperEvent(event);
+            } else if (isNetworkOfferingEvent(eventType)) {
+                createNetworkOfferingEvent(event);
+            } else if (isVPNUserEvent(eventType)) {
+                handleVpnUserEvent(event);
+            } else if (isSecurityGroupEvent(eventType)) {
+                createSecurityGroupEvent(event);
+            } else if (isVmSnapshotEvent(eventType)) {
+                handleVMSnapshotEvent(event);
+            } else if (isVmSnapshotOnPrimaryEvent(eventType)) {
+                createVmSnapshotOnPrimaryEvent(event);
+            } else if (isBackupEvent(eventType)) {
+                createBackupEvent(event);
+            }
+        } catch (EntityExistsException e) {
+            logger.warn(String.format("Failed to create usage event id: %d type: %s due to %s", event.getId(), eventType, e.getMessage()), e);
         }
     }
 

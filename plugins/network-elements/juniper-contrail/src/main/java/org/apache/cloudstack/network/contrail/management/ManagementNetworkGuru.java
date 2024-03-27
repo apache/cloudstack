@@ -109,7 +109,7 @@ public class ManagementNetworkGuru extends ContrailGuru {
     }
 
     @Override
-    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
+    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, String name, Long vpcId, Account owner) {
 
         if (!canHandle(offering)) {
             return null;
