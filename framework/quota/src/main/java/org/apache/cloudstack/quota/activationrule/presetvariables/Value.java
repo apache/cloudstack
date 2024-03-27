@@ -43,6 +43,7 @@ public class Value extends GenericPresetVariable {
     private BackupOffering backupOffering;
     private String hypervisorType;
     private String volumeFormat;
+    private String state;
 
     public Host getHost() {
         return host;
@@ -204,5 +205,14 @@ public class Value extends GenericPresetVariable {
 
     public String getVolumeFormat() {
         return volumeFormat;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
+        fieldNamesToIncludeInToString.add("state");
     }
 }

@@ -197,6 +197,7 @@
   <bean id="usageJobDaoImpl" class="com.cloud.usage.dao.UsageJobDaoImpl" />
   <bean id="usageLoadBalancerPolicyDaoImpl" class="com.cloud.usage.dao.UsageLoadBalancerPolicyDaoImpl" />
   <bean id="usageNetworkDaoImpl" class="com.cloud.usage.dao.UsageNetworkDaoImpl" />
+  <bean id="usageNetworksDaoImpl" class="com.cloud.usage.dao.UsageNetworksDaoImpl" />
   <bean id="usageNetworkOfferingDaoImpl" class="com.cloud.usage.dao.UsageNetworkOfferingDaoImpl" />
   <bean id="usagePortForwardingRuleDaoImpl" class="com.cloud.usage.dao.UsagePortForwardingRuleDaoImpl" />
   <bean id="usageSecurityGroupDaoImpl" class="com.cloud.usage.dao.UsageSecurityGroupDaoImpl" />

@@ -1409,6 +1409,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         if (isNetworkImplemented(network)) {
             s_logger.debug("Network id=" + networkId + " is already implemented");
             implemented.set(guru, network);
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_UPDATE, network.getAccountId(), network.getDataCenterId(), network.getId(),
+                    network.getName(), network.getNetworkOfferingId(), null, network.getState().name(), Network.class.getName(), network.getUuid(), true);
             return implemented;
         }
 
@@ -1469,6 +1471,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             network.setRestartRequired(false);
             _networksDao.update(network.getId(), network);
             implemented.set(guru, network);
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_CREATE, network.getAccountId(), network.getDataCenterId(), network.getId(),
+                    network.getName(), network.getNetworkOfferingId(), null, null, null, network.getState().name(), network.getUuid());
             return implemented;
         } catch (final NoTransitionException e) {
             s_logger.error(e.getMessage());
@@ -3344,6 +3348,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     final Pair<Class<?>, Long> networkMsg = new Pair<Class<?>, Long>(Network.class, networkFinal.getId());
                     _messageBus.publish(_name, EntityManager.MESSAGE_REMOVE_ENTITY_EVENT, PublishScope.LOCAL, networkMsg);
                 }
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_DELETE, network.getAccountId(), network.getDataCenterId(), network.getId(),
+                        network.getName(), network.getNetworkOfferingId(), null, null, null, Network.class.getName(), network.getUuid());
                 return true;
             } catch (final CloudRuntimeException e) {
                 s_logger.error("Failed to delete network", e);
