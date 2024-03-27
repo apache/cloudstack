@@ -91,6 +91,10 @@ public interface AlertService {
             return null;
         }
 
+        public static Set<AlertType> getAlertTypes() {
+            return defaultAlertTypes;
+        }
+
         @Override
         public String toString() {
             return String.valueOf(this.getType());

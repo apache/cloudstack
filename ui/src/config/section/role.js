@@ -16,6 +16,8 @@
 // under the License.
 
 import { shallowRef, defineAsyncComponent } from 'vue'
+import store from '@/store'
+
 export default {
   name: 'role',
   title: 'label.roles',
@@ -30,6 +32,11 @@ export default {
   }, {
     name: 'rules',
     component: shallowRef(defineAsyncComponent(() => import('@/views/iam/RolePermissionTab.vue')))
+  }, {
+    name: 'events',
+    resourceType: 'Role',
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+    show: () => { return 'listEvents' in store.getters.apis }
   }],
   actions: [
     {
