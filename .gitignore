@@ -104,3 +104,4 @@ scripts/.pydevproject
 venv
 node_modules
 .vscode
+*.bz2
