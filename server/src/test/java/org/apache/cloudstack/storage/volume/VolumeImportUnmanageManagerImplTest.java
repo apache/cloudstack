@@ -30,6 +30,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.offering.DiskOffering;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
@@ -60,6 +61,7 @@ import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.junit.Assert;
 import org.junit.Before;
@@ -128,6 +130,8 @@ public class VolumeImportUnmanageManagerImplTest {
     private VMTemplatePoolDao templatePoolDao;
     @Mock
     private VolumeApiService volumeApiService;
+    @Mock
+    private SnapshotDataStoreDao snapshotDataStoreDao;
 
     @Mock
     StoragePoolVO storagePoolVO;
@@ -215,6 +219,7 @@ public class VolumeImportUnmanageManagerImplTest {
 
         when(volumeDao.findByPoolIdAndPath(poolId, path)).thenReturn(null);
         when(templatePoolDao.findByPoolPath(poolId, path)).thenReturn(null);
+        when(snapshotDataStoreDao.listByStoreAndInstallPaths(eq(poolId), eq(DataStoreRole.Primary), any())).thenReturn(null);
 
         VolumeOnStorageTO volumeOnStorageTO = new VolumeOnStorageTO(hypervisorType, path, name, fullPath,
                 format, size, virtualSize);

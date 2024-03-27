@@ -33,6 +33,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.offering.DiskOffering;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePoolHostVO;
@@ -63,6 +64,7 @@ import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.commons.collections.CollectionUtils;
@@ -110,6 +112,8 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
     private VMTemplatePoolDao templatePoolDao;
     @Inject
     private VolumeApiService volumeApiService;
+    @Inject
+    private SnapshotDataStoreDao snapshotDataStoreDao;
 
     static final String DEFAULT_DISK_OFFERING_NAME = "Default Custom Offering for Volume Import";
     static final String DEFAULT_DISK_OFFERING_UNIQUE_NAME = "Volume-Import";
@@ -144,7 +148,9 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
 
         List<VolumeForImportResponse> responses = new ArrayList<>();
         for (VolumeOnStorageTO volume : volumes) {
-            if (checkIfVolumeManaged(pool, volume.getPath()) || checkIfVolumeForTemplate(pool, volume.getPath())) {
+            if (checkIfVolumeManaged(pool, volume.getPath())
+                    || checkIfVolumeForTemplate(pool, volume.getPath())
+                    || checkIfVolumeForSnapshot(pool, volume.getFullPath())) {
                 continue;
             }
             responses.add(createVolumeForImportResponse(volume, pool));
@@ -194,6 +200,9 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         checkIfVolumeIsLocked(volume);
         checkIfVolumeIsEncrypted(volume);
         checkIfVolumeHasBackingFile(volume);
+        if (checkIfVolumeForSnapshot(pool, volume.getFullPath())) {
+            logFailureAndThrowException("Volume is a reference of snapshot on primary: " + volume.getFullPath());
+        }
 
         // 5. check resource limitation
         checkResourceLimitForImportVolume(owner, volume);
@@ -328,6 +337,11 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
 
     private boolean checkIfVolumeForTemplate(StoragePoolVO pool, String volumePath) {
         return templatePoolDao.findByPoolPath(pool.getId(), volumePath) != null;
+    }
+
+    private boolean checkIfVolumeForSnapshot(StoragePoolVO pool, String fullVolumePath) {
+        List<String> absPathList = Arrays.asList(fullVolumePath);
+        return CollectionUtils.isNotEmpty(snapshotDataStoreDao.listByStoreAndInstallPaths(pool.getId(), DataStoreRole.Primary, absPathList));
     }
 
     protected void checkIfVolumeIsLocked(VolumeOnStorageTO volume) {
