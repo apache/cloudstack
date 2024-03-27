@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.ResourceAllocationException;
@@ -71,9 +72,9 @@ public class CheckAndRepairVolumeCmd extends BaseAsyncCmd {
 
     public String getRepair() {
         if (org.apache.commons.lang3.StringUtils.isNotEmpty(repair)) {
-            RepairValues repairType = Enum.valueOf(RepairValues.class, repair.toUpperCase());
+            RepairValues repairType = EnumUtils.getEnumIgnoreCase(RepairValues.class, repair);
             if (repairType == null) {
-                throw new InvalidParameterValueException(String.format("Repair parameter can only take the following values: %s" + Arrays.toString(RepairValues.values())));
+                throw new InvalidParameterValueException(String.format("Repair parameter can only take the following values: %s", Arrays.toString(RepairValues.values())));
             }
             return repair.toLowerCase();
         }
