@@ -193,6 +193,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         // check if volume is locked, encrypted or volume size is allowed
         checkIfVolumeIsLocked(volume);
         checkIfVolumeIsEncrypted(volume);
+        checkIfVolumeHasBackingFile(volume);
 
         // 5. check resource limitation
         checkResourceLimitForImportVolume(owner, volume);
@@ -344,7 +345,17 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         if (volumeDetails != null && volumeDetails.containsKey(VolumeOnStorageTO.Detail.IS_ENCRYPTED)) {
             String isEncrypted = volumeDetails.get(VolumeOnStorageTO.Detail.IS_ENCRYPTED);
             if (Boolean.parseBoolean(isEncrypted)) {
-                logFailureAndThrowException("Encrypted volume cannot be imported for now.");
+                logFailureAndThrowException("Encrypted volume cannot be imported.");
+            }
+        }
+    }
+
+    protected void checkIfVolumeHasBackingFile(VolumeOnStorageTO volume) {
+        Map<VolumeOnStorageTO.Detail, String> volumeDetails = volume.getDetails();
+        if (volumeDetails != null && volumeDetails.containsKey(VolumeOnStorageTO.Detail.BACKING_FILE)) {
+            String backingFile = volumeDetails.get(VolumeOnStorageTO.Detail.BACKING_FILE);
+            if (StringUtils.isNotBlank(backingFile)) {
+                logFailureAndThrowException("Volume with backing file cannot be imported.");
             }
         }
     }

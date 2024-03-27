@@ -258,6 +258,7 @@ public class VolumeImportUnmanageManagerImplTest {
 
         doNothing().when(volumeImportUnmanageManager).checkIfVolumeIsLocked(volumeOnStorageTO);
         doNothing().when(volumeImportUnmanageManager).checkIfVolumeIsEncrypted(volumeOnStorageTO);
+        doNothing().when(volumeImportUnmanageManager).checkIfVolumeHasBackingFile(volumeOnStorageTO);
 
         doNothing().when(resourceLimitService).checkResourceLimit(account, Resource.ResourceType.volume);
         doNothing().when(resourceLimitService).checkResourceLimit(account, Resource.ResourceType.primary_storage, virtualSize);
@@ -302,20 +303,44 @@ public class VolumeImportUnmanageManagerImplTest {
         Assert.assertEquals(volumesOnStorageTO, result);
     }
 
-    @Test(expected = CloudRuntimeException.class)
+    @Test
     public void testCheckIfVolumeIsLocked() {
-        VolumeOnStorageTO volumeOnStorageTO = new VolumeOnStorageTO(hypervisorType, path, name, fullPath,
-                format, size, virtualSize);
-        volumeOnStorageTO.addDetail(VolumeOnStorageTO.Detail.IS_LOCKED, "true");
-        volumeImportUnmanageManager.checkIfVolumeIsLocked(volumeOnStorageTO);
+        try {
+            VolumeOnStorageTO volumeOnStorageTO = new VolumeOnStorageTO(hypervisorType, path, name, fullPath,
+                    format, size, virtualSize);
+            volumeOnStorageTO.addDetail(VolumeOnStorageTO.Detail.IS_LOCKED, "true");
+            volumeImportUnmanageManager.checkIfVolumeIsLocked(volumeOnStorageTO);
+            Assert.fail("It should fail as the volume is locked");
+        } catch (CloudRuntimeException ex) {
+            Assert.assertEquals("Locked volume cannot be imported.", ex.getMessage());
+        }
     }
 
-    @Test(expected = CloudRuntimeException.class)
+    @Test
     public void testCheckIfVolumeIsEncrypted() {
-        VolumeOnStorageTO volumeOnStorageTO = new VolumeOnStorageTO(hypervisorType, path, name, fullPath,
-                format, size, virtualSize);
-        volumeOnStorageTO.addDetail(VolumeOnStorageTO.Detail.IS_ENCRYPTED, "true");
-        volumeImportUnmanageManager.checkIfVolumeIsEncrypted(volumeOnStorageTO);
+        try {
+            VolumeOnStorageTO volumeOnStorageTO = new VolumeOnStorageTO(hypervisorType, path, name, fullPath,
+                    format, size, virtualSize);
+            volumeOnStorageTO.addDetail(VolumeOnStorageTO.Detail.IS_ENCRYPTED, "true");
+            volumeImportUnmanageManager.checkIfVolumeIsEncrypted(volumeOnStorageTO);
+            Assert.fail("It should fail as the volume is encrypted");
+        } catch (CloudRuntimeException ex) {
+            Assert.assertEquals("Encrypted volume cannot be imported.", ex.getMessage());
+        }
+    }
+
+    @Test
+    public void testCheckIfVolumeHasBackingFile() {
+        try {
+            VolumeOnStorageTO volumeOnStorageTO = new VolumeOnStorageTO(hypervisorType, path, name, fullPath,
+                    format, size, virtualSize);
+            volumeOnStorageTO.addDetail(VolumeOnStorageTO.Detail.BACKING_FILE, BACKING_FILE);
+            volumeOnStorageTO.addDetail(VolumeOnStorageTO.Detail.BACKING_FILE_FORMAT, BACKING_FILE_FORMAT);
+            volumeImportUnmanageManager.checkIfVolumeHasBackingFile(volumeOnStorageTO);
+            Assert.fail("It should fail as the volume has backing file");
+        } catch (CloudRuntimeException ex) {
+            Assert.assertEquals("Volume with backing file cannot be imported.", ex.getMessage());
+        }
     }
 
     @Test
