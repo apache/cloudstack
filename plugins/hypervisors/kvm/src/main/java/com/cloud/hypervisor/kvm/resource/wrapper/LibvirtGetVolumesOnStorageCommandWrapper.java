@@ -100,7 +100,10 @@ public final class LibvirtGetVolumesOnStorageCommandWrapper extends CommandWrapp
                 volumeOnStorageTO.addDetail(VolumeOnStorageTO.Detail.CLUSTER_SIZE, clusterSize);
             }
             String fileFormat = info.get(QemuImg.FILE_FORMAT);
-            if (StringUtils.isNotBlank(clusterSize)) {
+            if (StringUtils.isNotBlank(fileFormat)) {
+                if (!fileFormat.equalsIgnoreCase(disk.getFormat().toString())) {
+                    return new GetVolumesOnStorageAnswer(command, false, String.format("The file format is %s, but expected to be %s", fileFormat, disk.getFormat()));
+                }
                 volumeOnStorageTO.addDetail(VolumeOnStorageTO.Detail.FILE_FORMAT, fileFormat);
             }
             String encrypted = info.get(QemuImg.ENCRYPTED);
