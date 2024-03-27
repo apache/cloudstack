@@ -20,19 +20,32 @@ public class VmWorkRestore extends VmWork {
     private static final long serialVersionUID = 195901782359759635L;
 
     private Long templateId;
+    private Long rootDiskOfferingId;
+    private Long rootDiskSize;
 
-    public VmWorkRestore(long userId, long accountId, long vmId, String handlerName, Long templateId) {
-        super(userId, accountId, vmId, handlerName);
+    private boolean expunge;
 
-        this.templateId = templateId;
-    }
-
-    public VmWorkRestore(VmWork vmWork, Long templateId) {
+    public VmWorkRestore(VmWork vmWork, Long templateId, Long rootDiskOfferingId, Long rootDiskSize, boolean expunge) {
         super(vmWork);
         this.templateId = templateId;
+        this.rootDiskOfferingId = rootDiskOfferingId;
+        this.rootDiskSize = rootDiskSize;
+        this.expunge = expunge;
     }
 
     public Long getTemplateId() {
         return templateId;
+    }
+
+    public Long getRootDiskOfferingId() {
+        return rootDiskOfferingId;
+    }
+
+    public Long getRootDiskSize() {
+        return rootDiskSize;
+    }
+
+    public boolean getExpunge() {
+        return expunge;
     }
 }
