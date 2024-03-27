@@ -36,6 +36,7 @@ public class MigrateVolumeCommand extends Command {
     String attachedVmName;
     Volume.Type volumeType;
     String hostGuidInTargetCluster;
+    Long newIops;
 
     private DataTO srcData;
     private DataTO destData;
@@ -145,4 +146,12 @@ public class MigrateVolumeCommand extends Command {
     }
 
     public String getChainInfo() { return chainInfo; }
+
+    public void setNewIops(Long newIops) {
+        this.newIops = newIops;
+    }
+
+    public Long getNewIops() {
+        return newIops;
+    }
 }
