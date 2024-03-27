@@ -1890,4 +1890,9 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Override
     public void detachVolumeFromAllStorageNodes(Volume volume) {
     }
+
+    @Override
+    public boolean volumesRequireGrantAccessWhenUsed() {
+        return true;
+    }
 }

@@ -51,4 +51,6 @@ public interface ImageStoreDao extends GenericDao<ImageStoreVO, Long> {
     ImageStoreVO findOneByZoneAndProtocol(long zoneId, String protocol);
 
     List<ImageStoreVO> listImageStoresByZoneIds(Long... zoneIds);
+
+    List<ImageStoreVO> listByIds(List<Long> ids);
 }

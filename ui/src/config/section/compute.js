@@ -31,9 +31,9 @@ export default {
       permission: ['listVirtualMachinesMetrics'],
       resourceType: 'UserVm',
       params: () => {
-        var params = { details: 'servoff,tmpl,nics,backoff' }
+        var params = { details: 'servoff,tmpl,iso,nics,backoff' }
         if (store.getters.metrics) {
-          params = { details: 'servoff,tmpl,nics,backoff,stats' }
+          params = { details: 'servoff,tmpl,iso,nics,backoff,stats' }
         }
         params.isvnf = false
         return params
@@ -898,7 +898,12 @@ export default {
         var fields = ['name', 'id']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('account')
+          if (store.getters.listAllProjects) {
+            fields.push('project')
+          }
           fields.push('domain')
+        } else if (store.getters.listAllProjects) {
+          fields.push('project')
         }
         return fields
       },
