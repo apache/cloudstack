@@ -91,6 +91,7 @@ import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
@@ -366,6 +367,7 @@ public class TemplateServiceImpl implements TemplateService {
                     toBeDownloaded.addAll(allTemplates);
 
                     final StateMachine2<VirtualMachineTemplate.State, VirtualMachineTemplate.Event, VirtualMachineTemplate> stateMachine = VirtualMachineTemplate.State.getStateMachine();
+                    Boolean followRedirect = StorageManager.DataStoreDownloadFollowRedirects.value();
                     for (VMTemplateVO tmplt : allTemplates) {
                         String uniqueName = tmplt.getUniqueName();
                         TemplateDataStoreVO tmpltStore = _vmTemplateStoreDao.findByStoreTemplate(storeId, tmplt.getId());
@@ -446,7 +448,8 @@ public class TemplateServiceImpl implements TemplateService {
                                         try {
                                             _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(accountId),
                                                     com.cloud.configuration.Resource.ResourceType.secondary_storage,
-                                                    tmpltInfo.getSize() - UriUtils.getRemoteSize(tmplt.getUrl()));
+                                                    tmpltInfo.getSize() - UriUtils.getRemoteSize(tmplt.getUrl(),
+                                                            followRedirect));
                                         } catch (ResourceAllocationException e) {
                                             s_logger.warn(e.getMessage());
                                             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED, zoneId, null, e.getMessage(), e.getMessage());
