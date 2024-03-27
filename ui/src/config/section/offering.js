@@ -36,7 +36,8 @@ export default {
         }
         return params
       },
-      columns: ['name', 'displaytext', 'cpunumber', 'cpuspeed', 'memory', 'domain', 'zone', 'order'],
+      filters: ['active', 'inactive'],
+      columns: ['name', 'displaytext', 'state', 'cpunumber', 'cpuspeed', 'memory', 'domain', 'zone', 'order'],
       details: () => {
         var fields = ['name', 'id', 'displaytext', 'offerha', 'provisioningtype', 'storagetype', 'iscustomized', 'iscustomizediops', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'hosttags', 'tags', 'storagetags', 'domain', 'zone', 'created', 'dynamicscalingenabled', 'diskofferingstrictness', 'encryptroot']
         if (store.getters.apis.createServiceOffering &&
@@ -89,15 +90,33 @@ export default {
         dataView: true,
         popup: true,
         component: shallowRef(defineAsyncComponent(() => import('@/views/offering/UpdateOfferingAccess.vue')))
+      },
+      {
+        api: 'updateServiceOffering',
+        icon: 'play-circle-outlined',
+        label: 'label.action.enable.service.offering',
+        message: 'message.action.enable.service.offering',
+        dataView: true,
+        args: ['state'],
+        mapping: {
+          state: {
+            value: (record) => { return 'Active' }
+          }
+        },
+        groupAction: true,
+        popup: true,
+        show: (record) => { return record.state !== 'Active' },
+        groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Active' } }) }
       }, {
         api: 'deleteServiceOffering',
-        icon: 'delete-outlined',
-        label: 'label.action.delete.service.offering',
-        message: 'message.action.delete.service.offering',
+        icon: 'pause-circle-outlined',
+        label: 'label.action.disable.service.offering',
+        message: 'message.action.disable.service.offering',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true,
         groupAction: true,
         popup: true,
+        show: (record) => { return record.state === 'Active' },
         groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
       }]
     },
@@ -108,7 +127,8 @@ export default {
       docHelp: 'adminguide/service_offerings.html#system-service-offerings',
       permission: ['listServiceOfferings', 'listInfrastructure'],
       params: { issystem: 'true', isrecursive: 'true' },
-      columns: ['name', 'systemvmtype', 'cpunumber', 'cpuspeed', 'memory', 'storagetype', 'order'],
+      columns: ['name', 'state', 'systemvmtype', 'cpunumber', 'cpuspeed', 'memory', 'storagetype', 'order'],
+      filters: ['active', 'inactive'],
       details: ['name', 'id', 'displaytext', 'systemvmtype', 'provisioningtype', 'storagetype', 'iscustomized', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'storagetags', 'hosttags', 'tags', 'domain', 'zone', 'created', 'dynamicscalingenabled', 'diskofferingstrictness'],
       actions: [{
         api: 'createServiceOffering',
@@ -128,15 +148,33 @@ export default {
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         args: ['name', 'displaytext', 'storagetags', 'hosttags']
       }, {
+        api: 'updateServiceOffering',
+        icon: 'play-circle-outlined',
+        label: 'label.action.enable.system.service.offering',
+        message: 'message.action.enable.system.service.offering',
+        dataView: true,
+        params: { issystem: 'true' },
+        args: ['state'],
+        mapping: {
+          state: {
+            value: (record) => { return 'Active' }
+          }
+        },
+        groupAction: true,
+        popup: true,
+        show: (record) => { return record.state !== 'Active' },
+        groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Active' } }) }
+      }, {
         api: 'deleteServiceOffering',
-        icon: 'delete-outlined',
-        label: 'label.action.delete.system.service.offering',
-        message: 'message.action.delete.system.service.offering',
+        icon: 'pause-circle-outlined',
+        label: 'label.action.disable.system.service.offering',
+        message: 'message.action.disable.system.service.offering',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true,
         params: { issystem: 'true' },
         groupAction: true,
         popup: true,
+        show: (record) => { return record.state === 'Active' },
         groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
       }]
     },
@@ -153,7 +191,8 @@ export default {
         }
         return params
       },
-      columns: ['name', 'displaytext', 'disksize', 'domain', 'zone', 'order'],
+      columns: ['name', 'displaytext', 'state', 'disksize', 'domain', 'zone', 'order'],
+      filters: ['active', 'inactive'],
       details: () => {
         var fields = ['name', 'id', 'displaytext', 'disksize', 'provisioningtype', 'storagetype', 'iscustomized', 'disksizestrictness', 'iscustomizediops', 'diskIopsReadRate', 'diskIopsWriteRate', 'diskBytesReadRate', 'diskBytesWriteRate', 'miniops', 'maxiops', 'tags', 'domain', 'zone', 'created', 'encrypt']
         if (store.getters.apis.createDiskOffering &&
@@ -203,14 +242,32 @@ export default {
         popup: true,
         component: shallowRef(defineAsyncComponent(() => import('@/views/offering/UpdateOfferingAccess.vue')))
       }, {
+        api: 'updateDiskOffering',
+        icon: 'play-circle-outlined',
+        label: 'label.action.enable.disk.offering',
+        message: 'message.action.enable.disk.offering',
+        dataView: true,
+        params: { issystem: 'true' },
+        args: ['state'],
+        mapping: {
+          state: {
+            value: (record) => { return 'Active' }
+          }
+        },
+        groupAction: true,
+        popup: true,
+        show: (record) => { return record.state !== 'Active' },
+        groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Active' } }) }
+      }, {
         api: 'deleteDiskOffering',
-        icon: 'delete-outlined',
-        label: 'label.action.delete.disk.offering',
-        message: 'message.action.delete.disk.offering',
+        icon: 'pause-circle-outlined',
+        label: 'label.action.disable.disk.offering',
+        message: 'message.action.disable.disk.offering',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true,
         groupAction: true,
         popup: true,
+        show: (record) => { return record.state === 'Active' },
         groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
       }]
     },

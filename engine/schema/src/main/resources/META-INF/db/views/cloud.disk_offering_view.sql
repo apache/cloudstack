@@ -76,7 +76,5 @@ FROM
         LEFT JOIN
     `cloud`.`disk_offering_details` AS `vsphere_storage_policy` ON `vsphere_storage_policy`.`offering_id` = `disk_offering`.`id`
         AND `vsphere_storage_policy`.`name` = 'storagepolicy'
-WHERE
-        `disk_offering`.`state`='Active'
 GROUP BY
     `disk_offering`.`id`;

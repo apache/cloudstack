@@ -16,10 +16,13 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.offering;
 
+import com.cloud.offering.DiskOffering.State;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.commons.lang3.EnumUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -28,6 +31,8 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+
+import static com.cloud.offering.DiskOffering.State.Active;
 
 @APICommand(name = "listDiskOfferings", description = "Lists all available disk offerings.", responseObject = DiskOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -67,6 +72,11 @@ public class ListDiskOfferingsCmd extends BaseListProjectAndAccountResourcesCmd 
             since = "4.19")
     private String storageType;
 
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING,
+               description = "Filter by state of the disk offering. Defaults to 'Active'. If set to 'all' shows both Active & Inactive offerings.",
+               since = "4.19")
+    private String diskOfferingState;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -93,6 +103,17 @@ public class ListDiskOfferingsCmd extends BaseListProjectAndAccountResourcesCmd 
 
     public String getStorageType() {
         return storageType;
+    }
+
+    public State getState() {
+        if (StringUtils.isBlank(diskOfferingState)) {
+            return Active;
+        }
+        State state = EnumUtils.getEnumIgnoreCase(State.class, diskOfferingState);
+        if (!diskOfferingState.equalsIgnoreCase("all") && state == null) {
+            throw new IllegalArgumentException("Invalid state value: " + diskOfferingState);
+        }
+        return state;
     }
 
     /////////////////////////////////////////////////////

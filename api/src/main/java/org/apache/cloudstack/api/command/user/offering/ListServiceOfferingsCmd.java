@@ -16,17 +16,21 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.offering;
 
+import com.cloud.offering.ServiceOffering.State;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.commons.lang3.EnumUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+
+import static com.cloud.offering.ServiceOffering.State.Active;
 
 @APICommand(name = "listServiceOfferings", description = "Lists all available service offerings.", responseObject = ServiceOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -95,6 +99,11 @@ public class ListServiceOfferingsCmd extends BaseListProjectAndAccountResourcesC
             since = "4.19")
     private String storageType;
 
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING,
+               description = "Filter by state of the service offering. Defaults to 'Active'. If set to 'all' shows both Active & Inactive offerings.",
+               since = "4.19")
+    private String serviceOfferingState;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -139,6 +148,17 @@ public class ListServiceOfferingsCmd extends BaseListProjectAndAccountResourcesC
 
     public String getStorageType() {
         return storageType;
+    }
+
+    public State getState() {
+        if (StringUtils.isBlank(serviceOfferingState)) {
+            return Active;
+        }
+        State state = EnumUtils.getEnumIgnoreCase(State.class, serviceOfferingState);
+        if (!serviceOfferingState.equalsIgnoreCase("all") && state == null) {
+            throw new IllegalArgumentException("Invalid state value: " + serviceOfferingState);
+        }
+        return state;
     }
 
     /////////////////////////////////////////////////////
