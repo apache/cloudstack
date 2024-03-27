@@ -49,6 +49,14 @@ public class OAuth2UserAuthenticator extends AdapterBase implements UserAuthenti
             s_logger.debug("Trying OAuth2 auth for user: " + username);
         }
 
+        if (!OAuth2AuthManager.OAuth2IsPluginEnabled.value()) {
+            s_logger.debug("OAuth2 plugin is disabled");
+            return new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
+        } else if (requestParameters == null) {
+            s_logger.debug("Request parameters are null");
+            return new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
+        }
+
         final UserAccount userAccount = _userAccountDao.getUserAccount(username, domainId);
         if (userAccount == null) {
             s_logger.debug("Unable to find user with " + username + " in domain " + domainId + ", or user source is not OAUTH2");
