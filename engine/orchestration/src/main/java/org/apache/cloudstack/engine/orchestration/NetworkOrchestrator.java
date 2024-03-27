@@ -4661,7 +4661,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         final NicProfile vmNic = new NicProfile(vo, network, vo.getBroadcastUri(), vo.getIsolationUri(), networkRate, _networkModel.isSecurityGroupSupportedInNetwork(network),
                 _networkModel.getNetworkTag(vm.getHypervisorType(), network));
 
-        return new Pair<NicProfile, Integer>(vmNic, Integer.valueOf(deviceId));
+        return new Pair<>(vmNic, Integer.valueOf(deviceId));
     }
 
     protected String getSelectedIpForNicImport(Network network, DataCenter dataCenter, Network.IpAddresses ipAddresses) {
