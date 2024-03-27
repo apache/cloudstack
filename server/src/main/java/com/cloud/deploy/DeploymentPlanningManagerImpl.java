@@ -1273,7 +1273,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 List<Host> suitableHosts = findSuitableHosts(vmProfile, potentialPlan, avoid, HostAllocator.RETURN_UPTO_ALL);
                 // if found suitable hosts in this cluster, find suitable storage
                 // pools for each volume of the VM
-                if (suitableHosts != null && !suitableHosts.isEmpty()) {
+                if (CollectionUtils.isNotEmpty(suitableHosts)) {
                     if (vmProfile.getHypervisorType() == HypervisorType.BareMetal) {
                         DeployDestination dest = new DeployDestination(dc, pod, clusterVO, suitableHosts.get(0));
                         return dest;
@@ -1621,17 +1621,16 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         List<Host> suitableHosts = new ArrayList<Host>();
         for (HostAllocator allocator : _hostAllocators) {
             suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, avoid, returnUpTo);
-            if (suitableHosts != null && !suitableHosts.isEmpty()) {
+            if (CollectionUtils.isNotEmpty(suitableHosts)) {
                 break;
             }
         }
 
-        if (suitableHosts.isEmpty()) {
-            s_logger.debug("No suitable hosts found");
+        if (CollectionUtils.isEmpty(suitableHosts)) {
+            s_logger.debug("No suitable hosts found.");
+        } else {
+            reorderHostsByPriority(plan.getHostPriorities(), suitableHosts);
         }
-
-        // re-order hosts by priority
-        reorderHostsByPriority(plan.getHostPriorities(), suitableHosts);
 
         return suitableHosts;
     }
