@@ -35,6 +35,7 @@ import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
@@ -125,6 +126,8 @@ public class VolumeImportUnmanageManagerImplTest {
     private VolumeOrchestrationService volumeManager;
     @Mock
     private VMTemplatePoolDao templatePoolDao;
+    @Mock
+    private VolumeApiService volumeApiService;
 
     @Mock
     StoragePoolVO storagePoolVO;
@@ -260,7 +263,9 @@ public class VolumeImportUnmanageManagerImplTest {
         doNothing().when(resourceLimitService).checkResourceLimit(account, Resource.ResourceType.primary_storage, virtualSize);
 
         DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
+        when(diskOffering.isCustomized()).thenReturn(true);
         doReturn(diskOffering).when(volumeImportUnmanageManager).getOrCreateDiskOffering(account, diskOfferingId, zoneId, isLocal);
+        doNothing().when(volumeApiService).validateCustomDiskOfferingSizeRange(anyLong());
         doReturn(diskProfile).when(volumeManager).importVolume(any(), anyString(), any(), eq(virtualSize), isNull(), isNull(), anyLong(),
                 any(), isNull(), isNull(), any(), isNull(), anyLong(), anyString(), isNull());
         when(diskProfile.getVolumeId()).thenReturn(volumeId);

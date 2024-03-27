@@ -37,6 +37,7 @@ import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
@@ -63,6 +64,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -106,6 +108,8 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
     private VolumeOrchestrationService volumeManager;
     @Inject
     private VMTemplatePoolDao templatePoolDao;
+    @Inject
+    private VolumeApiService volumeApiService;
 
     static final String DEFAULT_DISK_OFFERING_NAME = "Default Custom Offering for Volume Import";
     static final String DEFAULT_DISK_OFFERING_UNIQUE_NAME = "Volume-Import";
@@ -186,7 +190,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
 
         VolumeOnStorageTO volume = volumes.get(0);
 
-        // check if volume is locked
+        // check if volume is locked, encrypted or volume size is allowed
         checkIfVolumeIsLocked(volume);
         checkIfVolumeIsEncrypted(volume);
 
@@ -195,6 +199,9 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
 
         // 6. get disk offering
         DiskOfferingVO diskOffering = getOrCreateDiskOffering(owner, cmd.getDiskOfferingId(), pool.getDataCenterId(), pool.isLocal());
+        if (diskOffering.isCustomized()) {
+            volumeApiService.validateCustomDiskOfferingSizeRange(volume.getVirtualSize() / ByteScaleUtils.GiB);
+        }
 
         // 7. create records
         String volumeName = StringUtils.isNotBlank(cmd.getName()) ? cmd.getName().trim() : volumePath;
