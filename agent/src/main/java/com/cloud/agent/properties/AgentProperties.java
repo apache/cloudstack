@@ -696,6 +696,13 @@ public class AgentProperties{
     public static final Property<Boolean> DEVELOPER = new Property<>("developer", false);
 
     /**
+     * If set to "true", the agent will register for libvirt domain events, allowing for immediate updates on crashed or unexpectedly
+     * stopped VMs. Experimental, requires agent restart.
+     * Default value: <code>false</code>
+     */
+    public static final Property<Boolean> LIBVIRT_EVENTS_ENABLED = new Property<>("libvirt.events.enabled", false);
+
+    /**
      * Can only be used if developer = true. This property is used to define the local bridge name and private network name.<br>
      * Data type: String.<br>
      * Default value: <code>null</code>
