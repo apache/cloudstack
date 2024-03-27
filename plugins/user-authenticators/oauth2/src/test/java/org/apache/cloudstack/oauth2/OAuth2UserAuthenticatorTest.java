@@ -24,16 +24,22 @@ import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
 import org.apache.cloudstack.auth.UserOAuth2Authenticator;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -54,10 +60,24 @@ public class OAuth2UserAuthenticatorTest {
 
     @InjectMocks
     private OAuth2UserAuthenticator authenticator;
+    private AutoCloseable closeable;
 
     @Before
-    public void setUp() {
-        MockitoAnnotations.initMocks(this);
+    public void setUp() throws NoSuchFieldException, IllegalAccessException {
+        closeable = MockitoAnnotations.openMocks(this);
+        overrideDefaultConfigValue(OAuth2AuthManager.OAuth2IsPluginEnabled, "_defaultValue", "true");
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        overrideDefaultConfigValue(OAuth2AuthManager.OAuth2IsPluginEnabled, "_defaultValue", "false");
+        closeable.close();
+    }
+
+    private void overrideDefaultConfigValue(final ConfigKey configKey, final String name, final Object o) throws IllegalAccessException, NoSuchFieldException {
+        Field f = ConfigKey.class.getDeclaredField(name);
+        f.setAccessible(true);
+        f.set(configKey, o);
     }
 
     @Test
@@ -89,8 +109,8 @@ public class OAuth2UserAuthenticatorTest {
         verify(userOAuth2mgr).getUserOAuth2AuthenticationProvider(provider[0]);
         verify(userOAuth2Authenticator).verifyUser(email[0], secretCode[0]);
 
-        assertEquals(true, result.first().booleanValue());
-        assertEquals(null, result.second());
+        assertTrue(result.first());
+        assertNull(result.second());
     }
 
     @Test
@@ -122,7 +142,7 @@ public class OAuth2UserAuthenticatorTest {
         verify(userOAuth2mgr).getUserOAuth2AuthenticationProvider(provider[0]);
         verify(userOAuth2Authenticator).verifyUser(email[0], secretCode[0]);
 
-        assertEquals(false, result.first().booleanValue());
+        assertFalse(result.first());
         assertEquals(OAuth2UserAuthenticator.ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT, result.second());
     }
 
@@ -147,7 +167,7 @@ public class OAuth2UserAuthenticatorTest {
         verify(userDao, never()).getUser(anyLong());
         verify(userOAuth2mgr, never()).getUserOAuth2AuthenticationProvider(anyString());
 
-        assertEquals(false, result.first().booleanValue());
-        assertEquals(null, result.second());
+        assertFalse(result.first());
+        assertNull(result.second());
     }
 }
