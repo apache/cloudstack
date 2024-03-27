@@ -896,7 +896,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         if (!hostSupportsServiceOffering(sourceHost, serviceOffering)) {
             LOGGER.debug(String.format("VM %s needs to be migrated", vm.getUuid()));
             final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm, template, serviceOffering, owner, null);
-            profile.setServiceOffering(serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), serviceOffering.getId()));
+            profile.setServiceOffering(serviceOfferingDao.findById(vm.getId(), serviceOffering.getId()));
             DeploymentPlanner.ExcludeList excludeList = new DeploymentPlanner.ExcludeList();
             excludeList.addHost(sourceHost.getId());
             final DataCenterDeployment plan = new DataCenterDeployment(sourceHost.getDataCenterId(), sourceHost.getPodId(), sourceHost.getClusterId(), null, null, null);
@@ -2185,7 +2185,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
 
         final VirtualMachineProfile profile = new VirtualMachineProfileImpl(userVm, template, serviceOffering, owner, null);
-        ServiceOfferingVO dummyOffering = serviceOfferingDao.findByIdIncludingRemoved(userVm.getId(), serviceOffering.getId());
+        ServiceOfferingVO dummyOffering = serviceOfferingDao.findById(userVm.getId(), serviceOffering.getId());
         profile.setServiceOffering(dummyOffering);
         DeploymentPlanner.ExcludeList excludeList = new DeploymentPlanner.ExcludeList();
         final DataCenterDeployment plan = new DataCenterDeployment(zone.getId(), null, null, null, null, null);
@@ -2316,7 +2316,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         DiskProfile diskProfile = volumeManager.allocateRawVolume(Volume.Type.ROOT, rootVolumeName, diskOffering, null, null, null, userVm, template, owner, null);
 
         final VirtualMachineProfile profile = new VirtualMachineProfileImpl(userVm, template, serviceOffering, owner, null);
-        ServiceOfferingVO dummyOffering = serviceOfferingDao.findByIdIncludingRemoved(userVm.getId(), serviceOffering.getId());
+        ServiceOfferingVO dummyOffering = serviceOfferingDao.findById(userVm.getId(), serviceOffering.getId());
         profile.setServiceOffering(dummyOffering);
         DeploymentPlanner.ExcludeList excludeList = new DeploymentPlanner.ExcludeList();
         final DataCenterDeployment plan = new DataCenterDeployment(zone.getId(), null, null, hostId, poolId, null);
