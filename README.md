@@ -2,7 +2,7 @@
 
 [![Apache CloudStack](tools/logo/apache_cloudstack.png)](https://cloudstack.apache.org/)
 
-Apache CloudStack is open source software designed to deploy and manage large
+Apache CloudStack is an open stack/ource software designed to deploy and manage large
 networks of virtual machines, as a highly available, highly scalable
 Infrastructure as a Service (IaaS) cloud computing platform. CloudStack is used
 by a number of service providers to offer public cloud services, and by many
