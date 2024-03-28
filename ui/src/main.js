@@ -53,6 +53,7 @@ vueApp.use(localesPlugin)
 vueApp.use(genericUtilPlugin)
 vueApp.use(extensions)
 vueApp.use(directives)
+vueApp.use(require('vue3-shortkey'), { prevent: ['input', 'textarea'] })
 
 fetch('config.json').then(response => response.json()).then(config => {
   vueProps.$config = config

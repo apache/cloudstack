@@ -73,6 +73,7 @@
     "vue-web-storage": "^6.1.0",
     "vue3-clipboard": "^1.0.0",
     "vue3-google-login": "^2.0.20",
+    "vue3-shortkey": "^4.0.0",
     "vuedraggable": "^4.0.3",
     "vuex": "^4.0.0-0"
   },
