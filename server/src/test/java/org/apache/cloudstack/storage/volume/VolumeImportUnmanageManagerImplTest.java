@@ -23,6 +23,7 @@ import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.event.ActionEventUtils;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
@@ -282,7 +283,8 @@ public class VolumeImportUnmanageManagerImplTest {
 
         VolumeResponse response = mock(VolumeResponse.class);
         doReturn(response).when(responseGenerator).createVolumeResponse(ResponseObject.ResponseView.Full, volumeVO);
-        try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class)) {
+        try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class);
+             MockedStatic<ActionEventUtils> ignoredtoo = Mockito.mockStatic(ActionEventUtils.class)) {
             VolumeResponse result = volumeImportUnmanageManager.importVolume(cmd);
             Assert.assertEquals(response, result);
         }
@@ -356,7 +358,8 @@ public class VolumeImportUnmanageManagerImplTest {
         doNothing().when(resourceLimitService).decrementResourceCount(accountId, Resource.ResourceType.volume);
         doNothing().when(resourceLimitService).decrementResourceCount(accountId, Resource.ResourceType.primary_storage, virtualSize);
 
-        try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class)) {
+        try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class);
+             MockedStatic<ActionEventUtils> ignoredtoo = Mockito.mockStatic(ActionEventUtils.class)) {
             volumeImportUnmanageManager.unmanageVolume(volumeId);
         }
 
