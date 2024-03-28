@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
- 
+
 
 # $Id: listvmtmplt.sh 9132 2010-06-04 20:17:43Z manuel $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/storage/qcow2/listvmtmplt.sh $
 # listtmplt.sh -- list templates under a directory
@@ -51,7 +51,7 @@ fi
 
 
 for i in $(find /$rootdir -name template.properties );
-do  
+do
   d=$(dirname $i)
   filename=$(grep "filename" $i | awk -F"=" '{print $NF}')
   size=$(grep "virtualsize" $i | awk -F"=" '{print $NF}')
@@ -59,7 +59,7 @@ do
   then
     d=$d/$filename/$size
   fi
-  echo ${d#/} #remove leading slash 
+  echo ${d#/} #remove leading slash
 done
 
 exit 0

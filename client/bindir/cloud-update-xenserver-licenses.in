@@ -7,9 +7,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -46,7 +46,7 @@ cfg = "@MSCONF@/db.properties"
 #---------------------- option parsing and command line checks ------------------------
 
 
-usage = """%prog <license file> <-a | host names / IP addresses...> 
+usage = """%prog <license file> <-a | host names / IP addresses...>
 
 This command deploys the license file specified in the command line into a specific XenServer host or all XenServer hosts known to the management server."""
 
@@ -88,7 +88,7 @@ def parseuserpwfromhosts(hosts):
 	return creds
 
 class XenServerConfigurator(Thread):
-	
+
 	def __init__(self,host,user,password,keyfiledata):
 		Thread.__init__(self)
 		self.host = host
@@ -99,7 +99,7 @@ class XenServerConfigurator(Thread):
 		self.stdout = ""
 		self.stderr = ""
 		self.state = 'initialized'
-		
+
 	def run(self):
 		try:
 			self.state = 'running'
@@ -120,18 +120,18 @@ class XenServerConfigurator(Thread):
 			c.close()
 			if self.retval != 0: self.state = 'failed'
 			else: self.state = 'finished'
-			
+
 		except Exception as e:
 			self.state = 'failed'
 			self.retval = e
 			#raise
-	
+
 	def __str__(self):
 		if self.state == 'failed':
 			return "<%s XenServerConfigurator on %s@%s: %s>"%(self.state,self.user,self.host,str(self.retval))
 		else:
 			return "<%s XenServerConfigurator on %s@%s>"%(self.state,self.user,self.host)
-		
+
 #------------- actual code --------------------
 
 (options, args) = parser.parse_args()
@@ -162,7 +162,7 @@ for host,(user,password) in list(creds.items()):
 
 
 for c in configurators: c.start()
-	
+
 for c in configurators:
 	print(c.host + "...", end=' ')
 	c.join()
