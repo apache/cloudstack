@@ -79,3 +79,7 @@ CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_email_configuration`(
     PRIMARY KEY (`account_id`, `email_template_id`),
     CONSTRAINT `FK_quota_email_configuration_account_id` FOREIGN KEY (`account_id`) REFERENCES `cloud_usage`.`quota_account`(`account_id`),
     CONSTRAINT `FK_quota_email_configuration_email_template_id` FOREIGN KEY (`email_template_id`) REFERENCES `cloud_usage`.`quota_email_templates`(`id`));
+
+
+-- Quota inject tariff result into subsequent ones
+ALTER TABLE `cloud_usage`.`quota_tariff` ADD COLUMN `position` bigint(20) NOT NULL DEFAULT 1 COMMENT 'Position in the execution sequence for tariffs of the same type' ;
