@@ -1051,6 +1051,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
+    public int getVirtualMachineMaxNicsValue(VirtualMachine virtualMachine) {
+        return 0;
+    }
+
+    @Override
     public Pair<List<? extends GuestVlan>, Integer> listGuestVlans(ListGuestVlansCmd cmd) {
         return null;
     }

@@ -60,6 +60,8 @@ import org.apache.cloudstack.api.command.user.vpc.RestartVPCCmd;
 import org.apache.cloudstack.api.command.user.vpc.UpdateVPCCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.query.QueryService;
@@ -179,7 +181,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 
-public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvisioningService, VpcService {
+public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvisioningService, VpcService, Configurable {
 
     public static final String SERVICE = "service";
     public static final String CAPABILITYTYPE = "capabilitytype";
@@ -261,6 +263,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     AlertManager alertManager;
     @Inject
     CommandSetupHelper commandSetupHelper;
+    @Inject
+    NetworkOrchestrationService networkOrchestrationService;
     @Autowired
     @Qualifier("networkHelper")
     protected NetworkHelper networkHelper;
@@ -412,8 +416,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final String value = configs.get(Config.VpcCleanupInterval.key());
         _cleanupInterval = NumbersUtil.parseInt(value, 60 * 60); // 1 hour
 
-        final String maxNtwks = configs.get(Config.VpcMaxNetworks.key());
-        _maxNetworks = NumbersUtil.parseInt(maxNtwks, 3); // max=3 is default
+        _maxNetworks = VpcMaxNetworks.value();
 
         IpAddressSearch = _ipAddressDao.createSearchBuilder();
         IpAddressSearch.and("accountId", IpAddressSearch.entity().getAllocatedToAccountId(), Op.EQ);
@@ -1930,16 +1933,25 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(final TransactionStatus status) {
-                final Vpc locked = vpcDao.acquireInLockTable(vpc.getId());
+                long vpcId = vpc.getId();
+                final Vpc locked = vpcDao.acquireInLockTable(vpcId);
                 if (locked == null) {
                     throw new CloudRuntimeException("Unable to acquire lock on " + vpc);
                 }
 
+                _maxNetworks = VpcMaxNetworks.valueIn(vpc.getAccountId());
+                Account account = _accountMgr.getAccount(vpc.getAccountId());
+
                 try {
                     // check number of active networks in vpc
-                    if (_ntwkDao.countVpcNetworks(vpc.getId()) >= _maxNetworks) {
-                        logger.warn(String.format("Failed to create a new VPC Guest Network because the number of networks per VPC has reached its maximum capacity of [%s]. Increase it by modifying global config [%s].", _maxNetworks, Config.VpcMaxNetworks));
-                        throw new CloudRuntimeException(String.format("Number of networks per VPC cannot surpass [%s].", _maxNetworks));
+                    if (_ntwkDao.countVpcNetworks(vpcId) >= _maxNetworks) {
+                        logger.warn("Failed to create a new VPC Guest Network because the number of networks per VPC has reached its maximum capacity of {}. Increase it by modifying global or account config {}.", _maxNetworks, VpcMaxNetworks);
+                        throw new CloudRuntimeException(String.format("Number of networks per VPC cannot surpass [%s] for account [%s].", _maxNetworks, account.getAccountName()));
+                    }
+
+                    if (!existsVpcDomainRouterWithSufficientNicCapacity(vpc.getId())) {
+                        logger.warn("Failed to create a new VPC Guest Network because no virtual routers were found with sufficient NIC capacity. The number of VPC Guest networks cannot exceed the number of NICs a virtual router can have.");
+                        throw new CloudRuntimeException(String.format("No available virtual router found to deploy new Guest Network on VPC [%s].", vpc.getName()));
                     }
 
                     // 1) CIDR is required
@@ -1954,7 +1966,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
                     // 3) Network cidr shouldn't cross the cidr of other vpc
                     // network cidrs
-                    final List<? extends Network> ntwks = _ntwkDao.listByVpc(vpc.getId());
+                    final List<? extends Network> ntwks = _ntwkDao.listByVpc(vpcId);
                     for (final Network ntwk : ntwks) {
                         assert cidr != null : "Why the network cidr is null when it belongs to vpc?";
 
@@ -1981,6 +1993,20 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 }
             }
         });
+    }
+
+    protected boolean existsVpcDomainRouterWithSufficientNicCapacity(long vpcId) {
+        int countRouterDefaultNics = 2;
+        long countVpcNetworks = _ntwkDao.countVpcNetworks(vpcId);
+        DomainRouterVO vpcDomainRouter = routerDao.findOneByVpcId(vpcId);
+
+        if (vpcDomainRouter == null) {
+            return false;
+        }
+
+        int totalNicsAvailable = networkOrchestrationService.getVirtualMachineMaxNicsValue(vpcDomainRouter) - countRouterDefaultNics;
+
+        return totalNicsAvailable > countVpcNetworks;
     }
 
     private void CheckAccountsAccess(Vpc vpc, Account networkAccount) {
@@ -3284,5 +3310,15 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     protected boolean isDefaultAcl(long aclId) {
         return aclId == NetworkACL.DEFAULT_ALLOW || aclId == NetworkACL.DEFAULT_DENY;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return VpcManager.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {VpcMaxNetworks};
     }
 }

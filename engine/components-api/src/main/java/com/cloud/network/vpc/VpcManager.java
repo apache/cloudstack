@@ -22,6 +22,7 @@ import java.util.Set;
 
 import com.cloud.utils.Pair;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -39,6 +40,9 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 
 public interface VpcManager {
+    ConfigKey<Integer> VpcMaxNetworks = new ConfigKey<>("Advanced", Integer.class, "vpc.max.networks", "3",
+            "Maximum number of networks per VPC.", true, ConfigKey.Scope.Account);
+
     /**
      * Returns all the Guest networks that are part of VPC
      *
