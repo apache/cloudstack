@@ -79,3 +79,6 @@ CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_email_configuration`(
     PRIMARY KEY (`account_id`, `email_template_id`),
     CONSTRAINT `FK_quota_email_configuration_account_id` FOREIGN KEY (`account_id`) REFERENCES `cloud_usage`.`quota_account`(`account_id`),
     CONSTRAINT `FK_quota_email_configuration_email_template_id` FOREIGN KEY (`email_template_id`) REFERENCES `cloud_usage`.`quota_email_templates`(`id`));
+
+-- Remove on delete cascade from snapshot schedule
+ALTER TABLE `cloud`.`snapshot_schedule` DROP CONSTRAINT `fk__snapshot_schedule_async_job_id`;
