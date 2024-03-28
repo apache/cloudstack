@@ -16,6 +16,28 @@
 // under the License.
 package com.cloud.hypervisor.kvm.discoverer;
 
+import static com.cloud.configuration.ConfigurationManagerImpl.ADD_HOST_ON_SERVICE_RESTART_KVM;
+
+import java.net.InetAddress;
+import java.net.URI;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.cloudstack.agent.lb.IndirectAgentLB;
+import org.apache.cloudstack.ca.CAManager;
+import org.apache.cloudstack.ca.SetupCertificateCommand;
+import org.apache.cloudstack.direct.download.DirectDownloadManager;
+import org.apache.cloudstack.framework.ca.Certificate;
+import org.apache.cloudstack.utils.security.KeyStoreUtils;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -35,6 +57,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.PhysicalNetworkSetupInfo;
@@ -47,26 +70,8 @@ import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.ssh.SSHCmdHelper;
+import com.cloud.utils.ssh.SshException;
 import com.trilead.ssh2.Connection;
-import org.apache.cloudstack.agent.lb.IndirectAgentLB;
-import org.apache.cloudstack.ca.CAManager;
-import org.apache.cloudstack.ca.SetupCertificateCommand;
-import org.apache.cloudstack.direct.download.DirectDownloadManager;
-import org.apache.cloudstack.framework.ca.Certificate;
-import org.apache.cloudstack.utils.security.KeyStoreUtils;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.net.InetAddress;
-import java.net.URI;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import static com.cloud.configuration.ConfigurationManagerImpl.ADD_HOST_ON_SERVICE_RESTART_KVM;
 
 public abstract class LibvirtServerDiscoverer extends DiscovererBase implements Discoverer, Listener, ResourceStateAdapter {
     private final int _waitTime = 5; /* wait for 5 minutes */
@@ -83,6 +88,8 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
     private IndirectAgentLB indirectAgentLB;
     @Inject
     private HostDao hostDao;
+    @Inject
+    private HostDetailsDao hostDetailsDao;
 
     @Override
     public abstract Hypervisor.HypervisorType getHypervisorType();
@@ -120,6 +127,24 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
     @Override
     public boolean processDisconnect(long agentId, Status state) {
         // TODO Auto-generated method stub
+        return false;
+    }
+
+    private boolean stopAgentOnHost(Connection sshConnection) {
+        if (sshConnection == null) {
+            return false;
+        }
+        try {
+            SSHCmdHelper.SSHCmdResult result = SSHCmdHelper.sshExecuteCmdOneShot(sshConnection, "service cloudstack-agent stop");
+            if (result.getReturnCode() != 0) {
+                logger.debug(String.format("Couldn't stop agent due to: %s", result.getStdErr()));
+                return false;
+            }
+            logger.debug("cloudstack-agent stop result: " + result.toString());
+            return true;
+        } catch (final SshException e) {
+            logger.debug("cloudstack-agent stop failed", e);
+        }
         return false;
     }
 
@@ -350,8 +375,20 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             resources.put(kvmResource, details);
 
             HostVO connectedHost = waitForHostConnect(dcId, podId, clusterId, guid);
-            if (connectedHost == null)
+            if (connectedHost == null) {
+                HostVO connectingHost = getConnectingHost(dcId, guid);
+                stopAgentOnHost(sshConnection);
+                if (connectingHost != null) {
+                    logger.debug("Remove connecting host with id " + connectingHost.getId());
+                    hostDetailsDao.deleteDetails(connectingHost.getId());
+                    connectingHost.setDisconnectedOn(new Date());
+                    connectingHost.setGuid(null);
+                    connectingHost.setClusterId(null);
+                    _hostDao.update(connectingHost.getId(), connectingHost);
+                    _hostDao.remove(connectingHost.getId());
+                }
                 return null;
+            }
 
             details.put("guid", connectedHost.getGuid());
 
@@ -394,6 +431,15 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
         }
         logger.debug("Timeout, to wait for the host connecting to mgt svr, assuming it is failed");
         List<HostVO> hosts = _resourceMgr.findHostByGuid(dcId, guid);
+        if (hosts.size() == 1) {
+            return hosts.get(0);
+        } else {
+            return null;
+        }
+    }
+
+    private HostVO getConnectingHost(long dcId, String guid) {
+        List<HostVO> hosts = _resourceMgr.findHostByGuidAndStatus(dcId, guid, Status.Connecting);
         if (hosts.size() == 1) {
             return hosts.get(0);
         } else {

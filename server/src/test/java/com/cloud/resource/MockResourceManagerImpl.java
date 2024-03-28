@@ -17,6 +17,26 @@
 
 package com.cloud.resource;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.naming.ConfigurationException;
+
+import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
+import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
+import org.apache.cloudstack.api.command.admin.cluster.UpdateClusterCmd;
+import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
+import org.apache.cloudstack.api.command.admin.host.AddSecondaryStorageCmd;
+import org.apache.cloudstack.api.command.admin.host.CancelHostAsDegradedCmd;
+import org.apache.cloudstack.api.command.admin.host.CancelMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.host.DeclareHostAsDegradedCmd;
+import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
+import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
+import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
+import org.apache.cloudstack.framework.config.ConfigKey;
+
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.VgpuTypesInfo;
@@ -40,24 +60,6 @@ import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceState.Event;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.fsm.NoTransitionException;
-import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
-import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
-import org.apache.cloudstack.api.command.admin.cluster.UpdateClusterCmd;
-import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
-import org.apache.cloudstack.api.command.admin.host.AddSecondaryStorageCmd;
-import org.apache.cloudstack.api.command.admin.host.CancelHostAsDegradedCmd;
-import org.apache.cloudstack.api.command.admin.host.CancelMaintenanceCmd;
-import org.apache.cloudstack.api.command.admin.host.DeclareHostAsDegradedCmd;
-import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
-import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
-import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
-import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
-import org.apache.cloudstack.framework.config.ConfigKey;
-
-import javax.naming.ConfigurationException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class MockResourceManagerImpl extends ManagerBase implements ResourceManager {
 
@@ -535,6 +537,15 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      */
     @Override
     public List<HostVO> findHostByGuid(final long dcId, final String guid) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.resource.ResourceManager#findHostByGuidByStatus(long, java.lang.String, com.cloud.host.Status)
+     */
+    @Override
+    public List<HostVO> findHostByGuidAndStatus(final long dcId, final String guid, final Status status) {
         // TODO Auto-generated method stub
         return null;
     }
