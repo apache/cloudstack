@@ -337,7 +337,6 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         String apiKey = null;
         String secretKey = null;
-        String csUrl = ApiServiceConfiguration.ApiServletPath.value();
         Network.Provider provider = getLoadBalancerServiceProvider(lb);
         if (Network.Provider.Netscaler.equals(provider)) {
             Long autoscaleUserId = autoScaleVmProfile.getAutoScaleUserId();
@@ -358,13 +357,12 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 throw new InvalidParameterValueException("secretKey for user: " + user.getUsername() + " is empty. Please generate it");
             }
 
-            if (csUrl == null || csUrl.contains("localhost")) {
-                throw new InvalidParameterValueException(String.format("Global setting %s has to be set to the Management Server's API end point", ApiServiceConfiguration.ApiServletPath.key()));
-            }
+            ApiServiceConfiguration.validateEndpointUrl();
         }
 
         LbAutoScaleVmProfile lbAutoScaleVmProfile =
-            new LbAutoScaleVmProfile(autoScaleVmProfile, apiKey, secretKey, csUrl, zoneId, domainId, serviceOfferingId, templateId, vmName, lbNetworkUuid);
+            new LbAutoScaleVmProfile(autoScaleVmProfile, apiKey, secretKey, ApiServiceConfiguration.getApiServletPathValue(), zoneId, domainId, serviceOfferingId, templateId,
+                    vmName, lbNetworkUuid);
         return new LbAutoScaleVmGroup(vmGroup, autoScalePolicies, lbAutoScaleVmProfile, currentState);
     }
 
