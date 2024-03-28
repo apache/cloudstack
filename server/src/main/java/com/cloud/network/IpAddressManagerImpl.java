@@ -1238,7 +1238,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         AcquirePodIpCmdResponse ret = new AcquirePodIpCmdResponse();
         ret.setCidrAddress(pod_vo.getCidrAddress());
         ret.setGateway(pod_vo.getGateway());
-        ret.setInstanceId(vo.getInstanceId());
+        ret.setNicId(vo.getNicId());
         ret.setIpAddress(vo.getIpAddress());
         ret.setMacAddress(vo.getMacAddress());
         ret.setPodId(vo.getPodId());
