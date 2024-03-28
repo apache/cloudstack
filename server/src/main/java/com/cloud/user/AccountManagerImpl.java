@@ -426,6 +426,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
+    public List<String> getApiNameList() {
+        return apiNameList;
+    }
+
+    @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         _systemAccount = _accountDao.findById(Account.ACCOUNT_ID_SYSTEM);
         if (_systemAccount == null) {
