@@ -3121,7 +3121,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     }
 
                 }
-
+                pool.customizeLibvirtDiskDef(disk);
             }
 
             if (data instanceof VolumeObjectTO) {
@@ -3496,6 +3496,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
                 diskdef.setPhysicalBlockIOSize(attachingPool.getSupportedPhysicalBlockSize());
                 diskdef.setLogicalBlockIOSize(attachingPool.getSupportedLogicalBlockSize());
+                attachingPool.customizeLibvirtDiskDef(diskdef);
             }
 
             final String xml = diskdef.toString();
