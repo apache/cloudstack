@@ -102,6 +102,7 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
 
     List<VolumeVO> findIncludingRemovedByZone(long zoneId);
 
+    VolumeVO findByPath(String path);
     /**
      * Lists all volumes using a given passphrase ID
      * @param passphraseId
