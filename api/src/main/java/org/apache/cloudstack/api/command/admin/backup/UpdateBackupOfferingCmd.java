@@ -98,7 +98,7 @@ public class UpdateBackupOfferingCmd extends BaseCmd {
             this.setResponseObject(response);
         } catch (CloudRuntimeException e) {
             ApiErrorCode paramError = e instanceof InvalidParameterValueException ? ApiErrorCode.PARAM_ERROR : ApiErrorCode.INTERNAL_ERROR;
-            logger.error(String.format("Failed to update Backup Offering [id: %s] due to: [%s].", id, e.getMessage()), e);
+            logger.error("Failed to update Backup Offering [id: {}] due to: [{}].", id, e.getMessage(), e);
             throw new ServerApiException(paramError, e.getMessage());
         }
     }

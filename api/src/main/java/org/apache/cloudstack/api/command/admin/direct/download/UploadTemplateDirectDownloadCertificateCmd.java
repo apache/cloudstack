@@ -95,7 +95,7 @@ public class UploadTemplateDirectDownloadCertificateCmd extends BaseCmd {
         }
 
         try {
-            logger.debug("Uploading certificate " + name + " to agents for Direct Download");
+            logger.debug("Uploading certificate {} to agents for Direct Download", name);
             Pair<DirectDownloadCertificate, List<HostCertificateStatus>> uploadStatus =
                     directDownloadManager.uploadCertificateToHosts(certificate, name, hypervisor, zoneId, hostId);
             DirectDownloadCertificate certificate = uploadStatus.first();

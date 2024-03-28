@@ -155,7 +155,7 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
         Host destinationHost = _resourceService.getHost(getHostId());
         // OfflineVmwareMigration: destination host would have to not be a required parameter for stopped VMs
         if (destinationHost == null) {
-            logger.error(String.format("Unable to find the host with ID [%s].", getHostId()));
+            logger.error("Unable to find the host with ID [{}].", getHostId());
             throw new InvalidParameterValueException("Unable to find the specified host to migrate the VM.");
         }
         return destinationHost;

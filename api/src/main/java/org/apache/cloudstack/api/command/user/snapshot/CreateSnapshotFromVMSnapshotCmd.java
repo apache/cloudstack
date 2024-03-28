@@ -164,7 +164,7 @@ public class CreateSnapshotFromVMSnapshotCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute() {
-        logger.info("CreateSnapshotFromVMSnapshotCmd with vm snapshot id:" + getVMSnapshotId() + " and snapshot id:" + getEntityId() + " starts:" + System.currentTimeMillis());
+        logger.info("CreateSnapshotFromVMSnapshotCmd with vm snapshot id:{} and snapshot id:{} starts:{}", getVMSnapshotId(), getEntityId(), System.currentTimeMillis());
         CallContext.current().setEventDetails("Vm Snapshot Id: "+ this._uuidMgr.getUuid(VMSnapshot.class, getVMSnapshotId()));
         Snapshot snapshot = null;
         try {
@@ -186,7 +186,7 @@ public class CreateSnapshotFromVMSnapshotCmd extends BaseAsyncCreateCmd {
                 try {
                     _snapshotService.deleteSnapshot(getEntityId(), null);
                 } catch (Exception e) {
-                    logger.debug("Failed to clean failed snapshot" + getEntityId());
+                    logger.debug("Failed to clean failed snapshot {}", getEntityId());
                 }
             }
         }

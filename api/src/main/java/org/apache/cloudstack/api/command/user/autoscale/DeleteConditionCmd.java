@@ -64,7 +64,7 @@ public class DeleteConditionCmd extends BaseAsyncCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
         } else {
-            logger.warn("Failed to delete condition " + getId());
+            logger.warn("Failed to delete condition {}", getId());
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete condition.");
         }
     }

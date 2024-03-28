@@ -90,7 +90,7 @@ public class DeleteAutoScaleVmProfileCmd extends BaseAsyncCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
         } else {
-            logger.warn("Failed to delete autoscale vm profile " + getId());
+            logger.warn("Failed to delete autoscale vm profile {}", getId());
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete autoscale vm profile");
         }
     }

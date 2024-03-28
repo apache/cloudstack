@@ -201,9 +201,7 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
             for (Map<String, String> entry : (Collection<Map<String, String>>)nicNetworkList.values()) {
                 String nic = entry.get(VmDetailConstants.NIC);
                 String networkUuid = entry.get(VmDetailConstants.NETWORK);
-                if (logger.isTraceEnabled()) {
-                    logger.trace(String.format("nic, '%s', goes on net, '%s'", nic, networkUuid));
-                }
+                logger.trace("nic, '{}', goes on net, '{}'", nic, networkUuid);
                 if (StringUtils.isAnyEmpty(nic, networkUuid) || _entityMgr.findByUuid(Network.class, networkUuid) == null) {
                     throw new InvalidParameterValueException(String.format("Network ID: %s for NIC ID: %s is invalid", networkUuid, nic));
                 }
@@ -219,9 +217,7 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
             for (Map<String, String> entry : (Collection<Map<String, String>>)nicIpAddressList.values()) {
                 String nic = entry.get(VmDetailConstants.NIC);
                 String ipAddress = StringUtils.defaultIfEmpty(entry.get(VmDetailConstants.IP4_ADDRESS), null);
-                if (logger.isTraceEnabled()) {
-                    logger.trace(String.format("nic, '%s', gets ip, '%s'", nic, ipAddress));
-                }
+                logger.trace("nic, '{}', gets ip, '{}'", nic, ipAddress);
                 if (StringUtils.isEmpty(nic)) {
                     throw new InvalidParameterValueException(String.format("NIC ID: '%s' is invalid for IP address mapping", nic));
                 }
@@ -244,9 +240,7 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
             for (Map<String, String> entry : (Collection<Map<String, String>>)dataDiskToDiskOfferingList.values()) {
                 String disk = entry.get(VmDetailConstants.DISK);
                 String offeringUuid = entry.get(VmDetailConstants.DISK_OFFERING);
-                if (logger.isTraceEnabled()) {
-                    logger.trace(String.format("disk, '%s', gets offering, '%s'", disk, offeringUuid));
-                }
+                logger.trace("disk, '{}', gets offering, '{}'", disk, offeringUuid);
                 if (StringUtils.isAnyEmpty(disk, offeringUuid) || _entityMgr.findByUuid(DiskOffering.class, offeringUuid) == null) {
                     throw new InvalidParameterValueException(String.format("Disk offering ID: %s for disk ID: %s is invalid", offeringUuid, disk));
                 }
