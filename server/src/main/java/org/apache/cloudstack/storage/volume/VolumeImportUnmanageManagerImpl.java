@@ -25,7 +25,9 @@ import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
+import com.cloud.event.EventVO;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
@@ -47,10 +49,12 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
+import com.cloud.user.User;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DiskProfile;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ResponseObject;
@@ -446,11 +450,14 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
     private void publicUsageEventForVolumeImportAndUnmanage(VolumeVO volumeVO, boolean isImport) {
         try {
             String eventType = isImport ? EventTypes.EVENT_VOLUME_IMPORT: EventTypes.EVENT_VOLUME_UNMANAGE;
+            String eventDescription = isImport ? "Successfully imported volume " + volumeVO.getUuid(): "Successfully unmanaged volume "  + volumeVO.getUuid();
+            ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, volumeVO.getAccountId(), EventVO.LEVEL_INFO,
+                    eventType, eventDescription, volumeVO.getId(), ApiCommandResourceType.Volume.toString(),0);
             UsageEventUtils.publishUsageEvent(eventType, volumeVO.getAccountId(), volumeVO.getDataCenterId(),
                     volumeVO.getId(), volumeVO.getName(), volumeVO.getDiskOfferingId(), null, volumeVO.getSize(),
                     Volume.class.getName(), volumeVO.getUuid(), volumeVO.isDisplayVolume());
         } catch (Exception e) {
-            logger.error(String.format("Failed to publish volume ID: %s usage records during volume import/unmanage", volumeVO.getUuid()), e);
+            logger.error(String.format("Failed to publish volume ID: %s event or usage records during volume import/unmanage", volumeVO.getUuid()), e);
         }
     }
 
