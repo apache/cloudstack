@@ -120,8 +120,9 @@ public class ExtractTemplateCmd extends BaseAsyncCmd {
             CallContext.current().setEventDetails(getEventDescription());
             String uploadUrl = _templateService.extract(this);
             if (uploadUrl != null) {
-                ExtractResponse response = _responseGenerator.createExtractResponse(id, zoneId, getEntityOwnerId(), mode, uploadUrl);
+                ExtractResponse response = _responseGenerator.createImageExtractResponse(id, zoneId, getEntityOwnerId(), mode, uploadUrl);
                 response.setResponseName(getCommandName());
+                response.setObjectName("template");
                 this.setResponseObject(response);
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to extract template");

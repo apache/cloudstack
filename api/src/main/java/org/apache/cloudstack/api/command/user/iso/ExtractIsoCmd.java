@@ -120,7 +120,7 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
             CallContext.current().setEventDetails(getEventDescription());
             String uploadUrl = _templateService.extract(this);
             if (uploadUrl != null) {
-                ExtractResponse response = _responseGenerator.createExtractResponse(id, zoneId, getEntityOwnerId(), mode, uploadUrl);
+                ExtractResponse response = _responseGenerator.createImageExtractResponse(id, zoneId, getEntityOwnerId(), mode, uploadUrl);
                 response.setResponseName(getCommandName());
                 response.setObjectName("iso");
                 this.setResponseObject(response);
