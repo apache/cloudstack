@@ -148,18 +148,21 @@ public class StorPoolDataMotionStrategy implements DataMotionStrategy {
     public StrategyPriority canHandle(DataObject srcData, DataObject destData) {
         DataObjectType srcType = srcData.getType();
         DataObjectType dstType = destData.getType();
-        if (srcType == DataObjectType.SNAPSHOT && dstType == DataObjectType.TEMPLATE
-                && StorPoolConfigurationManager.BypassSecondaryStorage.value()) {
+        if (srcType == DataObjectType.SNAPSHOT && dstType == DataObjectType.TEMPLATE) {
             SnapshotInfo sinfo = (SnapshotInfo) srcData;
             VolumeInfo volume = sinfo.getBaseVolume();
             StoragePoolVO storagePool = _storagePool.findById(volume.getPoolId());
             if (!storagePool.getStorageProviderName().equals(StorPoolUtil.SP_PROVIDER_NAME)) {
                 return StrategyPriority.CANT_HANDLE;
             }
+            SnapshotDetailsVO snapshotDetail = _snapshotDetailsDao.findDetail(sinfo.getId(), StorPoolUtil.SP_DELAY_DELETE);
+            if (snapshotDetail != null) {
+                throw new CloudRuntimeException("Cannot create a template from the last snapshot of deleted volume. You can only restore the volume.");
+            }
             String snapshotName = StorPoolHelper.getSnapshotName(sinfo.getId(), sinfo.getUuid(), _snapshotStoreDao,
                     _snapshotDetailsDao);
             StorPoolUtil.spLog("StorPoolDataMotionStrategy.canHandle snapshot name=%s", snapshotName);
-            if (snapshotName != null) {
+            if (snapshotName != null && StorPoolConfigurationManager.BypassSecondaryStorage.value()) {
                 return StrategyPriority.HIGHEST;
             }
         }
