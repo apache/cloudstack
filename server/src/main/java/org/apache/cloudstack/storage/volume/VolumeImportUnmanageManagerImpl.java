@@ -274,10 +274,10 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
     protected StoragePoolVO checkIfPoolAvailable(Long poolId) {
         StoragePoolVO pool = primaryDataStoreDao.findById(poolId);
         if (pool == null) {
-            logFailureAndThrowException("Storage pool does not exist: ID = " + poolId);
+            logFailureAndThrowException(String.format("Storage pool (ID: %s) does not exist", poolId));
         }
         if (pool.isInMaintenance()) {
-            logFailureAndThrowException("Storage pool is in maintenance: " + pool.getName());
+            logFailureAndThrowException(String.format("Storage pool (name: %s) is in maintenance: ", pool.getName()));
         }
         return pool;
     }

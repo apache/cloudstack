@@ -320,6 +320,7 @@ public class VolumeImportUnmanageManagerImplTest {
             Assert.fail("It should fail as the volume is locked");
         } catch (CloudRuntimeException ex) {
             Assert.assertEquals("Locked volume cannot be imported.", ex.getMessage());
+            verify(volumeImportUnmanageManager).logFailureAndThrowException("Locked volume cannot be imported.");
         }
     }
 
@@ -333,6 +334,7 @@ public class VolumeImportUnmanageManagerImplTest {
             Assert.fail("It should fail as the volume is encrypted");
         } catch (CloudRuntimeException ex) {
             Assert.assertEquals("Encrypted volume cannot be imported.", ex.getMessage());
+            verify(volumeImportUnmanageManager).logFailureAndThrowException("Encrypted volume cannot be imported.");
         }
     }
 
@@ -347,6 +349,7 @@ public class VolumeImportUnmanageManagerImplTest {
             Assert.fail("It should fail as the volume has backing file");
         } catch (CloudRuntimeException ex) {
             Assert.assertEquals("Volume with backing file cannot be imported.", ex.getMessage());
+            verify(volumeImportUnmanageManager).logFailureAndThrowException("Volume with backing file cannot be imported.");
         }
     }
 
@@ -368,44 +371,74 @@ public class VolumeImportUnmanageManagerImplTest {
         verify(volumeDao).update(eq(volumeId), any());
     }
 
-    @Test(expected = CloudRuntimeException.class)
+    @Test
     public void testUnmanageVolumeNotExist() {
-        when(volumeDao.findById(volumeId)).thenReturn(null);
-        volumeImportUnmanageManager.unmanageVolume(volumeId);
+        try {
+            when(volumeDao.findById(volumeId)).thenReturn(null);
+            volumeImportUnmanageManager.unmanageVolume(volumeId);
+            Assert.fail("it should fail");
+        } catch (CloudRuntimeException ex) {
+            verify(volumeImportUnmanageManager).logFailureAndThrowException(String.format("Volume (ID: %s) does not exist", volumeId));
+        }
     }
 
-    @Test(expected = CloudRuntimeException.class)
+    @Test
     public void testUnmanageVolumeNotReady() {
-        when(volumeVO.getState()).thenReturn(Volume.State.Allocated);
-        volumeImportUnmanageManager.unmanageVolume(volumeId);
+        try {
+            when(volumeVO.getState()).thenReturn(Volume.State.Allocated);
+            volumeImportUnmanageManager.unmanageVolume(volumeId);
+            Assert.fail("it should fail");
+        } catch (CloudRuntimeException ex) {
+            verify(volumeImportUnmanageManager).logFailureAndThrowException(String.format("Volume (ID: %s) is not ready", volumeId));
+        }
     }
 
 
-    @Test(expected = CloudRuntimeException.class)
+    @Test
     public void testUnmanageVolumeEncrypted() {
-        when(volumeVO.getState()).thenReturn(Volume.State.Ready);
-        when(volumeVO.getEncryptFormat()).thenReturn(encryptFormat);
-        volumeImportUnmanageManager.unmanageVolume(volumeId);
+        try {
+            when(volumeVO.getState()).thenReturn(Volume.State.Ready);
+            when(volumeVO.getEncryptFormat()).thenReturn(encryptFormat);
+            volumeImportUnmanageManager.unmanageVolume(volumeId);
+            Assert.fail("it should fail");
+        } catch (CloudRuntimeException ex) {
+            verify(volumeImportUnmanageManager).logFailureAndThrowException(String.format("Volume (ID: %s) is encrypted", volumeId));
+        }
     }
 
-    @Test(expected = CloudRuntimeException.class)
+    @Test
     public void testUnmanageVolumeAttached() {
-        when(volumeVO.getState()).thenReturn(Volume.State.Ready);
-        when(volumeVO.getAttached()).thenReturn(new Date());
-        volumeImportUnmanageManager.unmanageVolume(volumeId);
+        try {
+            when(volumeVO.getState()).thenReturn(Volume.State.Ready);
+            when(volumeVO.getAttached()).thenReturn(new Date());
+            volumeImportUnmanageManager.unmanageVolume(volumeId);
+            Assert.fail("it should fail");
+        } catch (CloudRuntimeException ex) {
+            verify(volumeImportUnmanageManager).logFailureAndThrowException(String.format("Volume (ID: %s) is attached to VM (ID: %s)", volumeId, volumeVO.getInstanceId()));
+        }
     }
 
-    @Test(expected = CloudRuntimeException.class)
+    @Test
     public void testCheckIfPoolAvailableNotExist() {
-        when(primaryDataStoreDao.findById(poolId)).thenReturn(null);
-        volumeImportUnmanageManager.checkIfPoolAvailable(poolId);
+        try {
+            when(primaryDataStoreDao.findById(poolId)).thenReturn(null);
+            volumeImportUnmanageManager.checkIfPoolAvailable(poolId);
+            Assert.fail("it should fail");
+        } catch (CloudRuntimeException ex) {
+            verify(volumeImportUnmanageManager).logFailureAndThrowException(String.format("Storage pool (ID: %s) does not exist", poolId));
+        }
     }
 
-    @Test(expected = CloudRuntimeException.class)
+    @Test
     public void testCheckIfPoolAvailableInMaintenance() {
-        when(primaryDataStoreDao.findById(poolId)).thenReturn(storagePoolVO);
-        when(storagePoolVO.isInMaintenance()).thenReturn(true);
-        volumeImportUnmanageManager.checkIfPoolAvailable(poolId);
+        try {
+            when(primaryDataStoreDao.findById(poolId)).thenReturn(storagePoolVO);
+            when(storagePoolVO.isInMaintenance()).thenReturn(true);
+            volumeImportUnmanageManager.checkIfPoolAvailable(poolId);
+            Assert.fail("it should fail");
+        } catch (CloudRuntimeException ex) {
+            verify(volumeImportUnmanageManager).logFailureAndThrowException(String.format("Storage pool (name: %s) is in maintenance: ", storagePoolName));
+        }
     }
 
     @Test
@@ -461,38 +494,57 @@ public class VolumeImportUnmanageManagerImplTest {
         Assert.assertEquals(diskOfferingVO, result);
     }
 
-    @Test(expected = CloudRuntimeException.class)
+    @Test
     public void testGetOrCreateDiskOfferingNotExist() {
-        when(diskOfferingDao.findById(diskOfferingId)).thenReturn(null);
-
-        volumeImportUnmanageManager.getOrCreateDiskOffering(account, diskOfferingId, zoneId, isLocal);
+        try {
+            when(diskOfferingDao.findById(diskOfferingId)).thenReturn(null);
+            volumeImportUnmanageManager.getOrCreateDiskOffering(account, diskOfferingId, zoneId, isLocal);
+            Assert.fail("it should fail");
+        } catch (CloudRuntimeException ex) {
+            verify(volumeImportUnmanageManager).logFailureAndThrowException(String.format("Disk offering %s does not exist", diskOfferingId));
+        }
     }
 
-    @Test(expected = CloudRuntimeException.class)
+    @Test
     public void testGetOrCreateDiskOfferingNotActive() {
-        when(diskOfferingDao.findById(diskOfferingId)).thenReturn(diskOfferingVO);
-        when(diskOfferingVO.getState()).thenReturn(DiskOffering.State.Inactive);
+        try {
+            when(diskOfferingDao.findById(diskOfferingId)).thenReturn(diskOfferingVO);
+            when(diskOfferingVO.getState()).thenReturn(DiskOffering.State.Inactive);
 
-        volumeImportUnmanageManager.getOrCreateDiskOffering(account, diskOfferingId, zoneId, isLocal);
+            volumeImportUnmanageManager.getOrCreateDiskOffering(account, diskOfferingId, zoneId, isLocal);
+            Assert.fail("it should fail");
+        } catch (CloudRuntimeException ex) {
+            verify(volumeImportUnmanageManager).logFailureAndThrowException(String.format("Disk offering with ID %s is not active", diskOfferingId));
+        }
     }
 
-    @Test(expected = CloudRuntimeException.class)
+    @Test
     public void testGetOrCreateDiskOfferingNotLocal() {
-        when(diskOfferingDao.findById(diskOfferingId)).thenReturn(diskOfferingVO);
-        when(diskOfferingVO.getState()).thenReturn(DiskOffering.State.Active);
-        when(diskOfferingVO.isUseLocalStorage()).thenReturn(!isLocal);
+        try {
+            when(diskOfferingDao.findById(diskOfferingId)).thenReturn(diskOfferingVO);
+            when(diskOfferingVO.getState()).thenReturn(DiskOffering.State.Active);
+            when(diskOfferingVO.isUseLocalStorage()).thenReturn(!isLocal);
 
-        volumeImportUnmanageManager.getOrCreateDiskOffering(account, diskOfferingId, zoneId, isLocal);
+            volumeImportUnmanageManager.getOrCreateDiskOffering(account, diskOfferingId, zoneId, isLocal);
+            Assert.fail("it should fail");
+        } catch (CloudRuntimeException ex) {
+            verify(volumeImportUnmanageManager).logFailureAndThrowException(String.format("Disk offering with ID %s should use %s storage", diskOfferingId, isLocal ? "local" : "shared"));
+        }
     }
 
-    @Test(expected = CloudRuntimeException.class)
+    @Test
     public void testGetOrCreateDiskOfferingNoPermission() {
-        when(diskOfferingDao.findById(diskOfferingId)).thenReturn(diskOfferingVO);
-        when(diskOfferingVO.getState()).thenReturn(DiskOffering.State.Active);
-        when(diskOfferingVO.isUseLocalStorage()).thenReturn(isLocal);
-        doThrow(PermissionDeniedException.class).when(configMgr).checkDiskOfferingAccess(account, diskOfferingVO, dataCenterVO);
+        try {
+            when(diskOfferingDao.findById(diskOfferingId)).thenReturn(diskOfferingVO);
+            when(diskOfferingVO.getState()).thenReturn(DiskOffering.State.Active);
+            when(diskOfferingVO.isUseLocalStorage()).thenReturn(isLocal);
+            doThrow(PermissionDeniedException.class).when(configMgr).checkDiskOfferingAccess(account, diskOfferingVO, dataCenterVO);
 
-        volumeImportUnmanageManager.getOrCreateDiskOffering(account, diskOfferingId, zoneId, isLocal);
+            volumeImportUnmanageManager.getOrCreateDiskOffering(account, diskOfferingId, zoneId, isLocal);
+            Assert.fail("it should fail");
+        } catch (CloudRuntimeException ex) {
+            verify(volumeImportUnmanageManager).logFailureAndThrowException(String.format("Disk offering with ID %s is not accessible by owner %s", diskOfferingId, account));
+        }
     }
 
     @Test
