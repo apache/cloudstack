@@ -18,7 +18,6 @@ package org.apache.cloudstack.quota;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -165,36 +164,32 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
 
         if (endDate == null) {
             // adjust start date to end of day as there is no end date
-            Date adjustedStartDate = computeAdjustedTime(_respBldr.startOfNextDay(startDate));
+            startDate = _respBldr.startOfNextDay(startDate);
             if (logger.isDebugEnabled()) {
-                logger.debug("getQuotaBalance1: Getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", on or before " + adjustedStartDate);
+                logger.debug("getQuotaBalance1: Getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", on or before " + startDate);
             }
-            List<QuotaBalanceVO> qbrecords = _quotaBalanceDao.lastQuotaBalanceVO(accountId, domainId, adjustedStartDate);
+            List<QuotaBalanceVO> qbrecords = _quotaBalanceDao.lastQuotaBalanceVO(accountId, domainId, startDate);
             if (logger.isDebugEnabled()) {
                 logger.debug("Found records size=" + qbrecords.size());
             }
             if (qbrecords.isEmpty()) {
-                logger.info("Incorrect Date there are no quota records before this date " + adjustedStartDate);
+                logger.info("Incorrect Date there are no quota records before this date " + startDate);
                 return qbrecords;
             } else {
                 return qbrecords;
             }
         } else {
-            Date adjustedStartDate = computeAdjustedTime(startDate);
-            if (endDate.after(_respBldr.startOfNextDay())) {
-                throw new InvalidParameterValueException("Incorrect Date Range. End date:" + endDate + " should not be in future. ");
-            } else if (startDate.before(endDate)) {
-                Date adjustedEndDate = computeAdjustedTime(endDate);
+            if (startDate.before(endDate)) {
                 if (logger.isDebugEnabled()) {
-                    logger.debug("getQuotaBalance2: Getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate
-                            + " and " + adjustedEndDate);
+                    logger.debug("getQuotaBalance2: Getting quota balance records for account: " + accountId + ", domainId: " + domainId + ", between " + startDate
+                            + " and " + endDate);
                 }
-                List<QuotaBalanceVO> qbrecords = _quotaBalanceDao.findQuotaBalance(accountId, domainId, adjustedStartDate, adjustedEndDate);
+                List<QuotaBalanceVO> qbrecords = _quotaBalanceDao.findQuotaBalance(accountId, domainId, startDate, endDate);
                 if (logger.isDebugEnabled()) {
                     logger.debug("getQuotaBalance3: Found records size=" + qbrecords.size());
                 }
                 if (qbrecords.isEmpty()) {
-                    logger.info("There are no quota records between these dates start date " + adjustedStartDate + " and end date:" + endDate);
+                    logger.info("There are no quota records between these dates start date " + startDate + " and end date:" + endDate);
                     return qbrecords;
                 } else {
                     return qbrecords;
@@ -230,44 +225,11 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
         if (startDate.after(endDate)) {
             throw new InvalidParameterValueException("Incorrect Date Range. Start date: " + startDate + " is after end date:" + endDate);
         }
-        if (endDate.after(_respBldr.startOfNextDay())) {
-            throw new InvalidParameterValueException("Incorrect Date Range. End date:" + endDate + " should not be in future. ");
-        }
-        Date adjustedEndDate = computeAdjustedTime(endDate);
-        Date adjustedStartDate = computeAdjustedTime(startDate);
-        if (logger.isDebugEnabled()) {
-            logger.debug("Getting quota records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate + " and " + adjustedEndDate);
-        }
-        return _quotaUsageDao.findQuotaUsage(accountId, domainId, usageType, adjustedStartDate, adjustedEndDate);
-    }
 
-    @Override
-    public Date computeAdjustedTime(final Date date) {
-        if (date == null) {
-            return null;
-        }
+        logger.debug("Getting quota records of type [{}] for account [{}] in domain [{}], between [{}] and [{}].",
+                usageType, accountId, domainId, startDate, endDate);
 
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(date);
-        TimeZone localTZ = cal.getTimeZone();
-        int timezoneOffset = cal.get(Calendar.ZONE_OFFSET);
-        if (localTZ.inDaylightTime(date)) {
-            timezoneOffset += (60 * 60 * 1000);
-        }
-        cal.add(Calendar.MILLISECOND, timezoneOffset);
-
-        Date newTime = cal.getTime();
-
-        Calendar calTS = Calendar.getInstance(_usageTimezone);
-        calTS.setTime(newTime);
-        timezoneOffset = calTS.get(Calendar.ZONE_OFFSET);
-        if (_usageTimezone.inDaylightTime(date)) {
-            timezoneOffset += (60 * 60 * 1000);
-        }
-
-        calTS.add(Calendar.MILLISECOND, -1 * timezoneOffset);
-
-        return calTS.getTime();
+        return _quotaUsageDao.findQuotaUsage(accountId, domainId, usageType, startDate, endDate);
     }
 
     @Override

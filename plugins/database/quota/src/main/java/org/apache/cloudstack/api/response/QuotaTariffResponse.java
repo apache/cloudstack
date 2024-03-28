@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.response;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 import java.math.BigDecimal;
@@ -74,9 +75,9 @@ public class QuotaTariffResponse extends BaseResponse {
     @Param(description = "description")
     private String description;
 
-    @SerializedName("uuid")
-    @Param(description = "uuid")
-    private String uuid;
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "the ID of the tariff")
+    private String id;
 
     @SerializedName("removed")
     @Param(description = "when the quota tariff was removed")
@@ -85,15 +86,6 @@ public class QuotaTariffResponse extends BaseResponse {
     public QuotaTariffResponse() {
         super();
         this.setObjectName("quotatariff");
-    }
-
-    public QuotaTariffResponse(final int usageType) {
-        super();
-        this.usageType = usageType;
-    }
-
-    public String getUsageName() {
-        return usageName;
     }
 
     public void setUsageName(String usageName) {
@@ -108,16 +100,8 @@ public class QuotaTariffResponse extends BaseResponse {
         this.usageType = usageType;
     }
 
-    public String getUsageUnit() {
-        return usageUnit;
-    }
-
     public void setUsageUnit(String usageUnit) {
         this.usageUnit = usageUnit;
-    }
-
-    public String getUsageDiscriminator() {
-        return usageDiscriminator;
     }
 
     public void setUsageDiscriminator(String usageDiscriminator) {
@@ -132,24 +116,12 @@ public class QuotaTariffResponse extends BaseResponse {
         this.tariffValue = tariffValue;
     }
 
-    public String getUsageTypeDescription() {
-        return usageTypeDescription;
-    }
-
     public void setUsageTypeDescription(String usageTypeDescription) {
         this.usageTypeDescription = usageTypeDescription;
     }
 
-    public Date getEffectiveOn() {
-        return effectiveOn;
-    }
-
     public void setEffectiveOn(Date effectiveOn) {
         this.effectiveOn = effectiveOn;
-    }
-
-    public String getCurrency() {
-        return currency;
     }
 
     public void setCurrency(String currency) {
@@ -188,16 +160,12 @@ public class QuotaTariffResponse extends BaseResponse {
         this.description = description;
     }
 
-    public String getUuid() {
-        return uuid;
+    public String getId() {
+        return id;
     }
 
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
-    }
-
-    public Date getRemoved() {
-        return removed;
+    public void setId(String id) {
+        this.id = id;
     }
 
     public void setRemoved(Date removed) {

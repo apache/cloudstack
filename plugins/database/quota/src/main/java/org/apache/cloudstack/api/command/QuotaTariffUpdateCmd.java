@@ -52,8 +52,8 @@ public class QuotaTariffUpdateCmd extends BaseCmd {
             "Use yyyy-MM-dd as the date format, e.g. startDate=2009-06-03.")
     private Date startDate;
 
-    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "The end date of the quota tariff. Use yyyy-MM-dd as the date format, e.g."
-            + " endDate=2009-06-03.", since = "4.18.0.0")
+    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "The end date of the quota tariff. " +
+            ApiConstants.PARAMETER_DESCRIPTION_END_DATE_POSSIBLE_FORMATS, since = "4.18.0.0")
     private Date endDate;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Quota tariff's name", length = 65535, since = "4.18.0.0")

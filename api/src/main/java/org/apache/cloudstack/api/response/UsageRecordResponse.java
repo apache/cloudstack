@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -133,11 +134,11 @@ public class UsageRecordResponse extends BaseResponseWithTagInformation implemen
 
     @SerializedName(ApiConstants.START_DATE)
     @Param(description = "start date of the usage record")
-    private String startDate;
+    private Date startDate;
 
     @SerializedName(ApiConstants.END_DATE)
     @Param(description = "end date of the usage record")
-    private String endDate;
+    private Date endDate;
 
     @SerializedName("issourcenat")
     @Param(description = "True if the IPAddress is source NAT")
@@ -160,7 +161,7 @@ public class UsageRecordResponse extends BaseResponseWithTagInformation implemen
     private String vpcId;
 
     public UsageRecordResponse() {
-        tags = new LinkedHashSet<ResourceTagResponse>();
+        tags = new LinkedHashSet<>();
     }
 
     public void setTags(Set<ResourceTagResponse> tags) {
@@ -245,11 +246,11 @@ public class UsageRecordResponse extends BaseResponseWithTagInformation implemen
         this.size = size;
     }
 
-    public void setStartDate(String startDate) {
+    public void setStartDate(Date startDate) {
         this.startDate = startDate;
     }
 
-    public void setEndDate(String endDate) {
+    public void setEndDate(Date endDate) {
         this.endDate = endDate;
     }
 
