@@ -7668,6 +7668,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
             DataCenterVO zone = dataCenterDao.findById(vm.getDataCenterId());
             _accountMgr.checkAccess(caller, diskOffering, zone);
+            ServiceOfferingVO serviceOffering = serviceOfferingDao.findById(vm.getServiceOfferingId());
+            if (serviceOffering.getDiskOfferingStrictness() && !serviceOffering.getDiskOfferingId().equals(rootDiskOfferingId)) {
+                throw new InvalidParameterValueException("VM's service offering has a strict disk offering requirement, and the specified disk offering does not match");
+            }
         }
 
         //check if there are any active snapshots on volumes associated with the VM
@@ -7867,15 +7871,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 // Detach, destroy and create the usage event for the old root volume.
                 _volsDao.detachVolume(root.getId());
-                volumeMgr.destroyVolume(root);
-                if (expunge) {
-                    AsyncCallFuture<VolumeApiResult> future = _volService.expungeVolumeAsync(volFactory.getVolume(root.getId()));
-                    try {
-                        future.get();
-                    } catch (InterruptedException | java.util.concurrent.ExecutionException e) {
-                        s_logger.error(String.format("Failed to expunge volume [uuid: %s name: %s] due to [%s].", root.getUuid(), root.getName(), e.getMessage()), e);
-                    }
-                }
+                _volumeService.destroyVolume(root.getId(), caller, expunge, false);
 
                 // For VMware hypervisor since the old root volume is replaced by the new root volume, force expunge old root volume if it has been created in storage
                 if (vm.getHypervisorType() == HypervisorType.VMware) {
