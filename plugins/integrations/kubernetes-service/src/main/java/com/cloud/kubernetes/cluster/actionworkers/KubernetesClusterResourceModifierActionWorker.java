@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.network.rules.FirewallManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import org.apache.cloudstack.api.ApiConstants;
@@ -135,6 +136,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     protected LoadBalancingRulesService lbService;
     @Inject
     protected RulesService rulesService;
+    @Inject
+    protected FirewallManager firewallManager;
     @Inject
     protected PortForwardingRulesDao portForwardingRulesDao;
     @Inject
@@ -551,7 +554,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         for (PortForwardingRuleVO pfRule : pfRules) {
             if (startPort <= pfRule.getSourcePortStart() && pfRule.getSourcePortStart() <= endPort) {
                 portForwardingRulesDao.remove(pfRule.getId());
-                LOGGER.trace("Marking PF rule " + pfRule + " with Revoke state");
+                logger.trace("Marking PF rule " + pfRule + " with Revoke state");
                 pfRule.setState(FirewallRule.State.Revoke);
 
             }
