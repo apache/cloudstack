@@ -138,7 +138,7 @@
 "label.action.image.store.read.only": "Make image store read-only",
 "label.action.image.store.read.write": "Make image store read-write",
 "label.action.import.export.instances": "Import-Export Instances",
-"label.action.import.unmanage.volumes": "Import-Unmanage Volumes",
+"label.action.import.unmanage.volumes": "Import Data Volumes",
 "label.action.ingest.instances": "Ingest instances",
 "label.action.iso.permission": "Update ISO permissions",
 "label.action.iso.share": "Update ISO sharing",
