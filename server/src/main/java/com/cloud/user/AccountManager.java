@@ -197,4 +197,5 @@ public interface AccountManager extends AccountService, Configurable {
     void verifyUsingTwoFactorAuthenticationCode(String code, Long domainId, Long userAccountId);
     UserTwoFactorAuthenticationSetupResponse setupUserTwoFactorAuthentication(SetupUserTwoFactorAuthenticationCmd cmd);
 
+    void checkApiAccess(Account caller, String command);
 }
