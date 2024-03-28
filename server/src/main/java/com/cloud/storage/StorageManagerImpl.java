@@ -3094,24 +3094,16 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     private String getValidTemplateName(Long zoneId, HypervisorType hType) {
         String templateName = null;
-        switch (hType) {
-            case XenServer:
-                templateName = VirtualNetworkApplianceManager.RouterTemplateXen.valueIn(zoneId);
-                break;
-            case KVM:
-                templateName = VirtualNetworkApplianceManager.RouterTemplateKvm.valueIn(zoneId);
-                break;
-            case VMware:
-                templateName = VirtualNetworkApplianceManager.RouterTemplateVmware.valueIn(zoneId);
-                break;
-            case Hyperv:
-                templateName = VirtualNetworkApplianceManager.RouterTemplateHyperV.valueIn(zoneId);
-                break;
-            case LXC:
-                templateName = VirtualNetworkApplianceManager.RouterTemplateLxc.valueIn(zoneId);
-                break;
-            default:
-                break;
+        if (hType.equals(HypervisorType.XenServer)) {
+            templateName = VirtualNetworkApplianceManager.RouterTemplateXen.valueIn(zoneId);
+        } else if (hType.equals(HypervisorType.KVM)) {
+            templateName = VirtualNetworkApplianceManager.RouterTemplateKvm.valueIn(zoneId);
+        } else if (hType.equals(HypervisorType.VMware)) {
+            templateName = VirtualNetworkApplianceManager.RouterTemplateVmware.valueIn(zoneId);
+        } else if (hType.equals(HypervisorType.Hyperv)) {
+            templateName = VirtualNetworkApplianceManager.RouterTemplateHyperV.valueIn(zoneId);
+        } else if (hType.equals(HypervisorType.LXC)) {
+            templateName = VirtualNetworkApplianceManager.RouterTemplateLxc.valueIn(zoneId);
         }
         return templateName;
     }

@@ -118,6 +118,12 @@ import com.cloud.vm.VirtualMachineProfile.Param;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 
+import static com.cloud.hypervisor.Hypervisor.HypervisorType.Hyperv;
+import static com.cloud.hypervisor.Hypervisor.HypervisorType.KVM;
+import static com.cloud.hypervisor.Hypervisor.HypervisorType.LXC;
+import static com.cloud.hypervisor.Hypervisor.HypervisorType.VMware;
+import static com.cloud.hypervisor.Hypervisor.HypervisorType.XenServer;
+
 public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements InternalLoadBalancerVMManager, InternalLoadBalancerVMService, VirtualMachineGuru {
     static final private String InternalLbVmNamePrefix = "b";
 
@@ -202,7 +208,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
             } else if (nic.getTrafficType() == TrafficType.Control) {
                 controlNic = nic;
                 // Internal LB control command is sent over management server in VMware
-                if (dest.getHost().getHypervisorType() == HypervisorType.VMware) {
+                if (dest.getHost().getHypervisorType() == VMware) {
                     if (logger.isInfoEnabled()) {
                         logger.info("Check if we need to add management server explicit route to Internal LB. pod cidr: " + dest.getPod().getCidrAddress() + "/" +
                                 dest.getPod().getCidrSize() + ", pod gateway: " + dest.getPod().getGateway() + ", management host: " + _mgmtHost);
@@ -748,24 +754,16 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
                     logger.debug("Creating the internal lb vm " + id + " in datacenter " + dest.getDataCenter() + " with hypervisor type " + hType);
                 }
                 String templateName = null;
-                switch (hType) {
-                case XenServer:
+                if (hType.equals(XenServer)) {
                     templateName = VirtualNetworkApplianceManager.RouterTemplateXen.valueIn(dest.getDataCenter().getId());
-                    break;
-                case KVM:
+                } else if (hType.equals(KVM)) {
                     templateName = VirtualNetworkApplianceManager.RouterTemplateKvm.valueIn(dest.getDataCenter().getId());
-                    break;
-                case VMware:
+                } else if (hType.equals(VMware)) {
                     templateName = VirtualNetworkApplianceManager.RouterTemplateVmware.valueIn(dest.getDataCenter().getId());
-                    break;
-                case Hyperv:
+                } else if (hType.equals(Hyperv)) {
                     templateName = VirtualNetworkApplianceManager.RouterTemplateHyperV.valueIn(dest.getDataCenter().getId());
-                    break;
-                case LXC:
+                } else if (hType.equals(LXC)) {
                     templateName = VirtualNetworkApplianceManager.RouterTemplateLxc.valueIn(dest.getDataCenter().getId());
-                    break;
-                default:
-                    break;
                 }
                 final VMTemplateVO template = _templateDao.findRoutingTemplate(hType, templateName);
 

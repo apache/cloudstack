@@ -43,6 +43,7 @@ import com.cloud.util.StoragePoolTypeConverter;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
+import org.apache.cloudstack.util.HypervisorTypeConverter;
 
 @Entity
 @Table(name = "user_vm_view")
@@ -128,7 +129,7 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     private String guestOsUuid;
 
     @Column(name = "hypervisor_type")
-    @Enumerated(value = EnumType.STRING)
+    @Convert(converter = HypervisorTypeConverter.class)
     private HypervisorType hypervisorType;
 
     @Column(name = "ha_enabled", updatable = true, nullable = true)

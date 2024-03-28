@@ -1735,17 +1735,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             return ExecuteInSequence.value();
         }
 
-        switch (hypervisorType) {
-            case KVM:
-            case XenServer:
-            case Hyperv:
-            case LXC:
-                return false;
-            case VMware:
-                return StorageManager.shouldExecuteInSequenceOnVmware();
-            default:
-                return ExecuteInSequence.value();
+        if (Set.of(HypervisorType.KVM, HypervisorType.XenServer, HypervisorType.Hyperv, HypervisorType.LXC).contains(hypervisorType)) {
+            return false;
+        } else if (hypervisorType.equals(HypervisorType.VMware)) {
+            return StorageManager.shouldExecuteInSequenceOnVmware();
         }
+        return ExecuteInSequence.value();
     }
 
     @Override

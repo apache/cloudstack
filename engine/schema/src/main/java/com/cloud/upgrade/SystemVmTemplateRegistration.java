@@ -446,7 +446,7 @@ public class SystemVmTemplateRegistration {
     private List<String> fetchAllHypervisors(Long zoneId) {
         List<String> hypervisorList = new ArrayList<>();
         List<Hypervisor.HypervisorType> hypervisorTypes = clusterDao.getAvailableHypervisorInZone(zoneId);
-        hypervisorList = hypervisorTypes.stream().distinct().map(Enum::name).collect(Collectors.toList());
+        hypervisorList = hypervisorTypes.stream().distinct().map(Hypervisor.HypervisorType::name).collect(Collectors.toList());
         return hypervisorList;
     }
 
@@ -719,8 +719,8 @@ public class SystemVmTemplateRegistration {
     }
 
     private void validateTemplates(Set<Hypervisor.HypervisorType> hypervisorsInUse) {
-        Set<String> hypervisors = hypervisorsInUse.stream().map(Enum::name).
-                map(name -> name.toLowerCase(Locale.ROOT)).map(this::getHypervisorName).collect(Collectors.toSet());
+        Set<String> hypervisors = hypervisorsInUse.stream().
+                map(Hypervisor.HypervisorType::name).map(name -> name.toLowerCase(Locale.ROOT)).map(this::getHypervisorName).collect(Collectors.toSet());
         List<String> templates = new ArrayList<>();
         for (Hypervisor.HypervisorType hypervisorType : hypervisorsInUse) {
             templates.add(FileNames.get(hypervisorType));

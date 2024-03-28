@@ -17,8 +17,10 @@
 package org.apache.cloudstack.direct.download;
 
 import com.cloud.hypervisor.Hypervisor;
+import org.apache.cloudstack.util.HypervisorTypeConverter;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -45,6 +47,7 @@ public class DirectDownloadCertificateVO implements DirectDownloadCertificate {
     private String certificate;
 
     @Column(name = "hypervisor_type")
+    @Convert(converter = HypervisorTypeConverter.class)
     private Hypervisor.HypervisorType hypervisorType;
 
     @Column(name = "zone_id")

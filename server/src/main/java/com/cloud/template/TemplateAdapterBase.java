@@ -17,6 +17,7 @@
 package com.cloud.template;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -81,6 +82,7 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;
+import org.apache.commons.lang3.StringUtils;
 
 public abstract class TemplateAdapterBase extends AdapterBase implements TemplateAdapter {
     protected @Inject
@@ -285,8 +287,10 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
         if(hypervisorType == HypervisorType.None) {
-            throw new InvalidParameterValueException("Hypervisor Type: " + cmd.getHypervisor() + " is invalid. Supported Hypervisor types are "
-                    + EnumUtils.listValues(HypervisorType.values()).replace("None, ", ""));
+            throw new InvalidParameterValueException(String.format(
+                    "Hypervisor Type: %s is invalid. Supported Hypervisor types are: %s",
+                    cmd.getHypervisor(),
+                    StringUtils.join(Arrays.stream(HypervisorType.values()).filter(h -> h != HypervisorType.None).map(HypervisorType::name).toArray(), ", ")));
         }
 
         Map details = cmd.getDetails();
@@ -327,8 +331,10 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         }
 
         if(!params.isIso() && params.getHypervisorType() == HypervisorType.None) {
-            throw new InvalidParameterValueException("Hypervisor Type: " + params.getHypervisorType() + " is invalid. Supported Hypervisor types are "
-                    + EnumUtils.listValues(HypervisorType.values()).replace("None, ", ""));
+            throw new InvalidParameterValueException(String.format(
+                    "Hypervisor Type: %s is invalid. Supported Hypervisor types are: %s",
+                    params.getHypervisorType(),
+                    StringUtils.join(Arrays.stream(HypervisorType.values()).filter(h -> h != HypervisorType.None).map(HypervisorType::name).toArray(), ", ")));
         }
 
         return prepare(params.isIso(), params.getUserId(), params.getName(), params.getDisplayText(), params.getBits(),

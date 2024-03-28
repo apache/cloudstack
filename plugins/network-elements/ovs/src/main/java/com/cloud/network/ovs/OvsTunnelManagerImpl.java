@@ -29,6 +29,7 @@ import javax.persistence.EntityExistsException;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
@@ -240,23 +241,18 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
         HypervisorType hvType = host.getHypervisorType();
 
         String label = null;
-        switch (hvType) {
-        case XenServer:
+        if (hvType.equals(HypervisorType.XenServer)) {
             label = physNetTT.getXenNetworkLabel();
-            if ((label != null) && (!label.equals(""))) {
+            if (StringUtils.isNotBlank(label)) {
                 physNetLabel = label;
             }
-            break;
-        case KVM:
+        } else if (hvType.equals(HypervisorType.KVM)) {
             label = physNetTT.getKvmNetworkLabel();
-            if ((label != null) && (!label.equals(""))) {
+            if (StringUtils.isNotBlank(label)) {
                 physNetLabel = label;
             }
-            break;
-        default:
-            throw new CloudRuntimeException("Hypervisor " +
-                    hvType.toString() +
-                    " unsupported by OVS Tunnel Manager");
+        } else {
+            throw new CloudRuntimeException(String.format("Hypervisor %s unsupported by OVS Tunnel Manager", hvType));
         }
 
         // Try to fetch GRE endpoint IP address for cloud db

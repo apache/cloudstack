@@ -50,6 +50,7 @@ import com.cloud.util.StoragePoolTypeConverter;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.StateMachine;
+import org.apache.cloudstack.util.HypervisorTypeConverter;
 
 @Entity
 @Table(name = "host")
@@ -118,7 +119,7 @@ public class EngineHostVO implements EngineHost, Identity {
     private String storageMacAddressDeux;
 
     @Column(name = "hypervisor_type", updatable = true, nullable = false)
-    @Enumerated(value = EnumType.STRING)
+    @Convert(converter = HypervisorTypeConverter.class)
     private HypervisorType hypervisorType;
 
     @Column(name = "proxy_port")
