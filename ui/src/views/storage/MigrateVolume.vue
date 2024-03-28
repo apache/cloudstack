@@ -19,7 +19,7 @@
   <a-form class="form" layout="vertical" v-ctrl-enter="handleKeyboardSubmit">
     <a-alert class="top-spaced" type="warning">
       <template #message>
-        <span v-html="$t('message.migrate.volume')" />
+        <span v-html="$t('message.migrate.volume', { volume: resource.name, storage: resource.storage })" />
       </template>
     </a-alert>
     <a-form-item style="margin-top: 10px;">
