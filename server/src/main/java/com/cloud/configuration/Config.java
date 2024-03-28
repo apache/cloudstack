@@ -918,16 +918,6 @@ public enum Config {
             "1",
             "Weight for user dispersion heuristic (as a value between 0 and 1) applied to resource allocation during vm deployment. Weight for capacity heuristic will be (1 - weight of user dispersion)",
             null),
-    VmAllocationAlgorithm(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "vm.allocation.algorithm",
-            "random",
-            "'random', 'firstfit', 'userdispersing', 'userconcentratedpod_random', 'userconcentratedpod_firstfit', 'firstfitleastconsumed' : Order in which hosts within a cluster will be considered for VM/volume allocation.",
-            null,
-            ConfigKey.Kind.Select,
-            "random,firstfit,userdispersing,userconcentratedpod_random,userconcentratedpod_firstfit,firstfitleastconsumed"),
     VmDeploymentPlanner(
             "Advanced",
             ManagementServer.class,
