@@ -79,3 +79,24 @@ CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_email_configuration`(
     PRIMARY KEY (`account_id`, `email_template_id`),
     CONSTRAINT `FK_quota_email_configuration_account_id` FOREIGN KEY (`account_id`) REFERENCES `cloud_usage`.`quota_account`(`account_id`),
     CONSTRAINT `FK_quota_email_configuration_email_template_id` FOREIGN KEY (`email_template_id`) REFERENCES `cloud_usage`.`quota_email_templates`(`id`));
+
+-- Create command_timeout table and populate it
+CREATE TABLE IF NOT EXISTS `cloud`.`command_timeout` (
+     id bigint(20) unsigned not null auto_increment primary key,
+     command_classpath text unique key,
+     timeout int not null,
+     created datetime not null,
+     updated datetime not null
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT INTO `cloud`.`command_timeout` (command_classpath, timeout, created, updated)
+VALUES
+    ('org.apache.cloudstack.ca.SetupCertificateCommand', 60, now(), now()),
+    ('com.cloud.agent.api.CheckS2SVpnConnectionsCommand', 30, now(), now()),
+    ('com.cloud.agent.api.CheckOnHostCommand', 20, now(), now()),
+    ('com.cloud.agent.api.CheckVirtualMachineCommand', 20, now(), now()),
+    ('com.cloud.agent.api.CheckRouterCommand', 30, now(), now()),
+    ('com.cloud.agent.api.CheckHealthCommand', 50, now(), now()),
+    ('com.cloud.agent.api.routing.GetAutoScaleMetricsCommand', 30, now(), now()),
+    ('org.apache.cloudstack.ca.SetupKeyStoreCommand', 30, now(), now()),
+    ('org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsCommand', 15, now(), now());

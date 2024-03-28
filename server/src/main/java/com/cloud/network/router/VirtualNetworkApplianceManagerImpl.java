@@ -820,7 +820,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 final CheckS2SVpnConnectionsCommand command = new CheckS2SVpnConnectionsCommand(ipList);
                 command.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
                 command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-                command.setWait(30);
+
                 final Answer origAnswer = _agentMgr.easySend(router.getHostId(), command);
                 CheckS2SVpnConnectionsAnswer answer = null;
                 if (origAnswer instanceof CheckS2SVpnConnectionsAnswer) {
@@ -890,7 +890,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                     final CheckRouterCommand command = new CheckRouterCommand();
                     command.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
                     command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-                    command.setWait(30);
+
                     final Answer origAnswer = _agentMgr.easySend(router.getHostId(), command);
                     CheckRouterAnswer answer = null;
                     if (origAnswer instanceof CheckRouterAnswer) {

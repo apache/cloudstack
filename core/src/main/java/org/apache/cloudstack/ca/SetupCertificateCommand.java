@@ -45,7 +45,7 @@ public class SetupCertificateCommand extends NetworkElementCommand {
         if (certificate == null) {
             throw new CloudRuntimeException("A null certificate was provided to setup");
         }
-        setWait(60);
+
         try {
             this.certificate = CertUtils.x509CertificateToPem(certificate.getClientCertificate());
             this.caCertificates = CertUtils.x509CertificatesToPem(certificate.getCaCertificates());

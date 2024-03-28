@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,22 +14,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
+package org.apache.cloudstack.framework.config.dao;
 
-package org.apache.cloudstack.api.agent.test;
+import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.framework.config.impl.CommandTimeoutVO;
 
-import static org.junit.Assert.assertFalse;
+import java.util.Set;
 
-import org.junit.Test;
+public interface CommandTimeoutDao extends GenericDao<CommandTimeoutVO, String> {
 
-import com.cloud.agent.api.CheckHealthCommand;
+    int findMaxTimeoutBetweenCommands(Set<String> commandsClassPath);
 
-public class CheckHealthCommandTest {
-    CheckHealthCommand chc = new CheckHealthCommand();
-
-    @Test
-    public void testExecuteInSequence() {
-        boolean b = chc.executeInSequence();
-        assertFalse(b);
-    }
 }

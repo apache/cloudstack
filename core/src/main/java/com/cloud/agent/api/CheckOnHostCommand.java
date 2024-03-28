@@ -31,7 +31,6 @@ public class CheckOnHostCommand extends Command {
 
     public CheckOnHostCommand(Host host) {
         this.host = new HostTO(host);
-        setWait(20);
     }
 
     public CheckOnHostCommand(Host host, boolean reportCheckFailureIfOneStorageIsDown) {

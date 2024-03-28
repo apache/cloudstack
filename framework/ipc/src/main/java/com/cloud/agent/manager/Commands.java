@@ -100,6 +100,10 @@ public class Commands implements Iterable<Command> {
         return _cmds.toArray(new Command[_cmds.size()]);
     }
 
+    public ArrayList<Command> getCommands() {
+        return _cmds;
+    }
+
     public void setAnswers(Answer[] answers) {
         _answers = answers;
     }

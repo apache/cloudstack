@@ -25,6 +25,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -34,6 +35,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -46,7 +48,9 @@ import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.config.dao.CommandTimeoutDao;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.impl.CommandTimeoutVO;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
@@ -157,6 +161,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected HostPodDao _podDao = null;
     @Inject
     protected ConfigurationDao _configDao = null;
+
+    @Inject
+    protected CommandTimeoutDao commandTimeoutDao;
+
     @Inject
     protected ClusterDao _clusterDao = null;
 
@@ -436,9 +444,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             throw new AgentUnavailableException(-1);
         }
 
-        if (timeout <= 0) {
-            timeout = Wait.value();
-        }
+        timeout = getTimeoutForCommands(commands, timeout);
 
         if (CheckTxnBeforeSending.value()) {
             if (!noDbTxn()) {
@@ -463,6 +469,35 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         notifyAnswersToMonitors(hostId, req.getSequence(), answers);
         commands.setAnswers(answers);
         return answers;
+    }
+
+    protected int getTimeoutForCommands(Commands commands, int timeout) {
+        Set<String> commandsClassPath = commands.getCommands().stream().map(command -> command.getClass().getName()).collect(Collectors.toSet());
+
+        if (timeout > 0) {
+            logger.trace("The timeout [{}] was already defined for commands {}; therefore, we will use it instead of searching for the max value in table " +
+                "[{}].", timeout, commandsClassPath, CommandTimeoutVO.TABLE_NAME);
+            return timeout;
+        }
+
+        logger.trace("The timeout for commands {} was not defined yet; therefore, we will search for the max value between the commands in table " +
+            "[{}].", commandsClassPath, CommandTimeoutVO.TABLE_NAME);
+        timeout = commandTimeoutDao.findMaxTimeoutBetweenCommands(commandsClassPath);
+
+        if (timeout > 0) {
+            logger.trace("We found [{}] as the max timeout between commands {} in table [{}]; using it.", timeout, commandsClassPath,
+                CommandTimeoutVO.TABLE_NAME);
+        } else {
+            timeout = getWaitValue();
+            logger.trace("We did not find a max timeout between commands %s in table [{}]; therefore, we will fallback to the value of " +
+                    "configuration [{}]: [{}].", commandsClassPath, CommandTimeoutVO.TABLE_NAME, Wait.key(), timeout);
+        }
+
+        return timeout;
+    }
+
+    protected Integer getWaitValue() {
+        return Wait.value();
     }
 
     protected Status investigate(final AgentAttache agent) {
