@@ -189,7 +189,6 @@ public class AdaptiveDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle
             parameters.setName(dsName);
             parameters.setProviderName(providerName);
             parameters.setManaged(true);
-            parameters.setCapacityBytes(capacityBytes);
             parameters.setUsedBytes(0);
             parameters.setCapacityIops(capacityIops);
             parameters.setHypervisorType(HypervisorType.KVM);
@@ -223,7 +222,7 @@ public class AdaptiveDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle
 
             // if we have user-provided capacity bytes, validate they do not exceed the manaaged storage capacity bytes
             ProviderVolumeStorageStats stats = api.getManagedStorageStats();
-            if (capacityBytes != null && capacityBytes != 0) {
+            if (capacityBytes != null && capacityBytes != 0 && stats != null) {
                 if (stats.getCapacityInBytes() > 0) {
                     if (stats.getCapacityInBytes() < capacityBytes) {
                         throw new InvalidParameterValueException("Capacity bytes provided exceeds the capacity of the storage endpoint: provided by user: " + capacityBytes + ", storage capacity from storage provider: " + stats.getCapacityInBytes());
@@ -233,8 +232,8 @@ public class AdaptiveDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle
             }
             // if we have no user-provided capacity bytes, use the ones provided by storage
             else {
-                if (stats.getCapacityInBytes() <= 0) {
-                    throw new InvalidParameterValueException("Capacity bytes note available from the storage provider, user provided capacity bytes must be specified");
+                if (stats == null || stats.getCapacityInBytes() <= 0) {
+                    throw new InvalidParameterValueException("Capacity bytes not available from the storage provider, user provided capacity bytes must be specified");
                 }
                 parameters.setCapacityBytes(stats.getCapacityInBytes());
             }
@@ -383,8 +382,58 @@ public class AdaptiveDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle
      * Update the storage pool configuration
      */
     @Override
-    public void updateStoragePool(StoragePool storagePool, Map<String, String> details) {
-        _adapterFactoryMap.updateAPI(storagePool.getUuid(), storagePool.getStorageProviderName(), details);
+    public void updateStoragePool(StoragePool storagePool, Map<String, String> newDetails) {
+        /**String newAuthnType = newDetails.get(ProviderAdapter.API_AUTHENTICATION_TYPE_KEY);
+        String newUser = newDetails.get(ProviderAdapter.API_USERNAME_KEY);
+        String newToken = newDetails.get(ProviderAdapter.API_TOKEN_KEY);
+        String newPassword = fetchMightBeEncryptedProperty(ProviderAdapter.API_PASSWORD_KEY, newDetails);
+        String newSecret = fetchMightBeEncryptedProperty(ProviderAdapter.API_TOKEN_KEY, newDetails);
+        String newUrl = newDetails.get(ProviderAdapter.API_URL_KEY);
+        String skipTlsValidationStr = newDetails.get(ProviderAdapter.API_SKIP_TLS_VALIDATION_KEY);
+        Boolean newSkipTlsValidation = null;
+        if (skipTlsValidationStr != null) {
+            newSkipTlsValidation = Boolean.parseBoolean(skipTlsValidationStr);
+        }
+
+        String capacityInBytesStr = newDetails.get("capacityBytes");
+        Long newCapacityInBytes = null;
+        if (capacityInBytesStr != null) {
+            newCapacityInBytes = Long.parseLong(capacityInBytesStr);
+        }
+
+        String capacityIopsStr = newDetails.get("capacityIops");
+        Long newCapacityIops = null;
+        if (capacityIopsStr != null) {
+            newCapacityIops = Long.parseLong(capacityIopsStr);
+        }
+
+
+        Map<String,String> existingDetails = _primaryDataStoreDao.getDetails(storagePool.getId());
+        if (newAuthnType != null) {
+            existingDetails.put(ProviderAdapter.API_AUTHENTICATION_TYPE_KEY, newAuthnType);
+        }
+
+        if (newUser != null) existingDetails.put(ProviderAdapter.API_USERNAME_KEY, newUser);
+        if (newToken != null) existingDetails.put(ProviderAdapter.API_TOKEN_KEY, newToken);
+        if (newPassword != null) existingDetails.put(ProviderAdapter.API_PASSWORD_KEY, newPassword);
+        if (newSecret != null) existingDetails.put(ProviderAdapter.API_TOKEN_KEY, newSecret);
+        if (newUrl != null) existingDetails.put(ProviderAdapter.API_URL_KEY, newUrl);
+        if (newSkipTlsValidation != null) existingDetails.put(ProviderAdapter.API_SKIP_TLS_VALIDATION_KEY, newSkipTlsValidation.toString());
+        if (newCapacityInBytes != null) existingDetails.put("capacityBytes", capacityInBytesStr);
+        if (newCapacityIops != null) existingDetails.put("capacityIops", capacityIopsStr);
+
+        _adapterFactoryMap.updateAPI(storagePool.getUuid(), storagePool.getStorageProviderName(), existingDetails);*/
+        _adapterFactoryMap.updateAPI(storagePool.getUuid(), storagePool.getStorageProviderName(), newDetails);
+    }
+
+    private String fetchMightBeEncryptedProperty(String key, Map<String,String> details) {
+        String value;
+        try {
+            value = DBEncryptionUtil.decrypt(details.get(key));
+        } catch (Exception e) {
+            value = details.get(key);
+        }
+        return value;
     }
 
     /**
