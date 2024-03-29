@@ -24,7 +24,6 @@ import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.net.ssl.HostnameVerifier;
@@ -106,18 +105,11 @@ public class PrimeraAdapter implements ProviderAdapter {
         this.refreshSession(true);
     }
 
-    /**
-     * Validate that the hostgroup and pod from the details data exists.  Each
-     * configuration object/connection needs a distinct set of these 2 things.
-     */
     @Override
     public void validate() {
         login();
-        if (this.getHostset(hostset) == null) {
-            throw new RuntimeException("Hostgroup [" + hostset + "] not found in FlashArray at [" + url
-                    + "], please validate configuration");
-        }
-
+        // check if hostgroup and pod from details really exist - we will
+        // require a distinct configuration object/connection object for each type
         if (this.getCpg(cpg) == null) {
             throw new RuntimeException(
                     "Pod [" + cpg + "] not found in FlashArray at [" + url + "], please validate configuration");
@@ -176,10 +168,15 @@ public class PrimeraAdapter implements ProviderAdapter {
     }
 
     @Override
-    public String attach(ProviderAdapterContext context, ProviderAdapterDataObject dataIn) {
+    public String attach(ProviderAdapterContext context, ProviderAdapterDataObject dataIn, String hostname) {
         assert dataIn.getExternalName() != null : "External name not provided internally on volume attach";
         PrimeraHostset.PrimeraHostsetVLUNRequest request = new PrimeraHostset.PrimeraHostsetVLUNRequest();
-        request.setHostname("set:" + hostset);
+        PrimeraHost host = getHost(hostname);
+        if (host == null) {
+            throw new RuntimeException("Unable to find host " + hostname + " on storage provider");
+        }
+        request.setHostname(host.getName());
+
         request.setVolumeName(dataIn.getExternalName());
         request.setAutoLun(true);
         // auto-lun returned here: Location: /api/v1/vluns/test_vv02,252,mysystem,2:2:4
@@ -194,12 +191,36 @@ public class PrimeraAdapter implements ProviderAdapter {
         return toks[1];
     }
 
-    @Override
+    /**
+     * This detaches ALL vlun's for the provided volume name IF they are associated to this hostset
+     * @param context
+     * @param request
+     */
     public void detach(ProviderAdapterContext context, ProviderAdapterDataObject request) {
+        detach(context, request, null);
+    }
+
+    @Override
+    public void detach(ProviderAdapterContext context, ProviderAdapterDataObject request, String hostname) {
         // we expect to only be attaching one hostset to the vluns, so on detach we'll
         // remove ALL vluns we find.
         assert request.getExternalName() != null : "External name not provided internally on volume detach";
-        removeAllVluns(request.getExternalName());
+
+        PrimeraVlunList list = getVluns(request.getExternalName());
+        if (list != null && list.getMembers().size() > 0) {
+            list.getMembers().forEach(vlun -> {
+                // remove any hostset from old code if configured
+                if (hostset != null && vlun.getHostname() != null && vlun.getHostname().equals("set:" + hostset)) {
+                    removeVlun(request.getExternalName(), vlun.getLun(), vlun.getHostname());
+                }
+
+                if (hostname != null) {
+                    if (vlun.getHostname().equals(hostname) || vlun.getHostname().equals(hostname.split("\\.")[0])) {
+                        removeVlun(request.getExternalName(), vlun.getLun(), vlun.getHostname());
+                    }
+                }
+            });
+        }
     }
 
     public void removeVlun(String name, Integer lunid, String hostString) {
@@ -208,20 +229,7 @@ public class PrimeraAdapter implements ProviderAdapter {
         DELETE("/vluns/" + name + "," + lunid + "," + hostString);
     }
 
-    /**
-     * Removes all vluns - this should only be done when you are sure the volume is no longer in use
-     * @param name
-     */
-    public void removeAllVluns(String name) {
-        PrimeraVlunList list = getVolumeHostsets(name);
-        if (list != null && list.getMembers() != null) {
-            for (PrimeraVlun vlun: list.getMembers()) {
-                removeVlun(vlun.getVolumeName(), vlun.getLun(), vlun.getHostname());
-            }
-        }
-    }
-
-    public PrimeraVlunList getVolumeHostsets(String name) {
+    public PrimeraVlunList getVluns(String name) {
         String query = "%22volumeName%20EQ%20" + name + "%22";
         return GET("/vluns?query=" + query, new TypeReference<PrimeraVlunList>() {});
     }
@@ -231,7 +239,7 @@ public class PrimeraAdapter implements ProviderAdapter {
         assert request.getExternalName() != null : "External name not provided internally on volume delete";
 
         // first remove vluns (take volumes from vluns) from hostset
-        removeAllVluns(request.getExternalName());
+        detach(context, request);
         DELETE("/volumes/" + request.getExternalName());
     }
 
@@ -420,6 +428,7 @@ public class PrimeraAdapter implements ProviderAdapter {
         if (cpgobj == null || cpgobj.getTotalSpaceMiB() == 0) {
             return null;
         }
+
         Long capacityBytes = 0L;
         if (cpgobj.getsDGrowth() != null) {
             capacityBytes = cpgobj.getsDGrowth().getLimitMiB() * PrimeraAdapter.BYTES_IN_MiB;
@@ -453,48 +462,29 @@ public class PrimeraAdapter implements ProviderAdapter {
 
     @Override
     public boolean canAccessHost(ProviderAdapterContext context, String hostname) {
-        PrimeraHostset hostset = getHostset(this.hostset);
-
-        List<String> members = hostset.getSetmembers();
-
-        // check for fqdn and shortname combinations.  this assumes there is at least a shortname match in both the storage array and cloudstack
-        // hostname configuration
-        String shortname;
-        if (hostname.indexOf('.') > 0) {
-            shortname = hostname.substring(0, (hostname.indexOf('.')));
-        } else {
-            shortname = hostname;
-        }
-        for (String member: members) {
-            // exact match (short or long names)
-            if (member.equals(hostname)) {
-                return true;
-            }
-
-            // primera has short name and cloudstack had long name
-            if (member.equals(shortname)) {
-                return true;
-            }
-
-            // member has long name but cloudstack had shortname
-            int index = member.indexOf(".");
-            if (index > 0) {
-                if (member.substring(0, (member.indexOf('.'))).equals(shortname)) {
-                    return true;
-                }
-            }
+        // check that the array has the host configured
+        PrimeraHost host = this.getHost(hostname);
+        if (host != null) {
+            // if hostset is configured we'll additionally check if the host is in it (legacy/original behavior)
+            return true;
         }
 
         return false;
     }
 
-    private PrimeraCpg getCpg(String name) {
-        return GET("/cpgs/" + name, new TypeReference<PrimeraCpg>() {
-        });
+    private PrimeraHost getHost(String name) {
+        PrimeraHost host = GET("/hosts/" + name, new TypeReference<PrimeraHost>() {    });
+        if (host == null) {
+            if (name.indexOf('.') > 0) {
+                host = this.getHost(name.substring(0, (name.indexOf('.'))));
+            }
+        }
+        return host;
+
     }
 
-    private PrimeraHostset getHostset(String name) {
-        return GET("/hostsets/" + name, new TypeReference<PrimeraHostset>() {
+    private PrimeraCpg getCpg(String name) {
+        return GET("/cpgs/" + name, new TypeReference<PrimeraCpg>() {
         });
     }
 
@@ -518,8 +508,14 @@ public class PrimeraAdapter implements ProviderAdapter {
             keyExpiration = System.currentTimeMillis() + (5*1000);
         }
     }
+    /**
+     * Login to the array and get an access token
+     */
+    private void login() {
+        username = connectionDetails.get(ProviderAdapter.API_USERNAME_KEY);
+        password = connectionDetails.get(ProviderAdapter.API_PASSWORD_KEY);
+        String urlStr = connectionDetails.get(ProviderAdapter.API_URL_KEY);
 
-    private void validateLoginInfo(String urlStr) {
         URL urlFull;
         try {
             urlFull = new URL(urlStr);
@@ -566,13 +562,10 @@ public class PrimeraAdapter implements ProviderAdapter {
             }
         }
 
+        // if this is null, we will use direct-to-host vlunids (preferred)
         hostset = connectionDetails.get(PrimeraAdapter.HOSTSET);
         if (hostset == null) {
             hostset = queryParms.get(PrimeraAdapter.HOSTSET);
-            if (hostset == null) {
-                throw new RuntimeException(
-                        PrimeraAdapter.HOSTSET + " paramater/option required to configure this storage pool");
-            }
         }
 
         String connTimeoutStr = connectionDetails.get(PrimeraAdapter.CONNECT_TIMEOUT_MS);
@@ -629,16 +622,7 @@ public class PrimeraAdapter implements ProviderAdapter {
         } else {
             skipTlsValidation = true;
         }
-    }
 
-    /**
-     * Login to the array and get an access token
-     */
-    private void login() {
-        username = connectionDetails.get(ProviderAdapter.API_USERNAME_KEY);
-        password = connectionDetails.get(ProviderAdapter.API_PASSWORD_KEY);
-        String urlStr = connectionDetails.get(ProviderAdapter.API_URL_KEY);
-        validateLoginInfo(urlStr);
         CloseableHttpResponse response = null;
         try {
             HttpPost request = new HttpPost(url + "/credentials");
@@ -720,7 +704,7 @@ public class PrimeraAdapter implements ProviderAdapter {
             try {
                 String data = mapper.writeValueAsString(input);
                 request.setEntity(new StringEntity(data));
-                logger.debug("POST data: " + request.getEntity());
+                if (logger.isTraceEnabled()) logger.trace("POST data: " + request.getEntity());
             } catch (UnsupportedEncodingException | JsonProcessingException e) {
                 throw new RuntimeException(
                         "Error processing request payload to [" + url + "] for path [" + path + "]", e);
@@ -926,5 +910,22 @@ public class PrimeraAdapter implements ProviderAdapter {
         }
     }
 
+    @Override
+    public Map<String, String> getConnectionIdMap(ProviderAdapterDataObject dataIn) {
+        Map<String,String> connIdMap = new HashMap<String,String>();
+        PrimeraVlunList list = this.getVluns(dataIn.getExternalName());
 
+        if (list != null && list.getMembers() != null && list.getMembers().size() > 0) {
+            for (PrimeraVlun vlun: list.getMembers()) {
+                connIdMap.put(vlun.getHostname(), ""+vlun.getLun());
+            }
+        }
+
+        return connIdMap;
+    }
+
+    @Override
+    public boolean canDirectAttachSnapshot() {
+        return true;
+    }
 }

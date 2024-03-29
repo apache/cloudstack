@@ -558,6 +558,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 }
             }
         }
+
         if (storagePool == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Storage pool for disk %s(%s) with datastore: %s not found in zone ID: %s", disk.getLabel(), disk.getDiskId(), disk.getDatastoreName(), zone.getUuid()));
         }

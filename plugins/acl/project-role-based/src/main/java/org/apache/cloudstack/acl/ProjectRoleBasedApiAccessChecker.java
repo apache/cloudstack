@@ -76,7 +76,9 @@ public class ProjectRoleBasedApiAccessChecker  extends AdapterBase implements AP
 
         Project project = CallContext.current().getProject();
         if (project == null) {
-            LOGGER.warn(String.format("Project is null, ProjectRoleBasedApiAccessChecker only applies to projects, returning APIs [%s] for user [%s] as allowed.", apiNames, user));
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace(String.format("Project is null, ProjectRoleBasedApiAccessChecker only applies to projects, returning APIs [%s] for user [%s] as allowed.", apiNames, user));
+            }
             return apiNames;
         }
 
@@ -114,8 +116,10 @@ public class ProjectRoleBasedApiAccessChecker  extends AdapterBase implements AP
 
         Project project = CallContext.current().getProject();
         if (project == null) {
-            LOGGER.warn(String.format("Project is null, ProjectRoleBasedApiAccessChecker only applies to projects, returning API [%s] for user [%s] as allowed.", apiCommandName,
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace(String.format("Project is null, ProjectRoleBasedApiAccessChecker only applies to projects, returning API [%s] for user [%s] as allowed.", apiCommandName,
                 user));
+            }
             return true;
         }
 
