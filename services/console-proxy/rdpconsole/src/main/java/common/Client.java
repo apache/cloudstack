@@ -381,7 +381,7 @@ public class Client {
         return result;
     }
 
-    public static void main(String[] args) {
+    public static void main(String args[]) {
         // *DEBUG*/System.setProperty("javax.net.debug", "ssl");
         // * DEBUG */System.setProperty("javax.net.debug", "ssl:record:packet");
 
