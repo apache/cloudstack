@@ -4894,6 +4894,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             ApiConstants.BootMode.SECURE.toString()));
         options.put(VmDetailConstants.KEYBOARD, Arrays.asList("uk", "us", "jp", "fr"));
         options.put(VmDetailConstants.CPU_CORE_PER_SOCKET, Collections.emptyList());
+        options.put(VmDetailConstants.CPU_THREAD_PER_CORE, Collections.emptyList());
         options.put(VmDetailConstants.ROOT_DISK_SIZE, Collections.emptyList());
 
         if (HypervisorType.KVM.equals(hypervisorType)) {
