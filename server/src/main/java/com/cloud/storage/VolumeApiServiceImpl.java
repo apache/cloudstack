@@ -1512,6 +1512,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 volume.setDiskOfferingId(newDiskOfferingId);
             }
 
+            if (newMinIops != null) {
+                volume.setMinIops(newMinIops);
+            }
+
+            if (newMaxIops != null) {
+                volume.setMaxIops(newMaxIops);
+            }
+
             // Update size if volume has same size as before, else it is already updated
             final VolumeVO volumeNow = _volsDao.findById(volumeId);
             if (currentSize == volumeNow.getSize() && currentSize != newSize) {

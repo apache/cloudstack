@@ -1181,7 +1181,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             ResizeVolumePayload payload = (ResizeVolumePayload)volumeInfo.getpayload();
             long newSizeInBytes = payload.newSize != null ? payload.newSize : volumeInfo.getSize();
             // Only increase size is allowed and size should be specified in granularity of 8 GB
-            if (newSizeInBytes <= volumeInfo.getSize()) {
+            if (newSizeInBytes < volumeInfo.getSize()) {
                 throw new CloudRuntimeException("Only increase size is allowed for volume: " + volumeInfo.getName());
             }
 
@@ -1229,7 +1229,8 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                         volumeInfo.getPassphrase(), volumeInfo.getEncryptFormat());
 
                 try {
-                    if (!attachedRunning) {
+                    if (attachedRunning) {
+                        updateIopsForVolume(volumeInfo.getId(), payload.newMinIops, payload.newMaxIops);
                         grantAccess(volumeInfo, ep, volumeInfo.getDataStore());
                     }
                     Answer answer = ep.sendMessage(resizeVolumeCommand);
@@ -1260,12 +1261,30 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
             long newVolumeSize = volume.getSize();
             usedBytes += newVolumeSize - oldVolumeSize;
-            storagePool.setUsedBytes(usedBytes > capacityBytes ? capacityBytes : usedBytes);
+            storagePool.setUsedBytes(Math.min(usedBytes, capacityBytes));
             storagePoolDao.update(storagePoolId, storagePool);
         } catch (Exception e) {
             String errMsg = "Unable to resize PowerFlex volume: " + volumeInfo.getId() + " due to " + e.getMessage();
             LOGGER.warn(errMsg);
             throw new CloudRuntimeException(errMsg, e);
+        }
+    }
+
+    private void updateIopsForVolume(long volumeId, Long newMinIops, Long newMaxIops) {
+        if (newMinIops != null || newMaxIops != null) {
+            VolumeVO volume = volumeDao.findById(volumeId);
+            if (newMinIops != null) {
+                volume.setMinIops(newMinIops);
+            }
+            if (newMaxIops != null) {
+                volume.setMaxIops(newMaxIops);
+                final VolumeDetailVO iopsVolumeDetail = volumeDetailsDao.findDetail(volume.getId(), Volume.IOPS_LIMIT);
+                if (iopsVolumeDetail != null) {
+                    iopsVolumeDetail.setValue(newMaxIops.toString());
+                    volumeDetailsDao.update(iopsVolumeDetail.getId(), iopsVolumeDetail);
+                }
+            }
+            volumeDao.update(volumeId, volume);
         }
     }
 
