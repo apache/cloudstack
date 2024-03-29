@@ -194,13 +194,16 @@
       <router-link :to="{ path: '/volume/' + record.volumeid }">{{ text }}</router-link>
     </template>
     <template #size="{ text }">
-      <span v-if="text">
+      <span v-if="text && $route.path === '/kubernetes'">
+        {{ text }}
+      </span>
+      <span v-else-if="text">
         {{ parseFloat(parseFloat(text) / 1024.0 / 1024.0 / 1024.0).toFixed(2) }} GiB
       </span>
     </template>
     <template #physicalsize="{ text }">
       <span v-if="text">
-        {{ parseFloat(parseFloat(text) / 1024.0 / 1024.0 / 1024.0).toFixed(2) }} GiB
+        {{ isNaN(text) ? text : (parseFloat(parseFloat(text) / 1024.0 / 1024.0 / 1024.0).toFixed(2) + ' GiB') }}
       </span>
     </template>
     <template #physicalnetworkname="{ text, record }">
@@ -574,7 +577,7 @@ export default {
     },
     enableGroupAction () {
       return ['vm', 'alert', 'vmgroup', 'ssh', 'userdata', 'affinitygroup', 'autoscalevmgroup', 'volume', 'snapshot',
-        'vmsnapshot', 'guestnetwork', 'vpc', 'publicip', 'vpnuser', 'vpncustomergateway',
+        'vmsnapshot', 'backup', 'guestnetwork', 'vpc', 'publicip', 'vpnuser', 'vpncustomergateway',
         'project', 'account', 'systemvm', 'router', 'computeoffering', 'systemoffering',
         'diskoffering', 'backupoffering', 'networkoffering', 'vpcoffering', 'ilbvm', 'kubernetes', 'comment'
       ].includes(this.$route.name)

@@ -49,6 +49,7 @@ import javax.naming.ConfigurationException;
 import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.backup.PrepareForBackupRestorationCommand;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
@@ -606,6 +607,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 answer = execute((GetVmVncTicketCommand) cmd);
             } else if (clz == GetAutoScaleMetricsCommand.class) {
                 answer = execute((GetAutoScaleMetricsCommand) cmd);
+            } else if (clz == PrepareForBackupRestorationCommand.class) {
+                answer = execute((PrepareForBackupRestorationCommand) cmd);
             } else {
                 answer = Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -4763,7 +4766,13 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         final String vmName = cmd.getVmName();
         try {
             VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
+            if (hyperHost == null) {
+                throw new CloudRuntimeException("no hypervisor host found for migrate command");
+            }
             ManagedObjectReference morDc = hyperHost.getHyperHostDatacenter();
+            if (morDc == null) {
+                throw new CloudRuntimeException("no Managed Object Reference for the Data Center found for migrate command");
+            }
 
             // find VM through datacenter (VM is not at the target host yet)
             VirtualMachineMO vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
@@ -4774,6 +4783,9 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             }
 
             VmwareHypervisorHost destHyperHost = getTargetHyperHost(new DatacenterMO(hyperHost.getContext(), morDc), cmd.getDestinationIp());
+            if (destHyperHost == null) {
+                throw new CloudRuntimeException("no destination Hypervisor Host found for migrate command");
+            }
 
             ManagedObjectReference morTargetPhysicalHost = destHyperHost.findMigrationTarget(vmMo);
             if (morTargetPhysicalHost == null) {
@@ -4785,7 +4797,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             }
 
             return new MigrateAnswer(cmd, true, "migration succeeded", null);
-        } catch (Throwable e) {
+        } catch (Exception e) {
+            s_logger.info(String.format("migrate command for %s failed due to %s", vmName, e.getLocalizedMessage()));
             return new MigrateAnswer(cmd, false, createLogMessageException(e, cmd), null);
         }
     }
@@ -5210,7 +5223,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                     String childPath = datacenterName + summary.getName();
                     poolInfo.setHostPath(childPath);
                     String uuid = childDsMo.getCustomFieldValue(CustomFieldConstants.CLOUD_UUID);
-                    if (uuid == null) {
+                    if (uuid == null || !uuid.contains("-")) {
                         uuid = UUID.nameUUIDFromBytes(((pool.getHost() + childPath)).getBytes()).toString();
                     }
                     poolInfo.setUuid(uuid);
@@ -7748,6 +7761,35 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         } catch (Exception e) {
             s_logger.error("Error getting VNC ticket for VM " + vmInternalName, e);
             return new GetVmVncTicketAnswer(null, false, e.getLocalizedMessage());
+        }
+    }
+
+    private Answer execute(PrepareForBackupRestorationCommand command) {
+        try {
+            VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
+
+            String vmName = command.getVmName();
+            VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmName);
+
+            if (vmMo == null) {
+                if (hyperHost instanceof HostMO) {
+                    ClusterMO clusterMo = new ClusterMO(hyperHost.getContext(), ((HostMO) hyperHost).getParentMor());
+                    vmMo = clusterMo.findVmOnHyperHost(vmName);
+                }
+            }
+
+            if (vmMo == null) {
+                String msg = "VM " + vmName + " no longer exists to execute PrepareForBackupRestorationCommand command";
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
+
+            vmMo.removeChangeTrackPathFromVmdkForDisks();
+
+            return new Answer(command, true, "success");
+        } catch (Exception e) {
+            s_logger.error("Unexpected exception: ", e);
+            return new Answer(command, false, "Unable to execute PrepareForBackupRestorationCommand due to " + e.toString());
         }
     }
 

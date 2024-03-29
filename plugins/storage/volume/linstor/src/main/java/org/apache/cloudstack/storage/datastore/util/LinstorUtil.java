@@ -20,6 +20,8 @@ import com.linbit.linstor.api.ApiClient;
 import com.linbit.linstor.api.ApiException;
 import com.linbit.linstor.api.Configuration;
 import com.linbit.linstor.api.DevelopersApi;
+import com.linbit.linstor.api.model.ApiCallRc;
+import com.linbit.linstor.api.model.ApiCallRcList;
 import com.linbit.linstor.api.model.ProviderKind;
 import com.linbit.linstor.api.model.ResourceGroup;
 import com.linbit.linstor.api.model.StoragePool;
@@ -47,6 +49,15 @@ public class LinstorUtil {
         return new DevelopersApi(client);
     }
 
+    public static String getBestErrorMessage(ApiCallRcList answers) {
+        return answers != null && !answers.isEmpty() ?
+                answers.stream()
+                        .filter(ApiCallRc::isError)
+                        .findFirst()
+                        .map(ApiCallRc::getMessage)
+                        .orElse((answers.get(0)).getMessage()) : null;
+    }
+
     public static long getCapacityBytes(String linstorUrl, String rscGroupName) {
         DevelopersApi linstorApi = getLinstorAPI(linstorUrl);
         try {
@@ -72,7 +83,8 @@ public class LinstorUtil {
 
             return storagePools.stream()
                 .filter(sp -> sp.getProviderKind() != ProviderKind.DISKLESS)
-                .mapToLong(StoragePool::getTotalCapacity).sum() * 1024;  // linstor uses kiB
+                .mapToLong(sp -> sp.getTotalCapacity() != null ? sp.getTotalCapacity() : 0L)
+                .sum() * 1024;  // linstor uses kiB
         } catch (ApiException apiEx) {
             s_logger.error(apiEx.getMessage());
             throw new CloudRuntimeException(apiEx);

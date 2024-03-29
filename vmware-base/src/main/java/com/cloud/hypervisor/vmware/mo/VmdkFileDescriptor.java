@@ -33,6 +33,8 @@ public class VmdkFileDescriptor {
     private static final String VMDK_CREATE_TYPE_VMFSSPARSE = "vmfsSparse";
     private static final String VMDK_CREATE_TYPE_SESPARSE = "SEsparse";
     private static final String VMDK_PROPERTY_ADAPTER_TYPE = "ddb.adapterType";
+    private static final String VMDK_PROPERTY_CHANGE_TRACK_PATH = "changeTrackPath";
+    private static final String VMDK_PROPERTY_CHANGE_TRACK_PATH_COMMENT = "# Change Tracking File";
 
     private Properties _properties = new Properties();
     private String _baseFileName;
@@ -224,5 +226,62 @@ public class VmdkFileDescriptor {
         }
 
         return bos.toByteArray();
+    }
+
+    public static byte[] removeChangeTrackPath(byte[] vmdkContent) throws IOException {
+        assert (vmdkContent != null);
+
+        BufferedReader in = null;
+        BufferedWriter out = null;
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+
+        try {
+            in = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(vmdkContent)));
+            out = new BufferedWriter(new OutputStreamWriter(bos));
+            String line;
+            while ((line = in.readLine()) != null) {
+                // ignore empty and comment lines
+                line = line.trim();
+                if (line.isEmpty()) {
+                    out.newLine();
+                    continue;
+                }
+                if (line.equals(VMDK_PROPERTY_CHANGE_TRACK_PATH_COMMENT)) {
+                    s_logger.debug("Removed line from vmdk: " + line);
+                    continue;
+                }
+                if (line.charAt(0) == '#') {
+                    out.write(line);
+                    out.newLine();
+                    continue;
+                }
+
+                String[] tokens = line.split("=");
+                if (tokens.length == 2) {
+                    String name = tokens[0].trim();
+                    String value = tokens[1].trim();
+                    if (value.charAt(0) == '\"')
+                        value = value.substring(1, value.length() - 1);
+
+                    if (name.equals(VMDK_PROPERTY_CHANGE_TRACK_PATH)) {
+                        s_logger.debug("Removed line from vmdk: " + line);
+                    } else {
+                        out.write(line);
+                        out.newLine();
+                    }
+                } else {
+                    out.write(line);
+                    out.newLine();
+                }
+            }
+        } finally {
+            if (in != null)
+                in.close();
+            if (out != null)
+                out.close();
+        }
+
+        return bos.toByteArray();
+
     }
 }

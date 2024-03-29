@@ -1425,6 +1425,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
+        setNicAsDefaultIfNeeded(vmInstance, profile);
+
         NicProfile guestNic = null;
         boolean cleanUp = true;
 
@@ -1451,6 +1453,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         CallContext.current().putContextParameter(Nic.class, guestNic.getUuid());
         s_logger.debug(String.format("Successful addition of %s from %s through %s", network, vmInstance, guestNic));
         return _vmDao.findById(vmInstance.getId());
+    }
+
+    /**
+     * Set NIC as default if VM has no default NIC
+     * @param vmInstance VM instance to be checked
+     * @param nicProfile NIC profile to be updated
+     */
+    public void setNicAsDefaultIfNeeded(UserVmVO vmInstance, NicProfile nicProfile) {
+        if (_networkModel.getDefaultNic(vmInstance.getId()) == null) {
+            s_logger.debug(String.format("Setting NIC %s as default as VM %s has no default NIC.", nicProfile.getName(), vmInstance.getName()));
+            nicProfile.setDefaultNic(true);
+        }
     }
 
     /**
@@ -3630,8 +3644,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     isSecurityGroupEnabledNetworkUsed = true;
                 }
 
-                if (!(network.getTrafficType() == TrafficType.Guest && network.getGuestType() == Network.GuestType.Shared)) {
-                    throw new InvalidParameterValueException("Can specify only Shared Guest networks when" + " deploy vm in Advance Security Group enabled zone");
+                if (network.getTrafficType() != TrafficType.Guest || !Arrays.asList(GuestType.Shared, GuestType.L2).contains(network.getGuestType())) {
+                    throw new InvalidParameterValueException("Can specify only Shared or L2 Guest networks when deploy vm in Advance Security Group enabled zone");
                 }
 
                 _accountMgr.checkAccess(owner, AccessType.UseEntry, false, network);

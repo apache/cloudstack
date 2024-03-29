@@ -28,7 +28,7 @@ concurrency:
 
 jobs:
   build:
-    if: github.repository == 'apache/cloudstack'
+    if: github.repository == 'apache/cloudstack' && github.event.pull_request.head.repo.full_name == github.repository
     name: Sonar JaCoCo Coverage
     runs-on: ubuntu-22.04
     steps:
@@ -38,7 +38,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up JDK11
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '11'

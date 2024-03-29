@@ -424,11 +424,6 @@ export default {
           dataIndex: 'displayname'
         },
         {
-          title: this.$t('label.ip'),
-          dataIndex: 'ip',
-          width: 100
-        },
-        {
           title: this.$t('label.account'),
           dataIndex: 'account'
         },
