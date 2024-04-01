@@ -76,6 +76,7 @@ public class StorageManagerImplTest {
     HypervisorGuruManager hvGuruMgr;
     @Mock
     AgentManager agentManager;
+    @Mock
     ConfigDepot configDepot;
     @Mock
     ConfigurationDao configurationDao;
