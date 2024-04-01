@@ -141,40 +141,47 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         return ScaleIOGatewayClientConnectionPool.getInstance().getClient(storagePoolId, storagePoolDetailsDao);
     }
 
+    private boolean setLimitsForVolume(VolumeVO volume, Host host, DataStore dataStore, Long iopsLimit, Long bandwidthLimitInKbps) throws Exception {
+        final String sdcId = getConnectedSdc(dataStore.getId(), host.getId());
+        if (StringUtils.isBlank(sdcId)) {
+            alertHostSdcDisconnection(host);
+            throw new CloudRuntimeException("Unable to grant access to volume: " + volume.getId() + ", no Sdc connected with host ip: " + host.getPrivateIpAddress());
+        }
+
+        final ScaleIOGatewayClient client = getScaleIOClient(dataStore.getId());
+        return client.mapVolumeToSdcWithLimits(ScaleIOUtil.getVolumePath(volume.getPath()), sdcId, iopsLimit, bandwidthLimitInKbps);
+    }
+
+    private boolean setLimitsForVolume(VolumeVO volume, Host host, DataStore dataStore) throws Exception {
+        Long bandwidthLimitInKbps = 0L; // Unlimited
+        // Check Bandwidht Limit parameter in volume details
+        final VolumeDetailVO bandwidthVolumeDetail = volumeDetailsDao.findDetail(volume.getId(), Volume.BANDWIDTH_LIMIT_IN_MBPS);
+        if (bandwidthVolumeDetail != null && bandwidthVolumeDetail.getValue() != null) {
+            bandwidthLimitInKbps = Long.parseLong(bandwidthVolumeDetail.getValue()) * 1024;
+        }
+
+        Long iopsLimit = 0L; // Unlimited
+        // Check IOPS Limit parameter in volume details, else try MaxIOPS
+        final VolumeDetailVO iopsVolumeDetail = volumeDetailsDao.findDetail(volume.getId(), Volume.IOPS_LIMIT);
+        if (iopsVolumeDetail != null && iopsVolumeDetail.getValue() != null) {
+            iopsLimit = Long.parseLong(iopsVolumeDetail.getValue());
+        } else if (volume.getMaxIops() != null) {
+            iopsLimit = volume.getMaxIops();
+        }
+        if (iopsLimit > 0 && iopsLimit < ScaleIOUtil.MINIMUM_ALLOWED_IOPS_LIMIT) {
+            iopsLimit = ScaleIOUtil.MINIMUM_ALLOWED_IOPS_LIMIT;
+        }
+
+        return setLimitsForVolume(volume, host, dataStore, iopsLimit, bandwidthLimitInKbps);
+    }
+
     @Override
     public boolean grantAccess(DataObject dataObject, Host host, DataStore dataStore) {
         try {
             if (DataObjectType.VOLUME.equals(dataObject.getType())) {
                 final VolumeVO volume = volumeDao.findById(dataObject.getId());
                 LOGGER.debug("Granting access for PowerFlex volume: " + volume.getPath());
-
-                Long bandwidthLimitInKbps = Long.valueOf(0); // Unlimited
-                // Check Bandwidht Limit parameter in volume details
-                final VolumeDetailVO bandwidthVolumeDetail = volumeDetailsDao.findDetail(volume.getId(), Volume.BANDWIDTH_LIMIT_IN_MBPS);
-                if (bandwidthVolumeDetail != null && bandwidthVolumeDetail.getValue() != null) {
-                    bandwidthLimitInKbps = Long.parseLong(bandwidthVolumeDetail.getValue()) * 1024;
-                }
-
-                Long iopsLimit = Long.valueOf(0); // Unlimited
-                // Check IOPS Limit parameter in volume details, else try MaxIOPS
-                final VolumeDetailVO iopsVolumeDetail = volumeDetailsDao.findDetail(volume.getId(), Volume.IOPS_LIMIT);
-                if (iopsVolumeDetail != null && iopsVolumeDetail.getValue() != null) {
-                    iopsLimit = Long.parseLong(iopsVolumeDetail.getValue());
-                } else if (volume.getMaxIops() != null) {
-                    iopsLimit = volume.getMaxIops();
-                }
-                if (iopsLimit > 0 && iopsLimit < ScaleIOUtil.MINIMUM_ALLOWED_IOPS_LIMIT) {
-                    iopsLimit = ScaleIOUtil.MINIMUM_ALLOWED_IOPS_LIMIT;
-                }
-
-                final String sdcId = getConnectedSdc(dataStore.getId(), host.getId());
-                if (StringUtils.isBlank(sdcId)) {
-                    alertHostSdcDisconnection(host);
-                    throw new CloudRuntimeException("Unable to grant access to volume: " + dataObject.getId() + ", no Sdc connected with host ip: " + host.getPrivateIpAddress());
-                }
-
-                final ScaleIOGatewayClient client = getScaleIOClient(dataStore.getId());
-                return client.mapVolumeToSdcWithLimits(ScaleIOUtil.getVolumePath(volume.getPath()), sdcId, iopsLimit, bandwidthLimitInKbps);
+                return setLimitsForVolume(volume, host, dataStore);
             } else if (DataObjectType.TEMPLATE.equals(dataObject.getType())) {
                 final VMTemplateStoragePoolVO templatePoolRef = vmTemplatePoolDao.findByPoolTemplate(dataStore.getId(), dataObject.getId(), null);
                 LOGGER.debug("Granting access for PowerFlex template volume: " + templatePoolRef.getInstallPath());
@@ -791,7 +798,16 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             LOGGER.error(errorMsg);
             answer = new Answer(cmd, false, errorMsg);
         } else {
-            answer = ep.sendMessage(cmd);
+            VolumeVO volume = volumeDao.findById(destData.getId());
+            Host host = destHost != null ? destHost : hostDao.findById(ep.getId());
+            try {
+                setLimitsForVolume(volume, host, destData.getDataStore(), 0L, 0L);
+                answer = ep.sendMessage(cmd);
+                setLimitsForVolume(volume, host, destData.getDataStore());
+            } catch (Exception e) {
+                LOGGER.error("Failed to copy template to volume due to: " + e.getMessage(), e);
+                answer = new Answer(cmd, false, e.getMessage());
+            }
         }
 
         return answer;
