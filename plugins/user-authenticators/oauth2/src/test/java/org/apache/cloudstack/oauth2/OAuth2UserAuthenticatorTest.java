@@ -107,13 +107,13 @@ public class OAuth2UserAuthenticatorTest {
 
         Pair<Boolean, OAuth2UserAuthenticator.ActionOnFailedAuthentication> result = authenticator.authenticate(username, null, domainId, requestParameters);
 
+        assertTrue(result.first());
+        assertNull(result.second());
+
         verify(userAccountDao).getUserAccount(username, domainId);
         verify(userDao).getUser(userAccount.getId());
         verify(userOAuth2mgr).getUserOAuth2AuthenticationProvider(provider[0]);
         verify(userOAuth2Authenticator).verifyUser(email[0], secretCode[0]);
-
-        assertTrue(result.first());
-        assertNull(result.second());
     }
 
     @Test
@@ -140,13 +140,13 @@ public class OAuth2UserAuthenticatorTest {
 
         Pair<Boolean, OAuth2UserAuthenticator.ActionOnFailedAuthentication> result = authenticator.authenticate(username, null, domainId, requestParameters);
 
+        assertFalse(result.first());
+        assertEquals(OAuth2UserAuthenticator.ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT, result.second());
+
         verify(userAccountDao).getUserAccount(username, domainId);
         verify(userDao).getUser(userAccount.getId());
         verify(userOAuth2mgr).getUserOAuth2AuthenticationProvider(provider[0]);
         verify(userOAuth2Authenticator).verifyUser(email[0], secretCode[0]);
-
-        assertFalse(result.first());
-        assertEquals(OAuth2UserAuthenticator.ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT, result.second());
     }
 
     @Test
@@ -166,11 +166,11 @@ public class OAuth2UserAuthenticatorTest {
 
         Pair<Boolean, OAuth2UserAuthenticator.ActionOnFailedAuthentication> result = authenticator.authenticate(username, null, domainId, requestParameters);
 
+        assertFalse(result.first());
+        assertNull(result.second());
+
         verify(userAccountDao).getUserAccount(username, domainId);
         verify(userDao, never()).getUser(anyLong());
         verify(userOAuth2mgr, never()).getUserOAuth2AuthenticationProvider(anyString());
-
-        assertFalse(result.first());
-        assertNull(result.second());
     }
 }
