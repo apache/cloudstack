@@ -31,6 +31,7 @@ import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
@@ -52,7 +53,10 @@ import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.crypt.DBEncryptionUtil;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -265,4 +269,33 @@ public class PrimaryDataStoreHelper {
         return true;
     }
 
+    public DataStore switchToZone(DataStore store) {
+        StoragePoolVO pool = dataStoreDao.findById(store.getId());
+        pool.setScope(ScopeType.ZONE);
+        pool.setPodId(null);
+        pool.setClusterId(null);
+        dataStoreDao.update(pool.getId(), pool);
+        return dataStoreMgr.getDataStore(store.getId(), DataStoreRole.Primary);
+        }
+
+    public DataStore switchToCluster(DataStore store, ClusterScope clusterScope) {
+        List<StoragePoolHostVO> hostPoolRecords = storagePoolHostDao.listByPoolIdNotInCluster(clusterScope.getScopeId(), store.getId()).first();
+        StoragePoolVO pool = dataStoreDao.findById(store.getId());
+
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                for (StoragePoolHostVO host : hostPoolRecords) {
+                storagePoolHostDao.deleteStoragePoolHostDetails(host.getHostId(), host.getPoolId());
+            }
+            pool.setScope(ScopeType.CLUSTER);
+            pool.setPodId(clusterScope.getPodId());
+            pool.setClusterId(clusterScope.getScopeId());
+            dataStoreDao.update(pool.getId(), pool);
+            }
+        });
+
+        s_logger.debug("Scope of storage pool id=" + pool.getId() + " is changed to cluster id=" + clusterScope.getScopeId());
+            return dataStoreMgr.getDataStore(store.getId(), DataStoreRole.Primary);
+    }
 }

@@ -27,6 +27,7 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
+import com.cloud.vm.VirtualMachine;
 
 public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.State, Volume.Event, Volume> {
 
@@ -155,4 +156,6 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
     VolumeVO findByPoolIdAndPath(long id, String path);
 
     List<VolumeVO> listByIds(List<Long> ids);
+
+    public List<VolumeVO> listByPoolIdVMStatesNotInCluster(long clusterId, List<VirtualMachine.State> states, long poolId);
 }

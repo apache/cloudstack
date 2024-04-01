@@ -431,6 +431,12 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
         return null;
     }
 
+    @Override
+    public List<HostVO> listAllHostsInOneZoneNotInClusterByHypervisor(HypervisorType type, long dcId, long clusterId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.resource.ResourceManager#listAvailHypervisorInZone(java.lang.Long, java.lang.Long)
      */

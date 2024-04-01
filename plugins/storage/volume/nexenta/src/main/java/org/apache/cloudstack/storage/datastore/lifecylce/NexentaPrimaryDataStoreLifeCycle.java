@@ -43,6 +43,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolAutomation;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class NexentaPrimaryDataStoreLifeCycle
         implements PrimaryDataStoreLifeCycle {
@@ -175,6 +176,16 @@ public class NexentaPrimaryDataStoreLifeCycle
     @Override
     public void disableStoragePool(DataStore dataStore) {
         dataStoreHelper.disable(dataStore);
+    }
+
+    @Override
+    public boolean changeStoragePoolScopeToZone(DataStore store, ClusterScope clusterScope, Hypervisor.HypervisorType hypervisorType) {
+        throw new CloudRuntimeException("Storage pool scope change not supported for this Storage Pool Provider");
+    }
+
+    @Override
+    public boolean changeStoragePoolScopeToCluster(DataStore store, ClusterScope clusterScope, Hypervisor.HypervisorType hypervisorType) {
+        throw new CloudRuntimeException("Storage pool scope change not supported for this Storage Pool Provider");
     }
 
     @Override

@@ -21,6 +21,7 @@ import java.net.UnknownHostException;
 import java.util.Map;
 
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.storage.ChangeStoragePoolScopeCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteImageStoreCmd;
@@ -127,4 +128,6 @@ public interface StorageService {
     boolean deleteObjectStore(DeleteObjectStoragePoolCmd cmd);
 
     ObjectStore updateObjectStore(Long id, UpdateObjectStoragePoolCmd cmd);
+
+    StoragePool changeStoragePoolScope(ChangeStoragePoolScopeCmd cmd) throws IllegalArgumentException;
 }

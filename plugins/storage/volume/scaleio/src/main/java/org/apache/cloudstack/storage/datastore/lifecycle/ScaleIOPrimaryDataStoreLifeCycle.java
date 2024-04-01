@@ -368,6 +368,16 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
     }
 
     @Override
+    public boolean changeStoragePoolScopeToZone(DataStore store, ClusterScope clusterScope, Hypervisor.HypervisorType hypervisorType) {
+        throw new CloudRuntimeException("Storage pool scope change not supported for this Storage Pool Provider");
+    }
+
+    @Override
+    public boolean changeStoragePoolScopeToCluster(DataStore store, ClusterScope clusterScope, Hypervisor.HypervisorType hypervisorType) {
+        throw new CloudRuntimeException("Storage pool scope change not supported for this Storage Pool Provider");
+    }
+
+    @Override
     public boolean deleteDataStore(DataStore dataStore) {
         StoragePool storagePool = (StoragePool)dataStore;
         StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(storagePool.getId());

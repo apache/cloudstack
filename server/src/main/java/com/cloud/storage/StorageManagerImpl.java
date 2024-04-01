@@ -54,6 +54,7 @@ import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.storage.ChangeStoragePoolScopeCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteImageStoreCmd;
@@ -254,6 +255,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.collect.Sets;
@@ -1146,6 +1148,86 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         return (PrimaryDataStoreInfo)_dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
+    }
+
+    @Override
+    public PrimaryDataStoreInfo changeStoragePoolScope(ChangeStoragePoolScopeCmd cmd) throws IllegalArgumentException, InvalidParameterValueException, PermissionDeniedException {
+        Long id = cmd.getId();
+
+        Long accountId = cmd.getEntityOwnerId();
+        if (!_accountMgr.isRootAdmin(accountId)) {
+            throw new PermissionDeniedException("Only root admin can perform this operation");
+        }
+
+        ScopeType scopeType = ScopeType.validateAndGetScopeType(cmd.getScope());
+        if (scopeType != ScopeType.ZONE && scopeType != ScopeType.CLUSTER) {
+            throw new InvalidParameterValueException("Invalid scope " + scopeType.toString() + "for Primary storage");
+        }
+
+        StoragePoolVO primaryStorage = _storagePoolDao.findById(id);
+        if (primaryStorage == null) {
+            throw new IllegalArgumentException("Unable to find storage pool with ID: " + id);
+        }
+
+        if (StoragePoolStatus.Disabled != primaryStorage.getStatus()) {
+            throw new InvalidParameterValueException("Primary storage should be disabled for this operation");
+        }
+
+        if (scopeType == primaryStorage.getScope()) {
+            throw new InvalidParameterValueException("Invalid scope change");
+        }
+
+        if (!primaryStorage.getStatus().equals(StoragePoolStatus.Disabled)) {
+            throw new InvalidParameterValueException("Scope of the Primary storage with id "
+                    + primaryStorage.getUuid() +
+                    " cannot be changed, as it is not in the Disabled state");
+        }
+
+        if (!primaryStorage.getStorageProviderName().equals(DataStoreProvider.DEFAULT_PRIMARY)) {
+            throw new InvalidParameterValueException("Primary storage scope change is only supported with "
+                    + DataStoreProvider.DEFAULT_PRIMARY.toString() + " data store provider");
+        }
+
+        HypervisorType hypervisorType = primaryStorage.getHypervisor();
+        Set<HypervisorType> supportedHypervisorTypes = Sets.newHashSet(HypervisorType.KVM, HypervisorType.VMware, HypervisorType.Hyperv);
+        if (!supportedHypervisorTypes.contains(hypervisorType)) {
+            throw new InvalidParameterValueException("Primary storage scope change is not supported for hypervisor type " + hypervisorType);
+        }
+
+        String providerName = primaryStorage.getStorageProviderName();
+        DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(providerName);
+        PrimaryDataStoreLifeCycle lifeCycle = (PrimaryDataStoreLifeCycle) storeProvider.getDataStoreLifeCycle();
+        DataStore primaryStore = _dataStoreMgr.getPrimaryDataStore(id);
+
+        Long zoneId = primaryStorage.getDataCenterId();
+        DataCenterVO zone = _dcDao.findById(zoneId);
+        if (zone == null) {
+            throw new InvalidParameterValueException("unable to find zone by id " + zoneId);
+        }
+        if (Grouping.AllocationState.Disabled == zone.getAllocationState()) {
+            throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zoneId);
+        }
+
+        if (scopeType == ScopeType.ZONE) {
+            ClusterScope clusterScope = new ClusterScope(primaryStorage.getClusterId(), null, zoneId);
+            lifeCycle.changeStoragePoolScopeToZone(primaryStore, clusterScope, hypervisorType);
+
+        } else {
+
+            Long clusterId = cmd.getClusterId();
+            ClusterVO clusterVO = _clusterDao.findById(clusterId);
+            List<VirtualMachine.State> states = Arrays.asList(State.Starting, State.Running, State.Stopping, State.Migrating, State.Restoring);
+            List<VolumeVO> volumesInOtherClusters = volumeDao.listByPoolIdVMStatesNotInCluster(clusterId, states, id);
+            if (volumesInOtherClusters.size() > 0) {
+                throw new CloudRuntimeException("Cannot change scope of the pool " + primaryStorage.getName() + " to cluster " + clusterVO.getName() + " as there are associated volumes present for other clusters");
+            }
+
+            ClusterScope clusterScope = new ClusterScope(clusterId, clusterVO.getPodId(), zoneId);
+            lifeCycle.changeStoragePoolScopeToCluster(primaryStore, clusterScope, hypervisorType);
+        }
+
+        // maybe return a boolean instead
+        return (PrimaryDataStoreInfo)_dataStoreMgr.getDataStore(primaryStorage.getId(), DataStoreRole.Primary);
     }
 
     @Override

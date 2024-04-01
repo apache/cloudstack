@@ -318,4 +318,14 @@ public class StorPoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCy
         log.debug("disableStoragePool");
         dataStoreHelper.disable(dataStore);
     }
+
+    @Override
+    public boolean changeStoragePoolScopeToZone(DataStore store, ClusterScope clusterScope, HypervisorType hypervisorType) {
+        throw new CloudRuntimeException("Storage pool scope change not supported for this Storage Pool Provider");
+    }
+
+    @Override
+    public boolean changeStoragePoolScopeToCluster(DataStore store, ClusterScope clusterScope, HypervisorType hypervisorType) {
+        throw new CloudRuntimeException("Storage pool scope change not supported for this Storage Pool Provider");
+    }
 }

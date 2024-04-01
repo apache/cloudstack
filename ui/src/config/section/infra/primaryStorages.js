@@ -134,11 +134,26 @@ export default {
       show: (record) => { return ['Maintenance', 'PrepareForMaintenance', 'ErrorInMaintenance'].includes(record.state) }
     },
     {
+      api: 'changeStoragePoolScope',
+      icon: 'arrow-right-outlined',
+      label: 'label.action.change.primary.storage.scope',
+      dataView: true,
+      popup: true,
+      show: (record) => {
+        return (
+          record.state === 'Disabled' &&
+          (record.hypervisor === 'Simulator' || record.hypervisor === 'KVM' || record.hypervisor === 'VMware') &&
+          record.type === 'NetworkFilesystem' &&
+          record.provider === 'DefaultPrimary'
+        )
+      },
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/changeStoragePoolScope.vue')))
+    },
+    {
       api: 'deleteStoragePool',
       icon: 'delete-outlined',
       label: 'label.action.delete.primary.storage',
       dataView: true,
-      args: ['forced'],
       show: (record) => { return (record.state === 'Down' || record.state === 'Maintenance' || record.state === 'Disconnected') },
       displayName: (record) => { return record.name || record.displayName || record.id }
     }

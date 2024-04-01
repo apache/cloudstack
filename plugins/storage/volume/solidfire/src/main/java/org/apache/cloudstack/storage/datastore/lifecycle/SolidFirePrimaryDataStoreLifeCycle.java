@@ -387,4 +387,14 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
     public void disableStoragePool(DataStore dataStore) {
         _dataStoreHelper.disable(dataStore);
     }
+
+    @Override
+    public boolean changeStoragePoolScopeToZone(DataStore store, ClusterScope clusterScope, HypervisorType hypervisorType) {
+        throw new CloudRuntimeException("Storage pool scope change not supported for this Storage Pool Provider");
+    }
+
+    @Override
+    public boolean changeStoragePoolScopeToCluster(DataStore store, ClusterScope clusterScope, HypervisorType hypervisorType) {
+        throw new CloudRuntimeException("Storage pool scope change not supported for this Storage Pool Provider");
+    }
 }
