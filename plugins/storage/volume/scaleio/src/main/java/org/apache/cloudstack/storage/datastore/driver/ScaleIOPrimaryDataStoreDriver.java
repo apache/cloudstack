@@ -150,7 +150,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 logger.debug("Granting access for PowerFlex volume: " + volume.getPath());
 
                 Long bandwidthLimitInKbps = Long.valueOf(0); // Unlimited
-                // Check Bandwidht Limit parameter in volume details
+                // Check Bandwidth Limit parameter in volume details
                 final VolumeDetailVO bandwidthVolumeDetail = volumeDetailsDao.findDetail(volume.getId(), Volume.BANDWIDTH_LIMIT_IN_MBPS);
                 if (bandwidthVolumeDetail != null && bandwidthVolumeDetail.getValue() != null) {
                     bandwidthLimitInKbps = Long.parseLong(bandwidthVolumeDetail.getValue()) * 1024;
