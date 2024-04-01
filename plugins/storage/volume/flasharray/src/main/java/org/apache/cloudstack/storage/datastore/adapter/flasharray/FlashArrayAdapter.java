@@ -198,7 +198,6 @@ public class FlashArrayAdapter implements ProviderAdapter {
 
     @Override
     public void delete(ProviderAdapterContext context, ProviderAdapterDataObject dataObject) {
-        // public void deleteVolume(String volumeNamespace, String volumeName) {
         // first make sure we are disconnected
         removeVlunsAll(context, pod, dataObject.getExternalName());
         String fullName = normalizeName(pod, dataObject.getExternalName());
