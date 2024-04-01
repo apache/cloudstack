@@ -36,12 +36,12 @@ public class OAuth2UserAuthenticator extends AdapterBase implements UserAuthenti
     public static final Logger s_logger = Logger.getLogger(OAuth2UserAuthenticator.class);
 
     @Inject
-    private UserAccountDao _userAccountDao;
+    private UserAccountDao userAccountDao;
     @Inject
-    private UserDao _userDao;
+    private UserDao userDao;
 
     @Inject
-    private OAuth2AuthManager _userOAuth2mgr;
+    private OAuth2AuthManager userOAuth2mgr;
 
     @Override
     public Pair<Boolean, ActionOnFailedAuthentication> authenticate(String username, String password, Long domainId, Map<String, Object[]> requestParameters) {
@@ -57,12 +57,12 @@ public class OAuth2UserAuthenticator extends AdapterBase implements UserAuthenti
             return new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
         }
 
-        final UserAccount userAccount = _userAccountDao.getUserAccount(username, domainId);
+        final UserAccount userAccount = userAccountDao.getUserAccount(username, domainId);
         if (userAccount == null) {
             s_logger.debug("Unable to find user with " + username + " in domain " + domainId + ", or user source is not OAUTH2");
             return new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
         } else {
-            User user = _userDao.getUser(userAccount.getId());
+            User user = userDao.getUser(userAccount.getId());
             final String[] provider = (String[])requestParameters.get(ApiConstants.PROVIDER);
             final String[] emailArray = (String[])requestParameters.get(ApiConstants.EMAIL);
             final String[] secretCodeArray = (String[])requestParameters.get(ApiConstants.SECRET_CODE);
@@ -70,7 +70,7 @@ public class OAuth2UserAuthenticator extends AdapterBase implements UserAuthenti
             String email = ((emailArray == null) ? null : emailArray[0]);
             String secretCode = ((secretCodeArray == null) ? null : secretCodeArray[0]);
 
-            UserOAuth2Authenticator authenticator = _userOAuth2mgr.getUserOAuth2AuthenticationProvider(oauthProvider);
+            UserOAuth2Authenticator authenticator = userOAuth2mgr.getUserOAuth2AuthenticationProvider(oauthProvider);
             if (user != null && authenticator.verifyUser(email, secretCode)) {
                 return new Pair<Boolean, ActionOnFailedAuthentication>(true, null);
             }
