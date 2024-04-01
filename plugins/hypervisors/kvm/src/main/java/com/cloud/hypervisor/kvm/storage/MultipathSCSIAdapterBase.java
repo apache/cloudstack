@@ -482,8 +482,7 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
         }
 
         LOGGER.debug("Unable to find the volume with id: " + address.getPath() + " of the storage pool: " + pool.getUuid());
-        throw new CloudRuntimeException("Unable to connect volume with address [" + address.getPath() + "] of the storage pool: " + pool.getUuid());
-        //return false;
+        return false;
     }
 
     long getPhysicalDiskSize(String diskPath) {
