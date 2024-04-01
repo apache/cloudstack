@@ -22,6 +22,7 @@
         "<enter><wait>"
       ],
       "boot_wait": "5s",
+      "qemu_binary": "qemu-system-x86_64",
       "disk_interface": "virtio",
       "disk_size": "5000M",
       "format": "qcow2",
