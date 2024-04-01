@@ -178,12 +178,12 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
 
         if (StringUtils.isEmpty(volumePath)) {
             LOGGER.error("Unable to connect physical disk due to insufficient data - volume path is undefined");
-            throw new CloudRuntimeException("Unable to connect physical disk due to insufficient data - volume path is underfined");
+            return false;
         }
 
         if (pool == null) {
             LOGGER.error("Unable to connect physical disk due to insufficient data - pool is not set");
-            throw new CloudRuntimeException("Unable to connect physical disk due to insufficient data - pool is not set");
+            return false;
         }
 
         // we expect WWN values in the volumePath so need to convert it to an actual physical path
@@ -191,7 +191,8 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
 
         // validate we have a connection id - we can't proceed without that
         if (address.getConnectionId() == null) {
-            throw new CloudRuntimeException("Unable to connect volume with address [" + address.getPath() + "] of the storage pool: " + pool.getUuid() + " - connection id is not set in provided path");
+            LOGGER.error("Unable to connect volume with address [" + address.getPath() + "] of the storage pool: " + pool.getUuid() + " - connection id is not set in provided path");
+            return false;
         }
 
         int waitTimeInSec = diskWaitTimeSecs;
