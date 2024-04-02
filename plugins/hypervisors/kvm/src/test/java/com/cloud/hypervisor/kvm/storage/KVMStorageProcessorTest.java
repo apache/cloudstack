@@ -29,7 +29,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.cloudstack.utils.cryptsetup.KeyFile;
 import org.apache.cloudstack.utils.qemu.QemuImageOptions;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
@@ -267,19 +266,15 @@ public class KVMStorageProcessorTest {
         KVMStoragePool primaryPoolMock = Mockito.mock(KVMStoragePool.class);
         KVMPhysicalDisk baseFileMock = Mockito.mock(KVMPhysicalDisk.class);
         VolumeObjectTO volumeMock = Mockito.mock(VolumeObjectTO.class);
-        KeyFile srcKeyMock = Mockito.mock(KeyFile.class);
         QemuImgFile srcFileMock = Mockito.mock(QemuImgFile.class);
         QemuImgFile destFileMock = Mockito.mock(QemuImgFile.class);
         QemuImg qemuImgMock = Mockito.mock(QemuImg.class);
-        Script scriptMock = Mockito.mock(Script.class);
 
-        // Set up expectations
         Mockito.when(baseFileMock.getPath()).thenReturn("/path/to/baseFile");
         Mockito.when(primaryPoolMock.createFolder(Mockito.anyString())).thenReturn(true);
         Mockito.lenient().doThrow(new QemuImgException(errorMessage)).when(qemuImgMock).convert(Mockito.eq(srcFileMock), Mockito.eq(destFileMock), Mockito.anyMap(),
                 Mockito.anyList(), Mockito.any(QemuImageOptions.class), Mockito.isNull(), Mockito.eq(true));
 
-        // Create an instance of KVMStorageProcessor
         KVMStorageProcessor storageProcessor = new KVMStorageProcessor(storagePoolManager, null);
         String test = storageProcessor.convertBaseFileToSnapshotFileInPrimaryStorageDir(primaryPoolMock, baseFileMock, "/path/to/snapshot", volumeMock, 0);
     }
