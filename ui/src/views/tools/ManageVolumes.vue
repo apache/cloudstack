@@ -353,6 +353,7 @@
               ref="accounttype"
               :label="$t('label.accounttype')">
               <a-select
+                @change="changeAccountType"
                 v-model:value="importForm.selectedAccountType"
                 v-focus="true"
                 showSearch
@@ -436,6 +437,29 @@
               </a-select>
               <span v-if="importForm.projectError" class="required">{{ $t('label.required') }}</span>
             </a-form-item>
+
+            <a-form-item
+              name="diskoffering"
+              ref="diskoffering"
+              :label="$t('label.diskoffering')">
+              <a-select
+                v-model:value="importForm.selectedDiskoffering"
+                :placeholder="$t('label.diskofferingid')"
+                showSearch
+                optionFilterProp="label"
+                :filterOption="(input, option) => {
+                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }" >
+                <a-select-option
+                  v-for="(offering, index) in diskOfferings"
+                  :value="offering.id"
+                  :key="index"
+                  :label="offering.displaytext || offering.name">
+                  {{ offering.displaytext || offering.name }}
+                </a-select-option>
+              </a-select>
+            </a-form-item>
+
             <div :span="24" class="action-button">
               <a-button @click="onCloseImportVolumeForm">{{ $t('label.cancel') }}</a-button>
               <a-button type="primary" ref="submit" @click="handleSubmitImportVolumeForm">{{ $t('label.ok') }}</a-button>
@@ -516,6 +540,7 @@ export default {
       domains: [],
       accounts: [],
       projects: [],
+      diskOfferings: [],
       options: {
         zones: [],
         pods: [],
@@ -987,17 +1012,57 @@ export default {
         this.loading = false
       })
     },
+    changeAccountType () {
+      this.importForm.selectedDomain = null
+      this.importForm.selectedAccount = null
+      this.importForm.selectedProject = null
+      this.importForm.selectedDiskoffering = null
+      this.diskOfferings = {}
+    },
     changeDomain () {
       this.importForm.selectedAccount = null
       this.importForm.selectedProject = null
+      this.importForm.selectedDiskoffering = null
+      this.diskOfferings = {}
       this.fetchAccounts()
       this.fetchProjects()
     },
     changeAccount () {
       this.importForm.selectedProject = null
+      this.importForm.selectedDiskoffering = null
+      this.diskOfferings = {}
+      this.fetchDiskOfferings()
     },
     changeProject () {
       this.importForm.selectedAccount = null
+      this.importForm.selectedDiskoffering = null
+      this.diskOfferings = {}
+      this.fetchDiskOfferings()
+    },
+    fetchDiskOfferings () {
+      this.loading = true
+      const selectedPool = this.options.pools.filter(pool => pool.id === this.poolId)
+      const storagetype = selectedPool[0].scope === 'HOST' ? 'local' : 'shared'
+      var params = {
+        zoneid: this.zoneId,
+        storageid: this.poolId,
+        storagetype: storagetype,
+        encrypt: false,
+        listall: true
+      }
+      if (this.importForm.selectedAccountType === 'Account') {
+        params.domainid = this.importForm.selectedDomain
+        params.account = this.importForm.selectedAccount
+      } else if (this.importForm.selectedAccountType === 'Project') {
+        params.domainid = this.importForm.selectedDomain
+        params.projectid = this.importForm.selectedProject
+      }
+
+      api('listDiskOfferings', params).then(json => {
+        this.diskOfferings = json.listdiskofferingsresponse.diskoffering || []
+      }).finally(() => {
+        this.loading = false
+      })
     },
     fetchVolumes () {
       this.fetchUnmanagedVolumes()
@@ -1110,6 +1175,7 @@ export default {
         this.selectedUnmanagedVolume = this.unmanagedVolumes[this.unmanagedVolumesSelectedRowKeys[0]]
         this.importForm.name = this.selectedUnmanagedVolume.name
       }
+      this.fetchDiskOfferings()
       this.showImportForm = true
     },
     handleSubmitImportVolumeForm () {
@@ -1138,6 +1204,7 @@ export default {
       }
 
       var params = {
+        diskofferingid: this.importForm.selectedDiskoffering,
         domainid: this.importForm.selectedDomain,
         [variableKey]: variableValue,
         storageid: this.poolId,
