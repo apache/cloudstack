@@ -39,6 +39,7 @@ import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePoolHostVO;
+import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
@@ -277,7 +278,10 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
             logFailureAndThrowException(String.format("Storage pool (ID: %s) does not exist", poolId));
         }
         if (pool.isInMaintenance()) {
-            logFailureAndThrowException(String.format("Storage pool (name: %s) is in maintenance: ", pool.getName()));
+            logFailureAndThrowException(String.format("Storage pool (name: %s) is in maintenance", pool.getName()));
+        }
+        if (!StoragePoolStatus.Up.equals(pool.getStatus())) {
+            logFailureAndThrowException(String.format("Storage pool (ID: %s) is not Up: %s", pool.getName(), pool.getStatus()));
         }
         return pool;
     }

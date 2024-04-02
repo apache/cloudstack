@@ -2715,7 +2715,7 @@
 "message.desc.import.ext.kvm.wizard": "Import libvirt domain from External KVM Host not managed by CloudStack",
 "message.desc.import.local.kvm.wizard": "Import QCOW2 image from Local Storage of selected KVM Host",
 "message.desc.import.shared.kvm.wizard": "Import QCOW2 image from selected Primary Storage Pool",
-"message.desc.import.unmanage.volume": "Please choose a storage pool that you want to import or unmanage volumes. This feature only supports KVM.",
+"message.desc.import.unmanage.volume": "Please choose a storage pool that you want to import or unmanage volumes. The storage pool should be in Up status. <br>This feature only supports KVM.",
 "message.desc.importexportinstancewizard": "By choosing to manage an Instance, CloudStack takes over the orchestration of that Instance. Unmanaging an Instance removes CloudStack ability to manage it. In both cases, the Instance is left running and no changes are done to the VM on the hypervisor.<br><br>For KVM, managing a VM is an experimental feature.",
 "message.desc.importmigratefromvmwarewizard": "By selecting an existing or external VMware Datacenter and an instance to import, CloudStack migrates the selected instance from VMware to KVM on a conversion host using virt-v2v and imports it into a KVM cluster",
 "message.desc.primary.storage": "Each cluster must contain one or more primary storage servers. We will add the first one now. Primary storage contains the disk volumes for all the Instances running on hosts in the cluster. Use any standards-compliant protocol that is supported by the underlying hypervisor.",

@@ -36,6 +36,7 @@ import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePoolHostVO;
+import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
@@ -193,6 +194,7 @@ public class VolumeImportUnmanageManagerImplTest {
         when(storagePoolVO.getUuid()).thenReturn(storagePoolUuid);
         when(storagePoolVO.getName()).thenReturn(storagePoolName);
         when(storagePoolVO.getPoolType()).thenReturn(storagePoolType);
+        when(storagePoolVO.getStatus()).thenReturn(StoragePoolStatus.Up);
 
         when(volumeDao.findById(volumeId)).thenReturn(volumeVO);
         when(volumeVO.getId()).thenReturn(volumeId);
@@ -437,7 +439,20 @@ public class VolumeImportUnmanageManagerImplTest {
             volumeImportUnmanageManager.checkIfPoolAvailable(poolId);
             Assert.fail("it should fail");
         } catch (CloudRuntimeException ex) {
-            verify(volumeImportUnmanageManager).logFailureAndThrowException(String.format("Storage pool (name: %s) is in maintenance: ", storagePoolName));
+            verify(volumeImportUnmanageManager).logFailureAndThrowException(String.format("Storage pool (name: %s) is in maintenance", storagePoolName));
+        }
+    }
+
+    @Test
+    public void testCheckIfPoolAvailableDisabled() {
+        try {
+            when(primaryDataStoreDao.findById(poolId)).thenReturn(storagePoolVO);
+            when(storagePoolVO.isInMaintenance()).thenReturn(false);
+            when(storagePoolVO.getStatus()).thenReturn(StoragePoolStatus.Disabled);
+            volumeImportUnmanageManager.checkIfPoolAvailable(poolId);
+            Assert.fail("it should fail");
+        } catch (CloudRuntimeException ex) {
+            verify(volumeImportUnmanageManager).logFailureAndThrowException(String.format("Storage pool (ID: %s) is not Up: %s", storagePoolName, StoragePoolStatus.Disabled));
         }
     }
 
