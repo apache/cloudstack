@@ -21,6 +21,8 @@ package com.cloud.serializer;
 
 import java.util.List;
 
+import com.cloud.hypervisor.Hypervisor;
+import org.apache.cloudstack.transport.HypervisorTypeAdaptor;
 import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;
@@ -72,6 +74,7 @@ public class GsonHelper {
         builder.registerTypeAdapter(new TypeToken<Pair<Long, Long>>() {
         }.getType(), new NwGroupsCommandTypeAdaptor());
         builder.registerTypeAdapter(Storage.StoragePoolType.class, new StoragePoolTypeAdaptor());
+        builder.registerTypeAdapter(Hypervisor.HypervisorType.class, new HypervisorTypeAdaptor());
         Gson gson = builder.create();
         dsAdaptor.initGson(gson);
         dtAdaptor.initGson(gson);

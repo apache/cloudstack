@@ -22,8 +22,10 @@ import com.cloud.org.Grouping;
 import com.cloud.org.Managed.ManagedState;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.util.HypervisorTypeConverter;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -56,6 +58,7 @@ public class ClusterVO implements Cluster {
     long podId;
 
     @Column(name = "hypervisor_type")
+    @Convert(converter = HypervisorTypeConverter.class)
     String hypervisorType;
 
     @Column(name = "cluster_type")

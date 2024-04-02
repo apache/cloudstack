@@ -32,6 +32,13 @@ import org.apache.log4j.Logger;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+import static com.cloud.hypervisor.Hypervisor.HypervisorType.Hyperv;
+import static com.cloud.hypervisor.Hypervisor.HypervisorType.KVM;
+import static com.cloud.hypervisor.Hypervisor.HypervisorType.LXC;
+import static com.cloud.hypervisor.Hypervisor.HypervisorType.Ovm3;
+import static com.cloud.hypervisor.Hypervisor.HypervisorType.VMware;
+import static com.cloud.hypervisor.Hypervisor.HypervisorType.XenServer;
+
 public class Upgrade41500to41510 implements DbUpgrade, DbUpgradeSystemVmTemplate {
 
     final static Logger LOG = Logger.getLogger(Upgrade41500to41510.class);
@@ -74,27 +81,19 @@ public class Upgrade41500to41510 implements DbUpgrade, DbUpgradeSystemVmTemplate
         final Set<Hypervisor.HypervisorType> hypervisorsListInUse = new HashSet<Hypervisor.HypervisorType>();
         try (PreparedStatement pstmt = conn.prepareStatement("select distinct(hypervisor_type) from `cloud`.`cluster` where removed is null"); ResultSet rs = pstmt.executeQuery()) {
             while (rs.next()) {
-                switch (Hypervisor.HypervisorType.getType(rs.getString(1))) {
-                    case XenServer:
-                        hypervisorsListInUse.add(Hypervisor.HypervisorType.XenServer);
-                        break;
-                    case KVM:
-                        hypervisorsListInUse.add(Hypervisor.HypervisorType.KVM);
-                        break;
-                    case VMware:
-                        hypervisorsListInUse.add(Hypervisor.HypervisorType.VMware);
-                        break;
-                    case Hyperv:
-                        hypervisorsListInUse.add(Hypervisor.HypervisorType.Hyperv);
-                        break;
-                    case LXC:
-                        hypervisorsListInUse.add(Hypervisor.HypervisorType.LXC);
-                        break;
-                    case Ovm3:
-                        hypervisorsListInUse.add(Hypervisor.HypervisorType.Ovm3);
-                        break;
-                    default:
-                        break;
+                Hypervisor.HypervisorType type = Hypervisor.HypervisorType.getType(rs.getString(1));
+                if (type.equals(XenServer)) {
+                    hypervisorsListInUse.add(XenServer);
+                } else if (type.equals(KVM)) {
+                    hypervisorsListInUse.add(KVM);
+                } else if (type.equals(VMware)) {
+                    hypervisorsListInUse.add(VMware);
+                } else if (type.equals(Hyperv)) {
+                    hypervisorsListInUse.add(Hyperv);
+                } else if (type.equals(LXC)) {
+                    hypervisorsListInUse.add(LXC);
+                } else if (type.equals(Ovm3)) {
+                    hypervisorsListInUse.add(Ovm3);
                 }
             }
         } catch (final SQLException e) {

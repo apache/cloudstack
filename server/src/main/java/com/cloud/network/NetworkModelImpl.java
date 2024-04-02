@@ -1298,22 +1298,16 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             PhysicalNetworkTrafficTypeVO mgmtTraffic = _pNTrafficTypeDao.findBy(mgmtPhyNetwork.getId(), TrafficType.Management);
             if (mgmtTraffic != null) {
                 String label = null;
-                switch (hypervisorType) {
-                    case XenServer:
-                        label = mgmtTraffic.getXenNetworkLabel();
-                        break;
-                    case KVM:
-                        label = mgmtTraffic.getKvmNetworkLabel();
-                        break;
-                    case VMware:
-                        label = mgmtTraffic.getVmwareNetworkLabel();
-                        break;
-                    case Hyperv:
-                        label = mgmtTraffic.getHypervNetworkLabel();
-                        break;
-                    case Ovm3:
-                        label = mgmtTraffic.getOvm3NetworkLabel();
-                        break;
+                if (hypervisorType.equals(HypervisorType.XenServer)) {
+                    label = mgmtTraffic.getXenNetworkLabel();
+                } else if (hypervisorType.equals(HypervisorType.KVM)) {
+                    label = mgmtTraffic.getKvmNetworkLabel();
+                } else if (hypervisorType.equals(HypervisorType.VMware)) {
+                    label = mgmtTraffic.getVmwareNetworkLabel();
+                } else if (hypervisorType.equals(HypervisorType.Hyperv)) {
+                    label = mgmtTraffic.getHypervNetworkLabel();
+                } else if (hypervisorType.equals(HypervisorType.Ovm3)) {
+                    label = mgmtTraffic.getOvm3NetworkLabel();
                 }
                 return label;
             }
@@ -1333,22 +1327,16 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             PhysicalNetworkTrafficTypeVO storageTraffic = _pNTrafficTypeDao.findBy(storagePhyNetwork.getId(), TrafficType.Storage);
             if (storageTraffic != null) {
                 String label = null;
-                switch (hypervisorType) {
-                    case XenServer:
-                        label = storageTraffic.getXenNetworkLabel();
-                        break;
-                    case KVM:
-                        label = storageTraffic.getKvmNetworkLabel();
-                        break;
-                    case VMware:
-                        label = storageTraffic.getVmwareNetworkLabel();
-                        break;
-                    case Hyperv:
-                        label = storageTraffic.getHypervNetworkLabel();
-                        break;
-                    case Ovm3:
-                        label = storageTraffic.getOvm3NetworkLabel();
-                        break;
+                if (hypervisorType.equals(HypervisorType.XenServer)) {
+                    label = storageTraffic.getXenNetworkLabel();
+                } else if (hypervisorType.equals(HypervisorType.KVM)) {
+                    label = storageTraffic.getKvmNetworkLabel();
+                } else if (hypervisorType.equals(HypervisorType.VMware)) {
+                    label = storageTraffic.getVmwareNetworkLabel();
+                } else if (hypervisorType.equals(HypervisorType.Hyperv)) {
+                    label = storageTraffic.getHypervNetworkLabel();
+                } else if (hypervisorType.equals(HypervisorType.Ovm3)) {
+                    label = storageTraffic.getOvm3NetworkLabel();
                 }
                 return label;
             }
@@ -1858,22 +1846,16 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             PhysicalNetworkTrafficTypeVO publicTraffic = _pNTrafficTypeDao.findBy(publicPhyNetwork.getId(), TrafficType.Public);
             if (publicTraffic != null) {
                 String label = null;
-                switch (hypervisorType) {
-                    case XenServer:
-                        label = publicTraffic.getXenNetworkLabel();
-                        break;
-                    case KVM:
-                        label = publicTraffic.getKvmNetworkLabel();
-                        break;
-                    case VMware:
-                        label = publicTraffic.getVmwareNetworkLabel();
-                        break;
-                    case Hyperv:
-                        label = publicTraffic.getHypervNetworkLabel();
-                        break;
-                    case Ovm3:
-                        label = publicTraffic.getOvm3NetworkLabel();
-                        break;
+                if (hypervisorType.equals(HypervisorType.XenServer)) {
+                    label = publicTraffic.getXenNetworkLabel();
+                } else if (hypervisorType.equals(HypervisorType.KVM)) {
+                    label = publicTraffic.getKvmNetworkLabel();
+                } else if (hypervisorType.equals(HypervisorType.VMware)) {
+                    label = publicTraffic.getVmwareNetworkLabel();
+                } else if (hypervisorType.equals(HypervisorType.Hyperv)) {
+                    label = publicTraffic.getHypervNetworkLabel();
+                } else if (hypervisorType.equals(HypervisorType.Ovm3)) {
+                    label = publicTraffic.getOvm3NetworkLabel();
                 }
                 return label;
             }
@@ -1893,22 +1875,16 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             PhysicalNetworkTrafficTypeVO guestTraffic = _pNTrafficTypeDao.findBy(guestPhyNetwork.getId(), TrafficType.Guest);
             if (guestTraffic != null) {
                 String label = null;
-                switch (hypervisorType) {
-                    case XenServer:
-                        label = guestTraffic.getXenNetworkLabel();
-                        break;
-                    case KVM:
-                        label = guestTraffic.getKvmNetworkLabel();
-                        break;
-                    case VMware:
-                        label = guestTraffic.getVmwareNetworkLabel();
-                        break;
-                    case Hyperv:
-                        label = guestTraffic.getHypervNetworkLabel();
-                        break;
-                    case Ovm3:
-                        label = guestTraffic.getOvm3NetworkLabel();
-                        break;
+                if (hypervisorType.equals(HypervisorType.XenServer)) {
+                    label = guestTraffic.getXenNetworkLabel();
+                } else if (hypervisorType.equals(HypervisorType.KVM)) {
+                    label = guestTraffic.getKvmNetworkLabel();
+                } else if (hypervisorType.equals(HypervisorType.VMware)) {
+                    label = guestTraffic.getVmwareNetworkLabel();
+                } else if (hypervisorType.equals(HypervisorType.Hyperv)) {
+                    label = guestTraffic.getHypervNetworkLabel();
+                } else if (hypervisorType.equals(HypervisorType.Ovm3)) {
+                    label = guestTraffic.getOvm3NetworkLabel();
                 }
                 return label;
             }

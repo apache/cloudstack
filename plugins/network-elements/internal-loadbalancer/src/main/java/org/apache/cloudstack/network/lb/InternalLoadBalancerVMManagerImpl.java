@@ -750,24 +750,16 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
                     s_logger.debug("Creating the internal lb vm " + id + " in datacenter " + dest.getDataCenter() + " with hypervisor type " + hType);
                 }
                 String templateName = null;
-                switch (hType) {
-                case XenServer:
+                if (hType.equals(HypervisorType.XenServer)) {
                     templateName = VirtualNetworkApplianceManager.RouterTemplateXen.valueIn(dest.getDataCenter().getId());
-                    break;
-                case KVM:
+                } else if (hType.equals(HypervisorType.KVM)) {
                     templateName = VirtualNetworkApplianceManager.RouterTemplateKvm.valueIn(dest.getDataCenter().getId());
-                    break;
-                case VMware:
+                } else if (hType.equals(HypervisorType.VMware)) {
                     templateName = VirtualNetworkApplianceManager.RouterTemplateVmware.valueIn(dest.getDataCenter().getId());
-                    break;
-                case Hyperv:
+                } else if (hType.equals(HypervisorType.Hyperv)) {
                     templateName = VirtualNetworkApplianceManager.RouterTemplateHyperV.valueIn(dest.getDataCenter().getId());
-                    break;
-                case LXC:
+                } else if (hType.equals(HypervisorType.LXC)) {
                     templateName = VirtualNetworkApplianceManager.RouterTemplateLxc.valueIn(dest.getDataCenter().getId());
-                    break;
-                default:
-                    break;
                 }
                 final VMTemplateVO template = _templateDao.findRoutingTemplate(hType, templateName);
 
