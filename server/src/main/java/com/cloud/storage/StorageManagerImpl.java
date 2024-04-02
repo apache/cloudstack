@@ -1151,7 +1151,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public PrimaryDataStoreInfo changeStoragePoolScope(ChangeStoragePoolScopeCmd cmd) throws IllegalArgumentException, InvalidParameterValueException, PermissionDeniedException {
+    public boolean changeStoragePoolScope(ChangeStoragePoolScopeCmd cmd) throws IllegalArgumentException, InvalidParameterValueException, PermissionDeniedException {
         Long id = cmd.getId();
 
         Long accountId = cmd.getEntityOwnerId();
@@ -1169,6 +1169,24 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             throw new IllegalArgumentException("Unable to find storage pool with ID: " + id);
         }
 
+        if (!primaryStorage.getStorageProviderName().equals(DataStoreProvider.DEFAULT_PRIMARY)) {
+            throw new InvalidParameterValueException("Primary storage scope change is only supported with "
+                    + DataStoreProvider.DEFAULT_PRIMARY.toString() + " data store provider");
+        }
+
+        if (!primaryStorage.getPoolType().equals(Storage.StoragePoolType.NetworkFilesystem) &&
+            !primaryStorage.getPoolType().equals(Storage.StoragePoolType.RBD)) {
+            throw new InvalidParameterValueException("Primary storage scope change is not supported for protocol "
+                    + primaryStorage.getPoolType().toString());
+        }
+
+        HypervisorType hypervisorType = primaryStorage.getHypervisor();
+        Set<HypervisorType> supportedHypervisorTypes = Sets.newHashSet(HypervisorType.KVM, HypervisorType.VMware, HypervisorType.Hyperv);
+        if (!supportedHypervisorTypes.contains(hypervisorType)) {
+            throw new InvalidParameterValueException("Primary storage scope change is not supported for hypervisor type "
+                    + hypervisorType);
+        }
+
         if (StoragePoolStatus.Disabled != primaryStorage.getStatus()) {
             throw new InvalidParameterValueException("Primary storage should be disabled for this operation");
         }
@@ -1181,17 +1199,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             throw new InvalidParameterValueException("Scope of the Primary storage with id "
                     + primaryStorage.getUuid() +
                     " cannot be changed, as it is not in the Disabled state");
-        }
-
-        if (!primaryStorage.getStorageProviderName().equals(DataStoreProvider.DEFAULT_PRIMARY)) {
-            throw new InvalidParameterValueException("Primary storage scope change is only supported with "
-                    + DataStoreProvider.DEFAULT_PRIMARY.toString() + " data store provider");
-        }
-
-        HypervisorType hypervisorType = primaryStorage.getHypervisor();
-        Set<HypervisorType> supportedHypervisorTypes = Sets.newHashSet(HypervisorType.KVM, HypervisorType.VMware, HypervisorType.Hyperv);
-        if (!supportedHypervisorTypes.contains(hypervisorType)) {
-            throw new InvalidParameterValueException("Primary storage scope change is not supported for hypervisor type " + hypervisorType);
         }
 
         String providerName = primaryStorage.getStorageProviderName();
@@ -1226,8 +1233,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             lifeCycle.changeStoragePoolScopeToCluster(primaryStore, clusterScope, hypervisorType);
         }
 
-        // maybe return a boolean instead
-        return (PrimaryDataStoreInfo)_dataStoreMgr.getDataStore(primaryStorage.getId(), DataStoreRole.Primary);
+        return true;
     }
 
     @Override

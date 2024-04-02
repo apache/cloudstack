@@ -143,7 +143,7 @@ export default {
         return (
           record.state === 'Disabled' &&
           (record.hypervisor === 'Simulator' || record.hypervisor === 'KVM' || record.hypervisor === 'VMware') &&
-          record.type === 'NetworkFilesystem' &&
+          (record.type === 'NetworkFilesystem' || record.type === 'RBD') &&
           record.provider === 'DefaultPrimary'
         )
       },

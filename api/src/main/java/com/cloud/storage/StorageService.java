@@ -35,6 +35,7 @@ import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
 import org.apache.cloudstack.api.command.admin.storage.heuristics.CreateSecondaryStorageSelectorCmd;
@@ -129,5 +130,5 @@ public interface StorageService {
 
     ObjectStore updateObjectStore(Long id, UpdateObjectStoragePoolCmd cmd);
 
-    StoragePool changeStoragePoolScope(ChangeStoragePoolScopeCmd cmd) throws IllegalArgumentException;
+    boolean changeStoragePoolScope(ChangeStoragePoolScopeCmd cmd) throws IllegalArgumentException, InvalidParameterValueException, PermissionDeniedException;
 }

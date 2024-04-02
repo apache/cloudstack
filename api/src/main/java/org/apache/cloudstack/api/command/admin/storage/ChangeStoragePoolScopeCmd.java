@@ -31,7 +31,6 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
-import com.cloud.storage.StoragePool;
 import com.cloud.storage.StorageService;
 
 @APICommand(name = "changeStoragePoolScope", description = "Changes the scope of a storage pool.", responseObject = SuccessResponse.class,
@@ -62,8 +61,8 @@ public class ChangeStoragePoolScopeCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        StoragePool result = _storageService.changeStoragePoolScope(this);
-        if (result != null) {
+        boolean result = _storageService.changeStoragePoolScope(this);
+        if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
