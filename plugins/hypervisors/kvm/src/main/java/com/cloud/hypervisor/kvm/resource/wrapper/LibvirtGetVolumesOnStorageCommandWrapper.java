@@ -75,6 +75,10 @@ public final class LibvirtGetVolumesOnStorageCommandWrapper extends CommandWrapp
 
         KVMPhysicalDisk disk = storagePool.getPhysicalDisk(volumePath);
         if (disk != null) {
+            if (!volumePath.equals(disk.getPath()) && !volumePath.equals(disk.getName())) {
+                String error = String.format("Volume path mismatch. Expected volume path (%s) is not the same as the actual name (%s) and path (%s)", volumePath, disk.getName(), disk.getPath());
+                return new GetVolumesOnStorageAnswer(command, false, error);
+            }
             if (!isDiskFormatSupported(disk)) {
                 return new GetVolumesOnStorageAnswer(command, false, String.format("disk format %s is unsupported", disk.getFormat()));
             }
