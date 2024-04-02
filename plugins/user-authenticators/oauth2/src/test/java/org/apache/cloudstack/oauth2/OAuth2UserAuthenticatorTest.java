@@ -24,17 +24,17 @@ import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
 import org.apache.cloudstack.auth.UserOAuth2Authenticator;
-import org.apache.cloudstack.framework.config.ConfigKey;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -44,6 +44,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -62,26 +63,21 @@ public class OAuth2UserAuthenticatorTest {
     private OAuth2AuthManager userOAuth2mgr;
 
     @InjectMocks
+    @Spy
     private OAuth2UserAuthenticator authenticator;
     private AutoCloseable closeable;
 
     @Before
-    public void setUp() throws NoSuchFieldException, IllegalAccessException {
+    public void setUp() {
         closeable = MockitoAnnotations.openMocks(this);
-        overrideDefaultConfigValue(OAuth2AuthManager.OAuth2IsPluginEnabled, "_defaultValue", "true");
+        doReturn(true).when(authenticator).isOAuthPluginEnabled();
     }
 
     @After
     public void tearDown() throws Exception {
-        overrideDefaultConfigValue(OAuth2AuthManager.OAuth2IsPluginEnabled, "_defaultValue", "false");
         closeable.close();
     }
 
-    private void overrideDefaultConfigValue(final ConfigKey configKey, final String name, final Object o) throws IllegalAccessException, NoSuchFieldException {
-        Field f = ConfigKey.class.getDeclaredField(name);
-        f.setAccessible(true);
-        f.set(configKey, o);
-    }
 
     @Test
     public void testAuthenticateWithValidCredentials() {
@@ -129,7 +125,7 @@ public class OAuth2UserAuthenticatorTest {
         UserOAuth2Authenticator userOAuth2Authenticator = mock(UserOAuth2Authenticator.class);
 
         when(userAccountDao.getUserAccount(username, domainId)).thenReturn(userAccount);
-        when(userDao.getUser(userAccount.getId())).thenReturn( user);
+        when(userDao.getUser(userAccount.getId())).thenReturn(user);
         when(userOAuth2mgr.getUserOAuth2AuthenticationProvider(provider[0])).thenReturn(userOAuth2Authenticator);
         when(userOAuth2Authenticator.verifyUser(email[0], secretCode[0])).thenReturn(false);
 

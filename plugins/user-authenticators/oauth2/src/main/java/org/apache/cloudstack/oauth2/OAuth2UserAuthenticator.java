@@ -32,6 +32,8 @@ import org.apache.log4j.Logger;
 import javax.inject.Inject;
 import java.util.Map;
 
+import static org.apache.cloudstack.oauth2.OAuth2AuthManager.OAuth2IsPluginEnabled;
+
 public class OAuth2UserAuthenticator extends AdapterBase implements UserAuthenticator {
     public static final Logger s_logger = Logger.getLogger(OAuth2UserAuthenticator.class);
 
@@ -49,7 +51,7 @@ public class OAuth2UserAuthenticator extends AdapterBase implements UserAuthenti
             s_logger.debug("Trying OAuth2 auth for user: " + username);
         }
 
-        if (!OAuth2AuthManager.OAuth2IsPluginEnabled.value()) {
+        if (!isOAuthPluginEnabled()) {
             s_logger.debug("OAuth2 plugin is disabled");
             return new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
         } else if (requestParameters == null) {
@@ -82,5 +84,9 @@ public class OAuth2UserAuthenticator extends AdapterBase implements UserAuthenti
     @Override
     public String encode(String password) {
         return null;
+    }
+
+    protected boolean isOAuthPluginEnabled() {
+        return OAuth2IsPluginEnabled.value();
     }
 }
