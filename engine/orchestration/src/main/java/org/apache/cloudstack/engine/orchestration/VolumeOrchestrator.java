@@ -327,7 +327,19 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             newVol.setPassphraseId(passphrase.getId());
         }
 
-        return _volsDao.persist(newVol);
+        VolumeVO volume = _volsDao.persist(newVol);
+
+        // Duplicate volume's details
+        List<VolumeDetailVO> oldVolDetails = _volDetailDao.listDetails(oldVol.getId());
+        if (CollectionUtils.isNotEmpty(oldVolDetails)) {
+            List<VolumeDetailVO> newVolDetails = new ArrayList<>();
+            for (VolumeDetailVO oldVolDetail : oldVolDetails) {
+                VolumeDetailVO newVolDetail = new VolumeDetailVO(volume.getId(), oldVolDetail.getName(), oldVolDetail.getValue(), oldVolDetail.isDisplay());
+                newVolDetails.add(newVolDetail);
+            }
+            _volDetailDao.saveDetails(newVolDetails);
+        }
+        return volume;
     }
 
     private Optional<StoragePool> getMatchingStoragePool(String preferredPoolId, List<StoragePool> storagePools) {
