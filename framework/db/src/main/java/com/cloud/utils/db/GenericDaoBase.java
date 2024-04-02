@@ -1636,8 +1636,12 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         } else if (attr.getValue() != null && attr.getValue() instanceof Long) {
             pstmt.setLong(j, (Long)attr.getValue());
         } else if(attr.field.getDeclaredAnnotation(Convert.class) != null) {
-            Object val = _conversionSupport.convertToDatabaseColumn(attr.field, value);
-            pstmt.setObject(j, val);
+            if (value instanceof String) {
+                pstmt.setString(j, (String)value);
+            } else {
+                Object val = _conversionSupport.convertToDatabaseColumn(attr.field, value);
+                pstmt.setObject(j, val);
+            }
         } else if (attr.field.getType() == String.class) {
             final String str;
             try {
