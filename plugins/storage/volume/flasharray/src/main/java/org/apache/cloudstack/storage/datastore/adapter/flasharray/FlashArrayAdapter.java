@@ -23,6 +23,7 @@ import java.net.URL;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -203,6 +204,10 @@ public class FlashArrayAdapter implements ProviderAdapter {
         String fullName = normalizeName(pod, dataObject.getExternalName());
 
         FlashArrayVolume volume = new FlashArrayVolume();
+        // rename as we delete so it doesn't conflict if the template or volume is ever recreated
+        // pure keeps the volume(s) around in a Destroyed bucket for a period of time post delete
+        String timestamp = new SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date());
+        volume.setName(fullName + "-" + timestamp);
         volume.setDestroyed(true);
         try {
             PATCH("/volumes?names=" + fullName, volume, new TypeReference<FlashArrayList<FlashArrayVolume>>() {
