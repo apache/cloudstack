@@ -20,6 +20,8 @@ package com.cloud.api.query;
 import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.api.query.vo.TemplateJoinVO;
+import com.cloud.event.EventVO;
+import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.EventJoinDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
@@ -96,6 +98,9 @@ public class QueryManagerImplTest {
     AccountManager accountManager;
 
     @Mock
+    EventDao eventDao;
+
+    @Mock
     EventJoinDao eventJoinDao;
 
     @Mock
@@ -133,12 +138,12 @@ public class QueryManagerImplTest {
                 UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
         Mockito.when(accountManager.isRootAdmin(account.getId())).thenReturn(false);
-        final SearchBuilder<EventJoinVO> searchBuilder = Mockito.mock(SearchBuilder.class);
-        final SearchCriteria<EventJoinVO> searchCriteria = Mockito.mock(SearchCriteria.class);
-        final EventJoinVO eventJoinVO = Mockito.mock(EventJoinVO.class);
-        when(searchBuilder.entity()).thenReturn(eventJoinVO);
-        when(searchBuilder.create()).thenReturn(searchCriteria);
-        Mockito.when(eventJoinDao.createSearchBuilder()).thenReturn(searchBuilder);
+        final SearchBuilder<EventVO> eventSearchBuilder = Mockito.mock(SearchBuilder.class);
+        final SearchCriteria<EventVO> eventSearchCriteria = Mockito.mock(SearchCriteria.class);
+        final EventVO eventVO = Mockito.mock(EventVO.class);
+        when(eventSearchBuilder.entity()).thenReturn(eventVO);
+        when(eventSearchBuilder.create()).thenReturn(eventSearchCriteria);
+        Mockito.when(eventDao.createSearchBuilder()).thenReturn(eventSearchBuilder);
     }
 
     private ListEventsCmd setupMockListEventsCmd() {
@@ -154,19 +159,26 @@ public class QueryManagerImplTest {
         String uuid = UUID.randomUUID().toString();
         Mockito.when(cmd.getResourceId()).thenReturn(uuid);
         Mockito.when(cmd.getResourceType()).thenReturn(ApiCommandResourceType.Network.toString());
-        List<EventJoinVO> events = new ArrayList<>();
-        events.add(Mockito.mock(EventJoinVO.class));
-        events.add(Mockito.mock(EventJoinVO.class));
-        events.add(Mockito.mock(EventJoinVO.class));
-        Pair<List<EventJoinVO>, Integer> pair = new Pair<>(events, events.size());
+        List<EventVO> events = new ArrayList<>();
+        events.add(Mockito.mock(EventVO.class));
+        events.add(Mockito.mock(EventVO.class));
+        events.add(Mockito.mock(EventVO.class));
+        Pair<List<EventVO>, Integer> pair = new Pair<>(events, events.size());
+
+        List<EventJoinVO> eventJoins = new ArrayList<>();
+        eventJoins.add(Mockito.mock(EventJoinVO.class));
+        eventJoins.add(Mockito.mock(EventJoinVO.class));
+        eventJoins.add(Mockito.mock(EventJoinVO.class));
+
         NetworkVO network = Mockito.mock(NetworkVO.class);
         Mockito.when(network.getId()).thenReturn(1L);
         Mockito.when(network.getAccountId()).thenReturn(account.getId());
         Mockito.when(entityManager.findByUuidIncludingRemoved(Network.class, uuid)).thenReturn(network);
         Mockito.doNothing().when(accountManager).checkAccess(account, SecurityChecker.AccessType.ListEntry, true, network);
-        Mockito.when(eventJoinDao.searchAndCount(Mockito.any(), Mockito.any(Filter.class))).thenReturn(pair);
+        Mockito.when(eventDao.searchAndCount(Mockito.any(), Mockito.any(Filter.class))).thenReturn(pair);
+        Mockito.when(eventJoinDao.searchByIds(Mockito.any())).thenReturn(eventJoins);
         List<EventResponse> respList = new ArrayList<EventResponse>();
-        for (EventJoinVO vt : events) {
+        for (EventJoinVO vt : eventJoins) {
             respList.add(eventJoinDao.newEventResponse(vt));
         }
         try (MockedStatic<ViewResponseHelper> ignored = Mockito.mockStatic(ViewResponseHelper.class)) {

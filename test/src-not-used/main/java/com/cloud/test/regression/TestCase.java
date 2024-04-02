@@ -86,7 +86,7 @@ public abstract class TestCase {
         this.conn = null;
         try {
             Class.forName("com.mysql.jdbc.Driver");
-            this.conn = DriverManager.getConnection("jdbc:mysql://" + param.get("db") + "/cloud", "root", dbPassword);
+            this.conn = DriverManager.getConnection("jdbc:mysql://" + param.get("db") + "/cloud?" + TransactionLegacy.CONNECTION_PARAMS, "root", dbPassword);
             if (!this.conn.isValid(0)) {
                 LOGGER.error("Connection to DB failed to establish");
             }

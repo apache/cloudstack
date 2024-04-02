@@ -521,7 +521,7 @@ export default {
           this.data.systemvms = 0
         }
       })
-      api('listRouters', { zoneid: zone.id, listall: true }).then(json => {
+      api('listRouters', { zoneid: zone.id, listall: true, projectid: '-1' }).then(json => {
         this.loading = false
         this.data.routers = json?.listroutersresponse?.count
         if (!this.data.routers) {

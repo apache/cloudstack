@@ -716,4 +716,9 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         }
         return result;
     }
+
+    @Override
+    public boolean updateVpcSourceNatIp(Vpc vpc, IpAddress address) {
+        return true;
+    }
 }
