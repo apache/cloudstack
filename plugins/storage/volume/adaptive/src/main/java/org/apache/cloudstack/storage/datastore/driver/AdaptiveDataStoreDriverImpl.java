@@ -996,4 +996,8 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
         dataIn.setType(ProviderAdapterDataObject.Type.valueOf(data.getType().toString()));
         return dataIn;
     }
+
+    public boolean volumesRequireGrantAccessWhenUsed() {
+        return true;
+    }
 }
