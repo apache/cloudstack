@@ -132,8 +132,8 @@ public class CapacityVO implements Capacity {
         return podId;
     }
 
-    public void setPodId(long podId) {
-        this.podId = new Long(podId);
+    public void setPodId(Long podId) {
+        this.podId = podId;
     }
 
     @Override
@@ -141,8 +141,8 @@ public class CapacityVO implements Capacity {
         return clusterId;
     }
 
-    public void setClusterId(long clusterId) {
-        this.clusterId = new Long(clusterId);
+    public void setClusterId(Long clusterId) {
+        this.clusterId = (clusterId);
     }
 
     @Override

@@ -1181,10 +1181,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         HypervisorType hypervisorType = primaryStorage.getHypervisor();
-        Set<HypervisorType> supportedHypervisorTypes = Sets.newHashSet(HypervisorType.KVM, HypervisorType.VMware, HypervisorType.Hyperv);
+        Set<HypervisorType> supportedHypervisorTypes = Sets.newHashSet(HypervisorType.KVM, HypervisorType.VMware, HypervisorType.Simulator);
         if (!supportedHypervisorTypes.contains(hypervisorType)) {
-            throw new InvalidParameterValueException("Primary storage scope change is not supported for hypervisor type "
-                    + hypervisorType);
+            throw new InvalidParameterValueException("Primary storage scope change is not supported for hypervisor type " + hypervisorType);
         }
 
         if (StoragePoolStatus.Disabled != primaryStorage.getStatus()) {

@@ -270,15 +270,26 @@ public class PrimaryDataStoreHelper {
 
     public void switchToZone(DataStore store) {
         StoragePoolVO pool = dataStoreDao.findById(store.getId());
-        pool.setScope(ScopeType.ZONE);
-        pool.setPodId(null);
-        pool.setClusterId(null);
-        dataStoreDao.update(pool.getId(), pool);
+        CapacityVO capacity = _capacityDao.findByHostIdType(store.getId(), Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED);
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                pool.setScope(ScopeType.ZONE);
+                pool.setPodId(null);
+                pool.setClusterId(null);
+                dataStoreDao.update(pool.getId(), pool);
+
+                capacity.setPodId(null);
+                capacity.setClusterId(null);
+                _capacityDao.update(capacity.getId(), capacity);
+            }
+        });
+        s_logger.debug("Scope of storage pool id=" + pool.getId() + " is changed to zone");
     }
 
     public void switchToCluster(DataStore store, ClusterScope clusterScope) {
         List<StoragePoolHostVO> hostPoolRecords = storagePoolHostDao.listByPoolIdNotInCluster(clusterScope.getScopeId(), store.getId()).first();
         StoragePoolVO pool = dataStoreDao.findById(store.getId());
+        CapacityVO capacity = _capacityDao.findByHostIdType(store.getId(), Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED);
 
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
@@ -290,6 +301,10 @@ public class PrimaryDataStoreHelper {
                 pool.setPodId(clusterScope.getPodId());
                 pool.setClusterId(clusterScope.getScopeId());
                 dataStoreDao.update(pool.getId(), pool);
+
+                capacity.setPodId(clusterScope.getPodId());
+                capacity.setClusterId(clusterScope.getScopeId());
+                _capacityDao.update(capacity.getId(), capacity);
             }
         });
         s_logger.debug("Scope of storage pool id=" + pool.getId() + " is changed to cluster id=" + clusterScope.getScopeId());
