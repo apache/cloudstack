@@ -391,6 +391,9 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
             if (diskOfferingVO.isUseLocalStorage() != isLocal) {
                 logFailureAndThrowException(String.format("Disk offering with ID %s should use %s storage", diskOfferingId, isLocal ? "local": "shared"));
             }
+            if (diskOfferingVO.getEncrypt()) {
+                logFailureAndThrowException(String.format("Disk offering with ID %s should not support volume encryption", diskOfferingId));
+            }
             // check if disk offering is accessible by the account/owner
             try {
                 configMgr.checkDiskOfferingAccess(owner, diskOfferingVO, dcDao.findById(zoneId));

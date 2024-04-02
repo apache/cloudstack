@@ -488,6 +488,7 @@ public class VolumeImportUnmanageManagerImplTest {
         when(diskOfferingDao.findById(diskOfferingId)).thenReturn(diskOfferingVO);
         when(diskOfferingVO.getState()).thenReturn(DiskOffering.State.Active);
         when(diskOfferingVO.isUseLocalStorage()).thenReturn(isLocal);
+        when(diskOfferingVO.getEncrypt()).thenReturn(false);
         doNothing().when(configMgr).checkDiskOfferingAccess(account, diskOfferingVO, dataCenterVO);
 
         DiskOfferingVO result = volumeImportUnmanageManager.getOrCreateDiskOffering(account, diskOfferingId, zoneId, isLocal);
@@ -529,6 +530,21 @@ public class VolumeImportUnmanageManagerImplTest {
             Assert.fail("it should fail");
         } catch (CloudRuntimeException ex) {
             verify(volumeImportUnmanageManager).logFailureAndThrowException(String.format("Disk offering with ID %s should use %s storage", diskOfferingId, isLocal ? "local" : "shared"));
+        }
+    }
+
+    @Test
+    public void testGetOrCreateDiskOfferingForVolumeEncryption() {
+        try {
+            when(diskOfferingDao.findById(diskOfferingId)).thenReturn(diskOfferingVO);
+            when(diskOfferingVO.getState()).thenReturn(DiskOffering.State.Active);
+            when(diskOfferingVO.isUseLocalStorage()).thenReturn(isLocal);
+            when(diskOfferingVO.getEncrypt()).thenReturn(true);
+
+            volumeImportUnmanageManager.getOrCreateDiskOffering(account, diskOfferingId, zoneId, isLocal);
+            Assert.fail("it should fail");
+        } catch (CloudRuntimeException ex) {
+            verify(volumeImportUnmanageManager).logFailureAndThrowException(String.format("Disk offering with ID %s should not support volume encryption", diskOfferingId));
         }
     }
 
