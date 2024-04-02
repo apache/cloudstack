@@ -223,4 +223,55 @@ public class DatabaseUpgradeCheckerTest {
         assertEquals("We should have 1 upgrade step", 1, upgrades.length);
         assertTrue(upgrades[0] instanceof NoopDbUpgrade);
     }
+
+    @Test
+    public void testCalculateUpgradePathFrom41800toNextSecurityRelease() {
+
+        final CloudStackVersion dbVersion = CloudStackVersion.parse("4.18.0.0");
+        assertNotNull(dbVersion);
+
+        final DatabaseUpgradeChecker checker = new DatabaseUpgradeChecker();
+        final CloudStackVersion currentVersion = checker.getLatestVersion();
+        assertNotNull(currentVersion);
+
+        final DbUpgrade[] upgrades = checker.calculateUpgradePath(dbVersion, currentVersion);
+        assertNotNull(upgrades);
+
+        final CloudStackVersion nextSecurityRelease = CloudStackVersion.parse(currentVersion.getMajorRelease() + "."
+                + currentVersion.getMinorRelease() + "."
+                + currentVersion.getPatchRelease() + "."
+                + (currentVersion.getSecurityRelease() + 1));
+        assertNotNull(nextSecurityRelease);
+
+        final DbUpgrade[] upgradesToNext = checker.calculateUpgradePath(dbVersion, nextSecurityRelease);
+        assertNotNull(upgradesToNext);
+
+        assertEquals(upgrades.length + 1, upgradesToNext.length);
+        assertTrue(upgradesToNext[upgradesToNext.length - 1] instanceof NoopDbUpgrade);
+    }
+
+    @Test
+    public void testCalculateUpgradePathFromSecurityReleaseToLatest() {
+
+        final CloudStackVersion dbVersion = CloudStackVersion.parse("4.17.2.0");    // a EOL version
+        assertNotNull(dbVersion);
+
+        final CloudStackVersion oldSecurityRelease = CloudStackVersion.parse(dbVersion.getMajorRelease() + "."
+                + dbVersion.getMinorRelease() + "."
+                + dbVersion.getPatchRelease() + "."
+                + (dbVersion.getSecurityRelease() + 100));
+        assertNotNull(oldSecurityRelease);      // fake security release 4.17.2.100
+
+        final DatabaseUpgradeChecker checker = new DatabaseUpgradeChecker();
+        final CloudStackVersion currentVersion = checker.getLatestVersion();
+        assertNotNull(currentVersion);
+
+        final DbUpgrade[] upgrades = checker.calculateUpgradePath(dbVersion, currentVersion);
+        assertNotNull(upgrades);
+
+        final DbUpgrade[] upgradesFromSecurityRelease = checker.calculateUpgradePath(oldSecurityRelease, currentVersion);
+        assertNotNull(upgradesFromSecurityRelease);
+
+        assertEquals("The upgrade paths should be the same", upgrades.length, upgradesFromSecurityRelease.length);
+    }
 }
