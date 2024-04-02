@@ -7637,6 +7637,20 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return false;
     }
 
+    private DiskOfferingVO validateAndGetDiskOffering(Long diskOfferingId, UserVmVO vm, Account caller) {
+        DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
+        if (diskOffering == null) {
+            throw new InvalidParameterValueException("Cannot find disk offering with ID " + diskOfferingId);
+        }
+        DataCenterVO zone = dataCenterDao.findById(vm.getDataCenterId());
+        _accountMgr.checkAccess(caller, diskOffering, zone);
+        ServiceOfferingVO serviceOffering = serviceOfferingDao.findById(vm.getServiceOfferingId());
+        if (serviceOffering.getDiskOfferingStrictness() && !serviceOffering.getDiskOfferingId().equals(diskOfferingId)) {
+            throw new InvalidParameterValueException("VM's service offering has a strict disk offering requirement, and the specified disk offering does not match");
+        }
+        return diskOffering;
+    }
+
     @Override
     public UserVm restoreVM(RestoreVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException {
         // Input validation
@@ -7660,19 +7674,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
         _accountMgr.checkAccess(caller, null, true, vm);
 
-        DiskOffering diskOffering;
-        if (rootDiskOfferingId != null) {
-            diskOffering = _diskOfferingDao.findById(rootDiskOfferingId);
-            if (diskOffering == null) {
-                throw new InvalidParameterValueException("Cannot find disk offering with ID " + rootDiskOfferingId);
-            }
-            DataCenterVO zone = dataCenterDao.findById(vm.getDataCenterId());
-            _accountMgr.checkAccess(caller, diskOffering, zone);
-            ServiceOfferingVO serviceOffering = serviceOfferingDao.findById(vm.getServiceOfferingId());
-            if (serviceOffering.getDiskOfferingStrictness() && !serviceOffering.getDiskOfferingId().equals(rootDiskOfferingId)) {
-                throw new InvalidParameterValueException("VM's service offering has a strict disk offering requirement, and the specified disk offering does not match");
-            }
-        }
+        DiskOffering diskOffering = rootDiskOfferingId != null ? validateAndGetDiskOffering(rootDiskOfferingId, vm, caller) : null;
 
         //check if there are any active snapshots on volumes associated with the VM
         s_logger.debug("Checking if there are any ongoing snapshots on the ROOT volumes associated with VM with ID " + vmId);
@@ -7827,21 +7829,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             newVol = volumeMgr.allocateDuplicateVolume(root, null);
                         }
 
-                        VolumeVO resizedVolume = (VolumeVO) newVol;
-
-                        if (userVmDetailsDao.findDetail(userVm.getId(), VmDetailConstants.ROOT_DISK_SIZE) == null && !newVol.getSize().equals(template.getSize())) {
-                            if (template.getSize() != null) {
-                                resizedVolume.setSize(template.getSize());
-                            }
-                        }
-                        if (diskOffering != null) {
-                            resizedVolume.setDiskOfferingId(diskOffering.getId());
-                            resizedVolume.setSize(diskOffering.getDiskSize());
-                        }
-                        if (rootDiskSize != null) {
-                            resizedVolume.setSize(rootDiskSize);
-                        }
-                        _volsDao.update(resizedVolume.getId(), resizedVolume);
+                        updateVolume(newVol, template, userVm, diskOffering, rootDiskSize);
 
                         // 1. Save usage event and update resource count for user vm volumes
                         try {
@@ -7932,6 +7920,24 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         s_logger.debug("Restore VM " + vmId + " done successfully");
         return vm;
 
+    }
+
+    private void updateVolume(Volume vol, VMTemplateVO template, UserVmVO userVm, DiskOffering diskOffering, Long rootDiskSize) {
+        VolumeVO resizedVolume = (VolumeVO) vol;
+
+        if (userVmDetailsDao.findDetail(userVm.getId(), VmDetailConstants.ROOT_DISK_SIZE) == null && !vol.getSize().equals(template.getSize())) {
+            if (template.getSize() != null) {
+                resizedVolume.setSize(template.getSize());
+            }
+        }
+        if (diskOffering != null) {
+            resizedVolume.setDiskOfferingId(diskOffering.getId());
+            resizedVolume.setSize(diskOffering.getDiskSize());
+        }
+        if (rootDiskSize != null) {
+            resizedVolume.setSize(rootDiskSize);
+        }
+        _volsDao.update(resizedVolume.getId(), resizedVolume);
     }
 
     private void updateVMDynamicallyScalabilityUsingTemplate(UserVmVO vm, Long newTemplateId) {
