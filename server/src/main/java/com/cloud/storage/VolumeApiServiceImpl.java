@@ -3411,8 +3411,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         _accountMgr.checkAccess(caller, newDiskOffering, zone);
         StoragePool destStoragePool = _storagePoolDao.findById(cmd.getStoragePoolId());
 
-        if (VolumeApiServiceImpl.MatchStoragePoolTagsWithDiskOffering.valueIn(zone.getId()) && !doesNewDiskOfferingMatchTargetStoragePool(destStoragePool, newDiskOffering)) {
-            throw new InvalidParameterValueException(String.format("Existing disk offering storage tags of the volume %s does not contain in the new disk offering %s  ", volume.getUuid(), newDiskOffering.getUuid()));
+        if (VolumeApiServiceImpl.MatchStoragePoolTagsWithDiskOffering.valueIn(zone.getId()) && !doesTargetStorageSupportDiskOffering(destStoragePool, newDiskOffering)) {
+            throw new InvalidParameterValueException(String.format("New disk offering is not valid for the provided storage pool: volume [%s], disk offering [%s]", volume.getUuid(), newDiskOffering.getUuid()));
         }
         return newDiskOffering;
     }
@@ -3498,6 +3498,18 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return doesTargetStorageSupportDiskOffering(destPool, targetStoreTags);
     }
 
+    public static boolean doesNewDiskOfferingHasTagsAsOldDiskOffering(DiskOfferingVO oldDO, DiskOfferingVO newDO) {
+        String[] oldDOStorageTags = oldDO.getTagsArray();
+        String[] newDOStorageTags = newDO.getTagsArray();
+        if (oldDOStorageTags.length == 0) {
+            return true;
+        }
+        if (newDOStorageTags.length == 0) {
+            return false;
+        }
+        return CollectionUtils.isSubCollection(Arrays.asList(oldDOStorageTags), Arrays.asList(newDOStorageTags));
+    }
+
     @Override
     public boolean doesTargetStorageSupportDiskOffering(StoragePool destPool, String diskOfferingTags) {
         Pair<List<String>, Boolean> storagePoolTags = getStoragePoolTags(destPool);
@@ -3525,26 +3537,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
         s_logger.debug(String.format("Destination storage pool [%s] accepts tags [%s]? %s", destPool.getUuid(), diskOfferingTags, result));
         return result;
-    }
-
-    public boolean doesNewDiskOfferingMatchTargetStoragePool(StoragePool destPool, DiskOfferingVO newDO) {
-        String[] newDOStorageTags = newDO.getTagsArray();
-        List<StoragePoolTagVO> destPoolTags = storagePoolTagsDao.findStoragePoolTags(destPool.getId());
-        if (newDOStorageTags == null || newDOStorageTags.length == 0) {
-            if (destPoolTags == null || destPoolTags.isEmpty()) {
-                return true;
-            } else {
-                return false;
-            }
-        }
-        for (StoragePoolTagVO spt: destPoolTags) {
-            for (String doTag: newDOStorageTags) {
-                if (doTag.equals(spt.getTag())) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 
     /**
