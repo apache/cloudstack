@@ -272,11 +272,14 @@ public class KVMStorageProcessorTest {
 
         Mockito.when(baseFileMock.getPath()).thenReturn("/path/to/baseFile");
         Mockito.when(primaryPoolMock.createFolder(Mockito.anyString())).thenReturn(true);
-        Mockito.lenient().doThrow(new QemuImgException(errorMessage)).when(qemuImgMock).convert(Mockito.eq(srcFileMock), Mockito.eq(destFileMock), Mockito.anyMap(),
-                Mockito.anyList(), Mockito.any(QemuImageOptions.class), Mockito.isNull(), Mockito.eq(true));
-
-        KVMStorageProcessor storageProcessor = new KVMStorageProcessor(storagePoolManager, null);
-        String test = storageProcessor.convertBaseFileToSnapshotFileInPrimaryStorageDir(primaryPoolMock, baseFileMock, "/path/to/snapshot", volumeMock, 0);
+        try (MockedConstruction<Script> scr = Mockito.mockConstruction(Script.class, ((mock, context) -> {
+            Mockito.doReturn("").when(mock).execute();
+        }))){
+            Mockito.lenient().doThrow(new QemuImgException(errorMessage)).when(qemuImgMock).convert(Mockito.eq(srcFileMock), Mockito.eq(destFileMock), Mockito.anyMap(),
+                    Mockito.anyList(), Mockito.any(QemuImageOptions.class), Mockito.isNull(), Mockito.eq(true));
+            String test = storageProcessor.convertBaseFileToSnapshotFileInPrimaryStorageDir(primaryPoolMock, baseFileMock, "/path/to/snapshot", volumeMock, 0);
+            Assert.assertNotNull(test);
+        }
     }
 
     @Test
