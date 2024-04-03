@@ -373,6 +373,145 @@ class StorageTagsServices:
             "b": "NFS-B"
         }
 
+class TestPrimaryStorageScope(cloudstackTestCase):
+
+    def setUp(self):
+
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.services = self.testClient.getParsedTestDataConfig()
+        self.cleanup = []
+        self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
+        self.pod = get_pod(self.apiclient, self.zone.id)
+        self.clusters = list_clusters(self.apiclient)
+        return
+
+    def tearDown(self):
+        try:
+            cleanup_resources(self.apiclient, self.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    @attr(tags=["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
+    def test_01_primary_storage_scope_change(self):
+        """Test primary storage pool scope change
+        """
+
+        cluster1 = self.clusters[0]
+        cluster2 = self.clusters[1]
+        storage = StoragePool.create(self.apiclient,
+                                     self.services["nfs"],
+                                     clusterid=cluster1.id,
+                                     zoneid=self.zone.id,
+                                     podid=self.pod.id
+                                     )
+        self.cleanup.append(storage)
+        pool_id = self.dbclient.execute("select id from storage_pool where uuid=\"" + storage.id + "\"")[0][0]
+
+
+        self.debug("Created storage pool in cluster: %s" % cluster1.id)
+
+        # Disable storage pool
+        cmd = updateStoragePool.updateStoragePoolCmd()
+        cmd.id = storage.id
+        cmd.enabled = False
+        self.apiclient.updateStoragePool(cmd)
+
+        self.debug("Disabled storage pool : %s" % storage.id)
+
+        # Change storage pool scope to Zone
+        cmd = changeStoragePoolScope.changeStoragePoolScopeCmd()
+        cmd.id = storage.id
+        cmd.scope = "ZONE"
+        self.apiclient.changeStoragePoolScope(cmd)
+
+        self.debug("Changed scope of storage pool %s to zone" % storage.id)
+
+        host2 = Host.list(self.apiclient, clusterid=cluster2.id, listall=True)[0]
+        host2_id = self.dbclient.execute("select id from host where uuid=\"" + host2.id + "\"")[0][0]
+
+        pool_row = self.dbclient.execute("select cluster_id, pod_id, scope from storage_pool where id=" + str(pool_id))[0]
+        capacity_row = self.dbclient.execute("select cluster_id, pod_id from op_host_capacity where capacity_type=3 and host_id=" + str(pool_id))[0]
+        pool_host_rows = self.dbclient.execute("select id from storage_pool_host_ref where host_id=" + str(host2_id) + " and pool_id=" + str(pool_id))
+
+        self.assertIsNone(
+            pool_row[0],
+            "Cluster id not set to NULL for zone scope"
+        )
+        self.assertIsNone(
+            pool_row[1],
+            "Pod id not set to NULL for zone scope"
+        )
+        self.assertEqual(
+            pool_row[2],
+            "ZONE",
+            "Storage pool scope not changed to ZONE"
+        )
+        self.assertIsNone(
+            capacity_row[0],
+            "Cluster id not set to NULL in the op_host_capacity table"
+        )
+        self.assertIsNone(
+            capacity_row[1],
+            "Pod id not set to NULL in the op_host_capacity table"
+        )
+        self.assertEqual(
+            len(pool_host_rows),
+            1,
+            "Storage pool not added to the storage_pool_host_ref table for host on another cluster"
+        )
+
+        # Change storage pool scope to Cluster
+        cmd = changeStoragePoolScope.changeStoragePoolScopeCmd()
+        cmd.id = storage.id
+        cmd.scope = "CLUSTER"
+        cmd.clusterid = cluster1.id
+        self.apiclient.changeStoragePoolScope(cmd)
+
+        self.debug("Changed scope of storage pool %s to cluster" % storage.id)
+
+        pool_row = self.dbclient.execute("select cluster_id, pod_id, scope from storage_pool where id=" + str(pool_id))[0]
+        capacity_row = self.dbclient.execute("select cluster_id, pod_id from op_host_capacity where capacity_type=3 and host_id=" + str(pool_id))[0]
+        pool_host_rows = self.dbclient.execute("select id from storage_pool_host_ref where host_id=" + str(host2_id) + " and pool_id=" + str(pool_id))
+
+        self.assertIsNotNone(
+            pool_row[0],
+            "Cluster id should not be NULL for cluster scope"
+        )
+        self.assertIsNotNone(
+            pool_row[1],
+            "Pod id should not be NULL for cluster scope"
+        )
+        self.assertEqual(
+            pool_row[2],
+            "CLUSTER",
+            "Storage pool scope not changed to Cluster"
+        )
+        self.assertIsNotNone(
+            capacity_row[0],
+            "Cluster id should not be NULL in the op_host_capacity table"
+        )
+        self.assertIsNotNone(
+            capacity_row[1],
+            "Pod id set should not be NULL in the op_host_capacity table"
+        )
+        self.assertEqual(
+            len(pool_host_rows),
+            0,
+            "Storage pool not removed from the storage_pool_host_ref table for host on another cluster"
+        )
+
+        # Enable storage pool
+        cmd = updateStoragePool.updateStoragePoolCmd()
+        cmd.id = storage.id
+        cmd.enabled = True
+        response = self.apiclient.updateStoragePool(cmd)
+        self.assertEqual(
+            response.state,
+            "Up",
+            "Storage pool couldn't be enabled"
+        )
 
 class TestStorageTags(cloudstackTestCase):
 
