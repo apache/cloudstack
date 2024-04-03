@@ -3405,11 +3405,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         zone = _dcDao.findById(volume.getDataCenterId());
 
         _accountMgr.checkAccess(caller, newDiskOffering, zone);
-        StoragePool destStoragePool = _storagePoolDao.findById(cmd.getStoragePoolId());
-
-        if (VolumeApiServiceImpl.MatchStoragePoolTagsWithDiskOffering.valueIn(zone.getId()) && !doesTargetStorageSupportDiskOffering(destStoragePool, newDiskOffering)) {
-            throw new InvalidParameterValueException(String.format("New disk offering is not valid for the provided storage pool: volume [%s], disk offering [%s]", volume.getUuid(), newDiskOffering.getUuid()));
-        }
         return newDiskOffering;
     }
 
