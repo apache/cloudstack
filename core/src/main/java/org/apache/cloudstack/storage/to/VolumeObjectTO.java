@@ -33,7 +33,7 @@ import com.cloud.storage.Volume;
 
 import java.util.Arrays;
 
-public class VolumeObjectTO implements DataTO {
+public class VolumeObjectTO extends DownloadableObjectTO implements DataTO {
     private String uuid;
     private Volume.Type volumeType;
     private DataStoreTO dataStore;
@@ -119,6 +119,7 @@ public class VolumeObjectTO implements DataTO {
         this.vSphereStoragePolicyId = volume.getvSphereStoragePolicyId();
         this.passphrase = volume.getPassphrase();
         this.encryptFormat = volume.getEncryptFormat();
+        this.followRedirects = volume.isFollowRedirects();
     }
 
     public String getUuid() {

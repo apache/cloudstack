@@ -60,6 +60,7 @@ import com.cloud.storage.MigrationOptions;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.ProvisioningType;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeDetailVO;
@@ -116,6 +117,7 @@ public class VolumeObject implements VolumeInfo {
     private MigrationOptions migrationOptions;
     private boolean directDownload;
     private String vSphereStoragePolicyId;
+    private boolean followRedirects;
 
     private final List<Volume.State> volumeStatesThatShouldNotTransitWhenDataStoreRoleIsImage = Arrays.asList(Volume.State.Migrating, Volume.State.Uploaded, Volume.State.Copying,
       Volume.State.Expunged);
@@ -126,6 +128,7 @@ public class VolumeObject implements VolumeInfo {
 
     public VolumeObject() {
         _volStateMachine = Volume.State.getStateMachine();
+        this.followRedirects = StorageManager.DataStoreDownloadFollowRedirects.value();
     }
 
     protected void configure(DataStore dataStore, VolumeVO volumeVO) {
@@ -928,5 +931,10 @@ public class VolumeObject implements VolumeInfo {
     @Override
     public void setEncryptFormat(String encryptFormat) {
         volumeVO.setEncryptFormat(encryptFormat);
+    }
+
+    @Override
+    public boolean isFollowRedirects() {
+        return followRedirects;
     }
 }
