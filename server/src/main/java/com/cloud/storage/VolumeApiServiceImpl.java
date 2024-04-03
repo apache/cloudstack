@@ -3403,12 +3403,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         Account caller = CallContext.current().getCallingAccount();
         DataCenter zone = null;
         Volume volume = _volsDao.findById(cmd.getId());
-        if (volume != null) {
-            zone = _dcDao.findById(volume.getDataCenterId());
+        if (volume == null) {
+            throw new InvalidParameterValueException(String.format("Provided volume id is not valid: %s", cmd.getId()));
         }
+        zone = _dcDao.findById(volume.getDataCenterId());
+
         _accountMgr.checkAccess(caller, newDiskOffering, zone);
-        DiskOfferingVO currentDiskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
-        if (VolumeApiServiceImpl.MatchStoragePoolTagsWithDiskOffering.valueIn(zone.getId()) && !doesNewDiskOfferingHasTagsAsOldDiskOffering(currentDiskOffering, newDiskOffering)) {
+        StoragePool destStoragePool = _storagePoolDao.findById(cmd.getStoragePoolId());
+
+        if (VolumeApiServiceImpl.MatchStoragePoolTagsWithDiskOffering.valueIn(zone.getId()) && !doesNewDiskOfferingMatchTargetStoragePool(destStoragePool, newDiskOffering)) {
             throw new InvalidParameterValueException(String.format("Existing disk offering storage tags of the volume %s does not contain in the new disk offering %s  ", volume.getUuid(), newDiskOffering.getUuid()));
         }
         return newDiskOffering;
@@ -3524,16 +3527,24 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return result;
     }
 
-    public static boolean doesNewDiskOfferingHasTagsAsOldDiskOffering(DiskOfferingVO oldDO, DiskOfferingVO newDO) {
-        String[] oldDOStorageTags = oldDO.getTagsArray();
+    public boolean doesNewDiskOfferingMatchTargetStoragePool(StoragePool destPool, DiskOfferingVO newDO) {
         String[] newDOStorageTags = newDO.getTagsArray();
-        if (oldDOStorageTags.length == 0) {
-            return true;
+        List<StoragePoolTagVO> destPoolTags = storagePoolTagsDao.findStoragePoolTags(destPool.getId());
+        if (newDOStorageTags == null || newDOStorageTags.length == 0) {
+            if (destPoolTags == null || destPoolTags.isEmpty()) {
+                return true;
+            } else {
+                return false;
+            }
         }
-        if (newDOStorageTags.length == 0) {
-            return false;
+        for (StoragePoolTagVO spt: destPoolTags) {
+            for (String doTag: newDOStorageTags) {
+                if (doTag.equals(spt.getTag())) {
+                    return true;
+                }
+            }
         }
-        return CollectionUtils.isSubCollection(Arrays.asList(oldDOStorageTags), Arrays.asList(newDOStorageTags));
+        return false;
     }
 
     /**
