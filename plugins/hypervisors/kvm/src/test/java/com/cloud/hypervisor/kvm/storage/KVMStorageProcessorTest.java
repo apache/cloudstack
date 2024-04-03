@@ -58,6 +58,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -274,9 +275,11 @@ public class KVMStorageProcessorTest {
         Mockito.when(primaryPoolMock.createFolder(Mockito.anyString())).thenReturn(true);
         try (MockedConstruction<Script> scr = Mockito.mockConstruction(Script.class, ((mock, context) -> {
             Mockito.doReturn("").when(mock).execute();
-        }))){
-            Mockito.lenient().doThrow(new QemuImgException(errorMessage)).when(qemuImgMock).convert(Mockito.eq(srcFileMock), Mockito.eq(destFileMock), Mockito.anyMap(),
-                    Mockito.anyList(), Mockito.any(QemuImageOptions.class), Mockito.isNull(), Mockito.eq(true));
+        }));
+             MockedConstruction<QemuImg> qemu = Mockito.mockConstruction(QemuImg.class, ((mock, context) -> {
+                     Mockito.lenient().doThrow(new QemuImgException(errorMessage)).when(mock).convert(Mockito.any(QemuImgFile.class), Mockito.any(QemuImgFile.class), Mockito.any(Map.class),
+                             Mockito.any(List.class), Mockito.any(QemuImageOptions.class),Mockito.nullable(String.class), Mockito.any(Boolean.class));
+             }))) {
             String test = storageProcessor.convertBaseFileToSnapshotFileInPrimaryStorageDir(primaryPoolMock, baseFileMock, "/path/to/snapshot", volumeMock, 0);
             Assert.assertNotNull(test);
         }
