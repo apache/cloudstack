@@ -33,8 +33,8 @@ import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 
-@APICommand(name = "extractSnapshot", description = "Returns a download URL for extracting a snapshot. It must be in the Backed Up state.", responseObject = ExtractResponse.class, entityType = {Snapshot.class},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "extractSnapshot", description = "Returns a download URL for extracting a snapshot. It must be in the Backed Up state.", since = "4.20.0",
+        responseObject = ExtractResponse.class, entityType = {Snapshot.class}, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ExtractSnapshotCmd extends BaseAsyncCmd {
 
 
@@ -43,15 +43,11 @@ public class ExtractSnapshotCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @ACL(accessType = AccessType.OperateEntry)
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=SnapshotResponse.class,
-            required=true, description="the ID of the snapshot")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=SnapshotResponse.class, required=true, since="4.20.0", description="the ID of the snapshot")
     private Long id;
 
-    @Parameter(name = ApiConstants.ZONE_ID,
-               type = CommandType.UUID,
-               entityType = ZoneResponse.class,
-               required = true,
-               description = "the ID of the zone where the snapshot is located")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, since="4.20.0",
+            description = "the ID of the zone where the snapshot is located")
     private Long zoneId;
 
     /////////////////////////////////////////////////////
