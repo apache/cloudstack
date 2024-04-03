@@ -90,9 +90,6 @@ import org.libvirt.SchedParameter;
 import org.libvirt.SchedUlongParameter;
 import org.libvirt.Secret;
 import org.libvirt.VcpuInfo;
-import org.libvirt.event.DomainEvent;
-import org.libvirt.event.DomainEventDetail;
-import org.libvirt.event.StoppedDetail;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -466,7 +463,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected CPUStat _cpuStat = new CPUStat();
     protected MemStat _memStat = new MemStat(_dom0MinMem, _dom0OvercommitMem);
     private final LibvirtUtilitiesHelper libvirtUtilitiesHelper = new LibvirtUtilitiesHelper();
-    private AgentStatusUpdater _agentStatusUpdater;
+    private LibvirtDomainListener libvirtDomainListener;
 
     protected Boolean enableManuallySettingCpuTopologyOnKvmVm = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.ENABLE_MANUALLY_SETTING_CPU_TOPOLOGY_ON_KVM_VM);
 
@@ -492,8 +489,23 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     @Override
-    public void registerStatusUpdater(AgentStatusUpdater updater) {
-        _agentStatusUpdater = updater;
+    public synchronized void registerStatusUpdater(AgentStatusUpdater updater) {
+        if (AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LIBVIRT_EVENTS_ENABLED)) {
+            try {
+                Connect conn = LibvirtConnection.getConnection();
+                if (libvirtDomainListener != null) {
+                    s_logger.debug("Clearing old domain listener");
+                    conn.removeLifecycleListener(libvirtDomainListener);
+                }
+                libvirtDomainListener = new LibvirtDomainListener(updater);
+                conn.addLifecycleListener(libvirtDomainListener);
+                s_logger.debug("Set up the libvirt domain event lifecycle listener");
+            } catch (LibvirtException e) {
+                s_logger.error("Failed to get libvirt connection for domain event lifecycle", e);
+            }
+        } else {
+            s_logger.debug("Libvirt event listening is disabled, not registering status updater");
+        }
     }
 
     @Override
@@ -1852,6 +1864,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public boolean stop() {
         try {
             final Connect conn = LibvirtConnection.getConnection();
+            if (AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LIBVIRT_EVENTS_ENABLED) && libvirtDomainListener != null) {
+                s_logger.debug("Clearing old domain listener");
+                conn.removeLifecycleListener(libvirtDomainListener);
+            }
             conn.close();
         } catch (final LibvirtException e) {
             s_logger.trace("Ignoring libvirt error.", e);
@@ -3613,48 +3629,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         } catch (final CloudRuntimeException e) {
             s_logger.debug("Unable to initialize local storage pool: " + e);
         }
-        setupLibvirtEventListener();
         return sscmd;
-    }
-
-    private void setupLibvirtEventListener() {
-        try {
-            Connect conn = LibvirtConnection.getConnection();
-            conn.addLifecycleListener(this::onDomainLifecycleChange);
-
-            s_logger.debug("Set up the libvirt domain event lifecycle listener");
-        } catch (LibvirtException e) {
-            s_logger.error("Failed to get libvirt connection for domain event lifecycle", e);
-        }
-    }
-
-    private int onDomainLifecycleChange(Domain domain, DomainEvent domainEvent) {
-        try {
-            s_logger.debug(String.format("Got event lifecycle change on Domain %s, event %s", domain.getName(), domainEvent));
-            if (domainEvent != null) {
-                switch (domainEvent.getType()) {
-                    case STOPPED:
-                        /* libvirt-destroyed VMs have detail StoppedDetail.DESTROYED, self shutdown guests are StoppedDetail.SHUTDOWN
-                         * Checking for this helps us differentiate between events where cloudstack or admin stopped the VM vs guest
-                         * initiated, and avoid pushing extra updates for actions we are initiating without a need for extra tracking */
-                        DomainEventDetail detail = domainEvent.getDetail();
-                        if (StoppedDetail.SHUTDOWN.equals(detail) || StoppedDetail.CRASHED.equals(detail) || StoppedDetail.FAILED.equals(detail)) {
-                            s_logger.info("Triggering out of band status update due to completed self-shutdown or crash of VM");
-                            _agentStatusUpdater.triggerUpdate();
-                        } else {
-                            s_logger.debug("Event detail: " + detail);
-                        }
-                        break;
-                    default:
-                        s_logger.debug(String.format("No handling for event %s", domainEvent));
-                }
-            }
-        } catch (LibvirtException e) {
-            s_logger.error("Libvirt exception while processing lifecycle event", e);
-        } catch (Throwable e) {
-            s_logger.error("Error during lifecycle", e);
-        }
-        return 0;
     }
 
     public String diskUuidToSerial(String uuid) {

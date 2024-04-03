@@ -19,6 +19,8 @@ package com.cloud.hypervisor.kvm.resource;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.cloud.agent.properties.AgentProperties;
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Library;
@@ -39,7 +41,7 @@ public class LibvirtConnection {
         return getConnection(s_hypervisorURI);
     }
 
-    static public Connect getConnection(String hypervisorURI) throws LibvirtException {
+    static synchronized public Connect getConnection(String hypervisorURI) throws LibvirtException {
         s_logger.debug("Looking for libvirtd connection at: " + hypervisorURI);
         Connect conn = s_connections.get(hypervisorURI);
 
@@ -110,6 +112,11 @@ public class LibvirtConnection {
     // stand up libvirt event handling and polling. This is not specific to a connection object instance, but needs to
     // exist prior to creating connections.
     private static synchronized void setupEventListener() throws LibvirtException {
+        if (!AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LIBVIRT_EVENTS_ENABLED)) {
+            s_logger.debug("Libvirt event listening is disabled, not setting up event loop");
+            return;
+        }
+
         if (libvirtEventThread == null || !libvirtEventThread.isAlive()) {
             // Registers a default event loop, must be called before connecting to hypervisor
             Library.initEventLoop();
