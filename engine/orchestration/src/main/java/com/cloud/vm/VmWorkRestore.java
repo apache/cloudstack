@@ -16,21 +16,24 @@
 // under the License.
 package com.cloud.vm;
 
+import java.util.Map;
+
 public class VmWorkRestore extends VmWork {
     private static final long serialVersionUID = 195901782359759635L;
 
     private Long templateId;
     private Long rootDiskOfferingId;
     private Long rootDiskSize;
+    private Map<String,String> details;
 
     private boolean expunge;
 
-    public VmWorkRestore(VmWork vmWork, Long templateId, Long rootDiskOfferingId, Long rootDiskSize, boolean expunge) {
+    public VmWorkRestore(VmWork vmWork, Long templateId, Long rootDiskOfferingId, boolean expunge, Map<String,String> details) {
         super(vmWork);
         this.templateId = templateId;
         this.rootDiskOfferingId = rootDiskOfferingId;
-        this.rootDiskSize = rootDiskSize;
         this.expunge = expunge;
+        this.details = details;
     }
 
     public Long getTemplateId() {
@@ -41,11 +44,11 @@ public class VmWorkRestore extends VmWork {
         return rootDiskOfferingId;
     }
 
-    public Long getRootDiskSize() {
-        return rootDiskSize;
-    }
-
     public boolean getExpunge() {
         return expunge;
+    }
+
+    public Map<String, String> getDetails() {
+        return details;
     }
 }

@@ -7661,10 +7661,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Long rootDiskOfferingId = cmd.getRootDiskOfferingId();
         Long rootDiskSize = cmd.getRootDiskSize();
         boolean expunge = cmd.getExpungeRootDisk();
+        Map<String, String> details = cmd.getDetails();
 
         if (rootDiskSize != null && rootDiskSize < 0) {
             throw new InvalidParameterValueException("Invalid disk size " + rootDiskSize);
         }
+
+        verifyDetails(details);
 
         UserVmVO vm = _vmDao.findById(vmId);
         if (vm == null) {
@@ -7682,16 +7685,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new CloudRuntimeException("There is/are unbacked up snapshot(s) on ROOT volume, Re-install VM is not permitted, please try again later.");
         }
         s_logger.debug("Found no ongoing snapshots on volume of type ROOT, for the vm with id " + vmId);
-        return restoreVMInternal(caller, vm, newTemplateId, rootDiskOfferingId, rootDiskSize, expunge);
+        return restoreVMInternal(caller, vm, newTemplateId, rootDiskOfferingId, rootDiskSize, expunge, details);
     }
 
-    public UserVm restoreVMInternal(Account caller, UserVmVO vm, Long newTemplateId, Long rootDiskOfferingId, Long rootDiskSize, boolean expunge) throws InsufficientCapacityException, ResourceUnavailableException {
-        return _itMgr.restoreVirtualMachine(vm.getId(), newTemplateId, rootDiskOfferingId, rootDiskSize, expunge);
+    public UserVm restoreVMInternal(Account caller, UserVmVO vm, Long newTemplateId, Long rootDiskOfferingId, Long rootDiskSize, boolean expunge, Map<String, String> details) throws InsufficientCapacityException, ResourceUnavailableException {
+        return _itMgr.restoreVirtualMachine(vm.getId(), newTemplateId, rootDiskOfferingId, rootDiskSize, expunge, details);
     }
 
 
     public UserVm restoreVMInternal(Account caller, UserVmVO vm) throws InsufficientCapacityException, ResourceUnavailableException {
-        return restoreVMInternal(caller, vm, null, null, null, false);
+        return restoreVMInternal(caller, vm, null, null, null, false, null);
     }
 
     private VMTemplateVO getRestoreVirtualMachineTemplate(Account caller, Long newTemplateId, List<VolumeVO> rootVols, UserVmVO vm) {
@@ -7737,8 +7740,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Override
     public UserVm restoreVirtualMachine(final Account caller, final long vmId, final Long newTemplateId,
-            final Long rootDiskOfferingId, final Long rootDiskSize,
-            final boolean expunge) throws InsufficientCapacityException, ResourceUnavailableException {
+            final Long rootDiskOfferingId,
+            final boolean expunge, final Map<String, String> details) throws InsufficientCapacityException, ResourceUnavailableException {
         Long userId = caller.getId();
         _userDao.findById(userId);
         UserVmVO vm = _vmDao.findById(vmId);
@@ -7798,6 +7801,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         DiskOffering diskOffering = rootDiskOfferingId != null ? _diskOfferingDao.findById(rootDiskOfferingId) : null;
         for (VolumeVO root : rootVols) {
             if ( !Volume.State.Allocated.equals(root.getState()) || newTemplateId != null ) {
+                _volumeService.validateDestroyVolume(root, caller, expunge, false);
                 final UserVmVO userVm = vm;
                 Pair<UserVmVO, Volume> vmAndNewVol = Transaction.execute(new TransactionCallbackWithException<Pair<UserVmVO, Volume>, CloudRuntimeException>() {
                     @Override
@@ -7829,7 +7833,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             newVol = volumeMgr.allocateDuplicateVolume(root, null);
                         }
 
-                        updateVolume(newVol, template, userVm, diskOffering, rootDiskSize);
+                        updateVolume(newVol, template, userVm, diskOffering, details);
+                        volumeMgr.saveVolumeDetails(newVol.getDiskOfferingId(), newVol.getId());
 
                         // 1. Save usage event and update resource count for user vm volumes
                         try {
@@ -7922,7 +7927,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     }
 
-    private void updateVolume(Volume vol, VMTemplateVO template, UserVmVO userVm, DiskOffering diskOffering, Long rootDiskSize) {
+    private void updateVolume(Volume vol, VMTemplateVO template, UserVmVO userVm, DiskOffering diskOffering, Map<String, String> details) {
         VolumeVO resizedVolume = (VolumeVO) vol;
 
         if (userVmDetailsDao.findDetail(userVm.getId(), VmDetailConstants.ROOT_DISK_SIZE) == null && !vol.getSize().equals(template.getSize())) {
@@ -7930,12 +7935,36 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 resizedVolume.setSize(template.getSize());
             }
         }
+        Long rootDiskSize = null;
+        if (StringUtils.isNumeric(details.get(VmDetailConstants.ROOT_DISK_SIZE))) {
+            rootDiskSize = Long.parseLong(details.get(VmDetailConstants.ROOT_DISK_SIZE));
+        }
+
         if (diskOffering != null) {
             resizedVolume.setDiskOfferingId(diskOffering.getId());
             resizedVolume.setSize(diskOffering.getDiskSize());
+            if (diskOffering.isCustomized() && rootDiskSize == null) {
+                resizedVolume.setSize(vol.getSize());
+            }
+            if (diskOffering.getMinIops() != null) {
+                resizedVolume.setMinIops(diskOffering.getMinIops());
+            }
+            if (diskOffering.getMaxIops() != null) {
+                resizedVolume.setMaxIops(diskOffering.getMaxIops());
+            }
         }
         if (rootDiskSize != null) {
             resizedVolume.setSize(rootDiskSize);
+        }
+
+        String minIops = details.get("minIops");
+        String maxIops = details.get("maxIops");
+
+        if (StringUtils.isNotBlank(minIops)) {
+            resizedVolume.setMinIops(Long.parseLong(minIops));
+        }
+        if (StringUtils.isNotBlank(maxIops)) {
+            resizedVolume.setMinIops(Long.parseLong(maxIops));
         }
         _volsDao.update(resizedVolume.getId(), resizedVolume);
     }

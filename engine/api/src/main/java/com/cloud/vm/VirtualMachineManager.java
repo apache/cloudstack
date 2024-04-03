@@ -254,7 +254,7 @@ public interface VirtualMachineManager extends Manager {
      */
     boolean unmanage(String vmUuid);
 
-    UserVm restoreVirtualMachine(long vmId, Long newTemplateId, Long rootDiskOfferingId, Long rootDiskSize, boolean expunge) throws ResourceUnavailableException, InsufficientCapacityException;
+    UserVm restoreVirtualMachine(long vmId, Long newTemplateId, Long rootDiskOfferingId, Long rootDiskSize, boolean expunge, Map<String, String> details) throws ResourceUnavailableException, InsufficientCapacityException;
 
     boolean checkIfVmHasClusterWideVolumes(Long vmId);
 

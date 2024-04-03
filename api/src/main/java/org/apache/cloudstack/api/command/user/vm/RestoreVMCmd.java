@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
+import com.cloud.vm.VmDetailConstants;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.log4j.Logger;
@@ -43,6 +44,8 @@ import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 
+import java.util.Map;
+
 @APICommand(name = "restoreVirtualMachine", description = "Restore a VM to original template/ISO or new template/ISO", responseObject = UserVmResponse.class, since = "3.0.0", responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = true)
@@ -69,9 +72,13 @@ public class RestoreVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.ROOT_DISK_SIZE,
                type = CommandType.LONG,
-               description = "Override root volume's size (in GB).",
+               description = "Override root volume's size (in GB). Analogous to details[0].rootdisksize, which takes precedence over this parameter if both are provided",
                since = "4.19.1")
     private Long rootDiskSize;
+
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, since = "4.19.1",
+               description = "used to specify the custom parameters")
+    private Map details;
 
     @Parameter(name = ApiConstants.EXPUNGE,
                type = CommandType.BOOLEAN,
@@ -137,6 +144,14 @@ public class RestoreVMCmd extends BaseAsyncCmd implements UserCmd {
 
     public Long getRootDiskSize() {
         return rootDiskSize != null ? rootDiskSize * 1024L * 1024L * 1024L : null;
+    }
+
+    public Map<String, String> getDetails() {
+        Map<String, String> customparameterMap = convertDetailsToMap(details);
+        if (rootDiskSize != null && !customparameterMap.containsKey(VmDetailConstants.ROOT_DISK_SIZE)) {
+            customparameterMap.put(VmDetailConstants.ROOT_DISK_SIZE, rootDiskSize.toString());
+        }
+        return customparameterMap;
     }
 
     public Boolean getExpungeRootDisk() {
