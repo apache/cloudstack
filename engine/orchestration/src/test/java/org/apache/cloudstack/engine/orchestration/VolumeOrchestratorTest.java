@@ -18,6 +18,13 @@ package org.apache.cloudstack.engine.orchestration;
 
 import java.util.ArrayList;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.commons.lang3.ObjectUtils;
 import org.junit.Assert;
 import org.junit.Before;
@@ -31,14 +38,22 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
 import com.cloud.configuration.Resource;
+import com.cloud.exception.StorageAccessException;
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.user.ResourceLimitService;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @RunWith(MockitoJUnitRunner.class)
 public class VolumeOrchestratorTest {
 
     @Mock
     protected ResourceLimitService resourceLimitMgr;
+    @Mock
+    protected VolumeService volumeService;
+    @Mock
+    protected VolumeDataFactory volumeDataFactory;
 
     @Spy
     @InjectMocks
@@ -99,5 +114,45 @@ public class VolumeOrchestratorTest {
     @Test
     public void testCheckAndUpdateVolumeAccountResourceCountLessSize() {
         runCheckAndUpdateVolumeAccountResourceCountTest(20L, 10L);
+    }
+
+    @Test
+    public void testGrantVolumeAccessToHostIfNeededDriverNoNeed() {
+        PrimaryDataStore store = Mockito.mock(PrimaryDataStore.class);
+        PrimaryDataStoreDriver driver = Mockito.mock(PrimaryDataStoreDriver.class);
+        Mockito.when(driver.volumesRequireGrantAccessWhenUsed()).thenReturn(false);
+        Mockito.when(store.getDriver()).thenReturn(driver);
+        volumeOrchestrator.grantVolumeAccessToHostIfNeeded(store, 1L,
+                Mockito.mock(HostVO.class), "");
+        Mockito.verify(volumeService, Mockito.never())
+                .grantAccess(Mockito.any(DataObject.class), Mockito.any(Host.class), Mockito.any(DataStore.class));
+    }
+
+    @Test
+    public void testGrantVolumeAccessToHostIfNeededDriverNeeds() {
+        PrimaryDataStore store = Mockito.mock(PrimaryDataStore.class);
+        PrimaryDataStoreDriver driver = Mockito.mock(PrimaryDataStoreDriver.class);
+        Mockito.when(driver.volumesRequireGrantAccessWhenUsed()).thenReturn(true);
+        Mockito.when(store.getDriver()).thenReturn(driver);
+        Mockito.when(volumeDataFactory.getVolume(Mockito.anyLong())).thenReturn(Mockito.mock(VolumeInfo.class));
+        Mockito.doReturn(true).when(volumeService)
+                .grantAccess(Mockito.any(DataObject.class), Mockito.any(Host.class), Mockito.any(DataStore.class));
+        volumeOrchestrator.grantVolumeAccessToHostIfNeeded(store, 1L,
+                Mockito.mock(HostVO.class), "");
+        Mockito.verify(volumeService, Mockito.times(1))
+                .grantAccess(Mockito.any(DataObject.class), Mockito.any(Host.class), Mockito.any(DataStore.class));
+    }
+
+    @Test(expected = StorageAccessException.class)
+    public void testGrantVolumeAccessToHostIfNeededDriverNeedsButException() {
+        PrimaryDataStore store = Mockito.mock(PrimaryDataStore.class);
+        PrimaryDataStoreDriver driver = Mockito.mock(PrimaryDataStoreDriver.class);
+        Mockito.when(driver.volumesRequireGrantAccessWhenUsed()).thenReturn(true);
+        Mockito.when(store.getDriver()).thenReturn(driver);
+        Mockito.when(volumeDataFactory.getVolume(Mockito.anyLong())).thenReturn(Mockito.mock(VolumeInfo.class));
+        Mockito.doThrow(CloudRuntimeException.class).when(volumeService)
+                .grantAccess(Mockito.any(DataObject.class), Mockito.any(Host.class), Mockito.any(DataStore.class));
+        volumeOrchestrator.grantVolumeAccessToHostIfNeeded(store, 1L,
+                Mockito.mock(HostVO.class), "");
     }
 }

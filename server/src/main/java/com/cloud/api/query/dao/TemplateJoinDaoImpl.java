@@ -196,11 +196,15 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         List<ImageStoreVO> storesInZone = dataStoreDao.listStoresByZoneId(template.getDataCenterId());
         Long[] storeIds = storesInZone.stream().map(ImageStoreVO::getId).toArray(Long[]::new);
         List<TemplateDataStoreVO> templatesInStore = _templateStoreDao.listByTemplateNotBypassed(template.getId(), storeIds);
+
+        List<Long> dataStoreIdList = templatesInStore.stream().map(TemplateDataStoreVO::getDataStoreId).collect(Collectors.toList());
+        Map<Long, ImageStoreVO> imageStoreMap = dataStoreDao.listByIds(dataStoreIdList).stream().collect(Collectors.toMap(ImageStoreVO::getId, imageStore -> imageStore));
+
         List<Map<String, String>> downloadProgressDetails = new ArrayList<>();
         HashMap<String, String> downloadDetailInImageStores = null;
         for (TemplateDataStoreVO templateInStore : templatesInStore) {
             downloadDetailInImageStores = new HashMap<>();
-            ImageStoreVO imageStore = dataStoreDao.findById(templateInStore.getDataStoreId());
+            ImageStoreVO imageStore = imageStoreMap.get(templateInStore.getDataStoreId());
             if (imageStore != null) {
                 downloadDetailInImageStores.put("datastore", imageStore.getName());
                 if (view.equals(ResponseView.Full)) {
@@ -217,9 +221,12 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         List<Long> poolIds = poolsInZone.stream().map(StoragePoolVO::getId).collect(Collectors.toList());
         List<VMTemplateStoragePoolVO> templatesInPool = templatePoolDao.listByTemplateId(template.getId(), poolIds);
 
+        dataStoreIdList = templatesInStore.stream().map(TemplateDataStoreVO::getDataStoreId).collect(Collectors.toList());
+        Map<Long, StoragePoolVO> storagePoolMap = primaryDataStoreDao.listByIds(dataStoreIdList).stream().collect(Collectors.toMap(StoragePoolVO::getId, store -> store));
+
         for (VMTemplateStoragePoolVO templateInPool : templatesInPool) {
             downloadDetailInImageStores = new HashMap<>();
-            StoragePoolVO storagePool = primaryDataStoreDao.findById(templateInPool.getDataStoreId());
+            StoragePoolVO storagePool = storagePoolMap.get(templateInPool.getDataStoreId());
             if (storagePool != null) {
                 downloadDetailInImageStores.put("datastore", storagePool.getName());
                 if (view.equals(ResponseView.Full)) {
