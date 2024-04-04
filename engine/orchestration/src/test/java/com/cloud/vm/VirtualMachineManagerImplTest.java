@@ -39,6 +39,18 @@ import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 
+import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.api.query.vo.UserVmJoinVO;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.user.AccountVO;
+import com.cloud.user.dao.AccountDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -181,6 +193,16 @@ public class VirtualMachineManagerImplTest {
     private UserVmDao userVmDaoMock;
     @Mock
     private UserVmVO userVmMock;
+    @Mock
+    private NetworkDao networkDao;
+    @Mock
+    private AccountDao accountDao;
+    @Mock
+    private DomainDao domainDao;
+    @Mock
+    private DataCenterDao dcDao;
+    @Mock
+    private VpcDao vpcDao;
     @Mock
     private EntityManager _entityMgr;
     @Mock
@@ -939,9 +961,52 @@ public class VirtualMachineManagerImplTest {
     }
 
     @Test
+    public void checkIfVmNetworkDetailsReturnedIsCorrect() {
+        VMInstanceVO vm = new VMInstanceVO(1L, 1L, "VM1", "i-2-2-VM",
+                VirtualMachine.Type.User, 1L, HypervisorType.KVM, 1L, 1L, 1L,
+                1L, false, false);
+
+        VirtualMachineTO vmTO = new VirtualMachineTO() {
+        };
+        UserVmJoinVO userVm = new UserVmJoinVO();
+        NetworkVO networkVO = mock(NetworkVO.class);
+        AccountVO accountVO = mock(AccountVO.class);
+        DomainVO domainVO = mock(DomainVO.class);
+        domainVO.setName("testDomain");
+        DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+        VpcVO vpcVO = mock(VpcVO.class);
+
+        networkVO.setAccountId(1L);
+        networkVO.setName("testNet");
+        networkVO.setVpcId(1L);
+
+        accountVO.setAccountName("testAcc");
+
+        vpcVO.setName("VPC1");
+
+
+        List<UserVmJoinVO> userVms = List.of(userVm);
+        Mockito.when(userVmJoinDaoMock.searchByIds(anyLong())).thenReturn(userVms);
+        Mockito.when(networkDao.findById(anyLong())).thenReturn(networkVO);
+        Mockito.when(accountDao.findById(anyLong())).thenReturn(accountVO);
+        Mockito.when(domainDao.findById(anyLong())).thenReturn(domainVO);
+        Mockito.when(dcDao.findById(anyLong())).thenReturn(dataCenterVO);
+        Mockito.when(vpcDao.findById(anyLong())).thenReturn(vpcVO);
+        Mockito.when(dataCenterVO.getId()).thenReturn(1L);
+        when(accountVO.getId()).thenReturn(2L);
+        Mockito.when(domainVO.getId()).thenReturn(3L);
+        Mockito.when(vpcVO.getId()).thenReturn(4L);
+        Mockito.when(networkVO.getId()).thenReturn(5L);
+        virtualMachineManagerImpl.setVmNetworkDetails(vm, vmTO);
+        assertEquals(1, vmTO.getNetworkIdToNetworkNameMap().size());
+        assertEquals("D3-A2-Z1-V4-S5", vmTO.getNetworkIdToNetworkNameMap().get(5L));
+    }
+
+    @Test
     public void testOrchestrateStartNonNullPodId() throws Exception {
         VMInstanceVO vmInstance = new VMInstanceVO();
         ReflectionTestUtils.setField(vmInstance, "id", 1L);
+        ReflectionTestUtils.setField(vmInstance, "accountId", 1L);
         ReflectionTestUtils.setField(vmInstance, "uuid", "vm-uuid");
         ReflectionTestUtils.setField(vmInstance, "serviceOfferingId", 2L);
         ReflectionTestUtils.setField(vmInstance, "instanceName", "myVm");
@@ -955,6 +1020,7 @@ public class VirtualMachineManagerImplTest {
         User user = mock(User.class);
 
         Account account = mock(Account.class);
+        Account owner = mock(Account.class);
 
         ReservationContext ctx = mock(ReservationContext.class);
 
@@ -978,12 +1044,13 @@ public class VirtualMachineManagerImplTest {
         doReturn(vmGuru).when(virtualMachineManagerImpl).getVmGuru(vmInstance);
 
         Ternary<VMInstanceVO, ReservationContext, ItWorkVO> start = new Ternary<>(vmInstance, ctx, work);
-        Mockito.doReturn(start).when(virtualMachineManagerImpl).changeToStartState(vmGuru, vmInstance, user, account);
+        Mockito.doReturn(start).when(virtualMachineManagerImpl).changeToStartState(vmGuru, vmInstance, user, account, owner, serviceOffering, template);
 
         when(ctx.getJournal()).thenReturn(Mockito.mock(Journal.class));
 
         when(serviceOfferingDaoMock.findById(vmInstance.getId(), vmInstance.getServiceOfferingId())).thenReturn(serviceOffering);
 
+        when(_entityMgr.findById(Account.class, vmInstance.getAccountId())).thenReturn(owner);
         when(_entityMgr.findByIdIncludingRemoved(VirtualMachineTemplate.class, vmInstance.getTemplateId())).thenReturn(template);
 
         Host destHost = mock(Host.class);
@@ -1035,6 +1102,7 @@ public class VirtualMachineManagerImplTest {
     public void testOrchestrateStartNullPodId() throws Exception {
         VMInstanceVO vmInstance = new VMInstanceVO();
         ReflectionTestUtils.setField(vmInstance, "id", 1L);
+        ReflectionTestUtils.setField(vmInstance, "accountId", 1L);
         ReflectionTestUtils.setField(vmInstance, "uuid", "vm-uuid");
         ReflectionTestUtils.setField(vmInstance, "serviceOfferingId", 2L);
         ReflectionTestUtils.setField(vmInstance, "instanceName", "myVm");
@@ -1048,6 +1116,7 @@ public class VirtualMachineManagerImplTest {
         User user = mock(User.class);
 
         Account account = mock(Account.class);
+        Account owner = mock(Account.class);
 
         ReservationContext ctx = mock(ReservationContext.class);
 
@@ -1071,12 +1140,13 @@ public class VirtualMachineManagerImplTest {
         doReturn(vmGuru).when(virtualMachineManagerImpl).getVmGuru(vmInstance);
 
         Ternary<VMInstanceVO, ReservationContext, ItWorkVO> start = new Ternary<>(vmInstance, ctx, work);
-        Mockito.doReturn(start).when(virtualMachineManagerImpl).changeToStartState(vmGuru, vmInstance, user, account);
+        Mockito.doReturn(start).when(virtualMachineManagerImpl).changeToStartState(vmGuru, vmInstance, user, account, owner, serviceOffering, template);
 
         when(ctx.getJournal()).thenReturn(Mockito.mock(Journal.class));
 
         when(serviceOfferingDaoMock.findById(vmInstance.getId(), vmInstance.getServiceOfferingId())).thenReturn(serviceOffering);
 
+        when(_entityMgr.findById(Account.class, vmInstance.getAccountId())).thenReturn(owner);
         when(_entityMgr.findByIdIncludingRemoved(VirtualMachineTemplate.class, vmInstance.getTemplateId())).thenReturn(template);
 
         Host destHost = mock(Host.class);

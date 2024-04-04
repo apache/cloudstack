@@ -31,6 +31,7 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.element.NetworkACLServiceProvider;
@@ -183,6 +184,11 @@ public class ContrailVpcElementImpl extends ContrailElementImpl implements Netwo
     }
 
     @Override
+    public boolean reorderAclRules(Vpc vpc, List<? extends Network> networks, List<? extends NetworkACLItem> networkACLItems) {
+        return true;
+    }
+
+    @Override
     public boolean applyACLItemsToPrivateGw(PrivateGateway privateGateway,
             List<? extends NetworkACLItem> rules)
                     throws ResourceUnavailableException {
@@ -191,4 +197,8 @@ public class ContrailVpcElementImpl extends ContrailElementImpl implements Netwo
         return true;
     }
 
+    @Override
+    public boolean updateVpcSourceNatIp(Vpc vpc, IpAddress address) {
+        return true;
+    }
 }

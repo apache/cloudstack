@@ -41,6 +41,7 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.configuration.ConfigurationManager;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -63,6 +64,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -262,7 +264,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Autowired
     @Qualifier("networkHelper")
     protected NetworkHelper networkHelper;
-
     @Inject
     private VpcPrivateGatewayTransactionCallable vpcTxCallable;
 
@@ -270,7 +271,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     private List<VpcProvider> vpcElements = null;
     private final List<Service> nonSupportedServices = Arrays.asList(Service.SecurityGroup, Service.Firewall);
     private final List<Provider> supportedProviders = Arrays.asList(Provider.VPCVirtualRouter, Provider.NiciraNvp, Provider.InternalLbVm, Provider.Netscaler,
-            Provider.JuniperContrailVpcRouter, Provider.Ovs, Provider.BigSwitchBcf, Provider.ConfigDrive);
+            Provider.JuniperContrailVpcRouter, Provider.Ovs, Provider.BigSwitchBcf, Provider.ConfigDrive, Provider.Nsx);
 
     int _cleanupInterval;
     int _maxNetworks;
@@ -324,7 +325,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                             svcProviderMap.put(svc, defaultProviders);
                         }
                     }
-                    createVpcOffering(VpcOffering.defaultVPCOfferingName, VpcOffering.defaultVPCOfferingName, svcProviderMap, true, State.Enabled, null, false, false, false);
+                    createVpcOffering(VpcOffering.defaultVPCOfferingName, VpcOffering.defaultVPCOfferingName, svcProviderMap,
+                            true, State.Enabled, null, false,
+                            false, false, false, null);
                 }
 
                 // configure default vpc offering with Netscaler as LB Provider
@@ -343,7 +346,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                             svcProviderMap.put(svc, defaultProviders);
                         }
                     }
-                    createVpcOffering(VpcOffering.defaultVPCNSOfferingName, VpcOffering.defaultVPCNSOfferingName, svcProviderMap, false, State.Enabled, null, false, false, false);
+                    createVpcOffering(VpcOffering.defaultVPCNSOfferingName, VpcOffering.defaultVPCNSOfferingName, svcProviderMap, false, State.Enabled, null, false, false, false, false, null);
 
                 }
 
@@ -363,7 +366,44 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                             svcProviderMap.put(svc, defaultProviders);
                         }
                     }
-                    createVpcOffering(VpcOffering.redundantVPCOfferingName, VpcOffering.redundantVPCOfferingName, svcProviderMap, true, State.Enabled, null, false, false, true);
+                    createVpcOffering(VpcOffering.redundantVPCOfferingName, VpcOffering.redundantVPCOfferingName, svcProviderMap, true, State.Enabled,
+                            null, false, false, true, false, null);
+                }
+
+                // configure default vpc offering with NSX as network service provider in NAT mode
+                if (_vpcOffDao.findByUniqueName(VpcOffering.DEFAULT_VPC_NAT_NSX_OFFERING_NAME) == null) {
+                    logger.debug("Creating default VPC offering with NSX as network service provider" + VpcOffering.DEFAULT_VPC_NAT_NSX_OFFERING_NAME);
+                    final Map<Service, Set<Provider>> svcProviderMap = new HashMap<Service, Set<Provider>>();
+                    final Set<Provider> defaultProviders = Set.of(Provider.Nsx);
+                    for (final Service svc : getSupportedServices()) {
+                        if (List.of(Service.UserData, Service.Dhcp, Service.Dns).contains(svc)) {
+                            final Set<Provider> userDataProvider = Set.of(Provider.VPCVirtualRouter);
+                            svcProviderMap.put(svc, userDataProvider);
+                        } else {
+                            svcProviderMap.put(svc, defaultProviders);
+                        }
+                    }
+                    createVpcOffering(VpcOffering.DEFAULT_VPC_NAT_NSX_OFFERING_NAME, VpcOffering.DEFAULT_VPC_NAT_NSX_OFFERING_NAME, svcProviderMap, false,
+                            State.Enabled, null, false, false, false, true, NetworkOffering.NsxMode.NATTED.name());
+
+                }
+
+                // configure default vpc offering with NSX as network service provider in Route mode
+                if (_vpcOffDao.findByUniqueName(VpcOffering.DEFAULT_VPC_ROUTE_NSX_OFFERING_NAME) == null) {
+                    logger.debug("Creating default VPC offering with NSX as network service provider" + VpcOffering.DEFAULT_VPC_ROUTE_NSX_OFFERING_NAME);
+                    final Map<Service, Set<Provider>> svcProviderMap = new HashMap<>();
+                    final Set<Provider> defaultProviders = Set.of(Provider.Nsx);
+                    for (final Service svc : getSupportedServices()) {
+                        if (List.of(Service.UserData, Service.Dhcp, Service.Dns).contains(svc)) {
+                            final Set<Provider> userDataProvider = Set.of(Provider.VPCVirtualRouter);
+                            svcProviderMap.put(svc, userDataProvider);
+                        } else if (List.of(Service.SourceNat, Service.NetworkACL).contains(svc)){
+                            svcProviderMap.put(svc, defaultProviders);
+                        }
+                    }
+                    createVpcOffering(VpcOffering.DEFAULT_VPC_ROUTE_NSX_OFFERING_NAME, VpcOffering.DEFAULT_VPC_ROUTE_NSX_OFFERING_NAME, svcProviderMap, false,
+                            State.Enabled, null, false, false, false, true, NetworkOffering.NsxMode.ROUTED.name());
+
                 }
             }
         });
@@ -422,7 +462,11 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final Long serviceOfferingId = cmd.getServiceOfferingId();
         final List<Long> domainIds = cmd.getDomainIds();
         final List<Long> zoneIds = cmd.getZoneIds();
+        final Boolean forNsx = cmd.isForNsx();
+        String nsxMode = cmd.getNsxMode();
         final boolean enable = cmd.getEnable();
+        nsxMode = validateNsxMode(forNsx, nsxMode);
+
         // check if valid domain
         if (CollectionUtils.isNotEmpty(cmd.getDomainIds())) {
             for (final Long domainId: cmd.getDomainIds()) {
@@ -445,14 +489,34 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         return createVpcOffering(vpcOfferingName, displayText, supportedServices,
-                serviceProviderList, serviceCapabilityList, internetProtocol, serviceOfferingId,
+                serviceProviderList, serviceCapabilityList, internetProtocol, serviceOfferingId, forNsx, nsxMode,
                 domainIds, zoneIds, (enable ? State.Enabled : State.Disabled));
+    }
+
+    private String validateNsxMode(Boolean forNsx, String nsxMode) {
+        if (Boolean.TRUE.equals(forNsx)) {
+            if (Objects.isNull(nsxMode)) {
+                throw new InvalidParameterValueException("Mode for an NSX offering needs to be specified.Valid values: " + Arrays.toString(NetworkOffering.NsxMode.values()));
+            }
+            if (!EnumUtils.isValidEnum(NetworkOffering.NsxMode.class, nsxMode)) {
+                throw new InvalidParameterValueException("Invalid mode passed. Valid values: " + Arrays.toString(NetworkOffering.NsxMode.values()));
+            }
+        } else {
+            if (Objects.nonNull(nsxMode)) {
+                if (logger.isTraceEnabled()) {
+                    logger.trace("nsxMode has is ignored for non-NSX enabled zones");
+                }
+                nsxMode = null;
+            }
+        }
+        return nsxMode;
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_OFFERING_CREATE, eventDescription = "creating vpc offering", create = true)
     public VpcOffering createVpcOffering(final String name, final String displayText, final List<String> supportedServices, final Map<String, List<String>> serviceProviders,
-                                         final Map serviceCapabilityList, final NetUtils.InternetProtocol internetProtocol, final Long serviceOfferingId, List<Long> domainIds, List<Long> zoneIds, State state) {
+                                         final Map serviceCapabilityList, final NetUtils.InternetProtocol internetProtocol, final Long serviceOfferingId,
+                                         final Boolean forNsx, final String mode, List<Long> domainIds, List<Long> zoneIds, State state) {
 
         if (!Ipv6Service.Ipv6OfferingCreationEnabled.value() && !(internetProtocol == null || NetUtils.InternetProtocol.IPv4.equals(internetProtocol))) {
             throw new InvalidParameterValueException(String.format("Configuration %s needs to be enabled for creating IPv6 supported VPC offering", Ipv6Service.Ipv6OfferingCreationEnabled.key()));
@@ -537,7 +601,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final boolean offersRegionLevelVPC = isVpcOfferingForRegionLevelVpc(serviceCapabilityList);
         final boolean redundantRouter = isVpcOfferingRedundantRouter(serviceCapabilityList);
         final VpcOfferingVO offering = createVpcOffering(name, displayText, svcProviderMap, false, state, serviceOfferingId, supportsDistributedRouter, offersRegionLevelVPC,
-                redundantRouter);
+                redundantRouter, forNsx, mode);
 
         if (offering != null) {
             List<VpcOfferingDetailsVO> detailsVO = new ArrayList<>();
@@ -565,7 +629,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @DB
     protected VpcOfferingVO createVpcOffering(final String name, final String displayText, final Map<Network.Service, Set<Network.Provider>> svcProviderMap,
                                               final boolean isDefault, final State state, final Long serviceOfferingId, final boolean supportsDistributedRouter, final boolean offersRegionLevelVPC,
-                                              final boolean redundantRouter) {
+                                              final boolean redundantRouter, Boolean forNsx, String mode) {
 
         return Transaction.execute(new TransactionCallback<VpcOfferingVO>() {
             @Override
@@ -576,6 +640,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 if (state != null) {
                     offering.setState(state);
                 }
+                offering.setForNsx(forNsx);
+                offering.setNsxMode(mode);
                 logger.debug("Adding vpc offering " + offering);
                 offering = _vpcOffDao.persist(offering);
                 // populate services and providers
@@ -1092,8 +1158,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final boolean useDistributedRouter = vpcOff.isSupportsDistributedRouter();
         final VpcVO vpc = new VpcVO(zoneId, vpcName, displayText, owner.getId(), owner.getDomainId(), vpcOffId, cidr, networkDomain, useDistributedRouter, isRegionLevelVpcOff,
                 vpcOff.isRedundantRouter(), ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2);
-            vpc.setPublicMtu(publicMtu);
-            vpc.setDisplay(Boolean.TRUE.equals(displayVpc));
+        vpc.setPublicMtu(publicMtu);
+        vpc.setDisplay(Boolean.TRUE.equals(displayVpc));
 
         return createVpc(displayVpc, vpc);
     }
@@ -1106,11 +1172,27 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             cmd.getIp6Dns2(), cmd.isDisplay(), cmd.getPublicMtu());
 
         String sourceNatIP = cmd.getSourceNatIP();
-        if (sourceNatIP != null) {
+        boolean forNsx = isVpcForNsx(vpc);
+        if (sourceNatIP != null || forNsx) {
+            if (forNsx) {
+                logger.info("Provided source NAT IP will be ignored in an NSX-enabled zone");
+                sourceNatIP = null;
+            }
             logger.info(String.format("Trying to allocate the specified IP [%s] as the source NAT of VPC [%s].", sourceNatIP, vpc));
             allocateSourceNatIp(vpc, sourceNatIP);
         }
         return vpc;
+    }
+
+    private boolean isVpcForNsx(Vpc vpc) {
+        if (vpc == null) {
+            return false;
+        }
+        VpcOfferingServiceMapVO mapVO = _vpcOffSvcMapDao.findByServiceProviderAndOfferingId(Service.SourceNat.getName(), Provider.Nsx.getName(), vpc.getVpcOfferingId());
+        if (mapVO != null) {
+            logger.debug(String.format("The VPC %s is NSX-based and supports the %s service", vpc.getName(), Service.SourceNat.getName()));
+        }
+        return mapVO != null;
     }
 
     private void allocateSourceNatIp(Vpc vpc, String sourceNatIP) {
@@ -1118,11 +1200,20 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         DataCenter zone = _dcDao.findById(vpc.getZoneId());
         // reserve this ip and then
         try {
+            if (isVpcForNsx(vpc) && org.apache.commons.lang3.StringUtils.isBlank(sourceNatIP)) {
+                logger.debug(String.format("Reserving a source NAT IP for NSX VPC %s", vpc.getName()));
+                sourceNatIP = reserveSourceNatIpForNsxVpc(account, zone);
+            }
             IpAddress ip = _ipAddrMgr.allocateIp(account, false, CallContext.current().getCallingAccount(), CallContext.current().getCallingUserId(), zone, null, sourceNatIP);
             this.associateIPToVpc(ip.getId(), vpc.getId());
         } catch (ResourceAllocationException | ResourceUnavailableException | InsufficientAddressCapacityException e){
             throw new CloudRuntimeException("new source NAT address cannot be acquired", e);
         }
+    }
+
+    private String reserveSourceNatIpForNsxVpc(Account account, DataCenter zone) throws ResourceAllocationException {
+        IpAddress ipAddress = _ntwkSvc.reserveIpAddressWithVlanDetail(account, zone, true, ApiConstants.NSX_DETAIL_KEY);
+        return ipAddress.getAddress().addr();
     }
 
     @DB
@@ -1134,7 +1225,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         // cidr has to be RFC 1918 complient
-        if (!NetUtils.validateGuestCidr(cidr)) {
+        if (!NetUtils.validateGuestCidr(cidr, !ConfigurationManager.AllowNonRFC1918CompliantIPs.value())) {
             throw new InvalidParameterValueException("Guest Cidr " + cidr + " is not RFC1918 compliant");
         }
 
@@ -1318,6 +1409,11 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 }
             }
             return vpcDao.findById(vpcId);
+        } else if (isVpcForNsx(vpcToUpdate)) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("no restart needed.");
+            }
+            return vpcDao.findById(vpcId);
         } else {
             logger.error(String.format("failed to update vpc %s/%s",vpc.getName(), vpc.getUuid()));
             return null;
@@ -1332,6 +1428,15 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         if (! userIps.isEmpty()) {
             try {
                 _ipAddrMgr.updateSourceNatIpAddress(requestedIp, userIps);
+                if (isVpcForNsx(vpc)) {
+                    VpcProvider nsxElement = (VpcProvider) _ntwkModel.getElementImplementingProvider(Provider.Nsx.getName());
+                    if (nsxElement == null) {
+                        return true;
+                    }
+                    nsxElement.updateVpcSourceNatIp(vpc, requestedIp);
+                    // The NSX source NAT IP change does not require to update the VPC VR
+                    return false;
+                }
             } catch (Exception e) { // pokemon exception from transaction
                 String msg = String.format("Update of source NAT ip to %s for network \"%s\"/%s failed due to %s",
                         requestedIp.getAddress().addr(), vpc.getName(), vpc.getUuid(), e.getLocalizedMessage());
@@ -1775,7 +1880,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         // 5) When aclId is provided, verify that ACLProvider is supported by
         // network offering
-        if (aclId != null && !_ntwkModel.areServicesSupportedByNetworkOffering(guestNtwkOff.getId(), Service.NetworkACL)) {
+        if (aclId != null && !_ntwkModel.areServicesSupportedByNetworkOffering(guestNtwkOff.getId(), Service.NetworkACL) && !guestNtwkOff.isForNsx()) {
             throw new InvalidParameterValueException("Cannot apply NetworkACL. Network Offering does not support NetworkACL service");
         }
 
@@ -1793,7 +1898,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         // 2) Only Isolated networks with Source nat service enabled can be
         // added to vpc
-        if (!(guestNtwkOff.getGuestType() == GuestType.Isolated && supportedSvcs.contains(Service.SourceNat))) {
+        if (!guestNtwkOff.isForNsx() && !(guestNtwkOff.getGuestType() == GuestType.Isolated && supportedSvcs.contains(Service.SourceNat))) {
 
             throw new InvalidParameterValueException("Only network offerings of type " + GuestType.Isolated + " with service " + Service.SourceNat.getName()
                     + " are valid for vpc ");
@@ -1804,10 +1909,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
          * TODO This should have never been hardcoded like this in the first
          * place if (guestNtwkOff.getRedundantRouter()) { throw new
          * InvalidParameterValueException
-         * ("No redunant router support when network belnogs to VPC"); }
+         * ("No redundant router support when network belongs to VPC"); }
          */
 
-        // 4) Conserve mode should be off in older versions
+        // 4) Conserve mode should be off in older versions ( < 4.19.0.0)
         if (guestNtwkOff.isConserveMode()) {
             logger.info("Creating a network with conserve mode in VPC");
         }
@@ -3087,7 +3192,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Override
     public boolean isSrcNatIpRequired(long vpcOfferingId) {
         final Map<Network.Service, Set<Network.Provider>> vpcOffSvcProvidersMap = getVpcOffSvcProvidersMap(vpcOfferingId);
-        return vpcOffSvcProvidersMap.get(Network.Service.SourceNat).contains(Network.Provider.VPCVirtualRouter);
+        return Objects.nonNull(vpcOffSvcProvidersMap.get(Network.Service.SourceNat)) && (vpcOffSvcProvidersMap.get(Network.Service.SourceNat).contains(Network.Provider.VPCVirtualRouter) ||
+                vpcOffSvcProvidersMap.get(Service.SourceNat).contains(Provider.Nsx));
     }
 
     /**

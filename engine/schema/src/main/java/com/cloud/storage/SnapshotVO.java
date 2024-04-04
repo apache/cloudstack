@@ -20,6 +20,7 @@ import java.util.Date;
 import java.util.UUID;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -28,6 +29,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.util.HypervisorTypeConverter;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
@@ -89,7 +91,7 @@ public class SnapshotVO implements Snapshot {
     Date removed;
 
     @Column(name = "hypervisor_type")
-    @Enumerated(value = EnumType.STRING)
+    @Convert(converter = HypervisorTypeConverter.class)
     HypervisorType hypervisorType;
 
     @Expose

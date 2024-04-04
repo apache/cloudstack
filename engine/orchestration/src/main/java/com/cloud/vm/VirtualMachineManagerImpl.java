@@ -1,4 +1,4 @@
-// Licensed to the Apacohe Software Foundation (ASF) under one
+// Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
@@ -36,6 +36,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
@@ -48,6 +49,12 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
+import com.cloud.configuration.Resource;
+import com.cloud.domain.Domain;
+import com.cloud.domain.dao.DomainDao;
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.event.ActionEventUtils;
 import com.google.gson.Gson;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -81,6 +88,7 @@ import org.apache.cloudstack.framework.messagebus.MessageDispatcher;
 import org.apache.cloudstack.framework.messagebus.MessageHandler;
 import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -290,6 +298,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Inject
     private VMInstanceDao _vmDao;
     @Inject
+    private ReservationDao _reservationDao;
+    @Inject
     private ServiceOfferingDao _offeringDao;
     @Inject
     private DiskOfferingDao _diskOfferingDao;
@@ -385,6 +395,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     private DomainRouterJoinDao domainRouterJoinDao;
     @Inject
     private AnnotationDao annotationDao;
+    @Inject
+    private AccountDao accountDao;
+    @Inject
+    private VpcDao vpcDao;
+    @Inject
+    private DomainDao domainDao;
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
@@ -599,11 +615,18 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 VirtualMachine.Type.ConsoleProxy.equals(vm.getType());
     }
 
-    protected void advanceExpunge(VMInstanceVO vm) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException {
+    private boolean isVmDestroyed(VMInstanceVO vm) {
         if (vm == null || vm.getRemoved() != null) {
             if (logger.isDebugEnabled()) {
                 logger.debug("Unable to find vm or vm is expunged: " + vm);
             }
+            return true;
+        }
+        return false;
+    }
+
+    protected void advanceExpunge(VMInstanceVO vm) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException {
+        if (isVmDestroyed(vm)) {
             return;
         }
 
@@ -674,25 +697,28 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         // send hypervisor-dependent commands before removing
         final List<Command> finalizeExpungeCommands = hvGuru.finalizeExpunge(vm);
-        if (CollectionUtils.isNotEmpty(finalizeExpungeCommands) || CollectionUtils.isNotEmpty(nicExpungeCommands)) {
-            if (hostId != null) {
-                final Commands cmds = new Commands(Command.OnError.Stop);
-                addAllExpungeCommandsFromList(finalizeExpungeCommands, cmds, vm);
-                addAllExpungeCommandsFromList(nicExpungeCommands, cmds, vm);
-                _agentMgr.send(hostId, cmds);
-                if (!cmds.isSuccessful()) {
-                    for (final Answer answer : cmds.getAnswers()) {
-                        if (!answer.getResult()) {
-                            logger.warn("Failed to expunge vm due to: " + answer.getDetails());
-                            throw new CloudRuntimeException("Unable to expunge " + vm + " due to " + answer.getDetails());
-                        }
-                    }
-                }
-            }
-        }
+        handleUnsuccessfulExpungeOperation(finalizeExpungeCommands, nicExpungeCommands, vm, hostId);
 
         if (logger.isDebugEnabled()) {
             logger.debug("Expunged " + vm);
+        }
+    }
+
+    private void handleUnsuccessfulExpungeOperation(List<Command> finalizeExpungeCommands, List<Command> nicExpungeCommands,
+                                                    VMInstanceVO vm, Long hostId) throws OperationTimedoutException, AgentUnavailableException {
+        if (CollectionUtils.isNotEmpty(finalizeExpungeCommands) || CollectionUtils.isNotEmpty(nicExpungeCommands) && (hostId != null)) {
+            final Commands cmds = new Commands(Command.OnError.Stop);
+            addAllExpungeCommandsFromList(finalizeExpungeCommands, cmds, vm);
+            addAllExpungeCommandsFromList(nicExpungeCommands, cmds, vm);
+            _agentMgr.send(hostId, cmds);
+            if (!cmds.isSuccessful()) {
+                for (final Answer answer : cmds.getAnswers()) {
+                    if (!answer.getResult()) {
+                        logger.warn("Failed to expunge vm due to: " + answer.getDetails());
+                        throw new CloudRuntimeException(String.format("Unable to expunge %s due to %s", vm, answer.getDetails()));
+                    }
+                }
+            }
         }
     }
 
@@ -892,7 +918,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @DB
     protected Ternary<VMInstanceVO, ReservationContext, ItWorkVO> changeToStartState(final VirtualMachineGuru vmGuru, final VMInstanceVO vm, final User caller,
-            final Account account) throws ConcurrentOperationException {
+            final Account account, Account owner, ServiceOfferingVO offering, VirtualMachineTemplate template) throws ConcurrentOperationException {
         final long vmId = vm.getId();
 
         ItWorkVO work = new ItWorkVO(UUID.randomUUID().toString(), _nodeId, State.Starting, vm.getType(), vm.getId());
@@ -911,6 +937,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                                 if (stateTransitTo(vm, Event.StartRequested, null, work.getId())) {
                                     if (logger.isDebugEnabled()) {
                                         logger.debug("Successfully transitioned to start state for " + vm + " reservation id = " + work.getId());
+                                    }
+                                    if (VirtualMachine.Type.User.equals(vm.type) && ResourceCountRunningVMsonly.value()) {
+                                        _resourceLimitMgr.incrementVmResourceCount(owner.getAccountId(), vm.isDisplay(), offering, template);
                                     }
                                     return new Ternary<>(vm, context, work);
                                 }
@@ -1104,7 +1133,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final VirtualMachineGuru vmGuru = getVmGuru(vm);
 
-        final Ternary<VMInstanceVO, ReservationContext, ItWorkVO> start = changeToStartState(vmGuru, vm, caller, account);
+        final Account owner = _entityMgr.findById(Account.class, vm.getAccountId());
+        final ServiceOfferingVO offering = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
+        final VirtualMachineTemplate template = _entityMgr.findByIdIncludingRemoved(VirtualMachineTemplate.class, vm.getTemplateId());
+        final Ternary<VMInstanceVO, ReservationContext, ItWorkVO> start = changeToStartState(vmGuru, vm, caller, account, owner, offering, template);
         if (start == null) {
             return;
         }
@@ -1114,8 +1146,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         ItWorkVO work = start.third();
 
         VMInstanceVO startedVm = null;
-        final ServiceOfferingVO offering = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
-        final VirtualMachineTemplate template = _entityMgr.findByIdIncludingRemoved(VirtualMachineTemplate.class, vm.getTemplateId());
 
         DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), vm.getPodIdToDeployIn(), null, null, null, null, ctx);
         if (planToDeploy != null && planToDeploy.getDataCenterId() != 0) {
@@ -1127,12 +1157,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         final HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
-
-        // check resource count if ResourceCountRunningVMsonly.value() = true
-        final Account owner = _entityMgr.findById(Account.class, vm.getAccountId());
-        if (VirtualMachine.Type.User.equals(vm.type) && ResourceCountRunningVMsonly.value()) {
-            _resourceLimitMgr.incrementVmResourceCount(owner.getAccountId(), vm.isDisplay(), offering, template);
-        }
 
         boolean canRetry = true;
         ExcludeList avoids = null;
@@ -1277,6 +1301,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     checkAndSetEnterSetupMode(vmTO, params);
 
                     handlePath(vmTO.getDisks(), vm.getHypervisorType());
+                    setVmNetworkDetails(vm, vmTO);
+
 
                     Commands cmds = new Commands(Command.OnError.Stop);
                     final Map<String, String> sshAccessDetails = _networkMgr.getSystemVMAccessDetails(vm);
@@ -1458,6 +1484,55 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (startedVm == null) {
             throw new CloudRuntimeException("Unable to start instance '" + vm.getHostName() + "' (" + vm.getUuid() + "), see management server log for details");
         }
+    }
+
+    public void setVmNetworkDetails(VMInstanceVO vm, VirtualMachineTO vmTO) {
+        Map<Long, String> networkToNetworkNameMap = new HashMap<>();
+        if (VirtualMachine.Type.User.equals(vm.getType())) {
+            List<UserVmJoinVO> userVmJoinVOs = userVmJoinDao.searchByIds(vm.getId());
+            if (userVmJoinVOs != null && !userVmJoinVOs.isEmpty()) {
+                for (UserVmJoinVO userVmJoinVO : userVmJoinVOs) {
+                    addToNetworkNameMap(userVmJoinVO.getNetworkId(), vm.getDataCenterId(), networkToNetworkNameMap);
+                }
+                vmTO.setNetworkIdToNetworkNameMap(networkToNetworkNameMap);
+            }
+        } else if (VirtualMachine.Type.DomainRouter.equals(vm.getType())) {
+            List<DomainRouterJoinVO> routerJoinVO = domainRouterJoinDao.getRouterByIdAndTrafficType(vm.getId(), Networks.TrafficType.Guest);
+            for (DomainRouterJoinVO router : routerJoinVO) {
+                NetworkVO guestNetwork = _networkDao.findById(router.getNetworkId());
+                if (guestNetwork.getVpcId() == null && guestNetwork.getBroadcastDomainType() == Networks.BroadcastDomainType.NSX) {
+                    addToNetworkNameMap(router.getNetworkId(), vm.getDataCenterId(), networkToNetworkNameMap);
+                }
+            }
+            vmTO.setNetworkIdToNetworkNameMap(networkToNetworkNameMap);
+        }
+    }
+
+    private void addToNetworkNameMap(long networkId, long dataCenterId, Map<Long, String> networkToNetworkNameMap) {
+        NetworkVO networkVO = _networkDao.findById(networkId);
+        Account acc = accountDao.findById(networkVO.getAccountId());
+        Domain domain = domainDao.findById(networkVO.getDomainId());
+        DataCenter zone = _dcDao.findById(dataCenterId);
+        if (Objects.isNull(zone)) {
+            throw new CloudRuntimeException(String.format("Failed to find zone with ID: %s", dataCenterId));
+        }
+        if (Objects.isNull(acc)) {
+            throw new CloudRuntimeException(String.format("Failed to find account with ID: %s", networkVO.getAccountId()));
+        }
+        if (Objects.isNull(domain)) {
+            throw new CloudRuntimeException(String.format("Failed to find domain with ID: %s", networkVO.getDomainId()));
+        }
+        String networkName = String.format("D%s-A%s-Z%s", domain.getId(), acc.getId(), zone.getId());
+        if (Objects.isNull(networkVO.getVpcId())) {
+            networkName += "-S" + networkVO.getId();
+        } else {
+            VpcVO vpc = vpcDao.findById(networkVO.getVpcId());
+            if (Objects.isNull(vpc)) {
+                throw new CloudRuntimeException(String.format("Failed to find VPC with ID: %s", networkVO.getVpcId()));
+            }
+            networkName = String.format("%s-V%s-S%s", networkName, vpc.getId(), networkVO.getId());
+        }
+        networkToNetworkNameMap.put(networkVO.getId(), networkName);
     }
 
     /**
@@ -1660,17 +1735,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             return ExecuteInSequence.value();
         }
 
-        switch (hypervisorType) {
-            case KVM:
-            case XenServer:
-            case Hyperv:
-            case LXC:
-                return false;
-            case VMware:
-                return StorageManager.shouldExecuteInSequenceOnVmware();
-            default:
-                return ExecuteInSequence.value();
+        if (Set.of(HypervisorType.KVM, HypervisorType.XenServer, HypervisorType.Hyperv, HypervisorType.LXC).contains(hypervisorType)) {
+            return false;
+        } else if (hypervisorType.equals(HypervisorType.VMware)) {
+            return StorageManager.shouldExecuteInSequenceOnVmware();
         }
+        return ExecuteInSequence.value();
     }
 
     @Override
@@ -2204,16 +2274,21 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 _workDao.update(work.getId(), work);
             }
 
-            boolean result = stateTransitTo(vm, Event.OperationSucceeded, null);
-            if (result) {
-                vm.setPowerState(PowerState.PowerOff);
-                _vmDao.update(vm.getId(), vm);
-                if (VirtualMachine.Type.User.equals(vm.type) && ResourceCountRunningVMsonly.value()) {
-                    ServiceOfferingVO offering = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
-                    VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
-                    _resourceLimitMgr.decrementVmResourceCount(vm.getAccountId(), vm.isDisplay(), offering, template);
+            boolean result = Transaction.execute(new TransactionCallbackWithException<Boolean, NoTransitionException>() {
+                @Override
+                public Boolean doInTransaction(TransactionStatus status) throws NoTransitionException {
+                    boolean result = stateTransitTo(vm, Event.OperationSucceeded, null);
+
+                    if (result && VirtualMachine.Type.User.equals(vm.type) && ResourceCountRunningVMsonly.value()) {
+                        ServiceOfferingVO offering = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
+                        VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
+                        _resourceLimitMgr.decrementVmResourceCount(vm.getAccountId(), vm.isDisplay(), offering, template);
+                    }
+                    return result;
                 }
-            } else {
+            });
+
+            if (!result) {
                 throw new CloudRuntimeException("unable to stop " + vm);
             }
         } catch (final NoTransitionException e) {
@@ -2245,6 +2320,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (e == Event.OperationSucceeded) {
                 vm.setLastHostId(vm.getHostId());
             }
+        }
+
+        if (e.equals(VirtualMachine.Event.DestroyRequested) || e.equals(VirtualMachine.Event.ExpungeOperation)) {
+            _reservationDao.setResourceId(Resource.ResourceType.user_vm, null);
+            _reservationDao.setResourceId(Resource.ResourceType.cpu, null);
+            _reservationDao.setResourceId(Resource.ResourceType.memory, null);
         }
         return _stateMachine.transitTo(vm, e, new Pair<>(vm.getHostId(), hostId), _vmDao);
     }
@@ -2734,6 +2815,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final VirtualMachineTO to = toVmTO(profile);
         final PrepareForMigrationCommand pfmc = new PrepareForMigrationCommand(to);
+        setVmNetworkDetails(vm, to);
 
         ItWorkVO work = new ItWorkVO(UUID.randomUUID().toString(), _nodeId, State.Migrating, vm.getType(), vm.getId());
         work.setStep(Step.Prepare);

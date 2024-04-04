@@ -1972,7 +1972,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         // Add configuration settings VM record for User VM instances before creating VM
         Map<String, String> extraConfig = vmSpec.getExtraConfig();
         if (vmSpec.getType().equals(VirtualMachine.Type.User) && MapUtils.isNotEmpty(extraConfig)) {
-            logger.info("Appending user extra configuration settings to VM");
+            logger.info("Appending user extra configuration settings [{}] to [{}].", extraConfig, vmSpec);
             ExtraConfigurationUtility.setExtraConfigurationToVm(conn,vmr, vm, extraConfig);
         }
     }

@@ -51,6 +51,9 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.cloud.kubernetes.cluster.KubernetesClusterHelper;
+import com.cloud.network.dao.NsxProviderDao;
+import com.cloud.network.element.NsxProviderVO;
 import com.cloud.utils.exception.ExceptionProxyObject;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -589,6 +592,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Inject
     VMScheduleManager vmScheduleManager;
+    @Inject
+    NsxProviderDao nsxProviderDao;
 
     private ScheduledExecutorService _executor = null;
     private ScheduledExecutorService _vmIpFetchExecutor = null;
@@ -597,6 +602,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private boolean _dailyOrHourly = false;
     private int capacityReleaseInterval;
     private ExecutorService _vmIpFetchThreadExecutor;
+    private List<KubernetesClusterHelper> kubernetesClusterHelpers;
 
 
     private String _instance;
@@ -609,6 +615,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private static final int MAX_HTTP_GET_LENGTH = 2 * MAX_USER_DATA_LENGTH_BYTES;
     private static final int NUM_OF_2K_BLOCKS = 512;
     private static final int MAX_HTTP_POST_LENGTH = NUM_OF_2K_BLOCKS * MAX_USER_DATA_LENGTH_BYTES;
+
+    public List<KubernetesClusterHelper> getKubernetesClusterHelpers() {
+        return kubernetesClusterHelpers;
+    }
+
+    public void setKubernetesClusterHelpers(final List<KubernetesClusterHelper> kubernetesClusterHelpers) {
+        this.kubernetesClusterHelpers = kubernetesClusterHelpers;
+    }
 
     @Inject
     private OrchestrationService _orchSrvc;
@@ -644,7 +658,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             "enable.additional.vm.configuration", "false", "allow additional arbitrary configuration to vm", true, ConfigKey.Scope.Account);
 
     private static final ConfigKey<String> KvmAdditionalConfigAllowList = new ConfigKey<>(String.class,
-    "allow.additional.vm.configuration.list.kvm", "Advanced", "", "Comma separated list of allowed additional configuration options.", true, ConfigKey.Scope.Global, null, null, EnableAdditionalVmConfig.key(), null, null, ConfigKey.Kind.CSV, null);
+    "allow.additional.vm.configuration.list.kvm", "Advanced", "", "Comma separated list of allowed additional configuration options.", true, ConfigKey.Scope.Account, null, null, EnableAdditionalVmConfig.key(), null, null, ConfigKey.Kind.CSV, null);
 
     private static final ConfigKey<String> XenServerAdditionalConfigAllowList = new ConfigKey<>(String.class,
     "allow.additional.vm.configuration.list.xenserver", "Advanced", "", "Comma separated list of allowed additional configuration options", true, ConfigKey.Scope.Global, null, null, EnableAdditionalVmConfig.key(), null, null, ConfigKey.Kind.CSV, null);
@@ -2562,11 +2576,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         // cleanup port forwarding rules
-        if (_rulesMgr.revokePortForwardingRulesForVm(vmId)) {
-            logger.debug("Port forwarding rules are removed successfully as a part of vm id=" + vmId + " expunge");
-        } else {
-            success = false;
-            logger.warn("Fail to remove port forwarding rules as a part of vm id=" + vmId + " expunge");
+        VMInstanceVO vmInstanceVO = _vmInstanceDao.findById(vmId);
+        NsxProviderVO nsx = nsxProviderDao.findByZoneId(vmInstanceVO.getDataCenterId());
+        if (Objects.isNull(nsx) || Objects.isNull(kubernetesClusterHelpers.get(0).findByVmId(vmId))) {
+            if (_rulesMgr.revokePortForwardingRulesForVm(vmId)) {
+                logger.debug("Port forwarding rules are removed successfully as a part of vm id=" + vmId + " expunge");
+            } else {
+                success = false;
+                logger.warn("Fail to remove port forwarding rules as a part of vm id=" + vmId + " expunge");
+            }
         }
 
         // cleanup load balancer rules
@@ -2830,14 +2848,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (cleanupDetails){
             if (caller != null && caller.getType() == Account.Type.ADMIN) {
                 for (final UserVmDetailVO detail : existingDetails) {
-                    if (detail != null && detail.isDisplay()) {
+                    if (detail != null && detail.isDisplay() && !isExtraConfig(detail.getName())) {
                         userVmDetailsDao.removeDetail(id, detail.getName());
                     }
                 }
             } else {
                 for (final UserVmDetailVO detail : existingDetails) {
                     if (detail != null && !userDenyListedSettings.contains(detail.getName())
-                            && !userReadOnlySettings.contains(detail.getName()) && detail.isDisplay()) {
+                            && !userReadOnlySettings.contains(detail.getName()) && detail.isDisplay()
+                            && !isExtraConfig(detail.getName())) {
                         userVmDetailsDao.removeDetail(id, detail.getName());
                     }
                 }
@@ -2847,6 +2866,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 if (details.containsKey("extraconfig")) {
                     throw new InvalidParameterValueException("'extraconfig' should not be included in details as key");
                 }
+
+                details.entrySet().removeIf(detail -> isExtraConfig(detail.getKey()));
 
                 if (caller != null && caller.getType() != Account.Type.ADMIN) {
                     // Ensure denied or read-only detail is not passed by non-root-admin user
@@ -2871,7 +2892,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 // ensure details marked as non-displayable are maintained, regardless of admin or not
                 for (final UserVmDetailVO existingDetail : existingDetails) {
-                    if (!existingDetail.isDisplay()) {
+                    if (!existingDetail.isDisplay() || isExtraConfig(existingDetail.getName())) {
                         details.put(existingDetail.getName(), existingDetail.getValue());
                     }
                 }
@@ -2891,6 +2912,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
         return updateVirtualMachine(id, displayName, group, ha, isDisplayVm, osTypeId, userData, userDataId, userDataDetails, isDynamicallyScalable,
                 cmd.getHttpMethod(), cmd.getCustomId(), hostName, cmd.getInstanceName(), securityGroupIdList, cmd.getDhcpOptionsMap());
+    }
+
+    private boolean isExtraConfig(String detailName) {
+        return detailName != null && detailName.startsWith(ApiConstants.EXTRA_CONFIG);
     }
 
     protected void updateDisplayVmFlag(Boolean isDisplayVm, Long id, UserVmVO vmInstance) {
@@ -4019,11 +4044,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Root volume encryption is not supported for hypervisor type " + hypervisorType);
         }
 
+        long additionalDiskSize = 0L;
         if (!isIso && diskOfferingId != null) {
             DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
-            volumesSize += verifyAndGetDiskSize(diskOffering, diskSize);
+            additionalDiskSize = verifyAndGetDiskSize(diskOffering, diskSize);
         }
-        UserVm vm = getCheckedUserVmResource(zone, hostName, displayName, owner, diskOfferingId, diskSize, networkList, securityGroupIdList, group, httpmethod, userData, userDataId, userDataDetails, sshKeyPairs, caller, requestedIps, defaultIps, isDisplayVm, keyboard, affinityGroupIdList, customParameters, customId, dhcpOptionMap, datadiskTemplateToDiskOfferringMap, userVmOVFPropertiesMap, dynamicScalingEnabled, vmType, template, hypervisorType, accountId, offering, isIso, rootDiskOfferingId, volumesSize);
+        UserVm vm = getCheckedUserVmResource(zone, hostName, displayName, owner, diskOfferingId, diskSize, networkList, securityGroupIdList, group, httpmethod, userData, userDataId, userDataDetails, sshKeyPairs, caller, requestedIps, defaultIps, isDisplayVm, keyboard, affinityGroupIdList, customParameters, customId, dhcpOptionMap, datadiskTemplateToDiskOfferringMap, userVmOVFPropertiesMap, dynamicScalingEnabled, vmType, template, hypervisorType, accountId, offering, isIso, rootDiskOfferingId, volumesSize, additionalDiskSize);
 
         _securityGroupMgr.addInstanceToGroups(vm.getId(), securityGroupIdList);
 
@@ -4043,15 +4069,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Map<String, Map<Integer, String>> dhcpOptionMap, Map<Long, DiskOffering> datadiskTemplateToDiskOfferringMap,
         Map<String, String> userVmOVFPropertiesMap, boolean dynamicScalingEnabled, String vmType, VMTemplateVO template,
         HypervisorType hypervisorType, long accountId, ServiceOfferingVO offering, boolean isIso,
-        Long rootDiskOfferingId, long volumesSize) throws ResourceAllocationException, StorageUnavailableException,
-            InsufficientCapacityException {
+        Long rootDiskOfferingId, long volumesSize, long additionalDiskSize) throws ResourceAllocationException {
         if (!VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
             List<String> resourceLimitHostTags = resourceLimitService.getResourceLimitHostTags(offering, template);
             try (CheckedReservation vmReservation = new CheckedReservation(owner, ResourceType.user_vm, resourceLimitHostTags, 1l, reservationDao, resourceLimitService);
                  CheckedReservation cpuReservation = new CheckedReservation(owner, ResourceType.cpu, resourceLimitHostTags, Long.valueOf(offering.getCpu()), reservationDao, resourceLimitService);
                  CheckedReservation memReservation = new CheckedReservation(owner, ResourceType.memory, resourceLimitHostTags, Long.valueOf(offering.getRamSize()), reservationDao, resourceLimitService);
             ) {
-                return getUncheckedUserVmResource(zone, hostName, displayName, owner, diskOfferingId, diskSize, networkList, securityGroupIdList, group, httpmethod, userData, userDataId, userDataDetails, sshKeyPairs, caller, requestedIps, defaultIps, isDisplayVm, keyboard, affinityGroupIdList, customParameters, customId, dhcpOptionMap, datadiskTemplateToDiskOfferringMap, userVmOVFPropertiesMap, dynamicScalingEnabled, vmType, template, hypervisorType, accountId, offering, isIso, rootDiskOfferingId, volumesSize);
+                return getUncheckedUserVmResource(zone, hostName, displayName, owner, diskOfferingId, diskSize, networkList, securityGroupIdList, group, httpmethod, userData, userDataId, userDataDetails, sshKeyPairs, caller, requestedIps, defaultIps, isDisplayVm, keyboard, affinityGroupIdList, customParameters, customId, dhcpOptionMap, datadiskTemplateToDiskOfferringMap, userVmOVFPropertiesMap, dynamicScalingEnabled, vmType, template, hypervisorType, accountId, offering, isIso, rootDiskOfferingId, volumesSize, additionalDiskSize);
             } catch (ResourceAllocationException | CloudRuntimeException  e) {
                 throw e;
             } catch (Exception e) {
@@ -4060,7 +4085,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
 
         } else {
-            return getUncheckedUserVmResource(zone, hostName, displayName, owner, diskOfferingId, diskSize, networkList, securityGroupIdList, group, httpmethod, userData, userDataId, userDataDetails, sshKeyPairs, caller, requestedIps, defaultIps, isDisplayVm, keyboard, affinityGroupIdList, customParameters, customId, dhcpOptionMap, datadiskTemplateToDiskOfferringMap, userVmOVFPropertiesMap, dynamicScalingEnabled, vmType, template, hypervisorType, accountId, offering, isIso, rootDiskOfferingId, volumesSize);
+            return getUncheckedUserVmResource(zone, hostName, displayName, owner, diskOfferingId, diskSize, networkList, securityGroupIdList, group, httpmethod, userData, userDataId, userDataDetails, sshKeyPairs, caller, requestedIps, defaultIps, isDisplayVm, keyboard, affinityGroupIdList, customParameters, customId, dhcpOptionMap, datadiskTemplateToDiskOfferringMap, userVmOVFPropertiesMap, dynamicScalingEnabled, vmType, template, hypervisorType, accountId, offering, isIso, rootDiskOfferingId, volumesSize, additionalDiskSize);
         }
     }
 
@@ -4077,11 +4102,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Map<String, Map<Integer, String>> dhcpOptionMap, Map<Long, DiskOffering> datadiskTemplateToDiskOfferringMap,
         Map<String, String> userVmOVFPropertiesMap, boolean dynamicScalingEnabled, String vmType, VMTemplateVO template,
         HypervisorType hypervisorType, long accountId, ServiceOfferingVO offering, boolean isIso,
-        Long rootDiskOfferingId, long volumesSize) throws ResourceAllocationException, StorageUnavailableException,
-            InsufficientCapacityException {
-        List<String> resourceLimitStorageTags = getResourceLimitStorageTags(diskOfferingId != null ? diskOfferingId : offering.getDiskOfferingId());
-        try (CheckedReservation volumeReservation = new CheckedReservation(owner, ResourceType.volume, resourceLimitStorageTags, (isIso || diskOfferingId == null ? 1l : 2), reservationDao, resourceLimitService);
-             CheckedReservation primaryStorageReservation = new CheckedReservation(owner, ResourceType.primary_storage, resourceLimitStorageTags, volumesSize, reservationDao, resourceLimitService)) {
+        Long rootDiskOfferingId, long volumesSize, long additionalDiskSize) throws ResourceAllocationException
+    {
+        List<String> rootResourceLimitStorageTags = getResourceLimitStorageTags(rootDiskOfferingId != null ? rootDiskOfferingId : offering.getDiskOfferingId());
+        List<String> additionalResourceLimitStorageTags = diskOfferingId != null ? getResourceLimitStorageTags(diskOfferingId) : null;
+
+        try (CheckedReservation rootVolumeReservation = new CheckedReservation(owner, ResourceType.volume, rootResourceLimitStorageTags, 1L, reservationDao, resourceLimitService);
+             CheckedReservation additionalVolumeReservation = diskOfferingId != null ? new CheckedReservation(owner, ResourceType.volume, additionalResourceLimitStorageTags, 1L, reservationDao, resourceLimitService) : null;
+             CheckedReservation rootPrimaryStorageReservation = new CheckedReservation(owner, ResourceType.primary_storage, rootResourceLimitStorageTags, volumesSize, reservationDao, resourceLimitService);
+             CheckedReservation additionalPrimaryStorageReservation = diskOfferingId != null ? new CheckedReservation(owner, ResourceType.primary_storage, additionalResourceLimitStorageTags, additionalDiskSize, reservationDao, resourceLimitService) : null;
+        ) {
 
             // verify security group ids
             if (securityGroupIdList != null) {
@@ -5682,37 +5712,47 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         boolean status;
         State vmState = vm.getState();
 
-        try {
-            VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
-            status = vmEntity.destroy(expunge);
-        } catch (CloudException e) {
-            CloudRuntimeException ex = new CloudRuntimeException("Unable to destroy with specified vmId", e);
-            ex.addProxyObject(vm.getUuid(), "vmId");
-            throw ex;
-        }
+        Account owner = _accountMgr.getAccount(vm.getAccountId());
 
-        if (status) {
-            // Mark the account's volumes as destroyed
-            List<VolumeVO> volumes = _volsDao.findByInstance(vmId);
-            for (VolumeVO volume : volumes) {
-                if (volume.getVolumeType().equals(Volume.Type.ROOT)) {
-                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
-                            Volume.class.getName(), volume.getUuid(), volume.isDisplayVolume());
+        ServiceOfferingVO offering = serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId());
+
+        try (CheckedReservation vmReservation = new CheckedReservation(owner, ResourceType.user_vm, vmId, null, -1L, reservationDao, resourceLimitService);
+             CheckedReservation cpuReservation = new CheckedReservation(owner, ResourceType.cpu, vmId, null, -1 * Long.valueOf(offering.getCpu()), reservationDao, resourceLimitService);
+             CheckedReservation memReservation = new CheckedReservation(owner, ResourceType.memory, vmId, null, -1 * Long.valueOf(offering.getRamSize()), reservationDao, resourceLimitService);
+        ) {
+            try {
+                VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
+                status = vmEntity.destroy(expunge);
+            } catch (CloudException e) {
+                CloudRuntimeException ex = new CloudRuntimeException("Unable to destroy with specified vmId", e);
+                ex.addProxyObject(vm.getUuid(), "vmId");
+                throw ex;
+            }
+
+            if (status) {
+                // Mark the account's volumes as destroyed
+                List<VolumeVO> volumes = _volsDao.findByInstance(vmId);
+                for (VolumeVO volume : volumes) {
+                    if (volume.getVolumeType().equals(Volume.Type.ROOT)) {
+                        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
+                                Volume.class.getName(), volume.getUuid(), volume.isDisplayVolume());
+                    }
                 }
-            }
 
-            if (vmState != State.Error) {
-                // Get serviceOffering and template for Virtual Machine
-                ServiceOfferingVO offering = serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId());
-                VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
-                //Update Resource Count for the given account
-                resourceCountDecrement(vm.getAccountId(), vm.isDisplayVm(),offering, template);
+                if (vmState != State.Error) {
+                    // Get serviceOffering and template for Virtual Machine
+                    VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
+                    //Update Resource Count for the given account
+                    resourceCountDecrement(vm.getAccountId(), vm.isDisplayVm(), offering, template);
+                }
+                return _vmDao.findById(vmId);
+            } else {
+                CloudRuntimeException ex = new CloudRuntimeException("Failed to destroy vm with specified vmId");
+                ex.addProxyObject(vm.getUuid(), "vmId");
+                throw ex;
             }
-            return _vmDao.findById(vmId);
-        } else {
-            CloudRuntimeException ex = new CloudRuntimeException("Failed to destroy vm with specified vmId");
-            ex.addProxyObject(vm.getUuid(), "vmId");
-            throw ex;
+        } catch (Exception e) {
+                throw new CloudRuntimeException("Failed to destroy vm with specified vmId", e);
         }
 
     }
@@ -6268,7 +6308,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      */
     protected void persistExtraConfigKvm(String decodedUrl, UserVm vm) {
         // validate config against denied cfg commands
-        validateKvmExtraConfig(decodedUrl);
+        validateKvmExtraConfig(decodedUrl, vm.getAccountId());
         String[] extraConfigs = decodedUrl.split("\n\n");
         for (String cfg : extraConfigs) {
             int i = 1;
@@ -6286,6 +6326,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             i++;
         }
     }
+    /**
+     * This method is used to validate if extra config is valid
+     */
+    @Override
+    public void validateExtraConfig(long accountId, HypervisorType hypervisorType, String extraConfig) {
+        if (!EnableAdditionalVmConfig.valueIn(accountId)) {
+            throw new CloudRuntimeException("Additional VM configuration is not enabled for this account");
+        }
+        if (HypervisorType.KVM.equals(hypervisorType)) {
+            validateKvmExtraConfig(extraConfig, accountId);
+        }
+    }
 
     /**
      * This method is called by the persistExtraConfigKvm
@@ -6293,8 +6345,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      * controlled by Root admin
      * @param decodedUrl string containing xml configuration to be validated
      */
-    protected void validateKvmExtraConfig(String decodedUrl) {
-        String[] allowedConfigOptionList = KvmAdditionalConfigAllowList.value().split(",");
+    protected void validateKvmExtraConfig(String decodedUrl, long accountId) {
+        String[] allowedConfigOptionList = KvmAdditionalConfigAllowList.valueIn(accountId).split(",");
         // Skip allowed keys validation for DPDK
         if (!decodedUrl.contains(":")) {
             try {
@@ -6314,7 +6366,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         }
                     }
                     if (!isValidConfig) {
-                        throw new CloudRuntimeException(String.format("Extra config %s is not on the list of allowed keys for KVM hypervisor hosts", currentConfig));
+                        throw new CloudRuntimeException(String.format("Extra config '%s' is not on the list of allowed keys for KVM hypervisor hosts", currentConfig));
                     }
                 }
             } catch (ParserConfigurationException | IOException | SAXException e) {
@@ -6331,19 +6383,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         String decodedUrl = decodeExtraConfig(extraConfig);
         HypervisorType hypervisorType = vm.getHypervisorType();
 
-        switch (hypervisorType) {
-            case XenServer:
-                persistExtraConfigXenServer(decodedUrl, vm);
-                break;
-            case KVM:
-                persistExtraConfigKvm(decodedUrl, vm);
-                break;
-            case VMware:
-                persistExtraConfigVmware(decodedUrl, vm);
-                break;
-            default:
-                String msg = String.format("This hypervisor %s is not supported for use with this feature", hypervisorType.toString());
-                throw new CloudRuntimeException(msg);
+        if (hypervisorType.equals(HypervisorType.XenServer)) {
+            persistExtraConfigXenServer(decodedUrl, vm);
+        } else if (hypervisorType.equals(HypervisorType.KVM)) {
+            persistExtraConfigKvm(decodedUrl, vm);
+        } else if (hypervisorType.equals(HypervisorType.VMware)) {
+            persistExtraConfigVmware(decodedUrl, vm);
+        } else {
+            String msg = String.format("This hypervisor %s is not supported for use with this feature", hypervisorType.toString());
+            throw new CloudRuntimeException(msg);
         }
     }
 
@@ -6415,6 +6463,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             if (details.containsKey("extraconfig")) {
                 throw new InvalidParameterValueException("'extraconfig' should not be included in details as key");
+            }
+
+            for (String detailName : details.keySet()) {
+                if (isExtraConfig(detailName)) {
+                    throw new InvalidParameterValueException("detail name should not start with extraconfig");
+                }
             }
         }
     }

@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.DiscriminatorColumn;
 import javax.persistence.DiscriminatorType;
 import javax.persistence.Entity;
@@ -48,6 +49,7 @@ import com.cloud.utils.fsm.FiniteStateObject;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.google.gson.Gson;
+import org.apache.cloudstack.util.HypervisorTypeConverter;
 
 @Entity
 @Table(name = "vm_instance")
@@ -146,7 +148,7 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
     protected String reservationId;
 
     @Column(name = "hypervisor_type")
-    @Enumerated(value = EnumType.STRING)
+    @Convert(converter = HypervisorTypeConverter.class)
     protected HypervisorType hypervisorType;
 
     @Transient

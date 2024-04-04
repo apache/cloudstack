@@ -34,6 +34,8 @@ ResourceReservation extends InternalIdentity {
 
     Resource.ResourceType getResourceType();
 
+    Long getResourceId();
+
     String getTag();
 
     Long getReservedAmount();

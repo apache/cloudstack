@@ -554,12 +554,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 throw new InvalidParameterValueException("File:// type urls are currently unsupported");
             }
             UriUtils.validateUrl(format, url);
+            boolean followRedirects = StorageManager.DataStoreDownloadFollowRedirects.value();
             if (VolumeUrlCheck.value()) { // global setting that can be set when their MS does not have internet access
                 logger.debug("Checking url: " + url);
-                DirectDownloadHelper.checkUrlExistence(url);
+                DirectDownloadHelper.checkUrlExistence(url, followRedirects);
             }
             // Check that the resource limit for secondary storage won't be exceeded
-            _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(ownerId), ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
+            _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(ownerId), ResourceType.secondary_storage,
+                    UriUtils.getRemoteSize(url, followRedirects));
         } else {
             _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(ownerId), ResourceType.secondary_storage);
         }
@@ -660,8 +662,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 _resourceLimitMgr.incrementVolumeResourceCount(volume.getAccountId(), true, null, diskOfferingVO);
                 //url can be null incase of postupload
                 if (url != null) {
-                    _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
-                    volume.setSize(UriUtils.getRemoteSize(url));
+                    long remoteSize = UriUtils.getRemoteSize(url, StorageManager.DataStoreDownloadFollowRedirects.value());
+                    _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.secondary_storage,
+                            remoteSize);
+                    volume.setSize(remoteSize);
                 }
 
                 return volume;
