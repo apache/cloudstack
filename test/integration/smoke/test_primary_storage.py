@@ -409,7 +409,6 @@ class TestPrimaryStorageScope(cloudstackTestCase):
         self.cleanup.append(storage)
         pool_id = self.dbclient.execute("select id from storage_pool where uuid=\"" + storage.id + "\"")[0][0]
 
-
         self.debug("Created storage pool in cluster: %s" % cluster1.id)
 
         # Disable storage pool

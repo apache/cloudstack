@@ -513,7 +513,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         volumePoolNotInClusterSearch = createSearchBuilder();
         volumePoolNotInClusterSearch.and("poolId", volumePoolNotInClusterSearch.entity().getPoolId(), Op.EQ);
         SearchBuilder<VMInstanceVO> vmSearch = _vmDao.createSearchBuilder();
-        vmSearch.and("vmStateSearch", vmSearch.entity().getState(), Op.IN);
+        vmSearch.and("vmStates", vmSearch.entity().getState(), Op.IN);
         SearchBuilder<HostVO> hostSearch = _hostDao.createSearchBuilder();
         hostSearch.and("clusterId", hostSearch.entity().getClusterId(), SearchCriteria.Op.NEQ);
         vmSearch.join("hostSearch", hostSearch, hostSearch.entity().getId(), vmSearch.entity().getHostId(), JoinType.INNER);
@@ -871,7 +871,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     public List<VolumeVO> listByPoolIdVMStatesNotInCluster(long clusterId, List<VirtualMachine.State> states, long poolId) {
         SearchCriteria<VolumeVO> sc = volumePoolNotInClusterSearch.create();
         sc.setParameters("poolId", poolId);
-        sc.setParameters("states", states);
+        sc.setParameters("vmStates", states);
         sc.setJoinParameters("hostSearch", "clusterId", clusterId);
         return listBy(sc, null);
     }

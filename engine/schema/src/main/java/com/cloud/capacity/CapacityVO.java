@@ -142,7 +142,7 @@ public class CapacityVO implements Capacity {
     }
 
     public void setClusterId(Long clusterId) {
-        this.clusterId = (clusterId);
+        this.clusterId = clusterId;
     }
 
     @Override

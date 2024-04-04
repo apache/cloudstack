@@ -547,8 +547,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
 
     public boolean changeStoragePoolScopeToZone(DataStore store, ClusterScope clusterScope, HypervisorType hypervisorType) {
         List<HostVO> hosts = _resourceMgr.listAllHostsInOneZoneNotInClusterByHypervisor(hypervisorType, clusterScope.getZoneId(), clusterScope.getScopeId());
-        s_logger.debug("In createPool. Attaching the pool to each of the hosts.");
-        List<HostVO> poolHosts = new ArrayList<HostVO>();
+        s_logger.debug("Changing scope of the storage pool to Zone");
         for (HostVO host : hosts) {
             try {
                 storageMgr.connectHostToSharedPool(host.getId(), store.getId());
@@ -556,12 +555,13 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
                 s_logger.warn("Unable to establish a connection between " + host + " and " + store, e);
             }
         }
-        dataStoreHelper.switchToZone(store);
+        dataStoreHelper.switchToZone(store, hypervisorType);
         return true;
     }
 
     public boolean changeStoragePoolScopeToCluster(DataStore store, ClusterScope clusterScope, HypervisorType hypervisorType) {
         Pair<List<StoragePoolHostVO>, Integer> hostPoolRecords = _storagePoolHostDao.listByPoolIdNotInCluster(clusterScope.getScopeId(), store.getId());
+        s_logger.debug("Changing scope of the storage pool to Cluster");
         HypervisorType hType = null;
         if (hostPoolRecords.second() > 0) {
             hType = getHypervisorType(hostPoolRecords.first().get(0).getHostId());

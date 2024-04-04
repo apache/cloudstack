@@ -17,8 +17,6 @@
 
 package org.apache.cloudstack.api.command.admin.storage;
 
-import javax.inject.Inject;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -31,10 +29,9 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
-import com.cloud.storage.StorageService;
 
 @APICommand(name = "changeStoragePoolScope", description = "Changes the scope of a storage pool.", responseObject = SuccessResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+        since= "4.19.1", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ChangeStoragePoolScopeCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = StoragePoolResponse.class, required = true, description = "the Id of the storage pool")
@@ -43,11 +40,8 @@ public class ChangeStoragePoolScopeCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.SCOPE, type = CommandType.STRING, required = true, description = "the scope of the storage: cluster or zone")
     private String scope;
 
-    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, description = "the CLuster ID to use for the storage pool's scope")
+    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, description = "the Id of the cluster to use if scope is being set to Cluster")
     private Long clusterId;
-
-    @Inject
-    public StorageService _storageService;
 
     @Override
     public String getEventType() {
@@ -56,7 +50,7 @@ public class ChangeStoragePoolScopeCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Change Storage Pool Scope";
+        return "Change the scope to " + scope + " for storage pool " + this.id;
     }
 
     @Override

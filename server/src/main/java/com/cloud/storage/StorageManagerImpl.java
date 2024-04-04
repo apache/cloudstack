@@ -1159,7 +1159,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             throw new PermissionDeniedException("Only root admin can perform this operation");
         }
 
-        ScopeType scopeType = ScopeType.validateAndGetScopeType(cmd.getScope());
+        ScopeType scopeType = EnumUtils.getEnumIgnoreCase(ScopeType.class, cmd.getScope());
         if (scopeType != ScopeType.ZONE && scopeType != ScopeType.CLUSTER) {
             throw new InvalidParameterValueException("Invalid scope " + scopeType.toString() + "for Primary storage");
         }
@@ -1171,11 +1171,12 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         if (!primaryStorage.getStorageProviderName().equals(DataStoreProvider.DEFAULT_PRIMARY)) {
             throw new InvalidParameterValueException("Primary storage scope change is only supported with "
-                    + DataStoreProvider.DEFAULT_PRIMARY.toString() + " data store provider");
+                    + DataStoreProvider.DEFAULT_PRIMARY + " data store provider");
         }
 
-        if (!primaryStorage.getPoolType().equals(Storage.StoragePoolType.NetworkFilesystem) &&
-            !primaryStorage.getPoolType().equals(Storage.StoragePoolType.RBD)) {
+        StoragePoolType poolType = primaryStorage.getPoolType();
+        Set<StoragePoolType> supportedStoragePoolTypes = Sets.newHashSet(StoragePoolType.NetworkFilesystem, StoragePoolType.RBD);
+        if (!supportedStoragePoolTypes.contains(poolType)) {
             throw new InvalidParameterValueException("Primary storage scope change is not supported for protocol "
                     + primaryStorage.getPoolType().toString());
         }
@@ -1186,18 +1187,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             throw new InvalidParameterValueException("Primary storage scope change is not supported for hypervisor type " + hypervisorType);
         }
 
-        if (StoragePoolStatus.Disabled != primaryStorage.getStatus()) {
-            throw new InvalidParameterValueException("Primary storage should be disabled for this operation");
-        }
-
-        if (scopeType == primaryStorage.getScope()) {
-            throw new InvalidParameterValueException("Invalid scope change");
-        }
-
         if (!primaryStorage.getStatus().equals(StoragePoolStatus.Disabled)) {
             throw new InvalidParameterValueException("Scope of the Primary storage with id "
                     + primaryStorage.getUuid() +
                     " cannot be changed, as it is not in the Disabled state");
+        }
+
+        if (primaryStorage.getScope().equals(scopeType)) {
+            throw new InvalidParameterValueException("New scope must be different than the current scope");
         }
 
         String providerName = primaryStorage.getStorageProviderName();
@@ -1208,20 +1205,28 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         Long zoneId = primaryStorage.getDataCenterId();
         DataCenterVO zone = _dcDao.findById(zoneId);
         if (zone == null) {
-            throw new InvalidParameterValueException("unable to find zone by id " + zoneId);
+            throw new InvalidParameterValueException("Unable to find zone by id " + zoneId);
         }
         if (Grouping.AllocationState.Disabled == zone.getAllocationState()) {
             throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zoneId);
         }
 
-        if (scopeType == ScopeType.ZONE) {
+        if (scopeType.equals(ScopeType.ZONE)) {
             ClusterScope clusterScope = new ClusterScope(primaryStorage.getClusterId(), null, zoneId);
             lifeCycle.changeStoragePoolScopeToZone(primaryStore, clusterScope, hypervisorType);
 
         } else {
-
             Long clusterId = cmd.getClusterId();
+            if (clusterId == null) {
+                throw new IllegalArgumentException("Unable to find cluster with ID: " + clusterId);
+            }
             ClusterVO clusterVO = _clusterDao.findById(clusterId);
+            if (clusterVO == null) {
+                throw new InvalidParameterValueException("Unable to find cluster by id " + clusterId);
+            }
+            if (Grouping.AllocationState.Disabled == clusterVO.getAllocationState()) {
+                throw new PermissionDeniedException("Cannot perform this operation, Cluster is currently disabled: " + zoneId);
+            }
             List<VirtualMachine.State> states = Arrays.asList(State.Starting, State.Running, State.Stopping, State.Migrating, State.Restoring);
             List<VolumeVO> volumesInOtherClusters = volumeDao.listByPoolIdVMStatesNotInCluster(clusterId, states, id);
             if (volumesInOtherClusters.size() > 0) {

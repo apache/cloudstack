@@ -154,6 +154,7 @@ export default {
       icon: 'delete-outlined',
       label: 'label.action.delete.primary.storage',
       dataView: true,
+      args: ['forced'],
       show: (record) => { return (record.state === 'Down' || record.state === 'Maintenance' || record.state === 'Disconnected') },
       displayName: (record) => { return record.name || record.displayName || record.id }
     }

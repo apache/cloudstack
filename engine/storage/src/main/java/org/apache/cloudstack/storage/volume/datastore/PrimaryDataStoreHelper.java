@@ -268,7 +268,7 @@ public class PrimaryDataStoreHelper {
         return true;
     }
 
-    public void switchToZone(DataStore store) {
+    public void switchToZone(DataStore store, HypervisorType hypervisorType) {
         StoragePoolVO pool = dataStoreDao.findById(store.getId());
         CapacityVO capacity = _capacityDao.findByHostIdType(store.getId(), Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED);
         Transaction.execute(new TransactionCallbackNoReturn() {
@@ -276,6 +276,7 @@ public class PrimaryDataStoreHelper {
                 pool.setScope(ScopeType.ZONE);
                 pool.setPodId(null);
                 pool.setClusterId(null);
+                pool.setHypervisor(hypervisorType);
                 dataStoreDao.update(pool.getId(), pool);
 
                 capacity.setPodId(null);
