@@ -7659,13 +7659,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         long vmId = cmd.getVmId();
         Long newTemplateId = cmd.getTemplateId();
         Long rootDiskOfferingId = cmd.getRootDiskOfferingId();
-        Long rootDiskSize = cmd.getRootDiskSize();
         boolean expunge = cmd.getExpungeRootDisk();
         Map<String, String> details = cmd.getDetails();
-
-        if (rootDiskSize != null && rootDiskSize < 0) {
-            throw new InvalidParameterValueException("Invalid disk size " + rootDiskSize);
-        }
 
         verifyDetails(details);
 
@@ -7685,16 +7680,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new CloudRuntimeException("There is/are unbacked up snapshot(s) on ROOT volume, Re-install VM is not permitted, please try again later.");
         }
         s_logger.debug("Found no ongoing snapshots on volume of type ROOT, for the vm with id " + vmId);
-        return restoreVMInternal(caller, vm, newTemplateId, rootDiskOfferingId, rootDiskSize, expunge, details);
+        return restoreVMInternal(caller, vm, newTemplateId, rootDiskOfferingId, expunge, details);
     }
 
-    public UserVm restoreVMInternal(Account caller, UserVmVO vm, Long newTemplateId, Long rootDiskOfferingId, Long rootDiskSize, boolean expunge, Map<String, String> details) throws InsufficientCapacityException, ResourceUnavailableException {
-        return _itMgr.restoreVirtualMachine(vm.getId(), newTemplateId, rootDiskOfferingId, rootDiskSize, expunge, details);
+    public UserVm restoreVMInternal(Account caller, UserVmVO vm, Long newTemplateId, Long rootDiskOfferingId, boolean expunge, Map<String, String> details) throws InsufficientCapacityException, ResourceUnavailableException {
+        return _itMgr.restoreVirtualMachine(vm.getId(), newTemplateId, rootDiskOfferingId, expunge, details);
     }
 
 
     public UserVm restoreVMInternal(Account caller, UserVmVO vm) throws InsufficientCapacityException, ResourceUnavailableException {
-        return restoreVMInternal(caller, vm, null, null, null, false, null);
+        return restoreVMInternal(caller, vm, null, null, false, null);
     }
 
     private VMTemplateVO getRestoreVirtualMachineTemplate(Account caller, Long newTemplateId, List<VolumeVO> rootVols, UserVmVO vm) {

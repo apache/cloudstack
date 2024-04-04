@@ -23,7 +23,6 @@ public class VmWorkRestore extends VmWork {
 
     private Long templateId;
     private Long rootDiskOfferingId;
-    private Long rootDiskSize;
     private Map<String,String> details;
 
     private boolean expunge;

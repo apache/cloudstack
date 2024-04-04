@@ -142,10 +142,6 @@ public class RestoreVMCmd extends BaseAsyncCmd implements UserCmd {
         return rootDiskOfferingId;
     }
 
-    public Long getRootDiskSize() {
-        return rootDiskSize != null ? rootDiskSize * 1024L * 1024L * 1024L : null;
-    }
-
     public Map<String, String> getDetails() {
         Map<String, String> customparameterMap = convertDetailsToMap(details);
         if (rootDiskSize != null && !customparameterMap.containsKey(VmDetailConstants.ROOT_DISK_SIZE)) {
