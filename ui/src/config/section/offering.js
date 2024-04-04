@@ -57,6 +57,12 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
         },
         {
+          name: 'events',
+          resourceType: 'ServiceOffering',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+          show: () => { return 'listEvents' in store.getters.apis }
+        },
+        {
           name: 'comments',
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue'))),
           show: (record, route, user) => { return ['Admin', 'DomainAdmin'].includes(user.roletype) }
@@ -130,6 +136,24 @@ export default {
       columns: ['name', 'state', 'systemvmtype', 'cpunumber', 'cpuspeed', 'memory', 'storagetype', 'order'],
       filters: ['active', 'inactive'],
       details: ['name', 'id', 'displaytext', 'systemvmtype', 'provisioningtype', 'storagetype', 'iscustomized', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'storagetags', 'hosttags', 'tags', 'domain', 'zone', 'created', 'dynamicscalingenabled', 'diskofferingstrictness'],
+      resourceType: 'ServiceOffering',
+      tabs: [
+        {
+          name: 'details',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'events',
+          resourceType: 'ServiceOffering',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+          show: () => { return 'listEvents' in store.getters.apis }
+        },
+        {
+          name: 'comments',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue'))),
+          show: (record, route, user) => { return ['Admin', 'DomainAdmin'].includes(user.roletype) }
+        }
+      ],
       actions: [{
         api: 'createServiceOffering',
         icon: 'plus-outlined',
@@ -208,6 +232,12 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
         },
         {
+          name: 'events',
+          resourceType: 'DiskOffering',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+          show: () => { return 'listEvents' in store.getters.apis }
+        },
+        {
           name: 'comments',
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue'))),
           show: (record, route, user) => { return ['Admin', 'DomainAdmin'].includes(user.roletype) }
@@ -284,6 +314,18 @@ export default {
         title: 'label.instances',
         param: 'backupofferingid'
       }],
+      tabs: [
+        {
+          name: 'details',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'events',
+          resourceType: 'BackupOffering',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+          show: () => { return 'listEvents' in store.getters.apis }
+        }
+      ],
       actions: [{
         api: 'importBackupOffering',
         icon: 'plus-outlined',
@@ -325,6 +367,12 @@ export default {
         {
           name: 'details',
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'events',
+          resourceType: 'NetworkOffering',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+          show: () => { return 'listEvents' in store.getters.apis }
         },
         {
           name: 'comments',
@@ -418,6 +466,18 @@ export default {
         title: 'label.vpc',
         param: 'vpcofferingid'
       }],
+      tabs: [
+        {
+          name: 'details',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'events',
+          resourceType: 'VpcOffering',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+          show: () => { return 'listEvents' in store.getters.apis }
+        }
+      ],
       actions: [{
         api: 'createVPCOffering',
         icon: 'plus-outlined',
