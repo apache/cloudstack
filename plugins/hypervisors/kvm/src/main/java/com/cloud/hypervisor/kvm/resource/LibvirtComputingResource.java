@@ -5194,7 +5194,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             numThreadsPerCore = 1;
         }
 
-        if (vCpusInDef % (numCoresPerSocket * numThreadsPerCore)!= 0) {
+        if (vCpusInDef % (numCoresPerSocket * numThreadsPerCore) != 0) {
             LOGGER.warn(String.format("cores per socket(%d) * threads per core(%d) doesn't divide evenly into total VM cores(%d). Ignoring extra topology", numCoresPerSocket, numThreadsPerCore, vCpusInDef));
             numCoresPerSocket = 1;
             numThreadsPerCore = 1;
