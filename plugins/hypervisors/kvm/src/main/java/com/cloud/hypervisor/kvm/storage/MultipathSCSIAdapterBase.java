@@ -331,7 +331,7 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
         QemuImgFile srcFile = new QemuImgFile(disk.getPath(), disk.getFormat());
         QemuImgFile destFile = new QemuImgFile(destDisk.getPath(), destDisk.getFormat());
 
-        LOGGER.debug("Starting COPY from source downloaded template " + srcFile.getFileName() + " to Primera volume: " + destDisk.getPath());
+        LOGGER.debug("Starting COPY from source path " + srcFile.getFileName() + " to target volume path: " + destDisk.getPath());
 
         ScriptResult result = runScript(copyScript, timeout, destDisk.getFormat().toString().toLowerCase(), srcFile.getFileName(), destFile.getFileName());
         /**Script script = new Script(
@@ -346,7 +346,7 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
         if (rc != 0) {
             throw new CloudRuntimeException("Failed to convert from " + srcFile.getFileName() + " to " + destFile.getFileName() + " the error was: " + rc + " - " + result.getResult());
         }
-        LOGGER.debug("Successfully converted source downloaded template " + srcFile.getFileName() + " to Primera volume: " + destDisk.getPath() + " " + result.getResult());
+        LOGGER.debug("Successfully converted source volume at " + srcFile.getFileName() + " to destination volume: " + destDisk.getPath() + " " + result.getResult());
 
         return destDisk;
     }
