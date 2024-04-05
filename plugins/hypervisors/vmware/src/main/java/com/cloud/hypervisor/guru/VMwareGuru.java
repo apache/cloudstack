@@ -1348,7 +1348,13 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                                                      DatacenterMO dataCenterMO) throws Exception {
         HostMO sourceHost = vmMo.getRunningHost();
         String cloneName = UUID.randomUUID().toString();
-        DatastoreMO datastoreMO = vmMo.getAllDatastores().get(0); //pick the first datastore
+        List<DatastoreMO> vmDatastores = vmMo.getAllDatastores();
+        if (CollectionUtils.isEmpty(vmDatastores)) {
+            String err = String.format("Unable to fetch datastores, could not clone VM %s before migration from VMware", vmName);
+            s_logger.error(err);
+            throw new CloudRuntimeException(err);
+        }
+        DatastoreMO datastoreMO = vmDatastores.get(0); //pick the first datastore
         ManagedObjectReference morPool = vmMo.getRunningHost().getHyperHostOwnerResourcePool();
         boolean result = vmMo.createFullClone(cloneName, dataCenterMO.getVmFolder(), morPool, datastoreMO.getMor(), Storage.ProvisioningType.THIN);
         VirtualMachineMO clonedVM = dataCenterMO.findVm(cloneName);
@@ -1392,9 +1398,10 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             }
             VirtualMachinePowerState sourceVmPowerState = vmMo.getPowerState();
             if (sourceVmPowerState == VirtualMachinePowerState.POWERED_ON && isWindowsVm(vmMo)) {
-                s_logger.debug(String.format("VM %s is a Windows VM and its Running, cannot be imported." +
-                                "Please gracefully shut it down before attempting the import",
-                        vmName));
+                String err = String.format("VM %s is a Windows VM and its Running, cannot be imported." +
+                                "Please gracefully shut it down before attempting the import", vmName);
+                s_logger.error(err);
+                throw new CloudRuntimeException(err);
             }
 
             VirtualMachineMO clonedVM = createCloneFromSourceVM(vmName, vmMo, dataCenterMO);
