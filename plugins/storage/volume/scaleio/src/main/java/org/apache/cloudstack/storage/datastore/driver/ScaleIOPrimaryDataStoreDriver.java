@@ -141,7 +141,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         return ScaleIOGatewayClientConnectionPool.getInstance().getClient(storagePoolId, storagePoolDetailsDao);
     }
 
-    private boolean setLimitsForVolume(VolumeVO volume, Host host, DataStore dataStore, Long iopsLimit, Long bandwidthLimitInKbps) throws Exception {
+    private boolean setVolumeLimitsOnSDC(VolumeVO volume, Host host, DataStore dataStore, Long iopsLimit, Long bandwidthLimitInKbps) throws Exception {
         final String sdcId = getConnectedSdc(dataStore.getId(), host.getId());
         if (StringUtils.isBlank(sdcId)) {
             alertHostSdcDisconnection(host);
@@ -152,9 +152,9 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         return client.mapVolumeToSdcWithLimits(ScaleIOUtil.getVolumePath(volume.getPath()), sdcId, iopsLimit, bandwidthLimitInKbps);
     }
 
-    private boolean setLimitsForVolume(VolumeVO volume, Host host, DataStore dataStore) throws Exception {
+    private boolean setVolumeLimitsFromDetails(VolumeVO volume, Host host, DataStore dataStore) throws Exception {
         Long bandwidthLimitInKbps = 0L; // Unlimited
-        // Check Bandwidht Limit parameter in volume details
+        // Check Bandwidth Limit parameter in volume details
         final VolumeDetailVO bandwidthVolumeDetail = volumeDetailsDao.findDetail(volume.getId(), Volume.BANDWIDTH_LIMIT_IN_MBPS);
         if (bandwidthVolumeDetail != null && bandwidthVolumeDetail.getValue() != null) {
             bandwidthLimitInKbps = Long.parseLong(bandwidthVolumeDetail.getValue()) * 1024;
@@ -172,7 +172,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             iopsLimit = ScaleIOUtil.MINIMUM_ALLOWED_IOPS_LIMIT;
         }
 
-        return setLimitsForVolume(volume, host, dataStore, iopsLimit, bandwidthLimitInKbps);
+        return setVolumeLimitsOnSDC(volume, host, dataStore, iopsLimit, bandwidthLimitInKbps);
     }
 
     @Override
@@ -181,7 +181,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             if (DataObjectType.VOLUME.equals(dataObject.getType())) {
                 final VolumeVO volume = volumeDao.findById(dataObject.getId());
                 LOGGER.debug("Granting access for PowerFlex volume: " + volume.getPath());
-                return setLimitsForVolume(volume, host, dataStore);
+                return setVolumeLimitsFromDetails(volume, host, dataStore);
             } else if (DataObjectType.TEMPLATE.equals(dataObject.getType())) {
                 final VMTemplateStoragePoolVO templatePoolRef = vmTemplatePoolDao.findByPoolTemplate(dataStore.getId(), dataObject.getId(), null);
                 LOGGER.debug("Granting access for PowerFlex template volume: " + templatePoolRef.getInstallPath());
@@ -801,9 +801,9 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             VolumeVO volume = volumeDao.findById(destData.getId());
             Host host = destHost != null ? destHost : hostDao.findById(ep.getId());
             try {
-                setLimitsForVolume(volume, host, destData.getDataStore(), 0L, 0L);
+                setVolumeLimitsOnSDC(volume, host, destData.getDataStore(), 0L, 0L);
                 answer = ep.sendMessage(cmd);
-                setLimitsForVolume(volume, host, destData.getDataStore());
+                setVolumeLimitsFromDetails(volume, host, destData.getDataStore());
             } catch (Exception e) {
                 LOGGER.error("Failed to copy template to volume due to: " + e.getMessage(), e);
                 answer = new Answer(cmd, false, e.getMessage());
@@ -1245,9 +1245,10 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                         volumeInfo.getPassphrase(), volumeInfo.getEncryptFormat());
 
                 try {
+                    updateIopsForVolume(volumeInfo.getId(), payload.newMinIops, payload.newMaxIops);
                     if (attachedRunning) {
-                        updateIopsForVolume(volumeInfo.getId(), payload.newMinIops, payload.newMaxIops);
-                        grantAccess(volumeInfo, ep, volumeInfo.getDataStore());
+                        VolumeVO volume = volumeDao.findById(volumeInfo.getId());
+                        setVolumeLimitsFromDetails(volume, host, volumeInfo.getDataStore());
                     }
                     Answer answer = ep.sendMessage(resizeVolumeCommand);
 
