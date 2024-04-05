@@ -204,13 +204,18 @@ public class FlashArrayAdapter implements ProviderAdapter {
         String fullName = normalizeName(pod, dataObject.getExternalName());
 
         FlashArrayVolume volume = new FlashArrayVolume();
+
         // rename as we delete so it doesn't conflict if the template or volume is ever recreated
         // pure keeps the volume(s) around in a Destroyed bucket for a period of time post delete
         String timestamp = new SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date());
         volume.setName(fullName + "-" + timestamp);
+        PATCH("/volumes?names=" + fullName, volume, new TypeReference<FlashArrayList<FlashArrayVolume>>() {
+        });
+
+        // now delete it
         volume.setDestroyed(true);
         try {
-            PATCH("/volumes?names=" + fullName, volume, new TypeReference<FlashArrayList<FlashArrayVolume>>() {
+            PATCH("/volumes?names=" + fullName + "-" + timestamp, volume, new TypeReference<FlashArrayList<FlashArrayVolume>>() {
             });
         } catch (CloudRuntimeException e) {
             if (e.toString().contains("Volume does not exist")) {
