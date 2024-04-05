@@ -22,6 +22,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
@@ -38,6 +39,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.resourcedetail.DiskOfferingDetailVO;
+import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.storage.RemoteHostEndPoint;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CopyCommand;
@@ -127,11 +130,15 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Inject
     private ConfigurationDao configDao;
     @Inject
+    private DiskOfferingDetailsDao diskOfferingDetailsDao;
+    @Inject
     private HostDao hostDao;
     @Inject
     private VMInstanceDao vmInstanceDao;
     @Inject
     private VolumeService volumeService;
+    @Inject
+    private VolumeOrchestrationService volumeMgr;
 
     public ScaleIOPrimaryDataStoreDriver() {
 
@@ -1226,6 +1233,20 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 }
             }
 
+            Long newMaxIops = payload.newMaxIops != null ? payload.newMaxIops : volumeInfo.getMaxIops();
+            long newBandwidthLimit = 0L;
+            Long newDiskOfferingId = payload.newDiskOfferingId != null ? payload.newDiskOfferingId : volumeInfo.getDiskOfferingId();
+            if (newDiskOfferingId != null) {
+                DiskOfferingDetailVO bandwidthLimitDetail = diskOfferingDetailsDao.findDetail(newDiskOfferingId, Volume.BANDWIDTH_LIMIT_IN_MBPS);
+                if (bandwidthLimitDetail != null) {
+                    newBandwidthLimit = Long.parseLong(bandwidthLimitDetail.getValue()) * 1024;
+                }
+                DiskOfferingDetailVO iopsLimitDetail = diskOfferingDetailsDao.findDetail(newDiskOfferingId, Volume.IOPS_LIMIT);
+                if (iopsLimitDetail != null) {
+                    newMaxIops = Long.parseLong(iopsLimitDetail.getValue());
+                }
+            }
+
             if (volumeInfo.getFormat().equals(Storage.ImageFormat.QCOW2) || attachedRunning) {
                 LOGGER.debug("Volume needs to be resized at the hypervisor host");
 
@@ -1245,10 +1266,9 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                         volumeInfo.getPassphrase(), volumeInfo.getEncryptFormat());
 
                 try {
-                    updateIopsForVolume(volumeInfo.getId(), payload.newMinIops, payload.newMaxIops);
                     if (attachedRunning) {
                         VolumeVO volume = volumeDao.findById(volumeInfo.getId());
-                        setVolumeLimitsFromDetails(volume, host, volumeInfo.getDataStore());
+                        setVolumeLimitsOnSDC(volume, host, volumeInfo.getDataStore(), newMaxIops != null ? newMaxIops : 0L, newBandwidthLimit);
                     }
                     Answer answer = ep.sendMessage(resizeVolumeCommand);
 
@@ -1271,7 +1291,16 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             VolumeVO volume = volumeDao.findById(volumeInfo.getId());
             long oldVolumeSize = volume.getSize();
             volume.setSize(scaleIOVolume.getSizeInKb() * 1024);
+            if (payload.newMinIops != null) {
+                volume.setMinIops(payload.newMinIops);
+            }
+            if (payload.newMaxIops != null) {
+                volume.setMaxIops(payload.newMaxIops);
+            }
             volumeDao.update(volume.getId(), volume);
+            if (payload.newDiskOfferingId != null) {
+                volumeMgr.saveVolumeDetails(payload.newDiskOfferingId, volume.getId());
+            }
 
             long capacityBytes = storagePool.getCapacityBytes();
             long usedBytes = storagePool.getUsedBytes();
@@ -1284,24 +1313,6 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             String errMsg = "Unable to resize PowerFlex volume: " + volumeInfo.getId() + " due to " + e.getMessage();
             LOGGER.warn(errMsg);
             throw new CloudRuntimeException(errMsg, e);
-        }
-    }
-
-    private void updateIopsForVolume(long volumeId, Long newMinIops, Long newMaxIops) {
-        if (newMinIops != null || newMaxIops != null) {
-            VolumeVO volume = volumeDao.findById(volumeId);
-            if (newMinIops != null) {
-                volume.setMinIops(newMinIops);
-            }
-            if (newMaxIops != null) {
-                volume.setMaxIops(newMaxIops);
-                final VolumeDetailVO iopsVolumeDetail = volumeDetailsDao.findDetail(volume.getId(), Volume.IOPS_LIMIT);
-                if (iopsVolumeDetail != null) {
-                    iopsVolumeDetail.setValue(newMaxIops.toString());
-                    volumeDetailsDao.update(iopsVolumeDetail.getId(), iopsVolumeDetail);
-                }
-            }
-            volumeDao.update(volumeId, volume);
         }
     }
 
