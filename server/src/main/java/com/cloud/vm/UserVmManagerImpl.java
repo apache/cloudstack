@@ -7930,15 +7930,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 resizedVolume.setSize(template.getSize());
             }
         }
-        Long rootDiskSize = null;
-        if (StringUtils.isNumeric(details.get(VmDetailConstants.ROOT_DISK_SIZE))) {
-            rootDiskSize = Long.parseLong(details.get(VmDetailConstants.ROOT_DISK_SIZE));
-        }
 
         if (diskOffering != null) {
             resizedVolume.setDiskOfferingId(diskOffering.getId());
             resizedVolume.setSize(diskOffering.getDiskSize());
-            if (diskOffering.isCustomized() && rootDiskSize == null) {
+            if (diskOffering.isCustomized()) {
                 resizedVolume.setSize(vol.getSize());
             }
             if (diskOffering.getMinIops() != null) {
@@ -7948,18 +7944,25 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 resizedVolume.setMaxIops(diskOffering.getMaxIops());
             }
         }
-        if (rootDiskSize != null) {
-            resizedVolume.setSize(rootDiskSize);
-        }
 
-        String minIops = details.get("minIops");
-        String maxIops = details.get("maxIops");
+        if (MapUtils.isNotEmpty(details)) {
+            Long rootDiskSize = null;
+            if (StringUtils.isNumeric(details.get(VmDetailConstants.ROOT_DISK_SIZE))) {
+                rootDiskSize = Long.parseLong(details.get(VmDetailConstants.ROOT_DISK_SIZE));
+            }
+            if (rootDiskSize != null) {
+                resizedVolume.setSize(rootDiskSize);
+            }
 
-        if (StringUtils.isNotBlank(minIops)) {
-            resizedVolume.setMinIops(Long.parseLong(minIops));
-        }
-        if (StringUtils.isNotBlank(maxIops)) {
-            resizedVolume.setMinIops(Long.parseLong(maxIops));
+            String minIops = details.get("minIops");
+            String maxIops = details.get("maxIops");
+
+            if (StringUtils.isNumeric(minIops)) {
+                resizedVolume.setMinIops(Long.parseLong(minIops));
+            }
+            if (StringUtils.isNumeric(maxIops)) {
+                resizedVolume.setMinIops(Long.parseLong(maxIops));
+            }
         }
         _volsDao.update(resizedVolume.getId(), resizedVolume);
     }
