@@ -272,6 +272,16 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
     }
 
+    private void checkNetfsStoragePoolMounted(String uuid) {
+        String targetPath = _mountPoint + File.separator + uuid;
+        int mountpointResult = Script.runSimpleBashScriptForExitValue("mountpoint -q " + targetPath);
+        if (mountpointResult != 0) {
+            String errMsg = String.format("libvirt failed to mount storage pool %s at %s", uuid, targetPath);
+            s_logger.error(errMsg);
+            throw new CloudRuntimeException(errMsg);
+        }
+    }
+
     private StoragePool createNetfsStoragePool(PoolType fsType, Connect conn, String uuid, String host, String path) throws LibvirtException {
         String targetPath = _mountPoint + File.separator + uuid;
         LibvirtStoragePoolDef spd = new LibvirtStoragePoolDef(fsType, uuid, uuid, host, path, targetPath);
@@ -692,6 +702,10 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 sp.create(0);
             }
 
+            if (type == StoragePoolType.NetworkFilesystem) {
+                checkNetfsStoragePoolMounted(name);
+            }
+
             return getStoragePool(name);
         } catch (LibvirtException e) {
             String error = e.toString();
@@ -756,10 +770,10 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             if (e.toString().contains("exit status 16")) {
                 String targetPath = _mountPoint + File.separator + uuid;
                 s_logger.error("deleteStoragePool removed pool from libvirt, but libvirt had trouble unmounting the pool. Trying umount location " + targetPath +
-                        "again in a few seconds");
+                        " again in a few seconds");
                 String result = Script.runSimpleBashScript("sleep 5 && umount " + targetPath);
                 if (result == null) {
-                    s_logger.error("Succeeded in unmounting " + targetPath);
+                    s_logger.info("Succeeded in unmounting " + targetPath);
                     return true;
                 }
                 s_logger.error("Failed to unmount " + targetPath);
