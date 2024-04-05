@@ -89,7 +89,7 @@
         v-if="overrideDiskSize"
         input-decorator="rootdisksize"
         :isCustomized="true"
-        @update-disk-size="(input, value) => updateFieldValue(overrideRootDiskSize, value)"
+        @update-disk-size="(input, value) => updateFieldValue('overrideRootDiskSize', value)"
         style="margin-top: 10px;"
       />
     </a-form-item>
@@ -153,7 +153,7 @@ export default {
       rootDiskSizeKey: 'details[0].rootdisksize',
       minIopsKey: 'details[0].minIops',
       maxIopsKey: 'details[0].maxIops',
-      rootDiskSize: 0,
+      rootdisksize: 0,
       minIops: 0,
       maxIops: 0,
       templateFilter: [
@@ -192,14 +192,14 @@ export default {
       if (this.overrideDiskOffering) {
         params.diskofferingid = this.diskOffering.id
         if (this.diskOffering.iscustomized) {
-          params[this.rootDiskSizeKey] = this.rootDiskSize
+          params[this.rootDiskSizeKey] = this.rootdisksize
         }
         if (this.diskOffering.iscustomizediops) {
           params[this.minIopsKey] = this.minIops
           params[this.maxIopsKey] = this.maxIops
         }
       }
-      if (this.overrideDiskSize && this.overrideRootDiskSize && !this.rootdisksize) {
+      if (this.overrideDiskSize && this.overrideRootDiskSize) {
         params.rootdisksize = this.overrideRootDiskSize
       }
       params.expunge = this.expungeDisk

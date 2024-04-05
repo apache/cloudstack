@@ -7673,6 +7673,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         _accountMgr.checkAccess(caller, null, true, vm);
 
         DiskOffering diskOffering = rootDiskOfferingId != null ? validateAndGetDiskOffering(rootDiskOfferingId, vm, caller) : null;
+        VMTemplateVO template = _templateDao.findById(newTemplateId);
+        if (template.getSize() != null) {
+            String rootDiskSize = details.get(VmDetailConstants.ROOT_DISK_SIZE);
+            Long templateSize = template.getSize();
+            if (StringUtils.isNumeric(rootDiskSize)) {
+                if (Long.parseLong(rootDiskSize) * GiB_TO_BYTES < template.getSize()) {
+                    throw new InvalidParameterValueException(String.format("Root disk size [%s] is smaller than the template size [%s]", rootDiskSize, template.getSize()));
+                }
+            } else if (diskOffering != null && templateSize < diskOffering.getDiskSize()) {
+                throw new InvalidParameterValueException(String.format("Disk size for selected offering [%s] is less than the template's size [%s]", diskOffering.getDiskSize(), templateSize));
+            }
+        }
 
         //check if there are any active snapshots on volumes associated with the VM
         s_logger.debug("Checking if there are any ongoing snapshots on the ROOT volumes associated with VM with ID " + vmId);
@@ -7946,11 +7958,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         if (MapUtils.isNotEmpty(details)) {
-            Long rootDiskSize = null;
             if (StringUtils.isNumeric(details.get(VmDetailConstants.ROOT_DISK_SIZE))) {
-                rootDiskSize = Long.parseLong(details.get(VmDetailConstants.ROOT_DISK_SIZE));
-            }
-            if (rootDiskSize != null) {
+                Long rootDiskSize = Long.parseLong(details.get(VmDetailConstants.ROOT_DISK_SIZE)) * GiB_TO_BYTES;
                 resizedVolume.setSize(rootDiskSize);
             }
 
