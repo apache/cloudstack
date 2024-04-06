@@ -383,57 +383,7 @@ public class AdaptiveDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle
      */
     @Override
     public void updateStoragePool(StoragePool storagePool, Map<String, String> newDetails) {
-        /**String newAuthnType = newDetails.get(ProviderAdapter.API_AUTHENTICATION_TYPE_KEY);
-        String newUser = newDetails.get(ProviderAdapter.API_USERNAME_KEY);
-        String newToken = newDetails.get(ProviderAdapter.API_TOKEN_KEY);
-        String newPassword = fetchMightBeEncryptedProperty(ProviderAdapter.API_PASSWORD_KEY, newDetails);
-        String newSecret = fetchMightBeEncryptedProperty(ProviderAdapter.API_TOKEN_KEY, newDetails);
-        String newUrl = newDetails.get(ProviderAdapter.API_URL_KEY);
-        String skipTlsValidationStr = newDetails.get(ProviderAdapter.API_SKIP_TLS_VALIDATION_KEY);
-        Boolean newSkipTlsValidation = null;
-        if (skipTlsValidationStr != null) {
-            newSkipTlsValidation = Boolean.parseBoolean(skipTlsValidationStr);
-        }
-
-        String capacityInBytesStr = newDetails.get("capacityBytes");
-        Long newCapacityInBytes = null;
-        if (capacityInBytesStr != null) {
-            newCapacityInBytes = Long.parseLong(capacityInBytesStr);
-        }
-
-        String capacityIopsStr = newDetails.get("capacityIops");
-        Long newCapacityIops = null;
-        if (capacityIopsStr != null) {
-            newCapacityIops = Long.parseLong(capacityIopsStr);
-        }
-
-
-        Map<String,String> existingDetails = _primaryDataStoreDao.getDetails(storagePool.getId());
-        if (newAuthnType != null) {
-            existingDetails.put(ProviderAdapter.API_AUTHENTICATION_TYPE_KEY, newAuthnType);
-        }
-
-        if (newUser != null) existingDetails.put(ProviderAdapter.API_USERNAME_KEY, newUser);
-        if (newToken != null) existingDetails.put(ProviderAdapter.API_TOKEN_KEY, newToken);
-        if (newPassword != null) existingDetails.put(ProviderAdapter.API_PASSWORD_KEY, newPassword);
-        if (newSecret != null) existingDetails.put(ProviderAdapter.API_TOKEN_KEY, newSecret);
-        if (newUrl != null) existingDetails.put(ProviderAdapter.API_URL_KEY, newUrl);
-        if (newSkipTlsValidation != null) existingDetails.put(ProviderAdapter.API_SKIP_TLS_VALIDATION_KEY, newSkipTlsValidation.toString());
-        if (newCapacityInBytes != null) existingDetails.put("capacityBytes", capacityInBytesStr);
-        if (newCapacityIops != null) existingDetails.put("capacityIops", capacityIopsStr);
-
-        _adapterFactoryMap.updateAPI(storagePool.getUuid(), storagePool.getStorageProviderName(), existingDetails);*/
         _adapterFactoryMap.updateAPI(storagePool.getUuid(), storagePool.getStorageProviderName(), newDetails);
-    }
-
-    private String fetchMightBeEncryptedProperty(String key, Map<String,String> details) {
-        String value;
-        try {
-            value = DBEncryptionUtil.decrypt(details.get(key));
-        } catch (Exception e) {
-            value = details.get(key);
-        }
-        return value;
     }
 
     /**
