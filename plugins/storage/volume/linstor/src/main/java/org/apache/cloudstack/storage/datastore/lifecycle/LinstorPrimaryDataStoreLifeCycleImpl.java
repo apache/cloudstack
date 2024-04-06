@@ -53,7 +53,7 @@ import org.apache.cloudstack.storage.datastore.util.LinstorUtil;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
 import org.apache.log4j.Logger;
 
-public class LinstorPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
+public class LinstorPrimaryDataStoreLifeCycleImpl extends AbstractPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     private static final Logger s_logger = Logger.getLogger(LinstorPrimaryDataStoreLifeCycleImpl.class);
 
     @Inject
@@ -337,15 +337,5 @@ public class LinstorPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLif
     @Override
     public void disableStoragePool(DataStore store) {
         dataStoreHelper.disable(store);
-    }
-
-    @Override
-    public boolean changeStoragePoolScopeToZone(DataStore store, ClusterScope clusterScope, HypervisorType hypervisorType) {
-        throw new CloudRuntimeException("Storage pool scope change not supported for this Storage Pool Provider");
-    }
-
-    @Override
-    public boolean changeStoragePoolScopeToCluster(DataStore store, ClusterScope clusterScope, HypervisorType hypervisorType) {
-        throw new CloudRuntimeException("Storage pool scope change not supported for this Storage Pool Provider");
     }
 }

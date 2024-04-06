@@ -60,7 +60,7 @@ import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class StorPoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycle {
+public class StorPoolPrimaryDataStoreLifeCycle extends AbstractPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     private static final Logger log = Logger.getLogger(StorPoolPrimaryDataStoreLifeCycle.class);
 
     @Inject
@@ -317,15 +317,5 @@ public class StorPoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCy
     public void disableStoragePool(DataStore dataStore) {
         log.debug("disableStoragePool");
         dataStoreHelper.disable(dataStore);
-    }
-
-    @Override
-    public boolean changeStoragePoolScopeToZone(DataStore store, ClusterScope clusterScope, HypervisorType hypervisorType) {
-        throw new CloudRuntimeException("Storage pool scope change not supported for this Storage Pool Provider");
-    }
-
-    @Override
-    public boolean changeStoragePoolScopeToCluster(DataStore store, ClusterScope clusterScope, HypervisorType hypervisorType) {
-        throw new CloudRuntimeException("Storage pool scope change not supported for this Storage Pool Provider");
     }
 }

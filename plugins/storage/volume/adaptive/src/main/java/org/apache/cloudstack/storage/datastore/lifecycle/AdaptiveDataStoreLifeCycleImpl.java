@@ -62,7 +62,7 @@ import com.cloud.host.Host;
 /**
  * Manages the lifecycle of a Managed Data Store in CloudStack
  */
-public class AdaptiveDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
+public class AdaptiveDataStoreLifeCycleImpl extends AbstractPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     @Inject
     private PrimaryDataStoreDao _storagePoolDao;
     private static final Logger s_logger = Logger.getLogger(AdaptiveDataStoreLifeCycleImpl.class);
@@ -403,15 +403,5 @@ public class AdaptiveDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle
     public void disableStoragePool(DataStore store) {
         s_logger.info("Disabling storage pool [" + store.getName() + "]");
         _dataStoreHelper.disable(store);
-    }
-
-    @Override
-    public boolean changeStoragePoolScopeToZone(DataStore store, ClusterScope clusterScope, HypervisorType hypervisorType) {
-        throw new CloudRuntimeException("Storage pool scope change not supported for this Storage Pool Provider");
-    }
-
-    @Override
-    public boolean changeStoragePoolScopeToCluster(DataStore store, ClusterScope clusterScope, HypervisorType hypervisorType) {
-        throw new CloudRuntimeException("Storage pool scope change not supported for this Storage Pool Provider");
     }
 }

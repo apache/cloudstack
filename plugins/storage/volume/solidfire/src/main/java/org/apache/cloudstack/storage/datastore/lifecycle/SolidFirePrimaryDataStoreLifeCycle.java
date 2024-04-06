@@ -63,7 +63,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 import com.google.common.base.Preconditions;
 
-public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycle {
+public class SolidFirePrimaryDataStoreLifeCycle extends AbstractPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     private static final Logger s_logger = Logger.getLogger(SolidFirePrimaryDataStoreLifeCycle.class);
 
     @Inject private CapacityManager _capacityMgr;
@@ -390,11 +390,10 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
 
     @Override
     public boolean changeStoragePoolScopeToZone(DataStore store, ClusterScope clusterScope, HypervisorType hypervisorType) {
-        throw new CloudRuntimeException("Storage pool scope change not supported for this Storage Pool Provider");
-    }
-
-    @Override
-    public boolean changeStoragePoolScopeToCluster(DataStore store, ClusterScope clusterScope, HypervisorType hypervisorType) {
-        throw new CloudRuntimeException("Storage pool scope change not supported for this Storage Pool Provider");
+        /*
+         * We need to attach all VMware, Xenserver and KVM hosts in the zone.
+         * So pass hypervisorTpe as null.
+         */
+        return super.changeStoragePoolScopeToZone(store, clusterScope, null);
     }
 }

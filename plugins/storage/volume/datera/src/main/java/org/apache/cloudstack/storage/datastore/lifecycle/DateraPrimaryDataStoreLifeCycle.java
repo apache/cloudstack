@@ -58,7 +58,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class DateraPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycle {
+public class DateraPrimaryDataStoreLifeCycle extends AbstractPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     private static final Logger s_logger = Logger.getLogger(DateraPrimaryDataStoreLifeCycle.class);
 
     @Inject
@@ -397,12 +397,11 @@ public class DateraPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycl
 
     @Override
     public boolean changeStoragePoolScopeToZone(DataStore store, ClusterScope clusterScope, HypervisorType hypervisorType) {
-        throw new CloudRuntimeException("Storage pool scope change not supported for this Storage Pool Provider");
-    }
-
-    @Override
-    public boolean changeStoragePoolScopeToCluster(DataStore store, ClusterScope clusterScope, HypervisorType hypervisorType) {
-        throw new CloudRuntimeException("Storage pool scope change not supported for this Storage Pool Provider");
+        /*
+         * We need to attach all VMware, Xenserver and KVM hosts in the zone.
+         * So pass hypervisorTpe as null.
+         */
+        return super.changeStoragePoolScopeToZone(store, clusterScope, null);
     }
 
     private HypervisorType getHypervisorTypeForCluster(long clusterId) {

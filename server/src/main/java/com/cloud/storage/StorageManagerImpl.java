@@ -406,6 +406,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     private final Map<String, HypervisorHostListener> hostListeners = new HashMap<String, HypervisorHostListener>();
 
+    private final Set<HypervisorType> zoneWidePoolSupportedHypervisorTypes = Sets.newHashSet(HypervisorType.KVM, HypervisorType.VMware,
+            HypervisorType.Hyperv, HypervisorType.LXC, HypervisorType.Any, HypervisorType.Simulator);
+
     public boolean share(VMInstanceVO vm, List<VolumeVO> vols, HostVO host, boolean cancelPreviousShare) throws StorageUnavailableException {
 
         // if pool is in maintenance and it is the ONLY pool available; reject
@@ -870,9 +873,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 throw new InvalidParameterValueException("Missing parameter hypervisor. Hypervisor type is required to create zone wide primary storage.");
             }
 
-            Set<HypervisorType> supportedHypervisorTypes = Sets.newHashSet(HypervisorType.KVM, HypervisorType.VMware,
-                    HypervisorType.Hyperv, HypervisorType.LXC, HypervisorType.Any, HypervisorType.Simulator);
-            if (!supportedHypervisorTypes.contains(hypervisorType)) {
+            if (!zoneWidePoolSupportedHypervisorTypes.contains(hypervisorType)) {
                 throw new InvalidParameterValueException("Zone wide storage pool is not supported for hypervisor type " + hypervisor);
             }
         } else {
@@ -1159,32 +1160,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             throw new PermissionDeniedException("Only root admin can perform this operation");
         }
 
-        ScopeType scopeType = EnumUtils.getEnumIgnoreCase(ScopeType.class, cmd.getScope());
-        if (scopeType != ScopeType.ZONE && scopeType != ScopeType.CLUSTER) {
-            throw new InvalidParameterValueException("Invalid scope " + scopeType.toString() + "for Primary storage");
+        ScopeType newScope = EnumUtils.getEnumIgnoreCase(ScopeType.class, cmd.getScope());
+        if (newScope != ScopeType.ZONE && newScope != ScopeType.CLUSTER) {
+            throw new InvalidParameterValueException("Invalid scope " + newScope.toString() + "for Primary storage");
         }
 
         StoragePoolVO primaryStorage = _storagePoolDao.findById(id);
         if (primaryStorage == null) {
             throw new IllegalArgumentException("Unable to find storage pool with ID: " + id);
-        }
-
-        if (!primaryStorage.getStorageProviderName().equals(DataStoreProvider.DEFAULT_PRIMARY)) {
-            throw new InvalidParameterValueException("Primary storage scope change is only supported with "
-                    + DataStoreProvider.DEFAULT_PRIMARY + " data store provider");
-        }
-
-        StoragePoolType poolType = primaryStorage.getPoolType();
-        Set<StoragePoolType> supportedStoragePoolTypes = Sets.newHashSet(StoragePoolType.NetworkFilesystem, StoragePoolType.RBD);
-        if (!supportedStoragePoolTypes.contains(poolType)) {
-            throw new InvalidParameterValueException("Primary storage scope change is not supported for protocol "
-                    + primaryStorage.getPoolType().toString());
-        }
-
-        HypervisorType hypervisorType = primaryStorage.getHypervisor();
-        Set<HypervisorType> supportedHypervisorTypes = Sets.newHashSet(HypervisorType.KVM, HypervisorType.VMware, HypervisorType.Simulator);
-        if (!supportedHypervisorTypes.contains(hypervisorType)) {
-            throw new InvalidParameterValueException("Primary storage scope change is not supported for hypervisor type " + hypervisorType);
         }
 
         if (!primaryStorage.getStatus().equals(StoragePoolStatus.Disabled)) {
@@ -1193,8 +1176,25 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     " cannot be changed, as it is not in the Disabled state");
         }
 
-        if (primaryStorage.getScope().equals(scopeType)) {
+        ScopeType currentScope = primaryStorage.getScope();
+        if (currentScope.equals(newScope)) {
             throw new InvalidParameterValueException("New scope must be different than the current scope");
+        }
+
+        HypervisorType hypervisorType;
+        if (currentScope.equals(ScopeType.CLUSTER)) {
+            /*
+             * For cluster wide primary storage the hypervisor type might not be set.
+             * So, get it from the clusterVO.
+             */
+            Long clusterId = primaryStorage.getClusterId();
+            ClusterVO clusterVO = _clusterDao.findById(clusterId);
+            hypervisorType = clusterVO.getHypervisorType();
+        } else {
+            hypervisorType = primaryStorage.getHypervisor();
+        }
+        if (!zoneWidePoolSupportedHypervisorTypes.contains(hypervisorType)) {
+            throw new InvalidParameterValueException("Primary storage scope change is not supported for hypervisor type " + hypervisorType);
         }
 
         String providerName = primaryStorage.getStorageProviderName();
@@ -1211,7 +1211,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zoneId);
         }
 
-        if (scopeType.equals(ScopeType.ZONE)) {
+        if (newScope.equals(ScopeType.ZONE)) {
             ClusterScope clusterScope = new ClusterScope(primaryStorage.getClusterId(), null, zoneId);
             lifeCycle.changeStoragePoolScopeToZone(primaryStore, clusterScope, hypervisorType);
 

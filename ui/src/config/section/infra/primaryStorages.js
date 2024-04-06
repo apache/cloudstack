@@ -140,11 +140,13 @@ export default {
       dataView: true,
       popup: true,
       show: (record) => {
-        return (
-          record.state === 'Disabled' &&
-          (record.hypervisor === 'Simulator' || record.hypervisor === 'KVM' || record.hypervisor === 'VMware') &&
-          (record.type === 'NetworkFilesystem' || record.type === 'RBD') &&
-          record.provider === 'DefaultPrimary'
+        return (record.state === 'Disabled' &&
+          (record.hypervisor === 'KVM' ||
+           record.hypervisor === 'VMware' ||
+           record.hypervisor === 'HyperV' ||
+           record.hypervisor === 'LXC' ||
+           record.hypervisor === 'Any' ||
+           record.hypervisor === 'Simulator')
         )
       },
       component: shallowRef(defineAsyncComponent(() => import('@/views/infra/changeStoragePoolScope.vue')))

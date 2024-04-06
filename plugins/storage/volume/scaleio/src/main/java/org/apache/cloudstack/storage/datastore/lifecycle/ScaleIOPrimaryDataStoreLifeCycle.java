@@ -74,7 +74,7 @@ import com.cloud.utils.UriUtils;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycle {
+public class ScaleIOPrimaryDataStoreLifeCycle extends AbstractPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     private static final Logger LOGGER = Logger.getLogger(ScaleIOPrimaryDataStoreLifeCycle.class);
 
     @Inject
@@ -365,16 +365,6 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
     @Override
     public void disableStoragePool(DataStore dataStore) {
         dataStoreHelper.disable(dataStore);
-    }
-
-    @Override
-    public boolean changeStoragePoolScopeToZone(DataStore store, ClusterScope clusterScope, Hypervisor.HypervisorType hypervisorType) {
-        throw new CloudRuntimeException("Storage pool scope change not supported for this Storage Pool Provider");
-    }
-
-    @Override
-    public boolean changeStoragePoolScopeToCluster(DataStore store, ClusterScope clusterScope, Hypervisor.HypervisorType hypervisorType) {
-        throw new CloudRuntimeException("Storage pool scope change not supported for this Storage Pool Provider");
     }
 
     @Override

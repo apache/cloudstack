@@ -45,7 +45,6 @@ import com.cloud.storage.dao.StoragePoolWorkDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachineManager;
@@ -73,7 +72,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
+public class CloudStackPrimaryDataStoreLifeCycleImpl extends AbstractPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     private static final Logger s_logger = Logger.getLogger(CloudStackPrimaryDataStoreLifeCycleImpl.class);
     @Inject
     protected ResourceManager _resourceMgr;
@@ -543,46 +542,5 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
     @Override
     public void disableStoragePool(DataStore dataStore) {
         dataStoreHelper.disable(dataStore);
-    }
-
-    public boolean changeStoragePoolScopeToZone(DataStore store, ClusterScope clusterScope, HypervisorType hypervisorType) {
-        List<HostVO> hosts = _resourceMgr.listAllHostsInOneZoneNotInClusterByHypervisor(hypervisorType, clusterScope.getZoneId(), clusterScope.getScopeId());
-        s_logger.debug("Changing scope of the storage pool to Zone");
-        for (HostVO host : hosts) {
-            try {
-                storageMgr.connectHostToSharedPool(host.getId(), store.getId());
-            } catch (Exception e) {
-                s_logger.warn("Unable to establish a connection between " + host + " and " + store, e);
-            }
-        }
-        dataStoreHelper.switchToZone(store, hypervisorType);
-        return true;
-    }
-
-    public boolean changeStoragePoolScopeToCluster(DataStore store, ClusterScope clusterScope, HypervisorType hypervisorType) {
-        Pair<List<StoragePoolHostVO>, Integer> hostPoolRecords = _storagePoolHostDao.listByPoolIdNotInCluster(clusterScope.getScopeId(), store.getId());
-        s_logger.debug("Changing scope of the storage pool to Cluster");
-        HypervisorType hType = null;
-        if (hostPoolRecords.second() > 0) {
-            hType = getHypervisorType(hostPoolRecords.first().get(0).getHostId());
-        }
-
-        StoragePool pool = (StoragePool) store;
-        for (StoragePoolHostVO host : hostPoolRecords.first()) {
-            DeleteStoragePoolCommand deleteCmd = new DeleteStoragePoolCommand(pool);
-            final Answer answer = agentMgr.easySend(host.getHostId(), deleteCmd);
-
-            if (answer != null && answer.getResult()) {
-                if (HypervisorType.KVM != hType) {
-                    break;
-                }
-            } else {
-                if (answer != null) {
-                    s_logger.debug("Failed to delete storage pool: " + answer.getResult());
-                }
-            }
-        }
-        dataStoreHelper.switchToCluster(store, clusterScope);
-        return true;
     }
 }

@@ -72,7 +72,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycle {
+public class SolidFireSharedPrimaryDataStoreLifeCycle extends AbstractPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     private static final Logger LOGGER = Logger.getLogger(SolidFireSharedPrimaryDataStoreLifeCycle.class);
 
     @Inject private AccountDao accountDao;
@@ -769,15 +769,5 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
     @Override
     public void disableStoragePool(DataStore dataStore) {
         primaryDataStoreHelper.disable(dataStore);
-    }
-
-    @Override
-    public boolean changeStoragePoolScopeToZone(DataStore store, ClusterScope clusterScope, HypervisorType hypervisorType) {
-        throw new CloudRuntimeException("Storage pool scope change not supported for this Storage Pool Provider");
-    }
-
-    @Override
-    public boolean changeStoragePoolScopeToCluster(DataStore store, ClusterScope clusterScope, HypervisorType hypervisorType) {
-        throw new CloudRuntimeException("Storage pool scope change not supported for this Storage Pool Provider");
     }
 }

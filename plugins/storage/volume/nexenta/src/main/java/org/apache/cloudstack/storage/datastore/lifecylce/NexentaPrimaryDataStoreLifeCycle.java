@@ -30,6 +30,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreParameters;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.storage.datastore.lifecycle.AbstractPrimaryDataStoreLifeCycleImpl;
 import org.apache.cloudstack.storage.datastore.util.NexentaUtil;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
 import org.apache.log4j.Logger;
@@ -43,9 +44,9 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolAutomation;
-import com.cloud.utils.exception.CloudRuntimeException;
 
 public class NexentaPrimaryDataStoreLifeCycle
+        extends AbstractPrimaryDataStoreLifeCycleImpl
         implements PrimaryDataStoreLifeCycle {
     private static final Logger logger =
             Logger.getLogger(NexentaPrimaryDataStoreLifeCycle.class);
@@ -180,12 +181,11 @@ public class NexentaPrimaryDataStoreLifeCycle
 
     @Override
     public boolean changeStoragePoolScopeToZone(DataStore store, ClusterScope clusterScope, Hypervisor.HypervisorType hypervisorType) {
-        throw new CloudRuntimeException("Storage pool scope change not supported for this Storage Pool Provider");
-    }
-
-    @Override
-    public boolean changeStoragePoolScopeToCluster(DataStore store, ClusterScope clusterScope, Hypervisor.HypervisorType hypervisorType) {
-        throw new CloudRuntimeException("Storage pool scope change not supported for this Storage Pool Provider");
+        /*
+         * We need to attach all VMware, Xenserver and KVM hosts in the zone.
+         * So pass hypervisorTpe as null.
+         */
+        return super.changeStoragePoolScopeToZone(store, clusterScope, null);
     }
 
     @Override
