@@ -22,7 +22,7 @@
     <name>Apache CloudStack Developer Tools - Checkstyle Configuration</name>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>checkstyle</artifactId>
-    <version>4.18.1.0</version>
+    <version>4.18.1.1</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
