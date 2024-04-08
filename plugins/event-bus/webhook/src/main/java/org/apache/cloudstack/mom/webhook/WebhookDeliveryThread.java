@@ -77,7 +77,7 @@ public class WebhookDeliveryThread implements Runnable {
     private String payload;
     private String response;
     private Date startTime;
-    private int deliveryRetries = 3;
+    private int deliveryTries = 3;
     private int deliveryTimeout = 10;
 
     AsyncCompletionCallback<WebhookDeliveryResult> callback;
@@ -150,8 +150,8 @@ public class WebhookDeliveryThread implements Runnable {
         this.callback = callback;
     }
 
-    public void setDeliveryRetries(int deliveryRetries) {
-        this.deliveryRetries = deliveryRetries;
+    public void setDeliveryTries(int deliveryTries) {
+        this.deliveryTries = deliveryTries;
     }
 
     public void setDeliveryTimeout(int deliveryTimeout) {
@@ -175,7 +175,7 @@ public class WebhookDeliveryThread implements Runnable {
             callback.complete(new WebhookDeliveryResult(headers, payload, success, response, new Date()));
             return;
         }
-        while (attempt < deliveryRetries) {
+        while (attempt < deliveryTries) {
             attempt++;
             if (delivery(attempt)) {
                 success = true;

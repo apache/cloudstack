@@ -93,7 +93,7 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
                 .setContext(context);
         WebhookDeliveryThread job = new WebhookDeliveryThread(webhook, event, caller);
         job = ComponentContext.inject(job);
-        job.setDeliveryRetries(configs.first());
+        job.setDeliveryTries(configs.first());
         job.setDeliveryTimeout(configs.second());
         return job;
     }
@@ -118,7 +118,7 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
         for (WebhookVO webhook : webhooks) {
             if (!domainConfigs.containsKey(webhook.getDomainId())) {
                 domainConfigs.put(webhook.getDomainId(),
-                        new Pair<>(WebhookDeliveryRetries.valueIn(webhook.getDomainId()),
+                        new Pair<>(WebhookDeliveryTries.valueIn(webhook.getDomainId()),
                         WebhookDeliveryTimeout.valueIn(webhook.getDomainId())));
             }
             Pair<Integer, Integer> configs = domainConfigs.get(webhook.getDomainId());
@@ -162,7 +162,7 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
         caller.setCallback(caller.getTarget().manualDeliveryCompleteCallback(null, null))
                 .setContext(context);
         WebhookDeliveryThread job = new WebhookDeliveryThread(webhook, event, caller);
-        job.setDeliveryRetries(WebhookDeliveryRetries.valueIn(webhook.getDomainId()));
+        job.setDeliveryTries(WebhookDeliveryTries.valueIn(webhook.getDomainId()));
         job.setDeliveryTimeout(WebhookDeliveryTimeout.valueIn(webhook.getDomainId()));
         return job;
     }
@@ -222,7 +222,7 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey[]{
                 WebhookDeliveryTimeout,
-                WebhookDeliveryRetries,
+                WebhookDeliveryTries,
                 WebhookDeliveryThreadPoolSize,
                 WebhookDeliveriesLimit,
                 WebhookDeliveriesCleanupInterval

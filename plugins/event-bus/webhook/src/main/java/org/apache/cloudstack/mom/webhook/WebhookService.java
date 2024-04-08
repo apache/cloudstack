@@ -32,8 +32,8 @@ public interface WebhookService extends PluggableService, Configurable {
             "Wait timeout (in seconds) for a webhook delivery delivery",
             true, ConfigKey.Scope.Domain);
 
-    ConfigKey<Integer> WebhookDeliveryRetries = new ConfigKey<>("Advanced", Integer.class,
-            "webhook.delivery.retries", "3",
+    ConfigKey<Integer> WebhookDeliveryTries = new ConfigKey<>("Advanced", Integer.class,
+            "webhook.delivery.tries", "3",
             "Number of tries to be made for a webhook delivery",
             true, ConfigKey.Scope.Domain);
 
@@ -44,7 +44,7 @@ public interface WebhookService extends PluggableService, Configurable {
 
     ConfigKey<Integer> WebhookDeliveriesLimit = new ConfigKey<>("Advanced", Integer.class,
             "webhook.deliveries.limit", "10",
-            "Limit for number of deliveries to keep in DB per webhook",
+            "Limit for the number of deliveries to keep in DB per webhook",
             true, ConfigKey.Scope.Global);
 
     ConfigKey<Integer> WebhookDeliveriesCleanupInterval = new ConfigKey<>("Advanced", Integer.class,

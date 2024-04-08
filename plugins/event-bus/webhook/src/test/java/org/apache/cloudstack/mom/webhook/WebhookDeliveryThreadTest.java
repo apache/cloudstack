@@ -54,9 +54,9 @@ public class WebhookDeliveryThreadTest {
     }
 
     @Test
-    public void testSetDeliveryRetries() {
-        int retries = 2;
-        webhookDeliveryThread.setDeliveryRetries(retries);
-        Assert.assertEquals(retries, ReflectionTestUtils.getField(webhookDeliveryThread, "deliveryRetries"));
+    public void testSetDeliveryTries() {
+        int tries = 2;
+        webhookDeliveryThread.setDeliveryTries(tries);
+        Assert.assertEquals(tries, ReflectionTestUtils.getField(webhookDeliveryThread, "deliveryTries"));
     }
 }
