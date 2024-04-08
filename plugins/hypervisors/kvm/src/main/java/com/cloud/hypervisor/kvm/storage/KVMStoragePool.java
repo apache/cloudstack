@@ -83,4 +83,7 @@ public interface KVMStoragePool {
     default LibvirtVMDef.DiskDef.BlockIOSize getSupportedPhysicalBlockSize() {
         return null;
     }
+
+    default void customizeLibvirtDiskDef(LibvirtVMDef.DiskDef disk) {
+    }
 }
