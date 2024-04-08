@@ -102,7 +102,7 @@ public interface HypervisorGuru extends Adapter {
      * Will generate commands to migrate a vm to a pool. For now this will only work for stopped VMs on Vmware.
      *
      * @param vm the stopped vm to migrate
-     * @param destination the primary storage pool to migrate to
+     * @param volumeToPool the primary storage pools to migrate to
      * @return a list of commands to perform for a successful migration
      */
     List<Command> finalizeMigrate(VirtualMachine vm, Map<Volume, StoragePool> volumeToPool);
@@ -113,21 +113,34 @@ public interface HypervisorGuru extends Adapter {
      * @param hostIp VM's source host IP
      * @param vmName name of the source VM to clone from
      * @param params hypervisor specific additional parameters
-     * @param templateLocation datastore to create the template file
-     * @return a reference to the cloned VM and created template dir/name
+     * @return a reference to the cloned VM
      */
-    Pair<UnmanagedInstanceTO, String> cloneHypervisorVMAndCreateTemplateFileOutOfBand(String hostIp, String vmName,
-                                                                        Map<String, String> params, DataStoreTO templateLocation);
+    UnmanagedInstanceTO cloneHypervisorVMOutOfBand(String hostIp, String vmName, Map<String, String> params);
 
     /**
      * Removes a VM created as a clone of a VM on an external host
      * @param hostIp VM's source host IP
      * @param vmName name of the VM to remove
      * @param params hypervisor specific additional parameters
+     * @return true if the operation succeeds, false if not
+     */
+    boolean removeClonedHypervisorVMOutOfBand(String hostIp, String vmName, Map<String, String> params);
+
+    /**
+     * Will create an OVA template of a VM on an external host (if the guru can handle)
+     * @param hostIp VM's source host IP
+     * @param vmName name of the source VM to create template from
+     * @param params hypervisor specific additional parameters
+     * @param templateLocation datastore to create the template file
+     * @return the created template dir/name
+     */
+    String createVMTemplateFileOutOfBand(String hostIp, String vmName, Map<String, String> params, DataStoreTO templateLocation);
+
+    /**
+     * Removes the template file on the location
      * @param templateLocation datastore to remove the template file
      * @param templateDirAndName the template dir to remove from datastore
      * @return true if the operation succeeds, false if not
      */
-    boolean removeClonedHypervisorVMAandTemplateFileOutOfBand(String hostIp, String vmName,
-                                                              Map<String, String> params, DataStoreTO templateLocation, String templateDirAndName);
+    boolean removeVMTemplateFileOutOfBand(DataStoreTO templateLocation, String templateDirAndName);
 }

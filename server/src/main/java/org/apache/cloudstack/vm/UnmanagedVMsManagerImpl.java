@@ -1531,13 +1531,26 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return userVm;
     }
 
-    private Pair<UnmanagedInstanceTO, String> cloneSourceVmwareUnmanagedInstanceAndCreateOvaTemplateFile(String vcenter, String datacenterName, String username, String password, String clusterName, String sourceHostName, String sourceVM, DataStoreTO convertLocation) {
+    private UnmanagedInstanceTO cloneSourceVmwareUnmanagedInstance(String vcenter, String datacenterName, String username,
+                                                                   String password, String clusterName, String sourceHostName,
+                                                                   String sourceVM) {
         HypervisorGuru vmwareGuru = hypervisorGuruManager.getGuru(Hypervisor.HypervisorType.VMware);
 
         Map<String, String> params = createParamsForTemplateFromVmwareVmMigration(vcenter, datacenterName,
                 username, password, clusterName, sourceHostName, sourceVM);
 
-        return vmwareGuru.cloneHypervisorVMAndCreateTemplateFileOutOfBand(sourceHostName, sourceVM, params, convertLocation);
+        return vmwareGuru.cloneHypervisorVMOutOfBand(sourceHostName, sourceVM, params);
+    }
+
+    private String createOvaTemplateFileOfSourceVmwareUnmanagedInstance(String vcenter, String datacenterName, String username,
+                                                                        String password, String clusterName, String sourceHostName,
+                                                                        String sourceVM, DataStoreTO convertLocation) {
+        HypervisorGuru vmwareGuru = hypervisorGuruManager.getGuru(Hypervisor.HypervisorType.VMware);
+
+        Map<String, String> params = createParamsForTemplateFromVmwareVmMigration(vcenter, datacenterName,
+                username, password, clusterName, sourceHostName, sourceVM);
+
+        return vmwareGuru.createVMTemplateFileOutOfBand(sourceHostName, sourceVM, params, convertLocation);
     }
 
     protected UserVm importUnmanagedInstanceFromVmwareToKvm(DataCenter zone, Cluster destinationCluster, VMTemplateVO template,
@@ -1584,12 +1597,11 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         try {
             temporaryConvertLocation = selectInstanceConversionTemporaryLocation(destinationCluster, convertStoragePoolId);
             List<StoragePoolVO> convertStoragePools = findInstanceConversionStoragePoolsInCluster(destinationCluster);
-            Pair<UnmanagedInstanceTO, String> clonedInstanceAndOvaTemplate = cloneSourceVmwareUnmanagedInstanceAndCreateOvaTemplateFile(vcenter, datacenterName, username, password,
-                    clusterName, sourceHostName, sourceVM, temporaryConvertLocation);
-            clonedInstance = clonedInstanceAndOvaTemplate.first();
-            ovaTemplateDirAndNameOnConvertLocation = clonedInstanceAndOvaTemplate.second();
+            clonedInstance = cloneSourceVmwareUnmanagedInstance(vcenter, datacenterName, username, password, clusterName, sourceHostName, sourceVM);
             String instanceName = getGeneratedInstanceName(owner);
             checkNetworkingBeforeConvertingVmwareInstance(zone, owner, instanceName, hostName, clonedInstance, nicNetworkMap, nicIpAddressMap, forced);
+            ovaTemplateDirAndNameOnConvertLocation = createOvaTemplateFileOfSourceVmwareUnmanagedInstance(vcenter, datacenterName, username, password,
+                    clusterName, sourceHostName, clonedInstance.getName(), temporaryConvertLocation);
             UnmanagedInstanceTO convertedInstance = convertVmwareInstanceToKVM(sourceVM, clonedInstance, destinationCluster, convertStoragePools, convertInstanceHostId, temporaryConvertLocation, ovaTemplateDirAndNameOnConvertLocation);
             sanitizeConvertedInstance(convertedInstance, clonedInstance);
             UserVm userVm = importVirtualMachineInternal(convertedInstance, instanceName, zone, destinationCluster, null,
@@ -1606,7 +1618,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         } finally {
             if (clonedInstance != null) {
-                removeClonedInstanceAndTemplateFile(vcenter, datacenterName, username, password, sourceHostName, clonedInstance.getName(), sourceVM, temporaryConvertLocation, ovaTemplateDirAndNameOnConvertLocation);
+                removeClonedInstance(vcenter, datacenterName, username, password, sourceHostName, clonedInstance.getName(), sourceVM);
+            }
+            if (temporaryConvertLocation != null  && StringUtils.isNotBlank(ovaTemplateDirAndNameOnConvertLocation)) {
+                removeTemplateFile(temporaryConvertLocation, ovaTemplateDirAndNameOnConvertLocation);
             }
         }
     }
@@ -1700,21 +1715,32 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
     }
 
-    private void removeClonedInstanceAndTemplateFile(String vcenter, String datacenterName,
-                                                     String username, String password,
-                                                     String sourceHostName, String clonedInstanceName,
-                                                     String sourceVM, DataStoreTO convertLocation, String ovaTemplateOnConvertLocation) {
+    private void removeClonedInstance(String vcenter, String datacenterName, String username, String password,
+                                      String sourceHostName, String clonedInstanceName, String sourceVM) {
         HypervisorGuru vmwareGuru = hypervisorGuruManager.getGuru(Hypervisor.HypervisorType.VMware);
         Map<String, String> params = createParamsForRemoveClonedInstance(vcenter, datacenterName, username, password, sourceVM);
-        boolean result = vmwareGuru.removeClonedHypervisorVMAandTemplateFileOutOfBand(sourceHostName, clonedInstanceName, params, convertLocation, ovaTemplateOnConvertLocation);
+        boolean result = vmwareGuru.removeClonedHypervisorVMOutOfBand(sourceHostName, clonedInstanceName, params);
         if (!result) {
             String msg = String.format("Could not properly remove the cloned instance %s from VMware datacenter %s:%s",
                     clonedInstanceName, vcenter, datacenterName);
             LOGGER.warn(msg);
             return;
         }
-        LOGGER.debug(String.format("Removed the cloned instance %s from VMWare datacenter %s:%s",
+        LOGGER.debug(String.format("Removed the cloned instance %s from VMWare datacenter %s/%s",
                 clonedInstanceName, vcenter, datacenterName));
+    }
+
+    private void removeTemplateFile(DataStoreTO convertLocation, String ovaTemplateOnConvertLocation) {
+        HypervisorGuru vmwareGuru = hypervisorGuruManager.getGuru(Hypervisor.HypervisorType.VMware);
+        boolean result = vmwareGuru.removeVMTemplateFileOutOfBand(convertLocation, ovaTemplateOnConvertLocation);
+        if (!result) {
+            String msg = String.format("Could not remove the template file %s on datastore %s",
+                    ovaTemplateOnConvertLocation, convertLocation.getUrl());
+            LOGGER.warn(msg);
+            return;
+        }
+        LOGGER.debug(String.format("Removed the template file %s on datastore %s",
+                ovaTemplateOnConvertLocation, convertLocation.getUrl()));
     }
 
     private Map<String, String> createParamsForRemoveClonedInstance(String vcenter, String datacenterName, String username,

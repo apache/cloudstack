@@ -378,14 +378,26 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     }
 
     @Override
-    public Pair<UnmanagedInstanceTO, String> cloneHypervisorVMAndCreateTemplateFileOutOfBand(String hostIp, String vmName, Map<String, String> params, DataStoreTO templateLocation) {
-        s_logger.error("Unsupported operation: cannot clone external VM / create template file");
+    public UnmanagedInstanceTO cloneHypervisorVMOutOfBand(String hostIp, String vmName, Map<String, String> params) {
+        s_logger.error("Unsupported operation: cannot clone external VM");
         return null;
     }
 
     @Override
-    public boolean removeClonedHypervisorVMAandTemplateFileOutOfBand(String hostIp, String vmName, Map<String, String> params, DataStoreTO templateLocation, String templateDirAndName) {
-        s_logger.error("Unsupported operation: cannot remove external VM and template file");
+    public boolean removeClonedHypervisorVMOutOfBand(String hostIp, String vmName, Map<String, String> params) {
+        s_logger.error("Unsupported operation: cannot remove external VM");
+        return false;
+    }
+
+    @Override
+    public String createVMTemplateFileOutOfBand(String hostIp, String vmName, Map<String, String> params, DataStoreTO templateLocation) {
+        s_logger.error("Unsupported operation: cannot create template file");
+        return null;
+    }
+
+    @Override
+    public boolean removeVMTemplateFileOutOfBand(DataStoreTO templateLocation, String templateDirAndName) {
+        s_logger.error("Unsupported operation: cannot remove template file");
         return false;
     }
 }

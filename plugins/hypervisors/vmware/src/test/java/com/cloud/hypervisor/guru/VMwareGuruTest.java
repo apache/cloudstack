@@ -18,8 +18,10 @@ package com.cloud.hypervisor.guru;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -74,6 +76,7 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.Pair;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
@@ -115,7 +118,7 @@ public class VMwareGuruTest {
 
     @BeforeClass
     public static void init() {
-        mockedVmwareHelper = Mockito.mockStatic(VmwareHelper.class);;
+        mockedVmwareHelper = Mockito.mockStatic(VmwareHelper.class);
     }
 
     @AfterClass
@@ -201,7 +204,7 @@ public class VMwareGuruTest {
     }
 
     @Test(expected=CloudRuntimeException.class)
-    public void testCloneHypervisorVMAndCreateTemplateFile_NoExternalVM() throws Exception {
+    public void testCloneHypervisorVM_NoExternalVM() throws Exception {
         String vCenterHost = "10.1.1.2";
         String datacenterName = "datacenter";
         String hostIp = "10.1.1.3";
@@ -212,7 +215,6 @@ public class VMwareGuruTest {
         params.put(VmDetailConstants.VMWARE_VCENTER_USERNAME, "username");
         params.put(VmDetailConstants.VMWARE_VCENTER_PASSWORD, "password");
 
-        DataStoreTO dataStore = Mockito.mock(DataStoreTO.class);
         ManagedObjectReference mor = Mockito.mock(ManagedObjectReference.class);
         ServiceContent serviceContent = Mockito.mock(ServiceContent.class);
         VimPortType vimPort = Mockito.mock(VimPortType.class);
@@ -234,12 +236,12 @@ public class VMwareGuruTest {
         }); MockedConstruction<DatacenterMO> ignored3 = Mockito.mockConstruction(DatacenterMO.class, withSettings().spiedInstance(dataCenterMO), (mockDatacenterMO, contextDatacenterMO) -> {
             Mockito.doReturn(null).when(mockDatacenterMO).findVm(vmName);
         })) {
-            vMwareGuru.cloneHypervisorVMAndCreateTemplateFileOutOfBand(hostIp, vmName, params, dataStore);
+            vMwareGuru.cloneHypervisorVMOutOfBand(hostIp, vmName, params);
         }
     }
 
     @Test(expected=CloudRuntimeException.class)
-    public void testCloneHypervisorVMAndCreateTemplateFile_WindowsVMRunning() throws Exception {
+    public void testCloneHypervisorVM_WindowsVMRunning() throws Exception {
         String vCenterHost = "10.1.1.2";
         String datacenterName = "datacenter";
         String hostIp = "10.1.1.3";
@@ -250,7 +252,6 @@ public class VMwareGuruTest {
         params.put(VmDetailConstants.VMWARE_VCENTER_USERNAME, "username");
         params.put(VmDetailConstants.VMWARE_VCENTER_PASSWORD, "password");
 
-        DataStoreTO dataStore = Mockito.mock(DataStoreTO.class);
         ManagedObjectReference mor = Mockito.mock(ManagedObjectReference.class);
         ServiceContent serviceContent = Mockito.mock(ServiceContent.class);
         VimPortType vimPort = Mockito.mock(VimPortType.class);
@@ -261,7 +262,7 @@ public class VMwareGuruTest {
         Mockito.doReturn(mor).when(vimClient).getDecendentMoRef(any(ManagedObjectReference.class), anyString(), anyString());
         DatacenterMO dataCenterMO = spy(new DatacenterMO(vmwareContext, datacenterName));
         VirtualMachineMO vmMo = Mockito.mock(VirtualMachineMO.class);
-        HostMO hostMo = Mockito.mock(HostMO.class);;
+        HostMO hostMo = Mockito.mock(HostMO.class);
         Mockito.doReturn(VirtualMachinePowerState.POWERED_ON).when(vmMo).getPowerState();
         Mockito.doReturn(hostMo).when(vmMo).getRunningHost();
         UnmanagedInstanceTO instance = Mockito.mock(UnmanagedInstanceTO.class);
@@ -279,12 +280,12 @@ public class VMwareGuruTest {
         }); MockedConstruction<DatacenterMO> ignored3 = Mockito.mockConstruction(DatacenterMO.class, withSettings().spiedInstance(dataCenterMO), (mockDatacenterMO, contextDatacenterMO) -> {
             Mockito.doReturn(vmMo).when(mockDatacenterMO).findVm(vmName);
         })) {
-            vMwareGuru.cloneHypervisorVMAndCreateTemplateFileOutOfBand(hostIp, vmName, params, dataStore);
+            vMwareGuru.cloneHypervisorVMOutOfBand(hostIp, vmName, params);
         }
     }
 
     @Test(expected=CloudRuntimeException.class)
-    public void testCloneHypervisorVMAndCreateTemplateFile_GetDatastoresFailed() throws Exception {
+    public void testCloneHypervisorVM_GetDatastoresFailed() throws Exception {
         String vCenterHost = "10.1.1.2";
         String datacenterName = "datacenter";
         String hostIp = "10.1.1.3";
@@ -295,7 +296,6 @@ public class VMwareGuruTest {
         params.put(VmDetailConstants.VMWARE_VCENTER_USERNAME, "username");
         params.put(VmDetailConstants.VMWARE_VCENTER_PASSWORD, "password");
 
-        DataStoreTO dataStore = Mockito.mock(DataStoreTO.class);
         ManagedObjectReference mor = Mockito.mock(ManagedObjectReference.class);
         ServiceContent serviceContent = Mockito.mock(ServiceContent.class);
         VimPortType vimPort = Mockito.mock(VimPortType.class);
@@ -306,7 +306,7 @@ public class VMwareGuruTest {
         Mockito.doReturn(mor).when(vimClient).getDecendentMoRef(any(ManagedObjectReference.class), anyString(), anyString());
         DatacenterMO dataCenterMO = spy(new DatacenterMO(vmwareContext, datacenterName));
         VirtualMachineMO vmMo = Mockito.mock(VirtualMachineMO.class);
-        HostMO hostMo = Mockito.mock(HostMO.class);;
+        HostMO hostMo = Mockito.mock(HostMO.class);
         Mockito.doReturn(VirtualMachinePowerState.POWERED_OFF).when(vmMo).getPowerState();
         Mockito.doReturn(hostMo).when(vmMo).getRunningHost();
         List<DatastoreMO> datastores = new ArrayList<>();
@@ -323,12 +323,12 @@ public class VMwareGuruTest {
         }); MockedConstruction<DatacenterMO> ignored3 = Mockito.mockConstruction(DatacenterMO.class, withSettings().spiedInstance(dataCenterMO), (mockDatacenterMO, contextDatacenterMO) -> {
             Mockito.doReturn(vmMo).when(mockDatacenterMO).findVm(vmName);
         })) {
-            vMwareGuru.cloneHypervisorVMAndCreateTemplateFileOutOfBand(hostIp, vmName, params, dataStore);
+            vMwareGuru.cloneHypervisorVMOutOfBand(hostIp, vmName, params);
         }
     }
 
     @Test(expected=CloudRuntimeException.class)
-    public void testCloneHypervisorVMAndCreateTemplateFile_CloneVMFailed() throws Exception {
+    public void testCloneHypervisorVM_CloneVMFailed() throws Exception {
         String vCenterHost = "10.1.1.2";
         String datacenterName = "datacenter";
         String hostIp = "10.1.1.3";
@@ -339,7 +339,6 @@ public class VMwareGuruTest {
         params.put(VmDetailConstants.VMWARE_VCENTER_USERNAME, "username");
         params.put(VmDetailConstants.VMWARE_VCENTER_PASSWORD, "password");
 
-        DataStoreTO dataStore = Mockito.mock(DataStoreTO.class);
         ManagedObjectReference mor = Mockito.mock(ManagedObjectReference.class);
         ServiceContent serviceContent = Mockito.mock(ServiceContent.class);
         VimPortType vimPort = Mockito.mock(VimPortType.class);
@@ -350,11 +349,12 @@ public class VMwareGuruTest {
         Mockito.doReturn(mor).when(vimClient).getDecendentMoRef(any(ManagedObjectReference.class), anyString(), anyString());
         DatacenterMO dataCenterMO = spy(new DatacenterMO(vmwareContext, datacenterName));
         VirtualMachineMO vmMo = Mockito.mock(VirtualMachineMO.class);
-        HostMO hostMo = Mockito.mock(HostMO.class);;
+        HostMO hostMo = Mockito.mock(HostMO.class);
         Mockito.doReturn(VirtualMachinePowerState.POWERED_OFF).when(vmMo).getPowerState();
         Mockito.doReturn(hostMo).when(vmMo).getRunningHost();
         Mockito.doReturn(mor).when(hostMo).getHyperHostOwnerResourcePool();
-        DatastoreMO datastoreMO = Mockito.mock(DatastoreMO.class);;
+        DatastoreMO datastoreMO = Mockito.mock(DatastoreMO.class);
+        Mockito.doReturn(mor).when(datastoreMO).getMor();
         List<DatastoreMO> datastores = new ArrayList<>();
         datastores.add(datastoreMO);
         Mockito.doReturn(datastores).when(vmMo).getAllDatastores();
@@ -373,17 +373,75 @@ public class VMwareGuruTest {
             Mockito.doReturn(mor).when(mockDatacenterMO).getVmFolder();
             Mockito.doReturn(mor).when(mockDatacenterMO).getMor();
         })) {
-            vMwareGuru.cloneHypervisorVMAndCreateTemplateFileOutOfBand(hostIp, vmName, params, dataStore);
+            vMwareGuru.cloneHypervisorVMOutOfBand(hostIp, vmName, params);
         }
     }
 
     @Test
-    public void testRemoveClonedHypervisorVMAandTemplateFileOutOfBand_NoClonedVM() throws Exception {
+    public void testCloneHypervisorVM() throws Exception {
+        String vCenterHost = "10.1.1.2";
+        String datacenterName = "datacenter";
+        String hostIp = "10.1.1.3";
+        String vmName = "test-vm";
+        Map<String, String> params = new HashMap<>();
+        params.put(VmDetailConstants.VMWARE_VCENTER_HOST, vCenterHost);
+        params.put(VmDetailConstants.VMWARE_DATACENTER_NAME, datacenterName);
+        params.put(VmDetailConstants.VMWARE_VCENTER_USERNAME, "username");
+        params.put(VmDetailConstants.VMWARE_VCENTER_PASSWORD, "password");
+
+        ManagedObjectReference mor = Mockito.mock(ManagedObjectReference.class);
+        ServiceContent serviceContent = Mockito.mock(ServiceContent.class);
+        VimPortType vimPort = Mockito.mock(VimPortType.class);
+        VmwareClient vimClient = spy(new VmwareClient(vCenterHost));
+        VmwareContext vmwareContext = spy(new VmwareContext(vimClient, vCenterHost));
+        Mockito.doReturn(vimClient).when(vmwareContext).getVimClient();
+        Mockito.doReturn(mor).when(vmwareContext).getRootFolder();
+        Mockito.doReturn(mor).when(vimClient).getDecendentMoRef(any(ManagedObjectReference.class), anyString(), anyString());
+        DatacenterMO dataCenterMO = spy(new DatacenterMO(vmwareContext, datacenterName));
+        VirtualMachineMO vmMo = Mockito.mock(VirtualMachineMO.class);
+        HostMO hostMo = Mockito.mock(HostMO.class);
+        Mockito.doReturn(VirtualMachinePowerState.POWERED_OFF).when(vmMo).getPowerState();
+        Mockito.doReturn(hostMo).when(vmMo).getRunningHost();
+        Mockito.doReturn(mor).when(hostMo).getHyperHostOwnerResourcePool();
+        Mockito.doReturn(mor).when(hostMo).getMor();
+        DatastoreMO datastoreMO = Mockito.mock(DatastoreMO.class);
+        Mockito.doReturn(mor).when(datastoreMO).getMor();
+        List<DatastoreMO> datastores = new ArrayList<>();
+        datastores.add(datastoreMO);
+        Mockito.doReturn(datastores).when(vmMo).getAllDatastores();
+        Mockito.lenient().doReturn(true).when(vmMo).createFullClone(anyString(), any(ManagedObjectReference.class), any(ManagedObjectReference.class), any(ManagedObjectReference.class), any(Storage.ProvisioningType.class));
+        UnmanagedInstanceTO instance = Mockito.mock(UnmanagedInstanceTO.class);
+        when(VmwareHelper.getUnmanagedInstance(hostMo, vmMo)).thenReturn(instance);
+        UnmanagedInstanceTO.Disk disk = Mockito.mock(UnmanagedInstanceTO.Disk.class);
+        Mockito.doReturn("1").when(disk).getDiskId();
+        List<UnmanagedInstanceTO.Disk> disks = new ArrayList<>();
+        disks.add(disk);
+        Mockito.doReturn(disks).when(instance).getDisks();
+
+        try (MockedConstruction<VmwareClient> ignored1 = Mockito.mockConstruction(VmwareClient.class, withSettings().spiedInstance(vimClient), (mockVmwareClient, contextVmwareClient) -> {
+            Mockito.doReturn(vimPort).when(mockVmwareClient).getService();
+            Mockito.doReturn(serviceContent).when(mockVmwareClient).getServiceContent();
+            Mockito.doNothing().when(mockVmwareClient).connect(anyString(), anyString(), anyString());
+            Mockito.doReturn(mor).when(mockVmwareClient).getRootFolder();
+        }); MockedConstruction<VmwareContext> ignored2 = Mockito.mockConstruction(VmwareContext.class, withSettings().spiedInstance(vmwareContext), (mockVmwareContext, contextVmwareContext) -> {
+            Mockito.doReturn(vimClient).when(mockVmwareContext).getVimClient();
+            Mockito.doReturn(mor).when(mockVmwareContext).getRootFolder();
+        }); MockedConstruction<DatacenterMO> ignored3 = Mockito.mockConstruction(DatacenterMO.class, withSettings().spiedInstance(dataCenterMO), (mockDatacenterMO, contextDatacenterMO) -> {
+            Mockito.doReturn(vmMo).when(mockDatacenterMO).findVm(anyString());
+            Mockito.doReturn(mor).when(mockDatacenterMO).getVmFolder();
+            Mockito.doReturn(mor).when(mockDatacenterMO).getMor();
+        })) {
+            UnmanagedInstanceTO clonedVm = vMwareGuru.cloneHypervisorVMOutOfBand(hostIp, vmName, params);
+            assertNotNull(clonedVm);
+        }
+    }
+
+    @Test(expected=CloudRuntimeException.class)
+    public void testCreateVMTemplateFileOutOfBand_NoClonedVM() throws Exception {
         String vCenterHost = "10.1.1.2";
         String datacenterName = "datacenter";
         String hostIp = "10.1.1.3";
         String vmName = "cloned-test-vm";
-        String templateDirAndName = "f887b7b3-3d1f-4a7d-93e5-3147f58866c6";
         Map<String, String> params = new HashMap<>();
         params.put(VmDetailConstants.VMWARE_VCENTER_HOST, vCenterHost);
         params.put(VmDetailConstants.VMWARE_DATACENTER_NAME, datacenterName);
@@ -412,26 +470,103 @@ public class VMwareGuruTest {
         }); MockedConstruction<DatacenterMO> ignored3 = Mockito.mockConstruction(DatacenterMO.class, withSettings().spiedInstance(dataCenterMO), (mockDatacenterMO, contextDatacenterMO) -> {
             Mockito.doReturn(null).when(mockDatacenterMO).findVm(vmName);
         })) {
-            boolean result = vMwareGuru.removeClonedHypervisorVMAandTemplateFileOutOfBand(hostIp, vmName, params, dataStore, templateDirAndName);
-            assertFalse(result);
+            vMwareGuru.createVMTemplateFileOutOfBand(hostIp, vmName, params, dataStore);
         }
     }
 
     @Test
-    public void testRemoveClonedHypervisorVMAandTemplateFileOutOfBand() throws Exception {
+    public void testCreateVMTemplateFileOutOfBand() throws Exception {
         String vCenterHost = "10.1.1.2";
         String datacenterName = "datacenter";
         String hostIp = "10.1.1.3";
         String vmName = "cloned-test-vm";
-        String templateDirAndName = "f887b7b3-3d1f-4a7d-93e5-3147f58866c6";
         Map<String, String> params = new HashMap<>();
         params.put(VmDetailConstants.VMWARE_VCENTER_HOST, vCenterHost);
         params.put(VmDetailConstants.VMWARE_DATACENTER_NAME, datacenterName);
         params.put(VmDetailConstants.VMWARE_VCENTER_USERNAME, "username");
         params.put(VmDetailConstants.VMWARE_VCENTER_PASSWORD, "password");
 
+        ManagedObjectReference mor = Mockito.mock(ManagedObjectReference.class);
+        ServiceContent serviceContent = Mockito.mock(ServiceContent.class);
+        VimPortType vimPort = Mockito.mock(VimPortType.class);
+        VmwareClient vimClient = spy(new VmwareClient(vCenterHost));
+        VmwareContext vmwareContext = spy(new VmwareContext(vimClient, vCenterHost));
+        Mockito.doReturn(vimClient).when(vmwareContext).getVimClient();
+        Mockito.doReturn(mor).when(vmwareContext).getRootFolder();
+        Mockito.doReturn(mor).when(vimClient).getDecendentMoRef(any(ManagedObjectReference.class), anyString(), anyString());
+        DatacenterMO dataCenterMO = spy(new DatacenterMO(vmwareContext, datacenterName));
+        VirtualMachineMO vmMo = Mockito.mock(VirtualMachineMO.class);
+        Mockito.doNothing().when(vmMo).exportVm(anyString(), anyString(), anyBoolean(), anyBoolean());
         NfsTO dataStore = Mockito.mock(NfsTO.class);
         Mockito.doReturn("nfs://10.1.1.4/testdir").when(dataStore).getUrl();
+
+        try (MockedConstruction<VmwareClient> ignored1 = Mockito.mockConstruction(VmwareClient.class, withSettings().spiedInstance(vimClient), (mockVmwareClient, contextVmwareClient) -> {
+            Mockito.doReturn(vimPort).when(mockVmwareClient).getService();
+            Mockito.doReturn(serviceContent).when(mockVmwareClient).getServiceContent();
+            Mockito.doNothing().when(mockVmwareClient).connect(anyString(), anyString(), anyString());
+            Mockito.doReturn(mor).when(mockVmwareClient).getRootFolder();
+        }); MockedConstruction<VmwareContext> ignored2 = Mockito.mockConstruction(VmwareContext.class, withSettings().spiedInstance(vmwareContext), (mockVmwareContext, contextVmwareContext) -> {
+            Mockito.doReturn(vimClient).when(mockVmwareContext).getVimClient();
+            Mockito.doReturn(mor).when(mockVmwareContext).getRootFolder();
+        }); MockedConstruction<DatacenterMO> ignored3 = Mockito.mockConstruction(DatacenterMO.class, withSettings().spiedInstance(dataCenterMO), (mockDatacenterMO, contextDatacenterMO) -> {
+            Mockito.doReturn(vmMo).when(mockDatacenterMO).findVm(vmName);
+        })) {
+            String templateDirAndName = vMwareGuru.createVMTemplateFileOutOfBand(hostIp, vmName, params, dataStore);
+            assertNotNull(templateDirAndName);
+            assertTrue(UuidUtils.isUuid(templateDirAndName));
+        }
+    }
+
+    @Test
+    public void testRemoveClonedHypervisorVM_NoClonedVM() throws Exception {
+        String vCenterHost = "10.1.1.2";
+        String datacenterName = "datacenter";
+        String hostIp = "10.1.1.3";
+        String vmName = "cloned-test-vm";
+        Map<String, String> params = new HashMap<>();
+        params.put(VmDetailConstants.VMWARE_VCENTER_HOST, vCenterHost);
+        params.put(VmDetailConstants.VMWARE_DATACENTER_NAME, datacenterName);
+        params.put(VmDetailConstants.VMWARE_VCENTER_USERNAME, "username");
+        params.put(VmDetailConstants.VMWARE_VCENTER_PASSWORD, "password");
+
+        ManagedObjectReference mor = Mockito.mock(ManagedObjectReference.class);
+        ServiceContent serviceContent = Mockito.mock(ServiceContent.class);
+        VimPortType vimPort = Mockito.mock(VimPortType.class);
+        VmwareClient vimClient = spy(new VmwareClient(vCenterHost));
+        VmwareContext vmwareContext = spy(new VmwareContext(vimClient, vCenterHost));
+        Mockito.doReturn(vimClient).when(vmwareContext).getVimClient();
+        Mockito.doReturn(mor).when(vmwareContext).getRootFolder();
+        Mockito.doReturn(mor).when(vimClient).getDecendentMoRef(any(ManagedObjectReference.class), anyString(), anyString());
+        DatacenterMO dataCenterMO = spy(new DatacenterMO(vmwareContext, datacenterName));
+
+        try (MockedConstruction<VmwareClient> ignored1 = Mockito.mockConstruction(VmwareClient.class, withSettings().spiedInstance(vimClient), (mockVmwareClient, contextVmwareClient) -> {
+            Mockito.doReturn(vimPort).when(mockVmwareClient).getService();
+            Mockito.doReturn(serviceContent).when(mockVmwareClient).getServiceContent();
+            Mockito.doNothing().when(mockVmwareClient).connect(anyString(), anyString(), anyString());
+            Mockito.doReturn(mor).when(mockVmwareClient).getRootFolder();
+        }); MockedConstruction<VmwareContext> ignored2 = Mockito.mockConstruction(VmwareContext.class, withSettings().spiedInstance(vmwareContext), (mockVmwareContext, contextVmwareContext) -> {
+            Mockito.doReturn(vimClient).when(mockVmwareContext).getVimClient();
+            Mockito.doReturn(mor).when(mockVmwareContext).getRootFolder();
+        }); MockedConstruction<DatacenterMO> ignored3 = Mockito.mockConstruction(DatacenterMO.class, withSettings().spiedInstance(dataCenterMO), (mockDatacenterMO, contextDatacenterMO) -> {
+            Mockito.doReturn(null).when(mockDatacenterMO).findVm(vmName);
+        })) {
+            boolean result = vMwareGuru.removeClonedHypervisorVMOutOfBand(hostIp, vmName, params);
+            assertFalse(result);
+        }
+    }
+
+    @Test
+    public void testRemoveClonedHypervisorVM() throws Exception {
+        String vCenterHost = "10.1.1.2";
+        String datacenterName = "datacenter";
+        String hostIp = "10.1.1.3";
+        String vmName = "cloned-test-vm";
+        Map<String, String> params = new HashMap<>();
+        params.put(VmDetailConstants.VMWARE_VCENTER_HOST, vCenterHost);
+        params.put(VmDetailConstants.VMWARE_DATACENTER_NAME, datacenterName);
+        params.put(VmDetailConstants.VMWARE_VCENTER_USERNAME, "username");
+        params.put(VmDetailConstants.VMWARE_VCENTER_PASSWORD, "password");
+
         ManagedObjectReference mor = Mockito.mock(ManagedObjectReference.class);
         ServiceContent serviceContent = Mockito.mock(ServiceContent.class);
         VimPortType vimPort = Mockito.mock(VimPortType.class);
@@ -455,8 +590,17 @@ public class VMwareGuruTest {
         }); MockedConstruction<DatacenterMO> ignored3 = Mockito.mockConstruction(DatacenterMO.class, withSettings().spiedInstance(dataCenterMO), (mockDatacenterMO, contextDatacenterMO) -> {
             Mockito.doReturn(vmMo).when(mockDatacenterMO).findVm(vmName);
         })) {
-            boolean result = vMwareGuru.removeClonedHypervisorVMAandTemplateFileOutOfBand(hostIp, vmName, params, dataStore, templateDirAndName);
+            boolean result = vMwareGuru.removeClonedHypervisorVMOutOfBand(hostIp, vmName, params);
             assertTrue(result);
         }
+    }
+
+    @Test
+    public void testRemoveVMTemplateFileOutOfBand() throws Exception {
+        NfsTO dataStore = Mockito.mock(NfsTO.class);
+        Mockito.doReturn("nfs://10.1.1.4/testdir").when(dataStore).getUrl();
+        String templateDirAndName = "f887b7b3-3d1f-4a7d-93e5-3147f58866c6";
+        boolean result = vMwareGuru.removeVMTemplateFileOutOfBand(dataStore, templateDirAndName);
+        assertTrue(result);
     }
 }

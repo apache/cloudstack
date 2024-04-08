@@ -586,6 +586,7 @@ public class UnmanagedVMsManagerImplTest {
         String host = "192.168.1.10";
         String vmName = "TestInstanceFromVmware";
         instance.setName(vmName);
+        String tmplFileName = "5b8d689a-e61a-4ac3-9b76-e121ff90fbd3";
         long newVmId = 2L;
         long networkId = 1L;
         when(vmDao.getNextInSequence(Long.class, "id")).thenReturn(newVmId);
@@ -614,8 +615,10 @@ public class UnmanagedVMsManagerImplTest {
 
         HypervisorGuru vmwareGuru = mock(HypervisorGuru.class);
         when(hypervisorGuruManager.getGuru(Hypervisor.HypervisorType.VMware)).thenReturn(vmwareGuru);
-        when(vmwareGuru.cloneHypervisorVMAndCreateTemplateFileOutOfBand(anyString(), anyString(), anyMap(), any(DataStoreTO.class))).thenReturn(new Pair<>(instance, ""));
-        when(vmwareGuru.removeClonedHypervisorVMAandTemplateFileOutOfBand(anyString(), anyString(), anyMap(), any(DataStoreTO.class), anyString())).thenReturn(true);
+        when(vmwareGuru.cloneHypervisorVMOutOfBand(anyString(), anyString(), anyMap())).thenReturn(instance);
+        when(vmwareGuru.removeClonedHypervisorVMOutOfBand(anyString(), anyString(), anyMap())).thenReturn(true);
+        when(vmwareGuru.createVMTemplateFileOutOfBand(anyString(), anyString(), anyMap(), any(DataStoreTO.class))).thenReturn(tmplFileName);
+        when(vmwareGuru.removeVMTemplateFileOutOfBand(any(DataStoreTO.class), anyString())).thenReturn(true);
 
         HostVO convertHost = mock(HostVO.class);
         long convertHostId = 1L;
@@ -690,8 +693,10 @@ public class UnmanagedVMsManagerImplTest {
 
         try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class)) {
             unmanagedVMsManager.importVm(importVmCmd);
-            verify(vmwareGuru).cloneHypervisorVMAndCreateTemplateFileOutOfBand(Mockito.eq(host), Mockito.eq(vmName), anyMap(), any(DataStoreTO.class));
-            verify(vmwareGuru).removeClonedHypervisorVMAandTemplateFileOutOfBand(Mockito.eq(host), Mockito.eq(vmName), anyMap(), any(DataStoreTO.class), anyString());
+            verify(vmwareGuru).cloneHypervisorVMOutOfBand(Mockito.eq(host), Mockito.eq(vmName), anyMap());
+            verify(vmwareGuru).createVMTemplateFileOutOfBand(Mockito.eq(host), Mockito.eq(vmName), anyMap(), any(DataStoreTO.class));
+            verify(vmwareGuru).removeClonedHypervisorVMOutOfBand(Mockito.eq(host), Mockito.eq(vmName), anyMap());
+            verify(vmwareGuru).removeVMTemplateFileOutOfBand(any(DataStoreTO.class), anyString());
         }
     }
 

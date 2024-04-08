@@ -1379,8 +1379,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     }
 
     @Override
-    public Pair<UnmanagedInstanceTO, String> cloneHypervisorVMAndCreateTemplateFileOutOfBand(String hostIp, String vmName,
-                                                                               Map<String, String> params, DataStoreTO templateLocation) {
+    public UnmanagedInstanceTO cloneHypervisorVMOutOfBand(String hostIp, String vmName, Map<String, String> params) {
         String vcenter = params.get(VmDetailConstants.VMWARE_VCENTER_HOST);
         String datacenter = params.get(VmDetailConstants.VMWARE_DATACENTER_NAME);
         String username = params.get(VmDetailConstants.VMWARE_VCENTER_USERNAME);
@@ -1392,7 +1391,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             DatacenterMO dataCenterMO = new DatacenterMO(context, datacenter);
             VirtualMachineMO vmMo = dataCenterMO.findVm(vmName);
             if (vmMo == null) {
-                String err = String.format("Cannot find VM with name %s on %s/%s", vmName, vcenter, datacenter);
+                String err = String.format("Cannot find VM with name %s on vCenter %s/%s", vmName, vcenter, datacenter);
                 s_logger.error(err);
                 throw new CloudRuntimeException(err);
             }
@@ -1406,12 +1405,10 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
 
             VirtualMachineMO clonedVM = createCloneFromSourceVM(vmName, vmMo, dataCenterMO);
             s_logger.debug(String.format("VM %s cloned successfully", vmName));
-            String ovaTemplateDirAndName = createOVATemplateFileOfVM(clonedVM, templateLocation);
-            s_logger.debug(String.format("OVA %s/%s.ova created successfully on the datastore", ovaTemplateDirAndName, ovaTemplateDirAndName));
             UnmanagedInstanceTO clonedInstance = VmwareHelper.getUnmanagedInstance(vmMo.getRunningHost(), clonedVM);
-            setNicsFromSourceVM(clonedInstance, vmMo);
+            setDisksFromSourceVM(clonedInstance, vmMo);
             clonedInstance.setCloneSourcePowerState(sourceVmPowerState == VirtualMachinePowerState.POWERED_ON ? UnmanagedInstanceTO.PowerState.PowerOn : UnmanagedInstanceTO.PowerState.PowerOff);
-            return new Pair<> (clonedInstance, ovaTemplateDirAndName);
+            return clonedInstance;
         } catch (Exception e) {
             String err = String.format("Error cloning VM: %s from external vCenter %s: %s", vmName, vcenter, e.getMessage());
             s_logger.error(err, e);
@@ -1424,7 +1421,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         return sourceInstance.getOperatingSystem().toLowerCase().contains("windows");
     }
 
-    private void setNicsFromSourceVM(UnmanagedInstanceTO clonedInstance, VirtualMachineMO vmMo) throws Exception {
+    private void setDisksFromSourceVM(UnmanagedInstanceTO clonedInstance, VirtualMachineMO vmMo) throws Exception {
         UnmanagedInstanceTO sourceInstance = VmwareHelper.getUnmanagedInstance(vmMo.getRunningHost(), vmMo);
         List<UnmanagedInstanceTO.Disk> sourceDisks = sourceInstance.getDisks();
         List<UnmanagedInstanceTO.Disk> clonedDisks = clonedInstance.getDisks();
@@ -1436,8 +1433,34 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     }
 
     @Override
-    public boolean removeClonedHypervisorVMAandTemplateFileOutOfBand(String hostIp, String vmName, Map<String, String> params,
-                                                                     DataStoreTO templateLocation, String templateDirAndName) {
+    public String createVMTemplateFileOutOfBand(String hostIp, String vmName, Map<String, String> params, DataStoreTO templateLocation) {
+        String vcenter = params.get(VmDetailConstants.VMWARE_VCENTER_HOST);
+        String datacenter = params.get(VmDetailConstants.VMWARE_DATACENTER_NAME);
+        String username = params.get(VmDetailConstants.VMWARE_VCENTER_USERNAME);
+        String password = params.get(VmDetailConstants.VMWARE_VCENTER_PASSWORD);
+        s_logger.debug(String.format("Creating template of the VM %s at VMware host %s on vCenter %s", vmName, hostIp, vcenter));
+
+        try {
+            VmwareContext context = connectToVcenter(vcenter, username, password);
+            DatacenterMO dataCenterMO = new DatacenterMO(context, datacenter);
+            VirtualMachineMO vmMo = dataCenterMO.findVm(vmName);
+            if (vmMo == null) {
+                String err = String.format("Cannot find VM with name %s on vCenter %s/%s, to create template file", vmName, vcenter, datacenter);
+                s_logger.error(err);
+                throw new CloudRuntimeException(err);
+            }
+            String ovaTemplateDirAndName = createOVATemplateFileOfVM(vmMo, templateLocation);
+            s_logger.debug(String.format("OVA %s/%s.ova created successfully on the datastore", ovaTemplateDirAndName, ovaTemplateDirAndName));
+            return ovaTemplateDirAndName;
+        } catch (Exception e) {
+            String err = String.format("Error create template file of the VM: %s from vCenter %s: %s", vmName, vcenter, e.getMessage());
+            s_logger.error(err, e);
+            throw new CloudRuntimeException(err, e);
+        }
+    }
+
+    @Override
+    public boolean removeClonedHypervisorVMOutOfBand(String hostIp, String vmName, Map<String, String> params) {
         String vcenter = params.get(VmDetailConstants.VMWARE_VCENTER_HOST);
         String datacenter = params.get(VmDetailConstants.VMWARE_DATACENTER_NAME);
         String username = params.get(VmDetailConstants.VMWARE_VCENTER_USERNAME);
@@ -1455,12 +1478,23 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 return false;
             }
 
-            boolean clonedVMDestroyed = vmMo.destroy();
-            String dataStoreUrl = getDataStoreUrlForTemplate(templateLocation);
-            boolean templateDirDeleted = deleteDirOnStorage(templateDirAndName, dataStoreUrl, null);
-            return clonedVMDestroyed && templateDirDeleted;
+            return vmMo.destroy();
         } catch (Exception e) {
-            String err = String.format("Error destroying cloned VM %s or template %s/%s.ova: %s", vmName, templateDirAndName, templateDirAndName, e.getMessage());
+            String err = String.format("Error destroying cloned VM %s: %s", vmName, e.getMessage());
+            s_logger.error(err, e);
+            return false;
+        }
+    }
+
+    @Override
+    public boolean removeVMTemplateFileOutOfBand(DataStoreTO templateLocation, String templateDirAndName) {
+        s_logger.debug(String.format("Removing template file %s/%s.ova", templateDirAndName, templateDirAndName));
+
+        try {
+            String dataStoreUrl = getDataStoreUrlForTemplate(templateLocation);
+            return deleteDirOnStorage(templateDirAndName, dataStoreUrl, null);
+        } catch (Exception e) {
+            String err = String.format("Error removing template file %s/%s.ova: %s", templateDirAndName, templateDirAndName, e.getMessage());
             s_logger.error(err, e);
             return false;
         }
