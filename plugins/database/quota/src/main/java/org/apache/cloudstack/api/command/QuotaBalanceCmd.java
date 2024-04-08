@@ -43,11 +43,11 @@ public class QuotaBalanceCmd extends BaseCmd {
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = true, entityType = DomainResponse.class, description = "If domain Id is given and the caller is domain admin then the statement is generated for domain.")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "End date range for quota query. " +
+    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "End of the period of the Quota balance." +
             ApiConstants.PARAMETER_DESCRIPTION_END_DATE_POSSIBLE_FORMATS)
     private Date endDate;
 
-    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "Start date range quota query. " +
+    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "Start of the period of the Quota balance. " +
             ApiConstants.PARAMETER_DESCRIPTION_START_DATE_POSSIBLE_FORMATS)
     private Date startDate;
 
