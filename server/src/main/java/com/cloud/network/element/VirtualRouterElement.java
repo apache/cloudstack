@@ -272,12 +272,15 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
             return false;
         }
 
+        Map<VirtualMachineProfile.Param, Object> params = new HashMap<>();
+        params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, Boolean.TRUE);
+
         final RouterDeploymentDefinition routerDeploymentDefinition =
                 routerDeploymentDefinitionBuilder.create()
                 .setGuestNetwork(network)
                 .setDeployDestination(dest)
                 .setAccountOwner(_accountMgr.getAccount(network.getAccountId()))
-                .setParams(vm.getParameters())
+                .setParams(params)
                 .build();
 
         final List<DomainRouterVO> routers = routerDeploymentDefinition.deployVirtualRouter();
