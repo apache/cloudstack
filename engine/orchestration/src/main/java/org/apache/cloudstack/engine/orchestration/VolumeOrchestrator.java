@@ -965,10 +965,20 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         DiskOfferingDetailVO bandwidthLimitDetail = _diskOfferingDetailDao.findDetail(diskOfferingId, Volume.BANDWIDTH_LIMIT_IN_MBPS);
         if (bandwidthLimitDetail != null) {
             volumeDetailsVO.add(new VolumeDetailVO(volumeId, Volume.BANDWIDTH_LIMIT_IN_MBPS, bandwidthLimitDetail.getValue(), false));
+        } else {
+            VolumeDetailVO bandwidthLimit = _volDetailDao.findDetail(volumeId, Volume.BANDWIDTH_LIMIT_IN_MBPS);
+            if (bandwidthLimit != null) {
+                _volDetailDao.remove(bandwidthLimit.getId());
+            }
         }
         DiskOfferingDetailVO iopsLimitDetail = _diskOfferingDetailDao.findDetail(diskOfferingId, Volume.IOPS_LIMIT);
         if (iopsLimitDetail != null) {
             volumeDetailsVO.add(new VolumeDetailVO(volumeId, Volume.IOPS_LIMIT, iopsLimitDetail.getValue(), false));
+        } else {
+            VolumeDetailVO iopsLimit = _volDetailDao.findDetail(volumeId, Volume.IOPS_LIMIT);
+            if (iopsLimit != null) {
+                _volDetailDao.remove(iopsLimit.getId());
+            }
         }
         if (!volumeDetailsVO.isEmpty()) {
             _volDetailDao.saveDetails(volumeDetailsVO);
