@@ -18,6 +18,8 @@ package com.cloud.vm;
 
 import static com.cloud.configuration.ConfigurationManagerImpl.VM_USERDATA_MAX_LENGTH;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+import static org.apache.cloudstack.api.ApiConstants.MAX_IOPS;
+import static org.apache.cloudstack.api.ApiConstants.MIN_IOPS;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -2150,11 +2152,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 Long maxIopsInNewDiskOffering = null;
                 boolean autoMigrate = false;
                 boolean shrinkOk = false;
-                if (customParameters.containsKey(ApiConstants.MIN_IOPS)) {
-                    minIopsInNewDiskOffering = Long.parseLong(customParameters.get(ApiConstants.MIN_IOPS));
+                if (customParameters.containsKey(MIN_IOPS)) {
+                    minIopsInNewDiskOffering = Long.parseLong(customParameters.get(MIN_IOPS));
                 }
-                if (customParameters.containsKey(ApiConstants.MAX_IOPS)) {
-                    minIopsInNewDiskOffering = Long.parseLong(customParameters.get(ApiConstants.MAX_IOPS));
+                if (customParameters.containsKey(MAX_IOPS)) {
+                    minIopsInNewDiskOffering = Long.parseLong(customParameters.get(MAX_IOPS));
                 }
                 if (customParameters.containsKey(ApiConstants.AUTO_MIGRATE)) {
                     autoMigrate = Boolean.parseBoolean(customParameters.get(ApiConstants.AUTO_MIGRATE));
@@ -6310,8 +6312,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     // if specified, minIops should be <= maxIops
     private void verifyDetails(Map<String,String> details) {
         if (details != null) {
-            String minIops = details.get("minIops");
-            String maxIops = details.get("maxIops");
+            String minIops = details.get(MIN_IOPS);
+            String maxIops = details.get(MAX_IOPS);
 
             verifyMinAndMaxIops(minIops, maxIops);
 
@@ -7963,8 +7965,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 resizedVolume.setSize(rootDiskSize);
             }
 
-            String minIops = details.get("minIops");
-            String maxIops = details.get("maxIops");
+            String minIops = details.get(MIN_IOPS);
+            String maxIops = details.get(MAX_IOPS);
 
             if (StringUtils.isNumeric(minIops)) {
                 resizedVolume.setMinIops(Long.parseLong(minIops));
