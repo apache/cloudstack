@@ -229,7 +229,7 @@ public class VolumeImportUnmanageManagerImplTest {
         volumeOnStorageTO.setQemuEncryptFormat(encryptFormat);
         List<VolumeOnStorageTO> volumesOnStorageTO = new ArrayList<>();
         volumesOnStorageTO.add(volumeOnStorageTO);
-        doReturn(volumesOnStorageTO).when(volumeImportUnmanageManager).listVolumesForImportInternal(poolId, path, null);
+        doReturn(volumesOnStorageTO).when(volumeImportUnmanageManager).listVolumesForImportInternal(storagePoolVO, path, null);
 
         ListResponse<VolumeForImportResponse> listResponses = volumeImportUnmanageManager.listVolumesForImport(cmd);
         Assert.assertEquals(1, listResponses.getResponses().size());
@@ -262,7 +262,7 @@ public class VolumeImportUnmanageManagerImplTest {
         List<VolumeOnStorageTO> volumesOnStorageTO = new ArrayList<>();
         volumesOnStorageTO.add(volumeOnStorageTO);
 
-        doReturn(volumesOnStorageTO).when(volumeImportUnmanageManager).listVolumesForImportInternal(poolId, path, null);
+        doReturn(volumesOnStorageTO).when(volumeImportUnmanageManager).listVolumesForImportInternal(storagePoolVO, path, null);
 
         doNothing().when(volumeImportUnmanageManager).checkIfVolumeIsLocked(volumeOnStorageTO);
         doNothing().when(volumeImportUnmanageManager).checkIfVolumeIsEncrypted(volumeOnStorageTO);
@@ -309,7 +309,7 @@ public class VolumeImportUnmanageManagerImplTest {
         when(answer.getVolumes()).thenReturn(volumesOnStorageTO);
         doReturn(answer).when(agentManager).easySend(eq(hostId), any(GetVolumesOnStorageCommand.class));
 
-        List<VolumeOnStorageTO> result = volumeImportUnmanageManager.listVolumesForImportInternal(poolId, path, null);
+        List<VolumeOnStorageTO> result = volumeImportUnmanageManager.listVolumesForImportInternal(storagePoolVO, path, null);
         Assert.assertEquals(volumesOnStorageTO, result);
     }
 
@@ -361,6 +361,8 @@ public class VolumeImportUnmanageManagerImplTest {
         when(volumeVO.getState()).thenReturn(Volume.State.Ready);
         when(volumeVO.getPoolId()).thenReturn(poolId);
         when(volumeVO.getInstanceId()).thenReturn(null);
+        when(volumeVO.getPath()).thenReturn(path);
+        doNothing().when(volumeImportUnmanageManager).unmanageVolumeInternal(storagePoolVO, path);
         doNothing().when(resourceLimitService).decrementResourceCount(accountId, Resource.ResourceType.volume);
         doNothing().when(resourceLimitService).decrementResourceCount(accountId, Resource.ResourceType.primary_storage, virtualSize);
 
@@ -419,6 +421,15 @@ public class VolumeImportUnmanageManagerImplTest {
         } catch (CloudRuntimeException ex) {
             verify(volumeImportUnmanageManager).logFailureAndThrowException(String.format("Volume (ID: %s) is attached to VM (ID: %s)", volumeId, volumeVO.getInstanceId()));
         }
+    }
+
+    @Test
+    public void testUnmanageVolumeInternal() {
+        Pair<HostVO, String> hostAndLocalPath = mock(Pair.class);
+        doReturn(hostAndLocalPath).when(volumeImportUnmanageManager).findHostAndLocalPathForVolumeImport(storagePoolVO);
+        when(hostAndLocalPath.first()).thenReturn(hostVO);
+
+        volumeImportUnmanageManager.unmanageVolumeInternal(storagePoolVO, path);
     }
 
     @Test

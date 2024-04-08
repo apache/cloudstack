@@ -86,9 +86,6 @@ import java.util.Map;
 public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageService {
     protected Logger logger = Logger.getLogger(VolumeImportUnmanageManagerImpl.class);
 
-    private static final List<Hypervisor.HypervisorType> volumeImportUnmanageSupportedHypervisors =
-            Arrays.asList(Hypervisor.HypervisorType.KVM);
-
     @Inject
     private AccountManager accountMgr;
     @Inject
@@ -149,7 +146,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         }
 
         StoragePoolVO pool = checkIfPoolAvailable(poolId);
-        List<VolumeOnStorageTO> volumes = listVolumesForImportInternal(poolId, path, keyword);
+        List<VolumeOnStorageTO> volumes = listVolumesForImportInternal(pool, path, keyword);
 
         List<VolumeForImportResponse> responses = new ArrayList<>();
         for (VolumeOnStorageTO volume : volumes) {
@@ -194,7 +191,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         }
 
         // 4. send a command to hypervisor to check
-        List<VolumeOnStorageTO> volumes = listVolumesForImportInternal(poolId, volumePath, null);
+        List<VolumeOnStorageTO> volumes = listVolumesForImportInternal(pool, volumePath, null);
         if (CollectionUtils.isEmpty(volumes)) {
             logFailureAndThrowException("Cannot find volume on storage pool: " + volumePath);
         }
@@ -234,14 +231,10 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         return responseGenerator.createVolumeResponse(ResponseObject.ResponseView.Full, volumeVO);
     }
 
-    protected List<VolumeOnStorageTO> listVolumesForImportInternal(Long poolId, String volumePath, String keyword) {
-        StoragePoolVO pool = checkIfPoolAvailable(poolId);
-
+    protected List<VolumeOnStorageTO> listVolumesForImportInternal(StoragePoolVO pool, String volumePath, String keyword) {
         Pair<HostVO, String> hostAndLocalPath = findHostAndLocalPathForVolumeImport(pool);
         HostVO host = hostAndLocalPath.first();
-        if (!volumeImportUnmanageSupportedHypervisors.contains(host.getHypervisorType())) {
-            logFailureAndThrowException("Import VM is not supported for hypervisor: " + host.getHypervisorType());
-        }
+        checkIfHostAndPoolSupported(host, pool);
 
         StorageFilerTO storageTO = new StorageFilerTO(pool);
         GetVolumesOnStorageCommand command = new GetVolumesOnStorageCommand(storageTO, volumePath, keyword);
@@ -262,6 +255,9 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
 
         // 2. check if pool available
         StoragePoolVO pool = checkIfPoolAvailable(volume.getPoolId());
+
+        // 3. unmanage volume internally
+        unmanageVolumeInternal(pool, volume.getPath());
 
         // 3. Update resource count
         updateResourceLimitForVolumeUnmanage(volume);
@@ -323,6 +319,22 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         }
         logFailureAndThrowException("No host found to perform volume import on pool: " + poolId);
         return null;
+    }
+
+    private void checkIfHostAndPoolSupported(HostVO host, StoragePoolVO pool) {
+        if (!SUPPORTED_HYPERVISORS.contains(host.getHypervisorType())) {
+            logFailureAndThrowException("Importing and unmanaging volume are not supported for hypervisor: " + host.getHypervisorType());
+        }
+
+        if (Hypervisor.HypervisorType.KVM.equals(host.getHypervisorType()) && !SUPPORTED_STORAGE_POOL_TYPES_FOR_KVM.contains(pool.getPoolType())) {
+            logFailureAndThrowException(String.format("Importing and unmanaging volume are not supported for pool type %s on hypervisor %s", pool.getPoolType(), host.getHypervisorType()));
+        }
+    }
+
+    protected void unmanageVolumeInternal(StoragePoolVO pool, String volumePath) {
+        Pair<HostVO, String> hostAndLocalPath = findHostAndLocalPathForVolumeImport(pool);
+        HostVO host = hostAndLocalPath.first();
+        checkIfHostAndPoolSupported(host, pool);
     }
 
     protected VolumeForImportResponse createVolumeForImportResponse(VolumeOnStorageTO volume, StoragePoolVO pool) {

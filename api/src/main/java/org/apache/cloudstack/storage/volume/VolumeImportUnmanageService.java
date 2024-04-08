@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.storage.volume;
 
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.Storage;
 import com.cloud.utils.component.PluggableService;
 import org.apache.cloudstack.api.command.admin.volume.ListVolumesForImportCmd;
 import org.apache.cloudstack.api.command.admin.volume.ImportVolumeCmd;
@@ -24,7 +26,16 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.VolumeForImportResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 
+import java.util.Arrays;
+import java.util.List;
+
 public interface VolumeImportUnmanageService extends PluggableService {
+
+     List<Hypervisor.HypervisorType> SUPPORTED_HYPERVISORS =
+            Arrays.asList(Hypervisor.HypervisorType.KVM, Hypervisor.HypervisorType.VMware);
+
+    List<Storage.StoragePoolType> SUPPORTED_STORAGE_POOL_TYPES_FOR_KVM = Arrays.asList(Storage.StoragePoolType.NetworkFilesystem,
+            Storage.StoragePoolType.Filesystem, Storage.StoragePoolType.RBD);
 
     ListResponse<VolumeForImportResponse> listVolumesForImport(ListVolumesForImportCmd cmd);
 

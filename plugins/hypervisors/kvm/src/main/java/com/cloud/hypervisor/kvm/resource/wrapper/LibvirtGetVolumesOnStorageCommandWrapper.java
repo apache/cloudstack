@@ -50,7 +50,7 @@ import java.util.stream.Collectors;
 @ResourceWrapper(handles = GetVolumesOnStorageCommand.class)
 public final class LibvirtGetVolumesOnStorageCommandWrapper extends CommandWrapper<GetVolumesOnStorageCommand, Answer, LibvirtComputingResource> {
 
-    static final List<StoragePoolType> SUPPORTED_STORAGE_POOL_TYPES = Arrays.asList(StoragePoolType.NetworkFilesystem,
+    static final List<StoragePoolType> STORAGE_POOL_TYPES_SUPPORTED_BY_QEMU_IMG = Arrays.asList(StoragePoolType.NetworkFilesystem,
             StoragePoolType.Filesystem, StoragePoolType.RBD);
 
     @Override
@@ -111,7 +111,7 @@ public final class LibvirtGetVolumesOnStorageCommandWrapper extends CommandWrapp
                 volumeOnStorageTO.addDetail(VolumeOnStorageTO.Detail.FILE_FORMAT, fileFormat);
             }
             String encrypted = info.get(QemuImg.ENCRYPTED);
-            if (StringUtils.isNotBlank(encrypted) && encrypted.toLowerCase().equals("yes")) {
+            if (StringUtils.isNotBlank(encrypted) && encrypted.equalsIgnoreCase("yes")) {
                 volumeOnStorageTO.addDetail(VolumeOnStorageTO.Detail.IS_ENCRYPTED, String.valueOf(Boolean.TRUE));
             }
             Boolean isLocked = isDiskFileLocked(storagePool, disk);
@@ -154,7 +154,7 @@ public final class LibvirtGetVolumesOnStorageCommandWrapper extends CommandWrapp
     }
 
     private Map<String, String> getDiskFileInfo(KVMStoragePool pool, KVMPhysicalDisk disk, boolean secure) {
-        if (!SUPPORTED_STORAGE_POOL_TYPES.contains(pool.getType())) {
+        if (!STORAGE_POOL_TYPES_SUPPORTED_BY_QEMU_IMG.contains(pool.getType())) {
             return new HashMap<>(); // unknown
         }
         try {
