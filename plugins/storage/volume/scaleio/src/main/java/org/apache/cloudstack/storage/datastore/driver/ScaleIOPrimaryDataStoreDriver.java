@@ -810,7 +810,6 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             try {
                 setVolumeLimitsOnSDC(volume, host, destData.getDataStore(), 0L, 0L);
                 answer = ep.sendMessage(cmd);
-                setVolumeLimitsFromDetails(volume, host, destData.getDataStore());
             } catch (Exception e) {
                 LOGGER.error("Failed to copy template to volume due to: " + e.getMessage(), e);
                 answer = new Answer(cmd, false, e.getMessage());
@@ -1266,10 +1265,8 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                         volumeInfo.getPassphrase(), volumeInfo.getEncryptFormat());
 
                 try {
-                    if (attachedRunning) {
-                        VolumeVO volume = volumeDao.findById(volumeInfo.getId());
-                        setVolumeLimitsOnSDC(volume, host, volumeInfo.getDataStore(), newMaxIops != null ? newMaxIops : 0L, newBandwidthLimit);
-                    }
+                    VolumeVO volume = volumeDao.findById(volumeInfo.getId());
+                    setVolumeLimitsOnSDC(volume, host, volumeInfo.getDataStore(), newMaxIops != null ? newMaxIops : 0L, newBandwidthLimit);
                     Answer answer = ep.sendMessage(resizeVolumeCommand);
 
                     if (!answer.getResult() && volumeInfo.getFormat().equals(Storage.ImageFormat.QCOW2)) {
