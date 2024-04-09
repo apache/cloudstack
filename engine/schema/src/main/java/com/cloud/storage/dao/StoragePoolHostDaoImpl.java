@@ -51,7 +51,7 @@ public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Lo
     protected SearchBuilder<StoragePoolHostVO> poolNotInClusterSearch;
 
     @Inject
-    HostDao _hostDao;
+    HostDao hostDao;
 
     protected static final String HOST_FOR_POOL_SEARCH = "SELECT * FROM storage_pool_host_ref ph,  host h where  ph.host_id = h.id and ph.pool_id=? and h.status=? ";
 
@@ -85,7 +85,7 @@ public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Lo
     public void init(){
         poolNotInClusterSearch = createSearchBuilder();
         poolNotInClusterSearch.and("poolId", poolNotInClusterSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
-        SearchBuilder<HostVO> hostSearch = _hostDao.createSearchBuilder();
+        SearchBuilder<HostVO> hostSearch = hostDao.createSearchBuilder();
         poolNotInClusterSearch.join("hostSearch", hostSearch, hostSearch.entity().getId(), poolNotInClusterSearch.entity().getHostId(), JoinBuilder.JoinType.INNER);
         hostSearch.and("clusterId", hostSearch.entity().getClusterId(), SearchCriteria.Op.NEQ);
     }

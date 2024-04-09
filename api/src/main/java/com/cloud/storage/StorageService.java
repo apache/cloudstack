@@ -130,5 +130,5 @@ public interface StorageService {
 
     ObjectStore updateObjectStore(Long id, UpdateObjectStoragePoolCmd cmd);
 
-    boolean changeStoragePoolScope(ChangeStoragePoolScopeCmd cmd) throws IllegalArgumentException, InvalidParameterValueException, PermissionDeniedException;
+    void changeStoragePoolScope(ChangeStoragePoolScopeCmd cmd) throws IllegalArgumentException, InvalidParameterValueException, PermissionDeniedException;
 }

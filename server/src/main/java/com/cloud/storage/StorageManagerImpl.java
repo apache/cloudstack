@@ -1152,7 +1152,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public boolean changeStoragePoolScope(ChangeStoragePoolScopeCmd cmd) throws IllegalArgumentException, InvalidParameterValueException, PermissionDeniedException {
+    public void changeStoragePoolScope(ChangeStoragePoolScopeCmd cmd) throws IllegalArgumentException, InvalidParameterValueException, PermissionDeniedException {
         Long id = cmd.getId();
 
         Long accountId = cmd.getEntityOwnerId();
@@ -1207,7 +1207,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (zone == null) {
             throw new InvalidParameterValueException("Unable to find zone by id " + zoneId);
         }
-        if (Grouping.AllocationState.Disabled == zone.getAllocationState()) {
+        if (zone.getAllocationState().equals(Grouping.AllocationState.Disabled)) {
             throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zoneId);
         }
 
@@ -1224,7 +1224,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             if (clusterVO == null) {
                 throw new InvalidParameterValueException("Unable to find cluster by id " + clusterId);
             }
-            if (Grouping.AllocationState.Disabled == clusterVO.getAllocationState()) {
+            if (clusterVO.getAllocationState().equals(Grouping.AllocationState.Disabled)) {
                 throw new PermissionDeniedException("Cannot perform this operation, Cluster is currently disabled: " + zoneId);
             }
             List<VirtualMachine.State> states = Arrays.asList(State.Starting, State.Running, State.Stopping, State.Migrating, State.Restoring);
@@ -1236,8 +1236,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             ClusterScope clusterScope = new ClusterScope(clusterId, clusterVO.getPodId(), zoneId);
             lifeCycle.changeStoragePoolScopeToCluster(primaryStore, clusterScope, hypervisorType);
         }
-
-        return true;
     }
 
     @Override

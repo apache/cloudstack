@@ -82,11 +82,11 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     protected SearchBuilder<VolumeVO> volumePoolNotInClusterSearch;
 
     @Inject
-    ResourceTagDao _tagsDao;
+    ResourceTagDao tagsDao;
     @Inject
-    HostDao _hostDao;
+    HostDao hostDao;
     @Inject
-    VMInstanceDao _vmDao;
+    VMInstanceDao vmDao;
 
     protected static final String SELECT_VM_SQL = "SELECT DISTINCT instance_id from volumes v where v.host_id = ? and v.mirror_state = ?";
     // need to account for zone-wide primary storage where storage_pool has
@@ -512,9 +512,9 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     public void init() {
         volumePoolNotInClusterSearch = createSearchBuilder();
         volumePoolNotInClusterSearch.and("poolId", volumePoolNotInClusterSearch.entity().getPoolId(), Op.EQ);
-        SearchBuilder<VMInstanceVO> vmSearch = _vmDao.createSearchBuilder();
+        SearchBuilder<VMInstanceVO> vmSearch = vmDao.createSearchBuilder();
         vmSearch.and("vmStates", vmSearch.entity().getState(), Op.IN);
-        SearchBuilder<HostVO> hostSearch = _hostDao.createSearchBuilder();
+        SearchBuilder<HostVO> hostSearch = hostDao.createSearchBuilder();
         hostSearch.and("clusterId", hostSearch.entity().getClusterId(), SearchCriteria.Op.NEQ);
         vmSearch.join("hostSearch", hostSearch, hostSearch.entity().getId(), vmSearch.entity().getHostId(), JoinType.INNER);
         volumePoolNotInClusterSearch.join("vmSearch", vmSearch, vmSearch.entity().getId(), volumePoolNotInClusterSearch.entity().getInstanceId(), JoinType.INNER);
@@ -744,7 +744,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         s_logger.debug(String.format("Removing volume %s from DB", id));
         VolumeVO entry = findById(id);
         if (entry != null) {
-            _tagsDao.removeByIdAndType(id, ResourceObjectType.Volume);
+            tagsDao.removeByIdAndType(id, ResourceObjectType.Volume);
         }
         boolean result = super.remove(id);
 
@@ -767,7 +767,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
             destVol.setInstanceId(instanceId);
             update(srcVolId, srcVol);
             update(destVolId, destVol);
-            _tagsDao.updateResourceId(srcVolId, destVolId, ResourceObjectType.Volume);
+            tagsDao.updateResourceId(srcVolId, destVolId, ResourceObjectType.Volume);
         } catch (Exception e) {
             throw new CloudRuntimeException("Unable to persist the sequence number for this host");
         }

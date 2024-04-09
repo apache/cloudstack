@@ -45,18 +45,18 @@ public class AbstractPrimaryDataStoreLifeCycleImpl {
     @Inject
     AgentManager agentMgr;
     @Inject
-    protected ResourceManager _resourceMgr;
+    protected ResourceManager resourceMgr;
     @Inject
     StorageManager storageMgr;
     @Inject
     PrimaryDataStoreHelper dataStoreHelper;
     @Inject
-    protected HostDao _hostDao;
+    protected HostDao hostDao;
     @Inject
-    protected StoragePoolHostDao _storagePoolHostDao;
+    protected StoragePoolHostDao storagePoolHostDao;
 
     private HypervisorType getHypervisorType(long hostId) {
-        HostVO host = _hostDao.findById(hostId);
+        HostVO host = hostDao.findById(hostId);
         if (host != null)
             return host.getHypervisorType();
         return HypervisorType.None;
@@ -67,14 +67,14 @@ public class AbstractPrimaryDataStoreLifeCycleImpl {
         List<HostVO> hosts = new ArrayList<HostVO>();
 
         if (hypervisorType != null) {
-             hosts = _resourceMgr
+             hosts = resourceMgr
                     .listAllHostsInOneZoneNotInClusterByHypervisor(hypervisorType, clusterScope.getZoneId(), clusterScope.getScopeId());
         } else {
-            List<HostVO> xenServerHosts = _resourceMgr
+            List<HostVO> xenServerHosts = resourceMgr
                     .listAllHostsInOneZoneNotInClusterByHypervisor(HypervisorType.XenServer, clusterScope.getZoneId(), clusterScope.getScopeId());
-            List<HostVO> vmWareServerHosts = _resourceMgr
+            List<HostVO> vmWareServerHosts = resourceMgr
                     .listAllHostsInOneZoneNotInClusterByHypervisor(HypervisorType.VMware, clusterScope.getZoneId(), clusterScope.getScopeId());
-            List<HostVO> kvmHosts = _resourceMgr.
+            List<HostVO> kvmHosts = resourceMgr.
                     listAllHostsInOneZoneNotInClusterByHypervisor(HypervisorType.KVM, clusterScope.getZoneId(), clusterScope.getScopeId());
 
             hosts.addAll(xenServerHosts);
@@ -84,7 +84,7 @@ public class AbstractPrimaryDataStoreLifeCycleImpl {
         return hosts;
     }
 
-    public boolean changeStoragePoolScopeToZone(DataStore store, ClusterScope clusterScope, HypervisorType hypervisorType) {
+    public void changeStoragePoolScopeToZone(DataStore store, ClusterScope clusterScope, HypervisorType hypervisorType) {
         List<HostVO> hosts = getPoolHostsList(clusterScope, hypervisorType);
         s_logger.debug("Changing scope of the storage pool to Zone");
         for (HostVO host : hosts) {
@@ -95,11 +95,10 @@ public class AbstractPrimaryDataStoreLifeCycleImpl {
             }
         }
         dataStoreHelper.switchToZone(store, hypervisorType);
-        return true;
     }
 
-    public boolean changeStoragePoolScopeToCluster(DataStore store, ClusterScope clusterScope, HypervisorType hypervisorType) {
-        Pair<List<StoragePoolHostVO>, Integer> hostPoolRecords = _storagePoolHostDao.listByPoolIdNotInCluster(clusterScope.getScopeId(), store.getId());
+    public void changeStoragePoolScopeToCluster(DataStore store, ClusterScope clusterScope, HypervisorType hypervisorType) {
+        Pair<List<StoragePoolHostVO>, Integer> hostPoolRecords = storagePoolHostDao.listByPoolIdNotInCluster(clusterScope.getScopeId(), store.getId());
         s_logger.debug("Changing scope of the storage pool to Cluster");
         HypervisorType hType = null;
         if (hostPoolRecords.second() > 0) {
@@ -122,6 +121,5 @@ public class AbstractPrimaryDataStoreLifeCycleImpl {
             }
         }
         dataStoreHelper.switchToCluster(store, clusterScope);
-        return true;
     }
 }

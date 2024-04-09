@@ -30,6 +30,6 @@ public interface PrimaryDataStoreLifeCycle extends DataStoreLifeCycle {
     void updateStoragePool(StoragePool storagePool, Map<String, String> details);
     void enableStoragePool(DataStore store);
     void disableStoragePool(DataStore store);
-    boolean changeStoragePoolScopeToZone(DataStore store, ClusterScope clusterScope, Hypervisor.HypervisorType hypervisorType);
-    boolean changeStoragePoolScopeToCluster(DataStore store, ClusterScope clusterScope, Hypervisor.HypervisorType hypervisorType);
+    void changeStoragePoolScopeToZone(DataStore store, ClusterScope clusterScope, Hypervisor.HypervisorType hypervisorType);
+    void changeStoragePoolScopeToCluster(DataStore store, ClusterScope clusterScope, Hypervisor.HypervisorType hypervisorType);
 }

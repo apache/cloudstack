@@ -19,10 +19,8 @@ package org.apache.cloudstack.api.command.admin.storage;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
@@ -57,13 +55,9 @@ public class ChangeStoragePoolScopeCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        boolean result = _storageService.changeStoragePoolScope(this);
-        if (result) {
-            SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
-        } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update storage pool");
-        }
+        _storageService.changeStoragePoolScope(this);
+        SuccessResponse response = new SuccessResponse(getCommandName());
+        this.setResponseObject(response);
     }
 
     @Override

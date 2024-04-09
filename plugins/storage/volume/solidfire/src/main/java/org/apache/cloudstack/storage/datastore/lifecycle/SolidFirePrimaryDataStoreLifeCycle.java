@@ -389,11 +389,11 @@ public class SolidFirePrimaryDataStoreLifeCycle extends AbstractPrimaryDataStore
     }
 
     @Override
-    public boolean changeStoragePoolScopeToZone(DataStore store, ClusterScope clusterScope, HypervisorType hypervisorType) {
+    public void changeStoragePoolScopeToZone(DataStore store, ClusterScope clusterScope, HypervisorType hypervisorType) {
         /*
          * We need to attach all VMware, Xenserver and KVM hosts in the zone.
          * So pass hypervisorTpe as null.
          */
-        return super.changeStoragePoolScopeToZone(store, clusterScope, null);
+        super.changeStoragePoolScopeToZone(store, clusterScope, null);
     }
 }
