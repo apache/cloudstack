@@ -108,13 +108,13 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     }
 
     @Override
-    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
+    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, String name, Long vpcId, Account owner) {
 
         if (_networkModel.areServicesSupportedByNetworkOffering(offering.getId(), Network.Service.Connectivity)) {
             return null;
         }
 
-        NetworkVO config = (NetworkVO)super.design(offering, plan, userSpecified, owner);
+        NetworkVO config = (NetworkVO)super.design(offering, plan, userSpecified, name, vpcId, owner);
         if (config == null) {
             return null;
         } else if (_networkModel.networkIsConfiguredForExternalNetworking(plan.getDataCenterId(), config.getId())) {

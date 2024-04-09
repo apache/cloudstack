@@ -31,9 +31,9 @@ export default {
       permission: ['listVirtualMachinesMetrics'],
       resourceType: 'UserVm',
       params: () => {
-        var params = { details: 'servoff,tmpl,nics,backoff' }
+        var params = { details: 'servoff,tmpl,iso,nics,backoff' }
         if (store.getters.metrics) {
-          params = { details: 'servoff,tmpl,nics,backoff,stats' }
+          params = { details: 'servoff,tmpl,iso,nics,backoff,stats' }
         }
         params.isvnf = false
         return params
@@ -484,6 +484,12 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
         },
         {
+          name: 'events',
+          resourceType: 'VmSnapshot',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+          show: () => { return 'listEvents' in store.getters.apis }
+        },
+        {
           name: 'comments',
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
         }
@@ -898,7 +904,12 @@ export default {
         var fields = ['name', 'id']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('account')
+          if (store.getters.listAllProjects) {
+            fields.push('project')
+          }
           fields.push('domain')
+        } else if (store.getters.listAllProjects) {
+          fields.push('project')
         }
         return fields
       },
@@ -985,6 +996,18 @@ export default {
         title: 'label.instances',
         param: 'affinitygroupid'
       }],
+      tabs: [
+        {
+          name: 'details',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'events',
+          resourceType: 'AffinityGroup',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+          show: () => { return 'listEvents' in store.getters.apis }
+        }
+      ],
       actions: [
         {
           api: 'createAffinityGroup',

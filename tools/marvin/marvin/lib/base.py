@@ -4877,7 +4877,7 @@ class NiciraNvp:
 
 
 class NetworkServiceProvider:
-    """Manage network serivce providers for CloudStack"""
+    """Manage network service providers for CloudStack"""
 
     def __init__(self, items):
         self.__dict__.update(items)

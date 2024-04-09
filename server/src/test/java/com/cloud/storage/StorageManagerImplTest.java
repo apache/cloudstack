@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.framework.config.ConfigDepot;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -42,7 +44,9 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.capacity.CapacityManager;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.VsphereStoragePolicyVO;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VsphereStoragePolicyDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConnectionException;
@@ -77,6 +81,12 @@ public class StorageManagerImplTest {
     HypervisorGuruManager hvGuruMgr;
     @Mock
     AgentManager agentManager;
+    @Mock
+    ConfigDepot configDepot;
+    @Mock
+    ConfigurationDao configurationDao;
+    @Mock
+    DataCenterDao dataCenterDao;
 
     @Spy
     @InjectMocks
@@ -469,6 +479,37 @@ public class StorageManagerImplTest {
     }
 
     @Test
+    public void testEnableDefaultDatastoreDownloadRedirectionForExistingInstallationsNoChange() {
+        Mockito.when(configDepot.isNewConfig(StorageManager.DataStoreDownloadFollowRedirects))
+                .thenReturn(false);
+        storageManagerImpl.enableDefaultDatastoreDownloadRedirectionForExistingInstallations();
+        Mockito.verify(configurationDao, Mockito.never()).update(Mockito.anyString(), Mockito.anyString());
+    }
+
+    @Test
+    public void testEnableDefaultDatastoreDownloadRedirectionForExistingInstallationsOldInstall() {
+        Mockito.when(configDepot.isNewConfig(StorageManager.DataStoreDownloadFollowRedirects))
+                .thenReturn(true);
+        Mockito.when(dataCenterDao.listAll(Mockito.any()))
+                .thenReturn(List.of(Mockito.mock(DataCenterVO.class)));
+        Mockito.doReturn(true).when(configurationDao).update(Mockito.anyString(), Mockito.anyString());
+        storageManagerImpl.enableDefaultDatastoreDownloadRedirectionForExistingInstallations();
+        Mockito.verify(configurationDao, Mockito.times(1))
+                .update(StorageManager.DataStoreDownloadFollowRedirects.key(), "true");
+    }
+
+    @Test
+    public void testEnableDefaultDatastoreDownloadRedirectionForExistingInstallationsNewInstall() {
+        Mockito.when(configDepot.isNewConfig(StorageManager.DataStoreDownloadFollowRedirects))
+                .thenReturn(true);
+        Mockito.when(dataCenterDao.listAll(Mockito.any()))
+                .thenReturn(new ArrayList<>()); //new installation
+        storageManagerImpl.enableDefaultDatastoreDownloadRedirectionForExistingInstallations();
+        Mockito.verify(configurationDao, Mockito.never())
+                .update(StorageManager.DataStoreDownloadFollowRedirects.key(),StorageManager.DataStoreDownloadFollowRedirects.defaultValue());
+    }
+
+    @Test
     public void getStoragePoolNonDestroyedVolumesLogTestNonDestroyedVolumesReturnLog() {
         Mockito.doReturn(1L).when(storagePoolVOMock).getId();
         Mockito.doReturn(1L).when(volume1VOMock).getInstanceId();
@@ -485,5 +526,4 @@ public class StorageManagerImplTest {
 
         Assert.assertEquals(expected, log);
     }
-
 }

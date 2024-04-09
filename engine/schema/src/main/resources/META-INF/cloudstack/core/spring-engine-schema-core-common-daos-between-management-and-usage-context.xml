@@ -68,5 +68,6 @@
 	<bean id="vMSnapshotDaoImpl" class="com.cloud.vm.snapshot.dao.VMSnapshotDaoImpl" />
 	<bean id="VmTemplateDaoImpl" class="org.apache.cloudstack.quota.dao.VmTemplateDaoImpl" />
 	<bean id="volumeDaoImpl" class="com.cloud.storage.dao.VolumeDaoImpl" />
+  <bean id="reservationDao" class="org.apache.cloudstack.reservation.dao.ReservationDaoImpl" />
     <bean id="backupOfferingDaoImpl" class="org.apache.cloudstack.backup.dao.BackupOfferingDaoImpl" />
 </beans>

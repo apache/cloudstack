@@ -230,6 +230,7 @@
                 <module>backup/veeam</module>
                 <module>hypervisors/vmware</module>
                 <module>network-elements/cisco-vnmc</module>
+                <module>network-elements/nsx</module>
             </modules>
         </profile>
         <profile>

@@ -31,6 +31,13 @@ import java.util.Set;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+import static com.cloud.hypervisor.Hypervisor.HypervisorType.Hyperv;
+import static com.cloud.hypervisor.Hypervisor.HypervisorType.KVM;
+import static com.cloud.hypervisor.Hypervisor.HypervisorType.LXC;
+import static com.cloud.hypervisor.Hypervisor.HypervisorType.Ovm3;
+import static com.cloud.hypervisor.Hypervisor.HypervisorType.VMware;
+import static com.cloud.hypervisor.Hypervisor.HypervisorType.XenServer;
+
 public class Upgrade41500to41510 extends DbUpgradeAbstractImpl implements DbUpgradeSystemVmTemplate {
 
     @Override
@@ -71,27 +78,19 @@ public class Upgrade41500to41510 extends DbUpgradeAbstractImpl implements DbUpgr
         final Set<Hypervisor.HypervisorType> hypervisorsListInUse = new HashSet<Hypervisor.HypervisorType>();
         try (PreparedStatement pstmt = conn.prepareStatement("select distinct(hypervisor_type) from `cloud`.`cluster` where removed is null"); ResultSet rs = pstmt.executeQuery()) {
             while (rs.next()) {
-                switch (Hypervisor.HypervisorType.getType(rs.getString(1))) {
-                    case XenServer:
-                        hypervisorsListInUse.add(Hypervisor.HypervisorType.XenServer);
-                        break;
-                    case KVM:
-                        hypervisorsListInUse.add(Hypervisor.HypervisorType.KVM);
-                        break;
-                    case VMware:
-                        hypervisorsListInUse.add(Hypervisor.HypervisorType.VMware);
-                        break;
-                    case Hyperv:
-                        hypervisorsListInUse.add(Hypervisor.HypervisorType.Hyperv);
-                        break;
-                    case LXC:
-                        hypervisorsListInUse.add(Hypervisor.HypervisorType.LXC);
-                        break;
-                    case Ovm3:
-                        hypervisorsListInUse.add(Hypervisor.HypervisorType.Ovm3);
-                        break;
-                    default:
-                        break;
+                Hypervisor.HypervisorType type = Hypervisor.HypervisorType.getType(rs.getString(1));
+                if (type.equals(XenServer)) {
+                    hypervisorsListInUse.add(XenServer);
+                } else if (type.equals(KVM)) {
+                    hypervisorsListInUse.add(KVM);
+                } else if (type.equals(VMware)) {
+                    hypervisorsListInUse.add(VMware);
+                } else if (type.equals(Hyperv)) {
+                    hypervisorsListInUse.add(Hyperv);
+                } else if (type.equals(LXC)) {
+                    hypervisorsListInUse.add(LXC);
+                } else if (type.equals(Ovm3)) {
+                    hypervisorsListInUse.add(Ovm3);
                 }
             }
         } catch (final SQLException e) {
@@ -101,45 +100,45 @@ public class Upgrade41500to41510 extends DbUpgradeAbstractImpl implements DbUpgr
 
         final Map<Hypervisor.HypervisorType, String> NewTemplateNameList = new HashMap<Hypervisor.HypervisorType, String>() {
             {
-                put(Hypervisor.HypervisorType.KVM, "systemvm-kvm-4.15.1");
-                put(Hypervisor.HypervisorType.VMware, "systemvm-vmware-4.15.1");
-                put(Hypervisor.HypervisorType.XenServer, "systemvm-xenserver-4.15.1");
-                put(Hypervisor.HypervisorType.Hyperv, "systemvm-hyperv-4.15.1");
-                put(Hypervisor.HypervisorType.LXC, "systemvm-lxc-4.15.1");
-                put(Hypervisor.HypervisorType.Ovm3, "systemvm-ovm3-4.15.1");
+                put(KVM, "systemvm-kvm-4.15.1");
+                put(VMware, "systemvm-vmware-4.15.1");
+                put(XenServer, "systemvm-xenserver-4.15.1");
+                put(Hyperv, "systemvm-hyperv-4.15.1");
+                put(LXC, "systemvm-lxc-4.15.1");
+                put(Ovm3, "systemvm-ovm3-4.15.1");
             }
         };
 
         final Map<Hypervisor.HypervisorType, String> routerTemplateConfigurationNames = new HashMap<Hypervisor.HypervisorType, String>() {
             {
-                put(Hypervisor.HypervisorType.KVM, "router.template.kvm");
-                put(Hypervisor.HypervisorType.VMware, "router.template.vmware");
-                put(Hypervisor.HypervisorType.XenServer, "router.template.xenserver");
-                put(Hypervisor.HypervisorType.Hyperv, "router.template.hyperv");
-                put(Hypervisor.HypervisorType.LXC, "router.template.lxc");
-                put(Hypervisor.HypervisorType.Ovm3, "router.template.ovm3");
+                put(KVM, "router.template.kvm");
+                put(VMware, "router.template.vmware");
+                put(XenServer, "router.template.xenserver");
+                put(Hyperv, "router.template.hyperv");
+                put(LXC, "router.template.lxc");
+                put(Ovm3, "router.template.ovm3");
             }
         };
 
         final Map<Hypervisor.HypervisorType, String> newTemplateUrl = new HashMap<Hypervisor.HypervisorType, String>() {
             {
-                put(Hypervisor.HypervisorType.KVM, "https://download.cloudstack.org/systemvm/4.15/systemvmtemplate-4.15.1-kvm.qcow2.bz2");
-                put(Hypervisor.HypervisorType.VMware, "https://download.cloudstack.org/systemvm/4.15/systemvmtemplate-4.15.1-vmware.ova");
-                put(Hypervisor.HypervisorType.XenServer, "https://download.cloudstack.org/systemvm/4.15/systemvmtemplate-4.15.1-xen.vhd.bz2");
-                put(Hypervisor.HypervisorType.Hyperv, "https://download.cloudstack.org/systemvm/4.15/systemvmtemplate-4.15.1-hyperv.vhd.zip");
-                put(Hypervisor.HypervisorType.LXC, "https://download.cloudstack.org/systemvm/4.15/systemvmtemplate-4.15.1-kvm.qcow2.bz2");
-                put(Hypervisor.HypervisorType.Ovm3, "https://download.cloudstack.org/systemvm/4.15/systemvmtemplate-4.15.1-ovm.raw.bz2");
+                put(KVM, "https://download.cloudstack.org/systemvm/4.15/systemvmtemplate-4.15.1-kvm.qcow2.bz2");
+                put(VMware, "https://download.cloudstack.org/systemvm/4.15/systemvmtemplate-4.15.1-vmware.ova");
+                put(XenServer, "https://download.cloudstack.org/systemvm/4.15/systemvmtemplate-4.15.1-xen.vhd.bz2");
+                put(Hyperv, "https://download.cloudstack.org/systemvm/4.15/systemvmtemplate-4.15.1-hyperv.vhd.zip");
+                put(LXC, "https://download.cloudstack.org/systemvm/4.15/systemvmtemplate-4.15.1-kvm.qcow2.bz2");
+                put(Ovm3, "https://download.cloudstack.org/systemvm/4.15/systemvmtemplate-4.15.1-ovm.raw.bz2");
             }
         };
 
         final Map<Hypervisor.HypervisorType, String> newTemplateChecksum = new HashMap<Hypervisor.HypervisorType, String>() {
             {
-                put(Hypervisor.HypervisorType.KVM, "0e9f9a7d0957c3e0a2088e41b2da2cec");
-                put(Hypervisor.HypervisorType.XenServer, "86373992740b1eca8aff8b08ebf3aea5");
-                put(Hypervisor.HypervisorType.VMware, "4006982765846d373eb3719b2fe4d720");
-                put(Hypervisor.HypervisorType.Hyperv, "0b9514e4b6cba1f636fea2125f0f7a5f");
-                put(Hypervisor.HypervisorType.LXC, "0e9f9a7d0957c3e0a2088e41b2da2cec");
-                put(Hypervisor.HypervisorType.Ovm3, "ae3977e696b3e6c81bdcbb792d514d29");
+                put(KVM, "0e9f9a7d0957c3e0a2088e41b2da2cec");
+                put(XenServer, "86373992740b1eca8aff8b08ebf3aea5");
+                put(VMware, "4006982765846d373eb3719b2fe4d720");
+                put(Hyperv, "0b9514e4b6cba1f636fea2125f0f7a5f");
+                put(LXC, "0e9f9a7d0957c3e0a2088e41b2da2cec");
+                put(Ovm3, "ae3977e696b3e6c81bdcbb792d514d29");
             }
         };
 

@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -41,7 +42,13 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.VlanDetailsVO;
+import com.cloud.dc.dao.VlanDetailsDao;
+import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.dao.PublicIpQuarantineDao;
+import com.cloud.network.dao.VirtualRouterProviderDao;
+import com.cloud.network.element.NsxProviderVO;
+import com.cloud.network.element.VirtualRouterProviderVO;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.dao.ServiceOfferingDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -79,6 +86,7 @@ import org.apache.cloudstack.network.NetworkPermissionVO;
 import org.apache.cloudstack.network.dao.NetworkPermissionDao;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -282,6 +290,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     @Inject
     VlanDao _vlanDao = null;
     @Inject
+    private VlanDetailsDao vlanDetailsDao;
+    @Inject
     IPAddressDao _ipAddressDao = null;
     @Inject
     AccountDao _accountDao = null;
@@ -349,8 +359,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     @Inject
     HostDao _hostDao;
     @Inject
-    InternalLoadBalancerElementService _internalLbElementSvc;
-    @Inject
     DataCenterVnetDao _dcVnetDao;
     @Inject
     AccountGuestVlanMapDao _accountGuestVlanMapDao;
@@ -404,6 +412,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     ServiceOfferingDao serviceOfferingDao;
     @Inject
     PublicIpQuarantineDao publicIpQuarantineDao;
+    @Inject
+    NsxProviderDao nsxProviderDao;
+    @Inject
+    private VirtualRouterProviderDao virtualRouterProviderDao;
+    List<InternalLoadBalancerElementService> internalLoadBalancerElementServices = new ArrayList<>();
+    Map<String, InternalLoadBalancerElementService> internalLoadBalancerElementServiceMap = new HashMap<>();
 
     @Autowired
     @Qualifier("networkHelper")
@@ -811,7 +825,17 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
     @Override
     public boolean start() {
+        initializeInternalLoadBalancerElementsMap();
         return true;
+    }
+
+    private void initializeInternalLoadBalancerElementsMap() {
+        if (MapUtils.isEmpty(internalLoadBalancerElementServiceMap) && CollectionUtils.isNotEmpty(internalLoadBalancerElementServices)) {
+            for (InternalLoadBalancerElementService service : internalLoadBalancerElementServices) {
+                internalLoadBalancerElementServiceMap.put(service.getProviderType().name(), service);
+            }
+            logger.debug(String.format("Discovered internal loadbalancer elements configured on NetworkServiceImpl"));
+        }
     }
 
     @Override
@@ -1137,6 +1161,58 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         return ipVO;
     }
 
+    @Override
+    public IpAddress reserveIpAddressWithVlanDetail(Account account, DataCenter zone, Boolean displayIp, String vlanDetailKey) throws ResourceAllocationException {
+        // verify permissions
+        Account caller = CallContext.current().getCallingAccount();
+        _accountMgr.checkAccess(caller, null, true, account);
+
+        VlanVO vlan = findOneVlanRangeMatchingVlanDetailKey(zone, vlanDetailKey);
+        if (vlan == null) {
+            String msg = String.format("Cannot find any vlan matching the detail key %s on zone %s", vlanDetailKey, zone.getName());
+            logger.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+
+        List<IPAddressVO> freeIps = _ipAddressDao.listByVlanIdAndState(vlan.getId(), State.Free);
+        if (CollectionUtils.isEmpty(freeIps)) {
+            String msg = String.format("Cannot find any free IP matching on the VLAN range %s on zone %s", vlan.getIpRange(), zone.getName());
+            logger.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+
+        Collections.shuffle(freeIps);
+        IPAddressVO selectedIp = freeIps.get(0);
+
+        selectedIp.setAllocatedTime(new Date());
+        selectedIp.setAllocatedToAccountId(account.getAccountId());
+        selectedIp.setAllocatedInDomainId(account.getDomainId());
+        selectedIp.setState(State.Reserved);
+        if (displayIp != null) {
+            selectedIp.setDisplay(displayIp);
+        }
+        selectedIp = _ipAddressDao.persist(selectedIp);
+
+        Long ipDedicatedAccountId = getIpDedicatedAccountId(selectedIp.getVlanId());
+        if (ipDedicatedAccountId == null) {
+            _resourceLimitMgr.incrementResourceCount(account.getId(), Resource.ResourceType.public_ip);
+        }
+
+        return selectedIp;
+    }
+
+    private VlanVO findOneVlanRangeMatchingVlanDetailKey(DataCenter zone, String vlanDetailKey) {
+        List<VlanVO> zoneVlans = _vlanDao.listByZone(zone.getId());
+        for (VlanVO zoneVlan : zoneVlans) {
+            VlanDetailsVO detail = vlanDetailsDao.findDetail(zoneVlan.getId(), vlanDetailKey);
+            if (detail != null && detail.getValue().equalsIgnoreCase("true")) {
+                logger.debug(String.format("Found the VLAN range %s is set for NSX on zone %s", zoneVlan.getIpRange(), zone.getName()));
+                return zoneVlan;
+            }
+        }
+        return null;
+    }
+
     private Long getIpDedicatedAccountId(Long vlanId) {
         List<AccountVlanMapVO> accountVlanMaps = _accountVlanMapDao.listAccountVlanMapsByVlan(vlanId);
         if (CollectionUtils.isNotEmpty(accountVlanMaps)) {
@@ -1414,6 +1490,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         _accountMgr.checkAccess(owner, ntwkOff, zone);
 
         validateZoneAvailability(caller, zone);
+        validateNetworkCreationSupported(zone.getId(), zone.getName(), ntwkOff.getGuestType());
 
         ACLType aclType = getAclType(caller, cmd.getAclType(), ntwkOff);
 
@@ -1668,6 +1745,15 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             return implementedNetworkInCreation(caller, zone, network);
         }
         return network;
+    }
+
+    private void validateNetworkCreationSupported(long zoneId, String zoneName, GuestType guestType) {
+        NsxProviderVO nsxProviderVO = nsxProviderDao.findByZoneId(zoneId);
+        if (Objects.nonNull(nsxProviderVO) && List.of(GuestType.L2, GuestType.Shared).contains(guestType)) {
+            throw new InvalidParameterValueException(
+                    String.format("Creation of %s networks is not supported in NSX enabled zone %s", guestType.name(), zoneName)
+            );
+        }
     }
 
     void checkAndSetRouterSourceNatIp(Account owner, CreateNetworkCmd cmd, Network network) throws InsufficientAddressCapacityException, ResourceAllocationException {
@@ -2119,7 +2205,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                     if (createVlan && network != null) {
                         // Create vlan ip range
                         _configMgr.createVlanAndPublicIpRange(pNtwk.getDataCenterId(), network.getId(), physicalNetworkId, false, false, null, startIP, endIP, gateway, netmask, vlanId,
-                                bypassVlanOverlapCheck, null, null, startIPv6, endIPv6, ip6Gateway, ip6Cidr);
+                                bypassVlanOverlapCheck, null, null, startIPv6, endIPv6, ip6Gateway, ip6Cidr, ntwkOff.isForNsx());
                     }
                     if (associatedNetwork != null) {
                         _networkDetailsDao.persist(new NetworkDetailVO(network.getId(), Network.AssociatedNetworkId, String.valueOf(associatedNetwork.getId()), true));
@@ -3074,7 +3160,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             if (!NetUtils.isValidIp4Cidr(guestVmCidr)) {
                 throw new InvalidParameterValueException("Invalid format of Guest VM CIDR.");
             }
-            if (!NetUtils.validateGuestCidr(guestVmCidr)) {
+            if (!NetUtils.validateGuestCidr(guestVmCidr, !ConfigurationManager.AllowNonRFC1918CompliantIPs.value())) {
                 throw new InvalidParameterValueException("Invalid format of Guest VM CIDR. Make sure it is RFC1918 compliant. ");
             }
 
@@ -3248,7 +3334,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                             if (NetUtils.isNetworkAWithinNetworkB(network.getCidr(), network.getNetworkCidr())) {
                                 logger.warn(
                                         "Existing IP reservation will become ineffective for the network with id =  " + networkId + " You need to reapply reservation after network reimplementation.");
-                                //set cidr to the newtork cidr
+                                //set cidr to the network cidr
                                 network.setCidr(network.getNetworkCidr());
                                 //set networkCidr to null to bring network back to no IP reservation state
                                 network.setNetworkCidr(null);
@@ -4024,6 +4110,13 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                     // Add the config drive provider
                     addConfigDriveToPhysicalNetwork(pNetwork.getId());
 
+                    // Add NSX provider
+                    try {
+                        addNSXProviderToPhysicalNetwork(pNetwork.getId());
+                    } catch (Exception ex) {
+                        logger.warn("Failed to add NSX provider to physical network due to:", ex.getMessage());
+                    }
+
                     CallContext.current().putContextParameter(PhysicalNetwork.class, pNetwork.getUuid());
 
                     return pNetwork;
@@ -4284,9 +4377,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         final String virtualMachineDomainRouterType = VirtualMachine.Type.DomainRouter.toString();
-        if (!virtualMachineDomainRouterType.equalsIgnoreCase(serviceOffering.getSystemVmType())) {
+        if (!virtualMachineDomainRouterType.equalsIgnoreCase(serviceOffering.getVmType())) {
             throw new InvalidParameterValueException(String.format("The specified service offering [%s] is of type [%s]. Virtual routers can only be created with service offering "
-                    + "of type [%s].", serviceOffering, serviceOffering.getSystemVmType(), virtualMachineDomainRouterType.toLowerCase()));
+                    + "of type [%s].", serviceOffering, serviceOffering.getVmType(), virtualMachineDomainRouterType.toLowerCase()));
         }
     }
 
@@ -5348,7 +5441,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             throw new CloudRuntimeException("Unable to find the Network Element implementing the " + Network.Provider.InternalLbVm.getName() + " Provider");
         }
 
-        _internalLbElementSvc.addInternalLoadBalancerElement(nsp.getId());
+        InternalLoadBalancerElementService service = getInternalLoadBalancerElementByNetworkServiceProviderId(nsp.getId());
+        service.addInternalLoadBalancerElement(nsp.getId());
 
         return nsp;
     }
@@ -5415,6 +5509,22 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
         return null;
 
+    }
+
+    private PhysicalNetworkServiceProvider addNSXProviderToPhysicalNetwork(long physicalNetworkId) {
+        PhysicalNetworkVO pvo = _physicalNetworkDao.findById(physicalNetworkId);
+        DataCenterVO dvo = _dcDao.findById(pvo.getDataCenterId());
+        if (dvo.getNetworkType() == NetworkType.Advanced) {
+
+            Provider provider = Network.Provider.getProvider(Provider.Nsx.getName());
+            if (provider == null) {
+                return null;
+            }
+
+            addProviderToPhysicalNetwork(physicalNetworkId, Provider.Nsx.getName(), null, null);
+            enableProvider(Provider.Nsx.getName());
+        }
+        return null;
     }
 
     protected boolean isNetworkSystem(Network network) {
@@ -5651,6 +5761,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     @Inject
     public void setNetworkGurus(List<NetworkGuru> networkGurus) {
         _networkGurus = networkGurus;
+    }
+
+    public void setInternalLoadBalancerElementServices(List<InternalLoadBalancerElementService> services) {
+        this.internalLoadBalancerElementServices = services;
     }
 
     @Override
@@ -5992,6 +6106,34 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         checkCallerForPublicIpQuarantineAccess(publicIpQuarantine);
 
         _ipAddrMgr.removePublicIpAddressFromQuarantine(publicIpQuarantine.getId(), removalReason);
+    }
+
+    @Override
+    public InternalLoadBalancerElementService getInternalLoadBalancerElementByType(Type type) {
+        return internalLoadBalancerElementServiceMap.getOrDefault(type.name(), null);
+    }
+
+    @Override
+    public InternalLoadBalancerElementService getInternalLoadBalancerElementByNetworkServiceProviderId(long networkProviderId) {
+        PhysicalNetworkServiceProviderVO provider = _pNSPDao.findById(networkProviderId);
+        if (provider == null) {
+            String msg = String.format("Cannot find a network service provider with ID %s", networkProviderId);
+            logger.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+        Type type = provider.getProviderName().equalsIgnoreCase("nsx") ? Type.Nsx : Type.InternalLbVm;
+        return getInternalLoadBalancerElementByType(type);
+    }
+
+    @Override
+    public InternalLoadBalancerElementService getInternalLoadBalancerElementById(long providerId) {
+        VirtualRouterProviderVO provider = virtualRouterProviderDao.findById(providerId);
+        return getInternalLoadBalancerElementByType(provider.getType());
+    }
+
+    @Override
+    public List<InternalLoadBalancerElementService> getInternalLoadBalancerElements() {
+        return new ArrayList<>(this.internalLoadBalancerElementServiceMap.values());
     }
 
     /**

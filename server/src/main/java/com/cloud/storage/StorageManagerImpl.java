@@ -97,6 +97,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -238,6 +239,7 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.JoinBuilder;
@@ -380,6 +382,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Inject
     protected BucketDao _bucketDao;
+    @Inject
+    ConfigDepot configDepot;
+    @Inject
+    ConfigurationDao configurationDao;
+
     protected List<StoragePoolDiscoverer> _discoverers;
 
     public List<StoragePoolDiscoverer> getDiscoverers() {
@@ -437,6 +444,21 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             return false;
         } else {
             return true;
+        }
+    }
+
+    protected void enableDefaultDatastoreDownloadRedirectionForExistingInstallations() {
+        if (!configDepot.isNewConfig(DataStoreDownloadFollowRedirects)) {
+            logger.trace("{} is not a new configuration, skipping updating its value",
+                    DataStoreDownloadFollowRedirects.key());
+            return;
+        }
+        List<DataCenterVO> zones =
+                _dcDao.listAll(new Filter(1));
+        if (CollectionUtils.isNotEmpty(zones)) {
+            logger.debug(String.format("Updating value for configuration: %s to true",
+                DataStoreDownloadFollowRedirects.key()));
+            configurationDao.update(DataStoreDownloadFollowRedirects.key(), "true");
         }
     }
 
@@ -671,7 +693,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         _executor.scheduleWithFixedDelay(new DownloadURLGarbageCollector(), _downloadUrlCleanupInterval, _downloadUrlCleanupInterval, TimeUnit.SECONDS);
-
+        enableDefaultDatastoreDownloadRedirectionForExistingInstallations();
         return true;
     }
 
@@ -3114,24 +3136,16 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     private String getValidTemplateName(Long zoneId, HypervisorType hType) {
         String templateName = null;
-        switch (hType) {
-            case XenServer:
-                templateName = VirtualNetworkApplianceManager.RouterTemplateXen.valueIn(zoneId);
-                break;
-            case KVM:
-                templateName = VirtualNetworkApplianceManager.RouterTemplateKvm.valueIn(zoneId);
-                break;
-            case VMware:
-                templateName = VirtualNetworkApplianceManager.RouterTemplateVmware.valueIn(zoneId);
-                break;
-            case Hyperv:
-                templateName = VirtualNetworkApplianceManager.RouterTemplateHyperV.valueIn(zoneId);
-                break;
-            case LXC:
-                templateName = VirtualNetworkApplianceManager.RouterTemplateLxc.valueIn(zoneId);
-                break;
-            default:
-                break;
+        if (hType.equals(HypervisorType.XenServer)) {
+            templateName = VirtualNetworkApplianceManager.RouterTemplateXen.valueIn(zoneId);
+        } else if (hType.equals(HypervisorType.KVM)) {
+            templateName = VirtualNetworkApplianceManager.RouterTemplateKvm.valueIn(zoneId);
+        } else if (hType.equals(HypervisorType.VMware)) {
+            templateName = VirtualNetworkApplianceManager.RouterTemplateVmware.valueIn(zoneId);
+        } else if (hType.equals(HypervisorType.Hyperv)) {
+            templateName = VirtualNetworkApplianceManager.RouterTemplateHyperV.valueIn(zoneId);
+        } else if (hType.equals(HypervisorType.LXC)) {
+            templateName = VirtualNetworkApplianceManager.RouterTemplateLxc.valueIn(zoneId);
         }
         return templateName;
     }
@@ -3792,7 +3806,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 MountDisabledStoragePool,
                 VmwareCreateCloneFull,
                 VmwareAllowParallelExecution,
-                ConvertVmwareInstanceToKvmTimeout
+                ConvertVmwareInstanceToKvmTimeout,
+                DataStoreDownloadFollowRedirects
         };
     }
 

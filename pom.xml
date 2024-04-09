@@ -50,7 +50,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <project.systemvm.template.location>https://download.cloudstack.org/systemvm</project.systemvm.template.location>
-        <project.systemvm.template.version>4.19.0.0</project.systemvm.template.version>
+        <project.systemvm.template.version>4.20.0.0</project.systemvm.template.version>
         <sonar.organization>apache</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
 
@@ -151,7 +151,9 @@
         <cs.maven-javadoc-plugin.version>3.1.1</cs.maven-javadoc-plugin.version>
         <cs.javax.annotation.version>1.3.2</cs.javax.annotation.version>
         <cs.jaxb.version>2.3.0</cs.jaxb.version>
-        <cs.jaxws.version>2.3.2-1</cs.jaxws.version>
+        <cs.jaxb.impl.version>2.3.9</cs.jaxb.impl.version>
+        <cs.jakarta.xml.bind.version>2.3.3</cs.jakarta.xml.bind.version>
+        <cs.jaxws.version>2.3.7</cs.jaxws.version>
         <cs.jersey-client.version>2.26</cs.jersey-client.version>
         <cs.jetty.version>9.4.51.v20230217</cs.jetty.version>
         <cs.jetty-maven-plugin.version>9.4.27.v20200227</cs.jetty-maven-plugin.version>
@@ -164,7 +166,7 @@
         <cs.kafka-clients.version>2.7.0</cs.kafka-clients.version>
         <cs.libvirt-java.version>0.5.3</cs.libvirt-java.version>
         <cs.mail.version>1.5.0-b01</cs.mail.version>
-        <cs.mysql.version>8.0.19</cs.mysql.version>
+        <cs.mysql.version>8.0.33</cs.mysql.version>
         <cs.neethi.version>2.0.4</cs.neethi.version>
         <cs.nitro.version>10.1</cs.nitro.version>
         <cs.opensaml.version>2.6.6</cs.opensaml.version>
@@ -463,8 +465,8 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
+                <groupId>com.mysql</groupId>
+                <artifactId>mysql-connector-j</artifactId>
                 <version>${cs.mysql.version}</version>
                 <scope>test</scope>
             </dependency>
@@ -1040,6 +1042,7 @@
                             <exclude>systemvm/agent/js/jquery.js</exclude>
                             <exclude>systemvm/agent/js/jquery.flot.navigate.js</exclude>
                             <exclude>systemvm/agent/noVNC/**</exclude>
+                            <exclude>systemvm/agent/packages/**</exclude>
                             <exclude>systemvm/debian/**</exclude>
                             <exclude>test/integration/component/test_host_ha.sh</exclude>
                             <exclude>test/systemvm/README.md</exclude>

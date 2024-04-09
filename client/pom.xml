@@ -68,8 +68,8 @@
             <artifactId>jetty-util</artifactId>
         </dependency>
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
@@ -709,8 +709,8 @@
                 <dependencies>
                     <!-- specify the dependent jdbc driver here -->
                     <dependency>
-                        <groupId>mysql</groupId>
-                        <artifactId>mysql-connector-java</artifactId>
+                        <groupId>com.mysql</groupId>
+                        <artifactId>mysql-connector-j</artifactId>
                         <version>${cs.mysql.version}</version>
                     </dependency>
                     <dependency>
@@ -898,8 +898,8 @@
                                     <outputDirectory>${project.build.directory}/pythonlibs</outputDirectory>
                                 </artifactItem>
                                 <artifactItem>
-                                    <groupId>mysql</groupId>
-                                    <artifactId>mysql-connector-java</artifactId>
+                                    <groupId>com.mysql</groupId>
+                                    <artifactId>mysql-connector-j</artifactId>
                                     <overWrite>false</overWrite>
                                     <outputDirectory>${project.build.directory}/lib</outputDirectory>
                                 </artifactItem>
@@ -973,7 +973,7 @@
                                     <exclude>org.bouncycastle:bcprov-jdk15on</exclude>
                                     <exclude>org.bouncycastle:bcpkix-jdk15on</exclude>
                                     <exclude>org.bouncycastle:bctls-jdk15on</exclude>
-                                    <exclude>mysql:mysql-connector-java</exclude>
+                                    <exclude>com.mysql:mysql-connector-j</exclude>
                                     <exclude>org.apache.cloudstack:cloud-plugin-storage-volume-storpool</exclude>
                                     <exclude>org.apache.cloudstack:cloud-plugin-storage-volume-linstor</exclude>
                                     <exclude>org.apache.cloudstack:cloud-usage</exclude>
@@ -1095,6 +1095,11 @@
                 <dependency>
                     <groupId>org.apache.cloudstack</groupId>
                     <artifactId>cloud-plugin-network-cisco-vnmc</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.cloudstack</groupId>
+                    <artifactId>cloud-plugin-network-nsx</artifactId>
                     <version>${project.version}</version>
                 </dependency>
                 <dependency>
