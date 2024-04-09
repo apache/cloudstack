@@ -1218,7 +1218,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     /**
-     * Searches the maximum virtual machine NICs based on the hypervisor type of the cluster where the instance is deployed.
+     * Searches the maximum virtual machine NICs based on the cluster where the instance is deployed.
      *
      * @param virtualMachine Virtual machine to get the cluster.
      * @return The maximum number of NICs that the virtual machine can have.
@@ -1234,7 +1234,17 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             return null;
         }
 
-        int virtualMachineMaxNicsValue;
+        return getVirtualMachineMaxNicsValueFromCluster(cluster);
+    }
+
+    /**
+     * Searches the maximum virtual machine NICs based on the hypervisor type of the cluster where the instance is deployed.
+     *
+     * @param cluster Cluster to get the virtual machine max NICs value from.
+     * @return The maximum number of NICs that the virtual machine can have.
+     */
+    protected int getVirtualMachineMaxNicsValueFromCluster(ClusterVO cluster) {
+        int virtualMachineMaxNicsValue = 0;
         HypervisorType hypervisor = cluster.getHypervisorType();
 
         if (HypervisorType.KVM.equals(hypervisor)) {
