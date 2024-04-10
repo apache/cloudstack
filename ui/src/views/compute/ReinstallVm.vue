@@ -26,9 +26,9 @@
       show-icon
     >
       <template #message><span
-        style="margin-bottom: 5px"
-        v-html="$t('message.reinstall.vm')"
-      /></template>
+          style="margin-bottom: 5px"
+          v-html="$t('message.reinstall.vm')"
+        /></template>
     </a-alert>
     <a-form-item>
       <template-iso-selection
@@ -43,10 +43,12 @@
       />
     </a-form-item>
     <a-form-item>
-      <tooltip-label
-        :title="$t('label.override.root.diskoffering')"
-        :tooltip="apiParams.diskofferingid.description"
-      />
+      <template #label>
+        <tooltip-label
+          :title="$t('label.override.root.diskoffering')"
+          :tooltip="apiParams.diskofferingid.description"
+        />
+      </template>
       <a-switch
         v-model:checked="overrideDiskOffering"
         @change="val => { overrideDiskOffering = val }"
@@ -77,10 +79,12 @@
       />
     </a-form-item>
     <a-form-item v-if="!(diskOffering && diskOffering.iscustomized)">
-      <tooltip-label
-        :title="$t('label.override.rootdisk.size')"
-        :tooltip="apiParams.rootdisksize.description"
-      />
+      <template #label>
+        <tooltip-label
+          :title="$t('label.override.rootdisk.size')"
+          :tooltip="apiParams.rootdisksize.description"
+        />
+      </template>
       <a-switch
         v-model:checked="overrideDiskSize"
         @change="val => { overrideDiskSize = val }"
@@ -94,10 +98,12 @@
       />
     </a-form-item>
     <a-form-item>
-      <tooltip-label
-        :title="$t('label.expunge')"
-        :tooltip="apiParams.expunge.description"
-      />
+      <template #label>
+        <tooltip-label
+          :title="$t('label.expunge')"
+          :tooltip="apiParams.expunge.description"
+        />
+      </template>
       <a-switch
         v-model:checked="expungeDisk"
         @change="val => { expungeDisk = val }"
@@ -287,9 +293,13 @@ export default {
 }
 </script>
 
-<style scoped lang="scss">
+<style
+  scoped
+  lang="scss"
+>
 .ant-form {
   width: 90vw;
+
   @media (min-width: 700px) {
     width: 50vw;
   }
