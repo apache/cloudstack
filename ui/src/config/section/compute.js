@@ -602,6 +602,26 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/UpgradeKubernetesCluster.vue')))
         },
         {
+          api: 'addNodesToKubernetesCluster',
+          icon: 'plus-outlined',
+          label: 'label.kubernetes.cluster.add.nodes.to.cluster',
+          message: 'message.kubernetes.cluster.add.nodes',
+          dataView: true,
+          show: (record) => { return ['Running', 'Alert'].includes(record.state) && record.clustertype === 'CloudManaged' },
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/KubernetesAddNodes.vue')))
+        },
+        {
+          api: 'removeNodesFromKubernetesCluster',
+          icon: 'minus-outlined',
+          label: 'label.kubernetes.cluster.remove.nodes.from.cluster',
+          message: 'message.kubernetes.cluster.remove.nodes',
+          dataView: true,
+          show: (record) => { return ['Running', 'Alert'].includes(record.state) && record.clustertype === 'CloudManaged' && (record.virtualmachines.filter(vm => vm.isexternalnode) || []).length > 0 },
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/KubernetesRemoveNodes.vue')))
+        },
+        {
           api: 'deleteKubernetesCluster',
           icon: 'delete-outlined',
           label: 'label.kubernetes.cluster.delete',

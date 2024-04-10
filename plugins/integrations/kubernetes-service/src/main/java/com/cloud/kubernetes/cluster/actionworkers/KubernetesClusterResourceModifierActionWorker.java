@@ -21,6 +21,7 @@ import static com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClu
 import static com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType.ETCD;
 import static com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType.WORKER;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+import static com.cloud.utils.db.Transaction.execute;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,6 +30,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -36,9 +38,12 @@ import javax.inject.Inject;
 
 import com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType;
 import com.cloud.network.rules.FirewallManager;
+import com.cloud.network.rules.RulesService;
+import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
-import org.apache.cloudstack.api.ApiConstants;
+import com.cloud.utils.db.TransactionCallbackWithException;
+import com.cloud.utils.net.Ip;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.firewall.CreateFirewallRuleCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
@@ -69,23 +74,18 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
-import com.cloud.kubernetes.cluster.KubernetesClusterDetailsVO;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
 import com.cloud.kubernetes.cluster.KubernetesClusterVO;
-import com.cloud.kubernetes.cluster.utils.KubernetesClusterUtil;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVO;
-import com.cloud.network.firewall.FirewallService;
 import com.cloud.network.lb.LoadBalancingRulesService;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.PortForwardingRuleVO;
-import com.cloud.network.rules.RulesService;
-import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.vpc.NetworkACL;
 import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.NetworkACLItemDao;
@@ -99,16 +99,12 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.LaunchPermissionDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
-import com.cloud.user.SSHKeyPairVO;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentContext;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
-import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.Nic;
@@ -130,8 +126,6 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     protected HostDao hostDao;
     @Inject
     protected FirewallRulesDao firewallRulesDao;
-    @Inject
-    protected FirewallService firewallService;
     @Inject
     protected NetworkACLService networkACLService;
     @Inject
@@ -172,72 +166,6 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         kubernetesClusterNodeNamePrefix = getKubernetesClusterNodeNamePrefix();
     }
 
-    private String getKubernetesNodeConfig(final String joinIp, final boolean ejectIso) throws IOException {
-        String k8sNodeConfig = readResourceFile("/conf/k8s-node.yml");
-        final String sshPubKey = "{{ k8s.ssh.pub.key }}";
-        final String joinIpKey = "{{ k8s_control_node.join_ip }}";
-        final String clusterTokenKey = "{{ k8s_control_node.cluster.token }}";
-        final String ejectIsoKey = "{{ k8s.eject.iso }}";
-        String pubKey = "- \"" + configurationDao.getValue("ssh.publickey") + "\"";
-        String sshKeyPair = kubernetesCluster.getKeyPair();
-        if (StringUtils.isNotEmpty(sshKeyPair)) {
-            SSHKeyPairVO sshkp = sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), sshKeyPair);
-            if (sshkp != null) {
-                pubKey += "\n      - \"" + sshkp.getPublicKey() + "\"";
-            }
-        }
-        k8sNodeConfig = k8sNodeConfig.replace(sshPubKey, pubKey);
-        k8sNodeConfig = k8sNodeConfig.replace(joinIpKey, joinIp);
-        k8sNodeConfig = k8sNodeConfig.replace(clusterTokenKey, KubernetesClusterUtil.generateClusterToken(kubernetesCluster));
-        k8sNodeConfig = k8sNodeConfig.replace(ejectIsoKey, String.valueOf(ejectIso));
-
-        k8sNodeConfig = updateKubeConfigWithRegistryDetails(k8sNodeConfig);
-
-        return k8sNodeConfig;
-    }
-
-    protected String updateKubeConfigWithRegistryDetails(String k8sConfig) {
-        /* genarate /etc/containerd/config.toml file on the nodes only if Kubernetes cluster is created to
-         * use docker private registry */
-        String registryUsername = null;
-        String registryPassword = null;
-        String registryUrl = null;
-
-        List<KubernetesClusterDetailsVO> details = kubernetesClusterDetailsDao.listDetails(kubernetesCluster.getId());
-        for (KubernetesClusterDetailsVO detail : details) {
-            if (detail.getName().equals(ApiConstants.DOCKER_REGISTRY_USER_NAME)) {
-                registryUsername = detail.getValue();
-            }
-            if (detail.getName().equals(ApiConstants.DOCKER_REGISTRY_PASSWORD)) {
-                registryPassword = detail.getValue();
-            }
-            if (detail.getName().equals(ApiConstants.DOCKER_REGISTRY_URL)) {
-                registryUrl = detail.getValue();
-            }
-        }
-
-        if (StringUtils.isNoneEmpty(registryUsername, registryPassword, registryUrl)) {
-            // Update runcmd in the cloud-init configuration to run a script that updates the containerd config with provided registry details
-            String runCmd = "- bash -x /opt/bin/setup-containerd";
-
-            String registryEp = registryUrl.split("://")[1];
-            k8sConfig = k8sConfig.replace("- containerd config default > /etc/containerd/config.toml", runCmd);
-            final String registryUrlKey = "{{registry.url}}";
-            final String registryUrlEpKey = "{{registry.url.endpoint}}";
-            final String registryAuthKey = "{{registry.token}}";
-            final String registryUname = "{{registry.username}}";
-            final String registryPsswd = "{{registry.password}}";
-
-            final String usernamePasswordKey = registryUsername + ":" + registryPassword;
-            String base64Auth = Base64.encodeBase64String(usernamePasswordKey.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
-            k8sConfig = k8sConfig.replace(registryUrlKey,   registryUrl);
-            k8sConfig = k8sConfig.replace(registryUrlEpKey, registryEp);
-            k8sConfig = k8sConfig.replace(registryUname, registryUsername);
-            k8sConfig = k8sConfig.replace(registryPsswd, registryPassword);
-            k8sConfig = k8sConfig.replace(registryAuthKey, base64Auth);
-        }
-        return k8sConfig;
-    }
     protected DeployDestination plan(final long nodesCount, final DataCenter zone, final ServiceOffering offering) throws InsufficientServerCapacityException {
         final int cpu_requested = offering.getCpu() * offering.getSpeed();
         final long ram_requested = offering.getRamSize() * 1024L * 1024L;
@@ -357,7 +285,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         List<UserVm> nodes = new ArrayList<>();
         for (int i = offset + 1; i <= nodeCount; i++) {
             UserVm vm = createKubernetesNode(publicIpAddress);
-            addKubernetesClusterVm(kubernetesCluster.getId(), vm.getId(), false);
+            addKubernetesClusterVm(kubernetesCluster.getId(), vm.getId(), false, false);
             if (kubernetesCluster.getNodeRootDiskSize() > 0) {
                 resizeNodeVolume(vm);
             }
@@ -469,7 +397,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         final long domainId = account.getDomainId();
         Nic vmNic = networkModel.getNicInNetwork(vmId, networkId);
         final Ip vmIp = new Ip(vmNic.getIPv4Address());
-        PortForwardingRuleVO pfRule = Transaction.execute((TransactionCallbackWithException<PortForwardingRuleVO, NetworkRuleConflictException>) status -> {
+        PortForwardingRuleVO pfRule = execute((TransactionCallbackWithException<PortForwardingRuleVO, NetworkRuleConflictException>) status -> {
             PortForwardingRuleVO newRule =
                     new PortForwardingRuleVO(null, publicIpId,
                             sourcePort, sourcePort,
@@ -501,11 +429,18 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
      * @throws NetworkRuleConflictException
      */
     protected void provisionSshPortForwardingRules(IpAddress publicIp, Network network, Account account,
-                                                   List<Long> clusterVMIds) throws ResourceUnavailableException,
+                                                   List<Long> clusterVMIds, Map<Long, Integer> vmIdPortMap) throws ResourceUnavailableException,
             NetworkRuleConflictException {
         if (!CollectionUtils.isEmpty(clusterVMIds)) {
-            for (int i = 0; i < clusterVMIds.size(); ++i) {
-                provisionPublicIpPortForwardingRule(publicIp, network, account, clusterVMIds.get(i), CLUSTER_NODES_DEFAULT_START_SSH_PORT + i, DEFAULT_SSH_PORT);
+            int defaultNodesCount = clusterVMIds.size() - vmIdPortMap.size();
+            int sourcePort = CLUSTER_NODES_DEFAULT_START_SSH_PORT;
+            for (int i = 0; i < defaultNodesCount; ++i) {
+                sourcePort = CLUSTER_NODES_DEFAULT_START_SSH_PORT + i;
+                provisionPublicIpPortForwardingRule(publicIp, network, account, clusterVMIds.get(i), sourcePort, DEFAULT_SSH_PORT);
+            }
+            for (int i = defaultNodesCount; i < clusterVMIds.size(); ++i) {
+                sourcePort += 1;
+                provisionPublicIpPortForwardingRule(publicIp, network, account, clusterVMIds.get(i), sourcePort, DEFAULT_SSH_PORT);
             }
         }
     }
@@ -524,14 +459,14 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         return rule;
     }
 
-    protected FirewallRule removeSshFirewallRule(final IpAddress publicIp) {
+    protected FirewallRule removeSshFirewallRule(final IpAddress publicIp, final long networkId) {
         FirewallRule rule = null;
         List<FirewallRuleVO> firewallRules = firewallRulesDao.listByIpAndPurposeAndNotRevoked(publicIp.getId(), FirewallRule.Purpose.Firewall);
         for (FirewallRuleVO firewallRule : firewallRules) {
-            if (firewallRule.getSourcePortStart() == CLUSTER_NODES_DEFAULT_START_SSH_PORT) {
+            PortForwardingRuleVO pfRule = portForwardingRulesDao.findByNetworkAndPorts(networkId, firewallRule.getSourcePortStart(), firewallRule.getSourcePortEnd());
+            if (firewallRule.getSourcePortStart() == CLUSTER_NODES_DEFAULT_START_SSH_PORT || (Objects.nonNull(pfRule) && pfRule.getDestinationPortStart() == DEFAULT_SSH_PORT) ) {
                 rule = firewallRule;
                 firewallService.revokeIngressFwRule(firewallRule.getId(), true);
-                break;
             }
         }
         return rule;
@@ -546,7 +481,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                 for (PortForwardingRuleVO pfRule : pfRules) {
                     if (pfRule.getVirtualMachineId() == vmId) {
                         portForwardingRulesDao.remove(pfRule.getId());
-                        LOGGER.trace("Marking PF rule " + pfRule + " with Revoke state");
+                        logger.trace("Marking PF rule " + pfRule + " with Revoke state");
                         pfRule.setState(FirewallRule.State.Revoke);
                         revokedRules.add(pfRule);
                         break;
@@ -643,19 +578,11 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         lbService.assignToLoadBalancer(lb.getId(), null, vmIdIpMap, false);
     }
 
-    protected void createFirewallRules(IpAddress publicIp, List<Long> clusterVMIds, boolean apiRule) throws ManagementServerException {
+    protected Map<Long, Integer> createFirewallRules(IpAddress publicIp, List<Long> clusterVMIds, boolean apiRule) throws ManagementServerException {
         // Firewall rule for SSH access on each node VM
-        try {
-            int endPort = CLUSTER_NODES_DEFAULT_START_SSH_PORT + clusterVMIds.size() - 1;
-            provisionFirewallRules(publicIp, owner, CLUSTER_NODES_DEFAULT_START_SSH_PORT, endPort);
-            if (logger.isInfoEnabled()) {
-                logger.info(String.format("Provisioned firewall rule to open up port %d to %d on %s for Kubernetes cluster : %s", CLUSTER_NODES_DEFAULT_START_SSH_PORT, endPort, publicIp.getAddress().addr(), kubernetesCluster.getName()));
-            }
-        } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException | NetworkRuleConflictException e) {
-            throw new ManagementServerException(String.format("Failed to provision firewall rules for SSH access for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
-        }
+        Map<Long, Integer> vmIdPortMap = addFirewallRulesForNodes(publicIp, clusterVMIds.size());
         if (!apiRule) {
-            return;
+            return vmIdPortMap;
         }
         // Firewall rule for API access for control node VMs
         try {
@@ -667,6 +594,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException | NetworkRuleConflictException e) {
             throw new ManagementServerException(String.format("Failed to provision firewall rules for API access for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
         }
+        return vmIdPortMap;
     }
 
     /**
@@ -681,11 +609,11 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
      * @throws ManagementServerException
      */
     protected void setupKubernetesClusterIsolatedNetworkRules(IpAddress publicIp, Network network, List<Long> clusterVMIds, boolean apiRule) throws ManagementServerException {
-        createFirewallRules(publicIp, clusterVMIds, apiRule);
+        Map<Long, Integer> vmIdPortMap = createFirewallRules(publicIp, clusterVMIds, apiRule);
 
         // Port forwarding rule for SSH access on each node VM
         try {
-            provisionSshPortForwardingRules(publicIp, network, owner, clusterVMIds);
+            provisionSshPortForwardingRules(publicIp, network, owner, clusterVMIds, vmIdPortMap);
         } catch (ResourceUnavailableException | NetworkRuleConflictException e) {
             throw new ManagementServerException(String.format("Failed to activate SSH port forwarding rules for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
         }
@@ -775,7 +703,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
 
         // Add port forwarding rule for SSH access on each node VM
         try {
-            provisionSshPortForwardingRules(publicIp, network, owner, clusterVMIds);
+            Map<Long, Integer> vmIdPortMap = getVmPortMap();
+            provisionSshPortForwardingRules(publicIp, network, owner, clusterVMIds, vmIdPortMap);
         } catch (ResourceUnavailableException | NetworkRuleConflictException e) {
             throw new ManagementServerException(String.format("Failed to activate SSH port forwarding rules for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
         }
@@ -802,7 +731,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                                                                final KubernetesClusterNodeType nodeType,
                                                                final boolean updateNodeOffering,
                                                                final boolean updateClusterOffering) {
-        return Transaction.execute(new TransactionCallback<KubernetesClusterVO>() {
+        return execute(new TransactionCallback<KubernetesClusterVO>() {
                 @Override
                 public KubernetesClusterVO doInTransaction(TransactionStatus status) {
                 KubernetesClusterVO updatedCluster = kubernetesClusterDao.findById(kubernetesCluster.getId());

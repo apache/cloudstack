@@ -45,6 +45,9 @@ public class KubernetesClusterVmMapVO implements KubernetesClusterVmMap {
     @Column(name = "etcd_node")
     boolean etcdNode;
 
+    @Column(name = "external_node")
+    boolean externalNode;
+
     public KubernetesClusterVmMapVO() {
     }
 
@@ -93,5 +96,13 @@ public class KubernetesClusterVmMapVO implements KubernetesClusterVmMap {
 
     public void setEtcdNode(boolean etcdNode) {
         this.etcdNode = etcdNode;
+    }
+
+    public boolean isExternalNode() {
+        return externalNode;
+    }
+
+    public void setExternalNode(boolean externalNode) {
+        this.externalNode = externalNode;
     }
 }

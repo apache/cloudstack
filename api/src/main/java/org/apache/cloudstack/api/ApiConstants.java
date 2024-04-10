@@ -305,6 +305,7 @@ public class ApiConstants {
     public static final String MIGRATIONS = "migrations";
     public static final String MEMORY = "memory";
     public static final String MODE = "mode";
+    public static final String MOUNT_CKS_ISO_ON_VR = "mountcksisoonvr";
     public static final String NSX_MODE = "nsxmode";
     public static final String NSX_ENABLED = "isnsxenabled";
     public static final String NAME = "name";
@@ -1051,6 +1052,8 @@ public class ApiConstants {
     public static final String NODE_IDS = "nodeids";
     public static final String CONTROL_NODES = "controlnodes";
     public static final String ETCD_NODES = "etcdnodes";
+    public static final String EXTERNAL_NODES = "externalnodes";
+    public static final String IS_EXTERNAL_NODE = "isexternalnode";
     public static final String MIN_SEMANTIC_VERSION = "minimumsemanticversion";
     public static final String MIN_KUBERNETES_VERSION_ID = "minimumkubernetesversionid";
     public static final String NODE_ROOT_DISK_SIZE = "noderootdisksize";

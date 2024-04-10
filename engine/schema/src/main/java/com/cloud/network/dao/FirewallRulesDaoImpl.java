@@ -48,6 +48,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
     protected final SearchBuilder<FirewallRuleVO> NotRevokedSearch;
     protected final SearchBuilder<FirewallRuleVO> ReleaseSearch;
     protected SearchBuilder<FirewallRuleVO> VmSearch;
+    protected SearchBuilder<FirewallRuleVO> FirewallByPortsAndNetwork;
     protected final SearchBuilder<FirewallRuleVO> SystemRuleSearch;
     protected final GenericSearchBuilder<FirewallRuleVO, Long> RulesByIpCount;
 
@@ -104,6 +105,12 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         RulesByIpCount.and("ipAddressId", RulesByIpCount.entity().getSourceIpAddressId(), Op.EQ);
         RulesByIpCount.and("state", RulesByIpCount.entity().getState(), Op.EQ);
         RulesByIpCount.done();
+
+        FirewallByPortsAndNetwork = createSearchBuilder();
+        FirewallByPortsAndNetwork.and("networkId", FirewallByPortsAndNetwork.entity().getNetworkId(), Op.EQ);
+        FirewallByPortsAndNetwork.and("sourcePortStart", FirewallByPortsAndNetwork.entity().getSourcePortStart(), Op.EQ);
+        FirewallByPortsAndNetwork.and("sourcePortEnd", FirewallByPortsAndNetwork.entity().getSourcePortEnd(), Op.EQ);
+        FirewallByPortsAndNetwork.done();
     }
 
     @Override
@@ -384,6 +391,16 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
     public void loadDestinationCidrs(FirewallRuleVO rule){
         List<String> destCidrs = _firewallRulesDcidrsDao.getDestCidrs(rule.getId());
         rule.setDestinationCidrsList(destCidrs);
+    }
+
+    @Override
+    public FirewallRuleVO findByNetworkIdAndPorts(long networkId, int startPort, int endPort) {
+        SearchCriteria<FirewallRuleVO> sc = FirewallByPortsAndNetwork.create();
+        sc.setParameters("networkId", networkId);
+        sc.setParameters("sourcePortStart", startPort);
+        sc.setParameters("sourcePortEnd", endPort);
+
+        return findOneBy(sc);
     }
 
 }

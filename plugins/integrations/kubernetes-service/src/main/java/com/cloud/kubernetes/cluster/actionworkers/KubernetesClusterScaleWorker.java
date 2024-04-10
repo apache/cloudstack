@@ -134,7 +134,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         }
 
         // Remove existing SSH firewall rules
-        FirewallRule firewallRule = removeSshFirewallRule(publicIp);
+        FirewallRule firewallRule = removeSshFirewallRule(publicIp, network.getId());
         if (firewallRule == null) {
             throw new ManagementServerException("Firewall rule for node SSH access can't be provisioned");
         }
@@ -159,7 +159,8 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         }
         // Add port forwarding rule for SSH access on each node VM
         try {
-            provisionSshPortForwardingRules(publicIp, network, owner, clusterVMIds);
+           Map<Long, Integer> vmIdPortMap = getVmPortMap();
+            provisionSshPortForwardingRules(publicIp, network, owner, clusterVMIds, vmIdPortMap);
         } catch (ResourceUnavailableException | NetworkRuleConflictException e) {
             throw new ManagementServerException(String.format("Failed to activate SSH port forwarding rules for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
         }
@@ -416,10 +417,11 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         }
         List<KubernetesClusterVmMapVO> vmList;
         if (this.nodeIds != null) {
-            vmList = getKubernetesClusterVMMapsForNodes(this.nodeIds);
+            vmList = getKubernetesClusterVMMapsForNodes(this.nodeIds).stream().filter(vm -> !vm.isExternalNode()).collect(Collectors.toList());
         } else {
             vmList  = getKubernetesClusterVMMaps();
-            vmList = vmList.subList((int) (kubernetesCluster.getControlNodeCount() + clusterSize), vmList.size());
+            vmList  = vmList.stream().filter(vm -> !vm.isExternalNode()).collect(Collectors.toList());
+            vmList = vmList.subList((int) (kubernetesCluster.getControlNodeCount() + clusterSize - 1), vmList.size());
         }
         Collections.reverse(vmList);
         removeNodesFromCluster(vmList);
@@ -441,7 +443,9 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
             logTransitStateToFailedIfNeededAndThrow(Level.ERROR, String.format("Scaling failed for Kubernetes cluster : %s, unable to provision node VM in the cluster", kubernetesCluster.getName()), e);
         }
         try {
-            List<Long> clusterVMIds = getKubernetesClusterVMMaps().stream().map(KubernetesClusterVmMapVO::getVmId).collect(Collectors.toList());
+            List<Long> externalNodeIds = getKubernetesClusterVMMaps().stream().filter(KubernetesClusterVmMapVO::isExternalNode).map(KubernetesClusterVmMapVO::getVmId).collect(Collectors.toList());
+            List<Long> clusterVMIds = getKubernetesClusterVMMaps().stream().filter(vm -> !vm.isExternalNode()).map(KubernetesClusterVmMapVO::getVmId).collect(Collectors.toList());
+            clusterVMIds.addAll(externalNodeIds);
             scaleKubernetesClusterNetworkRules(clusterVMIds);
         } catch (ManagementServerException e) {
             logTransitStateToFailedIfNeededAndThrow(Level.ERROR, String.format("Scaling failed for Kubernetes cluster : %s, unable to update network rules", kubernetesCluster.getName()), e);

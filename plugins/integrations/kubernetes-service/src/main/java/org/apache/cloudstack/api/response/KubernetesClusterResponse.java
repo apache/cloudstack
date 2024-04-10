@@ -86,6 +86,10 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
     @Param(description = "the number of the etcd nodes on the Kubernetes cluster")
     private Long etcdNodes;
 
+    @SerializedName(ApiConstants.EXTERNAL_NODES)
+    @Param(description = "the number of the externally added worker nodes to the Kubernetes cluster")
+    private Long externalNodes;
+
     @SerializedName(ApiConstants.TEMPLATE_ID)
     @Param(description = "the ID of the template of the Kubernetes cluster")
     private String templateId;
@@ -165,7 +169,7 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINES)
     @Param(description = "the list of virtualmachine associated with this Kubernetes cluster")
-    private List<UserVmResponse> virtualMachines;
+    private List<KubernetesUserVmResponse> virtualMachines;
 
     @SerializedName(ApiConstants.IP_ADDRESS)
     @Param(description = "Public IP Address of the cluster")
@@ -443,11 +447,19 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
         this.etcdNodes = etcdNodes;
     }
 
-    public void setVirtualMachines(List<UserVmResponse> virtualMachines) {
+    public Long getExternalNodes() {
+        return externalNodes;
+    }
+
+    public void setExternalNodes(Long externalNodes) {
+        this.externalNodes = externalNodes;
+    }
+
+    public void setVirtualMachines(List<KubernetesUserVmResponse> virtualMachines) {
         this.virtualMachines = virtualMachines;
     }
 
-    public List<UserVmResponse> getVirtualMachines() {
+    public List<KubernetesUserVmResponse> getVirtualMachines() {
         return virtualMachines;
     }
 

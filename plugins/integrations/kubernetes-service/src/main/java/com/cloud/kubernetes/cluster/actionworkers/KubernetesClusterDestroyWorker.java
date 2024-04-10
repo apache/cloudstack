@@ -151,7 +151,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
         if (firewallRule == null) {
             logMessage(Level.WARN, "Firewall rule for API access can't be removed", null);
         }
-        firewallRule = removeSshFirewallRule(publicIp);
+        firewallRule = removeSshFirewallRule(publicIp, network.getId());
         if (firewallRule == null) {
             logMessage(Level.WARN, "Firewall rule for SSH access can't be removed", null);
         }

@@ -23,10 +23,12 @@ import static com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClu
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 import static com.cloud.vm.UserVmManager.AllowUserExpungeRecoverVm;
 
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -45,23 +47,33 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType;
+import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterRemoveWorker;
 import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.element.NsxProviderVO;
+import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterAddWorker;
+import com.cloud.template.TemplateApiService;
 import com.cloud.uservm.UserVm;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmService;
+import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.kubernetes.cluster.AddNodesToKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.AddVirtualMachinesToKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.CreateKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.DeleteKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.GetKubernetesClusterConfigCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.ListKubernetesClustersCmd;
+import org.apache.cloudstack.api.command.user.kubernetes.cluster.RemoveNodesFromKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.RemoveVirtualMachinesFromKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.ScaleKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.StartKubernetesClusterCmd;
@@ -69,6 +81,7 @@ import org.apache.cloudstack.api.command.user.kubernetes.cluster.StopKubernetesC
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.UpgradeKubernetesClusterCmd;
 import org.apache.cloudstack.api.response.KubernetesClusterConfigResponse;
 import org.apache.cloudstack.api.response.KubernetesClusterResponse;
+import org.apache.cloudstack.api.response.KubernetesUserVmResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.RemoveVirtualMachinesFromKubernetesClusterResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
@@ -77,6 +90,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -234,6 +248,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     @Inject
     protected UserDao userDao;
     @Inject
+    protected UserVmDetailsDao userVmDetailsDao;
+    @Inject
     protected VMInstanceDao vmInstanceDao;
     @Inject
     protected UserVmJoinDao userVmJoinDao;
@@ -271,9 +287,12 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     public NetworkHelper networkHelper;
     @Inject
     private NsxProviderDao nsxProviderDao;
-
+    @Inject
+    private NicDao nicDao;
     @Inject
     private UserVmService userVmService;
+    @Inject
+    private TemplateApiService templateService;
 
     private void logMessage(final Level logLevel, final String message, final Exception e) {
         if (logLevel == Level.WARN) {
@@ -662,7 +681,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             }
         }
 
-        List<UserVmResponse> vmResponses = new ArrayList<UserVmResponse>();
+        List<KubernetesUserVmResponse> vmResponses = new ArrayList<>();
         List<KubernetesClusterVmMapVO> vmList = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
         ResponseView respView = ResponseView.Restricted;
         Account caller = CallContext.current().getCallingAccount();
@@ -676,9 +695,17 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 if (userVM != null) {
                     UserVmResponse vmResponse = ApiDBUtils.newUserVmResponse(respView, responseName, userVM,
                         EnumSet.of(VMDetails.nics), caller);
-                    vmResponses.add(vmResponse);
+                    KubernetesUserVmResponse kubernetesUserVmResponse = new KubernetesUserVmResponse();
+                    try {
+                        BeanUtils.copyProperties(kubernetesUserVmResponse, vmResponse);
+                    } catch (IllegalAccessException | InvocationTargetException e) {
+                        throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to generate zone metrics response");
+                    }
+                    kubernetesUserVmResponse.setExternalNode(vmMapVO.isExternalNode());
+                    vmResponses.add(kubernetesUserVmResponse);
                 }
             }
+            response.setExternalNodes(vmList.stream().filter(KubernetesClusterVmMapVO::isEtcdNode).count());
         }
         response.setHasAnnotation(annotationDao.hasAnnotations(kubernetesCluster.getUuid(),
                 AnnotationService.EntityType.KUBERNETES_CLUSTER.name(), accountService.isRootAdmin(caller.getId())));
@@ -776,7 +803,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                         BaseCmd.getCommandNameByClass(ScaleKubernetesClusterCmd.class),
                         BaseCmd.getCommandNameByClass(StartKubernetesClusterCmd.class),
                         BaseCmd.getCommandNameByClass(StopKubernetesClusterCmd.class),
-                        BaseCmd.getCommandNameByClass(UpgradeKubernetesClusterCmd.class)
+                        BaseCmd.getCommandNameByClass(UpgradeKubernetesClusterCmd.class),
+                        BaseCmd.getCommandNameByClass(AddNodesToKubernetesClusterCmd.class),
+                        BaseCmd.getCommandNameByClass(RemoveNodesFromKubernetesClusterCmd.class)
                 ).contains(cmdName);
             case ExternalManaged:
                 return Arrays.asList(
@@ -924,7 +953,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         } catch (InvalidParameterValueException e) {
             String msg = String.format("Given service offering ID: %s for %s nodes is not suitable for the Kubernetes cluster version %s - %s",
                     serviceOffering, key, clusterKubernetesVersion, e.getMessage());
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new InvalidParameterValueException(msg);
         }
     }
@@ -1825,6 +1854,71 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     @Override
+    public boolean addNodesToKubernetesCluster(AddNodesToKubernetesClusterCmd cmd) {
+        KubernetesClusterVO kubernetesCluster = validateCluster(cmd.getClusterId());
+        long networkId = kubernetesCluster.getNetworkId();
+        NetworkVO networkVO = networkDao.findById(networkId);
+        List<Long> validNodeIds = validateNodes(cmd.getNodeIds(), networkId, networkVO.getName(), kubernetesCluster, false);
+        if (validNodeIds.isEmpty()) {
+            throw new CloudRuntimeException("No valid nodes found to be added to the Kubernetes cluster");
+        }
+        KubernetesClusterAddWorker addWorker = new KubernetesClusterAddWorker(kubernetesCluster, KubernetesClusterManagerImpl.this);
+        addWorker = ComponentContext.inject(addWorker);
+        return addWorker.addNodesToCluster(validNodeIds, cmd.isMountCksIsoOnVr());
+    }
+
+    @Override
+    public boolean removeNodesFromKubernetesCluster(RemoveNodesFromKubernetesClusterCmd cmd) throws Exception {
+        KubernetesClusterVO kubernetesCluster = validateCluster(cmd.getClusterId());
+        List<Long> validNodeIds = validateNodes(cmd.getNodeIds(), null, null, kubernetesCluster, true);
+        if (validNodeIds.isEmpty()) {
+            throw new CloudRuntimeException("No valid nodes found to be removed from the Kubernetes cluster");
+        }
+        KubernetesClusterRemoveWorker removeWorker = new KubernetesClusterRemoveWorker(kubernetesCluster, KubernetesClusterManagerImpl.this);
+        removeWorker = ComponentContext.inject(removeWorker);
+        return removeWorker.removeNodesFromCluster(validNodeIds);
+    }
+
+    private KubernetesClusterVO validateCluster(long clusterId) {
+        KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.findById(clusterId);
+        if (kubernetesCluster == null) {
+            throw new InvalidParameterValueException("Invalid Kubernetes cluster ID specified");
+        }
+        return kubernetesCluster;
+    }
+
+    private List<Long> validateNodes(List<Long> nodeIds, Long networkId, String networkName, KubernetesCluster cluster,  boolean removeNodes) {
+        List<Long> validNodeIds = new ArrayList<>(nodeIds);
+        for (Long id : nodeIds) {
+            VMInstanceVO node = vmInstanceDao.findById(id);
+            if (Objects.isNull(node)) {
+                logger.error(String.format("Failed to find node (physical or virtual machine) with ID: %s", id));
+                validNodeIds.remove(id);
+            } else if (!removeNodes) {
+                VMTemplateVO template = templateDao.findById(node.getTemplateId());
+                if (Objects.isNull(template)) {
+                    logger.error((String.format("Failed to find template with ID: %s", id)));
+                    validNodeIds.remove(id);
+                } else if (!template.isForCks()) {
+                    logger.error(String.format("Node: %s is deployed with a template that is not marked to be used for CKS", node.getId()));
+                    validNodeIds.remove(id);
+                }
+                NicVO nicVO = nicDao.findDefaultNicForVM(id);
+                if (networkId != nicVO.getNetworkId()) {
+                    logger.error(String.format("Node: %s does not have its default NIC in the kubernetes cluster network: %s", node.getId(), networkName));
+                    validNodeIds.remove(id);
+                }
+                List<KubernetesClusterVmMapVO> clusterVmMapVO = kubernetesClusterVmMapDao.listByClusterIdAndVmIdsIn(cluster.getId(), Collections.singletonList(id));
+                if (Objects.nonNull(clusterVmMapVO) && !clusterVmMapVO.isEmpty()) {
+                    logger.warn(String.format("Node: %s is already part of the cluster %s", node.getId(), cluster.getName()));
+                    validNodeIds.remove(id);
+                }
+            }
+        }
+        return validNodeIds;
+    }
+
+    @Override
     public List<RemoveVirtualMachinesFromKubernetesClusterResponse> removeVmsFromCluster(RemoveVirtualMachinesFromKubernetesClusterCmd cmd) {
         if (!KubernetesServiceEnabled.value()) {
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
@@ -1898,6 +1992,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         cmdList.add(UpgradeKubernetesClusterCmd.class);
         cmdList.add(AddVirtualMachinesToKubernetesClusterCmd.class);
         cmdList.add(RemoveVirtualMachinesFromKubernetesClusterCmd.class);
+        cmdList.add(AddNodesToKubernetesClusterCmd.class);
+        cmdList.add(RemoveNodesFromKubernetesClusterCmd.class);
         return cmdList;
     }
 
@@ -2190,6 +2286,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             KubernetesClusterScaleTimeout,
             KubernetesClusterUpgradeTimeout,
             KubernetesClusterUpgradeRetries,
+            KubernetesClusterAddNodeTimeout,
             KubernetesClusterExperimentalFeaturesEnabled,
             KubernetesMaxClusterSize
         };

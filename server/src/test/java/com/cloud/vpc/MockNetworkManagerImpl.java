@@ -1108,4 +1108,9 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     public List<InternalLoadBalancerElementService> getInternalLoadBalancerElements() {
         return null;
     }
+
+    @Override
+    public boolean handleCksIsoOnNetworkVirtualRouter(Long virtualRouterId, boolean mount) {
+        return false;
+    }
 }

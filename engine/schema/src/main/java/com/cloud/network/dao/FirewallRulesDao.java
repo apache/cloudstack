@@ -72,4 +72,6 @@ public interface FirewallRulesDao extends GenericDao<FirewallRuleVO, Long> {
     void loadSourceCidrs(FirewallRuleVO rule);
 
     void loadDestinationCidrs(FirewallRuleVO rule);
+
+    FirewallRuleVO findByNetworkIdAndPorts(long networkId, int startPort, int endPort);
 }

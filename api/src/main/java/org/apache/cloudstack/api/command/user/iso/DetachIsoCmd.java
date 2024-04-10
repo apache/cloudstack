@@ -104,7 +104,7 @@ public class DetachIsoCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public void execute() {
-        boolean result = _templateService.detachIso(virtualMachineId, isForced());
+        boolean result = _templateService.detachIso(virtualMachineId, null, isForced());
         if (result) {
             UserVm userVm = _entityMgr.findById(UserVm.class, virtualMachineId);
             UserVmResponse response = _responseGenerator.createUserVmResponse(getResponseView(), "virtualmachine", userVm).get(0);

@@ -34,6 +34,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.HandleCksIsoCommand;
 import com.cloud.agent.api.routing.UpdateNetworkCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.network.router.VirtualRouter;
@@ -144,6 +145,10 @@ public class VirtualRoutingResource {
                 return execute((UpdateNetworkCommand) cmd);
             }
 
+            if (cmd instanceof HandleCksIsoCommand) {
+                return execute((HandleCksIsoCommand) cmd);
+            }
+
             if (_vrAggregateCommandsSet.containsKey(routerName)) {
                 _vrAggregateCommandsSet.get(routerName).add(cmd);
                 aggregated = true;
@@ -169,6 +174,13 @@ public class VirtualRoutingResource {
                 }
             }
         }
+    }
+
+    protected Answer execute(final HandleCksIsoCommand cmd) {
+        String routerIp = getRouterSshControlIp(cmd);
+        s_logger.info("Attempting to mount CKS ISO on Virtual Router");
+        ExecutionResult result = _vrDeployer.executeInVR(routerIp, VRScripts.CKS_ISO_MOUNT_SERVE, String.valueOf(cmd.isMountCksIso()));
+        return new Answer(cmd, result.isSuccess(), result.getDetails());
     }
 
     private Answer execute(final SetupKeyStoreCommand cmd) {

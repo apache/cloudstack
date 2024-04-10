@@ -16,11 +16,13 @@
 // under the License.
 package com.cloud.kubernetes.cluster;
 
+import org.apache.cloudstack.api.command.user.kubernetes.cluster.AddNodesToKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.AddVirtualMachinesToKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.CreateKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.DeleteKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.GetKubernetesClusterConfigCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.ListKubernetesClustersCmd;
+import org.apache.cloudstack.api.command.user.kubernetes.cluster.RemoveNodesFromKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.RemoveVirtualMachinesFromKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.ScaleKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.StopKubernetesClusterCmd;
@@ -78,6 +80,18 @@ public interface KubernetesClusterService extends PluggableService, Configurable
             "The number of retries if fail to upgrade kubernetes cluster due to some reasons (e.g. drain node, etcdserver leader changed)",
             true,
             KubernetesServiceEnabled.key());
+    static final ConfigKey<Long> KubernetesClusterAddNodeTimeout = new ConfigKey<Long>("Advanced", Long.class,
+            "cloud.kubernetes.cluster.add.node.timeout",
+            "3600",
+            "Timeout interval (in seconds) in which an external node(VM / baremetal host) addition to a cluster should be completed",
+            true,
+            KubernetesServiceEnabled.key());
+    static final ConfigKey<Long> KubernetesClusterRemoveNodeTimeout = new ConfigKey<Long>("Advanced", Long.class,
+            "cloud.kubernetes.cluster.add.node.timeout",
+            "900",
+            "Timeout interval (in seconds) in which an external node(VM / baremetal host) removal from a cluster should be completed",
+            true,
+            KubernetesServiceEnabled.key());
     static final ConfigKey<Boolean> KubernetesClusterExperimentalFeaturesEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class,
             "cloud.kubernetes.cluster.experimental.features.enabled",
             "false",
@@ -117,6 +131,10 @@ public interface KubernetesClusterService extends PluggableService, Configurable
     boolean upgradeKubernetesCluster(UpgradeKubernetesClusterCmd cmd) throws CloudRuntimeException;
 
     boolean addVmsToCluster(AddVirtualMachinesToKubernetesClusterCmd cmd);
+
+    boolean addNodesToKubernetesCluster(AddNodesToKubernetesClusterCmd cmd);
+
+    boolean removeNodesFromKubernetesCluster(RemoveNodesFromKubernetesClusterCmd cmd) throws Exception;
 
     List<RemoveVirtualMachinesFromKubernetesClusterResponse> removeVmsFromCluster(RemoveVirtualMachinesFromKubernetesClusterCmd cmd);
 }
