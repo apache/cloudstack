@@ -4641,6 +4641,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             options.put(VmDetailConstants.VIDEO_RAM, Collections.emptyList());
             options.put(VmDetailConstants.IO_POLICY, Arrays.asList("threads", "native", "io_uring", "storage_specific"));
             options.put(VmDetailConstants.IOTHREADS, Arrays.asList("enabled"));
+            options.put(VmDetailConstants.CPU_THREAD_PER_CORE, Collections.emptyList());
         }
 
         if (HypervisorType.VMware.equals(hypervisorType)) {
