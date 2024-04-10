@@ -41,7 +41,7 @@ public class KubernetesClusterRemoveWorker extends KubernetesClusterActionWorker
 
     public boolean removeNodesFromCluster(List<Long> nodeIds) {
         init();
-        removeNodeTimeoutTime = System.currentTimeMillis() + KubernetesClusterService.KubernetesClusterAddNodeTimeout.value() * 1000;
+        removeNodeTimeoutTime = System.currentTimeMillis() + KubernetesClusterService.KubernetesClusterRemoveNodeTimeout.value() * 1000;
         Long networkId = kubernetesCluster.getNetworkId();
         Network network = networkDao.findById(networkId);
         if (Objects.isNull(network)) {
