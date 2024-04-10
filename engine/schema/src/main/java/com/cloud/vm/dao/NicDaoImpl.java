@@ -110,6 +110,8 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         PeerRouterSearch.and("macAddress", PeerRouterSearch.entity().getMacAddress(), Op.EQ);
         PeerRouterSearch.and("vmType", PeerRouterSearch.entity().getVmType(), Op.EQ);
         PeerRouterSearch.done();
+
+
     }
 
     @Override

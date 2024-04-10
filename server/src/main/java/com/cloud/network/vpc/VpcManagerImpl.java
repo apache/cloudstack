@@ -47,6 +47,7 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.bgp.BGPService;
@@ -330,6 +331,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     Site2SiteVpnConnectionDao site2SiteVpnConnectionDao;
     @Inject
     Site2SiteCustomerGatewayDao site2SiteCustomerGatewayDao;
+    @Inject
+    protected DomainRouterJoinDao domainRouterJoinDao;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("VpcChecker"));
     private List<VpcProvider> vpcElements = null;
@@ -2199,9 +2202,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
                 try {
                     Account account = _accountMgr.getAccount(vpc.getAccountId());
-                    int maxNetworks = VpcMaxNetworks.valueIn(vpc.getAccountId());
 
-                    checkIfVpcNumberOfTiersIsNotExceeded(vpcId, maxNetworks, account);
+                    checkIfVpcNumberOfTiersIsNotExceeded(vpcId, account);
 
                     checkIfVpcHasDomainRouterWithSufficientNicCapacity(vpc);
 
@@ -2227,20 +2229,23 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
 
     protected boolean existsVpcDomainRouterWithSufficientNicCapacity(long vpcId) {
-        int countRouterDefaultNics = 2;
-        long countVpcNetworks = _ntwkDao.countVpcNetworks(vpcId);
         DomainRouterVO vpcDomainRouter = routerDao.findOneByVpcId(vpcId);
 
         if (vpcDomainRouter == null) {
             return false;
         }
 
-        int totalNicsAvailable = networkOrchestrationService.getVirtualMachineMaxNicsValue(vpcDomainRouter) - countRouterDefaultNics;
+        int countRouterDefaultNetworks = domainRouterJoinDao.countDefaultNetworksById(vpcDomainRouter.getId());
+        long countVpcNetworks = _ntwkDao.countVpcNetworks(vpcId);
+
+        int totalNicsAvailable = networkOrchestrationService.getVirtualMachineMaxNicsValue(vpcDomainRouter) - countRouterDefaultNetworks;
 
         return totalNicsAvailable > countVpcNetworks;
     }
 
-    protected void checkIfVpcNumberOfTiersIsNotExceeded(long vpcId, int maxNetworks, Account account) {
+    protected void checkIfVpcNumberOfTiersIsNotExceeded(long vpcId, Account account) {
+        int maxNetworks = VpcMaxNetworks.valueIn(account.getId());
+
         if (_ntwkDao.countVpcNetworks(vpcId) >= maxNetworks) {
             logger.warn("Failed to create a new VPC Guest Network because the number of networks per VPC has reached its maximum capacity of {}. Increase it by modifying global or account config {}.", maxNetworks, VpcMaxNetworks);
             throw new CloudRuntimeException(String.format("Number of networks per VPC cannot surpass [%s] for account [%s].", maxNetworks, account.getAccountName()));
@@ -2256,7 +2261,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     protected void checkIfNetworkCidrIsWithinVpcCidr(String cidr, Vpc vpc) {
         if (!NetUtils.isNetworkAWithinNetworkB(cidr, vpc.getCidr())) {
-            throw new InvalidParameterValueException("Network cidr " + cidr + " is not within vpc " + vpc + " cidr");
+            throw new InvalidParameterValueException(String.format("Network CIDR %s is not within VPC %s CIDR", cidr, vpc));
         }
     }
 
@@ -2265,7 +2270,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         for (final Network network : networks) {
             if (NetUtils.isNetworkAWithinNetworkB(network.getCidr(), cidr) || NetUtils.isNetworkAWithinNetworkB(cidr, network.getCidr())) {
-                throw new InvalidParameterValueException("Network cidr " + cidr + " crosses other network cidr " + network + " belonging to the same vpc " + vpc);
+                throw new InvalidParameterValueException(String.format("Network CIDR %s crosses other network CIDR %s belonging to the same VPC %s.", cidr, network, vpc));
             }
         }
     }
