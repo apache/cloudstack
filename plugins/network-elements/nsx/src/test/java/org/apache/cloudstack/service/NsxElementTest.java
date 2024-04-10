@@ -61,6 +61,7 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.resource.NsxNetworkRule;
+import org.apache.cloudstack.resourcedetail.dao.FirewallRuleDetailsDao;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -124,6 +125,8 @@ public class NsxElementTest {
     private VpcOfferingServiceMapDao vpcOfferingServiceMapDao;
     @Mock
     LoadBalancerVMMapDao lbVmMapDao;
+    @Mock
+    FirewallRuleDetailsDao firewallRuleDetailsDao;
 
     NsxElement nsxElement;
     ReservationContext reservationContext;
@@ -148,6 +151,7 @@ public class NsxElementTest {
         nsxElement.vmInstanceDao = vmInstanceDao;
         nsxElement.vpcDao = vpcDao;
         nsxElement.lbVmMapDao = lbVmMapDao;
+        nsxElement.firewallRuleDetailsDao = firewallRuleDetailsDao;
 
         Field field = ApiDBUtils.class.getDeclaredField("s_ipAddressDao");
         field.setAccessible(true);
@@ -279,7 +283,6 @@ public class NsxElementTest {
         IPAddressVO ipAddress = new IPAddressVO(new Ip("10.1.13.10"), 1L, 1L, 1L,false);
         when(ApiDBUtils.findIpAddressById(anyLong())).thenReturn(ipAddress);
         when(nsxElement.canHandle(networkVO, service)).thenReturn(true);
-        when(nsxService.deletePortForwardRule(any(NsxNetworkRule.class))).thenReturn(true);
         assertTrue(nsxElement.applyPFRules(networkVO, List.of(rule)));
     }
 
