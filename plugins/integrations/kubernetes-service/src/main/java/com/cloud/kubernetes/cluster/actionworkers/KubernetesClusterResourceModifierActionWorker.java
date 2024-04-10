@@ -36,14 +36,19 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.kubernetes.cluster.KubernetesClusterDetailsVO;
 import com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType;
+import com.cloud.kubernetes.cluster.KubernetesClusterService;
+import com.cloud.kubernetes.cluster.utils.KubernetesClusterUtil;
 import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.RulesService;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.user.SSHKeyPairVO;
 import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.net.Ip;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.firewall.CreateFirewallRuleCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
@@ -164,6 +169,79 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     protected void init() {
         super.init();
         kubernetesClusterNodeNamePrefix = getKubernetesClusterNodeNamePrefix();
+    }
+
+    private String getKubernetesNodeConfig(final String joinIp, final boolean ejectIso) throws IOException {
+        String k8sNodeConfig = readResourceFile("/conf/k8s-node.yml");
+        final String sshPubKey = "{{ k8s.ssh.pub.key }}";
+        final String joinIpKey = "{{ k8s_control_node.join_ip }}";
+        final String clusterTokenKey = "{{ k8s_control_node.cluster.token }}";
+        final String ejectIsoKey = "{{ k8s.eject.iso }}";
+        final String installWaitTime = "{{ k8s.install.wait.time }}";
+        final String installReattemptsCount = "{{ k8s.install.reattempts.count }}";
+
+        final Long waitTime = KubernetesClusterService.KubernetesWorkerNodeInstallAttemptWait.value();
+        final Long reattempts = KubernetesClusterService.KubernetesWorkerNodeInstallReattempts.value();
+        String pubKey = "- \"" + configurationDao.getValue("ssh.publickey") + "\"";
+        String sshKeyPair = kubernetesCluster.getKeyPair();
+        if (StringUtils.isNotEmpty(sshKeyPair)) {
+            SSHKeyPairVO sshkp = sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), sshKeyPair);
+            if (sshkp != null) {
+                pubKey += "\n      - \"" + sshkp.getPublicKey() + "\"";
+            }
+        }
+        k8sNodeConfig = k8sNodeConfig.replace(sshPubKey, pubKey);
+        k8sNodeConfig = k8sNodeConfig.replace(joinIpKey, joinIp);
+        k8sNodeConfig = k8sNodeConfig.replace(clusterTokenKey, KubernetesClusterUtil.generateClusterToken(kubernetesCluster));
+        k8sNodeConfig = k8sNodeConfig.replace(ejectIsoKey, String.valueOf(ejectIso));
+        k8sNodeConfig = k8sNodeConfig.replace(installWaitTime, String.valueOf(waitTime));
+        k8sNodeConfig = k8sNodeConfig.replace(installReattemptsCount, String.valueOf(reattempts));
+        k8sNodeConfig = updateKubeConfigWithRegistryDetails(k8sNodeConfig);
+
+        return k8sNodeConfig;
+    }
+
+    protected String updateKubeConfigWithRegistryDetails(String k8sConfig) {
+        /* genarate /etc/containerd/config.toml file on the nodes only if Kubernetes cluster is created to
+         * use docker private registry */
+        String registryUsername = null;
+        String registryPassword = null;
+        String registryUrl = null;
+
+        List<KubernetesClusterDetailsVO> details = kubernetesClusterDetailsDao.listDetails(kubernetesCluster.getId());
+        for (KubernetesClusterDetailsVO detail : details) {
+            if (detail.getName().equals(ApiConstants.DOCKER_REGISTRY_USER_NAME)) {
+                registryUsername = detail.getValue();
+            }
+            if (detail.getName().equals(ApiConstants.DOCKER_REGISTRY_PASSWORD)) {
+                registryPassword = detail.getValue();
+            }
+            if (detail.getName().equals(ApiConstants.DOCKER_REGISTRY_URL)) {
+                registryUrl = detail.getValue();
+            }
+        }
+
+        if (StringUtils.isNoneEmpty(registryUsername, registryPassword, registryUrl)) {
+            // Update runcmd in the cloud-init configuration to run a script that updates the containerd config with provided registry details
+            String runCmd = "- bash -x /opt/bin/setup-containerd";
+
+            String registryEp = registryUrl.split("://")[1];
+            k8sConfig = k8sConfig.replace("- containerd config default > /etc/containerd/config.toml", runCmd);
+            final String registryUrlKey = "{{registry.url}}";
+            final String registryUrlEpKey = "{{registry.url.endpoint}}";
+            final String registryAuthKey = "{{registry.token}}";
+            final String registryUname = "{{registry.username}}";
+            final String registryPsswd = "{{registry.password}}";
+
+            final String usernamePasswordKey = registryUsername + ":" + registryPassword;
+            String base64Auth = Base64.encodeBase64String(usernamePasswordKey.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
+            k8sConfig = k8sConfig.replace(registryUrlKey,   registryUrl);
+            k8sConfig = k8sConfig.replace(registryUrlEpKey, registryEp);
+            k8sConfig = k8sConfig.replace(registryUname, registryUsername);
+            k8sConfig = k8sConfig.replace(registryPsswd, registryPassword);
+            k8sConfig = k8sConfig.replace(registryAuthKey, base64Auth);
+        }
+        return k8sConfig;
     }
 
     protected DeployDestination plan(final long nodesCount, final DataCenter zone, final ServiceOffering offering) throws InsufficientServerCapacityException {
