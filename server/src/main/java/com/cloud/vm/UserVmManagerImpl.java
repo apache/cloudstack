@@ -7680,10 +7680,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             String rootDiskSize = details.get(VmDetailConstants.ROOT_DISK_SIZE);
             Long templateSize = template.getSize();
             if (StringUtils.isNumeric(rootDiskSize)) {
-                if (Long.parseLong(rootDiskSize) * GiB_TO_BYTES < template.getSize()) {
-                    throw new InvalidParameterValueException(String.format("Root disk size [%s] is smaller than the template size [%s]", rootDiskSize, template.getSize()));
+                if (Long.parseLong(rootDiskSize) * GiB_TO_BYTES < templateSize) {
+                    throw new InvalidParameterValueException(String.format("Root disk size [%s] is smaller than the template size [%s]", rootDiskSize, templateSize));
                 }
-            } else if (diskOffering != null && templateSize < diskOffering.getDiskSize()) {
+            } else if (diskOffering != null && diskOffering.getDiskSize() < templateSize) {
                 throw new InvalidParameterValueException(String.format("Disk size for selected offering [%s] is less than the template's size [%s]", diskOffering.getDiskSize(), templateSize));
             }
         }
