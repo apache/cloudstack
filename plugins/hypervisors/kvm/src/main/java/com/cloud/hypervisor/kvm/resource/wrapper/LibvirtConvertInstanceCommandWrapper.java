@@ -79,7 +79,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         String sourceOVAFile = ovaTemplateDirAndNameOnConversionLocation + ".ova";
         long timeout = (long) cmd.getWait() * 1000;
 
-        if (!isInstanceConversionSupportedOnHost()) {
+        if (cmd.getCheckConversionSupport() && !isInstanceConversionSupportedOnHost()) {
             String msg = String.format("Cannot convert the instance %s from VMware as the virt-v2v binary is not found. " +
                     "Please install virt-v2v on the host before attempting the instance conversion", sourceInstanceName);
             s_logger.info(msg);

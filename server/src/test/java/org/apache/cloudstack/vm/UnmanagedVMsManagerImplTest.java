@@ -19,6 +19,8 @@ package org.apache.cloudstack.vm;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.CheckConvertInstanceAnswer;
+import com.cloud.agent.api.CheckConvertInstanceCommand;
 import com.cloud.agent.api.CheckVolumeAnswer;
 import com.cloud.agent.api.CheckVolumeCommand;
 import com.cloud.agent.api.ConvertInstanceAnswer;
@@ -684,11 +686,17 @@ public class UnmanagedVMsManagerImplTest {
             when(vmwareDatacenterDao.findById(existingDatacenterId)).thenReturn(null);
         }
 
-        ConvertInstanceAnswer answer = mock(ConvertInstanceAnswer.class);
-        when(answer.getResult()).thenReturn(vcenterParameter != VcenterParameter.CONVERT_FAILURE);
-        when(answer.getConvertedInstance()).thenReturn(instance);
+        CheckConvertInstanceAnswer checkConvertInstanceAnswer = mock(CheckConvertInstanceAnswer.class);
+        when(checkConvertInstanceAnswer.getResult()).thenReturn(vcenterParameter != VcenterParameter.CONVERT_FAILURE);
         if (VcenterParameter.AGENT_UNAVAILABLE != vcenterParameter) {
-            when(agentManager.send(Mockito.eq(convertHostId), Mockito.any(ConvertInstanceCommand.class))).thenReturn(answer);
+            when(agentManager.send(Mockito.eq(convertHostId), Mockito.any(CheckConvertInstanceCommand.class))).thenReturn(checkConvertInstanceAnswer);
+        }
+
+        ConvertInstanceAnswer convertInstanceAnswer = mock(ConvertInstanceAnswer.class);
+        when(convertInstanceAnswer.getResult()).thenReturn(vcenterParameter != VcenterParameter.CONVERT_FAILURE);
+        when(convertInstanceAnswer.getConvertedInstance()).thenReturn(instance);
+        if (VcenterParameter.AGENT_UNAVAILABLE != vcenterParameter) {
+            when(agentManager.send(Mockito.eq(convertHostId), Mockito.any(ConvertInstanceCommand.class))).thenReturn(convertInstanceAnswer);
         }
 
         try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class)) {
