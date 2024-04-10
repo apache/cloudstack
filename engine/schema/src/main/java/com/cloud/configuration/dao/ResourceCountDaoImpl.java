@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
@@ -64,6 +65,9 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
     private DomainDao _domainDao;
     @Inject
     private AccountDao _accountDao;
+
+    protected static final String INCREMENT_COUNT_BY_IDS_SQL = "UPDATE `cloud`.`resource_count` SET `count` = `count` + ? WHERE `id` IN (?)";
+    protected static final String DECREMENT_COUNT_BY_IDS_SQL = "UPDATE `cloud`.`resource_count` SET `count` = `count` - ? WHERE `id` IN (?)";
 
     public ResourceCountDaoImpl() {
         TypeSearch = createSearchBuilder();
@@ -152,6 +156,26 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
         ResourceCountVO resourceCountVO = findById(id);
         resourceCountVO.setCount(resourceCountVO.getCount() + delta);
         return update(resourceCountVO.getId(), resourceCountVO);
+    }
+
+    @Override
+    public boolean incrementCountByIds(Set<Long> ids, boolean increment, long delta) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return false;
+        }
+        String updateSql = increment ? INCREMENT_COUNT_BY_IDS_SQL : DECREMENT_COUNT_BY_IDS_SQL;
+
+        String poolIdsInStr = ids.stream().map(id -> String.valueOf(id)).collect(Collectors.joining(",", "(", ")"));
+        String sql = updateSql.replace("(?)", poolIdsInStr);
+
+        try (TransactionLegacy txn = TransactionLegacy.currentTxn();
+             PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql)) {
+            pstmt.setLong(1, delta);
+            pstmt.executeUpdate();
+            return txn.commit();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException(e);
+        }
     }
 
     @Override

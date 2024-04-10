@@ -203,17 +203,12 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
     @SuppressWarnings("unchecked")
     protected void removeResourceReservationIfNeededAndIncrementResourceCount(final long accountId, final ResourceType type, String tag, final long numToIncrement) {
+        Object obj = CallContext.current().getContextParameter(CheckedReservation.getResourceReservationContextParameterKey(type));
+        List<Long> reservationIds = (List<Long>)obj; // This complains an unchecked casting warning
         Transaction.execute(new TransactionCallbackWithExceptionNoReturn<CloudRuntimeException>() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) throws CloudRuntimeException {
-
-                Object obj = CallContext.current().getContextParameter(CheckedReservation.getResourceReservationContextParameterKey(type));
-                if (obj instanceof List) {
-                    List<Long> reservationIds = (List<Long>)obj; // This complains an unchecked casting warning
-                    for (Long reservationId : reservationIds) {
-                        reservationDao.remove(reservationId);
-                    }
-                }
+                reservationDao.removeByIds(reservationIds);
                 if (!updateResourceCountForAccount(accountId, type, tag, true, numToIncrement)) {
                     // we should fail the operation (resource creation) when failed to update the resource count
                     throw new CloudRuntimeException("Failed to increment resource count of type " + type + " for account id=" + accountId);
@@ -613,13 +608,11 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     }
 
     @Override
-    @DB
     public void checkResourceLimit(final Account account, final ResourceType type, long... count) throws ResourceAllocationException {
         checkResourceLimitWithTag(account, type, null, count);
     }
 
     @Override
-    @DB
     public void checkResourceLimitWithTag(final Account account, final ResourceType type, String tag, long... count) throws ResourceAllocationException {
         final long numResources = ((count.length == 0) ? 1 : count[0]);
         Project project = null;
@@ -1124,7 +1117,6 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         return recalculateResourceCount(accountId, domainId, typeId, null);
     }
 
-    @DB
     protected boolean updateResourceCountForAccount(final long accountId, final ResourceType type, String tag, final boolean increment, final long delta) {
         if (logger.isDebugEnabled()) {
             String convertedDelta = String.valueOf(delta);
@@ -1135,20 +1127,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             logger.debug("Updating resource Type = " + typeStr + " count for Account = " + accountId + " Operation = " + (increment ? "increasing" : "decreasing") + " Amount = " + convertedDelta);
         }
         try {
-            return Transaction.execute(new TransactionCallback<Boolean>() {
-                @Override
-                public Boolean doInTransaction(TransactionStatus status) {
-                    boolean result = true;
-                    List<ResourceCountVO> rowsToUpdate = lockAccountAndOwnerDomainRows(accountId, type, tag);
-                    for (ResourceCountVO rowToUpdate : rowsToUpdate) {
-                        if (!_resourceCountDao.updateById(rowToUpdate.getId(), increment, delta)) {
-                            logger.trace("Unable to update resource count for the row " + rowToUpdate);
-                            result = false;
-                        }
-                    }
-                    return result;
-                }
-            });
+            Set<Long> rowIdsToUpdate = _resourceCountDao.listAllRowsToUpdate(accountId, ResourceOwnerType.Account, type, tag);
+            return _resourceCountDao.incrementCountByIds(rowIdsToUpdate, increment, delta);
         } catch (Exception ex) {
             logger.error("Failed to update resource count for account id=" + accountId);
             return false;
@@ -1163,8 +1143,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
      * @param type the resource type to do the recalculation for
      * @return the resulting new resource count
      */
-    @DB
     protected long recalculateDomainResourceCount(final long domainId, final ResourceType type, String tag) {
+        List<DomainVO> domainChildren = _domainDao.findImmediateChildrenForParent(domainId);
         return Transaction.execute(new TransactionCallback<Long>() {
             @Override
             public Long doInTransaction(TransactionStatus status) {
@@ -1173,14 +1153,12 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 ResourceCountVO domainRC = _resourceCountDao.findByOwnerAndTypeAndTag(domainId, ResourceOwnerType.Domain, type, tag);
                 long oldResourceCount = domainRC.getCount();
 
-                List<DomainVO> domainChildren = _domainDao.findImmediateChildrenForParent(domainId);
-                // for each child domain update the resource count
-
                 // calculate project count here
                 if (type == ResourceType.project) {
                     newResourceCount += _projectDao.countProjectsForDomain(domainId);
                 }
 
+                // for each child domain update the resource count
                 for (DomainVO childDomain : domainChildren) {
                     long childDomainResourceCount = recalculateDomainResourceCount(childDomain.getId(), type, tag);
                     newResourceCount += childDomainResourceCount; // add the child domain count to parent domain count
@@ -1191,9 +1169,10 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                     long accountResourceCount = recalculateAccountResourceCount(account.getId(), type, tag);
                     newResourceCount += accountResourceCount; // add account's resource count to parent domain count
                 }
-                _resourceCountDao.setResourceCount(domainId, ResourceOwnerType.Domain, type, tag, newResourceCount);
 
                 if (oldResourceCount != newResourceCount) {
+                    domainRC.setCount(newResourceCount);
+                    _resourceCountDao.update(domainRC.getId(), domainRC);
                     logger.warn("Discrepency in the resource count has been detected " + "(original count = " + oldResourceCount + " correct count = " + newResourceCount + ") for Type = " + type
                             + " for Domain ID = " + domainId + " is fixed during resource count recalculation.");
                 }
@@ -1241,13 +1220,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
 
         if (newCount == null || !newCount.equals(oldCount)) {
-            Transaction.execute(new TransactionCallbackNoReturn() {
-                @Override
-                public void doInTransactionWithoutResult(TransactionStatus status) {
-                    lockAccountAndOwnerDomainRows(accountId, type, tag);
-                    _resourceCountDao.setResourceCount(accountId, ResourceOwnerType.Account, type, tag, (newCount == null) ? 0 : newCount);
-                }
-            });
+            lockAccountAndOwnerDomainRows(accountId, type, tag);
+            _resourceCountDao.setResourceCount(accountId, ResourceOwnerType.Account, type, tag, (newCount == null) ? 0 : newCount);
         }
 
         // No need to log message for primary and secondary storage because both are recalculating the
