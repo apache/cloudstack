@@ -316,7 +316,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             _sanity = _sanityExecutor.scheduleAtFixedRate(new SanityCheck(), 1, _sanityCheckInterval, TimeUnit.DAYS);
         }
 
-        Runtime.getRuntime().addShutdownHook(new AbbandonJob());
+        Runtime.getRuntime().addShutdownHook(new AbandonJob());
         TransactionLegacy usageTxn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
             if (_heartbeatLock.lock(3)) { // 3 second timeout
@@ -2186,7 +2186,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             }
         }
     }
-    private class AbbandonJob extends Thread {
+    private class AbandonJob extends Thread {
         @Override
         public void run() {
             s_logger.info("exitting Usage Manager");
