@@ -34,7 +34,7 @@ under the License.
          <Policies>
             <TimeBasedTriggeringPolicy/>
          </Policies>
-         <PatternLayout pattern="%d{ISO8601} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%ex{filters(${filters})}%n"/>
+         <PatternLayout pattern="%d{DEFAULT} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%ex{filters(${filters})}%n"/>
       </RollingFile>
 
 
@@ -43,7 +43,7 @@ under the License.
          <Policies>
             <TimeBasedTriggeringPolicy/>
          </Policies>
-         <PatternLayout pattern="%d{ISO8601} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%ex{filters(${filters})}%n"/>
+         <PatternLayout pattern="%d{DEFAULT} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%ex{filters(${filters})}%n"/>
       </RollingFile>
 
       <!-- ============================== -->
@@ -52,7 +52,7 @@ under the License.
 
       <Syslog name="SYSLOG" host="localhost" facility="LOCAL6">
          <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
-         <PatternLayout pattern="%d{ISO8601} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%ex{filters(${filters})}%n"/>
+         <PatternLayout pattern="%d{DEFAULT} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%ex{filters(${filters})}%n"/>
       </Syslog>
 
       <!-- ============================== -->
@@ -61,7 +61,7 @@ under the License.
 
       <AlertSyslogAppender name="ALERTSYSLOG" syslogHosts="" facility="LOCAL6">
          <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
-         <PatternLayout pattern="%d{ISO8601} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%ex{filters(${filters})}%n"/>
+         <PatternLayout pattern="%d{DEFAULT} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%ex{filters(${filters})}%n"/>
       </AlertSyslogAppender>
 
       <!-- ============================== -->
