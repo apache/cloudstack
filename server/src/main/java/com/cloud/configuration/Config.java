@@ -642,13 +642,6 @@ public enum Config {
             "true",
             "Indicates whether or not to automatically reserver system VM standby capacity.",
             null),
-    SystemVMDefaultHypervisor("Advanced",
-            ManagementServer.class,
-            String.class,
-            "system.vm.default.hypervisor",
-            null,
-            "Hypervisor type used to create system vm, valid values are: XenServer, KVM, VMware, Hyperv, VirtualBox, Parralels, BareMetal, Ovm, LXC, Any",
-            null),
     SystemVMRandomPassword(
             "Advanced",
             ManagementServer.class,
