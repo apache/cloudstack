@@ -130,6 +130,8 @@ public interface VolumeOrchestrationService {
 
     boolean canVmRestartOnAnotherServer(long vmId);
 
+    void saveVolumeDetails(Long diskOfferingId, Long volumeId);
+
     /**
      * Allocate a volume or multiple volumes in case of template is registered with the 'deploy-as-is' option, allowing multiple disks
      */
