@@ -49,9 +49,7 @@ public class ReservationDaoImpl extends GenericDaoBase<ReservationVO, Long> impl
     private final SearchBuilder<ReservationVO> listDomainAndTypeSearch;
     private final SearchBuilder<ReservationVO> listDomainAndTypeAndNoTagSearch;
     private final SearchBuilder<ReservationVO> listResourceByAccountAndTypeAndNoTagSearch;
-
     private final SearchBuilder<ReservationVO> listIdsSearch;
-
 
     public ReservationDaoImpl() {
 
@@ -173,12 +171,10 @@ public class ReservationDaoImpl extends GenericDaoBase<ReservationVO, Long> impl
 
     @Override
     public void removeByIds(List<Long> reservationIds) {
-        if (CollectionUtils.isEmpty(reservationIds)) {
-            return;
+        if (CollectionUtils.isNotEmpty(reservationIds)) {
+            SearchCriteria<ReservationVO> sc = listIdsSearch.create();
+            sc.setParameters(IDS, reservationIds.toArray());
+            remove(sc);
         }
-
-        SearchCriteria<ReservationVO> sc = listIdsSearch.create();
-        sc.setParameters(IDS, reservationIds.toArray());
-        remove(sc);
     }
 }

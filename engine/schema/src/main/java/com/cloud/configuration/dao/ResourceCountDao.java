@@ -49,11 +49,14 @@ public interface ResourceCountDao extends GenericDao<ResourceCountVO, Long> {
 
     ResourceCountVO findByOwnerAndTypeAndTag(long ownerId, ResourceOwnerType ownerType, ResourceType type, String tag);
 
+    List<ResourceCountVO> findByOwnersAndTypeAndTag(List<Long> ownerIdList, ResourceOwnerType ownerType,
+            ResourceType type, String tag);
+
     List<ResourceCountVO> listResourceCountByOwnerType(ResourceOwnerType ownerType);
 
     Set<Long> listAllRowsToUpdate(long ownerId, ResourceOwnerType ownerType, ResourceType type, String tag);
 
-    boolean incrementCountByIds(Set<Long> ids, boolean increment, long delta);
+    boolean updateCountByDeltaForIds(List<Long> ids, boolean increment, long delta);
 
     Set<Long> listRowsToUpdateForDomain(long domainId, ResourceType type, String tag);
 
@@ -74,4 +77,6 @@ public interface ResourceCountDao extends GenericDao<ResourceCountVO, Long> {
     long countMemoryAllocatedToAccount(long accountId);
 
     void removeResourceCountsForNonMatchingTags(Long ownerId, ResourceOwnerType ownerType, List<ResourceType> types, List<String> tags);
+
+    List<ResourceCountVO> lockRows(Set<Long> ids);
 }

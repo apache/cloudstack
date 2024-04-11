@@ -21,6 +21,7 @@ import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -574,13 +575,6 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         return _resourceCountDao.lockRows(sc, null, true);
     }
 
-    private List<ResourceCountVO> lockDomainRows(long domainId, final ResourceType type, String tag) {
-        Set<Long> rowIdsToLock = _resourceCountDao.listAllRowsToUpdate(domainId, ResourceOwnerType.Domain, type, tag);
-        SearchCriteria<ResourceCountVO> sc = ResourceCountSearch.create();
-        sc.setParameters("id", rowIdsToLock.toArray());
-        return _resourceCountDao.lockRows(sc, null, true);
-    }
-
     @Override
     public long findDefaultResourceLimitForDomain(ResourceType resourceType) {
         Long resourceLimit = null;
@@ -1126,13 +1120,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             String typeStr = StringUtils.isNotEmpty(tag) ? String.format("%s (tag: %s)", type, tag) : type.getName();
             logger.debug("Updating resource Type = " + typeStr + " count for Account = " + accountId + " Operation = " + (increment ? "increasing" : "decreasing") + " Amount = " + convertedDelta);
         }
-        try {
-            Set<Long> rowIdsToUpdate = _resourceCountDao.listAllRowsToUpdate(accountId, ResourceOwnerType.Account, type, tag);
-            return _resourceCountDao.incrementCountByIds(rowIdsToUpdate, increment, delta);
-        } catch (Exception ex) {
-            logger.error("Failed to update resource count for account id=" + accountId);
-            return false;
-        }
+        Set<Long> rowIdsToUpdate = _resourceCountDao.listAllRowsToUpdate(accountId, ResourceOwnerType.Account, type, tag);
+        return _resourceCountDao.updateCountByDeltaForIds(new ArrayList<>(rowIdsToUpdate), increment, delta);
     }
 
     /**
@@ -1144,41 +1133,62 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
      * @return the resulting new resource count
      */
     protected long recalculateDomainResourceCount(final long domainId, final ResourceType type, String tag) {
-        List<DomainVO> domainChildren = _domainDao.findImmediateChildrenForParent(domainId);
-        return Transaction.execute(new TransactionCallback<Long>() {
-            @Override
-            public Long doInTransaction(TransactionStatus status) {
-                long newResourceCount = 0;
-                lockDomainRows(domainId, type, tag);
-                ResourceCountVO domainRC = _resourceCountDao.findByOwnerAndTypeAndTag(domainId, ResourceOwnerType.Domain, type, tag);
-                long oldResourceCount = domainRC.getCount();
+        List<AccountVO> accounts = _accountDao.findActiveAccountsForDomain(domainId);
+        List<DomainVO> childDomains = _domainDao.findImmediateChildrenForParent(domainId);
 
-                // calculate project count here
-                if (type == ResourceType.project) {
-                    newResourceCount += _projectDao.countProjectsForDomain(domainId);
-                }
-
-                // for each child domain update the resource count
-                for (DomainVO childDomain : domainChildren) {
-                    long childDomainResourceCount = recalculateDomainResourceCount(childDomain.getId(), type, tag);
-                    newResourceCount += childDomainResourceCount; // add the child domain count to parent domain count
-                }
-
-                List<AccountVO> accounts = _accountDao.findActiveAccountsForDomain(domainId);
-                for (AccountVO account : accounts) {
-                    long accountResourceCount = recalculateAccountResourceCount(account.getId(), type, tag);
-                    newResourceCount += accountResourceCount; // add account's resource count to parent domain count
-                }
-
-                if (oldResourceCount != newResourceCount) {
-                    domainRC.setCount(newResourceCount);
-                    _resourceCountDao.update(domainRC.getId(), domainRC);
-                    logger.warn("Discrepency in the resource count has been detected " + "(original count = " + oldResourceCount + " correct count = " + newResourceCount + ") for Type = " + type
-                            + " for Domain ID = " + domainId + " is fixed during resource count recalculation.");
-                }
-
-                return newResourceCount;
+        if (CollectionUtils.isNotEmpty(childDomains)) {
+            for (DomainVO childDomain : childDomains) {
+                recalculateDomainResourceCount(childDomain.getId(), type, tag);
             }
+        }
+        if (CollectionUtils.isNotEmpty(accounts)) {
+            for (AccountVO account : accounts) {
+                recalculateAccountResourceCount(account.getId(), type, tag);
+            }
+        }
+
+        return Transaction.execute((TransactionCallback<Long>) status -> {
+            long newResourceCount = 0L;
+            List<Long> domainIdList = childDomains.stream().map(DomainVO::getId).collect(Collectors.toList());
+            domainIdList.add(domainId);
+            List<Long> accountIdList = accounts.stream().map(AccountVO::getId).collect(Collectors.toList());
+            List<ResourceCountVO> domainRCList = _resourceCountDao.findByOwnersAndTypeAndTag(domainIdList, ResourceOwnerType.Domain, type, tag);
+            List<ResourceCountVO> accountRCList = _resourceCountDao.findByOwnersAndTypeAndTag(accountIdList, ResourceOwnerType.Account, type, tag);
+
+            Set<Long> rowIdsToLock = new HashSet<>();
+            if (domainRCList != null) {
+                rowIdsToLock.addAll(domainRCList.stream().map(ResourceCountVO::getId).collect(Collectors.toList()));
+            }
+            if (accountRCList != null) {
+                rowIdsToLock.addAll(accountRCList.stream().map(ResourceCountVO::getId).collect(Collectors.toList()));
+            }
+            // lock the resource count rows for current domain, immediate child domain & accounts
+            List<ResourceCountVO> resourceCounts = _resourceCountDao.lockRows(rowIdsToLock);
+
+            long oldResourceCount = 0L;
+            ResourceCountVO domainRC = null;
+
+            // calculate project count here
+            if (type == ResourceType.project) {
+                newResourceCount += _projectDao.countProjectsForDomain(domainId);
+            }
+
+            for (ResourceCountVO resourceCount : resourceCounts) {
+                if (resourceCount.getResourceOwnerType() == ResourceOwnerType.Domain && resourceCount.getDomainId() == domainId) {
+                    oldResourceCount = resourceCount.getCount();
+                    domainRC = resourceCount;
+                } else {
+                    newResourceCount += resourceCount.getCount();
+                }
+            }
+
+            if (oldResourceCount != newResourceCount) {
+                domainRC.setCount(newResourceCount);
+                _resourceCountDao.update(domainRC.getId(), domainRC);
+                logger.warn("Discrepency in the resource count has been detected " + "(original count = " + oldResourceCount + " correct count = " + newResourceCount + ") for Type = " + type
+                        + " for Domain ID = " + domainId + " is fixed during resource count recalculation.");
+            }
+            return newResourceCount;
         });
     }
 
@@ -1217,11 +1227,10 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         final ResourceCountVO accountRC = _resourceCountDao.findByOwnerAndTypeAndTag(accountId, ResourceOwnerType.Account, type, tag);
         if (accountRC != null) {
             oldCount = accountRC.getCount();
-        }
-
-        if (newCount == null || !newCount.equals(oldCount)) {
-            lockAccountAndOwnerDomainRows(accountId, type, tag);
-            _resourceCountDao.setResourceCount(accountId, ResourceOwnerType.Account, type, tag, (newCount == null) ? 0 : newCount);
+            if (newCount == null || !newCount.equals(oldCount)) {
+                accountRC.setCount((newCount == null) ? 0 : newCount);
+                _resourceCountDao.update(accountRC.getId(), accountRC);
+            }
         }
 
         // No need to log message for primary and secondary storage because both are recalculating the
