@@ -86,7 +86,7 @@ public class StorPoolStatsCollector extends ManagerBase {
     public boolean start() {
         List<StoragePoolVO> spPools = storagePoolDao.findPoolsByProvider(StorPoolUtil.SP_PROVIDER_NAME);
         if (CollectionUtils.isNotEmpty(spPools)) {
-            executor = Executors.newScheduledThreadPool(3,new NamedThreadFactory("StorPoolStatsCollector"));
+            executor = Executors.newScheduledThreadPool(3, new NamedThreadFactory("StorPoolStatsCollector"));
             long storageStatsInterval = NumbersUtil.parseLong(configurationDao.getValue("storage.stats.interval"), 60000L);
             long volumeStatsInterval = NumbersUtil.parseLong(configurationDao.getValue("volume.stats.interval"), 60000L);
 
@@ -217,7 +217,7 @@ public class StorPoolStatsCollector extends ManagerBase {
                     onePoolforZone.put(storagePoolVO.getDataCenterId(), storagePoolVO);
                 }
                 for (StoragePoolVO storagePool : onePoolforZone.values()) {
-                    List<SnapshotDetailsVO> snapshotsDetails = snapshotDetailsDao.findDetailsByZoneAndKey(storagePool.getDataCenterId(), "SP_DELAY_DELETE");
+                    List<SnapshotDetailsVO> snapshotsDetails = snapshotDetailsDao.findDetailsByZoneAndKey(storagePool.getDataCenterId(), StorPoolUtil.SP_DELAY_DELETE);
                     if (CollectionUtils.isEmpty(snapshotsDetails)) {
                         return;
                     }

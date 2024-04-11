@@ -30,7 +30,7 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class SnapshotDetailsDaoImpl extends ResourceDetailsDaoBase<SnapshotDetailsVO> implements SnapshotDetailsDao {
-    private static final String GET_SNAPSHOT_DETAILS_ON_ZONE = "select s.* from snapshot_details s left join snapshots ss on ss.id=s.snapshot_id where ss.data_center_id=? and s.name=?";
+    private static final String GET_SNAPSHOT_DETAILS_ON_ZONE = "SELECT s.* FROM snapshot_details s LEFT JOIN snapshots ss ON ss.id=s.snapshot_id WHERE ss.data_center_id = ? AND s.name = ?";
 
     @Override
     public void addDetail(long resourceId, String key, String value, boolean display) {

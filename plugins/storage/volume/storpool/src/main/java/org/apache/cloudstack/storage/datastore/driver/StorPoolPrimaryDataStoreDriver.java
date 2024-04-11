@@ -444,7 +444,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         if (deleteAfter != null && deleteAfter > 0 && vinfo.getPassphraseId() == null) {
             createTemporarySnapshot(vinfo, name, deleteAfter, conn);
         } else {
-            StorPoolUtil.spLog("The volume [%s] is not marked to be snapshoted. Check the global setting `storpool.delete.after.interval` or the volume is encrypted [%s]", name, deleteAfter, vinfo.getPassphraseId() != null);
+            StorPoolUtil.spLog("The volume [%s] is not marked to be snapshotted. Check the global setting `storpool.delete.after.interval` or the volume is encrypted [%s]", name, deleteAfter, vinfo.getPassphraseId() != null);
         }
     }
 
@@ -551,7 +551,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     SnapshotDataStoreVO snap = getSnapshotImageStoreRef(sinfo.getId(), vinfo.getDataCenterId());
                     SnapshotDetailsVO snapshotDetail = snapshotDetailsDao.findDetail(sinfo.getId(), StorPoolUtil.SP_DELAY_DELETE);
                     if (snapshotDetail != null) {
-                        err = String.format("Could not create volume from snapshot due to: ", resp.getError());
+                        err = String.format("Could not create volume from snapshot due to: %s", resp.getError());
                     } else if (snap != null && StorPoolStorageAdaptor.getVolumeNameFromPath(snap.getInstallPath(), false) == null) {
                         resp = StorPoolUtil.volumeCreate(srcData.getUuid(), null, size, null, "no", "snapshot", sinfo.getBaseVolume().getMaxIops(), conn);
                         if (resp.getError() == null) {
