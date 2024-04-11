@@ -1945,23 +1945,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                     String.format("Trying to convert volume [%s] (%s) to snapshot [%s].", volume, baseFile, snapshotPath));
 
             primaryPool.createFolder(TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR);
-            String srcKeyName = "sec0";
-            List<QemuObject> qemuObjects = new ArrayList<>();
-            Map<String, String> options = new HashMap<>();
-            QemuImageOptions qemuImageOpts = new QemuImageOptions(baseFile.getPath());
-            if (srcKey.isSet()) {
-                qemuObjects.add(QemuObject.prepareSecretForQemuImg(baseFile.getFormat(),
-                        EncryptFormat.LUKS, srcKey.toString(), srcKeyName, options));
-                qemuImageOpts = new QemuImageOptions(baseFile.getFormat(), baseFile.getPath(), srcKeyName);
-            }
-            QemuImgFile srcFile = new QemuImgFile(baseFile.getPath());
-            srcFile.setFormat(PhysicalDiskFormat.QCOW2);
-
-            QemuImgFile destFile = new QemuImgFile(snapshotPath);
-            destFile.setFormat(PhysicalDiskFormat.QCOW2);
-
-            QemuImg q = new QemuImg(wait);
-            q.convert(srcFile, destFile, options, qemuObjects, qemuImageOpts, null, true);
+            convertTheBaseFileToSnapshot(baseFile, snapshotPath, wait, srcKey);
         } catch (QemuImgException | LibvirtException | IOException ex) {
             return String.format("Failed to convert %s snapshot of volume [%s] to [%s] due to [%s].", volume, baseFile,
                     snapshotPath, ex.getMessage());
@@ -1970,6 +1954,27 @@ public class KVMStorageProcessor implements StorageProcessor {
         s_logger.debug(String.format("Converted volume [%s] (from path \"%s\") to snapshot [%s].", volume, baseFile,
                 snapshotPath));
         return null;
+    }
+
+    private void convertTheBaseFileToSnapshot(KVMPhysicalDisk baseFile, String snapshotPath, int wait, KeyFile srcKey)
+            throws LibvirtException, QemuImgException {
+        List<QemuObject> qemuObjects = new ArrayList<>();
+        Map<String, String> options = new HashMap<>();
+        QemuImageOptions qemuImageOpts = new QemuImageOptions(baseFile.getPath());
+        if (srcKey.isSet()) {
+            String srcKeyName = "sec0";
+            qemuObjects.add(QemuObject.prepareSecretForQemuImg(baseFile.getFormat(), EncryptFormat.LUKS,
+                    srcKey.toString(), srcKeyName, options));
+            qemuImageOpts = new QemuImageOptions(baseFile.getFormat(), baseFile.getPath(), srcKeyName);
+        }
+        QemuImgFile srcFile = new QemuImgFile(baseFile.getPath());
+        srcFile.setFormat(PhysicalDiskFormat.QCOW2);
+
+        QemuImgFile destFile = new QemuImgFile(snapshotPath);
+        destFile.setFormat(PhysicalDiskFormat.QCOW2);
+
+        QemuImg q = new QemuImg(wait);
+        q.convert(srcFile, destFile, options, qemuObjects, qemuImageOpts, null, true);
     }
 
     /**
