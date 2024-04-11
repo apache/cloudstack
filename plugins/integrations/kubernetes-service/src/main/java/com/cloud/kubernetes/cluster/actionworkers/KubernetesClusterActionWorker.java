@@ -25,6 +25,7 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType;
+import com.cloud.kubernetes.cluster.KubernetesClusterService;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.exception.ManagementServerException;
@@ -804,12 +805,14 @@ public class KubernetesClusterActionWorker {
         final String clusterTokenKey = "{{ k8s_control_node.cluster.token }}";
         final String ejectIsoKey = "{{ k8s.eject.iso }}";
         final String routerIpKey = "{{ k8s.vr.iso.mounted.ip }}";
+        final String installWaitTime = "{{ k8s.install.wait.time }}";
+        final String installReattemptsCount = "{{ k8s.install.reattempts.count }}";
+
+        final Long waitTime = KubernetesClusterService.KubernetesWorkerNodeInstallAttemptWait.value();
+        final Long reattempts = KubernetesClusterService.KubernetesWorkerNodeInstallReattempts.value();
         NicVO routerNicOnNetwork = getVirtualRouterNicOnKubernetesClusterNetwork(kubernetesCluster);
         String routerIp = routerNicOnNetwork.getIPv4Address();
         String pubKey = "- \"" + configurationDao.getValue("ssh.publickey") + "\"";
-//        if (Objects.isNull(owner)) {
-//            owner = accountDao.findById(kubernetesCluster.getAccountId());
-//        }
         String sshKeyPair = kubernetesCluster.getKeyPair();
         if (StringUtils.isNotEmpty(sshKeyPair)) {
             SSHKeyPairVO sshkp = sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), sshKeyPair);
@@ -822,6 +825,8 @@ public class KubernetesClusterActionWorker {
         k8sNodeConfig = k8sNodeConfig.replace(clusterTokenKey, KubernetesClusterUtil.generateClusterToken(kubernetesCluster));
         k8sNodeConfig = k8sNodeConfig.replace(ejectIsoKey, String.valueOf(ejectIso));
         k8sNodeConfig = k8sNodeConfig.replace(routerIpKey, routerIp);
+        k8sNodeConfig = k8sNodeConfig.replace(installWaitTime, String.valueOf(waitTime));
+        k8sNodeConfig = k8sNodeConfig.replace(installReattemptsCount, String.valueOf(reattempts));
 
         k8sNodeConfig = updateKubeConfigWithRegistryDetails(k8sNodeConfig);
 
