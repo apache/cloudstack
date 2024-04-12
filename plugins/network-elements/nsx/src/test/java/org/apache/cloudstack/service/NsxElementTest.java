@@ -283,6 +283,7 @@ public class NsxElementTest {
         IPAddressVO ipAddress = new IPAddressVO(new Ip("10.1.13.10"), 1L, 1L, 1L,false);
         when(ApiDBUtils.findIpAddressById(anyLong())).thenReturn(ipAddress);
         when(nsxElement.canHandle(networkVO, service)).thenReturn(true);
+        when(nsxService.deletePortForwardRule(any(NsxNetworkRule.class))).thenReturn(true);
         assertTrue(nsxElement.applyPFRules(networkVO, List.of(rule)));
     }
 

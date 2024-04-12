@@ -127,6 +127,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.LongFunction;
+import java.util.stream.Collectors;
 
 @Component
 public class NsxElement extends AdapterBase implements  DhcpServiceProvider, DnsServiceProvider, VpcProvider,
@@ -403,10 +404,18 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
         Account account = null;
         boolean forNsx = false;
         List<PhysicalNetworkVO> physicalNetworks = physicalNetworkDao.listByZoneAndTrafficType(zone.getId(), Networks.TrafficType.Guest);
-        if (CollectionUtils.isNullOrEmpty(physicalNetworks) || physicalNetworks.size() > 1 ) {
-            throw new InvalidConfigurationException(String.format("Desired number of physical networks is not present in the zone %s for traffic type %s. ", zone.getName(), Networks.TrafficType.Guest.name()));
+        if (CollectionUtils.isNullOrEmpty(physicalNetworks)) {
+            String err = String.format("Desired physical network is not present in the zone %s for traffic type %s. ", zone.getName(), Networks.TrafficType.Guest.name());
+            LOGGER.error(err);
+            throw new InvalidConfigurationException(err);
         }
-        if (physicalNetworks.get(0).getIsolationMethods().contains("NSX")) {
+        List<PhysicalNetworkVO> filteredPhysicalNetworks = physicalNetworks.stream().filter(x -> x.getIsolationMethods().contains("NSX")).collect(Collectors.toList());
+        if (CollectionUtils.isNullOrEmpty(filteredPhysicalNetworks)) {
+            String err = String.format("No physical network with NSX isolation type for traffic type %s is present in the zone %s.", Networks.TrafficType.Guest.name(), zone.getName());
+            LOGGER.error(err);
+            throw new InvalidConfigurationException(err);
+        }
+        if (filteredPhysicalNetworks.get(0).getIsolationMethods().contains("NSX")) {
             account = accountMgr.getAccount(vpc.getAccountId());
             forNsx = true;
         }
@@ -585,9 +594,9 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
                         result &= pfRuleResult;
                     }
                 } else if (rule.getState() == FirewallRule.State.Revoke) {
-                    if (ruleDetail != null && ruleDetail.getValue().equalsIgnoreCase("true")) {
+                    if (ruleDetail == null || (ruleDetail != null && ruleDetail.getValue().equalsIgnoreCase("true"))) {
                         boolean pfRuleResult = nsxService.deletePortForwardRule(networkRule);
-                        if (pfRuleResult) {
+                        if (pfRuleResult && ruleDetail != null) {
                             LOGGER.debug(String.format("Updating firewall rule detail %s for rule %s, set to false", ruleDetail.getId(), rule.getId()));
                             ruleDetail.setValue("false");
                             firewallRuleDetailsDao.update(ruleDetail.getId(), ruleDetail);
