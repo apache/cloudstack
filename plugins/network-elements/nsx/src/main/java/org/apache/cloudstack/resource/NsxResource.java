@@ -385,10 +385,10 @@ public class NsxResource implements ServerResource {
                 cmd.getNetworkResourceId(), cmd.isResourceVpc());
         try {
             String privatePort = cmd.getPrivatePort();
-            LOGGER.debug(String.format("Checking if rule %s exists on Tier 1 Gateway: %s", ruleName, tier1GatewayName));
+            logger.debug(String.format("Checking if rule %s exists on Tier 1 Gateway: %s", ruleName, tier1GatewayName));
             if (nsxApiClient.doesPfRuleExist(ruleName, tier1GatewayName)) {
                 String msg = String.format("Port forward rule for port: %s (%s) exits on NSX, not adding it again", ruleName, privatePort);
-                LOGGER.debug(msg);
+                logger.debug(msg);
                 NsxAnswer answer = new NsxAnswer(cmd, true, msg);
                 answer.setObjectExists(true);
                 return answer;
@@ -399,7 +399,7 @@ public class NsxResource implements ServerResource {
                     cmd.getVmIp(), cmd.getPublicPort(), service);
         } catch (Exception e) {
             String msg = String.format("Failed to add NSX port forward rule %s for network: %s", ruleName, cmd.getNetworkResourceName());
-            LOGGER.error(msg, e);
+            logger.error(msg, e);
             return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
         }
         return new NsxAnswer(cmd, true, null);
@@ -421,7 +421,7 @@ public class NsxResource implements ServerResource {
                     cmd.getNetworkResourceName(), tier1GatewayName, ruleName);
         } catch (Exception e) {
             String msg = String.format("Failed to delete NSX rule %s for network %s: due to %s", ruleName, cmd.getNetworkResourceName(), e.getMessage());
-            LOGGER.error(msg, e);
+            logger.error(msg, e);
             return new NsxAnswer(cmd, new CloudRuntimeException(msg));
         }
         return new NsxAnswer(cmd, true, null);

@@ -406,13 +406,13 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
         List<PhysicalNetworkVO> physicalNetworks = physicalNetworkDao.listByZoneAndTrafficType(zone.getId(), Networks.TrafficType.Guest);
         if (CollectionUtils.isNullOrEmpty(physicalNetworks)) {
             String err = String.format("Desired physical network is not present in the zone %s for traffic type %s. ", zone.getName(), Networks.TrafficType.Guest.name());
-            LOGGER.error(err);
+            logger.error(err);
             throw new InvalidConfigurationException(err);
         }
         List<PhysicalNetworkVO> filteredPhysicalNetworks = physicalNetworks.stream().filter(x -> x.getIsolationMethods().contains("NSX")).collect(Collectors.toList());
         if (CollectionUtils.isNullOrEmpty(filteredPhysicalNetworks)) {
             String err = String.format("No physical network with NSX isolation type for traffic type %s is present in the zone %s.", Networks.TrafficType.Guest.name(), zone.getName());
-            LOGGER.error(err);
+            logger.error(err);
             throw new InvalidConfigurationException(err);
         }
         if (filteredPhysicalNetworks.get(0).getIsolationMethods().contains("NSX")) {
@@ -576,17 +576,17 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
                 FirewallRuleDetailVO ruleDetail = firewallRuleDetailsDao.findDetail(rule.getId(), ApiConstants.FOR_NSX);
                 if (Arrays.asList(FirewallRule.State.Add, FirewallRule.State.Active).contains(rule.getState())) {
                     if ((ruleDetail == null && FirewallRule.State.Add == rule.getState()) || (ruleDetail != null && !ruleDetail.getValue().equalsIgnoreCase("true"))) {
-                        LOGGER.debug(String.format("Creating port forwarding rule on NSX for VM %s to ports %s - %s",
+                        logger.debug(String.format("Creating port forwarding rule on NSX for VM %s to ports %s - %s",
                                 vm.getUuid(), rule.getDestinationPortStart(), rule.getDestinationPortEnd()));
                         NsxAnswer answer = nsxService.createPortForwardRule(networkRule);
                         boolean pfRuleResult = answer.getResult();
                         if (pfRuleResult && !answer.isObjectExistent()) {
-                            LOGGER.debug(String.format("Port forwarding rule %s created on NSX, adding detail on firewall rules details", rule.getId()));
+                            logger.debug(String.format("Port forwarding rule %s created on NSX, adding detail on firewall rules details", rule.getId()));
                             if (ruleDetail == null && FirewallRule.State.Add == rule.getState()) {
-                                LOGGER.debug(String.format("Adding new firewall detail for rule %s", rule.getId()));
+                                logger.debug(String.format("Adding new firewall detail for rule %s", rule.getId()));
                                 firewallRuleDetailsDao.addDetail(rule.getId(), ApiConstants.FOR_NSX, "true", false);
                             } else {
-                                LOGGER.debug(String.format("Updating firewall detail for rule %s", rule.getId()));
+                                logger.debug(String.format("Updating firewall detail for rule %s", rule.getId()));
                                 ruleDetail.setValue("true");
                                 firewallRuleDetailsDao.update(ruleDetail.getId(), ruleDetail);
                             }
@@ -597,7 +597,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
                     if (ruleDetail == null || (ruleDetail != null && ruleDetail.getValue().equalsIgnoreCase("true"))) {
                         boolean pfRuleResult = nsxService.deletePortForwardRule(networkRule);
                         if (pfRuleResult && ruleDetail != null) {
-                            LOGGER.debug(String.format("Updating firewall rule detail %s for rule %s, set to false", ruleDetail.getId(), rule.getId()));
+                            logger.debug(String.format("Updating firewall rule detail %s for rule %s, set to false", ruleDetail.getId(), rule.getId()));
                             ruleDetail.setValue("false");
                             firewallRuleDetailsDao.update(ruleDetail.getId(), ruleDetail);
                         }
