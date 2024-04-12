@@ -47,7 +47,7 @@ import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.datastore.api.StorPoolSnapshotDef;
-import org.apache.cloudstack.storage.datastore.api.StorPoolVolume;
+import org.apache.cloudstack.storage.datastore.api.StorPoolVolumeDef;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
@@ -456,13 +456,13 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         SpApiResponse resp = new SpApiResponse();
         if (tier != null || template != null) {
             Map<String, String> tags = StorPoolHelper.addStorPoolTags(null, null, null, null, tier);
-            StorPoolVolume spVolume = new StorPoolVolume(name, payload.newSize, tags, null, null, template, null, null,
+            StorPoolVolumeDef spVolume = new StorPoolVolumeDef(name, payload.newSize, tags, null, null, template, null, null,
                     payload.shrinkOk);
             resp = StorPoolUtil.volumeUpdate(spVolume, conn);
         } else {
             long maxIops = payload.newMaxIops == null ? Long.valueOf(0) : payload.newMaxIops;
 
-            StorPoolVolume spVolume = new StorPoolVolume(name, payload.newSize, null, null, maxIops, null, null, null,
+            StorPoolVolumeDef spVolume = new StorPoolVolumeDef(name, payload.newSize, null, null, maxIops, null, null, null,
                     payload.shrinkOk);
             StorPoolUtil.spLog(
                     "StorpoolPrimaryDataStoreDriverImpl.resize: name=%s, uuid=%s, oldSize=%d, newSize=%s, shrinkOk=%s, maxIops=%s",
@@ -1394,7 +1394,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         StorPoolUtil.spLog("Updating volume [%s] with tier tag [%s] or template [%s] from Disk offering", volume.getId(), tier, template);
         String volumeName = StorPoolStorageAdaptor.getVolumeNameFromPath(volume.getPath(), true);
         Map<String, String> tags = StorPoolHelper.addStorPoolTags(null, null, null, null, tier);
-        StorPoolVolume spVolume = new StorPoolVolume(volumeName, null, tags, null, null, template, null, null, null);
+        StorPoolVolumeDef spVolume = new StorPoolVolumeDef(volumeName, null, tags, null, null, template, null, null, null);
         SpApiResponse response = StorPoolUtil.volumeUpdate(spVolume, conn);
         if (response.getError() != null) {
             StorPoolUtil.spLog("Could not update volume [%s] with tier tag [%s] or template [%s] from Disk offering due to [%s]", volume.getId(), tier, template, response.getError());

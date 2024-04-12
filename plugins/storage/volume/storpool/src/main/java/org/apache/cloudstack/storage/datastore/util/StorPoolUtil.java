@@ -30,7 +30,7 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 
 import org.apache.cloudstack.storage.datastore.api.StorPoolSnapshotDef;
-import org.apache.cloudstack.storage.datastore.api.StorPoolVolume;
+import org.apache.cloudstack.storage.datastore.api.StorPoolVolumeDef;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
@@ -599,7 +599,7 @@ public class StorPoolUtil {
         return POST("MultiCluster/VolumeUpdate/" + name, json, conn);
     }
 
-    public static SpApiResponse volumeUpdate(StorPoolVolume volume, SpConnectionDesc conn) {
+    public static SpApiResponse volumeUpdate(StorPoolVolumeDef volume, SpConnectionDesc conn) {
         return POST("MultiCluster/VolumeUpdate/" + volume.getName(), volume, conn);
     }
 
