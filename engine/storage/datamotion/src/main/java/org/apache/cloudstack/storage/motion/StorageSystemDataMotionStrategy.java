@@ -1976,8 +1976,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
                 MigrateCommand.MigrateDiskInfo migrateDiskInfo;
 
-                boolean isNonManagedNfsToNfsOrSharedMountPointToNfs = supportStoragePoolType(sourceStoragePool.getPoolType()) && destStoragePool.getPoolType() == StoragePoolType.NetworkFilesystem && !managedStorageDestination;
-                if (isNonManagedNfsToNfsOrSharedMountPointToNfs) {
+                boolean isNonManagedToNfs = supportStoragePoolType(sourceStoragePool.getPoolType(), StoragePoolType.Filesystem) && destStoragePool.getPoolType() == StoragePoolType.NetworkFilesystem && !managedStorageDestination;
+                if (isNonManagedToNfs) {
                     migrateDiskInfo = new MigrateCommand.MigrateDiskInfo(srcVolumeInfo.getPath(),
                             MigrateCommand.MigrateDiskInfo.DiskType.FILE,
                             MigrateCommand.MigrateDiskInfo.DriverType.QCOW2,
@@ -2385,26 +2385,10 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             } else if (storageTypeConsistency != destStoragePoolVO.isManaged()) {
                 throw new CloudRuntimeException("Destination storage pools must be either all managed or all not managed");
             }
-
-            addSourcePoolToPoolsMap(sourcePools, srcStoragePoolVO, destStoragePoolVO);
         }
         verifyDestinationStorage(sourcePools, destHost);
     }
 
-    /**
-     * Adds source storage pool to the migration map if the destination pool is not managed and it is NFS.
-     */
-    protected void addSourcePoolToPoolsMap(Map<String, Storage.StoragePoolType> sourcePools, StoragePoolVO srcStoragePoolVO, StoragePoolVO destStoragePoolVO) {
-        if (destStoragePoolVO.isManaged() || !StoragePoolType.NetworkFilesystem.equals(destStoragePoolVO.getPoolType())) {
-            LOGGER.trace(String.format("Skipping adding source pool [%s] to map due to destination pool [%s] is managed or not NFS.", srcStoragePoolVO, destStoragePoolVO));
-            return;
-        }
-
-        String sourceStoragePoolUuid = srcStoragePoolVO.getUuid();
-        if (!sourcePools.containsKey(sourceStoragePoolUuid)) {
-            sourcePools.put(sourceStoragePoolUuid, srcStoragePoolVO.getPoolType());
-        }
-    }
 
     /**
      * Perform storage validation on destination host for KVM live storage migrations.
