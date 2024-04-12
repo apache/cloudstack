@@ -392,13 +392,13 @@ public class VpcManagerImplTest {
         Mockito.when(entityMgr.findById(NetworkOffering.class, 1L)).thenReturn(offering);
         Mockito.when(vpcMock.getId()).thenReturn(VPC_ID);
         Mockito.when(vpcDao.acquireInLockTable(VPC_ID)).thenReturn(vpcMockVO);
-        Mockito.when(networkDao.countVpcNetworks(anyLong())).thenReturn(1L);
         Mockito.when(offering.getGuestType()).thenReturn(Network.GuestType.Isolated);
         Mockito.when(networkModel.listNetworkOfferingServices(anyLong())).thenReturn(services);
         Mockito.when(networkOfferingServiceMapDao.listByNetworkOfferingId(anyLong())).thenReturn(serviceMap);
         Mockito.when(vpcMock.getCidr()).thenReturn("10.0.0.0/8");
         Mockito.when(vpcMock.getNetworkDomain()).thenReturn("cs1cloud.internal");
         Mockito.when(manager.existsVpcDomainRouterWithSufficientNicCapacity(VPC_ID)).thenReturn(true);
+        Mockito.doNothing().when(manager).checkIfVpcNumberOfTiersIsNotExceeded(Mockito.anyLong(), Mockito.any());
 
         manager.validateNewVpcGuestNetwork("10.10.10.0/24", "10.10.10.1", accountMock, vpcMock, "cs1cloud.internal");
         manager.validateNtwkOffForNtwkInVpc(2L, 1, "10.10.10.0/24", "111-", vpcMock, "10.1.1.1", new AccountVO(), null);
@@ -646,7 +646,6 @@ public class VpcManagerImplTest {
 
     @Test
     public void checkIfVpcNumberOfTiersIsNotExceededTestExceededTiersThrowCloudRuntimeException() {
-        int maxNetworks = 3;
         AccountVO accountMock = Mockito.mock(AccountVO.class);
         Mockito.doReturn(5L).when(networkDao).countVpcNetworks(1L);
 
