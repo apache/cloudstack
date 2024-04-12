@@ -1151,6 +1151,56 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return (PrimaryDataStoreInfo)_dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
     }
 
+    private void changeStoragePoolScopeToZone(StoragePoolVO primaryStorage) {
+        /*
+         * For cluster wide primary storage the hypervisor type might not be set.
+         * So, get it from the clusterVO.
+         */
+        Long clusterId = primaryStorage.getClusterId();
+        ClusterVO clusterVO = _clusterDao.findById(clusterId);
+        HypervisorType hypervisorType = clusterVO.getHypervisorType();
+        if (!zoneWidePoolSupportedHypervisorTypes.contains(hypervisorType)) {
+            throw new InvalidParameterValueException("Primary storage scope change to Zone is not supported for hypervisor type " + hypervisorType);
+        }
+
+        DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(primaryStorage.getStorageProviderName());
+        PrimaryDataStoreLifeCycle lifeCycle = (PrimaryDataStoreLifeCycle) storeProvider.getDataStoreLifeCycle();
+
+        DataStore primaryStore = _dataStoreMgr.getPrimaryDataStore(primaryStorage.getId());
+        ClusterScope clusterScope = new ClusterScope(primaryStorage.getClusterId(), null, primaryStorage.getDataCenterId());
+
+        lifeCycle.changeStoragePoolScopeToZone(primaryStore, clusterScope, hypervisorType);
+    }
+
+    private void changeStoragePoolScopeToCluster(StoragePoolVO primaryStorage, Long clusterId) {
+        if (clusterId == null) {
+            throw new InvalidParameterValueException("Cluster ID not provided");
+        }
+        ClusterVO clusterVO = _clusterDao.findById(clusterId);
+        if (clusterVO == null) {
+            throw new InvalidParameterValueException("Unable to find cluster by id " + clusterId);
+        }
+        if (clusterVO.getAllocationState().equals(Grouping.AllocationState.Disabled)) {
+            throw new PermissionDeniedException("Cannot perform this operation, Cluster is currently disabled: " + clusterId);
+        }
+
+        List<VirtualMachine.State> states = Arrays.asList(State.Starting, State.Running, State.Stopping, State.Migrating, State.Restoring);
+
+        Long id = primaryStorage.getId();
+        List<VolumeVO> volumesInOtherClusters = volumeDao.listByPoolIdVMStatesNotInCluster(clusterId, states, id);
+        if (volumesInOtherClusters.size() > 0) {
+            throw new CloudRuntimeException(String.format("Cannot change scope of the pool %s to cluster %s as there are associated volumes present for other clusters", primaryStorage.getName(), clusterVO.getName()));
+        }
+
+        DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(primaryStorage.getStorageProviderName());
+        PrimaryDataStoreLifeCycle lifeCycle = (PrimaryDataStoreLifeCycle) storeProvider.getDataStoreLifeCycle();
+
+        DataStore primaryStore = _dataStoreMgr.getPrimaryDataStore(id);
+        ClusterScope clusterScope = new ClusterScope(clusterId, clusterVO.getPodId(), primaryStorage.getDataCenterId());
+
+        lifeCycle.changeStoragePoolScopeToCluster(primaryStore, clusterScope, primaryStorage.getHypervisor());
+    }
+
     @Override
     public void changeStoragePoolScope(ChangeStoragePoolScopeCmd cmd) throws IllegalArgumentException, InvalidParameterValueException, PermissionDeniedException {
         Long id = cmd.getId();
@@ -1181,27 +1231,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             throw new InvalidParameterValueException("New scope must be different than the current scope");
         }
 
-        HypervisorType hypervisorType;
-        if (currentScope.equals(ScopeType.CLUSTER)) {
-            /*
-             * For cluster wide primary storage the hypervisor type might not be set.
-             * So, get it from the clusterVO.
-             */
-            Long clusterId = primaryStorage.getClusterId();
-            ClusterVO clusterVO = _clusterDao.findById(clusterId);
-            hypervisorType = clusterVO.getHypervisorType();
-        } else {
-            hypervisorType = primaryStorage.getHypervisor();
-        }
-        if (!zoneWidePoolSupportedHypervisorTypes.contains(hypervisorType)) {
-            throw new InvalidParameterValueException("Primary storage scope change is not supported for hypervisor type " + hypervisorType);
-        }
-
-        String providerName = primaryStorage.getStorageProviderName();
-        DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(providerName);
-        PrimaryDataStoreLifeCycle lifeCycle = (PrimaryDataStoreLifeCycle) storeProvider.getDataStoreLifeCycle();
-        DataStore primaryStore = _dataStoreMgr.getPrimaryDataStore(id);
-
         Long zoneId = primaryStorage.getDataCenterId();
         DataCenterVO zone = _dcDao.findById(zoneId);
         if (zone == null) {
@@ -1212,29 +1241,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         if (newScope.equals(ScopeType.ZONE)) {
-            ClusterScope clusterScope = new ClusterScope(primaryStorage.getClusterId(), null, zoneId);
-            lifeCycle.changeStoragePoolScopeToZone(primaryStore, clusterScope, hypervisorType);
-
+            changeStoragePoolScopeToZone(primaryStorage);
         } else {
-            Long clusterId = cmd.getClusterId();
-            if (clusterId == null) {
-                throw new IllegalArgumentException("Unable to find cluster with ID: " + clusterId);
-            }
-            ClusterVO clusterVO = _clusterDao.findById(clusterId);
-            if (clusterVO == null) {
-                throw new InvalidParameterValueException("Unable to find cluster by id " + clusterId);
-            }
-            if (clusterVO.getAllocationState().equals(Grouping.AllocationState.Disabled)) {
-                throw new PermissionDeniedException("Cannot perform this operation, Cluster is currently disabled: " + zoneId);
-            }
-            List<VirtualMachine.State> states = Arrays.asList(State.Starting, State.Running, State.Stopping, State.Migrating, State.Restoring);
-            List<VolumeVO> volumesInOtherClusters = volumeDao.listByPoolIdVMStatesNotInCluster(clusterId, states, id);
-            if (volumesInOtherClusters.size() > 0) {
-                throw new CloudRuntimeException("Cannot change scope of the pool " + primaryStorage.getName() + " to cluster " + clusterVO.getName() + " as there are associated volumes present for other clusters");
-            }
-
-            ClusterScope clusterScope = new ClusterScope(clusterId, clusterVO.getPodId(), zoneId);
-            lifeCycle.changeStoragePoolScopeToCluster(primaryStore, clusterScope, hypervisorType);
+            changeStoragePoolScopeToCluster(primaryStorage, cmd.getClusterId());
         }
     }
 
