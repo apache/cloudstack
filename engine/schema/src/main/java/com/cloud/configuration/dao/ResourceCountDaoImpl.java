@@ -185,12 +185,10 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
         String poolIdsInStr = ids.stream().map(String::valueOf).collect(Collectors.joining(",", "(", ")"));
         String sql = updateSql.replace("(?)", poolIdsInStr);
 
-        try (TransactionLegacy txn = TransactionLegacy.currentTxn();
-             PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql)
-        ) {
+        final TransactionLegacy txn = TransactionLegacy.currentTxn();
+        try(PreparedStatement pstmt = txn.prepareStatement(sql);) {
             pstmt.setLong(1, delta);
             pstmt.executeUpdate();
-            txn.commit();
             return true;
         } catch (SQLException e) {
             throw new CloudRuntimeException(e);
