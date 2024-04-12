@@ -20,11 +20,15 @@ package com.cloud.hypervisor.kvm.resource;
 
 import java.util.concurrent.Callable;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.LibvirtException;
 
 public class MigrateKVMAsync implements Callable<Domain> {
+
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private final LibvirtComputingResource libvirtComputingResource;
 
@@ -87,14 +91,13 @@ public class MigrateKVMAsync implements Callable<Domain> {
     private static final int LIBVIRT_VERSION_SUPPORTS_AUTO_CONVERGE = 1002003;
 
     public MigrateKVMAsync(final LibvirtComputingResource libvirtComputingResource, final Domain dm, final Connect dconn, final String dxml,
-            final boolean migrateStorage, final boolean migrateNonSharedInc, final boolean autoConvergence, final String vmName, final String destIp) {
+            final boolean migrateStorage, final boolean autoConvergence, final String vmName, final String destIp) {
         this.libvirtComputingResource = libvirtComputingResource;
 
         this.dm = dm;
         this.dconn = dconn;
         this.dxml = dxml;
         this.migrateStorage = migrateStorage;
-        this.migrateNonSharedInc = migrateNonSharedInc;
         this.autoConvergence = autoConvergence;
         this.vmName = vmName;
         this.destIp = destIp;
@@ -109,12 +112,8 @@ public class MigrateKVMAsync implements Callable<Domain> {
         }
 
         if (migrateStorage) {
-            if (migrateNonSharedInc) {
-                flags |= VIR_MIGRATE_PERSIST_DEST;
-                flags |= VIR_MIGRATE_NON_SHARED_INC;
-            } else {
-                flags |= VIR_MIGRATE_NON_SHARED_DISK;
-            }
+            flags |= VIR_MIGRATE_NON_SHARED_DISK;
+            logger.debug("Setting virMigrateNonSharedDisk for full migration.");
         }
 
         if (autoConvergence && dconn.getLibVirVersion() >= LIBVIRT_VERSION_SUPPORTS_AUTO_CONVERGE) {

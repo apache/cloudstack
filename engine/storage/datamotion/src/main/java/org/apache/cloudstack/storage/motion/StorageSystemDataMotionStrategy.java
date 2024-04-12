@@ -1861,27 +1861,16 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     }
 
     /**
-     * Prepare hosts for KVM live storage migration depending on volume type by setting MigrationOptions on destination volume:
-     * - Linked clones (backing file on disk): Decide if template (backing file) should be copied to destination storage prior disk creation
-     * - Full clones (no backing file): Take snapshot of the VM prior disk creation
-     * Return this information
+     * Configures the destination volume to be a full clone if the destination storage pool is not managed.
      */
     protected void setVolumeMigrationOptions(VolumeInfo srcVolumeInfo, VolumeInfo destVolumeInfo,
                                              VirtualMachineTO vmTO, Host srcHost, StoragePoolVO destStoragePool) {
         if (!destStoragePool.isManaged()) {
-            String srcVolumeBackingFile = getVolumeBackingFile(srcVolumeInfo);
-
             String srcPoolUuid = srcVolumeInfo.getDataStore().getUuid();
             StoragePoolVO srcPool = _storagePoolDao.findById(srcVolumeInfo.getPoolId());
             Storage.StoragePoolType srcPoolType = srcPool.getPoolType();
 
-            MigrationOptions migrationOptions;
-            if (StringUtils.isNotBlank(srcVolumeBackingFile)) {
-                migrationOptions = createLinkedCloneMigrationOptions(srcVolumeInfo, destVolumeInfo,
-                        srcVolumeBackingFile, srcPoolUuid, srcPoolType);
-            } else {
-                migrationOptions = createFullCloneMigrationOptions(srcVolumeInfo, vmTO, srcHost, srcPoolUuid, srcPoolType);
-            }
+            MigrationOptions migrationOptions = createFullCloneMigrationOptions(srcVolumeInfo, vmTO, srcHost, srcPoolUuid, srcPoolType);
             migrationOptions.setTimeout(StorageManager.KvmStorageOnlineMigrationWait.value());
             destVolumeInfo.setMigrationOptions(migrationOptions);
         }
@@ -1930,13 +1919,6 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
                 if (!shouldMigrateVolume(sourceStoragePool, destHost, destStoragePool)) {
                     continue;
-                }
-
-                if (srcVolumeInfo.getTemplateId() != null) {
-                    LOGGER.debug(String.format("Copying template [%s] of volume [%s] from source storage pool [%s] to target storage pool [%s].", srcVolumeInfo.getTemplateId(), srcVolumeInfo.getId(), sourceStoragePool.getId(), destStoragePool.getId()));
-                    copyTemplateToTargetFilesystemStorageIfNeeded(srcVolumeInfo, sourceStoragePool, destDataStore, destStoragePool, destHost);
-                } else {
-                    LOGGER.debug(String.format("Skipping copy template from source storage pool [%s] to target storage pool [%s] before migration due to volume [%s] does not have a template.", sourceStoragePool.getId(), destStoragePool.getId(), srcVolumeInfo.getId()));
                 }
 
                 VolumeVO destVolume = duplicateVolumeOnAnotherStorage(srcVolume, destStoragePool);
@@ -2015,14 +1997,12 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             VMInstanceVO vm = _vmDao.findById(vmTO.getId());
             boolean isWindows = _guestOsCategoryDao.findById(_guestOsDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
 
-            boolean migrateNonSharedInc = isSourceAndDestinationPoolTypeOfNfs(volumeDataStoreMap);
 
             MigrateCommand migrateCommand = new MigrateCommand(vmTO.getName(), destHost.getPrivateIpAddress(), isWindows, vmTO, true);
             migrateCommand.setWait(StorageManager.KvmStorageOnlineMigrationWait.value());
             migrateCommand.setMigrateStorage(migrateStorage);
             migrateCommand.setMigrateDiskInfoList(migrateDiskInfoList);
             migrateCommand.setMigrateStorageManaged(managedStorageDestination);
-            migrateCommand.setMigrateNonSharedInc(migrateNonSharedInc);
 
             Integer newVmCpuShares = ((PrepareForMigrationAnswer) pfma).getNewVmCpuShares();
             if (newVmCpuShares != null) {
@@ -2076,22 +2056,6 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         return formatMigrationElementsAsJsonToDisplayOnLog("volume", srcVolumeInfo.getId(), srcVolumeInfo.getPoolId(), destDataStore.getId());
     }
 
-    /**
-     * Returns true if at least one of the entries on the map 'volumeDataStoreMap' has both source and destination storage pools of Network Filesystem (NFS).
-     */
-    protected boolean isSourceAndDestinationPoolTypeOfNfs(Map<VolumeInfo, DataStore> volumeDataStoreMap) {
-        for (Map.Entry<VolumeInfo, DataStore> entry : volumeDataStoreMap.entrySet()) {
-            VolumeInfo srcVolumeInfo = entry.getKey();
-            DataStore destDataStore = entry.getValue();
-
-            StoragePoolVO destStoragePool = _storagePoolDao.findById(destDataStore.getId());
-            StoragePoolVO sourceStoragePool = _storagePoolDao.findById(srcVolumeInfo.getPoolId());
-            if (sourceStoragePool.getPoolType() == StoragePoolType.NetworkFilesystem && destStoragePool.getPoolType() == StoragePoolType.NetworkFilesystem) {
-                return true;
-            }
-        }
-        return false;
-    }
 
     /**
      * Returns true. This method was implemented considering the classes that extend this {@link StorageSystemDataMotionStrategy} and cannot migrate volumes from certain types of source storage pools and/or to a different kind of destiny storage pool.
@@ -2133,15 +2097,6 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
      */
     protected void setVolumePath(VolumeVO volume) {
         volume.setPath(volume.get_iScsiName());
-    }
-
-    /**
-     * For this strategy it is not necessary to copy the template before migrating the VM.
-     * However, classes that extend this one may need to copy the template to the target storage pool before migrating the VM.
-     */
-    protected void copyTemplateToTargetFilesystemStorageIfNeeded(VolumeInfo srcVolumeInfo, StoragePool srcStoragePool, DataStore destDataStore, StoragePool destStoragePool,
-            Host destHost) {
-        // This method is used by classes that extend this one
     }
 
     /*
