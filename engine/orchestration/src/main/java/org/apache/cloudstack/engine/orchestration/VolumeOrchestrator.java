@@ -879,32 +879,6 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         return diskProfile;
     }
 
-    @Override
-    public void saveVolumeDetails(Long diskOfferingId, Long volumeId) {
-        List<VolumeDetailVO> volumeDetailsVO = new ArrayList<>();
-        DiskOfferingDetailVO bandwidthLimitDetail = _diskOfferingDetailDao.findDetail(diskOfferingId, Volume.BANDWIDTH_LIMIT_IN_MBPS);
-        if (bandwidthLimitDetail != null) {
-            volumeDetailsVO.add(new VolumeDetailVO(volumeId, Volume.BANDWIDTH_LIMIT_IN_MBPS, bandwidthLimitDetail.getValue(), false));
-        } else {
-            VolumeDetailVO bandwidthLimit = _volDetailDao.findDetail(volumeId, Volume.BANDWIDTH_LIMIT_IN_MBPS);
-            if (bandwidthLimit != null) {
-                _volDetailDao.remove(bandwidthLimit.getId());
-            }
-        }
-        DiskOfferingDetailVO iopsLimitDetail = _diskOfferingDetailDao.findDetail(diskOfferingId, Volume.IOPS_LIMIT);
-        if (iopsLimitDetail != null) {
-            volumeDetailsVO.add(new VolumeDetailVO(volumeId, Volume.IOPS_LIMIT, iopsLimitDetail.getValue(), false));
-        } else {
-            VolumeDetailVO iopsLimit = _volDetailDao.findDetail(volumeId, Volume.IOPS_LIMIT);
-            if (iopsLimit != null) {
-                _volDetailDao.remove(iopsLimit.getId());
-            }
-        }
-        if (!volumeDetailsVO.isEmpty()) {
-            _volDetailDao.saveDetails(volumeDetailsVO);
-        }
-    }
-
     private DiskProfile allocateTemplatedVolume(Type type, String name, DiskOffering offering, Long rootDisksize, Long minIops, Long maxIops, VirtualMachineTemplate template, VirtualMachine vm,
                                                 Account owner, long deviceId, String configurationId) {
         assert (template.getFormat() != ImageFormat.ISO) : "ISO is not a template.";
@@ -948,18 +922,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         vol = _volsDao.persist(vol);
 
-        List<VolumeDetailVO> volumeDetailsVO = new ArrayList<VolumeDetailVO>();
-        DiskOfferingDetailVO bandwidthLimitDetail = _diskOfferingDetailDao.findDetail(offering.getId(), Volume.BANDWIDTH_LIMIT_IN_MBPS);
-        if (bandwidthLimitDetail != null) {
-            volumeDetailsVO.add(new VolumeDetailVO(vol.getId(), Volume.BANDWIDTH_LIMIT_IN_MBPS, bandwidthLimitDetail.getValue(), false));
-        }
-        DiskOfferingDetailVO iopsLimitDetail = _diskOfferingDetailDao.findDetail(offering.getId(), Volume.IOPS_LIMIT);
-        if (iopsLimitDetail != null) {
-            volumeDetailsVO.add(new VolumeDetailVO(vol.getId(), Volume.IOPS_LIMIT, iopsLimitDetail.getValue(), false));
-        }
-        if (!volumeDetailsVO.isEmpty()) {
-            _volDetailDao.saveDetails(volumeDetailsVO);
-        }
+        saveVolumeDetails(offering.getId(), vol.getId());
 
         if (StringUtils.isNotBlank(configurationId)) {
             VolumeDetailVO deployConfigurationDetail = new VolumeDetailVO(vol.getId(), VmDetailConstants.DEPLOY_AS_IS_CONFIGURATION, configurationId, false);
@@ -981,6 +944,32 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             _resourceLimitMgr.incrementVolumeResourceCount(vm.getAccountId(), vol.isDisplayVolume(), vol.getSize(), offering);
         }
         return toDiskProfile(vol, offering);
+    }
+
+    @Override
+    public void saveVolumeDetails(Long diskOfferingId, Long volumeId) {
+        List<VolumeDetailVO> volumeDetailsVO = new ArrayList<>();
+        DiskOfferingDetailVO bandwidthLimitDetail = _diskOfferingDetailDao.findDetail(diskOfferingId, Volume.BANDWIDTH_LIMIT_IN_MBPS);
+        if (bandwidthLimitDetail != null) {
+            volumeDetailsVO.add(new VolumeDetailVO(volumeId, Volume.BANDWIDTH_LIMIT_IN_MBPS, bandwidthLimitDetail.getValue(), false));
+        } else {
+            VolumeDetailVO bandwidthLimit = _volDetailDao.findDetail(volumeId, Volume.BANDWIDTH_LIMIT_IN_MBPS);
+            if (bandwidthLimit != null) {
+                _volDetailDao.remove(bandwidthLimit.getId());
+            }
+        }
+        DiskOfferingDetailVO iopsLimitDetail = _diskOfferingDetailDao.findDetail(diskOfferingId, Volume.IOPS_LIMIT);
+        if (iopsLimitDetail != null) {
+            volumeDetailsVO.add(new VolumeDetailVO(volumeId, Volume.IOPS_LIMIT, iopsLimitDetail.getValue(), false));
+        } else {
+            VolumeDetailVO iopsLimit = _volDetailDao.findDetail(volumeId, Volume.IOPS_LIMIT);
+            if (iopsLimit != null) {
+                _volDetailDao.remove(iopsLimit.getId());
+            }
+        }
+        if (!volumeDetailsVO.isEmpty()) {
+            _volDetailDao.saveDetails(volumeDetailsVO);
+        }
     }
 
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_CREATE, eventDescription = "creating ROOT volume", create = true)
