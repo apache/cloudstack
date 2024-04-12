@@ -141,6 +141,9 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import com.google.gson.Gson;
 
+import static org.apache.cloudstack.api.ApiConstants.MAX_IOPS;
+import static org.apache.cloudstack.api.ApiConstants.MIN_IOPS;
+
 public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     public static final String VM_IMPORT_DEFAULT_TEMPLATE_NAME = "system-default-vm-import-dummy-template.iso";
     private static final Logger LOGGER = Logger.getLogger(UnmanagedVMsManagerImpl.class);
@@ -1021,12 +1024,12 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 throw new InvalidParameterValueException(String.format("Root disk ID: %s size is invalid", rootDisk.getDiskId()));
             }
             Long minIops = null;
-            if (details.containsKey("minIops")) {
-                minIops = Long.parseLong(details.get("minIops"));
+            if (details.containsKey(MIN_IOPS)) {
+                minIops = Long.parseLong(details.get(MIN_IOPS));
             }
             Long maxIops = null;
-            if (details.containsKey("maxIops")) {
-                maxIops = Long.parseLong(details.get("maxIops"));
+            if (details.containsKey(MAX_IOPS)) {
+                maxIops = Long.parseLong(details.get(MAX_IOPS));
             }
             DiskOfferingVO diskOffering = diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
             diskProfileStoragePoolList.add(importDisk(rootDisk, userVm, cluster, diskOffering, Volume.Type.ROOT, String.format("ROOT-%d", userVm.getId()),
