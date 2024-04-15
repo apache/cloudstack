@@ -2972,7 +2972,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         if (path == null) {
             throw new CloudRuntimeException("No path given, cannot append filetype" + fileType);
         }
-        if (fileType = null || path.toLowerCase().endsWith(fileType.toLowerCase())) {
+        if (fileType == null || path.toLowerCase().endsWith(fileType.toLowerCase())) {
             return path;
         }
 
