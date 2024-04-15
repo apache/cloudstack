@@ -201,6 +201,13 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         return  accountManager.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
     }
 
+    protected String getNormalizedPayloadUrl(String payloadUrl) {
+        if (StringUtils.isBlank(payloadUrl) || payloadUrl.startsWith("http://") || payloadUrl.startsWith("https://")) {
+            return payloadUrl;
+        }
+        return String.format("http://%s", payloadUrl);
+    }
+
     @Override
     public ListResponse<WebhookResponse> listWebhooks(ListWebhooksCmd cmd) {
         final CallContext ctx = CallContext.current();
@@ -285,7 +292,7 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         final Account owner = getOwner(cmd);
         final String name  = cmd.getName();
         final String description = cmd.getDescription();
-        final String payloadUrl = cmd.getPayloadUrl();
+        final String payloadUrl = getNormalizedPayloadUrl(cmd.getPayloadUrl());
         final String secretKey = cmd.getSecretKey();
         final boolean sslVerification = cmd.isSslVerification();
         final String scopeStr = cmd.getScope();
@@ -349,8 +356,8 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         final long id = cmd.getId();
         final String name  = cmd.getName();
         final String description = cmd.getDescription();
-        final String payloadUrl = cmd.getPayloadUrl();
-        final String secretKey = cmd.getSecretKey();
+        final String payloadUrl = getNormalizedPayloadUrl(cmd.getPayloadUrl());
+        String secretKey = cmd.getSecretKey();
         final Boolean sslVerification = cmd.isSslVerification();
         final String scopeStr = cmd.getScope();
         final String stateStr = cmd.getState();
