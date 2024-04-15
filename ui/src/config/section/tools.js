@@ -86,7 +86,7 @@ export default {
         }
         return cols
       },
-      details: ['name', 'id', 'description', 'scope', 'payloadurl', 'sslverification', 'secret', 'state', 'account', 'domainid'],
+      details: ['name', 'id', 'description', 'scope', 'payloadurl', 'sslverification', 'secretkey', 'state', 'account', 'domainid'],
       searchFilters: () => {
         var filters = ['state']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
