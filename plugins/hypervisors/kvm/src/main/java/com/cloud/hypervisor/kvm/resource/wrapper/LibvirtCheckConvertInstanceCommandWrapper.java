@@ -38,8 +38,8 @@ public class LibvirtCheckConvertInstanceCommandWrapper extends CommandWrapper<Ch
     @Override
     public Answer execute(CheckConvertInstanceCommand cmd, LibvirtComputingResource serverResource) {
         if (!isInstanceConversionSupportedOnHost()) {
-            String msg = String.format("Cannot convert the instance from VMware as the virt-v2v binary is not found on host %s (%s). " +
-                    "Please install virt-v2v on the host before attempting the instance conversion", serverResource.getName(), serverResource.getPrivateIp());
+            String msg = String.format("Cannot convert the instance from VMware as the virt-v2v binary is not found on host %s. " +
+                    "Please install virt-v2v on the host before attempting the instance conversion", serverResource.getPrivateIp());
             s_logger.info(msg);
             return new CheckConvertInstanceAnswer(cmd, false, msg);
         }

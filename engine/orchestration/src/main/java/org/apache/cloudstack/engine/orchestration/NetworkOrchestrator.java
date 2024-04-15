@@ -4705,7 +4705,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     private String generateNewMacAddressIfForced(Network network, String macAddress, boolean forced) {
         if (!forced) {
-            throw new CloudRuntimeException("NIC with MAC address = " + macAddress + " exists on network with ID = " + network.getId() +
+            throw new CloudRuntimeException("NIC with MAC address " + macAddress + " exists on network with ID " + network.getUuid() +
                     " and forced flag is disabled");
         }
         try {

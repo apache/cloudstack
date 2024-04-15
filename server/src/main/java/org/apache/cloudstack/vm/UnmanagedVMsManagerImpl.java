@@ -1582,7 +1582,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         if (existingVcenterId != null) {
             VmwareDatacenterVO existingDC = vmwareDatacenterDao.findById(existingVcenterId);
             if (existingDC == null) {
-                String err = String.format("Cannot find any existing Vmware DC with ID %s", existingVcenterId);
+                String err = String.format("Cannot find any existing VMware DC with ID %s", existingVcenterId);
                 LOGGER.error(err);
                 throw new CloudRuntimeException(err);
             }
@@ -1670,8 +1670,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     private void checkUnmanagedNicAndNetworkMacAddressForImport(NetworkVO network, UnmanagedInstanceTO.Nic nic, boolean forced) {
         NicVO existingNic = nicDao.findByNetworkIdAndMacAddress(network.getId(), nic.getMacAddress());
         if (existingNic != null && !forced) {
-            String err = String.format("NIC with MAC address = %s exists on network with ID = %s and forced flag is disabled",
-                    nic.getMacAddress(), network.getId());
+            String err = String.format("NIC with MAC address %s exists on network with ID %s and forced flag is disabled",
+                    nic.getMacAddress(), network.getUuid());
             LOGGER.error(err);
             throw new CloudRuntimeException(err);
         }
@@ -1806,14 +1806,14 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         try {
             checkConvertInstanceAnswer = agentManager.send(convertHost.getId(), cmd);
         } catch (AgentUnavailableException | OperationTimedoutException e) {
-            String err = String.format("Failed to check conversion support on the host %s for converting instance %s from Vmware to KVM due to: %s",
+            String err = String.format("Failed to check conversion support on the host %s for converting instance %s from VMware to KVM due to: %s",
                     convertHost.getName(), sourceVM, e.getMessage());
             LOGGER.error(err);
             throw new CloudRuntimeException(err);
         }
 
         if (!checkConvertInstanceAnswer.getResult()) {
-            String err = String.format("The host %s doesn't support conversion of instance %s from Vmware to KVM due to: %s",
+            String err = String.format("The host %s doesn't support conversion of instance %s from VMware to KVM due to: %s",
                     convertHost.getName(), sourceVM, checkConvertInstanceAnswer.getDetails());
             LOGGER.error(err);
             throw new CloudRuntimeException(err);
@@ -1844,7 +1844,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
 
         if (!convertAnswer.getResult()) {
-            String err = String.format("The convert process failed for instance %s from Vmware to KVM on host %s: %s",
+            String err = String.format("The convert process failed for instance %s from VMware to KVM on host %s: %s",
                     sourceVM, convertHost.getName(), convertAnswer.getDetails());
             LOGGER.error(err);
             throw new CloudRuntimeException(err);

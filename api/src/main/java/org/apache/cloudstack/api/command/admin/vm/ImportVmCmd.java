@@ -118,38 +118,38 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
             description = "Temp Path on external host for disk image copy" )
     private String tmpPath;
 
-    // Import from Vmware to KVM migration parameters
+    // Import from VMware to KVM migration parameters
 
     @Parameter(name = ApiConstants.EXISTING_VCENTER_ID,
             type = CommandType.UUID,
             entityType = VmwareDatacenterResponse.class,
-            description = "(only for importing migrated VMs from Vmware to KVM) UUID of a linked existing vCenter")
+            description = "(only for importing migrated VMs from VMware to KVM) UUID of a linked existing vCenter")
     private Long existingVcenterId;
 
     @Parameter(name = ApiConstants.HOST_IP,
             type = BaseCmd.CommandType.STRING,
-            description = "(only for importing migrated VMs from Vmware to KVM) VMware ESXi host IP/Name.")
+            description = "(only for importing migrated VMs from VMware to KVM) VMware ESXi host IP/Name.")
     private String hostip;
 
     @Parameter(name = ApiConstants.VCENTER,
             type = CommandType.STRING,
-            description = "(only for importing migrated VMs from Vmware to KVM) The name/ip of vCenter. Make sure it is IP address or full qualified domain name for host running vCenter server.")
+            description = "(only for importing migrated VMs from VMware to KVM) The name/ip of vCenter. Make sure it is IP address or full qualified domain name for host running vCenter server.")
     private String vcenter;
 
     @Parameter(name = ApiConstants.DATACENTER_NAME, type = CommandType.STRING,
-            description = "(only for importing migrated VMs from Vmware to KVM) Name of VMware datacenter.")
+            description = "(only for importing migrated VMs from VMware to KVM) Name of VMware datacenter.")
     private String datacenterName;
 
     @Parameter(name = ApiConstants.CLUSTER_NAME, type = CommandType.STRING,
-            description = "(only for importing migrated VMs from Vmware to KVM) Name of VMware cluster.")
+            description = "(only for importing migrated VMs from VMware to KVM) Name of VMware cluster.")
     private String clusterName;
 
     @Parameter(name = ApiConstants.CONVERT_INSTANCE_HOST_ID, type = CommandType.UUID, entityType = HostResponse.class,
-            description = "(only for importing migrated VMs from Vmware to KVM) optional - the host to perform the virt-v2v migration from VMware to KVM.")
+            description = "(only for importing migrated VMs from VMware to KVM) optional - the host to perform the virt-v2v migration from VMware to KVM.")
     private Long convertInstanceHostId;
 
     @Parameter(name = ApiConstants.CONVERT_INSTANCE_STORAGE_POOL_ID, type = CommandType.UUID, entityType = StoragePoolResponse.class,
-            description = "(only for importing migrated VMs from Vmware to KVM) optional - the temporary storage pool to perform the virt-v2v migration from VMware to KVM.")
+            description = "(only for importing migrated VMs from VMware to KVM) optional - the temporary storage pool to perform the virt-v2v migration from VMware to KVM.")
     private Long convertStoragePoolId;
 
     /////////////////////////////////////////////////////

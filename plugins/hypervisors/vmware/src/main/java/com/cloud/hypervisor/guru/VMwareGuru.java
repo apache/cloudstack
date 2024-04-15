@@ -1350,7 +1350,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         String cloneName = UUID.randomUUID().toString();
         List<DatastoreMO> vmDatastores = vmMo.getAllDatastores();
         if (CollectionUtils.isEmpty(vmDatastores)) {
-            String err = String.format("Unable to fetch datastores, could not clone VM %s before migration from VMware", vmName);
+            String err = String.format("Unable to fetch datastores, could not clone VM %s for migration from VMware", vmName);
             s_logger.error(err);
             throw new CloudRuntimeException(err);
         }
