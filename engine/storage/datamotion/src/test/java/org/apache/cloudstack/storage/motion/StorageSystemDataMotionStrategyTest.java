@@ -23,7 +23,6 @@ import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import java.util.HashMap;
@@ -48,7 +47,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.mockito.verification.VerificationMode;
 
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.host.HostVO;
@@ -62,7 +60,6 @@ import com.cloud.storage.VolumeVO;
 import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
