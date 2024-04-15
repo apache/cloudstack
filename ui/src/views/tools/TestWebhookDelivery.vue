@@ -120,7 +120,7 @@ export default {
     width: 80vw;
 
     @media (min-width: 600px) {
-      width: 600px;
+      max-width: 95%;
     }
   }
 
