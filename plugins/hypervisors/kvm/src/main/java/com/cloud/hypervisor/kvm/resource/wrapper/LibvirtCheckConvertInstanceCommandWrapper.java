@@ -26,29 +26,21 @@ import com.cloud.agent.api.CheckConvertInstanceCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
-import com.cloud.utils.script.Script;
 
 @ResourceWrapper(handles =  CheckConvertInstanceCommand.class)
 public class LibvirtCheckConvertInstanceCommandWrapper extends CommandWrapper<CheckConvertInstanceCommand, Answer, LibvirtComputingResource> {
 
     private static final Logger s_logger = Logger.getLogger(LibvirtCheckConvertInstanceCommandWrapper.class);
 
-    protected static final String checkIfConversionIsSupportedCommand = "which virt-v2v";
-
     @Override
     public Answer execute(CheckConvertInstanceCommand cmd, LibvirtComputingResource serverResource) {
-        if (!isInstanceConversionSupportedOnHost()) {
+        if (!serverResource.hostSupportsInstanceConversion()) {
             String msg = String.format("Cannot convert the instance from VMware as the virt-v2v binary is not found on host %s. " +
-                    "Please install virt-v2v on the host before attempting the instance conversion", serverResource.getPrivateIp());
+                    "Please install virt-v2v on the host before attempting the instance conversion.", serverResource.getPrivateIp());
             s_logger.info(msg);
             return new CheckConvertInstanceAnswer(cmd, false, msg);
         }
 
         return new CheckConvertInstanceAnswer(cmd, true, "");
-    }
-
-    protected boolean isInstanceConversionSupportedOnHost() {
-        int exitValue = Script.runSimpleBashScriptForExitValue(checkIfConversionIsSupportedCommand);
-        return exitValue == 0;
     }
 }

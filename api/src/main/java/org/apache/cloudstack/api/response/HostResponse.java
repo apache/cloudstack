@@ -277,6 +277,10 @@ public class HostResponse extends BaseResponseWithAnnotations {
     @Param(description = "true if the host supports encryption", since = "4.18")
     private Boolean encryptionSupported;
 
+    @SerializedName(ApiConstants.INSTANCE_CONVERSION_SUPPORTED)
+    @Param(description = "true if the host supports instance conversion (using virt-v2v)", since = "4.19.1")
+    private Boolean instanceConversionSupported;
+
     @Override
     public String getObjectId() {
         return this.getId();
@@ -547,6 +551,13 @@ public class HostResponse extends BaseResponseWithAnnotations {
             this.setEncryptionSupported(new Boolean(false)); // default
         }
 
+        if (detailsCopy.containsKey(Host.HOST_INSTANCE_CONVERSION)) {
+            this.setInstanceConversionSupported(Boolean.parseBoolean((String) detailsCopy.get(Host.HOST_INSTANCE_CONVERSION)));
+            detailsCopy.remove(Host.HOST_INSTANCE_CONVERSION);
+        } else {
+            this.setInstanceConversionSupported(new Boolean(false)); // default
+        }
+
         this.details = detailsCopy;
     }
 
@@ -735,6 +746,10 @@ public class HostResponse extends BaseResponseWithAnnotations {
 
     public void setEncryptionSupported(Boolean encryptionSupported) {
         this.encryptionSupported = encryptionSupported;
+    }
+
+    public void setInstanceConversionSupported(Boolean instanceConversionSupported) {
+        this.instanceConversionSupported = instanceConversionSupported;
     }
 
     public Boolean getIsTagARule() {

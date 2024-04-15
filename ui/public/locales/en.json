@@ -1049,6 +1049,7 @@
 "label.installwizard.subtitle": "This guide will aid you in setting up your CloudStack™ installation",
 "label.installwizard.title": "Hello and welcome to CloudStack™",
 "label.instance": "Instance",
+"label.instance.conversion.support": "Instance Conversion Supported",
 "label.instance.groups": "Instance groups",
 "label.instance.name": "Instance name",
 "label.instancename": "Internal name",

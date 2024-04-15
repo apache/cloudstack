@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource;
 
+import static com.cloud.host.Host.HOST_INSTANCE_CONVERSION;
 import static com.cloud.host.Host.HOST_VOLUME_ENCRYPTION;
 
 import java.io.BufferedReader;
@@ -304,6 +305,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public static final String BASEPATH = "/usr/share/cloudstack-common/vms/";
 
     public static final String TUNGSTEN_PATH = "scripts/vm/network/tungsten";
+
+    public static final String INSTANCE_CONVERSION_SUPPORTED_CHECK_CMD = "which virt-v2v";
 
     private String modifyVlanPath;
     private String versionStringPath;
@@ -3634,6 +3637,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmd.setGatewayIpAddress(localGateway);
         cmd.setIqn(getIqn());
         cmd.getHostDetails().put(HOST_VOLUME_ENCRYPTION, String.valueOf(hostSupportsVolumeEncryption()));
+        cmd.getHostDetails().put(HOST_INSTANCE_CONVERSION, String.valueOf(hostSupportsInstanceConversion()));
         HealthCheckResult healthCheckResult = getHostHealthCheckResult();
         if (healthCheckResult != HealthCheckResult.IGNORE) {
             cmd.setHostHealthCheckResult(healthCheckResult == HealthCheckResult.SUCCESS);
@@ -5135,6 +5139,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         return false;
+    }
+
+    public boolean hostSupportsInstanceConversion() {
+        int exitValue = Script.runSimpleBashScriptForExitValue(INSTANCE_CONVERSION_SUPPORTED_CHECK_CMD);
+        return exitValue == 0;
     }
 
     private void setCpuTopology(CpuModeDef cmd, int vCpusInDef, Map<String, String> details) {

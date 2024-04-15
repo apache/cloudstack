@@ -83,15 +83,6 @@ public class LibvirtConvertInstanceCommandWrapperTest {
     }
 
     @Test
-    public void testIsInstanceConversionSupportedOnHost() {
-        try (MockedStatic<Script> ignored = Mockito.mockStatic(Script.class)) {
-            Mockito.when(Script.runSimpleBashScriptForExitValue(LibvirtConvertInstanceCommandWrapper.checkIfConversionIsSupportedCommand)).thenReturn(0);
-            boolean supported = convertInstanceCommandWrapper.isInstanceConversionSupportedOnHost();
-            Assert.assertTrue(supported);
-        }
-    }
-
-    @Test
     public void testAreSourceAndDestinationHypervisorsSupported() {
         boolean supported = convertInstanceCommandWrapper.areSourceAndDestinationHypervisorsSupported(Hypervisor.HypervisorType.VMware, Hypervisor.HypervisorType.KVM);
         Assert.assertTrue(supported);
@@ -242,12 +233,13 @@ public class LibvirtConvertInstanceCommandWrapperTest {
         return remoteInstanceTO;
     }
 
-    private ConvertInstanceCommand getConvertInstanceCommand(RemoteInstanceTO remoteInstanceTO, Hypervisor.HypervisorType hypervisorType) {
+    private ConvertInstanceCommand getConvertInstanceCommand(RemoteInstanceTO remoteInstanceTO, Hypervisor.HypervisorType hypervisorType, boolean checkConversionSupport) {
         ConvertInstanceCommand cmd = Mockito.mock(ConvertInstanceCommand.class);
         Mockito.when(cmd.getSourceInstance()).thenReturn(remoteInstanceTO);
         Mockito.when(cmd.getDestinationHypervisorType()).thenReturn(hypervisorType);
         Mockito.when(cmd.getWait()).thenReturn(14400);
         Mockito.when(cmd.getConversionTemporaryLocation()).thenReturn(secondaryDataStore);
+        Mockito.when(cmd.getCheckConversionSupport()).thenReturn(checkConversionSupport);
         return cmd;
     }
 
@@ -255,8 +247,8 @@ public class LibvirtConvertInstanceCommandWrapperTest {
     public void testExecuteConvertUnsupportedOnTheHost() {
         try (MockedStatic<Script> ignored = Mockito.mockStatic(Script.class)) {
             RemoteInstanceTO remoteInstanceTO = getRemoteInstanceTO(Hypervisor.HypervisorType.VMware);
-            ConvertInstanceCommand cmd = getConvertInstanceCommand(remoteInstanceTO, Hypervisor.HypervisorType.KVM);
-            Mockito.when(Script.runSimpleBashScriptForExitValue(LibvirtConvertInstanceCommandWrapper.checkIfConversionIsSupportedCommand)).thenReturn(1);
+            ConvertInstanceCommand cmd = getConvertInstanceCommand(remoteInstanceTO, Hypervisor.HypervisorType.KVM, true);
+            Mockito.when(Script.runSimpleBashScriptForExitValue(LibvirtComputingResource.INSTANCE_CONVERSION_SUPPORTED_CHECK_CMD)).thenReturn(1);
             Answer answer = convertInstanceCommandWrapper.execute(cmd, libvirtComputingResourceMock);
             Assert.assertFalse(answer.getResult());
         }
@@ -266,8 +258,8 @@ public class LibvirtConvertInstanceCommandWrapperTest {
     public void testExecuteConvertUnsupportedHypervisors() {
         try (MockedStatic<Script> ignored = Mockito.mockStatic(Script.class)) {
             RemoteInstanceTO remoteInstanceTO = getRemoteInstanceTO(Hypervisor.HypervisorType.XenServer);
-            ConvertInstanceCommand cmd = getConvertInstanceCommand(remoteInstanceTO, Hypervisor.HypervisorType.KVM);
-            Mockito.when(Script.runSimpleBashScriptForExitValue(LibvirtConvertInstanceCommandWrapper.checkIfConversionIsSupportedCommand)).thenReturn(0);
+            ConvertInstanceCommand cmd = getConvertInstanceCommand(remoteInstanceTO, Hypervisor.HypervisorType.KVM, true);
+            Mockito.when(Script.runSimpleBashScriptForExitValue(LibvirtComputingResource.INSTANCE_CONVERSION_SUPPORTED_CHECK_CMD)).thenReturn(0);
             Answer answer = convertInstanceCommandWrapper.execute(cmd, libvirtComputingResourceMock);
             Assert.assertFalse(answer.getResult());
         }
@@ -276,7 +268,7 @@ public class LibvirtConvertInstanceCommandWrapperTest {
     @Test
     public void testExecuteConvertFailure() {
         RemoteInstanceTO remoteInstanceTO = getRemoteInstanceTO(Hypervisor.HypervisorType.VMware);
-        ConvertInstanceCommand cmd = getConvertInstanceCommand(remoteInstanceTO, Hypervisor.HypervisorType.KVM);
+        ConvertInstanceCommand cmd = getConvertInstanceCommand(remoteInstanceTO, Hypervisor.HypervisorType.KVM, true);
         String localMountPoint = "/mnt/xyz";
         Mockito.when(temporaryPool.getLocalPath()).thenReturn(localMountPoint);
 
@@ -286,8 +278,9 @@ public class LibvirtConvertInstanceCommandWrapperTest {
                  Mockito.when(mock.getExitValue()).thenReturn(1);
              })
         ) {
-            Mockito.when(Script.runSimpleBashScriptForExitValue(LibvirtConvertInstanceCommandWrapper.checkIfConversionIsSupportedCommand)).thenReturn(0);
-            Mockito.when(Script.runSimpleBashScriptForExitValueAvoidLogging(Mockito.anyString())).thenReturn(0);
+            Mockito.when(libvirtComputingResourceMock.hostSupportsInstanceConversion()).thenReturn(true);
+            Mockito.when(Script.runSimpleBashScriptForExitValue(LibvirtComputingResource.INSTANCE_CONVERSION_SUPPORTED_CHECK_CMD)).thenReturn(0);
+            Mockito.when(Script.runSimpleBashScriptForExitValue(Mockito.anyString())).thenReturn(0);
             Mockito.when(Script.runSimpleBashScript(Mockito.anyString())).thenReturn("");
 
             Answer answer = convertInstanceCommandWrapper.execute(cmd, libvirtComputingResourceMock);

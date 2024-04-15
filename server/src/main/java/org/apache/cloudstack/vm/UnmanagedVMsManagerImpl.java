@@ -1596,7 +1596,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         DataStoreTO temporaryConvertLocation = null;
         String ovaTemplateDirAndNameOnConvertLocation = null;
         try {
-            HostVO convertHost = selectInstanceConvertionKVMHostInCluster(destinationCluster, convertInstanceHostId);
+            HostVO convertHost = selectInstanceConversionKVMHostInCluster(destinationCluster, convertInstanceHostId);
             checkConversionSupportOnHost(convertHost, sourceVM);
             LOGGER.debug(String.format("The host %s (%s) is selected to execute the conversion of the instance %s" +
                     " from VMware to KVM ", convertHost.getId(), convertHost.getName(), sourceVM));
@@ -1670,8 +1670,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     private void checkUnmanagedNicAndNetworkMacAddressForImport(NetworkVO network, UnmanagedInstanceTO.Nic nic, boolean forced) {
         NicVO existingNic = nicDao.findByNetworkIdAndMacAddress(network.getId(), nic.getMacAddress());
         if (existingNic != null && !forced) {
-            String err = String.format("NIC with MAC address %s exists on network with ID %s and forced flag is disabled",
-                    nic.getMacAddress(), network.getUuid());
+            String err = String.format("NIC with MAC address %s already exists on network with ID %s and forced flag is disabled. " +
+                    "Retry with forced flag enabled if a new MAC address to be generated.", nic.getMacAddress(), network.getUuid());
             LOGGER.error(err);
             throw new CloudRuntimeException(err);
         }
@@ -1760,7 +1760,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return params;
     }
 
-    private HostVO selectInstanceConvertionKVMHostInCluster(Cluster destinationCluster, Long convertInstanceHostId) {
+    private HostVO selectInstanceConversionKVMHostInCluster(Cluster destinationCluster, Long convertInstanceHostId) {
         if (convertInstanceHostId != null) {
             HostVO selectedHost = hostDao.findById(convertInstanceHostId);
             if (selectedHost == null) {
@@ -1777,23 +1777,23 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             }
             return selectedHost;
         }
-        List<HostVO> hosts = hostDao.listByClusterAndHypervisorType(destinationCluster.getId(), destinationCluster.getHypervisorType());
-        if (CollectionUtils.isEmpty(hosts)) {
-            String err = String.format("Could not find any running %s host in cluster %s",
-                    destinationCluster.getHypervisorType(), destinationCluster.getName());
-            LOGGER.error(err);
-            throw new CloudRuntimeException(err);
+
+        // Auto select host with conversion capability
+        List<HostVO> hosts = hostDao.listByClusterHypervisorTypeAndHostCapability(destinationCluster.getId(), destinationCluster.getHypervisorType(), Host.HOST_INSTANCE_CONVERSION);
+        if (CollectionUtils.isNotEmpty(hosts)) {
+            return hosts.get(new Random().nextInt(hosts.size()));
         }
-        List<HostVO> filteredHosts = hosts.stream()
-                .filter(x -> x.getResourceState() == ResourceState.Enabled)
-                .collect(Collectors.toList());
-        if (CollectionUtils.isEmpty(filteredHosts)) {
-            String err = String.format("Could not find a %s host in cluster %s to perform the instance conversion",
-                    destinationCluster.getHypervisorType(), destinationCluster.getName());
-            LOGGER.error(err);
-            throw new CloudRuntimeException(err);
+
+        // Try without host capability check
+        hosts = hostDao.listByClusterAndHypervisorType(destinationCluster.getId(), destinationCluster.getHypervisorType());
+        if (CollectionUtils.isNotEmpty(hosts)) {
+            return hosts.get(new Random().nextInt(hosts.size()));
         }
-        return filteredHosts.get(new Random().nextInt(filteredHosts.size()));
+
+        String err = String.format("Could not find any suitable %s host in cluster %s to perform the instance conversion",
+                destinationCluster.getHypervisorType(), destinationCluster.getName());
+        LOGGER.error(err);
+        throw new CloudRuntimeException(err);
     }
 
     private void checkConversionSupportOnHost(HostVO convertHost, String sourceVM) {

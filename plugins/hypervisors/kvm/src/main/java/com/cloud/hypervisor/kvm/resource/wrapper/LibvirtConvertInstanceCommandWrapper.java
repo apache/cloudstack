@@ -65,8 +65,6 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
     private static final List<Hypervisor.HypervisorType> supportedInstanceConvertSourceHypervisors =
             List.of(Hypervisor.HypervisorType.VMware);
 
-    protected static final String checkIfConversionIsSupportedCommand = "which virt-v2v";
-
     @Override
     public Answer execute(ConvertInstanceCommand cmd, LibvirtComputingResource serverResource) {
         RemoteInstanceTO sourceInstance = cmd.getSourceInstance();
@@ -79,9 +77,9 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         String sourceOVAFile = ovaTemplateDirAndNameOnConversionLocation + ".ova";
         long timeout = (long) cmd.getWait() * 1000;
 
-        if (cmd.getCheckConversionSupport() && !isInstanceConversionSupportedOnHost()) {
+        if (cmd.getCheckConversionSupport() && !serverResource.hostSupportsInstanceConversion()) {
             String msg = String.format("Cannot convert the instance %s from VMware as the virt-v2v binary is not found. " +
-                    "Please install virt-v2v on the host before attempting the instance conversion", sourceInstanceName);
+                    "Please install virt-v2v on the host before attempting the instance conversion.", sourceInstanceName);
             s_logger.info(msg);
             return new ConvertInstanceAnswer(cmd, false, msg);
         }
@@ -203,11 +201,6 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         }
         s_logger.info(String.format("Cleaning up temporary domain %s after conversion from temporary location", temporaryConvertUuid));
         Script.runSimpleBashScript(String.format("rm -f %s/%s*.xml", temporaryStoragePool.getLocalPath(), temporaryConvertUuid));
-    }
-
-    protected boolean isInstanceConversionSupportedOnHost() {
-        int exitValue = Script.runSimpleBashScriptForExitValue(checkIfConversionIsSupportedCommand);
-        return exitValue == 0;
     }
 
     protected void sanitizeDisksPath(List<LibvirtVMDef.DiskDef> disks) {

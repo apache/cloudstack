@@ -26,7 +26,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -34,7 +33,6 @@ import org.mockito.junit.MockitoJUnitRunner;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckConvertInstanceCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
-import com.cloud.utils.script.Script;
 
 @RunWith(MockitoJUnitRunner.class)
 public class LibvirtCheckConvertInstanceCommandWrapperTest {
@@ -53,30 +51,17 @@ public class LibvirtCheckConvertInstanceCommandWrapperTest {
     }
 
     @Test
-    public void testIsInstanceConversionSupportedOnHost() {
-        try (MockedStatic<Script> ignored = Mockito.mockStatic(Script.class)) {
-            Mockito.when(Script.runSimpleBashScriptForExitValue(LibvirtConvertInstanceCommandWrapper.checkIfConversionIsSupportedCommand)).thenReturn(0);
-            boolean supported = checkConvertInstanceCommandWrapper.isInstanceConversionSupportedOnHost();
-            assertTrue(supported);
-        }
-    }
-
-    @Test
     public void testCheckInstanceCommand_success() {
-        try (MockedStatic<Script> ignored = Mockito.mockStatic(Script.class)) {
-            Mockito.when(Script.runSimpleBashScriptForExitValue(LibvirtConvertInstanceCommandWrapper.checkIfConversionIsSupportedCommand)).thenReturn(0);
-            Answer answer = checkConvertInstanceCommandWrapper.execute(checkConvertInstanceCommandMock, libvirtComputingResourceMock);
-            assertTrue(answer.getResult());
-        }
+        Mockito.when(libvirtComputingResourceMock.hostSupportsInstanceConversion()).thenReturn(true);
+        Answer answer = checkConvertInstanceCommandWrapper.execute(checkConvertInstanceCommandMock, libvirtComputingResourceMock);
+        assertTrue(answer.getResult());
     }
 
     @Test
     public void testCheckInstanceCommand_failure() {
-        try (MockedStatic<Script> ignored = Mockito.mockStatic(Script.class)) {
-            Mockito.when(Script.runSimpleBashScriptForExitValue(LibvirtConvertInstanceCommandWrapper.checkIfConversionIsSupportedCommand)).thenReturn(1);
-            Answer answer = checkConvertInstanceCommandWrapper.execute(checkConvertInstanceCommandMock, libvirtComputingResourceMock);
-            assertFalse(answer.getResult());
-            assertTrue(StringUtils.isNotBlank(answer.getDetails()));
-        }
+        Mockito.when(libvirtComputingResourceMock.hostSupportsInstanceConversion()).thenReturn(false);
+        Answer answer = checkConvertInstanceCommandWrapper.execute(checkConvertInstanceCommandMock, libvirtComputingResourceMock);
+        assertFalse(answer.getResult());
+        assertTrue(StringUtils.isNotBlank(answer.getDetails()));
     }
 }
