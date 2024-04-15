@@ -20,15 +20,14 @@ package com.cloud.hypervisor.kvm.resource;
 
 import java.util.concurrent.Callable;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.LibvirtException;
 
 public class MigrateKVMAsync implements Callable<Domain> {
 
-    protected Logger logger = LogManager.getLogger(getClass());
+    protected Logger logger = Logger.getLogger(getClass());
 
     private final LibvirtComputingResource libvirtComputingResource;
 
