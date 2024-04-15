@@ -415,6 +415,9 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
             updateNeeded = true;
         }
         if (secretKey != null) {
+            if (StringUtils.isBlank(secretKey)) {
+                secretKey = null;
+            }
             webhook.setSecretKey(secretKey);
             updateNeeded = true;
         }
