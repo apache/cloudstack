@@ -33,7 +33,7 @@ import javax.inject.Inject;
 
 
 @APICommand(name = "updateGuiTheme", description = "Updates an existing GUI theme.", responseObject = GuiThemeResponse.class, entityType = {GuiThemeVO.class},
-        since = "4.18.0.4-scclouds", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin})
+        since = "4.20.0.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin})
 public class UpdateGuiThemeCmd extends BaseCmd {
 
     @Inject

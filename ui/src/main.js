@@ -63,7 +63,6 @@ vueApp.use(imagesUtilPlugin)
 vueApp.use(extensions)
 vueApp.use(directives)
 
-
 fetch('config.json?ts=' + Date.now()).then(response => response.json()).then(async config => {
   vueProps.$config = config
   let basUrl = config.apiBase
