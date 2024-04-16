@@ -33,7 +33,7 @@ import javax.inject.Inject;
 
 @APICommand(name = "createGuiTheme", description = "Creates a customized GUI theme for a set of Common Names (fixed or wildcard), a set of domain UUIDs, and/or a set of " +
         "account UUIDs.", responseObject = GuiThemeResponse.class, entityType = {GuiThemeVO.class}, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
-        since = "4.18.0.4-scclouds", authorized = {RoleType.Admin})
+        since = "4.20.0.0", authorized = {RoleType.Admin})
 public class CreateGuiThemeCmd extends BaseCmd {
 
     @Inject
