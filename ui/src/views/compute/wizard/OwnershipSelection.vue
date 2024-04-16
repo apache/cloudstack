@@ -19,6 +19,7 @@
   <a-form layout="vertical" >
     <a-form-item :label="$t('label.accounttype')">
       <a-select
+        @change="changeDomain"
         v-model:value="selectedAccountType"
         defaultValue="account"
         autoFocus
@@ -69,7 +70,7 @@
     <template v-if="selectedAccountType === $t('label.account')">
       <a-form-item :label="$t('label.account')" required>
         <a-select
-          @change="changeAccount"
+          @change="emitChangeEvent"
           v-model:value="selectedAccount"
           showSearch
           optionFilterProp="label"
@@ -98,7 +99,7 @@
     <template v-else>
       <a-form-item :label="$t('label.project')" required>
         <a-select
-          @change="changeProject"
+          @change="emitChangeEvent"
           v-model:value="selectedProject"
           showSearch
           optionFilterProp="label"
@@ -138,11 +139,16 @@ export default {
       domains: [],
       accounts: [],
       projects: [],
-      selectedAccountType: this.$t('label.account'),
+      selectedAccountType: this.$store.getters.project?.id ? this.$t('label.project') : this.$t('label.account'),
       selectedDomain: null,
       selectedAccount: null,
       selectedProject: null,
       loading: false
+    }
+  },
+  props: {
+    override: {
+      type: Object
     }
   },
   created () {
@@ -159,9 +165,19 @@ export default {
       })
         .then((response) => {
           this.domains = response.listdomainsresponse.domain
-          this.selectedDomain = this.domains[0].id
-          this.fetchAccounts()
-          this.fetchProjects()
+          if (this.override) {
+            this.domains = this.domains.filter(item => this.override.domains.has(item.id))
+          }
+          if (this.domains.length === 0) {
+            this.selectedDomain = null
+            this.selectedProject = null
+            this.selectedAccount = null
+            return
+          }
+          const domainIds = this.domains?.map(domain => domain.id)
+          const ownerDomainId = this.$store.getters.project?.domainid || this.$store.getters.userInfo.domainid
+          this.selectedDomain = domainIds?.includes(ownerDomainId) ? ownerDomainId : this.domains?.[0]?.id
+          this.changeDomain()
         })
         .catch((error) => {
           this.$notifyError(error)
@@ -181,6 +197,17 @@ export default {
       })
         .then((response) => {
           this.accounts = response.listaccountsresponse.account
+          if (this.override?.accounts && this.accounts) {
+            this.accounts = this.accounts.filter(item => this.override.accounts.has(item.name))
+          }
+          const accountNames = this.accounts.map(account => account.name)
+          if (this.selectedDomain === this.$store.getters.userInfo.domainid && accountNames.includes(this.$store.getters.userInfo.account)) {
+            this.selectedAccount = this.$store.getters.userInfo.account
+          } else {
+            this.selectedAccount = this.accounts?.[0]?.name
+          }
+          this.selectedProject = null
+          this.emitChangeEvent()
         })
         .catch((error) => {
           this.$notifyError(error)
@@ -201,6 +228,12 @@ export default {
       })
         .then((response) => {
           this.projects = response.listprojectsresponse.project
+          if (this.override?.projects && this.projects) {
+            this.projects = this.projects.filter(item => this.override.projects.has(item.id))
+          }
+          this.selectedProject = this.projects?.map(project => project.id)?.includes(this.$store.getters.project?.id) ? this.$store.getters.project?.id : this.projects?.[0]?.id
+          this.selectedAccount = null
+          this.emitChangeEvent()
         })
         .catch((error) => {
           this.$notifyError(error)
@@ -210,17 +243,13 @@ export default {
         })
     },
     changeDomain () {
-      this.selectedAccount = null
-      this.selectedProject = null
-      this.fetchAccounts()
-      this.fetchProjects()
+      if (this.selectedAccountType === this.$t('label.account')) {
+        this.fetchAccounts()
+      } else {
+        this.fetchProjects()
+      }
     },
-    changeAccount () {
-      this.selectedProject = null
-      this.$emit('fetch-owner', this)
-    },
-    changeProject () {
-      this.selectedAccount = null
+    emitChangeEvent () {
       this.$emit('fetch-owner', this)
     }
   }
