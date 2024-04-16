@@ -5557,18 +5557,22 @@ public class ApiResponseHelper implements ResponseGenerator {
     public GuiThemeResponse createGuiThemeResponse(GuiThemeJoinVO guiThemeJoinVO) {
         GuiThemeResponse guiThemeResponse = new GuiThemeResponse();
 
-        guiThemeResponse.setId(guiThemeJoinVO.getUuid());
-        guiThemeResponse.setName(guiThemeJoinVO.getName());
-        guiThemeResponse.setDescription(guiThemeJoinVO.getDescription());
-        guiThemeResponse.setCss(guiThemeJoinVO.getCss());
+        Long callerId = CallContext.current().getCallingAccount().getAccountId();
+        if (callerId != Account.ACCOUNT_ID_SYSTEM && _accountMgr.isRootAdmin(callerId)) {
+            guiThemeResponse.setId(guiThemeJoinVO.getUuid());
+            guiThemeResponse.setName(guiThemeJoinVO.getName());
+            guiThemeResponse.setDescription(guiThemeJoinVO.getDescription());
+            guiThemeResponse.setCommonNames(guiThemeJoinVO.getCommonNames());
+            guiThemeResponse.setDomainIds(guiThemeJoinVO.getDomains());
+            guiThemeResponse.setRecursiveDomains(guiThemeJoinVO.isRecursiveDomains());
+            guiThemeResponse.setAccountIds(guiThemeJoinVO.getAccounts());
+            guiThemeResponse.setPublic(guiThemeJoinVO.getIsPublic());
+            guiThemeResponse.setCreated(guiThemeJoinVO.getCreated());
+            guiThemeResponse.setRemoved(guiThemeJoinVO.getRemoved());
+        }
+
         guiThemeResponse.setJsonConfiguration(guiThemeJoinVO.getJsonConfiguration());
-        guiThemeResponse.setCommonNames(guiThemeJoinVO.getCommonNames());
-        guiThemeResponse.setDomainIds(guiThemeJoinVO.getDomains());
-        guiThemeResponse.setRecursiveDomains(guiThemeJoinVO.isRecursiveDomains());
-        guiThemeResponse.setAccountIds(guiThemeJoinVO.getAccounts());
-        guiThemeResponse.setPublic(guiThemeJoinVO.getIsPublic());
-        guiThemeResponse.setCreated(guiThemeJoinVO.getCreated());
-        guiThemeResponse.setRemoved(guiThemeJoinVO.getRemoved());
+        guiThemeResponse.setCss(guiThemeJoinVO.getCss());
         guiThemeResponse.setResponseName("guithemes");
 
         return guiThemeResponse;
