@@ -806,6 +806,11 @@ public class EventTypes {
     public static final String VM_LEASE_CANCELLED = "VM.LEASE.CANCELLED";
     public static final String VM_LEASE_EXPIRING = "VM.LEASE.EXPIRING";
 
+    // GUI Theme
+    public static final String EVENT_GUI_THEME_CREATE = "GUI.THEME.CREATE";
+    public static final String EVENT_GUI_THEME_REMOVE = "GUI.THEME.REMOVE";
+    public static final String EVENT_GUI_THEME_UPDATE = "GUI.THEME.UPDATE";
+
     static {
 
         // TODO: need a way to force author adding event types to declare the entity details as well, with out braking
@@ -1306,6 +1311,11 @@ public class EventTypes {
         entityEventDetails.put(VM_LEASE_EXPIRING, VirtualMachine.class);
         entityEventDetails.put(VM_LEASE_DISABLED, VirtualMachine.class);
         entityEventDetails.put(VM_LEASE_CANCELLED, VirtualMachine.class);
+
+        // GUI theme
+        entityEventDetails.put(EVENT_GUI_THEME_CREATE, "GuiTheme");
+        entityEventDetails.put(EVENT_GUI_THEME_REMOVE, "GuiTheme");
+        entityEventDetails.put(EVENT_GUI_THEME_UPDATE, "GuiTheme");
     }
 
     public static boolean isNetworkEvent(String eventType) {

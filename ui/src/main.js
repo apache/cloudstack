@@ -42,6 +42,9 @@ import {
 } from './utils/plugins'
 import { VueAxios } from './utils/request'
 import directives from './utils/directives'
+import Cookies from 'js-cookie'
+import { api } from '@/api'
+import { applyCustomGuiTheme } from './utils/guiTheme'
 
 vueApp.use(VueAxios, router)
 vueApp.use(pollJobPlugin)
@@ -60,7 +63,8 @@ vueApp.use(imagesUtilPlugin)
 vueApp.use(extensions)
 vueApp.use(directives)
 
-fetch('config.json?ts=' + Date.now()).then(response => response.json()).then(config => {
+
+fetch('config.json?ts=' + Date.now()).then(response => response.json()).then(async config => {
   vueProps.$config = config
   let basUrl = config.apiBase
   if (config.multipleServer) {
@@ -68,6 +72,19 @@ fetch('config.json?ts=' + Date.now()).then(response => response.json()).then(con
   }
 
   vueProps.axios.defaults.baseURL = basUrl
+
+  const userid = Cookies.get('userid')
+  let accountid = null
+  let domainid = null
+
+  if (userid !== undefined) {
+    await api('listUsers', { userid: userid }).then(response => {
+      accountid = response.listusersresponse.user[0].accountid
+      domainid = response.listusersresponse.user[0].domainid
+    })
+  }
+
+  await applyCustomGuiTheme(accountid, domainid)
 
   loadLanguageAsync().then(() => {
     vueApp.use(store)

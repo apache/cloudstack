@@ -17,6 +17,7 @@
   "logo": "assets/logo.svg",
   "minilogo": "assets/mini-logo.svg",
   "banner": "assets/banner.svg",
+  "favicon": "cloud.ico",
   "error": {
     "403": "assets/403.png",
     "404": "assets/404.png",

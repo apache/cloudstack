@@ -87,6 +87,7 @@ import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
+import org.apache.cloudstack.api.command.user.gui.themes.ListGuiThemesCmd;
 import org.apache.cloudstack.api.command.user.offering.ListDiskOfferingsCmd;
 import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
 import org.apache.cloudstack.api.command.user.project.ListProjectInvitationsCmd;
@@ -953,6 +954,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 final User user = ApiDBUtils.findUserById(userId);
                 return commandAvailable(remoteAddress, commandName, user);
             } else {
+                if (commandName.equalsIgnoreCase(ListGuiThemesCmd.class.getAnnotation(APICommand.class).name())) {
+                    return true;
+                }
                 // check against every available command to see if the command exists or not
                 if (!s_apiNameCmdClassMap.containsKey(commandName) && !commandName.equals("login") && !commandName.equals("logout")) {
                     final String errorMessage = "The given command " + commandName + " either does not exist, is not available" +
