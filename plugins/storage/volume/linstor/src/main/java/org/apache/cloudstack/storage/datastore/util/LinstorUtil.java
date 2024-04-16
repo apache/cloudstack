@@ -78,16 +78,16 @@ public class LinstorUtil {
         return nodes.stream().map(Node::getName).collect(Collectors.toList());
     }
 
-    public static com.linbit.linstor.api.model.StoragePool
-    getDiskfulStoragePool(@Nonnull DevelopersApi api, @Nonnull String rscName) throws ApiException
+    public static List<com.linbit.linstor.api.model.StoragePool>
+    getDiskfulStoragePools(@Nonnull DevelopersApi api, @Nonnull String rscName) throws ApiException
     {
         List<ResourceWithVolumes> resources = api.viewResources(
-            Collections.emptyList(),
-            Collections.singletonList(rscName),
-            Collections.emptyList(),
-            Collections.emptyList(),
-            null,
-            null);
+                Collections.emptyList(),
+                Collections.singletonList(rscName),
+                Collections.emptyList(),
+                Collections.emptyList(),
+                null,
+                null);
 
         String nodeName = null;
         String storagePoolName = null;
@@ -108,13 +108,23 @@ public class LinstorUtil {
         }
 
         List<com.linbit.linstor.api.model.StoragePool> sps = api.viewStoragePools(
-            Collections.singletonList(nodeName),
-            Collections.singletonList(storagePoolName),
-            Collections.emptyList(),
-            null,
-            null
+                Collections.singletonList(nodeName),
+                Collections.singletonList(storagePoolName),
+                Collections.emptyList(),
+                null,
+                null
         );
-        return !sps.isEmpty() ? sps.get(0) : null;
+        return sps != null ? sps : Collections.emptyList();
+    }
+
+    public static com.linbit.linstor.api.model.StoragePool
+    getDiskfulStoragePool(@Nonnull DevelopersApi api, @Nonnull String rscName) throws ApiException
+    {
+        List<com.linbit.linstor.api.model.StoragePool> sps = getDiskfulStoragePools(api, rscName);
+        if (sps != null) {
+            return !sps.isEmpty() ? sps.get(0) : null;
+        }
+        return null;
     }
 
     public static String getSnapshotPath(com.linbit.linstor.api.model.StoragePool sp, String rscName, String snapshotName) {

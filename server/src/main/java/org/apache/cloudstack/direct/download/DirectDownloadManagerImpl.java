@@ -270,7 +270,8 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
         PrimaryDataStoreTO to = (PrimaryDataStoreTO) primaryDataStore.getTO();
 
         DownloadProtocol protocol = getProtocolFromUrl(url);
-        DirectDownloadCommand cmd = getDirectDownloadCommandFromProtocol(protocol, url, templateId, to, checksum, headers);
+        DirectDownloadCommand cmd = getDirectDownloadCommandFromProtocol(protocol, url, templateId, to, checksum,
+                headers);
         cmd.setTemplateSize(template.getSize());
         cmd.setFormat(template.getFormat());
 
@@ -391,19 +392,23 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
     /**
      * Return DirectDownloadCommand according to the protocol
      */
-    private DirectDownloadCommand getDirectDownloadCommandFromProtocol(DownloadProtocol protocol, String url, Long templateId, PrimaryDataStoreTO destPool,
-                                                                       String checksum, Map<String, String> httpHeaders) {
+    private DirectDownloadCommand getDirectDownloadCommandFromProtocol(DownloadProtocol protocol, String url,
+               Long templateId, PrimaryDataStoreTO destPool, String checksum, Map<String, String> httpHeaders) {
         int connectTimeout = DirectDownloadConnectTimeout.value();
         int soTimeout = DirectDownloadSocketTimeout.value();
         int connectionRequestTimeout = DirectDownloadConnectionRequestTimeout.value();
+        boolean followRedirects = StorageManager.DataStoreDownloadFollowRedirects.value();
         if (protocol.equals(DownloadProtocol.HTTP)) {
-            return new HttpDirectDownloadCommand(url, templateId, destPool, checksum, httpHeaders, connectTimeout, soTimeout);
+            return new HttpDirectDownloadCommand(url, templateId, destPool, checksum, httpHeaders, connectTimeout,
+                    soTimeout, followRedirects);
         } else if (protocol.equals(DownloadProtocol.HTTPS)) {
-            return new HttpsDirectDownloadCommand(url, templateId, destPool, checksum, httpHeaders, connectTimeout, soTimeout, connectionRequestTimeout);
+            return new HttpsDirectDownloadCommand(url, templateId, destPool, checksum, httpHeaders, connectTimeout,
+                    soTimeout, connectionRequestTimeout, followRedirects);
         } else if (protocol.equals(DownloadProtocol.NFS)) {
             return new NfsDirectDownloadCommand(url, templateId, destPool, checksum, httpHeaders);
         } else if (protocol.equals(DownloadProtocol.METALINK)) {
-            return new MetalinkDirectDownloadCommand(url, templateId, destPool, checksum, httpHeaders, connectTimeout, soTimeout);
+            return new MetalinkDirectDownloadCommand(url, templateId, destPool, checksum, httpHeaders, connectTimeout,
+                    soTimeout, followRedirects);
         } else {
             return null;
         }

@@ -1,4 +1,4 @@
-// Licensed to the Apacohe Software Foundation (ASF) under one
+// Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
@@ -49,6 +49,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
+import com.cloud.configuration.Resource;
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.network.vpc.VpcVO;
@@ -87,6 +88,7 @@ import org.apache.cloudstack.framework.messagebus.MessageDispatcher;
 import org.apache.cloudstack.framework.messagebus.MessageHandler;
 import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -295,6 +297,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     private AgentManager _agentMgr;
     @Inject
     private VMInstanceDao _vmDao;
+    @Inject
+    private ReservationDao _reservationDao;
     @Inject
     private ServiceOfferingDao _offeringDao;
     @Inject
@@ -896,7 +900,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @DB
     protected Ternary<VMInstanceVO, ReservationContext, ItWorkVO> changeToStartState(final VirtualMachineGuru vmGuru, final VMInstanceVO vm, final User caller,
-            final Account account) throws ConcurrentOperationException {
+            final Account account, Account owner, ServiceOfferingVO offering, VirtualMachineTemplate template) throws ConcurrentOperationException {
         final long vmId = vm.getId();
 
         ItWorkVO work = new ItWorkVO(UUID.randomUUID().toString(), _nodeId, State.Starting, vm.getType(), vm.getId());
@@ -914,6 +918,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                                 if (stateTransitTo(vm, Event.StartRequested, null, work.getId())) {
                                     logger.debug("Successfully transitioned to start state for {} reservation id = {}", vm, work.getId());
+                                    if (VirtualMachine.Type.User.equals(vm.type) && ResourceCountRunningVMsonly.value()) {
+                                        _resourceLimitMgr.incrementVmResourceCount(owner.getAccountId(), vm.isDisplay(), offering, template);
+                                    }
                                     return new Ternary<>(vm, context, work);
                                 }
 
@@ -1097,7 +1104,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final VirtualMachineGuru vmGuru = getVmGuru(vm);
 
-        final Ternary<VMInstanceVO, ReservationContext, ItWorkVO> start = changeToStartState(vmGuru, vm, caller, account);
+        final Account owner = _entityMgr.findById(Account.class, vm.getAccountId());
+        final ServiceOfferingVO offering = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
+        final VirtualMachineTemplate template = _entityMgr.findByIdIncludingRemoved(VirtualMachineTemplate.class, vm.getTemplateId());
+        final Ternary<VMInstanceVO, ReservationContext, ItWorkVO> start = changeToStartState(vmGuru, vm, caller, account, owner, offering, template);
         if (start == null) {
             return;
         }
@@ -1107,8 +1117,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         ItWorkVO work = start.third();
 
         VMInstanceVO startedVm = null;
-        final ServiceOfferingVO offering = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
-        final VirtualMachineTemplate template = _entityMgr.findByIdIncludingRemoved(VirtualMachineTemplate.class, vm.getTemplateId());
 
         DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), vm.getPodIdToDeployIn(), null, null, null, null, ctx);
         if (planToDeploy != null && planToDeploy.getDataCenterId() != 0) {
@@ -1120,12 +1128,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         final HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
-
-        // check resource count if ResourceCountRunningVMsonly.value() = true
-        final Account owner = _entityMgr.findById(Account.class, vm.getAccountId());
-        if (VirtualMachine.Type.User.equals(vm.type) && ResourceCountRunningVMsonly.value()) {
-            _resourceLimitMgr.incrementVmResourceCount(owner.getAccountId(), vm.isDisplay(), offering, template);
-        }
 
         boolean canRetry = true;
         ExcludeList avoids = null;
@@ -1693,17 +1695,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             return ExecuteInSequence.value();
         }
 
-        switch (hypervisorType) {
-            case KVM:
-            case XenServer:
-            case Hyperv:
-            case LXC:
-                return false;
-            case VMware:
-                return StorageManager.shouldExecuteInSequenceOnVmware();
-            default:
-                return ExecuteInSequence.value();
+        if (Set.of(HypervisorType.KVM, HypervisorType.XenServer, HypervisorType.Hyperv, HypervisorType.LXC).contains(hypervisorType)) {
+            return false;
+        } else if (hypervisorType.equals(HypervisorType.VMware)) {
+            return StorageManager.shouldExecuteInSequenceOnVmware();
         }
+        return ExecuteInSequence.value();
     }
 
     @Override
@@ -2211,16 +2208,21 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 _workDao.update(work.getId(), work);
             }
 
-            boolean result = stateTransitTo(vm, Event.OperationSucceeded, null);
-            if (result) {
-                vm.setPowerState(PowerState.PowerOff);
-                _vmDao.update(vm.getId(), vm);
-                if (VirtualMachine.Type.User.equals(vm.type) && ResourceCountRunningVMsonly.value()) {
-                    ServiceOfferingVO offering = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
-                    VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
-                    _resourceLimitMgr.decrementVmResourceCount(vm.getAccountId(), vm.isDisplay(), offering, template);
+            boolean result = Transaction.execute(new TransactionCallbackWithException<Boolean, NoTransitionException>() {
+                @Override
+                public Boolean doInTransaction(TransactionStatus status) throws NoTransitionException {
+                    boolean result = stateTransitTo(vm, Event.OperationSucceeded, null);
+
+                    if (result && VirtualMachine.Type.User.equals(vm.type) && ResourceCountRunningVMsonly.value()) {
+                        ServiceOfferingVO offering = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
+                        VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
+                        _resourceLimitMgr.decrementVmResourceCount(vm.getAccountId(), vm.isDisplay(), offering, template);
+                    }
+                    return result;
                 }
-            } else {
+            });
+
+            if (!result) {
                 throw new CloudRuntimeException("unable to stop " + vm);
             }
         } catch (final NoTransitionException e) {
@@ -2252,6 +2254,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (e == Event.OperationSucceeded) {
                 vm.setLastHostId(vm.getHostId());
             }
+        }
+
+        if (e.equals(VirtualMachine.Event.DestroyRequested) || e.equals(VirtualMachine.Event.ExpungeOperation)) {
+            _reservationDao.setResourceId(Resource.ResourceType.user_vm, null);
+            _reservationDao.setResourceId(Resource.ResourceType.cpu, null);
+            _reservationDao.setResourceId(Resource.ResourceType.memory, null);
         }
         return _stateMachine.transitTo(vm, e, new Pair<>(vm.getHostId(), hostId), _vmDao);
     }
@@ -5561,20 +5569,20 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public UserVm restoreVirtualMachine(final long vmId, final Long newTemplateId) throws ResourceUnavailableException, InsufficientCapacityException {
+    public UserVm restoreVirtualMachine(final long vmId, final Long newTemplateId, final Long rootDiskOfferingId, final boolean expunge, final Map<String, String> details) throws ResourceUnavailableException, InsufficientCapacityException {
         final AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
             VmWorkJobVO placeHolder = null;
             placeHolder = createPlaceHolderWork(vmId);
             try {
-                return orchestrateRestoreVirtualMachine(vmId, newTemplateId);
+                return orchestrateRestoreVirtualMachine(vmId, newTemplateId, rootDiskOfferingId, expunge, details);
             } finally {
                 if (placeHolder != null) {
                     _workJobDao.expunge(placeHolder.getId());
                 }
             }
         } else {
-            final Outcome<VirtualMachine> outcome = restoreVirtualMachineThroughJobQueue(vmId, newTemplateId);
+            final Outcome<VirtualMachine> outcome = restoreVirtualMachineThroughJobQueue(vmId, newTemplateId, rootDiskOfferingId, expunge, details);
 
             retrieveVmFromJobOutcome(outcome, String.valueOf(vmId), "restoreVirtualMachine");
 
@@ -5591,14 +5599,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    private UserVm orchestrateRestoreVirtualMachine(final long vmId, final Long newTemplateId) throws ResourceUnavailableException, InsufficientCapacityException {
-        logger.debug("Restoring vm " + vmId + " with new templateId " + newTemplateId);
+    private UserVm orchestrateRestoreVirtualMachine(final long vmId, final Long newTemplateId, final Long rootDiskOfferingId, final boolean expunge, final Map<String, String> details) throws ResourceUnavailableException, InsufficientCapacityException {
+        logger.debug("Restoring vm " + vmId + " with templateId : " + newTemplateId + " diskOfferingId : " + rootDiskOfferingId + " details : " + details);
         final CallContext context = CallContext.current();
         final Account account = context.getCallingAccount();
-        return _userVmService.restoreVirtualMachine(account, vmId, newTemplateId);
+        return _userVmService.restoreVirtualMachine(account, vmId, newTemplateId, rootDiskOfferingId, expunge, details);
     }
 
-    public Outcome<VirtualMachine> restoreVirtualMachineThroughJobQueue(final long vmId, final Long newTemplateId) {
+    public Outcome<VirtualMachine> restoreVirtualMachineThroughJobQueue(final long vmId, final Long newTemplateId, final Long rootDiskOfferingId, final boolean expunge, Map<String, String> details) {
         String commandName = VmWorkRestore.class.getName();
         Pair<VmWorkJobVO, Long> pendingWorkJob = retrievePendingWorkJob(vmId, commandName);
 
@@ -5608,7 +5616,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             Pair<VmWorkJobVO, VmWork> newVmWorkJobAndInfo = createWorkJobAndWorkInfo(commandName, vmId);
 
             workJob = newVmWorkJobAndInfo.first();
-            VmWorkRestore workInfo = new VmWorkRestore(newVmWorkJobAndInfo.second(), newTemplateId);
+            VmWorkRestore workInfo = new VmWorkRestore(newVmWorkJobAndInfo.second(), newTemplateId, rootDiskOfferingId, expunge, details);
 
             setCmdInfoAndSubmitAsyncJob(workJob, workInfo, vmId);
         }
@@ -5620,7 +5628,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @ReflectionUse
     private Pair<JobInfo.Status, String> orchestrateRestoreVirtualMachine(final VmWorkRestore work) throws Exception {
         VMInstanceVO vm = findVmById(work.getVmId());
-        UserVm uservm = orchestrateRestoreVirtualMachine(vm.getId(), work.getTemplateId());
+        UserVm uservm = orchestrateRestoreVirtualMachine(vm.getId(), work.getTemplateId(), work.getRootDiskOfferingId(), work.getExpunge(), work.getDetails());
         HashMap<Long, String> passwordMap = new HashMap<>();
         passwordMap.put(uservm.getId(), uservm.getPassword());
         return new Pair<>(JobInfo.Status.SUCCEEDED, _jobMgr.marshallResultObject(passwordMap));

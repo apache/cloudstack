@@ -306,7 +306,11 @@ export default {
           message: this.$t('label.loadbalancerinstance')
         })
         this.$emit('close-action')
-        this.parentFetchData()
+        if (this.$store.getters.project?.id) {
+          this.$router.push({ path: '/vm' })
+        } else {
+          this.parentFetchData()
+        }
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {

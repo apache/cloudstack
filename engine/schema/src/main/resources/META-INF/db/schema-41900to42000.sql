@@ -29,6 +29,14 @@ DROP INDEX `i_resource_count__type_domaintId`,
 ADD UNIQUE INDEX `i_resource_count__type_tag_accountId` (`type`,`tag`,`account_id`),
 ADD UNIQUE INDEX `i_resource_count__type_tag_domaintId` (`type`,`tag`,`domain_id`);
 
+
+ALTER TABLE `cloud`.`resource_reservation`
+    ADD COLUMN `resource_id` bigint unsigned NULL;
+
+ALTER TABLE `cloud`.`resource_reservation`
+    MODIFY COLUMN `amount` bigint NOT NULL;
+
+
 -- Update Default System offering for Router to 512MiB
 UPDATE `cloud`.`service_offering` SET ram_size = 512 WHERE unique_name IN ("Cloud.Com-SoftwareRouter", "Cloud.Com-SoftwareRouter-Local",
                                                                            "Cloud.Com-InternalLBVm", "Cloud.Com-InternalLBVm-Local",
@@ -62,3 +70,12 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.network_offerings','nsx_mode', 'varc
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vpc_offerings','for_nsx', 'int(1) unsigned DEFAULT "0" COMMENT "is nsx enabled for the resource"');
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vpc_offerings','nsx_mode', 'varchar(32) COMMENT "mode in which the network would route traffic"');
 
+
+-- Create table to persist quota email template configurations
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_email_configuration`(
+    `account_id` int(11) NOT NULL,
+    `email_template_id` bigint(20) NOT NULL,
+    `enabled` int(1) UNSIGNED NOT NULL,
+    PRIMARY KEY (`account_id`, `email_template_id`),
+    CONSTRAINT `FK_quota_email_configuration_account_id` FOREIGN KEY (`account_id`) REFERENCES `cloud_usage`.`quota_account`(`account_id`),
+    CONSTRAINT `FK_quota_email_configuration_email_template_id` FOREIGN KEY (`email_template_id`) REFERENCES `cloud_usage`.`quota_email_templates`(`id`));

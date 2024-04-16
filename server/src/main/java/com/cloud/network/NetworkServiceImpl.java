@@ -4109,7 +4109,13 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
                     // Add the config drive provider
                     addConfigDriveToPhysicalNetwork(pNetwork.getId());
-                    addNSXProviderToPhysicalNetwork(pNetwork.getId());
+
+                    // Add NSX provider
+                    try {
+                        addNSXProviderToPhysicalNetwork(pNetwork.getId());
+                    } catch (Exception ex) {
+                        logger.warn("Failed to add NSX provider to physical network due to:", ex.getMessage());
+                    }
 
                     CallContext.current().putContextParameter(PhysicalNetwork.class, pNetwork.getUuid());
 
@@ -4371,9 +4377,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         final String virtualMachineDomainRouterType = VirtualMachine.Type.DomainRouter.toString();
-        if (!virtualMachineDomainRouterType.equalsIgnoreCase(serviceOffering.getSystemVmType())) {
+        if (!virtualMachineDomainRouterType.equalsIgnoreCase(serviceOffering.getVmType())) {
             throw new InvalidParameterValueException(String.format("The specified service offering [%s] is of type [%s]. Virtual routers can only be created with service offering "
-                    + "of type [%s].", serviceOffering, serviceOffering.getSystemVmType(), virtualMachineDomainRouterType.toLowerCase()));
+                    + "of type [%s].", serviceOffering, serviceOffering.getVmType(), virtualMachineDomainRouterType.toLowerCase()));
         }
     }
 
@@ -5510,7 +5516,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         DataCenterVO dvo = _dcDao.findById(pvo.getDataCenterId());
         if (dvo.getNetworkType() == NetworkType.Advanced) {
 
-            Provider provider = Network.Provider.getProvider("Nsx");
+            Provider provider = Network.Provider.getProvider(Provider.Nsx.getName());
             if (provider == null) {
                 return null;
             }

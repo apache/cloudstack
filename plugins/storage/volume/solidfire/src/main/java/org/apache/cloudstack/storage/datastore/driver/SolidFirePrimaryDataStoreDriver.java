@@ -1673,4 +1673,9 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Override
     public void detachVolumeFromAllStorageNodes(Volume volume) {
     }
+
+    @Override
+    public boolean volumesRequireGrantAccessWhenUsed() {
+        return true;
+    }
 }
