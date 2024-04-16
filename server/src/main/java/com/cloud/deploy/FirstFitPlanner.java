@@ -567,7 +567,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-        allocationAlgorithm = configDao.getValue(Config.VmAllocationAlgorithm.key());
+        allocationAlgorithm = VmAllocationAlgorithm.value();
         globalDeploymentPlanner = configDao.getValue(Config.VmDeploymentPlanner.key());
         String configValue;
         if ((configValue = configDao.getValue(Config.ImplicitHostTags.key())) != null) {
@@ -594,6 +594,6 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {ClusterCPUCapacityDisableThreshold, ClusterMemoryCapacityDisableThreshold, ClusterThresholdEnabled};
+        return new ConfigKey<?>[] {ClusterCPUCapacityDisableThreshold, ClusterMemoryCapacityDisableThreshold, ClusterThresholdEnabled, VmAllocationAlgorithm};
     }
 }
