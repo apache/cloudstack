@@ -16,10 +16,16 @@
 // under the License.
 package org.apache.cloudstack.gui.theme.dao;
 
-import com.cloud.utils.db.GenericDaoBase;
-import org.apache.cloudstack.gui.themes.GuiThemeVO;
-import org.springframework.stereotype.Component;
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.gui.themes.GuiThemeJoinVO;
 
-@Component
-public class GuiThemeDaoImpl extends GenericDaoBase<GuiThemeVO, Long> implements GuiThemeDao {
+import java.util.List;
+
+public interface GuiThemeJoinDao extends GenericDao<GuiThemeJoinVO, Long> {
+    GuiThemeJoinVO findDefaultTheme();
+
+    Pair<List<GuiThemeJoinVO>, Integer> listGuiThemesWithNoAuthentication(String commonName);
+
+    Pair<List<GuiThemeJoinVO>, Integer> listGuiThemes(Long id, String name, String commonName, String domainUuid, String accountUuid, boolean listAll, boolean showRemoved, Boolean showPublic);
 }

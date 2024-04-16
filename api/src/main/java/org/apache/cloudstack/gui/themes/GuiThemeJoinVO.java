@@ -17,31 +17,25 @@
 package org.apache.cloudstack.gui.themes;
 
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
-import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import java.util.Date;
-import java.util.UUID;
 
 @Entity
-@Table(name = "gui_themes")
-public class GuiThemeVO implements InternalIdentity, Identity {
+@Table(name = "gui_themes_view")
+public class GuiThemeJoinVO implements InternalIdentity {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Long id;
 
     @Column(name = "uuid", nullable = false)
-    private String uuid = UUID.randomUUID().toString();
+    private String uuid;
 
     @Column(name = "name", nullable = false, length = 2048)
     private String name;
@@ -55,11 +49,20 @@ public class GuiThemeVO implements InternalIdentity, Identity {
     @Column(name = "json_configuration", nullable = false, length = 65535)
     private String jsonConfiguration;
 
-    @Column(name = "is_public")
-    private boolean isPublic;
+    @Column(name = "common_names", length = 65535)
+    private String commonNames;
+
+    @Column(name = "domains", length = 65535)
+    private String domains;
+
+    @Column(name = "accounts", length = 65535)
+    private String accounts;
 
     @Column(name = "recursive_domains")
-    private boolean recursiveDomains = false;
+    private boolean recursiveDomains;
+
+    @Column(name = "is_public")
+    private boolean isPublic;
 
     @Column(name = GenericDao.CREATED_COLUMN, nullable = false)
     @Temporal(value = TemporalType.TIMESTAMP)
@@ -69,27 +72,34 @@ public class GuiThemeVO implements InternalIdentity, Identity {
     @Temporal(value = TemporalType.TIMESTAMP)
     private Date removed = null;
 
-    public GuiThemeVO() {
-
+    public GuiThemeJoinVO() {
     }
 
-    public GuiThemeVO(String name, String description, String css, String jsonConfiguration, boolean recursiveDomains, boolean isPublic, Date created, Date removed) {
+    public GuiThemeJoinVO(Long id, String uuid, String name, String description, String css, String jsonConfiguration, String commonNames, String domains,
+                          String accounts, boolean recursiveDomains, boolean isPublic, Date created, Date removed) {
+        this.id = id;
+        this.uuid = uuid;
         this.name = name;
         this.description = description;
         this.css = css;
         this.jsonConfiguration = jsonConfiguration;
+        this.commonNames = commonNames;
+        this.domains = domains;
+        this.accounts = accounts;
         this.recursiveDomains = recursiveDomains;
         this.isPublic = isPublic;
         this.created = created;
         this.removed = removed;
     }
 
-    @Override
     public long getId() {
         return id;
     }
 
-    @Override
+    public void setId(Long id) {
+        this.id = id;
+    }
+
     public String getUuid() {
         return uuid;
     }
@@ -110,65 +120,31 @@ public class GuiThemeVO implements InternalIdentity, Identity {
         return jsonConfiguration;
     }
 
-    public Date getCreated() {
-        return created;
+    public String getCommonNames() {
+        return commonNames;
     }
 
-    public Date getRemoved() {
-        return removed;
+    public String getDomains() {
+        return domains;
     }
 
-    public boolean getIsPublic() {
-        return isPublic;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public void setCss(String css) {
-        this.css = css;
-    }
-
-    public void setJsonConfiguration(String jsonConfiguration) {
-        this.jsonConfiguration = jsonConfiguration;
-    }
-
-    public void setCreated(Date created) {
-        this.created = created;
-    }
-
-    public void setRemoved(Date removed) {
-        this.removed = removed;
-    }
-
-    public void setIsPublic(boolean isPublic) {
-        this.isPublic = isPublic;
+    public String getAccounts() {
+        return accounts;
     }
 
     public boolean isRecursiveDomains() {
         return recursiveDomains;
     }
 
-    public void setRecursiveDomains(boolean recursiveDomains) {
-        this.recursiveDomains = recursiveDomains;
+    public boolean getIsPublic() {
+        return isPublic;
     }
 
+    public Date getCreated() {
+        return created;
+    }
 
-    @Override
-    public String toString() {
-        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "uuid", "name", "description", "isPublic", "recursiveDomains");
+    public Date getRemoved() {
+        return removed;
     }
 }

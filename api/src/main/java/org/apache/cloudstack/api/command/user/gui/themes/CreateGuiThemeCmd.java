@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.GuiThemeResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.gui.themes.GuiThemeJoinVO;
 import org.apache.cloudstack.gui.themes.GuiThemeVO;
 import org.apache.cloudstack.gui.themes.GuiThemeService;
 
@@ -68,6 +69,10 @@ public class CreateGuiThemeCmd extends BaseCmd {
             "the `commonNames` is informed. If the `domainIds` or `accountIds` is informed, it is considered as `false`.")
     private Boolean isPublic = true;
 
+    @Parameter(name = ApiConstants.RECURSIVE_DOMAINS, type = CommandType.BOOLEAN, description = "Defines whether the subdomains of the informed domains are considered. Default " +
+            "value is false.")
+    private Boolean recursiveDomains = false;
+
     public String getName() {
         return name;
     }
@@ -100,20 +105,21 @@ public class CreateGuiThemeCmd extends BaseCmd {
         return isPublic;
     }
 
-    public void setIsPublic(Boolean isPublic) {
-        this.isPublic = isPublic;
+    public Boolean getRecursiveDomains() {
+        return recursiveDomains;
     }
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails(String.format("Name: %s, AccountIDs: %s, DomainIDs: %s, CommonNames: %s", getName(), getAccountIds(), getDomainIds(), getCommonNames()));
-        GuiThemeVO guiThemeVO = guiThemeService.createGuiTheme(this);
+        CallContext.current().setEventDetails(String.format("Name: %s, AccountIDs: %s, DomainIDs: %s, RecursiveDomains: %s, CommonNames: %s", getName(), getAccountIds(),
+                getDomainIds(), getRecursiveDomains(), getCommonNames()));
+        GuiThemeJoinVO guiTheme = guiThemeService.createGuiTheme(this);
 
-        if (guiThemeVO == null) {
+        if (guiTheme == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create the GUI theme.");
         }
 
-        GuiThemeResponse response = _responseGenerator.createGuiThemeResponse(guiThemeVO);
+        GuiThemeResponse response = _responseGenerator.createGuiThemeResponse(guiTheme);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

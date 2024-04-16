@@ -207,7 +207,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
-import org.apache.cloudstack.gui.themes.GuiThemeVO;
+import org.apache.cloudstack.gui.themes.GuiThemeJoinVO;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.network.BgpPeerVO;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
@@ -5554,20 +5554,21 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public GuiThemeResponse createGuiThemeResponse(GuiThemeVO guiThemeVO) {
+    public GuiThemeResponse createGuiThemeResponse(GuiThemeJoinVO guiThemeJoinVO) {
         GuiThemeResponse guiThemeResponse = new GuiThemeResponse();
 
-        guiThemeResponse.setId(guiThemeVO.getUuid());
-        guiThemeResponse.setName(guiThemeVO.getName());
-        guiThemeResponse.setDescription(guiThemeVO.getDescription());
-        guiThemeResponse.setCss(guiThemeVO.getCss());
-        guiThemeResponse.setJsonConfiguration(guiThemeVO.getJsonConfiguration());
-        guiThemeResponse.setCommonNames(guiThemeVO.getCommonNames());
-        guiThemeResponse.setDomainIds(guiThemeVO.getDomainUuids());
-        guiThemeResponse.setAccountIds(guiThemeVO.getAccountUuids());
-        guiThemeResponse.setPublic(guiThemeVO.getIsPublic());
-        guiThemeResponse.setCreated(guiThemeVO.getCreated());
-        guiThemeResponse.setRemoved(guiThemeVO.getRemoved());
+        guiThemeResponse.setId(guiThemeJoinVO.getUuid());
+        guiThemeResponse.setName(guiThemeJoinVO.getName());
+        guiThemeResponse.setDescription(guiThemeJoinVO.getDescription());
+        guiThemeResponse.setCss(guiThemeJoinVO.getCss());
+        guiThemeResponse.setJsonConfiguration(guiThemeJoinVO.getJsonConfiguration());
+        guiThemeResponse.setCommonNames(guiThemeJoinVO.getCommonNames());
+        guiThemeResponse.setDomainIds(guiThemeJoinVO.getDomains());
+        guiThemeResponse.setRecursiveDomains(guiThemeJoinVO.isRecursiveDomains());
+        guiThemeResponse.setAccountIds(guiThemeJoinVO.getAccounts());
+        guiThemeResponse.setPublic(guiThemeJoinVO.getIsPublic());
+        guiThemeResponse.setCreated(guiThemeJoinVO.getCreated());
+        guiThemeResponse.setRemoved(guiThemeJoinVO.getRemoved());
         guiThemeResponse.setResponseName("guithemes");
 
         return guiThemeResponse;

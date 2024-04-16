@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.GuiThemeResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.gui.themes.GuiThemeJoinVO;
 import org.apache.cloudstack.gui.themes.GuiThemeVO;
 import org.apache.cloudstack.gui.themes.GuiThemeService;
 
@@ -62,6 +63,10 @@ public class UpdateGuiThemeCmd extends BaseCmd {
     @Parameter(name = ApiConstants.DOMAIN_IDS, type = CommandType.STRING, length = 65535, description = "A set of domain UUIDs (also known as ID for " +
             "the end-user) separated by comma that can retrieve the theme.")
     private String domainIds;
+
+    @Parameter(name = ApiConstants.RECURSIVE_DOMAINS, type = CommandType.BOOLEAN, description = "Defines whether the subdomains of the informed domains are considered. Default " +
+            "value is false.")
+    private Boolean recursiveDomains = false;
 
     @Parameter(name = ApiConstants.ACCOUNT_IDS, type = CommandType.STRING, length = 65535, description = "A set of account UUIDs (also known as ID for" +
             " the end-user) separated by comma that can retrieve the theme.")
@@ -103,21 +108,25 @@ public class UpdateGuiThemeCmd extends BaseCmd {
         return accountIds;
     }
 
+    public Boolean getRecursiveDomains() {
+        return recursiveDomains;
+    }
+
     public Boolean getIsPublic() {
         return isPublic;
     }
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails(String.format("ID: %s, Name: %s, AccountIDs: %s, DomainIDs: %s, CommonNames: %s", getId(), getName(), getAccountIds(),
-                getDomainIds(), getCommonNames()));
-        GuiThemeVO guiThemeVO = guiThemeService.updateGuiTheme(this);
+        CallContext.current().setEventDetails(String.format("ID: %s, Name: %s, AccountIDs: %s, DomainIDs: %s, RecursiveDomains: %s, CommonNames: %s", getId(), getName(),
+                getAccountIds(), getDomainIds(), getRecursiveDomains(), getCommonNames()));
+        GuiThemeJoinVO guiThemeJoinVO = guiThemeService.updateGuiTheme(this);
 
-        if (guiThemeVO == null) {
+        if (guiThemeJoinVO == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update the GUI theme.");
         }
 
-        GuiThemeResponse response = _responseGenerator.createGuiThemeResponse(guiThemeVO);
+        GuiThemeResponse response = _responseGenerator.createGuiThemeResponse(guiThemeJoinVO);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
