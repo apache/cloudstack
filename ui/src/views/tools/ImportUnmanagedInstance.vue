@@ -909,6 +909,11 @@ export default {
         resourcestate: 'Enabled'
       }).then(json => {
         this.kvmHostsForConversion = json.listhostsresponse.host || []
+        this.kvmHostsForConversion.map(host => {
+          if (host.instanceconversionsupported !== null && host.instanceconversionsupported !== undefined && host.instanceconversionsupported) {
+            host.name = host.name + ' (' + this.$t('label.supported') + ')'
+          }
+        })
       })
     },
     fetchStoragePoolsForConversion () {
