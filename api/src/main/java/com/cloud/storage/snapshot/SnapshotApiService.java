@@ -111,7 +111,7 @@ public interface SnapshotApiService {
      * Extracts the snapshot to a particular location.
      *
      * @param cmd
-     *            the command specifying url (where the snapshot needs to be extracted to), zoneId (zone where the snapshot exists),
+     *            the command specifying url (where the snapshot needs to be extracted to), zoneId (zone where the snapshot exists) and
      *            id (the id of the snapshot)
      *
      */

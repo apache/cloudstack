@@ -77,7 +77,7 @@ public class ExtractSnapshotCmd extends BaseAsyncCmd {
     }
 
     /**
-     * @return id of snapshot to be extracted, SYSTEM id if not found so ERROR events are tracked.
+     * @return ID of the snapshot to extract, if any. Otherwise returns the ACCOUNT_ID_SYSTEM, so ERROR events will be traceable.
      */
     @Override
     public long getEntityOwnerId() {
