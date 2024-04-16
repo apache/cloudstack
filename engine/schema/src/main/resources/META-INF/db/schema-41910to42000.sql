@@ -85,5 +85,5 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.host_tags', 'is_implicit', 'int(1) U
 
 
 -- Fields related to Snapshot Extraction
-ALTER TABLE `cloud`.`snapshot_store_ref` ADD COLUMN `download_url` varchar(2048) NULL;
-ALTER TABLE `cloud`.`snapshot_store_ref` ADD COLUMN `download_url_created` datetime NULL;
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.snapshot_store_ref', 'download_url', 'varchar(2048) DEFAULT NULL');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.snapshot_store_ref', 'download_url_created', 'datetime DEFAULT NULL');
