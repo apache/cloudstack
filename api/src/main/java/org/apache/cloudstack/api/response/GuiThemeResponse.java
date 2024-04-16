@@ -21,11 +21,11 @@ import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
-import org.apache.cloudstack.gui.themes.GuiThemeVO;
+import org.apache.cloudstack.gui.themes.GuiThemeJoinVO;
 
 import java.util.Date;
 
-@EntityReference(value = {GuiThemeVO.class})
+@EntityReference(value = {GuiThemeJoinVO.class})
 public class GuiThemeResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ID)
@@ -55,6 +55,10 @@ public class GuiThemeResponse extends BaseResponse {
     @SerializedName(ApiConstants.DOMAIN_IDS)
     @Param(description = "A set of domain UUIDs (also known as ID for the end-user) separated by comma that can retrieve the theme.")
     private String domainIds;
+
+    @SerializedName(ApiConstants.RECURSIVE_DOMAINS)
+    @Param(description = "Whether to consider the subdomains of the informed domain IDs.")
+    private Boolean recursiveDomains;
 
     @SerializedName(ApiConstants.ACCOUNT_IDS)
     @Param(description = "A set of account UUIDs (also known as ID for the end-user) separated by comma that can retrieve the theme.")
@@ -159,6 +163,14 @@ public class GuiThemeResponse extends BaseResponse {
 
     public Date getRemoved() {
         return removed;
+    }
+
+    public Boolean getRecursiveDomains() {
+        return recursiveDomains;
+    }
+
+    public void setRecursiveDomains(Boolean recursiveDomains) {
+        this.recursiveDomains = recursiveDomains;
     }
 
     public void setRemoved(Date removed) {
