@@ -82,4 +82,4 @@ CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_email_configuration`(
 
 
 -- Quota inject tariff result into subsequent ones
-ALTER TABLE `cloud_usage`.`quota_tariff` ADD COLUMN `position` bigint(20) NOT NULL DEFAULT 1 COMMENT 'Position in the execution sequence for tariffs of the same type' ;
+CALL `cloud_usage`.`IDEMPOTENT_ADD_COLUMN`('cloud_usage.quota_tariff', 'position', 'bigint(20) NOT NULL DEFAULT 1 COMMENT "Position in the execution sequence for tariffs of the same type"');
