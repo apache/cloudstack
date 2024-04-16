@@ -278,7 +278,11 @@ known_categories = {
     'importVm': 'Virtual Machine',
     'Webhook': 'Webhook',
     'Webhooks': 'Webhook',
-    'purgeExpungedResources': 'Resource'
+    'purgeExpungedResources': 'Resource',
+    'listGuiThemes': 'GUI Theme',
+    'createGuiTheme': 'GUI Theme',
+    'updateGuiTheme': 'GUI Theme',
+    'removeGuiTheme': 'GUI Theme'
 }
 
 

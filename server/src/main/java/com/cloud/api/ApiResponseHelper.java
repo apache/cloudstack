@@ -96,6 +96,7 @@ import org.apache.cloudstack.api.response.GuestOSResponse;
 import org.apache.cloudstack.api.response.GuestOsMappingResponse;
 import org.apache.cloudstack.api.response.GuestVlanRangeResponse;
 import org.apache.cloudstack.api.response.GuestVlanResponse;
+import org.apache.cloudstack.api.response.GuiThemeResponse;
 import org.apache.cloudstack.api.response.HostForMigrationResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.HypervisorCapabilitiesResponse;
@@ -201,6 +202,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.gui.themes.GuiThemeVO;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import org.apache.cloudstack.region.PortableIp;
@@ -5279,5 +5281,25 @@ public class ApiResponseHelper implements ResponseGenerator {
         bucketResponse.setProvider(objectStoreVO.getProviderName());
         populateAccount(bucketResponse, bucket.getAccountId());
         return bucketResponse;
+    }
+
+    @Override
+    public GuiThemeResponse createGuiThemeResponse(GuiThemeVO guiThemeVO) {
+        GuiThemeResponse guiThemeResponse = new GuiThemeResponse();
+
+        guiThemeResponse.setId(guiThemeVO.getUuid());
+        guiThemeResponse.setName(guiThemeVO.getName());
+        guiThemeResponse.setDescription(guiThemeVO.getDescription());
+        guiThemeResponse.setCss(guiThemeVO.getCss());
+        guiThemeResponse.setJsonConfiguration(guiThemeVO.getJsonConfiguration());
+        guiThemeResponse.setCommonNames(guiThemeVO.getCommonNames());
+        guiThemeResponse.setDomainIds(guiThemeVO.getDomainUuids());
+        guiThemeResponse.setAccountIds(guiThemeVO.getAccountUuids());
+        guiThemeResponse.setPublic(guiThemeVO.getIsPublic());
+        guiThemeResponse.setCreated(guiThemeVO.getCreated());
+        guiThemeResponse.setRemoved(guiThemeVO.getRemoved());
+        guiThemeResponse.setResponseName("guithemes");
+
+        return guiThemeResponse;
     }
 }
