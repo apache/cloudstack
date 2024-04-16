@@ -64,11 +64,13 @@ export function login (arg) {
   })
 }
 
-export function logout () {
-  sourceToken.cancel()
-  message.destroy()
-  notification.destroy()
-  return api('logout')
+export async function logout () {
+  const result = await api('logout').finally(() => {
+    sourceToken.cancel()
+    message.destroy()
+    notification.destroy()
+  })
+  return result
 }
 
 export function oauthlogin (arg) {
