@@ -146,7 +146,7 @@ import org.apache.cloudstack.config.ConfigurationGroup;
 import org.apache.cloudstack.direct.download.DirectDownloadCertificate;
 import org.apache.cloudstack.direct.download.DirectDownloadCertificateHostMap;
 import org.apache.cloudstack.direct.download.DirectDownloadManager;
-import org.apache.cloudstack.gui.themes.GuiThemeVO;
+import org.apache.cloudstack.gui.themes.GuiThemeJoinVO;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import org.apache.cloudstack.region.PortableIp;
@@ -552,5 +552,5 @@ public interface ResponseGenerator {
 
     BucketResponse createBucketResponse(Bucket bucket);
 
-    GuiThemeResponse createGuiThemeResponse(GuiThemeVO guiThemeVO);
+    GuiThemeResponse createGuiThemeResponse(GuiThemeJoinVO guiThemeJoinVO);
 }

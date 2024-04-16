@@ -24,6 +24,8 @@ import com.cloud.user.Account;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -39,6 +41,10 @@ import org.apache.cloudstack.api.response.GuiThemeResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.gui.theme.dao.GuiThemeDao;
+import org.apache.cloudstack.gui.theme.dao.GuiThemeDetailsDao;
+import org.apache.cloudstack.gui.theme.dao.GuiThemeJoinDao;
+import org.apache.cloudstack.gui.themes.GuiThemeDetailsVO;
+import org.apache.cloudstack.gui.themes.GuiThemeJoinVO;
 import org.apache.cloudstack.gui.themes.GuiThemeVO;
 import org.apache.cloudstack.gui.themes.GuiThemeService;
 import org.apache.commons.lang3.StringUtils;
@@ -46,7 +52,6 @@ import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -70,6 +75,12 @@ public class GuiThemeServiceImpl implements GuiThemeService {
     GuiThemeDao guiThemeDao;
 
     @Inject
+    GuiThemeDetailsDao guiThemeDetailsDao;
+
+    @Inject
+    GuiThemeJoinDao guiThemeJoinDao;
+
+    @Inject
     ResponseGenerator responseGenerator;
 
     @Inject
@@ -84,7 +95,7 @@ public class GuiThemeServiceImpl implements GuiThemeService {
     @Override
     public ListResponse<GuiThemeResponse> listGuiThemes(ListGuiThemesCmd cmd) {
         ListResponse<GuiThemeResponse> response = new ListResponse<>();
-        Pair<List<GuiThemeVO>, Integer> result;
+        Pair<List<GuiThemeJoinVO>, Integer> result;
         boolean listOnlyDefaultTheme = cmd.getListOnlyDefaultTheme();
 
         if (listOnlyDefaultTheme) {
@@ -97,8 +108,8 @@ public class GuiThemeServiceImpl implements GuiThemeService {
         }
         List<GuiThemeResponse> guiThemeResponses = new ArrayList<>();
 
-        for (GuiThemeVO guiThemeVO : result.first()) {
-            GuiThemeResponse guiThemeResponse = responseGenerator.createGuiThemeResponse(guiThemeVO);
+        for (GuiThemeJoinVO guiThemeJoinVO : result.first()) {
+            GuiThemeResponse guiThemeResponse = responseGenerator.createGuiThemeResponse(guiThemeJoinVO);
             guiThemeResponses.add(guiThemeResponse);
         }
 
@@ -106,9 +117,9 @@ public class GuiThemeServiceImpl implements GuiThemeService {
         return response;
     }
 
-    private Pair<List<GuiThemeVO>, Integer> retrieveDefaultTheme() {
-        GuiThemeVO defaultTheme = guiThemeDao.findDefaultTheme();
-        List<GuiThemeVO> list = new ArrayList<>();
+    private Pair<List<GuiThemeJoinVO>, Integer> retrieveDefaultTheme() {
+        GuiThemeJoinVO defaultTheme = guiThemeJoinDao.findDefaultTheme();
+        List<GuiThemeJoinVO> list = new ArrayList<>();
 
         if (defaultTheme != null) {
             list.add(defaultTheme);
@@ -119,7 +130,7 @@ public class GuiThemeServiceImpl implements GuiThemeService {
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_GUI_THEME_CREATE, eventDescription = "Creating GUI theme")
-    public GuiThemeVO createGuiTheme(CreateGuiThemeCmd cmd) {
+    public GuiThemeJoinVO createGuiTheme(CreateGuiThemeCmd cmd) {
         String name = cmd.getName();
         String description = cmd.getDescription();
         String css = cmd.getCss();
@@ -128,6 +139,7 @@ public class GuiThemeServiceImpl implements GuiThemeService {
         String providedDomainIds = cmd.getDomainIds();
         String providedAccountIds = cmd.getAccountIds();
         boolean isPublic = cmd.getPublic();
+        Boolean recursiveDomains = cmd.getRecursiveDomains();
 
         if (StringUtils.isAllBlank(css, jsonConfiguration)) {
             throw new CloudRuntimeException("Either the `css` or `jsonConfiguration` parameter must be informed.");
@@ -139,8 +151,27 @@ public class GuiThemeServiceImpl implements GuiThemeService {
             isPublic = false;
         }
 
-        GuiThemeVO guiThemeVO = new GuiThemeVO(name, description, css, jsonConfiguration, commonNames, providedDomainIds, providedAccountIds, isPublic, new Date(), null);
-        return guiThemeDao.persist(guiThemeVO);
+        GuiThemeVO guiThemeVO = new GuiThemeVO(name, description, css, jsonConfiguration, recursiveDomains, isPublic, new Date(), null);
+        guiThemeDao.persist(guiThemeVO);
+        persistGuiThemeDetails(guiThemeVO.getId(), commonNames, providedDomainIds, providedAccountIds);
+        return guiThemeJoinDao.findById(guiThemeVO.getId());
+    }
+
+    protected void persistGuiThemeDetails(long guiThemeId, String commonNames, String providedDomainIds, String providedAccountIds) {
+        persistDetailValueIfNotNull(guiThemeId, commonNames, "commonName");
+        persistDetailValueIfNotNull(guiThemeId, providedDomainIds, "domain");
+        persistDetailValueIfNotNull(guiThemeId, providedAccountIds, "account");
+    }
+
+    protected void persistDetailValueIfNotNull(long guiThemeId, String providedParameter, String type) {
+        if (providedParameter == null) {
+            logger.trace(String.format("GUI theme provided parameter `%s` is null; therefore, it will be ignored.", type));
+            return;
+        }
+        for (String splitParameter : StringUtils.deleteWhitespace(providedParameter).split(",")) {
+            guiThemeDetailsDao.persist(new GuiThemeDetailsVO(guiThemeId, type, splitParameter));
+        }
+
     }
 
     protected boolean shouldSetGuiThemeToPrivate(String providedDomainIds, String providedAccountIds) {
@@ -177,21 +208,21 @@ public class GuiThemeServiceImpl implements GuiThemeService {
             return;
         }
 
-        GuiThemeVO defaultTheme = guiThemeDao.findDefaultTheme();
+        GuiThemeJoinVO defaultTheme = guiThemeJoinDao.findDefaultTheme();
 
-        if (defaultTheme != null && (idOfThemeToBeUpdated == null || defaultTheme.getId() != idOfThemeToBeUpdated.longValue())) {
+        if (defaultTheme != null && (idOfThemeToBeUpdated == null || defaultTheme.getId() != idOfThemeToBeUpdated)) {
             throw new CloudRuntimeException(String.format("Only one default GUI theme is allowed. Remove the current default theme %s and try again.", defaultTheme));
         }
 
         logger.info("The parameters `commonNames`, `domainIds` and `accountIds` were not informed. The created theme will be considered as the default theme.");
     }
 
-    protected Pair<List<GuiThemeVO>, Integer> listGuiThemesWithNoAuthentication(ListGuiThemesCmd cmd) {
-        return guiThemeDao.listGuiThemesWithNoAuthentication(cmd.getCommonName());
+    protected Pair<List<GuiThemeJoinVO>, Integer> listGuiThemesWithNoAuthentication(ListGuiThemesCmd cmd) {
+        return guiThemeJoinDao.listGuiThemesWithNoAuthentication(cmd.getCommonName());
     }
 
 
-    protected Pair<List<GuiThemeVO>, Integer> listGuiThemesInternal(ListGuiThemesCmd cmd) {
+    protected Pair<List<GuiThemeJoinVO>, Integer> listGuiThemesInternal(ListGuiThemesCmd cmd) {
         Long id = cmd.getId();
         String name = cmd.getName();
         String commonName = cmd.getCommonName();
@@ -201,7 +232,7 @@ public class GuiThemeServiceImpl implements GuiThemeService {
         boolean showRemoved = cmd.getShowRemoved();
         Boolean showPublic = cmd.getShowPublic();
 
-        return guiThemeDao.listGuiThemes(id, name, commonName, domainUuid, accountUuid, listAll, showRemoved, showPublic);
+        return guiThemeJoinDao.listGuiThemes(id, name, commonName, domainUuid, accountUuid, listAll, showRemoved, showPublic);
     }
 
     protected void validateParameters(String jsonConfig, String domainIds, String accountIds, String commonNames, Long idOfThemeToBeUpdated) {
@@ -302,7 +333,7 @@ public class GuiThemeServiceImpl implements GuiThemeService {
     }
 
     /**
-     * Validate if the comma separated list of UUIDs of the fields {@link GuiThemeVO#accountUuids} and {@link GuiThemeVO#domainUuids} are valid.
+     * Validate if the comma separated list of UUIDs of the fields {@link GuiThemeJoinVO#getAccounts()} and {@link GuiThemeJoinVO#getDomains()} are valid.
      * @param providedIds a comma separated list of UUIDs of {@link Account} or {@link Domain}
      * @param clazz the class to infer the DAO object. Valid options are: {@link Account} and {@link Domain}
      */
@@ -311,7 +342,7 @@ public class GuiThemeServiceImpl implements GuiThemeService {
             return;
         }
 
-        List<String> commaSeparatedIds = new ArrayList<>(Arrays.asList(providedIds.split("\\s*,\\s*")));
+        String[] commaSeparatedIds = providedIds.split("\\s*,\\s*");
         for (String id : commaSeparatedIds) {
             Object objectVO = entityManager.findByUuid(clazz, id);
 
@@ -323,18 +354,19 @@ public class GuiThemeServiceImpl implements GuiThemeService {
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_GUI_THEME_UPDATE, eventDescription = "Updating GUI theme")
-    public GuiThemeVO updateGuiTheme(UpdateGuiThemeCmd cmd) {
+    public GuiThemeJoinVO updateGuiTheme(UpdateGuiThemeCmd cmd) {
         Long guiThemeId = cmd.getId();
-        GuiThemeVO guiThemeVO = guiThemeDao.findById(guiThemeId);
+        GuiThemeJoinVO guiThemeJoinVO = guiThemeJoinDao.findById(guiThemeId);
 
         String name = cmd.getName();
         String description = cmd.getDescription();
         String css = cmd.getCss();
         String jsonConfiguration = cmd.getJsonConfiguration();
-        String commonNames = cmd.getCommonNames() == null ? guiThemeVO.getCommonNames() : cmd.getCommonNames();
-        String providedDomainIds = cmd.getDomainIds() == null ? guiThemeVO.getDomainUuids() : cmd.getDomainIds();
-        String providedAccountIds = cmd.getAccountIds() == null ? guiThemeVO.getAccountUuids() : cmd.getAccountIds();
+        String commonNames = cmd.getCommonNames() == null ? guiThemeJoinVO.getCommonNames() : cmd.getCommonNames();
+        String providedDomainIds = cmd.getDomainIds() == null ? guiThemeJoinVO.getDomains() : cmd.getDomainIds();
+        String providedAccountIds = cmd.getAccountIds() == null ? guiThemeJoinVO.getAccounts() : cmd.getAccountIds();
         Boolean isPublic = cmd.getIsPublic();
+        Boolean recursiveDomains = cmd.getRecursiveDomains();
 
         validateParameters(jsonConfiguration, providedDomainIds, providedAccountIds, commonNames, guiThemeId);
 
@@ -342,45 +374,46 @@ public class GuiThemeServiceImpl implements GuiThemeService {
             isPublic = false;
         }
 
-        return persistGuiTheme(name, description, css, jsonConfiguration, commonNames, providedDomainIds, providedAccountIds, isPublic, guiThemeVO);
-
+        return persistGuiTheme(guiThemeId, name, description, css, jsonConfiguration, commonNames, providedDomainIds, providedAccountIds, isPublic, recursiveDomains);
     }
 
-    protected GuiThemeVO persistGuiTheme(String name, String description, String css, String jsonConfiguration, String commonNames, String providedDomainIds,
-                                         String providedAccountIds, Boolean isPublic, GuiThemeVO guiThemeVO){
-        if (name != null) {
-            guiThemeVO.setName(ifBlankReturnNull(name));
-        }
+    protected GuiThemeJoinVO persistGuiTheme(Long guiThemeId, String name, String description, String css, String jsonConfiguration, String commonNames, String providedDomainIds,
+                                             String providedAccountIds, Boolean isPublic, Boolean recursiveDomains){
+        return Transaction.execute((TransactionCallback<GuiThemeJoinVO>) status -> {
+            GuiThemeVO guiThemeVO = guiThemeDao.findById(guiThemeId);
 
-        if (description != null) {
-            guiThemeVO.setDescription(ifBlankReturnNull(description));
-        }
+            if (name != null) {
+                guiThemeVO.setName(ifBlankReturnNull(name));
+            }
 
-        if (css != null) {
-            guiThemeVO.setCss(css);
-        }
+            if (description != null) {
+                guiThemeVO.setDescription(ifBlankReturnNull(description));
+            }
 
-        if (jsonConfiguration != null) {
-            guiThemeVO.setJsonConfiguration(jsonConfiguration);
-        }
+            if (css != null) {
+                guiThemeVO.setCss(css);
+            }
 
-        if (commonNames != null) {
-            guiThemeVO.setCommonNames(ifBlankReturnNull(commonNames));
-        }
+            if (jsonConfiguration != null) {
+                guiThemeVO.setJsonConfiguration(jsonConfiguration);
+            }
 
-        if (providedAccountIds != null) {
-            guiThemeVO.setAccountUuids(ifBlankReturnNull(providedAccountIds));
-        }
+            if (isPublic != null) {
+                guiThemeVO.setIsPublic(isPublic);
+            }
 
-        if (providedDomainIds != null) {
-            guiThemeVO.setDomainUuids(ifBlankReturnNull(providedDomainIds));
-        }
+            if (recursiveDomains != null) {
+                guiThemeVO.setRecursiveDomains(recursiveDomains);
+            }
 
-        if (isPublic != null) {
-            guiThemeVO.setIsPublic(isPublic);
-        }
+            logger.trace(String.format("Persisting GUI theme [%s] with CSS [%s] and JSON configuration [%s].", guiThemeVO, guiThemeVO.getCss(), guiThemeVO.getJsonConfiguration()));
 
-        return guiThemeDao.persist(guiThemeVO);
+            guiThemeDao.persist(guiThemeVO);
+            guiThemeDetailsDao.expungeByGuiThemeId(guiThemeId);
+            persistGuiThemeDetails(guiThemeId, commonNames, providedDomainIds, providedAccountIds);
+
+            return guiThemeJoinDao.findById(guiThemeId);
+        });
     }
 
     protected String ifBlankReturnNull(String value) {
@@ -399,7 +432,8 @@ public class GuiThemeServiceImpl implements GuiThemeService {
         if (guiThemeVO != null) {
             guiThemeDao.remove(guiThemeId);
         } else {
-            throw new CloudRuntimeException(String.format("Unable to find a GUI theme with the specified UUID."));
+            logger.error(String.format("Unable to find a GUI theme with the specified ID [%s].", guiThemeId));
+            throw new CloudRuntimeException("Unable to find a GUI theme with the specified ID.");
         }
     }
 }

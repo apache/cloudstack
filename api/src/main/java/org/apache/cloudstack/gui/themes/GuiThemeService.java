@@ -11,9 +11,9 @@ public interface GuiThemeService {
 
     ListResponse<GuiThemeResponse> listGuiThemes(ListGuiThemesCmd cmd);
 
-    GuiThemeVO createGuiTheme(CreateGuiThemeCmd cmd);
+    GuiThemeJoinVO createGuiTheme(CreateGuiThemeCmd cmd);
 
-    GuiThemeVO updateGuiTheme(UpdateGuiThemeCmd cmd);
+    GuiThemeJoinVO updateGuiTheme(UpdateGuiThemeCmd cmd);
 
     void removeGuiTheme(RemoveGuiThemeCmd cmd);
 }

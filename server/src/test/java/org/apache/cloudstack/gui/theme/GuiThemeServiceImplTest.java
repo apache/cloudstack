@@ -22,41 +22,37 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.command.user.gui.themes.ListGuiThemesCmd;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.gui.theme.dao.GuiThemeDao;
+import org.apache.cloudstack.gui.theme.dao.GuiThemeJoinDao;
+import org.apache.cloudstack.gui.themes.GuiThemeJoinVO;
 import org.apache.cloudstack.gui.themes.GuiThemeVO;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.ArrayList;
 import java.util.List;
 
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(CallContext.class)
+@RunWith(MockitoJUnitRunner.class)
 public class GuiThemeServiceImplTest {
 
     @Mock
-    GuiThemeDao guiThemeDaoMock;
+    GuiThemeJoinDao guiThemeJoinDaoMock;
 
     @Mock
-    GuiThemeVO guiThemeVOMock;
+    GuiThemeJoinVO guiThemeJoinVOMock;
 
     @Mock
     EntityManager entityManagerMock;
 
     @Mock
     Object objectMock;
-
-    @Mock
-    CallContext callContextMock;
 
     @Mock
     ListGuiThemesCmd listGuiThemesCmdMock;
@@ -75,47 +71,43 @@ public class GuiThemeServiceImplTest {
 
     @Test
     public void listGuiThemesTestShouldIgnoreParametersWhenItIsCalledUnauthenticated() {
-        Pair<List<GuiThemeVO>, Integer> emptyPair = new Pair<>(new ArrayList<>(), 0);
-        PowerMockito.mockStatic(CallContext.class);
-        PowerMockito.when(CallContext.current()).thenReturn(callContextMock);
+        Pair<List<GuiThemeJoinVO>, Integer> emptyPair = new Pair<>(new ArrayList<>(), 0);
 
         Long accountId = Account.ACCOUNT_ID_SYSTEM;
 
-        Mockito.doReturn(accountId).when(callContextMock).getCallingAccountId();
-        Mockito.doReturn(emptyPair).when(guiThemeServiceSpy).listGuiThemesWithNoAuthentication(Mockito.nullable(ListGuiThemesCmd.class));
-        Mockito.when(listGuiThemesCmdMock.getListOnlyDefaultTheme()).thenReturn(false);
-        guiThemeServiceSpy.listGuiThemes(listGuiThemesCmdMock);
-        Mockito.verify(guiThemeServiceSpy, Mockito.times(1)).listGuiThemesWithNoAuthentication(Mockito.nullable(ListGuiThemesCmd.class));
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+            Mockito.doReturn(accountId).when(callContextMock).getCallingAccountId();
+            Mockito.doReturn(emptyPair).when(guiThemeServiceSpy).listGuiThemesWithNoAuthentication(Mockito.nullable(ListGuiThemesCmd.class));
+            Mockito.when(listGuiThemesCmdMock.getListOnlyDefaultTheme()).thenReturn(false);
+            guiThemeServiceSpy.listGuiThemes(listGuiThemesCmdMock);
+            Mockito.verify(guiThemeServiceSpy, Mockito.times(1)).listGuiThemesWithNoAuthentication(Mockito.nullable(ListGuiThemesCmd.class));
+        }
     }
 
     @Test
     public void listGuiThemesTestShouldCallNormalFlowWhenAuthenticated() {
         Pair<List<GuiThemeVO>, Integer> emptyPair = new Pair<>(new ArrayList<>(), 0);
-        PowerMockito.mockStatic(CallContext.class);
-        PowerMockito.when(CallContext.current()).thenReturn(callContextMock);
 
         Long accountId = 3L;
 
-        Mockito.doReturn(accountId).when(callContextMock).getCallingAccountId();
-        Mockito.doReturn(emptyPair).when(guiThemeServiceSpy).listGuiThemesInternal(Mockito.nullable(ListGuiThemesCmd.class));
-        Mockito.when(listGuiThemesCmdMock.getListOnlyDefaultTheme()).thenReturn(false);
-        guiThemeServiceSpy.listGuiThemes(listGuiThemesCmdMock);
-        Mockito.verify(guiThemeServiceSpy, Mockito.times(1)).listGuiThemesInternal(Mockito.nullable(ListGuiThemesCmd.class));
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+            Mockito.doReturn(accountId).when(callContextMock).getCallingAccountId();
+            Mockito.doReturn(emptyPair).when(guiThemeServiceSpy).listGuiThemesInternal(Mockito.nullable(ListGuiThemesCmd.class));
+            Mockito.when(listGuiThemesCmdMock.getListOnlyDefaultTheme()).thenReturn(false);
+            guiThemeServiceSpy.listGuiThemes(listGuiThemesCmdMock);
+            Mockito.verify(guiThemeServiceSpy, Mockito.times(1)).listGuiThemesInternal(Mockito.nullable(ListGuiThemesCmd.class));
+        }
     }
 
     @Test
     public void listGuiThemesTestListOnlyDefaultThemesShouldCallFindDefaultTheme() {
-        Pair<List<GuiThemeVO>, Integer> emptyPair = new Pair<>(new ArrayList<>(), 0);
-        PowerMockito.mockStatic(CallContext.class);
-        PowerMockito.when(CallContext.current()).thenReturn(callContextMock);
-
-        Long accountId = Account.ACCOUNT_ID_SYSTEM;
-
-        Mockito.doReturn(accountId).when(callContextMock).getCallingAccountId();
-        Mockito.doReturn(emptyPair).when(guiThemeServiceSpy).listGuiThemesWithNoAuthentication(Mockito.nullable(ListGuiThemesCmd.class));
         Mockito.when(listGuiThemesCmdMock.getListOnlyDefaultTheme()).thenReturn(true);
         guiThemeServiceSpy.listGuiThemes(listGuiThemesCmdMock);
-        Mockito.verify(guiThemeDaoMock, Mockito.times(1)).findDefaultTheme();
+        Mockito.verify(guiThemeJoinDaoMock, Mockito.times(1)).findDefaultTheme();
     }
 
     @Test
@@ -192,7 +184,7 @@ public class GuiThemeServiceImplTest {
     @Test
     public void checkIfDefaultThemeIsAllowedTestThemeIsConsideredDefaultAndThereIsNotADefaultThemeRegistered() {
         Mockito.when(guiThemeServiceSpy.isConsideredDefaultTheme(Mockito.anyString(), Mockito.anyString(), Mockito.anyString())).thenReturn(true);
-        Mockito.when(guiThemeDaoMock.findDefaultTheme()).thenReturn(null);
+        Mockito.when(guiThemeJoinDaoMock.findDefaultTheme()).thenReturn(null);
 
         guiThemeServiceSpy.checkIfDefaultThemeIsAllowed(BLANK_STRING, BLANK_STRING, BLANK_STRING, null);
     }
@@ -200,7 +192,7 @@ public class GuiThemeServiceImplTest {
     @Test(expected = CloudRuntimeException.class)
     public void checkIfDefaultThemeIsAllowedTestThemeIsConsideredDefaultAndThereIsADefaultThemeRegisteredShouldThrowCloudRuntimeException() {
         Mockito.when(guiThemeServiceSpy.isConsideredDefaultTheme(Mockito.anyString(), Mockito.anyString(), Mockito.anyString())).thenReturn(true);
-        Mockito.when(guiThemeDaoMock.findDefaultTheme()).thenReturn(guiThemeVOMock);
+        Mockito.when(guiThemeJoinDaoMock.findDefaultTheme()).thenReturn(guiThemeJoinVOMock);
 
         guiThemeServiceSpy.checkIfDefaultThemeIsAllowed(BLANK_STRING, BLANK_STRING, BLANK_STRING, null);
     }
@@ -208,8 +200,8 @@ public class GuiThemeServiceImplTest {
     @Test(expected = CloudRuntimeException.class)
     public void checkIfDefaultThemeIsAllowedTestThemeIsConsideredDefaultAndWillBeUpdatedAndIsDifferentIdShouldThrowCloudRuntimeException() {
         Mockito.when(guiThemeServiceSpy.isConsideredDefaultTheme(Mockito.anyString(), Mockito.anyString(), Mockito.anyString())).thenReturn(true);
-        Mockito.when(guiThemeDaoMock.findDefaultTheme()).thenReturn(guiThemeVOMock);
-        Mockito.when(guiThemeVOMock.getId()).thenReturn(1L);
+        Mockito.when(guiThemeJoinDaoMock.findDefaultTheme()).thenReturn(guiThemeJoinVOMock);
+        Mockito.when(guiThemeJoinVOMock.getId()).thenReturn(1L);
 
         guiThemeServiceSpy.checkIfDefaultThemeIsAllowed(BLANK_STRING, BLANK_STRING, BLANK_STRING, 2L);
     }
@@ -217,8 +209,8 @@ public class GuiThemeServiceImplTest {
     @Test
     public void checkIfDefaultThemeIsAllowedTestThemeIsConsideredDefaultAndWillBeUpdatedAndIsTheSameShouldAllowUpdate() {
         Mockito.when(guiThemeServiceSpy.isConsideredDefaultTheme(Mockito.anyString(), Mockito.anyString(), Mockito.anyString())).thenReturn(true);
-        Mockito.when(guiThemeDaoMock.findDefaultTheme()).thenReturn(guiThemeVOMock);
-        Mockito.when(guiThemeVOMock.getId()).thenReturn(1L);
+        Mockito.when(guiThemeJoinDaoMock.findDefaultTheme()).thenReturn(guiThemeJoinVOMock);
+        Mockito.when(guiThemeJoinVOMock.getId()).thenReturn(1L);
 
         guiThemeServiceSpy.checkIfDefaultThemeIsAllowed(BLANK_STRING, BLANK_STRING, BLANK_STRING, 1L);
     }
