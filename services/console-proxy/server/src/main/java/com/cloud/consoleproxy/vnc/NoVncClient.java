@@ -79,7 +79,7 @@ public class NoVncClient {
                 port = 80;
         }
 
-        s_logger.info(String.format("Connecting to VNC server %s:%s ...", host, port));
+        s_logger.info("Connecting to VNC server {}:{} ...", host, port);
         RawHTTP tunnel = new RawHTTP("CONNECT", host, port, path, session, useSSL);
         socket = tunnel.connect();
         setTunnelSocketStreams();
@@ -87,7 +87,7 @@ public class NoVncClient {
 
     public void connectTo(String host, int port) {
         // Connect to server
-        logger.info(String.format("Connecting to VNC server %s:%s ...", host, port));
+        logger.info("Connecting to VNC server {}:{} ...", host, port);
         try {
             NioSocket nioSocket = new NioSocket(host, port);
             this.nioSocketConnection = new NioSocketHandlerImpl(nioSocket);
