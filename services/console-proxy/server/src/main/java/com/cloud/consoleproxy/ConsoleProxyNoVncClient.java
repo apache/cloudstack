@@ -75,7 +75,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
     public boolean isFrontEndAlive() {
         long unusedTime = System.currentTimeMillis() - getClientLastFrontEndActivityTime();
         if (!connectionAlive || unusedTime > ConsoleProxy.VIEWER_LINGER_SECONDS * 1000) {
-            logger.info(String.format("Front end has been idle for too long (%dms).", unusedTime));
+            logger.info("Front end has been idle for too long ({}ms).", unusedTime);
             return false;
         }
         return true;
@@ -94,7 +94,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
         connectionAlive = true;
         this.sessionUuid = param.getSessionUuid();
         String clientSourceIp = param.getSourceIP();
-        s_logger.debug(String.format("Initializing client from IP %s", clientSourceIp));
+        s_logger.debug("Initializing client from IP {}", clientSourceIp);
 
         updateFrontEndActivityTime();
         Thread worker = new Thread(new Runnable() {
@@ -110,7 +110,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                     int readBytes;
                     byte[] b;
                     while (connectionAlive) {
-                        s_logger.trace(String.format("Connection with client [%s] [IP: %s] is alive.", clientId, clientSourceIp));
+                        s_logger.trace("Connection with client [{}] [IP: {}] is alive.", clientId, clientSourceIp);
                         if (client.isVncOverWebSocketConnection()) {
                             if (client.isVncOverWebSocketConnectionOpen()) {
                                 updateFrontEndActivityTime();
@@ -121,7 +121,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                             int nextBytes = client.getNextBytes();
                             bytesArr = new byte[nextBytes];
                             client.readBytes(bytesArr, nextBytes);
-                            logger.trace(String.format("Read [%s] bytes from client [%s].", nextBytes, clientId));
+                            logger.trace("Read [{}] bytes from client [{}].", nextBytes, clientId);
                             if (nextBytes > 0) {
                                 session.getRemote().sendBytes(ByteBuffer.wrap(bytesArr));
                                 updateFrontEndActivityTime();
@@ -131,7 +131,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                         } else {
                             b = new byte[100];
                             readBytes = client.read(b);
-                            logger.trace(String.format("Read [%s] bytes from client [%s].", readBytes, clientId));
+                            logger.trace("Read [{}] bytes from client [{}].", readBytes, clientId);
                             if (readBytes == -1 || (readBytes > 0 && !sendReadBytesToNoVNC(b, readBytes))) {
                                 connectionAlive = false;
                             }
@@ -142,7 +142,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                             logger.error("Error on sleep for vnc sessions", e);
                         }
                     }
-                    logger.info(String.format("Connection with client [%s] [IP: %s] is dead.", clientId, clientSourceIp));
+                    logger.info("Connection with client [{}] [IP: {}] is dead.", clientId, clientSourceIp);
                 } catch (IOException e) {
                     logger.error("Error on VNC client", e);
                 }
@@ -192,7 +192,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
             s_logger.debug("Authenticating to VNC server through NIO Socket.");
             authenticateVNCServerThroughNioSocket();
         }
-        s_logger.debug(String.format("Client [%s] [IP: %s] has been authenticated successfully to VNC server.", clientId, clientSourceIp));
+        s_logger.debug("Client [{}] [IP: {}] has been authenticated successfully to VNC server.", clientId, clientSourceIp);
     }
 
     /**
