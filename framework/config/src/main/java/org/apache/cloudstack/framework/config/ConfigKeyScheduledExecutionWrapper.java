@@ -52,6 +52,9 @@ public class ConfigKeyScheduledExecutionWrapper implements Runnable {
         if (configKey == null) {
             throw new IllegalArgumentException("ConfigKey cannot be null");
         }
+        if (!(configKey.value() instanceof Long || configKey.value() instanceof Integer)) {
+            throw new IllegalArgumentException("ConfigKey value must be a Long or Integer");
+        }
     }
 
     public ConfigKeyScheduledExecutionWrapper(ScheduledExecutorService executorService, Runnable command,

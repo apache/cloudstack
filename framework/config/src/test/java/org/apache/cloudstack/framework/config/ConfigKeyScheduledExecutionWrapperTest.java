@@ -55,6 +55,14 @@ public class ConfigKeyScheduledExecutionWrapperTest {
         ConfigKeyScheduledExecutionWrapper runner = new ConfigKeyScheduledExecutionWrapper(executorService, runnable, null, TimeUnit.SECONDS);
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void invalidConfigKeyTest() {
+        TestRunnable runnable = new TestRunnable();
+        ConfigKey<String> configKey = new ConfigKey<>(String.class, "test", "test", "test", "test", true,
+                ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.CSV, null);
+        ConfigKeyScheduledExecutionWrapper runner = new ConfigKeyScheduledExecutionWrapper(executorService, runnable, configKey, TimeUnit.SECONDS);
+    }
+
     @Test
     public void scheduleOncePerSecondTest() {
         when(configKey.value()).thenReturn(1);
