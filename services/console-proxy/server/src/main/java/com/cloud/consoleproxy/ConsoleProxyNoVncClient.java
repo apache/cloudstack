@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.consoleproxy;
 
-import com.cloud.utils.net.UrlUtil;
+import com.cloud.utils.net.NetUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.eclipse.jetty.websocket.api.Session;
@@ -26,7 +26,6 @@ import org.eclipse.jetty.websocket.api.extensions.Frame;
 import java.awt.Image;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -286,7 +285,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
         try {
             if (StringUtils.isNotBlank(websocketUrl)) {
                 s_logger.info(String.format("Connect to VNC over websocket URL: %s", websocketUrl));
-                ConsoleProxy.ensureRoute(extractHost(websocketUrl));
+                ConsoleProxy.ensureRoute(NetUtils.extractHost(websocketUrl));
                 client.connectToWebSocket(websocketUrl, session);
             } else if (tunnelUrl != null && !tunnelUrl.isEmpty() && tunnelSession != null
                     && !tunnelSession.isEmpty()) {
@@ -306,10 +305,6 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
         } catch (Throwable e) {
             s_logger.error("Unexpected exception", e);
         }
-    }
-
-    private String extractHost(String websocketUrl) throws URISyntaxException {
-        return (new URI(websocketUrl)).getHost();
     }
 
     private void setClientParam(ConsoleProxyClientParam param) {
