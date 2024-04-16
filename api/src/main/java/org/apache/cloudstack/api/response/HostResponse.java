@@ -29,6 +29,7 @@ import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
 
 import com.cloud.host.Host;
 import com.cloud.host.Status;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
@@ -530,7 +531,7 @@ public class HostResponse extends BaseResponseWithAnnotations {
         this.username = username;
     }
 
-    public void setDetails(Map details) {
+    public void setDetails(Map details, Hypervisor.HypervisorType hypervisorType) {
 
         if (details == null) {
             return;
@@ -551,11 +552,13 @@ public class HostResponse extends BaseResponseWithAnnotations {
             this.setEncryptionSupported(new Boolean(false)); // default
         }
 
-        if (detailsCopy.containsKey(Host.HOST_INSTANCE_CONVERSION)) {
-            this.setInstanceConversionSupported(Boolean.parseBoolean((String) detailsCopy.get(Host.HOST_INSTANCE_CONVERSION)));
-            detailsCopy.remove(Host.HOST_INSTANCE_CONVERSION);
-        } else {
-            this.setInstanceConversionSupported(new Boolean(false)); // default
+        if (Hypervisor.HypervisorType.KVM.equals(hypervisorType)) {
+            if (detailsCopy.containsKey(Host.HOST_INSTANCE_CONVERSION)) {
+                this.setInstanceConversionSupported(Boolean.parseBoolean((String) detailsCopy.get(Host.HOST_INSTANCE_CONVERSION)));
+                detailsCopy.remove(Host.HOST_INSTANCE_CONVERSION);
+            } else {
+                this.setInstanceConversionSupported(new Boolean(false)); // default
+            }
         }
 
         this.details = detailsCopy;
