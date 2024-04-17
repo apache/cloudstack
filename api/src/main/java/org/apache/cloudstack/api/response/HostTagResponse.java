@@ -36,7 +36,7 @@ public class HostTagResponse extends BaseResponse {
     private String name;
 
     @SerializedName(ApiConstants.IS_IMPLICIT)
-    @Param(description = "true if the host tag is implicit")
+    @Param(description = "true if the host tag is implicit", since = "4.20.0")
     private boolean isImplicit;
 
     public String getId() {
