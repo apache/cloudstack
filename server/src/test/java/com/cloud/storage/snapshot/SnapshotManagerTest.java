@@ -632,6 +632,8 @@ public class SnapshotManagerTest {
         Mockito.doReturn(extractUrl).when(snapshotStoreMock).getExtractUrl();
 
         Assert.assertEquals(extractUrl, _snapshotMgr.extractSnapshot(extractSnapshotCmdMock));
+        Mockito.verify(snapshotSrv, Mockito.never()).syncVolumeSnapshotsToRegionStore(Mockito.anyLong(), Mockito.any());
+        Mockito.verify(snapshotStoreDao, Mockito.never()).update(Mockito.anyLong(), Mockito.any());
     }
 
     @Test(expected = InvalidParameterValueException.class)
