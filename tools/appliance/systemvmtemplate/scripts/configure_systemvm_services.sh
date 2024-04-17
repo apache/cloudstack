@@ -111,6 +111,7 @@ function configure_services() {
   systemctl disable haproxy
   systemctl disable keepalived
   systemctl disable radvd
+  systemctl disable frr
   systemctl disable strongswan-starter
   systemctl disable x11-common
   systemctl disable xl2tpd
