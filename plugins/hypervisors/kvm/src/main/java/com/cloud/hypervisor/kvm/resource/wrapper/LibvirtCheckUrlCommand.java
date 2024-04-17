@@ -38,13 +38,14 @@ public class LibvirtCheckUrlCommand extends CommandWrapper<CheckUrlCommand, Chec
         final Integer connectTimeout = cmd.getConnectTimeout();
         final Integer connectionRequestTimeout = cmd.getConnectionRequestTimeout();
         final Integer socketTimeout = cmd.getSocketTimeout();
+        final boolean followRedirects = cmd.isFollowRedirects();
 
         s_logger.info(String.format("Checking URL: %s, with connect timeout: %d, connect request timeout: %d, socket timeout: %d", url, connectTimeout, connectionRequestTimeout, socketTimeout));
         Long remoteSize = null;
 
-        boolean checkResult = DirectDownloadHelper.checkUrlExistence(url, connectTimeout, connectionRequestTimeout, socketTimeout);
+        boolean checkResult = DirectDownloadHelper.checkUrlExistence(url, connectTimeout, connectionRequestTimeout, socketTimeout, followRedirects);
         if (checkResult) {
-            remoteSize = DirectDownloadHelper.getFileSize(url, cmd.getFormat(), connectTimeout, connectionRequestTimeout, socketTimeout);
+            remoteSize = DirectDownloadHelper.getFileSize(url, cmd.getFormat(), connectTimeout, connectionRequestTimeout, socketTimeout, followRedirects);
             if (remoteSize == null || remoteSize < 0) {
                 s_logger.error(String.format("Couldn't properly retrieve the remote size of the template on " +
                         "url %s, obtained size = %s", url, remoteSize));

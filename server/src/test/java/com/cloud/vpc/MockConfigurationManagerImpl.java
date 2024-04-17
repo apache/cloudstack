@@ -679,4 +679,9 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
         // TODO Auto-generated method stub
         return null;
     }
+
+    @Override
+    public void validateExtraConfigInServiceOfferingDetail(String detailName) {
+        // TODO Auto-generated method stub
+    }
 }
