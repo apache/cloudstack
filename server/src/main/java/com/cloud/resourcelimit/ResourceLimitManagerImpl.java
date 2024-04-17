@@ -43,6 +43,7 @@ import org.apache.cloudstack.api.response.TaggedResourceLimitAndCountResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.ConfigKeyScheduledExecutionWrapper;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
@@ -197,7 +198,6 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
     protected SearchBuilder<ResourceCountVO> ResourceCountSearch;
     ScheduledExecutorService _rcExecutor;
-    long _resourceCountCheckInterval = 0;
     Map<String, Long> accountResourceLimitMap = new HashMap<>();
     Map<String, Long> domainResourceLimitMap = new HashMap<>();
     Map<String, Long> projectResourceLimitMap = new HashMap<>();
@@ -220,8 +220,9 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
     @Override
     public boolean start() {
-        if (_resourceCountCheckInterval > 0) {
-            _rcExecutor.scheduleAtFixedRate(new ResourceCountCheckTask(), _resourceCountCheckInterval, _resourceCountCheckInterval, TimeUnit.SECONDS);
+        if (ResourceCountCheckInterval.value() >= 0) {
+            ConfigKeyScheduledExecutionWrapper runner = new ConfigKeyScheduledExecutionWrapper(_rcExecutor, new ResourceCountCheckTask(), ResourceCountCheckInterval, TimeUnit.SECONDS);
+            runner.start();
         }
         return true;
     }
@@ -258,8 +259,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         snapshotSizeSearch.join("snapshots", join2, snapshotSizeSearch.entity().getSnapshotId(), join2.entity().getId(), JoinBuilder.JoinType.INNER);
         snapshotSizeSearch.done();
 
-        _resourceCountCheckInterval = ResourceCountCheckInterval.value();
-        if (_resourceCountCheckInterval > 0) {
+        if (ResourceCountCheckInterval.value() >= 0) {
             _rcExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("ResourceCountChecker"));
         }
 
