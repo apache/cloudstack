@@ -36,6 +36,10 @@ public interface HostTagsDao extends GenericDao<HostTagVO, Long> {
 
     void deleteTags(long hostId);
 
+    boolean updateImplicitTags(long hostId, List<String> hostTags);
+
+    List<HostTagVO> getExplicitHostTags(long hostId);
+
     List<HostTagVO> findHostRuleTags();
 
     HostTagResponse newHostTagResponse(HostTagVO hostTag);

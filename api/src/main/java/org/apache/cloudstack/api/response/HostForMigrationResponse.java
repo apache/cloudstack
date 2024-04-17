@@ -205,8 +205,12 @@ public class HostForMigrationResponse extends BaseResponse {
     private String events;
 
     @SerializedName("hosttags")
-    @Param(description = "comma-separated list of tags for the host")
+    @Param(description = "comma-separated list of explicit host tags for the host")
     private String hostTags;
+
+    @SerializedName("implicithosttags")
+    @Param(description = "comma-separated list of implicit host tags for the host", since = "4.20.0")
+    private String implicitHostTags;
 
     @SerializedName("hasenoughcapacity")
     @Param(description = "true if this host has enough CPU and RAM capacity to migrate a VM to it, false otherwise")
@@ -412,6 +416,10 @@ public class HostForMigrationResponse extends BaseResponse {
 
     public void setHostTags(String hostTags) {
         this.hostTags = hostTags;
+    }
+
+    public void setImplicitHostTags(String implicitHostTags) {
+        this.implicitHostTags = implicitHostTags;
     }
 
     public void setHasEnoughCapacity(Boolean hasEnoughCapacity) {

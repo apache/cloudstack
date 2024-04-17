@@ -218,8 +218,12 @@ public class HostResponse extends BaseResponseWithAnnotations {
     private String events;
 
     @SerializedName("hosttags")
-    @Param(description = "comma-separated list of tags for the host")
+    @Param(description = "comma-separated list of explicit host tags for the host")
     private String hostTags;
+
+    @SerializedName("implicithosttags")
+    @Param(description = "comma-separated list of implicit host tags for the host", since = "4.20.0")
+    private String implicitHostTags;
 
     @SerializedName(ApiConstants.IS_TAG_A_RULE)
     @Param(description = ApiConstants.PARAMETER_DESCRIPTION_IS_TAG_A_RULE)
@@ -456,6 +460,14 @@ public class HostResponse extends BaseResponseWithAnnotations {
 
     public void setHostTags(String hostTags) {
         this.hostTags = hostTags;
+    }
+
+    public String getImplicitHostTags() {
+        return implicitHostTags;
+    }
+
+    public void setImplicitHostTags(String implicitHostTags) {
+        this.implicitHostTags = implicitHostTags;
     }
 
     public void setHasEnoughCapacity(Boolean hasEnoughCapacity) {

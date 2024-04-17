@@ -999,6 +999,7 @@
 "label.hostnamelabel": "Host name",
 "label.hosts": "Hosts",
 "label.hosttags": "Host tags",
+"label.hosttags.implicit": "Implicit Host tags",
 "label.hourly": "Hourly",
 "label.hypervisor": "Hypervisor",
 "label.hypervisor.capabilities": "Hypervisor capabilities",

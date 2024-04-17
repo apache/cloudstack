@@ -53,6 +53,7 @@ SELECT
     host_pod_ref.uuid pod_uuid,
     host_pod_ref.name pod_name,
     GROUP_CONCAT(DISTINCT(host_tags.tag)) AS tag,
+    GROUP_CONCAT(DISTINCT(implicit_host_tags.tag)) AS implicit_tag,
     `host_tags`.`is_tag_a_rule` AS `is_tag_a_rule`,
     guest_os_category.id guest_os_category_id,
     guest_os_category.uuid guest_os_category_uuid,
@@ -87,7 +88,9 @@ FROM
         LEFT JOIN
     `cloud`.`guest_os_category` ON guest_os_category.id = CONVERT ( host_details.value, UNSIGNED )
         LEFT JOIN
-    `cloud`.`host_tags` ON host_tags.host_id = host.id
+    `cloud`.`host_tags` ON host_tags.host_id = host.id AND host_tags.is_implicit = 0
+        LEFT JOIN
+    `cloud`.`host_tags` AS implicit_host_tags ON implicit_host_tags.host_id = host.id AND implicit_host_tags.is_implicit = 1
         LEFT JOIN
     `cloud`.`op_host_capacity` mem_caps ON host.id = mem_caps.host_id
         AND mem_caps.capacity_type = 0

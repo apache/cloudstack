@@ -174,6 +174,9 @@ public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity
     @Column(name = "tag")
     private String tag;
 
+    @Column(name = "implicit_tag")
+    private String implicitTag;
+
     @Column(name = "is_tag_a_rule")
     private Boolean isTagARule;
 
@@ -391,6 +394,10 @@ public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity
 
     public String getTag() {
         return tag;
+    }
+
+    public String getImplicitTag() {
+        return implicitTag;
     }
 
     public Boolean getIsTagARule() {

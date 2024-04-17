@@ -23,6 +23,7 @@ import org.apache.cloudstack.api.response.HostTagResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.host.HostTagVO;
@@ -41,6 +42,7 @@ public class HostTagsDaoImpl extends GenericDaoBase<HostTagVO, Long> implements 
     protected final GenericSearchBuilder<HostTagVO, String> DistinctImplictTagsSearch;
     private final SearchBuilder<HostTagVO> stSearch;
     private final SearchBuilder<HostTagVO> stIdSearch;
+    private final SearchBuilder<HostTagVO> ImplicitTagsSearch;
 
     @Inject
     private ConfigurationDao _configDao;
@@ -48,6 +50,7 @@ public class HostTagsDaoImpl extends GenericDaoBase<HostTagVO, Long> implements 
     public HostTagsDaoImpl() {
         HostSearch = createSearchBuilder();
         HostSearch.and("hostId", HostSearch.entity().getHostId(), SearchCriteria.Op.EQ);
+        HostSearch.and("isImplicit", HostSearch.entity().getIsImplicit(), SearchCriteria.Op.EQ);
         HostSearch.and("isTagARule", HostSearch.entity().getIsTagARule(), SearchCriteria.Op.EQ);
         HostSearch.done();
 
@@ -64,6 +67,11 @@ public class HostTagsDaoImpl extends GenericDaoBase<HostTagVO, Long> implements 
         stIdSearch = createSearchBuilder();
         stIdSearch.and("id", stIdSearch.entity().getId(), SearchCriteria.Op.EQ);
         stIdSearch.done();
+
+        ImplicitTagsSearch = createSearchBuilder();
+        ImplicitTagsSearch.and("hostId", ImplicitTagsSearch.entity().getHostId(), SearchCriteria.Op.EQ);
+        ImplicitTagsSearch.and("isImplicit", ImplicitTagsSearch.entity().getIsImplicit(), SearchCriteria.Op.EQ);
+        ImplicitTagsSearch.done();
     }
 
     @Override
@@ -93,6 +101,36 @@ public class HostTagsDaoImpl extends GenericDaoBase<HostTagVO, Long> implements 
     }
 
     @Override
+    public boolean updateImplicitTags(long hostId, List<String> hostTags) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        txn.start();
+        SearchCriteria<HostTagVO> sc = ImplicitTagsSearch.create();
+        sc.setParameters("hostId", hostId);
+        sc.setParameters("isImplicit", true);
+        boolean expunged = expunge(sc) > 0;
+        boolean persisted = false;
+        for (String tag : hostTags) {
+            if (StringUtils.isNotBlank(tag)) {
+                HostTagVO vo = new HostTagVO(hostId, tag.trim());
+                vo.setIsImplicit(true);
+                persist(vo);
+                persisted = true;
+            }
+        }
+        txn.commit();
+        return expunged || persisted;
+    }
+
+    @Override
+    public List<HostTagVO> getExplicitHostTags(long hostId) {
+        SearchCriteria<HostTagVO> sc = ImplicitTagsSearch.create();
+        sc.setParameters("hostId", hostId);
+        sc.setParameters("isImplicit", false);
+
+        return search(sc, null);
+    }
+
+    @Override
     public List<HostTagVO> findHostRuleTags() {
         SearchCriteria<HostTagVO> sc = HostSearch.create();
         sc.setParameters("isTagARule", true);
@@ -107,6 +145,7 @@ public class HostTagsDaoImpl extends GenericDaoBase<HostTagVO, Long> implements 
         txn.start();
         SearchCriteria<HostTagVO> sc = HostSearch.create();
         sc.setParameters("hostId", hostId);
+        sc.setParameters("isImplicit", false);
         expunge(sc);
 
         for (String tag : hostTags) {
@@ -135,6 +174,7 @@ public class HostTagsDaoImpl extends GenericDaoBase<HostTagVO, Long> implements 
 
         tagResponse.setName(tag.getTag());
         tagResponse.setHostId(tag.getHostId());
+        tagResponse.setImplicit(tag.getIsImplicit());
 
         tagResponse.setObjectName("hosttag");
 
