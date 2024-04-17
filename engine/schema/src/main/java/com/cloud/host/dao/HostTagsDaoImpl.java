@@ -16,10 +16,13 @@
 // under the License.
 package com.cloud.host.dao;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.api.response.HostTagResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.springframework.stereotype.Component;
 
 import com.cloud.host.HostTagVO;
@@ -30,10 +33,17 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.SearchCriteria.Func;
 
+import javax.inject.Inject;
+
 @Component
 public class HostTagsDaoImpl extends GenericDaoBase<HostTagVO, Long> implements HostTagsDao, Configurable {
     protected final SearchBuilder<HostTagVO> HostSearch;
     protected final GenericSearchBuilder<HostTagVO, String> DistinctImplictTagsSearch;
+    private final SearchBuilder<HostTagVO> stSearch;
+    private final SearchBuilder<HostTagVO> stIdSearch;
+
+    @Inject
+    private ConfigurationDao _configDao;
 
     public HostTagsDaoImpl() {
         HostSearch = createSearchBuilder();
@@ -46,6 +56,14 @@ public class HostTagsDaoImpl extends GenericDaoBase<HostTagVO, Long> implements 
         DistinctImplictTagsSearch.and("hostIds", DistinctImplictTagsSearch.entity().getHostId(), SearchCriteria.Op.IN);
         DistinctImplictTagsSearch.and("implicitTags", DistinctImplictTagsSearch.entity().getTag(), SearchCriteria.Op.IN);
         DistinctImplictTagsSearch.done();
+
+        stSearch = createSearchBuilder();
+        stSearch.and("idIN", stSearch.entity().getId(), SearchCriteria.Op.IN);
+        stSearch.done();
+
+        stIdSearch = createSearchBuilder();
+        stIdSearch.and("id", stIdSearch.entity().getId(), SearchCriteria.Op.EQ);
+        stIdSearch.done();
     }
 
     @Override
@@ -109,5 +127,72 @@ public class HostTagsDaoImpl extends GenericDaoBase<HostTagVO, Long> implements 
     @Override
     public String getConfigComponentName() {
         return HostTagsDaoImpl.class.getSimpleName();
+    }
+
+    @Override
+    public HostTagResponse newHostTagResponse(HostTagVO tag) {
+        HostTagResponse tagResponse = new HostTagResponse();
+
+        tagResponse.setName(tag.getTag());
+        tagResponse.setHostId(tag.getHostId());
+
+        tagResponse.setObjectName("hosttag");
+
+        return tagResponse;
+    }
+
+    @Override
+    public List<HostTagVO> searchByIds(Long... stIds) {
+        String batchCfg = _configDao.getValue("detail.batch.query.size");
+
+        final int detailsBatchSize = batchCfg != null ? Integer.parseInt(batchCfg) : 2000;
+
+        // query details by batches
+        List<HostTagVO> uvList = new ArrayList<HostTagVO>();
+        int curr_index = 0;
+
+        if (stIds.length > detailsBatchSize) {
+            while ((curr_index + detailsBatchSize) <= stIds.length) {
+                Long[] ids = new Long[detailsBatchSize];
+
+                for (int k = 0, j = curr_index; j < curr_index + detailsBatchSize; j++, k++) {
+                    ids[k] = stIds[j];
+                }
+
+                SearchCriteria<HostTagVO> sc = stSearch.create();
+
+                sc.setParameters("idIN", (Object[])ids);
+
+                List<HostTagVO> vms = searchIncludingRemoved(sc, null, null, false);
+
+                if (vms != null) {
+                    uvList.addAll(vms);
+                }
+
+                curr_index += detailsBatchSize;
+            }
+        }
+
+        if (curr_index < stIds.length) {
+            int batch_size = (stIds.length - curr_index);
+            // set the ids value
+            Long[] ids = new Long[batch_size];
+
+            for (int k = 0, j = curr_index; j < curr_index + batch_size; j++, k++) {
+                ids[k] = stIds[j];
+            }
+
+            SearchCriteria<HostTagVO> sc = stSearch.create();
+
+            sc.setParameters("idIN", (Object[])ids);
+
+            List<HostTagVO> vms = searchIncludingRemoved(sc, null, null, false);
+
+            if (vms != null) {
+                uvList.addAll(vms);
+            }
+        }
+
+        return uvList;
     }
 }
