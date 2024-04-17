@@ -306,12 +306,12 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             zonesIds = _dcDao.listAllZones().stream().map(DataCenterVO::getId).collect(Collectors.toList());
         }
 
-        List<DataStore> imageStores = getImageStoresThrowsExceptionIfNotFound(zonesIds, profile);
 
         for (long zoneId : zonesIds) {
             DataStore imageStore = verifyHeuristicRulesForZone(template, zoneId);
 
             if (imageStore == null) {
+                List<DataStore> imageStores = getImageStoresThrowsExceptionIfNotFound(List.of(zoneId), profile);
                 standardImageStoreAllocation(imageStores, template);
             } else {
                 validateSecondaryStorageAndCreateTemplate(List.of(imageStore), template, null);
