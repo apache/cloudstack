@@ -79,7 +79,7 @@ public class NoVncClient {
                 port = 80;
         }
 
-        s_logger.info("Connecting to VNC server {}:{} ...", host, port);
+        logger.info("Connecting to VNC server {}:{} ...", host, port);
         RawHTTP tunnel = new RawHTTP("CONNECT", host, port, path, session, useSSL);
         socket = tunnel.connect();
         setTunnelSocketStreams();
@@ -177,7 +177,7 @@ public class NoVncClient {
                 String reason = new String(buf, RfbConstants.CHARSET);
 
                 String msg = String.format("Authentication to VNC server has failed. Reason: %s", reason);
-                s_logger.error(msg);
+                logger.error(msg);
                 throw new RuntimeException(msg);
             }
 
@@ -194,7 +194,7 @@ public class NoVncClient {
 
             default:
                 String msg = String.format("Unsupported VNC protocol authorization scheme, scheme code: %d.", authType);
-                s_logger.error(msg);
+                logger.error(msg);
                 throw new RuntimeException(msg);
         }
         // Since we've taken care of the auth, we tell the client that there's no auth
@@ -375,7 +375,7 @@ public class NoVncClient {
     public ByteBuffer handshakeProtocolVersion() {
         ByteBuffer verStr = ByteBuffer.allocate(12);
 
-        s_logger.debug("Reading RFB protocol version");
+        logger.debug("Reading RFB protocol version");
 
         nioSocketConnection.readBytes(verStr, 12);
 
