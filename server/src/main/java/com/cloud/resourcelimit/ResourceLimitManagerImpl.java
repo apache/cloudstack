@@ -1112,6 +1112,9 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     }
 
     protected boolean updateResourceCountForAccount(final long accountId, final ResourceType type, String tag, final boolean increment, final long delta) {
+        if (delta == 0) {
+            return true;
+        }
         if (logger.isDebugEnabled()) {
             String convertedDelta = String.valueOf(delta);
             if (type == ResourceType.secondary_storage || type == ResourceType.primary_storage){
@@ -1631,6 +1634,31 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
     }
 
+    @Override
+    public void checkDiskOfferingChange(Account owner, Boolean display, Long currentSize, Long newSize, DiskOffering currentOffering, DiskOffering newOffering) throws ResourceAllocationException {
+        if (newOffering == null) {
+            newOffering = currentOffering;
+        }
+        Set<String> currentOfferingTags = new HashSet<>(getResourceLimitStorageTagsForResourceCountOperation(display, currentOffering));
+        Set<String> newOfferingTags = new HashSet<>(getResourceLimitStorageTagsForResourceCountOperation(display, newOffering));
+        if (CollectionUtils.isEmpty(currentOfferingTags) && CollectionUtils.isEmpty(newOfferingTags)) {
+            return;
+        }
+        Set<String> sameTags = currentOfferingTags.stream().filter(newOfferingTags::contains).collect(Collectors.toSet());;
+        Set<String> newTags = newOfferingTags.stream().filter(tag -> !currentOfferingTags.contains(tag)).collect(Collectors.toSet());
+
+        for (String tag : sameTags) {
+            if (newSize - currentSize > 0) {
+                checkResourceLimitWithTag(owner, ResourceType.primary_storage, tag, newSize - currentSize);
+            }
+        }
+
+        for (String tag : newTags) {
+            checkResourceLimitWithTag(owner, ResourceType.volume, tag, 1L);
+            checkResourceLimitWithTag(owner, ResourceType.primary_storage, tag, newSize);
+        }
+    }
+
     @DB
     @Override
     public void incrementVolumeResourceCount(long accountId, Boolean display, Long size, DiskOffering diskOffering) {
@@ -1669,6 +1697,97 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 }
             }
         });
+    }
+
+    @Override
+    public void handleServiceOfferingChange(long accountId, Boolean display, Long currentCpu, Long newCpu,
+            Long currentMemory, Long newMemory,
+            ServiceOffering currentOffering, ServiceOffering newOffering,
+            VirtualMachineTemplate template) {
+        if (newOffering == null) {
+            newOffering = currentOffering;
+        }
+        Set<String> currentOfferingTags = new HashSet<>(getResourceLimitHostTagsForResourceCountOperation(display, currentOffering, template));
+        Set<String> newOfferingTags = new HashSet<>(getResourceLimitHostTagsForResourceCountOperation(display, newOffering, template));
+        if (CollectionUtils.isEmpty(currentOfferingTags) && CollectionUtils.isEmpty(newOfferingTags)) {
+            return;
+        }
+        if (currentCpu == null) {
+            currentCpu = currentOffering.getCpu() != null ? Long.valueOf(currentOffering.getCpu()) : 0L;
+        }
+        if (newCpu == null) {
+            newCpu = newOffering.getCpu() != null ? Long.valueOf(newOffering.getCpu()) : 0L;
+        }
+        if (currentMemory == null) {
+            currentMemory = currentOffering.getRamSize() != null ? Long.valueOf(currentOffering.getRamSize()) : 0L;
+        }
+        if (newMemory == null) {
+            newMemory = newOffering.getRamSize() != null ? Long.valueOf(newOffering.getRamSize()) : 0L;
+        }
+
+        Set<String> sameTags = currentOfferingTags.stream().filter(newOfferingTags::contains).collect(Collectors.toSet());;
+        Set<String> newTags = newOfferingTags.stream().filter(tag -> !currentOfferingTags.contains(tag)).collect(Collectors.toSet());
+        Set<String> removedTags = currentOfferingTags.stream().filter(tag -> !newOfferingTags.contains(tag)).collect(Collectors.toSet());
+
+        for (String tag : sameTags) {
+            if (newCpu - currentCpu > 0) {
+                incrementResourceCountWithTag(accountId, ResourceType.cpu, tag, newCpu - currentCpu);
+            } else if (newCpu - currentCpu < 0) {
+                decrementResourceCountWithTag(accountId, ResourceType.cpu, tag, currentCpu - newCpu);
+            }
+
+            if (newMemory - currentMemory > 0) {
+                incrementResourceCountWithTag(accountId, ResourceType.memory, tag, newMemory - currentMemory);
+            } else if (newMemory - currentMemory < 0) {
+                decrementResourceCountWithTag(accountId, ResourceType.memory, tag, currentMemory - newMemory);
+            }
+        }
+
+        for (String tag : removedTags) {
+            decrementResourceCountWithTag(accountId, ResourceType.user_vm, tag, 1L);
+            decrementResourceCountWithTag(accountId, ResourceType.cpu, tag, currentCpu);
+            decrementResourceCountWithTag(accountId, ResourceType.memory, tag, currentMemory);
+        }
+
+        for (String tag : newTags) {
+            incrementResourceCountWithTag(accountId, ResourceType.user_vm, tag, 1L);
+            incrementResourceCountWithTag(accountId, ResourceType.cpu, tag, newCpu);
+            incrementResourceCountWithTag(accountId, ResourceType.memory, tag, newMemory);
+        }
+    }
+
+    @Override
+    public void handleDiskOfferingChange(long accountId, Boolean display, Long currentSize, Long newSize,
+            DiskOffering currentOffering, DiskOffering newOffering) {
+        if (newOffering == null) {
+            newOffering = currentOffering;
+        }
+        Set<String> currentOfferingTags = new HashSet<>(getResourceLimitStorageTagsForResourceCountOperation(display, currentOffering));
+        Set<String> newOfferingTags = new HashSet<>(getResourceLimitStorageTagsForResourceCountOperation(display, newOffering));
+        if (CollectionUtils.isEmpty(currentOfferingTags) && CollectionUtils.isEmpty(newOfferingTags)) {
+            return;
+        }
+        Set<String> sameTags = currentOfferingTags.stream().filter(newOfferingTags::contains).collect(Collectors.toSet());;
+        Set<String> newTags = newOfferingTags.stream().filter(tag -> !currentOfferingTags.contains(tag)).collect(Collectors.toSet());
+        Set<String> removedTags = currentOfferingTags.stream().filter(tag -> !newOfferingTags.contains(tag)).collect(Collectors.toSet());
+
+        for (String tag : sameTags) {
+            if (newSize - currentSize > 0) {
+                incrementResourceCountWithTag(accountId, ResourceType.primary_storage, tag, newSize - currentSize);
+            } else if (newSize - currentSize < 0) {
+                decrementResourceCountWithTag(accountId, ResourceType.primary_storage, tag, currentSize - newSize);
+            }
+        }
+
+        for (String tag : removedTags) {
+            decrementResourceCountWithTag(accountId, ResourceType.volume, tag, 1L);
+            decrementResourceCountWithTag(accountId, ResourceType.primary_storage, tag, currentSize);
+        }
+
+        for (String tag : newTags) {
+            incrementResourceCountWithTag(accountId, ResourceType.volume, tag, 1L);
+            incrementResourceCountWithTag(accountId, ResourceType.primary_storage, tag, newSize);
+        }
     }
 
     @Override
@@ -1766,6 +1885,51 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 }
             }
         });
+    }
+
+    @Override
+    public void checkForServiceOfferingChange(Account owner, Boolean display, Long currentCpu, Long newCpu,
+            Long currentMemory, Long newMemory,
+            ServiceOffering currentOffering, ServiceOffering newOffering, VirtualMachineTemplate template) throws ResourceAllocationException {
+        if (newOffering == null) {
+            newOffering = currentOffering;
+        }
+        Set<String> currentOfferingTags = new HashSet<>(getResourceLimitHostTagsForResourceCountOperation(display, currentOffering, template));
+        Set<String> newOfferingTags = new HashSet<>(getResourceLimitHostTagsForResourceCountOperation(display, newOffering, template));
+        if (CollectionUtils.isEmpty(currentOfferingTags) && CollectionUtils.isEmpty(newOfferingTags)) {
+            return;
+        }
+        if (currentCpu == null) {
+            currentCpu = currentOffering.getCpu() != null ? Long.valueOf(currentOffering.getCpu()) : 0L;
+        }
+        if (newCpu == null) {
+            newCpu = newOffering.getCpu() != null ? Long.valueOf(newOffering.getCpu()) : 0L;
+        }
+        if (currentMemory == null) {
+            currentMemory = currentOffering.getRamSize() != null ? Long.valueOf(currentOffering.getRamSize()) : 0L;
+        }
+        if (newMemory == null) {
+            newMemory = newOffering.getRamSize() != null ? Long.valueOf(newOffering.getRamSize()) : 0L;
+        }
+
+        Set<String> sameTags = currentOfferingTags.stream().filter(newOfferingTags::contains).collect(Collectors.toSet());;
+        Set<String> newTags = newOfferingTags.stream().filter(tag -> !currentOfferingTags.contains(tag)).collect(Collectors.toSet());
+
+        for (String tag : sameTags) {
+            if (newCpu - currentCpu > 0) {
+                checkResourceLimitWithTag(owner, ResourceType.cpu, tag, newCpu - currentCpu);
+            }
+
+            if (newMemory - currentMemory > 0) {
+                checkResourceLimitWithTag(owner, ResourceType.memory, tag, newMemory - currentMemory);
+            }
+        }
+
+        for (String tag : newTags) {
+            checkResourceLimitWithTag(owner, ResourceType.user_vm, tag, 1L);
+            checkResourceLimitWithTag(owner, ResourceType.cpu, tag, newCpu);
+            checkResourceLimitWithTag(owner, ResourceType.memory, tag, newMemory);
+        }
     }
 
     @Override

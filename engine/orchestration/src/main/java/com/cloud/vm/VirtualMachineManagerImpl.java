@@ -52,6 +52,7 @@ import javax.persistence.EntityExistsException;
 import com.cloud.configuration.Resource;
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.user.dao.AccountDao;
@@ -5692,7 +5693,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public UserVm restoreVirtualMachine(final long vmId, final Long newTemplateId, final Long rootDiskOfferingId, final boolean expunge, final Map<String, String> details) throws ResourceUnavailableException, InsufficientCapacityException {
+    public UserVm restoreVirtualMachine(final long vmId, final Long newTemplateId, final Long rootDiskOfferingId, final boolean expunge, final Map<String, String> details) throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         final AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
             VmWorkJobVO placeHolder = null;
@@ -5722,7 +5723,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    private UserVm orchestrateRestoreVirtualMachine(final long vmId, final Long newTemplateId, final Long rootDiskOfferingId, final boolean expunge, final Map<String, String> details) throws ResourceUnavailableException, InsufficientCapacityException {
+    private UserVm orchestrateRestoreVirtualMachine(final long vmId, final Long newTemplateId, final Long rootDiskOfferingId, final boolean expunge, final Map<String, String> details) throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         logger.debug("Restoring vm " + vmId + " with templateId : " + newTemplateId + " diskOfferingId : " + rootDiskOfferingId + " details : " + details);
         final CallContext context = CallContext.current();
         final Account account = context.getCallingAccount();

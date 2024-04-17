@@ -239,13 +239,31 @@ public interface ResourceLimitService {
     void updateTaggedResourceLimitsAndCountsForAccounts(List<AccountResponse> responses, String tag);
     void updateTaggedResourceLimitsAndCountsForDomains(List<DomainResponse> responses, String tag);
     void checkVolumeResourceLimit(Account owner, Boolean display, Long size, DiskOffering diskOffering) throws ResourceAllocationException;
+
+    void checkDiskOfferingChange(Account owner, Boolean display, Long currentSize, Long newSize,
+            DiskOffering currentOffering, DiskOffering newOffering) throws ResourceAllocationException;
+
     void incrementVolumeResourceCount(long accountId, Boolean display, Long size, DiskOffering diskOffering);
     void decrementVolumeResourceCount(long accountId, Boolean display, Long size, DiskOffering diskOffering);
+
+    void handleServiceOfferingChange(long accountId, Boolean display, Long currentCpu, Long newCpu, Long currentMemory,
+            Long newMemory,
+            ServiceOffering currentOffering, ServiceOffering newOffering,
+            VirtualMachineTemplate template);
+
+    void handleDiskOfferingChange(long accountId, Boolean display, Long currentSize, Long newSize,
+            DiskOffering currentDiskOffering, DiskOffering newDiskOffering);
+
     void incrementVolumePrimaryStorageResourceCount(long accountId, Boolean display, Long size, DiskOffering diskOffering);
     void decrementVolumePrimaryStorageResourceCount(long accountId, Boolean display, Long size, DiskOffering diskOffering);
     void checkVmResourceLimit(Account owner, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template) throws ResourceAllocationException;
     void incrementVmResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template);
     void decrementVmResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template);
+
+    void checkForServiceOfferingChange(Account owner, Boolean display, Long currentCpu, Long newCpu, Long currentMemory,
+            Long newMemory,
+            ServiceOffering currentOffering, ServiceOffering newOffering, VirtualMachineTemplate template) throws ResourceAllocationException;
+
     void checkVmCpuResourceLimit(Account owner, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long cpu) throws ResourceAllocationException;
     void incrementVmCpuResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long cpu);
     void decrementVmCpuResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long cpu);
