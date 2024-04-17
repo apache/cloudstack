@@ -1705,12 +1705,15 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     public void handleServiceOfferingChange(long accountId, Boolean display, Long currentCpu, Long newCpu,
             Long currentMemory, Long newMemory,
             ServiceOffering currentOffering, ServiceOffering newOffering,
-            VirtualMachineTemplate template) {
+            VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate) {
         if (newOffering == null) {
             newOffering = currentOffering;
         }
-        Set<String> currentOfferingTags = new HashSet<>(getResourceLimitHostTagsForResourceCountOperation(display, currentOffering, template));
-        Set<String> newOfferingTags = new HashSet<>(getResourceLimitHostTagsForResourceCountOperation(display, newOffering, template));
+        if (newTemplate == null) {
+            newTemplate = currentTemplate;
+        }
+        Set<String> currentOfferingTags = new HashSet<>(getResourceLimitHostTagsForResourceCountOperation(display, currentOffering, currentTemplate));
+        Set<String> newOfferingTags = new HashSet<>(getResourceLimitHostTagsForResourceCountOperation(display, newOffering, newTemplate));
         if (CollectionUtils.isEmpty(currentOfferingTags) && CollectionUtils.isEmpty(newOfferingTags)) {
             return;
         }
@@ -1892,12 +1895,15 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     @Override
     public void checkForServiceOfferingChange(Account owner, Boolean display, Long currentCpu, Long newCpu,
             Long currentMemory, Long newMemory,
-            ServiceOffering currentOffering, ServiceOffering newOffering, VirtualMachineTemplate template) throws ResourceAllocationException {
+            ServiceOffering currentOffering, ServiceOffering newOffering, VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate) throws ResourceAllocationException {
         if (newOffering == null) {
             newOffering = currentOffering;
         }
-        Set<String> currentOfferingTags = new HashSet<>(getResourceLimitHostTagsForResourceCountOperation(display, currentOffering, template));
-        Set<String> newOfferingTags = new HashSet<>(getResourceLimitHostTagsForResourceCountOperation(display, newOffering, template));
+        if (newTemplate == null) {
+            newTemplate = currentTemplate;
+        }
+        Set<String> currentOfferingTags = new HashSet<>(getResourceLimitHostTagsForResourceCountOperation(display, currentOffering, currentTemplate));
+        Set<String> newOfferingTags = new HashSet<>(getResourceLimitHostTagsForResourceCountOperation(display, newOffering, newTemplate));
         if (CollectionUtils.isEmpty(currentOfferingTags) && CollectionUtils.isEmpty(newOfferingTags)) {
             return;
         }

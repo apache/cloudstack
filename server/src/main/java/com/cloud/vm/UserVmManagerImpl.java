@@ -1352,7 +1352,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vmInstance.getTemplateId());
         if (!VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
             _resourceLimitMgr.checkForServiceOfferingChange(owner, vmInstance.isDisplay(), (long) currentCpu, (long) newCpu,
-                    (long) currentMemory, (long) newMemory, currentServiceOffering, newServiceOffering, template);
+                    (long) currentMemory, (long) newMemory, currentServiceOffering, newServiceOffering, template, template);
         }
 
         // Check that the specified service offering ID is valid
@@ -1370,7 +1370,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // Increment or decrement CPU and Memory count accordingly.
         if (!VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
             _resourceLimitMgr.handleServiceOfferingChange(owner.getAccountId(), vmInstance.isDisplay(), (long) currentCpu, (long) newCpu,
-                    (long) currentMemory, (long) newMemory, currentServiceOffering, newServiceOffering, template);
+                    (long) currentMemory, (long) newMemory, currentServiceOffering, newServiceOffering, template, template);
         }
 
         return _vmDao.findById(vmInstance.getId());
@@ -2053,7 +2053,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // Check resource limits
         _resourceLimitMgr.checkForServiceOfferingChange(owner, vmInstance.isDisplay(), (long) currentCpu, (long) newCpu,
-                (long) currentMemory, (long) newMemory, currentServiceOffering, newServiceOffering, template);
+                (long) currentMemory, (long) newMemory, currentServiceOffering, newServiceOffering, template, template);
 
         // Dynamically upgrade the running vms
         boolean success = false;
@@ -2085,7 +2085,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     // Increment CPU and Memory count accordingly.
                     _resourceLimitMgr.handleServiceOfferingChange(caller.getAccountId(), vmInstance.isDisplay(),
                             (long) currentCpu, (long) newCpu, (long) currentMemory, (long) newMemory,
-                            currentServiceOffering, newServiceOffering, template);
+                            currentServiceOffering, newServiceOffering, template, template);
                     // #1 Check existing host has capacity
                     if (!excludes.shouldAvoid(ApiDBUtils.findHostById(vmInstance.getHostId()))) {
                         existingHostHasCapacity = _capacityMgr.checkIfHostHasCpuCapability(vmInstance.getHostId(), newCpu, newSpeed)
@@ -2116,7 +2116,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         // Decrement CPU and Memory count accordingly.
                         _resourceLimitMgr.handleServiceOfferingChange(caller.getAccountId(), vmInstance.isDisplay(),
                                 (long) newCpu, (long) currentCpu, (long) newMemory, (long) currentMemory,
-                                newServiceOffering, currentServiceOffering, template);
+                                newServiceOffering, currentServiceOffering, template, template);
                     }
                 }
             }
@@ -2308,7 +2308,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 // First check that the maximum number of UserVMs, CPU and Memory limit for the given
                 // accountId will not be exceeded
-                if (! VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
+                if (!VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
                     resourceLimitService.checkVmResourceLimit(account, vm.isDisplayVm(), serviceOffering, template);
                 }
 
@@ -7998,8 +7998,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                         // 1. Save usage event and update resource count for user vm volumes
                         try {
-                            _resourceLimitMgr.handleDiskOfferingChange(userVm.getAccountId(), newVol.isDisplay(),
-                                    root.getSize(), newVol.getSize(), _diskOfferingDao.findById(root.getDiskOfferingId()), diskOffering);
+                            _resourceLimitMgr.incrementVolumeResourceCount(userVm.getAccountId(), newVol.isDisplay(),
+                                    newVol.getSize(), diskOffering != null ? diskOffering : _diskOfferingDao.findById(newVol.getDiskOfferingId()));
                         } catch (final CloudRuntimeException e) {
                             throw e;
                         } catch (final Exception e) {
@@ -8025,6 +8025,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 // Detach, destroy and create the usage event for the old root volume.
                 _volsDao.detachVolume(root.getId());
                 _volumeService.destroyVolume(root.getId(), caller, expunge, false);
+
+                if (currentTemplate.getId() != template.getId() && VirtualMachine.Type.User.equals(vm.type) && !VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
+                    ServiceOfferingVO serviceOffering = serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
+                    _resourceLimitMgr.handleServiceOfferingChange(vm.getAccountId(), vm.isDisplay(),
+                            (long) serviceOffering.getCpu(), (long) serviceOffering.getCpu(),
+                            (long) serviceOffering.getRamSize(), (long) serviceOffering.getRamSize(),
+                            serviceOffering, serviceOffering, currentTemplate, template);
+                }
 
                 // For VMware hypervisor since the old root volume is replaced by the new root volume, force expunge old root volume if it has been created in storage
                 if (vm.getHypervisorType() == HypervisorType.VMware) {
@@ -8158,8 +8166,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
+        AccountVO owner = _accountDao.findByIdIncludingRemoved(vm.getAccountId());
+        if (vm.getTemplateId() != template.getId()) {
+            ServiceOfferingVO serviceOffering = serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
+            VMTemplateVO currentTemplate = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
+            _resourceLimitMgr.checkForServiceOfferingChange(owner, vm.isDisplay(),
+                    (long) serviceOffering.getCpu(), (long) serviceOffering.getCpu(),
+                    (long) serviceOffering.getRamSize(), (long) serviceOffering.getRamSize(),
+                    serviceOffering, serviceOffering, currentTemplate, template);
+        }
+
         if (newDiskOffering != null) {
-            AccountVO owner = _accountDao.findByIdIncludingRemoved(vm.getAccountId());
             for (Volume vol: volumes) {
                 Long newSize = newDiskOffering.getDiskSize();
                 DiskOffering currentOffering = vol.getDiskOfferingId() != newDiskOffering.getId() ? _diskOfferingDao.findById(vol.getDiskOfferingId()) : newDiskOffering;

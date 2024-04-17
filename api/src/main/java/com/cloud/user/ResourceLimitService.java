@@ -249,7 +249,7 @@ public interface ResourceLimitService {
     void handleServiceOfferingChange(long accountId, Boolean display, Long currentCpu, Long newCpu, Long currentMemory,
             Long newMemory,
             ServiceOffering currentOffering, ServiceOffering newOffering,
-            VirtualMachineTemplate template);
+            VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate);
 
     void handleDiskOfferingChange(long accountId, Boolean display, Long currentSize, Long newSize,
             DiskOffering currentDiskOffering, DiskOffering newDiskOffering);
@@ -262,7 +262,7 @@ public interface ResourceLimitService {
 
     void checkForServiceOfferingChange(Account owner, Boolean display, Long currentCpu, Long newCpu, Long currentMemory,
             Long newMemory,
-            ServiceOffering currentOffering, ServiceOffering newOffering, VirtualMachineTemplate template) throws ResourceAllocationException;
+            ServiceOffering currentOffering, ServiceOffering newOffering, VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate) throws ResourceAllocationException;
 
     void checkVmCpuResourceLimit(Account owner, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long cpu) throws ResourceAllocationException;
     void incrementVmCpuResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long cpu);
