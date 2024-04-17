@@ -75,7 +75,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
     public boolean isFrontEndAlive() {
         long unusedTime = System.currentTimeMillis() - getClientLastFrontEndActivityTime();
         if (!connectionAlive || unusedTime > ConsoleProxy.VIEWER_LINGER_SECONDS * 1000) {
-            logger.info("Front end has been idle for too long ({}ms).", unusedTime);
+            logger.info("Front end has been idle for too long ({} ms).", unusedTime);
             return false;
         }
         return true;
