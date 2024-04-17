@@ -2978,7 +2978,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         ListResponse<StoragePoolResponse> response = new ListResponse<>();
 
         List<StoragePoolResponse> poolResponses = ViewResponseHelper.createStoragePoolResponse(storagePools.first().toArray(new StoragePoolJoinVO[storagePools.first().size()]));
-        Map<String, Long> poolUuidToIdMap = storagePools.first().stream().collect(Collectors.toMap(StoragePoolJoinVO::getUuid, StoragePoolJoinVO::getId));
+        Map<String, Long> poolUuidToIdMap = storagePools.first().stream().collect(Collectors.toMap(StoragePoolJoinVO::getUuid, StoragePoolJoinVO::getId, (a, b) -> a));
         for (StoragePoolResponse poolResponse : poolResponses) {
             DataStore store = dataStoreManager.getPrimaryDataStore(poolResponse.getId());
             if (store != null) {
@@ -3823,7 +3823,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                     for (String tag : storageTags) {
                         diskOfferingSearch.and(tag, diskOfferingSearch.entity().getTags(), Op.EQ);
                     }
-                    diskOfferingSearch.done();
                 }
             }
 
@@ -3940,10 +3939,16 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             if (!hostTags.isEmpty()) {
 
                 serviceOfferingSearch.and().op("hostTag", serviceOfferingSearch.entity().getHostTag(), Op.NULL);
-                serviceOfferingSearch.or().op();
+                serviceOfferingSearch.or();
 
+                boolean flag = true;
                 for(String tag : hostTags) {
-                    serviceOfferingSearch.and(tag, serviceOfferingSearch.entity().getHostTag(), Op.EQ);
+                    if (flag) {
+                        flag = false;
+                        serviceOfferingSearch.op("hostTag" + tag, serviceOfferingSearch.entity().getHostTag(), Op.EQ);
+                    } else {
+                        serviceOfferingSearch.and("hostTag" + tag, serviceOfferingSearch.entity().getHostTag(), Op.EQ);
+                    }
                 }
                 serviceOfferingSearch.cp().cp().done();
             }
@@ -4082,22 +4087,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
         }
         if (CollectionUtils.isNotEmpty(hostTags)) {
-            SearchBuilder<ServiceOfferingJoinVO> hostTagsSearchBuilder = _srvOfferingJoinDao.createSearchBuilder();
             for(String tag : hostTags) {
-                hostTagsSearchBuilder.and(tag, hostTagsSearchBuilder.entity().getHostTag(), Op.FIND_IN_SET);
+                sc.setParameters("hostTag" + tag, tag);
             }
-            hostTagsSearchBuilder.done();
-
-            SearchCriteria<ServiceOfferingJoinVO> hostTagsSearchCriteria = hostTagsSearchBuilder.create();
-            for(String tag : hostTags) {
-                hostTagsSearchCriteria.setParameters(tag, tag);
-            }
-
-            SearchCriteria<ServiceOfferingJoinVO> finalHostTagsSearchCriteria = _srvOfferingJoinDao.createSearchCriteria();
-            finalHostTagsSearchCriteria.addOr("hostTag", Op.NULL);
-            finalHostTagsSearchCriteria.addOr("hostTag", Op.SC, hostTagsSearchCriteria);
-
-            sc.addAnd("hostTagsConstraint", SearchCriteria.Op.SC, finalHostTagsSearchCriteria);
         }
 
         Pair<List<ServiceOfferingVO>, Integer> uniquePair = _srvOfferingDao.searchAndCount(sc, searchFilter);

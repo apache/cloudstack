@@ -1234,6 +1234,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 accountRC.setCount((newCount == null) ? 0 : newCount);
                 _resourceCountDao.update(accountRC.getId(), accountRC);
             }
+        } else if (newCount != null) {
+            _resourceCountDao.persist(new ResourceCountVO(type, newCount, accountId, ResourceOwnerType.Account, tag));
         }
 
         // No need to log message for primary and secondary storage because both are recalculating the
