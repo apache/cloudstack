@@ -403,8 +403,8 @@ export default {
           ips = ips.filter(x => x.issourcenat)
           this.publicIpAddress = ips.length > 0 ? ips[0] : null
         }
-      }).catch(() => {
-        this.publicIpAddress = null
+      }).catch(error => {
+        this.$notifyError(error)
       }).finally(() => {
         this.networkLoading = false
       })
