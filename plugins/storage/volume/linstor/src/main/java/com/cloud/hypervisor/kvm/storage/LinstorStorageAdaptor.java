@@ -42,6 +42,7 @@ import com.linbit.linstor.api.model.ApiCallRc;
 import com.linbit.linstor.api.model.ApiCallRcList;
 import com.linbit.linstor.api.model.Properties;
 import com.linbit.linstor.api.model.ProviderKind;
+import com.linbit.linstor.api.model.Resource;
 import com.linbit.linstor.api.model.ResourceDefinition;
 import com.linbit.linstor.api.model.ResourceDefinitionModify;
 import com.linbit.linstor.api.model.ResourceGroupSpawn;
@@ -285,8 +286,8 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     @Override
     public boolean disconnectPhysicalDisk(String volumePath, KVMStoragePool pool)
     {
-        logger.debug("Linstor: disconnectPhysicalDisk " + pool.getUuid() + ":" + volumePath);
-        return true;
+        logger.debug("Linstor: disconnectPhysicalDisk {}:{}", pool.getUuid(), volumePath);
+        return false;
     }
 
     @Override
@@ -322,39 +323,44 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
             logger.debug("Linstor: Using storpool: " + pool.getUuid());
             final DevelopersApi api = getLinstorAPI(pool);
 
-            try
-            {
+            Optional<ResourceWithVolumes> optRsc;
+            try {
                 List<ResourceWithVolumes> resources = api.viewResources(
-                    Collections.singletonList(localNodeName),
-                    null,
-                    null,
-                    null,
-                    null,
-                    null);
+                        Collections.singletonList(localNodeName),
+                        null,
+                        null,
+                        null,
+                        null,
+                        null);
 
-                Optional<ResourceWithVolumes> rsc = getResourceByPath(resources, localPath);
+                optRsc = getResourceByPath(resources, localPath);
+            } catch (ApiException apiEx) {
+                // couldn't query linstor controller
+                logger.error(apiEx.getBestMessage());
+                return false;
+            }
 
-                if (rsc.isPresent())
-                {
+            if (optRsc.isPresent()) {
+                try {
+                    Resource rsc = optRsc.get();
                     ResourceDefinitionModify rdm = new ResourceDefinitionModify();
                     rdm.deleteProps(Collections.singletonList("DrbdOptions/Net/allow-two-primaries"));
-                    ApiCallRcList answers = api.resourceDefinitionModify(rsc.get().getName(), rdm);
+                    ApiCallRcList answers = api.resourceDefinitionModify(rsc.getName(), rdm);
                     if (answers.hasError()) {
                         logger.error(
                                 String.format("Failed to remove 'allow-two-primaries' on %s: %s",
-                                        rsc.get().getName(), LinstorUtil.getBestErrorMessage(answers)));
+                                        rsc.getName(), LinstorUtil.getBestErrorMessage(answers)));
                         // do not fail here as removing allow-two-primaries property isn't fatal
                     }
-
+                } catch(ApiException apiEx){
+                    logger.error(apiEx.getBestMessage());
+                    // do not fail here as removing allow-two-primaries property isn't fatal
                     return true;
                 }
-                logger.warn("Linstor: Couldn't find resource for this path: " + localPath);
-            } catch (ApiException apiEx) {
-                logger.error(apiEx.getBestMessage());
-                // do not fail here as removing allow-two-primaries property isn't fatal
             }
         }
-        return true;
+        logger.info("Linstor: Couldn't find resource for this path: {}", localPath);
+        return false;
     }
 
     @Override
