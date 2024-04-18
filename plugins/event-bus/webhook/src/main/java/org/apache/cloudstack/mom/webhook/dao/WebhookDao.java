@@ -27,4 +27,5 @@ public interface WebhookDao extends GenericDao<WebhookVO, Long> {
     List<WebhookVO> listByEnabledForDelivery(Long accountId, List<Long> domainIds);
     void deleteByAccount(long accountId);
     List<WebhookVO> listByAccount(long accountId);
+    WebhookVO findByAccountAndPayloadUrl(long accountId, String payloadUrl);
 }

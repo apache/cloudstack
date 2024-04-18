@@ -195,4 +195,51 @@ public class WebhookApiServiceImplTest {
             Assert.assertTrue(webhookApiServiceImpl.deleteWebhook(cmd));
         }
     }
+
+    @Test
+    public void testValidateWebhookOwnerPayloadUrlNonExistent() {
+        Mockito.when(webhookDao.findByAccountAndPayloadUrl(Mockito.anyLong(), Mockito.anyString())).thenReturn(null);
+        Account account = Mockito.mock(Account.class);
+        String url = "url";
+        webhookApiServiceImpl.validateWebhookOwnerPayloadUrl(account, url, null);
+        webhookApiServiceImpl.validateWebhookOwnerPayloadUrl(account, url, Mockito.mock(Webhook.class));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateWebhookOwnerPayloadUrlCreateExist() {
+        Mockito.when(webhookDao.findByAccountAndPayloadUrl(Mockito.anyLong(), Mockito.anyString()))
+                .thenReturn(Mockito.mock(WebhookVO.class));
+        webhookApiServiceImpl.validateWebhookOwnerPayloadUrl(Mockito.mock(Account.class), "url",
+                null);
+    }
+
+    private Webhook mockWebhook(long id) {
+        Webhook webhook = Mockito.mock(Webhook.class);
+        Mockito.when(webhook.getId()).thenReturn(id);
+        return webhook;
+    }
+
+    private WebhookVO mockWebhookVO(long id) {
+        WebhookVO webhook = Mockito.mock(WebhookVO.class);
+        Mockito.when(webhook.getId()).thenReturn(id);
+        return webhook;
+    }
+
+    @Test
+    public void testValidateWebhookOwnerPayloadUrlUpdateSameExist() {
+        WebhookVO webhookVO = mockWebhookVO(1L);
+        Mockito.when(webhookDao.findByAccountAndPayloadUrl(Mockito.anyLong(), Mockito.anyString()))
+                .thenReturn(webhookVO);
+        webhookApiServiceImpl.validateWebhookOwnerPayloadUrl(Mockito.mock(Account.class), "url",
+                mockWebhook(1L));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateWebhookOwnerPayloadUrlUpdateDifferentExist() {
+        WebhookVO webhookVO = mockWebhookVO(2L);
+        Mockito.when(webhookDao.findByAccountAndPayloadUrl(Mockito.anyLong(), Mockito.anyString()))
+                .thenReturn(webhookVO);
+        webhookApiServiceImpl.validateWebhookOwnerPayloadUrl(Mockito.mock(Account.class), "url",
+                mockWebhook(1L));
+    }
 }

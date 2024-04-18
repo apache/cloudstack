@@ -208,6 +208,19 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         return String.format("http://%s", payloadUrl);
     }
 
+    protected void validateWebhookOwnerPayloadUrl(Account owner, String payloadUrl, Webhook currentWebhook) {
+        WebhookVO webhookVO = webhookDao.findByAccountAndPayloadUrl(owner.getId(), payloadUrl);
+        if (webhookVO == null) {
+            return;
+        }
+        if (currentWebhook != null && webhookVO.getId() == currentWebhook.getId()) {
+            return;
+        }
+        String error = String.format("Payload URL: %s is already in use by another webhook", payloadUrl);
+        logger.error(String.format("%s: %s for Account [%s]", error, webhookVO, owner));
+        throw new InvalidParameterValueException(error);
+    }
+
     @Override
     public ListResponse<WebhookResponse> listWebhooks(ListWebhooksCmd cmd) {
         final CallContext ctx = CallContext.current();
@@ -320,6 +333,7 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
             }
         }
         UriUtils.validateUrl(payloadUrl);
+        validateWebhookOwnerPayloadUrl(owner, payloadUrl, null);
         URI uri = URI.create(payloadUrl);
         if (sslVerification && !HttpConstants.HTTPS.equalsIgnoreCase(uri.getScheme())) {
             throw new InvalidParameterValueException(
@@ -384,10 +398,10 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
                 throw new InvalidParameterValueException("Invalid state specified");
             }
         }
+        Account owner = accountManager.getAccount(webhook.getAccountId());
         if (StringUtils.isNotEmpty(scopeStr)) {
             try {
                 Webhook.Scope scope = Webhook.Scope.valueOf(scopeStr);
-                Account owner = accountManager.getAccount(webhook.getAccountId());
                 if ((Webhook.Scope.Global.equals(scope) && !Account.Type.ADMIN.equals(owner.getType())) ||
                         (Webhook.Scope.Domain.equals(scope) &&
                                 !List.of(Account.Type.ADMIN, Account.Type.DOMAIN_ADMIN).contains(owner.getType()))) {
@@ -403,6 +417,7 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         URI uri = URI.create(webhook.getPayloadUrl());
         if (StringUtils.isNotEmpty(payloadUrl)) {
             UriUtils.validateUrl(payloadUrl);
+            validateWebhookOwnerPayloadUrl(owner, payloadUrl, webhook);
             uri = URI.create(payloadUrl);
             webhook.setPayloadUrl(payloadUrl);
             updateNeeded = true;

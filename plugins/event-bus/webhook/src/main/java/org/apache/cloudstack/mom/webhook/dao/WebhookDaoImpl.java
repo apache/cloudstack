@@ -85,4 +85,15 @@ public class WebhookDaoImpl extends GenericDaoBase<WebhookVO, Long> implements W
         sc.setParameters("accountId", accountId);
         return listBy(sc);
     }
+
+    @Override
+    public WebhookVO findByAccountAndPayloadUrl(long accountId, String payloadUrl) {
+        SearchBuilder<WebhookVO> sb = createSearchBuilder();
+        sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
+        sb.and("payloadUrl", sb.entity().getPayloadUrl(), SearchCriteria.Op.EQ);
+        SearchCriteria<WebhookVO> sc = sb.create();
+        sc.setParameters("accountId", accountId);
+        sc.setParameters("payloadUrl", payloadUrl);
+        return findOneBy(sc);
+    }
 }
