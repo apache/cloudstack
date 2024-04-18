@@ -4068,14 +4068,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setJoinParameters("domainDetailSearchNormalUser", "domainIdIN", domainIds.toArray());
         }
 
-        List<String> hostTags = getHostTagsFromTemplateForServiceOfferingsListing(caller, templateId);
-
         if (currentVmOffering != null) {
-
+            List<String> hostTags = getHostTagsFromTemplateForServiceOfferingsListing(caller, templateId);
             if (diskOffering != null) {
                 List<String> storageTags = com.cloud.utils.StringUtils.csvTagsToList(diskOffering.getTags());
                 if (!storageTags.isEmpty() && VolumeApiServiceImpl.MatchStoragePoolTagsWithDiskOffering.value()) {
-                    for(String tag : storageTags) {
+                    for (String tag : storageTags) {
                         sc.setJoinParameters("diskOfferingSearch", tag, tag);
                     }
                 }
@@ -4085,10 +4083,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             if (!offeringHostTags.isEmpty()) {
                 hostTags.addAll(offeringHostTags);
             }
-        }
-        if (CollectionUtils.isNotEmpty(hostTags)) {
-            for(String tag : hostTags) {
-                sc.setParameters("hostTag" + tag, tag);
+            if (CollectionUtils.isNotEmpty(hostTags)) {
+                for (String tag : hostTags) {
+                    sc.setParameters("hostTag" + tag, tag);
+                }
             }
         }
 
