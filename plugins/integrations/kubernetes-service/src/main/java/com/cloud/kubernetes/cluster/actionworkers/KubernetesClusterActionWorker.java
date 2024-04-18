@@ -798,7 +798,7 @@ public class KubernetesClusterActionWorker {
         }
     }
 
-    public String getKubernetesNodeConfig(final String joinIp, final boolean ejectIso) throws IOException {
+    public String getKubernetesNodeConfig(final String joinIp, final boolean ejectIso, final boolean mountCksIsoOnVR) throws IOException {
         String k8sNodeConfig = readResourceFile("/conf/k8s-node.yml");
         final String sshPubKey = "{{ k8s.ssh.pub.key }}";
         final String joinIpKey = "{{ k8s_control_node.join_ip }}";
@@ -810,8 +810,13 @@ public class KubernetesClusterActionWorker {
 
         final Long waitTime = KubernetesClusterService.KubernetesWorkerNodeInstallAttemptWait.value();
         final Long reattempts = KubernetesClusterService.KubernetesWorkerNodeInstallReattempts.value();
-        NicVO routerNicOnNetwork = getVirtualRouterNicOnKubernetesClusterNetwork(kubernetesCluster);
-        String routerIp = routerNicOnNetwork.getIPv4Address();
+        String routerIp = "";
+        if (mountCksIsoOnVR) {
+            NicVO routerNicOnNetwork = getVirtualRouterNicOnKubernetesClusterNetwork(kubernetesCluster);
+            if (Objects.nonNull(routerNicOnNetwork)) {
+                routerIp = routerNicOnNetwork.getIPv4Address();
+            }
+        }
         String pubKey = "- \"" + configurationDao.getValue("ssh.publickey") + "\"";
         String sshKeyPair = kubernetesCluster.getKeyPair();
         if (StringUtils.isNotEmpty(sshKeyPair)) {

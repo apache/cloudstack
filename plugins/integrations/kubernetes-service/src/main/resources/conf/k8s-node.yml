@@ -79,16 +79,18 @@ write_files:
         else
           ### Download from VR ###
           ROUTER_IP="{{ k8s.vr.iso.mounted.ip }}"
-          echo "Downloading CKS binaries from the VR $ROUTER_IP"
-          if [ ! -d "${ISO_MOUNT_DIR}" ]; then
-            mkdir "${ISO_MOUNT_DIR}"
+          if [ "$ROUTER_IP" != "" ]; then
+            echo "Downloading CKS binaries from the VR $ROUTER_IP"
+            if [ ! -d "${ISO_MOUNT_DIR}" ]; then
+              mkdir "${ISO_MOUNT_DIR}"
+            fi
+            ### Download from ROUTER_IP/cks-iso into ISO_MOUNT_DIR
+            AUX_DOWNLOAD_DIR=/aux-dwnld
+            mkdir -p $AUX_DOWNLOAD_DIR
+            wget -r -R "index.html*" $ROUTER_IP/cks-iso -P $AUX_DOWNLOAD_DIR
+            mv $AUX_DOWNLOAD_DIR/$ROUTER_IP/cks-iso/* $ISO_MOUNT_DIR
+            rm -rf $AUX_DOWNLOAD_DIR
           fi
-          ### Download from ROUTER_IP/cks-iso into ISO_MOUNT_DIR
-          AUX_DOWNLOAD_DIR=/aux-dwnld
-          mkdir -p $AUX_DOWNLOAD_DIR
-          wget -r -R "index.html*" $ROUTER_IP/cks-iso -P $AUX_DOWNLOAD_DIR
-          mv $AUX_DOWNLOAD_DIR/$ROUTER_IP/cks-iso/* $ISO_MOUNT_DIR
-          rm -rf $AUX_DOWNLOAD_DIR
         fi
         if [ -d "$BINARIES_DIR" ]; then
           break

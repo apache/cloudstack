@@ -172,7 +172,7 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
             UserVmVO vm = userVmDao.findById(nodeId);
             String k8sControlNodeConfig = null;
             try {
-                k8sControlNodeConfig = getKubernetesNodeConfig(publicIp.getAddress().addr(), Hypervisor.HypervisorType.VMware.equals(clusterTemplate.getHypervisorType()));
+                k8sControlNodeConfig = getKubernetesNodeConfig(publicIp.getAddress().addr(), Hypervisor.HypervisorType.VMware.equals(clusterTemplate.getHypervisorType()), mountCksIsoOnVr);
             } catch (IOException e) {
                 logAndThrow(Level.ERROR, "Failed to read Kubernetes control node configuration file", e);
             }
