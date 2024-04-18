@@ -35,6 +35,7 @@ import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.Ternary;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
@@ -1641,13 +1642,13 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         if (newOffering == null) {
             newOffering = currentOffering;
         }
-        Set<String> currentOfferingTags = new HashSet<>(getResourceLimitStorageTagsForResourceCountOperation(display, currentOffering));
-        Set<String> newOfferingTags = new HashSet<>(getResourceLimitStorageTagsForResourceCountOperation(display, newOffering));
-        if (CollectionUtils.isEmpty(currentOfferingTags) && CollectionUtils.isEmpty(newOfferingTags)) {
+        Ternary<Set<String>, Set<String>, Set<String>> ternary = getTagsForDiskOfferingChange(display, currentOffering, newOffering);
+        if (ternary == null) {
             return;
         }
-        Set<String> sameTags = currentOfferingTags.stream().filter(newOfferingTags::contains).collect(Collectors.toSet());;
-        Set<String> newTags = newOfferingTags.stream().filter(tag -> !currentOfferingTags.contains(tag)).collect(Collectors.toSet());
+
+        Set<String> sameTags = ternary.first();
+        Set<String> newTags = ternary.second();
 
         for (String tag : sameTags) {
             if (newSize - currentSize > 0) {
@@ -1702,19 +1703,42 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     }
 
     @Override
-    public void handleServiceOfferingChange(long accountId, Boolean display, Long currentCpu, Long newCpu,
-            Long currentMemory, Long newMemory,
-            ServiceOffering currentOffering, ServiceOffering newOffering,
-            VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate) {
-        if (newOffering == null) {
-            newOffering = currentOffering;
-        }
-        if (newTemplate == null) {
-            newTemplate = currentTemplate;
-        }
+    public void handleTemplateChange(long accountId, Boolean display, ServiceOffering offering,
+            VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate
+    ) {
+        handleServiceOfferingAndTemplateChange(accountId, display, null, null, null, null,
+                offering, offering, currentTemplate, newTemplate);
+    }
+
+    @Override
+    public void handleServiceOfferingChange(long accountId, Boolean display, Long currentCpu, Long newCpu, Long currentMemory, Long newMemory,
+            ServiceOffering currentOffering, ServiceOffering newOffering, VirtualMachineTemplate template
+    ) {
+        handleServiceOfferingAndTemplateChange(accountId, display, currentCpu, newCpu, currentMemory, newMemory, currentOffering,
+                newOffering != null ? newOffering : currentOffering, template, template);
+    }
+
+    private Ternary<Set<String>, Set<String>, Set<String>> getTagsForServiceOfferingAndTemplateChange(
+            Boolean display, ServiceOffering currentOffering, ServiceOffering newOffering,
+            VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate
+    ) {
         Set<String> currentOfferingTags = new HashSet<>(getResourceLimitHostTagsForResourceCountOperation(display, currentOffering, currentTemplate));
         Set<String> newOfferingTags = new HashSet<>(getResourceLimitHostTagsForResourceCountOperation(display, newOffering, newTemplate));
-        if (CollectionUtils.isEmpty(currentOfferingTags) && CollectionUtils.isEmpty(newOfferingTags)) {
+        if (currentOfferingTags.isEmpty() && newOfferingTags.isEmpty()) {
+            return null;
+        }
+        Set<String> sameTags = currentOfferingTags.stream().filter(newOfferingTags::contains).collect(Collectors.toSet());;
+        Set<String> newTags = newOfferingTags.stream().filter(tag -> !currentOfferingTags.contains(tag)).collect(Collectors.toSet());
+        Set<String> removedTags = currentOfferingTags.stream().filter(tag -> !newOfferingTags.contains(tag)).collect(Collectors.toSet());
+        return new Ternary<>(sameTags, newTags, removedTags);
+    }
+
+    private void handleServiceOfferingAndTemplateChange(long accountId, Boolean display, Long currentCpu, Long newCpu,
+            Long currentMemory, Long newMemory, ServiceOffering currentOffering, ServiceOffering newOffering,
+            VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate
+    ) {
+        Ternary<Set<String>, Set<String>, Set<String>> ternary = getTagsForServiceOfferingAndTemplateChange(display, currentOffering, newOffering, currentTemplate, newTemplate);
+        if (ternary == null) {
             return;
         }
         if (currentCpu == null) {
@@ -1730,9 +1754,9 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             newMemory = newOffering.getRamSize() != null ? Long.valueOf(newOffering.getRamSize()) : 0L;
         }
 
-        Set<String> sameTags = currentOfferingTags.stream().filter(newOfferingTags::contains).collect(Collectors.toSet());;
-        Set<String> newTags = newOfferingTags.stream().filter(tag -> !currentOfferingTags.contains(tag)).collect(Collectors.toSet());
-        Set<String> removedTags = currentOfferingTags.stream().filter(tag -> !newOfferingTags.contains(tag)).collect(Collectors.toSet());
+        Set<String> sameTags = ternary.first();
+        Set<String> newTags = ternary.second();
+        Set<String> removedTags = ternary.third();
 
         for (String tag : sameTags) {
             if (newCpu - currentCpu > 0) {
@@ -1761,20 +1785,33 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
     }
 
+    private Ternary<Set<String>, Set<String>, Set<String>> getTagsForDiskOfferingChange(
+            Boolean display, DiskOffering currentOffering, DiskOffering newOffering
+    ) {
+        Set<String> currentOfferingTags = new HashSet<>(getResourceLimitStorageTagsForResourceCountOperation(display, currentOffering));
+        Set<String> newOfferingTags = new HashSet<>(getResourceLimitStorageTagsForResourceCountOperation(display, newOffering));
+        if (currentOfferingTags.isEmpty() && newOfferingTags.isEmpty()) {
+            return null;
+        }
+        Set<String> sameTags = currentOfferingTags.stream().filter(newOfferingTags::contains).collect(Collectors.toSet());;
+        Set<String> newTags = newOfferingTags.stream().filter(tag -> !currentOfferingTags.contains(tag)).collect(Collectors.toSet());
+        Set<String> removedTags = currentOfferingTags.stream().filter(tag -> !newOfferingTags.contains(tag)).collect(Collectors.toSet());
+        return new Ternary<>(sameTags, newTags, removedTags);
+    }
+
     @Override
     public void handleDiskOfferingChange(long accountId, Boolean display, Long currentSize, Long newSize,
             DiskOffering currentOffering, DiskOffering newOffering) {
         if (newOffering == null) {
             newOffering = currentOffering;
         }
-        Set<String> currentOfferingTags = new HashSet<>(getResourceLimitStorageTagsForResourceCountOperation(display, currentOffering));
-        Set<String> newOfferingTags = new HashSet<>(getResourceLimitStorageTagsForResourceCountOperation(display, newOffering));
-        if (CollectionUtils.isEmpty(currentOfferingTags) && CollectionUtils.isEmpty(newOfferingTags)) {
+        Ternary<Set<String>, Set<String>, Set<String>> ternary = getTagsForDiskOfferingChange(display, currentOffering, newOffering);
+        if (ternary == null) {
             return;
         }
-        Set<String> sameTags = currentOfferingTags.stream().filter(newOfferingTags::contains).collect(Collectors.toSet());;
-        Set<String> newTags = newOfferingTags.stream().filter(tag -> !currentOfferingTags.contains(tag)).collect(Collectors.toSet());
-        Set<String> removedTags = currentOfferingTags.stream().filter(tag -> !newOfferingTags.contains(tag)).collect(Collectors.toSet());
+        Set<String> sameTags = ternary.first();
+        Set<String> newTags = ternary.second();
+        Set<String> removedTags = ternary.third();
 
         for (String tag : sameTags) {
             if (newSize - currentSize > 0) {
@@ -1893,20 +1930,29 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     }
 
     @Override
+    public void checkForTemplateChange(Account owner, Boolean display, ServiceOffering offering,
+            VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate) throws ResourceAllocationException {
+        checkForServiceOfferingAndTemplateChange(owner, display, null, null,
+                null, null, offering, offering, currentTemplate, newTemplate);
+    }
+
+    @Override
     public void checkForServiceOfferingChange(Account owner, Boolean display, Long currentCpu, Long newCpu,
             Long currentMemory, Long newMemory,
+            ServiceOffering currentOffering, ServiceOffering newOffering, VirtualMachineTemplate template
+    ) throws ResourceAllocationException {
+        checkForServiceOfferingAndTemplateChange(owner, display, currentCpu, newCpu, currentMemory, newMemory, currentOffering,
+                newOffering != null ? newOffering : currentOffering, template, template);
+    }
+
+    public void checkForServiceOfferingAndTemplateChange(Account owner, Boolean display, Long currentCpu, Long newCpu,
+            Long currentMemory, Long newMemory,
             ServiceOffering currentOffering, ServiceOffering newOffering, VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate) throws ResourceAllocationException {
-        if (newOffering == null) {
-            newOffering = currentOffering;
-        }
-        if (newTemplate == null) {
-            newTemplate = currentTemplate;
-        }
-        Set<String> currentOfferingTags = new HashSet<>(getResourceLimitHostTagsForResourceCountOperation(display, currentOffering, currentTemplate));
-        Set<String> newOfferingTags = new HashSet<>(getResourceLimitHostTagsForResourceCountOperation(display, newOffering, newTemplate));
-        if (CollectionUtils.isEmpty(currentOfferingTags) && CollectionUtils.isEmpty(newOfferingTags)) {
+        Ternary<Set<String>, Set<String>, Set<String>> ternary = getTagsForServiceOfferingAndTemplateChange(display, currentOffering, newOffering, currentTemplate, newTemplate);
+        if (ternary == null) {
             return;
         }
+
         if (currentCpu == null) {
             currentCpu = currentOffering.getCpu() != null ? Long.valueOf(currentOffering.getCpu()) : 0L;
         }
@@ -1920,8 +1966,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             newMemory = newOffering.getRamSize() != null ? Long.valueOf(newOffering.getRamSize()) : 0L;
         }
 
-        Set<String> sameTags = currentOfferingTags.stream().filter(newOfferingTags::contains).collect(Collectors.toSet());;
-        Set<String> newTags = newOfferingTags.stream().filter(tag -> !currentOfferingTags.contains(tag)).collect(Collectors.toSet());
+        Set<String> sameTags = ternary.first();
+        Set<String> newTags = ternary.second();
 
         for (String tag : sameTags) {
             if (newCpu - currentCpu > 0) {

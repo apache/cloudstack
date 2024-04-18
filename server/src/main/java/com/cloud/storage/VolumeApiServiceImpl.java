@@ -1260,18 +1260,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
 
             _volsDao.update(volume.getId(), volume);
-            if (newDiskOffering != null && newDiskOffering.getId() != diskOffering.getId()) {
-                _resourceLimitMgr.handleDiskOfferingChange(volume.getAccountId(), volume.isDisplayVolume(), currentSize, newSize,
-                        diskOffering, newDiskOffering);
-            } else {
-                if (!shrinkOk) {
-                    _resourceLimitMgr.incrementVolumePrimaryStorageResourceCount(volume.getAccountId(), volume.isDisplayVolume(),
-                            newSize - currentSize, diskOffering);
-                } else {
-                    _resourceLimitMgr.decrementVolumePrimaryStorageResourceCount(volume.getAccountId(), volume.isDisplayVolume(),
-                            currentSize - newSize, diskOffering);
-                }
-            }
+            _resourceLimitMgr.handleDiskOfferingChange(volume.getAccountId(), volume.isDisplayVolume(), currentSize, newSize,
+                    diskOffering, newDiskOffering);
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_RESIZE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
                     volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid());
             return volume;
@@ -1509,16 +1499,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             /* Update resource count for the account on primary storage resource */
             DiskOffering diskOffering = _diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId());
-            if (newDiskOfferingId != null && !newDiskOfferingId.equals(currentDiskOfferingId)) {
-                DiskOffering currentDiskOffering = _diskOfferingDao.findByIdIncludingRemoved(currentDiskOfferingId);
-                _resourceLimitMgr.handleDiskOfferingChange(volume.getAccountId(), volume.isDisplayVolume(), currentSize, newSize, currentDiskOffering, diskOffering);
-            } else {
-                if (!shrinkOk) {
-                    _resourceLimitMgr.incrementVolumePrimaryStorageResourceCount(volume.getAccountId(), volume.isDisplayVolume(), newSize - currentSize, diskOffering);
-                } else {
-                    _resourceLimitMgr.decrementVolumePrimaryStorageResourceCount(volume.getAccountId(), volume.isDisplayVolume(), currentSize - newSize, diskOffering);
-                }
-            }
+            DiskOffering currentDiskOffering = _diskOfferingDao.findByIdIncludingRemoved(currentDiskOfferingId);
+            _resourceLimitMgr.handleDiskOfferingChange(volume.getAccountId(), volume.isDisplayVolume(), currentSize, newSize, currentDiskOffering, diskOffering);
 
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_RESIZE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
                     volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid());
@@ -2017,18 +1999,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
 
             _volsDao.update(volume.getId(), volume);
-            if (newDiskOffering != null && newDiskOffering.getId() != existingDiskOffering.getId()) {
-                _resourceLimitMgr.handleDiskOfferingChange(volume.getAccountId(), volume.isDisplayVolume(), currentSize, newSize,
-                        existingDiskOffering, newDiskOffering);
-            } else {
-                if (!shrinkOk) {
-                    _resourceLimitMgr.incrementVolumePrimaryStorageResourceCount(volume.getAccountId(), volume.isDisplayVolume(),
-                            newSize - currentSize, existingDiskOffering);
-                } else {
-                    _resourceLimitMgr.decrementVolumePrimaryStorageResourceCount(volume.getAccountId(), volume.isDisplayVolume(),
-                            currentSize - newSize, existingDiskOffering);
-                }
-            }
+            _resourceLimitMgr.handleDiskOfferingChange(volume.getAccountId(), volume.isDisplayVolume(), currentSize, newSize,
+                    existingDiskOffering, newDiskOffering);
 
             if (currentSize != newSize) {
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_RESIZE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
@@ -2304,7 +2276,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (storagePoolId != null) {
                 StoragePoolVO storagePoolVO = _storagePoolDao.findById(storagePoolId);
 
-                if (storagePoolVO.isManaged() && !storagePoolVO.getPoolType().equals(Storage.StoragePoolType.PowerFlex)) {
+                if (storagePoolVO.isManaged() && !List.of(
+                        Storage.StoragePoolType.PowerFlex,
+                        Storage.StoragePoolType.FiberChannel).contains(storagePoolVO.getPoolType())) {
                     Long instanceId = volume.getInstanceId();
 
                     if (instanceId != null) {

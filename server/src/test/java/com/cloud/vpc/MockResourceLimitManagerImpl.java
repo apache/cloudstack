@@ -289,9 +289,15 @@ public class MockResourceLimitManagerImpl extends ManagerBase implements Resourc
     }
 
     @Override
+    public void handleTemplateChange(long accountId, Boolean display, ServiceOffering offering,
+            VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate) {
+
+    }
+
+    @Override
     public void handleServiceOfferingChange(long accountId, Boolean display, Long currentCpu, Long newCpu,
             Long currentMemory, Long newMemory, ServiceOffering currentOffering, ServiceOffering newOffering,
-            VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate) {
+            VirtualMachineTemplate template) {
 
     }
 
@@ -329,7 +335,14 @@ public class MockResourceLimitManagerImpl extends ManagerBase implements Resourc
     @Override
     public void checkForServiceOfferingChange(Account owner, Boolean display, Long currentCpu, Long newCpu,
             Long currentMemory, Long newMemory, ServiceOffering currentOffering, ServiceOffering newOffering,
-            VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate) throws ResourceAllocationException {
+            VirtualMachineTemplate template) throws ResourceAllocationException {
+
+    }
+
+    @Override
+    public void checkForTemplateChange(Account owner, Boolean display, ServiceOffering offering,
+            VirtualMachineTemplate currentTemplate,
+            VirtualMachineTemplate newTemplate) throws ResourceAllocationException {
 
     }
 
