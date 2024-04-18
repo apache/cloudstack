@@ -19,7 +19,6 @@ package com.cloud.network.dao;
 import java.util.List;
 
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.network.RemoteAccessVpn;
@@ -29,7 +28,6 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Component
 public class RemoteAccessVpnDaoImpl extends GenericDaoBase<RemoteAccessVpnVO, Long> implements RemoteAccessVpnDao {
-    private static final Logger s_logger = Logger.getLogger(RemoteAccessVpnDaoImpl.class);
 
     private final SearchBuilder<RemoteAccessVpnVO> AllFieldsSearch;
 

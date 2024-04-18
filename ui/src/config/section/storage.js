@@ -49,12 +49,14 @@ export default {
         if (store.getters.metrics) {
           fields.push(...metricsFields)
         }
-
         if (store.getters.userInfo.roletype === 'Admin') {
-          fields.push('account')
           fields.push('storage')
+          fields.push('account')
         } else if (store.getters.userInfo.roletype === 'DomainAdmin') {
           fields.push('account')
+        }
+        if (store.getters.listAllProjects) {
+          fields.push('project')
         }
         fields.push('zonename')
 
@@ -320,7 +322,12 @@ export default {
         var fields = ['name', 'state', 'volumename', 'intervaltype', 'physicalsize', 'created']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('account')
+          if (store.getters.listAllProjects) {
+            fields.push('project')
+          }
           fields.push('domain')
+        } else if (store.getters.listAllProjects) {
+          fields.push('project')
         }
         fields.push('zonename')
         return fields
@@ -444,61 +451,11 @@ export default {
           label: 'label.delete.backup',
           message: 'message.delete.backup',
           dataView: true,
-          show: (record) => { return record.state !== 'Destroyed' }
-        }
-      ]
-    },
-    {
-      name: 'backup',
-      title: 'label.backup',
-      icon: 'cloud-upload-outlined',
-      permission: ['listBackups'],
-      columns: [{ name: (record) => { return record.virtualmachinename } }, 'virtualmachinename', 'status', 'type', 'created', 'account', 'zone'],
-      details: ['virtualmachinename', 'id', 'type', 'externalid', 'size', 'virtualsize', 'volumes', 'backupofferingname', 'zone', 'account', 'domain', 'created'],
-      actions: [
-        {
-          api: 'restoreBackup',
-          icon: 'sync-outlined',
-          docHelp: 'adminguide/virtual_machines.html#restoring-vm-backups',
-          label: 'label.backup.restore',
-          message: 'message.backup.restore',
-          dataView: true,
-          show: (record) => { return record.state !== 'Destroyed' }
-        },
-        {
-          api: 'restoreVolumeFromBackupAndAttachToVM',
-          icon: 'paper-clip-outlined',
-          label: 'label.backup.attach.restore',
-          message: 'message.backup.attach.restore',
-          dataView: true,
           show: (record) => { return record.state !== 'Destroyed' },
+          groupAction: true,
           popup: true,
-          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/RestoreAttachBackupVolume.vue')))
-        },
-        {
-          api: 'removeVirtualMachineFromBackupOffering',
-          icon: 'scissor-outlined',
-          label: 'label.backup.offering.remove',
-          message: 'message.backup.offering.remove',
-          dataView: true,
-          show: (record) => { return record.state !== 'Destroyed' },
-          args: ['forced', 'virtualmachineid'],
-          mapping: {
-            forced: {
-              value: (record) => { return true }
-            },
-            virtualmachineid: {
-              value: (record) => { return record.virtualmachineid }
-            }
-          }
-        },
-        {
-          api: 'deleteBackup',
-          icon: 'delete-outlined',
-          label: 'label.delete.backup',
-          message: 'message.delete.backup',
-          dataView: true,
-          show: (record) => { return record.state !== 'Destroyed' }
+          groupMap: (selection, values) => { return selection.map(x => { return { id: x, forced: values.forced } }) },
+          args: ['forced']
         }
       ]
     },

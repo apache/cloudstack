@@ -24,7 +24,8 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.script.OutputInterpreter.TimedOutLogger;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.joda.time.Duration;
 
 import java.io.BufferedReader;
@@ -46,7 +47,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 public class Script implements Callable<String> {
-    private static final Logger s_logger = Logger.getLogger(Script.class);
+    protected static Logger LOGGER = LogManager.getLogger(Script.class);
 
     private final Logger _logger;
 
@@ -92,7 +93,7 @@ public class Script implements Callable<String> {
             _timeout = _defaultTimeout;
         }
         _process = null;
-        _logger = logger != null ? logger : s_logger;
+        _logger = logger != null ? logger : Script.LOGGER;
     }
 
     public Script(boolean runWithSudo, String command, Duration timeout, Logger logger) {
@@ -112,16 +113,16 @@ public class Script implements Callable<String> {
     }
 
     public Script(String command) {
-        this(command, 0, s_logger);
+        this(command, 0, LOGGER);
     }
 
     public Script(String command, Duration timeout) {
-        this(command, timeout.getMillis(), s_logger);
+        this(command, timeout.getMillis(), LOGGER);
     }
 
     @Deprecated
     public Script(String command, long timeout) {
-        this(command, timeout, s_logger);
+        this(command, timeout, LOGGER);
     }
 
     public void add(String... params) {
@@ -330,6 +331,118 @@ public class Script implements Callable<String> {
         }
     }
 
+    public String executeIgnoreExitValue(OutputInterpreter interpreter, int exitValue) {
+        String[] command = _command.toArray(new String[_command.size()]);
+
+        if (_logger.isDebugEnabled()) {
+            _logger.debug(String.format("Executing: %s", buildCommandLine(command).split(KeyStoreUtils.KS_FILENAME)[0]));
+        }
+
+        try {
+            ProcessBuilder pb = new ProcessBuilder(command);
+            pb.redirectErrorStream(true);
+            if (_workDir != null)
+                pb.directory(new File(_workDir));
+
+            _process = pb.start();
+            if (_process == null) {
+                _logger.warn(String.format("Unable to execute: %s", buildCommandLine(command)));
+                return String.format("Unable to execute the command: %s", command[0]);
+            }
+
+            BufferedReader ir = new BufferedReader(new InputStreamReader(_process.getInputStream()));
+
+            _thread = Thread.currentThread();
+            ScheduledFuture<String> future = null;
+            if (_timeout > 0) {
+                future = s_executors.schedule(this, _timeout, TimeUnit.MILLISECONDS);
+            }
+
+            Task task = null;
+            if (interpreter != null && interpreter.drain()) {
+                task = new Task(interpreter, ir);
+                s_executors.execute(task);
+            }
+
+            while (true) {
+                _logger.debug(String.format("Executing while with timeout : %d", _timeout));
+                try {
+                    //process execution completed within timeout period
+                    if (_process.waitFor(_timeout, TimeUnit.MILLISECONDS)) {
+                        //process completed successfully
+                        if (_process.exitValue() == 0 || _process.exitValue() == exitValue) {
+                            _logger.debug("Execution is successful.");
+                            if (interpreter != null) {
+                                return interpreter.drain() ? task.getResult() : interpreter.interpret(ir);
+                            } else {
+                                // null return exitValue apparently
+                                return String.valueOf(_process.exitValue());
+                            }
+                        } else { //process failed
+                            break;
+                        }
+                    } //timeout
+                } catch (InterruptedException e) {
+                    if (!_isTimeOut) {
+                        /*
+                         * This is not timeout, we are interrupted by others,
+                         * continue
+                         */
+                        _logger.debug("We are interrupted but it's not a timeout, just continue");
+                        continue;
+                    }
+                } finally {
+                    if (future != null) {
+                        future.cancel(false);
+                    }
+                    Thread.interrupted();
+                }
+
+                //timeout without completing the process
+                TimedOutLogger log = new TimedOutLogger(_process);
+                Task timedoutTask = new Task(log, ir);
+
+                timedoutTask.run();
+                if (!_passwordCommand) {
+                    _logger.warn(String.format("Timed out: %s.  Output is: %s", buildCommandLine(command), timedoutTask.getResult()));
+                } else {
+                    _logger.warn(String.format("Timed out: %s", buildCommandLine(command)));
+                }
+
+                return ERR_TIMEOUT;
+            }
+
+            _logger.debug(String.format("Exit value is %d", _process.exitValue()));
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(_process.getInputStream()), 128);
+
+            String error;
+            if (interpreter != null) {
+                error = interpreter.processError(reader);
+            } else {
+                error = String.valueOf(_process.exitValue());
+            }
+
+            if (_logger.isDebugEnabled()) {
+                _logger.debug(error);
+            }
+            return error;
+        } catch (SecurityException ex) {
+            _logger.warn("Security Exception....not running as root?", ex);
+            return stackTraceAsString(ex);
+        } catch (Exception ex) {
+            _logger.warn(String.format("Exception: %s", buildCommandLine(command)), ex);
+            return stackTraceAsString(ex);
+        } finally {
+            if (_process != null) {
+                IOUtils.closeQuietly(_process.getErrorStream());
+                IOUtils.closeQuietly(_process.getOutputStream());
+                IOUtils.closeQuietly(_process.getInputStream());
+                _process.destroyForcibly();
+            }
+        }
+    }
+
     @Override
     public String call() {
         try {
@@ -383,19 +496,19 @@ public class Script implements Callable<String> {
     }
 
     public static String findScript(String path, String script) {
-        s_logger.debug("Looking for " + script + " in the classpath");
+        LOGGER.debug("Looking for " + script + " in the classpath");
 
         URL url = ClassLoader.getSystemResource(script);
-        s_logger.debug("System resource: " + url);
+        LOGGER.debug("System resource: " + url);
         File file = null;
         if (url != null) {
             file = new File(url.getFile());
-            s_logger.debug("Absolute path =  " + file.getAbsolutePath());
+            LOGGER.debug("Absolute path =  " + file.getAbsolutePath());
             return file.getAbsolutePath();
         }
 
         if (path == null) {
-            s_logger.warn("No search path specified, unable to look for " + script);
+            LOGGER.warn("No search path specified, unable to look for " + script);
             return null;
         }
         path = path.replace("/", File.separator);
@@ -409,14 +522,14 @@ public class Script implements Callable<String> {
         } else {
             url = Script.class.getClassLoader().getResource(path + File.separator + script);
         }
-        s_logger.debug("Classpath resource: " + url);
+        LOGGER.debug("Classpath resource: " + url);
         if (url != null) {
             try {
                 file = new File(new URI(url.toString()).getPath());
-                s_logger.debug("Absolute path =  " + file.getAbsolutePath());
+                LOGGER.debug("Absolute path =  " + file.getAbsolutePath());
                 return file.getAbsolutePath();
             } catch (URISyntaxException e) {
-                s_logger.warn("Unable to convert " + url.toString() + " to a URI");
+                LOGGER.warn("Unable to convert " + url.toString() + " to a URI");
             }
         }
 
@@ -430,7 +543,7 @@ public class Script implements Callable<String> {
             return file.exists() ? file.getAbsolutePath() : null;
         }
 
-        s_logger.debug("Looking for " + script);
+        LOGGER.debug("Looking for " + script);
         String search = null;
         for (int i = 0; i < 3; i++) {
             if (i == 0) {
@@ -450,25 +563,25 @@ public class Script implements Callable<String> {
                 else
                     cp = cp.substring(begin, end);
 
-                s_logger.debug("Current binaries reside at " + cp);
+                LOGGER.debug("Current binaries reside at " + cp);
                 search = cp;
             } else if (i == 1) {
-                s_logger.debug("Searching in environment.properties");
+                LOGGER.debug("Searching in environment.properties");
                 try {
                     final File propsFile = PropertiesUtil.findConfigFile("environment.properties");
                     if (propsFile == null) {
-                        s_logger.debug("environment.properties could not be opened");
+                        LOGGER.debug("environment.properties could not be opened");
                     } else {
                         final Properties props = PropertiesUtil.loadFromFile(propsFile);
                         search = props.getProperty("paths.script");
                     }
                 } catch (IOException e) {
-                    s_logger.debug("environment.properties could not be opened");
+                    LOGGER.debug("environment.properties could not be opened");
                     continue;
                 }
-                s_logger.debug("environment.properties says scripts should be in " + search);
+                LOGGER.debug("environment.properties says scripts should be in " + search);
             } else {
-                s_logger.debug("Searching in the current directory");
+                LOGGER.debug("Searching in the current directory");
                 search = ".";
             }
 
@@ -476,7 +589,7 @@ public class Script implements Callable<String> {
             do {
                 search = search.substring(0, search.lastIndexOf(File.separator));
                 file = new File(search + File.separator + script);
-                s_logger.debug("Looking for " + script + " in " + file.getAbsolutePath());
+                LOGGER.debug("Looking for " + script + " in " + file.getAbsolutePath());
             } while (!file.exists() && search.lastIndexOf(File.separator) != -1);
 
             if (file.exists()) {
@@ -491,14 +604,14 @@ public class Script implements Callable<String> {
         do {
             search = search.substring(0, search.lastIndexOf(File.separator));
             file = new File(search + File.separator + script);
-            s_logger.debug("Looking for " + script + " in " + file.getAbsolutePath());
+            LOGGER.debug("Looking for " + script + " in " + file.getAbsolutePath());
         } while (!file.exists() && search.lastIndexOf(File.separator) != -1);
 
         if (file.exists()) {
             return file.getAbsolutePath();
         }
 
-        s_logger.warn("Unable to find script " + script);
+        LOGGER.warn("Unable to find script " + script);
         return null;
     }
 
@@ -531,6 +644,19 @@ public class Script implements Callable<String> {
         return runSimpleBashScriptForExitValue(command, 0, true);
     }
 
+    /**
+     * Executes a bash script and returns the exit value of the script.
+     *
+     * @param command
+     *         The bash command to be executed.
+     * @param timeout
+     *         The maximum time (in milliseconds) that the script is allowed to run before it is forcibly terminated.
+     * @param avoidLogging
+     *         If set to true, some logging is avoided.
+     *
+     * @return The exit value of the script. Returns -1 if the result is null or empty, or if it cannot be parsed into
+     *         an integer which can happen in case of a timeout.
+     */
     public static int runSimpleBashScriptForExitValue(String command, int timeout, boolean avoidLogging) {
 
         Script s = new Script("/bin/bash", timeout);
@@ -550,4 +676,24 @@ public class Script implements Callable<String> {
         }
     }
 
+    public static String runBashScriptIgnoreExitValue(String command, int exitValue) {
+        return runBashScriptIgnoreExitValue(command, exitValue, 0);
+    }
+
+    public static String runBashScriptIgnoreExitValue(String command, int exitValue, int timeout) {
+
+        Script s = new Script("/bin/bash", timeout);
+        s.add("-c");
+        s.add(command);
+
+        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+        s.executeIgnoreExitValue(parser, exitValue);
+
+        String result = parser.getLines();
+        if (result == null || result.trim().isEmpty()) {
+            return null;
+        } else {
+            return result.trim();
+        }
+    }
 }

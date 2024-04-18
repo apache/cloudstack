@@ -21,6 +21,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -34,7 +35,8 @@ import com.cloud.storage.DiskOfferingVO;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
@@ -49,16 +51,19 @@ import javax.inject.Inject;
 
 @Component
 public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJoinVO, Long> implements ServiceOfferingJoinDao {
-    public static final Logger s_logger = Logger.getLogger(ServiceOfferingJoinDaoImpl.class);
 
     @Inject
     VsphereStoragePolicyDao _vsphereStoragePolicyDao;
     @Inject
     private AnnotationDao annotationDao;
     @Inject
+    private ConfigurationDao configDao;
+    @Inject
     private AccountManager accountManager;
 
     private SearchBuilder<ServiceOfferingJoinVO> sofIdSearch;
+
+    private SearchBuilder<ServiceOfferingJoinVO> srvOfferingSearch;
 
     /**
      * Constant used to convert GB into Bytes (or the other way around).
@@ -85,6 +90,10 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         sofIdSearch.and("id", sofIdSearch.entity().getId(), SearchCriteria.Op.EQ);
         sofIdSearch.done();
 
+        srvOfferingSearch = createSearchBuilder();
+        srvOfferingSearch.and("idIN", srvOfferingSearch.entity().getId(), SearchCriteria.Op.IN);
+        srvOfferingSearch.done();
+
         this._count = "select count(distinct service_offering_view.id) from service_offering_view WHERE ";
     }
 
@@ -105,6 +114,7 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         ServiceOfferingResponse offeringResponse = new ServiceOfferingResponse();
         offeringResponse.setId(offering.getUuid());
         offeringResponse.setName(offering.getName());
+        offeringResponse.setState(offering.getState().toString());
         offeringResponse.setIsSystemOffering(offering.isSystemUse());
         offeringResponse.setDefaultUse(offering.isDefaultUse());
         offeringResponse.setSystemVmType(offering.getSystemVmType());
@@ -184,10 +194,9 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         return offerings.get(0);
     }
 
-
     @Override
     public Map<Long, List<String>> listDomainsOfServiceOfferingsUsedByDomainPath(String domainPath) {
-        s_logger.debug(String.format("Retrieving the domains of the service offerings used by domain with path [%s].", domainPath));
+        logger.debug("Retrieving the domains of the service offerings used by domain with path [{}].", domainPath);
 
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         try (PreparedStatement pstmt = txn.prepareStatement(LIST_DOMAINS_OF_SERVICE_OFFERINGS_USED_BY_DOMAIN_PATH)) {
@@ -208,13 +217,57 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
 
             return domainsOfServiceOfferingsUsedByDomainPath;
         } catch (SQLException e) {
-            s_logger.error(String.format("Failed to retrieve the domains of the service offerings used by domain with path [%s] due to [%s]. Returning an empty "
+            logger.error(String.format("Failed to retrieve the domains of the service offerings used by domain with path [%s] due to [%s]. Returning an empty "
                     + "list of domains.", domainPath, e.getMessage()));
 
-            s_logger.debug(String.format("Failed to retrieve the domains of the service offerings used by domain with path [%s]. Returning an empty "
+            logger.debug(String.format("Failed to retrieve the domains of the service offerings used by domain with path [%s]. Returning an empty "
                     + "list of domains.", domainPath), e);
 
             return new HashMap<>();
         }
+    }
+
+    @Override
+    public List<ServiceOfferingJoinVO> searchByIds(Long... offeringIds) {
+        // set detail batch query size
+        int DETAILS_BATCH_SIZE = 2000;
+        String batchCfg = configDao.getValue("detail.batch.query.size");
+        if (batchCfg != null) {
+            DETAILS_BATCH_SIZE = Integer.parseInt(batchCfg);
+        }
+
+        List<ServiceOfferingJoinVO> uvList = new ArrayList<>();
+        // query details by batches
+        int curr_index = 0;
+        if (offeringIds.length > DETAILS_BATCH_SIZE) {
+            while ((curr_index + DETAILS_BATCH_SIZE) <= offeringIds.length) {
+                Long[] ids = new Long[DETAILS_BATCH_SIZE];
+                for (int k = 0, j = curr_index; j < curr_index + DETAILS_BATCH_SIZE; j++, k++) {
+                    ids[k] = offeringIds[j];
+                }
+                SearchCriteria<ServiceOfferingJoinVO> sc = srvOfferingSearch.create();
+                sc.setParameters("idIN", ids);
+                List<ServiceOfferingJoinVO> accounts = searchIncludingRemoved(sc, null, null, false);
+                if (accounts != null) {
+                    uvList.addAll(accounts);
+                }
+                curr_index += DETAILS_BATCH_SIZE;
+            }
+        }
+        if (curr_index < offeringIds.length) {
+            int batch_size = (offeringIds.length - curr_index);
+            // set the ids value
+            Long[] ids = new Long[batch_size];
+            for (int k = 0, j = curr_index; j < curr_index + batch_size; j++, k++) {
+                ids[k] = offeringIds[j];
+            }
+            SearchCriteria<ServiceOfferingJoinVO> sc = srvOfferingSearch.create();
+            sc.setParameters("idIN", ids);
+            List<ServiceOfferingJoinVO> accounts = searchIncludingRemoved(sc, null, null, false);
+            if (accounts != null) {
+                uvList.addAll(accounts);
+            }
+        }
+        return uvList;
     }
 }

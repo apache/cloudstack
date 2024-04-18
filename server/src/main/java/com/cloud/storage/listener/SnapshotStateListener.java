@@ -28,7 +28,8 @@ import javax.inject.Inject;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventBusException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.stereotype.Component;
 
@@ -52,7 +53,7 @@ public class SnapshotStateListener implements StateListener<State, Event, Snapsh
     @Inject
     private ConfigurationDao configDao;
 
-    private static final Logger s_logger = Logger.getLogger(SnapshotStateListener.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     public SnapshotStateListener() {
 
@@ -106,7 +107,7 @@ public class SnapshotStateListener implements StateListener<State, Event, Snapsh
         try {
             s_eventBus.publish(eventMsg);
         } catch (EventBusException e) {
-            s_logger.warn("Failed to publish state change event on the event bus.");
+            logger.warn("Failed to publish state change event on the event bus.");
         }
     }
 

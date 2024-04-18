@@ -53,7 +53,7 @@
                     <template #suffixIcon><filter-outlined class="ant-select-suffix" /></template>
                     <a-select-option
                       v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) &&
-                      ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool', 'kubernetes'].includes($route.name) ||
+                      ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool', 'kubernetes', 'computeoffering', 'systemoffering', 'diskoffering'].includes($route.name) ||
                       ['account'].includes($route.name)"
                       key="all"
                       :label="$t('label.all')">
@@ -185,20 +185,20 @@
                 <template #message>
                   <exclamation-circle-outlined style="color: red; fontSize: 30px; display: inline-flex" />
                   <span style="padding-left: 5px" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
-                  <span v-html="$t(currentAction.message)" />
+                  <span v-html="currentAction.message" />
                 </template>
               </a-alert>
               <a-alert v-else type="warning">
                 <template #message>
                   <span v-if="selectedRowKeys.length > 0" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
-                  <span v-html="$t(currentAction.message)" />
+                  <span v-html="currentAction.message" />
                 </template>
               </a-alert>
             </div>
             <div v-else>
               <a-alert type="warning">
                 <template #message>
-                  <span v-html="$t(currentAction.message)" />
+                  <span v-html="currentAction.message" />
                 </template>
               </a-alert>
             </div>
@@ -692,7 +692,7 @@ export default {
       if (['volume'].includes(routeName)) {
         return 'user'
       }
-      if (['event'].includes(routeName)) {
+      if (['event', 'computeoffering', 'systemoffering', 'diskoffering'].includes(routeName)) {
         return 'active'
       }
       return 'self'
@@ -771,6 +771,9 @@ export default {
         'isofilter' in params && this.routeName === 'iso') {
         params.isofilter = 'all'
       }
+      if (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) && ['computeoffering', 'systemoffering', 'diskoffering'].includes(this.routeName) && this.$route.params.id) {
+        params.state = 'all'
+      }
       if (Object.keys(this.$route.query).length > 0) {
         if ('page' in this.$route.query) {
           this.page = Number(this.$route.query.page)
@@ -795,7 +798,7 @@ export default {
       }
 
       this.projectView = Boolean(store.getters.project && store.getters.project.id)
-      this.hasProjectId = ['vm', 'vmgroup', 'ssh', 'affinitygroup', 'volume', 'snapshot', 'vmsnapshot', 'guestnetwork',
+      this.hasProjectId = ['vm', 'vmgroup', 'ssh', 'affinitygroup', 'userdata', 'volume', 'snapshot', 'vmsnapshot', 'guestnetwork',
         'vpc', 'securitygroups', 'publicip', 'vpncustomergateway', 'template', 'iso', 'event', 'kubernetes',
         'autoscalevmgroup', 'vnfapp'].includes(this.$route.name)
 
@@ -881,6 +884,9 @@ export default {
           this.$store.getters.customColumns[this.$store.getters.userInfo.id][this.$route.path] = this.selectedColumns
         } else {
           this.selectedColumns = this.$store.getters.customColumns[this.$store.getters.userInfo.id][this.$route.path] || this.selectedColumns
+          if (this.$store.getters.listAllProjects && !this.projectView) {
+            this.selectedColumns.push('project')
+          }
           this.updateSelectedColumns()
         }
       }
@@ -1144,13 +1150,11 @@ export default {
       this.currentAction.paramFields = []
       this.currentAction.paramFilters = []
       if ('message' in action) {
-        var message = action.message
         if (typeof action.message === 'function') {
-          message = action.message(action.resource)
+          action.message = action.message(action.resource)
         }
-        action.message = message
+        action.message = Array.isArray(action.message) ? this.$t(...action.message) : this.$t(action.message)
       }
-
       this.getArgs(action, isGroupAction, paramFields)
       this.getFilters(action, isGroupAction, paramFields)
       this.getFirstIndexFocus()
@@ -1479,18 +1483,26 @@ export default {
                   this.selectedItems.filter(item => item === resource)
                 }
               }
-              var message = action.successMessage ? this.$t(action.successMessage) : this.$t(action.label) +
-                (resourceName ? ' - ' + resourceName : '')
-              var duration = 2
-              if (action.additionalMessage) {
-                message = message + ' - ' + this.$t(action.successMessage)
-                duration = 5
-              }
               if (this.selectedItems.length === 0) {
+                let message = ''
+                let messageDuration = 2
+                if ('successMessage' in action) {
+                  message = action.successMessage
+                  if (typeof action.successMessage === 'function') {
+                    message = action.successMessage(action.resource)
+                  }
+                  message = Array.isArray(message) ? this.$t(...message) : this.$t(message)
+                } else {
+                  message = this.$t(action.label) + (resourceName ? ' - ' + resourceName : '')
+                }
+                if ('additionalMessage' in action) {
+                  message = `${message} - ${this.$t(action.additionalMessage)}`
+                  messageDuration = 5
+                }
                 this.$message.success({
                   content: message,
                   key: action.label + resourceName,
-                  duration: duration
+                  duration: messageDuration
                 })
               }
               break
@@ -1756,6 +1768,8 @@ export default {
         } else {
           query.clustertype = filter === 'cloud.managed' ? 'CloudManaged' : 'ExternalManaged'
         }
+      } else if (['computeoffering', 'systemoffering', 'diskoffering'].includes(this.$route.name)) {
+        query.state = filter
       }
       query.filter = filter
       query.page = '1'

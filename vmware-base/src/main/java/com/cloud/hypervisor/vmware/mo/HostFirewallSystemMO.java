@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.hypervisor.vmware.mo;
 
-import org.apache.log4j.Logger;
 
 import com.vmware.vim25.HostFirewallDefaultPolicy;
 import com.vmware.vim25.HostFirewallInfo;
@@ -26,7 +25,6 @@ import com.cloud.hypervisor.vmware.util.VmwareContext;
 
 public class HostFirewallSystemMO extends BaseMO {
     @SuppressWarnings("unused")
-    private static final Logger s_logger = Logger.getLogger(HostFirewallSystemMO.class);
 
     public HostFirewallSystemMO(VmwareContext context, ManagedObjectReference morFirewallSystem) {
         super(context, morFirewallSystem);

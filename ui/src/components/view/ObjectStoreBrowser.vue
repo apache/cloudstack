@@ -449,7 +449,7 @@ export default {
     initMinioClient () {
       if (!this.client) {
         const url = /https?:\/\/([^/]+)\/?/.exec(this.resource.url.split(this.resource.name)[0])[1]
-        const isHttps = /^https/.test(url)
+        const isHttps = /^https/.test(this.resource.url)
         this.client = new Minio.Client({
           endPoint: url.split(':')[0],
           port: url.split(':').length > 1 ? parseInt(url.split(':')[1]) : isHttps ? 443 : 80,

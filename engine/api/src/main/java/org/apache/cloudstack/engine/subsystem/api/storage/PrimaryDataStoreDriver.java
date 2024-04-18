@@ -44,6 +44,10 @@ public interface PrimaryDataStoreDriver extends DataStoreDriver {
 
     void revokeAccess(DataObject dataObject, Host host, DataStore dataStore);
 
+    default boolean requiresAccessForMigration(DataObject dataObject) {
+        return false;
+    }
+
     /**
      * intended for managed storage (cloud.storage_pool.managed = true)
      * if not managed, return volume.getSize()
@@ -138,4 +142,19 @@ public interface PrimaryDataStoreDriver extends DataStoreDriver {
     boolean isStorageSupportHA(StoragePoolType type);
 
     void detachVolumeFromAllStorageNodes(Volume volume);
+    /**
+     * Data store driver needs its grantAccess() method called for volumes in order for them to be used with a host.
+     * @return true if we should call grantAccess() to use a volume
+     */
+    default boolean volumesRequireGrantAccessWhenUsed() {
+        return false;
+    }
+
+    /**
+     * Zone-wide data store supports using a volume across clusters without the need for data motion
+     * @return true if we don't need to data motion volumes across clusters for zone-wide use
+     */
+    default boolean zoneWideVolumesAvailableWithoutClusterMotion() {
+        return false;
+    }
 }

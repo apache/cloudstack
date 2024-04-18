@@ -108,7 +108,7 @@ public class CryptSetup {
 
     public boolean isSupported() {
         final Script script = new Script(commandPath);
-        script.add("--usage");
+        script.add("--version");
         final String result = script.execute();
         return result == null;
     }

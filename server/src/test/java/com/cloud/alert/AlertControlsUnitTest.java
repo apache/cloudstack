@@ -21,7 +21,8 @@ import com.cloud.server.ManagementServerImpl;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import junit.framework.TestCase;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,15 +32,15 @@ import org.mockito.Spy;
 
 import java.util.Date;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 public class AlertControlsUnitTest extends TestCase {
-    private static final Logger s_logger = Logger.getLogger(AlertControlsUnitTest.class);
+    private Logger logger = LogManager.getLogger(AlertControlsUnitTest.class);
 
     @Spy
     ManagementServerImpl _mgmtServer = new ManagementServerImpl();
@@ -47,12 +48,13 @@ public class AlertControlsUnitTest extends TestCase {
     AccountManager _accountMgr;
     @Mock
     AlertDao _alertDao;
+    private AutoCloseable closeable;
 
     @Override
     @Before
     @SuppressWarnings("unchecked")
-    protected void setUp() {
-        MockitoAnnotations.initMocks(this);
+    public void setUp() {
+        closeable = MockitoAnnotations.openMocks(this);
         _mgmtServer._alertDao = _alertDao;
         _mgmtServer._accountMgr = _accountMgr;
         doReturn(3L).when(_accountMgr).checkAccessAndSpecifyAuthority(any(Account.class), anyLong());
@@ -63,14 +65,15 @@ public class AlertControlsUnitTest extends TestCase {
     @Override
     @After
     public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test
     public void testInjected() throws Exception {
-        s_logger.info("Starting test to archive and delete alerts");
+        logger.info("Starting test to archive and delete alerts");
         archiveAlerts();
         deleteAlerts();
-        s_logger.info("archive/delete alerts: TEST PASSED");
+        logger.info("archive/delete alerts: TEST PASSED");
     }
 
     protected void archiveAlerts() {

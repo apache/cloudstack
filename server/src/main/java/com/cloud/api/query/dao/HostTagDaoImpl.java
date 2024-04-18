@@ -23,7 +23,6 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.api.response.HostTagResponse;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.query.vo.HostTagVO;
@@ -33,7 +32,6 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Component
 public class HostTagDaoImpl extends GenericDaoBase<HostTagVO, Long> implements HostTagDao {
-    public static final Logger s_logger = Logger.getLogger(HostTagDaoImpl.class);
 
     @Inject
     private ConfigurationDao _configDao;

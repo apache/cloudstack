@@ -68,20 +68,26 @@ public class HttpsDirectTemplateDownloader extends DirectTemplateDownloaderImpl 
     protected CloseableHttpClient httpsClient;
     private HttpUriRequest req;
 
-    protected HttpsDirectTemplateDownloader(String url, Integer connectTimeout, Integer connectionRequestTimeout, Integer socketTimeout) {
-        this(url, null, null, null, null, connectTimeout, socketTimeout, connectionRequestTimeout, null);
+    protected HttpsDirectTemplateDownloader(String url, Integer connectTimeout, Integer connectionRequestTimeout, Integer socketTimeout, boolean followRedirects) {
+        this(url, null, null, null, null, connectTimeout, socketTimeout, connectionRequestTimeout, null, followRedirects);
     }
 
-    public HttpsDirectTemplateDownloader(String url, Long templateId, String destPoolPath, String checksum, Map<String, String> headers,
-                                         Integer connectTimeout, Integer soTimeout, Integer connectionRequestTimeout, String temporaryDownloadPath) {
-        super(url, destPoolPath, templateId, checksum, temporaryDownloadPath);
+    public HttpsDirectTemplateDownloader(String url, Long templateId, String destPoolPath, String checksum,
+                 Map<String, String> headers, Integer connectTimeout, Integer soTimeout,
+                 Integer connectionRequestTimeout, String temporaryDownloadPath, boolean followRedirects) {
+        super(url, destPoolPath, templateId, checksum, temporaryDownloadPath, followRedirects);
         SSLContext sslcontext = getSSLContext();
         SSLConnectionSocketFactory factory = new SSLConnectionSocketFactory(sslcontext, SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
         RequestConfig config = RequestConfig.custom()
                 .setConnectTimeout(connectTimeout == null ? 5000 : connectTimeout)
                 .setConnectionRequestTimeout(connectionRequestTimeout == null ? 5000 : connectionRequestTimeout)
-                .setSocketTimeout(soTimeout == null ? 5000 : soTimeout).build();
-        httpsClient = HttpClients.custom().setSSLSocketFactory(factory).setDefaultRequestConfig(config).build();
+                .setSocketTimeout(soTimeout == null ? 5000 : soTimeout)
+                .setRedirectsEnabled(followRedirects)
+                .build();
+        httpsClient = HttpClients.custom()
+                .setSSLSocketFactory(factory)
+                .setDefaultRequestConfig(config)
+                .build();
         createUriRequest(url, headers);
         String downloadDir = getDirectDownloadTempPath(templateId);
         File tempFile = createTemporaryDirectoryAndFile(downloadDir);
@@ -90,6 +96,7 @@ public class HttpsDirectTemplateDownloader extends DirectTemplateDownloaderImpl 
 
     protected void createUriRequest(String downloadUrl, Map<String, String> headers) {
         req = new HttpGet(downloadUrl);
+        setFollowRedirects(this.isFollowRedirects());
         if (MapUtils.isNotEmpty(headers)) {
             for (String headerKey: headers.keySet()) {
                 req.setHeader(headerKey, headers.get(headerKey));
@@ -118,7 +125,7 @@ public class HttpsDirectTemplateDownloader extends DirectTemplateDownloaderImpl 
             sslContext.init(null, tm, null);
             return sslContext;
         } catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException | KeyManagementException e) {
-            s_logger.error(String.format("Failure getting SSL context for HTTPS downloader, using default SSL context: %s", e.getMessage()), e);
+            logger.error(String.format("Failure getting SSL context for HTTPS downloader, using default SSL context: %s", e.getMessage()), e);
             try {
                 return SSLContext.getDefault();
             } catch (NoSuchAlgorithmException ex) {
@@ -143,7 +150,7 @@ public class HttpsDirectTemplateDownloader extends DirectTemplateDownloaderImpl 
      * Consume response and persist it on getDownloadedFilePath() file
      */
     protected Pair<Boolean, String> consumeResponse(CloseableHttpResponse response) {
-        s_logger.info("Downloading template " + getTemplateId() + " from " + getUrl() + " to: " + getDownloadedFilePath());
+        logger.info("Downloading template " + getTemplateId() + " from " + getUrl() + " to: " + getDownloadedFilePath());
         if (response.getStatusLine().getStatusCode() != 200) {
             throw new CloudRuntimeException("Error on HTTPS response");
         }
@@ -153,7 +160,7 @@ public class HttpsDirectTemplateDownloader extends DirectTemplateDownloaderImpl 
             OutputStream out = new FileOutputStream(getDownloadedFilePath());
             IOUtils.copy(in, out);
         } catch (Exception e) {
-            s_logger.error("Error parsing response for template " + getTemplateId() + " due to: " + e.getMessage());
+            logger.error("Error parsing response for template " + getTemplateId() + " due to: " + e.getMessage());
             return new Pair<>(false, null);
         }
         return new Pair<>(true, getDownloadedFilePath());
@@ -164,13 +171,14 @@ public class HttpsDirectTemplateDownloader extends DirectTemplateDownloaderImpl 
         HttpHead httpHead = new HttpHead(url);
         try {
             CloseableHttpResponse response = httpsClient.execute(httpHead);
-            if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-                s_logger.error(String.format("Invalid URL: %s", url));
+            int responseCode = response.getStatusLine().getStatusCode();
+            if (responseCode != HttpStatus.SC_OK) {
+                logger.error(String.format("HTTP HEAD request to URL: %s failed, response code: %d", url, responseCode));
                 return false;
             }
             return true;
         } catch (IOException e) {
-            s_logger.error(String.format("Cannot reach URL: %s due to: %s", url, e.getMessage()), e);
+            logger.error(String.format("Cannot reach URL: %s due to: %s", url, e.getMessage()), e);
             return false;
         } finally {
             httpHead.releaseConnection();
@@ -215,11 +223,11 @@ public class HttpsDirectTemplateDownloader extends DirectTemplateDownloaderImpl 
             response = httpsClient.execute(getMethod);
             if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
                 String msg = String.format("Cannot access metalink content on URL %s", metalinkUrl);
-                s_logger.error(msg);
+                logger.error(msg);
                 throw new IOException(msg);
             }
         } catch (IOException e) {
-            s_logger.error(String.format("Error retrieving urls form metalink URL %s: %s", metalinkUrl, e.getMessage()), e);
+            logger.error(String.format("Error retrieving urls form metalink URL %s: %s", metalinkUrl, e.getMessage()), e);
             getMethod.releaseConnection();
             return null;
         }
@@ -229,7 +237,7 @@ public class HttpsDirectTemplateDownloader extends DirectTemplateDownloaderImpl 
             ByteArrayInputStream inputStream = new ByteArrayInputStream(responseStr.getBytes(StandardCharsets.UTF_8));
             addMetalinkUrlsToListFromInputStream(inputStream, urls);
         } catch (IOException e) {
-            s_logger.warn(e.getMessage(), e);
+            logger.warn(e.getMessage(), e);
         } finally {
             getMethod.releaseConnection();
         }
@@ -246,7 +254,7 @@ public class HttpsDirectTemplateDownloader extends DirectTemplateDownloaderImpl 
                 return generateChecksumListFromInputStream(is);
             }
         } catch (IOException e) {
-            s_logger.error(String.format("Error obtaining metalink checksums on URL %s: %s", metalinkUrl, e.getMessage()), e);
+            logger.error(String.format("Error obtaining metalink checksums on URL %s: %s", metalinkUrl, e.getMessage()), e);
         } finally {
             getMethod.releaseConnection();
         }

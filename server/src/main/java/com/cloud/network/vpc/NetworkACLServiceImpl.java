@@ -20,11 +20,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.inject.Inject;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.network.dao.NsxProviderDao;
+import com.cloud.network.element.NsxProviderVO;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
@@ -37,7 +42,6 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.event.ActionEvent;
@@ -75,7 +79,6 @@ import com.cloud.utils.net.NetUtils;
 
 @Component
 public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLService {
-    private static final Logger s_logger = Logger.getLogger(NetworkACLServiceImpl.class);
 
     @Inject
     private AccountManager _accountMgr;
@@ -99,6 +102,8 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
     private VpcDao _vpcDao;
     @Inject
     private VpcService _vpcSvc;
+    @Inject
+    private NsxProviderDao nsxProviderDao;
 
     private String supportedProtocolsForAclRules = "tcp,udp,icmp,all";
 
@@ -338,6 +343,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         if (isGlobalAcl(acl.getVpcId()) && !Account.Type.ADMIN.equals(caller.getType())) {
             throw new PermissionDeniedException("Only Root Admins can create rules for a global ACL.");
         }
+        validateNsxConstraints(acl.getVpcId(), protocol, icmpType, icmpCode, sourcePortStart, sourcePortEnd);
         validateAclRuleNumber(createNetworkACLCmd, acl);
 
         NetworkACLItem.Action ruleAction = validateAndCreateNetworkAclRuleAction(action);
@@ -428,6 +434,32 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         }
     }
 
+    private void validateNsxConstraints(long vpcId, String protocol, Integer icmpType,
+                                        Integer icmpCode, Integer sourcePortStart, Integer sourcePortEnd) {
+        VpcVO vpc = _vpcDao.findById(vpcId);
+        if (Objects.isNull(vpc)) {
+            return;
+        }
+        final DataCenter dc = _entityMgr.findById(DataCenter.class, vpc.getZoneId());
+        final NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(dc.getId());
+        if (Objects.isNull(nsxProvider)) {
+            return;
+        }
+
+        if (NetUtils.ICMP_PROTO.equals(protocol.toLowerCase(Locale.ROOT)) && (icmpType == -1 || icmpCode == -1)) {
+            String errorMsg = "Passing -1 for ICMP type is not supported for NSX enabled zones";
+            logger.error(errorMsg);
+            throw new InvalidParameterValueException(errorMsg);
+        }
+
+        if (List.of(NetUtils.TCP_PROTO, NetUtils.UDP_PROTO).contains(protocol.toLowerCase(Locale.ROOT)) &&
+                (Objects.isNull(sourcePortStart) || Objects.isNull(sourcePortEnd))) {
+            String errorMsg = "Source start and end ports are required to be passed";
+            logger.error(errorMsg);
+            throw new InvalidParameterValueException(errorMsg);
+        }
+    }
+
     /**
      * This methods will simply return the ACL rule list ID if it has been provided by the parameter 'createNetworkACLCmd'.
      * If no ACL rule List ID has been provided the method behave as follows:
@@ -478,7 +510,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
      * @return the Id of the network ACL that is created.
      */
     protected Long createAclListForNetworkAndReturnAclListId(CreateNetworkACLCmd aclItemCmd, Network network) {
-        s_logger.debug("Network " + network.getId() + " is not associated with any ACL. Creating an ACL before adding acl item");
+        logger.debug("Network " + network.getId() + " is not associated with any ACL. Creating an ACL before adding acl item");
 
         if (!networkModel.areServicesSupportedByNetworkOffering(network.getNetworkOfferingId(), Network.Service.NetworkACL)) {
             throw new InvalidParameterValueException("Network Offering does not support NetworkACL service");
@@ -495,14 +527,14 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         if (acl == null) {
             throw new CloudRuntimeException("Error while create ACL before adding ACL Item for network " + network.getId());
         }
-        s_logger.debug("Created ACL: " + aclName + " for network " + network.getId());
+        logger.debug("Created ACL: " + aclName + " for network " + network.getId());
         Long aclId = acl.getId();
         //Apply acl to network
         try {
             if (!_networkAclMgr.replaceNetworkACL(acl, (NetworkVO)network)) {
                 throw new CloudRuntimeException("Unable to apply auto created ACL to network " + network.getId());
             }
-            s_logger.debug("Created ACL is applied to network " + network.getId());
+            logger.debug("Created ACL is applied to network " + network.getId());
         } catch (ResourceUnavailableException e) {
             throw new CloudRuntimeException("Unable to apply auto created ACL to network " + network.getId(), e);
         }
@@ -583,7 +615,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         Integer icmpCode = networkACLItemVO.getIcmpCode();
         Integer icmpType = networkACLItemVO.getIcmpType();
         // icmp code and icmp type can't be passed in for any other protocol rather than icmp
-        boolean isIcmpProtocol = protocol.equalsIgnoreCase(NetUtils.ICMP_PROTO);
+        boolean isIcmpProtocol = protocol.equalsIgnoreCase(NetUtils.ICMP_PROTO) || protocol.equalsIgnoreCase(String.valueOf(NetUtils.ICMP_PROTO_NUMBER));
         if (!isIcmpProtocol && (icmpCode != null || icmpType != null)) {
             throw new InvalidParameterValueException("Can specify icmpCode and icmpType for ICMP protocol only");
         }
@@ -817,7 +849,8 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
         NetworkACL acl = _networkAclMgr.getNetworkACL(networkACLItemVo.getAclId());
         validateNetworkAcl(acl);
-
+        validateNsxConstraints(acl.getVpcId(), networkACLItemVo.getProtocol(), networkACLItemVo.getIcmpType(),
+                networkACLItemVo.getIcmpCode(), networkACLItemVo.getSourcePortStart(), networkACLItemVo.getSourcePortEnd());
         Account account = CallContext.current().getCallingAccount();
         validateGlobalAclPermissionAndAclAssociatedToVpc(acl, account, "Only Root Admins can update global ACLs.");
 
@@ -862,14 +895,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         if (!isPartialUpgrade || StringUtils.isNotBlank(protocol)) {
             networkACLItemVo.setProtocol(protocol);
         }
-        Integer icmpCode = updateNetworkACLItemCmd.getIcmpCode();
-        if (!isPartialUpgrade || icmpCode != null) {
-            networkACLItemVo.setIcmpCode(icmpCode);
-        }
-        Integer icmpType = updateNetworkACLItemCmd.getIcmpType();
-        if (!isPartialUpgrade || icmpType != null) {
-            networkACLItemVo.setIcmpType(icmpType);
-        }
+        updateIcmpCodeAndType(isPartialUpgrade, updateNetworkACLItemCmd, networkACLItemVo);
         String action = updateNetworkACLItemCmd.getAction();
         if (!isPartialUpgrade || StringUtils.isNotBlank(action)) {
             Action aclRuleAction = validateAndCreateNetworkAclRuleAction(action);
@@ -890,6 +916,32 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         String reason = updateNetworkACLItemCmd.getReason();
         if (!isPartialUpgrade || StringUtils.isNotBlank(reason)) {
             networkACLItemVo.setReason(reason);
+        }
+    }
+
+    protected void updateIcmpCodeAndType (boolean isPartialUpgrade, UpdateNetworkACLItemCmd updateNetworkACLItemCmd, NetworkACLItemVO networkACLItemVo) {
+        Integer icmpCode = updateNetworkACLItemCmd.getIcmpCode();
+        Integer icmpType = updateNetworkACLItemCmd.getIcmpType();
+
+        if (!isPartialUpgrade) {
+            updateIcmpCodeAndTypeFullUpgrade(icmpCode, icmpType, networkACLItemVo);
+            return;
+        }
+        if (icmpCode != null) {
+            networkACLItemVo.setIcmpCode(icmpCode);
+        }
+        if (icmpType != null) {
+            networkACLItemVo.setIcmpType(icmpType);
+        }
+    }
+
+    private void updateIcmpCodeAndTypeFullUpgrade (Integer icmpCode, Integer icmpType, NetworkACLItemVO networkACLItemVo) {
+        if (networkACLItemVo.getProtocol().equalsIgnoreCase(NetUtils.ICMP_PROTO)) {
+            networkACLItemVo.setIcmpCode(icmpCode != null ? icmpCode : -1);
+            networkACLItemVo.setIcmpType(icmpType != null ? icmpType : -1);
+        } else {
+            networkACLItemVo.setIcmpCode(null);
+            networkACLItemVo.setIcmpType(null);
         }
     }
 
@@ -958,14 +1010,26 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             NetworkACLVO lockedAcl = _networkACLDao.acquireInLockTable(ruleBeingMoved.getAclId());
             List<NetworkACLItemVO> allAclRules = getAllAclRulesSortedByNumber(lockedAcl.getId());
             validateAclConsistency(moveNetworkAclItemCmd, lockedAcl, allAclRules);
-
+            NetworkACLItem networkACLItem = null;
             if (previousRule == null) {
-                return moveRuleToTheTop(ruleBeingMoved, allAclRules);
+                networkACLItem = moveRuleToTheTop(ruleBeingMoved, allAclRules);
+            } else if (nextRule == null) {
+                networkACLItem = moveRuleToTheBottom(ruleBeingMoved, allAclRules);
+            } else {
+                networkACLItem = moveRuleBetweenAclRules(ruleBeingMoved, allAclRules, previousRule, nextRule);
             }
-            if (nextRule == null) {
-                return moveRuleToTheBottom(ruleBeingMoved, allAclRules);
+            VpcVO vpc = _vpcDao.findById(lockedAcl.getVpcId());
+            if (Objects.isNull(vpc)) {
+                return networkACLItem;
             }
-            return moveRuleBetweenAclRules(ruleBeingMoved, allAclRules, previousRule, nextRule);
+            final DataCenter dc = _entityMgr.findById(DataCenter.class, vpc.getZoneId());
+            final NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(dc.getId());
+            List<NetworkVO> networks = _networkDao.listByAclId(lockedAcl.getId());
+            if (Objects.nonNull(nsxProvider) && !networks.isEmpty()) {
+                allAclRules = getAllAclRulesSortedByNumber(lockedAcl.getId());
+                _networkAclMgr.reorderAclRules(vpc, networks, allAclRules);
+            }
+            return networkACLItem;
         } finally {
             _networkACLDao.releaseFromLockTable(ruleBeingMoved.getAclId());
         }
@@ -992,7 +1056,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
      */
     protected void validateAclConsistency(MoveNetworkAclItemCmd moveNetworkAclItemCmd, NetworkACLVO lockedAcl, List<NetworkACLItemVO> allAclRules) {
         if (CollectionUtils.isEmpty(allAclRules)) {
-            s_logger.debug(String.format("No ACL rules for [id=%s, name=%s]. Therefore, there is no need for consistency validation.", lockedAcl.getUuid(), lockedAcl.getName()));
+            logger.debug(String.format("No ACL rules for [id=%s, name=%s]. Therefore, there is no need for consistency validation.", lockedAcl.getUuid(), lockedAcl.getName()));
             return;
         }
         String aclConsistencyHash = moveNetworkAclItemCmd.getAclConsistencyHash();
@@ -1000,7 +1064,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             User callingUser = CallContext.current().getCallingUser();
             Account callingAccount = CallContext.current().getCallingAccount();
 
-            s_logger.warn(String.format(
+            logger.warn(String.format(
                     "User [id=%s, name=%s] from Account [id=%s, name=%s] has not entered an ACL consistency hash to execute the replacement of an ACL rule. Therefore, she/he is assuming all of the risks of procedding without this validation.",
                     callingUser.getUuid(), callingUser.getUsername(), callingAccount.getUuid(), callingAccount.getAccountName()));
             return;
@@ -1183,10 +1247,10 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
      */
     protected void validateGlobalAclPermissionAndAclAssociatedToVpc(NetworkACL acl, Account account, String exception){
         if (isGlobalAcl(acl.getVpcId())) {
-            s_logger.info(String.format("Checking if account [%s] has permission to manipulate global ACL [%s].", account, acl));
+            logger.info(String.format("Checking if account [%s] has permission to manipulate global ACL [%s].", account, acl));
             checkGlobalAclPermission(acl.getVpcId(), account, exception);
         } else {
-            s_logger.info(String.format("Validating ACL [%s] associated to VPC [%s] with account [%s].", acl, acl.getVpcId(), account));
+            logger.info(String.format("Validating ACL [%s] associated to VPC [%s] with account [%s].", acl, acl.getVpcId(), account));
             validateAclAssociatedToVpc(acl.getVpcId(), account, acl.getUuid());
         }
     }

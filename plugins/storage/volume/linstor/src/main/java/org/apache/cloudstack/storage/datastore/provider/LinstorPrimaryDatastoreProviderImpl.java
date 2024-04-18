@@ -48,7 +48,7 @@ public class LinstorPrimaryDatastoreProviderImpl implements PrimaryDataStoreProv
     public boolean configure(Map<String, Object> params) {
         lifecycle = ComponentContext.inject(LinstorPrimaryDataStoreLifeCycleImpl.class);
         driver = ComponentContext.inject(LinstorPrimaryDataStoreDriverImpl.class);
-        listener = ComponentContext.inject(DefaultHostListener.class);
+        listener = ComponentContext.inject(LinstorHostListener.class);
         return true;
     }
 
