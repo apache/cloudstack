@@ -499,7 +499,7 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         final Account caller = ctx.getCallingAccount();
         final Long deliveryId = cmd.getId();
         final Long webhookId = cmd.getWebhookId();
-        final String payloadUrl = cmd.getPayloadUrl();
+        final String payloadUrl = getNormalizedPayloadUrl(cmd.getPayloadUrl());
         final String secretKey = cmd.getSecretKey();
         final Boolean sslVerification = cmd.isSslVerification();
         final String payload = cmd.getPayload();
@@ -517,6 +517,9 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
                 throw new InvalidParameterValueException("Invalid webhook delivery specified");
             }
             webhook = webhookDao.findById(existingDelivery.getWebhookId());
+        }
+        if (StringUtils.isNotBlank(payloadUrl)) {
+            UriUtils.validateUrl(payloadUrl);
         }
         if (webhookId != null) {
             webhook = webhookDao.findById(webhookId);

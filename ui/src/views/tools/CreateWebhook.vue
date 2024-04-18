@@ -212,8 +212,8 @@ export default {
         sslverification: true
       })
       this.rules = reactive({
-        name: [{ required: true, message: this.$t('message.error.webhook.name') }],
-        payloadurl: [{ required: true, message: this.$t('message.error.webhook.payload') }]
+        name: [{ required: true, message: this.$t('message.error.create.webhook.name') }],
+        payloadurl: [{ required: true, message: this.$t('message.error.create.webhook.payloadurl') }]
       })
     },
     isValidValueForKey (obj, key) {
@@ -295,7 +295,7 @@ export default {
         if (values.scope === 'Local' && values.domainid && !values.account) {
           this.$notification.error({
             message: this.$t('message.request.failed'),
-            description: this.$t('message.error.webhook.local.account')
+            description: this.$t('message.error.create.webhook.local.account')
           })
           return
         }

@@ -242,4 +242,12 @@ public class WebhookApiServiceImplTest {
         webhookApiServiceImpl.validateWebhookOwnerPayloadUrl(Mockito.mock(Account.class), "url",
                 mockWebhook(1L));
     }
+
+    @Test
+    public void testGetNormalizedPayloadUrl() {
+        Assert.assertEquals("http://abc.com", webhookApiServiceImpl.getNormalizedPayloadUrl("abc.com"));
+        Assert.assertEquals("http://abc.com", webhookApiServiceImpl.getNormalizedPayloadUrl("http://abc.com"));
+        Assert.assertEquals("https://abc.com",
+                webhookApiServiceImpl.getNormalizedPayloadUrl("https://abc.com"));
+    }
 }

@@ -160,6 +160,10 @@ export default {
     }
   },
   methods: {
+    validateUrl (url) {
+      const urlPattern = /^(http|https):\/\/[^ "]+$/
+      urlPattern.test(url)
+    },
     resetTestDeliveryInterval () {
       if (this.testDeliveryInterval) {
         clearInterval(this.testDeliveryInterval)
@@ -197,21 +201,31 @@ export default {
         this.$emit('change-loading', this.loading)
       })
     },
+    getNormalizedPayloadUrl () {
+      if (!this.payloadUrl || this.payloadUrl === '' || this.validateUrl(this.payloadUrl)) {
+        return this.payloadUrl
+      }
+      return 'http://' + this.payloadUrl
+    },
+    executeTestWebhookDeliveryOrReset () {
+      const url = this.getNormalizedPayloadUrl()
+      if (url) {
+        this.testWebhookDelivery()
+        return
+      }
+      this.resetTestDeliveryInterval()
+    },
     timedTestWebhookDelivery () {
-      const urlPattern = /^(http|https):\/\/[^ "]+$/
+      const url = this.getNormalizedPayloadUrl()
       this.resetTestDeliveryInterval()
       this.testDeliveryInterval = setInterval(() => {
-        if (!this.payloadUrl || !urlPattern.test(this.payloadUrl)) {
+        if (!url) {
           this.resetTestDeliveryInterval()
           return
         }
         this.testDeliveryIntervalCouter = this.testDeliveryIntervalCouter + 1
         if (this.testDeliveryIntervalCouter >= 100) {
-          if (this.payloadUrl && urlPattern.test(this.payloadUrl)) {
-            this.testWebhookDelivery()
-            return
-          }
-          this.resetTestDeliveryInterval()
+          this.executeTestWebhookDeliveryOrReset()
         }
       }, this.timedDeliveryWait / 100)
     }
