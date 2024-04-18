@@ -412,6 +412,7 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
                 throw new InvalidParameterValueException(
                         String.format("SSL verification can be specified only for HTTPS URLs, %s", payloadUrl));
             }
+            webhook.setSslVerification(sslVerification);
             updateNeeded = true;
         }
         if (secretKey != null) {
