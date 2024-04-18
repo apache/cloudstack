@@ -76,7 +76,7 @@ fetch('config.json?ts=' + Date.now()).then(response => response.json()).then(asy
   let accountid = null
   let domainid = null
 
-  if (userid !== undefined && Cookies.get('sessionkey')) {
+  if (userid !== undefined) {
     await api('listUsers', { userid: userid }).then(response => {
       accountid = response.listusersresponse.user[0].accountid
       domainid = response.listusersresponse.user[0].domainid
