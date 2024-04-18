@@ -57,6 +57,7 @@ import org.apache.cloudstack.api.command.admin.storage.DeleteImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeletePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.SyncStoragePoolCmd;
+import org.apache.cloudstack.api.command.admin.storage.UpdateImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
@@ -2998,15 +2999,29 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public ImageStore updateImageStoreStatus(Long id, Boolean readonly) {
+    public ImageStore updateImageStore(UpdateImageStoreCmd cmd) {
+        return updateImageStoreStatus(cmd.getId(), cmd.getReadonly(), cmd.getCapacityBytes());
+    }
+
+    public ImageStore updateImageStoreStatus(Long id, Boolean readonly, Long capacityBytes) {
         // Input validation
         ImageStoreVO imageStoreVO = _imageStoreDao.findById(id);
         if (imageStoreVO == null) {
             throw new IllegalArgumentException("Unable to find image store with ID: " + id);
         }
-        imageStoreVO.setReadonly(readonly);
+        if (capacityBytes != null) {
+            imageStoreVO.setTotalSize(capacityBytes);
+        }
+        if (readonly != null) {
+            imageStoreVO.setReadonly(readonly);
+        }
         _imageStoreDao.update(id, imageStoreVO);
         return imageStoreVO;
+    }
+
+    @Override
+    public ImageStore updateImageStoreStatus(Long id, Boolean readonly) {
+        return updateImageStoreStatus(id, readonly, null);
     }
 
     /**

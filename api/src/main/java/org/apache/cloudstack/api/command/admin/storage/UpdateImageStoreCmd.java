@@ -41,9 +41,13 @@ public class UpdateImageStoreCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ImageStoreResponse.class, required = true, description = "Image Store UUID")
     private Long id;
 
-    @Parameter(name = ApiConstants.READ_ONLY, type = CommandType.BOOLEAN, required = true, description = "If set to true, it designates the corresponding image store to read-only, " +
-            "hence not considering them during storage migration")
+    @Parameter(name = ApiConstants.READ_ONLY, type = CommandType.BOOLEAN, required = false,
+            description = "If set to true, it designates the corresponding image store to read-only, hence not considering them during storage migration")
     private Boolean readonly;
+
+    @Parameter(name = ApiConstants.CAPACITY_BYTES, type = CommandType.LONG, required = false,
+            description = "bytes CloudStack can use on this image storage")
+    private Long capacityBytes;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -57,13 +61,17 @@ public class UpdateImageStoreCmd extends BaseCmd {
         return readonly;
     }
 
+    public Long getCapacityBytes() {
+        return capacityBytes;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
     @Override
     public void execute() {
-        ImageStore result = _storageService.updateImageStoreStatus(getId(), getReadonly());
+        ImageStore result = _storageService.updateImageStore(this);
         ImageStoreResponse storeResponse = null;
         if (result != null) {
             storeResponse = _responseGenerator.createImageStoreResponse(result);
