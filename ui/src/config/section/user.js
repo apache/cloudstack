@@ -25,7 +25,7 @@ export default {
   docHelp: 'adminguide/accounts.html#users',
   hidden: true,
   permission: ['listUsers'],
-  columns: ['username', 'state', 'firstname', 'lastname', 'email', 'account'],
+  columns: ['username', 'state', 'firstname', 'lastname', 'email', 'account', 'domain'],
   details: ['username', 'id', 'firstname', 'lastname', 'email', 'usersource', 'timezone', 'rolename', 'roletype', 'is2faenabled', 'account', 'domain', 'created'],
   tabs: [
     {

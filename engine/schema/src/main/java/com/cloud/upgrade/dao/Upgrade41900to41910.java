@@ -16,16 +16,20 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
+import com.cloud.upgrade.SystemVmTemplateRegistration;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.log4j.Logger;
 
 import java.io.InputStream;
 import java.sql.Connection;
 
-public class Upgrade41900to41910 implements DbUpgrade {
+public class Upgrade41900to41910 implements DbUpgrade, DbUpgradeSystemVmTemplate {
+    final static Logger LOG = Logger.getLogger(Upgrade41900to41910.class);
+    private SystemVmTemplateRegistration systemVmTemplateRegistration;
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[] {"4.19.0.0", "4.19.1.0"};
+        return new String[]{"4.19.0.0", "4.19.1.0"};
     }
 
     @Override
@@ -46,11 +50,12 @@ public class Upgrade41900to41910 implements DbUpgrade {
             throw new CloudRuntimeException("Unable to find " + scriptFile);
         }
 
-        return new InputStream[] {script};
+        return new InputStream[]{script};
     }
 
     @Override
     public void performDataMigration(Connection conn) {
+        addIndexes(conn);
     }
 
     @Override
@@ -61,6 +66,25 @@ public class Upgrade41900to41910 implements DbUpgrade {
             throw new CloudRuntimeException("Unable to find " + scriptFile);
         }
 
-        return new InputStream[] {script};
+        return new InputStream[]{script};
+    }
+
+    private void addIndexes(Connection conn) {
+        DbUpgradeUtils.addIndexIfNeeded(conn, "vm_stats", "vm_id");
+    }
+
+    @Override
+    public void updateSystemVmTemplates(Connection conn) {
+        LOG.debug("Updating System Vm template IDs");
+        initSystemVmTemplateRegistration();
+        try {
+            systemVmTemplateRegistration.updateSystemVmTemplates(conn);
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Failed to find / register SystemVM template(s)");
+        }
+    }
+
+    private void initSystemVmTemplateRegistration() {
+        systemVmTemplateRegistration = new SystemVmTemplateRegistration("");
     }
 }

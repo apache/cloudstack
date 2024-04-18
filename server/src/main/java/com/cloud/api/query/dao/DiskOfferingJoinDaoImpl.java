@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.api.query.dao;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -26,6 +27,7 @@ import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -51,9 +53,12 @@ public class DiskOfferingJoinDaoImpl extends GenericDaoBase<DiskOfferingJoinVO, 
     @Inject
     private AnnotationDao annotationDao;
     @Inject
+    private ConfigurationDao configDao;
+    @Inject
     private AccountManager accountManager;
 
     private final SearchBuilder<DiskOfferingJoinVO> dofIdSearch;
+    private SearchBuilder<DiskOfferingJoinVO> diskOfferingSearch;
     private final Attribute _typeAttr;
 
     protected DiskOfferingJoinDaoImpl() {
@@ -61,6 +66,11 @@ public class DiskOfferingJoinDaoImpl extends GenericDaoBase<DiskOfferingJoinVO, 
         dofIdSearch = createSearchBuilder();
         dofIdSearch.and("id", dofIdSearch.entity().getId(), SearchCriteria.Op.EQ);
         dofIdSearch.done();
+
+        diskOfferingSearch = createSearchBuilder();
+        diskOfferingSearch.and("idIN", diskOfferingSearch.entity().getId(), SearchCriteria.Op.IN);
+        diskOfferingSearch.done();
+
 
         _typeAttr = _allAttributes.get("type");
 
@@ -95,6 +105,7 @@ public class DiskOfferingJoinDaoImpl extends GenericDaoBase<DiskOfferingJoinVO, 
         DiskOfferingResponse diskOfferingResponse = new DiskOfferingResponse();
         diskOfferingResponse.setId(offering.getUuid());
         diskOfferingResponse.setName(offering.getName());
+        diskOfferingResponse.setState(offering.getState().toString());
         diskOfferingResponse.setDisplayText(offering.getDisplayText());
         diskOfferingResponse.setProvisioningType(offering.getProvisioningType().toString());
         diskOfferingResponse.setCreated(offering.getCreated());
@@ -153,5 +164,49 @@ public class DiskOfferingJoinDaoImpl extends GenericDaoBase<DiskOfferingJoinVO, 
         List<DiskOfferingJoinVO> offerings = searchIncludingRemoved(sc, null, null, false);
         assert offerings != null && offerings.size() == 1 : "No disk offering found for offering id " + offering.getId();
         return offerings.get(0);
+    }
+
+    @Override
+    public List<DiskOfferingJoinVO> searchByIds(Long... offeringIds) {
+        // set detail batch query size
+        int DETAILS_BATCH_SIZE = 2000;
+        String batchCfg = configDao.getValue("detail.batch.query.size");
+        if (batchCfg != null) {
+            DETAILS_BATCH_SIZE = Integer.parseInt(batchCfg);
+        }
+
+        List<DiskOfferingJoinVO> uvList = new ArrayList<>();
+        // query details by batches
+        int curr_index = 0;
+        if (offeringIds.length > DETAILS_BATCH_SIZE) {
+            while ((curr_index + DETAILS_BATCH_SIZE) <= offeringIds.length) {
+                Long[] ids = new Long[DETAILS_BATCH_SIZE];
+                for (int k = 0, j = curr_index; j < curr_index + DETAILS_BATCH_SIZE; j++, k++) {
+                    ids[k] = offeringIds[j];
+                }
+                SearchCriteria<DiskOfferingJoinVO> sc = diskOfferingSearch.create();
+                sc.setParameters("idIN", ids);
+                List<DiskOfferingJoinVO> accounts = searchIncludingRemoved(sc, null, null, false);
+                if (accounts != null) {
+                    uvList.addAll(accounts);
+                }
+                curr_index += DETAILS_BATCH_SIZE;
+            }
+        }
+        if (curr_index < offeringIds.length) {
+            int batch_size = (offeringIds.length - curr_index);
+            // set the ids value
+            Long[] ids = new Long[batch_size];
+            for (int k = 0, j = curr_index; j < curr_index + batch_size; j++, k++) {
+                ids[k] = offeringIds[j];
+            }
+            SearchCriteria<DiskOfferingJoinVO> sc = diskOfferingSearch.create();
+            sc.setParameters("idIN", ids);
+            List<DiskOfferingJoinVO> accounts = searchIncludingRemoved(sc, null, null, false);
+            if (accounts != null) {
+                uvList.addAll(accounts);
+            }
+        }
+        return uvList;
     }
 }

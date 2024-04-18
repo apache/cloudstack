@@ -23,6 +23,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.StorageManager;
 import com.cloud.user.UserData;
 import org.apache.log4j.Logger;
 
@@ -73,8 +74,10 @@ public class TemplateObject implements TemplateInfo {
     VMTemplatePoolDao templatePoolDao;
     @Inject
     TemplateDataStoreDao templateStoreDao;
+    final private boolean followRedirects;
 
     public TemplateObject() {
+        this.followRedirects = StorageManager.DataStoreDownloadFollowRedirects.value();
     }
 
     protected void configure(VMTemplateVO template, DataStore dataStore) {
@@ -572,5 +575,10 @@ public class TemplateObject implements TemplateInfo {
     public Date getUpdated() {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public boolean isFollowRedirects() {
+        return followRedirects;
     }
 }

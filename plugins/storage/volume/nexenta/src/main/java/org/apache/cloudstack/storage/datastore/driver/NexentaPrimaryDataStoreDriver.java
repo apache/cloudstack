@@ -268,4 +268,9 @@ public class NexentaPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Override
     public void detachVolumeFromAllStorageNodes(Volume volume) {
     }
+
+    @Override
+    public boolean volumesRequireGrantAccessWhenUsed() {
+        return true;
+    }
 }
