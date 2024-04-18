@@ -1260,7 +1260,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
 
             _volsDao.update(volume.getId(), volume);
-            _resourceLimitMgr.handleDiskOfferingChange(volume.getAccountId(), volume.isDisplayVolume(), currentSize, newSize,
+            _resourceLimitMgr.handleVolumeDiskOfferingChange(volume.getAccountId(), volume.isDisplayVolume(), currentSize, newSize,
                     diskOffering, newDiskOffering);
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_RESIZE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
                     volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid());
@@ -1500,7 +1500,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             /* Update resource count for the account on primary storage resource */
             DiskOffering diskOffering = _diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId());
             DiskOffering currentDiskOffering = _diskOfferingDao.findByIdIncludingRemoved(currentDiskOfferingId);
-            _resourceLimitMgr.handleDiskOfferingChange(volume.getAccountId(), volume.isDisplayVolume(), currentSize, newSize, currentDiskOffering, diskOffering);
+            _resourceLimitMgr.handleVolumeDiskOfferingChange(volume.getAccountId(), volume.isDisplayVolume(), currentSize, newSize, currentDiskOffering, diskOffering);
 
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_RESIZE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
                     volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid());
@@ -1999,7 +1999,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
 
             _volsDao.update(volume.getId(), volume);
-            _resourceLimitMgr.handleDiskOfferingChange(volume.getAccountId(), volume.isDisplayVolume(), currentSize, newSize,
+            _resourceLimitMgr.handleVolumeDiskOfferingChange(volume.getAccountId(), volume.isDisplayVolume(), currentSize, newSize,
                     existingDiskOffering, newDiskOffering);
 
             if (currentSize != newSize) {
@@ -2310,7 +2310,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
 
             /* Check resource limit for this account */
-            _resourceLimitMgr.checkDiskOfferingChange(_accountMgr.getAccount(volume.getAccountId()),
+            _resourceLimitMgr.checkVolumeDiskOfferingChange(_accountMgr.getAccount(volume.getAccountId()),
                     volume.isDisplayVolume(), currentSize, newSize, existingDiskOffering, newDiskOffering);
         }
     }

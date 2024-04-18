@@ -1638,11 +1638,13 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     }
 
     @Override
-    public void checkDiskOfferingChange(Account owner, Boolean display, Long currentSize, Long newSize, DiskOffering currentOffering, DiskOffering newOffering) throws ResourceAllocationException {
+    public void checkVolumeDiskOfferingChange(Account owner, Boolean display, Long currentSize, Long newSize,
+            DiskOffering currentOffering, DiskOffering newOffering
+    ) throws ResourceAllocationException {
         if (newOffering == null) {
             newOffering = currentOffering;
         }
-        Ternary<Set<String>, Set<String>, Set<String>> ternary = getTagsForDiskOfferingChange(display, currentOffering, newOffering);
+        Ternary<Set<String>, Set<String>, Set<String>> ternary = getTagsForVolumeDiskOfferingChange(display, currentOffering, newOffering);
         if (ternary == null) {
             return;
         }
@@ -1703,22 +1705,22 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     }
 
     @Override
-    public void handleTemplateChange(long accountId, Boolean display, ServiceOffering offering,
+    public void handleVmTemplateChange(long accountId, Boolean display, ServiceOffering offering,
             VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate
     ) {
-        handleServiceOfferingAndTemplateChange(accountId, display, null, null, null, null,
+        handleVmServiceOfferingAndTemplateChange(accountId, display, null, null, null, null,
                 offering, offering, currentTemplate, newTemplate);
     }
 
     @Override
-    public void handleServiceOfferingChange(long accountId, Boolean display, Long currentCpu, Long newCpu, Long currentMemory, Long newMemory,
+    public void handleVmServiceOfferingChange(long accountId, Boolean display, Long currentCpu, Long newCpu,Long currentMemory, Long newMemory,
             ServiceOffering currentOffering, ServiceOffering newOffering, VirtualMachineTemplate template
     ) {
-        handleServiceOfferingAndTemplateChange(accountId, display, currentCpu, newCpu, currentMemory, newMemory, currentOffering,
+        handleVmServiceOfferingAndTemplateChange(accountId, display, currentCpu, newCpu, currentMemory, newMemory, currentOffering,
                 newOffering != null ? newOffering : currentOffering, template, template);
     }
 
-    private Ternary<Set<String>, Set<String>, Set<String>> getTagsForServiceOfferingAndTemplateChange(
+    private Ternary<Set<String>, Set<String>, Set<String>> getTagsForVmServiceOfferingAndTemplateChange(
             Boolean display, ServiceOffering currentOffering, ServiceOffering newOffering,
             VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate
     ) {
@@ -1733,11 +1735,11 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         return new Ternary<>(sameTags, newTags, removedTags);
     }
 
-    private void handleServiceOfferingAndTemplateChange(long accountId, Boolean display, Long currentCpu, Long newCpu,
+    private void handleVmServiceOfferingAndTemplateChange(long accountId, Boolean display, Long currentCpu, Long newCpu,
             Long currentMemory, Long newMemory, ServiceOffering currentOffering, ServiceOffering newOffering,
             VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate
     ) {
-        Ternary<Set<String>, Set<String>, Set<String>> ternary = getTagsForServiceOfferingAndTemplateChange(display, currentOffering, newOffering, currentTemplate, newTemplate);
+        Ternary<Set<String>, Set<String>, Set<String>> ternary = getTagsForVmServiceOfferingAndTemplateChange(display, currentOffering, newOffering, currentTemplate, newTemplate);
         if (ternary == null) {
             return;
         }
@@ -1785,7 +1787,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
     }
 
-    private Ternary<Set<String>, Set<String>, Set<String>> getTagsForDiskOfferingChange(
+    private Ternary<Set<String>, Set<String>, Set<String>> getTagsForVolumeDiskOfferingChange(
             Boolean display, DiskOffering currentOffering, DiskOffering newOffering
     ) {
         Set<String> currentOfferingTags = new HashSet<>(getResourceLimitStorageTagsForResourceCountOperation(display, currentOffering));
@@ -1800,12 +1802,12 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     }
 
     @Override
-    public void handleDiskOfferingChange(long accountId, Boolean display, Long currentSize, Long newSize,
+    public void handleVolumeDiskOfferingChange(long accountId, Boolean display, Long currentSize, Long newSize,
             DiskOffering currentOffering, DiskOffering newOffering) {
         if (newOffering == null) {
             newOffering = currentOffering;
         }
-        Ternary<Set<String>, Set<String>, Set<String>> ternary = getTagsForDiskOfferingChange(display, currentOffering, newOffering);
+        Ternary<Set<String>, Set<String>, Set<String>> ternary = getTagsForVolumeDiskOfferingChange(display, currentOffering, newOffering);
         if (ternary == null) {
             return;
         }
@@ -1930,25 +1932,25 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     }
 
     @Override
-    public void checkForTemplateChange(Account owner, Boolean display, ServiceOffering offering,
+    public void checkForVmTemplateChange(Account owner, Boolean display, ServiceOffering offering,
             VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate) throws ResourceAllocationException {
-        checkForServiceOfferingAndTemplateChange(owner, display, null, null,
+        checkForVmServiceOfferingAndTemplateChange(owner, display, null, null,
                 null, null, offering, offering, currentTemplate, newTemplate);
     }
 
     @Override
-    public void checkForServiceOfferingChange(Account owner, Boolean display, Long currentCpu, Long newCpu,
+    public void checkForVmServiceOfferingChange(Account owner, Boolean display, Long currentCpu, Long newCpu,
             Long currentMemory, Long newMemory,
             ServiceOffering currentOffering, ServiceOffering newOffering, VirtualMachineTemplate template
     ) throws ResourceAllocationException {
-        checkForServiceOfferingAndTemplateChange(owner, display, currentCpu, newCpu, currentMemory, newMemory, currentOffering,
+        checkForVmServiceOfferingAndTemplateChange(owner, display, currentCpu, newCpu, currentMemory, newMemory, currentOffering,
                 newOffering != null ? newOffering : currentOffering, template, template);
     }
 
-    public void checkForServiceOfferingAndTemplateChange(Account owner, Boolean display, Long currentCpu, Long newCpu,
+    public void checkForVmServiceOfferingAndTemplateChange(Account owner, Boolean display, Long currentCpu, Long newCpu,
             Long currentMemory, Long newMemory,
             ServiceOffering currentOffering, ServiceOffering newOffering, VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate) throws ResourceAllocationException {
-        Ternary<Set<String>, Set<String>, Set<String>> ternary = getTagsForServiceOfferingAndTemplateChange(display, currentOffering, newOffering, currentTemplate, newTemplate);
+        Ternary<Set<String>, Set<String>, Set<String>> ternary = getTagsForVmServiceOfferingAndTemplateChange(display, currentOffering, newOffering, currentTemplate, newTemplate);
         if (ternary == null) {
             return;
         }
