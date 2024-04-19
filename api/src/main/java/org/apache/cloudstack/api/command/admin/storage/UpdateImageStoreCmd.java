@@ -41,6 +41,9 @@ public class UpdateImageStoreCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ImageStoreResponse.class, required = true, description = "Image Store UUID")
     private Long id;
 
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = false, description = "The new name for the Image Store.")
+    private String name;
+
     @Parameter(name = ApiConstants.READ_ONLY, type = CommandType.BOOLEAN, required = false,
             description = "If set to true, it designates the corresponding image store to read-only, hence not considering them during storage migration")
     private Boolean readonly;
@@ -55,6 +58,10 @@ public class UpdateImageStoreCmd extends BaseCmd {
 
     public Long getId() {
         return id;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public Boolean getReadonly() {

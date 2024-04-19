@@ -117,7 +117,6 @@ import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -213,6 +212,7 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -3000,14 +3000,17 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public ImageStore updateImageStore(UpdateImageStoreCmd cmd) {
-        return updateImageStoreStatus(cmd.getId(), cmd.getReadonly(), cmd.getCapacityBytes());
+        return updateImageStoreStatus(cmd.getId(), cmd.getName(), cmd.getReadonly(), cmd.getCapacityBytes());
     }
 
-    public ImageStore updateImageStoreStatus(Long id, Boolean readonly, Long capacityBytes) {
+    public ImageStore updateImageStoreStatus(Long id, String name, Boolean readonly, Long capacityBytes) {
         // Input validation
         ImageStoreVO imageStoreVO = _imageStoreDao.findById(id);
         if (imageStoreVO == null) {
             throw new IllegalArgumentException("Unable to find image store with ID: " + id);
+        }
+        if (com.cloud.utils.StringUtils.isNotBlank(name)) {
+            imageStoreVO.setName(name);
         }
         if (capacityBytes != null) {
             imageStoreVO.setTotalSize(capacityBytes);
@@ -3021,7 +3024,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public ImageStore updateImageStoreStatus(Long id, Boolean readonly) {
-        return updateImageStoreStatus(id, readonly, null);
+        return updateImageStoreStatus(id, null, readonly, null);
     }
 
     /**
