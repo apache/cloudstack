@@ -1115,7 +1115,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     protected boolean updateResourceCountForAccount(final long accountId, final ResourceType type, String tag, final boolean increment, final long delta) {
         if (delta == 0) {
             return true;
-        } else if (delta< 0) {
+        } else if (delta < 0) {
             logger.warn("Resource count delta is negative, delta = {} for Account = {} Type = {} tag = {}",
                     delta, accountId, type, tag);
             return true;
@@ -1765,7 +1765,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         Set<String> newTags = updatedResourceLimitHostTags.second();
         Set<String> removedTags = updatedResourceLimitHostTags.third();
 
-        if (!newCpu.equals(currentCpu)) {
+        if (!newCpu.equals(currentCpu) || !newMemory.equals(currentMemory)) {
             for (String tag : sameTags) {
                 if (newCpu - currentCpu > 0) {
                     incrementResourceCountWithTag(accountId, ResourceType.cpu, tag, newCpu - currentCpu);
@@ -1981,7 +1981,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         Set<String> sameTags = updatedResourceLimitHostTags.first();
         Set<String> newTags = updatedResourceLimitHostTags.second();
 
-        if (newCpu - currentCpu > 0 && newMemory - currentMemory > 0) {
+        if (newCpu - currentCpu > 0 || newMemory - currentMemory > 0) {
             for (String tag : sameTags) {
                 if (newCpu - currentCpu > 0) {
                     checkResourceLimitWithTag(owner, ResourceType.cpu, tag, newCpu - currentCpu);
