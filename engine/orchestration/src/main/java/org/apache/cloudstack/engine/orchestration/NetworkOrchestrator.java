@@ -3076,7 +3076,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 logger.warn("Unable to acquire lock for the network {} as a part of network shutdown", network);
                 return false;
             }
-            logger.debug("Lock is acquired for network " + network + " as a part of network shutdown");
+            logger.debug("Lock is acquired for network {} as a part of network shutdown", network);
 
             if (network.getState() == Network.State.Allocated) {
                 logger.debug("Network is already shutdown: {}", network);
@@ -3257,7 +3257,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         // Don't allow to delete network via api call when it has vms assigned to it
         final int nicCount = getActiveNicsInNetwork(networkId);
         if (nicCount > 0) {
-            logger.debug("The network id={} has active Nics, but shouldn't.", networkId");
+            logger.debug("The network id={} has active Nics, but shouldn't.", networkId);
             // at this point we have already determined that there are no active user vms in network
             // if the op_networks table shows active nics, it's a bug in releasing nics updating op_networks
             _networksDao.changeActiveNicsBy(networkId, -1 * nicCount);
@@ -3882,7 +3882,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         } catch (final ResourceUnavailableException ex) {
             success = false;
             // shouldn't even come here as network is being cleaned up after all network elements are shutdown
-            logger.warn("Failed to release portForwarding/StaticNat rules as a part of network id={} cleanup due to resourceUnavailable" + networkId, ex);
+            logger.warn("Failed to release portForwarding/StaticNat rules as a part of network id={} cleanup due to resourceUnavailable", networkId, ex);
         }
 
         //remove all LB rules for the network
