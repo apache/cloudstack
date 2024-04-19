@@ -240,20 +240,20 @@ public interface ResourceLimitService {
     void updateTaggedResourceLimitsAndCountsForDomains(List<DomainResponse> responses, String tag);
     void checkVolumeResourceLimit(Account owner, Boolean display, Long size, DiskOffering diskOffering) throws ResourceAllocationException;
 
-    void checkVolumeDiskOfferingChange(Account owner, Boolean display, Long currentSize, Long newSize,
+    void checkVolumeResourceLimitForDiskOfferingChange(Account owner, Boolean display, Long currentSize, Long newSize,
             DiskOffering currentOffering, DiskOffering newOffering) throws ResourceAllocationException;
 
     void incrementVolumeResourceCount(long accountId, Boolean display, Long size, DiskOffering diskOffering);
     void decrementVolumeResourceCount(long accountId, Boolean display, Long size, DiskOffering diskOffering);
 
-    void handleVmTemplateChange(long accountId, Boolean display, ServiceOffering offering, VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate);
+    void updateVmResourceCountForTemplateChange(long accountId, Boolean display, ServiceOffering offering, VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate);
 
-    void handleVmServiceOfferingChange(long accountId, Boolean display, Long currentCpu, Long newCpu, Long currentMemory,
+    void updateVmResourceCountForServiceOfferingChange(long accountId, Boolean display, Long currentCpu, Long newCpu, Long currentMemory,
             Long newMemory,
             ServiceOffering currentOffering, ServiceOffering newOffering,
             VirtualMachineTemplate template);
 
-    void handleVolumeDiskOfferingChange(long accountId, Boolean display, Long currentSize, Long newSize,
+    void updateVolumeResourceCountForDiskOfferingChange(long accountId, Boolean display, Long currentSize, Long newSize,
             DiskOffering currentDiskOffering, DiskOffering newDiskOffering);
 
     void incrementVolumePrimaryStorageResourceCount(long accountId, Boolean display, Long size, DiskOffering diskOffering);
@@ -262,11 +262,10 @@ public interface ResourceLimitService {
     void incrementVmResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template);
     void decrementVmResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template);
 
-    void checkForVmServiceOfferingChange(Account owner, Boolean display, Long currentCpu, Long newCpu, Long currentMemory,
-            Long newMemory,
-            ServiceOffering currentOffering, ServiceOffering newOffering, VirtualMachineTemplate template) throws ResourceAllocationException;
+    void checkVmResourceLimitsForServiceOfferingChange(Account owner, Boolean display, Long currentCpu, Long newCpu,
+            Long currentMemory, Long newMemory, ServiceOffering currentOffering, ServiceOffering newOffering, VirtualMachineTemplate template) throws ResourceAllocationException;
 
-    void checkForVmTemplateChange(Account owner, Boolean display, ServiceOffering offering,
+    void checkVmResourceLimitsForTemplateChange(Account owner, Boolean display, ServiceOffering offering,
             VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate) throws ResourceAllocationException;
 
     void checkVmCpuResourceLimit(Account owner, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long cpu) throws ResourceAllocationException;

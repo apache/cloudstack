@@ -1260,7 +1260,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
 
             _volsDao.update(volume.getId(), volume);
-            _resourceLimitMgr.handleVolumeDiskOfferingChange(volume.getAccountId(), volume.isDisplayVolume(), currentSize, newSize,
+            _resourceLimitMgr.updateVolumeResourceCountForDiskOfferingChange(volume.getAccountId(), volume.isDisplayVolume(), currentSize, newSize,
                     diskOffering, newDiskOffering);
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_RESIZE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
                     volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid());
@@ -1500,7 +1500,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             /* Update resource count for the account on primary storage resource */
             DiskOffering diskOffering = _diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId());
             DiskOffering currentDiskOffering = _diskOfferingDao.findByIdIncludingRemoved(currentDiskOfferingId);
-            _resourceLimitMgr.handleVolumeDiskOfferingChange(volume.getAccountId(), volume.isDisplayVolume(), currentSize, newSize, currentDiskOffering, diskOffering);
+            _resourceLimitMgr.updateVolumeResourceCountForDiskOfferingChange(volume.getAccountId(), volume.isDisplayVolume(), currentSize, newSize, currentDiskOffering, diskOffering);
 
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_RESIZE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
                     volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid());
@@ -1999,7 +1999,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
 
             _volsDao.update(volume.getId(), volume);
-            _resourceLimitMgr.handleVolumeDiskOfferingChange(volume.getAccountId(), volume.isDisplayVolume(), currentSize, newSize,
+            _resourceLimitMgr.updateVolumeResourceCountForDiskOfferingChange(volume.getAccountId(), volume.isDisplayVolume(), currentSize, newSize,
                     existingDiskOffering, newDiskOffering);
 
             if (currentSize != newSize) {
@@ -2303,14 +2303,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     logger.warn(message);
                     throw new InvalidParameterValueException(message);
                 }
-            }
-            if (currentSize > newSize && !shrinkOk) {
-                throw new InvalidParameterValueException("Going from existing size of " + currentSize + " to size of " + newSize + " would shrink the volume."
-                        + "Need to sign off by supplying the shrinkok parameter with value of true.");
+                if (!shrinkOk) {
+                    throw new InvalidParameterValueException("Going from existing size of " + currentSize + " to size of " + newSize + " would shrink the volume."
+                            + "Need to sign off by supplying the shrinkok parameter with value of true.");
+                }
             }
 
             /* Check resource limit for this account */
-            _resourceLimitMgr.checkVolumeDiskOfferingChange(_accountMgr.getAccount(volume.getAccountId()),
+            _resourceLimitMgr.checkVolumeResourceLimitForDiskOfferingChange(_accountMgr.getAccount(volume.getAccountId()),
                     volume.isDisplayVolume(), currentSize, newSize, existingDiskOffering, newDiskOffering);
         }
     }

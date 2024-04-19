@@ -273,7 +273,7 @@ public class MockResourceLimitManagerImpl extends ManagerBase implements Resourc
     }
 
     @Override
-    public void checkVolumeDiskOfferingChange(Account owner, Boolean display, Long currentSize, Long newSize,
+    public void checkVolumeResourceLimitForDiskOfferingChange(Account owner, Boolean display, Long currentSize, Long newSize,
             DiskOffering currentOffering, DiskOffering newOffering) throws ResourceAllocationException {
 
     }
@@ -289,20 +289,20 @@ public class MockResourceLimitManagerImpl extends ManagerBase implements Resourc
     }
 
     @Override
-    public void handleVmTemplateChange(long accountId, Boolean display, ServiceOffering offering,
+    public void updateVmResourceCountForTemplateChange(long accountId, Boolean display, ServiceOffering offering,
             VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate) {
 
     }
 
     @Override
-    public void handleVmServiceOfferingChange(long accountId, Boolean display, Long currentCpu, Long newCpu,
+    public void updateVmResourceCountForServiceOfferingChange(long accountId, Boolean display, Long currentCpu, Long newCpu,
             Long currentMemory, Long newMemory, ServiceOffering currentOffering, ServiceOffering newOffering,
             VirtualMachineTemplate template) {
 
     }
 
     @Override
-    public void handleVolumeDiskOfferingChange(long accountId, Boolean display, Long currentSize, Long newSize,
+    public void updateVolumeResourceCountForDiskOfferingChange(long accountId, Boolean display, Long currentSize, Long newSize,
             DiskOffering currentDiskOffering, DiskOffering newDiskOffering) {
 
     }
@@ -333,14 +333,14 @@ public class MockResourceLimitManagerImpl extends ManagerBase implements Resourc
     }
 
     @Override
-    public void checkForVmServiceOfferingChange(Account owner, Boolean display, Long currentCpu, Long newCpu,
+    public void checkVmResourceLimitsForServiceOfferingChange(Account owner, Boolean display, Long currentCpu, Long newCpu,
             Long currentMemory, Long newMemory, ServiceOffering currentOffering, ServiceOffering newOffering,
             VirtualMachineTemplate template) throws ResourceAllocationException {
 
     }
 
     @Override
-    public void checkForVmTemplateChange(Account owner, Boolean display, ServiceOffering offering,
+    public void checkVmResourceLimitsForTemplateChange(Account owner, Boolean display, ServiceOffering offering,
             VirtualMachineTemplate currentTemplate,
             VirtualMachineTemplate newTemplate) throws ResourceAllocationException {
 
