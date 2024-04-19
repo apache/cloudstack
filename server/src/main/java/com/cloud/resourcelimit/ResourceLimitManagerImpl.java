@@ -1709,7 +1709,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     public void updateVmResourceCountForTemplateChange(long accountId, Boolean display, ServiceOffering offering,
             VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate
     ) {
-        handleVmServiceOfferingAndTemplateChange(accountId, display, null, null, null, null,
+        updateVmResourceCountForServiceOfferingAndTemplateChange(accountId, display, null, null, null, null,
                 offering, offering, currentTemplate, newTemplate);
     }
 
@@ -1717,7 +1717,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     public void updateVmResourceCountForServiceOfferingChange(long accountId, Boolean display, Long currentCpu, Long newCpu,Long currentMemory, Long newMemory,
             ServiceOffering currentOffering, ServiceOffering newOffering, VirtualMachineTemplate template
     ) {
-        handleVmServiceOfferingAndTemplateChange(accountId, display, currentCpu, newCpu, currentMemory, newMemory, currentOffering,
+        updateVmResourceCountForServiceOfferingAndTemplateChange(accountId, display, currentCpu, newCpu, currentMemory, newMemory, currentOffering,
                 newOffering != null ? newOffering : currentOffering, template, template);
     }
 
@@ -1726,7 +1726,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate
     ) {
         Set<String> currentOfferingTags = new HashSet<>(getResourceLimitHostTagsForResourceCountOperation(display, currentOffering, currentTemplate));
-        if (currentOffering.getId() == newOffering.getId()) {
+        if (currentOffering.getId() == newOffering.getId() && currentTemplate.getId() == newTemplate.getId()) {
             return new Ternary<>(currentOfferingTags, new HashSet<>(), new HashSet<>());
         }
         Set<String> newOfferingTags = new HashSet<>(getResourceLimitHostTagsForResourceCountOperation(display, newOffering, newTemplate));
@@ -1740,8 +1740,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         return new Ternary<>(sameTags, newTags, removedTags);
     }
 
-    private void handleVmServiceOfferingAndTemplateChange(long accountId, Boolean display, Long currentCpu, Long newCpu,
-            Long currentMemory, Long newMemory, ServiceOffering currentOffering, ServiceOffering newOffering,
+    private void updateVmResourceCountForServiceOfferingAndTemplateChange(long accountId, Boolean display, Long currentCpu,
+            Long newCpu, Long currentMemory, Long newMemory, ServiceOffering currentOffering, ServiceOffering newOffering,
             VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate
     ) {
         Ternary<Set<String>, Set<String>, Set<String>> updatedResourceLimitHostTags = getResourceLimitHostTagsForVmServiceOfferingAndTemplateChange(display, currentOffering, newOffering, currentTemplate, newTemplate);
