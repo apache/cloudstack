@@ -172,18 +172,6 @@ public class VeeamClientTest {
         Mockito.verify(mockClient, times(10)).get(Mockito.anyString());
     }
 
-    private void verifyBackupMetrics(Map<String, Backup.Metric> metrics) {
-        Assert.assertEquals(2, metrics.size());
-
-        Assert.assertTrue(metrics.containsKey("d1bd8abd-fc73-4b77-9047-7be98a2ecb72"));
-        Assert.assertEquals(537776128L, (long) metrics.get("d1bd8abd-fc73-4b77-9047-7be98a2ecb72").getBackupSize());
-        Assert.assertEquals(2147506644L, (long) metrics.get("d1bd8abd-fc73-4b77-9047-7be98a2ecb72").getDataSize());
-
-        Assert.assertTrue(metrics.containsKey("0d752ca6-d628-4d85-a739-75275e4661e6"));
-        Assert.assertEquals(1268682752L, (long) metrics.get("0d752ca6-d628-4d85-a739-75275e4661e6").getBackupSize());
-        Assert.assertEquals(15624049921L, (long) metrics.get("0d752ca6-d628-4d85-a739-75275e4661e6").getDataSize());
-    }
-
     @Test
     public void testProcessPowerShellResultForBackupMetrics() {
         String result = "i-2-3-VM-CSBKP-d1bd8abd-fc73-4b77-9047-7be98a2ecb72\r\n" +
@@ -203,7 +191,17 @@ public class VeeamClientTest {
 
         Map<String, Backup.Metric> metrics = client.processPowerShellResultForBackupMetrics(result);
 
-        verifyBackupMetrics(metrics);
+        Assert.assertEquals(2, metrics.size());
+
+        String vmName1 = "i-2-3-VM";
+        Assert.assertTrue(metrics.containsKey(vmName1));
+        Assert.assertEquals(537776128L, (long) metrics.get(vmName1).getBackupSize());
+        Assert.assertEquals(2147506644L, (long) metrics.get(vmName1).getDataSize());
+
+        String vmName2 = "i-2-5-VM";
+        Assert.assertTrue(metrics.containsKey(vmName2));
+        Assert.assertEquals(1268682752L, (long) metrics.get(vmName2).getBackupSize());
+        Assert.assertEquals(15624049921L, (long) metrics.get(vmName2).getDataSize());
     }
 
     @Test
@@ -391,7 +389,15 @@ public class VeeamClientTest {
         InputStream inputStream = new ByteArrayInputStream(xmlResponse.getBytes());
         Map<String, Backup.Metric> metrics = client.processHttpResponseForBackupMetrics(inputStream);
 
-        verifyBackupMetrics(metrics);
+        Assert.assertEquals(2, metrics.size());
+
+        Assert.assertTrue(metrics.containsKey("d1bd8abd-fc73-4b77-9047-7be98a2ecb72"));
+        Assert.assertEquals(537776128L, (long) metrics.get("d1bd8abd-fc73-4b77-9047-7be98a2ecb72").getBackupSize());
+        Assert.assertEquals(2147506644L, (long) metrics.get("d1bd8abd-fc73-4b77-9047-7be98a2ecb72").getDataSize());
+
+        Assert.assertTrue(metrics.containsKey("0d752ca6-d628-4d85-a739-75275e4661e6"));
+        Assert.assertEquals(1268682752L, (long) metrics.get("0d752ca6-d628-4d85-a739-75275e4661e6").getBackupSize());
+        Assert.assertEquals(15624049921L, (long) metrics.get("0d752ca6-d628-4d85-a739-75275e4661e6").getDataSize());
     }
 
     @Test
