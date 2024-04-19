@@ -1343,7 +1343,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                             }
                             return;
                         } else {
-                            logger.info("The guru did not like the answers so stopping " + vm);
+                            logger.info("The guru did not like the answers so stopping {}", vm);
                             StopCommand stopCmd = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), false);
                             stopCmd.setControlIp(getControlNicIpForVM(vm));
                             Map<String, Boolean> vlanToPersistenceMap = getVlanToPersistenceMapForVM(vm.getId());
@@ -2429,7 +2429,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     private void afterHypervisorMigrationCleanup(VMInstanceVO vm, Map<Volume, StoragePool> volumeToPool, Long sourceClusterId, Answer[] hypervisorMigrationResults) throws InsufficientCapacityException {
-        logger.debug("Cleaning up after hypervisor pool migration volumes for VM %s(%s)", vm.getInstanceName(), vm.getUuid());
+        logger.debug("Cleaning up after hypervisor pool migration volumes for VM {}({})", vm.getInstanceName(), vm.getUuid());
 
         StoragePool rootVolumePool = null;
         if (MapUtils.isNotEmpty(volumeToPool)) {
@@ -2443,7 +2443,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         setDestinationPoolAndReallocateNetwork(rootVolumePool, vm);
         Long destClusterId = rootVolumePool != null ? rootVolumePool.getClusterId() : null;
         if (destClusterId != null && !destClusterId.equals(sourceClusterId)) {
-            logger.debug("Resetting lastHost for VM %s(%s)", vm.getInstanceName(), vm.getUuid());
+            logger.debug("Resetting lastHost for VM {}({})", vm.getInstanceName(), vm.getUuid());
             vm.setLastHostId(null);
             vm.setPodIdToDeployIn(rootVolumePool.getPodId());
         }
@@ -4190,7 +4190,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             throw new ConcurrentOperationException("Unable to lock nic " + nic.getId());
         }
 
-        logger.debug("Lock is acquired for nic id " + lock.getId() + " as a part of remove vm " + vm + " from network " + network);
+        logger.debug("Lock is acquired for nic id {} as a part of remove vm {} from network {}", lock.getId(), vm, network);
 
         try {
             final NicProfile nicProfile =
@@ -4199,27 +4199,27 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             if (vm.getState() == State.Running) {
                 final NicTO nicTO = toNicTO(nicProfile, vmProfile.getVirtualMachine().getHypervisorType());
-                logger.debug("Un-plugging nic for vm " + vm + " from network " + network);
+                logger.debug("Un-plugging nic for vm {} from network {}", vm, network);
                 final boolean result = unplugNic(network, nicTO, vmTO, context, dest);
                 if (result) {
-                    logger.debug("Nic is unplugged successfully for vm " + vm + " in network " + network);
+                    logger.debug("Nic is unplugged successfully for vm {} in network {}", vm, network);
                 } else {
-                    logger.warn("Failed to unplug nic for the vm " + vm + " from network " + network);
+                    logger.warn("Failed to unplug nic for the vm {} from network {}", vm, network);
                     return false;
                 }
             } else if (vm.getState() != State.Stopped) {
-                logger.warn("Unable to remove vm " + vm + " from network  " + network);
+                logger.warn("Unable to remove vm {} from network {}", vm, network);
                 throw new ResourceUnavailableException("Unable to remove vm " + vm + " from network, is not in the right state", DataCenter.class, vm.getDataCenterId());
             }
 
             _networkMgr.releaseNic(vmProfile, nic);
-            logger.debug("Successfully released nic " + nic + "for vm " + vm);
+            logger.debug("Successfully released nic {} for vm {}", nic, vm);
 
             _networkMgr.removeNic(vmProfile, nic);
             return true;
         } finally {
             _nicsDao.releaseFromLockTable(lock.getId());
-            logger.debug("Lock is released for nic id " + lock.getId() + " as a part of remove vm " + vm + " from network " + network);
+            logger.debug("Lock is released for nic id {} as a part of remove vm {} from network {}", lock.getId(), vm, network);
         }
     }
 
@@ -4259,7 +4259,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         if (dest != null) {
-            logger.debug(" Found " + dest + " for scaling the vm to.");
+            logger.debug("Found {} for scaling the vm to.", dest);
         }
 
         if (dest == null) {
@@ -5296,7 +5296,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
             workJob = pendingWorkJobs.get(0);
         } else {
-            logger.trace(String.format("no jobs to add network %s for vm %s yet", network, vm));
+            logger.trace("no jobs to add network {} for vm {} yet", network, vm);
 
             workJob = createVmWorkJobToAddNetwork(vm, network, requested, context, user, account);
         }
@@ -5600,7 +5600,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     private UserVm orchestrateRestoreVirtualMachine(final long vmId, final Long newTemplateId, final Long rootDiskOfferingId, final boolean expunge, final Map<String, String> details) throws ResourceUnavailableException, InsufficientCapacityException {
-        logger.debug("Restoring vm " + vmId + " with templateId : " + newTemplateId + " diskOfferingId : " + rootDiskOfferingId + " details : " + details);
+        logger.debug("Restoring vm {} with templateId: {}, diskOfferingId: {}, details: {}", vmId, newTemplateId, rootDiskOfferingId, details);
         final CallContext context = CallContext.current();
         final Account account = context.getCallingAccount();
         return _userVmService.restoreVirtualMachine(account, vmId, newTemplateId, rootDiskOfferingId, expunge, details);
@@ -5668,7 +5668,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     private Boolean orchestrateUpdateDefaultNicForVM(final VirtualMachine vm, final Nic nic, final Nic defaultNic) {
 
-        logger.debug("Updating default nic of vm " + vm + " from nic " + defaultNic.getUuid() + " to nic " + nic.getUuid());
+        logger.debug("Updating default nic of vm {} from nic {} to nic {}", vm, defaultNic.getUuid(), nic.getUuid());
         Integer chosenID = nic.getDeviceId();
         Integer existingID = defaultNic.getDeviceId();
         NicVO nicVO = _nicsDao.findById(nic.getId());
@@ -6015,9 +6015,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         for (StoragePoolAllocator allocator : _storagePoolAllocators) {
             List<StoragePool> poolListFromAllocator = allocator.allocateToPool(diskProfile, profile, plan, avoid, 1);
             if (CollectionUtils.isNotEmpty(poolListFromAllocator)) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug(String.format("Found a suitable pool: %s for disk offering: %s", poolListFromAllocator.get(0).getName(), diskOffering.getName()));
-                }
+                logger.debug("Found a suitable pool: {} for disk offering: {}", poolListFromAllocator.get(0).getName(), diskOffering.getName());
                 return true;
             }
         }
