@@ -101,6 +101,10 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
     @Param(description = "the tags for the storage pool")
     private String tags;
 
+    @SerializedName("nfsopts")
+    @Param(description = "the nfs options for the storage pool")
+    private String nfsopts;
+
     @SerializedName(ApiConstants.IS_TAG_A_RULE)
     @Param(description = ApiConstants.PARAMETER_DESCRIPTION_IS_TAG_A_RULE)
     private Boolean isTagARule;
@@ -346,5 +350,13 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
 
     public void setProvider(String provider) {
         this.provider = provider;
+    }
+
+    public String getNfsopts() {
+        return nfsopts;
+    }
+
+    public void setNfsopts(String nfsopts) {
+        this.nfsopts = nfsopts;
     }
 }

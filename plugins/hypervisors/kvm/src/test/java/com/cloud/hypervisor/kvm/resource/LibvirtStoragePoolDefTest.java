@@ -19,6 +19,9 @@
 
 package com.cloud.hypervisor.kvm.resource;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import junit.framework.TestCase;
 import com.cloud.hypervisor.kvm.resource.LibvirtStoragePoolDef.PoolType;
 import com.cloud.hypervisor.kvm.resource.LibvirtStoragePoolDef.AuthenticationType;
@@ -47,6 +50,14 @@ public class LibvirtStoragePoolDefTest extends TestCase {
         assertEquals(port, pool.getSourcePort());
         assertEquals(dir, pool.getSourceDir());
         assertEquals(targetPath, pool.getTargetPath());
+
+        List<String> nfsopts = new ArrayList<>();
+        nfsopts.add("vers=4.1");
+        nfsopts.add("nconnect=4");
+        pool = new LibvirtStoragePoolDef(type, name, uuid, host, dir, targetPath, nfsopts);
+        assertTrue(pool.getNfsOpts().containsKey("vers=4.1"));
+        assertTrue(pool.getNfsOpts().containsKey("nconnect=4"));
+        assertEquals(pool.getNfsOpts().size(), 2);
     }
 
     @Test
@@ -57,12 +68,17 @@ public class LibvirtStoragePoolDefTest extends TestCase {
         String host = "127.0.0.1";
         String dir  = "/export/primary";
         String targetPath = "/mnt/" + uuid;
+        List<String> nfsopts = new ArrayList<>();
+        nfsopts.add("vers=4.1");
+        nfsopts.add("nconnect=4");
 
-        LibvirtStoragePoolDef pool = new LibvirtStoragePoolDef(type, name, uuid, host, dir, targetPath);
+        LibvirtStoragePoolDef pool = new LibvirtStoragePoolDef(type, name, uuid, host, dir, targetPath, nfsopts);
 
-        String expectedXml = "<pool type='" + type.toString() + "'>\n<name>" + name + "</name>\n<uuid>" + uuid + "</uuid>\n" +
+        String expectedXml = "<pool type='" + type.toString() + "' xmlns:fs='http://libvirt.org/schemas/storagepool/fs/1.0'>\n" +
+                             "<name>" +name + "</name>\n<uuid>" + uuid + "</uuid>\n" +
                              "<source>\n<host name='" + host + "'/>\n<dir path='" + dir + "'/>\n</source>\n<target>\n" +
-                             "<path>" + targetPath + "</path>\n</target>\n</pool>\n";
+                             "<path>" + targetPath + "</path>\n</target>\n" +
+                             "<fs:mount_opts>\n<fs:option name='vers=4.1'/>\n<fs:option name='nconnect=4'/>\n</fs:mount_opts>\n</pool>\n";
 
         assertEquals(expectedXml, pool.toString());
     }

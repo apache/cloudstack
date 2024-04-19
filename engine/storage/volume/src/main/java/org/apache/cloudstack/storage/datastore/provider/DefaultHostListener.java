@@ -53,7 +53,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
+
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class DefaultHostListener implements HypervisorHostListener {
     private static final Logger s_logger = Logger.getLogger(DefaultHostListener.class);
@@ -125,7 +128,16 @@ public class DefaultHostListener implements HypervisorHostListener {
     @Override
     public boolean hostConnect(long hostId, long poolId) throws StorageConflictException {
         StoragePool pool = (StoragePool) this.dataStoreMgr.getDataStore(poolId, DataStoreRole.Primary);
-        ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, pool);
+        Map<String, String> details = null;
+        if (pool.getPoolType().equals(Storage.StoragePoolType.NetworkFilesystem)) {
+            details = new HashMap<>();
+            StoragePoolDetailVO nfsopts = storagePoolDetailsDao.findDetail(poolId, "nfsopts");
+            if (nfsopts != null) {
+                details.put("nfsopts", nfsopts.getValue());
+            }
+        }
+
+        ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, pool, details);
         cmd.setWait(modifyStoragePoolCommandWait);
         s_logger.debug(String.format("Sending modify storage pool command to agent: %d for storage pool: %d with timeout %d seconds",
                 hostId, poolId, cmd.getWait()));

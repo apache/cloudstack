@@ -249,4 +249,15 @@ public class StorageManagerImplTest {
                 .update(StorageManager.DataStoreDownloadFollowRedirects.key(),StorageManager.DataStoreDownloadFollowRedirects.defaultValue());
     }
 
+    @Test(expected = InvalidParameterValueException.class)
+    public void testDuplicateNFSOptions() {
+        String nfsopts = "vers=4.1, nconnect=4,vers=4.2";
+        storageManagerImpl.checkNfsOptions(nfsopts);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testInvalidNFSOptions() {
+        String nfsopts = "vers=4.1=2,";
+        storageManagerImpl.checkNfsOptions(nfsopts);
+    }
 }

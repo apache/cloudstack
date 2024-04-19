@@ -839,6 +839,21 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return String.format("%s-%s-%s", StringUtils.trim(host.getName()), "local", storagePoolInformation.getUuid().split("-")[0]);
     }
 
+    protected void checkNfsOptions(String nfsopts) throws InvalidParameterValueException {
+        String[] options = nfsopts.replaceAll("\\s", "").split(",");
+        Map<String, String> optionsMap = new HashMap<>();
+        for (String option : options) {
+            String[] keyValue = option.split("=");
+            if (keyValue.length > 2) {
+                throw new InvalidParameterValueException("Invalid value for NFS option " + keyValue[0]);
+            }
+            if (optionsMap.containsKey(keyValue[0])) {
+                throw new InvalidParameterValueException("Duplicate NFS option values found for option " + keyValue[0]);
+            }
+            optionsMap.put(keyValue[0], null);
+        }
+    }
+
     @Override
     public PrimaryDataStoreInfo createPool(CreateStoragePoolCmd cmd) throws ResourceInUseException, IllegalArgumentException, UnknownHostException, ResourceUnavailableException {
         String providerName = cmd.getStorageProviderName();
@@ -903,6 +918,20 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         Map<String, String> details = extractApiParamAsMap(cmd.getDetails());
+        if (details.containsKey("nfsopts")) {
+            Long accountId = cmd.getEntityOwnerId();
+            if (!_accountMgr.isRootAdmin(accountId)) {
+                throw new PermissionDeniedException("Only root admin can set nfs options");
+            }
+            if (!hypervisorType.equals(HypervisorType.KVM) && !hypervisorType.equals(HypervisorType.Simulator)) {
+                throw new InvalidParameterValueException("NFS options can not be set for the hypervisor type " + hypervisorType);
+            }
+            if (!"nfs".equals(uriParams.get("scheme"))) {
+                throw new InvalidParameterValueException("NFS options can only be set on pool type " + StoragePoolType.NetworkFilesystem);
+            }
+            checkNfsOptions(details.get("nfsopts"));
+        }
+
         DataCenterVO zone = _dcDao.findById(cmd.getZoneId());
         if (zone == null) {
             throw new InvalidParameterValueException("unable to find zone by id " + zoneId);
@@ -1085,6 +1114,24 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             throw new IllegalArgumentException("Unable to find storage pool with ID: " + id);
         }
 
+        Map<String, String> inputDetails = extractApiParamAsMap(cmd.getDetails());
+        if (inputDetails.containsKey("nfsopts")) {
+            Long accountId = cmd.getEntityOwnerId();
+            if (!_accountMgr.isRootAdmin(accountId)) {
+                throw new PermissionDeniedException("Only root admin can modify nfs options");
+            }
+            if (!pool.getHypervisor().equals(HypervisorType.KVM) && !pool.getHypervisor().equals((HypervisorType.Simulator))) {
+                throw new InvalidParameterValueException("NFS options can only be set for the hypervisor type " + HypervisorType.KVM);
+            }
+            if (!pool.getPoolType().equals(StoragePoolType.NetworkFilesystem)) {
+                throw new InvalidParameterValueException("NFS options can only be set on pool type " + StoragePoolType.NetworkFilesystem);
+            }
+            if (!pool.isInMaintenance()) {
+                throw new InvalidParameterValueException("The storage pool should be in maintenance mode to edit nfs options");
+            }
+            checkNfsOptions(inputDetails.get("nfsopts"));
+        }
+
         String name = cmd.getName();
         if(StringUtils.isNotBlank(name)) {
             s_logger.debug("Updating Storage Pool name to: " + name);
@@ -1128,12 +1175,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         // retrieve current details and merge/overlay input to capture changes
-        Map<String, String> inputDetails = extractApiParamAsMap(cmd.getDetails());
         Map<String, String> details = null;
-        if (inputDetails == null) {
-            details = _storagePoolDetailsDao.listDetailsKeyPairs(id);
-        } else {
-            details = _storagePoolDetailsDao.listDetailsKeyPairs(id);
+        details = _storagePoolDetailsDao.listDetailsKeyPairs(id);
+        if (inputDetails != null) {
             details.putAll(inputDetails);
             changes = true;
         }

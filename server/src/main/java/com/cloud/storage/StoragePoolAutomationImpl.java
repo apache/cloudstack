@@ -19,7 +19,9 @@
 package com.cloud.storage;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 
@@ -28,6 +30,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -87,6 +91,8 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
     protected StoragePoolWorkDao _storagePoolWorkDao;
     @Inject
     PrimaryDataStoreDao primaryDataStoreDao;
+    @Inject
+    StoragePoolDetailsDao storagePoolDetailsDao;
     @Inject
     DataStoreManager dataStoreMgr;
     @Inject
@@ -318,9 +324,19 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
         if (hosts == null || hosts.size() == 0) {
             return true;
         }
+
+        Map<String, String> details = null;
+        if (pool.getPoolType().equals(Storage.StoragePoolType.NetworkFilesystem)) {
+            details = new HashMap<>();
+            StoragePoolDetailVO nfsopts = storagePoolDetailsDao.findDetail(poolVO.getId(), "nfsopts");
+            if (nfsopts != null) {
+                details.put("nfsopts", nfsopts.getValue());
+            }
+        }
+
         // add heartbeat
         for (HostVO host : hosts) {
-            ModifyStoragePoolCommand msPoolCmd = new ModifyStoragePoolCommand(true, pool);
+            ModifyStoragePoolCommand msPoolCmd = new ModifyStoragePoolCommand(true, pool, details);
             final Answer answer = agentMgr.easySend(host.getId(), msPoolCmd);
             if (answer == null || !answer.getResult()) {
                 if (s_logger.isDebugEnabled()) {

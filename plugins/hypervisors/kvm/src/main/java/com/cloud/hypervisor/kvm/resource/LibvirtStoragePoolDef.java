@@ -16,6 +16,10 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 public class LibvirtStoragePoolDef {
     public enum PoolType {
         ISCSI("iscsi"), NETFS("netfs"), LOGICAL("logical"), DIR("dir"), RBD("rbd"), GLUSTERFS("glusterfs"), POWERFLEX("powerflex");
@@ -55,6 +59,7 @@ public class LibvirtStoragePoolDef {
     private String _authUsername;
     private AuthenticationType _authType;
     private String _secretUuid;
+    private Map<String, String> _nfsopts = new HashMap<>();
 
     public LibvirtStoragePoolDef(PoolType type, String poolName, String uuid, String host, int port, String dir, String targetPath) {
         _poolType = type;
@@ -73,6 +78,15 @@ public class LibvirtStoragePoolDef {
         _sourceHost = host;
         _sourceDir = dir;
         _targetPath = targetPath;
+    }
+
+    public LibvirtStoragePoolDef(PoolType type, String poolName, String uuid, String host, String dir, String targetPath, List<String> nfsopts) {
+        this(type, poolName, uuid, host, dir, targetPath);
+        if (nfsopts != null) {
+            for (String nfsopt : nfsopts) {
+                this._nfsopts.put(nfsopt, null);
+            }
+        }
     }
 
     public LibvirtStoragePoolDef(PoolType type, String poolName, String uuid, String sourceHost, int sourcePort, String dir, String authUsername, AuthenticationType authType,
@@ -124,10 +138,17 @@ public class LibvirtStoragePoolDef {
         return _authType;
     }
 
+    public Map<String, String> getNfsOpts() {
+        return _nfsopts;
+    }
+
     @Override
     public String toString() {
         StringBuilder storagePoolBuilder = new StringBuilder();
-        if (_poolType == PoolType.GLUSTERFS) {
+        if (_poolType == PoolType.NETFS && _nfsopts != null) {
+            // get from poolType
+            storagePoolBuilder.append("<pool type='netfs' xmlns:fs='http://libvirt.org/schemas/storagepool/fs/1.0'>\n");
+        } else if (_poolType == PoolType.GLUSTERFS) {
             /* libvirt mounts a Gluster volume, similar to NFS */
             storagePoolBuilder.append("<pool type='netfs'>\n");
         } else {
@@ -186,6 +207,13 @@ public class LibvirtStoragePoolDef {
             storagePoolBuilder.append("<target>\n");
             storagePoolBuilder.append("<path>" + _targetPath + "</path>\n");
             storagePoolBuilder.append("</target>\n");
+        }
+        if (_poolType == PoolType.NETFS && _nfsopts != null) {
+            storagePoolBuilder.append("<fs:mount_opts>\n");
+            for (Map.Entry<String, String> options : _nfsopts.entrySet()) {
+                storagePoolBuilder.append("<fs:option name='" + options.getKey() + "'/>\n");
+            }
+            storagePoolBuilder.append("</fs:mount_opts>\n");
         }
         storagePoolBuilder.append("</pool>\n");
         return storagePoolBuilder.toString();

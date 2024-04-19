@@ -34,7 +34,7 @@ export default {
     fields.push('zonename')
     return fields
   },
-  details: ['name', 'id', 'ipaddress', 'type', 'scope', 'tags', 'path', 'provider', 'hypervisor', 'overprovisionfactor', 'disksizetotal', 'disksizeallocated', 'disksizeused', 'clustername', 'podname', 'zonename', 'created'],
+  details: ['name', 'id', 'ipaddress', 'type', 'scope', 'tags', 'path', 'provider', 'hypervisor', 'overprovisionfactor', 'disksizetotal', 'disksizeallocated', 'disksizeused', 'clustername', 'podname', 'zonename', 'nfsopts', 'created'],
   related: [{
     name: 'volume',
     title: 'label.volumes',
@@ -108,6 +108,16 @@ export default {
       dataView: true,
       defaultArgs: { enabled: true },
       show: (record) => { return record.state === 'Disabled' }
+    },
+    {
+      api: 'updateStoragePool',
+      icon: 'control-outlined',
+      label: 'label.action.edit.nfs.options',
+      message: 'message.action.edit.nfs.options',
+      dataView: true,
+      popup: true,
+      show: (record) => { return (record.type === 'NetworkFilesystem' && record.hypervisor === 'KVM' && record.state === 'Maintenance') },
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/NFSOptsPrimaryStorage.vue')))
     },
     {
       api: 'syncStoragePool',

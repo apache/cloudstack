@@ -178,6 +178,17 @@
             <a-input v-model:value="form.path" :placeholder="$t('message.path.description')"/>
           </a-form-item>
         </div>
+        <div
+          v-if="form.protocol === 'nfs' &&
+            ((form.scope === 'zone' && (form.hypervisor === 'KVM' || form.hypervisor === 'Simulator')) ||
+             (form.scope === 'cluster' && (hypervisorType === 'KVM' || hypervisorType === 'Simulator')))">
+          <a-form-item name="nfsopts" ref="nfsopts">
+            <template #label>
+              <tooltip-label :title="$t('label.nfsopts')" :tooltip="$t('message.nfs.nfsopts.description')"/>
+            </template>
+            <a-input v-model:value="form.nfsopts" :placeholder="$t('message.nfs.nfsopts.description')" />
+          </a-form-item>
+        </div>
         <div v-if="form.protocol === 'SMB'">
           <a-form-item :label="$t('label.smbusername')" name="smbUsername" ref="smbUsername">
             <a-input v-model:value="form.smbUsername"/>
@@ -794,6 +805,7 @@ export default {
         var url = ''
         if (values.protocol === 'nfs') {
           url = this.nfsURL(server, path)
+          params['details[0].nfsopts'] = values.nfsopts
         } else if (values.protocol === 'SMB') {
           url = this.smbURL(server, path)
           const smbParams = {
