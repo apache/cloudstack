@@ -62,7 +62,9 @@ public class UsageNetworksVO implements InternalIdentity {
     @Temporal(value = TemporalType.TIMESTAMP)
     private Date removed = null;
 
-    protected UsageNetworksVO(){}
+    protected UsageNetworksVO() {
+
+    }
 
     public UsageNetworksVO(long id, long networkId, long networkOfferingId, long zoneId, long accountId, long domainId, String state, Date created, Date removed) {
         this.id = id;
@@ -75,6 +77,7 @@ public class UsageNetworksVO implements InternalIdentity {
         this.created = created;
         this.removed = removed;
     }
+
     public UsageNetworksVO(long networkId, long networkOfferingId, long zoneId, long accountId, long domainId, String state, Date created, Date removed) {
         this.networkId = networkId;
         this.networkOfferingId = networkOfferingId;

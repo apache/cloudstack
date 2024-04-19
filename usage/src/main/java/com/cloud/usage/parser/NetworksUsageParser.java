@@ -25,6 +25,7 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.usage.UsageTypes;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -57,7 +58,7 @@ public class NetworksUsageParser {
         }
 
         final List<UsageNetworksVO> usageNetworksVO = staticNetworksDao.getUsageRecords(account.getId(), startDate, endDate);
-        if (usageNetworksVO == null || usageNetworksVO.isEmpty()) {
+        if (CollectionUtils.isEmpty(usageNetworksVO)) {
             LOGGER.debug(String.format("Cannot find any VPC usage for account [%s] in period between [%s] and [%s].", account, startDate, endDate));
             return true;
         }
