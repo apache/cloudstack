@@ -41,7 +41,7 @@ public class HostTagsDaoImpl extends GenericDaoBase<HostTagVO, Long> implements 
     protected final SearchBuilder<HostTagVO> HostSearch;
     protected final GenericSearchBuilder<HostTagVO, String> DistinctImplictTagsSearch;
     private final SearchBuilder<HostTagVO> stSearch;
-    private final SearchBuilder<HostTagVO> stIdSearch;
+    private final SearchBuilder<HostTagVO> tagIdsearch;
     private final SearchBuilder<HostTagVO> ImplicitTagsSearch;
 
     @Inject
@@ -64,9 +64,9 @@ public class HostTagsDaoImpl extends GenericDaoBase<HostTagVO, Long> implements 
         stSearch.and("idIN", stSearch.entity().getId(), SearchCriteria.Op.IN);
         stSearch.done();
 
-        stIdSearch = createSearchBuilder();
-        stIdSearch.and("id", stIdSearch.entity().getId(), SearchCriteria.Op.EQ);
-        stIdSearch.done();
+        tagIdsearch = createSearchBuilder();
+        tagIdsearch.and("id", tagIdsearch.entity().getId(), SearchCriteria.Op.EQ);
+        tagIdsearch.done();
 
         ImplicitTagsSearch = createSearchBuilder();
         ImplicitTagsSearch.and("hostId", ImplicitTagsSearch.entity().getHostId(), SearchCriteria.Op.EQ);
@@ -182,21 +182,21 @@ public class HostTagsDaoImpl extends GenericDaoBase<HostTagVO, Long> implements 
     }
 
     @Override
-    public List<HostTagVO> searchByIds(Long... stIds) {
+    public List<HostTagVO> searchByIds(Long... tagIds) {
         String batchCfg = _configDao.getValue("detail.batch.query.size");
 
         final int detailsBatchSize = batchCfg != null ? Integer.parseInt(batchCfg) : 2000;
 
         // query details by batches
-        List<HostTagVO> uvList = new ArrayList<HostTagVO>();
+        List<HostTagVO> tagList = new ArrayList<>();
         int curr_index = 0;
 
-        if (stIds.length > detailsBatchSize) {
-            while ((curr_index + detailsBatchSize) <= stIds.length) {
+        if (tagIds.length > detailsBatchSize) {
+            while ((curr_index + detailsBatchSize) <= tagIds.length) {
                 Long[] ids = new Long[detailsBatchSize];
 
                 for (int k = 0, j = curr_index; j < curr_index + detailsBatchSize; j++, k++) {
-                    ids[k] = stIds[j];
+                    ids[k] = tagIds[j];
                 }
 
                 SearchCriteria<HostTagVO> sc = stSearch.create();
@@ -206,33 +206,33 @@ public class HostTagsDaoImpl extends GenericDaoBase<HostTagVO, Long> implements 
                 List<HostTagVO> vms = searchIncludingRemoved(sc, null, null, false);
 
                 if (vms != null) {
-                    uvList.addAll(vms);
+                    tagList.addAll(vms);
                 }
 
                 curr_index += detailsBatchSize;
             }
         }
 
-        if (curr_index < stIds.length) {
-            int batch_size = (stIds.length - curr_index);
+        if (curr_index < tagIds.length) {
+            int batch_size = (tagIds.length - curr_index);
             // set the ids value
             Long[] ids = new Long[batch_size];
 
             for (int k = 0, j = curr_index; j < curr_index + batch_size; j++, k++) {
-                ids[k] = stIds[j];
+                ids[k] = tagIds[j];
             }
 
             SearchCriteria<HostTagVO> sc = stSearch.create();
 
             sc.setParameters("idIN", (Object[])ids);
 
-            List<HostTagVO> vms = searchIncludingRemoved(sc, null, null, false);
+            List<HostTagVO> tags = searchIncludingRemoved(sc, null, null, false);
 
-            if (vms != null) {
-                uvList.addAll(vms);
+            if (tags != null) {
+                tagList.addAll(tags);
             }
         }
 
-        return uvList;
+        return tagList;
     }
 }
