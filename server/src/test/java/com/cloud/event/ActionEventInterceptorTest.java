@@ -198,6 +198,8 @@ public class ActionEventInterceptorTest {
 
         utils.init();
 
+        CallContext.unregister();
+
         componentContextMocked.close();
     }
 
@@ -282,7 +284,6 @@ public class ActionEventInterceptorTest {
         Assert.assertEquals(eventVO.getState(), com.cloud.event.Event.State.Completed);
         Assert.assertEquals(eventVO.getResourceId(), resourceId);
         Assert.assertEquals(eventVO.getResourceType(), resourceType.toString());
-        CallContext.unregister();
     }
 
     @Test
