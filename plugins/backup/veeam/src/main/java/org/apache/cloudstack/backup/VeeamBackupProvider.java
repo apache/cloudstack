@@ -375,7 +375,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
                         backup.setExternalId(restorePoint.getId());
                         backup.setType(restorePoint.getType());
                         backup.setDate(restorePoint.getCreated());
-                        backup.setBackupVolumes(createVolumeInfoFromVolumes(restorePoint.getPaths()));
+                        backup.setBackupVolumes(createVolumeInfoFromVolumePaths(restorePoint.getPaths()));
                         backup.setStatus(Backup.Status.BackedUp);
                         if (metric != null) {
                             backup.setSize(metric.getBackupSize());
@@ -404,7 +404,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
         });
     }
 
-    protected String createVolumeInfoFromVolumes(List<String> paths) {
+    protected String createVolumeInfoFromVolumePaths(List<String> paths) {
         List<VolumeVO> vmVolumes = new ArrayList<>();
         try {
             for (String diskName : paths) {
