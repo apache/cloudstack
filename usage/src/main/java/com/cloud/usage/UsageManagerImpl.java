@@ -2137,7 +2137,6 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         }
     }
 
-<<<<<<< HEAD
     private void handleNetworkEvent(UsageEventVO event) {
         Account account = _accountDao.findByIdIncludingRemoved(event.getAccountId());
         long domainId = account.getDomainId();
@@ -2150,7 +2149,9 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             usageNetworksDao.update(event.getResourceId(), event.getOfferingId(), event.getResourceType());
         } else {
             s_logger.error(String.format("Unknown event type [%s] in Networks event parser. Skipping it.", event.getType()));
-=======
+        }
+    }
+
     private void handleVpcEvent(UsageEventVO event) {
         Account account = _accountDao.findByIdIncludingRemoved(event.getAccountId());
         long domainId = account.getDomainId();
@@ -2161,7 +2162,6 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             usageVpcDao.persist(usageVPCVO);
         } else {
             s_logger.error(String.format("Unknown event type [%s] in VPC event parser. Skipping it.", event.getType()));
->>>>>>> 21182dabcd8cdfbb20fc514c549837aa26a4ba45
         }
     }
 

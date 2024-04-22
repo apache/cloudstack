@@ -63,7 +63,6 @@ public class UsageNetworksVO implements InternalIdentity {
     private Date removed = null;
 
     protected UsageNetworksVO() {
-
     }
 
     public UsageNetworksVO(long id, long networkId, long networkOfferingId, long zoneId, long accountId, long domainId, String state, Date created, Date removed) {
