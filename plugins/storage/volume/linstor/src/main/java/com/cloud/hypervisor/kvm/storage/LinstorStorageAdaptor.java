@@ -260,6 +260,28 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         }
     }
 
+    /**
+     * Checks if the given resource is in use by drbd on any host and
+     * if so set the drbd option allow-two-primaries
+     * @param api linstor api object
+     * @param rscName resource name to set allow-two-primaries if in use
+     * @throws ApiException if any problem connecting to the Linstor controller
+     */
+    private void allow2PrimariesIfInUse(DevelopersApi api, String rscName) throws ApiException {
+        if (LinstorUtil.isResourceInUse(api, rscName)) {
+            // allow 2 primaries for live migration, should be removed by disconnect on the other end
+            ResourceDefinitionModify rdm = new ResourceDefinitionModify();
+            Properties props = new Properties();
+            props.put("DrbdOptions/Net/allow-two-primaries", "yes");
+            rdm.setOverrideProps(props);
+            ApiCallRcList answers = api.resourceDefinitionModify(rscName, rdm);
+            if (answers.hasError()) {
+                s_logger.error("Unable to set 'allow-two-primaries' on " + rscName);
+                // do not fail here as adding allow-two-primaries property is only a problem while live migrating
+            }
+        }
+    }
+
     @Override
     public boolean connectPhysicalDisk(String volumePath, KVMStoragePool pool, Map<String, String> details)
     {
@@ -286,16 +308,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
 
         try
         {
-            // allow 2 primaries for live migration, should be removed by disconnect on the other end
-            ResourceDefinitionModify rdm = new ResourceDefinitionModify();
-            Properties props = new Properties();
-            props.put("DrbdOptions/Net/allow-two-primaries", "yes");
-            rdm.setOverrideProps(props);
-            ApiCallRcList answers = api.resourceDefinitionModify(rscName, rdm);
-            if (answers.hasError()) {
-                s_logger.error("Unable to set 'allow-two-primaries' on " + rscName);
-                // do not fail here as adding allow-two-primaries property is only a problem while live migrating
-            }
+            allow2PrimariesIfInUse(api, rscName);
         } catch (ApiException apiEx) {
             s_logger.error(apiEx);
             // do not fail here as adding allow-two-primaries property is only a problem while live migrating

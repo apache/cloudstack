@@ -23,6 +23,7 @@ import com.linbit.linstor.api.DevelopersApi;
 import com.linbit.linstor.api.model.ApiCallRc;
 import com.linbit.linstor.api.model.ApiCallRcList;
 import com.linbit.linstor.api.model.ProviderKind;
+import com.linbit.linstor.api.model.Resource;
 import com.linbit.linstor.api.model.ResourceGroup;
 import com.linbit.linstor.api.model.StoragePool;
 
@@ -89,5 +90,23 @@ public class LinstorUtil {
             s_logger.error(apiEx.getMessage());
             throw new CloudRuntimeException(apiEx);
         }
+    }
+
+    /**
+     * Check if any resource of the given name is InUse on any host.
+     *
+     * @param api developer api object to use
+     * @param rscName resource name to check in use state.
+     * @return True if a resource found that is in use(primary) state, else false.
+     * @throws ApiException forwards api errors
+     */
+    public static boolean isResourceInUse(DevelopersApi api, String rscName) throws ApiException {
+        List<Resource> rscs = api.resourceList(rscName, null, null);
+        if (rscs != null) {
+            return rscs.stream()
+                    .anyMatch(rsc -> rsc.getState() != null && Boolean.TRUE.equals(rsc.getState().isInUse()));
+        }
+        s_logger.error("isResourceInUse: null returned from resourceList");
+        return false;
     }
 }
