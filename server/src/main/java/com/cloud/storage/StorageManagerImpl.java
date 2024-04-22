@@ -1212,7 +1212,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         ScopeType newScope = EnumUtils.getEnumIgnoreCase(ScopeType.class, cmd.getScope());
         if (newScope != ScopeType.ZONE && newScope != ScopeType.CLUSTER) {
-            throw new InvalidParameterValueException("Invalid scope " + newScope.toString() + "for Primary storage");
+            throw new InvalidParameterValueException("Invalid scope " + cmd.getScope() + "for Primary storage");
         }
 
         StoragePoolVO primaryStorage = _storagePoolDao.findById(id);

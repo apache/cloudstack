@@ -16,13 +16,15 @@
 // under the License.
 package com.cloud.storage;
 
-import com.cloud.agent.api.StoragePoolInfo;
-import com.cloud.exception.ConnectionException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.host.Host;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.dao.VMInstanceDao;
+import static org.mockito.Mockito.mock;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.cloudstack.api.command.admin.storage.ChangeStoragePoolScopeCmd;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.collections.MapUtils;
@@ -34,11 +36,24 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.cloud.agent.api.StoragePoolInfo;
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.exception.ConnectionException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.host.Host;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.user.AccountManagerImpl;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.VMInstanceDao;
 
 @RunWith(MockitoJUnitRunner.class)
 public class StorageManagerImplTest {
@@ -48,6 +63,18 @@ public class StorageManagerImplTest {
 
     @Mock
     VMInstanceDao vmInstanceDao;
+
+    @Mock
+    AccountManagerImpl accountMgr;
+
+    @Mock
+    ClusterDao clusterDao;
+
+    @Mock
+    PrimaryDataStoreDao storagePoolDao;
+
+    @Mock
+    DataCenterDao _dcDao;
 
     @Spy
     @InjectMocks
@@ -70,8 +97,8 @@ public class StorageManagerImplTest {
 
         String expectedLocalStorageName = hostMockName.trim() + "-local-" + firstBlockUuid;
 
-        Host hostMock = Mockito.mock(Host.class);
-        StoragePoolInfo storagePoolInfoMock = Mockito.mock(StoragePoolInfo.class);
+        Host hostMock = mock(Host.class);
+        StoragePoolInfo storagePoolInfoMock = mock(StoragePoolInfo.class);
 
         Mockito.when(hostMock.getName()).thenReturn(hostMockName);
         Mockito.when(storagePoolInfoMock.getUuid()).thenReturn(firstBlockUuid + "-213151-df21ef333d-2d33f1");
@@ -115,7 +142,7 @@ public class StorageManagerImplTest {
     @Test
     public void testIsVolumeSuspectedDestroyDuplicateNoVmVolumes() {
         VolumeVO volume = mockVolumeForIsVolumeSuspectedDestroyDuplicateTest();
-        Mockito.when(vmInstanceDao.findById(1L)).thenReturn(Mockito.mock(VMInstanceVO.class));
+        Mockito.when(vmInstanceDao.findById(1L)).thenReturn(mock(VMInstanceVO.class));
         Mockito.when(_volumeDao.findUsableVolumesForInstance(1L)).thenReturn(new ArrayList<>());
         Assert.assertFalse(storageManagerImpl.isVolumeSuspectedDestroyDuplicateOfVmVolume(volume));
     }
@@ -126,11 +153,11 @@ public class StorageManagerImplTest {
         String path = "data";
         VolumeVO volume = mockVolumeForIsVolumeSuspectedDestroyDuplicateTest();
         volume.setPoolId(poolId);
-        Mockito.when(vmInstanceDao.findById(1L)).thenReturn(Mockito.mock(VMInstanceVO.class));
-        VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
+        Mockito.when(vmInstanceDao.findById(1L)).thenReturn(mock(VMInstanceVO.class));
+        VolumeVO volumeVO = mock(VolumeVO.class);
         Mockito.when(volumeVO.getPoolId()).thenReturn(poolId);
         Mockito.when(volumeVO.getPath()).thenReturn(path);
-        Mockito.when(_volumeDao.findUsableVolumesForInstance(1L)).thenReturn(List.of(volumeVO, Mockito.mock(VolumeVO.class)));
+        Mockito.when(_volumeDao.findUsableVolumesForInstance(1L)).thenReturn(List.of(volumeVO, mock(VolumeVO.class)));
         Assert.assertTrue(storageManagerImpl.isVolumeSuspectedDestroyDuplicateOfVmVolume(volume));
     }
 
@@ -142,7 +169,7 @@ public class StorageManagerImplTest {
         VolumeVO volume = new VolumeVO();
         volume.setState(Volume.State.Allocated);
         volume.setPoolId(1L);
-        PrimaryDataStoreDao storagePoolDao = Mockito.mock(PrimaryDataStoreDao.class);
+        PrimaryDataStoreDao storagePoolDao = mock(PrimaryDataStoreDao.class);
         storageManagerImpl._storagePoolDao = storagePoolDao;
         Mockito.doReturn(storagePool).when(storagePoolDao).findById(volume.getPoolId());
         Assert.assertFalse(storageManagerImpl.storagePoolCompatibleWithVolumePool(storagePool, volume));
@@ -156,7 +183,7 @@ public class StorageManagerImplTest {
         storagePool.setId(1L);
         VolumeVO volume = new VolumeVO();
         volume.setState(Volume.State.Allocated);
-        PrimaryDataStoreDao storagePoolDao = Mockito.mock(PrimaryDataStoreDao.class);
+        PrimaryDataStoreDao storagePoolDao = mock(PrimaryDataStoreDao.class);
         storageManagerImpl._storagePoolDao = storagePoolDao;
         Assert.assertTrue(storageManagerImpl.storagePoolCompatibleWithVolumePool(storagePool, volume));
 
@@ -205,5 +232,69 @@ public class StorageManagerImplTest {
         } catch (ConnectionException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private ChangeStoragePoolScopeCmd mockChangeStoragePooolScopeCmd(String newScope) {
+        ChangeStoragePoolScopeCmd cmd = new ChangeStoragePoolScopeCmd();
+        ReflectionTestUtils.setField(cmd, "id", 1L);
+        ReflectionTestUtils.setField(cmd, "clusterId", 1L);
+        ReflectionTestUtils.setField(cmd, "scope", newScope);
+        return cmd;
+    }
+
+    private StoragePoolVO mockStoragePoolVOForChangeStoragePoolScope(ScopeType currentScope, StoragePoolStatus status) {
+        StoragePoolVO primaryStorage = new StoragePoolVO();
+        primaryStorage.setId(1L);
+        primaryStorage.setDataCenterId(1L);
+        primaryStorage.setClusterId(1L);
+        primaryStorage.setStatus(StoragePoolStatus.Disabled);
+        primaryStorage.setScope(currentScope);
+        primaryStorage.setStatus(status);
+        return primaryStorage;
+    }
+
+    private void prepareTestChangeStoragePoolScope(ScopeType currentScope, StoragePoolStatus status) {
+        final DataCenterVO zone = new DataCenterVO(1L, null, null, null, null, null, null, null, null, null, DataCenter.NetworkType.Advanced, null, null);
+        StoragePoolVO primaryStorage = mockStoragePoolVOForChangeStoragePoolScope(currentScope, status);
+
+        Mockito.when(accountMgr.isRootAdmin(Mockito.any())).thenReturn(true);
+        Mockito.when(_dcDao.findById(1L)).thenReturn(zone);
+        Mockito.when(storagePoolDao.findById(1L)).thenReturn(primaryStorage);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testChangeStoragePoolScopeNotDisabledException() {
+        prepareTestChangeStoragePoolScope(ScopeType.CLUSTER, StoragePoolStatus.Initialized);
+
+        ChangeStoragePoolScopeCmd cmd = mockChangeStoragePooolScopeCmd("ZONE");
+        storageManagerImpl.changeStoragePoolScope(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testChangeStoragePoolScopeToZoneHypervisorNotSupported() {
+        prepareTestChangeStoragePoolScope(ScopeType.CLUSTER, StoragePoolStatus.Disabled);
+
+        final ClusterVO cluster = new ClusterVO();
+        cluster.setHypervisorType(String.valueOf(HypervisorType.XenServer));
+        Mockito.when(clusterDao.findById(1L)).thenReturn(cluster);
+
+        ChangeStoragePoolScopeCmd cmd = mockChangeStoragePooolScopeCmd("ZONE");
+        storageManagerImpl.changeStoragePoolScope(cmd);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testChangeStoragePoolScopeToClusterVolumesPresentException() {
+        prepareTestChangeStoragePoolScope(ScopeType.ZONE, StoragePoolStatus.Disabled);
+
+        final ClusterVO cluster = new ClusterVO();
+        Mockito.when(clusterDao.findById(1L)).thenReturn(cluster);
+
+        List<VolumeVO> volumes = new ArrayList<>();
+        volumes.add(new VolumeVO());
+        List<VirtualMachine.State> states = Arrays.asList(VirtualMachine.State.Starting, VirtualMachine.State.Running, VirtualMachine.State.Stopping, VirtualMachine.State.Migrating, VirtualMachine.State.Restoring);
+        Mockito.when(_volumeDao.listByPoolIdVMStatesNotInCluster(1L, states, 1L)).thenReturn(volumes);
+
+        ChangeStoragePoolScopeCmd cmd = mockChangeStoragePooolScopeCmd("CLUSTER");
+        storageManagerImpl.changeStoragePoolScope(cmd);
     }
 }
