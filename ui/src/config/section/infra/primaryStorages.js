@@ -149,7 +149,7 @@ export default {
            record.hypervisor === 'Simulator')
         )
       },
-      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/changeStoragePoolScope.vue')))
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/ChangeStoragePoolScope.vue')))
     },
     {
       api: 'deleteStoragePool',
