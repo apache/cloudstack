@@ -190,18 +190,9 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
             logFailureAndThrowException("Volume is a base image of a template: " + volumePath);
         }
 
-        // 4. send a command to hypervisor to check
-        List<VolumeOnStorageTO> volumes = listVolumesForImportInternal(pool, volumePath, null);
-        if (CollectionUtils.isEmpty(volumes)) {
-            logFailureAndThrowException("Cannot find volume on storage pool: " + volumePath);
-        }
+        // 4. get volume info on storage through host and check
+        VolumeOnStorageTO volume = getVolumeOnStorageAndCheck(pool, volumePath);
 
-        VolumeOnStorageTO volume = volumes.get(0);
-
-        // check if volume is locked, encrypted or volume size is allowed
-        checkIfVolumeIsLocked(volume);
-        checkIfVolumeIsEncrypted(volume);
-        checkIfVolumeHasBackingFile(volume);
         if (checkIfVolumeForSnapshot(pool, volume.getFullPath())) {
             logFailureAndThrowException("Volume is a reference of snapshot on primary: " + volume.getFullPath());
         }
@@ -231,6 +222,23 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         return responseGenerator.createVolumeResponse(ResponseObject.ResponseView.Full, volumeVO);
     }
 
+    protected VolumeOnStorageTO getVolumeOnStorageAndCheck(StoragePoolVO pool, String volumePath) {
+        // send a command to hypervisor to check
+        List<VolumeOnStorageTO> volumes = listVolumesForImportInternal(pool, volumePath, null);
+        if (CollectionUtils.isEmpty(volumes)) {
+            logFailureAndThrowException("Cannot find volume on storage pool: " + volumePath);
+        }
+
+        VolumeOnStorageTO volume = volumes.get(0);
+
+        // check if volume is locked, encrypted or has backing file
+        checkIfVolumeIsLocked(volume);
+        checkIfVolumeIsEncrypted(volume);
+        checkIfVolumeHasBackingFile(volume);
+
+        return volume;
+    }
+
     protected List<VolumeOnStorageTO> listVolumesForImportInternal(StoragePoolVO pool, String volumePath, String keyword) {
         Pair<HostVO, String> hostAndLocalPath = findHostAndLocalPathForVolumeImport(pool);
         HostVO host = hostAndLocalPath.first();
@@ -257,7 +265,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         StoragePoolVO pool = checkIfPoolAvailable(volume.getPoolId());
 
         // 3. unmanage volume internally
-        unmanageVolumeInternal(pool, volume.getPath());
+        getVolumeOnStorageAndCheck(pool, volume.getPath());
 
         // 3. Update resource count
         updateResourceLimitForVolumeUnmanage(volume);
@@ -331,12 +339,6 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         }
     }
 
-    protected void unmanageVolumeInternal(StoragePoolVO pool, String volumePath) {
-        Pair<HostVO, String> hostAndLocalPath = findHostAndLocalPathForVolumeImport(pool);
-        HostVO host = hostAndLocalPath.first();
-        checkIfHostAndPoolSupported(host, pool);
-    }
-
     protected VolumeForImportResponse createVolumeForImportResponse(VolumeOnStorageTO volume, StoragePoolVO pool) {
         VolumeForImportResponse response = new VolumeForImportResponse();
         response.setPath(volume.getPath());
@@ -372,7 +374,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         if (volumeDetails != null && volumeDetails.containsKey(VolumeOnStorageTO.Detail.IS_LOCKED)) {
             String isLocked = volumeDetails.get(VolumeOnStorageTO.Detail.IS_LOCKED);
             if (Boolean.parseBoolean(isLocked)) {
-                logFailureAndThrowException("Locked volume cannot be imported.");
+                logFailureAndThrowException("Locked volume cannot be imported or unmanaged.");
             }
         }
     }
@@ -382,7 +384,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         if (volumeDetails != null && volumeDetails.containsKey(VolumeOnStorageTO.Detail.IS_ENCRYPTED)) {
             String isEncrypted = volumeDetails.get(VolumeOnStorageTO.Detail.IS_ENCRYPTED);
             if (Boolean.parseBoolean(isEncrypted)) {
-                logFailureAndThrowException("Encrypted volume cannot be imported.");
+                logFailureAndThrowException("Encrypted volume cannot be imported or unmanaged.");
             }
         }
     }
@@ -392,7 +394,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         if (volumeDetails != null && volumeDetails.containsKey(VolumeOnStorageTO.Detail.BACKING_FILE)) {
             String backingFile = volumeDetails.get(VolumeOnStorageTO.Detail.BACKING_FILE);
             if (StringUtils.isNotBlank(backingFile)) {
-                logFailureAndThrowException("Volume with backing file cannot be imported.");
+                logFailureAndThrowException("Volume with backing file cannot be imported or unmanaged.");
             }
         }
     }

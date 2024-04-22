@@ -322,8 +322,8 @@ public class VolumeImportUnmanageManagerImplTest {
             volumeImportUnmanageManager.checkIfVolumeIsLocked(volumeOnStorageTO);
             Assert.fail("It should fail as the volume is locked");
         } catch (CloudRuntimeException ex) {
-            Assert.assertEquals("Locked volume cannot be imported.", ex.getMessage());
-            verify(volumeImportUnmanageManager).logFailureAndThrowException("Locked volume cannot be imported.");
+            Assert.assertEquals("Locked volume cannot be imported or unmanaged.", ex.getMessage());
+            verify(volumeImportUnmanageManager).logFailureAndThrowException("Locked volume cannot be imported or unmanaged.");
         }
     }
 
@@ -336,8 +336,8 @@ public class VolumeImportUnmanageManagerImplTest {
             volumeImportUnmanageManager.checkIfVolumeIsEncrypted(volumeOnStorageTO);
             Assert.fail("It should fail as the volume is encrypted");
         } catch (CloudRuntimeException ex) {
-            Assert.assertEquals("Encrypted volume cannot be imported.", ex.getMessage());
-            verify(volumeImportUnmanageManager).logFailureAndThrowException("Encrypted volume cannot be imported.");
+            Assert.assertEquals("Encrypted volume cannot be imported or unmanaged.", ex.getMessage());
+            verify(volumeImportUnmanageManager).logFailureAndThrowException("Encrypted volume cannot be imported or unmanaged.");
         }
     }
 
@@ -351,8 +351,8 @@ public class VolumeImportUnmanageManagerImplTest {
             volumeImportUnmanageManager.checkIfVolumeHasBackingFile(volumeOnStorageTO);
             Assert.fail("It should fail as the volume has backing file");
         } catch (CloudRuntimeException ex) {
-            Assert.assertEquals("Volume with backing file cannot be imported.", ex.getMessage());
-            verify(volumeImportUnmanageManager).logFailureAndThrowException("Volume with backing file cannot be imported.");
+            Assert.assertEquals("Volume with backing file cannot be imported or unmanaged.", ex.getMessage());
+            verify(volumeImportUnmanageManager).logFailureAndThrowException("Volume with backing file cannot be imported or unmanaged.");
         }
     }
 
@@ -362,7 +362,9 @@ public class VolumeImportUnmanageManagerImplTest {
         when(volumeVO.getPoolId()).thenReturn(poolId);
         when(volumeVO.getInstanceId()).thenReturn(null);
         when(volumeVO.getPath()).thenReturn(path);
-        doNothing().when(volumeImportUnmanageManager).unmanageVolumeInternal(storagePoolVO, path);
+        VolumeOnStorageTO volumeOnStorageTO = new VolumeOnStorageTO(hypervisorType, path, name, fullPath,
+                format, size, virtualSize);
+        doReturn(volumeOnStorageTO).when(volumeImportUnmanageManager).getVolumeOnStorageAndCheck(storagePoolVO, path);
         doNothing().when(resourceLimitService).decrementResourceCount(accountId, Resource.ResourceType.volume);
         doNothing().when(resourceLimitService).decrementResourceCount(accountId, Resource.ResourceType.primary_storage, virtualSize);
 
@@ -421,15 +423,6 @@ public class VolumeImportUnmanageManagerImplTest {
         } catch (CloudRuntimeException ex) {
             verify(volumeImportUnmanageManager).logFailureAndThrowException(String.format("Volume (ID: %s) is attached to VM (ID: %s)", volumeId, volumeVO.getInstanceId()));
         }
-    }
-
-    @Test
-    public void testUnmanageVolumeInternal() {
-        Pair<HostVO, String> hostAndLocalPath = mock(Pair.class);
-        doReturn(hostAndLocalPath).when(volumeImportUnmanageManager).findHostAndLocalPathForVolumeImport(storagePoolVO);
-        when(hostAndLocalPath.first()).thenReturn(hostVO);
-
-        volumeImportUnmanageManager.unmanageVolumeInternal(storagePoolVO, path);
     }
 
     @Test
