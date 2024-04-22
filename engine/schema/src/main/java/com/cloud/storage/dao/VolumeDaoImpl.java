@@ -871,7 +871,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     public List<VolumeVO> listByPoolIdVMStatesNotInCluster(long clusterId, List<VirtualMachine.State> states, long poolId) {
         SearchCriteria<VolumeVO> sc = volumePoolNotInClusterSearch.create();
         sc.setParameters("poolId", poolId);
-        sc.setParameters("vmStates", states);
+        sc.setJoinParameters("vmSearch", "vmStates", states);
         sc.setJoinParameters("hostSearch", "clusterId", clusterId);
         return listBy(sc, null);
     }

@@ -17,7 +17,7 @@
 
 package org.apache.cloudstack.storage.datastore.lifecycle;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -63,23 +63,14 @@ public class BasePrimaryDataStoreLifeCycleImpl {
     }
 
     private List<HostVO> getPoolHostsList(ClusterScope clusterScope, HypervisorType hypervisorType) {
-
-        List<HostVO> hosts = new ArrayList<HostVO>();
-
+        List<HostVO> hosts;
         if (hypervisorType != null) {
              hosts = resourceMgr
                     .listAllHostsInOneZoneNotInClusterByHypervisor(hypervisorType, clusterScope.getZoneId(), clusterScope.getScopeId());
         } else {
-            List<HostVO> xenServerHosts = resourceMgr
-                    .listAllHostsInOneZoneNotInClusterByHypervisor(HypervisorType.XenServer, clusterScope.getZoneId(), clusterScope.getScopeId());
-            List<HostVO> vmWareServerHosts = resourceMgr
-                    .listAllHostsInOneZoneNotInClusterByHypervisor(HypervisorType.VMware, clusterScope.getZoneId(), clusterScope.getScopeId());
-            List<HostVO> kvmHosts = resourceMgr.
-                    listAllHostsInOneZoneNotInClusterByHypervisor(HypervisorType.KVM, clusterScope.getZoneId(), clusterScope.getScopeId());
-
-            hosts.addAll(xenServerHosts);
-            hosts.addAll(vmWareServerHosts);
-            hosts.addAll(kvmHosts);
+            List<HypervisorType> hypervisorTypes = Arrays.asList(HypervisorType.KVM, HypervisorType.VMware);
+            hosts = resourceMgr
+                    .listAllHostsInOneZoneNotInClusterByHypervisors(hypervisorTypes, clusterScope.getZoneId(), clusterScope.getScopeId());
         }
         return hosts;
     }

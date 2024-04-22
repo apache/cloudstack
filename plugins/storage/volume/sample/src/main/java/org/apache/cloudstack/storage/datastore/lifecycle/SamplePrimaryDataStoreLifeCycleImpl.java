@@ -149,11 +149,9 @@ public class SamplePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLife
 
     @Override
     public void changeStoragePoolScopeToZone(DataStore store, ClusterScope clusterScope, HypervisorType hypervisorType) {
-        return;
     }
 
     @Override
     public void changeStoragePoolScopeToCluster(DataStore store, ClusterScope clusterScope, HypervisorType hypervisorType) {
-        return;
     }
 }

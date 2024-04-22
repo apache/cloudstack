@@ -3429,6 +3429,17 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
+    public List<HostVO> listAllHostsInOneZoneNotInClusterByHypervisors(List<HypervisorType> types, final long dcId, final long clusterId) {
+        final QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getHypervisorType(), Op.IN, types);
+        sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
+        sc.and(sc.entity().getClusterId(), Op.NEQ, clusterId);
+        sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
+        sc.and(sc.entity().getResourceState(), Op.EQ, ResourceState.Enabled);
+        return sc.list();
+    }
+
+    @Override
     public boolean isGPUDeviceAvailable(final long hostId, final String groupName, final String vgpuType) {
         if(!listAvailableGPUDevice(hostId, groupName, vgpuType).isEmpty()) {
             return true;

@@ -132,7 +132,9 @@ public interface ResourceManager extends ResourceService, Configurable {
 
     public List<HostVO> listAllHostsInAllZonesByType(Type type);
 
-    public List<HostVO> listAllHostsInOneZoneNotInClusterByHypervisor(HypervisorType type, long dcId, long clusterId);
+    public List<HostVO> listAllHostsInOneZoneNotInClusterByHypervisor(final HypervisorType type, long dcId, long clusterId);
+
+    public List<HostVO> listAllHostsInOneZoneNotInClusterByHypervisors(List<HypervisorType> types, long dcId, long clusterId);
 
     public List<HypervisorType> listAvailHypervisorInZone(Long hostId, Long zoneId);
 

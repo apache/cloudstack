@@ -433,6 +433,11 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
 
     @Override
     public List<HostVO> listAllHostsInOneZoneNotInClusterByHypervisor(HypervisorType type, long dcId, long clusterId) {
+        return null;
+    }
+
+    @Override
+    public List<HostVO> listAllHostsInOneZoneNotInClusterByHypervisors(List<HypervisorType> types, long dcId, long clusterId) {
         // TODO Auto-generated method stub
         return null;
     }
