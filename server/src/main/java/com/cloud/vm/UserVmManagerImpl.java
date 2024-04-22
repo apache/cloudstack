@@ -17,6 +17,7 @@
 package com.cloud.vm;
 
 import static com.cloud.configuration.ConfigurationManagerImpl.VM_USERDATA_MAX_LENGTH;
+import static com.cloud.storage.Volume.IOPS_LIMIT;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 import static org.apache.cloudstack.api.ApiConstants.MAX_IOPS;
 import static org.apache.cloudstack.api.ApiConstants.MIN_IOPS;
@@ -2176,8 +2177,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 if (customParameters.containsKey(MIN_IOPS)) {
                     minIopsInNewDiskOffering = Long.parseLong(customParameters.get(MIN_IOPS));
                 }
-                if (customParameters.containsKey(MAX_IOPS)) {
-                    minIopsInNewDiskOffering = Long.parseLong(customParameters.get(MAX_IOPS));
+
+                if (customParameters.containsKey(IOPS_LIMIT)) {
+                    maxIopsInNewDiskOffering = Long.parseLong(customParameters.get(IOPS_LIMIT));
+                } else if (customParameters.containsKey(MAX_IOPS)) {
+                    maxIopsInNewDiskOffering = Long.parseLong(customParameters.get(MAX_IOPS));
                 }
                 if (customParameters.containsKey(ApiConstants.AUTO_MIGRATE)) {
                     autoMigrate = Boolean.parseBoolean(customParameters.get(ApiConstants.AUTO_MIGRATE));
@@ -7901,7 +7905,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Override
     public UserVm restoreVirtualMachine(final Account caller, final long vmId, final Long newTemplateId,
             final Long rootDiskOfferingId,
-            final boolean expunge, final Map<String, String> details) throws InsufficientCapacityException, ResourceUnavailableException, ResourceAllocationException {
+            final boolean expunge, final Map<String, String> details) throws InsufficientCapacityException, ResourceUnavailableException {
         Long userId = caller.getId();
         _userDao.findById(userId);
         UserVmVO vm = _vmDao.findById(vmId);
@@ -7946,7 +7950,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         VMTemplateVO template = getRestoreVirtualMachineTemplate(caller, newTemplateId, rootVols, vm);
         DiskOffering diskOffering = rootDiskOfferingId != null ? _diskOfferingDao.findById(rootDiskOfferingId) : null;
-        checkRestoreVmFromTemplate(vm, template, rootVols, diskOffering, details);
+        try {
+            checkRestoreVmFromTemplate(vm, template, rootVols, diskOffering, details);
+        } catch (ResourceAllocationException e) {
+            logger.error("Failed to restore VM " + vm.getUuid() + " due to " + e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to restore VM " + vm.getUuid() + " due to " + e.getMessage(), e);
+        }
 
         if (needRestart) {
             try {
@@ -8170,14 +8179,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             _resourceLimitMgr.checkVmResourceLimitsForTemplateChange(owner, vm.isDisplay(), serviceOffering, currentTemplate, template);
         }
 
-        if (newDiskOffering != null) {
-            for (Volume vol: volumes) {
-                Long newSize = newDiskOffering.getDiskSize();
-                DiskOffering currentOffering = vol.getDiskOfferingId() != newDiskOffering.getId() ? _diskOfferingDao.findById(vol.getDiskOfferingId()) : newDiskOffering;
-                if (MapUtils.isNotEmpty(details) && StringUtils.isNumeric(details.get(VmDetailConstants.ROOT_DISK_SIZE))) {
-                    newSize = Long.parseLong(details.get(VmDetailConstants.ROOT_DISK_SIZE)) * GiB_TO_BYTES;
+        Long newSize = newDiskOffering != null ? newDiskOffering.getDiskSize() : null;
+        if (MapUtils.isNotEmpty(details) && StringUtils.isNumeric(details.get(VmDetailConstants.ROOT_DISK_SIZE))) {
+            newSize = Long.parseLong(details.get(VmDetailConstants.ROOT_DISK_SIZE)) * GiB_TO_BYTES;
+        }
+        if (newDiskOffering != null || newSize != null) {
+            for (Volume vol : volumes) {
+                if (newDiskOffering != null || !vol.getSize().equals(newSize)) {
+                    DiskOffering currentOffering = _diskOfferingDao.findById(vol.getDiskOfferingId());
+                    _resourceLimitMgr.checkVolumeResourceLimitForDiskOfferingChange(owner, vol.isDisplay(),
+                            vol.getSize(), newSize, currentOffering, newDiskOffering);
                 }
-                _resourceLimitMgr.checkVolumeResourceLimitForDiskOfferingChange(owner, vol.isDisplay(), vol.getSize(), newSize, currentOffering, newDiskOffering);
             }
         }
     }

@@ -2259,7 +2259,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             DiskOfferingVO existingDiskOffering, DiskOfferingVO newDiskOffering) throws ResourceAllocationException {
 
         // if the caller is looking to change the size of the volume
-        if (currentSize != newSize) {
+        if (newSize != null && currentSize != newSize) {
             if (volume.getInstanceId() != null) {
                 // Check that VM to which this volume is attached does not have VM snapshots
                 if (_vmSnapshotDao.findByVm(volume.getInstanceId()).size() > 0) {
@@ -2308,11 +2308,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                             + "Need to sign off by supplying the shrinkok parameter with value of true.");
                 }
             }
-
-            /* Check resource limit for this account */
-            _resourceLimitMgr.checkVolumeResourceLimitForDiskOfferingChange(_accountMgr.getAccount(volume.getAccountId()),
-                    volume.isDisplayVolume(), currentSize, newSize, existingDiskOffering, newDiskOffering);
         }
+        /* Check resource limit for this account */
+        _resourceLimitMgr.checkVolumeResourceLimitForDiskOfferingChange(_accountMgr.getAccount(volume.getAccountId()),
+                volume.isDisplayVolume(), currentSize, newSize != null ? newSize : currentSize,
+                existingDiskOffering, newDiskOffering);
     }
 
     @Override
