@@ -596,6 +596,22 @@ public class LibvirtVMDef {
             public QemuObject.EncryptFormat getEncryptFormat() { return this.encryptFormat; }
         }
 
+        public static class DiskGeometry {
+            int cylinders;
+            int heads;
+            int sectors;
+
+            public DiskGeometry(int cylinders, int heads, int sectors) {
+                this.cylinders = cylinders;
+                this.heads = heads;
+                this.sectors = sectors;
+            }
+
+            public String toXml() {
+                return String.format("<geometry cyls='%d' heads='%d' secs='%d'/>\n", this.cylinders, this.heads, this.sectors);
+            }
+        }
+
         public enum DeviceType {
             FLOPPY("floppy"), DISK("disk"), CDROM("cdrom"), LUN("lun");
             String _type;
@@ -747,6 +763,7 @@ public class LibvirtVMDef {
         private boolean isIothreadsEnabled;
         private BlockIOSize logicalBlockIOSize = null;
         private BlockIOSize physicalBlockIOSize = null;
+        private DiskGeometry geometry = null;
 
         public DiscardType getDiscard() {
             return _discard;
@@ -1087,9 +1104,20 @@ public class LibvirtVMDef {
             this._serial = serial;
         }
 
-        public void setLibvirtDiskEncryptDetails(LibvirtDiskEncryptDetails details) { this.encryptDetails = details; }
+        public void setLibvirtDiskEncryptDetails(LibvirtDiskEncryptDetails details)
+        {
+            this.encryptDetails = details;
+        }
 
-        public LibvirtDiskEncryptDetails getLibvirtDiskEncryptDetails() { return this.encryptDetails; }
+        public LibvirtDiskEncryptDetails getLibvirtDiskEncryptDetails()
+        {
+            return this.encryptDetails;
+        }
+
+        public void setGeometry(DiskGeometry geometry)
+        {
+            this.geometry = geometry;
+        }
 
         public String getSourceHost() {
             return _sourceHost;
@@ -1173,6 +1201,10 @@ public class LibvirtVMDef {
                 diskBuilder.append(" bus='" + _bus + "'");
             }
             diskBuilder.append("/>\n");
+
+            if (geometry != null) {
+                diskBuilder.append(geometry.toXml());
+            }
 
             if (logicalBlockIOSize != null || physicalBlockIOSize != null) {
                 diskBuilder.append("<blockio ");

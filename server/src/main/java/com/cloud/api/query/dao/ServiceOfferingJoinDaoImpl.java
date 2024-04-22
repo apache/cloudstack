@@ -114,6 +114,7 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         ServiceOfferingResponse offeringResponse = new ServiceOfferingResponse();
         offeringResponse.setId(offering.getUuid());
         offeringResponse.setName(offering.getName());
+        offeringResponse.setState(offering.getState().toString());
         offeringResponse.setIsSystemOffering(offering.isSystemUse());
         offeringResponse.setDefaultUse(offering.isDefaultUse());
         offeringResponse.setSystemVmType(offering.getSystemVmType());
