@@ -747,7 +747,12 @@ export default {
       return {
         type: 'checkbox',
         selectedRowKeys: this.managedVolumesSelectedRowKeys || [],
-        onChange: this.onManagedVolumeSelectRow
+        onChange: this.onManagedVolumeSelectRow,
+        getCheckboxProps: (record) => {
+          return {
+            disabled: record.virtualmachineid !== undefined || record.state !== 'Ready' || record.hypervisor !== 'KVM'
+          }
+        }
       }
     },
     selectedCluster () {
