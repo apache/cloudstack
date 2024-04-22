@@ -623,6 +623,18 @@ public class VpcManagerImplTest {
     }
 
     @Test
+    public void existsVpcDomainRouterWithSufficientNicCapacityTestRouterIncompatibleHypervisorTypeReturnsTrue() {
+        Mockito.when(routerDao.findOneByVpcId(vpcId)).thenReturn(domainRouterVOMock);
+        Mockito.when(domainRouterVOMock.getId()).thenReturn(1L);
+        Mockito.when(domainRouterJoinDaoMock.countDefaultNetworksById(1L)).thenReturn(2);
+        Mockito.when(networkOrchestrationServiceMock.getVirtualMachineMaxNicsValue(domainRouterVOMock)).thenReturn(null);
+
+        boolean result = manager.existsVpcDomainRouterWithSufficientNicCapacity(vpcId);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
     public void existsVpcDomainRouterWithSufficientNicCapacityTestAvailableRouterReturnsTrue() {
         Mockito.when(networkDao.countVpcNetworks(vpcId)).thenReturn(6L);
         Mockito.when(routerDao.findOneByVpcId(vpcId)).thenReturn(domainRouterVOMock);

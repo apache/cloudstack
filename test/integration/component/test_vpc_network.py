@@ -191,7 +191,7 @@ class Services:
                 "name": "Test Network",
                 "displaytext": "Test Network",
                 "netmask": '255.255.255.0',
-                # Max networks allowed per VPC: Xenserver -> 7, VMWare -> 10 & KVM -> 27
+                # Max networks allowed per hypervisor: Xenserver -> 7, VMWare -> 10 & KVM -> 27
                 "limit": 5,
             },
             "lbrule": {
