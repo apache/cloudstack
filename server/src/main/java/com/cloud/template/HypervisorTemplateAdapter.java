@@ -311,7 +311,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             DataStore imageStore = verifyHeuristicRulesForZone(template, zoneId);
 
             if (imageStore == null) {
-                List<DataStore> imageStores = getImageStoresThrowsExceptionIfNotFound(List.of(zoneId), profile);
+                List<DataStore> imageStores = getImageStoresThrowsExceptionIfNotFound(zoneId, profile);
                 standardImageStoreAllocation(imageStores, template);
             } else {
                 validateSecondaryStorageAndCreateTemplate(List.of(imageStore), template, null);
@@ -319,8 +319,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         }
     }
 
-    protected List<DataStore> getImageStoresThrowsExceptionIfNotFound(List<Long> zonesIds, TemplateProfile profile) {
-        List<DataStore> imageStores = storeMgr.getImageStoresByZoneIds(zonesIds.toArray(new Long[0]));
+    protected List<DataStore> getImageStoresThrowsExceptionIfNotFound(long zoneId, TemplateProfile profile) {
+        List<DataStore> imageStores = storeMgr.getImageStoresByZoneIds(zoneId);
         if (imageStores == null || imageStores.size() == 0) {
             throw new CloudRuntimeException(String.format("Unable to find image store to download the template [%s].", profile.getTemplate()));
         }
@@ -426,7 +426,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                 List<TemplateOrVolumePostUploadCommand> payloads = new LinkedList<>();
 
                 if (imageStore == null) {
-                    List<DataStore> imageStores = getImageStoresThrowsExceptionIfNotFound(List.of(zoneId), profile);
+                    List<DataStore> imageStores = getImageStoresThrowsExceptionIfNotFound(zoneId, profile);
                     postUploadAllocation(imageStores, template, payloads);
                 } else {
                     postUploadAllocation(List.of(imageStore), template, payloads);
