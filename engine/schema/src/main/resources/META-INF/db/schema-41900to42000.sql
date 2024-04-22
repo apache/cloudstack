@@ -122,4 +122,3 @@ SELECT
     `cloud`.`gui_themes`.`removed` AS `removed`
 FROM `cloud`.`gui_themes` LEFT JOIN `cloud`.`gui_themes_details` ON `cloud`.`gui_themes_details`.`gui_theme_id` = `cloud`.`gui_themes`.`id`
 GROUP BY `cloud`.`gui_themes`.`id`;
-
