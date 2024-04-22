@@ -30,6 +30,7 @@ import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.Storage.StoragePoolType;
@@ -95,6 +96,8 @@ public interface UserVmManager extends UserVmService {
     String finalizeUserData(String userData, Long userDataId, VirtualMachineTemplate template);
 
     String validateUserData(String userData, HTTPMethod httpmethod);
+
+    void validateExtraConfig(long accountId, HypervisorType hypervisorType, String extraConfig);
 
     boolean isVMUsingLocalStorage(VMInstanceVO vm);
 
