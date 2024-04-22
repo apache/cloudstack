@@ -27,12 +27,9 @@
           @submit="handleSubmitForm">
           <a-alert type="warning">
             <template #message>
-              <span v-html="resource.scope=='ZONE' ? $t('message.action.primary.storage.scope.cluster') : $t('message.action.primary.storage.scope.zone')"></span>
-            </template>
-          </a-alert>
-          <a-alert type="warning">
-            <template #message>
-              <span v-html="$t('message.warn.change.primary.storage.scope')"></span>
+              <span
+                v-html="(resource.scope=='ZONE' ? $t('message.action.primary.storage.scope.cluster') : $t('message.action.primary.storage.scope.zone')) +
+                        '<br><br>' + $t('message.warn.change.primary.storage.scope')"></span>
             </template>
           </a-alert>
           <p></p>
