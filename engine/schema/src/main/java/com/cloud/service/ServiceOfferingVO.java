@@ -194,7 +194,7 @@ public class ServiceOfferingVO implements ServiceOffering {
         limitCpuUse = offering.getLimitCpuUse();
         volatileVm = offering.isVolatileVm();
         hostTag = offering.getHostTag();
-        vmType = offering.getSystemVmType();
+        vmType = offering.getVmType();
         systemUse = offering.isSystemUse();
         dynamicScalingEnabled = offering.isDynamicScalingEnabled();
         diskOfferingStrictness = offering.diskOfferingStrictness;
@@ -278,7 +278,7 @@ public class ServiceOfferingVO implements ServiceOffering {
     }
 
     @Override
-    public String getSystemVmType() {
+    public String getVmType() {
         return vmType;
     }
 

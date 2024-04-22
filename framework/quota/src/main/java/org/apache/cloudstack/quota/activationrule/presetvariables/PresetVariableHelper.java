@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 
 import com.cloud.host.HostTagVO;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.vpc.VpcVO;
 import javax.inject.Inject;
 
 import com.cloud.hypervisor.Hypervisor;
@@ -39,6 +40,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
 import org.apache.cloudstack.quota.dao.NetworkDao;
 import org.apache.cloudstack.quota.dao.VmTemplateDao;
+import org.apache.cloudstack.quota.dao.VpcDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -175,6 +177,10 @@ public class PresetVariableHelper {
     @Inject
     NetworkDao networkDao;
 
+    @Inject
+    VpcDao vpcDao;
+
+
     protected boolean backupSnapshotAfterTakingSnapshot = SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value();
 
     private List<Integer> runningAndAllocatedVmUsageTypes = Arrays.asList(UsageTypes.RUNNING_VM, UsageTypes.ALLOCATED_VM);
@@ -279,6 +285,7 @@ public class PresetVariableHelper {
         loadPresetVariableValueForVmSnapshot(usageRecord, value);
         loadPresetVariableValueForBackup(usageRecord, value);
         loadPresetVariableValueForNetwork(usageRecord, value);
+        loadPresetVariableValueForVpc(usageRecord, value);
 
         return value;
     }
@@ -709,6 +716,21 @@ public class PresetVariableHelper {
         value.setId(network.getUuid());
         value.setName(network.getName());
         value.setState(usageRecord.getState());
+    }
+
+    protected void loadPresetVariableValueForVpc(UsageVO usageRecord, Value value) {
+        int usageType = usageRecord.getUsageType();
+        if (usageType != QuotaTypes.VPC) {
+            logNotLoadingMessageInTrace("VPC", usageType);
+            return;
+        }
+
+        Long vpcId = usageRecord.getUsageId();
+        VpcVO vpc = vpcDao.findByIdIncludingRemoved(vpcId);
+        validateIfObjectIsNull(vpc, vpcId, "VPC");
+
+        value.setId(vpc.getUuid());
+        value.setName(vpc.getName());
     }
 
     /**

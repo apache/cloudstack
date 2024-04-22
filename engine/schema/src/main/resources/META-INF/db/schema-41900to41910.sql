@@ -42,6 +42,17 @@ CREATE TABLE IF NOT EXISTS `cloud_usage`.`usage_networks` (
   `state` varchar(100) DEFAULT NULL,
   `removed` datetime DEFAULT NULL,
   `created` datetime NOT NULL,
+
+-- PR #7235 - [Usage] Create VPC billing
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`usage_vpc` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `vpc_id` bigint(20) unsigned NOT NULL,
+  `zone_id` bigint(20) unsigned NOT NULL,
+  `account_id` bigint(20) unsigned NOT NULL,
+  `domain_id` bigint(20) unsigned NOT NULL,
+  `state` varchar(100) DEFAULT NULL,
+  `created` datetime NOT NULL,
+  `removed` datetime DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB CHARSET=utf8;
 

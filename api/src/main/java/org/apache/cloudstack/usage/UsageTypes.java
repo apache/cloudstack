@@ -47,6 +47,7 @@ public class UsageTypes {
     public static final int BACKUP = 28;
     public static final int BUCKET = 29;
     public static final int NETWORK = 30;
+    public static final int VPC = 31;
 
     public static List<UsageTypeResponse> listUsageTypes() {
         List<UsageTypeResponse> responseList = new ArrayList<UsageTypeResponse>();
@@ -74,6 +75,7 @@ public class UsageTypes {
         responseList.add(new UsageTypeResponse(BACKUP, "Backup storage usage"));
         responseList.add(new UsageTypeResponse(BUCKET, "Bucket storage usage"));
         responseList.add(new UsageTypeResponse(NETWORK, "Network usage"));
+        responseList.add(new UsageTypeResponse(VPC, "VPC usage"));
         return responseList;
     }
 }
