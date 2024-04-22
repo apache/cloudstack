@@ -1943,7 +1943,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     @Override
     public void checkVmResourceLimitsForTemplateChange(Account owner, Boolean display, ServiceOffering offering,
             VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate) throws ResourceAllocationException {
-        checkForVmServiceOfferingAndTemplateChange(owner, display, null, null,
+        checkVmResourceLimitsForServiceOfferingAndTemplateChange(owner, display, null, null,
                 null, null, offering, offering, currentTemplate, newTemplate);
     }
 
@@ -1952,11 +1952,11 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             Long currentMemory, Long newMemory,
             ServiceOffering currentOffering, ServiceOffering newOffering, VirtualMachineTemplate template
     ) throws ResourceAllocationException {
-        checkForVmServiceOfferingAndTemplateChange(owner, display, currentCpu, newCpu, currentMemory, newMemory, currentOffering,
+        checkVmResourceLimitsForServiceOfferingAndTemplateChange(owner, display, currentCpu, newCpu, currentMemory, newMemory, currentOffering,
                 newOffering != null ? newOffering : currentOffering, template, template);
     }
 
-    public void checkForVmServiceOfferingAndTemplateChange(Account owner, Boolean display, Long currentCpu, Long newCpu,
+    private void checkVmResourceLimitsForServiceOfferingAndTemplateChange(Account owner, Boolean display, Long currentCpu, Long newCpu,
             Long currentMemory, Long newMemory, ServiceOffering currentOffering, ServiceOffering newOffering,
             VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate
     ) throws ResourceAllocationException {
