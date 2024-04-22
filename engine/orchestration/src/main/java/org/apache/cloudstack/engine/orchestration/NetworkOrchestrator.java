@@ -701,7 +701,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     @Override
     public boolean start() {
         final int netGcInterval = NumbersUtil.parseInt(_configDao.getValue(NetworkGcInterval.key()), 60);
-        logger.info("Network Manager will run the NetworkGarbageCollector every '{}' seconds.", netGcInterval");
+        logger.info("Network Manager will run the NetworkGarbageCollector every '{}' seconds.", netGcInterval);
 
         _executor.scheduleWithFixedDelay(new NetworkGarbageCollector(), netGcInterval, netGcInterval, TimeUnit.SECONDS);
         return true;
