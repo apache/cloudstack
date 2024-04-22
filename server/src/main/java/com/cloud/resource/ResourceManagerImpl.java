@@ -733,7 +733,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 // VMware only allows adding host to an existing cluster, as we
                 // already have a lot of information
                 // in cluster object, to simplify user input, we will construct
-                // neccessary information here
+                // necessary information here
                 final Map<String, String> clusterDetails = _clusterDetailsDao.findDetails(clusterId);
                 username = clusterDetails.get("username");
                 assert username != null;
@@ -2799,7 +2799,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         final StoragePoolVO storagePool = _storageMgr.findLocalStorageOnHost(host.getId());
         if (forceDestroyStorage && storagePool != null) {
-            // put local storage into mainenance mode, will set all the VMs on
+            // put local storage into maintenance mode, will set all the VMs on
             // this local storage into stopped state
             if (storagePool.getStatus() == StoragePoolStatus.Up || storagePool.getStatus() == StoragePoolStatus.ErrorInMaintenance) {
                 try {

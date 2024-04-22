@@ -29,6 +29,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import org.apache.cloudstack.user.ResourceReservation;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -40,6 +41,7 @@ public class ReservationDaoImpl extends GenericDaoBase<ReservationVO, Long> impl
     private static final String RESOURCE_ID = "resourceId";
     private static final String ACCOUNT_ID = "accountId";
     private static final String DOMAIN_ID = "domainId";
+    private static final String IDS = "ids";
     private final SearchBuilder<ReservationVO> listResourceByAccountAndTypeSearch;
     private final SearchBuilder<ReservationVO> listAccountAndTypeSearch;
     private final SearchBuilder<ReservationVO> listAccountAndTypeAndNoTagSearch;
@@ -47,6 +49,7 @@ public class ReservationDaoImpl extends GenericDaoBase<ReservationVO, Long> impl
     private final SearchBuilder<ReservationVO> listDomainAndTypeSearch;
     private final SearchBuilder<ReservationVO> listDomainAndTypeAndNoTagSearch;
     private final SearchBuilder<ReservationVO> listResourceByAccountAndTypeAndNoTagSearch;
+    private final SearchBuilder<ReservationVO> listIdsSearch;
 
     public ReservationDaoImpl() {
 
@@ -87,6 +90,10 @@ public class ReservationDaoImpl extends GenericDaoBase<ReservationVO, Long> impl
         listDomainAndTypeAndNoTagSearch.and(RESOURCE_TYPE, listDomainAndTypeAndNoTagSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
         listDomainAndTypeAndNoTagSearch.and(RESOURCE_TAG, listDomainAndTypeAndNoTagSearch.entity().getTag(), SearchCriteria.Op.NULL);
         listDomainAndTypeAndNoTagSearch.done();
+
+        listIdsSearch = createSearchBuilder();
+        listIdsSearch.and(IDS, listIdsSearch.entity().getId(), SearchCriteria.Op.IN);
+        listIdsSearch.done();
     }
 
     @Override
@@ -160,5 +167,14 @@ public class ReservationDaoImpl extends GenericDaoBase<ReservationVO, Long> impl
             sc.setParameters(RESOURCE_TAG, tag);
         }
         return listBy(sc);
+    }
+
+    @Override
+    public void removeByIds(List<Long> reservationIds) {
+        if (CollectionUtils.isNotEmpty(reservationIds)) {
+            SearchCriteria<ReservationVO> sc = listIdsSearch.create();
+            sc.setParameters(IDS, reservationIds.toArray());
+            remove(sc);
+        }
     }
 }

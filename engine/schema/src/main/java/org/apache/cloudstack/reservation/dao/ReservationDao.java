@@ -31,4 +31,5 @@ public interface ReservationDao extends GenericDao<ReservationVO, Long> {
     void setResourceId(Resource.ResourceType type, Long resourceId);
     List<Long> getResourceIds(long accountId, Resource.ResourceType type);
     List<ReservationVO> getReservationsForAccount(long accountId, Resource.ResourceType type, String tag);
+    void removeByIds(List<Long> reservationIds);
 }
