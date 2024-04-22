@@ -45,10 +45,11 @@ import org.apache.cloudstack.gui.theme.dao.GuiThemeDetailsDao;
 import org.apache.cloudstack.gui.theme.dao.GuiThemeJoinDao;
 import org.apache.cloudstack.gui.themes.GuiThemeDetailsVO;
 import org.apache.cloudstack.gui.themes.GuiThemeJoinVO;
-import org.apache.cloudstack.gui.themes.GuiThemeVO;
 import org.apache.cloudstack.gui.themes.GuiThemeService;
+import org.apache.cloudstack.gui.themes.GuiThemeVO;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -59,7 +60,7 @@ import java.util.Set;
 
 public class GuiThemeServiceImpl implements GuiThemeService {
 
-    protected Logger logger = Logger.getLogger(GuiThemeServiceImpl.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private static final List<String> ALLOWED_PRIMITIVE_PROPERTIES = List.of("appTitle", "footer", "loginFooter", "logo", "minilogo", "banner");
 
