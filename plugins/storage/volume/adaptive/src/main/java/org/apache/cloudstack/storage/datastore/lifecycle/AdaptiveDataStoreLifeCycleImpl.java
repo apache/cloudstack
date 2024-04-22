@@ -62,7 +62,7 @@ import com.cloud.host.Host;
 /**
  * Manages the lifecycle of a Managed Data Store in CloudStack
  */
-public class AdaptiveDataStoreLifeCycleImpl extends AbstractPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
+public class AdaptiveDataStoreLifeCycleImpl extends BasePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     @Inject
     private PrimaryDataStoreDao _storagePoolDao;
     private static final Logger s_logger = Logger.getLogger(AdaptiveDataStoreLifeCycleImpl.class);

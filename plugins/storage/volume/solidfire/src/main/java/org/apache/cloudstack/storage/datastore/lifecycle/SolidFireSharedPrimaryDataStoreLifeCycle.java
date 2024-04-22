@@ -72,7 +72,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class SolidFireSharedPrimaryDataStoreLifeCycle extends AbstractPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
+public class SolidFireSharedPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     private static final Logger LOGGER = Logger.getLogger(SolidFireSharedPrimaryDataStoreLifeCycle.class);
 
     @Inject private AccountDao accountDao;

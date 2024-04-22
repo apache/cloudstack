@@ -63,7 +63,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 import com.google.common.base.Preconditions;
 
-public class SolidFirePrimaryDataStoreLifeCycle extends AbstractPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
+public class SolidFirePrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     private static final Logger s_logger = Logger.getLogger(SolidFirePrimaryDataStoreLifeCycle.class);
 
     @Inject private CapacityManager _capacityMgr;

@@ -53,7 +53,7 @@ import org.apache.cloudstack.storage.datastore.util.LinstorUtil;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
 import org.apache.log4j.Logger;
 
-public class LinstorPrimaryDataStoreLifeCycleImpl extends AbstractPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
+public class LinstorPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     private static final Logger s_logger = Logger.getLogger(LinstorPrimaryDataStoreLifeCycleImpl.class);
 
     @Inject

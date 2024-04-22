@@ -30,7 +30,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreParameters;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
-import org.apache.cloudstack.storage.datastore.lifecycle.AbstractPrimaryDataStoreLifeCycleImpl;
+import org.apache.cloudstack.storage.datastore.lifecycle.BasePrimaryDataStoreLifeCycleImpl;
 import org.apache.cloudstack.storage.datastore.util.NexentaUtil;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
 import org.apache.log4j.Logger;
@@ -46,7 +46,7 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolAutomation;
 
 public class NexentaPrimaryDataStoreLifeCycle
-        extends AbstractPrimaryDataStoreLifeCycleImpl
+        extends BasePrimaryDataStoreLifeCycleImpl
         implements PrimaryDataStoreLifeCycle {
     private static final Logger logger =
             Logger.getLogger(NexentaPrimaryDataStoreLifeCycle.class);

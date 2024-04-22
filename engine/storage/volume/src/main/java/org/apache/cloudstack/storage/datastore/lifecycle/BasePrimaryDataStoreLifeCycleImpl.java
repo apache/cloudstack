@@ -40,8 +40,8 @@ import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.Pair;
 
-public class AbstractPrimaryDataStoreLifeCycleImpl {
-    private static final Logger s_logger = Logger.getLogger(AbstractPrimaryDataStoreLifeCycleImpl.class);
+public class BasePrimaryDataStoreLifeCycleImpl {
+    private static final Logger s_logger = Logger.getLogger(BasePrimaryDataStoreLifeCycleImpl.class);
     @Inject
     AgentManager agentMgr;
     @Inject
