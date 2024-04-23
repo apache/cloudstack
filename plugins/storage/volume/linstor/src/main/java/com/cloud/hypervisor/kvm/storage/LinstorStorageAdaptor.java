@@ -256,7 +256,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
             rdm.setOverrideProps(props);
             ApiCallRcList answers = api.resourceDefinitionModify(rscName, rdm);
             if (answers.hasError()) {
-                s_logger.error("Unable to set 'allow-two-primaries' on " + rscName);
+                logger.error("Unable to set 'allow-two-primaries' on {} ", rscName);
                 // do not fail here as adding allow-two-primaries property is only a problem while live migrating
             }
         }

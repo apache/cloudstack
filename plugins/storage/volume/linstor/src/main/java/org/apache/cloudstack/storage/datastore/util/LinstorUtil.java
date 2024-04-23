@@ -200,7 +200,7 @@ public class LinstorUtil {
             return rscs.stream()
                     .anyMatch(rsc -> rsc.getState() != null && Boolean.TRUE.equals(rsc.getState().isInUse()));
         }
-        s_logger.error("isResourceInUse: null returned from resourceList");
+        LOGGER.error("isResourceInUse: null returned from resourceList");
         return false;
     }
 }

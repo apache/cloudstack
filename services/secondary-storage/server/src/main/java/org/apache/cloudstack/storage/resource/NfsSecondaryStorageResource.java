@@ -3107,7 +3107,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
 
         String extraOptions = extraOpts.toString();
-        logger.debug("extraOpts now ", ()->StringUtils.cleanString(extraOptions));
+        logger.debug("extraOpts now {}", ()->StringUtils.cleanString(extraOptions));
 
         if (!foundUser || !foundPswd) {
             String errMsg = "Missing user and password from URI. Make sure they" + "are in the query string and separated by '&'.  E.g. "
