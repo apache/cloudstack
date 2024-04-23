@@ -1045,7 +1045,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         }
         parsed = VpcUsageParser.parse(account, currentStartDate, currentEndDate);
         if (!parsed) {
-            s_logger.debug(String.format("VPC usage failed to parse for account [%s].", account));
+            logger.debug(String.format("VPC usage failed to parse for account [%s].", account));
         }
         return parsed;
     }
@@ -2140,7 +2140,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             UsageVpcVO usageVPCVO = new UsageVpcVO(event.getResourceId(), event.getZoneId(), event.getAccountId(), domainId, Vpc.State.Enabled.name(), event.getCreateDate(), null);
             usageVpcDao.persist(usageVPCVO);
         } else {
-            s_logger.error(String.format("Unknown event type [%s] in VPC event parser. Skipping it.", event.getType()));
+            logger.error(String.format("Unknown event type [%s] in VPC event parser. Skipping it.", event.getType()));
         }
     }
 

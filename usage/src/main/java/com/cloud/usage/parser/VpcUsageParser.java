@@ -24,16 +24,17 @@ import com.cloud.user.AccountVO;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import org.apache.cloudstack.usage.UsageTypes;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.List;
-import org.apache.log4j.Logger;
 
 @Component
 public class VpcUsageParser {
-    private static final Logger LOGGER = Logger.getLogger(VpcUsageParser.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger(VpcUsageParser.class.getName());
 
     @Inject
     private UsageVpcDao vpcDao;

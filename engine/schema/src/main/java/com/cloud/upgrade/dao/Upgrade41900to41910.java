@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.upgrade.SystemVmTemplateRegistration;
 import com.cloud.utils.exception.CloudRuntimeException;
 
