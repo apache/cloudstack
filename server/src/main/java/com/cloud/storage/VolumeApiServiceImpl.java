@@ -1475,7 +1475,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         }
 
-        ResizeVolumePayload payload = new ResizeVolumePayload(newSize, newMinIops, newMaxIops, newHypervisorSnapshotReserve, shrinkOk, instanceName, hosts, isManaged);
+        ResizeVolumePayload payload = new ResizeVolumePayload(newSize, newMinIops, newMaxIops, newDiskOfferingId, newHypervisorSnapshotReserve, shrinkOk, instanceName, hosts, isManaged);
 
         try {
             VolumeInfo vol = volFactory.getVolume(volume.getId());
@@ -1514,6 +1514,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             if (newDiskOfferingId != null) {
                 volume.setDiskOfferingId(newDiskOfferingId);
+                _volumeMgr.saveVolumeDetails(newDiskOfferingId, volume.getId());
+            }
+
+            if (newMinIops != null) {
+                volume.setMinIops(newMinIops);
+            }
+
+            if (newMaxIops != null) {
+                volume.setMaxIops(newMaxIops);
             }
 
             // Update size if volume has same size as before, else it is already updated
@@ -1715,11 +1724,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return _volStateMachine.transitTo(vol, event, null, _volsDao);
     }
 
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DESTROY, eventDescription = "destroying a volume")
-    public Volume destroyVolume(long volumeId, Account caller, boolean expunge, boolean forceExpunge) {
-        VolumeVO volume = retrieveAndValidateVolume(volumeId, caller);
-
+    public void validateDestroyVolume(Volume volume, Account caller, boolean expunge, boolean forceExpunge) {
         if (expunge) {
             // When trying to expunge, permission is denied when the caller is not an admin and the AllowUserExpungeRecoverVolume is false for the caller.
             final Long userId = caller.getAccountId();
@@ -1729,6 +1734,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         } else if (volume.getState() == Volume.State.Allocated || volume.getState() == Volume.State.Uploaded) {
             throw new InvalidParameterValueException("The volume in Allocated/Uploaded state can only be expunged not destroyed/recovered");
         }
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DESTROY, eventDescription = "destroying a volume")
+    public Volume destroyVolume(long volumeId, Account caller, boolean expunge, boolean forceExpunge) {
+        VolumeVO volume = retrieveAndValidateVolume(volumeId, caller);
+
+        validateDestroyVolume(volume, caller, expunge, forceExpunge);
 
         destroyVolumeIfPossible(volume);
 
@@ -1882,7 +1895,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 } else if (jobResult instanceof ResourceAllocationException) {
                     throw (ResourceAllocationException)jobResult;
                 } else if (jobResult instanceof Throwable) {
-                    throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
+                    Throwable throwable = (Throwable) jobResult;
+                    throw new RuntimeException(String.format("Unexpected exception: %s", throwable.getMessage()), throwable);
                 }
             }
 
@@ -2033,6 +2047,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             if (newDiskOffering != null) {
                 volume.setDiskOfferingId(newDiskOfferingId);
+                _volumeMgr.saveVolumeDetails(newDiskOfferingId, volume.getId());
             }
 
             _volsDao.update(volume.getId(), volume);
