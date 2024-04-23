@@ -63,3 +63,4 @@ jobs:
           flags: uitests
           verbose: true
           name: codecov
+          token: ${{ secrets.CODECOV_TOKEN }}
