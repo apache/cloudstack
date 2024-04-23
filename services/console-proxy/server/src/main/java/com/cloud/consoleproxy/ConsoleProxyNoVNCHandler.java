@@ -91,6 +91,7 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
         String sourceIP = queryMap.get("sourceIP");
         String websocketUrl = queryMap.get("websocketUrl");
         String sessionUuid = queryMap.get("sessionUuid");
+        String clientIp = session.getRemoteAddress().getAddress().getHostAddress();
 
         if (tag == null)
             tag = "";
@@ -117,7 +118,7 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
             }
         }
 
-        if (!checkSessionSourceIp(session, sourceIP)) {
+        if (!checkSessionSourceIp(session, sourceIP, clientIp)) {
             return;
         }
 
@@ -138,6 +139,8 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
             param.setWebsocketUrl(websocketUrl);
             param.setSessionUuid(sessionUuid);
             param.setSourceIP(sourceIP);
+            param.setClientIp(clientIp);
+
             if (queryMap.containsKey("extraSecurityToken")) {
                 param.setExtraSecurityToken(queryMap.get("extraSecurityToken"));
             }
@@ -156,9 +159,8 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
         }
     }
 
-    private boolean checkSessionSourceIp(final Session session, final String sourceIP) throws IOException {
+    private boolean checkSessionSourceIp(final Session session, final String sourceIP, String sessionSourceIP) throws IOException {
         logger.debug("Verifying session source IP.");
-        String sessionSourceIP = session.getRemoteAddress().getAddress().getHostAddress();
         logger.info("Get websocket connection request from remote IP : " + sessionSourceIP);
         if (ConsoleProxy.isSourceIpCheckEnabled && (sessionSourceIP == null || !sessionSourceIP.equals(sourceIP))) {
             logger.warn("Failed to access console as the source IP to request the console is " + sourceIP);
@@ -180,7 +182,7 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
 
     @OnWebSocketFrame
     public void onFrame(Frame f) throws IOException {
-        logger.trace("Sending client frame of {} bytes.", f.getPayloadLength());
+        logger.trace(String.format("Sending client frame of %s bytes.", f.getPayloadLength()));
         viewer.sendClientFrame(f);
     }
 
