@@ -17,7 +17,7 @@
 
 <template>
   <a-form layout="vertical" >
-    <a-form-item :label="$t('label.accounttype')">
+    <a-form-item :label="$t('label.owner.type')">
       <a-select
         @change="changeDomain"
         v-model:value="selectedAccountType"

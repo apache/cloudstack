@@ -1532,6 +1532,7 @@
 "label.ovmnetworklabel": "OVM traffic label",
 "label.ovs": "OVS",
 "label.owner.account": "Owner Account",
+"label.owner.type": "Owner type",
 "label.owners": "Owners",
 "label.pa": "Palo Alto",
 "label.page": "page",
