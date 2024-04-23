@@ -7847,19 +7847,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         Volume newVol = null;
                         if (newTemplateId != null) {
                             if (isISO) {
-                                newVol = volumeMgr.allocateDuplicateVolume(root, null);
+                                newVol = volumeMgr.allocateDuplicateVolume(root, diskOffering, null);
                                 userVm.setIsoId(newTemplateId);
                                 userVm.setGuestOSId(template.getGuestOSId());
                                 userVm.setTemplateId(newTemplateId);
                             } else {
-                                newVol = volumeMgr.allocateDuplicateVolume(root, newTemplateId);
+                                newVol = volumeMgr.allocateDuplicateVolume(root, diskOffering, newTemplateId);
                                 userVm.setGuestOSId(template.getGuestOSId());
                                 userVm.setTemplateId(newTemplateId);
                             }
                             // check and update VM if it can be dynamically scalable with the new template
                             updateVMDynamicallyScalabilityUsingTemplate(userVm, newTemplateId);
                         } else {
-                            newVol = volumeMgr.allocateDuplicateVolume(root, null);
+                            newVol = volumeMgr.allocateDuplicateVolume(root, diskOffering, null);
                         }
 
                         updateVolume(newVol, template, userVm, diskOffering, details);
