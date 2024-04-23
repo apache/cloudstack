@@ -43,6 +43,10 @@ CREATE TABLE IF NOT EXISTS `cloud_usage`.`usage_networks` (
   `removed` datetime DEFAULT NULL,
   `created` datetime NOT NULL,
 
+-- allow for bigger urls
+
+ALTER TABLE `cloud`.`vm_template` MODIFY COLUMN `url` VARCHAR(1024) DEFAULT NULL COMMENT 'the url where the template exists externally';
+
 -- PR #7235 - [Usage] Create VPC billing
 CREATE TABLE IF NOT EXISTS `cloud_usage`.`usage_vpc` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
