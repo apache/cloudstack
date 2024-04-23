@@ -102,7 +102,7 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
     private String tags;
 
     @SerializedName(ApiConstants.NFS_MOUNT_OPTIONS)
-    @Param(description = "the nfs mount options for the storage pool")
+    @Param(description = "the nfs mount options for the storage pool", since = "4.19.1")
     private String nfsMountOpts;
 
     @SerializedName(ApiConstants.IS_TAG_A_RULE)

@@ -33,6 +33,7 @@ import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
@@ -366,7 +367,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
     private List<String> getNFSMountOptsFromDetails(StoragePoolType type, Map<String, String> details) {
         List<String> nfsMountOpts = null;
-        if (type == StoragePoolType.NetworkFilesystem) {
+        if (type.equals(StoragePoolType.NetworkFilesystem)) {
             if (details != null && details.containsKey(ApiConstants.NFS_MOUNT_OPTIONS)) {
                 nfsMountOpts = Arrays.asList(details.get(ApiConstants.NFS_MOUNT_OPTIONS).replaceAll("\\s", "").split(","));
             }
@@ -693,7 +694,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
 
         List<String> nfsMountOpts = getNFSMountOptsFromDetails(type, details);
-        if (sp != null && nfsMountOpts != null) {
+        if (sp != null && CollectionUtils.isNotEmpty(nfsMountOpts)) {
             if (destroyStoragePoolForNFSMountOptions(sp, conn, nfsMountOpts)) {
                 sp = null;
             }
