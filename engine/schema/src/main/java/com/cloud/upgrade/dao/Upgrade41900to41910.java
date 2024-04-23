@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
+import org.apache.log4j.Logger;
+
 import com.cloud.upgrade.SystemVmTemplateRegistration;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -71,6 +73,10 @@ public class Upgrade41900to41910 extends DbUpgradeAbstractImpl implements DbUpgr
         DbUpgradeUtils.addIndexIfNeeded(conn, "vm_stats", "vm_id");
     }
 
+    private void initSystemVmTemplateRegistration() {
+        systemVmTemplateRegistration = new SystemVmTemplateRegistration("");
+    }
+
     @Override
     public void updateSystemVmTemplates(Connection conn) {
         logger.debug("Updating System Vm template IDs");
@@ -80,9 +86,5 @@ public class Upgrade41900to41910 extends DbUpgradeAbstractImpl implements DbUpgr
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to find / register SystemVM template(s)");
         }
-    }
-
-    private void initSystemVmTemplateRegistration() {
-        systemVmTemplateRegistration = new SystemVmTemplateRegistration("");
     }
 }
