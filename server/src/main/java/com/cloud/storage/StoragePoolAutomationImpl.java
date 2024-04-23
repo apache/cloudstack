@@ -25,13 +25,11 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
@@ -326,15 +324,8 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
             return true;
         }
 
-        Map<String, String> details = null;
-        if (pool.getPoolType().equals(Storage.StoragePoolType.NetworkFilesystem)) {
-            details = new HashMap<>();
-            StoragePoolDetailVO nfsMountOpts = storagePoolDetailsDao.findDetail(poolVO.getId(), ApiConstants.NFS_MOUNT_OPTIONS);
-            if (nfsMountOpts != null) {
-                details.put(ApiConstants.NFS_MOUNT_OPTIONS, nfsMountOpts.getValue());
-            }
-        }
-
+        Map<String, String> details = new HashMap<>();
+        storageManager.addStoragePoolNFSMountOptsToDetailsMap(pool, details);
         // add heartbeat
         for (HostVO host : hosts) {
             ModifyStoragePoolCommand msPoolCmd = new ModifyStoragePoolCommand(true, pool, details);

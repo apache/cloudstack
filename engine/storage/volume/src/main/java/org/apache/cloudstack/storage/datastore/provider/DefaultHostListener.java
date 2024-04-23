@@ -44,7 +44,6 @@ import com.cloud.storage.StorageService;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -130,14 +129,8 @@ public class DefaultHostListener implements HypervisorHostListener {
     @Override
     public boolean hostConnect(long hostId, long poolId) throws StorageConflictException {
         StoragePool pool = (StoragePool) this.dataStoreMgr.getDataStore(poolId, DataStoreRole.Primary);
-        Map<String, String> details = null;
-        if (pool.getPoolType().equals(Storage.StoragePoolType.NetworkFilesystem)) {
-            details = new HashMap<>();
-            StoragePoolDetailVO nfsMountOpts = storagePoolDetailsDao.findDetail(poolId, ApiConstants.NFS_MOUNT_OPTIONS);
-            if (nfsMountOpts != null) {
-                details.put(ApiConstants.NFS_MOUNT_OPTIONS, nfsMountOpts.getValue());
-            }
-        }
+        Map<String, String> details = new HashMap<>();
+        storageManager.addStoragePoolNFSMountOptsToDetailsMap(pool, details);
 
         ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, pool, details);
         cmd.setWait(modifyStoragePoolCommandWait);

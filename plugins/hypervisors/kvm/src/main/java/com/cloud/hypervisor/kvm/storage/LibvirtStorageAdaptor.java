@@ -364,6 +364,41 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
     }
 
+    private List<String> getNFSMountOptsFromDetails(StoragePoolType type, Map<String, String> details) {
+        List<String> nfsMountOpts = null;
+        if (type == StoragePoolType.NetworkFilesystem) {
+            if (details != null && details.containsKey(ApiConstants.NFS_MOUNT_OPTIONS)) {
+                nfsMountOpts = Arrays.asList(details.get(ApiConstants.NFS_MOUNT_OPTIONS).replaceAll("\\s", "").split(","));
+            }
+        }
+        return nfsMountOpts;
+    }
+
+    private boolean destroyStoragePoolForNFSMountOptions(StoragePool sp, Connect conn, List<String> nfsMountOpts) {
+        try {
+            LibvirtStoragePoolDef poolDef = getStoragePoolDef(conn, sp);
+            Map poolNfsMountOptsMap = poolDef.getNfsMountOpts();
+            boolean mountOptsDiffer = false;
+            if (poolNfsMountOptsMap.size() != nfsMountOpts.size()) {
+                mountOptsDiffer = true;
+            } else {
+                for (String nfsMountOpt : nfsMountOpts) {
+                    if (!poolNfsMountOptsMap.containsKey(nfsMountOpt)) {
+                        mountOptsDiffer = true;
+                        break;
+                    }
+                }
+            }
+            if (mountOptsDiffer) {
+                sp.destroy();
+                return true;
+            }
+        } catch (LibvirtException e) {
+            s_logger.error("Failure in destroying the pre-existing storage pool for changing the NFS mount options" + e);
+        }
+        return false;
+    }
+
     private StoragePool createRBDStoragePool(Connect conn, String uuid, String host, int port, String userInfo, String path) {
 
         LibvirtStoragePoolDef spd;
@@ -657,34 +692,10 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             }
         }
 
-        List<String> nfsMountOpts = null;
-        if (type == StoragePoolType.NetworkFilesystem) {
-            if (details != null && details.containsKey(ApiConstants.NFS_MOUNT_OPTIONS)) {
-                nfsMountOpts = Arrays.asList(details.get(ApiConstants.NFS_MOUNT_OPTIONS).replaceAll("\\s", "").split(","));
-            }
-
-            if (sp != null && nfsMountOpts != null) {
-                try {
-                    LibvirtStoragePoolDef poolDef = getStoragePoolDef(conn, sp);
-                    Map poolNfsMountOptsMap = poolDef.getNfsMountOpts();
-                    boolean mountOptsDiffer = false;
-                    if (poolNfsMountOptsMap.size() != nfsMountOpts.size()) {
-                        mountOptsDiffer = true;
-                    } else {
-                        for (String nfsMountOpt : nfsMountOpts) {
-                            if (!poolNfsMountOptsMap.containsKey(nfsMountOpt)) {
-                                mountOptsDiffer = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (mountOptsDiffer == true) {
-                        sp.destroy();
-                        sp = null;
-                    }
-                } catch (LibvirtException e) {
-                    s_logger.error("Failure in destroying the pre-existing storage pool for changing the NFS mount options" + e);
-                }
+        List<String> nfsMountOpts = getNFSMountOptsFromDetails(type, details);
+        if (sp != null && nfsMountOpts != null) {
+            if (destroyStoragePoolForNFSMountOptions(sp, conn, nfsMountOpts)) {
+                sp = null;
             }
         }
 

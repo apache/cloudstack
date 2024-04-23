@@ -2973,6 +2973,16 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         return new Pair<>(pools, pools.size());
     }
 
+    private void setPoolResponseNFSMountOptions(StoragePoolResponse poolResponse, Long poolId) {
+        if (Storage.StoragePoolType.NetworkFilesystem.toString().equals(poolResponse.getType()) &&
+                HypervisorType.KVM.toString().equals(poolResponse.getHypervisor())) {
+            StoragePoolDetailVO detail = _storagePoolDetailsDao.findDetail(poolId, ApiConstants.NFS_MOUNT_OPTIONS);
+            if (detail != null) {
+                poolResponse.setNfsMountOpts(detail.getValue());
+            }
+        }
+    }
+
     private ListResponse<StoragePoolResponse> createStoragesPoolResponse(Pair<List<StoragePoolJoinVO>, Integer> storagePools) {
         ListResponse<StoragePoolResponse> response = new ListResponse<>();
 
@@ -2994,11 +3004,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                     poolResponse.setCaps(caps);
                 }
             }
-            if (Storage.StoragePoolType.NetworkFilesystem.toString().equals(poolResponse.getType()) &&
-                HypervisorType.KVM.toString().equals(poolResponse.getHypervisor())) {
-                StoragePoolDetailVO detail = _storagePoolDetailsDao.findDetail(poolUuidToIdMap.get(poolResponse.getId()), ApiConstants.NFS_MOUNT_OPTIONS);
-                if (detail != null) poolResponse.setNfsMountOpts(detail.getValue());
-            }
+            setPoolResponseNFSMountOptions(poolResponse, poolUuidToIdMap.get(poolResponse.getId()));
         }
 
         response.setResponses(poolResponses, storagePools.second());

@@ -854,6 +854,36 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
     }
 
+    protected void checkNFSMountOptionsForCreate(Map<String, String> details, HypervisorType hypervisorType, String scheme) throws InvalidParameterValueException {
+        if (details.containsKey(ApiConstants.NFS_MOUNT_OPTIONS)) {
+            if (!hypervisorType.equals(HypervisorType.KVM) && !hypervisorType.equals(HypervisorType.Simulator)) {
+                throw new InvalidParameterValueException("NFS options can not be set for the hypervisor type " + hypervisorType);
+            }
+            if (!"nfs".equals(scheme)) {
+                throw new InvalidParameterValueException("NFS options can only be set on pool type " + StoragePoolType.NetworkFilesystem);
+            }
+            checkNfsMountOptions(details.get(ApiConstants.NFS_MOUNT_OPTIONS));
+        }
+    }
+
+    protected void checkNFSMountOptionsForUpdate(Map<String, String> details, StoragePoolVO pool, Long accountId) throws InvalidParameterValueException {
+        if (details.containsKey(ApiConstants.NFS_MOUNT_OPTIONS)) {
+            if (!_accountMgr.isRootAdmin(accountId)) {
+                throw new PermissionDeniedException("Only root admin can modify nfs options");
+            }
+            if (!pool.getHypervisor().equals(HypervisorType.KVM) && !pool.getHypervisor().equals((HypervisorType.Simulator))) {
+                throw new InvalidParameterValueException("NFS options can only be set for the hypervisor type " + HypervisorType.KVM);
+            }
+            if (!pool.getPoolType().equals(StoragePoolType.NetworkFilesystem)) {
+                throw new InvalidParameterValueException("NFS options can only be set on pool type " + StoragePoolType.NetworkFilesystem);
+            }
+            if (!pool.isInMaintenance()) {
+                throw new InvalidParameterValueException("The storage pool should be in maintenance mode to edit nfs options");
+            }
+            checkNfsMountOptions(details.get(ApiConstants.NFS_MOUNT_OPTIONS));
+        }
+    }
+
     @Override
     public PrimaryDataStoreInfo createPool(CreateStoragePoolCmd cmd) throws ResourceInUseException, IllegalArgumentException, UnknownHostException, ResourceUnavailableException {
         String providerName = cmd.getStorageProviderName();
@@ -918,19 +948,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         Map<String, String> details = extractApiParamAsMap(cmd.getDetails());
-        if (details.containsKey(ApiConstants.NFS_MOUNT_OPTIONS)) {
-            Long accountId = cmd.getEntityOwnerId();
-            if (!_accountMgr.isRootAdmin(accountId)) {
-                throw new PermissionDeniedException("Only root admin can set nfs options");
-            }
-            if (!hypervisorType.equals(HypervisorType.KVM) && !hypervisorType.equals(HypervisorType.Simulator)) {
-                throw new InvalidParameterValueException("NFS options can not be set for the hypervisor type " + hypervisorType);
-            }
-            if (!"nfs".equals(uriParams.get("scheme"))) {
-                throw new InvalidParameterValueException("NFS options can only be set on pool type " + StoragePoolType.NetworkFilesystem);
-            }
-            checkNfsMountOptions(details.get(ApiConstants.NFS_MOUNT_OPTIONS));
-        }
+        checkNFSMountOptionsForCreate(details, hypervisorType, uriParams.get("scheme"));
 
         DataCenterVO zone = _dcDao.findById(cmd.getZoneId());
         if (zone == null) {
@@ -1115,22 +1133,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         Map<String, String> inputDetails = extractApiParamAsMap(cmd.getDetails());
-        if (inputDetails.containsKey(ApiConstants.NFS_MOUNT_OPTIONS)) {
-            Long accountId = cmd.getEntityOwnerId();
-            if (!_accountMgr.isRootAdmin(accountId)) {
-                throw new PermissionDeniedException("Only root admin can modify nfs options");
-            }
-            if (!pool.getHypervisor().equals(HypervisorType.KVM) && !pool.getHypervisor().equals((HypervisorType.Simulator))) {
-                throw new InvalidParameterValueException("NFS options can only be set for the hypervisor type " + HypervisorType.KVM);
-            }
-            if (!pool.getPoolType().equals(StoragePoolType.NetworkFilesystem)) {
-                throw new InvalidParameterValueException("NFS options can only be set on pool type " + StoragePoolType.NetworkFilesystem);
-            }
-            if (!pool.isInMaintenance()) {
-                throw new InvalidParameterValueException("The storage pool should be in maintenance mode to edit nfs options");
-            }
-            checkNfsMountOptions(inputDetails.get(ApiConstants.NFS_MOUNT_OPTIONS));
-        }
+        checkNFSMountOptionsForUpdate(inputDetails, pool, cmd.getEntityOwnerId());
 
         String name = cmd.getName();
         if(StringUtils.isNotBlank(name)) {
@@ -1274,6 +1277,16 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             }
         }
         return deleteDataStoreInternal(sPool, forced);
+    }
+
+    @Override
+    public void addStoragePoolNFSMountOptsToDetailsMap(StoragePool pool, Map<String, String> details) {
+        if (pool.getPoolType().equals(Storage.StoragePoolType.NetworkFilesystem)) {
+            StoragePoolDetailVO nfsMountOpts = _storagePoolDetailsDao.findDetail(pool.getId(), ApiConstants.NFS_MOUNT_OPTIONS);
+            if (nfsMountOpts != null) {
+                details.put(ApiConstants.NFS_MOUNT_OPTIONS, nfsMountOpts.getValue());
+            }
+        }
     }
 
     private boolean checkIfDataStoreClusterCanbeDeleted(StoragePoolVO sPool, boolean forced) {
