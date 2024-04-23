@@ -2996,8 +2996,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
             if (Storage.StoragePoolType.NetworkFilesystem.toString().equals(poolResponse.getType()) &&
                 HypervisorType.KVM.toString().equals(poolResponse.getHypervisor())) {
-                StoragePoolDetailVO detail = _storagePoolDetailsDao.findDetail(poolUuidToIdMap.get(poolResponse.getId()), "nfsopts");
-                if (detail != null) poolResponse.setNfsopts(detail.getValue());
+                StoragePoolDetailVO detail = _storagePoolDetailsDao.findDetail(poolUuidToIdMap.get(poolResponse.getId()), ApiConstants.NFS_MOUNT_OPTIONS);
+                if (detail != null) poolResponse.setNfsMountOpts(detail.getValue());
             }
         }
 

@@ -531,8 +531,8 @@ export default {
           }
         },
         {
-          title: 'label.nfsopts',
-          key: 'primaryStorageNFSOptions',
+          title: 'label.nfsmountopts',
+          key: 'primaryStorageNFSMountOptions',
           required: false,
           display: {
             primaryStorageProtocol: 'nfs',

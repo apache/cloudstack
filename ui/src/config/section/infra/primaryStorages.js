@@ -34,7 +34,7 @@ export default {
     fields.push('zonename')
     return fields
   },
-  details: ['name', 'id', 'ipaddress', 'type', 'scope', 'tags', 'path', 'provider', 'hypervisor', 'overprovisionfactor', 'disksizetotal', 'disksizeallocated', 'disksizeused', 'clustername', 'podname', 'zonename', 'nfsopts', 'created'],
+  details: ['name', 'id', 'ipaddress', 'type', 'scope', 'tags', 'path', 'provider', 'hypervisor', 'overprovisionfactor', 'disksizetotal', 'disksizeallocated', 'disksizeused', 'clustername', 'podname', 'zonename', 'nfsmountopts', 'created'],
   related: [{
     name: 'volume',
     title: 'label.volumes',
@@ -117,7 +117,7 @@ export default {
       dataView: true,
       popup: true,
       show: (record) => { return (record.type === 'NetworkFilesystem' && record.hypervisor === 'KVM' && record.state === 'Maintenance') },
-      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/NFSOptsPrimaryStorage.vue')))
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/NFSMountOptsPrimaryStorage.vue')))
     },
     {
       api: 'syncStoragePool',

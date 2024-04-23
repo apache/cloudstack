@@ -25,12 +25,12 @@ import xml.etree.ElementTree as ET
 from lxml import etree
 from nose.plugins.attrib import attr
 
-class TestNFSOptsKVM(cloudstackTestCase):
+class TestNFSMountOptsKVM(cloudstackTestCase):
     """ Test cases for host HA using KVM host(s)
     """
 
     def setUp(self):
-        self.testClient = super(TestNFSOptsKVM, self).getClsTestClient()
+        self.testClient = super(TestNFSMountOptsKVM, self).getClsTestClient()
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.services = self.testClient.getParsedTestDataConfig()
@@ -77,7 +77,7 @@ class TestNFSOptsKVM(cloudstackTestCase):
             return self.storage_pool
         raise self.skipTest("Not enough KVM hosts found, skipping NFS options test")
 
-    def getNFSOptionsFromVirsh(self, poolId):
+    def getNFSMountOptionsFromVirsh(self, poolId):
         virsh_cmd = "virsh pool-dumpxml %s" % poolId
         xml_res = self.sshClient.execute(virsh_cmd)
         xml_as_str = ''.join(xml_res)
@@ -105,7 +105,7 @@ class TestNFSOptsKVM(cloudstackTestCase):
                 return key
         return None
 
-    def getNFSOptionForPool(self, option, poolId):
+    def getNFSMountOptionForPool(self, option, poolId):
         nfsstat_cmd = "nfsstat -m | sed -n '/%s/{ n; p }'" % poolId
         nfsstat = self.sshClient.execute(nfsstat_cmd)
         if (nfsstat == None):
@@ -120,7 +120,7 @@ class TestNFSOptsKVM(cloudstackTestCase):
             Tests that NFS mount options configured on the primary storage are set correctly on the KVM hypervisor host
         """
 
-        vers = self.getNFSOptionForPool("vers", self.storage_pool.id)
+        vers = self.getNFSMountOptionForPool("vers", self.storage_pool.id)
         if (vers == None):
             raise self.skipTest("Storage pool not associated with the host")
 
@@ -129,12 +129,12 @@ class TestNFSOptsKVM(cloudstackTestCase):
         if version == None:
             self.debug("skipping nconnect mount option as there are multiple mounts already present from the nfs server for all versions")
             version = self.getUnusedNFSVersions(self.storage_pool.id)
-            nfsopts = "vers=" + version
+            nfsMountOpts = "vers=" + version
         else:
             nconnect='4'
-            nfsopts = "vers=" + version + ",nconnect=" + nconnect
+            nfsMountOpts = "vers=" + version + ",nconnect=" + nconnect
 
-        details = [{'nfsopts': nfsopts}]
+        details = [{'nfsmountopts': nfsMountOpts}]
 
         maint_cmd = enableStorageMaintenance.enableStorageMaintenanceCmd()
         maint_cmd.id = self.storage_pool.id
@@ -153,9 +153,9 @@ class TestNFSOptsKVM(cloudstackTestCase):
                                    id=self.storage_pool.id
                                    )[0]
 
-        self.assertEqual(storage.nfsopts, nfsopts)
+        self.assertEqual(storage.nfsmountopts, nfsMountOpts)
 
-        options = self.getNFSOptionsFromVirsh(self.storage_pool.id)
+        options = self.getNFSMountOptionsFromVirsh(self.storage_pool.id)
 
         self.assertEqual(options["vers"], version)
         if (nconnect != None):

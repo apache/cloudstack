@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.utils.cryptsetup.KeyFile;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
@@ -272,9 +273,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
     }
 
-    private StoragePool createNetfsStoragePool(PoolType fsType, Connect conn, String uuid, String host, String path, List<String> nfsopts) throws LibvirtException {
+    private StoragePool createNetfsStoragePool(PoolType fsType, Connect conn, String uuid, String host, String path, List<String> nfsMountOpts) throws LibvirtException {
         String targetPath = _mountPoint + File.separator + uuid;
-        LibvirtStoragePoolDef spd = new LibvirtStoragePoolDef(fsType, uuid, uuid, host, path, targetPath, nfsopts);
+        LibvirtStoragePoolDef spd = new LibvirtStoragePoolDef(fsType, uuid, uuid, host, path, targetPath, nfsMountOpts);
         _storageLayer.mkdir(targetPath);
         StoragePool sp = null;
         try {
@@ -656,33 +657,33 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             }
         }
 
-        List<String> nfsopts = null;
+        List<String> nfsMountOpts = null;
         if (type == StoragePoolType.NetworkFilesystem) {
-            if (details != null && details.containsKey("nfsopts")) {
-                nfsopts = Arrays.asList(details.get("nfsopts").replaceAll("\\s", "").split(","));
+            if (details != null && details.containsKey(ApiConstants.NFS_MOUNT_OPTIONS)) {
+                nfsMountOpts = Arrays.asList(details.get(ApiConstants.NFS_MOUNT_OPTIONS).replaceAll("\\s", "").split(","));
             }
 
-            if (sp != null && nfsopts != null) {
+            if (sp != null && nfsMountOpts != null) {
                 try {
                     LibvirtStoragePoolDef poolDef = getStoragePoolDef(conn, sp);
-                    Map poolNfsOptsMap = poolDef.getNfsOpts();
-                    boolean optionsDiffer = false;
-                    if (poolNfsOptsMap.size() != nfsopts.size()) {
-                        optionsDiffer = true;
+                    Map poolNfsMountOptsMap = poolDef.getNfsMountOpts();
+                    boolean mountOptsDiffer = false;
+                    if (poolNfsMountOptsMap.size() != nfsMountOpts.size()) {
+                        mountOptsDiffer = true;
                     } else {
-                        for (String nfsopt : nfsopts) {
-                            if (!poolNfsOptsMap.containsKey(nfsopt)) {
-                                optionsDiffer = true;
+                        for (String nfsMountOpt : nfsMountOpts) {
+                            if (!poolNfsMountOptsMap.containsKey(nfsMountOpt)) {
+                                mountOptsDiffer = true;
                                 break;
                             }
                         }
                     }
-                    if (optionsDiffer == true) {
+                    if (mountOptsDiffer == true) {
                         sp.destroy();
                         sp = null;
                     }
                 } catch (LibvirtException e) {
-                    s_logger.error("Failure in destroying the pre-existing storage pool for changing the NFS options" + e);
+                    s_logger.error("Failure in destroying the pre-existing storage pool for changing the NFS mount options" + e);
                 }
             }
         }
@@ -693,7 +694,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
             if (type == StoragePoolType.NetworkFilesystem) {
                 try {
-                    sp = createNetfsStoragePool(PoolType.NETFS, conn, name, host, path, nfsopts);
+                    sp = createNetfsStoragePool(PoolType.NETFS, conn, name, host, path, nfsMountOpts);
                 } catch (LibvirtException e) {
                     s_logger.error("Failed to create netfs mount: " + host + ":" + path , e);
                     s_logger.error(e.getStackTrace());

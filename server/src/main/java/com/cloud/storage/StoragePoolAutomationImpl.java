@@ -25,6 +25,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -328,9 +329,9 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
         Map<String, String> details = null;
         if (pool.getPoolType().equals(Storage.StoragePoolType.NetworkFilesystem)) {
             details = new HashMap<>();
-            StoragePoolDetailVO nfsopts = storagePoolDetailsDao.findDetail(poolVO.getId(), "nfsopts");
-            if (nfsopts != null) {
-                details.put("nfsopts", nfsopts.getValue());
+            StoragePoolDetailVO nfsMountOpts = storagePoolDetailsDao.findDetail(poolVO.getId(), ApiConstants.NFS_MOUNT_OPTIONS);
+            if (nfsMountOpts != null) {
+                details.put(ApiConstants.NFS_MOUNT_OPTIONS, nfsMountOpts.getValue());
             }
         }
 

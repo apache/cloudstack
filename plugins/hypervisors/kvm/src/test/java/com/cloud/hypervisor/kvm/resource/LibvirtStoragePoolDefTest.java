@@ -51,13 +51,13 @@ public class LibvirtStoragePoolDefTest extends TestCase {
         assertEquals(dir, pool.getSourceDir());
         assertEquals(targetPath, pool.getTargetPath());
 
-        List<String> nfsopts = new ArrayList<>();
-        nfsopts.add("vers=4.1");
-        nfsopts.add("nconnect=4");
-        pool = new LibvirtStoragePoolDef(type, name, uuid, host, dir, targetPath, nfsopts);
-        assertTrue(pool.getNfsOpts().containsKey("vers=4.1"));
-        assertTrue(pool.getNfsOpts().containsKey("nconnect=4"));
-        assertEquals(pool.getNfsOpts().size(), 2);
+        List<String> nfsMountOpts = new ArrayList<>();
+        nfsMountOpts.add("vers=4.1");
+        nfsMountOpts.add("nconnect=4");
+        pool = new LibvirtStoragePoolDef(type, name, uuid, host, dir, targetPath, nfsMountOpts);
+        assertTrue(pool.getNfsMountOpts().containsKey("vers=4.1"));
+        assertTrue(pool.getNfsMountOpts().containsKey("nconnect=4"));
+        assertEquals(pool.getNfsMountOpts().size(), 2);
     }
 
     @Test
@@ -68,11 +68,11 @@ public class LibvirtStoragePoolDefTest extends TestCase {
         String host = "127.0.0.1";
         String dir  = "/export/primary";
         String targetPath = "/mnt/" + uuid;
-        List<String> nfsopts = new ArrayList<>();
-        nfsopts.add("vers=4.1");
-        nfsopts.add("nconnect=4");
+        List<String> nfsMountOpts = new ArrayList<>();
+        nfsMountOpts.add("vers=4.1");
+        nfsMountOpts.add("nconnect=4");
 
-        LibvirtStoragePoolDef pool = new LibvirtStoragePoolDef(type, name, uuid, host, dir, targetPath, nfsopts);
+        LibvirtStoragePoolDef pool = new LibvirtStoragePoolDef(type, name, uuid, host, dir, targetPath, nfsMountOpts);
 
         String expectedXml = "<pool type='" + type.toString() + "' xmlns:fs='http://libvirt.org/schemas/storagepool/fs/1.0'>\n" +
                              "<name>" +name + "</name>\n<uuid>" + uuid + "</uuid>\n" +

@@ -31,11 +31,11 @@
             </template>
           </a-alert>
           <p></p>
-          <a-form-item name="nfsopts" ref="nfsopts" :label="$t('label.nfsopts')">
+          <a-form-item name="nfsMountOpts" ref="nfsMountOpts" :label="$t('label.nfsmountopts')">
             <template #label>
-              <tooltip-label :title="$t('label.nfsopts')" :tooltip="$t('message.nfs.nfsopts.description')"/>
+              <tooltip-label :title="$t('label.nfsmountopts')" :tooltip="$t('message.nfs.nfsmountopts.description')"/>
             </template>
-            <a-input v-model:value="form.nfsopts" :placeholder="$t('message.nfs.nfsopts.description')" />
+            <a-input v-model:value="form.nfsMountOpts" :placeholder="$t('message.nfs.nfsmountopts.description')" />
           </a-form-item>
           <div :span="24" class="action-button">
             <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
@@ -92,7 +92,7 @@ export default {
         var params = {
           id: this.resource.id
         }
-        params['details[0].nfsopts'] = values.nfsopts
+        params['details[0].nfsmountopts'] = values.nfsMountOpts
 
         this.updateStoragePool(params)
       }).catch(error => {
@@ -104,7 +104,7 @@ export default {
     },
     updateStoragePool (args) {
       api('updateStoragePool', args).then(json => {
-        this.$message.success(`${this.$t('message.success.edit.nfsopts')}: ${this.resource.name}`)
+        this.$message.success(`${this.$t('message.success.edit.nfsmountopts')}: ${this.resource.name}`)
         this.$emit('refresh-data')
         this.closeAction()
       }).catch(error => {

@@ -250,14 +250,14 @@ public class StorageManagerImplTest {
     }
 
     @Test(expected = InvalidParameterValueException.class)
-    public void testDuplicateNFSOptions() {
-        String nfsopts = "vers=4.1, nconnect=4,vers=4.2";
-        storageManagerImpl.checkNfsOptions(nfsopts);
+    public void testDuplicateNFSMountOptions() {
+        String nfsMountOpts = "vers=4.1, nconnect=4,vers=4.2";
+        storageManagerImpl.checkNfsMountOptions(nfsMountOpts);
     }
 
     @Test(expected = InvalidParameterValueException.class)
-    public void testInvalidNFSOptions() {
-        String nfsopts = "vers=4.1=2,";
-        storageManagerImpl.checkNfsOptions(nfsopts);
+    public void testInvalidNFSMountOptions() {
+        String nfsMountOpts = "vers=4.1=2,";
+        storageManagerImpl.checkNfsMountOptions(nfsMountOpts);
     }
 }

@@ -93,13 +93,13 @@ public class LibvirtStoragePoolXMLParser {
                 return new LibvirtStoragePoolDef(LibvirtStoragePoolDef.PoolType.valueOf(format.toUpperCase()),
                         poolName, uuid, host, port, path, targetPath);
             } else if (type.equalsIgnoreCase("netfs")) {
-                List<String> nfsopts = new ArrayList<>();
+                List<String> nfsMountOpts = new ArrayList<>();
                 Element mountOpts = (Element) rootElement.getElementsByTagName("fs:mount_opts").item(0);
                 if (mountOpts != null) {
                     NodeList options = mountOpts.getElementsByTagName("fs:option");
                     for (int i = 0; i < options.getLength(); i++) {
                         Element option = (Element) options.item(i);
-                        nfsopts.add(option.getAttribute("name"));
+                        nfsMountOpts.add(option.getAttribute("name"));
                     }
                 }
 
@@ -107,7 +107,7 @@ public class LibvirtStoragePoolXMLParser {
                 Element target = (Element)rootElement.getElementsByTagName("target").item(0);
                 String targetPath = getTagValue("path", target);
 
-                return new LibvirtStoragePoolDef(LibvirtStoragePoolDef.PoolType.valueOf(type.toUpperCase()), poolName, uuid, host, path, targetPath, nfsopts);
+                return new LibvirtStoragePoolDef(LibvirtStoragePoolDef.PoolType.valueOf(type.toUpperCase()), poolName, uuid, host, path, targetPath, nfsMountOpts);
             } else {
                 String path = getAttrValue("dir", "path", source);
 

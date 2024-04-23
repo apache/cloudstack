@@ -43,6 +43,8 @@ import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StorageService;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.exception.CloudRuntimeException;
+
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -131,9 +133,9 @@ public class DefaultHostListener implements HypervisorHostListener {
         Map<String, String> details = null;
         if (pool.getPoolType().equals(Storage.StoragePoolType.NetworkFilesystem)) {
             details = new HashMap<>();
-            StoragePoolDetailVO nfsopts = storagePoolDetailsDao.findDetail(poolId, "nfsopts");
-            if (nfsopts != null) {
-                details.put("nfsopts", nfsopts.getValue());
+            StoragePoolDetailVO nfsMountOpts = storagePoolDetailsDao.findDetail(poolId, ApiConstants.NFS_MOUNT_OPTIONS);
+            if (nfsMountOpts != null) {
+                details.put(ApiConstants.NFS_MOUNT_OPTIONS, nfsMountOpts.getValue());
             }
         }
 

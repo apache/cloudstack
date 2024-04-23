@@ -839,8 +839,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return String.format("%s-%s-%s", StringUtils.trim(host.getName()), "local", storagePoolInformation.getUuid().split("-")[0]);
     }
 
-    protected void checkNfsOptions(String nfsopts) throws InvalidParameterValueException {
-        String[] options = nfsopts.replaceAll("\\s", "").split(",");
+    protected void checkNfsMountOptions(String nfsMountOpts) throws InvalidParameterValueException {
+        String[] options = nfsMountOpts.replaceAll("\\s", "").split(",");
         Map<String, String> optionsMap = new HashMap<>();
         for (String option : options) {
             String[] keyValue = option.split("=");
@@ -918,7 +918,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         Map<String, String> details = extractApiParamAsMap(cmd.getDetails());
-        if (details.containsKey("nfsopts")) {
+        if (details.containsKey(ApiConstants.NFS_MOUNT_OPTIONS)) {
             Long accountId = cmd.getEntityOwnerId();
             if (!_accountMgr.isRootAdmin(accountId)) {
                 throw new PermissionDeniedException("Only root admin can set nfs options");
@@ -929,7 +929,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             if (!"nfs".equals(uriParams.get("scheme"))) {
                 throw new InvalidParameterValueException("NFS options can only be set on pool type " + StoragePoolType.NetworkFilesystem);
             }
-            checkNfsOptions(details.get("nfsopts"));
+            checkNfsMountOptions(details.get(ApiConstants.NFS_MOUNT_OPTIONS));
         }
 
         DataCenterVO zone = _dcDao.findById(cmd.getZoneId());
@@ -1115,7 +1115,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         Map<String, String> inputDetails = extractApiParamAsMap(cmd.getDetails());
-        if (inputDetails.containsKey("nfsopts")) {
+        if (inputDetails.containsKey(ApiConstants.NFS_MOUNT_OPTIONS)) {
             Long accountId = cmd.getEntityOwnerId();
             if (!_accountMgr.isRootAdmin(accountId)) {
                 throw new PermissionDeniedException("Only root admin can modify nfs options");
@@ -1129,7 +1129,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             if (!pool.isInMaintenance()) {
                 throw new InvalidParameterValueException("The storage pool should be in maintenance mode to edit nfs options");
             }
-            checkNfsOptions(inputDetails.get("nfsopts"));
+            checkNfsMountOptions(inputDetails.get(ApiConstants.NFS_MOUNT_OPTIONS));
         }
 
         String name = cmd.getName();

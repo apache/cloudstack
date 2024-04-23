@@ -182,11 +182,11 @@
           v-if="form.protocol === 'nfs' &&
             ((form.scope === 'zone' && (form.hypervisor === 'KVM' || form.hypervisor === 'Simulator')) ||
              (form.scope === 'cluster' && (hypervisorType === 'KVM' || hypervisorType === 'Simulator')))">
-          <a-form-item name="nfsopts" ref="nfsopts">
+          <a-form-item name="nfsMountOpts" ref="nfsMountOpts">
             <template #label>
-              <tooltip-label :title="$t('label.nfsopts')" :tooltip="$t('message.nfs.nfsopts.description')"/>
+              <tooltip-label :title="$t('label.nfsmountopts')" :tooltip="$t('message.nfs.nfsmountopts.description')"/>
             </template>
-            <a-input v-model:value="form.nfsopts" :placeholder="$t('message.nfs.nfsopts.description')" />
+            <a-input v-model:value="form.nfsMountOpts" :placeholder="$t('message.nfs.nfsmountopts.description')" />
           </a-form-item>
         </div>
         <div v-if="form.protocol === 'SMB'">
@@ -805,7 +805,7 @@ export default {
         var url = ''
         if (values.protocol === 'nfs') {
           url = this.nfsURL(server, path)
-          params['details[0].nfsopts'] = values.nfsopts
+          params['details[0].nfsmountopts'] = values.nfsMountOpts
         } else if (values.protocol === 'SMB') {
           url = this.smbURL(server, path)
           const smbParams = {

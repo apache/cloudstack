@@ -59,7 +59,7 @@ public class LibvirtStoragePoolDef {
     private String _authUsername;
     private AuthenticationType _authType;
     private String _secretUuid;
-    private Map<String, String> _nfsopts = new HashMap<>();
+    private Map<String, String> _nfsMountOpts = new HashMap<>();
 
     public LibvirtStoragePoolDef(PoolType type, String poolName, String uuid, String host, int port, String dir, String targetPath) {
         _poolType = type;
@@ -80,11 +80,11 @@ public class LibvirtStoragePoolDef {
         _targetPath = targetPath;
     }
 
-    public LibvirtStoragePoolDef(PoolType type, String poolName, String uuid, String host, String dir, String targetPath, List<String> nfsopts) {
+    public LibvirtStoragePoolDef(PoolType type, String poolName, String uuid, String host, String dir, String targetPath, List<String> nfsMountOpts) {
         this(type, poolName, uuid, host, dir, targetPath);
-        if (nfsopts != null) {
-            for (String nfsopt : nfsopts) {
-                this._nfsopts.put(nfsopt, null);
+        if (nfsMountOpts != null) {
+            for (String nfsMountOpt : nfsMountOpts) {
+                this._nfsMountOpts.put(nfsMountOpt, null);
             }
         }
     }
@@ -138,14 +138,14 @@ public class LibvirtStoragePoolDef {
         return _authType;
     }
 
-    public Map<String, String> getNfsOpts() {
-        return _nfsopts;
+    public Map<String, String> getNfsMountOpts() {
+        return _nfsMountOpts;
     }
 
     @Override
     public String toString() {
         StringBuilder storagePoolBuilder = new StringBuilder();
-        if (_poolType == PoolType.NETFS && _nfsopts != null) {
+        if (_poolType == PoolType.NETFS && _nfsMountOpts != null) {
             // get from poolType
             storagePoolBuilder.append("<pool type='netfs' xmlns:fs='http://libvirt.org/schemas/storagepool/fs/1.0'>\n");
         } else if (_poolType == PoolType.GLUSTERFS) {
@@ -208,9 +208,9 @@ public class LibvirtStoragePoolDef {
             storagePoolBuilder.append("<path>" + _targetPath + "</path>\n");
             storagePoolBuilder.append("</target>\n");
         }
-        if (_poolType == PoolType.NETFS && _nfsopts != null) {
+        if (_poolType == PoolType.NETFS && _nfsMountOpts != null) {
             storagePoolBuilder.append("<fs:mount_opts>\n");
-            for (Map.Entry<String, String> options : _nfsopts.entrySet()) {
+            for (Map.Entry<String, String> options : _nfsMountOpts.entrySet()) {
                 storagePoolBuilder.append("<fs:option name='" + options.getKey() + "'/>\n");
             }
             storagePoolBuilder.append("</fs:mount_opts>\n");
