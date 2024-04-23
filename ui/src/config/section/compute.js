@@ -164,33 +164,10 @@ export default {
           label: 'label.reinstall.vm',
           message: 'message.reinstall.vm',
           dataView: true,
-          args: ['virtualmachineid', 'templateid'],
-          filters: (record) => {
-            var filters = {}
-            var filterParams = {}
-            filterParams.hypervisortype = record.hypervisor
-            filterParams.zoneid = record.zoneid
-            filters.templateid = filterParams
-            return filters
-          },
+          popup: true,
           show: (record) => { return ['Running', 'Stopped'].includes(record.state) },
-          mapping: {
-            virtualmachineid: {
-              value: (record) => { return record.id }
-            }
-          },
           disabled: (record) => { return record.hostcontrolstate === 'Offline' },
-          successMethod: (obj, result) => {
-            const vm = result.jobresult.virtualmachine || {}
-            if (result.jobstatus === 1 && vm.password) {
-              const name = vm.displayname || vm.name || vm.id
-              obj.$notification.success({
-                message: `${obj.$t('label.reinstall.vm')}: ` + name,
-                description: `${obj.$t('label.password.reset.confirm')}: ` + vm.password,
-                duration: 0
-              })
-            }
-          }
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ReinstallVm.vue')))
         },
         {
           api: 'createVMSnapshot',
@@ -482,6 +459,12 @@ export default {
         {
           name: 'details',
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'events',
+          resourceType: 'VmSnapshot',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+          show: () => { return 'listEvents' in store.getters.apis }
         },
         {
           name: 'comments',
@@ -990,6 +973,18 @@ export default {
         title: 'label.instances',
         param: 'affinitygroupid'
       }],
+      tabs: [
+        {
+          name: 'details',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'events',
+          resourceType: 'AffinityGroup',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+          show: () => { return 'listEvents' in store.getters.apis }
+        }
+      ],
       actions: [
         {
           api: 'createAffinityGroup',

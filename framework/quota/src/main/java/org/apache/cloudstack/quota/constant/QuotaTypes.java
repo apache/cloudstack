@@ -56,6 +56,7 @@ public class QuotaTypes extends UsageTypes {
         quotaTypeList.put(VM_SNAPSHOT_ON_PRIMARY, new QuotaTypes(VM_SNAPSHOT_ON_PRIMARY, "VM_SNAPSHOT_ON_PRIMARY", UsageUnitTypes.GB_MONTH.toString(), "VM Snapshot primary storage usage"));
         quotaTypeList.put(BACKUP, new QuotaTypes(BACKUP, "BACKUP", UsageUnitTypes.GB_MONTH.toString(), "Backup storage usage"));
         quotaTypeList.put(BUCKET, new QuotaTypes(BUCKET, "BUCKET", UsageUnitTypes.GB_MONTH.toString(), "Object Store bucket usage"));
+        quotaTypeList.put(VPC, new QuotaTypes(VPC, "VPC", UsageUnitTypes.COMPUTE_MONTH.toString(), "VPC usage"));
         quotaTypeMap = Collections.unmodifiableMap(quotaTypeList);
     }
 
