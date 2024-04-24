@@ -17,6 +17,7 @@
 package com.cloud.vm;
 
 import static com.cloud.configuration.ConfigurationManagerImpl.VM_USERDATA_MAX_LENGTH;
+import static com.cloud.storage.Volume.IOPS_LIMIT;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 import static org.apache.cloudstack.api.ApiConstants.MAX_IOPS;
 import static org.apache.cloudstack.api.ApiConstants.MIN_IOPS;
@@ -53,6 +54,7 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.cloud.user.AccountVO;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -1295,13 +1297,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         Account owner = _accountMgr.getActiveAccountById(vmInstance.getAccountId());
         VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vmInstance.getTemplateId());
-        if (! VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
-            if (newCpu > currentCpu) {
-                _resourceLimitMgr.checkVmCpuResourceLimit(owner, vmInstance.isDisplay(), newServiceOffering, template, (long)(newCpu - currentCpu));
-            }
-            if (newMemory > currentMemory) {
-                _resourceLimitMgr.checkVmMemoryResourceLimit(owner, vmInstance.isDisplay(), newServiceOffering, template, (long)(newMemory - currentMemory));
-            }
+        if (!VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
+            _resourceLimitMgr.checkVmResourceLimitsForServiceOfferingChange(owner, vmInstance.isDisplay(), (long) currentCpu, (long) newCpu,
+                    (long) currentMemory, (long) newMemory, currentServiceOffering, newServiceOffering, template);
         }
 
         // Check that the specified service offering ID is valid
@@ -1317,17 +1315,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         _itMgr.upgradeVmDb(vmId, newServiceOffering, currentServiceOffering);
 
         // Increment or decrement CPU and Memory count accordingly.
-        if (! VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
-            if (newCpu > currentCpu) {
-                _resourceLimitMgr.incrementVmCpuResourceCount(owner.getAccountId(), vmInstance.isDisplay(), newServiceOffering, template, (long)(newCpu - currentCpu));
-            } else if (currentCpu > newCpu) {
-                _resourceLimitMgr.decrementVmMemoryResourceCount(owner.getAccountId(), vmInstance.isDisplay(), newServiceOffering, template, (long)(currentCpu - newCpu));
-            }
-            if (newMemory > currentMemory) {
-                _resourceLimitMgr.incrementVmMemoryResourceCount(owner.getAccountId(), vmInstance.isDisplay(), newServiceOffering, template, (long)(newMemory - currentMemory));
-            } else if (currentMemory > newMemory) {
-                _resourceLimitMgr.decrementVmMemoryResourceCount(owner.getAccountId(), vmInstance.isDisplay(), newServiceOffering, template, (long)(currentMemory - newMemory));
-            }
+        if (!VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
+            _resourceLimitMgr.updateVmResourceCountForServiceOfferingChange(owner.getAccountId(), vmInstance.isDisplay(), (long) currentCpu, (long) newCpu,
+                    (long) currentMemory, (long) newMemory, currentServiceOffering, newServiceOffering, template);
         }
 
         return _vmDao.findById(vmInstance.getId());
@@ -1991,13 +1981,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vmInstance.getTemplateId());
 
         // Check resource limits
-        if (newCpu > currentCpu) {
-            _resourceLimitMgr.checkVmCpuResourceLimit(owner, vmInstance.isDisplay(), newServiceOffering, template, (long)(newCpu - currentCpu));
-        }
-
-        if (newMemory > currentMemory) {
-            _resourceLimitMgr.checkVmMemoryResourceLimit(caller, vmInstance.isDisplay(), newServiceOffering, template, (long)memoryDiff);
-        }
+        _resourceLimitMgr.checkVmResourceLimitsForServiceOfferingChange(owner, vmInstance.isDisplay(), (long) currentCpu, (long) newCpu,
+                (long) currentMemory, (long) newMemory, currentServiceOffering, newServiceOffering, template);
 
         // Dynamically upgrade the running vms
         boolean success = false;
@@ -2027,14 +2012,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     boolean existingHostHasCapacity = false;
 
                     // Increment CPU and Memory count accordingly.
-                    if (newCpu > currentCpu) {
-                        _resourceLimitMgr.incrementVmCpuResourceCount(caller.getAccountId(), vmInstance.isDisplay(), newServiceOffering, template, (long)(newCpu - currentCpu));
-                    }
-
-                    if (memoryDiff > 0) {
-                        _resourceLimitMgr.incrementVmMemoryResourceCount(caller.getAccountId(), vmInstance.isDisplay(), newServiceOffering, template, (long)memoryDiff);
-                    }
-
+                    _resourceLimitMgr.updateVmResourceCountForServiceOfferingChange(caller.getAccountId(), vmInstance.isDisplay(),
+                            (long) currentCpu, (long) newCpu, (long) currentMemory, (long) newMemory,
+                            currentServiceOffering, newServiceOffering, template);
                     // #1 Check existing host has capacity
                     if (!excludes.shouldAvoid(ApiDBUtils.findHostById(vmInstance.getHostId()))) {
                         existingHostHasCapacity = _capacityMgr.checkIfHostHasCpuCapability(vmInstance.getHostId(), newCpu, newSpeed)
@@ -2063,13 +2043,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 } finally {
                     if (!success) {
                         // Decrement CPU and Memory count accordingly.
-                        if (newCpu > currentCpu) {
-                            _resourceLimitMgr.decrementVmCpuResourceCount(caller.getAccountId(), vmInstance.isDisplay(), newServiceOffering, template, (long)(newCpu - currentCpu));
-                        }
-
-                        if (memoryDiff > 0) {
-                            _resourceLimitMgr.decrementVmMemoryResourceCount(caller.getAccountId(), vmInstance.isDisplay(), newServiceOffering, template, (long)memoryDiff);
-                        }
+                        _resourceLimitMgr.updateVmResourceCountForServiceOfferingChange(caller.getAccountId(), vmInstance.isDisplay(),
+                                (long) newCpu, (long) currentCpu, (long) newMemory, (long) currentMemory,
+                                newServiceOffering, currentServiceOffering, template);
                     }
                 }
             }
@@ -2135,8 +2111,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 if (customParameters.containsKey(MIN_IOPS)) {
                     minIopsInNewDiskOffering = Long.parseLong(customParameters.get(MIN_IOPS));
                 }
-                if (customParameters.containsKey(MAX_IOPS)) {
-                    minIopsInNewDiskOffering = Long.parseLong(customParameters.get(MAX_IOPS));
+
+                if (customParameters.containsKey(IOPS_LIMIT)) {
+                    maxIopsInNewDiskOffering = Long.parseLong(customParameters.get(IOPS_LIMIT));
+                } else if (customParameters.containsKey(MAX_IOPS)) {
+                    maxIopsInNewDiskOffering = Long.parseLong(customParameters.get(MAX_IOPS));
                 }
                 if (customParameters.containsKey(ApiConstants.AUTO_MIGRATE)) {
                     autoMigrate = Boolean.parseBoolean(customParameters.get(ApiConstants.AUTO_MIGRATE));
@@ -2267,7 +2246,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 // First check that the maximum number of UserVMs, CPU and Memory limit for the given
                 // accountId will not be exceeded
-                if (! VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
+                if (!VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
                     resourceLimitService.checkVmResourceLimit(account, vm.isDisplayVm(), serviceOffering, template);
                 }
 
@@ -3211,7 +3190,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_REBOOT, eventDescription = "rebooting Vm", async = true)
-    public UserVm rebootVirtualMachine(RebootVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException {
+    public UserVm rebootVirtualMachine(RebootVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ResourceAllocationException {
         Account caller = CallContext.current().getCallingAccount();
         Long vmId = cmd.getId();
 
@@ -7663,7 +7642,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
-    public UserVm restoreVM(RestoreVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException {
+    public UserVm restoreVM(RestoreVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ResourceAllocationException {
         // Input validation
         Account caller = CallContext.current().getCallingAccount();
 
@@ -7717,12 +7696,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return restoreVMInternal(caller, vm, newTemplateId, rootDiskOfferingId, expunge, details);
     }
 
-    public UserVm restoreVMInternal(Account caller, UserVmVO vm, Long newTemplateId, Long rootDiskOfferingId, boolean expunge, Map<String, String> details) throws InsufficientCapacityException, ResourceUnavailableException {
+    public UserVm restoreVMInternal(Account caller, UserVmVO vm, Long newTemplateId, Long rootDiskOfferingId, boolean expunge, Map<String, String> details) throws InsufficientCapacityException, ResourceUnavailableException, ResourceAllocationException {
         return _itMgr.restoreVirtualMachine(vm.getId(), newTemplateId, rootDiskOfferingId, expunge, details);
     }
 
 
-    public UserVm restoreVMInternal(Account caller, UserVmVO vm) throws InsufficientCapacityException, ResourceUnavailableException {
+    public UserVm restoreVMInternal(Account caller, UserVmVO vm) throws InsufficientCapacityException, ResourceUnavailableException, ResourceAllocationException {
         return restoreVMInternal(caller, vm, null, null, false, null);
     }
 
@@ -7814,7 +7793,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         VMTemplateVO template = getRestoreVirtualMachineTemplate(caller, newTemplateId, rootVols, vm);
-        checkRestoreVmFromTemplate(vm, template);
+        DiskOffering diskOffering = rootDiskOfferingId != null ? _diskOfferingDao.findById(rootDiskOfferingId) : null;
+        try {
+            checkRestoreVmFromTemplate(vm, template, rootVols, diskOffering, details);
+        } catch (ResourceAllocationException e) {
+            s_logger.error("Failed to restore VM " + vm.getUuid() + " due to " + e.getMessage());
+            throw new CloudRuntimeException("Failed to restore VM " + vm.getUuid() + " due to " + e.getMessage(), e);
+        }
 
         if (needRestart) {
             try {
@@ -7827,7 +7812,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
-        DiskOffering diskOffering = rootDiskOfferingId != null ? _diskOfferingDao.findById(rootDiskOfferingId) : null;
         for (VolumeVO root : rootVols) {
             if ( !Volume.State.Allocated.equals(root.getState()) || newTemplateId != null ) {
                 _volumeService.validateDestroyVolume(root, caller, expunge, false);
@@ -7867,7 +7851,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                         // 1. Save usage event and update resource count for user vm volumes
                         try {
-                            _resourceLimitMgr.incrementVolumeResourceCount(newVol.getAccountId(), newVol.isDisplay(), newVol.getSize(), _diskOfferingDao.findById(newVol.getDiskOfferingId()));
+                            _resourceLimitMgr.incrementVolumeResourceCount(userVm.getAccountId(), newVol.isDisplay(),
+                                    newVol.getSize(), diskOffering != null ? diskOffering : _diskOfferingDao.findById(newVol.getDiskOfferingId()));
                         } catch (final CloudRuntimeException e) {
                             throw e;
                         } catch (final Exception e) {
@@ -7893,6 +7878,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 // Detach, destroy and create the usage event for the old root volume.
                 _volsDao.detachVolume(root.getId());
                 _volumeService.destroyVolume(root.getId(), caller, expunge, false);
+
+                if (currentTemplate.getId() != template.getId() && VirtualMachine.Type.User.equals(vm.type) && !VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
+                    ServiceOfferingVO serviceOffering = serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
+                    _resourceLimitMgr.updateVmResourceCountForTemplateChange(vm.getAccountId(), vm.isDisplay(), serviceOffering, currentTemplate, template);
+                }
 
                 // For VMware hypervisor since the old root volume is replaced by the new root volume, force expunge old root volume if it has been created in storage
                 if (vm.getHypervisorType() == HypervisorType.VMware) {
@@ -8012,7 +8002,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      * @param template template
      * @throws InvalidParameterValueException if restore is not possible
      */
-    private void checkRestoreVmFromTemplate(UserVmVO vm, VMTemplateVO template) {
+    private void checkRestoreVmFromTemplate(UserVmVO vm, VMTemplateVO template, List<VolumeVO> volumes, DiskOffering newDiskOffering, Map<String,String> details) throws ResourceAllocationException {
         TemplateDataStoreVO tmplStore;
         if (!template.isDirectDownload()) {
             tmplStore = _templateStoreDao.findByTemplateZoneReady(template.getId(), vm.getDataCenterId());
@@ -8023,6 +8013,27 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             tmplStore = _templateStoreDao.findByTemplate(template.getId(), DataStoreRole.Image);
             if (tmplStore == null || (tmplStore != null && !tmplStore.getDownloadState().equals(VMTemplateStorageResourceAssoc.Status.BYPASSED))) {
                 throw new InvalidParameterValueException("Cannot restore the vm as the bypassed template " + template.getUuid() + " isn't available in the zone");
+            }
+        }
+
+        AccountVO owner = _accountDao.findByIdIncludingRemoved(vm.getAccountId());
+        if (vm.getTemplateId() != template.getId()) {
+            ServiceOfferingVO serviceOffering = serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
+            VMTemplateVO currentTemplate = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
+            _resourceLimitMgr.checkVmResourceLimitsForTemplateChange(owner, vm.isDisplay(), serviceOffering, currentTemplate, template);
+        }
+
+        Long newSize = newDiskOffering != null ? newDiskOffering.getDiskSize() : null;
+        if (MapUtils.isNotEmpty(details) && StringUtils.isNumeric(details.get(VmDetailConstants.ROOT_DISK_SIZE))) {
+            newSize = Long.parseLong(details.get(VmDetailConstants.ROOT_DISK_SIZE)) * GiB_TO_BYTES;
+        }
+        if (newDiskOffering != null || newSize != null) {
+            for (Volume vol : volumes) {
+                if (newDiskOffering != null || !vol.getSize().equals(newSize)) {
+                    DiskOffering currentOffering = _diskOfferingDao.findById(vol.getDiskOfferingId());
+                    _resourceLimitMgr.checkVolumeResourceLimitForDiskOfferingChange(owner, vol.isDisplay(),
+                            vol.getSize(), newSize, currentOffering, newDiskOffering);
+                }
             }
         }
     }

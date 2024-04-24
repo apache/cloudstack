@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
+import com.cloud.exception.ResourceAllocationException;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -115,7 +116,7 @@ public class RebootVMCmd extends BaseAsyncCmd implements UserCmd {
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         CallContext.current().setEventDetails("Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()));
         UserVm result;
         result = _userVmService.rebootVirtualMachine(this);
