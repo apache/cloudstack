@@ -3821,7 +3821,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 List<String> storageTags = com.cloud.utils.StringUtils.csvTagsToList(diskOffering.getTags());
                 if (!storageTags.isEmpty() && VolumeApiServiceImpl.MatchStoragePoolTagsWithDiskOffering.value()) {
                     for (String tag : storageTags) {
-                        diskOfferingSearch.and(tag, diskOfferingSearch.entity().getTags(), Op.EQ);
+                        diskOfferingSearch.and("storageTag" + tag, diskOfferingSearch.entity().getTags(), Op.FIND_IN_SET);
                     }
                 }
             }
@@ -3934,24 +3934,24 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                     srvOffrDomainDetailSearch.entity().getName(), serviceOfferingSearch.entity().setString(ApiConstants.DOMAIN_ID));
         }
 
+        List<String> hostTags = getHostTagsFromTemplateForServiceOfferingsListing(caller, templateId);
         if (currentVmOffering != null) {
-            List<String> hostTags = com.cloud.utils.StringUtils.csvTagsToList(currentVmOffering.getHostTag());
-            if (!hostTags.isEmpty()) {
+            hostTags.addAll(com.cloud.utils.StringUtils.csvTagsToList(currentVmOffering.getHostTag()));
+        }
 
-                serviceOfferingSearch.and().op("hostTag", serviceOfferingSearch.entity().getHostTag(), Op.NULL);
-                serviceOfferingSearch.or();
-
-                boolean flag = true;
-                for(String tag : hostTags) {
-                    if (flag) {
-                        flag = false;
-                        serviceOfferingSearch.op("hostTag" + tag, serviceOfferingSearch.entity().getHostTag(), Op.EQ);
-                    } else {
-                        serviceOfferingSearch.and("hostTag" + tag, serviceOfferingSearch.entity().getHostTag(), Op.EQ);
-                    }
+        if (!hostTags.isEmpty()) {
+            serviceOfferingSearch.and().op("hostTag", serviceOfferingSearch.entity().getHostTag(), Op.NULL);
+            serviceOfferingSearch.or();
+            boolean flag = true;
+            for(String tag : hostTags) {
+                if (flag) {
+                    flag = false;
+                    serviceOfferingSearch.op("hostTag" + tag, serviceOfferingSearch.entity().getHostTag(), Op.FIND_IN_SET);
+                } else {
+                    serviceOfferingSearch.and("hostTag" + tag, serviceOfferingSearch.entity().getHostTag(), Op.FIND_IN_SET);
                 }
-                serviceOfferingSearch.cp().cp().done();
             }
+            serviceOfferingSearch.cp().cp();
         }
 
         SearchCriteria<ServiceOfferingVO> sc = serviceOfferingSearch.create();
@@ -4068,25 +4068,18 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setJoinParameters("domainDetailSearchNormalUser", "domainIdIN", domainIds.toArray());
         }
 
-        if (currentVmOffering != null) {
-            List<String> hostTags = getHostTagsFromTemplateForServiceOfferingsListing(caller, templateId);
-            if (diskOffering != null) {
-                List<String> storageTags = com.cloud.utils.StringUtils.csvTagsToList(diskOffering.getTags());
-                if (!storageTags.isEmpty() && VolumeApiServiceImpl.MatchStoragePoolTagsWithDiskOffering.value()) {
-                    for (String tag : storageTags) {
-                        sc.setJoinParameters("diskOfferingSearch", tag, tag);
-                    }
+        if (diskOffering != null) {
+            List<String> storageTags = com.cloud.utils.StringUtils.csvTagsToList(diskOffering.getTags());
+            if (!storageTags.isEmpty() && VolumeApiServiceImpl.MatchStoragePoolTagsWithDiskOffering.value()) {
+                for (String tag : storageTags) {
+                    sc.setJoinParameters("diskOfferingSearch", "storageTag" + tag, tag);
                 }
             }
+        }
 
-            List<String> offeringHostTags = com.cloud.utils.StringUtils.csvTagsToList(currentVmOffering.getHostTag());
-            if (!offeringHostTags.isEmpty()) {
-                hostTags.addAll(offeringHostTags);
-            }
-            if (CollectionUtils.isNotEmpty(hostTags)) {
-                for (String tag : hostTags) {
-                    sc.setParameters("hostTag" + tag, tag);
-                }
+        if (CollectionUtils.isNotEmpty(hostTags)) {
+            for (String tag : hostTags) {
+                sc.setParameters("hostTag" + tag, tag);
             }
         }
 
