@@ -16,13 +16,13 @@
 // under the License.
 package com.cloud.host;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -768,23 +768,24 @@ public class HostVO implements Host {
         this.uuid = uuid;
     }
 
-    public boolean checkHostServiceOfferingAndTemplateTags(ServiceOffering serviceOffering, VirtualMachineTemplate template) {
+    public boolean checkHostServiceOfferingAndTemplateTags(ServiceOffering serviceOffering, VirtualMachineTemplate template, Set<String> strictHostTags) {
         if (serviceOffering == null || template == null) {
             return false;
         }
         if (StringUtils.isEmpty(serviceOffering.getHostTag()) && StringUtils.isEmpty(template.getTemplateTag())) {
             return true;
         }
-        if (getHostTags() == null) {
-            return false;
-        }
         HashSet<String> hostTagsSet = new HashSet<>(getHostTags());
-        List<String> tags = new ArrayList<>();
+        HashSet<String> tags = new HashSet<>();
         if (StringUtils.isNotEmpty(serviceOffering.getHostTag())) {
             tags.addAll(Arrays.asList(serviceOffering.getHostTag().split(",")));
         }
-        if (StringUtils.isNotEmpty(template.getTemplateTag()) && !tags.contains(template.getTemplateTag())) {
+        if (StringUtils.isNotEmpty(template.getTemplateTag())) {
             tags.add(template.getTemplateTag());
+        }
+        tags.removeIf(tag -> !strictHostTags.contains(tag));
+        if (tags.isEmpty()) {
+            return true;
         }
         return hostTagsSet.containsAll(tags);
     }

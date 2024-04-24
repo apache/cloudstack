@@ -17,8 +17,10 @@
 package com.cloud.vm;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -37,6 +39,8 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
+
+import static com.cloud.user.ResourceLimitService.ResourceLimitHostTags;
 
 /**
  *
@@ -58,6 +62,12 @@ public interface UserVmManager extends UserVmService {
     ConfigKey<Boolean> DestroyRootVolumeOnVmDestruction = new ConfigKey<Boolean>("Advanced", Boolean.class, "destroy.root.volume.on.vm.destruction", "false",
             "Destroys the VM's root volume when the VM is destroyed.",
             true, ConfigKey.Scope.Domain);
+
+    ConfigKey<Boolean> EnforceStrictResourceLimitHostTagCheck = new ConfigKey<Boolean>(
+            "Advanced", Boolean.class, "vm.strict.resource.limit.host.tag.check", "true",
+            "Determines whether the resource limits tags are considered strict or not", true);
+    ConfigKey<String> StrictHostTags = new ConfigKey<>("Advanced", String.class, "vm.strict.host.tags", "",
+            "A comma-separated list of tags for strict host check", true);
 
     static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
 
@@ -126,6 +136,14 @@ public interface UserVmManager extends UserVmService {
     void validateCustomParameters(ServiceOfferingVO serviceOffering, Map<String, String> customParameters);
 
     void generateUsageEvent(VirtualMachine vm, boolean isDisplay, String eventType);
+
+    static Set<String> getStrictHostTags() {
+        Set<String> strictHostTags = new HashSet<>(List.of(StrictHostTags.value().split(",")));
+        if (EnforceStrictResourceLimitHostTagCheck.value()) {
+            strictHostTags.addAll(List.of(ResourceLimitHostTags.value().split(",")));
+        }
+        return strictHostTags;
+    }
 
     void persistDeviceBusInfo(UserVmVO paramUserVmVO, String paramString);
 
