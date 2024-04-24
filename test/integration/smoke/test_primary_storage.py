@@ -372,6 +372,8 @@ class StorageTagsServices:
             "a": "NFS-A",
             "b": "NFS-B"
         }
+
+
 class TestStorageTags(cloudstackTestCase):
 
     @classmethod

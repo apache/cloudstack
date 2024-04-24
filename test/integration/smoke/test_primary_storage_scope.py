@@ -22,6 +22,7 @@
 from marvin.cloudstackTestCase import *
 from marvin.lib.base import (Host, StoragePool, Cluster, updateStoragePool, changeStoragePoolScope)
 from marvin.lib.common import (get_zone, get_pod, list_clusters)
+from marvin.lib.utils import cleanup_resources
 from nose.plugins.attrib import attr
 
 class TestPrimaryStorageScope(cloudstackTestCase):
@@ -31,6 +32,7 @@ class TestPrimaryStorageScope(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.services = self.testClient.getParsedTestDataConfig()
+        self._cleanup = []
         self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
         self.pod = get_pod(self.apiclient, self.zone.id)
         self.debug("here")
@@ -48,18 +50,22 @@ class TestPrimaryStorageScope(cloudstackTestCase):
                                        podid=self.pod.id,
                                        hypervisor=self.cluster1.hypervisortype
                                        )
+        self._cleanup.append(self.cluster2)
         self.storage = StoragePool.create(self.apiclient,
                                           self.services["nfs"],
                                           scope = 'ZONE',
                                           zoneid=self.zone.id,
                                           hypervisor=self.cluster1.hypervisortype
                                           )
+        self._cleanup.append(self.storage)
         self.debug("Created storage pool %s in zone scope", self.storage.id)
         return
 
     def tearDown(self):
-        StoragePool.delete(self.storage, self.apiclient)
-        Cluster.delete(self.cluster2, self.apiclient)
+        try:
+            cleanup_resources(self.apiclient, self._cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
     @attr(tags=["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
