@@ -768,12 +768,9 @@ public class HostVO implements Host {
         this.uuid = uuid;
     }
 
-    public boolean checkHostServiceOfferingAndTemplateTags(ServiceOffering serviceOffering, VirtualMachineTemplate template, Set<String> strictHostTags) {
-        if (serviceOffering == null || template == null) {
-            return false;
-        }
+    private Set<String> getHostServiceOfferingAndTemplateStrictTags(ServiceOffering serviceOffering, VirtualMachineTemplate template, Set<String> strictHostTags) {
         if (StringUtils.isEmpty(serviceOffering.getHostTag()) && StringUtils.isEmpty(template.getTemplateTag())) {
-            return true;
+            return new HashSet<>();
         }
         HashSet<String> hostTagsSet = new HashSet<>(getHostTags());
         HashSet<String> tags = new HashSet<>();
@@ -784,10 +781,30 @@ public class HostVO implements Host {
             tags.add(template.getTemplateTag());
         }
         tags.removeIf(tag -> !strictHostTags.contains(tag));
+        tags.removeAll(hostTagsSet);
+        return tags;
+    }
+
+    public boolean checkHostServiceOfferingAndTemplateTags(ServiceOffering serviceOffering, VirtualMachineTemplate template, Set<String> strictHostTags) {
+        if (serviceOffering == null || template == null) {
+            return false;
+        }
+        Set<String> tags = getHostServiceOfferingAndTemplateStrictTags(serviceOffering, template, strictHostTags);
         if (tags.isEmpty()) {
             return true;
         }
+        HashSet<String> hostTagsSet = new HashSet<>(getHostTags());
         return hostTagsSet.containsAll(tags);
+    }
+
+    public Set<String> getHostServiceOfferingAndTemplateMissingTags(ServiceOffering serviceOffering, VirtualMachineTemplate template, Set<String> strictHostTags) {
+        Set<String> tags = getHostServiceOfferingAndTemplateStrictTags(serviceOffering, template, strictHostTags);
+        if (tags.isEmpty()) {
+            return new HashSet<>();
+        }
+        HashSet<String> hostTagsSet = new HashSet<>(getHostTags());
+        tags.removeAll(hostTagsSet);
+        return tags;
     }
 
     public boolean checkHostServiceOfferingTags(ServiceOffering serviceOffering) {

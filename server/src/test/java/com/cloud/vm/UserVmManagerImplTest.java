@@ -1565,7 +1565,7 @@ public class UserVmManagerImplTest {
     }
 
     @Test
-    public void testCheckEnforceStrictHostTagCheckPass() {
+    public void testValidateStrictHostTagCheckPass() {
         ServiceOfferingVO serviceOffering = Mockito.mock(ServiceOfferingVO.class);
         VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
 
@@ -1580,7 +1580,7 @@ public class UserVmManagerImplTest {
 
         Mockito.when(destinationHostVO.checkHostServiceOfferingAndTemplateTags(Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class), Mockito.anySet())).thenReturn(true);
 
-        userVmManagerImpl.checkEnforceStrictHostTagCheck(vm, destinationHostVO);
+        userVmManagerImpl.validateStrictHostTagCheck(vm, destinationHostVO);
 
         Mockito.verify(
                 destinationHostVO, Mockito.times(1)
@@ -1588,7 +1588,7 @@ public class UserVmManagerImplTest {
     }
 
     @Test(expected = InvalidParameterValueException.class)
-    public void testCheckEnforceStrictHostTagCheckFail() {
+    public void testValidateStrictHostTagCheckFail() {
         ServiceOfferingVO serviceOffering = Mockito.mock(ServiceOfferingVO.class);
         VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
 
@@ -1602,6 +1602,6 @@ public class UserVmManagerImplTest {
         Mockito.when(vm.getTemplateId()).thenReturn(2L);
 
         Mockito.when(destinationHostVO.checkHostServiceOfferingAndTemplateTags(Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class), Mockito.anySet())).thenReturn(false);
-        userVmManagerImpl.checkEnforceStrictHostTagCheck(vm, destinationHostVO);
+        userVmManagerImpl.validateStrictHostTagCheck(vm, destinationHostVO);
     }
 }

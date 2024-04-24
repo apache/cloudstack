@@ -2075,6 +2075,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             // Check disable threshold for cluster is not crossed
             HostVO host = _hostDao.findById(vmInstance.getHostId());
+            _hostDao.loadDetails(host);
             if (_capacityMgr.checkIfClusterCrossesThreshold(host.getClusterId(), cpuDiff, memoryDiff)) {
                 throw new CloudRuntimeException(String.format("Unable to scale %s due to insufficient resources.", vmInstance.toString()));
             }
@@ -2087,12 +2088,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     _resourceLimitMgr.updateVmResourceCountForServiceOfferingChange(caller.getAccountId(), vmInstance.isDisplay(),
                             (long) currentCpu, (long) newCpu, (long) currentMemory, (long) newMemory,
                             currentServiceOffering, newServiceOffering, template);
-                    // #1 Check existing host has capacity
+
+                    // #1 Check existing host has capacity & and the correct tags
                     if (!excludes.shouldAvoid(ApiDBUtils.findHostById(vmInstance.getHostId()))) {
                         existingHostHasCapacity = _capacityMgr.checkIfHostHasCpuCapability(vmInstance.getHostId(), newCpu, newSpeed)
                                 && _capacityMgr.checkIfHostHasCapacity(vmInstance.getHostId(), cpuDiff, ByteScaleUtils.mebibytesToBytes(memoryDiff), false,
                                         _capacityMgr.getClusterOverProvisioningFactor(host.getClusterId(), Capacity.CAPACITY_TYPE_CPU),
-                                        _capacityMgr.getClusterOverProvisioningFactor(host.getClusterId(), Capacity.CAPACITY_TYPE_MEMORY), false);
+                                        _capacityMgr.getClusterOverProvisioningFactor(host.getClusterId(), Capacity.CAPACITY_TYPE_MEMORY), false)
+                                && checkEnforceStrictHostTagCheck(vmInstance, host);
                         excludes.addHost(vmInstance.getHostId());
                     }
 
@@ -5490,7 +5493,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (destinationHost != null) {
             logger.debug("Destination Host to deploy the VM is specified, specifying a deployment plan to deploy the VM");
             _hostDao.loadHostTags(destinationHost);
-            checkEnforceStrictHostTagCheck(vm, destinationHost);
+            validateStrictHostTagCheck(vm, destinationHost);
 
             final ServiceOfferingVO offering = serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
             Pair<Boolean, Boolean> cpuCapabilityAndCapacity = _capacityMgr.checkIfHostHasCpuCapabilityAndCapacity(destinationHost, offering, false);
@@ -6705,16 +6708,26 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
     }
 
-    protected void checkEnforceStrictHostTagCheck(VMInstanceVO vm, HostVO host) {
+    protected boolean checkEnforceStrictHostTagCheck(VMInstanceVO vm, HostVO host) {
+        ServiceOffering serviceOffering = serviceOfferingDao.findByIdIncludingRemoved(vm.getServiceOfferingId());
+        VirtualMachineTemplate template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
+        return checkEnforceStrictHostTagCheck(host, serviceOffering, template);
+    }
+
+    private boolean checkEnforceStrictHostTagCheck(HostVO host, ServiceOffering serviceOffering, VirtualMachineTemplate template) {
+        Set<String> strictHostTags = UserVmManager.getStrictHostTags();
+        return host.checkHostServiceOfferingAndTemplateTags(serviceOffering, template, strictHostTags);
+    }
+
+    protected void validateStrictHostTagCheck(VMInstanceVO vm, HostVO host) {
         ServiceOffering serviceOffering = serviceOfferingDao.findByIdIncludingRemoved(vm.getServiceOfferingId());
         VirtualMachineTemplate template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
 
-        Set<String> strictHostTags = UserVmManager.getStrictHostTags();
-        if (!host.checkHostServiceOfferingAndTemplateTags(serviceOffering, template, strictHostTags)) {
-            s_logger.error(String.format(
-                    "Cannot deploy VM: %s to host : %s due to tag mismatch." +
-                            " strictHosts: %s serviceOffering tags: %s, template tags: %s",
-                    vm, host, strictHostTags, serviceOffering.getHostTag(), template.getTemplateTag()));
+        if (!checkEnforceStrictHostTagCheck(host, serviceOffering, template)) {
+            Set<String> missingTags = host.getHostServiceOfferingAndTemplateMissingTags(serviceOffering, template, UserVmManager.getStrictHostTags());
+            logger.error("Cannot deploy VM: {} to host : {} due to tag mismatch. host tags: {}, " +
+                            "strict host tags: {} serviceOffering tags: {}, template tags: {}, missing tags: {}",
+                    vm, host, host.getHostTags(), UserVmManager.getStrictHostTags(), serviceOffering.getHostTag(), template.getTemplateTag(), missingTags);
             throw new InvalidParameterValueException(String.format("Cannot deploy VM, destination host: %s " +
                     "is not compatible for the VM", host.getName()));
         }
@@ -6747,7 +6760,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         HostVO destinationHostVO = _hostDao.findById(destinationHost.getId());
         _hostDao.loadHostTags(destinationHostVO);
-        checkEnforceStrictHostTagCheck(vm, destinationHostVO);
+        validateStrictHostTagCheck(vm, destinationHostVO);
 
         checkHostsDedication(vm, srcHost.getId(), destinationHost.getId());
 

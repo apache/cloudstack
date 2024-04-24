@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -97,7 +98,9 @@ public class HostVOTest {
     @Test
     public void testNoTagOfferingTemplate() {
         assertTrue(host.checkHostServiceOfferingAndTemplateTags(offering, Mockito.mock(VirtualMachineTemplate.class), Collections.emptySet()));
+        assertTrue(host.getHostServiceOfferingAndTemplateMissingTags(offering, Mockito.mock(VirtualMachineTemplate.class), Collections.emptySet()).isEmpty());
         assertTrue(host.checkHostServiceOfferingAndTemplateTags(offering, Mockito.mock(VirtualMachineTemplate.class), Set.of("tag1", "tag2")));
+        assertTrue(host.getHostServiceOfferingAndTemplateMissingTags(offering, Mockito.mock(VirtualMachineTemplate.class), Set.of("tag1", "tag2")).isEmpty());
     }
 
     @Test
@@ -105,15 +108,25 @@ public class HostVOTest {
         host.setHostTags(Arrays.asList("tag1", "tag2"), false);
         offering.setHostTag("tag2,tag1");
         assertTrue(host.checkHostServiceOfferingAndTemplateTags(offering, Mockito.mock(VirtualMachineTemplate.class), Set.of("tag1")));
+        Set<String> actualMissingTags = host.getHostServiceOfferingAndTemplateMissingTags(offering, Mockito.mock(VirtualMachineTemplate.class), Set.of("tag1"));
+        assertTrue(actualMissingTags.isEmpty());
+
         host.setHostTags(Arrays.asList("tag1", "tag2", "tag3"), false);
         offering.setHostTag("tag2,tag1");
         VirtualMachineTemplate template = Mockito.mock(VirtualMachineTemplate.class);
         Mockito.when(template.getTemplateTag()).thenReturn("tag3");
         assertTrue(host.checkHostServiceOfferingAndTemplateTags(offering, template, Set.of("tag2", "tag3")));
+        actualMissingTags = host.getHostServiceOfferingAndTemplateMissingTags(offering, template, Set.of("tag2", "tag3"));
+        assertTrue(actualMissingTags.isEmpty());
         host.setHostTags(List.of("tag3"), false);
         offering.setHostTag(null);
         assertTrue(host.checkHostServiceOfferingAndTemplateTags(offering, template, Set.of("tag3")));
+        actualMissingTags = host.getHostServiceOfferingAndTemplateMissingTags(offering, template, Set.of("tag3"));
+        assertTrue(actualMissingTags.isEmpty());
+
         assertTrue(host.checkHostServiceOfferingAndTemplateTags(offering, template, Set.of("tag2", "tag1")));
+        actualMissingTags = host.getHostServiceOfferingAndTemplateMissingTags(offering, template, Set.of("tag2", "tag1"));
+        assertTrue(actualMissingTags.isEmpty());
     }
 
     @Test
@@ -123,9 +136,14 @@ public class HostVOTest {
         VirtualMachineTemplate template = Mockito.mock(VirtualMachineTemplate.class);
         Mockito.when(template.getTemplateTag()).thenReturn("tag1");
         assertFalse(host.checkHostServiceOfferingAndTemplateTags(offering, template, Set.of("tag1", "tag2", "tag3", "tag4")));
+        Set<String> actualMissingTags = host.getHostServiceOfferingAndTemplateMissingTags(offering, template, Set.of("tag1", "tag2", "tag3", "tag4"));
+        assertEquals(Set.of("tag4"), actualMissingTags);
+
         offering.setHostTag("tag1,tag2");
         template = Mockito.mock(VirtualMachineTemplate.class);
         Mockito.when(template.getTemplateTag()).thenReturn("tag3");
+        actualMissingTags = host.getHostServiceOfferingAndTemplateMissingTags(offering, template, Set.of("tag1", "tag2", "tag3", "tag4"));
         assertFalse(host.checkHostServiceOfferingAndTemplateTags(offering, template, Set.of("tag1", "tag2", "tag3", "tag4")));
+        assertEquals(Set.of("tag3"), actualMissingTags);
     }
 }

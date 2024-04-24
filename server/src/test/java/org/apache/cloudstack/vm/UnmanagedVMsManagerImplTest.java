@@ -302,7 +302,6 @@ public class UnmanagedVMsManagerImplTest {
         HostVO hostVO = Mockito.mock(HostVO.class);
         when(hostVO.isInMaintenanceStates()).thenReturn(false);
         hosts.add(hostVO);
-        when(hostVO.checkHostServiceOfferingAndTemplateTags(Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(true);
         when(resourceManager.listHostsInClusterByStatus(anyLong(), any(Status.class))).thenReturn(hosts);
         when(resourceManager.listAllUpAndEnabledHostsInOneZoneByHypervisor(any(Hypervisor.HypervisorType.class), anyLong())).thenReturn(hosts);
         List<VMTemplateStoragePoolVO> templates = new ArrayList<>();

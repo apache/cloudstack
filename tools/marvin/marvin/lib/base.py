@@ -776,12 +776,14 @@ class VirtualMachine:
         if response[0] == FAIL:
             raise Exception(response[1])
 
-    def restore(self, apiclient, templateid=None):
+    def restore(self, apiclient, templateid=None, expunge=None):
         """Restore the instance"""
         cmd = restoreVirtualMachine.restoreVirtualMachineCmd()
         cmd.virtualmachineid = self.id
         if templateid:
             cmd.templateid = templateid
+        if expunge:
+            cmd.expunge = expunge
         return apiclient.restoreVirtualMachine(cmd)
 
     def get_ssh_client(
@@ -1457,7 +1459,7 @@ class Template:
     @classmethod
     def register(cls, apiclient, services, zoneid=None,
                  account=None, domainid=None, hypervisor=None,
-                 projectid=None, details=None, randomize_name=True):
+                 projectid=None, details=None, randomize_name=True, templatetag=None):
         """Create template from URL"""
 
         # Create template from Virtual machine and Volume ID
@@ -1521,6 +1523,9 @@ class Template:
 
         if details:
             cmd.details = details
+
+        if templatetag:
+            cmd.templatetag = templatetag
 
         if "directdownload" in services:
             cmd.directdownload = services["directdownload"]
