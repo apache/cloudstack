@@ -151,28 +151,24 @@ public class DbUtilTest {
     public void getGlobalLock() throws SQLException {
         Mockito.when(dataSource.getConnection()).thenReturn(connection);
         Mockito.when(connection.prepareStatement(Matchers.anyString())).thenReturn(preparedStatement);
-        Mockito.when(preparedStatement.executeQuery()).thenReturn(resultSet);
-        Mockito.when(resultSet.first()).thenReturn(true);
-        Mockito.when(resultSet.getInt(1)).thenReturn(1);
+        Mockito.when(preparedStatement.executeUpdate()).thenReturn(1);
         Assert.assertTrue(DbUtil.getGlobalLock("TEST", 600));
 
         Mockito.verify(connection).prepareStatement(Matchers.anyString());
         Mockito.verify(preparedStatement).close();
-        Mockito.verify(resultSet).close();
     }
 
     @Test
     public void getGlobalLockTimeout() throws SQLException {
         Mockito.when(dataSource.getConnection()).thenReturn(connection);
         Mockito.when(connection.prepareStatement(Matchers.anyString())).thenReturn(preparedStatement);
-        Mockito.when(preparedStatement.executeQuery()).thenReturn(resultSet);
-        Mockito.when(resultSet.first()).thenReturn(true);
-        Mockito.when(resultSet.getInt(1)).thenReturn(0);
-        Assert.assertFalse(DbUtil.getGlobalLock("TEST", 600));
+        Mockito.when(preparedStatement.executeUpdate()).thenReturn(0);
 
-        Mockito.verify(connection).prepareStatement(Matchers.anyString());
-        Mockito.verify(preparedStatement).close();
-        Mockito.verify(resultSet).close();
+        final int tries = 2;
+        Assert.assertFalse(DbUtil.getGlobalLock("TEST", tries));
+
+        Mockito.verify(connection, Mockito.times(tries)).prepareStatement(Matchers.anyString());
+        Mockito.verify(preparedStatement, Mockito.times(tries)).close();
         Mockito.verify(connection).close();
 
         // if any error happens, the connection map must be cleared
@@ -238,13 +234,10 @@ public class DbUtilTest {
     @Test
     public void releaseGlobalLock() throws SQLException {
         Mockito.when(connection.prepareStatement(Matchers.anyString())).thenReturn(preparedStatement);
-        Mockito.when(preparedStatement.executeQuery()).thenReturn(resultSet);
-        Mockito.when(resultSet.first()).thenReturn(true);
-        Mockito.when(resultSet.getInt(1)).thenReturn(1);
+        Mockito.when(preparedStatement.executeUpdate()).thenReturn(1);
         connectionMap.put("testLock", connection);
         Assert.assertTrue(DbUtil.releaseGlobalLock("testLock"));
 
-        Mockito.verify(resultSet).close();
         Mockito.verify(preparedStatement).close();
         Mockito.verify(connection).close();
         Assert.assertFalse(connectionMap.containsKey("testLock"));
