@@ -89,7 +89,8 @@ export default {
       icon: 'edit-outlined',
       label: 'label.edit',
       dataView: true,
-      args: ['name', 'tags', 'istagarule', 'capacitybytes', 'capacityiops']
+      popup: true,
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/UpdatePrimaryStorage.vue')))
     },
     {
       api: 'updateStoragePool',
@@ -108,16 +109,6 @@ export default {
       dataView: true,
       defaultArgs: { enabled: true },
       show: (record) => { return record.state === 'Disabled' }
-    },
-    {
-      api: 'updateStoragePool',
-      icon: 'control-outlined',
-      label: 'label.action.edit.nfs.options',
-      message: 'message.action.edit.nfs.options',
-      dataView: true,
-      popup: true,
-      show: (record) => { return (record.type === 'NetworkFilesystem' && record.state === 'Maintenance' && (record.hypervisor === 'KVM' || record.hypervisor === 'Simulator')) },
-      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/NFSMountOptsPrimaryStorage.vue')))
     },
     {
       api: 'syncStoragePool',
