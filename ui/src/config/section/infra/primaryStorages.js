@@ -116,7 +116,7 @@ export default {
       message: 'message.action.edit.nfs.options',
       dataView: true,
       popup: true,
-      show: (record) => { return (record.type === 'NetworkFilesystem' && record.hypervisor === 'KVM' && record.state === 'Maintenance') },
+      show: (record) => { return (record.type === 'NetworkFilesystem' && record.state === 'Maintenance' && (record.hypervisor === 'KVM' || record.hypervisor === 'Simulator')) },
       component: shallowRef(defineAsyncComponent(() => import('@/views/infra/NFSMountOptsPrimaryStorage.vue')))
     },
     {

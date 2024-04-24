@@ -31,7 +31,7 @@
             </template>
           </a-alert>
           <p></p>
-          <a-form-item name="nfsMountOpts" ref="nfsMountOpts" :label="$t('label.nfsmountopts')">
+          <a-form-item name="nfsMountOpts" ref="nfsMountOpts">
             <template #label>
               <tooltip-label :title="$t('label.nfsmountopts')" :tooltip="$t('message.nfs.nfsmountopts.description')"/>
             </template>
