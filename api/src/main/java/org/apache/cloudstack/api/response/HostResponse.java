@@ -218,8 +218,12 @@ public class HostResponse extends BaseResponseWithAnnotations {
     private String events;
 
     @SerializedName("hosttags")
-    @Param(description = "comma-separated list of explicit host tags for the host")
+    @Param(description = "comma-separated list of tags for the host")
     private String hostTags;
+
+    @SerializedName("explicithosttags")
+    @Param(description = "comma-separated list of explicit host tags for the host", since = "4.20.0")
+    private String explicitHostTags;
 
     @SerializedName("implicithosttags")
     @Param(description = "comma-separated list of implicit host tags for the host", since = "4.20.0")
@@ -460,6 +464,14 @@ public class HostResponse extends BaseResponseWithAnnotations {
 
     public void setHostTags(String hostTags) {
         this.hostTags = hostTags;
+    }
+
+    public String getExplicitHostTags() {
+        return explicitHostTags;
+    }
+
+    public void setExplicitHostTags(String explicitHostTags) {
+        this.explicitHostTags = explicitHostTags;
     }
 
     public String getImplicitHostTags() {

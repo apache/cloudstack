@@ -84,7 +84,7 @@ class TestHostTags(cloudstackTestCase):
 
         ssh_client.execute(command)
 
-    def wait_until_host_is_up_and_verify_hosttags(self, hosttags, implicithosttags, interval=3, retries=20):
+    def wait_until_host_is_up_and_verify_hosttags(self, explicithosttags, implicithosttags, interval=3, retries=20):
         def check_host_state():
             hosts = Host.list(
                 self.apiclient,
@@ -94,11 +94,11 @@ class TestHostTags(cloudstackTestCase):
                 host = hosts[0]
                 if host.state == "Up":
                     self.logger.debug("Host %s is in Up state" % host.name)
-                    self.logger.debug("Host hosttags is %s, implicit hosttags is %s" % (host.hosttags, host.implicithosttags))
-                    if hosttags:
-                        self.assertEquals(hosttags, host.hosttags)
+                    self.logger.debug("Host explicithosttags is %s, implicit hosttags is %s" % (host.explicithosttags, host.implicithosttags))
+                    if explicithosttags:
+                        self.assertEquals(explicithosttags, host.explicithosttags)
                     else:
-                        self.assertIsNone(host.hosttags)
+                        self.assertIsNone(host.explicithosttags)
                     if implicithosttags:
                         self.assertEquals(implicithosttags, host.implicithosttags)
                     else:
@@ -118,43 +118,43 @@ class TestHostTags(cloudstackTestCase):
         """Test implicit/explicit host tags
         """
 
-        # update hosttags to "s1,s2"
-        hosttags="s1,s2"
+        # update explicit host tags to "s1,s2"
+        explicithosttags="s1,s2"
         implicithosttags=self.host.implicithosttags
-        self.update_host_tags_via_api(hosttags)
-        self.wait_until_host_is_up_and_verify_hosttags(hosttags, implicithosttags)
+        self.update_host_tags_via_api(explicithosttags)
+        self.wait_until_host_is_up_and_verify_hosttags(explicithosttags, implicithosttags)
 
         # update implicit host tags to "d1,d2"
         implicithosttags="d1,d2"
         self.update_implicit_host_tags_via_agent_properties(implicithosttags)
-        self.wait_until_host_is_up_and_verify_hosttags(hosttags, implicithosttags)
+        self.wait_until_host_is_up_and_verify_hosttags(explicithosttags, implicithosttags)
 
-        # update hosttags to "s3,s4"
-        hosttags="s3,s4"
-        self.update_host_tags_via_api(hosttags)
-        self.wait_until_host_is_up_and_verify_hosttags(hosttags, implicithosttags)
+        # update explicit host tags to "s3,s4"
+        explicithosttags="s3,s4"
+        self.update_host_tags_via_api(explicithosttags)
+        self.wait_until_host_is_up_and_verify_hosttags(explicithosttags, implicithosttags)
 
         # update implicit host tags to "d3,d4"
         implicithosttags="d3,d4"
         self.update_implicit_host_tags_via_agent_properties(implicithosttags)
-        self.wait_until_host_is_up_and_verify_hosttags(hosttags, implicithosttags)
+        self.wait_until_host_is_up_and_verify_hosttags(explicithosttags, implicithosttags)
 
         # update hosttags to ""
-        hosttags=""
-        self.update_host_tags_via_api(hosttags)
-        self.wait_until_host_is_up_and_verify_hosttags(hosttags, implicithosttags)
+        explicithosttags=""
+        self.update_host_tags_via_api(explicithosttags)
+        self.wait_until_host_is_up_and_verify_hosttags(explicithosttags, implicithosttags)
 
         # update implicit host tags to ""
         implicithosttags=""
         self.update_implicit_host_tags_via_agent_properties(implicithosttags)
-        self.wait_until_host_is_up_and_verify_hosttags(hosttags, implicithosttags)
+        self.wait_until_host_is_up_and_verify_hosttags(explicithosttags, implicithosttags)
 
-        # update hosttags to "s1,s2"
-        hosttags="s1,s2"
-        self.update_host_tags_via_api(hosttags)
-        self.wait_until_host_is_up_and_verify_hosttags(hosttags, implicithosttags)
+        # update explicit host tags to "s1,s2"
+        explicithosttags="s1,s2"
+        self.update_host_tags_via_api(explicithosttags)
+        self.wait_until_host_is_up_and_verify_hosttags(explicithosttags, implicithosttags)
 
         # update implicit host tags to "d1,d2"
         implicithosttags="d1,d2"
         self.update_implicit_host_tags_via_agent_properties(implicithosttags)
-        self.wait_until_host_is_up_and_verify_hosttags(hosttags, implicithosttags)
+        self.wait_until_host_is_up_and_verify_hosttags(explicithosttags, implicithosttags)

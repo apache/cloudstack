@@ -56,6 +56,14 @@
           </div>
         </div>
       </a-list-item>
+      <a-list-item v-if="host.explicithosttags">
+        <div>
+          <strong>{{ $t('label.hosttags.explicit') }}</strong>
+          <div>
+            {{ host.explicithosttags }}
+          </div>
+        </div>
+      </a-list-item>
       <a-list-item v-if="host.implicithosttags">
         <div>
           <strong>{{ $t('label.hosttags.implicit') }}</strong>

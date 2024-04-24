@@ -3680,7 +3680,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         String hostTags = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST_TAGS);
         if (StringUtils.isNotBlank(hostTags)) {
             for (String hostTag : hostTags.split(",")) {
-                hostTagsList.add(hostTag.trim());
+                if (!hostTagsList.contains(hostTag.trim())) {
+                    hostTagsList.add(hostTag.trim());
+                }
             }
         }
         return hostTagsList;
