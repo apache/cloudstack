@@ -97,7 +97,6 @@
 
         <module>network-elements/bigswitch</module>
         <module>network-elements/dns-notifier</module>
-        <module>network-elements/juniper-contrail</module>
         <module>network-elements/elastic-loadbalancer</module>
         <module>network-elements/globodns</module>
         <module>network-elements/internal-loadbalancer</module>
@@ -195,6 +194,7 @@
                 <module>backup/veeam</module>
                 <module>hypervisors/vmware</module>
                 <module>network-elements/cisco-vnmc</module>
+                <module>network-elements/juniper-contrail</module>
             </modules>
         </profile>
         <profile>

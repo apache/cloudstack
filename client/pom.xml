@@ -29,10 +29,6 @@
     </parent>
     <repositories>
         <repository>
-            <id>juniper-contrail</id>
-            <url>https://juniper.github.io/contrail-maven/snapshots</url>
-        </repository>
-        <repository>
             <id>juniper-tungsten-api</id>
             <url>https://github.com/radu-todirica/tungsten-api/raw/master</url>
         </repository>
@@ -199,11 +195,6 @@
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-network-nvp</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.cloudstack</groupId>
-            <artifactId>cloud-plugin-network-contrail</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -974,6 +965,11 @@
                 <dependency>
                     <groupId>org.apache.cloudstack</groupId>
                     <artifactId>cloud-plugin-api-vmware-sioc</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.cloudstack</groupId>
+                    <artifactId>cloud-plugin-network-contrail</artifactId>
                     <version>${project.version}</version>
                 </dependency>
                 <dependency>
