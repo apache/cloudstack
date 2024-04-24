@@ -19,25 +19,18 @@
 
 package com.cloud.utils.net;
 
-import static com.cloud.utils.AutoCloseableUtil.closeAutoCloseable;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.Enumeration;
 import java.util.Formatter;
-
-import org.apache.log4j.Logger;
 
 /**
  * This class retrieves the (first) MAC address for the machine is it is loaded on and stores it statically for retrieval.
  * It can also be used for formatting MAC addresses.
- * copied fnd addpeted rom the public domain utility from John Burkard.
  **/
 public class MacAddress {
-    private static final Logger s_logger = Logger.getLogger(MacAddress.class);
     private long _addr = 0;
 
     protected MacAddress() {
@@ -79,209 +72,45 @@ public class MacAddress {
     static {
         String macAddress = null;
 
-        Process p = null;
-        BufferedReader in = null;
-
         try {
-            String osname = System.getProperty("os.name");
-
-            if (osname.startsWith("Windows")) {
-                p = Runtime.getRuntime().exec(new String[] {"ipconfig", "/all"}, null);
-            } else if (osname.startsWith("Solaris") || osname.startsWith("SunOS")) {
-                // Solaris code must appear before the generic code
-                String hostName = MacAddress.getFirstLineOfCommand(new String[] {"uname", "-n"});
-                if (hostName != null) {
-                    p = Runtime.getRuntime().exec(new String[] {"/usr/sbin/arp", hostName}, null);
-                }
-            } else if (new File("/usr/sbin/lanscan").exists()) {
-                p = Runtime.getRuntime().exec(new String[] {"/usr/sbin/lanscan"}, null);
-            } else if (new File("/sbin/ifconfig").exists()) {
-                p = Runtime.getRuntime().exec(new String[] {"/sbin/ifconfig", "-a"}, null);
-            }
-
-            if (p != null) {
-                in = new BufferedReader(new InputStreamReader(p.getInputStream()), 128);
-                String l = null;
-                while ((l = in.readLine()) != null) {
-                    macAddress = MacAddress.parse(l);
-                    if (macAddress != null) {
-                        short parsedShortMacAddress = MacAddress.parseShort(macAddress);
-                        if (parsedShortMacAddress != 0xff && parsedShortMacAddress != 0x00)
-                            break;
-                    }
-                    macAddress = null;
-                }
-            }
-
-        } catch (SecurityException ex) {
-            s_logger.info("[ignored] security exception in static initializer of MacAddress", ex);
-        } catch (IOException ex) {
-            s_logger.info("[ignored] io exception in static initializer of MacAddress");
-        } finally {
-            if (p != null) {
-                closeAutoCloseable(in, "closing init process input stream");
-                closeAutoCloseable(p.getErrorStream(), "closing init process error output stream");
-                closeAutoCloseable(p.getOutputStream(), "closing init process std output stream");
-                p.destroy();
-            }
+            Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
+            while (networkInterfaces.hasMoreElements()) {
+                 NetworkInterface network = networkInterfaces.nextElement();
+                 final byte [] mac = network.getHardwareAddress();
+                 if (mac != null && !network.isVirtual() &&
+                         !network.getName().startsWith("br-") &&
+                         !network.getName().startsWith("veth") &&
+                         !network.getName().startsWith("vnet")) {
+                     StringBuilder macAddressBuilder = new StringBuilder();
+                     for (byte b : mac) {
+                         macAddressBuilder.append(String.format("%02X", b));
+                     }
+                     macAddress = macAddressBuilder.toString();
+                 }
+             }
+        } catch (SocketException ignore) {
         }
 
-        long clockSeqAndNode = 0;
+        long macAddressInLong = 0;
 
         if (macAddress != null) {
-            if (macAddress.indexOf(':') != -1) {
-                clockSeqAndNode |= MacAddress.parseLong(macAddress);
-            } else if (macAddress.startsWith("0x")) {
-                clockSeqAndNode |= MacAddress.parseLong(macAddress.substring(2));
-            }
+            macAddressInLong = Long.parseLong(macAddress, 16);
         } else {
             try {
                 byte[] local = InetAddress.getLocalHost().getAddress();
-                clockSeqAndNode |= (local[0] << 24) & 0xFF000000L;
-                clockSeqAndNode |= (local[1] << 16) & 0xFF0000;
-                clockSeqAndNode |= (local[2] << 8) & 0xFF00;
-                clockSeqAndNode |= local[3] & 0xFF;
+                macAddressInLong |= (local[0] << 24) & 0xFF000000L;
+                macAddressInLong |= (local[1] << 16) & 0xFF0000;
+                macAddressInLong |= (local[2] << 8) & 0xFF00;
+                macAddressInLong |= local[3] & 0xFF;
             } catch (UnknownHostException ex) {
-                clockSeqAndNode |= (long)(Math.random() * 0x7FFFFFFF);
+                macAddressInLong |= (long)(Math.random() * 0x7FFFFFFF);
             }
         }
 
-        s_address = new MacAddress(clockSeqAndNode);
+        s_address = new MacAddress(macAddressInLong);
     }
 
     public static MacAddress getMacAddress() {
         return s_address;
-    }
-
-    private static String getFirstLineOfCommand(String[] commands) throws IOException {
-
-        Process p = null;
-        BufferedReader reader = null;
-
-        try {
-            p = Runtime.getRuntime().exec(commands);
-            reader = new BufferedReader(new InputStreamReader(p.getInputStream()), 128);
-
-            return reader.readLine();
-        } finally {
-            if (p != null) {
-                closeAutoCloseable(reader, "closing process input stream");
-                closeAutoCloseable(p.getErrorStream(), "closing process error output stream");
-                closeAutoCloseable(p.getOutputStream(), "closing process std output stream");
-                p.destroy();
-            }
-        }
-
-    }
-
-    /**
-     * The MAC address parser attempts to find the following patterns:
-     * <ul>
-     * <li>.{1,2}:.{1,2}:.{1,2}:.{1,2}:.{1,2}:.{1,2}</li>
-     * <li>.{1,2}-.{1,2}-.{1,2}-.{1,2}-.{1,2}-.{1,2}</li>
-     * </ul>
-     *
-     * This is copied from the author below.  The author encouraged copying
-     * it.
-     *
-     */
-    static String parse(String in) {
-
-        // lanscan
-
-        int hexStart = in.indexOf("0x");
-        if (hexStart != -1) {
-            int hexEnd = in.indexOf(' ', hexStart);
-            if (hexEnd != -1) {
-                return in.substring(hexStart, hexEnd);
-            }
-        }
-
-        int octets = 0;
-        int lastIndex, old, end;
-
-        if (in.indexOf('-') > -1) {
-            in = in.replace('-', ':');
-        }
-
-        lastIndex = in.lastIndexOf(':');
-
-        if (lastIndex > in.length() - 2)
-            return null;
-
-        end = Math.min(in.length(), lastIndex + 3);
-
-        ++octets;
-        old = lastIndex;
-        while (octets != 5 && lastIndex != -1 && lastIndex > 1) {
-            lastIndex = in.lastIndexOf(':', --lastIndex);
-            if (old - lastIndex == 3 || old - lastIndex == 2) {
-                ++octets;
-                old = lastIndex;
-            }
-        }
-
-        if (octets == 5 && lastIndex > 1) {
-            return in.substring(lastIndex - 2, end).trim();
-        }
-        return null;
-    }
-
-    /**
-     * Parses a <code>long</code> from a hex encoded number. This method will skip
-     * all characters that are not 0-9 and a-f (the String is lower cased first).
-     * Returns 0 if the String does not contain any interesting characters.
-     *
-     * @param s the String to extract a <code>long</code> from, may not be <code>null</code>
-     * @return a <code>long</code>
-     * @throws NullPointerException if the String is <code>null</code>
-     */
-    private static long parseLong(String s) throws NullPointerException {
-        s = s.toLowerCase();
-        long out = 0;
-        byte shifts = 0;
-        char c;
-        for (int i = 0; i < s.length() && shifts < 16; i++) {
-            c = s.charAt(i);
-            if ((c > 47) && (c < 58)) {
-                out <<= 4;
-                ++shifts;
-                out |= c - 48;
-            } else if ((c > 96) && (c < 103)) {
-                ++shifts;
-                out <<= 4;
-                out |= c - 87;
-            }
-        }
-        return out;
-    }
-
-    /**
-     * Parses a <code>short</code> from a hex encoded number. This method will skip
-     * all characters that are not 0-9 and a-f (the String is lower cased first).
-     * Returns 0 if the String does not contain any interesting characters.
-     *
-     * @param s the String to extract a <code>short</code> from, may not be <code>null</code>
-     * @return a <code>short</code>
-     * @throws NullPointerException if the String is <code>null</code>
-     */
-    private static short parseShort(String s) throws NullPointerException {
-        s = s.toLowerCase();
-        short out = 0;
-        byte shifts = 0;
-        char c;
-        for (int i = 0; i < s.length() && shifts < 4; i++) {
-            c = s.charAt(i);
-            if ((c > 47) && (c < 58)) {
-                out <<= 4;
-                ++shifts;
-                out |= c - 48;
-            } else if ((c > 96) && (c < 103)) {
-                ++shifts;
-                out <<= 4;
-                out |= c - 87;
-            }
-        }
-        return out;
     }
 }
