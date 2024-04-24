@@ -320,3 +320,4 @@ jobs:
           flags: simulator-marvin-tests
           verbose: true
           name: codecov
+          token: ${{ secrets.CODECOV_TOKEN }}

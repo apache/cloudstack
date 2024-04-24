@@ -7850,8 +7850,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
         _accountMgr.checkAccess(caller, null, true, vm);
 
+        VMTemplateVO template;
+        if (newTemplateId != null) {
+            template = _templateDao.findById(newTemplateId);
+            if (template == null) {
+                throw new InvalidParameterValueException("Cannot find template with ID " + newTemplateId);
+            }
+        } else {
+            template = _templateDao.findById(vm.getTemplateId());
+            if (template == null) {
+                throw new InvalidParameterValueException("Cannot find template linked with VM");
+            }
+        }
         DiskOffering diskOffering = rootDiskOfferingId != null ? validateAndGetDiskOffering(rootDiskOfferingId, vm, caller) : null;
-        VMTemplateVO template = _templateDao.findById(newTemplateId);
         if (template.getSize() != null) {
             String rootDiskSize = details.get(VmDetailConstants.ROOT_DISK_SIZE);
             Long templateSize = template.getSize();
