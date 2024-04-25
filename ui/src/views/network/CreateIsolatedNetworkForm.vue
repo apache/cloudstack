@@ -434,7 +434,6 @@ export default {
         domainid: this.$store.getters.userInfo.domainid,
         account: this.$store.getters.userInfo.account
       }
-      console.log(this.owner)
       if (OwnerOptions.selectedAccountType === this.$t('label.account')) {
         if (!OwnerOptions.selectedAccount) {
           return
