@@ -1563,4 +1563,37 @@ public class UserVmManagerImplTest {
             Assert.fail(e.getMessage());
         }
     }
+
+    @Test
+    public void testGetRootVolumeSizeForVmTemplateRestore() {
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(template.getSize()).thenReturn(10L * GiB_TO_BYTES);
+        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+        Mockito.when(userVm.getId()).thenReturn(1L);
+        DiskOffering diskOffering = Mockito.mock(DiskOffering.class);
+        Mockito.when(diskOffering.isCustomized()).thenReturn(false);
+        Mockito.when(diskOffering.getDiskSize()).thenReturn(8L * GiB_TO_BYTES);
+        Map<String, String> details = new HashMap<>();
+        details.put(VmDetailConstants.ROOT_DISK_SIZE, "16");
+        UserVmDetailVO vmRootDiskSizeDetail = Mockito.mock(UserVmDetailVO.class);
+        Mockito.when(vmRootDiskSizeDetail.getValue()).thenReturn("20");
+        Mockito.when(userVmDetailsDao.findDetail(1L, VmDetailConstants.ROOT_DISK_SIZE)).thenReturn(vmRootDiskSizeDetail);
+        Long actualSize = userVmManagerImpl.getRootVolumeSizeForVmTemplateRestore(userVm, template, diskOffering, details);
+        Assert.assertEquals(16 * GiB_TO_BYTES, actualSize.longValue());
+    }
+
+    @Test
+    public void testGetRootVolumeSizeForVmTemplateRestoreNullDiskOfferingAndEmptyDetails() {
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(template.getSize()).thenReturn(10L * GiB_TO_BYTES);
+        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+        Mockito.when(userVm.getId()).thenReturn(1L);
+        DiskOffering diskOffering = null;
+        Map<String, String> details = new HashMap<>();
+        UserVmDetailVO vmRootDiskSizeDetail = Mockito.mock(UserVmDetailVO.class);
+        Mockito.when(vmRootDiskSizeDetail.getValue()).thenReturn("20");
+        Mockito.when(userVmDetailsDao.findDetail(1L, VmDetailConstants.ROOT_DISK_SIZE)).thenReturn(vmRootDiskSizeDetail);
+        Long actualSize = userVmManagerImpl.getRootVolumeSizeForVmTemplateRestore(userVm, template, diskOffering, details);
+        Assert.assertEquals(20 * GiB_TO_BYTES, actualSize.longValue());
+    }
 }

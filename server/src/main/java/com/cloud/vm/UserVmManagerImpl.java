@@ -7980,7 +7980,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         for (VolumeVO root : rootVols) {
-            if ( !Volume.State.Allocated.equals(root.getState()) || newTemplateId != null ) {
+            if ( !Volume.State.Allocated.equals(root.getState()) || newTemplateId != null || diskOffering != null) {
                 _volumeService.validateDestroyVolume(root, caller, Volume.State.Allocated.equals(root.getState()) || expunge, false);
                 final UserVmVO userVm = vm;
                 Pair<UserVmVO, Volume> vmAndNewVol = Transaction.execute(new TransactionCallbackWithException<Pair<UserVmVO, Volume>, CloudRuntimeException>() {
@@ -8185,7 +8185,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      * @param template template
      * @throws InvalidParameterValueException if restore is not possible
      */
-    private void checkRestoreVmFromTemplate(UserVmVO vm, VMTemplateVO template, List<VolumeVO> volumes, DiskOffering newDiskOffering, Map<String,String> details) throws ResourceAllocationException {
+    private void checkRestoreVmFromTemplate(UserVmVO vm, VMTemplateVO template, List<VolumeVO> rootVolumes, DiskOffering newDiskOffering, Map<String,String> details) throws ResourceAllocationException {
         TemplateDataStoreVO tmplStore;
         if (!template.isDirectDownload()) {
             tmplStore = _templateStoreDao.findByTemplateZoneReady(template.getId(), vm.getDataCenterId());
@@ -8206,19 +8206,45 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             _resourceLimitMgr.checkVmResourceLimitsForTemplateChange(owner, vm.isDisplay(), serviceOffering, currentTemplate, template);
         }
 
-        Long newSize = newDiskOffering != null ? newDiskOffering.getDiskSize() : null;
-        if (MapUtils.isNotEmpty(details) && StringUtils.isNumeric(details.get(VmDetailConstants.ROOT_DISK_SIZE))) {
-            newSize = Long.parseLong(details.get(VmDetailConstants.ROOT_DISK_SIZE)) * GiB_TO_BYTES;
+        Long newSize = getRootVolumeSizeForVmTemplateRestore(vm, template, newDiskOffering, details);
+        for (Volume vol : rootVolumes) {
+            if (newSize == null) {
+                newSize = vol.getSize();
+            }
+            if (newDiskOffering != null || !vol.getSize().equals(newSize)) {
+                DiskOffering currentOffering = _diskOfferingDao.findById(vol.getDiskOfferingId());
+                _resourceLimitMgr.checkVolumeResourceLimitForDiskOfferingChange(owner, vol.isDisplay(),
+                        vol.getSize(), newSize, currentOffering, newDiskOffering);
+            }
         }
-        if (newDiskOffering != null || newSize != null) {
-            for (Volume vol : volumes) {
-                if (newDiskOffering != null || !vol.getSize().equals(newSize)) {
-                    DiskOffering currentOffering = _diskOfferingDao.findById(vol.getDiskOfferingId());
-                    _resourceLimitMgr.checkVolumeResourceLimitForDiskOfferingChange(owner, vol.isDisplay(),
-                            vol.getSize(), newSize, currentOffering, newDiskOffering);
+    }
+
+    protected Long getRootVolumeSizeForVmTemplateRestore(
+            UserVmVO userVm, VMTemplateVO template, DiskOffering diskOffering, Map<String, String> details
+    ) {
+        Long size = null;
+        if (template != null && template.getSize() != null) {
+            UserVmDetailVO vmRootDiskSizeDetail = userVmDetailsDao.findDetail(userVm.getId(), VmDetailConstants.ROOT_DISK_SIZE);
+            if (vmRootDiskSizeDetail == null) {
+                size = template.getSize();
+            } else {
+                long rootDiskSize = Long.parseLong(vmRootDiskSizeDetail.getValue()) * GiB_TO_BYTES;
+                if (template.getSize() >= rootDiskSize) {
+                    size = template.getSize();
+                } else {
+                    size = rootDiskSize;
                 }
             }
         }
+
+        if (diskOffering != null && !diskOffering.isCustomized()) {
+            size = diskOffering.getDiskSize();
+        }
+
+        if (MapUtils.isNotEmpty(details) && StringUtils.isNumeric(details.get(VmDetailConstants.ROOT_DISK_SIZE))) {
+            size = Long.parseLong(details.get(VmDetailConstants.ROOT_DISK_SIZE)) * GiB_TO_BYTES;
+        }
+        return size;
     }
 
     private void handleManagedStorage(UserVmVO vm, VolumeVO root) {
