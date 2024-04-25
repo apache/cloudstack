@@ -35,6 +35,7 @@ import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.Ternary;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
@@ -1112,6 +1113,13 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     }
 
     protected boolean updateResourceCountForAccount(final long accountId, final ResourceType type, String tag, final boolean increment, final long delta) {
+        if (delta == 0) {
+            return true;
+        } else if (delta < 0) {
+            logger.warn("Resource count delta is negative, delta = {} for Account = {} Type = {} tag = {}",
+                    delta, accountId, type, tag);
+            return true;
+        }
         if (logger.isDebugEnabled()) {
             String convertedDelta = String.valueOf(delta);
             if (type == ResourceType.secondary_storage || type == ResourceType.primary_storage){
@@ -1231,6 +1239,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 accountRC.setCount((newCount == null) ? 0 : newCount);
                 _resourceCountDao.update(accountRC.getId(), accountRC);
             }
+        } else if (newCount != null) {
+            _resourceCountDao.persist(new ResourceCountVO(type, newCount, accountId, ResourceOwnerType.Account, tag));
         }
 
         // No need to log message for primary and secondary storage because both are recalculating the
@@ -1631,6 +1641,30 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
     }
 
+    @Override
+    public void checkVolumeResourceLimitForDiskOfferingChange(Account owner, Boolean display, Long currentSize, Long newSize,
+            DiskOffering currentOffering, DiskOffering newOffering
+    ) throws ResourceAllocationException {
+        Ternary<Set<String>, Set<String>, Set<String>> updatedResourceLimitStorageTags = getResourceLimitStorageTagsForDiskOfferingChange(display, currentOffering, newOffering);
+        if (updatedResourceLimitStorageTags == null) {
+            return;
+        }
+
+        Set<String> sameTags = updatedResourceLimitStorageTags.first();
+        Set<String> newTags = updatedResourceLimitStorageTags.second();
+
+        if (newSize > currentSize) {
+            for (String tag : sameTags) {
+                checkResourceLimitWithTag(owner, ResourceType.primary_storage, tag, newSize - currentSize);
+            }
+        }
+
+        for (String tag : newTags) {
+            checkResourceLimitWithTag(owner, ResourceType.volume, tag, 1L);
+            checkResourceLimitWithTag(owner, ResourceType.primary_storage, tag, newSize);
+        }
+    }
+
     @DB
     @Override
     public void incrementVolumeResourceCount(long accountId, Boolean display, Long size, DiskOffering diskOffering) {
@@ -1669,6 +1703,144 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 }
             }
         });
+    }
+
+    @Override
+    public void updateVmResourceCountForTemplateChange(long accountId, Boolean display, ServiceOffering offering,
+            VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate
+    ) {
+        updateVmResourceCountForServiceOfferingAndTemplateChange(accountId, display, null, null, null, null,
+                offering, offering, currentTemplate, newTemplate);
+    }
+
+    @Override
+    public void updateVmResourceCountForServiceOfferingChange(long accountId, Boolean display, Long currentCpu, Long newCpu,Long currentMemory, Long newMemory,
+            ServiceOffering currentOffering, ServiceOffering newOffering, VirtualMachineTemplate template
+    ) {
+        updateVmResourceCountForServiceOfferingAndTemplateChange(accountId, display, currentCpu, newCpu, currentMemory, newMemory, currentOffering,
+                newOffering != null ? newOffering : currentOffering, template, template);
+    }
+
+    private Ternary<Set<String>, Set<String>, Set<String>> getResourceLimitHostTagsForVmServiceOfferingAndTemplateChange(
+            Boolean display, ServiceOffering currentOffering, ServiceOffering newOffering,
+            VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate
+    ) {
+        Set<String> currentOfferingTags = new HashSet<>(getResourceLimitHostTagsForResourceCountOperation(display, currentOffering, currentTemplate));
+        if (currentOffering.getId() == newOffering.getId() && currentTemplate.getId() == newTemplate.getId()) {
+            return new Ternary<>(currentOfferingTags, new HashSet<>(), new HashSet<>());
+        }
+        Set<String> newOfferingTags = new HashSet<>(getResourceLimitHostTagsForResourceCountOperation(display, newOffering, newTemplate));
+
+        if (currentOfferingTags.isEmpty() && newOfferingTags.isEmpty()) {
+            return null;
+        }
+        Set<String> sameTags = currentOfferingTags.stream().filter(newOfferingTags::contains).collect(Collectors.toSet());;
+        Set<String> newTags = newOfferingTags.stream().filter(tag -> !currentOfferingTags.contains(tag)).collect(Collectors.toSet());
+        Set<String> removedTags = currentOfferingTags.stream().filter(tag -> !newOfferingTags.contains(tag)).collect(Collectors.toSet());
+        return new Ternary<>(sameTags, newTags, removedTags);
+    }
+
+    private void updateVmResourceCountForServiceOfferingAndTemplateChange(long accountId, Boolean display, Long currentCpu,
+            Long newCpu, Long currentMemory, Long newMemory, ServiceOffering currentOffering, ServiceOffering newOffering,
+            VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate
+    ) {
+        Ternary<Set<String>, Set<String>, Set<String>> updatedResourceLimitHostTags = getResourceLimitHostTagsForVmServiceOfferingAndTemplateChange(display, currentOffering, newOffering, currentTemplate, newTemplate);
+        if (updatedResourceLimitHostTags == null) {
+            return;
+        }
+        if (currentCpu == null) {
+            currentCpu = currentOffering.getCpu() != null ? Long.valueOf(currentOffering.getCpu()) : 0L;
+        }
+        if (newCpu == null) {
+            newCpu = newOffering.getCpu() != null ? Long.valueOf(newOffering.getCpu()) : 0L;
+        }
+        if (currentMemory == null) {
+            currentMemory = currentOffering.getRamSize() != null ? Long.valueOf(currentOffering.getRamSize()) : 0L;
+        }
+        if (newMemory == null) {
+            newMemory = newOffering.getRamSize() != null ? Long.valueOf(newOffering.getRamSize()) : 0L;
+        }
+
+        Set<String> sameTags = updatedResourceLimitHostTags.first();
+        Set<String> newTags = updatedResourceLimitHostTags.second();
+        Set<String> removedTags = updatedResourceLimitHostTags.third();
+
+        if (!newCpu.equals(currentCpu) || !newMemory.equals(currentMemory)) {
+            for (String tag : sameTags) {
+                if (newCpu - currentCpu > 0) {
+                    incrementResourceCountWithTag(accountId, ResourceType.cpu, tag, newCpu - currentCpu);
+                } else if (newCpu - currentCpu < 0) {
+                    decrementResourceCountWithTag(accountId, ResourceType.cpu, tag, currentCpu - newCpu);
+                }
+
+                if (newMemory - currentMemory > 0) {
+                    incrementResourceCountWithTag(accountId, ResourceType.memory, tag, newMemory - currentMemory);
+                } else if (newMemory - currentMemory < 0) {
+                    decrementResourceCountWithTag(accountId, ResourceType.memory, tag, currentMemory - newMemory);
+                }
+            }
+        }
+
+        for (String tag : removedTags) {
+            decrementResourceCountWithTag(accountId, ResourceType.user_vm, tag, 1L);
+            decrementResourceCountWithTag(accountId, ResourceType.cpu, tag, currentCpu);
+            decrementResourceCountWithTag(accountId, ResourceType.memory, tag, currentMemory);
+        }
+
+        for (String tag : newTags) {
+            incrementResourceCountWithTag(accountId, ResourceType.user_vm, tag, 1L);
+            incrementResourceCountWithTag(accountId, ResourceType.cpu, tag, newCpu);
+            incrementResourceCountWithTag(accountId, ResourceType.memory, tag, newMemory);
+        }
+    }
+
+    private Ternary<Set<String>, Set<String>, Set<String>> getResourceLimitStorageTagsForDiskOfferingChange(
+            Boolean display, DiskOffering currentOffering, DiskOffering newOffering
+    ) {
+        Set<String> currentOfferingTags = new HashSet<>(getResourceLimitStorageTagsForResourceCountOperation(display, currentOffering));
+        if (newOffering == null || currentOffering.getId() == newOffering.getId()) {
+            return new Ternary<>(currentOfferingTags, new HashSet<>(), new HashSet<>());
+        }
+        Set<String> newOfferingTags = new HashSet<>(getResourceLimitStorageTagsForResourceCountOperation(display, newOffering));
+        if (currentOfferingTags.isEmpty() && newOfferingTags.isEmpty()) {
+            return null;
+        }
+        Set<String> sameTags = currentOfferingTags.stream().filter(newOfferingTags::contains).collect(Collectors.toSet());;
+        Set<String> newTags = newOfferingTags.stream().filter(tag -> !currentOfferingTags.contains(tag)).collect(Collectors.toSet());
+        Set<String> removedTags = currentOfferingTags.stream().filter(tag -> !newOfferingTags.contains(tag)).collect(Collectors.toSet());
+        return new Ternary<>(sameTags, newTags, removedTags);
+    }
+
+    @Override
+    public void updateVolumeResourceCountForDiskOfferingChange(long accountId, Boolean display, Long currentSize, Long newSize,
+            DiskOffering currentOffering, DiskOffering newOffering
+    ) {
+        Ternary<Set<String>, Set<String>, Set<String>> updatedResourceLimitStorageTags = getResourceLimitStorageTagsForDiskOfferingChange(display, currentOffering, newOffering);
+        if (updatedResourceLimitStorageTags == null) {
+            return;
+        }
+        Set<String> sameTags = updatedResourceLimitStorageTags.first();
+        Set<String> newTags = updatedResourceLimitStorageTags.second();
+        Set<String> removedTags = updatedResourceLimitStorageTags.third();
+
+        if (!newSize.equals(currentSize)) {
+            for (String tag : sameTags) {
+                if (newSize - currentSize > 0) {
+                    incrementResourceCountWithTag(accountId, ResourceType.primary_storage, tag, newSize - currentSize);
+                } else if (newSize - currentSize < 0) {
+                    decrementResourceCountWithTag(accountId, ResourceType.primary_storage, tag, currentSize - newSize);
+                }
+            }
+        }
+        for (String tag : removedTags) {
+            decrementResourceCountWithTag(accountId, ResourceType.volume, tag, 1L);
+            decrementResourceCountWithTag(accountId, ResourceType.primary_storage, tag, currentSize);
+        }
+
+        for (String tag : newTags) {
+            incrementResourceCountWithTag(accountId, ResourceType.volume, tag, 1L);
+            incrementResourceCountWithTag(accountId, ResourceType.primary_storage, tag, newSize);
+        }
     }
 
     @Override
@@ -1766,6 +1938,66 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 }
             }
         });
+    }
+
+    @Override
+    public void checkVmResourceLimitsForTemplateChange(Account owner, Boolean display, ServiceOffering offering,
+            VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate) throws ResourceAllocationException {
+        checkVmResourceLimitsForServiceOfferingAndTemplateChange(owner, display, null, null,
+                null, null, offering, offering, currentTemplate, newTemplate);
+    }
+
+    @Override
+    public void checkVmResourceLimitsForServiceOfferingChange(Account owner, Boolean display, Long currentCpu, Long newCpu,
+            Long currentMemory, Long newMemory,
+            ServiceOffering currentOffering, ServiceOffering newOffering, VirtualMachineTemplate template
+    ) throws ResourceAllocationException {
+        checkVmResourceLimitsForServiceOfferingAndTemplateChange(owner, display, currentCpu, newCpu, currentMemory, newMemory, currentOffering,
+                newOffering != null ? newOffering : currentOffering, template, template);
+    }
+
+    private void checkVmResourceLimitsForServiceOfferingAndTemplateChange(Account owner, Boolean display, Long currentCpu, Long newCpu,
+            Long currentMemory, Long newMemory, ServiceOffering currentOffering, ServiceOffering newOffering,
+            VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate
+    ) throws ResourceAllocationException {
+        Ternary<Set<String>, Set<String>, Set<String>> updatedResourceLimitHostTags = getResourceLimitHostTagsForVmServiceOfferingAndTemplateChange(display, currentOffering, newOffering, currentTemplate, newTemplate);
+        if (updatedResourceLimitHostTags == null) {
+            return;
+        }
+
+        if (currentCpu == null) {
+            currentCpu = currentOffering.getCpu() != null ? Long.valueOf(currentOffering.getCpu()) : 0L;
+        }
+        if (newCpu == null) {
+            newCpu = newOffering.getCpu() != null ? Long.valueOf(newOffering.getCpu()) : 0L;
+        }
+        if (currentMemory == null) {
+            currentMemory = currentOffering.getRamSize() != null ? Long.valueOf(currentOffering.getRamSize()) : 0L;
+        }
+        if (newMemory == null) {
+            newMemory = newOffering.getRamSize() != null ? Long.valueOf(newOffering.getRamSize()) : 0L;
+        }
+
+        Set<String> sameTags = updatedResourceLimitHostTags.first();
+        Set<String> newTags = updatedResourceLimitHostTags.second();
+
+        if (newCpu - currentCpu > 0 || newMemory - currentMemory > 0) {
+            for (String tag : sameTags) {
+                if (newCpu - currentCpu > 0) {
+                    checkResourceLimitWithTag(owner, ResourceType.cpu, tag, newCpu - currentCpu);
+                }
+
+                if (newMemory - currentMemory > 0) {
+                    checkResourceLimitWithTag(owner, ResourceType.memory, tag, newMemory - currentMemory);
+                }
+            }
+        }
+
+        for (String tag : newTags) {
+            checkResourceLimitWithTag(owner, ResourceType.user_vm, tag, 1L);
+            checkResourceLimitWithTag(owner, ResourceType.cpu, tag, newCpu);
+            checkResourceLimitWithTag(owner, ResourceType.memory, tag, newMemory);
+        }
     }
 
     @Override
