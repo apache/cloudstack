@@ -120,6 +120,7 @@ import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
 import org.apache.cloudstack.api.command.user.template.ListTemplatesCmd;
 import org.apache.cloudstack.api.command.user.template.ListVnfTemplatesCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
+import org.apache.cloudstack.api.command.user.vm.ListVnfAppliancesCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListResourceDetailsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
@@ -1409,6 +1410,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         Boolean isVnf = cmd.getVnf();
+        if (cmd instanceof ListVnfAppliancesCmd) {
+            if (isVnf != null && !isVnf) {
+                throw new InvalidParameterValueException("Unable to list VNF appliances as isvnf is set to false");
+            }
+            isVnf = true;
+        }
         if (isVnf != null) {
             SearchBuilder<VMTemplateVO> templateSearch = _templateDao.createSearchBuilder();
             templateSearch.and("templateTypeEQ", templateSearch.entity().getTemplateType(), Op.EQ);
