@@ -43,8 +43,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.network.dao.PublicIpQuarantineDao;
-import com.cloud.hypervisor.HypervisorGuru;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
@@ -187,6 +185,7 @@ import org.apache.cloudstack.api.command.admin.region.UpdateRegionCmd;
 import org.apache.cloudstack.api.command.admin.resource.ArchiveAlertsCmd;
 import org.apache.cloudstack.api.command.admin.resource.CleanVMReservationsCmd;
 import org.apache.cloudstack.api.command.admin.resource.DeleteAlertsCmd;
+import org.apache.cloudstack.api.command.admin.resource.ListAlertTypesCmd;
 import org.apache.cloudstack.api.command.admin.resource.ListAlertsCmd;
 import org.apache.cloudstack.api.command.admin.resource.ListCapacityCmd;
 import org.apache.cloudstack.api.command.admin.resource.StartRollingMaintenanceCmd;
@@ -225,8 +224,8 @@ import org.apache.cloudstack.api.command.admin.storage.ListSecondaryStagingStore
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStorageProvidersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStorageTagsCmd;
-import org.apache.cloudstack.api.command.admin.storage.MigrateSecondaryStorageDataCmd;
 import org.apache.cloudstack.api.command.admin.storage.MigrateResourcesToAnotherSecondaryStorageCmd;
+import org.apache.cloudstack.api.command.admin.storage.MigrateSecondaryStorageDataCmd;
 import org.apache.cloudstack.api.command.admin.storage.PreparePrimaryStorageForMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.SyncStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateCloudToUseObjectStoreCmd;
@@ -552,6 +551,7 @@ import org.apache.cloudstack.api.command.user.volume.AddResourceDetailCmd;
 import org.apache.cloudstack.api.command.user.volume.AssignVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ChangeOfferingForVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.CheckAndRepairVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DeleteVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DestroyVolumeCmd;
@@ -605,6 +605,9 @@ import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.config.ConfigurationGroup;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -716,6 +719,7 @@ import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorCapabilities;
 import com.cloud.hypervisor.HypervisorCapabilitiesVO;
+import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.info.ConsoleProxyInfo;
@@ -735,6 +739,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.network.dao.NetworkDomainVO;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.PublicIpQuarantineDao;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping.AllocationState;
@@ -965,6 +970,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private DpdkHelper dpdkHelper;
     @Inject
     private PrimaryDataStoreDao _primaryDataStoreDao;
+    @Inject
+    private DataStoreManager dataStoreManager;
     @Inject
     private VolumeDataStoreDao _volumeStoreDao;
     @Inject
@@ -1413,6 +1420,20 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return listHostsForMigrationOfVM(vm, startIndex, pageSize, keyword, Collections.emptyList());
     }
 
+    protected boolean zoneWideVolumeRequiresStorageMotion(PrimaryDataStore volumeDataStore,
+               final Host sourceHost, final Host destinationHost) {
+        if (volumeDataStore.isManaged() && sourceHost.getClusterId() != destinationHost.getClusterId()) {
+            PrimaryDataStoreDriver driver = (PrimaryDataStoreDriver)volumeDataStore.getDriver();
+            // Depends on the storage driver. For some storages simply
+            // changing volume access to host should work: grant access on destination
+            // host and revoke access on source host. For others, we still have to perform a storage migration
+            // because we need to create a new target volume and copy the contents of the
+            // source volume into it before deleting the source volume.
+            return !driver.zoneWideVolumesAvailableWithoutClusterMotion();
+        }
+        return false;
+    }
+
     @Override
     public Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> listHostsForMigrationOfVM(final VirtualMachine vm, final Long startIndex, final Long pageSize,
             final String keyword, List<VirtualMachine> vmList) {
@@ -1481,8 +1502,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             filteredHosts = new ArrayList<>(allHosts);
 
             for (final VolumeVO volume : volumes) {
-                StoragePool storagePool = _poolDao.findById(volume.getPoolId());
-                Long volClusterId = storagePool.getClusterId();
+                PrimaryDataStore primaryDataStore = (PrimaryDataStore)dataStoreManager.getPrimaryDataStore(volume.getPoolId());
+                Long volClusterId = primaryDataStore.getClusterId();
 
                 for (Iterator<HostVO> iterator = filteredHosts.iterator(); iterator.hasNext();) {
                     final Host host = iterator.next();
@@ -1492,8 +1513,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                     }
 
                     if (volClusterId != null) {
-                        if (storagePool.isLocal() || !host.getClusterId().equals(volClusterId) || usesLocal) {
-                            if (storagePool.isManaged()) {
+                        if (primaryDataStore.isLocal() || !host.getClusterId().equals(volClusterId) || usesLocal) {
+                            if (primaryDataStore.isManaged()) {
                                 // At the time being, we do not support storage migration of a volume from managed storage unless the managed storage
                                 // is at the zone level and the source and target storage pool is the same.
                                 // If the source and target storage pool is the same and it is managed, then we still have to perform a storage migration
@@ -1511,18 +1532,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                             }
                         }
                     } else {
-                        if (storagePool.isManaged()) {
-                            if (srcHost.getClusterId() != host.getClusterId()) {
-                                if (storagePool.getPoolType() == Storage.StoragePoolType.PowerFlex) {
-                                    // No need of new volume creation for zone wide PowerFlex/ScaleIO pool
-                                    // Simply, changing volume access to host should work: grant access on dest host and revoke access on source host
-                                    continue;
-                                }
-                                // If the volume's storage pool is managed and at the zone level, then we still have to perform a storage migration
-                                // because we need to create a new target volume and copy the contents of the source volume into it before deleting
-                                // the source volume.
-                                requiresStorageMotion.put(host, true);
-                            }
+                        if (zoneWideVolumeRequiresStorageMotion(primaryDataStore, srcHost, host)) {
+                            requiresStorageMotion.put(host, true);
                         }
                     }
                 }
@@ -1630,9 +1641,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
-    public Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForMigrationOfVolume(final Long volumeId) {
+    public Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForMigrationOfVolume(final Long volumeId, String keyword) {
 
-        Pair<List<? extends StoragePool>, List<? extends StoragePool>> allPoolsAndSuitablePoolsPair = listStoragePoolsForMigrationOfVolumeInternal(volumeId, null, null, null, null, false, true, false);
+        Pair<List<? extends StoragePool>, List<? extends StoragePool>> allPoolsAndSuitablePoolsPair = listStoragePoolsForMigrationOfVolumeInternal(volumeId, null, null, null, null, false, true, false, keyword);
         List<? extends StoragePool> allPools = allPoolsAndSuitablePoolsPair.first();
         List<? extends StoragePool> suitablePools = allPoolsAndSuitablePoolsPair.second();
         List<StoragePool> avoidPools = new ArrayList<>();
@@ -1650,10 +1661,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForSystemMigrationOfVolume(final Long volumeId, Long newDiskOfferingId, Long newSize, Long newMinIops, Long newMaxIops, boolean keepSourceStoragePool, boolean bypassStorageTypeCheck) {
-        return listStoragePoolsForMigrationOfVolumeInternal(volumeId, newDiskOfferingId, newSize, newMinIops, newMaxIops, keepSourceStoragePool, bypassStorageTypeCheck, true);
+        return listStoragePoolsForMigrationOfVolumeInternal(volumeId, newDiskOfferingId, newSize, newMinIops, newMaxIops, keepSourceStoragePool, bypassStorageTypeCheck, true, null);
     }
 
-    public Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForMigrationOfVolumeInternal(final Long volumeId, Long newDiskOfferingId, Long newSize, Long newMinIops, Long newMaxIops, boolean keepSourceStoragePool, boolean bypassStorageTypeCheck, boolean bypassAccountCheck) {
+    public Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForMigrationOfVolumeInternal(final Long volumeId, Long newDiskOfferingId, Long newSize, Long newMinIops, Long newMaxIops, boolean keepSourceStoragePool, boolean bypassStorageTypeCheck, boolean bypassAccountCheck, String keyword) {
         if (!bypassAccountCheck) {
             final Account caller = getCaller();
             if (!_accountMgr.isRootAdmin(caller.getId())) {
@@ -1728,7 +1739,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Pair<Host, List<Cluster>> hostClusterPair = getVolumeVmHostClusters(srcVolumePool, vm, hypervisorType);
         Host vmHost = hostClusterPair.first();
         List<Cluster> clusters = hostClusterPair.second();
-        allPools = getAllStoragePoolCompatibleWithVolumeSourceStoragePool(srcVolumePool, hypervisorType, clusters);
+        allPools = getAllStoragePoolCompatibleWithVolumeSourceStoragePool(srcVolumePool, hypervisorType, clusters, keyword);
         ExcludeList avoid = new ExcludeList();
         if (!keepSourceStoragePool) {
             allPools.remove(srcVolumePool);
@@ -1736,7 +1747,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
         if (vm != null) {
             suitablePools = findAllSuitableStoragePoolsForVm(volume, diskOfferingId, newSize, newMinIops, newMaxIops, vm, vmHost, avoid,
-                    CollectionUtils.isNotEmpty(clusters) ? clusters.get(0) : null, hypervisorType, bypassStorageTypeCheck);
+                    CollectionUtils.isNotEmpty(clusters) ? clusters.get(0) : null, hypervisorType, bypassStorageTypeCheck, keyword);
         } else {
             suitablePools = findAllSuitableStoragePoolsForDetachedVolume(volume, diskOfferingId, allPools);
         }
@@ -1803,15 +1814,15 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
      *  <li>We also all storage available filtering by data center, pod and cluster as the current storage pool used by the given volume.</li>
      * </ul>
      */
-    private List<? extends StoragePool> getAllStoragePoolCompatibleWithVolumeSourceStoragePool(StoragePool srcVolumePool, HypervisorType hypervisorType, List<Cluster> clusters) {
+    private List<? extends StoragePool> getAllStoragePoolCompatibleWithVolumeSourceStoragePool(StoragePool srcVolumePool, HypervisorType hypervisorType, List<Cluster> clusters, String keyword) {
         List<StoragePoolVO> storagePools = new ArrayList<>();
-        List<StoragePoolVO> zoneWideStoragePools = _poolDao.findZoneWideStoragePoolsByHypervisor(srcVolumePool.getDataCenterId(), hypervisorType);
+        List<StoragePoolVO> zoneWideStoragePools = _poolDao.findZoneWideStoragePoolsByHypervisor(srcVolumePool.getDataCenterId(), hypervisorType, keyword);
         if (CollectionUtils.isNotEmpty(zoneWideStoragePools)) {
             storagePools.addAll(zoneWideStoragePools);
         }
         if (CollectionUtils.isNotEmpty(clusters)) {
             List<Long> clusterIds = clusters.stream().map(Cluster::getId).collect(Collectors.toList());
-            List<StoragePoolVO> clusterAndLocalStoragePools = _poolDao.findPoolsInClusters(clusterIds);
+            List<StoragePoolVO> clusterAndLocalStoragePools = _poolDao.findPoolsInClusters(clusterIds, keyword);
             if (CollectionUtils.isNotEmpty(clusterAndLocalStoragePools)) {
                 storagePools.addAll(clusterAndLocalStoragePools);
             }
@@ -1827,7 +1838,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
      *
      *  Side note: the idea behind this method is to provide power for administrators of manually overriding deployments defined by CloudStack.
      */
-    private List<StoragePool> findAllSuitableStoragePoolsForVm(final VolumeVO volume, Long diskOfferingId, Long newSize, Long newMinIops, Long newMaxIops, VMInstanceVO vm, Host vmHost, ExcludeList avoid, Cluster srcCluster, HypervisorType hypervisorType, boolean bypassStorageTypeCheck) {
+    private List<StoragePool> findAllSuitableStoragePoolsForVm(final VolumeVO volume, Long diskOfferingId, Long newSize, Long newMinIops, Long newMaxIops, VMInstanceVO vm, Host vmHost, ExcludeList avoid, Cluster srcCluster, HypervisorType hypervisorType, boolean bypassStorageTypeCheck, String keyword) {
         List<StoragePool> suitablePools = new ArrayList<>();
         Long clusterId = null;
         Long podId = null;
@@ -1849,7 +1860,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         for (StoragePoolAllocator allocator : _storagePoolAllocators) {
-            List<StoragePool> pools = allocator.allocateToPool(diskProfile, profile, plan, avoid, StoragePoolAllocator.RETURN_UPTO_ALL, bypassStorageTypeCheck);
+            List<StoragePool> pools = allocator.allocateToPool(diskProfile, profile, plan, avoid, StoragePoolAllocator.RETURN_UPTO_ALL, bypassStorageTypeCheck, keyword);
             if (CollectionUtils.isEmpty(pools)) {
                 continue;
             }
@@ -3458,6 +3469,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(RemoveRegionCmd.class);
         cmdList.add(UpdateRegionCmd.class);
         cmdList.add(ListAlertsCmd.class);
+        cmdList.add(ListAlertTypesCmd.class);
         cmdList.add(ListCapacityCmd.class);
         cmdList.add(UpdatePodManagementNetworkIpRangeCmd.class);
         cmdList.add(UploadCustomCertificateCmd.class);
@@ -3704,6 +3716,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListVMGroupsCmd.class);
         cmdList.add(UpdateVMGroupCmd.class);
         cmdList.add(AttachVolumeCmd.class);
+        cmdList.add(CheckAndRepairVolumeCmd.class);
         cmdList.add(CreateVolumeCmd.class);
         cmdList.add(DeleteVolumeCmd.class);
         cmdList.add(UpdateVolumeCmd.class);

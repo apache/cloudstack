@@ -41,6 +41,7 @@ import org.junit.runners.Parameterized.Parameters;
 import org.mockito.Mockito;
 
 import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.db.TransactionLegacy;
 
 @RunWith(Parameterized.class)
 public class UsageSanityCheckerIT{
@@ -106,7 +107,7 @@ public class UsageSanityCheckerIT{
     protected Connection createConnection(String dbSchema) throws SQLException {
         String cloudDbUrl = "jdbc:mysql://"+properties.getProperty("db."+dbSchema+".host") +
                 ":" + properties.getProperty("db."+dbSchema+".port") + "/" +
-                properties.getProperty("db."+dbSchema+".name");
+                properties.getProperty("db."+dbSchema+".name") + "?" + TransactionLegacy.CONNECTION_PARAMS;
         return DriverManager.getConnection(cloudDbUrl, properties.getProperty("db."+dbSchema+".username"),
                 properties.getProperty("db."+dbSchema+".password"));
     }

@@ -84,9 +84,15 @@
             <a-select-option value="no">{{ $t('label.no') }}</a-select-option>
           </a-select>
         </div>
-        <div class="form__item" v-if="!newRule.autoscale || newRule.autoscale === 'no' || ('vpcid' in this.resource && !('associatednetworkid' in this.resource))">
+        <div class="form__item" v-if="!newRule.autoscale || newRule.autoscale === 'no'">
           <div class="form__label" style="white-space: nowrap;">{{ $t('label.add.vms') }}</div>
           <a-button :disabled="!('createLoadBalancerRule' in $store.getters.apis)" type="primary" @click="handleOpenAddVMModal">
+            {{ $t('label.add') }}
+          </a-button>
+        </div>
+        <div class="form__item" v-else-if="newRule.autoscale === 'yes' && ('vpcid' in this.resource && !this.associatednetworkid)">
+          <div class="form__label" style="white-space: nowrap;">{{ $t('label.select.tier') }}</div>
+          <a-button :disabled="!('createLoadBalancerRule' in $store.getters.apis)" type="primary" @click="handleOpenAddNetworkModal">
             {{ $t('label.add') }}
           </a-button>
         </div>
@@ -519,7 +525,7 @@
             </template>
 
             <template v-if="column.key === 'actions'" style="text-align: center" :text="text">
-              <a-checkbox v-model:value="record.id" @change="e => fetchNics(e, index)" :disabled="newRule.autoscale"/>
+              <a-checkbox v-model:value="record.id" @change="e => fetchNics(e, index)" />
             </template>
           </template>
         </a-table>
@@ -542,6 +548,71 @@
         <div :span="24" class="action-button">
           <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
           <a-button :disabled="newRule.virtualmachineid === []" type="primary" ref="submit" @click="handleAddNewRule">{{ $t('label.ok') }}</a-button>
+        </div>
+      </div>
+    </a-modal>
+
+    <a-modal
+      :title="$t('label.select.tier')"
+      :maskClosable="false"
+      :closable="true"
+      v-if="addNetworkModalVisible"
+      :visible="addNetworkModalVisible"
+      class="network-modal"
+      width="60vw"
+      :footer="null"
+      @cancel="closeModal"
+    >
+      <div @keyup.ctrl.enter="handleAddNewRule">
+        <a-input-search
+          v-focus="!('vpcid' in resource && !('associatednetworkid' in resource))"
+          class="input-search"
+          :placeholder="$t('label.search')"
+          v-model:value="searchQuery"
+          allowClear
+          @search="onNetworkSearch" />
+        <a-table
+          size="small"
+          class="list-view"
+          :loading="addNetworkModalLoading"
+          :columns="networkColumns"
+          :dataSource="networks"
+          :pagination="false"
+          :rowKey="record => record.id"
+          :scroll="{ y: 300 }">
+          <template #bodyCell="{ column, record }">
+            <template v-if="column.key === 'actions'">
+              <div style="text-align: center">
+                <a-radio-group
+                  class="radio-group"
+                  :key="record.id"
+                  v-model:value="this.selectedTierForAutoScaling"
+                  @change="($event) => this.selectedTierForAutoScaling = $event.target.value">
+                  <a-radio :value="record.id" />
+                </a-radio-group>
+              </div>
+            </template>
+          </template>
+        </a-table>
+        <a-pagination
+          class="pagination"
+          size="small"
+          :current="networkPage"
+          :pageSize="networkPageSize"
+          :total="networkCount"
+          :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
+          :pageSizeOptions="['10', '20', '40', '80', '100']"
+          @change="handleChangeNetworkPage"
+          @showSizeChange="handleChangeNetworkPageSize"
+          showSizeChanger>
+          <template #buildOptionText="props">
+            <span>{{ props.value }} / {{ $t('label.page') }}</span>
+          </template>
+        </a-pagination>
+
+        <div :span="24" class="action-button">
+          <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
+          <a-button :disabled="this.selectedTierForAutoScaling === null" type="primary" ref="submit" @click="handleAddNewRule">{{ $t('label.ok') }}</a-button>
         </div>
       </div>
     </a-modal>
@@ -802,6 +873,41 @@ export default {
       vmPage: 1,
       vmPageSize: 10,
       vmCount: 0,
+      addNetworkModalVisible: false,
+      addNetworkModalLoading: false,
+      networks: [],
+      associatednetworkid: null,
+      selectedTierForAutoScaling: null,
+      networkColumns: [
+        {
+          key: 'name',
+          title: this.$t('label.name'),
+          dataIndex: 'name',
+          width: 220
+        },
+        {
+          key: 'state',
+          title: this.$t('label.state'),
+          dataIndex: 'state'
+        },
+        {
+          title: this.$t('label.gateway'),
+          dataIndex: 'gateway'
+        },
+        {
+          title: this.$t('label.netmask'),
+          dataIndex: 'netmask'
+        },
+        {
+          key: 'actions',
+          title: this.$t('label.select'),
+          dataIndex: 'actions',
+          width: 80
+        }
+      ],
+      networkPage: 1,
+      networkPageSize: 10,
+      networkCount: 0,
       searchQuery: null,
       tungstenHealthMonitors: [],
       healthMonitorModal: false,
@@ -825,6 +931,9 @@ export default {
   beforeCreate () {
     this.createLoadBalancerRuleParams = this.$getApiParams('createLoadBalancerRule')
     this.createLoadBalancerStickinessPolicyParams = this.$getApiParams('createLBStickinessPolicy')
+    if ('associatednetworkid' in this.resource) {
+      this.associatednetworkid = this.resource.associatednetworkid
+    }
   },
   created () {
     this.initForm()
@@ -1489,6 +1598,55 @@ export default {
         this.addVmModalLoading = false
       })
     },
+    handleOpenAddNetworkModal () {
+      if (this.addNetworkModalLoading) return
+      if (!this.checkNewRule()) {
+        return
+      }
+      this.addNetworkModalVisible = true
+      this.fetchNetworks()
+    },
+    fetchNetworks () {
+      this.networkCount = 0
+      this.networks = []
+      this.addNetworkModalLoading = true
+      const vpcid = this.resource.vpcid
+      if (!vpcid) {
+        this.addNetworkModalLoading = false
+        return
+      }
+      api('listNetworks', {
+        listAll: true,
+        keyword: this.searchQuery,
+        page: this.networkPage,
+        pagesize: this.networkPageSize,
+        supportedservices: 'Lb',
+        isrecursive: true,
+        vpcid: vpcid
+      }).then(response => {
+        this.networkCount = response.listnetworksresponse.count || 0
+        this.networks = response.listnetworksresponse.network || []
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.addNetworkModalLoading = false
+      })
+      this.selectedTierForAutoScaling = null
+    },
+    onNetworkSearch (value) {
+      this.searchQuery = value
+      this.fetchNetworks()
+    },
+    handleChangeNetworkPage (page, pageSize) {
+      this.networkPage = page
+      this.networkPageSize = pageSize
+      this.fetchNetworks()
+    },
+    handleChangeNetworkPageSize (currentPage, pageSize) {
+      this.networkPage = currentPage
+      this.networkPageSize = pageSize
+      this.fetchNetworks()
+    },
     handleAssignToLBRule (data) {
       const vmIDIpMap = {}
 
@@ -1560,7 +1718,8 @@ export default {
         return
       }
 
-      const networkId = ('vpcid' in this.resource && !('associatednetworkid' in this.resource)) ? this.selectedTier : this.resource.associatednetworkid
+      const networkId = this.selectedTierForAutoScaling != null ? this.selectedTierForAutoScaling
+        : ('vpcid' in this.resource && !('associatednetworkid' in this.resource)) ? this.selectedTier : this.resource.associatednetworkid
       api('createLoadBalancerRule', {
         openfirewall: false,
         networkid: networkId,
@@ -1573,7 +1732,9 @@ export default {
         cidrlist: this.newRule.cidrlist
       }).then(response => {
         this.addVmModalVisible = false
+        this.addNetworkModalVisible = false
         this.handleAssignToLBRule(response.createloadbalancerruleresponse.id)
+        this.associatednetworkid = networkId
       }).catch(error => {
         this.$notifyError(error)
         this.loading = false
@@ -1597,6 +1758,9 @@ export default {
       this.nics = []
       this.addVmModalVisible = false
       this.newRule.virtualmachineid = []
+      this.addNetworkModalLoading = false
+      this.addNetworkModalVisible = false
+      this.selectedTierForAutoScaling = null
     },
     handleChangePage (page, pageSize) {
       this.page = page

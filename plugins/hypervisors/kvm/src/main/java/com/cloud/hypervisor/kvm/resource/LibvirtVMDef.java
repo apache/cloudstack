@@ -222,9 +222,7 @@ public class LibvirtVMDef {
                         guestDef.append("<boot dev='" + bo + "'/>\n");
                     }
                 }
-                if (_arch == null || !_arch.equals("aarch64")) {
-                    guestDef.append("<smbios mode='sysinfo'/>\n");
-                }
+                guestDef.append("<smbios mode='sysinfo'/>\n");
                 guestDef.append("</os>\n");
                 if (iothreads) {
                     guestDef.append(String.format("<iothreads>%s</iothreads>", NUMBER_OF_IOTHREADS));
@@ -2200,7 +2198,7 @@ public class LibvirtVMDef {
 
     public static class WatchDogDef {
         enum WatchDogModel {
-            I6300ESB("i6300esb"), IB700("ib700"), DIAG288("diag288");
+            I6300ESB("i6300esb"), IB700("ib700"), DIAG288("diag288"), ITCO("itco");
             String model;
 
             WatchDogModel(String model) {
@@ -2214,7 +2212,7 @@ public class LibvirtVMDef {
         }
 
         enum WatchDogAction {
-            RESET("reset"), SHUTDOWN("shutdown"), POWEROFF("poweroff"), PAUSE("pause"), NONE("none"), DUMP("dump");
+            RESET("reset"), SHUTDOWN("shutdown"), POWEROFF("poweroff"), PAUSE("pause"), NONE("none"), DUMP("dump"), INJECT_NMI("inject-nmi");
             String action;
 
             WatchDogAction(String action) {

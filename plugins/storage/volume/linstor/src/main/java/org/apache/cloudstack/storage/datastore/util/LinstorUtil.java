@@ -24,6 +24,7 @@ import com.linbit.linstor.api.model.ApiCallRc;
 import com.linbit.linstor.api.model.ApiCallRcList;
 import com.linbit.linstor.api.model.Node;
 import com.linbit.linstor.api.model.ProviderKind;
+import com.linbit.linstor.api.model.Resource;
 import com.linbit.linstor.api.model.ResourceGroup;
 import com.linbit.linstor.api.model.ResourceWithVolumes;
 import com.linbit.linstor.api.model.StoragePool;
@@ -77,16 +78,16 @@ public class LinstorUtil {
         return nodes.stream().map(Node::getName).collect(Collectors.toList());
     }
 
-    public static com.linbit.linstor.api.model.StoragePool
-    getDiskfulStoragePool(@Nonnull DevelopersApi api, @Nonnull String rscName) throws ApiException
+    public static List<com.linbit.linstor.api.model.StoragePool>
+    getDiskfulStoragePools(@Nonnull DevelopersApi api, @Nonnull String rscName) throws ApiException
     {
         List<ResourceWithVolumes> resources = api.viewResources(
-            Collections.emptyList(),
-            Collections.singletonList(rscName),
-            Collections.emptyList(),
-            Collections.emptyList(),
-            null,
-            null);
+                Collections.emptyList(),
+                Collections.singletonList(rscName),
+                Collections.emptyList(),
+                Collections.emptyList(),
+                null,
+                null);
 
         String nodeName = null;
         String storagePoolName = null;
@@ -107,13 +108,23 @@ public class LinstorUtil {
         }
 
         List<com.linbit.linstor.api.model.StoragePool> sps = api.viewStoragePools(
-            Collections.singletonList(nodeName),
-            Collections.singletonList(storagePoolName),
-            Collections.emptyList(),
-            null,
-            null
+                Collections.singletonList(nodeName),
+                Collections.singletonList(storagePoolName),
+                Collections.emptyList(),
+                null,
+                null
         );
-        return !sps.isEmpty() ? sps.get(0) : null;
+        return sps != null ? sps : Collections.emptyList();
+    }
+
+    public static com.linbit.linstor.api.model.StoragePool
+    getDiskfulStoragePool(@Nonnull DevelopersApi api, @Nonnull String rscName) throws ApiException
+    {
+        List<com.linbit.linstor.api.model.StoragePool> sps = getDiskfulStoragePools(api, rscName);
+        if (sps != null) {
+            return !sps.isEmpty() ? sps.get(0) : null;
+        }
+        return null;
     }
 
     public static String getSnapshotPath(com.linbit.linstor.api.model.StoragePool sp, String rscName, String snapshotName) {
@@ -136,28 +147,33 @@ public class LinstorUtil {
         return path;
     }
 
-    public static long getCapacityBytes(String linstorUrl, String rscGroupName) {
-        DevelopersApi linstorApi = getLinstorAPI(linstorUrl);
-        try {
-            List<ResourceGroup> rscGrps = linstorApi.resourceGroupList(
+    public static List<StoragePool> getRscGroupStoragePools(DevelopersApi api, String rscGroupName)
+            throws ApiException {
+        List<ResourceGroup> rscGrps = api.resourceGroupList(
                 Collections.singletonList(rscGroupName),
                 null,
                 null,
                 null);
 
-            if (rscGrps.isEmpty()) {
-                final String errMsg = String.format("Linstor: Resource group '%s' not found", rscGroupName);
-                s_logger.error(errMsg);
-                throw new CloudRuntimeException(errMsg);
-            }
+        if (rscGrps.isEmpty()) {
+            final String errMsg = String.format("Linstor: Resource group '%s' not found", rscGroupName);
+            s_logger.error(errMsg);
+            throw new CloudRuntimeException(errMsg);
+        }
 
-            List<StoragePool> storagePools = linstorApi.viewStoragePools(
+        return api.viewStoragePools(
                 Collections.emptyList(),
                 rscGrps.get(0).getSelectFilter().getStoragePoolList(),
                 null,
                 null,
                 null
-            );
+        );
+    }
+
+    public static long getCapacityBytes(String linstorUrl, String rscGroupName) {
+        DevelopersApi linstorApi = getLinstorAPI(linstorUrl);
+        try {
+            List<StoragePool> storagePools = getRscGroupStoragePools(linstorApi, rscGroupName);
 
             return storagePools.stream()
                 .filter(sp -> sp.getProviderKind() != ProviderKind.DISKLESS)
@@ -167,5 +183,23 @@ public class LinstorUtil {
             s_logger.error(apiEx.getMessage());
             throw new CloudRuntimeException(apiEx);
         }
+    }
+
+    /**
+     * Check if any resource of the given name is InUse on any host.
+     *
+     * @param api developer api object to use
+     * @param rscName resource name to check in use state.
+     * @return True if a resource found that is in use(primary) state, else false.
+     * @throws ApiException forwards api errors
+     */
+    public static boolean isResourceInUse(DevelopersApi api, String rscName) throws ApiException {
+        List<Resource> rscs = api.resourceList(rscName, null, null);
+        if (rscs != null) {
+            return rscs.stream()
+                    .anyMatch(rsc -> rsc.getState() != null && Boolean.TRUE.equals(rsc.getState().isInUse()));
+        }
+        s_logger.error("isResourceInUse: null returned from resourceList");
+        return false;
     }
 }

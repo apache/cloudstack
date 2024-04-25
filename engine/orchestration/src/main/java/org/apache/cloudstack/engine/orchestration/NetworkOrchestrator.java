@@ -1409,6 +1409,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         if (isNetworkImplemented(network)) {
             s_logger.debug("Network id=" + networkId + " is already implemented");
             implemented.set(guru, network);
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_UPDATE, network.getAccountId(), network.getDataCenterId(), network.getId(),
+                    network.getName(), network.getNetworkOfferingId(), null, network.getState().name(), Network.class.getName(), network.getUuid(), true);
             return implemented;
         }
 
@@ -1469,6 +1471,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             network.setRestartRequired(false);
             _networksDao.update(network.getId(), network);
             implemented.set(guru, network);
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_CREATE, network.getAccountId(), network.getDataCenterId(), network.getId(),
+                    network.getName(), network.getNetworkOfferingId(), null, null, null, network.getState().name(), network.getUuid());
             return implemented;
         } catch (final NoTransitionException e) {
             s_logger.error(e.getMessage());
@@ -2310,12 +2314,12 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     @DB
     protected void releaseNic(final VirtualMachineProfile vmProfile, final long nicId) throws ConcurrentOperationException, ResourceUnavailableException {
-        final Pair<Network, NicProfile> networkToRelease = Transaction.execute(new TransactionCallback<Pair<Network, NicProfile>>() {
+        final Pair<Network, NicProfile> networkToRelease = Transaction.execute(new TransactionCallback<>() {
             @Override
             public Pair<Network, NicProfile> doInTransaction(final TransactionStatus status) {
                 final NicVO nic = _nicDao.lockRow(nicId, true);
                 if (nic == null) {
-                    throw new ConcurrentOperationException("Unable to acquire lock on nic " + nic);
+                    throw new ConcurrentOperationException(String.format("Unable to acquire lock on nic id=%d", nicId));
                 }
 
                 final Nic.State originalState = nic.getState();
@@ -2329,6 +2333,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         final NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), null, _networkModel
                                 .isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(vmProfile.getHypervisorType(), network));
                         if (guru.release(profile, vmProfile, nic.getReservationId())) {
+                            if (s_logger.isDebugEnabled()) {
+                                s_logger.debug(String.format("The nic %s on %s was released according to %s by guru %s, now updating record.", nic, profile, vmProfile, guru));
+                            }
                             applyProfileToNicForRelease(nic, profile);
                             nic.setState(Nic.State.Allocated);
                             if (originalState == Nic.State.Reserved) {
@@ -2338,7 +2345,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                             }
                         }
                         // Perform release on network elements
-                        return new Pair<Network, NicProfile>(network, profile);
+                        return new Pair<>(network, profile);
                     } else {
                         nic.setState(Nic.State.Allocated);
                         updateNic(nic, network.getId(), -1);
@@ -2435,7 +2442,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             for (final NetworkElement element : networkElements) {
                 if (providersToImplement.contains(element.getProvider())) {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Asking " + element.getName() + " to release " + nic);
+                        s_logger.debug(String.format("Asking %s to release %s, according to the reservation strategy %s", element.getName(), nic, nic.getReservationStrategy()));
                     }
                     try {
                         element.release(network, profile, vm, null);
@@ -3341,6 +3348,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     final Pair<Class<?>, Long> networkMsg = new Pair<Class<?>, Long>(Network.class, networkFinal.getId());
                     _messageBus.publish(_name, EntityManager.MESSAGE_REMOVE_ENTITY_EVENT, PublishScope.LOCAL, networkMsg);
                 }
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_DELETE, network.getAccountId(), network.getDataCenterId(), network.getId(),
+                        network.getName(), network.getNetworkOfferingId(), null, null, null, Network.class.getName(), network.getUuid());
                 return true;
             } catch (final CloudRuntimeException e) {
                 s_logger.error("Failed to delete network", e);

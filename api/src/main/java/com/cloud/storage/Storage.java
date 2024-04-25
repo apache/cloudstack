@@ -144,7 +144,7 @@ public class Storage {
         LVM(false, false, false), // XenServer local LVM SR
         CLVM(true, false, false),
         RBD(true, true, false), // http://libvirt.org/storage.html#StorageBackendRBD
-        SharedMountPoint(true, false, true),
+        SharedMountPoint(true, true, true),
         VMFS(true, true, false), // VMware VMFS storage
         PreSetup(true, true, false), // for XenServer, Storage Pool is set up by customers.
         EXT(false, true, false), // XenServer local EXT SR
@@ -159,12 +159,12 @@ public class Storage {
         FiberChannel(true, true, false); // Fiber Channel Pool for KVM hypervisors is used to find the volume by WWN value (/dev/disk/by-id/wwn-<wwnvalue>)
 
         private final boolean shared;
-        private final boolean overprovisioning;
+        private final boolean overProvisioning;
         private final boolean encryption;
 
-        StoragePoolType(boolean shared, boolean overprovisioning, boolean encryption) {
+        StoragePoolType(boolean shared, boolean overProvisioning, boolean encryption) {
             this.shared = shared;
-            this.overprovisioning = overprovisioning;
+            this.overProvisioning = overProvisioning;
             this.encryption = encryption;
         }
 
@@ -173,14 +173,16 @@ public class Storage {
         }
 
         public boolean supportsOverProvisioning() {
-            return overprovisioning;
+            return overProvisioning;
         }
 
-        public boolean supportsEncryption() { return encryption; }
+        public boolean supportsEncryption() {
+            return encryption;
+        }
     }
 
     public static List<StoragePoolType> getNonSharedStoragePoolTypes() {
-        List<StoragePoolType> nonSharedStoragePoolTypes = new ArrayList<StoragePoolType>();
+        List<StoragePoolType> nonSharedStoragePoolTypes = new ArrayList<>();
         for (StoragePoolType storagePoolType : StoragePoolType.values()) {
             if (!storagePoolType.isShared()) {
                 nonSharedStoragePoolTypes.add(storagePoolType);

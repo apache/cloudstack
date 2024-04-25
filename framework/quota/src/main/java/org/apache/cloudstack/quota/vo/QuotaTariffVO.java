@@ -16,7 +16,7 @@
 //under the License.
 package org.apache.cloudstack.quota.vo;
 
-import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.quota.QuotaTariff;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
@@ -37,7 +37,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "quota_tariff")
-public class QuotaTariffVO implements InternalIdentity {
+public class QuotaTariffVO implements QuotaTariff {
     private static final long serialVersionUID = -7117933766387653203L;
 
     @Id
@@ -240,6 +240,7 @@ public class QuotaTariffVO implements InternalIdentity {
         return description;
     }
 
+    @Override
     public String getUuid() {
         return uuid;
     }

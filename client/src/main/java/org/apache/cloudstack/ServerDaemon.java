@@ -31,7 +31,6 @@ import org.apache.commons.daemon.DaemonContext;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.eclipse.jetty.jmx.MBeanContainer;
-import org.eclipse.jetty.server.ForwardedRequestCustomizer;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.NCSARequestLog;
@@ -173,7 +172,7 @@ public class ServerDaemon implements Daemon {
 
         // HTTP config
         final HttpConfiguration httpConfig = new HttpConfiguration();
-        httpConfig.addCustomizer( new ForwardedRequestCustomizer() );
+// it would be nice to make this dynamic but we take care of this ourselves for now: httpConfig.addCustomizer( new ForwardedRequestCustomizer() );
         httpConfig.setSecureScheme("https");
         httpConfig.setSecurePort(httpsPort);
         httpConfig.setOutputBufferSize(32768);
