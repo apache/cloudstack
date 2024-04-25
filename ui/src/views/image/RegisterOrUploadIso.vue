@@ -250,6 +250,12 @@
           </template>
           <a-switch v-model:checked="form.isfeatured" />
         </a-form-item>
+        <a-form-item ref="passwordenabled" name="passwordenabled" v-if="currentForm === 'Create'">
+          <template #label>
+            <tooltip-label :title="$t('label.passwordenabled')" :tooltip="apiParams.passwordenabled.description"/>
+          </template>
+          <a-switch v-model:checked="form.passwordenabled" />
+        </a-form-item>
 
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
@@ -332,7 +338,8 @@ export default {
       this.form = reactive({
         bootable: true,
         isextractable: false,
-        ispublic: false
+        ispublic: false,
+        passwordenabled: false
       })
       this.rules = reactive({
         url: [{ required: true, message: this.$t('label.upload.iso.from.local') }],
