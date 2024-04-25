@@ -105,8 +105,7 @@ public class TemplateObject implements TemplateInfo {
         if (imageVO == null) {
             String msg = String.format("Template Object is not properly initialised %s", this.toString());
             s_logger.error(msg);
-            throw new InvalidParameterValueException(msg);
-        }
+        } // somehow the nullpointer is needed : refacter needed!?!
         return imageVO;
     }
 
