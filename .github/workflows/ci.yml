@@ -313,7 +313,7 @@ jobs:
           echo -e "Simulator CI Test Results: (only failures listed)\n"
           python3 ./tools/marvin/xunit-reader.py integration-test-results/
 
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v4
         with:
           files: jacoco-coverage.xml
           fail_ci_if_error: true
