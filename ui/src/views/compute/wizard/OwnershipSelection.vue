@@ -196,7 +196,7 @@ export default {
         isrecursive: false
       })
         .then((response) => {
-          this.accounts = response.listaccountsresponse.account
+          this.accounts = response.listaccountsresponse.account || []
           if (this.override?.accounts && this.accounts) {
             this.accounts = this.accounts.filter(item => this.override.accounts.has(item.name))
           }
