@@ -79,9 +79,6 @@ public class StorageManagerImplTest {
     @Mock
     PrimaryDataStoreDao storagePoolDao;
 
-    @Mock
-    DataCenterDao _dcDao;
-
     @Spy
     @InjectMocks
     private StorageManagerImpl storageManagerImpl;
@@ -295,7 +292,7 @@ public class StorageManagerImplTest {
         StoragePoolVO primaryStorage = mockStoragePoolVOForChangeStoragePoolScope(currentScope, status);
 
         Mockito.when(accountMgr.isRootAdmin(Mockito.any())).thenReturn(true);
-        Mockito.when(_dcDao.findById(1L)).thenReturn(zone);
+        Mockito.when(dataCenterDao.findById(1L)).thenReturn(zone);
         Mockito.when(storagePoolDao.findById(1L)).thenReturn(primaryStorage);
     }
 
@@ -334,6 +331,4 @@ public class StorageManagerImplTest {
         ChangeStoragePoolScopeCmd cmd = mockChangeStoragePooolScopeCmd("CLUSTER");
         storageManagerImpl.changeStoragePoolScope(cmd);
     }
-
 }
-
