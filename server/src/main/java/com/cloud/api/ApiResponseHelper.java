@@ -4853,12 +4853,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public UserDataResponse createUserDataResponse(UserData userData) {
         UserDataResponse response = new UserDataResponse(userData.getUuid(), userData.getName(), userData.getUserData(), userData.getParams());
-        Account account = ApiDBUtils.findAccountById(userData.getAccountId());
-        response.setAccountId(account.getUuid());
-        response.setAccountName(account.getAccountName());
-        Domain domain = ApiDBUtils.findDomainById(userData.getDomainId());
-        response.setDomainId(domain.getUuid());
-        response.setDomainName(domain.getName());
+        populateOwner(response, userData);
         response.setHasAnnotation(annotationDao.hasAnnotations(userData.getUuid(), AnnotationService.EntityType.USER_DATA.name(),
                 _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
         return response;

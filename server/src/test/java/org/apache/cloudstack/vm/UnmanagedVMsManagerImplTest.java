@@ -333,6 +333,7 @@ public class UnmanagedVMsManagerImplTest {
         when(serviceOffering.getRamSize()).thenReturn(instance.getMemory());
         when(serviceOffering.getSpeed()).thenReturn(instance.getCpuSpeed());
         when(serviceOfferingDao.findById(anyLong())).thenReturn(serviceOffering);
+        when(serviceOfferingDao.findById(anyLong(), anyLong())).thenReturn(Mockito.mock(ServiceOfferingVO.class));
         DiskOfferingVO diskOfferingVO = Mockito.mock(DiskOfferingVO.class);
         when(diskOfferingDao.findById(anyLong())).thenReturn(diskOfferingVO);
         UserVmVO userVm = Mockito.mock(UserVmVO.class);

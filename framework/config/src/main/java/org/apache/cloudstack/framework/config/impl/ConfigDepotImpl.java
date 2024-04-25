@@ -82,6 +82,7 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
     List<Configurable> _configurables;
     List<ScopedConfigStorage> _scopedStorages;
     Set<Configurable> _configured = Collections.synchronizedSet(new HashSet<Configurable>());
+    Set<String> newConfigs = Collections.synchronizedSet(new HashSet<>());
 
     private HashMap<String, Pair<String, ConfigKey<?>>> _allKeys = new HashMap<String, Pair<String, ConfigKey<?>>>(1007);
 
@@ -194,6 +195,7 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
             }
 
             _configDao.persist(vo);
+            newConfigs.add(vo.getName());
         } else {
             boolean configUpdated = false;
             if (vo.isDynamic() != key.isDynamic() || !ObjectUtils.equals(vo.getDescription(), key.description()) || !ObjectUtils.equals(vo.getDefaultValue(), key.defaultValue()) ||
@@ -343,5 +345,10 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
         }
 
         return new Pair<>(groupId, subGroupId);
+    }
+
+    @Override
+    public boolean isNewConfig(ConfigKey<?> configKey) {
+        return newConfigs.contains(configKey.key());
     }
 }

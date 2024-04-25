@@ -31,6 +31,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef;
 
 import junit.framework.TestCase;
 import org.apache.cloudstack.utils.qemu.QemuObject;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -267,7 +268,7 @@ public class LibvirtDomainXMLParserTest extends TestCase {
                 "  <uuid>aafaaabc-8657-4efc-9c52-3422d4e04088</uuid>\n" +
                 "  <memory unit='KiB'>2097152</memory>\n" +
                 "  <currentMemory unit='KiB'>2097152</currentMemory>\n" +
-                "  <vcpu placement='static'>2</vcpu>\n" +
+                "  <vcpu placement='static'>8</vcpu>\n" +
                 "  <os>\n" +
                 "    <type arch='x86_64' machine='pc-i440fx-rhel7.0.0'>hvm</type>\n" +
                 "    <boot dev='hd'/>\n" +
@@ -278,6 +279,7 @@ public class LibvirtDomainXMLParserTest extends TestCase {
                 "  </features>\n" +
                 "  <cpu mode='host-model' check='partial'>\n" +
                 "    <model fallback='allow'/>\n" +
+                "    <topology sockets='1' cores='4' threads='2' />" +
                 "  </cpu>\n" +
                 "  <clock offset='utc'>\n" +
                 "    <timer name='rtc' tickpolicy='catchup'/>\n" +
@@ -380,5 +382,8 @@ public class LibvirtDomainXMLParserTest extends TestCase {
             System.out.println("Got exception " + e.getMessage());
             throw e;
         }
+        Assert.assertEquals("CPU socket count is parsed", 1, libvirtDomainXMLParser.getCpuModeDef().getSockets());
+        Assert.assertEquals("CPU cores count is parsed", 4, libvirtDomainXMLParser.getCpuModeDef().getCoresPerSocket());
+        Assert.assertEquals("CPU threads count is parsed", 2, libvirtDomainXMLParser.getCpuModeDef().getThreadsPerCore());
     }
 }
