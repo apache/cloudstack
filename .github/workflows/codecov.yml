@@ -49,7 +49,7 @@ jobs:
           cd nonoss && bash -x install-non-oss.sh && cd ..
           mvn -P quality -Dsimulator -Dnoredist clean install -T$(nproc)
 
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v4
         with:
           files: ./client/target/site/jacoco-aggregate/jacoco.xml
           fail_ci_if_error: true
