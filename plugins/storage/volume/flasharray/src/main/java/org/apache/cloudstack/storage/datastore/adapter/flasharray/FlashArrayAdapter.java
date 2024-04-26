@@ -511,7 +511,6 @@ public class FlashArrayAdapter implements ProviderAdapter {
     }
 
     private String getAccessToken() {
-        refreshSession(false);
         return accessToken;
     }
 

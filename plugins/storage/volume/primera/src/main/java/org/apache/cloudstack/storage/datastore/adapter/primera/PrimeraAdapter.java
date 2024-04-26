@@ -72,7 +72,7 @@ public class PrimeraAdapter implements ProviderAdapter {
     public static final String TASK_WAIT_TIMEOUT_MS = "taskWaitTimeoutMs";
 
     private static final long KEY_TTL_DEFAULT = (1000 * 60 * 14);
-    private static final long CONNECT_TIMEOUT_MS_DEFAULT = 600000;
+    private static final long CONNECT_TIMEOUT_MS_DEFAULT = 60 * 1000;
     private static final long TASK_WAIT_TIMEOUT_MS_DEFAULT = 10 * 60 * 1000;
     public static final long BYTES_IN_MiB = 1048576;
 
@@ -118,6 +118,15 @@ public class PrimeraAdapter implements ProviderAdapter {
 
     @Override
     public void disconnect() {
+        logger.info("PrimeraAdapter:disconnect(): closing session");
+        try {
+            _client.close();
+        } catch (IOException e) {
+            logger.warn("PrimeraAdapter:refreshSession(): Error closing client connection", e);
+        } finally {
+            _client = null;
+            keyExpiration = -1;
+        }
         return;
     }
 
@@ -489,24 +498,25 @@ public class PrimeraAdapter implements ProviderAdapter {
     }
 
     private String getSessionKey() {
-        refreshSession(false);
         return key;
     }
 
-    private synchronized void refreshSession(boolean force) {
+    private synchronized String refreshSession(boolean force) {
         try {
-            if (force || keyExpiration < System.currentTimeMillis()) {
+            if (force || keyExpiration < (System.currentTimeMillis()-15000)) {
                 // close client to force connection reset on appliance -- not doing this can result in NotAuthorized error...guessing
-                _client.close();;
-                _client = null;
+                disconnect();
                 login();
-                keyExpiration = System.currentTimeMillis() + keyTtl;
+                logger.debug("PrimeraAdapter:refreshSession(): session created or refreshed with key=" + key + ", expiration=" + keyExpiration);
+            } else {
+                logger.debug("PrimeraAdapter:refreshSession(): using existing session key=" + key + ", expiration=" + keyExpiration);
             }
         } catch (Exception e) {
             // retry frequently but not every request to avoid DDOS on storage API
             logger.warn("Failed to refresh Primera API key for " + username + "@" + url + ", will retry in 5 seconds", e);
             keyExpiration = System.currentTimeMillis() + (5*1000);
         }
+        return key;
     }
     /**
      * Login to the array and get an access token
@@ -549,7 +559,7 @@ public class PrimeraAdapter implements ProviderAdapter {
             cpg = queryParms.get(PrimeraAdapter.CPG);
             if (cpg == null) {
                 throw new RuntimeException(
-                        PrimeraAdapter.CPG + " paramater/option required to configure this storage pool");
+                        PrimeraAdapter.CPG + " parameter/option required to configure this storage pool");
             }
         }
 
@@ -636,6 +646,9 @@ public class PrimeraAdapter implements ProviderAdapter {
             if (statusCode == 200 | statusCode == 201) {
                 PrimeraKey keyobj = mapper.readValue(response.getEntity().getContent(), PrimeraKey.class);
                 key = keyobj.getKey();
+                // Set the key expiration to x minutes from now
+                this.keyExpiration = System.currentTimeMillis() + keyTtl;
+                logger.info("PrimeraAdapter:login(): successful, new session: New key=" + key + ", expiration=" + this.keyExpiration);
             } else if (statusCode == 401 || statusCode == 403) {
                 throw new RuntimeException("Authentication or Authorization to Primera [" + url + "] with user [" + username
                         + "] failed, unable to retrieve session token");
@@ -696,11 +709,11 @@ public class PrimeraAdapter implements ProviderAdapter {
     private <T> T POST(String path, Object input, final TypeReference<T> type) {
         CloseableHttpResponse response = null;
         try {
-            this.refreshSession(false);
+            String session_key = this.refreshSession(false);
             HttpPost request = new HttpPost(url + path);
             request.addHeader("Content-Type", "application/json");
             request.addHeader("Accept", "application/json");
-            request.addHeader("X-HP3PAR-WSAPI-SessionKey", getSessionKey());
+            request.addHeader("X-HP3PAR-WSAPI-SessionKey", session_key);
             try {
                 String data = mapper.writeValueAsString(input);
                 request.setEntity(new StringEntity(data));
@@ -781,10 +794,11 @@ public class PrimeraAdapter implements ProviderAdapter {
         CloseableHttpResponse response = null;
         try {
             this.refreshSession(false);
+            String session_key = this.refreshSession(false);
             HttpPut request = new HttpPut(url + path);
             request.addHeader("Content-Type", "application/json");
             request.addHeader("Accept", "application/json");
-            request.addHeader("X-HP3PAR-WSAPI-SessionKey", getSessionKey());
+            request.addHeader("X-HP3PAR-WSAPI-SessionKey", session_key);
             String data = mapper.writeValueAsString(input);
             request.setEntity(new StringEntity(data));
 
@@ -834,10 +848,11 @@ public class PrimeraAdapter implements ProviderAdapter {
         CloseableHttpResponse response = null;
         try {
             this.refreshSession(false);
+            String session_key = this.refreshSession(false);
             HttpGet request = new HttpGet(url + path);
             request.addHeader("Content-Type", "application/json");
             request.addHeader("Accept", "application/json");
-            request.addHeader("X-HP3PAR-WSAPI-SessionKey", getSessionKey());
+            request.addHeader("X-HP3PAR-WSAPI-SessionKey", session_key);
 
             CloseableHttpClient client = getClient();
             response = (CloseableHttpResponse) client.execute(request);
@@ -876,10 +891,11 @@ public class PrimeraAdapter implements ProviderAdapter {
         CloseableHttpResponse response = null;
         try {
             this.refreshSession(false);
+            String session_key = this.refreshSession(false);
             HttpDelete request = new HttpDelete(url + path);
             request.addHeader("Content-Type", "application/json");
             request.addHeader("Accept", "application/json");
-            request.addHeader("X-HP3PAR-WSAPI-SessionKey", getSessionKey());
+            request.addHeader("X-HP3PAR-WSAPI-SessionKey", session_key);
 
             CloseableHttpClient client = getClient();
             response = (CloseableHttpResponse) client.execute(request);
