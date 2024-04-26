@@ -266,12 +266,7 @@ public class KVMStorageProcessor implements StorageProcessor {
 
                 Map<String, String> details = primaryStore.getDetails();
 
-                String path = null;
-                if (primaryStore.getPoolType() == StoragePoolType.FiberChannel) {
-                    path = destData.getPath();
-                } else {
-                    path = details != null ? details.get("managedStoreTarget") : null;
-                }
+                String path = derivePath(primaryStore, destData, details);
 
                 if (!storagePoolMgr.connectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path, details)) {
                     s_logger.warn("Failed to connect physical disk at path: " + path + ", in storage pool id: " + primaryStore.getUuid());
@@ -330,6 +325,16 @@ public class KVMStorageProcessor implements StorageProcessor {
                 s_logger.debug("Failed to clean up secondary storage", e);
             }
         }
+    }
+
+    private String derivePath(PrimaryDataStoreTO primaryStore, DataTO destData, Map<String, String> details) {
+        String path = null;
+        if (primaryStore.getPoolType() == StoragePoolType.FiberChannel) {
+            path = destData.getPath();
+        } else {
+            path = details != null ? details.get("managedStoreTarget") : null;
+        }
+        return path;
     }
 
     // this is much like PrimaryStorageDownloadCommand, but keeping it separate. copies template direct to root disk
@@ -411,12 +416,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 vol = templateToPrimaryDownload(templatePath, primaryPool, volume.getUuid(), volume.getSize(), cmd.getWaitInMillSeconds());
             } if (primaryPool.getType() == StoragePoolType.PowerFlex) {
                 Map<String, String> details = primaryStore.getDetails();
-                String path = null;
-                if (primaryStore.getPoolType() == StoragePoolType.FiberChannel) {
-                    path = destData.getPath();
-                } else {
-                    path = details != null ? details.get("managedStoreTarget") : null;
-                }
+                String path = derivePath(primaryStore, destData, details);
 
                 if (!storagePoolMgr.connectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), templatePath, details)) {
                     s_logger.warn("Failed to connect base template volume at path: " + templatePath + ", in storage pool id: " + primaryStore.getUuid());

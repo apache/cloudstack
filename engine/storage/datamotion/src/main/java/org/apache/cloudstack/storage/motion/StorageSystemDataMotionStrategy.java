@@ -1850,14 +1850,12 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     private CopyCmdAnswer copyImageToVolume(DataObject srcDataObject, VolumeInfo destVolumeInfo, HostVO hostVO) {
         int primaryStorageDownloadWait = StorageManager.PRIMARY_STORAGE_DOWNLOAD_WAIT.value();
 
-        CopyCommand copyCommand = null;
-
         CopyCmdAnswer copyCmdAnswer;
 
         try {
             _volumeService.grantAccess(destVolumeInfo, hostVO, destVolumeInfo.getDataStore());
 
-            copyCommand = new CopyCommand(srcDataObject.getTO(), destVolumeInfo.getTO(), primaryStorageDownloadWait,
+            CopyCommand copyCommand = new CopyCommand(srcDataObject.getTO(), destVolumeInfo.getTO(), primaryStorageDownloadWait,
             VirtualMachineManager.ExecuteInSequence.value());
             Map<String, String> destDetails = getVolumeDetails(destVolumeInfo);
 
@@ -2599,8 +2597,6 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             int primaryStorageDownloadWait = StorageManager.PRIMARY_STORAGE_DOWNLOAD_WAIT.value();
 
-            CopyCommand copyCommand = null;
-
             try {
                 handleQualityOfServiceForVolumeMigration(volumeInfo, PrimaryDataStoreDriver.QualityOfServiceState.MIGRATION);
 
@@ -2608,7 +2604,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                     _volumeService.grantAccess(volumeInfo, hostVO, srcDataStore);
                 }
 
-                copyCommand = new CopyCommand(volumeInfo.getTO(), templateInfo.getTO(), primaryStorageDownloadWait, VirtualMachineManager.ExecuteInSequence.value());
+                CopyCommand copyCommand = new CopyCommand(volumeInfo.getTO(), templateInfo.getTO(), primaryStorageDownloadWait, VirtualMachineManager.ExecuteInSequence.value());
 
                 Map<String, String> srcDetails = getVolumeDetails(volumeInfo);
 
@@ -3076,15 +3072,13 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             srcData = cacheData;
         }
 
-        CopyCommand copyCommand = null;
-
         try {
             if (Snapshot.LocationType.PRIMARY.equals(locationType)) {
                 _volumeService.grantAccess(snapshotInfo, hostVO, snapshotInfo.getDataStore());
 
                 Map<String, String> srcDetails = getSnapshotDetails(snapshotInfo);
 
-                copyCommand = new CopyCommand(srcData.getTO(), volumeInfo.getTO(), primaryStorageDownloadWait, VirtualMachineManager.ExecuteInSequence.value());
+                CopyCommand copyCommand = new CopyCommand(srcData.getTO(), volumeInfo.getTO(), primaryStorageDownloadWait, VirtualMachineManager.ExecuteInSequence.value());
                 copyCommand.setOptions(srcDetails);
             } else {
                 _volumeService.grantAccess(volumeInfo, hostVO, volumeInfo.getDataStore());
