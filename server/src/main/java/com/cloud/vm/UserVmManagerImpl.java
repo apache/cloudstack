@@ -7992,9 +7992,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if (diskOffering != null) {
             resizedVolume.setDiskOfferingId(diskOffering.getId());
-            resizedVolume.setSize(diskOffering.getDiskSize());
-            if (diskOffering.isCustomized()) {
-                resizedVolume.setSize(vol.getSize());
+            if (!diskOffering.isCustomized()) {
+                resizedVolume.setSize(diskOffering.getDiskSize());
             }
             if (diskOffering.getMinIops() != null) {
                 resizedVolume.setMinIops(diskOffering.getMinIops());
