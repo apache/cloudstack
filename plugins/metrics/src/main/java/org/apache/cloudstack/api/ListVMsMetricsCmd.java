@@ -17,10 +17,12 @@
 
 package org.apache.cloudstack.api;
 
+import java.util.EnumSet;
 import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.exception.InvalidParameterValueException;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
@@ -54,6 +56,16 @@ public class ListVMsMetricsCmd extends ListVMsCmd implements UserCmd {
     @Override
     public String getCommandName() {
         return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
+    }
+
+    @Override
+    public EnumSet<ApiConstants.VMDetails> getDetails() throws InvalidParameterValueException {
+        final EnumSet<ApiConstants.VMDetails> dv = super.getDetails();
+        // Include stats detail when 'all' details are asked
+        if (dv.contains(ApiConstants.VMDetails.all)) {
+            dv.add(ApiConstants.VMDetails.stats);
+        }
+        return dv;
     }
 
     @Override

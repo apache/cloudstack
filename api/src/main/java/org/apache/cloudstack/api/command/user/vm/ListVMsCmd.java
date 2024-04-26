@@ -96,10 +96,11 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
     @Parameter(name = ApiConstants.DETAILS,
                type = CommandType.LIST,
                collectionType = CommandType.STRING,
-               description = "comma separated list of vm details requested, "
-                   + "value can be a list of [all, group, nics, stats, secgrp, tmpl, servoff, diskoff, backoff, iso, volume, min, affgrp]."
-                   + " If no parameter is passed in, the details will be defaulted to all")
-    private List<String> viewDetails;
+               description = "comma separated list of host details requested, "
+                   + "value can be a list of [all, group, nics, stats, secgrp, tmpl, servoff, diskoff, iso, volume, min, affgrp]."
+                   + " If no parameter is passed in, the details will be defaulted to, all details excluding stats "
+                   + " for the listVirtualMachines API, and all details including stats for the listVirtualMachinesMetrics API")
+    protected List<String> viewDetails;
 
     @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.UUID, entityType = TemplateResponse.class, description = "list vms by template")
     private Long templateId;

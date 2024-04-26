@@ -251,7 +251,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             userVmResponse.setOsDisplayName(guestOS.getDisplayName());
         }
 
-        if (details.contains(VMDetails.all) || details.contains(VMDetails.stats)) {
+        if (details.contains(VMDetails.stats)) {
             // stats calculation
             VmStats vmStats = ApiDBUtils.getVmStatistics(userVm.getId(), accumulateStats);
             if (vmStats != null) {
@@ -268,7 +268,6 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
                 userVmResponse.setMemoryKBs(totalMemory);
                 userVmResponse.setMemoryIntFreeKBs(correctedFreeMemory);
                 userVmResponse.setMemoryTargetKBs((long)vmStats.getTargetMemoryKBs());
-
             }
         }
 
