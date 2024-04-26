@@ -18,7 +18,7 @@
 """
 # Import Local Modules
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.lib.base import (VirtualMachine, ServiceOffering, Template)
+from marvin.lib.base import (VirtualMachine, Volume, ServiceOffering, Template)
 from marvin.lib.common import (get_zone, get_domain)
 from nose.plugins.attrib import attr
 
@@ -68,10 +68,17 @@ class TestRestoreVM(cloudstackTestCase):
                                                 serviceofferingid=self.service_offering.id)
         self._cleanup.append(virtual_machine)
 
+        root_vol = Volume.list(self.apiclient, virtualmachineid=virtual_machine.id)[0]
+        self.assertEqual(root_vol.state, 'Ready', "Volume should be in Ready state")
+        self.assertEqual(root_vol.size, self.template_t1.size, "Size of volume and template should match")
+
         virtual_machine.restore(self.apiclient, self.template_t2.id)
         restored_vm = VirtualMachine.list(self.apiclient, id=virtual_machine.id)[0]
-        self.assertEqual(restored_vm.state, 'Running', "Check the state of VM")
-        self.assertEqual(restored_vm.templateid, self.template_t2.id, "Check the template of VM")
+        self.assertEqual(restored_vm.state, 'Running', "VM should be in a running state")
+        self.assertEqual(restored_vm.templateid, self.template_t2.id, "VM's template after restore is incorrect")
+        root_vol = Volume.list(self.apiclient, virtualmachineid=restored_vm.id)[0]
+        self.assertEqual(root_vol.state, 'Ready', "Volume should be in Ready state")
+        self.assertEqual(root_vol.size, self.template_t2.size, "Size of volume and template should match")
 
     @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_02_restore_vm_allocated_root(self):
@@ -83,9 +90,19 @@ class TestRestoreVM(cloudstackTestCase):
                                                 serviceofferingid=self.service_offering.id,
                                                 startvm=False)
         self._cleanup.append(virtual_machine)
+        root_vol = Volume.list(self.apiclient, virtualmachineid=virtual_machine.id)[0]
+        self.assertEqual(root_vol.state, 'Allocated', "Volume should be in Allocated state")
+        self.assertEqual(root_vol.size, self.template_t1.size, "Size of volume and template should match")
 
-        virtual_machine.stop(self.apiclient)
         virtual_machine.restore(self.apiclient, self.template_t2.id)
         restored_vm = VirtualMachine.list(self.apiclient, id=virtual_machine.id)[0]
         self.assertEqual(restored_vm.state, 'Stopped', "Check the state of VM")
         self.assertEqual(restored_vm.templateid, self.template_t2.id, "Check the template of VM")
+
+        root_vol = Volume.list(self.apiclient, virtualmachineid=restored_vm.id)[0]
+        self.assertEqual(root_vol.state, 'Allocated', "Volume should be in Allocated state")
+        self.assertEqual(root_vol.size, self.template_t2.size, "Size of volume and template should match")
+
+        virtual_machine.start(self.apiclient)
+        root_vol = Volume.list(self.apiclient, virtualmachineid=restored_vm.id)[0]
+        self.assertEqual(root_vol.state, 'Ready', "Volume should be in Ready state")
