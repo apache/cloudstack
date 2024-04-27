@@ -23,8 +23,9 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.util.Enumeration;
+import java.util.Collections;
 import java.util.Formatter;
+import java.util.List;
 
 /**
  * This class retrieves the (first) MAC address for the machine is it is loaded on and stores it statically for retrieval.
@@ -68,49 +69,52 @@ public class MacAddress {
         return toString(":");
     }
 
-    private static MacAddress s_address;
-    static {
-        String macAddress = null;
+    private static MacAddress macAddress;
 
+    static {
+        String macString = null;
         try {
-            Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
-            while (networkInterfaces.hasMoreElements()) {
-                 NetworkInterface network = networkInterfaces.nextElement();
-                 final byte [] mac = network.getHardwareAddress();
-                 if (mac != null && !network.isVirtual() &&
-                         !network.getName().startsWith("br-") &&
-                         !network.getName().startsWith("veth") &&
-                         !network.getName().startsWith("vnet")) {
-                     StringBuilder macAddressBuilder = new StringBuilder();
-                     for (byte b : mac) {
-                         macAddressBuilder.append(String.format("%02X", b));
-                     }
-                     macAddress = macAddressBuilder.toString();
-                 }
-             }
+            final List<NetworkInterface> nics = Collections.list(NetworkInterface.getNetworkInterfaces());
+            Collections.reverse(nics);
+            for (final NetworkInterface nic : nics) {
+                final byte[] mac = nic.getHardwareAddress();
+                if (mac != null &&
+                        !nic.isVirtual() &&
+                        !nic.isLoopback() &&
+                        !nic.getName().startsWith("br") &&
+                        !nic.getName().startsWith("veth") &&
+                        !nic.getName().startsWith("vnet")) {
+                    StringBuilder macAddressBuilder = new StringBuilder();
+                    for (byte b : mac) {
+                        macAddressBuilder.append(String.format("%02X", b));
+                    }
+                    macString = macAddressBuilder.toString();
+                    break;
+                }
+            }
         } catch (SocketException ignore) {
         }
 
-        long macAddressInLong = 0;
+        long macAddressLong = 0;
 
-        if (macAddress != null) {
-            macAddressInLong = Long.parseLong(macAddress, 16);
+        if (macString != null) {
+            macAddressLong = Long.parseLong(macString, 16);
         } else {
             try {
                 byte[] local = InetAddress.getLocalHost().getAddress();
-                macAddressInLong |= (local[0] << 24) & 0xFF000000L;
-                macAddressInLong |= (local[1] << 16) & 0xFF0000;
-                macAddressInLong |= (local[2] << 8) & 0xFF00;
-                macAddressInLong |= local[3] & 0xFF;
+                macAddressLong |= (local[0] << 24) & 0xFF000000L;
+                macAddressLong |= (local[1] << 16) & 0xFF0000;
+                macAddressLong |= (local[2] << 8) & 0xFF00;
+                macAddressLong |= local[3] & 0xFF;
             } catch (UnknownHostException ex) {
-                macAddressInLong |= (long)(Math.random() * 0x7FFFFFFF);
+                macAddressLong |= (long)(Math.random() * 0x7FFFFFFF);
             }
         }
 
-        s_address = new MacAddress(macAddressInLong);
+        MacAddress.macAddress = new MacAddress(macAddressLong);
     }
 
     public static MacAddress getMacAddress() {
-        return s_address;
+        return macAddress;
     }
 }
