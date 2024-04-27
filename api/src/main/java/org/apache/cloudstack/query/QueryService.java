@@ -125,6 +125,9 @@ public interface QueryService {
     static final ConfigKey<Boolean> SharePublicTemplatesWithOtherDomains = new ConfigKey<>("Advanced", Boolean.class, "share.public.templates.with.other.domains", "true",
             "If false, templates of this domain will not show up in the list templates of other domains.", true, ConfigKey.Scope.Domain);
 
+    ConfigKey<Boolean> AllowStatsInDefaultDetailsForListVMs = new ConfigKey<>("Advanced", Boolean.class, "list.vm.default.details.stats", "false",
+            "Determines whether VM stats should be returned when details are not specified in listVirtualMachines API request", true, ConfigKey.Scope.Global);
+
     ListResponse<UserResponse> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException;
 
     ListResponse<UserResponse> searchForUsers(Long domainId, boolean recursive) throws PermissionDeniedException;

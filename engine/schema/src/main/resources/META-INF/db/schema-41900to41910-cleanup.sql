@@ -18,3 +18,5 @@
 --;
 -- Schema upgrade cleanup from 4.19.0.0 to 4.19.1.0
 --;
+
+DELETE from cloud.configuration where name='vm.stats.increment.metrics.in.memory';
