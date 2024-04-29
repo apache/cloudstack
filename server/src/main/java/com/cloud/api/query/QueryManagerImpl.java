@@ -3934,7 +3934,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                     srvOffrDomainDetailSearch.entity().getName(), serviceOfferingSearch.entity().setString(ApiConstants.DOMAIN_ID));
         }
 
-        List<String> hostTags = getHostTagsFromTemplateForServiceOfferingsListing(caller, templateId);
+        List<String> hostTags = new ArrayList<>();
         if (currentVmOffering != null) {
             hostTags.addAll(com.cloud.utils.StringUtils.csvTagsToList(currentVmOffering.getHostTag()));
         }

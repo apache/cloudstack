@@ -54,6 +54,7 @@ jobs:
                   smoke/test_deploy_vm_with_userdata
                   smoke/test_deploy_vms_in_parallel
                   smoke/test_deploy_vms_with_varied_deploymentplanners
+                  smoke/test_restore_vm
                   smoke/test_diagnostics
                   smoke/test_direct_download
                   smoke/test_disk_offerings
