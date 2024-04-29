@@ -26,7 +26,7 @@ repos:
       - id: identity
       - id: check-hooks-apply
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v4.6.0
     hooks:
       #- id: check-added-large-files
       - id: check-case-conflict
@@ -57,7 +57,7 @@ repos:
         exclude: \.(cs|xml)$
       # - id: trailing-whitespace
   - repo: https://github.com/pycqa/flake8
-    rev: 6.1.0
+    rev: 7.0.0
     hooks:
     - id: flake8
       args: [--config, .github/linters/.flake8]

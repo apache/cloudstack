@@ -185,6 +185,9 @@ import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.apache.cloudstack.api.ApiConstants.MAX_IOPS;
+import static org.apache.cloudstack.api.ApiConstants.MIN_IOPS;
+
 public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     public static final String VM_IMPORT_DEFAULT_TEMPLATE_NAME = "system-default-vm-import-dummy-template.iso";
     public static final String KVM_VM_IMPORT_DEFAULT_TEMPLATE_NAME = "kvm-default-vm-import-dummy-template";
@@ -852,7 +855,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
         StoragePool storagePool = getStoragePool(disk, zone, cluster);
         DiskProfile profile = volumeManager.importVolume(type, name, diskOffering, diskSize,
-                minIops, maxIops, vm, template, owner, deviceId, storagePool.getId(), path, chainInfo);
+                minIops, maxIops, vm.getDataCenterId(), vm.getHypervisorType(), vm, template, owner, deviceId, storagePool.getId(), path, chainInfo);
 
         return new Pair<DiskProfile, StoragePool>(profile, storagePool);
     }
@@ -898,6 +901,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         if (!hostSupportsServiceOfferingAndTemplate(sourceHost, serviceOffering, template)) {
             logger.debug(String.format("VM %s needs to be migrated", vm.getUuid()));
             final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm, template, serviceOffering, owner, null);
+            profile.setServiceOffering(serviceOfferingDao.findById(vm.getId(), serviceOffering.getId()));
             DeploymentPlanner.ExcludeList excludeList = new DeploymentPlanner.ExcludeList();
             excludeList.addHost(sourceHost.getId());
             final DataCenterDeployment plan = new DataCenterDeployment(sourceHost.getDataCenterId(), sourceHost.getPodId(), sourceHost.getClusterId(), null, null, null);
@@ -1199,12 +1203,12 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 throw new InvalidParameterValueException(String.format("Root disk ID: %s size is invalid", rootDisk.getDiskId()));
             }
             Long minIops = null;
-            if (details.containsKey("minIops")) {
-                minIops = Long.parseLong(details.get("minIops"));
+            if (details.containsKey(MIN_IOPS)) {
+                minIops = Long.parseLong(details.get(MIN_IOPS));
             }
             Long maxIops = null;
-            if (details.containsKey("maxIops")) {
-                maxIops = Long.parseLong(details.get("maxIops"));
+            if (details.containsKey(MAX_IOPS)) {
+                maxIops = Long.parseLong(details.get(MAX_IOPS));
             }
             DiskOfferingVO diskOffering = diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
             diskProfileStoragePoolList.add(importDisk(rootDisk, userVm, cluster, diskOffering, Volume.Type.ROOT, String.format("ROOT-%d", userVm.getId()),
@@ -2164,11 +2168,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         UserVm userVm = null;
 
         Map<String, String> allDetails = new HashMap<>(details);
-        if (serviceOffering.isDynamic()) {
-            allDetails.put(VmDetailConstants.CPU_NUMBER, String.valueOf(serviceOffering.getCpu()));
-            allDetails.put(VmDetailConstants.MEMORY, String.valueOf(serviceOffering.getRamSize()));
-            allDetails.put(VmDetailConstants.CPU_SPEED, String.valueOf(serviceOffering.getSpeed()));
-        }
         // Check disks and supplied disk offerings
         List<UnmanagedInstanceTO.Disk> unmanagedInstanceDisks = unmanagedInstance.getDisks();
 
@@ -2222,6 +2221,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
 
         final VirtualMachineProfile profile = new VirtualMachineProfileImpl(userVm, template, serviceOffering, owner, null);
+        ServiceOfferingVO dummyOffering = serviceOfferingDao.findById(userVm.getId(), serviceOffering.getId());
+        profile.setServiceOffering(dummyOffering);
         DeploymentPlanner.ExcludeList excludeList = new DeploymentPlanner.ExcludeList();
         final DataCenterDeployment plan = new DataCenterDeployment(zone.getId(), null, null, null, null, null);
         DeployDestination dest = null;
@@ -2273,7 +2274,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             cleanupFailedImportVM(userVm);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import NICs while importing vm: %s. %s", instanceName, StringUtils.defaultString(e.getMessage())));
         }
-        publishVMUsageUpdateResourceCount(userVm, serviceOffering, template);
+        publishVMUsageUpdateResourceCount(userVm, dummyOffering, template);
         return userVm;
     }
 
@@ -2285,11 +2286,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         UserVm userVm = null;
 
         Map<String, String> allDetails = new HashMap<>(details);
-        if (serviceOffering.isDynamic()) {
-            allDetails.put(VmDetailConstants.CPU_NUMBER, String.valueOf(serviceOffering.getCpu()));
-            allDetails.put(VmDetailConstants.MEMORY, String.valueOf(serviceOffering.getRamSize()));
-            allDetails.put(VmDetailConstants.CPU_SPEED, String.valueOf(serviceOffering.getSpeed()));
-        }
 
         VirtualMachine.PowerState powerState = VirtualMachine.PowerState.PowerOff;
 
@@ -2356,6 +2352,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         DiskProfile diskProfile = volumeManager.allocateRawVolume(Volume.Type.ROOT, rootVolumeName, diskOffering, null, null, null, userVm, template, owner, null);
 
         final VirtualMachineProfile profile = new VirtualMachineProfileImpl(userVm, template, serviceOffering, owner, null);
+        ServiceOfferingVO dummyOffering = serviceOfferingDao.findById(userVm.getId(), serviceOffering.getId());
+        profile.setServiceOffering(dummyOffering);
         DeploymentPlanner.ExcludeList excludeList = new DeploymentPlanner.ExcludeList();
         final DataCenterDeployment plan = new DataCenterDeployment(zone.getId(), null, null, hostId, poolId, null);
         DeployDestination dest = null;
@@ -2407,7 +2405,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import volumes while importing vm: %s. %s", instanceName, StringUtils.defaultString(e.getMessage())));
         }
         networkOrchestrationService.importNic(macAddress, 0, network, true, userVm, requestedIpPair, zone, true);
-        publishVMUsageUpdateResourceCount(userVm, serviceOffering, template);
+        publishVMUsageUpdateResourceCount(userVm, dummyOffering, template);
         return userVm;
     }
 

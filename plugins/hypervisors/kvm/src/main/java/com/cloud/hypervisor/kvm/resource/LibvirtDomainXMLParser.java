@@ -545,8 +545,9 @@ public class LibvirtDomainXMLParser {
             }
             final String sockets = getAttrValue("topology", "sockets", cpuModeDefElement);
             final String cores = getAttrValue("topology", "cores", cpuModeDefElement);
-            if (StringUtils.isNotBlank(sockets) && StringUtils.isNotBlank(cores)) {
-                cpuModeDef.setTopology(Integer.parseInt(cores), Integer.parseInt(sockets));
+            final String threads = getAttrValue("topology", "threads", cpuModeDefElement);
+            if (StringUtils.isNotBlank(sockets) && StringUtils.isNotBlank(cores) && StringUtils.isNotBlank(threads)) {
+                cpuModeDef.setTopology(Integer.parseInt(cores), Integer.parseInt(threads), Integer.parseInt(sockets));
             }
         }
     }

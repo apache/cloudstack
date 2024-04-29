@@ -130,6 +130,8 @@ public interface VolumeOrchestrationService {
 
     boolean canVmRestartOnAnotherServer(long vmId);
 
+    void saveVolumeDetails(Long diskOfferingId, Long volumeId);
+
     /**
      * Allocate a volume or multiple volumes in case of template is registered with the 'deploy-as-is' option, allowing multiple disks
      */
@@ -165,7 +167,8 @@ public interface VolumeOrchestrationService {
      * @param chainInfo chain info for the volume. Hypervisor specific.
      * @return  DiskProfile of imported volume
      */
-    DiskProfile importVolume(Type type, String name, DiskOffering offering, Long sizeInBytes, Long minIops, Long maxIops, VirtualMachine vm, VirtualMachineTemplate template,
+    DiskProfile importVolume(Type type, String name, DiskOffering offering, Long sizeInBytes, Long minIops, Long maxIops,
+                             Long zoneId, HypervisorType hypervisorType, VirtualMachine vm, VirtualMachineTemplate template,
                              Account owner, Long deviceId, Long poolId, String path, String chainInfo);
 
     DiskProfile updateImportedVolume(Type type, DiskOffering offering, VirtualMachine vm, VirtualMachineTemplate template,

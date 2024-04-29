@@ -26,8 +26,10 @@ import com.cloud.utils.db.StateMachine;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State.Event;
+import org.apache.cloudstack.util.HypervisorTypeConverter;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -62,6 +64,7 @@ public class EngineClusterVO implements EngineCluster, Identity {
     long podId;
 
     @Column(name = "hypervisor_type")
+    @Convert(converter = HypervisorTypeConverter.class)
     String hypervisorType;
 
     @Column(name = "cluster_type")
