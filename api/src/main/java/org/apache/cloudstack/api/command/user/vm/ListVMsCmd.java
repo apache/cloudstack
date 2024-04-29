@@ -44,6 +44,7 @@ import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.query.QueryService;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 
@@ -245,6 +246,9 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
         EnumSet<VMDetails> dv;
         if (viewDetails == null || viewDetails.size() <= 0) {
             dv = EnumSet.of(VMDetails.all);
+            if (QueryService.AllowStatsInDefaultDetailsForListVMs.value()) {
+                dv.add(VMDetails.stats);
+            }
         } else {
             try {
                 ArrayList<VMDetails> dc = new ArrayList<VMDetails>();
