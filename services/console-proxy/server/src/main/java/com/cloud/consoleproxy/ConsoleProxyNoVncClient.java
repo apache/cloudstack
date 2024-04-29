@@ -94,7 +94,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
         connectionAlive = true;
         this.sessionUuid = param.getSessionUuid();
         String clientSourceIp = param.getClientIp();
-        logger.debug("Initializing client from IP {}", clientSourceIp);
+        logger.debug("Initializing client from IP {}.", clientSourceIp);
 
         updateFrontEndActivityTime();
         Thread worker = new Thread(new Runnable() {
