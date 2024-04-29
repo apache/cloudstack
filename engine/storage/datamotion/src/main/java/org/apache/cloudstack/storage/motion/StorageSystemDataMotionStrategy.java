@@ -3073,12 +3073,13 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         }
 
         try {
+            CopyCommand copyCommand = null;
             if (Snapshot.LocationType.PRIMARY.equals(locationType)) {
                 _volumeService.grantAccess(snapshotInfo, hostVO, snapshotInfo.getDataStore());
 
                 Map<String, String> srcDetails = getSnapshotDetails(snapshotInfo);
 
-                CopyCommand copyCommand = new CopyCommand(srcData.getTO(), volumeInfo.getTO(), primaryStorageDownloadWait, VirtualMachineManager.ExecuteInSequence.value());
+                copyCommand = new CopyCommand(srcData.getTO(), volumeInfo.getTO(), primaryStorageDownloadWait, VirtualMachineManager.ExecuteInSequence.value());
                 copyCommand.setOptions(srcDetails);
             } else {
                 _volumeService.grantAccess(volumeInfo, hostVO, volumeInfo.getDataStore());
