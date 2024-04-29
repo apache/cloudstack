@@ -7948,17 +7948,25 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private void updateVolume(Volume vol, VMTemplateVO template, UserVmVO userVm, DiskOffering diskOffering, Map<String, String> details) {
         VolumeVO resizedVolume = (VolumeVO) vol;
 
-        if (userVmDetailsDao.findDetail(userVm.getId(), VmDetailConstants.ROOT_DISK_SIZE) == null && !vol.getSize().equals(template.getSize())) {
-            if (template.getSize() != null) {
+        if (template != null && template.getSize() != null) {
+            UserVmDetailVO vmRootDiskSizeDetail = userVmDetailsDao.findDetail(userVm.getId(), VmDetailConstants.ROOT_DISK_SIZE);
+            if (vmRootDiskSizeDetail == null) {
                 resizedVolume.setSize(template.getSize());
+            } else {
+                long rootDiskSize = Long.parseLong(vmRootDiskSizeDetail.getValue()) * GiB_TO_BYTES;
+                if (template.getSize() >= rootDiskSize) {
+                    resizedVolume.setSize(template.getSize());
+                    userVmDetailsDao.remove(vmRootDiskSizeDetail.getId());
+                } else {
+                    resizedVolume.setSize(rootDiskSize);
+                }
             }
         }
 
         if (diskOffering != null) {
             resizedVolume.setDiskOfferingId(diskOffering.getId());
-            resizedVolume.setSize(diskOffering.getDiskSize());
-            if (diskOffering.isCustomized()) {
-                resizedVolume.setSize(vol.getSize());
+            if (!diskOffering.isCustomized()) {
+                resizedVolume.setSize(diskOffering.getDiskSize());
             }
             if (diskOffering.getMinIops() != null) {
                 resizedVolume.setMinIops(diskOffering.getMinIops());
@@ -7972,6 +7980,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (StringUtils.isNumeric(details.get(VmDetailConstants.ROOT_DISK_SIZE))) {
                 Long rootDiskSize = Long.parseLong(details.get(VmDetailConstants.ROOT_DISK_SIZE)) * GiB_TO_BYTES;
                 resizedVolume.setSize(rootDiskSize);
+                UserVmDetailVO vmRootDiskSizeDetail = userVmDetailsDao.findDetail(userVm.getId(), VmDetailConstants.ROOT_DISK_SIZE);
+                if (vmRootDiskSizeDetail != null) {
+                    vmRootDiskSizeDetail.setValue(details.get(VmDetailConstants.ROOT_DISK_SIZE));
+                    userVmDetailsDao.update(vmRootDiskSizeDetail.getId(), vmRootDiskSizeDetail);
+                } else {
+                    userVmDetailsDao.persist(new UserVmDetailVO(userVm.getId(), VmDetailConstants.ROOT_DISK_SIZE,
+                            details.get(VmDetailConstants.ROOT_DISK_SIZE), true));
+                }
             }
 
             String minIops = details.get(MIN_IOPS);
