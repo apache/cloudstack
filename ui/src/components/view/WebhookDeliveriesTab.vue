@@ -93,6 +93,14 @@ export default {
           message: 'message.redeliver.webhook.delivery',
           dataView: true,
           popup: true
+        },
+        {
+          api: 'deleteWebhookDelivery',
+          icon: 'delete-outlined',
+          label: 'label.delete.webhook.delivery',
+          message: 'message.redeliver.webhook.delivery',
+          dataView: true,
+          popup: true
         }
       ],
       page: 1,
@@ -234,10 +242,38 @@ export default {
         this.tabLoading = false
       })
     },
+    deleteDeliveryConfirmation (item) {
+      const self = this
+      this.$confirm({
+        title: this.$t('label.delete') + ' ' + item.eventtype,
+        okText: this.$t('label.ok'),
+        okType: 'primary',
+        cancelText: this.$t('label.cancel'),
+        onOk () {
+          self.deleteDelivery(item)
+        }
+      })
+    },
+    deleteDelivery (item) {
+      const params = {
+        id: item.id
+      }
+      this.tabLoading = true
+      api('deleteWebhookDelivery', params).then(json => {
+        const message = `${this.$t('message.success.delete')} ${this.$t('label.webhook.delivery')}`
+        this.$message.success(message)
+        this.fetchData()
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.tabLoading = false
+      })
+    },
     execAction (action) {
-      console.log('-------------------', action)
       if (action.api === 'executeWebhookDelivery') {
         this.redeliverDeliveryConfirmation(action.resource)
+      } else if (action.api === 'deleteWebhookDelivery') {
+        this.deleteDeliveryConfirmation(action.resource)
       }
     }
   }

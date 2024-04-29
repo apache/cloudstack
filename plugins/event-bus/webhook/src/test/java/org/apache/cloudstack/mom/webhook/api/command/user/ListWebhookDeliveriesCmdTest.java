@@ -20,6 +20,7 @@ package org.apache.cloudstack.mom.webhook.api.command.user;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -67,6 +68,26 @@ public class ListWebhookDeliveriesCmdTest {
         Assert.assertEquals(value, getCommandMethodValue(cmd, methodName));
     }
 
+    private void runStringMemberTest(String memberName) {
+        String methodName = "get" + memberName.substring(0, 1).toUpperCase() + memberName.substring(1);
+        ListWebhookDeliveriesCmd cmd = new ListWebhookDeliveriesCmd();
+        ReflectionTestUtils.setField(cmd, memberName, null);
+        Assert.assertNull(getCommandMethodValue(cmd, methodName));
+        String value = UUID.randomUUID().toString();
+        ReflectionTestUtils.setField(cmd, memberName, value);
+        Assert.assertEquals(value, getCommandMethodValue(cmd, methodName));
+    }
+
+    private void runDateMemberTest(String memberName) {
+        String methodName = "get" + memberName.substring(0, 1).toUpperCase() + memberName.substring(1);
+        ListWebhookDeliveriesCmd cmd = new ListWebhookDeliveriesCmd();
+        ReflectionTestUtils.setField(cmd, memberName, null);
+        Assert.assertNull(getCommandMethodValue(cmd, methodName));
+        Date value = new Date();
+        ReflectionTestUtils.setField(cmd, memberName, value);
+        Assert.assertEquals(value, getCommandMethodValue(cmd, methodName));
+    }
+
     @Test
     public void testGetId() {
         runLongMemberTest("id");
@@ -80,6 +101,21 @@ public class ListWebhookDeliveriesCmdTest {
     @Test
     public void testGetManagementServerId() {
         runLongMemberTest("managementServerId");
+    }
+
+    @Test
+    public void testStartDate() {
+        runDateMemberTest("startDate");
+    }
+
+    @Test
+    public void testEndDate() {
+        runDateMemberTest("endDate");
+    }
+
+    @Test
+    public void testEventType() {
+        runStringMemberTest("eventType");
     }
 
     @Test

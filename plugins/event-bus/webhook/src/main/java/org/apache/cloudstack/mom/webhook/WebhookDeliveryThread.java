@@ -166,6 +166,7 @@ public class WebhookDeliveryThread implements Runnable {
             return;
         }
         payload = event.getDescription();
+        LOGGER.trace("Payload: {}", payload);
         int attempt = 0;
         boolean success = false;
         try {

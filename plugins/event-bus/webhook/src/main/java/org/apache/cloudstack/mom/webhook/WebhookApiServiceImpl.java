@@ -19,6 +19,7 @@ package org.apache.cloudstack.mom.webhook;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -117,7 +118,7 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
     }
 
     protected ManagementServerHostVO basicWebhookDeliveryApiCheck(Account caller, final Long id, final Long webhookId,
-                                                Long managementServerId) {
+                final Long managementServerId, final Date startDate, final Date endDate) {
         if (id != null) {
             WebhookDeliveryVO webhookDeliveryVO = webhookDeliveryDao.findById(id);
             if (webhookDeliveryVO == null) {
@@ -134,6 +135,9 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
                 throw new InvalidParameterValueException("Invalid Webhook specified");
             }
             accountManager.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, false, webhookVO);
+        }
+        if (endDate != null && startDate != null && endDate.before(startDate)) {
+            throw new InvalidParameterValueException(String.format("Invalid %s specified", ApiConstants.END_DATE));
         }
         ManagementServerHostVO managementServerHostVO = null;
         if (managementServerId != null) {
@@ -457,8 +461,12 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         final Long webhookId = cmd.getWebhookId();
         final Long managementServerId = cmd.getManagementServerId();
         final String keyword = cmd.getKeyword();
+        final Date startDate = cmd.getStartDate();
+        final Date endDate = cmd.getEndDate();
+        final String eventType = cmd.getEventType();
         List<WebhookDeliveryResponse> responsesList = new ArrayList<>();
-        ManagementServerHostVO host = basicWebhookDeliveryApiCheck(caller, id, webhookId, managementServerId);
+        ManagementServerHostVO host = basicWebhookDeliveryApiCheck(caller, id, webhookId, managementServerId,
+                startDate, endDate);
 
         Filter searchFilter = new Filter(WebhookDeliveryJoinVO.class, "id", false, cmd.getStartIndex(),
                 cmd.getPageSizeVal());
@@ -469,8 +477,8 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
             webhookIds.addAll(getIdsOfAccessibleWebhooks(caller));
         }
         Pair<List<WebhookDeliveryJoinVO>, Integer> deliveriesAndCount =
-                webhookDeliveryJoinDao.searchAndCountByIdWebhooksManagementServerKeyword(id, webhookIds,
-                        (host != null ? host.getMsid() : null), keyword, searchFilter);
+                webhookDeliveryJoinDao.searchAndCountByListApiParameters(id, webhookIds,
+                        (host != null ? host.getMsid() : null), keyword, startDate, endDate, eventType, searchFilter);
         for (WebhookDeliveryJoinVO delivery : deliveriesAndCount.first()) {
             WebhookDeliveryResponse response = createWebhookDeliveryResponse(delivery);
             responsesList.add(response);
@@ -487,7 +495,8 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         final Long id = cmd.getId();
         final Long webhookId = cmd.getWebhookId();
         final Long managementServerId = cmd.getManagementServerId();
-        ManagementServerHostVO host = basicWebhookDeliveryApiCheck(caller, id, webhookId, managementServerId);
+        ManagementServerHostVO host = basicWebhookDeliveryApiCheck(caller, id, webhookId, managementServerId,
+                null, null);
         int removed = webhookDeliveryDao.deleteByIdWebhookManagementServer(id, webhookId,
                 host != null ? host.getMsid() : null);
         return removed > 0;

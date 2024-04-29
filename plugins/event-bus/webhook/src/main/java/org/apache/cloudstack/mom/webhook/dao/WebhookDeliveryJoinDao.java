@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.mom.webhook.dao;
 
+import java.util.Date;
 import java.util.List;
 
 import org.apache.cloudstack.mom.webhook.vo.WebhookDeliveryJoinVO;
@@ -26,6 +27,7 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
 
 public interface WebhookDeliveryJoinDao extends GenericDao<WebhookDeliveryJoinVO, Long> {
-    Pair<List<WebhookDeliveryJoinVO>, Integer> searchAndCountByIdWebhooksManagementServerKeyword(Long id,
-         List<Long> webhookIds, Long managementServerId, final String keyword, Filter searchFilter);
+    Pair<List<WebhookDeliveryJoinVO>, Integer> searchAndCountByListApiParameters(Long id,
+         List<Long> webhookIds, Long managementServerId, final String keyword, final Date startDate,
+         final Date endDate, final String eventType, Filter searchFilter);
 }

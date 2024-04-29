@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.mom.webhook.api.command.user;
 
+import java.util.Date;
+
 import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -65,6 +67,23 @@ public class ListWebhookDeliveriesCmd extends BaseListCmd {
             authorized = {RoleType.Admin})
     private Long managementServerId;
 
+    @Parameter(name = ApiConstants.START_DATE,
+            type = CommandType.DATE,
+            description = "The start date range for the Webhook delivery " +
+                    "(use format \"yyyy-MM-dd\" or \"yyyy-MM-dd HH:mm:ss\")")
+    private Date startDate;
+
+    @Parameter(name = ApiConstants.END_DATE,
+            type = CommandType.DATE,
+            description = "The end date range for the Webhook delivery " +
+                    "(use format \"yyyy-MM-dd\" or \"yyyy-MM-dd HH:mm:ss\")")
+    private Date endDate;
+
+    @Parameter(name = ApiConstants.EVENT_TYPE,
+            type = CommandType.STRING,
+            description = "The event type of the Webhook delivery")
+    private String eventType;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -78,6 +97,18 @@ public class ListWebhookDeliveriesCmd extends BaseListCmd {
 
     public Long getManagementServerId() {
         return managementServerId;
+    }
+
+    public Date getStartDate() {
+        return startDate;
+    }
+
+    public Date getEndDate() {
+        return endDate;
+    }
+
+    public String getEventType() {
+        return eventType;
     }
 
     /////////////////////////////////////////////////////

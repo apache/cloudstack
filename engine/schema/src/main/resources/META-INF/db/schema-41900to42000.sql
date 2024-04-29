@@ -92,7 +92,7 @@ CREATE TABLE `cloud`.`webhook` (
   `payload_url` varchar(255) COMMENT 'payload URL for the webhook',
   `secret_key` varchar(255) COMMENT 'secret key for the webhook',
   `ssl_verification` boolean COMMENT 'for https payload url, if true then strict ssl verification',
-  `scope` char(32) NOT NULL COMMENT 'scope for the webhook - Local,Domain,Global',
+  `scope` char(32) NOT NULL COMMENT 'scope for the webhook - Local, Domain, Global',
   `created` datetime COMMENT 'date the webhook was created',
   `removed` datetime COMMENT 'date removed if not null',
   `generated_removed` BIGINT(15) GENERATED ALWAYS AS (IF(removed IS NULL, 0, TIMESTAMPDIFF(SECOND, from_unixtime(0), removed))),
