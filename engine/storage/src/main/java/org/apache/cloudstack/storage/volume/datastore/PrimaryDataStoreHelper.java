@@ -295,8 +295,10 @@ public class PrimaryDataStoreHelper {
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-                for (StoragePoolHostVO host : hostPoolRecords) {
-                    storagePoolHostDao.deleteStoragePoolHostDetails(host.getHostId(), host.getPoolId());
+                if (hostPoolRecords != null) {
+                    for (StoragePoolHostVO host : hostPoolRecords) {
+                        storagePoolHostDao.deleteStoragePoolHostDetails(host.getHostId(), host.getPoolId());
+                    }
                 }
                 pool.setScope(ScopeType.CLUSTER);
                 pool.setPodId(clusterScope.getPodId());

@@ -55,13 +55,6 @@ public class BasePrimaryDataStoreLifeCycleImpl {
     @Inject
     protected StoragePoolHostDao storagePoolHostDao;
 
-    private HypervisorType getHypervisorType(long hostId) {
-        HostVO host = hostDao.findById(hostId);
-        if (host != null)
-            return host.getHypervisorType();
-        return HypervisorType.None;
-    }
-
     private List<HostVO> getPoolHostsList(ClusterScope clusterScope, HypervisorType hypervisorType) {
         List<HostVO> hosts;
         if (hypervisorType != null) {
@@ -78,11 +71,13 @@ public class BasePrimaryDataStoreLifeCycleImpl {
     public void changeStoragePoolScopeToZone(DataStore store, ClusterScope clusterScope, HypervisorType hypervisorType) {
         List<HostVO> hosts = getPoolHostsList(clusterScope, hypervisorType);
         s_logger.debug("Changing scope of the storage pool to Zone");
-        for (HostVO host : hosts) {
-            try {
-                storageMgr.connectHostToSharedPool(host.getId(), store.getId());
-            } catch (Exception e) {
-                s_logger.warn("Unable to establish a connection between " + host + " and " + store, e);
+        if (hosts != null) {
+            for (HostVO host : hosts) {
+                try {
+                    storageMgr.connectHostToSharedPool(host.getId(), store.getId());
+                } catch (Exception e) {
+                    s_logger.warn("Unable to establish a connection between " + host + " and " + store, e);
+                }
             }
         }
         dataStoreHelper.switchToZone(store, hypervisorType);
@@ -91,23 +86,20 @@ public class BasePrimaryDataStoreLifeCycleImpl {
     public void changeStoragePoolScopeToCluster(DataStore store, ClusterScope clusterScope, HypervisorType hypervisorType) {
         Pair<List<StoragePoolHostVO>, Integer> hostPoolRecords = storagePoolHostDao.listByPoolIdNotInCluster(clusterScope.getScopeId(), store.getId());
         s_logger.debug("Changing scope of the storage pool to Cluster");
-        HypervisorType hType = null;
         if (hostPoolRecords.second() > 0) {
-            hType = getHypervisorType(hostPoolRecords.first().get(0).getHostId());
-        }
+            StoragePool pool = (StoragePool) store;
+            for (StoragePoolHostVO host : hostPoolRecords.first()) {
+                DeleteStoragePoolCommand deleteCmd = new DeleteStoragePoolCommand(pool);
+                final Answer answer = agentMgr.easySend(host.getHostId(), deleteCmd);
 
-        StoragePool pool = (StoragePool) store;
-        for (StoragePoolHostVO host : hostPoolRecords.first()) {
-            DeleteStoragePoolCommand deleteCmd = new DeleteStoragePoolCommand(pool);
-            final Answer answer = agentMgr.easySend(host.getHostId(), deleteCmd);
-
-            if (answer != null && answer.getResult()) {
-                if (HypervisorType.KVM != hType) {
-                    break;
-                }
-            } else {
-                if (answer != null) {
-                    s_logger.debug("Failed to delete storage pool: " + answer.getResult());
+                if (answer != null && answer.getResult()) {
+                    if (HypervisorType.KVM != hypervisorType) {
+                        break;
+                    }
+                } else {
+                    if (answer != null) {
+                        s_logger.debug("Failed to delete storage pool: " + answer.getResult());
+                    }
                 }
             }
         }
