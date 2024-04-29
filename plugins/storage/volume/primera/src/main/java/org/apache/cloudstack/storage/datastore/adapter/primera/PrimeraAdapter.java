@@ -497,10 +497,6 @@ public class PrimeraAdapter implements ProviderAdapter {
         });
     }
 
-    private String getSessionKey() {
-        return key;
-    }
-
     private synchronized String refreshSession(boolean force) {
         try {
             if (force || keyExpiration < (System.currentTimeMillis()-15000)) {
@@ -509,7 +505,9 @@ public class PrimeraAdapter implements ProviderAdapter {
                 login();
                 logger.debug("PrimeraAdapter:refreshSession(): session created or refreshed with key=" + key + ", expiration=" + keyExpiration);
             } else {
-                logger.debug("PrimeraAdapter:refreshSession(): using existing session key=" + key + ", expiration=" + keyExpiration);
+                if (logger.isTraceEnabled()) {
+                    logger.trace("PrimeraAdapter:refreshSession(): using existing session key=" + key + ", expiration=" + keyExpiration);
+                }
             }
         } catch (Exception e) {
             // retry frequently but not every request to avoid DDOS on storage API
