@@ -52,6 +52,14 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
     static byte[] CLEANUP_LOCK = new byte[0];
 
     /**
+     * List of supported OUI's (needed for path-based cleanup logic on disconnects after live migrations)
+     */
+    static String[] SUPPORTED_OUI_LIST = {
+        "0002ac", // HPE Primera 3PAR
+        "24a937"  // Pure Flasharray
+    };
+
+    /**
      * Property keys and defaults
      */
     static final Property<Integer> CLEANUP_FREQUENCY_SECS = new Property<Integer>("multimap.cleanup.frequency.secs", 60);
@@ -207,35 +215,48 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
 
     @Override
     public boolean disconnectPhysicalDisk(String volumePath, KVMStoragePool pool) {
-        LOGGER.debug(String.format("disconnectPhysicalDiskByPath(volumePath,pool) called with args (%s, %s) START", volumePath, pool.getUuid()));
+        if (LOGGER.isDebugEnabled()) LOGGER.debug(String.format("disconnectPhysicalDisk(volumePath,pool) called with args (%s, %s) START", volumePath, pool.getUuid()));
         AddressInfo address = this.parseAndValidatePath(volumePath);
         if (address.getAddress() == null) {
-            LOGGER.debug(String.format("disconnectPhysicalDiskByPath(volumePath,pool) returning FALSE, volume path has no address field", volumePath, pool.getUuid()));
+            if (LOGGER.isDebugEnabled()) LOGGER.debug(String.format("disconnectPhysicalDisk(volumePath,pool) returning FALSE, volume path has no address field", volumePath, pool.getUuid()));
             return false;
         }
         ScriptResult result = runScript(disconnectScript, 60000L, address.getAddress().toLowerCase());
-        if (LOGGER.isDebugEnabled()) LOGGER.debug("multipath flush output: " + result.getResult());
-        LOGGER.debug(String.format("disconnectPhysicalDiskByPath(volumePath,pool) called with args (%s, %s) COMPLETE [rc=%s]", volumePath, pool.getUuid(), result.getResult()));
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("multipath flush output: " + result.getResult());
+            LOGGER.debug(String.format("disconnectPhysicalDisk(volumePath,pool) called with args (%s, %s) COMPLETE [rc=%s]", volumePath, pool.getUuid(), result.getResult()));
+        }
         return true;
     }
 
     @Override
     public boolean disconnectPhysicalDisk(Map<String, String> volumeToDisconnect) {
-        LOGGER.debug(String.format("disconnectPhysicalDiskByPath(volumeToDisconnect) called with arg bag [not implemented]:") + " " + volumeToDisconnect);
+        LOGGER.debug(String.format("disconnectPhysicalDisk(volumeToDisconnect) called with arg bag [not implemented]:") + " " + volumeToDisconnect);
         return false;
     }
 
     @Override
     public boolean disconnectPhysicalDiskByPath(String localPath) {
-        LOGGER.debug(String.format("disconnectPhysicalDiskByPath(localPath) called with args (%s) STARTED", localPath));
-        if (localPath == null || (localPath != null && !localPath.startsWith("/dev/mapper/"))) {
-            LOGGER.debug(String.format("isconnectPhysicalDiskByPath(localPath) returning FALSE, volume path is not a multipath volume: %s", localPath));
+        if (localPath == null) {
             return false;
         }
-        ScriptResult result = runScript(disconnectScript, 60000L, localPath.replace("/dev/mapper/3", ""));
-        if (LOGGER.isDebugEnabled()) LOGGER.debug("multipath flush output: " + result.getResult());
-        LOGGER.debug(String.format("disconnectPhysicalDiskByPath(localPath) called with args (%s) COMPLETE [rc=%s]", localPath, result.getExitCode()));
-        return true;
+        if (LOGGER.isDebugEnabled()) LOGGER.debug(String.format("disconnectPhysicalDiskByPath(localPath) called with args (%s) START", localPath));
+        if (localPath.startsWith("/dev/mapper/")) {
+            String multipathName = localPath.replace("/dev/mapper/3", "");
+            // this ensures we only disconnect multipath devices supported by this driver
+            for (String oui: SUPPORTED_OUI_LIST) {
+                if (multipathName.length() > 1 && multipathName.substring(2).startsWith(oui)) {
+                    ScriptResult result = runScript(disconnectScript, 60000L, multipathName);
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("multipath flush output: " + result.getResult());
+                        LOGGER.debug(String.format("disconnectPhysicalDiskByPath(localPath) called with args (%s) COMPLETE [rc=%s]", localPath, result.getExitCode()));
+                    }
+                    return true;
+                }
+            }
+        }
+        if (LOGGER.isDebugEnabled()) LOGGER.debug(String.format("disconnectPhysicalDiskByPath(localPath) returning FALSE, volume path is not a multipath volume: %s", localPath));
+        return false;
     }
 
     @Override
