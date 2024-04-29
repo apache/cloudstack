@@ -547,4 +547,17 @@ public class LibvirtVMDefTest extends TestCase {
                 "</controller>\n";
         assertEquals(expected, str);
     }
+
+    @Test
+    public void testTopology() {
+        LibvirtVMDef.CpuModeDef cpuModeDef = new LibvirtVMDef.CpuModeDef();
+        cpuModeDef.setTopology(2, 1, 4);
+        assertEquals("<cpu><topology sockets='4' cores='2' threads='1' /></cpu>", cpuModeDef.toString());
+    }
+
+    public void testTopologyNoInfo() {
+        LibvirtVMDef.CpuModeDef cpuModeDef = new LibvirtVMDef.CpuModeDef();
+        cpuModeDef.setTopology(-1, -1, 4);
+        assertEquals("<cpu></cpu>", cpuModeDef.toString());
+    }
 }

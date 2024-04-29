@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.cloud.host.HostTagVO;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.vpc.VpcVO;
 import javax.inject.Inject;
 
@@ -37,6 +38,7 @@ import org.apache.cloudstack.backup.BackupOfferingVO;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
+import org.apache.cloudstack.quota.dao.NetworkDao;
 import org.apache.cloudstack.quota.dao.VmTemplateDao;
 import org.apache.cloudstack.quota.dao.VpcDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
@@ -174,6 +176,9 @@ public class PresetVariableHelper {
     BackupOfferingDao backupOfferingDao;
 
     @Inject
+    NetworkDao networkDao;
+
+    @Inject
     VpcDao vpcDao;
 
 
@@ -280,6 +285,7 @@ public class PresetVariableHelper {
         loadPresetVariableValueForNetworkOffering(usageRecord, value);
         loadPresetVariableValueForVmSnapshot(usageRecord, value);
         loadPresetVariableValueForBackup(usageRecord, value);
+        loadPresetVariableValueForNetwork(usageRecord, value);
         loadPresetVariableValueForVpc(usageRecord, value);
 
         return value;
@@ -695,6 +701,22 @@ public class PresetVariableHelper {
         backupOffering.setExternalId(backupOfferingVo.getExternalId());
 
         return backupOffering;
+    }
+
+    protected void loadPresetVariableValueForNetwork(UsageVO usageRecord, Value value) {
+        int usageType = usageRecord.getUsageType();
+        if (usageType != QuotaTypes.NETWORK) {
+            logNotLoadingMessageInTrace("Network", usageType);
+            return;
+        }
+
+        Long networkId = usageRecord.getUsageId();
+        NetworkVO network = networkDao.findByIdIncludingRemoved(networkId);
+        validateIfObjectIsNull(network, networkId, "Network");
+
+        value.setId(network.getUuid());
+        value.setName(network.getName());
+        value.setState(usageRecord.getState());
     }
 
     protected void loadPresetVariableValueForVpc(UsageVO usageRecord, Value value) {

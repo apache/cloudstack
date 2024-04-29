@@ -150,4 +150,12 @@ public class ValueTest {
         variable.setVolumeFormat(null);
         Assert.assertTrue(variable.fieldNamesToIncludeInToString.contains("volumeFormat"));
     }
+
+    @Test
+    public void setStateTestAddFieldStateToCollection() {
+        Value variable = new Value();
+        variable.setState(null);
+        Assert.assertTrue(variable.fieldNamesToIncludeInToString.contains("state"));
+    }
+
 }
