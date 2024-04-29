@@ -490,7 +490,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                     if(parameterMap.putIfAbsent(param.getName(), new String[]{param.getValue()}) != null) {
                         String message = String.format("Query parameter '%s' has multiple values [%s, %s]. Only the last value will be respected." +
                             "It is advised to pass only a single parameter", param.getName(), param.getValue(), parameterMap.get(param.getName()));
-                        logger.warn(message);
+                        logger.warn(StringUtils.cleanString(message));
                     }
                 }
             }
