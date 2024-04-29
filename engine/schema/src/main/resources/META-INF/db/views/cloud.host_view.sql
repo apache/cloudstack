@@ -55,7 +55,7 @@ SELECT
     GROUP_CONCAT(DISTINCT(host_tags.tag)) AS tag,
     GROUP_CONCAT(DISTINCT(explicit_host_tags.tag)) AS explicit_tag,
     GROUP_CONCAT(DISTINCT(implicit_host_tags.tag)) AS implicit_tag,
-    `host_tags`.`is_tag_a_rule` AS `is_tag_a_rule`,
+    `explicit_host_tags`.`is_tag_a_rule` AS `is_tag_a_rule`,
     guest_os_category.id guest_os_category_id,
     guest_os_category.uuid guest_os_category_uuid,
     guest_os_category.name guest_os_category_name,
