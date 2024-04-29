@@ -43,7 +43,7 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
         InternalLbProvider, PublicLbProvider, servicepackageuuid, servicepackagedescription, PromiscuousMode, MacAddressChanges, ForgedTransmits, MacLearning, RelatedNetworkOffering, domainid, zoneid, pvlanType, internetProtocol
     }
 
-    public enum NsxMode {
+    public enum RoutingMode {
         NATTED,
         ROUTED
     }
@@ -102,7 +102,7 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
 
     boolean isForNsx();
 
-    String getNsxMode();
+    String getRoutingMode();
 
     TrafficType getTrafficType();
 

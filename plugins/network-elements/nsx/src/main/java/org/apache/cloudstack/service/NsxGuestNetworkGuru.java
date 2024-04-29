@@ -87,9 +87,9 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
     public boolean canHandle(NetworkOffering offering, DataCenter.NetworkType networkType,
                              PhysicalNetwork physicalNetwork) {
         return networkType == DataCenter.NetworkType.Advanced && isMyTrafficType(offering.getTrafficType())
-                && isMyIsolationMethod(physicalNetwork) && (NetworkOffering.NsxMode.ROUTED.name().equals(offering.getNsxMode())
+                && isMyIsolationMethod(physicalNetwork) && (NetworkOffering.RoutingMode.ROUTED.name().equals(offering.getRoutingMode())
                 || (networkOfferingServiceMapDao.isProviderForNetworkOffering(
-                offering.getId(), Network.Provider.Nsx) && NetworkOffering.NsxMode.NATTED.name().equals(offering.getNsxMode())));
+                offering.getId(), Network.Provider.Nsx) && NetworkOffering.RoutingMode.NATTED.name().equals(offering.getRoutingMode())));
     }
 
     @Override
@@ -231,7 +231,7 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
 
         NetworkOfferingVO networkOfferingVO = networkOfferingDao.findById(network.getNetworkOfferingId());
 
-        if (isNull(network.getVpcId()) && networkOfferingVO.getNsxMode().equals(NetworkOffering.NsxMode.NATTED.name())) {
+        if (isNull(network.getVpcId()) && networkOfferingVO.getRoutingMode().equals(NetworkOffering.RoutingMode.NATTED.name())) {
             long domainId = domain.getId();
             long accountId = account.getId();
             long dataCenterId = zone.getId();
@@ -322,7 +322,7 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
             logger.debug(String.format("Creating a Tier 1 Gateway for the network %s before creating the NSX segment", networkVO.getName()));
             long networkOfferingId = networkVO.getNetworkOfferingId();
             NetworkOfferingVO networkOfferingVO = networkOfferingDao.findById(networkOfferingId);
-            boolean isSourceNatSupported = !NetworkOffering.NsxMode.ROUTED.name().equals(networkOfferingVO.getNsxMode()) &&
+            boolean isSourceNatSupported = !NetworkOffering.RoutingMode.ROUTED.name().equals(networkOfferingVO.getRoutingMode()) &&
                     networkOfferingServiceMapDao.areServicesSupportedByNetworkOffering(networkVO.getNetworkOfferingId(), Network.Service.SourceNat);
             CreateNsxTier1GatewayCommand nsxTier1GatewayCommand =  new CreateNsxTier1GatewayCommand(domain.getId(), account.getId(), zone.getId(), networkVO.getId(), networkVO.getName(), false, isSourceNatSupported);
 

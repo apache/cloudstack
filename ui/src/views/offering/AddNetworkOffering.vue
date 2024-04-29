@@ -147,18 +147,18 @@
             </a-form-item>
           </a-col>
         </a-row>
-        <a-form-item name="nsxmode" ref="nsxmode" v-if="forNsx">
+        <a-form-item name="routingmode" ref="routingmode" v-if="forNsx">
           <template #label>
-            <tooltip-label :title="$t('label.nsxmode')" :tooltip="apiParams.nsxmode.description"/>
+            <tooltip-label :title="$t('label.routingmode')" :tooltip="apiParams.routingmode.description"/>
           </template>
           <a-select
             v-if="showMode"
             optionFilterProp="label"
-            v-model:value="form.nsxmode"
+            v-model:value="form.routingmode"
             :filterOption="(input, option) => {
               return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
-            :placeholder="apiParams.nsxmode.description">
+            :placeholder="apiParams.routingmode.description">
             <a-select-option v-for="(opt) in modes" :key="opt.name" :label="opt.name">
               {{ opt.name }}
             </a-select-option>
@@ -1031,7 +1031,7 @@ export default {
         }
         if (values.fornsx === true) {
           params.fornsx = true
-          params.nsxmode = values.nsxmode
+          params.routingmode = values.routingmode
           params.nsxsupportlb = values.nsxsupportlb
           params.nsxsupportsinternallb = values.nsxsupportsinternallb
         }

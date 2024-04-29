@@ -72,7 +72,7 @@ public class VpcOfferingResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.NSX_MODE)
     @Param(description = "Mode in which the network will operate. This parameter is only relevant for NSX offerings")
-    private String nsxMode;
+    private String routingMode;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "the domain ID(s) this disk offering belongs to. Ignore this information as it is not currently applicable.")
@@ -150,8 +150,8 @@ public class VpcOfferingResponse extends BaseResponse {
         this.forNsx = forNsx;
     }
 
-    public void setNsxMode(String nsxMode) {
-        this.nsxMode = nsxMode;
+    public void setRoutingMode(String routingMode) {
+        this.routingMode = routingMode;
     }
 
     public String getZoneId() {

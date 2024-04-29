@@ -6082,7 +6082,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Boolean forVpc = cmd.getForVpc();
         Boolean forNsx = cmd.isForNsx();
         Boolean forTungsten = cmd.getForTungsten();
-        String nsxMode = cmd.getNsxMode();
+        String routingMode = cmd.getRoutingMode();
         boolean nsxSupportInternalLbSvc = cmd.getNsxSupportsInternalLbService();
         Integer maxconn = null;
         boolean enableKeepAlive = false;
@@ -6122,18 +6122,18 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         if (Boolean.TRUE.equals(forNsx)) {
-            if (Objects.isNull(nsxMode)) {
-                throw new InvalidParameterValueException("Mode for an NSX offering needs to be specified. Valid values: " + Arrays.toString(NetworkOffering.NsxMode.values()));
+            if (Objects.isNull(routingMode)) {
+                throw new InvalidParameterValueException("Mode for an NSX offering needs to be specified. Valid values: " + Arrays.toString(NetworkOffering.RoutingMode.values()));
             }
-            if (!EnumUtils.isValidEnum(NetworkOffering.NsxMode.class, nsxMode)) {
-                throw new InvalidParameterValueException("Invalid mode passed. Valid values: " + Arrays.toString(NetworkOffering.NsxMode.values()));
+            if (!EnumUtils.isValidEnum(NetworkOffering.RoutingMode.class, routingMode)) {
+                throw new InvalidParameterValueException("Invalid mode passed. Valid values: " + Arrays.toString(NetworkOffering.RoutingMode.values()));
             }
         } else {
-            if (Objects.nonNull(nsxMode)) {
+            if (Objects.nonNull(routingMode)) {
                 if (logger.isTraceEnabled()) {
-                    logger.trace("nsxMode has is ignored for non-NSX enabled zones");
+                    logger.trace("routingMode has is ignored for non-NSX enabled zones");
                 }
-                nsxMode = null;
+                routingMode = null;
             }
         }
 
@@ -6401,7 +6401,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         final NetworkOfferingVO offering = createNetworkOffering(name, displayText, trafficType, tags, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType, false,
-                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive, forVpc, forTungsten, forNsx, nsxMode, domainIds, zoneIds, enable, internetProtocol);
+                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive, forVpc, forTungsten, forNsx, routingMode, domainIds, zoneIds, enable, internetProtocol);
         if (Boolean.TRUE.equals(forNsx) && nsxSupportInternalLbSvc) {
             offering.setInternalLb(true);
             offering.setPublicLb(false);
@@ -6714,7 +6714,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         offeringFinal.setForTungsten(Objects.requireNonNullElse(forTungsten, false));
         offeringFinal.setForNsx(Objects.requireNonNullElse(forNsx, false));
         if (Boolean.TRUE.equals(forNsx)) {
-            offeringFinal.setNsxMode(mode);
+            offeringFinal.setRoutingMode(mode);
         }
 
         if (enableOffering) {

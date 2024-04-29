@@ -109,7 +109,7 @@ public class NetworkOfferingResponse extends BaseResponseWithAnnotations {
 
     @SerializedName(ApiConstants.NSX_MODE)
     @Param(description = "Mode in which the network will operate. This parameter is only relevant for NSX offerings")
-    private String nsxMode;
+    private String routingMode;
 
     @SerializedName(ApiConstants.IS_PERSISTENT)
     @Param(description = "true if network offering supports persistent networks, false otherwise")
@@ -235,8 +235,8 @@ public class NetworkOfferingResponse extends BaseResponseWithAnnotations {
         this.forTungsten = forTungsten;
     }
 
-    public void setNsxMode(String nsxMode) {
-        this.nsxMode = nsxMode;
+    public void setRoutingMode(String routingMode) {
+        this.routingMode = routingMode;
     }
 
     public void setIsPersistent(Boolean isPersistent) {

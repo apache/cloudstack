@@ -139,8 +139,8 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name = "for_nsx")
     boolean forNsx = false;
 
-    @Column(name = "nsx_mode")
-    String nsxMode;
+    @Column(name = "routing_mode")
+    String routingMode;
 
     @Column(name = "egress_default_policy")
     boolean egressdefaultpolicy;
@@ -211,12 +211,12 @@ public class NetworkOfferingVO implements NetworkOffering {
     }
 
     @Override
-    public String getNsxMode() {
-        return nsxMode;
+    public String getRoutingMode() {
+        return routingMode;
     }
 
-    public void setNsxMode(String nsxMode) {
-        this.nsxMode = nsxMode;
+    public void setRoutingMode(String routingMode) {
+        this.routingMode = routingMode;
     }
 
     @Override

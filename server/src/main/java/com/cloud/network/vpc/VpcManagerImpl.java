@@ -385,7 +385,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         }
                     }
                     createVpcOffering(VpcOffering.DEFAULT_VPC_NAT_NSX_OFFERING_NAME, VpcOffering.DEFAULT_VPC_NAT_NSX_OFFERING_NAME, svcProviderMap, false,
-                            State.Enabled, null, false, false, false, true, NetworkOffering.NsxMode.NATTED.name());
+                            State.Enabled, null, false, false, false, true, NetworkOffering.RoutingMode.NATTED.name());
 
                 }
 
@@ -403,7 +403,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         }
                     }
                     createVpcOffering(VpcOffering.DEFAULT_VPC_ROUTE_NSX_OFFERING_NAME, VpcOffering.DEFAULT_VPC_ROUTE_NSX_OFFERING_NAME, svcProviderMap, false,
-                            State.Enabled, null, false, false, false, true, NetworkOffering.NsxMode.ROUTED.name());
+                            State.Enabled, null, false, false, false, true, NetworkOffering.RoutingMode.ROUTED.name());
 
                 }
             }
@@ -464,9 +464,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final List<Long> domainIds = cmd.getDomainIds();
         final List<Long> zoneIds = cmd.getZoneIds();
         final Boolean forNsx = cmd.isForNsx();
-        String nsxMode = cmd.getNsxMode();
+        String routingMode = cmd.getRoutingMode();
         final boolean enable = cmd.getEnable();
-        nsxMode = validateNsxMode(forNsx, nsxMode);
+        routingMode = validateRoutingMode(forNsx, routingMode);
 
         // check if valid domain
         if (CollectionUtils.isNotEmpty(cmd.getDomainIds())) {
@@ -490,27 +490,27 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         return createVpcOffering(vpcOfferingName, displayText, supportedServices,
-                serviceProviderList, serviceCapabilityList, internetProtocol, serviceOfferingId, forNsx, nsxMode,
+                serviceProviderList, serviceCapabilityList, internetProtocol, serviceOfferingId, forNsx, routingMode,
                 domainIds, zoneIds, (enable ? State.Enabled : State.Disabled));
     }
 
-    private String validateNsxMode(Boolean forNsx, String nsxMode) {
+    private String validateRoutingMode(Boolean forNsx, String routingMode) {
         if (Boolean.TRUE.equals(forNsx)) {
-            if (Objects.isNull(nsxMode)) {
-                throw new InvalidParameterValueException("Mode for an NSX offering needs to be specified.Valid values: " + Arrays.toString(NetworkOffering.NsxMode.values()));
+            if (Objects.isNull(routingMode)) {
+                throw new InvalidParameterValueException("Mode for an NSX offering needs to be specified.Valid values: " + Arrays.toString(NetworkOffering.RoutingMode.values()));
             }
-            if (!EnumUtils.isValidEnum(NetworkOffering.NsxMode.class, nsxMode)) {
-                throw new InvalidParameterValueException("Invalid mode passed. Valid values: " + Arrays.toString(NetworkOffering.NsxMode.values()));
+            if (!EnumUtils.isValidEnum(NetworkOffering.RoutingMode.class, routingMode)) {
+                throw new InvalidParameterValueException("Invalid mode passed. Valid values: " + Arrays.toString(NetworkOffering.RoutingMode.values()));
             }
         } else {
-            if (Objects.nonNull(nsxMode)) {
+            if (Objects.nonNull(routingMode)) {
                 if (logger.isTraceEnabled()) {
-                    logger.trace("nsxMode has is ignored for non-NSX enabled zones");
+                    logger.trace("routingMode has is ignored for non-NSX enabled zones");
                 }
-                nsxMode = null;
+                routingMode = null;
             }
         }
-        return nsxMode;
+        return routingMode;
     }
 
     @Override
@@ -642,7 +642,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     offering.setState(state);
                 }
                 offering.setForNsx(forNsx);
-                offering.setNsxMode(mode);
+                offering.setRoutingMode(mode);
                 logger.debug("Adding vpc offering " + offering);
                 offering = _vpcOffDao.persist(offering);
                 // populate services and providers
