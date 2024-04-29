@@ -40,6 +40,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.offering.DiskOffering;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVnfApplianceCmd;
@@ -1565,7 +1566,7 @@ public class UserVmManagerImplTest {
     }
 
     @Test
-    public void testGetRootVolumeSizeForVmTemplateRestore() {
+    public void testGetRootVolumeSizeForVmRestore() {
         VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
         Mockito.when(template.getSize()).thenReturn(10L * GiB_TO_BYTES);
         UserVmVO userVm = Mockito.mock(UserVmVO.class);
@@ -1578,12 +1579,12 @@ public class UserVmManagerImplTest {
         UserVmDetailVO vmRootDiskSizeDetail = Mockito.mock(UserVmDetailVO.class);
         Mockito.when(vmRootDiskSizeDetail.getValue()).thenReturn("20");
         Mockito.when(userVmDetailsDao.findDetail(1L, VmDetailConstants.ROOT_DISK_SIZE)).thenReturn(vmRootDiskSizeDetail);
-        Long actualSize = userVmManagerImpl.getRootVolumeSizeForVmTemplateRestore(userVm, template, diskOffering, details);
+        Long actualSize = userVmManagerImpl.getRootVolumeSizeForVmRestore(null, template, userVm, diskOffering, details, false);
         Assert.assertEquals(16 * GiB_TO_BYTES, actualSize.longValue());
     }
 
     @Test
-    public void testGetRootVolumeSizeForVmTemplateRestoreNullDiskOfferingAndEmptyDetails() {
+    public void testGetRootVolumeSizeForVmRestoreNullDiskOfferingAndEmptyDetails() {
         VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
         Mockito.when(template.getSize()).thenReturn(10L * GiB_TO_BYTES);
         UserVmVO userVm = Mockito.mock(UserVmVO.class);
@@ -1593,7 +1594,7 @@ public class UserVmManagerImplTest {
         UserVmDetailVO vmRootDiskSizeDetail = Mockito.mock(UserVmDetailVO.class);
         Mockito.when(vmRootDiskSizeDetail.getValue()).thenReturn("20");
         Mockito.when(userVmDetailsDao.findDetail(1L, VmDetailConstants.ROOT_DISK_SIZE)).thenReturn(vmRootDiskSizeDetail);
-        Long actualSize = userVmManagerImpl.getRootVolumeSizeForVmTemplateRestore(userVm, template, diskOffering, details);
+        Long actualSize = userVmManagerImpl.getRootVolumeSizeForVmRestore(null, template, userVm, diskOffering, details, false);
         Assert.assertEquals(20 * GiB_TO_BYTES, actualSize.longValue());
     }
 }

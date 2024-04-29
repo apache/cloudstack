@@ -39,6 +39,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.AccountManager;
@@ -1855,19 +1856,29 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
      * If it's different it verifies the resource limits and updates the volume's size
      */
     protected void updateVolumeSize(DataStore store, VolumeVO vol) throws ResourceAllocationException {
-        if (store.getDriver() instanceof PrimaryDataStoreDriver) {
-            VMTemplateVO template = vol.getTemplateId() != null ? _templateDao.findById(vol.getTemplateId()) : null;
-            PrimaryDataStoreDriver driver = (PrimaryDataStoreDriver) store.getDriver();
-            long newSize = driver.getVolumeSizeRequiredOnPool(vol.getSize(), template == null ? null : template.getSize(), vol.getPassphraseId() != null);
-            if (newSize != vol.getSize()) {
-                if (newSize > vol.getSize()) {
-                    _resourceLimitMgr.checkPrimaryStorageResourceLimit(
-                            _accountMgr.getActiveAccountById(vol.getAccountId()), vol.isDisplay(), newSize - vol.getSize(),
-                            diskOfferingDao.findByIdIncludingRemoved(vol.getDiskOfferingId()));
-                }
-                vol.setSize(newSize);
-                _volsDao.persist(vol);
+        if (store == null || !(store.getDriver() instanceof PrimaryDataStoreDriver)) {
+            return;
+        }
+
+        VMTemplateVO template = vol.getTemplateId() != null ? _templateDao.findById(vol.getTemplateId()) : null;
+        PrimaryDataStoreDriver driver = (PrimaryDataStoreDriver) store.getDriver();
+        long newSize = driver.getVolumeSizeRequiredOnPool(vol.getSize(),
+                template == null ? null : template.getSize(),
+                vol.getPassphraseId() != null);
+
+        if (newSize != vol.getSize()) {
+            DiskOfferingVO diskOffering = diskOfferingDao.findByIdIncludingRemoved(vol.getDiskOfferingId());
+            if (newSize > vol.getSize()) {
+                _resourceLimitMgr.checkPrimaryStorageResourceLimit(_accountMgr.getActiveAccountById(vol.getAccountId()),
+                        vol.isDisplay(), newSize - vol.getSize(), diskOffering);
+                _resourceLimitMgr.incrementVolumePrimaryStorageResourceCount(vol.getAccountId(), vol.isDisplay(),
+                        newSize - vol.getSize(), diskOffering);
+            } else {
+                _resourceLimitMgr.decrementVolumePrimaryStorageResourceCount(vol.getAccountId(), vol.isDisplay(),
+                        vol.getSize() - newSize, diskOffering);
             }
+            vol.setSize(newSize);
+            _volsDao.persist(vol);
         }
     }
 
