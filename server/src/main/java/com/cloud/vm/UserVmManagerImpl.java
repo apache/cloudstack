@@ -7846,7 +7846,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         DiskOffering diskOffering = rootDiskOfferingId != null ? _diskOfferingDao.findById(rootDiskOfferingId) : null;
         for (VolumeVO root : rootVols) {
             if ( !Volume.State.Allocated.equals(root.getState()) || newTemplateId != null ) {
-                _volumeService.validateDestroyVolume(root, caller, expunge, false);
+                _volumeService.validateDestroyVolume(root, caller, Volume.State.Allocated.equals(root.getState()) || expunge, false);
                 final UserVmVO userVm = vm;
                 Pair<UserVmVO, Volume> vmAndNewVol = Transaction.execute(new TransactionCallbackWithException<Pair<UserVmVO, Volume>, CloudRuntimeException>() {
                     @Override
@@ -7863,19 +7863,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         Volume newVol = null;
                         if (newTemplateId != null) {
                             if (isISO) {
-                                newVol = volumeMgr.allocateDuplicateVolume(root, null);
+                                newVol = volumeMgr.allocateDuplicateVolume(root, diskOffering, null);
                                 userVm.setIsoId(newTemplateId);
                                 userVm.setGuestOSId(template.getGuestOSId());
                                 userVm.setTemplateId(newTemplateId);
                             } else {
-                                newVol = volumeMgr.allocateDuplicateVolume(root, newTemplateId);
+                                newVol = volumeMgr.allocateDuplicateVolume(root, diskOffering, newTemplateId);
                                 userVm.setGuestOSId(template.getGuestOSId());
                                 userVm.setTemplateId(newTemplateId);
                             }
                             // check and update VM if it can be dynamically scalable with the new template
                             updateVMDynamicallyScalabilityUsingTemplate(userVm, newTemplateId);
                         } else {
-                            newVol = volumeMgr.allocateDuplicateVolume(root, null);
+                            newVol = volumeMgr.allocateDuplicateVolume(root, diskOffering, null);
                         }
 
                         updateVolume(newVol, template, userVm, diskOffering, details);
@@ -7909,7 +7909,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 // Detach, destroy and create the usage event for the old root volume.
                 _volsDao.detachVolume(root.getId());
-                _volumeService.destroyVolume(root.getId(), caller, expunge, false);
+                _volumeService.destroyVolume(root.getId(), caller, Volume.State.Allocated.equals(root.getState()) || expunge, false);
 
                 // For VMware hypervisor since the old root volume is replaced by the new root volume, force expunge old root volume if it has been created in storage
                 if (vm.getHypervisorType() == HypervisorType.VMware) {
