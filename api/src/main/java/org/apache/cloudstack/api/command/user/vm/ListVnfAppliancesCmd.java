@@ -31,4 +31,9 @@ import org.apache.cloudstack.api.response.UserVmResponse;
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
         since = "4.19.1")
 public class ListVnfAppliancesCmd extends ListVMsCmd implements UserCmd {
+
+    @Override
+    public Boolean getVnf() {
+        return true;
+    }
 }
