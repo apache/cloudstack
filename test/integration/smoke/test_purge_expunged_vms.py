@@ -53,20 +53,20 @@ class TestPurgeExpungedVms(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        testClient = super(TestPurgeExpungedVms, cls).getClsTestClient()
-        cls.apiclient = testClient.getApiClient()
-        cls.services = testClient.getParsedTestDataConfig()
-        cls.dbConnection = testClient.getDbConnection()
+        cls.testClient = super(TestPurgeExpungedVms, cls).getClsTestClient()
+        cls.apiclient = cls.testClient.getApiClient()
+        cls.services = cls.testClient.getParsedTestDataConfig()
+        cls.dbConnection = cls.testClient.getDbConnection()
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
-        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
+        cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         cls.mgtSvrDetails = cls.config.__dict__["mgtSvr"][0].__dict__
 
 
-        cls.hypervisor = testClient.getHypervisorInfo().lower()
+        cls.hypervisor = cls.testClient.getHypervisorInfo().lower()
         cls.hypervisorIsSimulator = False
         if cls.hypervisor == 'simulator':
             cls.hypervisorIsSimulator = True
