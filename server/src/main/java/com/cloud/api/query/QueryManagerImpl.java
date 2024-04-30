@@ -2436,6 +2436,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         volumeSearchBuilder.and("uuid", volumeSearchBuilder.entity().getUuid(), SearchCriteria.Op.NNULL);
         volumeSearchBuilder.and("instanceId", volumeSearchBuilder.entity().getInstanceId(), SearchCriteria.Op.EQ);
         volumeSearchBuilder.and("dataCenterId", volumeSearchBuilder.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        if (cmd.isEncrypted() != null) {
+            if (cmd.isEncrypted()) {
+                volumeSearchBuilder.and("encryptFormat", volumeSearchBuilder.entity().getEncryptFormat(), SearchCriteria.Op.NNULL);
+            } else {
+                volumeSearchBuilder.and("encryptFormat", volumeSearchBuilder.entity().getEncryptFormat(), SearchCriteria.Op.NULL);
+            }
+        }
 
         if (keyword != null) {
             volumeSearchBuilder.and().op("keywordName", volumeSearchBuilder.entity().getName(), SearchCriteria.Op.LIKE);

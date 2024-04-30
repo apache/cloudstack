@@ -18,7 +18,6 @@ package com.cloud.storage.dao;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Set;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.ScopeType;
@@ -113,7 +112,8 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
     /**
      * Gets the Total Primary Storage space allocated for an account
      *
-     * @param list of ids of virtual router VMs under this account
+     * @param accountId
+     * @param virtualRouters list of ids of virtual router VMs under this account
      * @return total Primary Storage space (in bytes) used
      */
     long primaryStorageUsedForAccount(long accountId, List<Long> virtualRouters);
