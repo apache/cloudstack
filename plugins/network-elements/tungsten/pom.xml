@@ -30,13 +30,6 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <repositories>
-        <repository>
-            <id>juniper-tungsten-api</id>
-            <url>https://github.com/radu-todirica/tungsten-api/raw/master</url>
-        </repository>
-    </repositories>
-
     <dependencies>
         <dependency>
             <groupId>net.juniper.tungsten</groupId>
