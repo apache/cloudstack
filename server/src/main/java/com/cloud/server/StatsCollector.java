@@ -1671,7 +1671,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 }
 
                 List<DataStore> stores = _dataStoreMgr.listImageStores();
-                ConcurrentHashMap<Long, StorageStats> storageStats = new ConcurrentHashMap<Long, StorageStats>();
+                ConcurrentHashMap<Long, StorageStats> storageStats = new ConcurrentHashMap<>();
                 for (DataStore store : stores) {
                     if (store.getUri() == null) {
                         continue;
