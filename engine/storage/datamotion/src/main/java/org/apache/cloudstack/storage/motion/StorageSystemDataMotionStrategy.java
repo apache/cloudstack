@@ -683,10 +683,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         return zoneScope;
     }
 
-    private vo(VolumeInfo srcVolumeInfo, VolumeInfo destVolumeInfo,
+    private void handleVolumeMigrationFromNonManagedStorageToManagedStorage(VolumeInfo srcVolumeInfo, VolumeInfo destVolumeInfo,
                                                                             AsyncCompletionCallback<CopyCommandResult> callback) {
-        String errMsg = null;
-
         try {
             HypervisorType hypervisorType = srcVolumeInfo.getHypervisorType();
 
@@ -697,19 +695,17 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             if (HypervisorType.XenServer.equals(hypervisorType)) {
                 handleVolumeMigrationForXenServer(srcVolumeInfo, destVolumeInfo);
-                CopyCmdAnswer copyCmdAnswer = new CopyCmdAnswer(errMsg);
                 destVolumeInfo = _volumeDataFactory.getVolume(destVolumeInfo.getId(), destVolumeInfo.getDataStore());
                 DataTO dataTO = destVolumeInfo.getTO();
-                copyCmdAnswer = new CopyCmdAnswer(dataTO);
+                CopyCmdAnswer copyCmdAnswer = new CopyCmdAnswer(dataTO);
                 CopyCommandResult result = new CopyCommandResult(null, copyCmdAnswer);
-                result.setResult(errMsg);
                 callback.complete(result);
             } else {
                 handleVolumeMigrationForKVM(srcVolumeInfo, destVolumeInfo, callback);
             }
         }
         catch (Exception ex) {
-            errMsg = "Migration operation failed in 'StorageSystemDataMotionStrategy.handleVolumeMigrationFromNonManagedStorageToManagedStorage': " +
+            String errMsg = "Migration operation failed in 'StorageSystemDataMotionStrategy.handleVolumeMigrationFromNonManagedStorageToManagedStorage': " +
                     ex.getMessage();
 
             throw new CloudRuntimeException(errMsg, ex);
@@ -882,7 +878,6 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             // re-retrieve volume to get any updated information from grant
             destVolumeInfo = _volumeDataFactory.getVolume(destVolumeInfo.getId(), destVolumeInfo.getDataStore());
-
 
             CopyCmdAnswer copyCmdAnswer;
             if (errMsg != null) {
