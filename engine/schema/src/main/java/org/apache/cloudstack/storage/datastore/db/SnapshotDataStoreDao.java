@@ -107,5 +107,5 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
 
     void updateDisplayForSnapshotStoreRole(long snapshotId, long storeId, DataStoreRole role, boolean display);
 
-    int expungeBySnapshotList(final List<Long> snapshotIds, final Long batchSize);
+    int expungeBySnapshotList(List<Long> snapshotIds, Long batchSize);
 }

@@ -98,5 +98,5 @@ public interface ResourceDetailsDao<R extends ResourceDetail> extends GenericDao
 
     public List<Long> findResourceIdsByNameAndValueIn(String name, Object[] values);
 
-    public long batchExpungeForResources(final List<Long> ids, final Long batchSize);
+    public long batchExpungeForResources(List<Long> ids, Long batchSize);
 }

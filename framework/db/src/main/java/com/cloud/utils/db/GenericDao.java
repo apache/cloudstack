@@ -245,7 +245,7 @@ public interface GenericDao<T, ID extends Serializable> {
      */
     int batchExpunge(final SearchCriteria<T> sc, final Long batchSize);
 
-    int expungeList(final List<ID> ids);
+    int expungeList(List<ID> ids);
 
     /**
      * expunge the removed rows.

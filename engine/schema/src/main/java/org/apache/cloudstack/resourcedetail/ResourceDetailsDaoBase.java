@@ -206,7 +206,7 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
     }
 
     @Override
-    public long batchExpungeForResources(List<Long> ids, Long batchSize) {
+    public long batchExpungeForResources(final List<Long> ids, final Long batchSize) {
         if (CollectionUtils.isEmpty(ids)) {
             return 0;
         }

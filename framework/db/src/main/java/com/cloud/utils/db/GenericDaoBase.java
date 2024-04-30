@@ -1290,7 +1290,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     }
 
     @Override
-    public int expungeList(List<ID> ids) {
+    public int expungeList(final List<ID> ids) {
         if (org.apache.commons.collections.CollectionUtils.isEmpty(ids)) {
             return 0;
         }

@@ -561,7 +561,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     }
 
     @Override
-    public int expungeBySnapshotList(List<Long> snapshotIds, Long batchSize) {
+    public int expungeBySnapshotList(final List<Long> snapshotIds, final Long batchSize) {
         if (CollectionUtils.isEmpty(snapshotIds)) {
             return 0;
         }
