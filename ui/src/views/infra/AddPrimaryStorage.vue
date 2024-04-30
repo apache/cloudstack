@@ -184,9 +184,9 @@
              (form.scope === 'cluster' && (hypervisorType === 'KVM' || hypervisorType === 'Simulator')))">
           <a-form-item name="nfsMountOpts" ref="nfsMountOpts">
             <template #label>
-              <tooltip-label :title="$t('label.nfsmountopts')" :tooltip="$t('message.nfs.nfsmountopts.description')"/>
+              <tooltip-label :title="$t('label.nfsmountopts')" :tooltip="$t('message.nfs.mount.options.description')"/>
             </template>
-            <a-input v-model:value="form.nfsMountOpts" :placeholder="$t('message.nfs.nfsmountopts.description')" />
+            <a-input v-model:value="form.nfsMountOpts" :placeholder="$t('message.nfs.mount.options.description')" />
           </a-form-item>
         </div>
         <div v-if="form.protocol === 'SMB'">
