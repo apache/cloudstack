@@ -2317,6 +2317,7 @@
 "message.scale.processing": "Escalonamento em progresso",
 "message.select.a.zone": "A zona tipicamente corresponde a um \u00fanico datacenter. M\u00faltiplas zonas auxiliam a nuvem a ser mais confi\u00e1vel provendo isolamento f\u00edsico e redund\u00e2ncia.",
 "message.select.affinity.groups": "Por favor, selecione quaisquer grupos de afinidade que voc\u00ea deseja que esta VM perten\u00e7a:",
+"message.select.deselect.desired.options": "Por favor, selecione / desselecione as op\u00e7\u00f5es desejadas",
 "message.select.destination.image.stores": "Por favor, selecione o(s) armazenamento(s) de imagem(ns) para os quais os dados devem ser migrados",
 "message.select.disk.offering": "Por favor, selecione uma oferta de disco para o disco",
 "message.select.end.date.and.time": "Selecione uma data e hor\u00e1rio final.",

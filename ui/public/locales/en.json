@@ -3185,6 +3185,7 @@
 "message.scaleup.policy.name.continue": "Please input a name to ScaleUp policy to continue",
 "message.select.a.zone": "A zone typically corresponds to a single datacenter. Multiple zones help make the cloud more reliable by providing physical isolation and redundancy.",
 "message.select.affinity.groups": "Please select any affinity groups you want this Instance to belong to:",
+"message.select.deselect.desired.options": "Please select / deselect the desired options",
 "message.select.deselect.to.sort": "Please select / deselect to sort the values",
 "message.select.destination.image.stores": "Please select Image Store(s) to which data is to be migrated to",
 "message.select.disk.offering": "Please select a disk offering for disk",
