@@ -683,7 +683,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         return zoneScope;
     }
 
-    private void handleVolumeMigrationFromNonManagedStorageToManagedStorage(VolumeInfo srcVolumeInfo, VolumeInfo destVolumeInfo,
+    private vo(VolumeInfo srcVolumeInfo, VolumeInfo destVolumeInfo,
                                                                             AsyncCompletionCallback<CopyCommandResult> callback) {
         String errMsg = null;
 
