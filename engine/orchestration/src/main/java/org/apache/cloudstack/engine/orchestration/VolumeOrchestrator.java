@@ -305,11 +305,11 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     @Override
-    public Volume allocateDuplicateVolume(Volume oldVol, Long templateId) {
-        return allocateDuplicateVolumeVO(oldVol, templateId);
+    public Volume allocateDuplicateVolume(Volume oldVol, DiskOffering diskOffering, Long templateId) {
+        return allocateDuplicateVolumeVO(oldVol, diskOffering, templateId);
     }
 
-    public VolumeVO allocateDuplicateVolumeVO(Volume oldVol, Long templateId) {
+    public VolumeVO allocateDuplicateVolumeVO(Volume oldVol, DiskOffering diskOffering, Long templateId) {
         VolumeVO newVol = new VolumeVO(oldVol.getVolumeType(), oldVol.getName(), oldVol.getDataCenterId(), oldVol.getDomainId(), oldVol.getAccountId(), oldVol.getDiskOfferingId(),
                 oldVol.getProvisioningType(), oldVol.getSize(), oldVol.getMinIops(), oldVol.getMaxIops(), oldVol.get_iScsiName());
         if (templateId != null) {
@@ -321,8 +321,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         newVol.setInstanceId(oldVol.getInstanceId());
         newVol.setRecreatable(oldVol.isRecreatable());
         newVol.setFormat(oldVol.getFormat());
-
-        if (oldVol.getPassphraseId() != null) {
+        if ((diskOffering == null || diskOffering.getEncrypt()) && oldVol.getPassphraseId() != null) {
             PassphraseVO passphrase = passphraseDao.persist(new PassphraseVO(true));
             newVol.setPassphraseId(passphrase.getId());
         }
@@ -1180,7 +1179,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         return Transaction.execute(new TransactionCallback<VolumeVO>() {
             @Override
             public VolumeVO doInTransaction(TransactionStatus status) {
-                VolumeVO newVolume = allocateDuplicateVolumeVO(existingVolume, templateIdToUseFinal);
+                VolumeVO newVolume = allocateDuplicateVolumeVO(existingVolume, null, templateIdToUseFinal);
                 try {
                     stateTransitTo(existingVolume, Volume.Event.DestroyRequested);
                 } catch (NoTransitionException e) {
@@ -2191,7 +2190,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
     @Override
     public DiskProfile importVolume(Type type, String name, DiskOffering offering, Long sizeInBytes, Long minIops, Long maxIops,
-                                    VirtualMachine vm, VirtualMachineTemplate template, Account owner,
+                                    Long zoneId, HypervisorType hypervisorType, VirtualMachine vm, VirtualMachineTemplate template, Account owner,
                                     Long deviceId, Long poolId, String path, String chainInfo) {
         if (sizeInBytes == null) {
             sizeInBytes = offering.getDiskSize();
@@ -2200,9 +2199,10 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         minIops = minIops != null ? minIops : offering.getMinIops();
         maxIops = maxIops != null ? maxIops : offering.getMaxIops();
 
-        VolumeVO vol = new VolumeVO(type, name, vm.getDataCenterId(), owner.getDomainId(), owner.getId(), offering.getId(), offering.getProvisioningType(), sizeInBytes, minIops, maxIops, null);
+        VolumeVO vol = new VolumeVO(type, name, zoneId, owner.getDomainId(), owner.getId(), offering.getId(), offering.getProvisioningType(), sizeInBytes, minIops, maxIops, null);
         if (vm != null) {
             vol.setInstanceId(vm.getId());
+            vol.setAttached(new Date());
         }
 
         if (deviceId != null) {
@@ -2225,17 +2225,16 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
 
         // display flag matters only for the User vms
-        if (VirtualMachine.Type.User.equals(vm.getType())) {
+        if (vm != null && VirtualMachine.Type.User.equals(vm.getType())) {
             UserVmVO userVm = _userVmDao.findById(vm.getId());
             vol.setDisplayVolume(userVm.isDisplayVm());
         }
 
-        vol.setFormat(getSupportedImageFormatForCluster(vm.getHypervisorType()));
+        vol.setFormat(getSupportedImageFormatForCluster(hypervisorType));
         vol.setPoolId(poolId);
         vol.setPath(path);
         vol.setChainInfo(chainInfo);
         vol.setState(Volume.State.Ready);
-        vol.setAttached(new Date());
         vol = _volsDao.persist(vol);
         return toDiskProfile(vol, offering);
     }

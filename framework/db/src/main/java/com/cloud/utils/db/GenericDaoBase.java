@@ -57,6 +57,7 @@ import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 
 import com.amazonaws.util.CollectionUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.DateUtil;
@@ -2180,6 +2181,9 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
     @Override
     public List<T> findByUuids(String... uuidArray) {
+        if (ArrayUtils.isEmpty(uuidArray)) {
+            return new ArrayList<T>();
+        }
         SearchCriteria<T> sc = createSearchCriteria();
         sc.addAnd("uuid", SearchCriteria.Op.IN, uuidArray);
         return search(sc, null);
