@@ -95,7 +95,7 @@ CREATE TABLE `cloud`.`webhook` (
   `scope` char(32) NOT NULL COMMENT 'scope for the webhook - Local, Domain, Global',
   `created` datetime COMMENT 'date the webhook was created',
   `removed` datetime COMMENT 'date removed if not null',
-  `generated_removed` BIGINT(15) GENERATED ALWAYS AS (IF(removed IS NULL, 0, TIMESTAMPDIFF(SECOND, from_unixtime(0), removed))),
+  `generated_removed` BIGINT(15) GENERATED ALWAYS AS (IF(removed IS NULL, 0, TIMESTAMPDIFF(SECOND, from_unixtime(0), removed))) PERSISTENT,
   PRIMARY KEY(`id`),
   UNIQUE `i_account_id__payload_url__generated_removed`(`account_id`, `payload_url`, `generated_removed`),
   INDEX `i_webhook__account_id`(`account_id`),
