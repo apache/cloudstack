@@ -8244,7 +8244,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
     }
 
-
     private void handleManagedStorage(UserVmVO vm, VolumeVO root) {
         if (Volume.State.Allocated.equals(root.getState())) {
             return;
