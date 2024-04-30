@@ -1280,13 +1280,16 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public void addStoragePoolNFSMountOptsToDetailsMap(StoragePool pool, Map<String, String> details) {
+    public boolean addStoragePoolNFSMountOptsToDetailsMap(StoragePool pool, Map<String, String> details) {
+        boolean details_added = false;
         if (pool.getPoolType().equals(Storage.StoragePoolType.NetworkFilesystem)) {
             StoragePoolDetailVO nfsMountOpts = _storagePoolDetailsDao.findDetail(pool.getId(), ApiConstants.NFS_MOUNT_OPTIONS);
             if (nfsMountOpts != null) {
                 details.put(ApiConstants.NFS_MOUNT_OPTIONS, nfsMountOpts.getValue());
+                details_added = true;
             }
         }
+        return details_added;
     }
 
     private boolean checkIfDataStoreClusterCanbeDeleted(StoragePoolVO sPool, boolean forced) {

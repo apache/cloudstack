@@ -325,7 +325,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
         }
 
         Map<String, String> details = new HashMap<>();
-        storageManager.addStoragePoolNFSMountOptsToDetailsMap(pool, details);
+        boolean nfsMountOptsAdded = storageManager.addStoragePoolNFSMountOptsToDetailsMap(pool, details);
         // add heartbeat
         for (HostVO host : hosts) {
             ModifyStoragePoolCommand msPoolCmd = new ModifyStoragePoolCommand(true, pool, details);
@@ -333,6 +333,10 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
             if (answer == null || !answer.getResult()) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("ModifyStoragePool add failed due to " + ((answer == null) ? "answer null" : answer.getDetails()));
+                }
+                if (answer != null && nfsMountOptsAdded) {
+                    s_logger.error(String.format("Unable to attach storage pool to the host %s due to %s",  host,  answer.getDetails()));
+                    throw new CloudRuntimeException("Unable to attach storage pool to the host " +  host.getName());
                 }
             } else {
                 if (s_logger.isDebugEnabled()) {

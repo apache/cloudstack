@@ -342,7 +342,7 @@ public interface StorageManager extends StorageService {
 
     boolean registerHostListener(String providerUuid, HypervisorHostListener listener);
 
-    void addStoragePoolNFSMountOptsToDetailsMap(StoragePool pool, Map<String, String> details);
+    boolean addStoragePoolNFSMountOptsToDetailsMap(StoragePool pool, Map<String, String> details);
 
     boolean connectHostToSharedPool(long hostId, long poolId) throws StorageUnavailableException, StorageConflictException;
 
