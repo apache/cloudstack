@@ -84,7 +84,6 @@ public class TemplateObject implements TemplateInfo {
         if (template == null) {
             String msg = String.format("Template Object is not properly initialised %s", this.toString());
             s_logger.error(msg);
-            throw new InvalidParameterValueException(msg);
         }
         imageVO = template;
         this.dataStore = dataStore;
