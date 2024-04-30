@@ -16,9 +16,9 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource;
 
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.collections.CollectionUtils;
 
@@ -61,7 +61,7 @@ public class LibvirtStoragePoolDef {
     private String _authUsername;
     private AuthenticationType _authType;
     private String _secretUuid;
-    private Map<String, String> _nfsMountOpts = new HashMap<>();
+    private Set<String> _nfsMountOpts = new HashSet<>();
 
     public LibvirtStoragePoolDef(PoolType type, String poolName, String uuid, String host, int port, String dir, String targetPath) {
         _poolType = type;
@@ -86,7 +86,7 @@ public class LibvirtStoragePoolDef {
         this(type, poolName, uuid, host, dir, targetPath);
         if (CollectionUtils.isNotEmpty(nfsMountOpts)) {
             for (String nfsMountOpt : nfsMountOpts) {
-                this._nfsMountOpts.put(nfsMountOpt, null);
+                this._nfsMountOpts.add(nfsMountOpt);
             }
         }
     }
@@ -140,7 +140,7 @@ public class LibvirtStoragePoolDef {
         return _authType;
     }
 
-    public Map<String, String> getNfsMountOpts() {
+    public Set<String> getNfsMountOpts() {
         return _nfsMountOpts;
     }
 
@@ -227,8 +227,8 @@ public class LibvirtStoragePoolDef {
         }
         if (_poolType == PoolType.NETFS && _nfsMountOpts != null) {
             storagePoolBuilder.append("<fs:mount_opts>\n");
-            for (Map.Entry<String, String> options : _nfsMountOpts.entrySet()) {
-                storagePoolBuilder.append("<fs:option name='" + options.getKey() + "'/>\n");
+            for (String options : _nfsMountOpts) {
+                storagePoolBuilder.append("<fs:option name='" + options + "'/>\n");
             }
             storagePoolBuilder.append("</fs:mount_opts>\n");
         }

@@ -378,13 +378,13 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     private boolean destroyStoragePoolForNFSMountOptions(StoragePool sp, Connect conn, List<String> nfsMountOpts) {
         try {
             LibvirtStoragePoolDef poolDef = getStoragePoolDef(conn, sp);
-            Map poolNfsMountOptsMap = poolDef.getNfsMountOpts();
+            Set poolNfsMountOptsMap = poolDef.getNfsMountOpts();
             boolean mountOptsDiffer = false;
             if (poolNfsMountOptsMap.size() != nfsMountOpts.size()) {
                 mountOptsDiffer = true;
             } else {
                 for (String nfsMountOpt : nfsMountOpts) {
-                    if (!poolNfsMountOptsMap.containsKey(nfsMountOpt)) {
+                    if (!poolNfsMountOptsMap.contains(nfsMountOpt)) {
                         mountOptsDiffer = true;
                         break;
                     }

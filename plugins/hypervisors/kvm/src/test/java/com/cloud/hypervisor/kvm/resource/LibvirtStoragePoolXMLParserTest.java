@@ -59,8 +59,8 @@ public class LibvirtStoragePoolXMLParserTest extends TestCase {
         LibvirtStoragePoolDef pool = parser.parseStoragePoolXML(poolXML);
 
         assertEquals("10.11.12.13", pool.getSourceHost());
-        assertTrue(pool.getNfsMountOpts().containsKey("vers=4.1"));
-        assertTrue(pool.getNfsMountOpts().containsKey("nconnect=8"));
+        assertTrue(pool.getNfsMountOpts().contains("vers=4.1"));
+        assertTrue(pool.getNfsMountOpts().contains("nconnect=8"));
     }
 
     @Test

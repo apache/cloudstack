@@ -55,8 +55,8 @@ public class LibvirtStoragePoolDefTest extends TestCase {
         nfsMountOpts.add("vers=4.1");
         nfsMountOpts.add("nconnect=4");
         pool = new LibvirtStoragePoolDef(type, name, uuid, host, dir, targetPath, nfsMountOpts);
-        assertTrue(pool.getNfsMountOpts().containsKey("vers=4.1"));
-        assertTrue(pool.getNfsMountOpts().containsKey("nconnect=4"));
+        assertTrue(pool.getNfsMountOpts().contains("vers=4.1"));
+        assertTrue(pool.getNfsMountOpts().contains("nconnect=4"));
         assertEquals(pool.getNfsMountOpts().size(), 2);
     }
 
