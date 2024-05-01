@@ -50,14 +50,14 @@ class TestRestoreVM(cloudstackTestCase):
 
         template_t1 = Template.register(cls.apiclient, cls.services["test_templates"][
             cls.hypervisor.lower() if cls.hypervisor.lower() != 'simulator' else 'xenserver'],
-                                            zoneid=cls.zone.id, hypervisor=cls.hypervisor.lower())
+                                        zoneid=cls.zone.id, hypervisor=cls.hypervisor.lower())
         cls._cleanup.append(template_t1)
         template_t1.download(cls.apiclient)
         cls.template_t1 = Template.list(cls.apiclient, templatefilter='all', id=template_t1.id)[0]
 
         template_t2 = Template.register(cls.apiclient, cls.services["test_templates"][
             cls.hypervisor.lower() if cls.hypervisor.lower() != 'simulator' else 'xenserver'],
-                                            zoneid=cls.zone.id, hypervisor=cls.hypervisor.lower())
+                                        zoneid=cls.zone.id, hypervisor=cls.hypervisor.lower())
         cls._cleanup.append(template_t2)
         template_t2.download(cls.apiclient)
         cls.template_t2 = Template.list(cls.apiclient, templatefilter='all', id=template_t2.id)[0]
@@ -117,7 +117,8 @@ class TestRestoreVM(cloudstackTestCase):
         root_vol = Volume.list(self.apiclient, virtualmachineid=restored_vm.id)[0]
         self.assertEqual(root_vol.diskofferingid, self.disk_offering.id, "Disk offering id should match")
         self.assertEqual(root_vol.state, 'Ready', "Volume should be in Ready state")
-        self.assertEqual(root_vol.size, self.disk_offering.disksize * 1024 * 1024 * 1024, "Size of volume and disk offering should match")
+        self.assertEqual(root_vol.size, self.disk_offering.disksize * 1024 * 1024 * 1024,
+                         "Size of volume and disk offering should match")
 
         old_root_vol = Volume.list(self.apiclient, id=old_root_vol.id)
         self.assertEqual(old_root_vol, None, "Old volume should be deleted")
