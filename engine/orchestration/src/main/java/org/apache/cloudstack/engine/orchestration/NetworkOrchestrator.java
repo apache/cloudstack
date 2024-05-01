@@ -3346,11 +3346,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         return deletedVlans.second();
                     }
                 });
-                if (CollectionUtils.isNotEmpty(deletedVlanRangeToPublish)) {
-                    for (VlanVO vlan : deletedVlanRangeToPublish) {
-                        _messageBus.publish(_name, MESSAGE_DELETE_VLAN_IP_RANGE_EVENT, PublishScope.LOCAL, vlan);
-                    }
-                }
+                publishDeletedVlanRanges(deletedVlanRangeToPublish);
                 if (_networksDao.findById(network.getId()) == null) {
                     // remove its related ACL permission
                     final Pair<Class<?>, Long> networkMsg = new Pair<Class<?>, Long>(Network.class, networkFinal.getId());
@@ -3366,6 +3362,14 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         return success;
+    }
+
+    private void publishDeletedVlanRanges(List<VlanVO> deletedVlanRangeToPublish) {
+        if (CollectionUtils.isNotEmpty(deletedVlanRangeToPublish)) {
+            for (VlanVO vlan : deletedVlanRangeToPublish) {
+                _messageBus.publish(_name, MESSAGE_DELETE_VLAN_IP_RANGE_EVENT, PublishScope.LOCAL, vlan);
+            }
+        }
     }
 
     @Override
