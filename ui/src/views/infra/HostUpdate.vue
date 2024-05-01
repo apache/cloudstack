@@ -35,7 +35,7 @@
       </a-form-item>
       <a-form-item name="hosttags" ref="hosttags">
         <template #label>
-          <tooltip-label :title="$t('label.hosttags.explicit')" :tooltip="$t('label.hosttags.explicit')"/>
+          <tooltip-label :title="$t('label.hosttags')" :tooltip="$t('label.hosttags.explicit.description')"/>
         </template>
         <a-input v-model:value="form.hosttags" />
       </a-form-item>
