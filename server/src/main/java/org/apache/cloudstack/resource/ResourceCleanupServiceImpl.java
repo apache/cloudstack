@@ -218,6 +218,9 @@ public class ResourceCleanupServiceImpl extends ManagerBase implements ResourceC
     }
 
     protected void purgeLinkedNicEntities(final List<Long> nicIds, final Long batchSize) {
+        if (CollectionUtils.isEmpty(nicIds)) {
+            return;
+        }
         nicDetailsDao.batchExpungeForResources(nicIds, batchSize);
         nicExtraDhcpOptionDao.expungeByNicList(nicIds, batchSize);
         inlineLoadBalancerNicMapDao.expungeByNicList(nicIds, batchSize);

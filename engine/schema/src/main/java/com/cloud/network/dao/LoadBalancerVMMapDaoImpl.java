@@ -18,6 +18,7 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.GenericDaoBase;
@@ -138,6 +139,9 @@ public class LoadBalancerVMMapDaoImpl extends GenericDaoBase<LoadBalancerVMMapVO
 
     @Override
     public int expungeByVmList(List<Long> vmIds, Long batchSize) {
+        if (CollectionUtils.isEmpty(vmIds)) {
+            return 0;
+        }
         SearchBuilder<LoadBalancerVMMapVO> sb = createSearchBuilder();
         sb.and("vmIds", sb.entity().getInstanceId(), SearchCriteria.Op.IN);
         SearchCriteria<LoadBalancerVMMapVO> sc = sb.create();

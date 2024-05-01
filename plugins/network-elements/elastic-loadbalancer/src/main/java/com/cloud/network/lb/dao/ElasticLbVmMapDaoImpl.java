@@ -21,6 +21,7 @@ import java.util.List;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.network.ElasticLbVmMapVO;
@@ -138,6 +139,9 @@ public class ElasticLbVmMapDaoImpl extends GenericDaoBase<ElasticLbVmMapVO, Long
 
     @Override
     public int expungeByLbVmList(List<Long> vmIds, Long batchSize) {
+        if (CollectionUtils.isEmpty(vmIds)) {
+            return 0;
+        }
         SearchBuilder<ElasticLbVmMapVO> sb = createSearchBuilder();
         sb.and("vmIds", sb.entity().getElbVmId(), SearchCriteria.Op.IN);
         SearchCriteria<ElasticLbVmMapVO> sc = sb.create();

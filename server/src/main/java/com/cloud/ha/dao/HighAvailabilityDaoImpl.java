@@ -19,6 +19,7 @@ package com.cloud.ha.dao;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.ha.HaWorkVO;
@@ -260,6 +261,9 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<HaWorkVO, Long> impl
 
     @Override
     public int expungeByVmList(List<Long> vmIds, Long batchSize) {
+        if (CollectionUtils.isEmpty(vmIds)) {
+            return 0;
+        }
         SearchBuilder<HaWorkVO> sb = createSearchBuilder();
         sb.and("vmIds", sb.entity().getInstanceId(), SearchCriteria.Op.IN);
         SearchCriteria<HaWorkVO> sc = sb.create();

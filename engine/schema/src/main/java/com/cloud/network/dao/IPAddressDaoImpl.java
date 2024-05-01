@@ -26,6 +26,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.resourcedetail.dao.UserIpAddressDetailsDao;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.Vlan.VlanType;
@@ -564,6 +565,9 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
 
     @Override
     public int expungeByVmList(List<Long> vmIds, Long batchSize) {
+        if (CollectionUtils.isEmpty(vmIds)) {
+            return 0;
+        }
         SearchBuilder<IPAddressVO> sb = createSearchBuilder();
         sb.and("vmIds", sb.entity().getAssociatedWithVmId(), SearchCriteria.Op.IN);
         SearchCriteria<IPAddressVO> sc = sb.create();

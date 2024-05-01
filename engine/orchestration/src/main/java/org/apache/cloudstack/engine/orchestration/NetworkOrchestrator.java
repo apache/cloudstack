@@ -4724,7 +4724,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     @Override
     public void expungeLbVmRefs(List<Long> vmIds, Long batchSize) {
-        if (CollectionUtils.isEmpty(networkElements)) {
+        if (CollectionUtils.isEmpty(networkElements) || CollectionUtils.isEmpty(vmIds)) {
             return;
         }
         for (NetworkElement element : networkElements) {

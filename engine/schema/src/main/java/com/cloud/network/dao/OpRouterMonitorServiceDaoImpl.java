@@ -19,6 +19,7 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.GenericDaoBase;
@@ -30,6 +31,9 @@ import com.cloud.utils.db.SearchCriteria;
 public class OpRouterMonitorServiceDaoImpl extends GenericDaoBase<OpRouterMonitorServiceVO, Long> implements OpRouterMonitorServiceDao  {
     @Override
     public int expungeByVmList(List<Long> vmIds, Long batchSize) {
+        if (CollectionUtils.isEmpty(vmIds)) {
+            return 0;
+        }
         SearchBuilder<OpRouterMonitorServiceVO> sb = createSearchBuilder();
         sb.and("vmIds", sb.entity().getId(), SearchCriteria.Op.IN);
         SearchCriteria<OpRouterMonitorServiceVO> sc = sb.create();

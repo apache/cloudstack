@@ -900,6 +900,9 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 
     @Override
     public List<VolumeVO> searchRemovedByVms(List<Long> vmIds, Long batchSize) {
+        if (CollectionUtils.isEmpty(vmIds)) {
+            return new ArrayList<>();
+        }
         SearchBuilder<VolumeVO> sb = createSearchBuilder();
         sb.and("vmIds", sb.entity().getInstanceId(), SearchCriteria.Op.IN);
         sb.and("removed", sb.entity().getRemoved(), SearchCriteria.Op.NNULL);

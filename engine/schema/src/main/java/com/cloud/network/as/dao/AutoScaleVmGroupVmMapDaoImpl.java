@@ -21,6 +21,7 @@ import java.util.List;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.network.as.AutoScaleVmGroupVmMapVO;
@@ -117,6 +118,9 @@ public class AutoScaleVmGroupVmMapDaoImpl extends GenericDaoBase<AutoScaleVmGrou
 
     @Override
     public int expungeByVmList(List<Long> vmIds, Long batchSize) {
+        if (CollectionUtils.isEmpty(vmIds)) {
+            return 0;
+        }
         SearchBuilder<AutoScaleVmGroupVmMapVO> sb = createSearchBuilder();
         sb.and("vmIds", sb.entity().getInstanceId(), SearchCriteria.Op.IN);
         SearchCriteria<AutoScaleVmGroupVmMapVO> sc = sb.create();

@@ -228,6 +228,17 @@ public class ResourceCleanupServiceImplTest {
     }
 
     @Test
+    public void testPurgeLinkedNicEntitiesNoNics() {
+        resourceCleanupService.purgeLinkedNicEntities(new ArrayList<>(), batchSize);
+        Mockito.verify(nicDetailsDao, Mockito.never())
+                .batchExpungeForResources(ids, batchSize);
+        Mockito.verify(nicExtraDhcpOptionDao, Mockito.never())
+                .expungeByNicList(ids, batchSize);
+        Mockito.verify(inlineLoadBalancerNicMapDao, Mockito.never())
+                .expungeByNicList(ids, batchSize);
+    }
+
+    @Test
     public void testPurgeLinkedNicEntities() {
         Mockito.when(nicDetailsDao.batchExpungeForResources(ids, batchSize)).thenReturn(2L);
         Mockito.when(nicExtraDhcpOptionDao.expungeByNicList(ids, batchSize)).thenReturn(2);
