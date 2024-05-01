@@ -135,7 +135,7 @@ export default {
     },
     {
       api: 'changeStoragePoolScope',
-      icon: 'arrow-right-outlined',
+      icon: 'swap-outlined',
       label: 'label.action.change.primary.storage.scope',
       dataView: true,
       popup: true,
