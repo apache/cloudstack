@@ -1581,14 +1581,8 @@ public class VolumeServiceImpl implements VolumeService {
     @DB
     @Override
     public AsyncCallFuture<VolumeApiResult> createVolumeFromTemplateAsync(VolumeInfo volume, long dataStoreId, TemplateInfo template) {
-        TemplateInfo templateOnPrimaryStore = null;
         PrimaryDataStore pd = dataStoreMgr.getPrimaryDataStore(dataStoreId);
-        try {
-            long templateId = template.getId();
-            templateOnPrimaryStore = pd.getTemplate(templateId, volume.getDeployAsIsConfiguration());
-        } catch (NullPointerException e) {
-            s_logger.debug("no template to create volume from: " + (template == null ? "null" : template.toString()));
-        }
+        TemplateInfo templateOnPrimaryStore = pd.getTemplate(template.getId(), volume.getDeployAsIsConfiguration());
         AsyncCallFuture<VolumeApiResult> future = new AsyncCallFuture<>();
 
         if (templateOnPrimaryStore == null) {
