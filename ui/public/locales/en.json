@@ -61,6 +61,7 @@
 "label.action.cancel.maintenance.mode": "Cancel maintenance mode",
 "label.action.change.password": "Change password",
 "label.action.clear.webhook.deliveries": "Clear deliveries",
+"label.action.delete.webhook.deliveries": "Delete deliveries",
 "label.action.configure.stickiness": "Stickiness",
 "label.action.copy.iso": "Copy ISO",
 "label.action.copy.snapshot": "Copy Snapshot",

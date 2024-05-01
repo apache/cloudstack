@@ -22,20 +22,22 @@
       type="danger"
       danger
       style="width: 100%; margin-bottom: 15px"
-      @click="clearDeliveriesConfirmation()">
+      @click="clearOrDeleteDeliveriesConfirmation()">
       <template #icon><delete-outlined /></template>
-      {{ $t('label.action.clear.webhook.deliveries') }}
+      {{ (selectedRowKeys && selectedRowKeys.length > 0) ? $t('label.action.delete.webhook.deliveries') : $t('label.action.clear.webhook.deliveries') }}
     </a-button>
     <list-view
       :tabLoading="tabLoading"
       :columns="columns"
-      :items="dispatches"
+      :items="deliveries"
       :actions="actions"
       :columnKeys="columnKeys"
+      :explicitlyAllowRowSelection="true"
       :selectedColumns="selectedColumnKeys"
       ref="listview"
       @update-selected-columns="updateSelectedColumns"
-      @refresh="this.fetchData"/>
+      @refresh="this.fetchData"
+      @selection-change="updateSelectedRows"/>
       <a-pagination
         class="row-element"
         style="margin-top: 10px"
@@ -82,9 +84,10 @@ export default {
       tabLoading: false,
       columnKeys: ['payload', 'eventtype', 'success', 'response', 'duration'],
       selectedColumnKeys: [],
+      selectedRowKeys: [],
       columns: [],
       cols: [],
-      dispatches: [],
+      deliveries: [],
       actions: [
         {
           api: 'executeWebhookDelivery',
@@ -137,10 +140,13 @@ export default {
   },
   methods: {
     fetchData () {
+      if ('listview' in this.$refs && this.$refs.listview) {
+        this.$refs.listview.resetSelection()
+      }
       this.fetchDeliveries()
     },
     fetchDeliveries () {
-      this.dispatches = []
+      this.deliveries = []
       if (!this.resource.id) {
         return
       }
@@ -152,9 +158,9 @@ export default {
       }
       this.tabLoading = true
       api('listWebhookDeliveries', params).then(json => {
-        this.dispatches = []
+        this.deliveries = []
         this.totalCount = json?.listwebhookdeliveriesresponse?.count || 0
-        this.dispatches = json?.listwebhookdeliveriesresponse?.webhookdelivery || []
+        this.deliveries = json?.listwebhookdeliveriesresponse?.webhookdelivery || []
         this.tabLoading = false
       })
     },
@@ -190,16 +196,49 @@ export default {
         this.columns[this.columns.length - 1].customFilterDropdown = true
       }
     },
-    clearDeliveriesConfirmation () {
+    updateSelectedRows (keys) {
+      this.selectedRowKeys = keys
+    },
+    clearOrDeleteDeliveriesConfirmation () {
       const self = this
+      const title = (this.selectedRowKeys && this.selectedRowKeys.length > 0) ? this.$t('label.action.delete.webhook.deliveries') : this.$t('label.action.clear.webhook.deliveries')
       this.$confirm({
-        title: this.$t('label.action.clear.webhook.deliveries'),
+        title: title,
         okText: this.$t('label.ok'),
         okType: 'danger',
         cancelText: this.$t('label.cancel'),
         onOk () {
+          if (self.selectedRowKeys && self.selectedRowKeys.length > 0) {
+            self.deletedSelectedDeliveries()
+            return
+          }
           self.clearDeliveries()
         }
+      })
+    },
+    deletedSelectedDeliveries () {
+      const promises = []
+      this.selectedRowKeys.forEach(id => {
+        const params = {
+          id: id
+        }
+        promises.push(new Promise((resolve, reject) => {
+          api('deleteWebhookDelivery', params).then(json => {
+            return resolve(id)
+          }).catch(error => {
+            return reject(error)
+          })
+        }))
+      })
+      const msg = this.$t('label.action.delete.webhook.deliveries')
+      this.$message.info({
+        content: msg,
+        duration: 3
+      })
+      this.tabLoading = true
+      Promise.all(promises).finally(() => {
+        this.tabLoading = false
+        this.fetchData()
       })
     },
     clearDeliveries () {

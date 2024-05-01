@@ -23,7 +23,7 @@
     :dataSource="items"
     :rowKey="(record, idx) => record.id || record.name || record.usageType || idx + '-' + Math.random()"
     :pagination="false"
-    :rowSelection=" enableGroupAction() || $route.name === 'event' ? {selectedRowKeys: selectedRowKeys, onChange: onSelectChange, columnWidth: 30} : null"
+    :rowSelection="explicitlyAllowRowSelection || enableGroupAction() || $route.name === 'event' ? {selectedRowKeys: selectedRowKeys, onChange: onSelectChange, columnWidth: 30} : null"
     :rowClassName="getRowClassName"
     style="overflow-y: auto"
   >
@@ -561,6 +561,10 @@ export default {
     actions: {
       type: Array,
       default: () => []
+    },
+    explicitlyAllowRowSelection: {
+      type: Boolean,
+      default: false
     }
   },
   inject: ['parentFetchData', 'parentToggleLoading'],
