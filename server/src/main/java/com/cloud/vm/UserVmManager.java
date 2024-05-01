@@ -63,11 +63,21 @@ public interface UserVmManager extends UserVmService {
             "Destroys the VM's root volume when the VM is destroyed.",
             true, ConfigKey.Scope.Domain);
 
+    ConfigKey<String> StrictHostTags = new ConfigKey<>(
+            "Advanced",
+            String.class,
+            "vm.strict.host.tags",
+            "",
+            "A comma-separated list of tags which must match during operations like modifying the compute" +
+                    "offering for an instance, and starting or live migrating an instance to a specific host.",
+            true);
     ConfigKey<Boolean> EnforceStrictResourceLimitHostTagCheck = new ConfigKey<Boolean>(
-            "Advanced", Boolean.class, "vm.strict.resource.limit.host.tag.check", "true",
-            "Determines whether the resource limits tags are considered strict or not", true);
-    ConfigKey<String> StrictHostTags = new ConfigKey<>("Advanced", String.class, "vm.strict.host.tags", "",
-            "A comma-separated list of tags for strict host check", true);
+            "Advanced",
+            Boolean.class,
+            "vm.strict.resource.limit.host.tag.check",
+            "true",
+            "If set to true, tags specified in `resource.limit.host.tags` are also included in vm.strict.host.tags.",
+            true);
 
     static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
 
