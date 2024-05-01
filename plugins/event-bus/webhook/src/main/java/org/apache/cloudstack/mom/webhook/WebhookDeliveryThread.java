@@ -216,7 +216,7 @@ public class WebhookDeliveryThread implements Runnable {
             }
         } catch (URISyntaxException | IOException | DecoderException | NoSuchAlgorithmException |
                  InvalidKeyException e) {
-            LOGGER.warn("Failed to delivery {}, in attempt #{} due to: {}",
+            LOGGER.warn("Failed to deliver {}, in attempt #{} due to: {}",
                     webhook, attempt, e.getMessage());
             response = String.format("Failed due to : %s", e.getMessage());
         }

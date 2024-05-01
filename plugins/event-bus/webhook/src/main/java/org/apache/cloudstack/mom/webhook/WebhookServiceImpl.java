@@ -43,7 +43,6 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.mom.webhook.dao.WebhookDao;
 import org.apache.cloudstack.mom.webhook.dao.WebhookDeliveryDao;
 import org.apache.cloudstack.mom.webhook.vo.WebhookDeliveryVO;
-import org.apache.cloudstack.mom.webhook.vo.WebhookJoinVO;
 import org.apache.cloudstack.mom.webhook.vo.WebhookVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.webhook.WebhookHelper;
@@ -104,7 +103,8 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
             return jobs;
         }
         if (event.getResourceAccountId() == null) {
-            logger.warn("Skipping delivering event [ID: {}, description: {}] to any webhook as account ID is missing");
+            logger.warn("Skipping delivering event [ID: {}, description: {}] to any webhook as account ID is missing",
+                    event.getEventId(), event.getDescription());
             throw new EventBusException(String.format("Account missing for the event ID: %s", event.getEventUuid()));
         }
         List<Long> domainIds = new ArrayList<>();
@@ -186,6 +186,26 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
         return null;
     }
 
+    protected long cleanupOldWebhookDeliveries(long deliveriesLimit) {
+        Filter filter = new Filter(WebhookVO.class, "id", true, 0L, 50L);
+        Pair<List<WebhookVO>, Integer> webhooksAndCount =
+                webhookDao.searchAndCount(webhookDao.createSearchCriteria(), filter);
+        List<WebhookVO> webhooks = webhooksAndCount.first();
+        long count = webhooksAndCount.second();
+        long processed = 0;
+        do {
+            for (WebhookVO webhook : webhooks) {
+                webhookDeliveryDao.removeOlderDeliveries(webhook.getId(), deliveriesLimit);
+                processed++;
+            }
+            if (processed < count) {
+                filter.setOffset(processed);
+                webhooks = webhookDao.listAll(filter);
+            }
+        } while (processed < count);
+        return processed;
+    }
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         try {
@@ -201,9 +221,12 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
 
     @Override
     public boolean start() {
+        long webhookDeliveriesCleanupInitialDelay = WebhookDeliveriesCleanupInitialDelay.value();
         long webhookDeliveriesCleanupInterval = WebhookDeliveriesCleanupInterval.value();
+        logger.debug("Scheduling webhook deliveries cleanup task with initial delay={}s and interval={}s",
+                webhookDeliveriesCleanupInitialDelay, webhookDeliveriesCleanupInterval);
         webhookDeliveriesCleanupExecutor.scheduleWithFixedDelay(new WebhookDeliveryCleanupWorker(),
-                (5 * 60), webhookDeliveriesCleanupInterval, TimeUnit.SECONDS);
+                webhookDeliveriesCleanupInitialDelay, webhookDeliveriesCleanupInterval, TimeUnit.SECONDS);
         return true;
     }
 
@@ -225,6 +248,7 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
                 WebhookDeliveryTries,
                 WebhookDeliveryThreadPoolSize,
                 WebhookDeliveriesLimit,
+                WebhookDeliveriesCleanupInitialDelay,
                 WebhookDeliveriesCleanupInterval
         };
     }
@@ -295,28 +319,20 @@ public class WebhookServiceImpl extends ManagerBase implements WebhookService, W
     public class WebhookDeliveryCleanupWorker extends ManagedContextRunnable {
 
         protected void runCleanupForLongestRunningManagementServer() {
-            ManagementServerHostVO msHost = managementServerHostDao.findOneByLongestRuntime();
-            if (msHost == null || (msHost.getMsid() != ManagementServerNode.getManagementServerId())) {
-                logger.trace("Skipping the webhook delivery cleanup task on this management server");
-                return;
+            try {
+                ManagementServerHostVO msHost = managementServerHostDao.findOneByLongestRuntime();
+                if (msHost == null || (msHost.getMsid() != ManagementServerNode.getManagementServerId())) {
+                    logger.debug("Skipping the webhook delivery cleanup task on this management server");
+                    return;
+                }
+                long deliveriesLimit = WebhookDeliveriesLimit.value();
+                logger.debug("Clearing old deliveries for webhooks with limit={} using management server {}",
+                        deliveriesLimit, msHost.getMsid());
+                long processed = cleanupOldWebhookDeliveries(deliveriesLimit);
+                logger.debug("Cleared old deliveries with limit={} for {} webhooks", deliveriesLimit, processed);
+            } catch (Exception e) {
+                logger.warn("Cleanup task failed to cleanup old webhook deliveries", e);
             }
-            long deliveriesLimit = WebhookDeliveriesLimit.value();
-            Filter filter = new Filter(WebhookJoinVO.class, "id", true, 0L, 50L);
-            Pair<List<WebhookVO>, Integer> webhooksAndCount =
-                    webhookDao.searchAndCount(webhookDao.createSearchCriteria(), filter);
-            List<WebhookVO> webhooks = webhooksAndCount.first();
-            long count = webhooksAndCount.second();
-            long processed = 0;
-            do {
-                for (WebhookVO webhook : webhooks) {
-                    webhookDeliveryDao.removeOlderDeliveries(webhook.getId(), deliveriesLimit);
-                    processed++;
-                }
-                if (processed < count) {
-                    filter.setOffset(processed);
-                    webhooks = webhookDao.listAll(filter);
-                }
-            } while (processed < count);
         }
 
         @Override

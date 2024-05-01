@@ -47,6 +47,11 @@ public interface WebhookService extends PluggableService, Configurable {
             "Limit for the number of deliveries to keep in DB per webhook",
             true, ConfigKey.Scope.Global);
 
+    ConfigKey<Integer> WebhookDeliveriesCleanupInitialDelay = new ConfigKey<>("Advanced", Integer.class,
+            "webhook.deliveries.cleanup.initial.delay", "180",
+            "Initial delay (in seconds) for webhook deliveries cleanup task",
+            false, ConfigKey.Scope.Global);
+
     ConfigKey<Integer> WebhookDeliveriesCleanupInterval = new ConfigKey<>("Advanced", Integer.class,
             "webhook.deliveries.cleanup.interval", "3600",
             "Interval (in seconds) for cleaning up webhook deliveries",
