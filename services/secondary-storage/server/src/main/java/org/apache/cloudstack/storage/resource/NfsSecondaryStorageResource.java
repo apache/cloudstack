@@ -189,6 +189,8 @@ import io.netty.handler.logging.LoggingHandler;
 public class NfsSecondaryStorageResource extends ServerResourceBase implements SecondaryStorageResource {
 
     public static final Logger s_logger = Logger.getLogger(NfsSecondaryStorageResource.class);
+    public static final String OUTPUT_CHAIN = "OUTPUT";
+    public static final String INPUT_CHAIN = "INPUT";
 
     private static final String TEMPLATE_ROOT_DIR = "template/tmpl";
     private static final String VOLUME_ROOT_DIR = "volumes";
@@ -2288,13 +2290,13 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return null;
         }
         String intf = "eth1";
-        String rule =  String.format("OUTPUT -o %s -d %s -p tcp -m state --state NEW -m tcp  -j ACCEPT", intf, destCidr);
+        String rule =  String.format("-o %s -d %s -p tcp -m state --state NEW -m tcp  -j ACCEPT", intf, destCidr);
 
         s_logger.info(String.format("Adding rule if required: " + rule));
-        if (ruleNeedsAdding(rule)) {
+        if (needsAdding(OUTPUT_CHAIN, rule)) {
             Script command = new Script("/bin/bash", s_logger);
             command.add("-c");
-            command.add("iptables -I");
+            command.add("iptables -I " + OUTPUT_CHAIN);
             command.add(rule);
 
             String result = command.execute();
@@ -2311,10 +2313,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return null;
     }
 
-    private boolean ruleNeedsAdding(String rule) {
+    private boolean needsAdding(String chain, String rule) {
         Script command = new Script("/bin/bash", s_logger);
         command.add("-c");
-        command.add("iptables -C");
+        command.add("iptables -C " + chain);
         command.add(rule);
 
         String r1 = command.execute();
@@ -2850,11 +2852,11 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         if (result != null) {
             s_logger.warn("Error in starting sshd service err=" + result);
         }
-        String rule = "INPUT -i eth1 -p tcp -m state --state NEW -m tcp --dport 3922 -j ACCEPT";
-        if (ruleNeedsAdding(rule)) {
+        String rule = "-i eth1 -p tcp -m state --state NEW -m tcp --dport 3922 -j ACCEPT";
+        if (needsAdding(INPUT_CHAIN, rule)) {
             command = new Script("/bin/bash", s_logger);
             command.add("-c");
-            command.add("iptables -I");
+            command.add("iptables -I " + INPUT_CHAIN);
             command.add(rule);
             result = command.execute();
             if (result != null) {
