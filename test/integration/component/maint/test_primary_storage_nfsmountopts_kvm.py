@@ -15,7 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import marvin
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.cloudstackAPI import *
 from marvin.lib.utils import *
@@ -29,26 +28,31 @@ class TestNFSMountOptsKVM(cloudstackTestCase):
     """ Test cases for host HA using KVM host(s)
     """
 
-    def setUp(self):
-        self.testClient = super(TestNFSMountOptsKVM, self).getClsTestClient()
-        self.apiclient = self.testClient.getApiClient()
-        self.dbclient = self.testClient.getDbConnection()
-        self.services = self.testClient.getParsedTestDataConfig()
-        self.logger = logging.getLogger('TestHAKVM')
+    @classmethod
+    def setUpClass(cls):
+        testClient = super(TestNFSMountOptsKVM, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
 
-        self.cluster = list_clusters(self.apiclient)[0]
-        self.hypervisor = self.testClient.getHypervisorInfo()
-        self.host = self.getHost()
-        self.storagePool = self.getPrimaryStorage(self.cluster.id)
-        self.hostConfig = self.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
-        self.cluster_id = self.host.clusterid
-        self.hostConfig["password"]="P@ssword123"
-        self.sshClient = SshClient(
-            host=self.host.ipaddress,
+        cls.cluster = list_clusters(cls.apiclient)[0]
+        cls.host = cls.getHost(cls)
+        cls.storage_pool = cls.getPrimaryStorage(cls, cls.cluster.id)
+        cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
+        cls.cluster_id = cls.host.clusterid
+        cls.hostConfig["password"]="P@ssword123"
+        cls.sshClient = SshClient(
+            host=cls.host.ipaddress,
             port=22,
-            user=self.hostConfig['username'],
-            passwd=self.hostConfig['password'])
+            user=cls.hostConfig['username'],
+            passwd=cls.hostConfig['password'])
+        cls.version = cls.getNFSMountOptionForPool(cls, "vers", cls.storage_pool.id)
+        if (cls.version == None):
+            raise cls.skipTest("Storage pool not associated with the host")
 
+    def tearDown(self):
+        nfsMountOpts = "vers=" + self.version
+        details = [{'nfsmountopts': nfsMountOpts}]
+        self.changeNFSOptions(details)
+        pass
 
     def getHost(self):
         response = list_hosts(
@@ -73,8 +77,7 @@ class TestNFSMountOptsKVM(cloudstackTestCase):
             id=None,
         )
         if response and len(response) > 0:
-            self.storage_pool = response[0]
-            return self.storage_pool
+            return response[0]
         raise self.skipTest("Not enough KVM hosts found, skipping NFS options test")
 
     def getNFSMountOptionsFromVirsh(self, poolId):
@@ -114,28 +117,7 @@ class TestNFSMountOptsKVM(cloudstackTestCase):
         vers = stat[stat.find(option):].split("=")[1].split(",")[0]
         return vers
 
-    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
-    def test_primary_storage_nfs_options_kvm(self):
-        """
-            Tests that NFS mount options configured on the primary storage are set correctly on the KVM hypervisor host
-        """
-
-        vers = self.getNFSMountOptionForPool("vers", self.storage_pool.id)
-        if (vers == None):
-            raise self.skipTest("Storage pool not associated with the host")
-
-        version = self.getUnusedNFSVersions(self.storage_pool.ipaddress)
-        nconnect = None
-        if version == None:
-            self.debug("skipping nconnect mount option as there are multiple mounts already present from the nfs server for all versions")
-            version = self.getUnusedNFSVersions(self.storage_pool.id)
-            nfsMountOpts = "vers=" + version
-        else:
-            nconnect='4'
-            nfsMountOpts = "vers=" + version + ",nconnect=" + nconnect
-
-        details = [{'nfsmountopts': nfsMountOpts}]
-
+    def changeNFSOptions(self, details):
         maint_cmd = enableStorageMaintenance.enableStorageMaintenanceCmd()
         maint_cmd.id = self.storage_pool.id
         resp = self.apiclient.enableStorageMaintenance(maint_cmd)
@@ -148,15 +130,45 @@ class TestNFSMountOptsKVM(cloudstackTestCase):
         store_maint_cmd = cancelStorageMaintenance.cancelStorageMaintenanceCmd()
         store_maint_cmd.id = self.storage_pool.id
         resp = self.apiclient.cancelStorageMaintenance(store_maint_cmd)
+        return resp
+
+    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
+    def test_primary_storage_nfs_options_kvm(self):
+        """
+            Tests that NFS mount options configured on the primary storage are set correctly on the KVM hypervisor host
+        """
+        version = self.getUnusedNFSVersions(self.storage_pool.ipaddress)
+        nconnect = None
+        if version == None:
+            self.debug("skipping nconnect mount option as there are multiple mounts already present from the nfs server for all versions")
+            version = self.getUnusedNFSVersions(self.storage_pool.id)
+            nfsMountOpts = "vers=" + version
+        else:
+            nconnect='4'
+            nfsMountOpts = "vers=" + version + ",nconnect=" + nconnect
+
+        details = [{'nfsmountopts': nfsMountOpts}]
+
+        resp = self.changeNFSOptions(details)
 
         storage = StoragePool.list(self.apiclient,
                                    id=self.storage_pool.id
                                    )[0]
-
         self.assertEqual(storage.nfsmountopts, nfsMountOpts)
 
         options = self.getNFSMountOptionsFromVirsh(self.storage_pool.id)
-
         self.assertEqual(options["vers"], version)
         if (nconnect != None):
             self.assertEqual(options["nconnect"], nconnect)
+
+    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
+    def test_primary_storage_incorrect_nfs_options_kvm(self):
+        nfsMountOpts = "version=4.1"
+        details = [{'nfsmountopts': nfsMountOpts}]
+
+        try:
+            resp = self.changeNFSOptions(details)
+        except Exception:
+            pass
+        else:
+            self.fail("Incorrect NFS mount option should throw error while mounting")

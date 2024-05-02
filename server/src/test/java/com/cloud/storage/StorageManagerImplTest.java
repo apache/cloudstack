@@ -22,10 +22,13 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.user.AccountManager;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -59,6 +62,8 @@ public class StorageManagerImplTest {
     ConfigurationDao configurationDao;
     @Mock
     DataCenterDao dataCenterDao;
+    @Mock
+    AccountManager accountManager;
 
     @Spy
     @InjectMocks
@@ -252,12 +257,22 @@ public class StorageManagerImplTest {
     @Test(expected = InvalidParameterValueException.class)
     public void testDuplicateNFSMountOptions() {
         String nfsMountOpts = "vers=4.1, nconnect=4,vers=4.2";
-        storageManagerImpl.checkNfsMountOptions(nfsMountOpts);
+        Map<String, String> details = new HashMap<>();
+        details.put(ApiConstants.NFS_MOUNT_OPTIONS, nfsMountOpts);
+        storageManagerImpl.checkNFSMountOptionsForCreate(details, Hypervisor.HypervisorType.KVM, "nfs");
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void testInvalidNFSMountOptions() {
         String nfsMountOpts = "vers=4.1=2,";
-        storageManagerImpl.checkNfsMountOptions(nfsMountOpts);
+        Map<String, String> details = new HashMap<>();
+        details.put(ApiConstants.NFS_MOUNT_OPTIONS, nfsMountOpts);
+        StoragePoolVO pool = new StoragePoolVO();
+        pool.setHypervisor(Hypervisor.HypervisorType.KVM);
+        pool.setPoolType(Storage.StoragePoolType.NetworkFilesystem);
+        pool.setStatus(StoragePoolStatus.Maintenance);
+        Long accountId = 1L;
+        Mockito.when(accountManager.isRootAdmin(accountId)).thenReturn(true);
+        storageManagerImpl.checkNFSMountOptionsForUpdate(details, pool, accountId);
     }
 }
