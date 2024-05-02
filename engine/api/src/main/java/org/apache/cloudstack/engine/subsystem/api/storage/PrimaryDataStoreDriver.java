@@ -111,6 +111,14 @@ public interface PrimaryDataStoreDriver extends DataStoreDriver {
     boolean canHostAccessStoragePool(Host host, StoragePool pool);
 
     /**
+     * intended for managed storage
+     * returns true if the host can prepare storage client to provide access the storage pool
+     */
+    default boolean canHostPrepareStoragePoolAccess() {
+        return false;
+    }
+
+    /**
      * Used by storage pools which want to keep VMs' information
      * @return true if additional VM info is needed (intended for storage pools).
      */

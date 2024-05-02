@@ -1618,6 +1618,11 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         }
 
         s_logger.debug("Host: " + host.getId() + (hostCanAccessSPool ? " can" : " cannot") + " access pool: " + pool.getId());
+        if (_storageMgr.canHostPrepareStoragePoolAccess(host, pool)) {
+            s_logger.debug("Host: " + host.getId() + " can prepare access to pool: " + pool.getId());
+            hostCanAccessSPool = true;
+        }
+
         return hostCanAccessSPool;
     }
 

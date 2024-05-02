@@ -2650,6 +2650,26 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
+    public boolean canHostPrepareStoragePoolAccess(Host host, StoragePool pool) {
+        if (host == null || pool == null) {
+            return false;
+        }
+
+        if (!pool.isManaged()) {
+            return true;
+        }
+
+        DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
+        DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
+
+        if (storeDriver instanceof PrimaryDataStoreDriver && ((PrimaryDataStoreDriver)storeDriver).canHostPrepareStoragePoolAccess()) {
+            return true;
+        }
+
+        return false;
+    }
+
+    @Override
     @DB
     public Host getHost(long hostId) {
         return _hostDao.findById(hostId);
@@ -3824,6 +3844,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 STORAGE_POOL_DISK_WAIT,
                 STORAGE_POOL_CLIENT_TIMEOUT,
                 STORAGE_POOL_CLIENT_MAX_CONNECTIONS,
+                STORAGE_POOL_CONNECTED_CLIENTS_LIMIT,
                 STORAGE_POOL_IO_POLICY,
                 PRIMARY_STORAGE_DOWNLOAD_WAIT,
                 SecStorageMaxMigrateSessions,
