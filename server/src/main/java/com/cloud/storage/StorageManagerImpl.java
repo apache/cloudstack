@@ -411,6 +411,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     private final Map<String, HypervisorHostListener> hostListeners = new HashMap<String, HypervisorHostListener>();
 
+    private static final String NFS_MOUNT_OPTIONS_INCORRECT = "An incorrect mount option was specified";
+
     public boolean share(VMInstanceVO vm, List<VolumeVO> vols, HostVO host, boolean cancelPreviousShare) throws StorageUnavailableException {
 
         // if pool is in maintenance and it is the ONLY pool available; reject
@@ -1280,8 +1282,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public boolean addStoragePoolNFSMountOptsToDetailsMap(StoragePool pool, Map<String, String> details) {
+    public Pair<Map<String, String>, Boolean> getStoragePoolNFSMountOpts(StoragePool pool, Map<String, String> details) {
         boolean details_added = false;
+        if (details == null) {
+            details = new HashMap<>();
+        }
         if (pool.getPoolType().equals(Storage.StoragePoolType.NetworkFilesystem)) {
             StoragePoolDetailVO nfsMountOpts = _storagePoolDetailsDao.findDetail(pool.getId(), ApiConstants.NFS_MOUNT_OPTIONS);
             if (nfsMountOpts != null) {
@@ -1289,7 +1294,15 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 details_added = true;
             }
         }
-        return details_added;
+        return new Pair<>(details, details_added);
+    }
+
+    public String getStoragePoolMountFailureReason(String reason) {
+        if (reason.toLowerCase().contains(NFS_MOUNT_OPTIONS_INCORRECT.toLowerCase())) {
+            return NFS_MOUNT_OPTIONS_INCORRECT;
+        } else {
+            return null;
+        }
     }
 
     private boolean checkIfDataStoreClusterCanbeDeleted(StoragePoolVO sPool, boolean forced) {

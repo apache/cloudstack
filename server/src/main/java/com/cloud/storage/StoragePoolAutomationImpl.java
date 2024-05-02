@@ -19,7 +19,6 @@
 package com.cloud.storage;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -51,6 +50,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.dao.UserDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
@@ -324,19 +324,23 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
             return true;
         }
 
-        Map<String, String> details = new HashMap<>();
-        boolean nfsMountOptsAdded = storageManager.addStoragePoolNFSMountOptsToDetailsMap(pool, details);
+        Pair<Map<String, String>, Boolean> nfsMountOpts = storageManager.getStoragePoolNFSMountOpts(pool, null);
         // add heartbeat
         for (HostVO host : hosts) {
-            ModifyStoragePoolCommand msPoolCmd = new ModifyStoragePoolCommand(true, pool, details);
+            ModifyStoragePoolCommand msPoolCmd = new ModifyStoragePoolCommand(true, pool, nfsMountOpts.first());
             final Answer answer = agentMgr.easySend(host.getId(), msPoolCmd);
             if (answer == null || !answer.getResult()) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("ModifyStoragePool add failed due to " + ((answer == null) ? "answer null" : answer.getDetails()));
                 }
-                if (answer != null && nfsMountOptsAdded) {
+                if (answer != null && nfsMountOpts.second()) {
                     s_logger.error(String.format("Unable to attach storage pool to the host %s due to %s",  host,  answer.getDetails()));
-                    throw new CloudRuntimeException("Unable to attach storage pool to the host " +  host.getName());
+                    StringBuilder exceptionSB = new StringBuilder("Unable to attach storage pool to the host ").append(host.getName());
+                    String reason = storageManager.getStoragePoolMountFailureReason(answer.getDetails());
+                    if (reason!= null) {
+                        exceptionSB.append(". ").append(reason).append(".");
+                    }
+                    throw new CloudRuntimeException(exceptionSB.toString());
                 }
             } else {
                 if (s_logger.isDebugEnabled()) {

@@ -42,6 +42,7 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StorageService;
 import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -55,7 +56,6 @@ import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -129,10 +129,9 @@ public class DefaultHostListener implements HypervisorHostListener {
     @Override
     public boolean hostConnect(long hostId, long poolId) throws StorageConflictException {
         StoragePool pool = (StoragePool) this.dataStoreMgr.getDataStore(poolId, DataStoreRole.Primary);
-        Map<String, String> details = new HashMap<>();
-        storageManager.addStoragePoolNFSMountOptsToDetailsMap(pool, details);
+        Pair<Map<String, String>, Boolean> nfsMountOpts = storageManager.getStoragePoolNFSMountOpts(pool, null);
 
-        ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, pool, details);
+        ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, pool, nfsMountOpts.first());
         cmd.setWait(modifyStoragePoolCommandWait);
         s_logger.debug(String.format("Sending modify storage pool command to agent: %d for storage pool: %d with timeout %d seconds",
                 hostId, poolId, cmd.getWait()));
