@@ -225,6 +225,33 @@ write_files:
         done
       fi
 
+  - path: /etc/kubernetes/kubeadm-config.yaml
+    permissions: '0644'
+    owner: root:root
+    content: |
+      apiVersion: kubeadm.k8s.io/v1beta3
+      kind: ClusterConfiguration
+      apiServer:
+        certSANs:
+        {{ k8s_control.server_ips }}
+      controlPlaneEndpoint: {{ k8s_control.server_ip }}:{{ k8s.api_server_port }}
+      etcd:
+        external:
+          endpoints:
+          {{ etcd.etcd_endpoint_list }}  
+      ---
+      apiVersion: kubeadm.k8s.io/v1beta3
+      kind: InitConfiguration
+      bootstrapTokens:
+        - token: "{{ k8s_control_node.cluster.token }}"
+      nodeRegistration:
+        criSocket: /run/containerd/containerd.sock
+      localAPIEndpoint:
+        advertiseAddress: {{ k8s_control.server_ip }}
+        bindPort: {{ k8s.api_server_port }}
+      certificateKey: {{ k8s_control.certificate_key }}
+      
+
   - path: /opt/bin/deploy-kube-system
     permissions: '0700'
     owner: root:root
@@ -240,6 +267,7 @@ write_files:
         export PATH=$PATH:/opt/bin
       fi
 
+      EXTERNAL_ETCD_NODES={{ etcd.unstacked_etcd }}
       MAX_SETUP_CRUCIAL_CMD_ATTEMPTS=3
       crucial_cmd_attempts=1
       while true; do
@@ -249,7 +277,11 @@ write_files:
         fi
         retval=0
         set +e
-        kubeadm init --token {{ k8s_control_node.cluster.token }} --token-ttl 0 {{ k8s_control_node.cluster.initargs }} --cri-socket /run/containerd/containerd.sock
+        if [[ ${EXTERNAL_ETCD_NODES} == true ]]; then
+          kubeadm init --config /etc/kubernetes/kubeadm-config.yaml --upload-certs
+        else
+          kubeadm init --token {{ k8s_control_node.cluster.token }} --token-ttl 0 {{ k8s_control_node.cluster.initargs }} --cri-socket /run/containerd/containerd.sock
+        fi
         retval=$?
         set -e
         if [ $retval -eq 0 ]; then

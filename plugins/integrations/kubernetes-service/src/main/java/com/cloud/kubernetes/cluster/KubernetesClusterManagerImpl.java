@@ -42,18 +42,23 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.dao.DedicatedResourceDao;
+import com.cloud.exception.ManagementServerException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterRemoveWorker;
 import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.element.NsxProviderVO;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterAddWorker;
+import com.cloud.network.rules.PortForwardingRuleVO;
+import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.template.TemplateApiService;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.uservm.UserVm;
@@ -304,6 +309,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     private UserVmService userVmService;
     @Inject
     private TemplateApiService templateService;
+    @Inject
+    private PortForwardingRulesDao pfRuleDao;
 
     private void logMessage(final Level logLevel, final String message, final Exception e) {
         if (logLevel == Level.WARN) {
@@ -745,10 +752,23 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                         throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to generate zone metrics response");
                     }
                     kubernetesUserVmResponse.setExternalNode(vmMapVO.isExternalNode());
+                    kubernetesUserVmResponse.setEtcdNode(vmMapVO.isEtcdNode());
                     vmResponses.add(kubernetesUserVmResponse);
                 }
             }
-            response.setExternalNodes(vmList.stream().filter(KubernetesClusterVmMapVO::isEtcdNode).count());
+            List<Long> etcdNodeIds = vmList.stream().filter(KubernetesClusterVmMapVO::isEtcdNode).map(KubernetesClusterVmMapVO::getVmId).collect(Collectors.toList());
+            List<Long> etcdIpIds = new ArrayList<>();
+            Map<String, String> etcdIps = new HashMap<>();
+            int etcdNodeSshPort = KubernetesClusterService.KubernetesEtcdNodeStartPort.value();
+            etcdNodeIds.forEach(id -> {
+               etcdIpIds.addAll(pfRuleDao.listByVm(id).stream().filter(rule -> rule.getSourcePortStart() == etcdNodeSshPort)
+                       .map(PortForwardingRuleVO::getSourceIpAddressId).collect(Collectors.toList()));
+            });
+            etcdIpIds.forEach(id -> {
+                IPAddressVO ipAddress = ipAddressDao.findById(id);
+                etcdIps.put(ipAddress.getUuid(), ipAddress.getAddress().addr());
+            });
+            response.setEtcdIps(etcdIps);
         }
         response.setHasAnnotation(annotationDao.hasAnnotations(kubernetesCluster.getUuid(),
                 AnnotationService.EntityType.KUBERNETES_CLUSTER.name(), accountService.isRootAdmin(caller.getId())));
@@ -758,6 +778,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         response.setMaxSize(kubernetesCluster.getMaxSize());
         response.setClusterType(kubernetesCluster.getClusterType());
         response.setCreated(kubernetesCluster.getCreated());
+
+
+
         return response;
     }
 
@@ -1554,7 +1577,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
      */
 
     @Override
-    public boolean startKubernetesCluster(long kubernetesClusterId, Long domainId, String accountName, boolean onCreate) throws CloudRuntimeException {
+    public boolean startKubernetesCluster(long kubernetesClusterId, Long domainId, String accountName, boolean onCreate)
+            throws CloudRuntimeException, ManagementServerException, ResourceUnavailableException, InsufficientCapacityException {
         if (!KubernetesServiceEnabled.value()) {
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
         }
@@ -2361,7 +2385,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             KubernetesControlNodeInstallAttemptWait,
             KubernetesControlNodeInstallReattempts,
             KubernetesWorkerNodeInstallAttemptWait,
-            KubernetesWorkerNodeInstallReattempts
+            KubernetesWorkerNodeInstallReattempts,
+            KubernetesEtcdNodeStartPort
         };
     }
 }

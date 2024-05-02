@@ -188,6 +188,24 @@
             </span>
           </div>
         </div>
+        <div class="resource-detail-item" v-if="resource.etcdips">
+          <div class="resource-detail-item__label">{{ $t('label.etcd.ips') }}</div>
+          <div class="resource-detail-item__details resource-detail-item__details--start">
+            <div>
+              <div
+                v-for="(address, index) in resource.etcdips"
+                :key="index">
+                <environment-outlined
+                  @click="$message.success(`${$t('label.copied.clipboard')} : ${ address }`)"
+                  v-clipboard:copy="address"
+                />
+                <router-link v-if="address" :to="{ path: '/publicip/' + index }">
+                  <copy-label :label="address" />&nbsp;
+                </router-link>
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="resource-detail-item" v-if="('cpunumber' in resource && 'cpuspeed' in resource) || resource.cputotal">
           <div class="resource-detail-item__label">{{ $t('label.cpu') }}</div>
           <div class="resource-detail-item__details">

@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponseWithAnnotations;
@@ -85,10 +86,6 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
     @SerializedName(ApiConstants.ETCD_NODES)
     @Param(description = "the number of the etcd nodes on the Kubernetes cluster")
     private Long etcdNodes;
-
-    @SerializedName(ApiConstants.EXTERNAL_NODES)
-    @Param(description = "the number of the externally added worker nodes to the Kubernetes cluster")
-    private Long externalNodes;
 
     @SerializedName(ApiConstants.TEMPLATE_ID)
     @Param(description = "the ID of the template of the Kubernetes cluster")
@@ -178,6 +175,10 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
     @SerializedName(ApiConstants.IP_ADDRESS_ID)
     @Param(description = "Public IP Address ID of the cluster")
     private String ipAddressId;
+
+    @SerializedName(ApiConstants.ETCD_IPS)
+    @Param(description = "Public IP Addresses of the etcd nodes")
+    private Map<String, String> etcdIps;
 
     @SerializedName(ApiConstants.AUTOSCALING_ENABLED)
     @Param(description = "Whether autoscaling is enabled for the cluster")
@@ -447,14 +448,6 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
         this.etcdNodes = etcdNodes;
     }
 
-    public Long getExternalNodes() {
-        return externalNodes;
-    }
-
-    public void setExternalNodes(Long externalNodes) {
-        this.externalNodes = externalNodes;
-    }
-
     public void setVirtualMachines(List<KubernetesUserVmResponse> virtualMachines) {
         this.virtualMachines = virtualMachines;
     }
@@ -469,6 +462,10 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
 
     public void setIpAddressId(String ipAddressId) {
         this.ipAddressId = ipAddressId;
+    }
+
+    public void setEtcdIps(Map<String, String> etcdIps) {
+        this.etcdIps = etcdIps;
     }
 
     public void setAutoscalingEnabled(boolean isAutoscalingEnabled) {

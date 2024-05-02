@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.kubernetes.cluster;
 
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ManagementServerException;
+import com.cloud.exception.ResourceUnavailableException;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.AddNodesToKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.AddVirtualMachinesToKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.CreateKubernetesClusterCmd;
@@ -129,6 +132,12 @@ public interface KubernetesClusterService extends PluggableService, Configurable
             "Number of times the offline installation of K8S will be re-attempted",
             true,
             KubernetesServiceEnabled.key());
+    static final ConfigKey<Integer> KubernetesEtcdNodeStartPort = new ConfigKey<Integer>("Advanced", Integer.class,
+            "cloud.kubernetes.etcd.node.start.port",
+            "50000",
+            "Start port for Port forwarding rules for etcd nodes",
+            true,
+            KubernetesServiceEnabled.key());
 
     KubernetesCluster findById(final Long id);
 
@@ -136,7 +145,7 @@ public interface KubernetesClusterService extends PluggableService, Configurable
 
     KubernetesCluster createManagedKubernetesCluster(CreateKubernetesClusterCmd cmd) throws CloudRuntimeException;
 
-    boolean startKubernetesCluster(long kubernetesClusterId, Long domainId, String accountName, boolean onCreate) throws CloudRuntimeException;
+    boolean startKubernetesCluster(long kubernetesClusterId, Long domainId, String accountName, boolean onCreate) throws CloudRuntimeException, ManagementServerException, ResourceUnavailableException, InsufficientCapacityException;
 
     boolean stopKubernetesCluster(StopKubernetesClusterCmd cmd) throws CloudRuntimeException;
 

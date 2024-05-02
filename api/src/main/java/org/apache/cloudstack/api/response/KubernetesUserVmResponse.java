@@ -30,11 +30,15 @@ public class KubernetesUserVmResponse extends UserVmResponse {
     @Param(description = "If the VM is an externally added node")
     private boolean isExternalNode;
 
-    public boolean isExternalNode() {
-        return isExternalNode;
-    }
+    @SerializedName(ApiConstants.IS_ETCD_NODE)
+    @Param(description = "If the VM is an etcd node")
+    private boolean isEtcdNode;
 
     public void setExternalNode(boolean externalNode) {
         isExternalNode = externalNode;
+    }
+
+    public void setEtcdNode(boolean etcdNode) {
+        isEtcdNode = etcdNode;
     }
 }

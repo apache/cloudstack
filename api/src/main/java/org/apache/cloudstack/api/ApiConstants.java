@@ -120,6 +120,7 @@ public class ApiConstants {
     public static final String ENCRYPT_FORMAT = "encryptformat";
     public static final String ENCRYPT_ROOT = "encryptroot";
     public static final String ENCRYPTION_SUPPORTED = "encryptionsupported";
+    public static final String ETCD_IPS = "etcdips";
     public static final String MIN_IOPS = "miniops";
     public static final String MAX_IOPS = "maxiops";
     public static final String HYPERVISOR_SNAPSHOT_RESERVE = "hypervisorsnapshotreserve";
@@ -1055,6 +1056,7 @@ public class ApiConstants {
     public static final String ETCD_NODES = "etcdnodes";
     public static final String EXTERNAL_NODES = "externalnodes";
     public static final String IS_EXTERNAL_NODE = "isexternalnode";
+    public static final String IS_ETCD_NODE = "isetcdnode";
     public static final String MIN_SEMANTIC_VERSION = "minimumsemanticversion";
     public static final String MIN_KUBERNETES_VERSION_ID = "minimumkubernetesversionid";
     public static final String NODE_ROOT_DISK_SIZE = "noderootdisksize";

@@ -264,7 +264,7 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
         kubernetesClusterDao.update(clusterId, kubernetesClusterVO);
         kubernetesCluster = kubernetesClusterVO;
 
-        finalNodeIds.forEach(id -> addKubernetesClusterVm(clusterId, id, false, true, manualUpgrade));
+        finalNodeIds.forEach(id -> addKubernetesClusterVm(clusterId, id, false, true, false, manualUpgrade));
     }
 
 

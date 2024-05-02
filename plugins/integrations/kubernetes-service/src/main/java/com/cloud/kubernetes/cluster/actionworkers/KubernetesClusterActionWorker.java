@@ -133,6 +133,8 @@ public class KubernetesClusterActionWorker {
     public static final int CLUSTER_API_PORT = 6443;
     public static final int DEFAULT_SSH_PORT = 22;
     public static final int CLUSTER_NODES_DEFAULT_START_SSH_PORT = 2222;
+    public static final int ETCD_NODE_CLIENT_REQUEST_PORT = 2379;
+    public static final int ETCD_NODE_PEER_COMM_PORT = 2380;
     public static final int CLUSTER_NODES_DEFAULT_SSH_PORT_SG = DEFAULT_SSH_PORT;
 
     public static final String CKS_CLUSTER_SECURITY_GROUP_NAME = "CKSSecurityGroup";
@@ -358,14 +360,16 @@ public class KubernetesClusterActionWorker {
         return new File(keyFile);
     }
 
-    protected KubernetesClusterVmMapVO addKubernetesClusterVm(final long kubernetesClusterId, final long vmId, boolean isControlNode,
-                                                              boolean isExternalNode, boolean markForManualUpgrade) {
+    protected KubernetesClusterVmMapVO addKubernetesClusterVm(final long kubernetesClusterId, final long vmId,
+                                                              boolean isControlNode, boolean isExternalNode,
+                                                              boolean isEtcdNode,  boolean markForManualUpgrade) {
         return Transaction.execute(new TransactionCallback<KubernetesClusterVmMapVO>() {
             @Override
             public KubernetesClusterVmMapVO doInTransaction(TransactionStatus status) {
                 KubernetesClusterVmMapVO newClusterVmMap = new KubernetesClusterVmMapVO(kubernetesClusterId, vmId, isControlNode);
                 newClusterVmMap.setExternalNode(isExternalNode);
                 newClusterVmMap.setManualUpgrade(markForManualUpgrade);
+                newClusterVmMap.setEtcdNode(isEtcdNode);
                 kubernetesClusterVmMapDao.persist(newClusterVmMap);
                 return newClusterVmMap;
             }
@@ -436,7 +440,7 @@ public class KubernetesClusterActionWorker {
         return publicIp;
     }
 
-    protected IpAddress acquireVpcTierKubernetesPublicIp(Network network) throws
+    protected IpAddress acquireVpcTierKubernetesPublicIp(Network network, boolean forEtcd) throws
             InsufficientAddressCapacityException, ResourceAllocationException, ResourceUnavailableException {
         IpAddress ip = networkService.allocateIP(owner, kubernetesCluster.getZoneId(), network.getId(), null, null);
         if (ip == null) {
@@ -444,7 +448,19 @@ public class KubernetesClusterActionWorker {
         }
         ip = vpcService.associateIPToVpc(ip.getId(), network.getVpcId());
         ip = ipAddressManager.associateIPToGuestNetwork(ip.getId(), network.getId(), false);
-        kubernetesClusterDetailsDao.addDetail(kubernetesCluster.getId(), ApiConstants.PUBLIC_IP_ID, ip.getUuid(), false);
+        if (!forEtcd) {
+            kubernetesClusterDetailsDao.addDetail(kubernetesCluster.getId(), ApiConstants.PUBLIC_IP_ID, ip.getUuid(), false);
+        }
+        return ip;
+    }
+
+    protected IpAddress acquirePublicIpForIsolatedNetwork(Network network) throws
+            InsufficientAddressCapacityException, ResourceAllocationException, ResourceUnavailableException {
+        IpAddress ip = networkService.allocateIP(owner, kubernetesCluster.getZoneId(), network.getId(), null, null);
+        if (ip == null) {
+            return null;
+        }
+        ip = networkService.associateIPToNetwork(ip.getId(), network.getId());
         return ip;
     }
 
@@ -476,7 +492,7 @@ public class KubernetesClusterActionWorker {
             return new Pair<>(address.getAddress().addr(), port);
         }
         if (acquireNewPublicIpForVpcTierIfNeeded) {
-            address = acquireVpcTierKubernetesPublicIp(network);
+            address = acquireVpcTierKubernetesPublicIp(network, false);
             if (address != null) {
                 return new Pair<>(address.getAddress().addr(), port);
             }

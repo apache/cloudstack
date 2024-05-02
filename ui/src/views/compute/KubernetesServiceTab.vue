@@ -114,7 +114,8 @@
               <status :text="text ? text : ''" displayText />
             </template>
             <template v-if="column.key === 'port'" :name="text" :record="record">
-              {{ cksSshStartingPort + index }}
+              <span v-if="record.isexternalnode || (!record.isexternalnode && !record.isetcdnode)"> {{ cksSshStartingPort + index }} </span>
+              <span v-else> {{ etcdSshPort }} </span>
             </template>
             <template v-if="column.key === 'actions'">
               <a-tooltip placement="bottom" >
@@ -209,6 +210,7 @@ export default {
       publicIpAddress: null,
       currentTab: 'details',
       cksSshStartingPort: 2222,
+      etcdSshPort: 50000,
       annotations: []
     }
   },
@@ -280,6 +282,7 @@ export default {
         dataIndex: 'actions'
       })
     }
+    this.fetchEtcdSshPort()
     this.handleFetchData()
     this.setCurrentTab()
   },
@@ -382,9 +385,10 @@ export default {
     },
     fetchInstances () {
       this.instanceLoading = true
-      var defaultNodes = this.resource.virtualmachines.filter(x => !x.isexternalnode)
+      var defaultNodes = this.resource.virtualmachines.filter(x => !x.isexternalnode && !x.isetcdnode)
       var externalNodes = this.resource.virtualmachines.filter(x => x.isexternalnode)
-      this.virtualmachines = defaultNodes.concat(externalNodes)
+      var etcdNodes = this.resource.virtualmachines.filter(x => x.isetcdnode)
+      this.virtualmachines = defaultNodes.concat(externalNodes).concat(etcdNodes)
       this.virtualmachines.map(x => { x.ipaddress = x.nic[0].ipaddress })
       this.instanceLoading = false
     },
@@ -433,6 +437,15 @@ export default {
         this.$notifyError(error)
       }).finally(() => {
         this.networkLoading = false
+      })
+    },
+    fetchEtcdSshPort () {
+      const params = {}
+      params.name = 'cloud.kubernetes.etcd.node.start.port'
+      var apiName = 'listConfigurations'
+      api(apiName, params).then(json => {
+        const configResponse = json.listconfigurationsresponse.configuration
+        this.etcdSshPort = configResponse[0]?.value
       })
     },
     downloadKubernetesClusterConfig () {

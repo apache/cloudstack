@@ -335,7 +335,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         List<UserVm> nodes = new ArrayList<>();
         for (int i = offset + 1; i <= nodeCount; i++) {
             UserVm vm = createKubernetesNode(publicIpAddress, domainId, accountId);
-            addKubernetesClusterVm(kubernetesCluster.getId(), vm.getId(), false, false, false);
+            addKubernetesClusterVm(kubernetesCluster.getId(), vm.getId(), false, false, false, false);
             if (kubernetesCluster.getNodeRootDiskSize() > 0) {
                 resizeNodeVolume(vm);
             }
@@ -772,6 +772,21 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             }
             prefix = "k8s-" + prefix;
         }
+        if (prefix.length() > 40) {
+            prefix = prefix.substring(0, 40);
+        }
+        return prefix;
+    }
+
+    protected String getEtcdNodeNameForCluster() {
+        String prefix = kubernetesCluster.getName();
+        if (!NetUtils.verifyDomainNameLabel(prefix, true)) {
+            prefix = prefix.replaceAll("[^a-zA-Z0-9-]", "");
+            if (prefix.isEmpty()) {
+                prefix = kubernetesCluster.getUuid();
+            }
+        }
+        prefix = "etcd-" + prefix;
         if (prefix.length() > 40) {
             prefix = prefix.substring(0, 40);
         }

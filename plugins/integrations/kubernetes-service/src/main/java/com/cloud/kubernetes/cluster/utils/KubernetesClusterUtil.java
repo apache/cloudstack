@@ -217,8 +217,8 @@ public class KubernetesClusterUtil {
                 user, sshKeyFile, null,
                 "sudo /opt/bin/kubectl get nodes | awk '{if ($2 == \"Ready\") print $1}' | wc -l",
                 10000, 10000, 20000);
-        if (result.first()) {
-            return Integer.parseInt(result.second().trim().replace("\"", ""));
+        if (Boolean.TRUE.equals(result.first())) {
+            return Integer.parseInt(result.second().trim().replace("\"", "")) + kubernetesCluster.getEtcdNodeCount().intValue();
         } else {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug(String.format("Failed to retrieve ready nodes for Kubernetes cluster : %s. Output: %s", kubernetesCluster.getName(), result.second()));
