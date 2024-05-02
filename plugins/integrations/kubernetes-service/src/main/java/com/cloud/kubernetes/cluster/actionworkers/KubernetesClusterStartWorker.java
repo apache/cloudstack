@@ -24,9 +24,11 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.apache.cloudstack.api.BaseCmd;
@@ -188,7 +190,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         return k8sControlNodeConfig;
     }
 
-    private UserVm createKubernetesControlNode(final Network network, String serverIp) throws ManagementServerException,
+    private UserVm createKubernetesControlNode(final Network network, String serverIp, Long domainId, Long accountId) throws ManagementServerException,
             ResourceUnavailableException, InsufficientCapacityException {
         UserVm controlVm = null;
         DataCenter zone = dataCenterDao.findById(kubernetesCluster.getZoneId());
@@ -225,18 +227,21 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             keypairs.add(kubernetesCluster.getKeyPair());
         }
 
+        Long affinityGroupId = getExplicitAffinityGroup(domainId, accountId);
         if (zone.isSecurityGroupEnabled()) {
             List<Long> securityGroupIds = new ArrayList<>();
             securityGroupIds.add(kubernetesCluster.getSecurityGroupId());
             controlVm = userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, controlNodeTemplate, networkIds, securityGroupIds, owner,
             hostName, hostName, null, null, null, Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST,base64UserData, null, null, keypairs,
-                    requestedIps, addrs, null, null, null, customParameterMap, null, null, null,
+                    requestedIps, addrs, null, null, Objects.nonNull(affinityGroupId) ?
+                            Collections.singletonList(affinityGroupId) : null, customParameterMap, null, null, null,
                     null, true, null, UserVmManager.CKS_NODE);
         } else {
             controlVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, controlNodeTemplate, networkIds, owner,
                     hostName, hostName, null, null, null,
                     Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, null, null, keypairs,
-                    requestedIps, addrs, null, null, null, customParameterMap, null, null, null, null, true, UserVmManager.CKS_NODE, null);
+                    requestedIps, addrs, null, null, Objects.nonNull(affinityGroupId) ?
+                            Collections.singletonList(affinityGroupId) : null, customParameterMap, null, null, null, null, true, UserVmManager.CKS_NODE, null);
         }
         if (logger.isInfoEnabled()) {
             logger.info(String.format("Created control VM ID: %s, %s in the Kubernetes cluster : %s", controlVm.getUuid(), hostName, kubernetesCluster.getName()));
@@ -276,7 +281,8 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         return k8sControlNodeConfig;
     }
 
-    private UserVm createKubernetesAdditionalControlNode(final String joinIp, final int additionalControlNodeInstance) throws ManagementServerException,
+    private UserVm createKubernetesAdditionalControlNode(final String joinIp, final int additionalControlNodeInstance,
+                                                         final Long domainId, final Long accountId) throws ManagementServerException,
             ResourceUnavailableException, InsufficientCapacityException {
         UserVm additionalControlVm = null;
         DataCenter zone = dataCenterDao.findById(kubernetesCluster.getZoneId());
@@ -307,18 +313,21 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             keypairs.add(kubernetesCluster.getKeyPair());
         }
 
+        Long affinityGroupId = getExplicitAffinityGroup(domainId, accountId);
         if (zone.isSecurityGroupEnabled()) {
             List<Long> securityGroupIds = new ArrayList<>();
             securityGroupIds.add(kubernetesCluster.getSecurityGroupId());
             additionalControlVm = userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, controlNodeTemplate, networkIds, securityGroupIds, owner,
                     hostName, hostName, null, null, null, Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST,base64UserData, null, null, keypairs,
-                    null, addrs, null, null, null, customParameterMap, null, null, null,
+                    null, addrs, null, null, Objects.nonNull(affinityGroupId) ?
+                            Collections.singletonList(affinityGroupId) : null, customParameterMap, null, null, null,
                     null, true, null, UserVmManager.CKS_NODE);
         } else {
             additionalControlVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, controlNodeTemplate, networkIds, owner,
                     hostName, hostName, null, null, null,
                     Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, null, null, keypairs,
-                    null, addrs, null, null, null, customParameterMap, null, null, null, null, true, UserVmManager.CKS_NODE, null);
+                    null, addrs, null, null, Objects.nonNull(affinityGroupId) ?
+                            Collections.singletonList(affinityGroupId) : null, customParameterMap, null, null, null, null, true, UserVmManager.CKS_NODE, null);
         }
 
         if (logger.isInfoEnabled()) {
@@ -327,15 +336,16 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         return additionalControlVm;
     }
 
-    private UserVm provisionKubernetesClusterControlVm(final Network network, final String publicIpAddress) throws
+    private UserVm provisionKubernetesClusterControlVm(final Network network, final String publicIpAddress,
+                                                       final Long domainId, final Long accountId) throws
             ManagementServerException, InsufficientCapacityException, ResourceUnavailableException {
         UserVm k8sControlVM = null;
-        k8sControlVM = createKubernetesControlNode(network, publicIpAddress);
+        k8sControlVM = createKubernetesControlNode(network, publicIpAddress, domainId, accountId);
         addKubernetesClusterVm(kubernetesCluster.getId(), k8sControlVM.getId(), true, false, false);
         if (kubernetesCluster.getNodeRootDiskSize() > 0) {
             resizeNodeVolume(k8sControlVM);
         }
-        startKubernetesVM(k8sControlVM);
+        startKubernetesVM(k8sControlVM, domainId, accountId);
         k8sControlVM = userVmDao.findById(k8sControlVM.getId());
         if (k8sControlVM == null) {
             throw new ManagementServerException(String.format("Failed to provision control VM for Kubernetes cluster : %s" , kubernetesCluster.getName()));
@@ -346,18 +356,18 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         return k8sControlVM;
     }
 
-    private List<UserVm> provisionKubernetesClusterAdditionalControlVms(final String publicIpAddress) throws
+    private List<UserVm> provisionKubernetesClusterAdditionalControlVms(final String publicIpAddress, final Long domainId, final Long accountId) throws
             InsufficientCapacityException, ManagementServerException, ResourceUnavailableException {
         List<UserVm> additionalControlVms = new ArrayList<>();
         if (kubernetesCluster.getControlNodeCount() > 1) {
             for (int i = 1; i < kubernetesCluster.getControlNodeCount(); i++) {
                 UserVm vm = null;
-                vm = createKubernetesAdditionalControlNode(publicIpAddress, i);
+                vm = createKubernetesAdditionalControlNode(publicIpAddress, i, domainId, accountId);
                 addKubernetesClusterVm(kubernetesCluster.getId(), vm.getId(), true, false, false);
                 if (kubernetesCluster.getNodeRootDiskSize() > 0) {
                     resizeNodeVolume(vm);
                 }
-                startKubernetesVM(vm);
+                startKubernetesVM(vm, domainId, accountId);
                 vm = userVmDao.findById(vm.getId());
                 if (vm == null) {
                     throw new ManagementServerException(String.format("Failed to provision additional control VM for Kubernetes cluster : %s" , kubernetesCluster.getName()));
@@ -418,7 +428,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         setupKubernetesClusterIsolatedNetworkRules(publicIp, network, clusterVMIds, true);
     }
 
-    private void startKubernetesClusterVMs() {
+    private void startKubernetesClusterVMs(Long domainId, Long accountId) {
         List <UserVm> clusterVms = getKubernetesClusterVMs();
         for (final UserVm vm : clusterVms) {
             if (vm == null) {
@@ -426,7 +436,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             }
             try {
                 resizeNodeVolume(vm);
-                startKubernetesVM(vm);
+                startKubernetesVM(vm, domainId, accountId);
             } catch (ManagementServerException ex) {
                 logger.warn(String.format("Failed to start VM : %s in Kubernetes cluster : %s due to ", vm.getDisplayName(), kubernetesCluster.getName()) + ex);
                 // don't bail out here. proceed further to stop the reset of the VM's
@@ -480,7 +490,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         kubernetesClusterDao.update(kubernetesCluster.getId(), kubernetesClusterVO);
     }
 
-    public boolean startKubernetesClusterOnCreate() {
+    public boolean startKubernetesClusterOnCreate(Long domainId, Long accountId) {
         init();
         if (logger.isInfoEnabled()) {
             logger.info(String.format("Starting Kubernetes cluster : %s", kubernetesCluster.getName()));
@@ -489,7 +499,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.StartRequested);
         DeployDestination dest = null;
         try {
-            dest = plan();
+            dest = plan(domainId, accountId);
         } catch (InsufficientCapacityException e) {
             logTransitStateAndThrow(Level.ERROR, String.format("Provisioning the cluster failed due to insufficient capacity in the Kubernetes cluster: %s", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed, e);
         }
@@ -519,7 +529,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         List<UserVm> clusterVMs = new ArrayList<>();
         UserVm k8sControlVM = null;
         try {
-            k8sControlVM = provisionKubernetesClusterControlVm(network, publicIpAddress);
+            k8sControlVM = provisionKubernetesClusterControlVm(network, publicIpAddress, domainId, accountId);
         } catch (CloudRuntimeException | ManagementServerException | ResourceUnavailableException | InsufficientCapacityException e) {
             logTransitStateAndThrow(Level.ERROR, String.format("Provisioning the control VM failed in the Kubernetes cluster : %s", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed, e);
         }
@@ -532,13 +542,13 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             }
         }
         try {
-            List<UserVm> additionalControlVMs = provisionKubernetesClusterAdditionalControlVms(publicIpAddress);
+            List<UserVm> additionalControlVMs = provisionKubernetesClusterAdditionalControlVms(publicIpAddress, domainId, accountId);
             clusterVMs.addAll(additionalControlVMs);
         }  catch (CloudRuntimeException | ManagementServerException | ResourceUnavailableException | InsufficientCapacityException e) {
             logTransitStateAndThrow(Level.ERROR, String.format("Provisioning additional control VM failed in the Kubernetes cluster : %s", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed, e);
         }
         try {
-            List<UserVm> nodeVMs = provisionKubernetesClusterNodeVms(kubernetesCluster.getNodeCount(), publicIpAddress);
+            List<UserVm> nodeVMs = provisionKubernetesClusterNodeVms(kubernetesCluster.getNodeCount(), publicIpAddress, domainId, accountId);
             clusterVMs.addAll(nodeVMs);
         }  catch (CloudRuntimeException | ManagementServerException | ResourceUnavailableException | InsufficientCapacityException e) {
             logTransitStateAndThrow(Level.ERROR, String.format("Provisioning node VM failed in the Kubernetes cluster : %s", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed, e);
@@ -590,14 +600,14 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
 
 
 
-    public boolean startStoppedKubernetesCluster() throws CloudRuntimeException {
+    public boolean startStoppedKubernetesCluster(Long domainId, Long accountId) throws CloudRuntimeException {
         init();
         if (logger.isInfoEnabled()) {
             logger.info(String.format("Starting Kubernetes cluster : %s", kubernetesCluster.getName()));
         }
         final long startTimeoutTime = System.currentTimeMillis() + KubernetesClusterService.KubernetesClusterStartTimeout.value() * 1000;
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.StartRequested);
-        startKubernetesClusterVMs();
+        startKubernetesClusterVMs(domainId, accountId);
         try {
             InetAddress address = InetAddress.getByName(new URL(kubernetesCluster.getEndpoint()).getHost());
         } catch (MalformedURLException | UnknownHostException ex) {

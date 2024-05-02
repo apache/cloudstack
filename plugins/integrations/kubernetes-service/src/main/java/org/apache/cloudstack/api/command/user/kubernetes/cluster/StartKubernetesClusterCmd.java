@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.user.kubernetes.cluster;
 
 import javax.inject.Inject;
 
+import com.cloud.user.Account;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -108,7 +109,8 @@ public class StartKubernetesClusterCmd extends BaseAsyncCmd {
     public void execute() throws ServerApiException, ConcurrentOperationException {
         final KubernetesCluster kubernetesCluster = validateRequest();
         try {
-            if (!kubernetesClusterService.startKubernetesCluster(kubernetesCluster.getId(), false)) {
+            Account account = _accountService.getAccount(kubernetesCluster.getAccountId());
+            if (!kubernetesClusterService.startKubernetesCluster(kubernetesCluster.getId(), kubernetesCluster.getDomainId(), account.getAccountName(), false)) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to start Kubernetes cluster ID: %d", getId()));
             }
             final KubernetesClusterResponse response = kubernetesClusterService.createKubernetesClusterResponse(kubernetesCluster.getId());

@@ -59,6 +59,8 @@ import com.cloud.vm.NicVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.UserVmManager;
+import org.apache.cloudstack.affinity.AffinityGroupVO;
+import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.firewall.CreateFirewallRuleCmd;
 import org.apache.cloudstack.ca.CAManager;
@@ -194,6 +196,8 @@ public class KubernetesClusterActionWorker {
     protected FirewallService firewallService;
     @Inject
     private NicDao nicDao;
+    @Inject
+    protected AffinityGroupDao affinityGroupDao;
 
     protected KubernetesClusterDao kubernetesClusterDao;
     protected KubernetesClusterVmMapDao kubernetesClusterVmMapDao;
@@ -982,5 +986,19 @@ public class KubernetesClusterActionWorker {
             i.addAndGet(1);
         });
         return vmIdPortMap;
+    }
+
+    public Long getExplicitAffinityGroup(Long domainId, Long accountId) {
+        AffinityGroupVO groupVO = null;
+        if (Objects.nonNull(accountId)) {
+            groupVO = affinityGroupDao.findByAccountAndType(accountId, "ExplicitDedication");
+        }
+        if (Objects.isNull(groupVO)) {
+            groupVO = affinityGroupDao.findDomainLevelGroupByType(domainId, "ExplicitDedication");
+        }
+        if (Objects.nonNull(groupVO)) {
+            return groupVO.getId();
+        }
+        return null;
     }
 }

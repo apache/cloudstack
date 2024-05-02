@@ -46,12 +46,16 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.DedicatedResourceVO;
+import com.cloud.dc.dao.DedicatedResourceDao;
+import com.cloud.host.Host;
 import com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterRemoveWorker;
 import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.element.NsxProviderVO;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterAddWorker;
 import com.cloud.template.TemplateApiService;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmService;
@@ -59,6 +63,8 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.affinity.AffinityGroupVO;
+import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
@@ -118,7 +124,6 @@ import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
-import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
@@ -236,11 +241,17 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     @Inject
     protected HostDao hostDao;
     @Inject
+    protected AffinityGroupDao affinityGroupDao;
+    @Inject
     protected ServiceOfferingDao serviceOfferingDao;
     @Inject
     protected VMTemplateDao templateDao;
     @Inject
     protected TemplateJoinDao templateJoinDao;
+    @Inject
+    protected DedicatedResourceDao dedicatedResourceDao;
+    @Inject
+    protected AccountDao accountDao;
     @Inject
     protected AccountService accountService;
     @Inject
@@ -531,16 +542,43 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
     }
 
-    private DeployDestination plan(final long nodesCount, final DataCenter zone, final ServiceOffering offering) throws InsufficientServerCapacityException {
+    public Long getExplicitAffinityGroup(Long domainId) {
+        AffinityGroupVO groupVO = affinityGroupDao.findDomainLevelGroupByType(domainId, "ExplicitDedication");
+        if (Objects.nonNull(groupVO)) {
+            return groupVO.getId();
+        }
+        return null;
+    }
+
+    private DeployDestination plan(final long nodesCount, final DataCenter zone, final ServiceOffering offering,
+                                   final Long domainId, final Long accountId) throws InsufficientServerCapacityException {
         final int cpu_requested = offering.getCpu() * offering.getSpeed();
         final long ram_requested = offering.getRamSize() * 1024L * 1024L;
-        List<HostVO> hosts = resourceManager.listAllHostsInOneZoneByType(Type.Routing, zone.getId());
+        boolean useDedicatedHosts = false;
+        Long group = getExplicitAffinityGroup(domainId);
+        List<HostVO> hosts = new ArrayList<>();
+        if (Objects.nonNull(group)) {
+            List<DedicatedResourceVO> dedicatedHosts = new ArrayList<>();
+            if (Objects.nonNull(accountId)) {
+                dedicatedHosts = dedicatedResourceDao.listByAccountId(accountId);
+            } else if (Objects.nonNull(domainId)) {
+                dedicatedHosts = dedicatedResourceDao.listByDomainId(domainId);
+            }
+            for (DedicatedResourceVO dedicatedHost : dedicatedHosts) {
+                hosts.add(hostDao.findById(dedicatedHost.getHostId()));
+                useDedicatedHosts = true;
+            }
+        }
+        if (hosts.isEmpty()) {
+            hosts = resourceManager.listAllHostsInOneZoneByType(Host.Type.Routing, zone.getId());
+        }
         final Map<String, Pair<HostVO, Integer>> hosts_with_resevered_capacity = new ConcurrentHashMap<String, Pair<HostVO, Integer>>();
         for (HostVO h : hosts) {
             hosts_with_resevered_capacity.put(h.getUuid(), new Pair<HostVO, Integer>(h, 0));
         }
         boolean suitable_host_found = false;
         Cluster planCluster = null;
+        HostVO suitableHost = null;
         for (int i = 1; i <= nodesCount; i++) {
             suitable_host_found = false;
             for (Map.Entry<String, Pair<HostVO, Integer>> hostEntry : hosts_with_resevered_capacity.entrySet()) {
@@ -566,6 +604,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                     }
                     hostEntry.setValue(new Pair<HostVO, Integer>(hostVO, reserved));
                     suitable_host_found = true;
+                    suitableHost = hostVO;
                     planCluster = cluster;
                     break;
                 }
@@ -580,6 +619,10 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (suitable_host_found) {
             if (logger.isInfoEnabled()) {
                 logger.info(String.format("Suitable hosts found in datacenter ID: %s, creating deployment destination", zone.getUuid()));
+            }
+            if (useDedicatedHosts) {
+                planCluster = clusterDao.findById(suitableHost.getClusterId());
+                return new DeployDestination(zone, null, planCluster, suitableHost);
             }
             return new DeployDestination(zone, null, planCluster, null);
         }
@@ -1349,7 +1392,16 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
         Map<String, Long> serviceOfferingNodeTypeMap = cmd.getServiceOfferingNodeTypeMap();
         Long defaultServiceOfferingId = cmd.getServiceOfferingId();
-        Hypervisor.HypervisorType hypervisorType = getHypervisorTypeAndValidateNodeDeployments(serviceOfferingNodeTypeMap, defaultServiceOfferingId, nodeTypeCount, zone);
+        String accountName = cmd.getAccountName();
+        Long domainId = cmd.getDomainId();
+        Long accountId = null;
+        if (Objects.nonNull(accountName) && Objects.nonNull(domainId)) {
+            Account account = accountDao.findActiveAccount(accountName, domainId);
+            if (Objects.nonNull(account)) {
+                accountId = account.getId();
+            }
+        }
+        Hypervisor.HypervisorType hypervisorType = getHypervisorTypeAndValidateNodeDeployments(serviceOfferingNodeTypeMap, defaultServiceOfferingId, nodeTypeCount, zone, domainId, accountId);
 
         SecurityGroup securityGroup = null;
         if (zone.isSecurityGroupEnabled()) {
@@ -1434,7 +1486,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
     protected Hypervisor.HypervisorType getHypervisorTypeAndValidateNodeDeployments(Map<String, Long> serviceOfferingNodeTypeMap,
                                                                                     Long defaultServiceOfferingId,
-                                                                                    Map<String, Long> nodeTypeCount, DataCenter zone) {
+                                                                                    Map<String, Long> nodeTypeCount,
+                                                                                    DataCenter zone, Long domainId, Long accountId) {
         Hypervisor.HypervisorType hypervisorType = null;
         for (String nodeType : CLUSTER_NODES_TYPES_LIST) {
             if (!nodeTypeCount.containsKey(nodeType)) {
@@ -1448,7 +1501,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                         (!serviceOfferingNodeTypeMap.containsKey(ETCD.name()) || nodes == 0)) {
                     continue;
                 }
-                DeployDestination deployDestination = plan(nodes, zone, serviceOffering);
+                DeployDestination deployDestination = plan(nodes, zone, serviceOffering, domainId, accountId);
                 if (deployDestination.getCluster() == null) {
                     logAndThrow(Level.ERROR, String.format("Creating Kubernetes cluster failed due to error while finding suitable deployment plan for cluster in zone : %s", zone.getName()));
                 }
@@ -1491,14 +1544,17 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
      * are provisioned from scratch. Second kind of start, happens on  Stopped Kubernetes cluster, in which all resources
      * are provisioned (like volumes, nics, networks etc). It just that VM's are not in running state. So just
      * start the VM's (which can possibly implicitly start the network also).
+     *
      * @param kubernetesClusterId
+     * @param domainId
+     * @param accountName
      * @param onCreate
      * @return
      * @throws CloudRuntimeException
      */
 
     @Override
-    public boolean startKubernetesCluster(long kubernetesClusterId, boolean onCreate) throws CloudRuntimeException {
+    public boolean startKubernetesCluster(long kubernetesClusterId, Long domainId, String accountName, boolean onCreate) throws CloudRuntimeException {
         if (!KubernetesServiceEnabled.value()) {
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
         }
@@ -1526,6 +1582,13 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (zone == null) {
             logAndThrow(Level.WARN, String.format("Unable to find zone for Kubernetes cluster : %s", kubernetesCluster.getName()));
         }
+        Long accountId = null;
+        if (Objects.nonNull(accountName) && Objects.nonNull(domainId)) {
+            Account account = accountDao.findActiveAccount(accountName, domainId);
+            if (Objects.nonNull(account)) {
+                accountId = account.getId();
+            }
+        }
         KubernetesClusterStartWorker startWorker =
             new KubernetesClusterStartWorker(kubernetesCluster, this);
         startWorker = ComponentContext.inject(startWorker);
@@ -1533,10 +1596,10 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             // Start for Kubernetes cluster in 'Created' state
             String[] keys = getServiceUserKeys(kubernetesCluster);
             startWorker.setKeys(keys);
-            return startWorker.startKubernetesClusterOnCreate();
+            return startWorker.startKubernetesClusterOnCreate(domainId, accountId);
         } else {
             // Start for Kubernetes cluster in 'Stopped' state. Resources are already provisioned, just need to be started
-            return startWorker.startStoppedKubernetesCluster();
+            return startWorker.startStoppedKubernetesCluster(domainId, accountId);
         }
     }
 

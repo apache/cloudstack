@@ -112,7 +112,8 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
 
     @ACL(accessType = AccessType.UseEntry)
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class,
-            description = "an optional domainId for the virtual machine. If the account parameter is used, domainId must also be used.")
+            description = "an optional domainId for the virtual machine. If the account parameter is used, domainId must also be used. " +
+                    "Hosts dedicated to the specified domain will be used for deploying the cluster")
     private Long domainId;
 
     @ACL(accessType = AccessType.UseEntry)
@@ -321,7 +322,7 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     public void execute() {
         try {
             if (KubernetesCluster.ClusterType.valueOf(getClusterType()) == KubernetesCluster.ClusterType.CloudManaged
-                    && !kubernetesClusterService.startKubernetesCluster(getEntityId(), true)) {
+                    && !kubernetesClusterService.startKubernetesCluster(getEntityId(), getDomainId(), getAccountName(), true)) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to start Kubernetes cluster");
             }
             KubernetesClusterResponse response = kubernetesClusterService.createKubernetesClusterResponse(getEntityId());

@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,19 +37,18 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.kubernetes.cluster.KubernetesClusterDetailsVO;
+import com.cloud.dc.DedicatedResourceVO;
+import com.cloud.dc.dao.DedicatedResourceDao;
+import com.cloud.deploy.DataCenterDeployment;
+import com.cloud.deploy.DeploymentPlan;
 import com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType;
-import com.cloud.kubernetes.cluster.KubernetesClusterService;
-import com.cloud.kubernetes.cluster.utils.KubernetesClusterUtil;
 import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.RulesService;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
-import com.cloud.user.SSHKeyPairVO;
 import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.net.Ip;
-import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.firewall.CreateFirewallRuleCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
@@ -146,6 +146,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     @Inject
     protected ResourceManager resourceManager;
     @Inject
+    protected DedicatedResourceDao dedicatedResourceDao;
+    @Inject
     protected LoadBalancerDao loadBalancerDao;
     @Inject
     protected VMInstanceDao vmInstanceDao;
@@ -171,88 +173,34 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         kubernetesClusterNodeNamePrefix = getKubernetesClusterNodeNamePrefix();
     }
 
-    private String getKubernetesNodeConfig(final String joinIp, final boolean ejectIso) throws IOException {
-        String k8sNodeConfig = readResourceFile("/conf/k8s-node.yml");
-        final String sshPubKey = "{{ k8s.ssh.pub.key }}";
-        final String joinIpKey = "{{ k8s_control_node.join_ip }}";
-        final String clusterTokenKey = "{{ k8s_control_node.cluster.token }}";
-        final String ejectIsoKey = "{{ k8s.eject.iso }}";
-        final String installWaitTime = "{{ k8s.install.wait.time }}";
-        final String installReattemptsCount = "{{ k8s.install.reattempts.count }}";
-
-        final Long waitTime = KubernetesClusterService.KubernetesWorkerNodeInstallAttemptWait.value();
-        final Long reattempts = KubernetesClusterService.KubernetesWorkerNodeInstallReattempts.value();
-        String pubKey = "- \"" + configurationDao.getValue("ssh.publickey") + "\"";
-        String sshKeyPair = kubernetesCluster.getKeyPair();
-        if (StringUtils.isNotEmpty(sshKeyPair)) {
-            SSHKeyPairVO sshkp = sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), sshKeyPair);
-            if (sshkp != null) {
-                pubKey += "\n      - \"" + sshkp.getPublicKey() + "\"";
-            }
-        }
-        k8sNodeConfig = k8sNodeConfig.replace(sshPubKey, pubKey);
-        k8sNodeConfig = k8sNodeConfig.replace(joinIpKey, joinIp);
-        k8sNodeConfig = k8sNodeConfig.replace(clusterTokenKey, KubernetesClusterUtil.generateClusterToken(kubernetesCluster));
-        k8sNodeConfig = k8sNodeConfig.replace(ejectIsoKey, String.valueOf(ejectIso));
-        k8sNodeConfig = k8sNodeConfig.replace(installWaitTime, String.valueOf(waitTime));
-        k8sNodeConfig = k8sNodeConfig.replace(installReattemptsCount, String.valueOf(reattempts));
-        k8sNodeConfig = updateKubeConfigWithRegistryDetails(k8sNodeConfig);
-
-        return k8sNodeConfig;
-    }
-
-    protected String updateKubeConfigWithRegistryDetails(String k8sConfig) {
-        /* genarate /etc/containerd/config.toml file on the nodes only if Kubernetes cluster is created to
-         * use docker private registry */
-        String registryUsername = null;
-        String registryPassword = null;
-        String registryUrl = null;
-
-        List<KubernetesClusterDetailsVO> details = kubernetesClusterDetailsDao.listDetails(kubernetesCluster.getId());
-        for (KubernetesClusterDetailsVO detail : details) {
-            if (detail.getName().equals(ApiConstants.DOCKER_REGISTRY_USER_NAME)) {
-                registryUsername = detail.getValue();
-            }
-            if (detail.getName().equals(ApiConstants.DOCKER_REGISTRY_PASSWORD)) {
-                registryPassword = detail.getValue();
-            }
-            if (detail.getName().equals(ApiConstants.DOCKER_REGISTRY_URL)) {
-                registryUrl = detail.getValue();
-            }
-        }
-
-        if (StringUtils.isNoneEmpty(registryUsername, registryPassword, registryUrl)) {
-            // Update runcmd in the cloud-init configuration to run a script that updates the containerd config with provided registry details
-            String runCmd = "- bash -x /opt/bin/setup-containerd";
-
-            String registryEp = registryUrl.split("://")[1];
-            k8sConfig = k8sConfig.replace("- containerd config default > /etc/containerd/config.toml", runCmd);
-            final String registryUrlKey = "{{registry.url}}";
-            final String registryUrlEpKey = "{{registry.url.endpoint}}";
-            final String registryAuthKey = "{{registry.token}}";
-            final String registryUname = "{{registry.username}}";
-            final String registryPsswd = "{{registry.password}}";
-
-            final String usernamePasswordKey = registryUsername + ":" + registryPassword;
-            String base64Auth = Base64.encodeBase64String(usernamePasswordKey.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
-            k8sConfig = k8sConfig.replace(registryUrlKey,   registryUrl);
-            k8sConfig = k8sConfig.replace(registryUrlEpKey, registryEp);
-            k8sConfig = k8sConfig.replace(registryUname, registryUsername);
-            k8sConfig = k8sConfig.replace(registryPsswd, registryPassword);
-            k8sConfig = k8sConfig.replace(registryAuthKey, base64Auth);
-        }
-        return k8sConfig;
-    }
-
-    protected DeployDestination plan(final long nodesCount, final DataCenter zone, final ServiceOffering offering) throws InsufficientServerCapacityException {
+    protected DeployDestination plan(final long nodesCount, final DataCenter zone, final ServiceOffering offering,
+                                     final Long domainId, final Long accountId) throws InsufficientServerCapacityException {
         final int cpu_requested = offering.getCpu() * offering.getSpeed();
         final long ram_requested = offering.getRamSize() * 1024L * 1024L;
-        List<HostVO> hosts = resourceManager.listAllHostsInOneZoneByType(Host.Type.Routing, zone.getId());
+        boolean useDedicatedHosts = false;
+        List<HostVO> hosts = new ArrayList<>();
+        Long group = getExplicitAffinityGroup(domainId, accountId);
+        if (Objects.nonNull(group)) {
+            List<DedicatedResourceVO> dedicatedHosts = new ArrayList<>();
+            if (Objects.nonNull(accountId)) {
+                dedicatedHosts = dedicatedResourceDao.listByAccountId(accountId);
+            } else if (Objects.nonNull(domainId)) {
+                dedicatedHosts = dedicatedResourceDao.listByDomainId(domainId);
+            }
+            for (DedicatedResourceVO dedicatedHost : dedicatedHosts) {
+                hosts.add(hostDao.findById(dedicatedHost.getHostId()));
+                useDedicatedHosts = true;
+            }
+        }
+        if (hosts.isEmpty()) {
+            hosts = resourceManager.listAllHostsInOneZoneByType(Host.Type.Routing, zone.getId());
+        }
         final Map<String, Pair<HostVO, Integer>> hosts_with_resevered_capacity = new ConcurrentHashMap<String, Pair<HostVO, Integer>>();
         for (HostVO h : hosts) {
             hosts_with_resevered_capacity.put(h.getUuid(), new Pair<HostVO, Integer>(h, 0));
         }
         boolean suitable_host_found = false;
+        HostVO suitableHost = null;
         for (int i = 1; i <= nodesCount; i++) {
             suitable_host_found = false;
             for (Map.Entry<String, Pair<HostVO, Integer>> hostEntry : hosts_with_resevered_capacity.entrySet()) {
@@ -281,6 +229,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                     }
                     hostEntry.setValue(new Pair<HostVO, Integer>(h, reserved));
                     suitable_host_found = true;
+                    suitableHost = h;
                     break;
                 }
             }
@@ -296,6 +245,9 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             if (logger.isInfoEnabled()) {
                 logger.info(String.format("Suitable hosts found in datacenter : %s, creating deployment destination", zone.getName()));
             }
+            if (useDedicatedHosts) {
+                return new DeployDestination(zone, null, null, suitableHost);
+            }
             return new DeployDestination(zone, null, null, null);
         }
         String msg = String.format("Cannot find enough capacity for Kubernetes cluster(requested cpu=%d memory=%s) with offering : %s and hypervisor: %s",
@@ -305,13 +257,13 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         throw new InsufficientServerCapacityException(msg, DataCenter.class, zone.getId());
     }
 
-    protected DeployDestination plan() throws InsufficientServerCapacityException {
+    protected DeployDestination plan(Long domainId, Long accountId) throws InsufficientServerCapacityException {
         ServiceOffering offering = serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId());
         DataCenter zone = dataCenterDao.findById(kubernetesCluster.getZoneId());
         if (logger.isDebugEnabled()) {
             logger.debug(String.format("Checking deployment destination for Kubernetes cluster : %s in zone : %s", kubernetesCluster.getName(), zone.getName()));
         }
-        return plan(kubernetesCluster.getTotalNodeCount(), zone, offering);
+        return plan(kubernetesCluster.getTotalNodeCount(), zone, offering, domainId, accountId);
     }
 
     protected void resizeNodeVolume(final UserVm vm) throws ManagementServerException {
@@ -337,14 +289,33 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         }
     }
 
-    protected void startKubernetesVM(final UserVm vm) throws ManagementServerException {
+    protected void startKubernetesVM(final UserVm vm, final Long domainId, final Long accountId) throws ManagementServerException {
         try {
             StartVMCmd startVm = new StartVMCmd();
             startVm = ComponentContext.inject(startVm);
             Field f = startVm.getClass().getDeclaredField("id");
             f.setAccessible(true);
             f.set(startVm, vm.getId());
-            itMgr.advanceStart(vm.getUuid(), null, null);
+            DeploymentPlan planner = null;
+            if (Objects.nonNull(domainId) && !listDedicatedHostsInDomain(domainId).isEmpty()) {
+                DeployDestination dest = null;
+                try {
+                     dest = plan(domainId, accountId);
+                } catch (InsufficientCapacityException e) {
+                    logTransitStateAndThrow(Level.ERROR, String.format("Provisioning the cluster failed due to insufficient capacity in the Kubernetes cluster: %s", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed, e);
+                }
+                if (dest != null) {
+                    planner = new DataCenterDeployment(
+                            Objects.nonNull(dest.getDataCenter()) ? dest.getDataCenter().getId() : 0,
+                            Objects.nonNull(dest.getPod()) ? dest.getPod().getId() : null,
+                            Objects.nonNull(dest.getCluster()) ? dest.getCluster().getId() : null,
+                            Objects.nonNull(dest.getHost()) ? dest.getHost().getId() : null,
+                            null,
+                            null);
+                }
+            }
+
+            itMgr.advanceStart(vm.getUuid(), null, planner, null);
             if (logger.isInfoEnabled()) {
                 logger.info(String.format("Started VM : %s in the Kubernetes cluster : %s", vm.getDisplayName(), kubernetesCluster.getName()));
             }
@@ -358,16 +329,17 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         }
     }
 
-    protected List<UserVm> provisionKubernetesClusterNodeVms(final long nodeCount, final int offset, final String publicIpAddress) throws ManagementServerException,
+    protected List<UserVm> provisionKubernetesClusterNodeVms(final long nodeCount, final int offset,
+                                                             final String publicIpAddress, final Long domainId, final Long accountId) throws ManagementServerException,
             ResourceUnavailableException, InsufficientCapacityException {
         List<UserVm> nodes = new ArrayList<>();
         for (int i = offset + 1; i <= nodeCount; i++) {
-            UserVm vm = createKubernetesNode(publicIpAddress);
+            UserVm vm = createKubernetesNode(publicIpAddress, domainId, accountId);
             addKubernetesClusterVm(kubernetesCluster.getId(), vm.getId(), false, false, false);
             if (kubernetesCluster.getNodeRootDiskSize() > 0) {
                 resizeNodeVolume(vm);
             }
-            startKubernetesVM(vm);
+            startKubernetesVM(vm, domainId, accountId);
             vm = userVmDao.findById(vm.getId());
             if (vm == null) {
                 throw new ManagementServerException(String.format("Failed to provision worker VM for Kubernetes cluster : %s" , kubernetesCluster.getName()));
@@ -380,12 +352,12 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         return nodes;
     }
 
-    protected List<UserVm> provisionKubernetesClusterNodeVms(final long nodeCount, final String publicIpAddress) throws ManagementServerException,
+    protected List<UserVm> provisionKubernetesClusterNodeVms(final long nodeCount, final String publicIpAddress, final Long domainId, final Long accountId) throws ManagementServerException,
             ResourceUnavailableException, InsufficientCapacityException {
-        return provisionKubernetesClusterNodeVms(nodeCount, 0, publicIpAddress);
+        return provisionKubernetesClusterNodeVms(nodeCount, 0, publicIpAddress, domainId, accountId);
     }
 
-    protected UserVm createKubernetesNode(String joinIp) throws ManagementServerException,
+    protected UserVm createKubernetesNode(String joinIp, Long domainId, Long accountId) throws ManagementServerException,
             ResourceUnavailableException, InsufficientCapacityException {
         UserVm nodeVm = null;
         DataCenter zone = dataCenterDao.findById(kubernetesCluster.getZoneId());
@@ -416,18 +388,21 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         if (StringUtils.isNotBlank(kubernetesCluster.getKeyPair())) {
             keypairs.add(kubernetesCluster.getKeyPair());
         }
+        Long affinityGroupId = getExplicitAffinityGroup(domainId, accountId);
         if (zone.isSecurityGroupEnabled()) {
             List<Long> securityGroupIds = new ArrayList<>();
             securityGroupIds.add(kubernetesCluster.getSecurityGroupId());
             nodeVm = userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, workerNodeTemplate, networkIds, securityGroupIds, owner,
                     hostName, hostName, null, null, null, Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST,base64UserData, null, null, keypairs,
-                    null, addrs, null, null, null, customParameterMap, null, null, null,
+                    null, addrs, null, null, Objects.nonNull(affinityGroupId) ?
+                            Collections.singletonList(affinityGroupId) : null, customParameterMap, null, null, null,
                     null, true, null, UserVmManager.CKS_NODE);
         } else {
             nodeVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, workerNodeTemplate, networkIds, owner,
                     hostName, hostName, null, null, null,
                     Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, null, null, keypairs,
-                    null, addrs, null, null, null, customParameterMap, null, null, null, null, true, UserVmManager.CKS_NODE, null);
+                    null, addrs, null, null, Objects.nonNull(affinityGroupId) ?
+                            Collections.singletonList(affinityGroupId) : null, customParameterMap, null, null, null, null, true, UserVmManager.CKS_NODE, null);
         }
         if (logger.isInfoEnabled()) {
             logger.info(String.format("Created node VM : %s, %s in the Kubernetes cluster : %s", hostName, nodeVm.getUuid(), kubernetesCluster.getName()));
@@ -907,5 +882,9 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             // Deploying the autoscaler might fail but it can be deployed manually too, so no need to go to an alert state
             updateLoginUserDetails(null);
         }
+    }
+
+    protected List<DedicatedResourceVO> listDedicatedHostsInDomain(Long domainId) {
+        return dedicatedResourceDao.listByDomainId(domainId);
     }
 }

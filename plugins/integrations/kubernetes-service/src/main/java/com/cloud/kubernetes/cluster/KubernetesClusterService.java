@@ -136,7 +136,7 @@ public interface KubernetesClusterService extends PluggableService, Configurable
 
     KubernetesCluster createManagedKubernetesCluster(CreateKubernetesClusterCmd cmd) throws CloudRuntimeException;
 
-    boolean startKubernetesCluster(long kubernetesClusterId, boolean onCreate) throws CloudRuntimeException;
+    boolean startKubernetesCluster(long kubernetesClusterId, Long domainId, String accountName, boolean onCreate) throws CloudRuntimeException;
 
     boolean stopKubernetesCluster(StopKubernetesClusterCmd cmd) throws CloudRuntimeException;
 
