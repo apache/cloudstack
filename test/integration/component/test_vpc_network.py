@@ -34,7 +34,8 @@ from marvin.lib.base import (VirtualMachine,
                              LoadBalancerRule,
                              Router,
                              StaticNATRule,
-                             NetworkACL)
+                             NetworkACL,
+                             PublicIPAddress)
 from marvin.lib.common import (get_zone,
                                get_domain,
                                get_template,
@@ -50,6 +51,7 @@ from marvin.codes import PASS
 
 
 class Services:
+
     """Test VPC network services
     """
 
@@ -185,7 +187,7 @@ class Services:
             "network": {
                 "name": "Test Network",
                 "displaytext": "Test Network",
-                "netmask": '255.255.255.0',
+                "netmask": '255.255.255.0'
             },
             "lbrule": {
                 "name": "SSH",
