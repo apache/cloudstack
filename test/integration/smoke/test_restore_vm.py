@@ -46,10 +46,12 @@ class TestRestoreVM(cloudstackTestCase):
         cls.template_t1 = Template.register(cls.apiclient, cls.services["test_templates"][
             cls.hypervisor.lower() if cls.hypervisor.lower() != 'simulator' else 'xenserver'],
                                             zoneid=cls.zone.id, hypervisor=cls.hypervisor.lower())
+        cls.template_t1.download(cls.apiclient)
 
         cls.template_t2 = Template.register(cls.apiclient, cls.services["test_templates"][
             cls.hypervisor.lower() if cls.hypervisor.lower() != 'simulator' else 'xenserver'],
                                             zoneid=cls.zone.id, hypervisor=cls.hypervisor.lower())
+        cls.template_t2.download(cls.apiclient)
 
         cls._cleanup = [cls.service_offering, cls.template_t1, cls.template_t2]
 
