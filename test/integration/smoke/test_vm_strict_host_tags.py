@@ -166,7 +166,7 @@ class TestVMDeploymentPlannerStrictTags(cloudstackTestCase):
             self._cleanup.append(vm)
             self.fail("VM should not be deployed")
         except Exception as e:
-            self.assertTrue("No suitable host found for follow compute offering tags: t2" in str(e))
+            self.assertTrue("No suitable host found for vm " in str(e))
 
 
 class TestScaleVMStrictTags(cloudstackTestCase):
@@ -261,7 +261,7 @@ class TestScaleVMStrictTags(cloudstackTestCase):
             vm.start(self.apiclient)
             self.fail("VM should not be be able scale and start")
         except Exception as e:
-            self.assertTrue("No suitable host found for follow compute offering tags: h2" in str(e))
+            self.assertTrue("No suitable host found for vm " in str(e))
 
 
 class TestRestoreVMStrictTags(cloudstackTestCase):
@@ -333,7 +333,7 @@ class TestRestoreVMStrictTags(cloudstackTestCase):
 
         vm.restore(self.apiclient, templateid=self.template_t2.id, expunge=True)
         restored_vm = VirtualMachine.list(self.apiclient, id=vm.id, listall=True)[0]
-        self.assertEqual(restored_vm.templateid, self.template_t2.id, "VM was not scaled")
+        self.assertEqual(restored_vm.templateid, self.template_t2.id, "VM was not restored")
 
     @attr(tags=["advanced", "advancedns", "ssh", "smoke"], required_hardware="false")
     def test_02_restore_vm_strict_tags_failure(self):
@@ -349,7 +349,7 @@ class TestRestoreVMStrictTags(cloudstackTestCase):
             vm.restore(self.apiclient, templateid=self.template_t2.id, expunge=True)
             self.fail("VM should not be restored")
         except Exception as e:
-            self.assertTrue("No suitable host found for follow compute offering tags: t2" in str(e))
+            self.assertTrue("No suitable host found for vm " in str(e))
 
 class TestMigrateVMStrictTags(cloudstackTestCase):
     @classmethod

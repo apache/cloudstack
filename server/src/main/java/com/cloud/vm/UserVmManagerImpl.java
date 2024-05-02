@@ -1964,9 +1964,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             HostVO instanceHost = _hostDao.findById(vmInstance.getHostId());
             _hostDao.loadHostTags(instanceHost);
 
-            if (!instanceHost.checkHostServiceOfferingAndTemplateTags(newServiceOfferingVO, template, UserVmManager.getStrictHostTags())) {
-                logger.error(String.format("Cannot upgrade VM [%s] as the new service offering [%s] does not have the required host tags %s.",
-                        vmInstance, newServiceOfferingVO, instanceHost.getHostTags()));
+            Set<String> strictHostTags = UserVmManager.getStrictHostTags();
+            if (!instanceHost.checkHostServiceOfferingAndTemplateTags(newServiceOfferingVO, template, strictHostTags)) {
+                logger.error("Cannot upgrade VM {} as the new service offering {} does not have the required host tags {}.",
+                        vmInstance, newServiceOfferingVO,
+                        instanceHost.getHostServiceOfferingAndTemplateMissingTags(newServiceOfferingVO, template, strictHostTags));
                 return false;
             }
         }

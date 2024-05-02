@@ -45,6 +45,7 @@ import javax.persistence.Transient;
 import org.apache.cloudstack.util.HypervisorTypeConverter;
 import org.apache.cloudstack.utils.jsinterpreter.TagAsRuleHelper;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -772,7 +773,8 @@ public class HostVO implements Host {
         if (StringUtils.isEmpty(serviceOffering.getHostTag()) && StringUtils.isEmpty(template.getTemplateTag())) {
             return new HashSet<>();
         }
-        HashSet<String> hostTagsSet = new HashSet<>(getHostTags());
+        List<String> hostTagsList = getHostTags();
+        HashSet<String> hostTagsSet = CollectionUtils.isNotEmpty(hostTagsList) ? new HashSet<>(hostTagsList) : new HashSet<>();
         HashSet<String> tags = new HashSet<>();
         if (StringUtils.isNotEmpty(serviceOffering.getHostTag())) {
             tags.addAll(Arrays.asList(serviceOffering.getHostTag().split(",")));
@@ -793,7 +795,8 @@ public class HostVO implements Host {
         if (tags.isEmpty()) {
             return true;
         }
-        HashSet<String> hostTagsSet = new HashSet<>(getHostTags());
+        List<String> hostTagsList = getHostTags();
+        HashSet<String> hostTagsSet = CollectionUtils.isNotEmpty(hostTagsList) ? new HashSet<>(hostTagsList) : new HashSet<>();
         return hostTagsSet.containsAll(tags);
     }
 
@@ -802,7 +805,8 @@ public class HostVO implements Host {
         if (tags.isEmpty()) {
             return new HashSet<>();
         }
-        HashSet<String> hostTagsSet = new HashSet<>(getHostTags());
+        List<String> hostTagsList = getHostTags();
+        HashSet<String> hostTagsSet = CollectionUtils.isNotEmpty(hostTagsList) ? new HashSet<>(hostTagsList) : new HashSet<>();
         tags.removeAll(hostTagsSet);
         return tags;
     }

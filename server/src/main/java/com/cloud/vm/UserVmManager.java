@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
@@ -148,11 +149,15 @@ public interface UserVmManager extends UserVmService {
     void generateUsageEvent(VirtualMachine vm, boolean isDisplay, String eventType);
 
     static Set<String> getStrictHostTags() {
-        Set<String> strictHostTags = new HashSet<>(List.of(StrictHostTags.value().split(",")));
-        if (EnforceStrictResourceLimitHostTagCheck.value()) {
-            strictHostTags.addAll(List.of(ResourceLimitHostTags.value().split(",")));
+        String strictHostTags = StrictHostTags.value();
+        Set<String> strictHostTagsSet = new HashSet<>();
+        if (StringUtils.isNotEmpty(strictHostTags)) {
+            strictHostTagsSet.addAll(List.of(strictHostTags.split(",")));
         }
-        return strictHostTags;
+        if (EnforceStrictResourceLimitHostTagCheck.value() && StringUtils.isNotEmpty(ResourceLimitHostTags.value())) {
+            strictHostTagsSet.addAll(List.of(ResourceLimitHostTags.value().split(",")));
+        }
+        return strictHostTagsSet;
     }
 
     void persistDeviceBusInfo(UserVmVO paramUserVmVO, String paramString);
