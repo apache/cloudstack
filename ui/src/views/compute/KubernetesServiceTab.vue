@@ -382,7 +382,9 @@ export default {
     },
     fetchInstances () {
       this.instanceLoading = true
-      this.virtualmachines = this.resource.virtualmachines || []
+      var defaultNodes = this.resource.virtualmachines.filter(x => !x.isexternalnode)
+      var externalNodes = this.resource.virtualmachines.filter(x => x.isexternalnode)
+      this.virtualmachines = defaultNodes.concat(externalNodes)
       this.virtualmachines.map(x => { x.ipaddress = x.nic[0].ipaddress })
       this.instanceLoading = false
     },
