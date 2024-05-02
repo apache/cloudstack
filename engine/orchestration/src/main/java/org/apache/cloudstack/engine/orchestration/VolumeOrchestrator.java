@@ -1832,7 +1832,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 break; //break out of template-redeploy retry loop
             } catch (StorageAccessException e) {
                 throw e;
-            } catch (InterruptedException | ExecutionException | NullPointerException e) {
+            } catch (InterruptedException | ExecutionException e) {
                 String msg = String.format("Unable to create volume [%s] due to [%s].", newVolToString, e.toString());
                 s_logger.error(msg);
                 s_logger.debug("Exception: ", e);
