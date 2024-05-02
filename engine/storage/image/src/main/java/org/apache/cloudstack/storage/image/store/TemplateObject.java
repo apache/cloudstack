@@ -83,7 +83,7 @@ public class TemplateObject implements TemplateInfo {
     protected void configure(VMTemplateVO template, DataStore dataStore) {
         if (template == null) {
             String msg = String.format("Template Object is not properly initialised %s", this.toString());
-            s_logger.error(msg);
+            s_logger.warn(msg);
         }
         imageVO = template;
         this.dataStore = dataStore;
