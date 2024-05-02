@@ -151,7 +151,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 //    private ScaleIOSDCManager scaleioSDCManager = new ScaleIOSDCManagerImpl();
 
     public ScaleIOPrimaryDataStoreDriver() {
-        sdcManager = ComponentContext.inject(ScaleIOSDCManagerImpl.class);
+        sdcManager = new ScaleIOSDCManagerImpl();
 //        sdcManager = new ScaleIOSDCManagerImpl();
     }
 
@@ -160,6 +160,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     private boolean setVolumeLimitsOnSDC(VolumeVO volume, Host host, DataStore dataStore, Long iopsLimit, Long bandwidthLimitInKbps) throws Exception {
+        sdcManager = ComponentContext.inject(sdcManager);
         final String sdcId = sdcManager.prepareSDC(host, dataStore);
         if (StringUtils.isBlank(sdcId)) {
             alertHostSdcDisconnection(host);
@@ -196,6 +197,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Override
     public boolean grantAccess(DataObject dataObject, Host host, DataStore dataStore) {
         try {
+            sdcManager = ComponentContext.inject(sdcManager);
             final String sdcId = sdcManager.prepareSDC(host, dataStore);
             if (StringUtils.isBlank(sdcId)) {
                 alertHostSdcDisconnection(host);
@@ -256,6 +258,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 client.unmapVolumeFromSdc(ScaleIOUtil.getVolumePath(snapshot.getPath()), sdcId);
             }
             if (client.listVolumesMappedToSdc(sdcId).isEmpty()) {
+                sdcManager = ComponentContext.inject(sdcManager);
                 sdcManager.stopSDC(host, dataStore);
             }
         } catch (Exception e) {
