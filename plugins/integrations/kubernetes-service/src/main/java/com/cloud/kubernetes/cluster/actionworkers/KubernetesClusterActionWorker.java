@@ -354,12 +354,14 @@ public class KubernetesClusterActionWorker {
         return new File(keyFile);
     }
 
-    protected KubernetesClusterVmMapVO addKubernetesClusterVm(final long kubernetesClusterId, final long vmId, boolean isControlNode, boolean isExternalNode) {
+    protected KubernetesClusterVmMapVO addKubernetesClusterVm(final long kubernetesClusterId, final long vmId, boolean isControlNode,
+                                                              boolean isExternalNode, boolean markForManualUpgrade) {
         return Transaction.execute(new TransactionCallback<KubernetesClusterVmMapVO>() {
             @Override
             public KubernetesClusterVmMapVO doInTransaction(TransactionStatus status) {
                 KubernetesClusterVmMapVO newClusterVmMap = new KubernetesClusterVmMapVO(kubernetesClusterId, vmId, isControlNode);
                 newClusterVmMap.setExternalNode(isExternalNode);
+                newClusterVmMap.setManualUpgrade(markForManualUpgrade);
                 kubernetesClusterVmMapDao.persist(newClusterVmMap);
                 return newClusterVmMap;
             }

@@ -331,7 +331,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             ManagementServerException, InsufficientCapacityException, ResourceUnavailableException {
         UserVm k8sControlVM = null;
         k8sControlVM = createKubernetesControlNode(network, publicIpAddress);
-        addKubernetesClusterVm(kubernetesCluster.getId(), k8sControlVM.getId(), true, false);
+        addKubernetesClusterVm(kubernetesCluster.getId(), k8sControlVM.getId(), true, false, false);
         if (kubernetesCluster.getNodeRootDiskSize() > 0) {
             resizeNodeVolume(k8sControlVM);
         }
@@ -353,7 +353,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             for (int i = 1; i < kubernetesCluster.getControlNodeCount(); i++) {
                 UserVm vm = null;
                 vm = createKubernetesAdditionalControlNode(publicIpAddress, i);
-                addKubernetesClusterVm(kubernetesCluster.getId(), vm.getId(), true, false);
+                addKubernetesClusterVm(kubernetesCluster.getId(), vm.getId(), true, false, false);
                 if (kubernetesCluster.getNodeRootDiskSize() > 0) {
                     resizeNodeVolume(vm);
                 }

@@ -48,6 +48,11 @@
             {{ $t('label.mount.cks.iso.on.vr') }}
           </a-checkbox>
         </a-form-item>
+        <a-form-item name="manualupgrade" ref="manualupgrade">
+          <a-checkbox v-model:checked="form.manualupgrade">
+            {{ $t('label.cks.cluster.node.manual.upgrade') }}
+          </a-checkbox>
+        </a-form-item>
       </div>
       <p v-else v-html="$t('label.vms.empty')" />
 
@@ -111,7 +116,8 @@ export default {
           accountId: accountId,
           domainId: domainId,
           details: 'min',
-          listall: 'true'
+          listall: 'true',
+          networkid: this.resource.networkid
         }).then(json => {
           const vms = json.listvirtualmachinesresponse.virtualmachine || []
           resolve(vms)
@@ -134,6 +140,9 @@ export default {
         }
         if (values.mountcksiso) {
           params.mountcksisoonvr = values.mountcksiso
+        }
+        if (values.manualupgrade) {
+          params.manualupgrade = values.manualupgrade
         }
         this.loading = true
         try {

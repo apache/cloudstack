@@ -363,7 +363,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         List<UserVm> nodes = new ArrayList<>();
         for (int i = offset + 1; i <= nodeCount; i++) {
             UserVm vm = createKubernetesNode(publicIpAddress);
-            addKubernetesClusterVm(kubernetesCluster.getId(), vm.getId(), false, false);
+            addKubernetesClusterVm(kubernetesCluster.getId(), vm.getId(), false, false, false);
             if (kubernetesCluster.getNodeRootDiskSize() > 0) {
                 resizeNodeVolume(vm);
             }

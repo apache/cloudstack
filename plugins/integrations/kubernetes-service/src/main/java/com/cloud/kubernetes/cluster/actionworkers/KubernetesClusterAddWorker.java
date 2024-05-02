@@ -70,7 +70,7 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
         super(kubernetesCluster, clusterManager);
     }
 
-    public boolean addNodesToCluster(List<Long> nodeIds, boolean mountCksIsoOnVr) throws CloudRuntimeException {
+    public boolean addNodesToCluster(List<Long> nodeIds, boolean mountCksIsoOnVr, boolean manualUpgrade) throws CloudRuntimeException {
         try {
             init();
             addNodeTimeoutTime = System.currentTimeMillis() + KubernetesClusterService.KubernetesClusterAddNodeTimeout.value() * 1000;
@@ -90,7 +90,7 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
             stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.AddNodeRequested);
             Ternary<Integer, Long, Long> nodesAddedAndMemory = importNodeToCluster(nodeIds, network, publicIp, mountCksIsoOnVr);
             int nodesAdded = nodesAddedAndMemory.first();
-            updateKubernetesCluster(kubernetesCluster.getId(), nodesAddedAndMemory);
+            updateKubernetesCluster(kubernetesCluster.getId(), nodesAddedAndMemory, manualUpgrade);
             if (nodeIds.size() != nodesAdded) {
                 String msg = String.format("Not every node was added to the CKS cluster %s, nodes added: %s out of %s", kubernetesCluster.getUuid(), nodesAdded, nodeIds.size());
                 logger.info(msg);
@@ -255,7 +255,7 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
         return new Pair<>(true, ++nodeIndex);
     }
 
-    private void updateKubernetesCluster(long clusterId, Ternary<Integer, Long, Long> additionalNodesDetails) {
+    private void updateKubernetesCluster(long clusterId, Ternary<Integer, Long, Long> additionalNodesDetails, boolean manualUpgrade) {
         int additionalNodeCount = additionalNodesDetails.first();
         KubernetesClusterVO kubernetesClusterVO = kubernetesClusterDao.findById(clusterId);
         kubernetesClusterVO.setNodeCount(kubernetesClusterVO.getNodeCount() + additionalNodeCount);
@@ -264,7 +264,7 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
         kubernetesClusterDao.update(clusterId, kubernetesClusterVO);
         kubernetesCluster = kubernetesClusterVO;
 
-        finalNodeIds.forEach(id -> addKubernetesClusterVm(clusterId, id, false, true));
+        finalNodeIds.forEach(id -> addKubernetesClusterVm(clusterId, id, false, true, manualUpgrade));
     }
 
 

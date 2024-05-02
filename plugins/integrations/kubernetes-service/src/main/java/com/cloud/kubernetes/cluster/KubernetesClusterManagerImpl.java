@@ -1855,6 +1855,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
     @Override
     public boolean addNodesToKubernetesCluster(AddNodesToKubernetesClusterCmd cmd) {
+        if (!KubernetesServiceEnabled.value()) {
+            logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
+        }
         KubernetesClusterVO kubernetesCluster = validateCluster(cmd.getClusterId());
         long networkId = kubernetesCluster.getNetworkId();
         NetworkVO networkVO = networkDao.findById(networkId);
@@ -1864,11 +1867,14 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
         KubernetesClusterAddWorker addWorker = new KubernetesClusterAddWorker(kubernetesCluster, KubernetesClusterManagerImpl.this);
         addWorker = ComponentContext.inject(addWorker);
-        return addWorker.addNodesToCluster(validNodeIds, cmd.isMountCksIsoOnVr());
+        return addWorker.addNodesToCluster(validNodeIds, cmd.isMountCksIsoOnVr(), cmd.isManualUpgrade());
     }
 
     @Override
     public boolean removeNodesFromKubernetesCluster(RemoveNodesFromKubernetesClusterCmd cmd) throws Exception {
+        if (!KubernetesServiceEnabled.value()) {
+            logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
+        }
         KubernetesClusterVO kubernetesCluster = validateCluster(cmd.getClusterId());
         List<Long> validNodeIds = validateNodes(cmd.getNodeIds(), null, null, kubernetesCluster, true);
         if (validNodeIds.isEmpty()) {

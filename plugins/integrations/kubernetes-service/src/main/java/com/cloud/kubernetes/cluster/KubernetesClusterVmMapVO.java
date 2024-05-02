@@ -48,6 +48,9 @@ public class KubernetesClusterVmMapVO implements KubernetesClusterVmMap {
     @Column(name = "external_node")
     boolean externalNode;
 
+    @Column(name = "manual_upgrade")
+    boolean manualUpgrade;
+
     public KubernetesClusterVmMapVO() {
     }
 
@@ -104,5 +107,13 @@ public class KubernetesClusterVmMapVO implements KubernetesClusterVmMap {
 
     public void setExternalNode(boolean externalNode) {
         this.externalNode = externalNode;
+    }
+
+    public boolean isManualUpgrade() {
+        return manualUpgrade;
+    }
+
+    public void setManualUpgrade(boolean manualUpgrade) {
+        this.manualUpgrade = manualUpgrade;
     }
 }

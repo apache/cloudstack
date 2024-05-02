@@ -31,6 +31,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.KubernetesClusterResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
@@ -69,6 +70,10 @@ public class AddNodesToKubernetesClusterCmd extends BaseAsyncCmd {
             since = "4.20.0")
     private Boolean mountCksIsoOnVr;
 
+    @Parameter(name = ApiConstants.MANUAL_UPGRADE, type = CommandType.BOOLEAN,
+            description = "(optional) indicates if the node is marked for manual upgrade and excluded from the Kubernetes cluster upgrade operation",
+            since = "4.20.0")
+    private Boolean manualUpgrade;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -83,7 +88,11 @@ public class AddNodesToKubernetesClusterCmd extends BaseAsyncCmd {
     }
 
     public boolean isMountCksIsoOnVr() {
-        return mountCksIsoOnVr != null && mountCksIsoOnVr;
+        return BooleanUtils.isTrue(mountCksIsoOnVr);
+    }
+
+    public boolean isManualUpgrade() {
+        return BooleanUtils.isTrue(manualUpgrade);
     }
 
     /////////////////////////////////////////////////////
