@@ -164,9 +164,9 @@ export default {
       this.fetchLoading = true
       api('listHosts', { id: this.resource.id }).then(json => {
         this.host = json.listhostsresponse.host[0]
-        const hosttags = this.host.hosttags.split(',') || []
-        const explicithosttags = this.host.explicithosttags.split(',') || []
-        const implicithosttags = this.host.implicithosttags.split(',') || []
+        const hosttags = this.host.hosttags?.split(',') || []
+        const explicithosttags = this.host.explicithosttags?.split(',') || []
+        const implicithosttags = this.host.implicithosttags?.split(',') || []
         const allHostTags = []
         for (const hosttag of hosttags) {
           var isexplicit = false
