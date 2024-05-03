@@ -63,7 +63,6 @@ import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.usage.UsageUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
@@ -1719,7 +1718,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                     pool.setCapacityBytes(capacityBytes);
                                     poolNeedsUpdating = true;
                                 } else {
-                                    logger.warn("Not setting capacity bytes, received " + ((StorageStats)answer).getCapacityBytes()  + " capacity for pool ID " + poolId);
+                                    logger.warn("Not setting capacity bytes, received {} capacity for pool ID {}",
+                                            NumbersUtil.toReadableSize(((StorageStats)answer).getCapacityBytes()), poolId);
                                 }
                             }
                             if (((_storagePoolStats.get(poolId) != null && _storagePoolStats.get(poolId).getByteUsed() != usedBytes)
@@ -1823,16 +1823,16 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         double totalCapacity = imageStoreStats.getCapacityBytes();
         double usedCapacity = imageStoreStats.getByteUsed();
         double threshold = getImageStoreCapacityThreshold();
-        String readableTotalCapacity = FileUtils.byteCountToDisplaySize((long) totalCapacity);
-        String readableUsedCapacity = FileUtils.byteCountToDisplaySize((long) usedCapacity);
+        String readableTotalCapacity = NumbersUtil.toReadableSize((long) totalCapacity);
+        String readableUsedCapacity = NumbersUtil.toReadableSize((long) usedCapacity);
 
-        logger.debug(String.format("Verifying image storage [%s]. Capacity: total=[%s], used=[%s], threshold=[%s%%].", imageStoreId, readableTotalCapacity, readableUsedCapacity, threshold * 100));
+        logger.debug(String.format("Verifying image storage [%s]. Capacity: total=[%s], used=[%s], threshold=[%.2f%%].", imageStoreId, readableTotalCapacity, readableUsedCapacity, threshold * 100));
 
         if (usedCapacity / totalCapacity <= threshold) {
             return true;
         }
 
-        logger.warn(String.format("Image storage [%s] has not enough capacity. Capacity: total=[%s], used=[%s], threshold=[%s%%].", imageStoreId, readableTotalCapacity, readableUsedCapacity, threshold * 100));
+        logger.warn(String.format("Image storage [%s] has not enough capacity. Capacity: total=[%s], used=[%s], threshold=[%.2f%%].", imageStoreId, readableTotalCapacity, readableUsedCapacity, threshold * 100));
         return false;
     }
 
