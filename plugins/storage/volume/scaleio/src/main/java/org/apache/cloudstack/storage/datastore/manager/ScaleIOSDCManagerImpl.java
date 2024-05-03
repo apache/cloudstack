@@ -67,48 +67,23 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager {
 
     @Override
     public boolean areSDCConnectionsWithinLimit(Long storagePoolId) {
-        int connectedClientsLimit = StorageManager.STORAGE_POOL_CONNECTED_CLIENTS_LIMIT.valueIn(storagePoolId);
-        if (connectedClientsLimit <= 0) {
-            return true;
-        }
-
-        String systemId = storagePoolDetailsDao.findDetail(storagePoolId, ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID).getValue();
-        if (systemId == null) {
-            LOGGER.warn("Unable to check SDC connections, failed to get the system id for PowerFlex storage pool id: " + storagePoolId);
-            return false;
-        }
-
-        GlobalLock lock = null;
         try {
-            String storageSystemIdLockString = "SystemId:" + systemId;
-            lock = GlobalLock.getInternLock(storageSystemIdLockString);
-            if (lock == null) {
-                LOGGER.error("Unable to check SDC connections, couldn't get global lock on: " + storageSystemIdLockString);
-                return false;
-            }
-
-            int storagePoolMaxWaitSeconds = NumbersUtil.parseInt(configDao.getValue(Config.StoragePoolMaxWaitSeconds.key()), 3600);
-            if (!lock.lock(storagePoolMaxWaitSeconds)) {
-                LOGGER.error("Unable to check SDC connections, couldn't lock on " + storageSystemIdLockString);
-                return false;
+            int connectedClientsLimit = StorageManager.STORAGE_POOL_CONNECTED_CLIENTS_LIMIT.valueIn(storagePoolId);
+            if (connectedClientsLimit <= 0) {
+                return true;
             }
 
             int connectedSdcsCount = getScaleIOClient(storagePoolId).getConnectedSdcsCount();
             if (connectedSdcsCount < connectedClientsLimit) {
-                LOGGER.debug("SDC connections are within the limit, on Powerflex Storage with system id: " + systemId + ", storage pool id" + storagePoolId);
+                LOGGER.debug("SDC connections are within the limit, on Powerflex Storage with pool id" + storagePoolId);
                 return true;
             }
-            LOGGER.debug("SDC connections limit reached on Powerflex Storage with system id: " + systemId + ", storage pool id" + storagePoolId);
+            LOGGER.debug("SDC connections limit reached on Powerflex Storage with pool id" + storagePoolId);
             return false;
         } catch (Exception e) {
-            String errMsg = "Unable to check SDC connections for the storage pool with id: " + storagePoolId + " due to " + e.getMessage();
+            String errMsg = "Unable to check SDC connections for the Powerflex storage pool with id: " + storagePoolId + " due to " + e.getMessage();
             LOGGER.warn(errMsg, e);
             return false;
-        } finally {
-            if (lock != null) {
-                lock.unlock();
-                lock.releaseRef();
-            }
         }
     }
 
@@ -119,16 +94,17 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager {
             throw new CloudRuntimeException("Unable to prepare SDC, failed to get the system id for PowerFlex storage pool: " + dataStore.getName());
         }
 
-        GlobalLock lock = null;
+        GlobalLock hostIdStorageSystemIdLock = null;
+        GlobalLock storageSystemIdLock = null;
         try {
             String hostIdStorageSystemIdLockString = "HostId:" + host.getId() + "-SystemId:" + systemId;
-            lock = GlobalLock.getInternLock(hostIdStorageSystemIdLockString);
-            if (lock == null) {
+            hostIdStorageSystemIdLock = GlobalLock.getInternLock(hostIdStorageSystemIdLockString);
+            if (hostIdStorageSystemIdLock == null) {
                 throw new CloudRuntimeException("Unable to prepare SDC, couldn't get global lock on " + hostIdStorageSystemIdLockString);
             }
 
             int storagePoolMaxWaitSeconds = NumbersUtil.parseInt(configDao.getValue(Config.StoragePoolMaxWaitSeconds.key()), 3600);
-            if (!lock.lock(storagePoolMaxWaitSeconds)) {
+            if (!hostIdStorageSystemIdLock.lock(storagePoolMaxWaitSeconds)) {
                 LOGGER.debug("Unable to prepare SDC, couldn't lock on " + hostIdStorageSystemIdLockString);
                 throw new CloudRuntimeException("Unable to prepare SDC, couldn't lock on " + hostIdStorageSystemIdLockString);
             }
@@ -138,6 +114,18 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager {
             String sdcId = getConnectedSdc(poolId, hostId);
             if (StringUtils.isNotBlank(sdcId)) {
                 return sdcId;
+            }
+
+            String storageSystemIdLockString = "PowerflexSystemId:" + systemId;
+            storageSystemIdLock = GlobalLock.getInternLock(storageSystemIdLockString);
+            if (storageSystemIdLock == null) {
+                LOGGER.error("Unable to prepare SDC, couldn't get global lock on: " + storageSystemIdLockString);
+                throw new CloudRuntimeException("Unable to prepare SDC, couldn't get global lock on " + storageSystemIdLockString);
+            }
+
+            if (!storageSystemIdLock.lock(storagePoolMaxWaitSeconds)) {
+                LOGGER.error("Unable to prepare SDC, couldn't lock on " + storageSystemIdLockString);
+                throw new CloudRuntimeException("Unable to prepare SDC, couldn't lock on " + storageSystemIdLockString);
             }
 
             if (!areSDCConnectionsWithinLimit(poolId)) {
@@ -168,9 +156,13 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager {
             }
             return null;
         } finally {
-            if (lock != null) {
-                lock.unlock();
-                lock.releaseRef();
+            if (storageSystemIdLock != null) {
+                storageSystemIdLock.unlock();
+                storageSystemIdLock.releaseRef();
+            }
+            if (hostIdStorageSystemIdLock != null) {
+                hostIdStorageSystemIdLock.unlock();
+                hostIdStorageSystemIdLock.releaseRef();
             }
         }
     }
