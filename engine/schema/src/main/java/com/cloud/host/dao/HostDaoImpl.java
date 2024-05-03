@@ -482,6 +482,15 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     @Override
+    public Integer countUpAndEnabledHostsInZone(long zoneId) {
+        SearchCriteria<HostVO> sc = HostTypeCountSearch.create();
+        sc.setParameters("type", Type.Routing);
+        sc.setParameters("resourceState", ResourceState.Enabled);
+        sc.setParameters("dc", zoneId);
+        return getCount(sc);
+    }
+
+    @Override
     public List<HostVO> listByDataCenterId(long id) {
         return listByDataCenterIdAndState(id, ResourceState.Enabled);
     }
