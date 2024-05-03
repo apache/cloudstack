@@ -4,6 +4,6 @@
     notifempty
     maxsize 10M
     postrotate
-      /bin/kill -HUP `cat /var/run/rsyslog.pid 2> /dev/null` 2> /dev/null || true
+      /usr/lib/rsyslog/rsyslog-rotate
     endscript
 }

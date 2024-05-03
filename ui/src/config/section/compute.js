@@ -612,6 +612,9 @@ export default {
           groupAction: true,
           popup: true,
           args: (record, store, group) => {
+            if (record.clustertype === 'CloudManaged') {
+              return []
+            }
             return (['Admin'].includes(store.userInfo.roletype) || store.features.allowuserexpungerecovervm)
               ? ['cleanup', 'expunge'] : ['cleanup']
           },

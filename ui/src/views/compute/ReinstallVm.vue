@@ -36,7 +36,7 @@
         :items="templates"
         :selected="tabKey"
         :loading="loading.templates"
-        :preFillContent="resource.templateid"
+        :preFillContent="dataPrefill"
         :key="templateKey"
         @handle-search-filter="($event) => fetchAllTemplates($event)"
         @update-template-iso="updateFieldValue"
@@ -61,7 +61,7 @@
         :zoneId="resource.zoneId"
         :value="diskOffering ? diskOffering.id : ''"
         :loading="loading.diskOfferings"
-        :preFillContent="resource.diskofferingid"
+        :preFillContent="dataPrefill"
         :isIsoSelected="false"
         :isRootDiskOffering="true"
         @on-selected-disk-size="onSelectDiskSize"
@@ -170,7 +170,11 @@ export default {
       ],
       diskOffering: {},
       diskOfferingCount: 0,
-      templateKey: 0
+      templateKey: 0,
+      dataPrefill: {
+        templateid: this.resource.templateid,
+        diskofferingid: this.resource.diskofferingid
+      }
     }
   },
   beforeCreate () {
@@ -192,8 +196,10 @@ export default {
     },
     handleSubmit () {
       const params = {
-        virtualmachineid: this.resource.id,
-        templateid: this.templateid
+        virtualmachineid: this.resource.id
+      }
+      if (this.templateid) {
+        params.templateid = this.templateid
       }
       if (this.overrideDiskOffering) {
         params.diskofferingid = this.diskOffering.id
@@ -285,9 +291,11 @@ export default {
     },
     onSelectDiskSize (rowSelected) {
       this.diskOffering = rowSelected
+      this.dataPrefill.diskofferingid = rowSelected.id
     },
     updateFieldValue (input, value) {
       this[input] = value
+      this.dataPrefill[input] = value
     }
   }
 }
