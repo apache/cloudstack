@@ -144,15 +144,10 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     private VolumeService volumeService;
     @Inject
     private VolumeOrchestrationService volumeMgr;
-//    @Autowired
-//    @Qualifier("scaleIOSDCManager")
-//    @Inject
     private ScaleIOSDCManager sdcManager;
-//    private ScaleIOSDCManager scaleioSDCManager = new ScaleIOSDCManagerImpl();
 
     public ScaleIOPrimaryDataStoreDriver() {
         sdcManager = new ScaleIOSDCManagerImpl();
-//        sdcManager = new ScaleIOSDCManagerImpl();
     }
 
     public ScaleIOGatewayClient getScaleIOClient(final Long storagePoolId) throws Exception {
@@ -1422,8 +1417,13 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     @Override
-    public boolean canHostPrepareStoragePoolAccess() {
-        return true;
+    public boolean canHostPrepareStoragePoolAccess(Host host, StoragePool pool) {
+        if (host == null || pool == null) {
+            return false;
+        }
+
+        sdcManager = ComponentContext.inject(sdcManager);
+        return sdcManager.areSDCConnectionsWithinLimit(pool.getId());
     }
 
     private void alertHostSdcDisconnection(Host host) {

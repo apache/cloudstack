@@ -22,12 +22,12 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import com.cloud.host.Host;
 
 public interface ScaleIOSDCManager {
-//    /**
-//     * Checks SDC connections limit.
-//     * @param storagePoolId the storage pool id
-//     * @return true if SDC connections are within limit
-//     */
-//    boolean areSDCConnectionsWithinLimit(Long storagePoolId);
+    /**
+     * Checks SDC connections limit.
+     * @param storagePoolId the storage pool id
+     * @return true if SDC connections are within limit
+     */
+    boolean areSDCConnectionsWithinLimit(Long storagePoolId);
 
     /**
      * Prepares/starts the SDC on the host.

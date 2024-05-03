@@ -276,7 +276,7 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
                     poolHosts.add(host);
                 }
             } catch (Exception e) {
-                LOGGER.warn("Unable to establish a connection between " + host + " and " + primaryDataStoreInfo, e);
+                LOGGER.warn("Unable to establish a connection between host: " + host + " and pool: " + dataStore + "on the cluster: " + primaryDataStoreInfo.getClusterId(), e);
             }
         }
 
@@ -308,13 +308,11 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
                     poolHosts.add(host);
                 }
             } catch (Exception e) {
-                LOGGER.warn("Unable to establish a connection between " + host + " and " + dataStore, e);
+                LOGGER.warn("Unable to establish a connection between host: " + host + " and pool: " + dataStore + "in the zone: " + scope.getScopeId(), e);
             }
         }
         if (poolHosts.isEmpty()) {
-            LOGGER.warn("No host can access storage pool " + dataStore + " in this zone.");
-//            primaryDataStoreDao.expunge(dataStore.getId());
-//            throw new CloudRuntimeException("Failed to create storage pool as it is not accessible to hosts.");
+            LOGGER.warn("No host can access storage pool " + dataStore + " in the zone: " + scope.getScopeId());
         }
 
         dataStoreHelper.attachZone(dataStore);

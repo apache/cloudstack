@@ -65,7 +65,8 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager {
 
     }
 
-    private boolean areSDCConnectionsWithinLimit(Long storagePoolId) {
+    @Override
+    public boolean areSDCConnectionsWithinLimit(Long storagePoolId) {
         int connectedClientsLimit = StorageManager.STORAGE_POOL_CONNECTED_CLIENTS_LIMIT.valueIn(storagePoolId);
         if (connectedClientsLimit <= 0) {
             return true;
@@ -79,7 +80,6 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager {
         } catch (Exception e) {
             String errMsg = "Unable to check SDC connections for the storage pool with id: " + storagePoolId + " due to " + e.getMessage();
             LOGGER.warn(errMsg, e);
-            throw new CloudRuntimeException(errMsg);
         }
 
         return false;
@@ -106,7 +106,6 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager {
                 throw new CloudRuntimeException("Unable to prepare SDC, couldn't lock on " + hostIdStorageSystemIdLockString);
             }
 
-            // Check connected
             long poolId = dataStore.getId();
             long hostId = host.getId();
             String sdcId = getConnectedSdc(poolId, hostId);
@@ -115,10 +114,11 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager {
             }
 
             if (!areSDCConnectionsWithinLimit(poolId)) {
-                throw new CloudRuntimeException("SDC connections limit reached");
+                String errorMsg = String.format("Unable to check SDC connections or the connections limit reached for Powerflex storage (System ID: %s)", systemId);
+                LOGGER.error(errorMsg);
+                throw new CloudRuntimeException(errorMsg);
             }
 
-            // Send PrepareSDCCommand & Check Answer
             sdcId = prepareSDCOnHost(host, dataStore, systemId);
             StoragePoolHostVO storagePoolHost = storagePoolHostDao.findByPoolHost(poolId, hostId);
 
@@ -220,7 +220,6 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager {
                 throw new CloudRuntimeException("Unable to unprepare SDC, couldn't lock on " + hostIdStorageSystemIdLockString);
             }
 
-            // Check not connected
             long poolId = dataStore.getId();
             long hostId = host.getId();
             String sdcId = getConnectedSdc(poolId, hostId);
@@ -229,7 +228,6 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager {
                 return true;
             }
 
-            // Send StopSDCCommand & Check Answer
             return unprepareSDCOnHost(host);
         } finally {
             if (lock != null) {
