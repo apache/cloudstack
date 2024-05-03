@@ -4954,10 +4954,24 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     private void scanStalledVMInTransitionStateOnUpHost(final long hostId) {
-        final long stallThresholdInMs = VmJobStateReportInterval.value() + (VmJobStateReportInterval.value() >> 1);
+        // Check VM that is stuck in Starting, Stopping, Migrating states, we won't check
+        // VMs in expunging state (this need to be handled specially)
+        //
+        // checking condition
+        //      1) no pending VmWork job
+        //      2) on hostId host and host is UP
+        //
+        // When host is UP, sooner or later we will get a report from the host about the VM,
+        // however, if VM is missing from the host report (it may happen in out of band changes
+        // or from behaviour of XS/KVM by design), the VM may not get a chance to run the state-sync logic
+        //
+        // Therefore, we will scan those VMs on UP host based on last update timestamp, if the host is UP
+        // and a VM stalls for status update, we will consider them to be powered off
+        // (which is relatively safe to do so)
+        final long stallThresholdInMs = VmJobStateReportInterval.value() * 2;
         final Date cutTime = new Date(DateUtil.currentGMTTime().getTime() - stallThresholdInMs);
-        final List<Long> mostlikelyStoppedVMs = listStalledVMInTransitionStateOnUpHost(hostId, cutTime);
-        for (final Long vmId : mostlikelyStoppedVMs) {
+        final List<Long> mostLikelyStoppedVMs = listStalledVMInTransitionStateOnUpHost(hostId, cutTime);
+        for (final Long vmId : mostLikelyStoppedVMs) {
             final VMInstanceVO vm = _vmDao.findById(vmId);
             assert vm != null;
             handlePowerOffReportWithNoPendingJobsOnVM(vm);
@@ -4988,7 +5002,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     private List<Long> listStalledVMInTransitionStateOnUpHost(final long hostId, final Date cutTime) {
-        final String sql = "SELECT i.* FROM vm_instance as i, host as h WHERE h.status = 'UP' " +
+        final String sql = "SELECT i.id FROM vm_instance as i, host as h WHERE h.status = 'UP' " +
                 "AND h.id = ? AND i.power_state_update_time < ? AND i.host_id = h.id " +
                 "AND (i.state ='Starting' OR i.state='Stopping' OR i.state='Migrating') " +
                 "AND i.id NOT IN (SELECT w.vm_instance_id FROM vm_work_job AS w JOIN async_job AS j ON w.id = j.id WHERE j.job_status = ?)" +
@@ -4998,9 +5012,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB)) {
             String cutTimeStr = DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutTime);
 
-            try {
-                PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql);
-
+            try (PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql)) {
                 pstmt.setLong(1, hostId);
                 pstmt.setString(2, cutTimeStr);
                 pstmt.setInt(3, JobInfo.Status.IN_PROGRESS.ordinal());
@@ -5016,7 +5028,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     private List<Long> listVMInTransitionStateWithRecentReportOnUpHost(final long hostId, final Date cutTime) {
-        final String sql = "SELECT i.* FROM vm_instance as i, host as h WHERE h.status = 'UP' " +
+        final String sql = "SELECT i.id FROM vm_instance as i, host as h WHERE h.status = 'UP' " +
                 "AND h.id = ? AND i.power_state_update_time > ? AND i.host_id = h.id " +
                 "AND (i.state ='Starting' OR i.state='Stopping' OR i.state='Migrating') " +
                 "AND i.id NOT IN (SELECT w.vm_instance_id FROM vm_work_job AS w JOIN async_job AS j ON w.id = j.id WHERE j.job_status = ?)" +
@@ -5027,9 +5039,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             String cutTimeStr = DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutTime);
             int jobStatusInProgress = JobInfo.Status.IN_PROGRESS.ordinal();
 
-            try {
-                PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql);
-
+            try (PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql)) {
                 pstmt.setLong(1, hostId);
                 pstmt.setString(2, cutTimeStr);
                 pstmt.setInt(3, jobStatusInProgress);
