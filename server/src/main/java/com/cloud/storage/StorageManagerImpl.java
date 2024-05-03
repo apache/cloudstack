@@ -1284,12 +1284,12 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @Override
     public Pair<Map<String, String>, Boolean> getStoragePoolNFSMountOpts(StoragePool pool, Map<String, String> details) {
         boolean details_added = false;
-        if (details == null) {
-            details = new HashMap<>();
-        }
         if (pool.getPoolType().equals(Storage.StoragePoolType.NetworkFilesystem)) {
             StoragePoolDetailVO nfsMountOpts = _storagePoolDetailsDao.findDetail(pool.getId(), ApiConstants.NFS_MOUNT_OPTIONS);
             if (nfsMountOpts != null) {
+                if (details == null) {
+                    details = new HashMap<>();
+                }
                 details.put(ApiConstants.NFS_MOUNT_OPTIONS, nfsMountOpts.getValue());
                 details_added = true;
             }
