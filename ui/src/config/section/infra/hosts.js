@@ -25,7 +25,7 @@ export default {
   permission: ['listHostsMetrics'],
   resourceType: 'Host',
   filters: () => {
-    const filters = ['enabled', 'disabled', 'maintenance', 'up', 'down', 'alert']
+    const filters = ['enabled', 'disabled', 'maintenance', 'up', 'down', 'disconnected', 'alert']
     return filters
   },
   params: { type: 'routing' },

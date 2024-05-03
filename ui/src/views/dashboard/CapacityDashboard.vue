@@ -41,7 +41,7 @@
         <div class="capacity-dashboard-button">
           <a-button
             shape="round"
-            @click="() => { updateData(zoneSelected); listAlerts(); listEvents(); }">
+            @click="() => { updateData(zoneSelected, true); listAlerts(); listEvents(); }">
             <reload-outlined/>
             {{ $t('label.fetch.latest') }}
           </a-button>
@@ -170,7 +170,7 @@
       </chart-card>
     </a-col>
     <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }">
-      <chart-card :loading="loading" class="dashboard-card">
+      <chart-card :loading="capacityLoading" class="dashboard-card">
         <template #title>
           <div class="center">
             <h3><cloud-outlined /> {{ $t('label.compute') }}</h3>
@@ -200,7 +200,7 @@
       </chart-card>
     </a-col>
     <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }">
-      <chart-card :loading="loading" class="dashboard-card">
+      <chart-card :loading="capacityLoading" class="dashboard-card">
         <template #title>
           <div class="center">
             <h3><hdd-outlined /> {{ $t('label.storage') }}</h3>
@@ -230,7 +230,7 @@
       </chart-card>
     </a-col>
     <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }">
-      <chart-card :loading="loading" class="dashboard-card">
+      <chart-card :loading="capacityLoading" class="dashboard-card">
         <template #title>
           <div class="center">
             <h3><apartment-outlined /> {{ $t('label.network') }}</h3>
@@ -340,6 +340,7 @@ export default {
   data () {
     return {
       loading: true,
+      capacityLoading: true,
       tabKey: 'alerts',
       alerts: [],
       events: [],
@@ -431,9 +432,9 @@ export default {
       this.listEvents()
     },
     listCapacity (zone, latest = false, additive = false) {
-      this.loading = true
+      this.capacityLoading = true
       api('listCapacity', { zoneid: zone.id, fetchlatest: latest }).then(json => {
-        this.loading = false
+        this.capacityLoading = false
         let stats = []
         if (json && json.listcapacityresponse && json.listcapacityresponse.capacity) {
           stats = json.listcapacityresponse.capacity
@@ -457,15 +458,14 @@ export default {
         }
       })
     },
-    updateData (zone) {
+    updateData (zone, latest = false) {
+      this.statsMap = {}
       if (!zone.id) {
-        this.statsMap = {}
         for (const zone of this.zones.slice(1)) {
-          this.listCapacity(zone, true, true)
+          this.listCapacity(zone, latest, true)
         }
       } else {
-        this.statsMap = {}
-        this.listCapacity(this.zoneSelected, true)
+        this.listCapacity(this.zoneSelected, latest)
       }
 
       this.data = {
