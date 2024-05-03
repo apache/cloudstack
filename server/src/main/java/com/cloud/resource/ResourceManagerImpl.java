@@ -2390,9 +2390,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             _hostDao.update(host.getId(), host);
         }
 
-        if (startup instanceof StartupRoutingCommand) {
+        if (host != null && host.getHypervisorType().equals(HypervisorType.XenServer) &&
+                startup instanceof StartupRoutingCommand) {
             final StartupRoutingCommand ssCmd = (StartupRoutingCommand)startup;
-
             updateSupportsClonedVolumes(host, ssCmd.getSupportsClonedVolumes());
         }
 
