@@ -137,6 +137,7 @@
         <cs.cxf.version>3.2.14</cs.cxf.version>
         <cs.ehcache.version>2.6.11</cs.ehcache.version>
         <cs.globodns-client.version>0.0.27</cs.globodns-client.version>
+        <cs.gmavenplus.version>3.0.2</cs.gmavenplus.version>
         <cs.google-http-client>1.42.3</cs.google-http-client>
         <cs.groovy.version>2.4.17</cs.groovy.version>
         <cs.gson.version>1.7.2</cs.gson.version>
@@ -930,20 +931,6 @@
                                     </pluginExecutionFilter>
                                     <action>
                                         <ignore />
-                                    </action>
-                                </pluginExecution>
-                                <pluginExecution>
-                                    <pluginExecutionFilter>
-                                        <groupId>org.codehaus.gmaven</groupId>
-                                        <artifactId>gmaven-plugin</artifactId>
-                                        <versionRange>[1.3,)</versionRange>
-                                        <goals>
-                                            <goal>compile</goal>
-                                            <goal>testCompile</goal>
-                                        </goals>
-                                    </pluginExecutionFilter>
-                                    <action>
-                                        <ignore></ignore>
                                     </action>
                                 </pluginExecution>
                                 <pluginExecution>
