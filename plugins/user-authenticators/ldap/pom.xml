@@ -73,6 +73,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <argLine>@{argLine} --add-exports=java.naming/com.sun.jndi.ldap=ALL-UNNAMED</argLine>
                     <includes>
                         <include>**/*Spec.groovy</include>
                         <include>**/*Test.java</include>
