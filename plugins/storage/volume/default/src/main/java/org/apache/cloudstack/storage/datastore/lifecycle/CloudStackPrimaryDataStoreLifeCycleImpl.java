@@ -466,8 +466,8 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
 
     @Override
     public boolean cancelMaintain(DataStore store) {
-        dataStoreHelper.cancelMaintain(store);
         storagePoolAutmation.cancelMaintain(store);
+        dataStoreHelper.cancelMaintain(store);
         return true;
     }
 

@@ -38,6 +38,7 @@ class TestNFSMountOptsKVM(cloudstackTestCase):
         cls.storage_pool = cls.getPrimaryStorage(cls, cls.cluster.id)
         cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
         cls.cluster_id = cls.host.clusterid
+        cls.hostConfig['password'] = "P@ssword123"
         cls.sshClient = SshClient(
             host=cls.host.ipaddress,
             port=22,
@@ -119,12 +120,17 @@ class TestNFSMountOptsKVM(cloudstackTestCase):
     def changeNFSOptions(self, details):
         maint_cmd = enableStorageMaintenance.enableStorageMaintenanceCmd()
         maint_cmd.id = self.storage_pool.id
-        resp = self.apiclient.enableStorageMaintenance(maint_cmd)
 
-        storage = StoragePool.update(self.apiclient,
-                                     id=self.storage_pool.id,
-                                     details=details
-                                     )
+        storage = StoragePool.list(self.apiclient,
+                                   id=self.storage_pool.id
+                                   )[0]
+        if storage.state != "Maintenance":
+            self.apiclient.enableStorageMaintenance(maint_cmd)
+
+        StoragePool.update(self.apiclient,
+                           id=self.storage_pool.id,
+                           details=details
+                           )
 
         store_maint_cmd = cancelStorageMaintenance.cancelStorageMaintenanceCmd()
         store_maint_cmd.id = self.storage_pool.id
@@ -162,12 +168,18 @@ class TestNFSMountOptsKVM(cloudstackTestCase):
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
     def test_primary_storage_incorrect_nfs_options_kvm(self):
+        """
+            Tests that incorrect NFS mount options leads to exception when maintenance mode is cancelled
+        """
         nfsMountOpts = "version=4.1"
         details = [{'nfsmountopts': nfsMountOpts}]
 
         try:
             resp = self.changeNFSOptions(details)
         except Exception:
-            pass
+            storage = StoragePool.list(self.apiclient,
+                                       id=self.storage_pool.id
+                                       )[0]
+            self.assertEqual(storage.state, "Maintenance")
         else:
             self.fail("Incorrect NFS mount option should throw error while mounting")
