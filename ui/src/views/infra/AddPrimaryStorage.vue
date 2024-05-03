@@ -805,7 +805,9 @@ export default {
         var url = ''
         if (values.protocol === 'nfs') {
           url = this.nfsURL(server, path)
-          params['details[0].nfsmountopts'] = values.nfsMountOpts
+          if (values.nfsMountOpts) {
+            params['details[0].nfsmountopts'] = values.nfsMountOpts
+          }
         } else if (values.protocol === 'SMB') {
           url = this.smbURL(server, path)
           const smbParams = {
