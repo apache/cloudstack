@@ -31,7 +31,6 @@ import org.libvirt.TypedStringParameter;
 import org.libvirt.TypedUlongParameter;
 
 public class MigrateKVMAsync implements Callable<Domain> {
-    protected Logger logger = Logger.getLogger(getClass());
 
     protected Logger logger = Logger.getLogger(getClass());
 
