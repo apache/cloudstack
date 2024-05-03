@@ -17,6 +17,7 @@
 package com.cloud.vm;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -94,14 +95,8 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
         // any state outdates should be checked against the time before this list was retrieved
         Date startTime = DateUtil.currentGMTTime();
         // for all running/stopping VMs, we provide monitoring of missing report
-        List<VMInstanceVO> vmsThatAreMissingReport = _instanceDao.findByHostInStates(hostId, VirtualMachine.State.Running,
-                VirtualMachine.State.Stopping, VirtualMachine.State.Starting);
-        java.util.Iterator<VMInstanceVO> it = vmsThatAreMissingReport.iterator();
-        while (it.hasNext()) {
-            VMInstanceVO instance = it.next();
-            if (translatedInfo.get(instance.getId()) != null)
-                it.remove();
-        }
+        List<VMInstanceVO> vmsThatAreMissingReport = _instanceDao.findByHostInStatesExcluding(hostId, new ArrayList<>(translatedInfo.keySet()),
+                VirtualMachine.State.Running, VirtualMachine.State.Stopping, VirtualMachine.State.Starting);
 
         // here we need to be wary of out of band migration as opposed to other, more unexpected state changes
         if (vmsThatAreMissingReport.size() > 0) {

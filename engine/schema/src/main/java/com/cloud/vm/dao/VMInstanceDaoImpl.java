@@ -268,6 +268,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         HostAndStateSearch = createSearchBuilder();
         HostAndStateSearch.and("host", HostAndStateSearch.entity().getHostId(), Op.EQ);
         HostAndStateSearch.and("states", HostAndStateSearch.entity().getState(), Op.IN);
+        HostAndStateSearch.and("idsNotIn", HostAndStateSearch.entity().getId(), Op.NIN);
         HostAndStateSearch.done();
 
         StartingWithNoHostSearch = createSearchBuilder();
@@ -878,6 +879,17 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         boolean result = super.remove(id);
         txn.commit();
         return result;
+    }
+
+    @Override
+    public List<VMInstanceVO> findByHostInStatesExcluding(Long hostId, List<Long> excludingIds, State... states) {
+        SearchCriteria<VMInstanceVO> sc = HostAndStateSearch.create();
+        sc.setParameters("host", hostId);
+        if (excludingIds != null && !excludingIds.isEmpty()) {
+            sc.setParameters("idsNotIn", excludingIds.toArray());
+        }
+        sc.setParameters("states", (Object[])states);
+        return listBy(sc);
     }
 
     @Override

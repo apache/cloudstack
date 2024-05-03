@@ -144,6 +144,8 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
      */
     List<String> listDistinctHostNames(long networkId, VirtualMachine.Type... types);
 
+    List<VMInstanceVO> findByHostInStatesExcluding(Long hostId, List<Long> excludingIds, State... states);
+
     List<VMInstanceVO> findByHostInStates(Long hostId, State... states);
 
     List<VMInstanceVO> listStartingWithNoHostId();
