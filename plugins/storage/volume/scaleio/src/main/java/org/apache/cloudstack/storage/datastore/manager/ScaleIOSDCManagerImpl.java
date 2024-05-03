@@ -72,17 +72,44 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager {
             return true;
         }
 
+        String systemId = storagePoolDetailsDao.findDetail(storagePoolId, ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID).getValue();
+        if (systemId == null) {
+            LOGGER.warn("Unable to check SDC connections, failed to get the system id for PowerFlex storage pool id: " + storagePoolId);
+            return false;
+        }
+
+        GlobalLock lock = null;
         try {
+            String storageSystemIdLockString = "SystemId:" + systemId;
+            lock = GlobalLock.getInternLock(storageSystemIdLockString);
+            if (lock == null) {
+                LOGGER.error("Unable to check SDC connections, couldn't get global lock on: " + storageSystemIdLockString);
+                return false;
+            }
+
+            int storagePoolMaxWaitSeconds = NumbersUtil.parseInt(configDao.getValue(Config.StoragePoolMaxWaitSeconds.key()), 3600);
+            if (!lock.lock(storagePoolMaxWaitSeconds)) {
+                LOGGER.error("Unable to check SDC connections, couldn't lock on " + storageSystemIdLockString);
+                return false;
+            }
+
             int connectedSdcsCount = getScaleIOClient(storagePoolId).getConnectedSdcsCount();
             if (connectedSdcsCount < connectedClientsLimit) {
+                LOGGER.debug("SDC connections are within the limit, on Powerflex Storage with system id: " + systemId + ", storage pool id" + storagePoolId);
                 return true;
             }
+            LOGGER.debug("SDC connections limit reached on Powerflex Storage with system id: " + systemId + ", storage pool id" + storagePoolId);
+            return false;
         } catch (Exception e) {
             String errMsg = "Unable to check SDC connections for the storage pool with id: " + storagePoolId + " due to " + e.getMessage();
             LOGGER.warn(errMsg, e);
+            return false;
+        } finally {
+            if (lock != null) {
+                lock.unlock();
+                lock.releaseRef();
+            }
         }
-
-        return false;
     }
 
     @Override
