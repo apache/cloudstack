@@ -14,10 +14,9 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-""" BVT tests for CM Deployment Planner
-"""
+
 # Import Local Modules
-from marvin.cloudstackAPI import (updateConfiguration)
+from marvin.cloudstackAPI import (expungeVirtualMachine, updateConfiguration)
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import (Account, ServiceOffering, Template, Host, VirtualMachine)
 from marvin.lib.common import (get_domain, get_zone)
@@ -57,9 +56,6 @@ class TestVMDeploymentPlannerStrictTags(cloudstackTestCase):
         hosts = Host.list(cls.apiclient, zoneid=cls.zone.id, type='Routing')
         cls.host_h1 = hosts[0] if len(hosts) >= 1 else None
 
-        if cls.host_h1:
-            Host.update(cls.apiclient, id=cls.host_h1.id, hosttags="h1,t1,v1")
-
         cls._cleanup = [cls.account, cls.service_offering_h1, cls.service_offering_h2, cls.template_t1, cls.template_t2]
 
     @classmethod
@@ -70,6 +66,34 @@ class TestVMDeploymentPlannerStrictTags(cloudstackTestCase):
         cls.updateConfiguration("vm.strict.resource.limit.host.tag.check", "true")
         cls.updateConfiguration("resource.limit.host.tags", "")
         super(TestVMDeploymentPlannerStrictTags, cls).tearDownClass()
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        if self.host_h1:
+            Host.update(self.apiclient, id=self.host_h1.id, hosttags="h1,t1,v1")
+        self.updateConfiguration("vm.strict.host.tags", "")
+        self.updateConfiguration("vm.strict.resource.limit.host.tag.check", "true")
+        self.updateConfiguration("resource.limit.host.tags", "")
+        self.cleanup = []
+
+    def tearDown(self):
+        self.cleanup_vm_for_template(self.template_t1.id)
+        self.cleanup_vm_for_template(self.template_t2.id)
+        super(TestVMDeploymentPlannerStrictTags, self).tearDown()
+
+    def cleanup_vm_for_template(self, templateid):
+        vm_list = VirtualMachine.list(self.apiclient, listall=True, templateid=templateid)
+        if type(vm_list) is list:
+            for vm in vm_list:
+                self.expunge_vm(vm)
+
+    def expunge_vm(self, vm):
+        try:
+            cmd = expungeVirtualMachine.expungeVirtualMachineCmd()
+            cmd.id = vm.id
+            self.apiclient.expungeVirtualMachine(cmd)
+        except Exception as e:
+            self.debug("Failed to expunge VM: %s" % e)
 
     @classmethod
     def updateConfiguration(self, name, value):
@@ -90,7 +114,7 @@ class TestVMDeploymentPlannerStrictTags(cloudstackTestCase):
         self.updateConfiguration("resource.limit.host.tags", "")
 
         vm = self.deploy_vm(self.host_h1.id, self.template_t1.id, self.service_offering_h1.id)
-        self._cleanup.append(vm)
+        self.cleanup.append(vm)
         self.assertEqual(self.host_h1.id, vm.hostid, "VM instance was not deployed on target host ID")
 
     @attr(tags=["advanced", "advancedns", "ssh", "smoke"], required_hardware="false")
@@ -100,7 +124,7 @@ class TestVMDeploymentPlannerStrictTags(cloudstackTestCase):
         self.updateConfiguration("resource.limit.host.tags", "")
 
         vm = self.deploy_vm(None, self.template_t1.id, self.service_offering_h1.id)
-        self._cleanup.append(vm)
+        self.cleanup.append(vm)
         self.assertIsNotNone(vm, "VM instance was not deployed")
 
     @attr(tags=["advanced", "advancedns", "ssh", "smoke"], required_hardware="false")
@@ -110,13 +134,13 @@ class TestVMDeploymentPlannerStrictTags(cloudstackTestCase):
         self.updateConfiguration("resource.limit.host.tags", "h1,h2,t1,t2")
 
         vm = self.deploy_vm(self.host_h1.id, self.template_t1.id, self.service_offering_h1.id)
-        self._cleanup.append(vm)
+        self.cleanup.append(vm)
         self.assertEqual(self.host_h1.id, vm.hostid, "VM instance was not deployed on target host ID")
 
         self.updateConfiguration("vm.strict.resource.limit.host.tag.check", "true")
 
         vm = self.deploy_vm(self.host_h1.id, self.template_t1.id, self.service_offering_h1.id)
-        self._cleanup.append(vm)
+        self.cleanup.append(vm)
         self.assertEqual(self.host_h1.id, vm.hostid, "VM instance was not deployed on target host ID")
 
     @attr(tags=["advanced", "advancedns", "ssh", "smoke"], required_hardware="false")
@@ -126,13 +150,13 @@ class TestVMDeploymentPlannerStrictTags(cloudstackTestCase):
         self.updateConfiguration("resource.limit.host.tags", "h1,h2,t1,t2")
 
         vm = self.deploy_vm(None, self.template_t1.id, self.service_offering_h1.id)
-        self._cleanup.append(vm)
+        self.cleanup.append(vm)
         self.assertIsNotNone(vm, "VM instance was not deployed")
 
         self.updateConfiguration("vm.strict.resource.limit.host.tag.check", "true")
 
         vm = self.deploy_vm(None, self.template_t1.id, self.service_offering_h1.id)
-        self._cleanup.append(vm)
+        self.cleanup.append(vm)
         self.assertEqual(self.host_h1.id, vm.hostid, "VM instance was not deployed on target host ID")
 
     @attr(tags=["advanced", "advancedns", "ssh", "smoke"], required_hardware="false")
@@ -143,14 +167,14 @@ class TestVMDeploymentPlannerStrictTags(cloudstackTestCase):
 
         try:
             vm = self.deploy_vm(self.host_h1.id, self.template_t2.id, self.service_offering_h1.id)
-            self._cleanup.append(vm)
+            self.cleanup.append(vm)
             self.fail("VM should not be deployed")
         except Exception as e:
             self.assertTrue("Cannot deploy VM, destination host" in str(e))
 
         try:
             vm = self.deploy_vm(self.host_h1.id, self.template_t2.id, self.service_offering_h2.id)
-            self._cleanup.append(vm)
+            self.cleanup.append(vm)
             self.fail("VM should not be deployed")
         except Exception as e:
             self.assertTrue("Cannot deploy VM, destination host" in str(e))
@@ -163,7 +187,7 @@ class TestVMDeploymentPlannerStrictTags(cloudstackTestCase):
 
         try:
             vm = self.deploy_vm(None, self.template_t2.id, self.service_offering_h1.id)
-            self._cleanup.append(vm)
+            self.cleanup.append(vm)
             self.fail("VM should not be deployed")
         except Exception as e:
             self.assertTrue("No suitable host found for vm " in str(e))
@@ -200,9 +224,6 @@ class TestScaleVMStrictTags(cloudstackTestCase):
         hosts = Host.list(cls.apiclient, zoneid=cls.zone.id, type='Routing')
         cls.host_h1 = hosts[0] if len(hosts) >= 1 else None
 
-        if cls.host_h1:
-            Host.update(cls.apiclient, id=cls.host_h1.id, hosttags="h1,t1,v1,h2,t2,v2")
-
         cls._cleanup = [cls.account, cls.service_offering_h1, cls.service_offering_h2, cls.template_t1, cls.template_t2]
 
     @classmethod
@@ -213,6 +234,34 @@ class TestScaleVMStrictTags(cloudstackTestCase):
         cls.updateConfiguration("vm.strict.resource.limit.host.tag.check", "true")
         cls.updateConfiguration("resource.limit.host.tags", "")
         super(TestScaleVMStrictTags, cls).tearDownClass()
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        if self.host_h1:
+            Host.update(self.apiclient, id=self.host_h1.id, hosttags="h1,t1,v1,h2,t2,v2")
+        self.updateConfiguration("vm.strict.host.tags", "")
+        self.updateConfiguration("vm.strict.resource.limit.host.tag.check", "true")
+        self.updateConfiguration("resource.limit.host.tags", "")
+        self.cleanup = []
+
+    def tearDown(self):
+        self.cleanup_vm_for_template(self.template_t1.id)
+        self.cleanup_vm_for_template(self.template_t2.id)
+        super(TestScaleVMStrictTags, self).tearDown()
+
+    def cleanup_vm_for_template(self, templateid):
+        vm_list = VirtualMachine.list(self.apiclient, listall=True, templateid=templateid)
+        if type(vm_list) is list:
+            for vm in vm_list:
+                self.expunge_vm(vm)
+
+    def expunge_vm(self, vm):
+        try:
+            cmd = expungeVirtualMachine.expungeVirtualMachineCmd()
+            cmd.id = vm.id
+            self.apiclient.expungeVirtualMachine(cmd)
+        except Exception as e:
+            self.debug("Failed to expunge VM: %s" % e)
 
     @classmethod
     def updateConfiguration(self, name, value):
@@ -233,7 +282,7 @@ class TestScaleVMStrictTags(cloudstackTestCase):
         self.updateConfiguration("resource.limit.host.tags", "h1,h2,t1,t2")
 
         vm = self.deploy_vm(self.host_h1.id, self.template_t1.id, self.service_offering_h1.id)
-        self._cleanup.append(vm)
+        self.cleanup.append(vm)
         self.assertEqual(self.host_h1.id, vm.hostid, "VM instance was not deployed on target host ID")
         vm.stop(self.apiclient)
         vm.scale(self.apiclient, serviceOfferingId=self.service_offering_h2.id)
@@ -252,7 +301,7 @@ class TestScaleVMStrictTags(cloudstackTestCase):
         self.updateConfiguration("resource.limit.host.tags", "h1,h2,t1,t2")
 
         vm = self.deploy_vm(self.host_h1.id, self.template_t1.id, self.service_offering_h1.id)
-        self._cleanup.append(vm)
+        self.cleanup.append(vm)
 
         self.assertEqual(self.host_h1.id, vm.hostid, "VM instance was not deployed on target host ID")
         try:
@@ -295,9 +344,6 @@ class TestRestoreVMStrictTags(cloudstackTestCase):
         hosts = Host.list(cls.apiclient, zoneid=cls.zone.id, type='Routing')
         cls.host_h1 = hosts[0] if len(hosts) >= 1 else None
 
-        if cls.host_h1:
-            Host.update(cls.apiclient, id=cls.host_h1.id, hosttags="h1,t1,v1")
-
         cls._cleanup = [cls.account, cls.service_offering_h1, cls.service_offering_h2, cls.template_t1, cls.template_t2]
 
     @classmethod
@@ -308,6 +354,34 @@ class TestRestoreVMStrictTags(cloudstackTestCase):
         cls.updateConfiguration("vm.strict.resource.limit.host.tag.check", "true")
         cls.updateConfiguration("resource.limit.host.tags", "")
         super(TestRestoreVMStrictTags, cls).tearDownClass()
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        if self.host_h1:
+            Host.update(self.apiclient, id=self.host_h1.id, hosttags="h1,t1,v1")
+        self.updateConfiguration("vm.strict.host.tags", "")
+        self.updateConfiguration("vm.strict.resource.limit.host.tag.check", "true")
+        self.updateConfiguration("resource.limit.host.tags", "")
+        self.cleanup = []
+
+    def tearDown(self):
+        self.cleanup_vm_for_template(self.template_t1.id)
+        self.cleanup_vm_for_template(self.template_t2.id)
+        super(TestRestoreVMStrictTags, self).tearDown()
+
+    def cleanup_vm_for_template(self, templateid):
+        vm_list = VirtualMachine.list(self.apiclient, listall=True, templateid=templateid)
+        if type(vm_list) is list:
+            for vm in vm_list:
+                self.expunge_vm(vm)
+
+    def expunge_vm(self, vm):
+        try:
+            cmd = expungeVirtualMachine.expungeVirtualMachineCmd()
+            cmd.id = vm.id
+            self.apiclient.expungeVirtualMachine(cmd)
+        except Exception as e:
+            self.debug("Failed to expunge VM: %s" % e)
 
     @classmethod
     def updateConfiguration(self, name, value):
@@ -328,7 +402,7 @@ class TestRestoreVMStrictTags(cloudstackTestCase):
         self.updateConfiguration("resource.limit.host.tags", "h1,h2")
 
         vm = self.deploy_vm(self.host_h1.id, self.template_t1.id, self.service_offering_h1.id)
-        self._cleanup.append(vm)
+        self.cleanup.append(vm)
         self.assertEqual(self.host_h1.id, vm.hostid, "VM instance was not deployed on target host ID")
 
         vm.restore(self.apiclient, templateid=self.template_t2.id, expunge=True)
@@ -342,7 +416,7 @@ class TestRestoreVMStrictTags(cloudstackTestCase):
         self.updateConfiguration("resource.limit.host.tags", "h1,h2,t1,t2")
 
         vm = self.deploy_vm(self.host_h1.id, self.template_t1.id, self.service_offering_h1.id)
-        self._cleanup.append(vm)
+        self.cleanup.append(vm)
 
         self.assertEqual(self.host_h1.id, vm.hostid, "VM instance was not deployed on target host ID")
         try:
@@ -350,6 +424,7 @@ class TestRestoreVMStrictTags(cloudstackTestCase):
             self.fail("VM should not be restored")
         except Exception as e:
             self.assertTrue("No suitable host found for vm " in str(e))
+
 
 class TestMigrateVMStrictTags(cloudstackTestCase):
     @classmethod
@@ -374,9 +449,6 @@ class TestMigrateVMStrictTags(cloudstackTestCase):
                 if host.clusterid == cls.host_h1.clusterid:
                     cls.host_h2 = host
                     break
-
-        if cls.host_h1:
-            Host.update(cls.apiclient, id=cls.host_h1.id, hosttags="h1,t1,v1")
 
         if not cls.host_h2:
             cls.skipTest("There are not enough hosts to run this test")
@@ -407,6 +479,34 @@ class TestMigrateVMStrictTags(cloudstackTestCase):
         cls.updateConfiguration("resource.limit.host.tags", "")
         super(TestMigrateVMStrictTags, cls).tearDownClass()
 
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        if self.host_h1:
+            Host.update(self.apiclient, id=self.host_h1.id, hosttags="h1,t1,v1")
+        self.updateConfiguration("vm.strict.host.tags", "")
+        self.updateConfiguration("vm.strict.resource.limit.host.tag.check", "true")
+        self.updateConfiguration("resource.limit.host.tags", "")
+        self.cleanup = []
+
+    def tearDown(self):
+        self.cleanup_vm_for_template(self.template_t1.id)
+        self.cleanup_vm_for_template(self.template_t2.id)
+        super(TestMigrateVMStrictTags, self).tearDown()
+
+    def cleanup_vm_for_template(self, templateid):
+        vm_list = VirtualMachine.list(self.apiclient, listall=True, templateid=templateid)
+        if type(vm_list) is list:
+            for vm in vm_list:
+                self.expunge_vm(vm)
+
+    def expunge_vm(self, vm):
+        try:
+            cmd = expungeVirtualMachine.expungeVirtualMachineCmd()
+            cmd.id = vm.id
+            self.apiclient.expungeVirtualMachine(cmd)
+        except Exception as e:
+            self.debug("Failed to expunge VM: %s" % e)
+
     @classmethod
     def updateConfiguration(self, name, value):
         cmd = updateConfiguration.updateConfigurationCmd()
@@ -426,7 +526,7 @@ class TestMigrateVMStrictTags(cloudstackTestCase):
         self.updateConfiguration("resource.limit.host.tags", "h1,h2,t1,t2")
 
         vm = self.deploy_vm(self.host_h1.id, self.template_t1.id, self.service_offering_h1.id)
-        self._cleanup.append(vm)
+        self.cleanup.append(vm)
         self.assertEqual(self.host_h1.id, vm.hostid, "VM instance was not deployed on target host ID")
         Host.update(self.apiclient, id=self.host_h2.id, hosttags="h1,t1,v1")
         vm.migrate(self.apiclient, self.host_h2.id)
@@ -440,7 +540,7 @@ class TestMigrateVMStrictTags(cloudstackTestCase):
         self.updateConfiguration("resource.limit.host.tags", "h1,h2,t1,t2")
 
         vm = self.deploy_vm(self.host_h1.id, self.template_t1.id, self.service_offering_h1.id)
-        self._cleanup.append(vm)
+        self.cleanup.append(vm)
 
         self.assertEqual(self.host_h1.id, vm.hostid, "VM instance was not deployed on target host ID")
         Host.update(self.apiclient, id=self.host_h2.id, hosttags="h2,t2,v2")
