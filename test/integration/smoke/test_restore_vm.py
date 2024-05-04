@@ -43,17 +43,19 @@ class TestRestoreVM(cloudstackTestCase):
 
         cls.service_offering = ServiceOffering.create(cls.apiclient, cls.services["service_offering"])
 
-        cls.template_t1 = Template.register(cls.apiclient, cls.services["test_templates"][
+        template_t1 = Template.register(cls.apiclient, cls.services["test_templates"][
             cls.hypervisor.lower() if cls.hypervisor.lower() != 'simulator' else 'xenserver'],
                                             zoneid=cls.zone.id, hypervisor=cls.hypervisor.lower())
-        cls.template_t1.download(cls.apiclient)
+        template_t1.download(cls.apiclient)
+        cls.template_t1 = Template.list(cls.apiclient, templatefilter='all', id=template_t1.id)[0]
 
-        cls.template_t2 = Template.register(cls.apiclient, cls.services["test_templates"][
+        template_t2 = Template.register(cls.apiclient, cls.services["test_templates"][
             cls.hypervisor.lower() if cls.hypervisor.lower() != 'simulator' else 'xenserver'],
                                             zoneid=cls.zone.id, hypervisor=cls.hypervisor.lower())
-        cls.template_t2.download(cls.apiclient)
+        template_t2.download(cls.apiclient)
+        cls.template_t2 = Template.list(cls.apiclient, templatefilter='all', id=template_t2.id)[0]
 
-        cls._cleanup = [cls.service_offering, cls.template_t1, cls.template_t2]
+        cls._cleanup = [cls.service_offering, template_t1, template_t2]
 
     @classmethod
     def tearDownClass(cls):
