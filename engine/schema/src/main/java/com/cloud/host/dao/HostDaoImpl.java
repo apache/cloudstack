@@ -122,6 +122,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected SearchBuilder<HostVO> UnmanagedApplianceSearch;
     protected SearchBuilder<HostVO> MaintenanceCountSearch;
     protected SearchBuilder<HostVO> HostTypeCountSearch;
+    protected SearchBuilder<HostVO> HostTypeClusterCountSearch;
     protected SearchBuilder<HostVO> ResponsibleMsCountSearch;
     protected SearchBuilder<HostVO> HostTypeZoneCountSearch;
     protected SearchBuilder<HostVO> ClusterStatusSearch;
@@ -186,6 +187,13 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         ResponsibleMsCountSearch = createSearchBuilder();
         ResponsibleMsCountSearch.and("managementServerId", ResponsibleMsCountSearch.entity().getManagementServerId(), SearchCriteria.Op.EQ);
         ResponsibleMsCountSearch.done();
+
+        HostTypeClusterCountSearch = createSearchBuilder();
+        HostTypeClusterCountSearch.and("cluster", HostTypeClusterCountSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
+        HostTypeClusterCountSearch.and("type", HostTypeClusterCountSearch.entity().getType(), SearchCriteria.Op.EQ);
+        HostTypeClusterCountSearch.and("status", HostTypeClusterCountSearch.entity().getStatus(), SearchCriteria.Op.IN);
+        HostTypeClusterCountSearch.and("removed", HostTypeClusterCountSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
+        HostTypeClusterCountSearch.done();
 
         HostTypeZoneCountSearch = createSearchBuilder();
         HostTypeZoneCountSearch.and("type", HostTypeZoneCountSearch.entity().getType(), SearchCriteria.Op.EQ);
@@ -462,14 +470,28 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         sc.setParameters("resourceState", (Object[])states);
         sc.setParameters("cluster", clusterId);
 
-        List<HostVO> hosts = listBy(sc);
-        return hosts.size();
+        return getCount(sc);
     }
 
     @Override
     public Integer countAllByType(final Host.Type type) {
         SearchCriteria<HostVO> sc = HostTypeCountSearch.create();
         sc.setParameters("type", type);
+        return getCount(sc);
+    }
+
+    @Override
+    public Integer countAllInClusterByTypeAndStates(Long clusterId, final Host.Type type, List<Status> status) {
+        SearchCriteria<HostVO> sc = HostTypeClusterCountSearch.create();
+        if (clusterId != null) {
+            sc.setParameters("cluster", clusterId);
+        }
+        if (type != null) {
+            sc.setParameters("type", type);
+        }
+        if (status != null) {
+            sc.setParameters("status", status.toArray());
+        }
         return getCount(sc);
     }
 

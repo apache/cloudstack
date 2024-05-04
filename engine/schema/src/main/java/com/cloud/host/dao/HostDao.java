@@ -39,6 +39,8 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     Integer countAllByType(final Host.Type type);
 
+    Integer countAllInClusterByTypeAndStates(Long clusterId, final Host.Type type, List<Status> status);
+
     Integer countAllByTypeInZone(long zoneId, final Host.Type type);
 
     Integer countUpAndEnabledHostsInZone(long zoneId);

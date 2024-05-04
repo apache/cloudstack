@@ -22,6 +22,7 @@ import com.cloud.dc.ClusterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Grouping;
+import com.cloud.org.Managed;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
@@ -94,6 +95,8 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
 
         ZoneClusterSearch = createSearchBuilder();
         ZoneClusterSearch.and("dataCenterId", ZoneClusterSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        ZoneClusterSearch.and("allocationState", ZoneClusterSearch.entity().getAllocationState(), Op.EQ);
+        ZoneClusterSearch.and("managedState", ZoneClusterSearch.entity().getManagedState(), Op.EQ);
         ZoneClusterSearch.done();
 
         ClusterIdSearch = createSearchBuilder(Long.class);
@@ -250,6 +253,23 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
         sc.setJoinParameters("disabledPodIdSearch", "allocationState", Grouping.AllocationState.Disabled);
 
         return customSearch(sc, null);
+    }
+
+    @Override
+    public Integer countAllByDcId(long zoneId) {
+        SearchCriteria<ClusterVO> sc = ZoneClusterSearch.create();
+        sc.setParameters("dataCenterId", zoneId);
+        return getCount(sc);
+    }
+
+    @Override
+    public Integer countAllManagedAndEnabledByDcId(long zoneId) {
+        SearchCriteria<ClusterVO> sc = ZoneClusterSearch.create();
+        sc.setParameters("dataCenterId", zoneId);
+        sc.setParameters("allocationState", Grouping.AllocationState.Enabled);
+        sc.setParameters("managedState", Managed.ManagedState.Managed);
+
+        return getCount(sc);
     }
 
     @Override
