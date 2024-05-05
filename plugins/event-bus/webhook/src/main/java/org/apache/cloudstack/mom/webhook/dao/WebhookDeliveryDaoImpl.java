@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.mom.webhook.dao;
 
+import java.util.Date;
 import java.util.List;
 
 import org.apache.cloudstack.mom.webhook.vo.WebhookDeliveryVO;
@@ -28,12 +29,14 @@ import com.cloud.utils.db.SearchCriteria;
 
 public class WebhookDeliveryDaoImpl extends GenericDaoBase<WebhookDeliveryVO, Long> implements WebhookDeliveryDao {
     @Override
-    public int deleteByIdWebhookManagementServer(Long id, Long webhookId, Long managementServerId) {
+    public int deleteByDeleteApiParams(Long id, Long webhookId, Long managementServerId, Date startDate,
+           Date endDate) {
         SearchBuilder<WebhookDeliveryVO> sb = createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("webhookId", sb.entity().getWebhookId(), SearchCriteria.Op.EQ);
         sb.and("managementServerId", sb.entity().getManagementServerId(), SearchCriteria.Op.EQ);
-        sb.and("keyword", sb.entity().getPayload(), SearchCriteria.Op.LIKE);
+        sb.and("startDate", sb.entity().getStartTime(), SearchCriteria.Op.GTEQ);
+        sb.and("endDate", sb.entity().getEndTime(), SearchCriteria.Op.LTEQ);
         SearchCriteria<WebhookDeliveryVO> sc = sb.create();
         if (id != null) {
             sc.setParameters("id", id);
@@ -43,6 +46,12 @@ public class WebhookDeliveryDaoImpl extends GenericDaoBase<WebhookDeliveryVO, Lo
         }
         if (managementServerId != null) {
             sc.setParameters("managementServerId", managementServerId);
+        }
+        if (startDate != null) {
+            sc.setParameters("startDate", startDate);
+        }
+        if (endDate != null) {
+            sc.setParameters("endDate", endDate);
         }
         return remove(sc);
     }

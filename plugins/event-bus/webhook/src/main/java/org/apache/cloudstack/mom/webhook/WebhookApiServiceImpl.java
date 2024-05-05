@@ -495,10 +495,12 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
         final Long id = cmd.getId();
         final Long webhookId = cmd.getWebhookId();
         final Long managementServerId = cmd.getManagementServerId();
+        final Date startDate = cmd.getStartDate();
+        final Date endDate = cmd.getEndDate();
         ManagementServerHostVO host = basicWebhookDeliveryApiCheck(caller, id, webhookId, managementServerId,
-                null, null);
-        int removed = webhookDeliveryDao.deleteByIdWebhookManagementServer(id, webhookId,
-                host != null ? host.getMsid() : null);
+                startDate, endDate);
+        int removed = webhookDeliveryDao.deleteByDeleteApiParams(id, webhookId,
+                (host != null ? host.getMsid() : null), startDate, endDate);
         return removed > 0;
     }
 

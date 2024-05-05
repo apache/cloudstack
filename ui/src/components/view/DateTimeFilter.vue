@@ -22,12 +22,12 @@
     :model="form"
     @finish="handleSubmit"
     layout="vertical">
-    <div v-show="!(!showStartDate || !showEndDate) || (!showStartDate && !showEndDate)">
+    <div v-show="showAllDataOption && (!(!showStartDate || !showEndDate) || (!showStartDate && !showEndDate))">
       <a-form-item :label="$t('label.all.available.data')" ref="allData" name="allData">
         <a-switch v-model:checked="allDataIsChecked" @change="onToggleAllData"/>
       </a-form-item>
       <div v-show="showAllDataAlert">
-        <a-alert :message="$t('message.alert.show.all.stats.data')" banner />
+        <a-alert :message="allDataMessage" banner />
       </div>
     </div>
     <div v-show="showStartDate">
@@ -64,7 +64,7 @@ import { ref, reactive, toRaw } from 'vue'
 import moment from 'moment'
 
 export default {
-  name: 'FilterStats',
+  name: 'DateTimeFilter',
   emits: ['closeAction', 'onSubmit'],
   props: {
     startDateProp: {
@@ -74,6 +74,14 @@ export default {
     endDateProp: {
       type: [Date, String, Number],
       required: false
+    },
+    showAllDataOption: {
+      type: Boolean,
+      default: true
+    },
+    allDataMessage: {
+      type: String,
+      value: ''
     }
   },
   computed: {

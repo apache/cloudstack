@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.mom.webhook.api.command.user;
 
+import java.util.Date;
+
 import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -66,6 +68,20 @@ public class DeleteWebhookDeliveryCmd extends BaseCmd {
             authorized = {RoleType.Admin})
     private Long managementServerId;
 
+    @Parameter(name = ApiConstants.START_DATE,
+            type = CommandType.DATE,
+            description = "The start date range for the Webhook delivery " +
+                    "(use format \"yyyy-MM-dd\" or \"yyyy-MM-dd HH:mm:ss\"). " +
+                    "All deliveries having start date equal to or after the specified date will be considered.")
+    private Date startDate;
+
+    @Parameter(name = ApiConstants.END_DATE,
+            type = CommandType.DATE,
+            description = "The end date range for the Webhook delivery " +
+                    "(use format \"yyyy-MM-dd\" or \"yyyy-MM-dd HH:mm:ss\"). " +
+                    "All deliveries having end date equal to or before the specified date will be considered.")
+    private Date endDate;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -79,6 +95,14 @@ public class DeleteWebhookDeliveryCmd extends BaseCmd {
 
     public Long getManagementServerId() {
         return managementServerId;
+    }
+
+    public Date getStartDate() {
+        return startDate;
+    }
+
+    public Date getEndDate() {
+        return endDate;
     }
 
     @Override

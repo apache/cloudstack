@@ -70,13 +70,15 @@ public class ListWebhookDeliveriesCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.START_DATE,
             type = CommandType.DATE,
             description = "The start date range for the Webhook delivery " +
-                    "(use format \"yyyy-MM-dd\" or \"yyyy-MM-dd HH:mm:ss\")")
+                    "(use format \"yyyy-MM-dd\" or \"yyyy-MM-dd HH:mm:ss\"). " +
+                    "All deliveries having start date equal to or after the specified date will be listed.")
     private Date startDate;
 
     @Parameter(name = ApiConstants.END_DATE,
             type = CommandType.DATE,
             description = "The end date range for the Webhook delivery " +
-                    "(use format \"yyyy-MM-dd\" or \"yyyy-MM-dd HH:mm:ss\")")
+                    "(use format \"yyyy-MM-dd\" or \"yyyy-MM-dd HH:mm:ss\"). " +
+                    "All deliveries having end date equal to or before the specified date will be listed.")
     private Date endDate;
 
     @Parameter(name = ApiConstants.EVENT_TYPE,

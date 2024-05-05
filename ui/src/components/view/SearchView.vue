@@ -85,6 +85,9 @@
                           </span>
                           <block-outlined v-else style="margin-right: 5px" />
                         </span>
+                        <span v-if="(field.name.startsWith('managementserver'))">
+                          <status :text="opt.state" />
+                        </span>
                         {{ $t(opt.path || opt.name) }}
                       </div>
                     </a-select-option>
@@ -157,12 +160,14 @@ import { api } from '@/api'
 import { isAdmin } from '@/role'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
+import Status from '@/components/widgets/Status'
 
 export default {
   name: 'SearchView',
   components: {
     TooltipButton,
-    ResourceIcon
+    ResourceIcon,
+    Status
   },
   props: {
     searchFilters: {
@@ -207,13 +212,7 @@ export default {
       if (to && to.query && 'q' in to.query) {
         this.searchQuery = to.query.q
       }
-      this.isFiltered = false
-      this.searchFilters.some(item => {
-        if (this.searchParams[item]) {
-          this.isFiltered = true
-          return true
-        }
-      })
+      this.updateIsFiltered()
     }
   },
   mounted () {
@@ -221,6 +220,7 @@ export default {
     if (this.$route && this.$route.query && 'q' in this.$route.query) {
       this.searchQuery = this.$route.query.q
     }
+    this.updateIsFiltered()
   },
   computed: {
     styleSearch () {
@@ -281,7 +281,7 @@ export default {
         if (item === 'groupid' && !('listInstanceGroups' in this.$store.getters.apis)) {
           return true
         }
-        if (['zoneid', 'domainid', 'imagestoreid', 'storageid', 'state', 'level', 'clusterid', 'podid', 'groupid', 'entitytype', 'type', 'scope'].includes(item)) {
+        if (['zoneid', 'domainid', 'imagestoreid', 'storageid', 'state', 'level', 'clusterid', 'podid', 'groupid', 'entitytype', 'type', 'scope', 'managementserverid'].includes(item)) {
           type = 'list'
         } else if (item === 'tags') {
           type = 'tag'
@@ -364,6 +364,7 @@ export default {
       let podIndex = -1
       let clusterIndex = -1
       let groupIndex = -1
+      let managementServerIdIndex = -1
 
       if (arrayField.includes('type')) {
         if (this.$route.path === '/alert') {
@@ -415,6 +416,12 @@ export default {
         promises.push(await this.fetchInstanceGroups(searchKeyword))
       }
 
+      if (arrayField.includes('managementserverid')) {
+        managementServerIdIndex = this.fields.findIndex(item => item.name === 'managementserverid')
+        this.fields[managementServerIdIndex].loading = true
+        promises.push(await this.fetchManagementServers(searchKeyword))
+      }
+
       Promise.all(promises).then(response => {
         if (typeIndex > -1) {
           const types = response.filter(item => item.type === 'type')
@@ -464,6 +471,12 @@ export default {
             this.fields[groupIndex].opts = this.sortArray(groups[0].data)
           }
         }
+        if (managementServerIdIndex > -1) {
+          const managementServers = response.filter(item => item.type === 'managementserverid')
+          if (managementServers && managementServers.length > 0) {
+            this.fields[managementServerIdIndex].opts = this.sortArray(managementServers[0].data)
+          }
+        }
       }).finally(() => {
         if (typeIndex > -1) {
           this.fields[typeIndex].loading = false
@@ -488,6 +501,9 @@ export default {
         }
         if (groupIndex > -1) {
           this.fields[groupIndex].loading = false
+        }
+        if (managementServerIdIndex > -1) {
+          this.fields[managementServerIdIndex].loading = false
         }
         this.fillFormFieldValues()
       })
@@ -634,6 +650,19 @@ export default {
           })
         })
       }
+    },
+    fetchManagementServers (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        api('listManagementServers', { listAll: true, keyword: searchKeyword }).then(json => {
+          const managementservers = json.listmanagementserversresponse.managementserver
+          resolve({
+            type: 'managementserverid',
+            data: managementservers
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
     },
     fetchGuestNetworkTypes () {
       const types = []
@@ -809,6 +838,13 @@ export default {
     },
     changeFilter (filter) {
       this.$emit('change-filter', filter)
+    },
+    updateIsFiltered () {
+      this.isFiltered = this.searchFilters.some(item => {
+        if (this.searchParams[item]) {
+          return true
+        }
+      })
     }
   }
 }
