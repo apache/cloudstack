@@ -489,7 +489,7 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
     }
 
     @Override
-    public boolean deleteWebhookDelivery(DeleteWebhookDeliveryCmd cmd) throws CloudRuntimeException {
+    public int deleteWebhookDelivery(DeleteWebhookDeliveryCmd cmd) throws CloudRuntimeException {
         final CallContext ctx = CallContext.current();
         final Account caller = ctx.getCallingAccount();
         final Long id = cmd.getId();
@@ -501,7 +501,8 @@ public class WebhookApiServiceImpl extends ManagerBase implements WebhookApiServ
                 startDate, endDate);
         int removed = webhookDeliveryDao.deleteByDeleteApiParams(id, webhookId,
                 (host != null ? host.getMsid() : null), startDate, endDate);
-        return removed > 0;
+        logger.info("{} webhook deliveries removed", removed);
+        return removed;
     }
 
     @Override

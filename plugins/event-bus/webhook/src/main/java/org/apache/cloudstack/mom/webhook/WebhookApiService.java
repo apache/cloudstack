@@ -39,6 +39,6 @@ public interface WebhookApiService extends PluggableService {
     WebhookResponse updateWebhook(UpdateWebhookCmd cmd) throws CloudRuntimeException;
     WebhookResponse createWebhookResponse(long webhookId);
     ListResponse<WebhookDeliveryResponse> listWebhookDeliveries(ListWebhookDeliveriesCmd cmd);
-    boolean deleteWebhookDelivery(DeleteWebhookDeliveryCmd cmd) throws CloudRuntimeException;
+    int deleteWebhookDelivery(DeleteWebhookDeliveryCmd cmd) throws CloudRuntimeException;
     WebhookDeliveryResponse executeWebhookDelivery(ExecuteWebhookDeliveryCmd cmd) throws CloudRuntimeException;
 }

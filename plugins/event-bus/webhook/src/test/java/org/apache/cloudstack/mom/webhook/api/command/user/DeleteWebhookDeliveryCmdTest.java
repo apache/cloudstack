@@ -90,14 +90,6 @@ public class DeleteWebhookDeliveryCmdTest {
     }
 
     @Test(expected = ServerApiException.class)
-    public void testExecuteFalseResponse() {
-        DeleteWebhookDeliveryCmd cmd = new DeleteWebhookDeliveryCmd();
-        cmd.webhookApiService = webhookApiService;
-        Mockito.when(webhookApiService.deleteWebhookDelivery(cmd)).thenReturn(false);
-        cmd.execute();
-    }
-
-    @Test(expected = ServerApiException.class)
     public void testExecuteCRE() {
         DeleteWebhookDeliveryCmd cmd = new DeleteWebhookDeliveryCmd();
         cmd.webhookApiService = webhookApiService;
@@ -109,7 +101,7 @@ public class DeleteWebhookDeliveryCmdTest {
     public void testExecute() {
         DeleteWebhookDeliveryCmd cmd = new DeleteWebhookDeliveryCmd();
         cmd.webhookApiService = webhookApiService;
-        Mockito.when(webhookApiService.deleteWebhookDelivery(cmd)).thenReturn(true);
+        Mockito.when(webhookApiService.deleteWebhookDelivery(cmd)).thenReturn(10);
         cmd.execute();
         Assert.assertNotNull(cmd.getResponseObject());
     }

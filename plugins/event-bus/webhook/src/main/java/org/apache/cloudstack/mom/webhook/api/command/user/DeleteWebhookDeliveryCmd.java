@@ -116,9 +116,7 @@ public class DeleteWebhookDeliveryCmd extends BaseCmd {
     @Override
     public void execute() throws ServerApiException {
         try {
-            if (!webhookApiService.deleteWebhookDelivery(this)) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete webhook delivery");
-            }
+            webhookApiService.deleteWebhookDelivery(this);
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
         } catch (CloudRuntimeException ex) {
