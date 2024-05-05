@@ -157,8 +157,9 @@ public class SecurityGroupListener implements Listener {
 
     @Override
     public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) {
-        if (s_logger.isInfoEnabled())
-            s_logger.info("Received a host startup notification");
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("Received a host startup notification");
+        }
 
         if (cmd instanceof StartupRoutingCommand) {
             //if (Boolean.toString(true).equals(host.getDetail("can_bridge_firewall"))) {
@@ -167,8 +168,9 @@ public class SecurityGroupListener implements Listener {
                 CleanupNetworkRulesCmd cleanupCmd = new CleanupNetworkRulesCmd(interval);
                 Commands c = new Commands(cleanupCmd);
                 _agentMgr.send(host.getId(), c, this);
-                if (s_logger.isInfoEnabled())
-                    s_logger.info("Scheduled network rules cleanup, interval=" + cleanupCmd.getInterval());
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace("Scheduled network rules cleanup, interval=" + cleanupCmd.getInterval());
+                }
             } catch (AgentUnavailableException e) {
                 //usually hypervisors that do not understand sec group rules.
                 s_logger.debug("Unable to schedule network rules cleanup for host " + host.getId(), e);
