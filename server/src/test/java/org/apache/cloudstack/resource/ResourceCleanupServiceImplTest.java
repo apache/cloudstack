@@ -65,6 +65,7 @@ import com.cloud.vm.ItWorkDao;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.ConsoleSessionDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicDetailsDao;
 import com.cloud.vm.dao.NicExtraDhcpOptionDao;
@@ -128,6 +129,8 @@ public class ResourceCleanupServiceImplTest {
     IPAddressDao ipAddressDao;
     @Mock
     VmWorkJobDao vmWorkJobDao;
+    @Mock
+    ConsoleSessionDao consoleSessionDao;
     @Mock
     ServiceOfferingDetailsDao serviceOfferingDetailsDao;
 
@@ -313,6 +316,7 @@ public class ResourceCleanupServiceImplTest {
         Mockito.when(portForwardingRulesDao.expungeByVmList(Mockito.anyList(), Mockito.anyLong())).thenReturn(2);
         Mockito.when(ipAddressDao.expungeByVmList(Mockito.anyList(), Mockito.anyLong())).thenReturn(2);
         Mockito.when(vmWorkJobDao.expungeByVmList(Mockito.anyList(), Mockito.anyLong())).thenReturn(2);
+        Mockito.when(consoleSessionDao.expungeByVmList(Mockito.anyList(), Mockito.anyLong())).thenReturn(2);
 
         resourceCleanupService.purgeLinkedVMEntities(ids, batchSize);
 
@@ -335,6 +339,7 @@ public class ResourceCleanupServiceImplTest {
         Mockito.verify(portForwardingRulesDao, Mockito.times(1)).expungeByVmList(ids, batchSize);
         Mockito.verify(ipAddressDao, Mockito.times(1)).expungeByVmList(ids, batchSize);
         Mockito.verify(vmWorkJobDao, Mockito.times(1)).expungeByVmList(ids, batchSize);
+        Mockito.verify(consoleSessionDao, Mockito.times(1)).expungeByVmList(ids, batchSize);
     }
 
     @Test
