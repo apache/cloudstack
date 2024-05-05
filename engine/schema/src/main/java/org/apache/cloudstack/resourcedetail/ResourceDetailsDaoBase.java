@@ -22,9 +22,7 @@ import java.util.Map;
 
 import org.apache.cloudstack.api.ResourceDetail;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.ObjectUtils;
 
-import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
@@ -215,14 +213,6 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
         sb.done();
         SearchCriteria<R> sc = sb.create();
         sc.setParameters("ids", ids.toArray());
-        int removed = 0;
-        long totalRemoved = 0;
-        Filter filter = new Filter(_entityBeanType, "id", true, null, batchSize);
-        final long batchSizeFinal = ObjectUtils.defaultIfNull(batchSize, 0L);
-        do {
-            removed = expunge(sc, filter);
-            totalRemoved += removed;
-        } while (batchSizeFinal > 0 && removed >= batchSizeFinal);
-        return totalRemoved;
+        return batchExpunge(sc, batchSize);
     }
 }

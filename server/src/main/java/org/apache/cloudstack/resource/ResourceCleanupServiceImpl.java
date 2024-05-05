@@ -88,6 +88,7 @@ import com.cloud.vm.ItWorkDao;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.ConsoleSessionDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicDetailsDao;
 import com.cloud.vm.dao.NicExtraDhcpOptionDao;
@@ -152,6 +153,8 @@ public class ResourceCleanupServiceImpl extends ManagerBase implements ResourceC
     @Inject
     VmWorkJobDao vmWorkJobDao;
     @Inject
+    ConsoleSessionDao consoleSessionDao;
+    @Inject
     ManagementServerHostDao managementServerHostDao;
     @Inject
     ServiceOfferingDetailsDao serviceOfferingDetailsDao;
@@ -179,7 +182,7 @@ public class ResourceCleanupServiceImpl extends ManagerBase implements ResourceC
         sc.setParameters("volumeIds", volumeIds.toArray());
         int removed = 0;
         long totalRemoved = 0;
-        Filter filter = new Filter(SnapshotVO.class, "id", true, null, batchSize);
+        Filter filter = new Filter(SnapshotVO.class, "id", true, 0L, batchSize);
         final long batchSizeFinal = ObjectUtils.defaultIfNull(batchSize, 0L);
         do {
             List<SnapshotVO> snapshots = snapshotDao.searchIncludingRemoved(sc, filter, null, false);
@@ -279,6 +282,7 @@ public class ResourceCleanupServiceImpl extends ManagerBase implements ResourceC
         portForwardingRulesDao.expungeByVmList(vmIds, batchSize);
         ipAddressDao.expungeByVmList(vmIds, batchSize);
         vmWorkJobDao.expungeByVmList(vmIds, batchSize);
+        consoleSessionDao.expungeByVmList(vmIds, batchSize);
     }
 
     protected HashSet<Long> getVmIdsWithActiveVolumeSnapshots(List<Long> vmIds) {

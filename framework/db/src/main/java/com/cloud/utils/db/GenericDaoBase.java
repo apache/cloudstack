@@ -1285,7 +1285,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         do {
             currentExpunged = expunge(sc, filter);
             expunged += currentExpunged;
-        } while (batchSizeFinal > 0 && expunged >= batchSizeFinal);
+        } while (batchSizeFinal > 0 && currentExpunged >= batchSizeFinal);
         return expunged;
     }
 

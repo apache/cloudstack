@@ -1037,7 +1037,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         if (CollectionUtils.isNotEmpty(skippedVmIds)) {
             sc.setParameters("skippedVmIds", skippedVmIds.toArray());
         }
-        Filter filter = new Filter(VMInstanceVO.class, "id", true, null, batchSize);
+        Filter filter = new Filter(VMInstanceVO.class, "id", true, 0L, batchSize);
         return searchIncludingRemoved(sc, filter, null, false);
     }
 }

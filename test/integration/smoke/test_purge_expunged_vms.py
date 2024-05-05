@@ -150,8 +150,7 @@ class TestPurgeExpungedVms(cloudstackTestCase):
             self.userapiclient,
             self.services["virtual_machine"],
             serviceofferingid=self.compute_offering.id,
-            networkids=self.l2_network.id,
-            mode=self.services["mode"]
+            networkids=self.l2_network.id
         )
         self.cleanup.append(vm)
         vm_id = vm.id
@@ -253,7 +252,6 @@ class TestPurgeExpungedVms(cloudstackTestCase):
             return False
 
     def getManagementServerIps(self):
-        print(self.mgtSvrDetails)
         if self.mgtSvrDetails["mgtSvrIp"] == 'localhost':
             return None
         cmd = listManagementServers.listManagementServersCmd()
@@ -334,8 +332,7 @@ class TestPurgeExpungedVms(cloudstackTestCase):
             self.userapiclient,
             self.services["virtual_machine"],
             serviceofferingid=self.purge_resource_compute_offering.id,
-            networkids=self.l2_network.id,
-            mode=self.services["mode"]
+            networkids=self.l2_network.id
         )
         self.cleanup.append(vm)
         vm_id = vm.id

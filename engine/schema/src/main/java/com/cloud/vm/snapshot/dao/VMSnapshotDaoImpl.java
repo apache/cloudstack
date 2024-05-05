@@ -204,7 +204,7 @@ public class VMSnapshotDaoImpl extends GenericDaoBase<VMSnapshotVO, Long> implem
         sb.and("removed", sb.entity().getRemoved(), SearchCriteria.Op.NNULL);
         SearchCriteria<VMSnapshotVO> sc = sb.create();
         sc.setParameters("vmIds", vmIds.toArray());
-        Filter filter = new Filter(VMSnapshotVO.class, "id", true, null, batchSize);
+        Filter filter = new Filter(VMSnapshotVO.class, "id", true, 0L, batchSize);
         return searchIncludingRemoved(sc, filter, null, false);
     }
 }

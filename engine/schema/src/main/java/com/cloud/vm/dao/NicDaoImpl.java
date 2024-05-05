@@ -436,7 +436,7 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         sb.and("removed", sb.entity().getRemoved(), SearchCriteria.Op.NNULL);
         SearchCriteria<NicVO> sc = sb.create();
         sc.setParameters("vmIds", vmIds.toArray());
-        Filter filter = new Filter(NicVO.class, "id", true, null, batchSize);
+        Filter filter = new Filter(NicVO.class, "id", true, 0L, batchSize);
         return searchIncludingRemoved(sc, filter, null, false);
     }
 }
