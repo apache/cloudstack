@@ -1786,6 +1786,7 @@
 "label.restore.volume.attach": "Restore volume and attach",
 "label.review": "Review",
 "label.role": "Role",
+"label.roleid": "Role",
 "label.rolename": "Role",
 "label.roles": "Roles",
 "label.roletype": "Role Type",

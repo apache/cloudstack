@@ -42,6 +42,12 @@
             :placeholder="apiParams.displaytext.description"
             autoFocus />
         </a-form-item>
+        <a-form-item name="passwordenabled" ref="passwordenabled">
+          <template #label>
+            <tooltip-label :title="$t('label.passwordenabled')" :tooltip="apiParams.passwordenabled.description"/>
+          </template>
+          <a-switch v-model:checked="form.passwordenabled" />
+        </a-form-item>
 
         <a-form-item name="ostypeid" ref="ostypeid" :label="$t('label.ostypeid')">
           <a-select
@@ -162,7 +168,7 @@ export default {
         displaytext: [{ required: true, message: this.$t('message.error.required.input') }],
         ostypeid: [{ required: true, message: this.$t('message.error.select') }]
       })
-      const resourceFields = ['name', 'displaytext', 'ostypeid', 'userdataid', 'userdatapolicy']
+      const resourceFields = ['name', 'displaytext', 'passwordenabled', 'ostypeid', 'userdataid', 'userdatapolicy']
 
       for (var field of resourceFields) {
         var fieldValue = this.resource[field]

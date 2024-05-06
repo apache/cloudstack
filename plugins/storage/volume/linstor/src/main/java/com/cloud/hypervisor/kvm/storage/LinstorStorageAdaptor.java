@@ -321,7 +321,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
                     null,
                     null);
 
-            optRsc = getResourceByPath(resources, volumePath);
+            optRsc = getResourceByPathOrName(resources, volumePath);
         } catch (ApiException apiEx) {
             // couldn't query linstor controller
             logger.error(apiEx.getBestMessage());
@@ -381,9 +381,10 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         return false;
     }
 
-    private Optional<ResourceWithVolumes> getResourceByPath(final List<ResourceWithVolumes> resources, String path) {
+    private Optional<ResourceWithVolumes> getResourceByPathOrName(
+            final List<ResourceWithVolumes> resources, String path) {
         return resources.stream()
-            .filter(rsc -> rsc.getVolumes().stream()
+            .filter(rsc -> getLinstorRscName(path).equalsIgnoreCase(rsc.getName()) || rsc.getVolumes().stream()
                 .anyMatch(v -> path.equals(v.getDevicePath())))
             .findFirst();
     }
