@@ -1244,15 +1244,20 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             throw new IllegalArgumentException("Unable to find storage pool with ID: " + id);
         }
 
+        ScopeType currentScope = primaryStorage.getScope();
+        if (currentScope.equals(newScope)) {
+            throw new InvalidParameterValueException("New scope must be different than the current scope");
+        }
+
+        if (currentScope != ScopeType.ZONE && currentScope != ScopeType.CLUSTER) {
+            throw new InvalidParameterValueException("This opearation is supported only for Primary storages having scope "
+                    + ScopeType.CLUSTER + " or " + ScopeType.ZONE);
+        }
+
         if (!primaryStorage.getStatus().equals(StoragePoolStatus.Disabled)) {
             throw new InvalidParameterValueException("Scope of the Primary storage with id "
                     + primaryStorage.getUuid() +
                     " cannot be changed, as it is not in the Disabled state");
-        }
-
-        ScopeType currentScope = primaryStorage.getScope();
-        if (currentScope.equals(newScope)) {
-            throw new InvalidParameterValueException("New scope must be different than the current scope");
         }
 
         Long zoneId = primaryStorage.getDataCenterId();

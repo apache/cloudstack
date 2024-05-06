@@ -141,6 +141,8 @@ export default {
       popup: true,
       show: (record) => {
         return (record.state === 'Disabled' &&
+          (record.scope === 'CLUSTER' ||
+           record.scope === 'ZONE') &&
           (record.hypervisor === 'KVM' ||
            record.hypervisor === 'VMware' ||
            record.hypervisor === 'HyperV' ||
