@@ -58,6 +58,7 @@ public class ScaleIOUtil {
     private static final String SDC_SERVICE_IS_ENABLED_CMD = "systemctl is-enabled scini";
     private static final String SDC_SERVICE_ENABLE_CMD = "systemctl enable scini";
 
+    public static final String CONNECTED_SDC_COUNT_STAT = "ConnectedSDCCount";
     /**
      * Cmd for querying volumes in SDC
      * Sample output for cmd: drv_cfg --query_vols:

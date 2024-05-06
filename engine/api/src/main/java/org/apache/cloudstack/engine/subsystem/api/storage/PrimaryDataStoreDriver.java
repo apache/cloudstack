@@ -18,6 +18,8 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
+import java.util.Map;
+
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
 
@@ -85,6 +87,22 @@ public interface PrimaryDataStoreDriver extends DataStoreDriver {
      * returns true if the storage can provide the stats (capacity and used bytes)
      */
     boolean canProvideStorageStats();
+
+    /**
+     * intended for managed storage
+     * returns true if the storage can provide its custom stats
+     */
+    default boolean poolProvidesCustomStorageStats() {
+        return false;
+    }
+
+    /**
+     * intended for managed storage
+     * returns the custom stats if the storage can provide them
+     */
+    default Map<String, String> getCustomStorageStats(StoragePool pool) {
+        return null;
+    }
 
     /**
      * intended for managed storage
