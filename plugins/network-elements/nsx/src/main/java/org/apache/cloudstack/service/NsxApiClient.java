@@ -18,6 +18,9 @@ package org.apache.cloudstack.service;
 
 import com.cloud.network.Network;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.vmware.nsx.cluster.Status;
+import com.vmware.nsx.model.ClusterStatus;
+import com.vmware.nsx.model.ControllerClusterStatus;
 import com.vmware.nsx.model.TransportZone;
 import com.vmware.nsx.model.TransportZoneListResult;
 import com.vmware.nsx_policy.infra.DhcpRelayConfigs;
@@ -113,6 +116,7 @@ public class NsxApiClient {
     protected Logger logger = LogManager.getLogger(getClass());
 
     // Constants
+    private static final String CLUSTER_STATUS_STABLE = "STABLE";
     private static final String TIER_1_RESOURCE_TYPE = "Tier1";
     private static final String TIER_1_LOCALE_SERVICE_ID = "default";
     private static final String SEGMENT_RESOURCE_TYPE = "Segment";
@@ -198,6 +202,26 @@ public class NsxApiClient {
         Configuration config = configBuilder.build();
         apiClient = ApiClients.newRestClient(controllerUrl, config);
         nsxService = apiClient::createStub;
+    }
+
+    public boolean isNsxControllerActive() {
+        try {
+            Status statusService = (Status) nsxService.apply(Status.class);
+            ClusterStatus clusterStatus = statusService.get();
+            if (clusterStatus == null) {
+                LOGGER.error("Cannot get NSX Cluster Status");
+                return false;
+            }
+            ControllerClusterStatus status = clusterStatus.getControlClusterStatus();
+            if (status == null) {
+                LOGGER.error("Cannot get NSX Controller Cluster Status");
+                return false;
+            }
+            return CLUSTER_STATUS_STABLE.equalsIgnoreCase(status.getStatus());
+        } catch (Error error) {
+            LOGGER.error(String.format("Error checking NSX Controller Health: %s", error.getMessage()));
+            return false;
+        }
     }
 
     public void createTier1NatRule(String tier1GatewayName, String natId, String natRuleId,

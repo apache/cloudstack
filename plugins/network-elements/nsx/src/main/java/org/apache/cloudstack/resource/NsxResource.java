@@ -18,6 +18,8 @@ package org.apache.cloudstack.resource;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.CheckHealthAnswer;
+import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.ReadyAnswer;
@@ -102,6 +104,8 @@ public class NsxResource implements ServerResource {
     public Answer executeRequest(Command cmd) {
         if (cmd instanceof ReadyCommand) {
             return executeRequest((ReadyCommand) cmd);
+        } else if (cmd instanceof CheckHealthCommand) {
+            return executeRequest((CheckHealthCommand) cmd);
         } else if (cmd instanceof DeleteNsxTier1GatewayCommand) {
             return executeRequest((DeleteNsxTier1GatewayCommand) cmd);
         } else if (cmd instanceof DeleteNsxSegmentCommand) {
@@ -291,6 +295,10 @@ public class NsxResource implements ServerResource {
 
     private Answer executeRequest(ReadyCommand cmd) {
         return new ReadyAnswer(cmd);
+    }
+
+    private Answer executeRequest(CheckHealthCommand cmd) {
+        return new CheckHealthAnswer(cmd, nsxApiClient.isNsxControllerActive());
     }
 
     private Answer executeRequest(CreateNsxTier1GatewayCommand cmd) {
