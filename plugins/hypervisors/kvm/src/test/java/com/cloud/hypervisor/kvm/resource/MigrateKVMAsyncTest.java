@@ -45,7 +45,7 @@ public class MigrateKVMAsyncTest {
     @Test
     public void createTypedParameterListTestNoMigrateDiskLabels() {
         MigrateKVMAsync migrateKVMAsync = new MigrateKVMAsync(libvirtComputingResource, domain, connect, "testxml",
-                false, false, false, "tst", "1.1.1.1", null);
+                false, false,  "tst", "1.1.1.1", null);
 
         Mockito.doReturn(10).when(libvirtComputingResource).getMigrateSpeed();
 
@@ -64,7 +64,7 @@ public class MigrateKVMAsyncTest {
     public void createTypedParameterListTestWithMigrateDiskLabels() {
         Set<String> labels = Set.of("vda", "vdb");
         MigrateKVMAsync migrateKVMAsync = new MigrateKVMAsync(libvirtComputingResource, domain, connect, "testxml",
-                false, false, false, "tst", "1.1.1.1", labels);
+                false, false, "tst", "1.1.1.1", labels);
 
         Mockito.doReturn(10).when(libvirtComputingResource).getMigrateSpeed();
 
