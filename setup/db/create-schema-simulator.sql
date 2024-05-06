@@ -64,7 +64,8 @@ CREATE TABLE `simulator`.`mockstoragepool` (
   `capacity` bigint,
   `pool_type` varchar(40),
   `hostguid` varchar(255) UNIQUE,
-  PRIMARY KEY  (`id`)
+  PRIMARY KEY  (`id`),
+  INDEX `i_mockstoragepool__guid`(`guid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 

@@ -431,3 +431,9 @@ ALTER TABLE `cloud`.`resource_reservation`
 
 ALTER TABLE `cloud`.`resource_reservation`
     MODIFY COLUMN `amount` bigint NOT NULL;
+
+-- Scalability and DB optimisations
+ALTER TABLE `cloud`.`host` ADD INDEX `i_host__type` (`type`);
+ALTER TABLE `cloud`.`host` ADD INDEX `i_host__resource_state` (`resource_state`);
+
+ALTER TABLE `cloud`.`storage_pool` ADD INDEX `i_storage_pool__pool_type` (`pool_type`);

@@ -827,8 +827,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             }
 
             boolean useLocalStorage = BooleanUtils.toBoolean(ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dataCenterId));
-            List<Pair<Long, Integer>> storagePoolHostInfos = _storagePoolHostDao.getDatacenterStoragePoolHostInfo(dataCenterId, !useLocalStorage);
-            if (CollectionUtils.isNotEmpty(storagePoolHostInfos) && storagePoolHostInfos.get(0).second() > 0) {
+            boolean hasStoragePoolHostInfo = _storagePoolHostDao.hasDatacenterStoragePoolHostInfo(dataCenterId, !useLocalStorage);
+            if (hasStoragePoolHostInfo) {
                 return true;
             } else {
                 if (s_logger.isDebugEnabled()) {

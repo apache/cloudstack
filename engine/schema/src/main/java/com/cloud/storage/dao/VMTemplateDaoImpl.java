@@ -356,6 +356,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         readySystemTemplateSearch.join("tmplHyper", hostHyperSearch2, hostHyperSearch2.entity().getHypervisorType(), readySystemTemplateSearch.entity()
             .getHypervisorType(), JoinBuilder.JoinType.INNER);
         hostHyperSearch2.done();
+        readySystemTemplateSearch.groupBy(readySystemTemplateSearch.entity().getId());
         readySystemTemplateSearch.done();
 
         tmpltTypeHyperSearch2 = createSearchBuilder();

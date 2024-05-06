@@ -889,8 +889,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
             if (templateHostRef != null) {
                 Boolean useLocalStorage = BooleanUtils.toBoolean(ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dataCenterId));
-                List<Pair<Long, Integer>> l = consoleProxyDao.getDatacenterStoragePoolHostInfo(dataCenterId, useLocalStorage);
-                if (CollectionUtils.isNotEmpty(l) && l.get(0).second() > 0) {
+                boolean hasDatacenterStoragePoolHostInfo = consoleProxyDao.hasDatacenterStoragePoolHostInfo(dataCenterId, !useLocalStorage);
+                if (hasDatacenterStoragePoolHostInfo) {
                     return true;
                 } else {
                     if (s_logger.isDebugEnabled()) {

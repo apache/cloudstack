@@ -20,7 +20,6 @@ import java.util.List;
 
 import com.cloud.host.Status;
 import com.cloud.storage.StoragePoolHostVO;
-import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 
 public interface StoragePoolHostDao extends GenericDao<StoragePoolHostVO, Long> {
@@ -34,7 +33,7 @@ public interface StoragePoolHostDao extends GenericDao<StoragePoolHostVO, Long> 
 
     List<Long> findHostsConnectedToPools(List<Long> poolIds);
 
-    List<Pair<Long, Integer>> getDatacenterStoragePoolHostInfo(long dcId, boolean sharedOnly);
+    boolean hasDatacenterStoragePoolHostInfo(long dcId, boolean sharedOnly);
 
     public void deletePrimaryRecordsForHost(long hostId);
 
