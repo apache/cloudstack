@@ -1213,7 +1213,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         Long id = primaryStorage.getId();
         List<VolumeVO> volumesInOtherClusters = volumeDao.listByPoolIdVMStatesNotInCluster(clusterId, states, id);
         if (volumesInOtherClusters.size() > 0) {
-            throw new CloudRuntimeException(String.format("Cannot change scope of the pool %s to cluster %s as there are associated volumes present for other clusters", primaryStorage.getName(), clusterVO.getName()));
+            throw new CloudRuntimeException(String.format("Cannot change scope of the pool %s to cluster %s as there are VMs running on other clusters which are using volumes on this storage pool",
+                    primaryStorage.getName(), clusterVO.getName()));
         }
 
         DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(primaryStorage.getStorageProviderName());
@@ -1226,6 +1227,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_CHANGE_STORAGE_POOL_SCOPE, eventDescription = "changing storage pool scope")
     public void changeStoragePoolScope(ChangeStoragePoolScopeCmd cmd) throws IllegalArgumentException, InvalidParameterValueException, PermissionDeniedException {
         Long id = cmd.getId();
 
@@ -1243,6 +1245,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (primaryStorage == null) {
             throw new IllegalArgumentException("Unable to find storage pool with ID: " + id);
         }
+
+        String eventDetails = String.format(" Storage pool Id: %s to %s",primaryStorage.getUuid(), newScope);
+        CallContext.current().setEventDetails(eventDetails);
 
         ScopeType currentScope = primaryStorage.getScope();
         if (currentScope.equals(newScope)) {

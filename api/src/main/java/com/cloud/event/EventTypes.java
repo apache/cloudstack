@@ -1001,6 +1001,7 @@ public class EventTypes {
         // Primary storage pool
         entityEventDetails.put(EVENT_ENABLE_PRIMARY_STORAGE, StoragePool.class);
         entityEventDetails.put(EVENT_DISABLE_PRIMARY_STORAGE, StoragePool.class);
+        entityEventDetails.put(EVENT_CHANGE_STORAGE_POOL_SCOPE, StoragePool.class);
 
         // VPN
         entityEventDetails.put(EVENT_REMOTE_ACCESS_VPN_CREATE, RemoteAccessVpn.class);

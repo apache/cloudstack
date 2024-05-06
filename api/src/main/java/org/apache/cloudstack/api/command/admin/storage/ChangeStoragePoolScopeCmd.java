@@ -18,6 +18,7 @@
 package org.apache.cloudstack.api.command.admin.storage;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -27,6 +28,7 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
+import com.cloud.storage.StoragePool;
 
 @APICommand(name = "changeStoragePoolScope", description = "Changes the scope of a storage pool when the pool is in Disabled state." +
         "This feature is officially tested and supported for Hypervisors: KVM and VMware, Protocols: NFS and Ceph, and Storage Provider: DefaultPrimary. " +
@@ -44,13 +46,30 @@ public class ChangeStoragePoolScopeCmd extends BaseAsyncCmd {
     private Long clusterId;
 
     @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.StoragePool;
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return getId();
+    }
+
     public String getEventType() {
         return EventTypes.EVENT_CHANGE_STORAGE_POOL_SCOPE;
     }
 
     @Override
     public String getEventDescription() {
-        return "Change the scope to " + scope + " for storage pool " + this.id;
+        String description = "Change storage pool scope. Storage pool Id: ";
+        StoragePool pool = _entityMgr.findById(StoragePool.class, getId());
+        if (pool != null) {
+            description += pool.getUuid();
+        } else {
+            description += getId();
+        }
+        description += " to " + getScope();
+        return description;
     }
 
     @Override
