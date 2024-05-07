@@ -2443,7 +2443,6 @@
 "label.quotagb": "Quota in GB",
 "label.encryption": "Encryption",
 "label.etcdnodes": "Number of etcd nodes",
-"label.etcd.ips": "etcd Node(s) IP address(es)",
 "label.versioning": "Versioning",
 "label.objectlocking": "Object Lock",
 "label.bucket.policy": "Bucket Policy",

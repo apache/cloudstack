@@ -786,7 +786,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                 prefix = kubernetesCluster.getUuid();
             }
         }
-        prefix = "etcd-" + prefix;
+        prefix = prefix + "-etcd" ;
         if (prefix.length() > 40) {
             prefix = prefix.substring(0, 40);
         }

@@ -32,7 +32,6 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.utils.Ternary;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.framework.ca.Certificate;
@@ -518,20 +517,12 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         return additionalControlVms;
     }
 
-    private Ternary<List<UserVm>, List<Network.IpAddresses>, List<IpAddress>> provisionEtcdCluster(final Network network, final Long domainId, final Long accountId)
+    private Pair<List<UserVm>, List<Network.IpAddresses>> provisionEtcdCluster(final Network network, final Long domainId, final Long accountId)
             throws InsufficientCapacityException, ResourceUnavailableException, ManagementServerException {
         List<UserVm> etcdNodeVms = new ArrayList<>();
-        List<IpAddress> etcdNodeIps = getEtcdNodePublicIpAddresses(network, kubernetesCluster.getEtcdNodeCount());
         List<Network.IpAddresses>  etcdNodeGuestIps = getEtcdNodeGuestIps(network, kubernetesCluster.getEtcdNodeCount());
         List<String> etcdHostnames = getEtcdNodeHostnames();
         for (int i = 0; i < kubernetesCluster.getEtcdNodeCount(); i++) {
-            IpAddress ip = etcdNodeIps.get(i);
-            if (Objects.isNull(ip)) {
-                String errMsg = String.format("No public IP found for the network: %s, to create Etcd node for " +
-                        "Kubernetes cluster: %s", network, kubernetesCluster.getName());
-                LOGGER.error(errMsg);
-                logAndThrow(Level.ERROR, errMsg);
-            }
             UserVm vm = createEtcdNode(etcdNodeGuestIps, etcdHostnames, i, domainId, accountId);
             addKubernetesClusterVm(kubernetesCluster.getId(), vm.getId(), false, false, true, true);
             startKubernetesVM(vm, domainId, accountId);
@@ -544,19 +535,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                 LOGGER.info(String.format("Provisioned additional control VM : %s in to the Kubernetes cluster : %s", vm.getDisplayName(), kubernetesCluster.getName()));
             }
         }
-        return new Ternary<>(etcdNodeVms, etcdNodeGuestIps, etcdNodeIps);
-    }
-
-    private List<IpAddress> getEtcdNodePublicIpAddresses(final Network network, final long etcdNodeCount) throws InsufficientAddressCapacityException, ResourceUnavailableException, ResourceAllocationException {
-        List<IpAddress> ipAddresses = new ArrayList<>();
-        for (int i = 1; i <= etcdNodeCount; i++) {
-            if (network.getVpcId() == null) {
-                ipAddresses.add(acquirePublicIpForIsolatedNetwork(network));
-            } else {
-                ipAddresses.add(acquireVpcTierKubernetesPublicIp(network, true));
-            }
-        }
-        return ipAddresses;
+        return new Pair<>(etcdNodeVms, etcdNodeGuestIps);
     }
 
     private List<Network.IpAddresses> getEtcdNodeGuestIps(final Network network, final long etcdNodeCount) {
@@ -614,7 +593,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         setupKubernetesClusterIsolatedNetworkRules(publicIp, network, clusterVMIds, true);
     }
 
-    protected void setupKubernetesEtcdNetworkRules(List<IpAddress> etcdNodeIps, List<UserVm> etcdVms, Network network) throws ManagementServerException, ResourceUnavailableException {
+    protected void setupKubernetesEtcdNetworkRules(List<UserVm> etcdVms, Network network) throws ManagementServerException, ResourceUnavailableException {
         if (!Network.GuestType.Isolated.equals(network.getGuestType())) {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug(String.format("Network : %s for Kubernetes cluster : %s is not an isolated network, therefore, no need for network rules", network.getName(), kubernetesCluster.getName()));
@@ -622,18 +601,16 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         }
         List<Long> etcdVmIds = etcdVms.stream().map(UserVm::getId).collect(Collectors.toList());
         Integer startPort = KubernetesClusterService.KubernetesEtcdNodeStartPort.value();
+        IpAddress publicIp = ipAddressDao.findByIpAndDcId(kubernetesCluster.getZoneId(), publicIpAddress);
         for (int i = 0; i < etcdVmIds.size(); i++) {
-            IpAddress publicIp = etcdNodeIps.get(i);
+            startPort += i;
             try {
                 provisionFirewallRules(publicIp, owner, startPort, startPort);
-                provisionFirewallRules(publicIp, owner, ETCD_NODE_CLIENT_REQUEST_PORT, ETCD_NODE_PEER_COMM_PORT);
             } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException |
                      NetworkRuleConflictException e) {
                 throw new ManagementServerException(String.format("Failed to provision firewall rules for etcd nodes for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
             }
             provisionPublicIpPortForwardingRule(publicIp, network, owner, etcdVmIds.get(i), startPort, DEFAULT_SSH_PORT);
-            provisionPublicIpPortForwardingRule(publicIp, network, owner, etcdVmIds.get(i), ETCD_NODE_CLIENT_REQUEST_PORT, ETCD_NODE_CLIENT_REQUEST_PORT);
-            provisionPublicIpPortForwardingRule(publicIp, network, owner, etcdVmIds.get(i), ETCD_NODE_PEER_COMM_PORT, ETCD_NODE_PEER_COMM_PORT);
         }
     }
 
@@ -737,12 +714,10 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
 
         List<UserVm> etcdVms = new ArrayList<>();
         List<Network.IpAddresses> etcdGuestNodeIps = new ArrayList<>();
-        List<IpAddress> etcdPublicNodeIps = new ArrayList<>();
         if (kubernetesCluster.getEtcdNodeCount() > 0) {
-            Ternary<List<UserVm>, List<Network.IpAddresses>, List<IpAddress>> etcdNodesAndIps = provisionEtcdCluster(network, domainId, accountId);
+            Pair<List<UserVm>, List<Network.IpAddresses>> etcdNodesAndIps = provisionEtcdCluster(network, domainId, accountId);
             etcdVms = etcdNodesAndIps.first();
             etcdGuestNodeIps = etcdNodesAndIps.second();
-            etcdPublicNodeIps = etcdNodesAndIps.third();
         }
 
         List<UserVm> clusterVMs = new ArrayList<>();
@@ -781,7 +756,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup Kubernetes cluster : %s, unable to setup network rules", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed, e);
         }
         try {
-            setupKubernetesEtcdNetworkRules(etcdPublicNodeIps, etcdVms, network);
+            setupKubernetesEtcdNetworkRules(etcdVms, network);
         } catch (ManagementServerException e) {
             logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup Kubernetes cluster : %s, unable to setup network rules for etcd nodes", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed, e);
         }
