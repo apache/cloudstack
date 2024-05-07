@@ -1358,36 +1358,20 @@ export default {
         }
 
         this.serviceOffering = _.find(this.options.serviceOfferings, (option) => option.id === instanceConfig.computeofferingid)
-        if (this.serviceOffering?.diskofferingid) {
-          if (iso) {
-            this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === this.serviceOffering.diskofferingid)
-          } else {
-            instanceConfig.overridediskofferingid = this.serviceOffering.diskofferingid
-          }
-        }
-        if (!iso && this.diskSelected) {
-          this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.diskofferingid)
-        }
-        if (this.rootDiskSelected?.id) {
-          instanceConfig.overridediskofferingid = this.rootDiskSelected.id
-        }
+
+        instanceConfig.overridediskofferingid = this.rootDiskSelected?.id || this.serviceOffering?.diskofferingid
         if (instanceConfig.overridediskofferingid) {
           this.overrideDiskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.overridediskofferingid)
         } else {
           this.overrideDiskOffering = null
         }
 
-        if (!iso && this.diskSelected) {
+        if (iso && this.serviceOffering?.diskofferingid) {
+          this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === this.serviceOffering.diskofferingid)
+        } else if (!iso && this.diskSelected) {
           this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.diskofferingid)
         }
-        if (this.rootDiskSelected?.id) {
-          instanceConfig.overridediskofferingid = this.rootDiskSelected.id
-        }
-        if (instanceConfig.overridediskofferingid) {
-          this.overrideDiskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.overridediskofferingid)
-        } else {
-          this.overrideDiskOffering = null
-        }
+
         this.zone = _.find(this.options.zones, (option) => option.id === instanceConfig.zoneid)
         this.affinityGroups = _.filter(this.options.affinityGroups, (option) => _.includes(instanceConfig.affinitygroupids, option.id))
         this.networks = this.getSelectedNetworksWithExistingConfig(_.filter(this.options.networks, (option) => _.includes(instanceConfig.networkids, option.id)))
@@ -1664,6 +1648,7 @@ export default {
         this.showRootDiskSizeChanger = false
       } else {
         this.rootDiskSelected = null
+        this.form.overridediskofferingid = undefined
       }
       this.showOverrideDiskOfferingOption = val
     },
@@ -1905,7 +1890,6 @@ export default {
       if (this.loading.deploy) return
       this.formRef.value.validate().then(async () => {
         const values = toRaw(this.form)
-
         if (!values.templateid && !values.isoid) {
           this.$notification.error({
             message: this.$t('message.request.failed'),
@@ -1994,7 +1978,7 @@ export default {
         if (this.selectedTemplateConfiguration) {
           deployVmData['details[0].configurationId'] = this.selectedTemplateConfiguration.id
         }
-        if (!this.serviceOffering.diskofferingstrictness && values.overridediskofferingid) {
+        if (!this.serviceOffering.diskofferingstrictness && values.overridediskofferingid && !values.isoid) {
           deployVmData.overridediskofferingid = values.overridediskofferingid
           if (values.rootdisksize && values.rootdisksize > 0) {
             deployVmData.rootdisksize = values.rootdisksize

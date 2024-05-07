@@ -97,15 +97,17 @@ public class ApiServletTest {
     @Mock
     AccountService accountMgr;
 
+    @Mock ConfigKey<Boolean> useForwardHeader;
     StringWriter responseWriter;
 
     ApiServlet servlet;
-
+    ApiServlet spyServlet;
     @SuppressWarnings("unchecked")
     @Before
     public void setup() throws SecurityException, NoSuchFieldException,
     IllegalArgumentException, IllegalAccessException, IOException, UnknownHostException {
         servlet = new ApiServlet();
+        spyServlet = Mockito.spy(servlet);
         responseWriter = new StringWriter();
         Mockito.when(response.getWriter()).thenReturn(
                 new PrintWriter(responseWriter));
@@ -259,32 +261,43 @@ public class ApiServletTest {
 
     @Test
     public void getClientAddressWithXForwardedFor() throws UnknownHostException {
+        String[] proxynet = {"127.0.0.0/8"};
+        Mockito.when(spyServlet.proxyNets()).thenReturn(proxynet);
+        Mockito.when(spyServlet.doUseForwardHeaders()).thenReturn(true);
         Mockito.when(request.getHeader(Mockito.eq("X-Forwarded-For"))).thenReturn("192.168.1.1");
-        Assert.assertEquals(InetAddress.getByName("192.168.1.1"), ApiServlet.getClientAddress(request));
+        Assert.assertEquals(InetAddress.getByName("192.168.1.1"), spyServlet.getClientAddress(request));
     }
 
     @Test
     public void getClientAddressWithHttpXForwardedFor() throws UnknownHostException {
+        String[] proxynet = {"127.0.0.0/8"};
+        Mockito.when(spyServlet.proxyNets()).thenReturn(proxynet);
+        Mockito.when(spyServlet.doUseForwardHeaders()).thenReturn(true);
         Mockito.when(request.getHeader(Mockito.eq("HTTP_X_FORWARDED_FOR"))).thenReturn("192.168.1.1");
-        Assert.assertEquals(InetAddress.getByName("192.168.1.1"), ApiServlet.getClientAddress(request));
+        Assert.assertEquals(InetAddress.getByName("192.168.1.1"), spyServlet.getClientAddress(request));
     }
 
     @Test
-    public void getClientAddressWithXRemoteAddr() throws UnknownHostException {
-        Mockito.when(request.getHeader(Mockito.eq("Remote_Addr"))).thenReturn("192.168.1.1");
-        Assert.assertEquals(InetAddress.getByName("192.168.1.1"), ApiServlet.getClientAddress(request));
+    public void getClientAddressWithRemoteAddr() throws UnknownHostException {
+        String[] proxynet = {"127.0.0.0/8"};
+        Mockito.when(spyServlet.proxyNets()).thenReturn(proxynet);
+        Mockito.when(spyServlet.doUseForwardHeaders()).thenReturn(true);
+        Assert.assertEquals(InetAddress.getByName("127.0.0.1"), spyServlet.getClientAddress(request));
     }
 
     @Test
     public void getClientAddressWithHttpClientIp() throws UnknownHostException {
+        String[] proxynet = {"127.0.0.0/8"};
+        Mockito.when(spyServlet.proxyNets()).thenReturn(proxynet);
+        Mockito.when(spyServlet.doUseForwardHeaders()).thenReturn(true);
         Mockito.when(request.getHeader(Mockito.eq("HTTP_CLIENT_IP"))).thenReturn("192.168.1.1");
-        Assert.assertEquals(InetAddress.getByName("192.168.1.1"), ApiServlet.getClientAddress(request));
+        Assert.assertEquals(InetAddress.getByName("192.168.1.1"), spyServlet.getClientAddress(request));
     }
 
     @Test
     public void getClientAddressDefault() throws UnknownHostException {
         Mockito.when(request.getRemoteAddr()).thenReturn("127.0.0.1");
-        Assert.assertEquals(InetAddress.getByName("127.0.0.1"), ApiServlet.getClientAddress(request));
+        Assert.assertEquals(InetAddress.getByName("127.0.0.1"), spyServlet.getClientAddress(request));
     }
 
     @Test

@@ -662,8 +662,9 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     }
 
     @Override
-    public String downloadS3Template(S3TO s3, long id, String url, String name, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum,
-            String installPathPrefix, String user, String password, long maxTemplateSizeInBytes, Proxy proxy, ResourceType resourceType) {
+    public String downloadS3Template(S3TO s3, long id, String url, String name, ImageFormat format, boolean hvm,
+            Long accountId, String descr, String cksum, String installPathPrefix, String user, String password,
+            long maxTemplateSizeInBytes, Proxy proxy, ResourceType resourceType, boolean followRedirects) {
         UUID uuid = UUID.randomUUID();
         String jobId = uuid.toString();
 
@@ -683,6 +684,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         } else {
             throw new CloudRuntimeException("Unable to download from URL: " + url);
         }
+        td.setFollowRedirects(followRedirects);
         DownloadJob dj = new DownloadJob(td, jobId, id, name, format, hvm, accountId, descr, cksum, installPathPrefix, resourceType);
         dj.setTmpltPath(installPathPrefix);
         jobs.put(jobId, dj);
@@ -718,8 +720,10 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     }
 
     @Override
-    public String downloadPublicTemplate(long id, String url, String name, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum,
-            String installPathPrefix, String templatePath, String user, String password, long maxTemplateSizeInBytes, Proxy proxy, ResourceType resourceType) {
+    public String downloadPublicTemplate(long id, String url, String name, ImageFormat format, boolean hvm,
+            Long accountId, String descr, String cksum, String installPathPrefix, String templatePath, String user,
+            String password, long maxTemplateSizeInBytes, Proxy proxy, ResourceType resourceType,
+            boolean followRedirects) {
         UUID uuid = UUID.randomUUID();
         String jobId = uuid.toString();
         String tmpDir = installPathPrefix;
@@ -766,6 +770,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                     throw new CloudRuntimeException("Unable to download from URL: " + url);
                 }
             }
+            td.setFollowRedirects(followRedirects);
             // NOTE the difference between installPathPrefix and templatePath
             // here. instalPathPrefix is the absolute path for template
             // including mount directory
@@ -902,12 +907,16 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         String jobId = null;
         if (dstore instanceof S3TO) {
             jobId =
-                    downloadS3Template((S3TO)dstore, cmd.getId(), cmd.getUrl(), cmd.getName(), cmd.getFormat(), cmd.isHvm(), cmd.getAccountId(), cmd.getDescription(),
-                            cmd.getChecksum(), installPathPrefix, user, password, maxDownloadSizeInBytes, cmd.getProxy(), resourceType);
+                    downloadS3Template((S3TO)dstore, cmd.getId(), cmd.getUrl(), cmd.getName(), cmd.getFormat(),
+                            cmd.isHvm(), cmd.getAccountId(), cmd.getDescription(), cmd.getChecksum(),
+                            installPathPrefix, user, password, maxDownloadSizeInBytes, cmd.getProxy(), resourceType,
+                            cmd.isFollowRedirects());
         } else {
             jobId =
-                    downloadPublicTemplate(cmd.getId(), cmd.getUrl(), cmd.getName(), cmd.getFormat(), cmd.isHvm(), cmd.getAccountId(), cmd.getDescription(),
-                            cmd.getChecksum(), installPathPrefix, cmd.getInstallPath(), user, password, maxDownloadSizeInBytes, cmd.getProxy(), resourceType);
+                    downloadPublicTemplate(cmd.getId(), cmd.getUrl(), cmd.getName(), cmd.getFormat(), cmd.isHvm(),
+                            cmd.getAccountId(), cmd.getDescription(), cmd.getChecksum(), installPathPrefix,
+                            cmd.getInstallPath(), user, password, maxDownloadSizeInBytes, cmd.getProxy(), resourceType,
+                            cmd.isFollowRedirects());
         }
         sleep();
         if (jobId == null) {

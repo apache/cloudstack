@@ -31,6 +31,7 @@ import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.ha.HAConfig;
 import org.apache.cloudstack.storage.object.Bucket;
 import org.apache.cloudstack.storage.object.ObjectStore;
+import org.apache.cloudstack.quota.QuotaTariff;
 import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.vm.schedule.VMSchedule;
 
@@ -315,6 +316,8 @@ public class EventTypes {
     public static final String EVENT_VOLUME_UPDATE = "VOLUME.UPDATE";
     public static final String EVENT_VOLUME_DESTROY = "VOLUME.DESTROY";
     public static final String EVENT_VOLUME_RECOVER = "VOLUME.RECOVER";
+    public static final String EVENT_VOLUME_IMPORT = "VOLUME.IMPORT";
+    public static final String EVENT_VOLUME_UNMANAGE = "VOLUME.UNMANAGE";
     public static final String EVENT_VOLUME_CHANGE_DISK_OFFERING = "VOLUME.CHANGE.DISK.OFFERING";
 
     // Domains
@@ -728,6 +731,11 @@ public class EventTypes {
     public static final String EVENT_BUCKET_CREATE = "BUCKET.CREATE";
     public static final String EVENT_BUCKET_DELETE = "BUCKET.DELETE";
     public static final String EVENT_BUCKET_UPDATE = "BUCKET.UPDATE";
+
+    // Quota
+    public static final String EVENT_QUOTA_TARIFF_CREATE = "QUOTA.TARIFF.CREATE";
+    public static final String EVENT_QUOTA_TARIFF_DELETE = "QUOTA.TARIFF.DELETE";
+    public static final String EVENT_QUOTA_TARIFF_UPDATE = "QUOTA.TARIFF.UPDATE";
 
     static {
 
@@ -1178,8 +1186,17 @@ public class EventTypes {
         entityEventDetails.put(EVENT_BUCKET_CREATE, Bucket.class);
         entityEventDetails.put(EVENT_BUCKET_UPDATE, Bucket.class);
         entityEventDetails.put(EVENT_BUCKET_DELETE, Bucket.class);
+
+        // Quota
+        entityEventDetails.put(EVENT_QUOTA_TARIFF_CREATE, QuotaTariff.class);
+        entityEventDetails.put(EVENT_QUOTA_TARIFF_DELETE, QuotaTariff.class);
+        entityEventDetails.put(EVENT_QUOTA_TARIFF_UPDATE, QuotaTariff.class);
     }
 
+    public static boolean isNetworkEvent(String eventType) {
+        return EVENT_NETWORK_CREATE.equals(eventType) || EVENT_NETWORK_DELETE.equals(eventType) ||
+                EVENT_NETWORK_UPDATE.equals(eventType);
+    }
     public static String getEntityForEvent(String eventName) {
         Object entityClass = entityEventDetails.get(eventName);
         if (entityClass == null) {
@@ -1207,5 +1224,9 @@ public class EventTypes {
         }
 
         return null;
+    }
+
+    public static boolean isVpcEvent(String eventType) {
+        return EventTypes.EVENT_VPC_CREATE.equals(eventType) || EventTypes.EVENT_VPC_DELETE.equals(eventType);
     }
 }

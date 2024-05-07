@@ -2061,7 +2061,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             if (implementedNetwork == null || implementedNetwork.first() == null) {
                 logger.warn("Failed to provision the network " + network);
             }
-            return implementedNetwork.second();
+            Network implemented = implementedNetwork.second();
+            if (implemented != null) {
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_CREATE, implemented.getAccountId(), implemented.getDataCenterId(), implemented.getId(),
+                        implemented.getName(), implemented.getNetworkOfferingId(), null, null, null, Network.class.getName(), implemented.getUuid());
+            }
+            return implemented;
         } catch (ResourceUnavailableException ex) {
             logger.warn("Failed to implement persistent guest network " + network + "due to ", ex);
             CloudRuntimeException e = new CloudRuntimeException("Failed to implement persistent guest network");
@@ -3458,7 +3463,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 }
             }
         }
-        return getNetwork(network.getId());
+        Network updatedNetwork = getNetwork(network.getId());
+        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_UPDATE, updatedNetwork.getAccountId(), updatedNetwork.getDataCenterId(), updatedNetwork.getId(),
+                updatedNetwork.getName(), updatedNetwork.getNetworkOfferingId(), null, updatedNetwork.getState().name(), Network.class.getName(), updatedNetwork.getUuid(), true);
+        return updatedNetwork;
     }
 
     protected Pair<Integer, Integer> validateMtuOnUpdate(NetworkVO network, Long zoneId, Integer publicMtu, Integer privateMtu) {
@@ -4109,7 +4117,13 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
                     // Add the config drive provider
                     addConfigDriveToPhysicalNetwork(pNetwork.getId());
-                    addNSXProviderToPhysicalNetwork(pNetwork.getId());
+
+                    // Add NSX provider
+                    try {
+                        addNSXProviderToPhysicalNetwork(pNetwork.getId());
+                    } catch (Exception ex) {
+                        logger.warn("Failed to add NSX provider to physical network due to:", ex.getMessage());
+                    }
 
                     CallContext.current().putContextParameter(PhysicalNetwork.class, pNetwork.getUuid());
 
@@ -4371,9 +4385,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         final String virtualMachineDomainRouterType = VirtualMachine.Type.DomainRouter.toString();
-        if (!virtualMachineDomainRouterType.equalsIgnoreCase(serviceOffering.getSystemVmType())) {
+        if (!virtualMachineDomainRouterType.equalsIgnoreCase(serviceOffering.getVmType())) {
             throw new InvalidParameterValueException(String.format("The specified service offering [%s] is of type [%s]. Virtual routers can only be created with service offering "
-                    + "of type [%s].", serviceOffering, serviceOffering.getSystemVmType(), virtualMachineDomainRouterType.toLowerCase()));
+                    + "of type [%s].", serviceOffering, serviceOffering.getVmType(), virtualMachineDomainRouterType.toLowerCase()));
         }
     }
 
@@ -5510,7 +5524,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         DataCenterVO dvo = _dcDao.findById(pvo.getDataCenterId());
         if (dvo.getNetworkType() == NetworkType.Advanced) {
 
-            Provider provider = Network.Provider.getProvider("Nsx");
+            Provider provider = Network.Provider.getProvider(Provider.Nsx.getName());
             if (provider == null) {
                 return null;
             }

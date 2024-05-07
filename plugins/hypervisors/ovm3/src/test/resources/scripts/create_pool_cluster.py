@@ -30,7 +30,7 @@ normalRepo = 0
 try:
   if normalRepo:
     print "normal repo"
-    # this litterally throws EVERYTHING away on the repo
+    # this literally throws EVERYTHING away on the repo
     repoDom = parseString(server.discover_repository_db())
     for node in repoDom.getElementsByTagName('Repository'):
         repoUuid = node.attributes['Uuid']
@@ -38,7 +38,7 @@ try:
         localMount = node.getElementsByTagName('Mount_point')[0].firstChild.nodeValue
 
         # there is a "strong" relation between repo's and VMs
-        # onfortunately there is no reference in the vm.cfg
+        # unfortunately there is no reference in the vm.cfg
         # or any known info in the configuration of the VM
         # in which repo it lives....
         for dirname, dirnames, filenames in os.walk('%s/VirtualMachines/' % localMount):
@@ -146,7 +146,7 @@ try:
     journalesize = ""
 
     # o2cb is the problem.... /etc/init.d/o2cb
-    #   sets it's config in /etc/sysconfig/o2cb (can be removed)
+    #   sets its config in /etc/sysconfig/o2cb (can be removed)
     #   dmsetup requires the stopping of o2cb first,
     #   then the removal of the config, after which dmsetup
     #   can remove the device from /dev/mapper/
