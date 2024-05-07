@@ -32,6 +32,7 @@ class TestRestoreVM(cloudstackTestCase):
         testClient = super(TestRestoreVM, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
         cls.services = testClient.getParsedTestDataConfig()
+        cls._cleanup = []
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
@@ -42,16 +43,21 @@ class TestRestoreVM(cloudstackTestCase):
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
 
         cls.service_offering = ServiceOffering.create(cls.apiclient, cls.services["service_offering"])
+        cls._cleanup.append(cls.service_offering)
 
-        cls.template_t1 = Template.register(cls.apiclient, cls.services["test_templates"][
+        template_t1 = Template.register(cls.apiclient, cls.services["test_templates"][
             cls.hypervisor.lower() if cls.hypervisor.lower() != 'simulator' else 'xenserver'],
                                             zoneid=cls.zone.id, hypervisor=cls.hypervisor.lower())
+        cls._cleanup.append(template_t1)
+        template_t1.download(cls.apiclient)
+        cls.template_t1 = Template.list(cls.apiclient, templatefilter='all', id=template_t1.id)[0]
 
-        cls.template_t2 = Template.register(cls.apiclient, cls.services["test_templates"][
+        template_t2 = Template.register(cls.apiclient, cls.services["test_templates"][
             cls.hypervisor.lower() if cls.hypervisor.lower() != 'simulator' else 'xenserver'],
                                             zoneid=cls.zone.id, hypervisor=cls.hypervisor.lower())
-
-        cls._cleanup = [cls.service_offering, cls.template_t1, cls.template_t2]
+        cls._cleanup.append(template_t2)
+        template_t2.download(cls.apiclient)
+        cls.template_t2 = Template.list(cls.apiclient, templatefilter='all', id=template_t2.id)[0]
 
     @classmethod
     def tearDownClass(cls):
