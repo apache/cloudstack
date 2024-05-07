@@ -5418,7 +5418,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         try {
             orchestrateStart(vm.getUuid(), work.getParams(), work.getPlan(), _dpMgr.getDeploymentPlannerByName(work.getDeploymentPlanner()));
         } catch (CloudRuntimeException e){
-            logger.error(String.format("Unable to orchestrate start %s due to [%s].", vm, e.getMessage()));
+            logger.error("Unable to orchestrate start {} due to [{}].", vm, e.getMessage());
             CloudRuntimeException ex = new CloudRuntimeException(String.format("Unable to orchestrate the start of VM instance %s.",
                     ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "instanceName", "uuid")));
             return new Pair<>(JobInfo.Status.FAILED, JobSerializerHelper.toObjectSerializedString(ex));
