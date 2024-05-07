@@ -3003,6 +3003,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return updateImageStoreStatus(cmd.getId(), cmd.getName(), cmd.getReadonly(), cmd.getCapacityBytes());
     }
 
+    @Override
     public ImageStore updateImageStoreStatus(Long id, String name, Boolean readonly, Long capacityBytes) {
         // Input validation
         ImageStoreVO imageStoreVO = _imageStoreDao.findById(id);

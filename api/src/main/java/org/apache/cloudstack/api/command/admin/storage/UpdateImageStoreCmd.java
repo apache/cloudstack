@@ -49,7 +49,7 @@ public class UpdateImageStoreCmd extends BaseCmd {
     private Boolean readonly;
 
     @Parameter(name = ApiConstants.CAPACITY_BYTES, type = CommandType.LONG, required = false,
-            description = "bytes CloudStack can use on this image storage")
+            description = "The number of bytes CloudStack can use on this image storage.\n\tNOTE: this will be overwritten by the StatsCollector as soon as there is a SSVM to query the storage.")
     private Long capacityBytes;
 
     /////////////////////////////////////////////////////
