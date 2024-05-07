@@ -23,6 +23,10 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.StorageManager;
+import com.cloud.user.UserData;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
@@ -38,25 +42,21 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
-import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.template.VirtualMachineTemplate;
-import com.cloud.user.UserData;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 @SuppressWarnings("serial")
 public class TemplateObject implements TemplateInfo {
@@ -97,7 +97,7 @@ public class TemplateObject implements TemplateInfo {
     }
 
     public void setSize(Long size) {
-        getImage().setSize(size);
+        imageVO.setSize(size);
     }
 
     public VMTemplateVO getImage() {
@@ -115,22 +115,22 @@ public class TemplateObject implements TemplateInfo {
 
     @Override
     public String getUniqueName() {
-        return getImage().getUniqueName();
+        return imageVO.getUniqueName();
     }
 
     @Override
     public long getId() {
-        return getImage().getId();
+        return imageVO.getId();
     }
 
     @Override
     public State getState() {
-        return getImage().getState();
+        return imageVO.getState();
     }
 
     @Override
     public String getUuid() {
-        return getImage().getUuid();
+        return imageVO.getUuid();
     }
 
     @Override
@@ -138,7 +138,7 @@ public class TemplateObject implements TemplateInfo {
         if (url != null) {
             return url;
         }
-        VMTemplateVO image = imageDao.findById(getImage().getId());
+        VMTemplateVO image = imageDao.findById(imageVO.getId());
 
         return image.getUrl();
 
@@ -147,19 +147,19 @@ public class TemplateObject implements TemplateInfo {
     @Override
     public Long getSize() {
         if (dataStore == null) {
-            return getImage().getSize();
+            return imageVO.getSize();
         }
-        VMTemplateVO image = imageDao.findById(getImage().getId());
+        VMTemplateVO image = imageDao.findById(imageVO.getId());
         return image.getSize();
     }
 
     @Override
     public long getPhysicalSize() {
-        TemplateDataStoreVO templateDataStoreVO = templateStoreDao.findByTemplate(getImage().getId(), DataStoreRole.Image);
+        TemplateDataStoreVO templateDataStoreVO = templateStoreDao.findByTemplate(imageVO.getId(), DataStoreRole.Image);
         if (templateDataStoreVO != null) {
             return templateDataStoreVO.getPhysicalSize();
         }
-        return getImage().getSize();
+        return imageVO.getSize();
     }
 
     @Override
@@ -169,7 +169,7 @@ public class TemplateObject implements TemplateInfo {
 
     @Override
     public ImageFormat getFormat() {
-        return getImage().getFormat();
+        return imageVO.getFormat();
     }
 
     @Override
@@ -381,11 +381,10 @@ public class TemplateObject implements TemplateInfo {
 
     @Override
     public boolean isDirectDownload() {
-        try {
-            return getImage().isDirectDownload();
-        } catch (InvalidParameterValueException e) {
+        if (this.imageVO == null) {
             return false;
         }
+        return this.imageVO.isDirectDownload();
     }
 
     @Override
@@ -419,11 +418,10 @@ public class TemplateObject implements TemplateInfo {
 
     @Override
     public boolean isDeployAsIs() {
-        try {
-            return getImage().isDirectDownload();
-        } catch (InvalidParameterValueException e) {
+        if (this.imageVO == null) {
             return false;
         }
+        return this.imageVO.isDeployAsIs();
     }
 
     public void setInstallPath(String installPath) {
@@ -432,82 +430,82 @@ public class TemplateObject implements TemplateInfo {
 
     @Override
     public long getAccountId() {
-        return getImage().getAccountId();
+        return imageVO.getAccountId();
     }
 
     @Override
     public boolean isFeatured() {
-        return getImage().isFeatured();
+        return imageVO.isFeatured();
     }
 
     @Override
     public boolean isPublicTemplate() {
-        return getImage().isPublicTemplate();
+        return imageVO.isPublicTemplate();
     }
 
     @Override
     public boolean isExtractable() {
-        return getImage().isExtractable();
+        return imageVO.isExtractable();
     }
 
     @Override
     public String getName() {
-        return getImage().getName();
+        return imageVO.getName();
     }
 
     @Override
     public boolean isRequiresHvm() {
-        return getImage().isRequiresHvm();
+        return imageVO.isRequiresHvm();
     }
 
     @Override
     public String getDisplayText() {
-        return getImage().getDisplayText();
+        return imageVO.getDisplayText();
     }
 
     @Override
     public boolean isEnablePassword() {
-        return getImage().isEnablePassword();
+        return imageVO.isEnablePassword();
     }
 
     @Override
     public boolean isEnableSshKey() {
-        return getImage().isEnableSshKey();
+        return imageVO.isEnableSshKey();
     }
 
     @Override
     public boolean isCrossZones() {
-        return getImage().isCrossZones();
+        return imageVO.isCrossZones();
     }
 
     @Override
     public Date getCreated() {
-        return getImage().getCreated();
+        return imageVO.getCreated();
     }
 
     @Override
     public long getGuestOSId() {
-        return getImage().getGuestOSId();
+        return imageVO.getGuestOSId();
     }
 
     @Override
     public boolean isBootable() {
-        return getImage().isBootable();
+        return imageVO.isBootable();
     }
 
     @Override
     public TemplateType getTemplateType() {
-        return getImage().getTemplateType();
+        return imageVO.getTemplateType();
     }
 
     @Override
     public HypervisorType getHypervisorType() {
-        return getImage().getHypervisorType();
+        return imageVO.getHypervisorType();
     }
 
     @Override
     public int getBits() {
-        return getImage().getBits();
+        return imageVO.getBits();
     }
 
     @Override
@@ -515,7 +513,7 @@ public class TemplateObject implements TemplateInfo {
         if (url != null) {
             return url;
         }
-        return getImage().getUrl();
+        return imageVO.getUrl();
     }
 
     public void setUrl(String url) {
@@ -524,27 +522,27 @@ public class TemplateObject implements TemplateInfo {
 
     @Override
     public String getChecksum() {
-        return getImage().getChecksum();
+        return imageVO.getChecksum();
     }
 
     @Override
     public Long getSourceTemplateId() {
-        return getImage().getSourceTemplateId();
+        return imageVO.getSourceTemplateId();
     }
 
     @Override
     public Long getParentTemplateId() {
-        return getImage().getParentTemplateId();
+        return imageVO.getParentTemplateId();
     }
 
     @Override
     public String getTemplateTag() {
-        return getImage().getTemplateTag();
+        return imageVO.getTemplateTag();
     }
 
     @Override
     public Map<String, String> getDetails() {
-        return getImage().getDetails();
+        return imageVO.getDetails();
     }
 
     @Override
@@ -554,7 +552,7 @@ public class TemplateObject implements TemplateInfo {
 
     @Override
     public long getDomainId() {
-        return getImage().getDomainId();
+        return imageVO.getDomainId();
     }
 
     @Override
