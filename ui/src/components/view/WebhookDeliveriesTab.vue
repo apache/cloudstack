@@ -26,7 +26,7 @@
         :startDateProp="startDate"
         :endDateProp="endDate"
         :showAllDataOption="false"
-        @closeTimeFilterAction="closeTimeFilterAction"
+        @closeAction="closeTimeFilterAction"
         @onSubmit="handleSubmitDateTimeFilter"/>
     </a-modal>
     <div class="filter-row">
@@ -91,24 +91,24 @@
       @update-selected-columns="updateSelectedColumns"
       @refresh="this.fetchData"
       @selection-change="updateSelectedRows"/>
-      <a-pagination
-        class="row-element"
-        style="margin-top: 10px"
-        size="small"
-        :current="page"
-        :pageSize="pageSize"
-        :total="totalCount"
-        :showTotal="total => `${$t('label.showing')} ${Math.min(total, 1+((page-1)*pageSize))}-${Math.min(page*pageSize, total)} ${$t('label.of')} ${total} ${$t('label.items')}`"
-        :pageSizeOptions="pageSizeOptions"
-        @change="changePage"
-        @showSizeChange="changePage"
-        showSizeChanger
-        showQuickJumper>
-        <template #buildOptionText="props">
-          <span>{{ props.value }} / {{ $t('label.page') }}</span>
-        </template>
-      </a-pagination>
-    </div>
+    <a-pagination
+      class="row-element"
+      style="margin-top: 10px"
+      size="small"
+      :current="page"
+      :pageSize="pageSize"
+      :total="totalCount"
+      :showTotal="total => `${$t('label.showing')} ${Math.min(total, 1+((page-1)*pageSize))}-${Math.min(page*pageSize, total)} ${$t('label.of')} ${total} ${$t('label.items')}`"
+      :pageSizeOptions="pageSizeOptions"
+      @change="changePage"
+      @showSizeChange="changePage"
+      showSizeChanger
+      showQuickJumper>
+      <template #buildOptionText="props">
+        <span>{{ props.value }} / {{ $t('label.page') }}</span>
+      </template>
+    </a-pagination>
+  </div>
 </template>
 
 <script>
@@ -215,7 +215,7 @@ export default {
   watch: {
     resource: {
       handler () {
-        this.fetchDeliveries()
+        this.fetchData()
       }
     }
   },
@@ -277,16 +277,17 @@ export default {
     updateColumns () {
       this.columns = []
       for (var columnKey of this.columnKeys) {
-        if (!this.selectedColumnKeys.includes(columnKey)) continue
-        var title = this.$t('label.' + String(columnKey).toLowerCase())
-        if (columnKey === 'eventtype') {
+        const key = columnKey
+        if (!this.selectedColumnKeys.includes(key)) continue
+        var title = this.$t('label.' + String(key).toLowerCase())
+        if (key === 'eventtype') {
           title = this.$t('label.event')
         }
         this.columns.push({
-          key: columnKey,
+          key: key,
           title: title,
-          dataIndex: columnKey,
-          sorter: (a, b) => { return genericCompare(a[columnKey] || '', b[columnKey] || '') }
+          dataIndex: key,
+          sorter: (a, b) => { return genericCompare(a[key] || '', b[key] || '') }
         })
       }
       if (this.columns.length > 0) {
@@ -449,11 +450,11 @@ export default {
         formatedEndDate = moment(this.endDate).format('MMM DD, YYYY') + ' at ' + moment(this.endDate).format('HH:mm:ss')
       }
       if (formatedStartDate && formatedEndDate) {
-        this.formatedPeriod = ' ' + this.$t('label.vm.stats.filter.period', { startDate: formatedStartDate, endDate: formatedEndDate })
+        this.formatedPeriod = ' ' + this.$t('label.datetime.filter.period', { startDate: formatedStartDate, endDate: formatedEndDate })
       } else if (formatedStartDate && !formatedEndDate) {
-        this.formatedPeriod = ' ' + this.$t('label.vm.stats.filter.starting', { startDate: formatedStartDate })
+        this.formatedPeriod = ' ' + this.$t('label.datetime.filter.starting', { startDate: formatedStartDate })
       } else if (!formatedStartDate && formatedEndDate) {
-        this.formatedPeriod = ' ' + this.$t('label.vm.stats.filter.up.to', { endDate: formatedEndDate })
+        this.formatedPeriod = ' ' + this.$t('label.datetime.filter.up.to', { endDate: formatedEndDate })
       } else {
         this.formatedPeriod = ' <b>' + this.$t('label.all.available.data') + '</b>'
       }
