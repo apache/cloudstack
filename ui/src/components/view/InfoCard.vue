@@ -589,12 +589,6 @@
             <span v-else>{{ resource.etcdofferingname || resource.etcdofferingid }}</span>
           </div>
         </div>
-        <div class="resource-detail-item" v-if="resource.etcdnodes">
-          <div class="resource-detail-item__label">{{ $t('label.etcdnodes') }}</div>
-          <div class="resource-detail-item__details">
-            <bulb-outlined />{{ resource.etcdnodes }}
-          </div>
-        </div>
         <div class="resource-detail-item" v-if="resource.diskofferingname && resource.diskofferingid">
           <div class="resource-detail-item__label">{{ $t('label.diskoffering') }}</div>
           <div class="resource-detail-item__details">

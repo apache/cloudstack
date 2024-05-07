@@ -404,7 +404,10 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
 
         // Scale network rules to update firewall rule
         try {
-            List<Long> clusterVMIds = getKubernetesClusterVMMaps().stream().map(KubernetesClusterVmMapVO::getVmId).collect(Collectors.toList());
+            List<Long> clusterVMIds = getKubernetesClusterVMMaps()
+                    .stream()
+                    .filter(x -> !x.isEtcdNode())
+                    .map(KubernetesClusterVmMapVO::getVmId).collect(Collectors.toList());
             scaleKubernetesClusterNetworkRules(clusterVMIds);
         } catch (ManagementServerException e) {
             logTransitStateAndThrow(Level.ERROR, String.format("Scaling failed for Kubernetes cluster : %s, unable to update network rules", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed, e);
@@ -420,7 +423,9 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
             vmList = getKubernetesClusterVMMapsForNodes(this.nodeIds).stream().filter(vm -> !vm.isExternalNode()).collect(Collectors.toList());
         } else {
             vmList  = getKubernetesClusterVMMaps();
-            vmList  = vmList.stream().filter(vm -> !vm.isExternalNode()).collect(Collectors.toList());
+            vmList  = vmList.stream()
+                        .filter(vm -> !vm.isExternalNode() && !vm.isControlNode() && !vm.isEtcdNode())
+                        .collect(Collectors.toList());
             vmList = vmList.subList((int) (kubernetesCluster.getControlNodeCount() + clusterSize - 1), vmList.size());
         }
         Collections.reverse(vmList);
@@ -444,7 +449,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         }
         try {
             List<Long> externalNodeIds = getKubernetesClusterVMMaps().stream().filter(KubernetesClusterVmMapVO::isExternalNode).map(KubernetesClusterVmMapVO::getVmId).collect(Collectors.toList());
-            List<Long> clusterVMIds = getKubernetesClusterVMMaps().stream().filter(vm -> !vm.isExternalNode()).map(KubernetesClusterVmMapVO::getVmId).collect(Collectors.toList());
+            List<Long> clusterVMIds = getKubernetesClusterVMMaps().stream().filter(vm -> !vm.isExternalNode() && !vm.isEtcdNode()).map(KubernetesClusterVmMapVO::getVmId).collect(Collectors.toList());
             clusterVMIds.addAll(externalNodeIds);
             scaleKubernetesClusterNetworkRules(clusterVMIds);
         } catch (ManagementServerException e) {
