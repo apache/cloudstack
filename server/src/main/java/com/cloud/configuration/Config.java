@@ -918,16 +918,6 @@ public enum Config {
             "1",
             "Weight for user dispersion heuristic (as a value between 0 and 1) applied to resource allocation during vm deployment. Weight for capacity heuristic will be (1 - weight of user dispersion)",
             null),
-    VmAllocationAlgorithm(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "vm.allocation.algorithm",
-            "random",
-            "'random', 'firstfit', 'userdispersing', 'userconcentratedpod_random', 'userconcentratedpod_firstfit', 'firstfitleastconsumed' : Order in which hosts within a cluster will be considered for VM/volume allocation.",
-            null,
-            ConfigKey.Kind.Select,
-            "random,firstfit,userdispersing,userconcentratedpod_random,userconcentratedpod_firstfit,firstfitleastconsumed"),
     VmDeploymentPlanner(
             "Advanced",
             ManagementServer.class,
@@ -959,7 +949,7 @@ public enum Config {
             ManagementServer.class,
             Integer.class,
             "network.loadbalancer.basiczone.elb.vm.ram.size",
-            "128",
+            "512",
             "Memory in MB for the elastic load balancer vm",
             null),
     ElasticLoadBalancerVmCpuMhz(
@@ -1291,7 +1281,7 @@ public enum Config {
             "The allowable clock difference in milliseconds between when an SSO login request is made and when it is received.",
             null),
     //NetworkType("Hidden", ManagementServer.class, String.class, "network.type", "vlan", "The type of network that this deployment will use.", "vlan,direct"),
-    RouterRamSize("Hidden", NetworkOrchestrationService.class, Integer.class, "router.ram.size", "256", "Default RAM for router VM (in MB).", null),
+    RouterRamSize("Hidden", NetworkOrchestrationService.class, Integer.class, "router.ram.size", "512", "Default RAM for router VM (in MB).", null),
 
     DefaultPageSize("Advanced", ManagementServer.class, Long.class, "default.page.size", "500", "Default page size for API list* commands", null),
 

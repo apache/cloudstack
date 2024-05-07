@@ -25,6 +25,7 @@ import com.cloud.util.StoragePoolTypeConverter;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.util.HypervisorTypeConverter;
 
 import javax.persistence.Column;
 import javax.persistence.Convert;
@@ -118,7 +119,7 @@ public class StoragePoolVO implements StoragePool {
     private Long capacityIops;
 
     @Column(name = "hypervisor")
-    @Enumerated(value = EnumType.STRING)
+    @Convert(converter = HypervisorTypeConverter.class)
     private HypervisorType hypervisor;
 
     @Column(name = "parent")

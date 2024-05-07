@@ -117,6 +117,7 @@ public class ApiConstants {
     public static final String CURRENT_START_IP = "currentstartip";
     public static final String CURRENT_END_IP = "currentendip";
     public static final String ENCRYPT = "encrypt";
+    public static final String ENCRYPT_FORMAT = "encryptformat";
     public static final String ENCRYPT_ROOT = "encryptroot";
     public static final String ENCRYPTION_SUPPORTED = "encryptionsupported";
     public static final String MIN_IOPS = "miniops";
@@ -191,6 +192,7 @@ public class ApiConstants {
     public static final String FORMAT = "format";
     public static final String FOR_VIRTUAL_NETWORK = "forvirtualnetwork";
     public static final String FOR_SYSTEM_VMS = "forsystemvms";
+    public static final String FULL_PATH = "fullpath";
     public static final String GATEWAY = "gateway";
     public static final String IP6_GATEWAY = "ip6gateway";
     public static final String GROUP = "group";
@@ -303,6 +305,8 @@ public class ApiConstants {
     public static final String MIGRATIONS = "migrations";
     public static final String MEMORY = "memory";
     public static final String MODE = "mode";
+    public static final String NSX_MODE = "nsxmode";
+    public static final String NSX_ENABLED = "isnsxenabled";
     public static final String NAME = "name";
     public static final String METHOD_NAME = "methodname";
     public static final String NETWORK_DOMAIN = "networkdomain";
@@ -380,6 +384,7 @@ public class ApiConstants {
     public static final String RECEIVED_BYTES = "receivedbytes";
     public static final String RECONNECT = "reconnect";
     public static final String RECOVER = "recover";
+    public static final String REPAIR = "repair";
     public static final String REQUIRES_HVM = "requireshvm";
     public static final String RESOURCE_COUNT = "resourcecount";
     public static final String RESOURCE_NAME = "resourcename";
@@ -506,6 +511,9 @@ public class ApiConstants {
     public static final String IS_VOLATILE = "isvolatile";
     public static final String VOLUME_ID = "volumeid";
     public static final String VOLUMES = "volumes";
+    public static final String VOLUME_CHECK_RESULT = "volumecheckresult";
+    public static final String VOLUME_REPAIR_RESULT = "volumerepairresult";
+
     public static final String ZONE = "zone";
     public static final String ZONE_ID = "zoneid";
     public static final String ZONE_NAME = "zonename";
@@ -551,6 +559,7 @@ public class ApiConstants {
     public static final String ALLOCATION_STATE = "allocationstate";
     public static final String MANAGED_STATE = "managedstate";
     public static final String MANAGEMENT_SERVER_ID = "managementserverid";
+    public static final String STORAGE = "storage";
     public static final String STORAGE_ID = "storageid";
     public static final String PING_STORAGE_SERVER_IP = "pingstorageserverip";
     public static final String PING_DIR = "pingdir";
@@ -700,6 +709,12 @@ public class ApiConstants {
     public static final String VSWITCH_TYPE_PUBLIC_TRAFFIC = "publicvswitchtype";
     public static final String VSWITCH_NAME_GUEST_TRAFFIC = "guestvswitchname";
     public static final String VSWITCH_NAME_PUBLIC_TRAFFIC = "publicvswitchname";
+
+    // NSX
+    public static final String EDGE_CLUSTER = "edgecluster";
+    public static final String TIER0_GATEWAY = "tier0gateway";
+
+    public static final String TRANSPORT_ZONE = "transportzone";
     // Tungsten-Fabric
     public static final String TUNGSTEN_VIRTUAL_ROUTER_UUID = "tungstenvirtualrouteruuid";
     public static final String TUNGSTEN_PROVIDER_HOSTNAME = "tungstenproviderhostname";
@@ -821,6 +836,9 @@ public class ApiConstants {
     public static final String FORCE_ENCAP = "forceencap";
     public static final String SPLIT_CONNECTIONS = "splitconnections";
     public static final String FOR_VPC = "forvpc";
+    public static final String FOR_NSX = "fornsx";
+    public static final String NSX_SUPPORT_LB = "nsxsupportlb";
+    public static final String NSX_SUPPORTS_INTERNAL_LB = "nsxsupportsinternallb";
     public static final String FOR_TUNGSTEN = "fortungsten";
     public static final String SHRINK_OK = "shrinkok";
     public static final String NICIRA_NVP_DEVICE_ID = "nvpdeviceid";
@@ -830,6 +848,11 @@ public class ApiConstants {
     public static final String NICIRA_NVP_L2_GATEWAYSERVICE_UUID = "l2gatewayserviceuuid";
     public static final String NSX_LOGICAL_SWITCH = "nsxlogicalswitch";
     public static final String NSX_LOGICAL_SWITCH_PORT = "nsxlogicalswitchport";
+    public static final String NSX_PROVIDER_UUID = "nsxprovideruuid";
+    public static final String NSX_PROVIDER_HOSTNAME = "nsxproviderhostname";
+
+    public static final String NSX_PROVIDER_PORT = "nsxproviderport";
+    public static final String NSX_CONTROLLER_ID = "nsxcontrollerid";
     public static final String S3_ACCESS_KEY = "accesskey";
     public static final String S3_SECRET_KEY = "secretkey";
     public static final String S3_END_POINT = "endpoint";
@@ -954,6 +977,7 @@ public class ApiConstants {
     public static final String SUPPORTS_REGION_LEVEL_VPC = "supportsregionLevelvpc";
     public static final String SUPPORTS_STRECHED_L2_SUBNET = "supportsstrechedl2subnet";
     public static final String SUPPORTS_PUBLIC_ACCESS = "supportspublicaccess";
+    public static final String SUPPORTS_INTERNAL_LB = "supportsinternallb";
     public static final String SUPPORTS_VM_AUTOSCALING = "supportsvmautoscaling";
     public static final String REGION_LEVEL_VPC = "regionlevelvpc";
     public static final String STRECHED_L2_SUBNET = "strechedl2subnet";
@@ -1072,14 +1096,13 @@ public class ApiConstants {
     public static final String SOURCE_NAT_IP = "sourcenatipaddress";
     public static final String SOURCE_NAT_IP_ID = "sourcenatipaddressid";
     public static final String HAS_RULES = "hasrules";
+    public static final String NSX_DETAIL_KEY = "forNsx";
     public static final String DISK_PATH = "diskpath";
     public static final String IMPORT_SOURCE = "importsource";
     public static final String TEMP_PATH = "temppath";
     public static final String OBJECT_STORAGE = "objectstore";
-
     public static final String HEURISTIC_RULE = "heuristicrule";
     public static final String HEURISTIC_TYPE_VALID_OPTIONS = "Valid options are: ISO, SNAPSHOT, TEMPLATE and VOLUME.";
-
     public static final String MANAGEMENT = "management";
     public static final String IS_VNF = "isvnf";
     public static final String VNF_NICS = "vnfnics";

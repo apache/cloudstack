@@ -63,8 +63,16 @@ public class VpcOfferingResponse extends BaseResponse {
     private Boolean supportsDistributedRouter;
 
     @SerializedName((ApiConstants.SUPPORTS_REGION_LEVEL_VPC))
-    @Param(description = " indicated if the offering can support region level vpc", since = "4.4")
+    @Param(description = "indicated if the offering can support region level vpc", since = "4.4")
     private Boolean supportsRegionLevelVpc;
+
+    @SerializedName(ApiConstants.FOR_NSX)
+    @Param(description = "true if vpc offering can be used by NSX networks only")
+    private Boolean forNsx;
+
+    @SerializedName(ApiConstants.NSX_MODE)
+    @Param(description = "Mode in which the network will operate. This parameter is only relevant for NSX offerings")
+    private String nsxMode;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "the domain ID(s) this disk offering belongs to. Ignore this information as it is not currently applicable.")
@@ -136,6 +144,14 @@ public class VpcOfferingResponse extends BaseResponse {
 
     public void setDomain(String domain) {
         this.domain = domain;
+    }
+
+    public void setForNsx(Boolean forNsx) {
+        this.forNsx = forNsx;
+    }
+
+    public void setNsxMode(String nsxMode) {
+        this.nsxMode = nsxMode;
     }
 
     public String getZoneId() {

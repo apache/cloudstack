@@ -1115,7 +1115,7 @@ class TestSecuredVmMigration(cloudstackTestCase):
                     time.sleep(interval)
                     restarted_host = Host.list(
                         cls.apiclient,
-                        hostid=host.id,
+                        id=host.id,
                         type='Routing'
                     )[0]
                     if restarted_host.state == "Up":
@@ -1180,7 +1180,7 @@ class TestSecuredVmMigration(cloudstackTestCase):
             time.sleep(interval)
             host = Host.list(
                 self.apiclient,
-                hostid=hostId,
+                id=hostId,
                 type='Routing'
             )[0]
             if host.state != state:
@@ -1240,7 +1240,7 @@ class TestSecuredVmMigration(cloudstackTestCase):
             host = Host.list(
                 self.apiclient,
                 zoneid=self.zone.id,
-                hostid=host.id,
+                id=host.id,
                 type='Routing'
             )[0]
             if host.details.secured != secured:

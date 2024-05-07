@@ -483,4 +483,8 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
         return null;
     }
 
+    @Override
+    public List<String> getApiNameList() {
+        return null;
+    }
 }

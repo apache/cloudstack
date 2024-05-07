@@ -18,6 +18,7 @@
 -- VIEW `cloud`.`domain_view`;
 
 DROP VIEW IF EXISTS `cloud`.`domain_view`;
+
 CREATE VIEW `cloud`.`domain_view` AS
 select
     `domain`.`id` AS `id`,

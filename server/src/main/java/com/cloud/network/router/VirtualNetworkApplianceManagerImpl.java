@@ -1585,7 +1585,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     }
 
     private SetMonitorServiceCommand createMonitorServiceCommand(DomainRouterVO router, List<MonitorServiceTO> services,
-                                                                 boolean reconfigure, boolean deleteFromProcessedCache) {
+                                                                 boolean reconfigure, boolean deleteFromProcessedCache, Map<String, String> routerHealthCheckConfig) {
         final SetMonitorServiceCommand command = new SetMonitorServiceCommand(services);
         command.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
         command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
@@ -1603,7 +1603,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         }
 
         command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_EXCLUDED, excludedTests);
-        command.setHealthChecksConfig(getRouterHealthChecksConfig(router));
+        command.setHealthChecksConfig(routerHealthCheckConfig);
         command.setReconfigureAfterUpdate(reconfigure);
         command.setDeleteFromProcessedCache(deleteFromProcessedCache); // As part of updating
         return command;
@@ -1628,7 +1628,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         logger.info("Updating data for router health checks for router " + router.getUuid());
         Answer origAnswer = null;
         try {
-            SetMonitorServiceCommand command = createMonitorServiceCommand(router, null, true, true);
+            SetMonitorServiceCommand command = createMonitorServiceCommand(router, null, true, true, getRouterHealthChecksConfig(router));
             origAnswer = _agentMgr.easySend(router.getHostId(), command);
         } catch (final Exception e) {
             logger.error("Error while sending update data for health check to router: " + router.getInstanceName(), e);
@@ -1743,7 +1743,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         }
     }
 
-    private Map<String, String> getRouterHealthChecksConfig(final DomainRouterVO router) {
+    protected Map<String, String> getRouterHealthChecksConfig(final DomainRouterVO router) {
         Map<String, String> data = new HashMap<>();
         List<DomainRouterJoinVO> routerJoinVOs = domainRouterJoinDao.searchByIds(router.getId());
         StringBuilder vmsData = new StringBuilder();
@@ -1757,16 +1757,14 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             }
             SearchBuilder<UserVmJoinVO> sbvm = userVmJoinDao.createSearchBuilder();
             sbvm.and("networkId", sbvm.entity().getNetworkId(), SearchCriteria.Op.EQ);
+            sbvm.and("state", sbvm.entity().getState(), SearchCriteria.Op.EQ);
             SearchCriteria<UserVmJoinVO> scvm = sbvm.create();
             scvm.setParameters("networkId", routerJoinVO.getNetworkId());
+            scvm.setParameters("state", VirtualMachine.State.Running);
             List<UserVmJoinVO> vms = userVmJoinDao.search(scvm, null);
             boolean isDhcpSupported = _ntwkSrvcDao.areServicesSupportedInNetwork(routerJoinVO.getNetworkId(), Service.Dhcp);
             boolean isDnsSupported = _ntwkSrvcDao.areServicesSupportedInNetwork(routerJoinVO.getNetworkId(), Service.Dns);
             for (UserVmJoinVO vm : vms) {
-                if (vm.getState() != VirtualMachine.State.Running) {
-                    continue;
-                }
-
                 vmsData.append("vmName=").append(vm.getName())
                         .append(",macAddress=").append(vm.getMacAddress())
                         .append(",ip=").append(vm.getIpAddress())
@@ -2308,6 +2306,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         final Provider provider = getVrProvider(router);
 
         final List<Long> routerGuestNtwkIds = _routerDao.getRouterNetworks(router.getId());
+        Map <String, String> routerHealthChecksConfig = getRouterHealthChecksConfig(router);
         for (final Long guestNetworkId : routerGuestNtwkIds) {
             final AggregationControlCommand startCmd = new AggregationControlCommand(Action.Start, router.getInstanceName(), controlNic.getIPv4Address(), _routerControlHelper.getRouterIpInNetwork(
                     guestNetworkId, router.getId()));
@@ -2316,7 +2315,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             if (reprogramGuestNtwks) {
                 finalizeIpAssocForNetwork(cmds, router, provider, guestNetworkId, null);
                 finalizeNetworkRulesForNetwork(cmds, router, provider, guestNetworkId);
-                finalizeMonitorService(cmds, profile, router, provider, guestNetworkId, true);
+                finalizeMonitorService(cmds, profile, router, provider, guestNetworkId, true, routerHealthChecksConfig);
             }
 
             finalizeUserDataAndDhcpOnStart(cmds, router, provider, guestNetworkId);
@@ -2330,7 +2329,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     }
 
     protected void finalizeMonitorService(final Commands cmds, final VirtualMachineProfile profile, final DomainRouterVO router, final Provider provider,
-                                          final long networkId, boolean onStart) {
+                                          final long networkId, boolean onStart, Map<String, String> routerHealthCheckConfig) {
         final NetworkOffering offering = _networkOfferingDao.findById(_networkDao.findById(networkId).getNetworkOfferingId());
         if (offering.isRedundantRouter()) {
             // service monitoring is currently not added in RVR
@@ -2380,7 +2379,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         }
 
         // As part of aggregate command we don't need to reconfigure if onStart and persist in processed cache. Subsequent updates are not needed.
-        SetMonitorServiceCommand command = createMonitorServiceCommand(router, servicesTO, !onStart, false);
+        SetMonitorServiceCommand command = createMonitorServiceCommand(router, servicesTO, !onStart, false, routerHealthCheckConfig);
         command.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(networkId, router.getId()));
         if (!isMonitoringServicesEnabled) {
             command.setAccessDetail(SetMonitorServiceCommand.ROUTER_MONITORING_ENABLED, isMonitoringServicesEnabled.toString());
@@ -2545,25 +2544,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 }
             }
 
-            final List<LoadBalancerVO> lbs = _loadBalancerDao.listByNetworkIdAndScheme(guestNetworkId, Scheme.Public);
-            final List<LoadBalancingRule> lbRules = new ArrayList<LoadBalancingRule>();
-            if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.Lb, provider)) {
-                // Re-apply load balancing rules
-                for (final LoadBalancerVO lb : lbs) {
-                    final List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
-                    final List<LbStickinessPolicy> policyList = _lbMgr.getStickinessPolicies(lb.getId());
-                    final List<LbHealthCheckPolicy> hcPolicyList = _lbMgr.getHealthCheckPolicies(lb.getId());
-                    final Ip sourceIp = _networkModel.getPublicIpAddress(lb.getSourceIpAddressId()).getAddress();
-                    final LbSslCert sslCert = _lbMgr.getLbSslCert(lb.getId());
-                    final LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList, hcPolicyList, sourceIp, sslCert, lb.getLbProtocol());
-                    lbRules.add(loadBalancing);
-                }
-            }
-
-            logger.debug("Found " + lbRules.size() + " load balancing rule(s) to apply as a part of domR " + router + " start.");
-            if (!lbRules.isEmpty()) {
-                _commandSetupHelper.createApplyLoadBalancingRulesCommands(lbRules, router, cmds, guestNetworkId);
-            }
+            createApplyLoadBalancingRulesCommands(cmds, router, provider, guestNetworkId);
         }
         // Reapply dhcp and dns configuration.
         final Network guestNetwork = _networkDao.findById(guestNetworkId);
@@ -2587,6 +2568,35 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                     _commandSetupHelper.configDnsMasq(router, _networkDao.findById(guestNetworkId), cmds);
                 }
             }
+        }
+    }
+
+    private void createApplyLoadBalancingRulesCommands(final Commands cmds, final DomainRouterVO router, final Provider provider, final Long guestNetworkId) {
+        if (router.getVpcId() != null) {
+            return;
+        }
+        final List<LoadBalancerVO> lbs = _loadBalancerDao.listByNetworkIdAndScheme(guestNetworkId, Scheme.Public);
+        final List<LoadBalancingRule> lbRules = new ArrayList<LoadBalancingRule>();
+        if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.Lb, provider)) {
+            // Re-apply load balancing rules
+            createLoadBalancingRulesList(lbRules, lbs);
+        }
+
+        logger.debug("Found " + lbRules.size() + " load balancing rule(s) to apply as a part of domR " + router + " start.");
+        if (!lbRules.isEmpty()) {
+            _commandSetupHelper.createApplyLoadBalancingRulesCommands(lbRules, router, cmds, guestNetworkId);
+        }
+    }
+
+    protected void createLoadBalancingRulesList(List<LoadBalancingRule> lbRules, final List<LoadBalancerVO> lbs) {
+        for (final LoadBalancerVO lb : lbs) {
+            final List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
+            final List<LbStickinessPolicy> policyList = _lbMgr.getStickinessPolicies(lb.getId());
+            final List<LbHealthCheckPolicy> hcPolicyList = _lbMgr.getHealthCheckPolicies(lb.getId());
+            final Ip sourceIp = _networkModel.getPublicIpAddress(lb.getSourceIpAddressId()).getAddress();
+            final LbSslCert sslCert = _lbMgr.getLbSslCert(lb.getId());
+            final LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList, hcPolicyList, sourceIp, sslCert, lb.getLbProtocol());
+            lbRules.add(loadBalancing);
         }
     }
 
