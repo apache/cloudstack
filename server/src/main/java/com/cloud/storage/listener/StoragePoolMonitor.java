@@ -27,7 +27,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -47,7 +48,7 @@ import com.cloud.storage.StorageManagerImpl;
 import com.cloud.storage.StoragePoolHostVO;
 
 public class StoragePoolMonitor implements Listener {
-    private static final Logger s_logger = Logger.getLogger(StoragePoolMonitor.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     private final StorageManagerImpl _storageManager;
     private final PrimaryDataStoreDao _poolDao;
     private DataStoreProviderManager _dataStoreProviderMgr;
@@ -85,7 +86,7 @@ public class StoragePoolMonitor implements Listener {
                         }
                     }
                     catch (Exception ex) {
-                        s_logger.error("hostAdded(long) failed for storage provider " + provider.getName(), ex);
+                        logger.error("hostAdded(long) failed for storage provider " + provider.getName(), ex);
                     }
                 }
             }
@@ -101,7 +102,7 @@ public class StoragePoolMonitor implements Listener {
                 scCmd.getHypervisorType() == HypervisorType.Ovm || scCmd.getHypervisorType() == HypervisorType.Hyperv ||
                 scCmd.getHypervisorType() == HypervisorType.LXC || scCmd.getHypervisorType() == HypervisorType.Ovm3) {
                 List<StoragePoolVO> pools = _poolDao.listBy(host.getDataCenterId(), host.getPodId(), host.getClusterId(), ScopeType.CLUSTER);
-                List<StoragePoolVO> zoneStoragePoolsByTags = _poolDao.findZoneWideStoragePoolsByTags(host.getDataCenterId(), null);
+                List<StoragePoolVO> zoneStoragePoolsByTags = _poolDao.findZoneWideStoragePoolsByTags(host.getDataCenterId(), null, false);
                 List<StoragePoolVO> zoneStoragePoolsByHypervisor = _poolDao.findZoneWideStoragePoolsByHypervisor(host.getDataCenterId(), scCmd.getHypervisorType());
                 zoneStoragePoolsByTags.retainAll(zoneStoragePoolsByHypervisor);
                 pools.addAll(zoneStoragePoolsByTags);
@@ -128,8 +129,8 @@ public class StoragePoolMonitor implements Listener {
                     }
 
                     Long hostId = host.getId();
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Host " + hostId + " connected, connecting host to shared pool id " + pool.getId() + " and sending storage pool information ...");
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Host " + hostId + " connected, connecting host to shared pool id " + pool.getId() + " and sending storage pool information ...");
                     }
                     try {
                         _storageManager.connectHostToSharedPool(hostId, pool.getId());
@@ -146,7 +147,7 @@ public class StoragePoolMonitor implements Listener {
     public synchronized boolean processDisconnect(long agentId, Status state) {
         Host host = _storageManager.getHost(agentId);
         if (host == null) {
-            s_logger.warn("Agent: " + agentId + " not found, not disconnecting pools");
+            logger.warn("Agent: " + agentId + " not found, not disconnecting pools");
             return false;
         }
 
@@ -156,8 +157,8 @@ public class StoragePoolMonitor implements Listener {
 
         List<StoragePoolHostVO> storagePoolHosts = _storageManager.findStoragePoolsConnectedToHost(host.getId());
         if (storagePoolHosts == null) {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("No pools to disconnect for host: " + host.getId());
+            if (logger.isTraceEnabled()) {
+                logger.trace("No pools to disconnect for host: " + host.getId());
             }
             return true;
         }
@@ -181,7 +182,7 @@ public class StoragePoolMonitor implements Listener {
             try {
                 _storageManager.disconnectHostFromSharedPool(host.getId(), pool.getId());
             } catch (Exception e) {
-                s_logger.error("Unable to disconnect host " + host.getId() + " from storage pool id " + pool.getId() + " due to " + e.toString());
+                logger.error("Unable to disconnect host " + host.getId() + " from storage pool id " + pool.getId() + " due to " + e.toString());
                 disconnectResult = false;
             }
         }
@@ -204,7 +205,7 @@ public class StoragePoolMonitor implements Listener {
                         }
                     }
                     catch (Exception ex) {
-                        s_logger.error("hostAboutToBeRemoved(long) failed for storage provider " + provider.getName(), ex);
+                        logger.error("hostAboutToBeRemoved(long) failed for storage provider " + provider.getName(), ex);
                     }
                 }
             }
@@ -226,7 +227,7 @@ public class StoragePoolMonitor implements Listener {
                         }
                     }
                     catch (Exception ex) {
-                        s_logger.error("hostRemoved(long, long) failed for storage provider " + provider.getName(), ex);
+                        logger.error("hostRemoved(long, long) failed for storage provider " + provider.getName(), ex);
                     }
                 }
             }

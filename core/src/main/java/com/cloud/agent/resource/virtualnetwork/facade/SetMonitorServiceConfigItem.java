@@ -21,7 +21,6 @@ package com.cloud.agent.resource.virtualnetwork.facade;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.SetMonitorServiceCommand;
@@ -32,7 +31,6 @@ import com.cloud.agent.resource.virtualnetwork.model.ConfigBase;
 import com.cloud.agent.resource.virtualnetwork.model.MonitorService;
 
 public class SetMonitorServiceConfigItem extends AbstractConfigItemFacade {
-    private static final Logger s_logger = Logger.getLogger(SetMonitorServiceConfigItem.class);
 
     @Override
     public List<ConfigItem> generateConfig(final NetworkElementCommand cmd) {
@@ -58,14 +56,14 @@ public class SetMonitorServiceConfigItem extends AbstractConfigItemFacade {
         try {
             monitorService.setHealthChecksBasicRunInterval(Integer.parseInt(command.getAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_BASIC_INTERVAL)));
         } catch (NumberFormatException exception) {
-            s_logger.error("Unexpected health check basic interval set" + command.getAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_BASIC_INTERVAL) +
+            logger.error("Unexpected health check basic interval set" + command.getAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_BASIC_INTERVAL) +
                     ". Exception: " + exception + "Will use default value");
         }
 
         try {
             monitorService.setHealthChecksAdvancedRunInterval(Integer.parseInt(command.getAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ADVANCED_INTERVAL)));
         } catch (NumberFormatException exception) {
-            s_logger.error("Unexpected health check advanced interval set" + command.getAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ADVANCED_INTERVAL) +
+            logger.error("Unexpected health check advanced interval set" + command.getAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ADVANCED_INTERVAL) +
                     ". Exception: " + exception + "Will use default value");
         }
 

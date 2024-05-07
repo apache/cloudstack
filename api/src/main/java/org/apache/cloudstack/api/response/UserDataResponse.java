@@ -24,7 +24,7 @@ import org.apache.cloudstack.api.BaseResponseWithAnnotations;
 import org.apache.cloudstack.api.EntityReference;
 
 @EntityReference(value = UserData.class)
-public class UserDataResponse extends BaseResponseWithAnnotations {
+public class UserDataResponse extends BaseResponseWithAnnotations implements ControlledEntityResponse {
 
     @SerializedName(ApiConstants.ID)
     @Param(description = "ID of the ssh keypair")
@@ -39,6 +39,14 @@ public class UserDataResponse extends BaseResponseWithAnnotations {
 
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the owner of the userdata")
     private String accountName;
+
+    @SerializedName(ApiConstants.PROJECT_ID)
+    @Param(description = "the project id of the userdata", since = "4.19.1")
+    private String projectId;
+
+    @SerializedName(ApiConstants.PROJECT)
+    @Param(description = "the project name of the userdata", since = "4.19.1")
+    private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain id of the userdata owner")
     private String domainId;
@@ -116,6 +124,16 @@ public class UserDataResponse extends BaseResponseWithAnnotations {
 
     public void setAccountName(String accountName) {
         this.accountName = accountName;
+    }
+
+    @Override
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
+    }
+
+    @Override
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
     }
 
     public String getDomainName() {

@@ -26,7 +26,7 @@ export default {
   permission: ['listClustersMetrics'],
   columns: () => {
     const fields = ['name', 'state', 'allocationstate', 'clustertype', 'hypervisortype', 'hosts']
-    const metricsFields = ['cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal']
+    const metricsFields = ['cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal', 'drsimbalance']
     if (store.getters.metrics) {
       fields.push(...metricsFields)
     }
@@ -34,7 +34,7 @@ export default {
     fields.push('zonename')
     return fields
   },
-  details: ['name', 'id', 'allocationstate', 'clustertype', 'managedstate', 'hypervisortype', 'podname', 'zonename'],
+  details: ['name', 'id', 'allocationstate', 'clustertype', 'managedstate', 'hypervisortype', 'podname', 'zonename', 'drsimbalance'],
   related: [{
     name: 'host',
     title: 'label.hosts',
@@ -55,8 +55,17 @@ export default {
     name: 'settings',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/SettingsTab.vue')))
   }, {
+    name: 'drs',
+    component: shallowRef(defineAsyncComponent(() => import('@/views/infra/ClusterDRSTab.vue')))
+  }, {
     name: 'comments',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
+  },
+  {
+    name: 'events',
+    resourceType: 'Cluster',
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+    show: () => { return 'listEvents' in store.getters.apis }
   }],
   actions: [
     {
@@ -111,6 +120,16 @@ export default {
       message: 'message.action.unmanage.cluster',
       dataView: true,
       defaultArgs: { managedstate: 'Unmanaged' },
+      show: (record) => { return record.managedstate === 'Managed' }
+    },
+    {
+      api: 'executeDRS',
+      icon: 'gold-outlined',
+      label: 'label.action.drs.cluster',
+      message: 'message.action.drs.cluster',
+      dataView: true,
+      defaultArgs: { iterations: null },
+      args: ['iterations'],
       show: (record) => { return record.managedstate === 'Managed' }
     },
     {

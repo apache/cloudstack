@@ -22,19 +22,22 @@ package com.cloud.utils.storage;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
 import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.UriUtils;
 
 public final class QCOW2Utils {
-    public static final Logger LOGGER = Logger.getLogger(QCOW2Utils.class.getName());
+    protected static Logger LOGGER = LogManager.getLogger(QCOW2Utils.class);
 
     private static final int VIRTUALSIZE_HEADER_LOCATION = 24;
     private static final int VIRTUALSIZE_HEADER_LENGTH = 8;
@@ -111,16 +114,23 @@ public final class QCOW2Utils {
         }
     }
 
-    public static long getVirtualSize(String urlStr) {
+    public static long getVirtualSizeFromUrl(String urlStr, boolean followRedirects) {
+        HttpURLConnection httpConn = null;
         try {
-            URL url = new URL(urlStr);
-            return getVirtualSizeFromInputStream(url.openStream());
-        } catch (MalformedURLException e) {
+            URI url = new URI(urlStr);
+            httpConn = (HttpURLConnection)url.toURL().openConnection();
+            httpConn.setInstanceFollowRedirects(followRedirects);
+            return getVirtualSize(httpConn.getInputStream(), UriUtils.isUrlForCompressedFile(urlStr));
+        } catch (URISyntaxException e) {
             LOGGER.warn("Failed to validate for qcow2, malformed URL: " + urlStr + ", error: " + e.getMessage());
             throw new IllegalArgumentException("Invalid URL: " + urlStr);
         }  catch (IOException e) {
             LOGGER.warn("Failed to validate for qcow2, error: " + e.getMessage());
             throw new IllegalArgumentException("Failed to connect URL: " + urlStr);
+        } finally {
+            if (httpConn != null) {
+                httpConn.disconnect();
+            }
         }
     }
 }

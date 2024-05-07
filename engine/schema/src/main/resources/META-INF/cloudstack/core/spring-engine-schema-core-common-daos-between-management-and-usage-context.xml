@@ -45,6 +45,7 @@
 	<bean id="hostTagsDaoImpl" class="com.cloud.host.dao.HostTagsDaoImpl" />
 	<bean id="hostTransferMapDaoImpl" class="com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl" />
 	<bean id="imageStoreDaoImpl" class="org.apache.cloudstack.storage.datastore.db.ImageStoreDaoImpl" />
+	<bean id="imageStoreObjectDownloadDaoImpl" class="org.apache.cloudstack.storage.datastore.db.ImageStoreObjectDownloadDaoImpl" />
 	<bean id="networkOfferingDaoImpl" class="com.cloud.offerings.dao.NetworkOfferingDaoImpl" />
 	<bean id="networkOfferingDetailsDaoImpl" class="com.cloud.offerings.dao.NetworkOfferingDetailsDaoImpl" />
 	<bean id="networkOfferingServiceMapDaoImpl" class="com.cloud.offerings.dao.NetworkOfferingServiceMapDaoImpl" />
@@ -56,6 +57,7 @@
 	<bean id="serviceOfferingDaoImpl" class="com.cloud.service.dao.ServiceOfferingDaoImpl" />
 	<bean id="serviceOfferingDetailsDaoImpl" class="com.cloud.service.dao.ServiceOfferingDetailsDaoImpl"/>
 	<bean id="snapshotDaoImpl" class="com.cloud.storage.dao.SnapshotDaoImpl" />
+	<bean id="snapshotZoneDaoImpl" class="com.cloud.storage.dao.SnapshotZoneDaoImpl" />
 	<bean id="snapshotDataStoreDaoImpl" class="org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDaoImpl" />
 	<bean id="storagePoolDetailsDaoImpl" class="com.cloud.storage.dao.StoragePoolDetailsDaoImpl" />
 	<bean id="storagePoolHostDaoImpl" class="com.cloud.storage.dao.StoragePoolHostDaoImpl" />
@@ -65,6 +67,9 @@
 	<bean id="vMInstanceDaoImpl" class="com.cloud.vm.dao.VMInstanceDaoImpl" />
 	<bean id="vMSnapshotDaoImpl" class="com.cloud.vm.snapshot.dao.VMSnapshotDaoImpl" />
 	<bean id="VmTemplateDaoImpl" class="org.apache.cloudstack.quota.dao.VmTemplateDaoImpl" />
+	<bean id="NetworkDaoImpl" class="org.apache.cloudstack.quota.dao.NetworkDaoImpl" />
+	<bean id="VpcDaoImpl" class="org.apache.cloudstack.quota.dao.VpcDaoImpl" />
 	<bean id="volumeDaoImpl" class="com.cloud.storage.dao.VolumeDaoImpl" />
+  <bean id="reservationDao" class="org.apache.cloudstack.reservation.dao.ReservationDaoImpl" />
     <bean id="backupOfferingDaoImpl" class="org.apache.cloudstack.backup.dao.BackupOfferingDaoImpl" />
 </beans>

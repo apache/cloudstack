@@ -19,6 +19,7 @@
 
 package com.cloud.resource;
 
+import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.NetworkInterface;
@@ -33,9 +34,11 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsAnswer;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
@@ -45,7 +48,7 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
 
 public abstract class ServerResourceBase implements ServerResource {
-    private static final Logger s_logger = Logger.getLogger(ServerResourceBase.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     protected String name;
     private ArrayList<String> warnings = new ArrayList<String>();
     private ArrayList<String> errors = new ArrayList<String>();
@@ -78,7 +81,7 @@ public abstract class ServerResourceBase implements ServerResource {
 
         String infos[] = NetUtils.getNetworkParams(privateNic);
         if (infos == null) {
-            s_logger.warn("Incorrect details for private Nic during initialization of ServerResourceBase");
+            logger.warn("Incorrect details for private Nic during initialization of ServerResourceBase");
             return false;
         }
         params.put("host.ip", infos[0]);
@@ -104,7 +107,7 @@ public abstract class ServerResourceBase implements ServerResource {
     }
 
     protected void tryToAutoDiscoverResourcePrivateNetworkInterface() throws ConfigurationException {
-        s_logger.info("Trying to autodiscover this resource's private network interface.");
+        logger.info("Trying to autodiscover this resource's private network interface.");
 
         List<NetworkInterface> nics;
         try {
@@ -116,11 +119,11 @@ public abstract class ServerResourceBase implements ServerResource {
             throw new ConfigurationException(String.format("Could not retrieve the environment NICs due to [%s].", e.getMessage()));
         }
 
-        s_logger.debug(String.format("Searching the private NIC along the environment NICs [%s].", Arrays.toString(nics.toArray())));
+        logger.debug(String.format("Searching the private NIC along the environment NICs [%s].", Arrays.toString(nics.toArray())));
 
         for (NetworkInterface nic : nics) {
             if (isValidNicToUseAsPrivateNic(nic))  {
-                s_logger.info(String.format("Using NIC [%s] as private NIC.", nic));
+                logger.info(String.format("Using NIC [%s] as private NIC.", nic));
                 privateNic = nic;
                 return;
             }
@@ -132,22 +135,55 @@ public abstract class ServerResourceBase implements ServerResource {
     protected boolean isValidNicToUseAsPrivateNic(NetworkInterface nic) {
         String nicName = nic.getName();
 
-        s_logger.debug(String.format("Verifying if NIC [%s] can be used as private NIC.", nic));
+        logger.debug(String.format("Verifying if NIC [%s] can be used as private NIC.", nic));
 
         String[] nicNameStartsToAvoid = {"vnif", "vnbr", "peth", "vif", "virbr"};
         if (nic.isVirtual() || StringUtils.startsWithAny(nicName, nicNameStartsToAvoid) || nicName.contains(":")) {
-            s_logger.debug(String.format("Not using NIC [%s] because it is either virtual, starts with %s, or contains \":\"" +
+            logger.debug(String.format("Not using NIC [%s] because it is either virtual, starts with %s, or contains \":\"" +
              " in its name.", Arrays.toString(nicNameStartsToAvoid), nic));
             return false;
         }
 
         String[] info = NetUtils.getNicParams(nicName);
         if (info == null || info[0] == null) {
-            s_logger.debug(String.format("Not using NIC [%s] because it does not have a valid IP to use as the private IP.", nic));
+            logger.debug(String.format("Not using NIC [%s] because it does not have a valid IP to use as the private IP.", nic));
             return false;
         }
 
         return true;
+    }
+
+     protected Answer listFilesAtPath(String nfsMountPoint, String relativePath, int startIndex, int pageSize) {
+        int count = 0;
+        File file = new File(nfsMountPoint, relativePath);
+        List<String> names = new ArrayList<>();
+        List<String> paths = new ArrayList<>();
+        List<String> absPaths = new ArrayList<>();
+        List<Boolean> isDirs = new ArrayList<>();
+        List<Long> sizes = new ArrayList<>();
+        List<Long> modifiedList = new ArrayList<>();
+        if (file.isFile()) {
+            count = 1;
+            names.add(file.getName());
+            paths.add(file.getPath().replace(nfsMountPoint, ""));
+            absPaths.add(file.getPath());
+            isDirs.add(file.isDirectory());
+            sizes.add(file.length());
+            modifiedList.add(file.lastModified());
+        } else if (file.isDirectory()) {
+            String[] files = file.list();
+            count = files.length;
+            for (int i = startIndex; i < startIndex + pageSize && i < count; i++) {
+                File f = new File(nfsMountPoint, relativePath + '/' + files[i]);
+                names.add(f.getName());
+                paths.add(f.getPath().replace(nfsMountPoint, ""));
+                absPaths.add(f.getPath());
+                isDirs.add(f.isDirectory());
+                sizes.add(f.length());
+                modifiedList.add(f.lastModified());
+            }
+        }
+         return new ListDataStoreObjectsAnswer(file.exists(), count, names, paths, absPaths, isDirs, sizes, modifiedList);
     }
 
     protected void fillNetworkInformation(final StartupCommand cmd) {
@@ -155,8 +191,8 @@ public abstract class ServerResourceBase implements ServerResource {
         if (privateNic != null) {
             info = NetUtils.getNetworkParams(privateNic);
             if (info != null) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Parameters for private nic: " + info[0] + " - " + info[1] + "-" + info[2]);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Parameters for private nic: " + info[0] + " - " + info[1] + "-" + info[2]);
                 }
                 cmd.setPrivateIpAddress(info[0]);
                 cmd.setPrivateMacAddress(info[1]);
@@ -165,16 +201,16 @@ public abstract class ServerResourceBase implements ServerResource {
         }
 
         if (storageNic != null) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Storage has its now nic: " + storageNic.getName());
+            if (logger.isDebugEnabled()) {
+                logger.debug("Storage has its now nic: " + storageNic.getName());
             }
             info = NetUtils.getNetworkParams(storageNic);
         }
 
         // NOTE: In case you're wondering, this is not here by mistake.
         if (info != null) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Parameters for storage nic: " + info[0] + " - " + info[1] + "-" + info[2]);
+            if (logger.isDebugEnabled()) {
+                logger.debug("Parameters for storage nic: " + info[0] + " - " + info[1] + "-" + info[2]);
             }
             cmd.setStorageIpAddress(info[0]);
             cmd.setStorageMacAddress(info[1]);
@@ -184,8 +220,8 @@ public abstract class ServerResourceBase implements ServerResource {
         if (publicNic != null) {
             info = NetUtils.getNetworkParams(publicNic);
             if (info != null) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Parameters for public nic: " + info[0] + " - " + info[1] + "-" + info[2]);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Parameters for public nic: " + info[0] + " - " + info[1] + "-" + info[2]);
                 }
                 cmd.setPublicIpAddress(info[0]);
                 cmd.setPublicMacAddress(info[1]);
@@ -196,8 +232,8 @@ public abstract class ServerResourceBase implements ServerResource {
         if (storageNic2 != null) {
             info = NetUtils.getNetworkParams(storageNic2);
             if (info != null) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Parameters for storage nic 2: " + info[0] + " - " + info[1] + "-" + info[2]);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Parameters for storage nic 2: " + info[0] + " - " + info[1] + "-" + info[2]);
                 }
                 cmd.setStorageIpAddressDeux(info[0]);
                 cmd.setStorageMacAddressDeux(info[1]);

@@ -45,7 +45,6 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.server.ResourceIcon;
@@ -56,7 +55,6 @@ import com.cloud.vm.VirtualMachine;
 @APICommand(name = "listVirtualMachines", description = "List the virtual machines owned by the account.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(ListVMsCmd.class.getName());
 
     private static final String s_name = "listvirtualmachinesresponse";
 
@@ -96,8 +94,8 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
     @Parameter(name = ApiConstants.DETAILS,
                type = CommandType.LIST,
                collectionType = CommandType.STRING,
-               description = "comma separated list of host details requested, "
-                   + "value can be a list of [all, group, nics, stats, secgrp, tmpl, servoff, diskoff, iso, volume, min, affgrp]."
+               description = "comma separated list of vm details requested, "
+                   + "value can be a list of [all, group, nics, stats, secgrp, tmpl, servoff, diskoff, backoff, iso, volume, min, affgrp]."
                    + " If no parameter is passed in, the details will be defaulted to all")
     private List<String> viewDetails;
 
@@ -189,6 +187,10 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
         return zoneId;
     }
 
+    @Parameter(name = ApiConstants.IS_VNF, type = CommandType.BOOLEAN,
+            description = "flag to list vms created from VNF templates (as known as VNF appliances) or not; true if need to list VNF appliances, false otherwise.",
+            since = "4.19.0")
+    private Boolean isVnf;
 
     public Long getNetworkId() {
         return networkId;
@@ -264,6 +266,10 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
 
     public Boolean getAccumulate() {
         return accumulate;
+    }
+
+    public Boolean getVnf() {
+        return isVnf;
     }
 
     /////////////////////////////////////////////////////

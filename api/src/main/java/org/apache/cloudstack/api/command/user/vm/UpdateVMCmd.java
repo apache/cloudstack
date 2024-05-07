@@ -23,7 +23,6 @@ import java.util.Map;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.response.UserDataResponse;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -54,7 +53,6 @@ import com.cloud.vm.VirtualMachine;
         "Therefore, stop the VM manually before issuing this call.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
     requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction, UserCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateVMCmd.class.getName());
     private static final String s_name = "updatevirtualmachineresponse";
 
     /////////////////////////////////////////////////////

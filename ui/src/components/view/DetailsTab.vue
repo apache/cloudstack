@@ -28,18 +28,32 @@
       <p v-html="ip6routes" />
     </template>
   </a-alert>
+  <a-alert v-if="vnfAccessMethods" type="info" :showIcon="true" :message="$t('label.vnf.appliance.access.methods')">
+    <template #description>
+      <p v-html="vnfAccessMethods" />
+    </template>
+  </a-alert>
   <a-list
     size="small"
     :dataSource="fetchDetails()">
     <template #renderItem="{item}">
-      <a-list-item v-if="item in dataResource && !customDisplayItems.includes(item)">
+      <a-list-item v-if="(item in dataResource && !customDisplayItems.includes(item)) || (offeringDetails.includes(item) && dataResource.serviceofferingdetails)">
         <div>
           <strong>{{ item === 'service' ? $t('label.supportedservices') : $t('label.' + String(item).toLowerCase()) }}</strong>
           <br/>
           <div v-if="Array.isArray(dataResource[item]) && item === 'service'">
             <div v-for="(service, idx) in dataResource[item]" :key="idx">
-              {{ service.name }} : {{ service.provider[0].name }}
+              {{ service.name }} : {{ service.provider?.[0]?.name }}
             </div>
+          </div>
+          <div v-else-if="$route.meta.name === 'backup' && (item === 'size' || item === 'virtualsize')">
+            {{ $bytesToHumanReadableSize(dataResource[item]) }}
+            <a-tooltip placement="right">
+              <template #title>
+                {{ dataResource[item] }} bytes
+              </template>
+              <QuestionCircleOutlined />
+            </a-tooltip>
           </div>
           <div v-else-if="$route.meta.name === 'backup' && item === 'volumes'">
             <div v-for="(volume, idx) in JSON.parse(dataResource[item])" :key="idx">
@@ -85,6 +99,9 @@
                 {{ securityGroup.name }} &nbsp;
               </span>
             </div>
+          </div>
+          <div v-else-if="$route.meta.name === 'computeoffering' && offeringDetails.includes(item)">
+            {{ dataResource.serviceofferingdetails[item] }}
           </div>
           <div v-else>{{ dataResource[item] }}</div>
         </div>
@@ -157,13 +174,106 @@ export default {
   },
   computed: {
     customDisplayItems () {
-      return ['ip6routes', 'privatemtu', 'publicmtu']
+      return ['ip6routes', 'privatemtu', 'publicmtu', 'provider']
+    },
+    vnfAccessMethods () {
+      if (this.resource.templatetype === 'VNF' && ['vm', 'vnfapp'].includes(this.$route.meta.name)) {
+        const accessMethodsDescription = []
+        const accessMethods = this.resource.vnfdetails?.access_methods || null
+        const username = this.resource.vnfdetails?.username || null
+        const password = this.resource.vnfdetails?.password || null
+        const sshPort = this.resource.vnfdetails?.ssh_port || 22
+        const sshUsername = this.resource.vnfdetails?.ssh_user || null
+        const sshPassword = this.resource.vnfdetails?.ssh_password || null
+        let httpPath = this.resource.vnfdetails?.http_path || ''
+        if (!httpPath.startsWith('/')) {
+          httpPath = '/' + httpPath
+        }
+        const httpPort = this.resource.vnfdetails?.http_port || null
+        let httpsPath = this.resource.vnfdetails?.https_path || ''
+        if (!httpsPath.startsWith('/')) {
+          httpsPath = '/' + httpsPath
+        }
+        const httpsPort = this.resource.vnfdetails?.https_port || null
+        const webUsername = this.resource.vnfdetails?.web_user || null
+        const webPassword = this.resource.vnfdetails?.web_password || null
+
+        const credentials = []
+        if (username) {
+          credentials.push(this.$t('label.username') + ' : ' + username)
+        }
+        if (password) {
+          credentials.push(this.$t('label.password.default') + ' : ' + password)
+        }
+        if (webUsername) {
+          credentials.push('Web ' + this.$t('label.username') + ' : ' + webUsername)
+        }
+        if (webPassword) {
+          credentials.push('Web ' + this.$t('label.password.default') + ' : ' + webPassword)
+        }
+        if (sshUsername) {
+          credentials.push('SSH ' + this.$t('label.username') + ' : ' + sshUsername)
+        }
+        if (sshPassword) {
+          credentials.push('SSH ' + this.$t('label.password.default') + ' : ' + sshPassword)
+        }
+
+        const managementDeviceIds = []
+        if (this.resource.vnfnics) {
+          for (const vnfnic of this.resource.vnfnics) {
+            if (vnfnic.management) {
+              managementDeviceIds.push(vnfnic.deviceid)
+            }
+          }
+        }
+        const managementIps = []
+        for (const nic of this.resource.nic) {
+          if (managementDeviceIds.includes(parseInt(nic.deviceid)) && nic.ipaddress) {
+            managementIps.push(nic.ipaddress)
+            if (nic.publicip) {
+              managementIps.push(nic.publicip)
+            }
+          }
+        }
+
+        if (accessMethods) {
+          const accessMethodsArray = accessMethods.split(',')
+          for (const accessMethod of accessMethodsArray) {
+            if (accessMethod === 'console') {
+              accessMethodsDescription.push('- VM Console.')
+            } else if (accessMethod === 'ssh-password') {
+              accessMethodsDescription.push('- SSH with password' + (sshPort ? ' (SSH port is ' + sshPort + ').' : '.'))
+            } else if (accessMethod === 'ssh-key') {
+              accessMethodsDescription.push('- SSH with key' + (sshPort ? ' (SSH port is ' + sshPort + ').' : '.'))
+            } else if (accessMethod === 'http') {
+              for (const managementIp of managementIps) {
+                const url = 'http://' + managementIp + (httpPort ? ':' + httpPort : '') + httpPath
+                accessMethodsDescription.push('- Webpage: <a href="' + url + '" target="_blank>">' + url + '</a>')
+              }
+            } else if (accessMethod === 'https') {
+              for (const managementIp of managementIps) {
+                const url = 'https://' + managementIp + (httpsPort ? ':' + httpsPort : '') + httpsPath
+                accessMethodsDescription.push('- Webpage: <a href="' + url + '" target="_blank">' + url + '</a>')
+              }
+            }
+          }
+        } else {
+          accessMethodsDescription.push('- VM Console.')
+        }
+        if (credentials) {
+          accessMethodsDescription.push('<br>' + this.$t('message.vnf.credentials.in.template.vnf.details'))
+        }
+        return accessMethodsDescription.join('<br>')
+      }
+      return null
+    },
+    offeringDetails () {
+      return ['maxcpunumber', 'mincpunumber', 'minmemory', 'maxmemory']
     },
     ipV6Address () {
       if (this.dataResource.nic && this.dataResource.nic.length > 0) {
         return this.dataResource.nic.filter(e => { return e.ip6address }).map(e => { return e.ip6address }).join(', ')
       }
-
       return null
     },
     ip6routes () {

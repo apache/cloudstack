@@ -193,6 +193,7 @@ export default {
         case 'VirtualRouter': return 'VR'
         case 'AutoScaleVmGroup': return 'AUTOSCALE_VM_GROUP'
         case 'ManagementServer': return 'MANAGEMENT_SERVER'
+        case 'ObjectStorage': return 'OBJECT_STORAGE'
         default: return ''
       }
     },

@@ -57,7 +57,8 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -71,7 +72,7 @@ import com.google.common.collect.ImmutableSet;
 
 public class UriUtils {
 
-    public static final Logger s_logger = Logger.getLogger(UriUtils.class.getName());
+    protected static Logger LOGGER = LogManager.getLogger(UriUtils.class);
 
     public static String formNfsUri(String host, String path) {
         try {
@@ -128,7 +129,7 @@ public class UriUtils {
     public static String getCifsUriParametersProblems(URI uri) {
         if (!UriUtils.hostAndPathPresent(uri)) {
             String errMsg = "cifs URI missing host and/or path. Make sure it's of the format cifs://hostname/path";
-            s_logger.warn(errMsg);
+            LOGGER.warn(errMsg);
             return errMsg;
         }
         return null;
@@ -146,10 +147,10 @@ public class UriUtils {
             String name = nvp.getName();
             if (name.equals("user")) {
                 foundUser = true;
-                s_logger.debug("foundUser is" + foundUser);
+                LOGGER.debug("foundUser is" + foundUser);
             } else if (name.equals("password")) {
                 foundPswd = true;
-                s_logger.debug("foundPswd is" + foundPswd);
+                LOGGER.debug("foundPswd is" + foundPswd);
             }
         }
         return (foundUser && foundPswd);
@@ -213,7 +214,7 @@ public class UriUtils {
     }
 
     // Get the size of a file from URL response header.
-    public static long getRemoteSize(String url) {
+    public static long getRemoteSize(String url, Boolean followRedirect) {
         long remoteSize = 0L;
         final String[] methods = new String[]{"HEAD", "GET"};
         IllegalArgumentException exception = null;
@@ -228,6 +229,7 @@ public class UriUtils {
                 httpConn.setRequestMethod(method);
                 httpConn.setConnectTimeout(2000);
                 httpConn.setReadTimeout(5000);
+                httpConn.setInstanceFollowRedirects(Boolean.TRUE.equals(followRedirect));
                 String contentLength = httpConn.getHeaderField("content-length");
                 if (contentLength != null) {
                     remoteSize = Long.parseLong(contentLength);
@@ -359,7 +361,7 @@ public class UriUtils {
             for (int i = 0; i < tagNames.length; i++) {
                 NodeList targetNodes = rootElement.getElementsByTagName(tagNames[i]);
                 if (targetNodes.getLength() <= 0) {
-                    s_logger.error("no " + tagNames[i] + " tag in XML response...");
+                    LOGGER.error("no " + tagNames[i] + " tag in XML response...");
                 } else {
                     List<Pair<String, Integer>> priorityList = new ArrayList<>();
                     for (int j = 0; j < targetNodes.getLength(); j++) {
@@ -371,7 +373,7 @@ public class UriUtils {
                 }
             }
         } catch (Exception ex) {
-            s_logger.error(ex);
+            LOGGER.error(ex);
         }
         return returnValues;
     }
@@ -387,7 +389,7 @@ public class UriUtils {
         try {
             status = httpClient.executeMethod(getMethod);
         } catch (IOException e) {
-            s_logger.error("Error retrieving urls form metalink: " + metalinkUrl);
+            LOGGER.error("Error retrieving urls form metalink: " + metalinkUrl);
             getMethod.releaseConnection();
             return null;
         }
@@ -401,21 +403,21 @@ public class UriUtils {
                 }
             }
         } catch (IOException e) {
-            s_logger.warn(e.getMessage());
+            LOGGER.warn(e.getMessage());
         } finally {
             getMethod.releaseConnection();
         }
         return urls;
     }
 
-    public static final Set<String> COMMPRESSION_FORMATS = ImmutableSet.of("zip", "bz2", "gz");
+    public static final Set<String> COMPRESSION_FORMATS = ImmutableSet.of("zip", "bz2", "gz");
 
     public static final Set<String> buildExtensionSet(boolean metalink, String... baseExtensions) {
         final ImmutableSet.Builder<String> builder = ImmutableSet.builder();
 
         for (String baseExtension : baseExtensions) {
             builder.add("." + baseExtension);
-            for (String format : COMMPRESSION_FORMATS) {
+            for (String format : COMPRESSION_FORMATS) {
                 builder.add("." + baseExtension + "." + format);
             }
         }
@@ -478,20 +480,20 @@ public class UriUtils {
                 httpclient.getParams().setAuthenticationPreemptive(true);
                 Credentials defaultcreds = new UsernamePasswordCredentials(user, password);
                 httpclient.getState().setCredentials(new AuthScope(hostAndPort.first(), hostAndPort.second(), AuthScope.ANY_REALM), defaultcreds);
-                s_logger.info("Added username=" + user + ", password=" + password + "for host " + hostAndPort.first() + ":" + hostAndPort.second());
+                LOGGER.info("Added username=" + user + ", password=" + password + "for host " + hostAndPort.first() + ":" + hostAndPort.second());
             }
             // Execute the method.
             GetMethod method = new GetMethod(url);
             int statusCode = httpclient.executeMethod(method);
 
             if (statusCode != HttpStatus.SC_OK) {
-                s_logger.error("Failed to read from URL: " + url);
+                LOGGER.error("Failed to read from URL: " + url);
                 return null;
             }
 
             return method.getResponseBodyAsStream();
         } catch (Exception ex) {
-            s_logger.error("Failed to read from URL: " + url);
+            LOGGER.error("Failed to read from URL: " + url);
             return null;
         }
     }
@@ -646,5 +648,9 @@ public class UriUtils {
         } catch (URISyntaxException e) {
             throw new CloudRuntimeException(url + " is not a valid uri for RBD");
         }
+    }
+
+    public static boolean isUrlForCompressedFile(String url) {
+        return UriUtils.COMPRESSION_FORMATS.stream().anyMatch(f -> url.toLowerCase().endsWith(f));
     }
 }

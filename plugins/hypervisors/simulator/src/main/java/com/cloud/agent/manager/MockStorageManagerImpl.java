@@ -32,7 +32,6 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand;
@@ -79,6 +78,8 @@ import com.cloud.agent.api.storage.ListVolumeAnswer;
 import com.cloud.agent.api.storage.ListVolumeCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
+import com.cloud.agent.api.storage.ResizeVolumeAnswer;
+import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.StorageFilerTO;
@@ -108,7 +109,6 @@ import com.cloud.vm.DiskProfile;
 
 @Component
 public class MockStorageManagerImpl extends ManagerBase implements MockStorageManager {
-    private static final Logger s_logger = Logger.getLogger(MockStorageManagerImpl.class);
     @Inject
     MockStoragePoolDao _mockStoragePoolDao = null;
     @Inject
@@ -1093,7 +1093,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
                 MessageDigest md = MessageDigest.getInstance("md5");
                 md5 = String.format("%032x", new BigInteger(1, md.digest(cmd.getTemplatePath().getBytes())));
             } catch (NoSuchAlgorithmException e) {
-                s_logger.debug("failed to gernerate md5:" + e.toString());
+                logger.debug("failed to gernerate md5:" + e.toString());
             }
             txn.commit();
             return new Answer(cmd, true, md5);
@@ -1308,5 +1308,33 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
         }
 
         return new Answer(cmd);
+    }
+
+    @Override
+    public Answer handleResizeVolume(ResizeVolumeCommand cmd) {
+        Long currentSize = cmd.getCurrentSize();
+        Long newSize = cmd.getNewSize();
+        MockStoragePoolVO storagePool = null;
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
+        try {
+            txn.start();
+            storagePool = _mockStoragePoolDao.findByUuid(cmd.getPoolUuid());
+            txn.commit();
+            if (storagePool == null) {
+                return new ResizeVolumeAnswer(cmd, false, "Failed to find storage pool: " + cmd.getPoolUuid());
+            }
+        } catch (Exception ex) {
+            txn.rollback();
+            throw new CloudRuntimeException("Error when finding storage " + cmd.getPoolUuid(), ex);
+        } finally {
+            txn.close();
+            txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
+            txn.close();
+        }
+
+        if (newSize >= currentSize) {
+            return new ResizeVolumeAnswer(cmd, true, "", newSize);
+        }
+        return new ResizeVolumeAnswer(cmd, false, "Failed to resize");
     }
 }

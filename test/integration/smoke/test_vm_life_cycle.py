@@ -1011,7 +1011,36 @@ class TestSecuredVmMigration(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
+        if cls.hypervisor.lower() in ["kvm"]:
+            cls.ensure_all_hosts_are_up()
         super(TestSecuredVmMigration, cls).tearDownClass()
+
+    @classmethod
+    def ensure_all_hosts_are_up(cls):
+        hosts = Host.list(
+            cls.apiclient,
+            zoneid=cls.zone.id,
+            type='Routing',
+            hypervisor='KVM'
+        )
+        for host in hosts:
+            if host.state != "Up":
+                SshClient(host.ipaddress, port=22, user=cls.hostConfig["username"], passwd=cls.hostConfig["password"]) \
+                    .execute("service cloudstack-agent stop ; \
+                              sleep 10 ; \
+                              service cloudstack-agent start")
+                interval = 5
+                retries = 10
+                while retries > -1:
+                    time.sleep(interval)
+                    restarted_host = Host.list(
+                        cls.apiclient,
+                        id=host.id,
+                        type='Routing'
+                    )[0]
+                    if restarted_host.state == "Up":
+                        break
+                    retries = retries - 1
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -1071,7 +1100,7 @@ class TestSecuredVmMigration(cloudstackTestCase):
             time.sleep(interval)
             host = Host.list(
                 self.apiclient,
-                hostid=hostId,
+                id=hostId,
                 type='Routing'
             )[0]
             if host.state != state:
@@ -1131,7 +1160,7 @@ class TestSecuredVmMigration(cloudstackTestCase):
             host = Host.list(
                 self.apiclient,
                 zoneid=self.zone.id,
-                hostid=host.id,
+                id=host.id,
                 type='Routing'
             )[0]
             if host.details.secured != secured:

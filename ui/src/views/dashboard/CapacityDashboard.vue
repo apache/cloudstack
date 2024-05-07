@@ -112,7 +112,8 @@
                 :value-style="{ color: $config.theme['@primary-color'] }">
                 <template #prefix>
                   <database-outlined/>
-                  <status class="status" text="Alert" style="margin-left: -10px"/>
+                  <a-badge v-if="data.alertHosts > 0" count="!" style="margin-left: -5px" />
+                  <a-badge v-else count="✓" style="margin-left: -5px" :number-style="{ backgroundColor: '#52c41a' }" />
                 </template>
               </a-statistic>
             </router-link>
@@ -520,7 +521,7 @@ export default {
           this.data.systemvms = 0
         }
       })
-      api('listRouters', { zoneid: zone.id, listall: true }).then(json => {
+      api('listRouters', { zoneid: zone.id, listall: true, projectid: '-1' }).then(json => {
         this.loading = false
         this.data.routers = json?.listroutersresponse?.count
         if (!this.data.routers) {

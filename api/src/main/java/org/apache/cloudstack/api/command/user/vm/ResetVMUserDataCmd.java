@@ -37,7 +37,6 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import java.util.Map;
 
@@ -46,7 +45,6 @@ import java.util.Map;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true, since = "4.18.0")
 public class ResetVMUserDataCmd extends BaseCmd implements UserCmd {
 
-    public static final Logger s_logger = Logger.getLogger(ResetVMUserDataCmd.class.getName());
 
     private static final String s_name = "resetuserdataforvirtualmachineresponse";
 

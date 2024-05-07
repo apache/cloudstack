@@ -123,7 +123,7 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @Param(description = "the physical size of the template")
     private Long physicalSize;
 
-    @SerializedName(ApiConstants.TEMPLATETYPE)
+    @SerializedName(ApiConstants.TEMPLATE_TYPE)
     @Param(description = "the type of the template")
     private String templateType;
 

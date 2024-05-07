@@ -34,6 +34,7 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.api.response.UserTwoFactorAuthenticationSetupResponse;
@@ -48,6 +49,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InOrder;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -90,6 +92,12 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
 
     @Mock
     private Account accountMock;
+
+    @Mock
+    private DomainVO domainVoMock;
+
+    @Mock
+    private AccountVO accountVoMock;
 
     @Mock
     private ProjectAccountVO projectAccountVO;
@@ -190,6 +198,42 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.verify(_accountDao, Mockito.atLeastOnce()).markForCleanup(Mockito.eq(42l));
     }
 
+    @Test (expected = InvalidParameterValueException.class)
+    public void deleteUserTestIfUserIdIsEqualToCallerIdShouldThrowException() {
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            DeleteUserCmd cmd = Mockito.mock(DeleteUserCmd.class);
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+
+            Mockito.doReturn(userVoMock).when(callContextMock).getCallingUser();
+            Mockito.doReturn(1L).when(cmd).getId();
+            Mockito.doReturn(userVoMock).when(accountManagerImpl).getValidUserVO(Mockito.anyLong());
+            Mockito.doReturn(accountVoMock).when(_accountDao).findById(Mockito.anyLong());
+            Mockito.doReturn(domainVoMock).when(_domainDao).findById(Mockito.anyLong());
+            Mockito.doReturn(1L).when(userVoMock).getId();
+
+            accountManagerImpl.deleteUser(cmd);
+        }
+    }
+
+    @Test
+    public void deleteUserTestIfUserIdIsNotEqualToCallerIdShouldNotThrowException() {
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            DeleteUserCmd cmd = Mockito.mock(DeleteUserCmd.class);
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+
+            Mockito.doReturn(userVoMock).when(callContextMock).getCallingUser();
+            Mockito.doReturn(1L).when(cmd).getId();
+            Mockito.doReturn(userVoMock).when(accountManagerImpl).getValidUserVO(Mockito.anyLong());
+            Mockito.doReturn(accountVoMock).when(_accountDao).findById(Mockito.anyLong());
+            Mockito.doReturn(2L).when(userVoMock).getId();
+
+            Mockito.doNothing().when(accountManagerImpl).checkAccountAndAccess(Mockito.any(), Mockito.any());
+            accountManagerImpl.deleteUser(cmd);
+        }
+    }
+
     @Test
     public void testAuthenticateUser() throws UnknownHostException {
         Pair<Boolean, UserAuthenticator.ActionOnFailedAuthentication> successAuthenticationPair = new Pair<>(true, null);
@@ -200,24 +244,24 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         userAccountVO.setSource(User.Source.UNKNOWN);
         userAccountVO.setState(Account.State.DISABLED.toString());
         Mockito.when(userAccountDaoMock.getUserAccount("test", 1L)).thenReturn(userAccountVO);
-        Mockito.when(userAuthenticator.authenticate("test", "fail", 1L, null)).thenReturn(failureAuthenticationPair);
-        Mockito.lenient().when(userAuthenticator.authenticate("test", null, 1L, null)).thenReturn(successAuthenticationPair);
-        Mockito.lenient().when(userAuthenticator.authenticate("test", "", 1L, null)).thenReturn(successAuthenticationPair);
+        Mockito.when(userAuthenticator.authenticate("test", "fail", 1L, new HashMap<>())).thenReturn(failureAuthenticationPair);
+        Mockito.lenient().when(userAuthenticator.authenticate("test", null, 1L, new HashMap<>())).thenReturn(successAuthenticationPair);
+        Mockito.lenient().when(userAuthenticator.authenticate("test", "", 1L, new HashMap<>())).thenReturn(successAuthenticationPair);
 
         //Test for incorrect password. authentication should fail
-        UserAccount userAccount = accountManagerImpl.authenticateUser("test", "fail", 1L, InetAddress.getByName("127.0.0.1"), null);
+        UserAccount userAccount = accountManagerImpl.authenticateUser("test", "fail", 1L, InetAddress.getByName("127.0.0.1"), new HashMap<>());
         Assert.assertNull(userAccount);
 
         //Test for null password. authentication should fail
-        userAccount = accountManagerImpl.authenticateUser("test", null, 1L, InetAddress.getByName("127.0.0.1"), null);
+        userAccount = accountManagerImpl.authenticateUser("test", null, 1L, InetAddress.getByName("127.0.0.1"), new HashMap<>());
         Assert.assertNull(userAccount);
 
         //Test for empty password. authentication should fail
-        userAccount = accountManagerImpl.authenticateUser("test", "", 1L, InetAddress.getByName("127.0.0.1"), null);
+        userAccount = accountManagerImpl.authenticateUser("test", "", 1L, InetAddress.getByName("127.0.0.1"), new HashMap<>());
         Assert.assertNull(userAccount);
 
         //Verifying that the authentication method is only called when password is specified
-        Mockito.verify(userAuthenticator, Mockito.times(1)).authenticate("test", "fail", 1L, null);
+        Mockito.verify(userAuthenticator, Mockito.times(1)).authenticate("test", "fail", 1L, new HashMap<>());
         Mockito.verify(userAuthenticator, Mockito.never()).authenticate("test", null, 1L, null);
         Mockito.verify(userAuthenticator, Mockito.never()).authenticate("test", "", 1L, null);
     }
@@ -973,5 +1017,18 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         UserTwoFactorAuthenticationSetupResponse response = accountManagerImpl.setupUserTwoFactorAuthentication(cmd);
 
         Assert.assertEquals("345543", response.getSecretCode());
+    }
+
+    @Test
+    public void testGetActiveUserAccountByEmail() {
+        String email = "test@example.com";
+        Long domainId = 1L;
+        List<UserAccountVO> userAccountVOList = new ArrayList<>();
+        UserAccountVO userAccountVO = new UserAccountVO();
+        userAccountVOList.add(userAccountVO);
+        Mockito.when(userAccountDaoMock.getUserAccountByEmail(email, domainId)).thenReturn(userAccountVOList);
+        List<UserAccount> userAccounts = accountManagerImpl.getActiveUserAccountByEmail(email, domainId);
+        Assert.assertEquals(userAccountVOList.size(), userAccounts.size());
+        Assert.assertEquals(userAccountVOList.get(0), userAccounts.get(0));
     }
 }

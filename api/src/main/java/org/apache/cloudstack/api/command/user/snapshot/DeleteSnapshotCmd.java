@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.snapshot;
 
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.api.response.ZoneResponse;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -38,7 +38,6 @@ import com.cloud.user.Account;
 @APICommand(name = "deleteSnapshot", description = "Deletes a snapshot of a disk volume.", responseObject = SuccessResponse.class, entityType = {Snapshot.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteSnapshotCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteSnapshotCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -48,6 +47,10 @@ public class DeleteSnapshotCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = SnapshotResponse.class,
             required=true, description="The ID of the snapshot")
     private Long id;
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
+            description="The ID of the zone for the snapshot", since = "4.19.0")
+    private Long zoneId;
+
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -55,6 +58,10 @@ public class DeleteSnapshotCmd extends BaseAsyncCmd {
 
     public Long getId() {
         return id;
+    }
+
+    public Long getZoneId() {
+        return zoneId;
     }
 
     /////////////////////////////////////////////////////
@@ -94,7 +101,7 @@ public class DeleteSnapshotCmd extends BaseAsyncCmd {
     @Override
     public void execute() {
         CallContext.current().setEventDetails("Snapshot Id: " + this._uuidMgr.getUuid(Snapshot.class, getId()));
-        boolean result = _snapshotService.deleteSnapshot(getId());
+        boolean result = _snapshotService.deleteSnapshot(getId(), getZoneId());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);

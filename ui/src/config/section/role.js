@@ -16,6 +16,8 @@
 // under the License.
 
 import { shallowRef, defineAsyncComponent } from 'vue'
+import store from '@/store'
+
 export default {
   name: 'role',
   title: 'label.roles',
@@ -23,13 +25,18 @@ export default {
   docHelp: 'adminguide/accounts.html#roles',
   permission: ['listRoles', 'listRolePermissions'],
   columns: ['name', 'type', 'description'],
-  details: ['name', 'id', 'type', 'description'],
+  details: ['name', 'id', 'type', 'description', 'ispublic'],
   tabs: [{
     name: 'details',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
   }, {
     name: 'rules',
     component: shallowRef(defineAsyncComponent(() => import('@/views/iam/RolePermissionTab.vue')))
+  }, {
+    name: 'events',
+    resourceType: 'Role',
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+    show: () => { return 'listEvents' in store.getters.apis }
   }],
   actions: [
     {
@@ -53,7 +60,7 @@ export default {
       icon: 'edit-outlined',
       label: 'label.edit.role',
       dataView: true,
-      args: ['name', 'description', 'type'],
+      args: (record) => record.isdefault ? ['ispublic'] : ['name', 'description', 'type', 'ispublic'],
       mapping: {
         type: {
           options: ['Admin', 'DomainAdmin', 'User']

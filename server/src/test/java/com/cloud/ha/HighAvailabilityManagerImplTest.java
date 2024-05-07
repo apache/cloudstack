@@ -16,6 +16,34 @@
 // under the License.
 package com.cloud.ha;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import javax.inject.Inject;
+
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContext;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
 import com.cloud.consoleproxy.ConsoleProxyManager;
@@ -39,40 +67,17 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.user.AccountManager;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.managed.context.ManagedContext;
-import org.apache.log4j.Logger;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
-
-import javax.inject.Inject;
-import java.lang.reflect.Array;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(MockitoJUnitRunner.class)
 public class HighAvailabilityManagerImplTest {
-    private static final Logger s_logger = Logger.getLogger(HighAvailabilityManagerImplTest.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     @Mock
     HighAvailabilityDao _haDao;
     @Mock
@@ -117,6 +122,10 @@ public class HighAvailabilityManagerImplTest {
     SecondaryStorageVmManager secondaryStorageVmManager;
     @Mock
     HostVO hostVO;
+    @Mock
+    VolumeDao volumeDao;
+    @Mock
+    DataStoreProviderManager dataStoreProviderMgr;
 
     HighAvailabilityManagerImpl highAvailabilityManager;
     HighAvailabilityManagerImpl highAvailabilityManagerSpy;
@@ -128,7 +137,6 @@ public class HighAvailabilityManagerImplTest {
             processWorkMethod = HighAvailabilityManagerImpl.class.getDeclaredMethod("processWork", HaWorkVO.class);
             processWorkMethod.setAccessible(true);
         } catch (NoSuchMethodException e) {
-            s_logger.info("[ignored] expected NoSuchMethodException caught: " + e.getLocalizedMessage());
         }
     }
 
@@ -183,13 +191,13 @@ public class HighAvailabilityManagerImplTest {
         List<VMInstanceVO> vms = new ArrayList<VMInstanceVO>();
         VMInstanceVO vm1 = Mockito.mock(VMInstanceVO.class);
         Mockito.lenient().when(vm1.getHostId()).thenReturn(1l);
-        Mockito.when(vm1.getInstanceName()).thenReturn("i-2-3-VM");
+        //Mockito.when(vm1.getInstanceName()).thenReturn("i-2-3-VM");
         Mockito.when(vm1.getType()).thenReturn(VirtualMachine.Type.User);
         Mockito.when(vm1.isHaEnabled()).thenReturn(true);
         vms.add(vm1);
         VMInstanceVO vm2 = Mockito.mock(VMInstanceVO.class);
         Mockito.when(vm2.getHostId()).thenReturn(1l);
-        Mockito.when(vm2.getInstanceName()).thenReturn("r-2-VM");
+        //Mockito.when(vm2.getInstanceName()).thenReturn("r-2-VM");
         Mockito.when(vm2.getType()).thenReturn(VirtualMachine.Type.DomainRouter);
         Mockito.when(vm2.isHaEnabled()).thenReturn(true);
         vms.add(vm2);
@@ -199,7 +207,7 @@ public class HighAvailabilityManagerImplTest {
         Mockito.when(_podDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(HostPodVO.class));
         Mockito.when(_dcDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(DataCenterVO.class));
         Mockito.when(_haDao.findPreviousHA(Mockito.anyLong())).thenReturn(Arrays.asList(Mockito.mock(HaWorkVO.class)));
-        Mockito.when(_haDao.persist((HaWorkVO)Mockito.anyObject())).thenReturn(Mockito.mock(HaWorkVO.class));
+        Mockito.when(_haDao.persist((HaWorkVO)Mockito.any())).thenReturn(Mockito.mock(HaWorkVO.class));
         Mockito.when(_serviceOfferingDao.findById(vm1.getServiceOfferingId())).thenReturn(Mockito.mock(ServiceOfferingVO.class));
 
         highAvailabilityManager.scheduleRestartForVmsOnHost(hostVO, true);
@@ -239,11 +247,11 @@ public class HighAvailabilityManagerImplTest {
         try {
             processWorkMethod.invoke(highAvailabilityManagerSpy, work);
         } catch (IllegalAccessException e) {
-            s_logger.info("[ignored] expected IllegalAccessException caught: " + e.getLocalizedMessage());
+            logger.info("[ignored] expected IllegalAccessException caught: " + e.getLocalizedMessage());
         } catch (IllegalArgumentException e) {
-            s_logger.info("[ignored] expected IllegalArgumentException caught: " + e.getLocalizedMessage());
+            logger.info("[ignored] expected IllegalArgumentException caught: " + e.getLocalizedMessage());
         } catch (InvocationTargetException e) {
-            s_logger.info("[ignored] expected InvocationTargetException caught: " + e.getLocalizedMessage());
+            logger.info("[ignored] expected InvocationTargetException caught: " + e.getLocalizedMessage());
         }
         assertTrue(work.getStep() == expectedStep);
     }

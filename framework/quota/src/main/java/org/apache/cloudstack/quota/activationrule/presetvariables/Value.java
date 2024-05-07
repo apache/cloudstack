@@ -41,6 +41,9 @@ public class Value extends GenericPresetVariable {
     private Storage storage;
     private ComputingResources computingResources;
     private BackupOffering backupOffering;
+    private String hypervisorType;
+    private String volumeFormat;
+    private String state;
 
     public Host getHost() {
         return host;
@@ -184,5 +187,32 @@ public class Value extends GenericPresetVariable {
     public void setBackupOffering(BackupOffering backupOffering) {
         this.backupOffering = backupOffering;
         fieldNamesToIncludeInToString.add("backupOffering");
+    }
+
+    public void setHypervisorType(String hypervisorType) {
+        this.hypervisorType = hypervisorType;
+        fieldNamesToIncludeInToString.add("hypervisorType");
+    }
+
+    public String getHypervisorType() {
+        return hypervisorType;
+    }
+
+    public void setVolumeFormat(String volumeFormat) {
+        this.volumeFormat = volumeFormat;
+        fieldNamesToIncludeInToString.add("volumeFormat");
+    }
+
+    public String getVolumeFormat() {
+        return volumeFormat;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
+        fieldNamesToIncludeInToString.add("state");
     }
 }

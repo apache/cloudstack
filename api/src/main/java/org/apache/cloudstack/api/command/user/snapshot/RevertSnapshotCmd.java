@@ -30,7 +30,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.storage.Snapshot;
@@ -39,7 +38,6 @@ import com.cloud.user.Account;
 @APICommand(name = "revertSnapshot", description = "This is supposed to revert a volume snapshot. This command is only supported with KVM so far", responseObject = SnapshotResponse.class, entityType = {Snapshot.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class RevertSnapshotCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(RevertSnapshotCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

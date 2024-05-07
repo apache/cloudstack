@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.usage.dao;
 
+import com.cloud.usage.BucketStatisticsVO;
 import com.cloud.usage.UsageVO;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserStatisticsVO;
@@ -33,7 +34,6 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 import org.apache.cloudstack.acl.RoleType;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import java.sql.PreparedStatement;
@@ -48,7 +48,6 @@ import java.util.TimeZone;
 
 @Component
 public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements UsageDao {
-    public static final Logger s_logger = Logger.getLogger(UsageDaoImpl.class.getName());
     private static final String DELETE_ALL = "DELETE FROM cloud_usage";
     private static final String DELETE_ALL_BY_ACCOUNTID = "DELETE FROM cloud_usage WHERE account_id = ?";
     private static final String DELETE_ALL_BY_INTERVAL = "DELETE FROM cloud_usage WHERE end_date < DATE_SUB(CURRENT_DATE(), INTERVAL ? DAY)";
@@ -82,6 +81,13 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
             + "WHERE   cloud_usage.usage_type = ? AND cloud_usage.account_id = ? AND cloud_usage.start_date >= ? AND cloud_usage.end_date <= ? "
             + "GROUP   BY cloud_usage.usage_id ";
 
+    private static final String GET_LAST_BUCKET_STATS_ID = "SELECT id FROM cloud_usage.bucket_statistics ORDER BY id DESC LIMIT 1";
+
+    private static final String INSERT_BUCKET_STATS = "INSERT INTO cloud_usage.bucket_statistics (id, account_id, bucket_id, size) VALUES (?,?,?,?)";
+
+    private static final String UPDATE_BUCKET_STATS = "UPDATE cloud_usage.bucket_statistics SET size=? WHERE id=?";
+
+
     public UsageDaoImpl() {
     }
 
@@ -100,7 +106,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
             txn.commit();
         } catch (Exception ex) {
             txn.rollback();
-            s_logger.error("error retrieving usage vm instances for account id: " + accountId, ex);
+            logger.error("error retrieving usage vm instances for account id: " + accountId, ex);
         } finally {
             txn.close();
         }
@@ -148,7 +154,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
             txn.commit();
         } catch (Exception ex) {
             txn.rollback();
-            s_logger.error("error saving account to cloud_usage db", ex);
+            logger.error("error saving account to cloud_usage db", ex);
             throw new CloudRuntimeException(ex.getMessage());
         }
     }
@@ -178,7 +184,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
             txn.commit();
         } catch (Exception ex) {
             txn.rollback();
-            s_logger.error("error updating account to cloud_usage db", ex);
+            logger.error("error updating account to cloud_usage db", ex);
             throw new CloudRuntimeException(ex.getMessage());
         }
     }
@@ -219,7 +225,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
             txn.commit();
         } catch (Exception ex) {
             txn.rollback();
-            s_logger.error("error saving user stats to cloud_usage db", ex);
+            logger.error("error saving user stats to cloud_usage db", ex);
             throw new CloudRuntimeException(ex.getMessage());
         }
     }
@@ -246,7 +252,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
             txn.commit();
         } catch (Exception ex) {
             txn.rollback();
-            s_logger.error("error updating user stats to cloud_usage db", ex);
+            logger.error("error updating user stats to cloud_usage db", ex);
             throw new CloudRuntimeException(ex.getMessage());
         }
     }
@@ -263,7 +269,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
                 return Long.valueOf(rs.getLong(1));
             }
         } catch (Exception ex) {
-            s_logger.error("error getting last account id", ex);
+            logger.error("error getting last account id", ex);
         }
         return null;
     }
@@ -280,9 +286,72 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
                 return Long.valueOf(rs.getLong(1));
             }
         } catch (Exception ex) {
-            s_logger.error("error getting last user stats id", ex);
+            logger.error("error getting last user stats id", ex);
         }
         return null;
+    }
+
+    @Override
+    public Long getLastBucketStatsId() {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        PreparedStatement pstmt = null;
+        String sql = GET_LAST_BUCKET_STATS_ID;
+        try {
+            pstmt = txn.prepareAutoCloseStatement(sql);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return Long.valueOf(rs.getLong(1));
+            }
+        } catch (Exception ex) {
+            logger.error("error getting last bucket stats id", ex);
+        }
+        return null;
+    }
+
+    @Override
+    public void saveBucketStats(List<BucketStatisticsVO> bucketStats) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        try {
+            txn.start();
+            String sql = INSERT_BUCKET_STATS;
+            PreparedStatement pstmt = null;
+            pstmt = txn.prepareAutoCloseStatement(sql); // in reality I just want CLOUD_USAGE dataSource connection
+            for (BucketStatisticsVO bucketStat : bucketStats) {
+                pstmt.setLong(1, bucketStat.getId());
+                pstmt.setLong(2, bucketStat.getAccountId());
+                pstmt.setLong(3, bucketStat.getBucketId());
+                pstmt.setLong(4, bucketStat.getSize());
+                pstmt.addBatch();
+            }
+            pstmt.executeBatch();
+            txn.commit();
+        } catch (Exception ex) {
+            txn.rollback();
+            logger.error("error saving bucket stats to cloud_usage db", ex);
+            throw new CloudRuntimeException(ex.getMessage());
+        }
+    }
+
+    @Override
+    public void updateBucketStats(List<BucketStatisticsVO> bucketStats) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        try {
+            txn.start();
+            String sql = UPDATE_BUCKET_STATS;
+            PreparedStatement pstmt = null;
+            pstmt = txn.prepareAutoCloseStatement(sql); // in reality I just want CLOUD_USAGE dataSource connection
+            for (BucketStatisticsVO bucketStat : bucketStats) {
+                pstmt.setLong(1, bucketStat.getSize());
+                pstmt.setLong(2, bucketStat.getId());
+                pstmt.addBatch();
+            }
+            pstmt.executeBatch();
+            txn.commit();
+        } catch (Exception ex) {
+            txn.rollback();
+            logger.error("error updating bucket stats to cloud_usage db", ex);
+            throw new CloudRuntimeException(ex.getMessage());
+        }
     }
 
     @Override
@@ -299,7 +368,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
                 templateList.add(Long.valueOf(rs.getLong(1)));
             }
         } catch (Exception ex) {
-            s_logger.error("error listing public templates", ex);
+            logger.error("error listing public templates", ex);
         }
         return templateList;
     }
@@ -316,7 +385,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
                 return Long.valueOf(rs.getLong(1));
             }
         } catch (Exception ex) {
-            s_logger.error("error getting last vm disk stats id", ex);
+            logger.error("error getting last vm disk stats id", ex);
         }
         return null;
     }
@@ -349,7 +418,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
             txn.commit();
         } catch (Exception ex) {
             txn.rollback();
-            s_logger.error("error updating vm disk stats to cloud_usage db", ex);
+            logger.error("error updating vm disk stats to cloud_usage db", ex);
             throw new CloudRuntimeException(ex.getMessage());
         }
 
@@ -395,7 +464,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
             txn.commit();
         } catch (Exception ex) {
             txn.rollback();
-            s_logger.error("error saving vm disk stats to cloud_usage db", ex);
+            logger.error("error saving vm disk stats to cloud_usage db", ex);
             throw new CloudRuntimeException(ex.getMessage());
         }
 
@@ -462,7 +531,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
             txn.commit();
         } catch (Exception ex) {
             txn.rollback();
-            s_logger.error("error saving usage records to cloud_usage db", ex);
+            logger.error("error saving usage records to cloud_usage db", ex);
             throw new CloudRuntimeException(ex.getMessage());
         }
     }
@@ -480,7 +549,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
             txn.commit();
         } catch (Exception ex) {
             txn.rollback();
-            s_logger.error("error removing old cloud_usage records for interval: " + days);
+            logger.error("error removing old cloud_usage records for interval: " + days);
         } finally {
             txn.close();
         }
@@ -497,7 +566,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
 
     @Override
     public Pair<List<UsageVO>, Integer> listUsageRecordsPendingForQuotaAggregation(long accountId, long domainId) {
-        s_logger.debug(String.format("Retrieving pending usage records for accountId [%s] and domainId [%s].", accountId, domainId));
+        logger.debug(String.format("Retrieving pending usage records for accountId [%s] and domainId [%s].", accountId, domainId));
 
         return Transaction.execute(TransactionLegacy.USAGE_DB, (TransactionCallback<Pair<List<UsageVO>, Integer>>) status -> {
             Filter usageFilter = new Filter(UsageVO.class, "startDate", true, null, null);
@@ -523,7 +592,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
         String startDateString = DateUtil.getOutputString(startDate);
         String endDateString = DateUtil.getOutputString(endDate);
 
-        s_logger.debug(String.format("Retrieving account resources between [%s] and [%s] for accountId [%s] and usageType [%s].", startDateString, endDateString, accountId,
+        logger.debug(String.format("Retrieving account resources between [%s] and [%s] for accountId [%s] and usageType [%s].", startDateString, endDateString, accountId,
                 usageType));
 
         TransactionLegacy txn = TransactionLegacy.currentTxn();
@@ -546,7 +615,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
 
             return accountResourcesOfTheLastDay;
         } catch (SQLException e) {
-            s_logger.error(String.format("Failed to retrieve account resources between [%s] and [%s] for accountId [%s] and usageType [%s] due to [%s]. Returning an empty list of"
+            logger.error(String.format("Failed to retrieve account resources between [%s] and [%s] for accountId [%s] and usageType [%s] due to [%s]. Returning an empty list of"
                     + " resources.", startDateString, endDateString, accountId, usageType, e.getMessage()), e);
 
             return new ArrayList<>();

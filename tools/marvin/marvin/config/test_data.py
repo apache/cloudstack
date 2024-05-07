@@ -2260,11 +2260,23 @@ test_data = {
             "url": "http://download.cloudstack.org/cks/setup-1.26.0.iso",
             "mincpunumber": 2,
             "minmemory": 2048
+        },
+        "1.27.8": {
+            "semanticversion": "1.27.8",
+            "url": "http://download.cloudstack.org/cks/setup-1.27.8.iso",
+            "mincpunumber": 2,
+            "minmemory": 2048
+        },
+        "1.28.4": {
+            "semanticversion": "1.28.4",
+            "url": "http://download.cloudstack.org/cks/setup-1.28.4.iso",
+            "mincpunumber": 2,
+            "minmemory": 2048
         }
     },
-    "cks_kubernetes_version": "1.26.0",
-    "cks_kubernetes_version_upgrade_from": "1.25.0",
-    "cks_kubernetes_version_upgrade_to": "1.26.0",
+    "cks_kubernetes_version": "1.28.4",
+    "cks_kubernetes_version_upgrade_from": "1.27.8",
+    "cks_kubernetes_version_upgrade_to": "1.28.4",
     "cks_service_offering": {
         "name": "CKS-Instance",
         "displaytext": "CKS Instance",

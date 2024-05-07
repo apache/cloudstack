@@ -23,6 +23,7 @@
           :loading="loading"
           :resource="resource"
           :dataSource="dataSource"
+          :resourceType="'Volume'"
           @close-action="closeAction"
           @refresh="handleRefresh"/>
       </a-tab-pane>

@@ -25,7 +25,6 @@ import javax.inject.Inject;
 import com.cloud.agent.api.storage.DeleteEntityDownloadURLCommand;
 import com.cloud.host.dao.HostDao;
 import com.cloud.storage.Upload;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -45,7 +44,6 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class CloudStackImageStoreDriverImpl extends NfsImageStoreDriverImpl {
-    private static final Logger s_logger = Logger.getLogger(CloudStackImageStoreDriverImpl.class);
 
     @Inject
     ConfigurationDao _configDao;
@@ -70,20 +68,25 @@ public class CloudStackImageStoreDriverImpl extends NfsImageStoreDriverImpl {
         EndPoint ep = _epSelector.select(store);
         // Create Symlink at ssvm
         String path = installPath;
-        String uuid = UUID.randomUUID().toString() + "." + format.getFileExtension();
+        String uuid = UUID.randomUUID().toString();
+        if (format != null) {
+            uuid = uuid + "." + format.getFileExtension();
+        } else if (path.lastIndexOf(".") != -1) {
+            uuid = uuid + "." + path.substring(path.lastIndexOf(".") + 1);
+        }
         CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(((ImageStoreEntity)store).getMountPoint(),
                                                                 path, uuid, dataObject == null ? null: dataObject.getTO());
         Answer ans = null;
         if (ep == null) {
             String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
-            s_logger.error(errMsg);
+            logger.error(errMsg);
             ans = new Answer(cmd, false, errMsg);
         } else {
             ans = ep.sendMessage(cmd);
         }
         if (ans == null || !ans.getResult()) {
-            String errorString = "Unable to create a link for entity at " + installPath + " on ssvm," + ans.getDetails();
-            s_logger.error(errorString);
+            String errorString = "Unable to create a link for entity at " + installPath + " on ssvm, " + ans.getDetails();
+            logger.error(errorString);
             throw new CloudRuntimeException(errorString);
         }
         // Construct actual URL locally now that the symlink exists at SSVM
@@ -101,7 +104,7 @@ public class CloudStackImageStoreDriverImpl extends NfsImageStoreDriverImpl {
             _sslCopy = Boolean.parseBoolean(sslCfg);
         }
         if(_sslCopy && (_ssvmUrlDomain == null || _ssvmUrlDomain.isEmpty())){
-            s_logger.warn("Empty secondary storage url domain, ignoring SSL");
+            logger.warn("Empty secondary storage url domain, ignoring SSL");
             _sslCopy = false;
         }
         if (_sslCopy) {
@@ -127,14 +130,14 @@ public class CloudStackImageStoreDriverImpl extends NfsImageStoreDriverImpl {
         Answer ans = null;
         if (ep == null) {
             String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
-            s_logger.error(errMsg);
+            logger.error(errMsg);
             ans = new Answer(cmd, false, errMsg);
         } else {
             ans = ep.sendMessage(cmd);
         }
         if (ans == null || !ans.getResult()) {
             String errorString = "Unable to delete the url " + downloadUrl + " for path " + installPath + " on ssvm, " + ans.getDetails();
-            s_logger.error(errorString);
+            logger.error(errorString);
             throw new CloudRuntimeException(errorString);
         }
 

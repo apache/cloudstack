@@ -186,7 +186,8 @@ export default {
       inputKey: null,
       inputValue: null,
       fieldValues: {},
-      isFiltered: false
+      isFiltered: false,
+      alertTypes: []
     }
   },
   created () {
@@ -279,7 +280,7 @@ export default {
         if (item === 'groupid' && !('listInstanceGroups' in this.$store.getters.apis)) {
           return true
         }
-        if (['zoneid', 'domainid', 'state', 'level', 'clusterid', 'podid', 'groupid', 'entitytype', 'type'].includes(item)) {
+        if (['zoneid', 'domainid', 'imagestoreid', 'storageid', 'state', 'level', 'clusterid', 'podid', 'groupid', 'entitytype', 'type'].includes(item)) {
           type = 'list'
         } else if (item === 'tags') {
           type = 'tag'
@@ -339,18 +340,30 @@ export default {
           { value: 'Template' },
           { value: 'User' },
           { value: 'VirtualMachine' },
-          { value: 'Volume' }
+          { value: 'Volume' },
+          { value: 'QuotaTariff' }
         ]
         this.fields[resourceTypeIndex].loading = false
       }
     },
     async fetchDynamicFieldData (arrayField, searchKeyword) {
       const promises = []
+      let typeIndex = -1
       let zoneIndex = -1
       let domainIndex = -1
+      let imageStoreIndex = -1
+      let storageIndex = -1
       let podIndex = -1
       let clusterIndex = -1
       let groupIndex = -1
+
+      if (arrayField.includes('type')) {
+        if (this.$route.path === '/alert') {
+          typeIndex = this.fields.findIndex(item => item.name === 'type')
+          this.fields[typeIndex].loading = true
+          promises.push(await this.fetchAlertTypes())
+        }
+      }
 
       if (arrayField.includes('zoneid')) {
         zoneIndex = this.fields.findIndex(item => item.name === 'zoneid')
@@ -362,6 +375,18 @@ export default {
         domainIndex = this.fields.findIndex(item => item.name === 'domainid')
         this.fields[domainIndex].loading = true
         promises.push(await this.fetchDomains(searchKeyword))
+      }
+
+      if (arrayField.includes('imagestoreid')) {
+        imageStoreIndex = this.fields.findIndex(item => item.name === 'imagestoreid')
+        this.fields[imageStoreIndex].loading = true
+        promises.push(await this.fetchImageStores(searchKeyword))
+      }
+
+      if (arrayField.includes('storageid')) {
+        storageIndex = this.fields.findIndex(item => item.name === 'storageid')
+        this.fields[storageIndex].loading = true
+        promises.push(await this.fetchStoragePools(searchKeyword))
       }
 
       if (arrayField.includes('podid')) {
@@ -383,6 +408,12 @@ export default {
       }
 
       Promise.all(promises).then(response => {
+        if (typeIndex > -1) {
+          const types = response.filter(item => item.type === 'type')
+          if (types && types.length > 0) {
+            this.fields[typeIndex].opts = this.sortArray(types[0].data)
+          }
+        }
         if (zoneIndex > -1) {
           const zones = response.filter(item => item.type === 'zoneid')
           if (zones && zones.length > 0) {
@@ -393,6 +424,18 @@ export default {
           const domain = response.filter(item => item.type === 'domainid')
           if (domain && domain.length > 0) {
             this.fields[domainIndex].opts = this.sortArray(domain[0].data, 'path')
+          }
+        }
+        if (imageStoreIndex > -1) {
+          const imageStore = response.filter(item => item.type === 'imagestoreid')
+          if (imageStore && imageStore.length > 0) {
+            this.fields[imageStoreIndex].opts = this.sortArray(imageStore[0].data, 'name')
+          }
+        }
+        if (storageIndex > -1) {
+          const storagePool = response.filter(item => item.type === 'storageid')
+          if (storagePool && storagePool.length > 0) {
+            this.fields[storageIndex].opts = this.sortArray(storagePool[0].data, 'name')
           }
         }
         if (podIndex > -1) {
@@ -414,11 +457,20 @@ export default {
           }
         }
       }).finally(() => {
+        if (typeIndex > -1) {
+          this.fields[typeIndex].loading = false
+        }
         if (zoneIndex > -1) {
           this.fields[zoneIndex].loading = false
         }
         if (domainIndex > -1) {
           this.fields[domainIndex].loading = false
+        }
+        if (imageStoreIndex > -1) {
+          this.fields[imageStoreIndex].loading = false
+        }
+        if (storageIndex > -1) {
+          this.fields[storageIndex].loading = false
         }
         if (podIndex > -1) {
           this.fields[podIndex].loading = false
@@ -487,6 +539,32 @@ export default {
         })
       })
     },
+    fetchImageStores (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        api('listImageStores', { listAll: true, showicon: true, keyword: searchKeyword }).then(json => {
+          const imageStore = json.listimagestoresresponse.imagestore
+          resolve({
+            type: 'imagestoreid',
+            data: imageStore
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
+    fetchStoragePools (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        api('listStoragePools', { listAll: true, showicon: true, keyword: searchKeyword }).then(json => {
+          const storagePool = json.liststoragepoolsresponse.storagepool
+          resolve({
+            type: 'storageid',
+            data: storagePool
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
     fetchPods (searchKeyword) {
       return new Promise((resolve, reject) => {
         api('listPods', { keyword: searchKeyword }).then(json => {
@@ -526,6 +604,29 @@ export default {
         })
       })
     },
+    fetchAlertTypes () {
+      if (this.alertTypes.length > 0) {
+        return new Promise((resolve, reject) => {
+          resolve({
+            type: 'type',
+            data: this.alertTypes
+          })
+        })
+      } else {
+        return new Promise((resolve, reject) => {
+          api('listAlertTypes').then(json => {
+            const alerttypes = json.listalerttypesresponse.alerttype.map(a => { return { id: a.alerttypeid, name: a.name } })
+            this.alertTypes = alerttypes
+            resolve({
+              type: 'type',
+              data: alerttypes
+            })
+          }).catch(error => {
+            reject(error.response.headers['x-description'])
+          })
+        })
+      }
+    },
     fetchGuestNetworkTypes () {
       const types = []
       if (this.apiName.indexOf('listNetworks') > -1) {
@@ -545,30 +646,35 @@ export default {
       return types
     },
     fetchState () {
-      const state = []
-      if (this.apiName.indexOf('listVolumes') > -1) {
-        state.push({
-          id: 'Allocated',
-          name: 'label.allocated'
-        })
-        state.push({
-          id: 'Ready',
-          name: 'label.isready'
-        })
-        state.push({
-          id: 'Destroy',
-          name: 'label.destroy'
-        })
-        state.push({
-          id: 'Expunging',
-          name: 'label.expunging'
-        })
-        state.push({
-          id: 'Expunged',
-          name: 'label.expunged'
-        })
+      if (this.apiName.includes('listVolumes')) {
+        return [
+          {
+            id: 'Allocated',
+            name: 'label.allocated'
+          },
+          {
+            id: 'Ready',
+            name: 'label.isready'
+          },
+          {
+            id: 'Destroy',
+            name: 'label.destroy'
+          },
+          {
+            id: 'Expunging',
+            name: 'label.expunging'
+          },
+          {
+            id: 'Expunged',
+            name: 'label.expunged'
+          },
+          {
+            id: 'Migrating',
+            name: 'label.migrating'
+          }
+        ]
       }
-      return state
+      return []
     },
     fetchEntityType () {
       const entityType = []
@@ -697,12 +803,6 @@ export default {
     &-search {
       position: absolute;
       right: 0;
-    }
-  }
-
-  :deep(.ant-input-group) {
-    .ant-input-affix-wrapper {
-      width: calc(100% - 10px);
     }
   }
 }

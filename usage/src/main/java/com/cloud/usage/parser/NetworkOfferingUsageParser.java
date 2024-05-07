@@ -25,7 +25,10 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import com.cloud.usage.UsageManagerImpl;
+import com.cloud.utils.DateUtil;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.usage.UsageTypes;
@@ -39,7 +42,7 @@ import com.cloud.utils.Pair;
 
 @Component
 public class NetworkOfferingUsageParser {
-    public static final Logger s_logger = Logger.getLogger(NetworkOfferingUsageParser.class.getName());
+    protected static Logger LOGGER = LogManager.getLogger(NetworkOfferingUsageParser.class);
 
     private static UsageDao s_usageDao;
     private static UsageNetworkOfferingDao s_usageNetworkOfferingDao;
@@ -56,8 +59,8 @@ public class NetworkOfferingUsageParser {
     }
 
     public static boolean parse(AccountVO account, Date startDate, Date endDate) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Parsing all NetworkOffering usage events for account: " + account.getId());
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Parsing all NetworkOffering usage events for account: " + account.getId());
         }
         if ((endDate == null) || endDate.after(new Date())) {
             endDate = new Date();
@@ -71,7 +74,7 @@ public class NetworkOfferingUsageParser {
         List<UsageNetworkOfferingVO> usageNOs = s_usageNetworkOfferingDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate, false, 0);
 
         if (usageNOs.isEmpty()) {
-            s_logger.debug("No NetworkOffering usage events for this period");
+            LOGGER.debug("No NetworkOffering usage events for this period");
             return true;
         }
 
@@ -138,8 +141,8 @@ public class NetworkOfferingUsageParser {
     private static void createUsageRecord(int type, long runningTime, Date startDate, Date endDate, AccountVO account, long vmId, long noId, long zoneId,
         boolean isDefault) {
         // Our smallest increment is hourly for now
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Total running time " + runningTime + "ms");
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Total running time " + runningTime + "ms");
         }
 
         float usage = runningTime / 1000f / 60f / 60f;
@@ -147,10 +150,9 @@ public class NetworkOfferingUsageParser {
         DecimalFormat dFormat = new DecimalFormat("#.######");
         String usageDisplay = dFormat.format(usage);
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Creating network offering:" + noId + " usage record for Vm : " + vmId + ", usage: " + usageDisplay + ", startDate: " + startDate +
-                ", endDate: " + endDate + ", for account: " + account.getId());
-        }
+        LOGGER.debug("Creating network offering usage record for id [{}], vm [{}], usage [{}], startDate [{}], and endDate [{}], for account [{}].",
+                noId, vmId, usageDisplay, DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), startDate),
+                DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), endDate), account.getId());
 
         // Create the usage record
         String usageDesc = "Network offering:" + noId + " for Vm : " + vmId + " usage time";

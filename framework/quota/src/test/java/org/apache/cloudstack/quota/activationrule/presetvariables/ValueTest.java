@@ -136,4 +136,26 @@ public class ValueTest {
         variable.setBackupOffering(null);
         Assert.assertTrue(variable.fieldNamesToIncludeInToString.contains("backupOffering"));
     }
+
+    @Test
+    public void setHypervisorTypeTestAddFieldHypervisorTypeToCollection() {
+        Value variable = new Value();
+        variable.setHypervisorType(null);
+        Assert.assertTrue(variable.fieldNamesToIncludeInToString.contains("hypervisorType"));
+    }
+
+    @Test
+    public void setVolumeFormatTestAddFieldVolumeFormatToCollection() {
+        Value variable = new Value();
+        variable.setVolumeFormat(null);
+        Assert.assertTrue(variable.fieldNamesToIncludeInToString.contains("volumeFormat"));
+    }
+
+    @Test
+    public void setStateTestAddFieldStateToCollection() {
+        Value variable = new Value();
+        variable.setState(null);
+        Assert.assertTrue(variable.fieldNamesToIncludeInToString.contains("state"));
+    }
+
 }

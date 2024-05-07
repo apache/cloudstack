@@ -1660,7 +1660,7 @@ under the License.
 		</parameters>
 	</command>
 	
-<!--  Test case 939 - verify that you can assign a load balancer to multipe vms -->
+<!--  Test case 939 - verify that you can assign a load balancer to multiple vms -->
 	<command>
 		<name>deployVirtualMachine</name>
 		<testcase> [Deploy a Virtual Machine-1 to check multiple VMs - LB assignment]</testcase>

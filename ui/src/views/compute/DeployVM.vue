@@ -473,13 +473,13 @@
 
                         <span v-if="property.type && property.type==='boolean'">
                           <a-switch
-                            v-model:checked="form['properties.' + escapePropertyKey(property.key)]"
+                            v-model:checked="form.properties[escapePropertyKey(property.key)]"
                             :placeholder="property.description"
                           />
                         </span>
                         <span v-else-if="property.type && (property.type==='int' || property.type==='real')">
                           <a-input-number
-                            v-model:value="form['properties.'+ escapePropertyKey(property.key)]"
+                            v-model:value="form.properties[escapePropertyKey(property.key)]"
                             :placeholder="property.description"
                             :min="getPropertyQualifiers(property.qualifiers, 'number-select').min"
                             :max="getPropertyQualifiers(property.qualifiers, 'number-select').max" />
@@ -487,11 +487,11 @@
                         <span v-else-if="property.type && property.type==='string' && property.qualifiers && property.qualifiers.startsWith('ValueMap')">
                           <a-select
                             showSearch
-                            optionFilterProp="value"
-                            v-model:value="form['properties.' + escapePropertyKey(property.key)]"
+                            optionFilterProp="label"
+                            v-model:value="form.properties[escapePropertyKey(property.key)]"
                             :placeholder="property.description"
                             :filterOption="(input, option) => {
-                              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                             }"
                           >
                             <a-select-option v-for="opt in getPropertyQualifiers(property.qualifiers, 'select')" :key="opt">
@@ -501,12 +501,12 @@
                         </span>
                         <span v-else-if="property.type && property.type==='string' && property.password">
                           <a-input-password
-                            v-model:value="form['properties.' + escapePropertyKey(property.key)]"
+                            v-model:value="form.properties[escapePropertyKey(property.key)]"
                             :placeholder="property.description" />
                         </span>
                         <span v-else>
                           <a-input
-                            v-model:value="form['properties.' + escapePropertyKey(property.key)]"
+                            v-model:value="form.properties[escapePropertyKey(property.key)]"
                             :placeholder="property.description" />
                         </span>
                       </a-form-item>
@@ -522,7 +522,7 @@
                     {{ $t('label.isadvanced') }}
                     <a-switch v-model:checked="showDetails" style="margin-left: 10px"/>
                   </span>
-                  <div style="margin-top: 15px" v-show="showDetails">
+                  <div style="margin-top: 15px" v-if="showDetails">
                     <div
                       v-if="vm.templateid && ['KVM', 'VMware', 'XenServer'].includes(hypervisor) && !template.deployasis">
                       <a-form-item :label="$t('label.boottype')" name="boottype" ref="boottype">
@@ -1358,36 +1358,20 @@ export default {
         }
 
         this.serviceOffering = _.find(this.options.serviceOfferings, (option) => option.id === instanceConfig.computeofferingid)
-        if (this.serviceOffering?.diskofferingid) {
-          if (iso) {
-            this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === this.serviceOffering.diskofferingid)
-          } else {
-            instanceConfig.overridediskofferingid = this.serviceOffering.diskofferingid
-          }
-        }
-        if (!iso && this.diskSelected) {
-          this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.diskofferingid)
-        }
-        if (this.rootDiskSelected?.id) {
-          instanceConfig.overridediskofferingid = this.rootDiskSelected.id
-        }
+
+        instanceConfig.overridediskofferingid = this.rootDiskSelected?.id || this.serviceOffering?.diskofferingid
         if (instanceConfig.overridediskofferingid) {
           this.overrideDiskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.overridediskofferingid)
         } else {
           this.overrideDiskOffering = null
         }
 
-        if (!iso && this.diskSelected) {
+        if (iso && this.serviceOffering?.diskofferingid) {
+          this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === this.serviceOffering.diskofferingid)
+        } else if (!iso && this.diskSelected) {
           this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.diskofferingid)
         }
-        if (this.rootDiskSelected?.id) {
-          instanceConfig.overridediskofferingid = this.rootDiskSelected.id
-        }
-        if (instanceConfig.overridediskofferingid) {
-          this.overrideDiskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.overridediskofferingid)
-        } else {
-          this.overrideDiskOffering = null
-        }
+
         this.zone = _.find(this.options.zones, (option) => option.id === instanceConfig.zoneid)
         this.affinityGroups = _.filter(this.options.affinityGroups, (option) => _.includes(instanceConfig.affinitygroupids, option.id))
         this.networks = this.getSelectedNetworksWithExistingConfig(_.filter(this.options.networks, (option) => _.includes(instanceConfig.networkids, option.id)))
@@ -1536,61 +1520,7 @@ export default {
           })
         }
 
-        if (this.vm.templateid && this.templateProperties && Object.keys(this.templateProperties).length > 0) {
-          this.templateProperties.forEach((props, category) => {
-            props.forEach((property, propertyIndex) => {
-              if (property.type && property.type === 'boolean') {
-                this.form['properties.' + this.escapePropertyKey(property.key)] = property.value === 'TRUE'
-              } else if (property.type && (property.type === 'int' || property.type === 'real')) {
-                this.form['properties.' + this.escapePropertyKey(property.key)] = property.value
-              } else if (property.type && property.type === 'string' && property.qualifiers && property.qualifiers.startsWith('ValueMap')) {
-                this.form['properties.' + this.escapePropertyKey(property.key)] = property.value && property.value.length > 0
-                  ? property.value
-                  : this.getPropertyQualifiers(property.qualifiers, 'select')[0]
-              } else if (property.type && property.type === 'string' && property.password) {
-                this.form['properties.' + this.escapePropertyKey(property.key)] = property.value
-                this.rules['properties.' + this.escapePropertyKey(property.key)] = [{
-                  validator: async (rule, value) => {
-                    if (!property.qualifiers) {
-                      return Promise.resolve()
-                    }
-                    var minlength = this.getPropertyQualifiers(property.qualifiers, 'number-select').min
-                    var maxlength = this.getPropertyQualifiers(property.qualifiers, 'number-select').max
-                    var errorMessage = ''
-                    var isPasswordInvalidLength = function () {
-                      return false
-                    }
-                    if (minlength) {
-                      errorMessage = this.$t('message.validate.minlength').replace('{0}', minlength)
-                      isPasswordInvalidLength = function () {
-                        return !value || value.length < minlength
-                      }
-                    }
-                    if (maxlength !== Number.MAX_SAFE_INTEGER) {
-                      if (minlength) {
-                        errorMessage = this.$t('message.validate.range.length').replace('{0}', minlength).replace('{1}', maxlength)
-                        isPasswordInvalidLength = function () {
-                          return !value || (maxlength < value.length || value.length < minlength)
-                        }
-                      } else {
-                        errorMessage = this.$t('message.validate.maxlength').replace('{0}', maxlength)
-                        isPasswordInvalidLength = function () {
-                          return !value || value.length > maxlength
-                        }
-                      }
-                    }
-                    if (isPasswordInvalidLength()) {
-                      return Promise.reject(errorMessage)
-                    }
-                    return Promise.resolve()
-                  }
-                }]
-              } else {
-                this.form['properties.' + this.escapePropertyKey(property.key)] = property.value
-              }
-            })
-          })
-        }
+        this.updateFormProperties()
 
         if (this.vm.templateid && this.templateLicenses && this.templateLicenses.length > 0) {
           this.rules.licensesaccepted = [{
@@ -1718,6 +1648,7 @@ export default {
         this.showRootDiskSizeChanger = false
       } else {
         this.rootDiskSelected = null
+        this.form.overridediskofferingid = undefined
       }
       this.showOverrideDiskOfferingOption = val
     },
@@ -1827,6 +1758,9 @@ export default {
           this.form.iothreadsenabled = template.details && Object.prototype.hasOwnProperty.call(template.details, 'iothreads')
           this.form.iodriverpolicy = template.details?.['io.policy']
           this.form.keyboard = template.details?.keyboard
+          if (template.details['vmware-to-kvm-mac-addresses']) {
+            this.dataPreFill.macAddressArray = JSON.parse(template.details['vmware-to-kvm-mac-addresses'])
+          }
         }
       } else if (name === 'isoid') {
         this.templateConfigurations = []
@@ -1956,7 +1890,6 @@ export default {
       if (this.loading.deploy) return
       this.formRef.value.validate().then(async () => {
         const values = toRaw(this.form)
-
         if (!values.templateid && !values.isoid) {
           this.$notification.error({
             message: this.$t('message.request.failed'),
@@ -2045,7 +1978,7 @@ export default {
         if (this.selectedTemplateConfiguration) {
           deployVmData['details[0].configurationId'] = this.selectedTemplateConfiguration.id
         }
-        if (!this.serviceOffering.diskofferingstrictness && values.overridediskofferingid) {
+        if (!this.serviceOffering.diskofferingstrictness && values.overridediskofferingid && !values.isoid) {
           deployVmData.overridediskofferingid = values.overridediskofferingid
           if (values.rootdisksize && values.rootdisksize > 0) {
             deployVmData.rootdisksize = values.rootdisksize
@@ -2346,6 +2279,7 @@ export default {
       args.details = 'all'
       args.showicon = 'true'
       args.id = this.templateId
+      args.isvnf = false
 
       return new Promise((resolve, reject) => {
         api('listTemplates', args).then((response) => {
@@ -2597,7 +2531,7 @@ export default {
       }
     },
     resetFromTemplateConfiguration () {
-      this.deleteFrom(this.params.serviceOfferings.options, ['cpuspeed', 'cpunumber', 'memory'])
+      this.deleteFrom(this.params.serviceOfferings.options, ['templateid', 'cpuspeed', 'cpunumber', 'memory'])
       this.deleteFrom(this.dataPreFill, ['cpuspeed', 'cpunumber', 'memory'])
       this.handleSearchFilter('serviceOfferings', {
         page: 1,
@@ -2605,20 +2539,86 @@ export default {
       })
     },
     handleTemplateConfiguration () {
-      if (!this.selectedTemplateConfiguration) {
+      if (!this.selectedTemplateConfiguration && !this.template.templatetag) {
         return
       }
-      const params = {
-        cpunumber: this.selectedTemplateConfiguration.cpunumber,
-        cpuspeed: this.selectedTemplateConfiguration.cpuspeed,
-        memory: this.selectedTemplateConfiguration.memory,
+      let params = {
         page: 1,
         pageSize: 10
       }
-      this.dataPreFill.cpunumber = params.cpunumber
-      this.dataPreFill.cpuspeed = params.cpuspeed
-      this.dataPreFill.memory = params.memory
+      if (this.template.templatetag) {
+        params.templateid = this.template.id
+      }
+      if (this.selectedTemplateConfiguration && Object.keys(this.selectedTemplateConfiguration).length > 0) {
+        params = {
+          ...params,
+          cpunumber: this.selectedTemplateConfiguration.cpunumber,
+          cpuspeed: this.selectedTemplateConfiguration.cpuspeed,
+          memory: this.selectedTemplateConfiguration.memory
+        }
+        this.dataPreFill.cpunumber = params.cpunumber
+        this.dataPreFill.cpuspeed = params.cpuspeed
+        this.dataPreFill.memory = params.memory
+      }
       this.handleSearchFilter('serviceOfferings', params)
+    },
+    updateFormProperties () {
+      if (this.vm.templateid && this.templateProperties && Object.keys(this.templateProperties).length > 0) {
+        this.form.properties = {}
+        Object.keys(this.templateProperties).forEach((category, categoryIndex) => {
+          this.templateProperties[category].forEach((property, _) => {
+            if (property.type && property.type === 'boolean') {
+              this.form.properties[this.escapePropertyKey(property.key)] = property.value === 'TRUE'
+            } else if (property.type && (property.type === 'int' || property.type === 'real')) {
+              this.form.properties[this.escapePropertyKey(property.key)] = property.value
+            } else if (property.type && property.type === 'string' && property.qualifiers && property.qualifiers.startsWith('ValueMap')) {
+              this.form.properties[this.escapePropertyKey(property.key)] = property.value && property.value.length > 0
+                ? property.value
+                : this.getPropertyQualifiers(property.qualifiers, 'select')[0]
+            } else if (property.type && property.type === 'string' && property.password) {
+              this.form.properties[this.escapePropertyKey(property.key)] = property.value
+              this.rules['properties.' + this.escapePropertyKey(property.key)] = [{
+                validator: async (rule, value) => {
+                  if (!property.qualifiers) {
+                    return Promise.resolve()
+                  }
+                  var minlength = this.getPropertyQualifiers(property.qualifiers, 'number-select').min
+                  var maxlength = this.getPropertyQualifiers(property.qualifiers, 'number-select').max
+                  var errorMessage = ''
+                  var isPasswordInvalidLength = function () {
+                    return false
+                  }
+                  if (minlength) {
+                    errorMessage = this.$t('message.validate.minlength').replace('{0}', minlength)
+                    isPasswordInvalidLength = function () {
+                      return !value || value.length < minlength
+                    }
+                  }
+                  if (maxlength !== Number.MAX_SAFE_INTEGER) {
+                    if (minlength) {
+                      errorMessage = this.$t('message.validate.range.length').replace('{0}', minlength).replace('{1}', maxlength)
+                      isPasswordInvalidLength = function () {
+                        return !value || (maxlength < value.length || value.length < minlength)
+                      }
+                    } else {
+                      errorMessage = this.$t('message.validate.maxlength').replace('{0}', maxlength)
+                      isPasswordInvalidLength = function () {
+                        return !value || value.length > maxlength
+                      }
+                    }
+                  }
+                  if (isPasswordInvalidLength()) {
+                    return Promise.reject(errorMessage)
+                  }
+                  return Promise.resolve()
+                }
+              }]
+            } else {
+              this.form.properties[this.escapePropertyKey(property.key)] = property.value
+            }
+          })
+        })
+      }
     },
     updateTemplateParameters () {
       if (this.template) {
@@ -2628,15 +2628,16 @@ export default {
         this.templateProperties = this.fetchTemplateProperties(this.template)
         this.selectedTemplateConfiguration = {}
         setTimeout(() => {
-          if (this.templateConfigurationExists) {
-            this.selectedTemplateConfiguration = this.templateConfigurations[0]
+          if (this.templateConfigurationExists || this.template.templatetag) {
+            this.selectedTemplateConfiguration = this.templateConfigurationExists ? this.templateConfigurations[0] : {}
             this.handleTemplateConfiguration()
-            if ('templateConfiguration' in this.form.fieldsStore.fieldsMeta) {
+            if (this.selectedTemplateConfiguration) {
               this.updateFieldValue('templateConfiguration', this.selectedTemplateConfiguration.id)
             }
             this.updateComputeOffering(null) // reset as existing selection may be incompatible
           }
         }, 500)
+        this.updateFormProperties()
       }
     },
     onSelectTemplateConfigurationId (value) {

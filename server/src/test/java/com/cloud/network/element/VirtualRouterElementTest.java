@@ -103,11 +103,11 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
 import java.util.ArrayList;
@@ -116,10 +116,10 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyLong;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
@@ -342,7 +342,7 @@ public class VirtualRouterElementTest {
                 VirtualMachine.Type.DomainRouter,
                 /* defaultUse */ false);
         lenient().when(_serviceOfferingDao.findById(0L)).thenReturn(svcoff);
-        lenient().when(_serviceOfferingDao.findByName(Matchers.anyString())).thenReturn(svcoff);
+        lenient().when(_serviceOfferingDao.findByName(ArgumentMatchers.anyString())).thenReturn(svcoff);
         final DomainRouterVO router = new DomainRouterVO(/* id */ 1L,
                 /* serviceOfferingId */ 1L,
                 /* elementId */ 0L,

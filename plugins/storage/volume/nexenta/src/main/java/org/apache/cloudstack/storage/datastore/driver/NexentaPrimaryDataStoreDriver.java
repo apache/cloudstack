@@ -41,7 +41,8 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.NexentaStorAppliance;
 import org.apache.cloudstack.storage.datastore.util.NexentaStorAppliance.NexentaStorZvol;
 import org.apache.cloudstack.storage.datastore.util.NexentaUtil;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
@@ -49,14 +50,16 @@ import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.host.Host;
 import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 
 public class NexentaPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
-    private static final Logger logger = Logger.getLogger(NexentaPrimaryDataStoreDriver.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Override
     public boolean grantAccess(DataObject dataObject, Host host, DataStore dataStore) {
@@ -256,5 +259,19 @@ public class NexentaPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     @Override
     public void provideVmTags(long vmId, long volumeId, String tagValue) {
+    }
+
+    @Override
+    public boolean isStorageSupportHA(StoragePoolType type) {
+        return false;
+    }
+
+    @Override
+    public void detachVolumeFromAllStorageNodes(Volume volume) {
+    }
+
+    @Override
+    public boolean volumesRequireGrantAccessWhenUsed() {
+        return true;
     }
 }

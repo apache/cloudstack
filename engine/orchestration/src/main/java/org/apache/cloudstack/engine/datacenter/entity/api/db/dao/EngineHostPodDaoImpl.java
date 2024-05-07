@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.List;
 
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity;
@@ -44,7 +43,6 @@ import com.cloud.utils.db.UpdateBuilder;
 
 @Component(value = "EngineHostPodDao")
 public class EngineHostPodDaoImpl extends GenericDaoBase<EngineHostPodVO, Long> implements EngineHostPodDao {
-    private static final Logger s_logger = Logger.getLogger(EngineHostPodDaoImpl.class);
 
     protected SearchBuilder<EngineHostPodVO> DataCenterAndNameSearch;
     protected SearchBuilder<EngineHostPodVO> DataCenterIdSearch;
@@ -111,7 +109,7 @@ public class EngineHostPodDaoImpl extends GenericDaoBase<EngineHostPodVO, Long> 
                 currentPodCidrSubnets.put(podId, cidrPair);
             }
         } catch (SQLException ex) {
-            s_logger.warn("DB exception " + ex.getMessage(), ex);
+            logger.warn("DB exception " + ex.getMessage(), ex);
             return null;
         }
 
@@ -163,7 +161,7 @@ public class EngineHostPodDaoImpl extends GenericDaoBase<EngineHostPodVO, Long> 
 
         int rows = update(vo, sc);
 
-        if (rows == 0 && s_logger.isDebugEnabled()) {
+        if (rows == 0 && logger.isDebugEnabled()) {
             EngineHostPodVO dbDC = findByIdIncludingRemoved(vo.getId());
             if (dbDC != null) {
                 StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
@@ -185,7 +183,7 @@ public class EngineHostPodDaoImpl extends GenericDaoBase<EngineHostPodVO, Long> 
                     .append("; updatedTime=")
                     .append(oldUpdatedTime);
             } else {
-                s_logger.debug("Unable to update dataCenter: id=" + vo.getId() + ", as there is no such dataCenter exists in the database anymore");
+                logger.debug("Unable to update dataCenter: id=" + vo.getId() + ", as there is no such dataCenter exists in the database anymore");
             }
         }
         return rows > 0;

@@ -69,12 +69,12 @@ public final class ConfigureSimulatorHAProviderState extends BaseCmd {
     private Boolean activity;
 
     @Parameter(name = ApiConstants.RECOVER, type = CommandType.BOOLEAN,
-            description = "Set true is haprovider for simulator host should be be recoverable",
+            description = "Set true is haprovider for simulator host should be recoverable",
             required = true)
     private Boolean recovery;
 
     @Parameter(name = ApiConstants.FENCE, type = CommandType.BOOLEAN,
-            description = "Set true is haprovider for simulator host should be be fence-able",
+            description = "Set true is haprovider for simulator host should be fence-able",
             required = true)
     private Boolean fenceable;
 
