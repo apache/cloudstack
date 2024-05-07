@@ -223,7 +223,6 @@ public class KVMHostInfo {
                 We used to check if this was supported, but that is no longer required
             */
             this.capabilities.add("snapshot");
-            conn.close();
         } catch (final LibvirtException e) {
             LOGGER.error("Caught libvirt exception while fetching host information", e);
         }

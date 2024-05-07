@@ -339,7 +339,8 @@ public class DefaultEndPointSelector implements EndPointSelector {
      * Finds an SSVM that can be used to execute a command.
      * For zone-wide image store, use SSVM for that zone. For region-wide store, we can arbitrarily pick one SSVM to do the task.
      * */
-    public EndPoint findSsvm(long dcId) {
+    @Override
+    public EndPoint findSsvm(Long dcId) {
         List<HostVO> ssAHosts = listUpAndConnectingSecondaryStorageVmHost(dcId);
         if (ssAHosts == null || ssAHosts.isEmpty()) {
             return null;

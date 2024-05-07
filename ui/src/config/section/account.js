@@ -91,7 +91,7 @@ export default {
       icon: 'edit-outlined',
       label: 'label.action.edit.account',
       dataView: true,
-      args: ['newname', 'account', 'domainid', 'networkdomain'],
+      args: ['newname', 'account', 'domainid', 'networkdomain', 'roleid'],
       mapping: {
         account: {
           value: (record) => { return record.name }

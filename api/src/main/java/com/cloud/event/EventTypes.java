@@ -316,6 +316,8 @@ public class EventTypes {
     public static final String EVENT_VOLUME_UPDATE = "VOLUME.UPDATE";
     public static final String EVENT_VOLUME_DESTROY = "VOLUME.DESTROY";
     public static final String EVENT_VOLUME_RECOVER = "VOLUME.RECOVER";
+    public static final String EVENT_VOLUME_IMPORT = "VOLUME.IMPORT";
+    public static final String EVENT_VOLUME_UNMANAGE = "VOLUME.UNMANAGE";
     public static final String EVENT_VOLUME_CHANGE_DISK_OFFERING = "VOLUME.CHANGE.DISK.OFFERING";
 
     // Domains
@@ -1191,6 +1193,10 @@ public class EventTypes {
         entityEventDetails.put(EVENT_QUOTA_TARIFF_UPDATE, QuotaTariff.class);
     }
 
+    public static boolean isNetworkEvent(String eventType) {
+        return EVENT_NETWORK_CREATE.equals(eventType) || EVENT_NETWORK_DELETE.equals(eventType) ||
+                EVENT_NETWORK_UPDATE.equals(eventType);
+    }
     public static String getEntityForEvent(String eventName) {
         Object entityClass = entityEventDetails.get(eventName);
         if (entityClass == null) {
@@ -1218,5 +1224,9 @@ public class EventTypes {
         }
 
         return null;
+    }
+
+    public static boolean isVpcEvent(String eventType) {
+        return EventTypes.EVENT_VPC_CREATE.equals(eventType) || EventTypes.EVENT_VPC_DELETE.equals(eventType);
     }
 }
