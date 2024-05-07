@@ -23,6 +23,7 @@ import java.util.Set;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.VlanVO;
 import org.apache.cloudstack.api.command.admin.config.ResetCfgCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateGuestNetworkIpv6PrefixCmd;
@@ -517,9 +518,9 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      * @see com.cloud.configuration.ConfigurationManager#deleteVlanAndPublicIpRange(long, long, com.cloud.user.Account)
      */
     @Override
-    public boolean deleteVlanAndPublicIpRange(long userId, long vlanDbId, Account caller) {
+    public VlanVO deleteVlanAndPublicIpRange(long userId, long vlanDbId, Account caller) {
         // TODO Auto-generated method stub
-        return false;
+        return null;
     }
 
     /* (non-Javadoc)
