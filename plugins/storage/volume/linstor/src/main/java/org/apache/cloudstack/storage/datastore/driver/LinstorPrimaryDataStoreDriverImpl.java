@@ -102,6 +102,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.LinstorConfigurationManager;
 import org.apache.cloudstack.storage.datastore.util.LinstorUtil;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.storage.volume.VolumeObject;
 import org.apache.log4j.Logger;
 
@@ -798,6 +799,15 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             || srcData.getDataStore().getRole() == DataStoreRole.ImageCache);
     }
 
+    private static boolean canCopyVolumeCond(DataObject srcData, DataObject dstData) {
+        // Volume download from Linstor primary storage
+        return srcData.getType() == DataObjectType.VOLUME
+                && (dstData.getType() == DataObjectType.VOLUME || dstData.getType() == DataObjectType.TEMPLATE)
+                && srcData.getDataStore().getRole() == DataStoreRole.Primary
+                && (dstData.getDataStore().getRole() == DataStoreRole.Image
+                || dstData.getDataStore().getRole() == DataStoreRole.ImageCache);
+    }
+
     @Override
     public boolean canCopy(DataObject srcData, DataObject dstData)
     {
@@ -814,6 +824,10 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             return storagePoolVO != null
                 && storagePoolVO.getPoolType() == Storage.StoragePoolType.Linstor
                 && tInfo.getSize() != null;
+        } else if (canCopyVolumeCond(srcData, dstData)) {
+            VolumeInfo srcVolInfo = (VolumeInfo) srcData;
+            StoragePoolVO storagePool = _storagePoolDao.findById(srcVolInfo.getPoolId());
+            return storagePool.getStorageProviderName().equals(LinstorUtil.PROVIDER_NAME);
         }
         return false;
     }
@@ -843,6 +857,9 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             res.setResult(errMsg);
         } else if (canCopyTemplateCond(srcData, dstData)) {
             Answer answer = copyTemplate(srcData, dstData);
+            res = new CopyCommandResult(null, answer);
+        } else if (canCopyVolumeCond(srcData, dstData)) {
+            Answer answer = copyVolume(srcData, dstData);
             res = new CopyCommandResult(null, answer);
         } else {
             Answer answer = new Answer(null, false, "noimpl");
@@ -960,6 +977,43 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         } catch (ApiException exc) {
             s_logger.error("copy template failed: ", exc);
             deleteResourceDefinition(pool, rscName);
+            throw new CloudRuntimeException(exc.getBestMessage());
+        }
+        return answer;
+    }
+
+    private Answer copyVolume(DataObject srcData, DataObject dstData) {
+        VolumeInfo srcVolInfo = (VolumeInfo) srcData;
+        final StoragePoolVO pool = _storagePoolDao.findById(srcVolInfo.getDataStore().getId());
+        final DevelopersApi api = LinstorUtil.getLinstorAPI(pool.getHostAddress());
+        final String rscName = LinstorUtil.RSC_PREFIX + srcVolInfo.getUuid();
+
+        VolumeObjectTO to = (VolumeObjectTO) srcVolInfo.getTO();
+        // patch source format
+        // Linstor volumes are stored as RAW, but we can't set the correct format as RAW (we use QCOW2)
+        // otherwise create template from snapshot won't work, because this operation
+        // uses the format of the base volume and we backup snapshots as QCOW2
+        // https://github.com/apache/cloudstack/pull/8802#issuecomment-2024019927
+        to.setFormat(Storage.ImageFormat.RAW);
+        int nMaxExecutionSeconds = NumbersUtil.parseInt(
+                _configDao.getValue(Config.CopyVolumeWait.key()), 10800);
+        CopyCommand cmd = new CopyCommand(
+                to,
+                dstData.getTO(),
+                nMaxExecutionSeconds,
+                VirtualMachineManager.ExecuteInSequence.value());
+        Answer answer;
+
+        try {
+            Optional<RemoteHostEndPoint> optEP = getLinstorEP(api, rscName);
+            if (optEP.isPresent()) {
+                answer = optEP.get().sendMessage(cmd);
+            }
+            else {
+                answer = new Answer(cmd, false, "Unable to get matching Linstor endpoint.");
+            }
+        } catch (ApiException exc) {
+            s_logger.error("copy volume failed: ", exc);
             throw new CloudRuntimeException(exc.getBestMessage());
         }
         return answer;
