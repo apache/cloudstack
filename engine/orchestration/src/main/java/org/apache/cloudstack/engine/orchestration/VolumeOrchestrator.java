@@ -38,6 +38,11 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.user.AccountManager;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
@@ -183,6 +188,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     private static final Logger s_logger = Logger.getLogger(VolumeOrchestrator.class);
 
     @Inject
+    private AccountManager _accountMgr;
+    @Inject
     EntityManager _entityMgr;
     @Inject
     private UUIDManager _uuidMgr;
@@ -196,6 +203,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     protected TemplateDataStoreDao _vmTemplateStoreDao = null;
     @Inject
     protected VolumeDao _volumeDao;
+    @Inject
+    protected VMTemplateDao _templateDao;
     @Inject
     protected SnapshotDao _snapshotDao;
     @Inject
@@ -1709,7 +1718,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
     }
 
-    private Pair<VolumeVO, DataStore> recreateVolume(VolumeVO vol, VirtualMachineProfile vm, DeployDestination dest) throws StorageUnavailableException, StorageAccessException {
+    private Pair<VolumeVO, DataStore> recreateVolume(VolumeVO vol, VirtualMachineProfile vm, DeployDestination dest) throws StorageUnavailableException, StorageAccessException, ResourceAllocationException {
         String volToString = getReflectOnlySelectedFields(vol);
 
         VolumeVO newVol;
@@ -1744,6 +1753,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 s_logger.debug(String.format("Created new volume [%s] from old volume [%s].", newVolToString, volToString));
             }
         }
+        updateVolumeSize(destPool, newVol);
         VolumeInfo volume = volFactory.getVolume(newVol.getId(), destPool);
         Long templateId = newVol.getTemplateId();
         for (int i = 0; i < 2; i++) {
@@ -1875,8 +1885,39 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
     }
 
+    /**
+     * This method checks if size of volume on the data store would be different.
+     * If it's different it verifies the resource limits and updates the volume's size
+     */
+    protected void updateVolumeSize(DataStore store, VolumeVO vol) throws ResourceAllocationException {
+        if (store == null || !(store.getDriver() instanceof PrimaryDataStoreDriver)) {
+            return;
+        }
+
+        VMTemplateVO template = vol.getTemplateId() != null ? _templateDao.findById(vol.getTemplateId()) : null;
+        PrimaryDataStoreDriver driver = (PrimaryDataStoreDriver) store.getDriver();
+        long newSize = driver.getVolumeSizeRequiredOnPool(vol.getSize(),
+                template == null ? null : template.getSize(),
+                vol.getPassphraseId() != null);
+
+        if (newSize != vol.getSize()) {
+            DiskOfferingVO diskOffering = diskOfferingDao.findByIdIncludingRemoved(vol.getDiskOfferingId());
+            if (newSize > vol.getSize()) {
+                _resourceLimitMgr.checkPrimaryStorageResourceLimit(_accountMgr.getActiveAccountById(vol.getAccountId()),
+                        vol.isDisplay(), newSize - vol.getSize(), diskOffering);
+                _resourceLimitMgr.incrementVolumePrimaryStorageResourceCount(vol.getAccountId(), vol.isDisplay(),
+                        newSize - vol.getSize(), diskOffering);
+            } else {
+                _resourceLimitMgr.decrementVolumePrimaryStorageResourceCount(vol.getAccountId(), vol.isDisplay(),
+                        vol.getSize() - newSize, diskOffering);
+            }
+            vol.setSize(newSize);
+            _volsDao.persist(vol);
+        }
+    }
+
     @Override
-    public void prepare(VirtualMachineProfile vm, DeployDestination dest) throws StorageUnavailableException, InsufficientStorageCapacityException, ConcurrentOperationException, StorageAccessException {
+    public void prepare(VirtualMachineProfile vm, DeployDestination dest) throws StorageUnavailableException, InsufficientStorageCapacityException, ConcurrentOperationException, StorageAccessException, ResourceAllocationException {
         if (dest == null) {
             String msg = String.format("Unable to prepare volumes for the VM [%s] because DeployDestination is null.", vm.getVirtualMachine());
             s_logger.error(msg);
@@ -1899,7 +1940,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
                 String volToString = getReflectOnlySelectedFields(vol);
 
-                store = (PrimaryDataStore)dataStoreMgr.getDataStore(task.pool.getId(), DataStoreRole.Primary);
+                store = (PrimaryDataStore) dataStoreMgr.getDataStore(task.pool.getId(), DataStoreRole.Primary);
 
                 // For zone-wide managed storage, it is possible that the VM can be started in another
                 // cluster. In that case, make sure that the volume is in the right access group.
@@ -1909,6 +1950,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
                     long lastClusterId = lastHost == null || lastHost.getClusterId() == null ? -1 : lastHost.getClusterId();
                     long clusterId = host == null || host.getClusterId() == null ? -1 : host.getClusterId();
+
+                    updateVolumeSize(store, (VolumeVO) vol);
 
                     if (lastClusterId != clusterId) {
                         if (lastHost != null) {
@@ -1929,6 +1972,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 }
             } else if (task.type == VolumeTaskType.MIGRATE) {
                 store = (PrimaryDataStore) dataStoreMgr.getDataStore(task.pool.getId(), DataStoreRole.Primary);
+                updateVolumeSize(store, task.volume);
                 vol = migrateVolume(task.volume, store);
             } else if (task.type == VolumeTaskType.RECREATE) {
                 Pair<VolumeVO, DataStore> result = recreateVolume(task.volume, vm, dest);

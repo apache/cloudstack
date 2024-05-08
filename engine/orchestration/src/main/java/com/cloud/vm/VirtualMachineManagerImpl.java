@@ -50,6 +50,7 @@ import javax.persistence.EntityExistsException;
 
 import com.cloud.configuration.Resource;
 import com.cloud.event.ActionEventUtils;
+import com.cloud.exception.ResourceAllocationException;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -1434,7 +1435,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                             s_logger.warn("unexpected InsufficientCapacityException : " + e.getScope().getName(), e);
                         }
                     }
-                } catch (ExecutionException | NoTransitionException e) {
+                } catch (ExecutionException | NoTransitionException | ResourceAllocationException e) {
                     s_logger.error("Failed to start instance " + vm, e);
                     throw new AgentUnavailableException("Unable to start instance due to " + e.getMessage(), destHostId, e);
                 } catch (final StorageAccessException e) {
