@@ -562,13 +562,7 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
         response.setRouters(domainRouterDao.countAllByRole(VirtualRouter.Role.VIRTUAL_ROUTER));
         response.setInternalLbs(domainRouterDao.countAllByRole(VirtualRouter.Role.INTERNAL_LB_VM));
         response.setAlerts(alertDao.countAll());
-        int cpuSockets = 0;
-        for (final Host host : hostDao.listByType(Host.Type.Routing)) {
-            if (host.getCpuSockets() != null) {
-                cpuSockets += host.getCpuSockets();
-            }
-        }
-        response.setCpuSockets(cpuSockets);
+        response.setCpuSockets(hostDao.countAllCPUSockets());
         response.setManagementServers(managementServerHostDao.countAll());
         return response;
     }

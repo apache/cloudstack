@@ -45,6 +45,8 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     Integer countUpAndEnabledHostsInZone(long zoneId);
 
+    Integer countAllCPUSockets();
+
     /**
      * Mark all hosts associated with a certain management server
      * as disconnected.
