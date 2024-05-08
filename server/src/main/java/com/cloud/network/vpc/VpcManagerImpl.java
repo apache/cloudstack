@@ -1685,7 +1685,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             s_logger.debug("Not starting VPC as " + ApiConstants.START + "=false was passed to the API");
             return;
         }
-        startVpc(cmd.getEntityId(), false);
+        startVpc(cmd.getEntityId(), true);
     }
 
     protected boolean startVpc(final Vpc vpc, final DeployDestination dest, final ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException,
