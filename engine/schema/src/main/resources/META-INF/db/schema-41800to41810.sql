@@ -433,9 +433,25 @@ ALTER TABLE `cloud`.`resource_reservation`
     MODIFY COLUMN `amount` bigint NOT NULL;
 
 -- Scalability and DB optimisations
-ALTER TABLE `cloud`.`host` ADD INDEX `i_host__type` (`type`);
+ALTER TABLE `cloud`.`host` ADD INDEX `i_host__mgmt_server_id` (`mgmt_server_id`);
+ALTER TABLE `cloud`.`host` ADD INDEX `i_host__resource` (`resource`);
 ALTER TABLE `cloud`.`host` ADD INDEX `i_host__resource_state` (`resource_state`);
+ALTER TABLE `cloud`.`host` ADD INDEX `i_host__type` (`type`);
+
+ALTER TABLE `cloud`.`user_ip_address` ADD INDEX `i_user_ip_address__vm_id` (`vm_id`);
+ALTER TABLE `cloud`.`user_ip_address` ADD INDEX `i_user_ip_address__public_ip_address` (`public_ip_address`);
+ALTER TABLE `cloud`.`user_ip_address` ADD INDEX `i_user_ip_address__data_center_id` (`data_center_id`);
+ALTER TABLE `cloud`.`user_ip_address` ADD INDEX `i_user_ip_address__vlan_db_id` (`vlan_db_id`);
+
+ALTER TABLE `cloud`.`resource_tags` ADD INDEX `i_resource_tags__resource_id__resource_type` (`resource_id`, `resource_type`);
+
+ALTER TABLE `cloud`.`vlan` ADD INDEX `i_vlan__vlan_type` (`vlan_type`);
+
+ALTER TABLE `cloud`.`service_offering` ADD INDEX `i_service_offering__cpu` (`cpu`);
+ALTER TABLE `cloud`.`service_offering` ADD INDEX `i_service_offering__speed` (`speed`);
+ALTER TABLE `cloud`.`service_offering` ADD INDEX `i_service_offering__ram_size` (`ram_size`);
+
+ALTER TABLE `cloud`.`op_host_planner_reservation` ADD INDEX `i_op_host_planner_reservation__resource_usage`(`resource_usage`);
 
 ALTER TABLE `cloud`.`storage_pool` ADD INDEX `i_storage_pool__pool_type` (`pool_type`);
 
-ALTER TABLE op_host_planner_reservation ADD INDEX `i_op_host_planner_reservation__resource_usage`(`resource_usage`);
