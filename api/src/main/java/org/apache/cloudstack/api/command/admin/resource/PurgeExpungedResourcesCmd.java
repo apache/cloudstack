@@ -45,7 +45,7 @@ import com.cloud.event.EventTypes;
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin},
-        since = "4.18.1")
+        since = "4.20")
 public class PurgeExpungedResourcesCmd extends BaseAsyncCmd {
 
     @Inject
