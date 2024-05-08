@@ -244,7 +244,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.PURGE_RESOURCES, type = CommandType.BOOLEAN,
             description = "Whether to cleanup instance and its associated resource from database upon expunge of the instance",
-            since="4.18.1")
+            since="4.20")
     private Boolean purgeResources;
 
 
