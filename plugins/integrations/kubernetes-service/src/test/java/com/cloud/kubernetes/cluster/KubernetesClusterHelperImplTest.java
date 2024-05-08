@@ -17,8 +17,6 @@
 package com.cloud.kubernetes.cluster;
 
 
-import javax.inject.Inject;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;

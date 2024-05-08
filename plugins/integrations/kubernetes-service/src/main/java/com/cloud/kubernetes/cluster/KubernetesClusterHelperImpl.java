@@ -30,7 +30,6 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmManager;
-import com.cloud.vm.VirtualMachine;
 
 @Component
 public class KubernetesClusterHelperImpl extends AdapterBase implements KubernetesClusterHelper, Configurable {
