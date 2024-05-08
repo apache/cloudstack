@@ -732,8 +732,9 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         PublicIpQuarantine publicIpQuarantine = null;
         // Cleanup all ip address resources - PF/LB/Static nat rules
         if (!cleanupIpResources(addrId, userId, caller)) {
-            success = false;
-            s_logger.warn("Failed to release resources for ip address id=" + addrId);
+            String msg = String.format("Failed to release resources for ip address id=%s", addrId);
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg);
         }
 
         IPAddressVO ip = markIpAsUnavailable(addrId);
