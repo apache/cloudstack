@@ -157,4 +157,20 @@ public interface PrimaryDataStoreDriver extends DataStoreDriver {
     default boolean zoneWideVolumesAvailableWithoutClusterMotion() {
         return false;
     }
+
+    /**
+     * This method returns the actual size required on the pool for a volume.
+     *
+     * @param volumeSize
+     *         Size of volume to be created on the store
+     * @param templateSize
+     *         Size of template, if any, which will be used to create the volume
+     * @param isEncryptionRequired
+     *         true if volume is encrypted
+     *
+     * @return the size required on the pool for the volume
+     */
+    default long getVolumeSizeRequiredOnPool(long volumeSize, Long templateSize, boolean isEncryptionRequired) {
+        return volumeSize;
+    }
 }
