@@ -235,7 +235,7 @@ public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
     private Boolean encryptRoot;
 
     @SerializedName(ApiConstants.PURGE_RESOURCES)
-    @Param(description = "Whether to cleanup VM and its associated resource upon expunge", since = "4.18.1")
+    @Param(description = "Whether to cleanup VM and its associated resource upon expunge", since = "4.20")
     private Boolean purgeResources;
 
     public ServiceOfferingResponse() {
