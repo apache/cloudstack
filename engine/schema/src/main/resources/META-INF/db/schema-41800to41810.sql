@@ -437,3 +437,5 @@ ALTER TABLE `cloud`.`host` ADD INDEX `i_host__type` (`type`);
 ALTER TABLE `cloud`.`host` ADD INDEX `i_host__resource_state` (`resource_state`);
 
 ALTER TABLE `cloud`.`storage_pool` ADD INDEX `i_storage_pool__pool_type` (`pool_type`);
+
+ALTER TABLE op_host_planner_reservation ADD INDEX `i_op_host_planner_reservation__resource_usage`(`resource_usage`);
