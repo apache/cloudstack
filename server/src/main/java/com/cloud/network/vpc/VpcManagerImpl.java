@@ -1683,6 +1683,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     public void startVpc(final CreateVPCCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         if (!cmd.isStart()) {
             s_logger.debug("Not starting VPC as " + ApiConstants.START + "=false was passed to the API");
+            return;
         }
         startVpc(cmd.getEntityId(), false);
     }
