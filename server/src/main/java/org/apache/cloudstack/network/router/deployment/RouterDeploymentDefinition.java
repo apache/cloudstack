@@ -439,7 +439,7 @@ public class RouterDeploymentDefinition {
         String networkRouterOffering = VirtualNetworkApplianceManager.NetworkVirtualRouterServiceOffering.valueIn(guestNetwork.getId());
         if (networkRouterOffering != null) {
             ServiceOfferingVO serviceOffering = serviceOfferingDao.findByUuid(networkRouterOffering);
-            if (serviceOffering != null && "domainrouter".equals(serviceOffering.getSystemVmType())) {
+            if (serviceOffering != null && "domainrouter".equals(serviceOffering.getVmType())) {
                 boolean isLocalStorage = ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dest.getDataCenter().getId());
                 DiskOfferingVO diskOffering = diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
                 if (isLocalStorage == diskOffering.isUseLocalStorage()) {
