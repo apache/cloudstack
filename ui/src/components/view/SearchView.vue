@@ -283,7 +283,7 @@ export default {
         if (item === 'groupid' && !('listInstanceGroups' in this.$store.getters.apis)) {
           return true
         }
-        if (['zoneid', 'domainid', 'imagestoreid', 'storageid', 'state', 'account', 'level', 'clusterid', 'podid', 'groupid', 'entitytype', 'accounttype', 'type'].includes(item)) {
+        if (['zoneid', 'domainid', 'imagestoreid', 'storageid', 'state', 'account', 'hypervisor', 'level', 'clusterid', 'podid', 'groupid', 'entitytype', 'accounttype', 'type'].includes(item)) {
           type = 'list'
         } else if (item === 'tags') {
           type = 'tag'
@@ -367,6 +367,7 @@ export default {
       let zoneIndex = -1
       let domainIndex = -1
       let accountIndex = -1
+      let hypervisorIndex = -1
       let imageStoreIndex = -1
       let storageIndex = -1
       let podIndex = -1
@@ -401,6 +402,12 @@ export default {
         accountIndex = this.fields.findIndex(item => item.name === 'account')
         this.fields[accountIndex].loading = true
         promises.push(await this.fetchAccounts(searchKeyword))
+      }
+
+      if (arrayField.includes('hypervisor')) {
+        hypervisorIndex = this.fields.findIndex(item => item.name === 'hypervisor')
+        this.fields[hypervisorIndex].loading = true
+        promises.push(await this.fetchHypervisors())
       }
 
       if (arrayField.includes('imagestoreid')) {
@@ -456,6 +463,12 @@ export default {
           const account = response.filter(item => item.type === 'account')
           if (account && account.length > 0) {
             this.fields[accountIndex].opts = this.sortArray(account[0].data, 'name')
+          }
+        }
+        if (hypervisorIndex > -1) {
+          const hypervisor = response.filter(item => item.type === 'hypervisor')
+          if (hypervisor && hypervisor.length > 0) {
+            this.fields[hypervisorIndex].opts = this.sortArray(hypervisor[0].data, 'name')
           }
         }
         if (imageStoreIndex > -1) {
@@ -578,6 +591,19 @@ export default {
           resolve({
             type: 'account',
             data: account
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
+    fetchHypervisors () {
+      return new Promise((resolve, reject) => {
+        api('listHypervisors').then(json => {
+          const hypervisor = json.listhypervisorsresponse.hypervisor.map(a => { return { id: a.name, name: a.name } })
+          resolve({
+            type: 'hypervisor',
+            data: hypervisor
           })
         }).catch(error => {
           reject(error.response.headers['x-description'])
