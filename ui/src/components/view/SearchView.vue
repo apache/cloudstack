@@ -79,7 +79,7 @@
                           </span>
                           <global-outlined v-else style="margin-right: 5px" />
                         </span>
-                        <span v-if="(field.name.startsWith('domain'))">
+                        <span v-if="(field.name.startsWith('domain') || field.name.startsWith('account'))">
                           <span v-if="opt.icon">
                             <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
                           </span>
@@ -268,6 +268,9 @@ export default {
         if (item === 'domainid' && !('listDomains' in this.$store.getters.apis)) {
           return true
         }
+        if (item === 'account' && !('listAccounts' in this.$store.getters.apis)) {
+          return true
+        }
         if (item === 'account' && !('addAccountToProject' in this.$store.getters.apis || 'createAccount' in this.$store.getters.apis)) {
           return true
         }
@@ -280,7 +283,7 @@ export default {
         if (item === 'groupid' && !('listInstanceGroups' in this.$store.getters.apis)) {
           return true
         }
-        if (['zoneid', 'domainid', 'imagestoreid', 'storageid', 'state', 'level', 'clusterid', 'podid', 'groupid', 'entitytype', 'type'].includes(item)) {
+        if (['zoneid', 'domainid', 'imagestoreid', 'storageid', 'state', 'account', 'level', 'clusterid', 'podid', 'groupid', 'entitytype', 'type'].includes(item)) {
           type = 'list'
         } else if (item === 'tags') {
           type = 'tag'
@@ -351,6 +354,7 @@ export default {
       let typeIndex = -1
       let zoneIndex = -1
       let domainIndex = -1
+      let accountIndex = -1
       let imageStoreIndex = -1
       let storageIndex = -1
       let podIndex = -1
@@ -375,6 +379,12 @@ export default {
         domainIndex = this.fields.findIndex(item => item.name === 'domainid')
         this.fields[domainIndex].loading = true
         promises.push(await this.fetchDomains(searchKeyword))
+      }
+
+      if (arrayField.includes('account')) {
+        accountIndex = this.fields.findIndex(item => item.name === 'account')
+        this.fields[accountIndex].loading = true
+        promises.push(await this.fetchAccounts(searchKeyword))
       }
 
       if (arrayField.includes('imagestoreid')) {
@@ -424,6 +434,12 @@ export default {
           const domain = response.filter(item => item.type === 'domainid')
           if (domain && domain.length > 0) {
             this.fields[domainIndex].opts = this.sortArray(domain[0].data, 'path')
+          }
+        }
+        if (accountIndex > -1) {
+          const account = response.filter(item => item.type === 'account')
+          if (account && account.length > 0) {
+            this.fields[accountIndex].opts = this.sortArray(account[0].data, 'name')
           }
         }
         if (imageStoreIndex > -1) {
@@ -533,6 +549,19 @@ export default {
           resolve({
             type: 'domainid',
             data: domain
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
+    fetchAccounts (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        api('listAccounts', { listAll: true, showicon: true, keyword: searchKeyword }).then(json => {
+          const account = json.listaccountsresponse.account
+          resolve({
+            type: 'account',
+            data: account
           })
         }).catch(error => {
           reject(error.response.headers['x-description'])
@@ -671,6 +700,57 @@ export default {
           {
             id: 'Migrating',
             name: 'label.migrating'
+          }
+        ]
+      } else if (this.apiName.includes('listKubernetesClusters')) {
+        return [
+          {
+            id: 'Created',
+            name: 'label.created'
+          },
+          {
+            id: 'Starting',
+            name: 'label.starting'
+          },
+          {
+            id: 'Running',
+            name: 'label.running'
+          },
+          {
+            id: 'Stopping',
+            name: 'label.stopping'
+          },
+          {
+            id: 'Stopped',
+            name: 'label.stopped'
+          },
+          {
+            id: 'Scaling',
+            name: 'label.scaling'
+          },
+          {
+            id: 'Upgrading',
+            name: 'label.upgrading'
+          },
+          {
+            id: 'Alert',
+            name: 'label.alert'
+          },
+          {
+            id: 'Recovering',
+            name: 'label.recovering'
+          },
+          {
+            id: 'Destroyed',
+            name: 'label.destroyed'
+          },
+          {
+            id: 'Destroying',
+            name: 'label.destroying'
+          },
+          {
+            id: 'Error',
+            name: 'label.error'
           }
         ]
       }
