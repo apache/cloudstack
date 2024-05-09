@@ -61,7 +61,6 @@ public class ListVMsMetricsCmd extends ListVMsCmd implements UserCmd {
         return super.getDetails();
     }
 
-
     @Override
     public void execute() {
         ListResponse<UserVmResponse> userVms = _queryService.searchForUserVMs(this);

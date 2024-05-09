@@ -99,7 +99,8 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
                collectionType = CommandType.STRING,
                description = "comma separated list of vm details requested, "
                    + "value can be a list of [all, group, nics, stats, secgrp, tmpl, servoff, diskoff, backoff, iso, volume, min, affgrp]."
-                   + " If no parameter is passed in, the details will be defaulted to all.")
+                   + " If no parameter is passed in, the details will be defaulted to all. When return.vm.stats.on.vm.list is true, the default" +
+                       "details change to [group, nics, secgrp, tmpl, servoff, diskoff, backoff, iso, volume, min, affgrp], thus the stats will not be returned. ")
     private List<String> viewDetails;
 
     @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.UUID, entityType = TemplateResponse.class, description = "list vms by template")
@@ -246,7 +247,7 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
 
     public EnumSet<VMDetails> getDetails() throws InvalidParameterValueException {
         if (isViewDetailsEmpty()) {
-            if (_queryService.returnVmStatsOnVmList.value()) {
+            if (_queryService.ReturnVmStatsOnVmList.value()) {
                 return EnumSet.of(VMDetails.all);
             }
 
