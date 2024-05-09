@@ -200,11 +200,11 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         s_typeMap.put(EntityType.OBJECT_STORAGE, ApiCommandResourceType.ObjectStore);
     }
 
-    public List<KubernetesServiceHelper> getKubernetesClusterHelpers() {
+    public List<KubernetesServiceHelper> getKubernetesServiceHelpers() {
         return kubernetesServiceHelpers;
     }
 
-    public void setKubernetesClusterHelpers(final List<KubernetesServiceHelper> kubernetesServiceHelpers) {
+    public void setKubernetesServiceHelpers(final List<KubernetesServiceHelper> kubernetesServiceHelpers) {
         this.kubernetesServiceHelpers = kubernetesServiceHelpers;
     }
 

@@ -85,6 +85,11 @@ public class UpdateKubernetesSupportedVersionCmd extends BaseCmd implements Admi
         return ApiCommandResourceType.KubernetesSupportedVersion;
     }
 
+    @Override
+    public Long getApiResourceId() {
+        return getId();
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
