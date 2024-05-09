@@ -16,11 +16,12 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.snapshot;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.projects.Project;
+import com.cloud.storage.Volume;
+import com.cloud.storage.snapshot.SnapshotPolicy;
+import com.cloud.user.Account;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -30,16 +31,15 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SnapshotPolicyResponse;
+import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.commons.collections.MapUtils;
 
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.projects.Project;
-import com.cloud.storage.Volume;
-import com.cloud.storage.snapshot.SnapshotPolicy;
-import com.cloud.user.Account;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @APICommand(name = "createSnapshotPolicy", description = "Creates a snapshot policy for the account.", responseObject = SnapshotPolicyResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -83,6 +83,14 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
                     "The snapshots will always be made available in the zone in which the volume is present.")
     protected List<Long> zoneIds;
 
+    @Parameter(name = ApiConstants.STORAGE_ID_LIST,
+            type=CommandType.LIST,
+            collectionType = CommandType.UUID,
+            entityType = StoragePoolResponse.class,
+            description = "A comma-separated list of IDs of the storage pools in other zones in which the snapshot will be made available. " +
+                    "The snapshot will always be made available in the zone in which the volume is present.",
+            since = "4.20.0")
+    protected List<Long> storagePoolIds;
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -118,6 +126,8 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
     public List<Long> getZoneIds() {
         return zoneIds;
     }
+
+    public  List<Long> getStoragePoolIds() { return storagePoolIds; }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
