@@ -33,22 +33,16 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import javax.sql.DataSource;
 
-import org.apache.commons.dbcp2.ConnectionFactory;
-import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
-import org.apache.commons.dbcp2.PoolableConnection;
-import org.apache.commons.dbcp2.PoolableConnectionFactory;
-import org.apache.commons.dbcp2.PoolingDataSource;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.pool2.ObjectPool;
-import org.apache.commons.pool2.impl.GenericObjectPool;
-import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.mgmt.JmxUtil;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
 /**
  * Transaction abstracts away the Connection object in JDBC.  It allows the
@@ -1073,7 +1067,7 @@ public class TransactionLegacy implements Closeable {
             // Default Data Source for CloudStack
             s_ds = createDataSource(cloudUriAndDriver.first(), cloudUsername, cloudPassword, cloudMaxActive, cloudMaxIdle, cloudMaxWait,
                     cloudTimeBtwEvictionRunsMillis, cloudMinEvcitableIdleTimeMillis, cloudTestWhileIdle, cloudTestOnBorrow,
-                    cloudValidationQuery, isolationLevel);
+                    cloudValidationQuery, isolationLevel, "cloud");
 
             // Configure the usage db
             final int usageMaxActive = Integer.parseInt(dbProps.getProperty("db.usage.maxActive"));
@@ -1089,7 +1083,7 @@ public class TransactionLegacy implements Closeable {
             // Data Source for usage server
             s_usageDS = createDataSource(usageUriAndDriver.first(), usageUsername, usagePassword,
                     usageMaxActive, usageMaxIdle, usageMaxWait, null, null, null, null,
-                    null, isolationLevel);
+                    null, isolationLevel, "usage");
 
             try {
                 // Configure the simulator db
@@ -1123,14 +1117,14 @@ public class TransactionLegacy implements Closeable {
                 DriverLoader.loadDriver(simulatorDriver);
 
                 s_simulatorDS = createDataSource(simulatorConnectionUri, simulatorUsername, simulatorPassword,
-                        simulatorMaxActive, simulatorMaxIdle, simulatorMaxWait, null, null, null, null, cloudValidationQuery, isolationLevel);
+                        simulatorMaxActive, simulatorMaxIdle, simulatorMaxWait, null, null, null, null, cloudValidationQuery, isolationLevel, "simulator");
             } catch (Exception e) {
                 LOGGER.debug("Simulator DB properties are not available. Not initializing simulator DS");
             }
         } catch (final Exception e) {
             s_ds = getDefaultDataSource("cloud");
             s_usageDS = getDefaultDataSource("cloud_usage");
-            s_simulatorDS = getDefaultDataSource("cloud_simulator");
+            s_simulatorDS = getDefaultDataSource("simulator");
             LOGGER.warn(
                     "Unable to load db configuration, using defaults with 5 connections. Falling back on assumed datasource on localhost:3306 using username:password=cloud:cloud. Please check your configuration",
                     e);
@@ -1226,42 +1220,100 @@ public class TransactionLegacy implements Closeable {
                                                Integer maxActive, Integer maxIdle, Long maxWait,
                                                Long timeBtwnEvictionRuns, Long minEvictableIdleTime,
                                                Boolean testWhileIdle, Boolean testOnBorrow,
-                                               String validationQuery, Integer isolationLevel) {
-        ConnectionFactory connectionFactory = new DriverManagerConnectionFactory(uri, username, password);
-        PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(connectionFactory, null);
-        GenericObjectPoolConfig config = createPoolConfig(maxActive, maxIdle, maxWait, timeBtwnEvictionRuns, minEvictableIdleTime, testWhileIdle, testOnBorrow);
-        ObjectPool<PoolableConnection> connectionPool = new GenericObjectPool<>(poolableConnectionFactory, config);
-        poolableConnectionFactory.setPool(connectionPool);
-        if (isolationLevel != null) {
-            poolableConnectionFactory.setDefaultTransactionIsolation(isolationLevel);
-        }
-        return new PoolingDataSource<>(connectionPool);
-    }
+                                               String validationQuery, Integer isolationLevel,
+                                               String dsName) {
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl(uri);
+        config.setUsername(username);
+        config.setPassword(password);
 
-    /**
-     * Return a GenericObjectPoolConfig configuration usable on connection pool creation
-     */
-    private static GenericObjectPoolConfig createPoolConfig(Integer maxActive, Integer maxIdle, Long maxWait,
-                                                            Long timeBtwnEvictionRuns, Long minEvictableIdleTime,
-                                                            Boolean testWhileIdle, Boolean testOnBorrow) {
-        GenericObjectPoolConfig config = new GenericObjectPoolConfig();
-        config.setMaxTotal(maxActive);
-        config.setMaxIdle(maxIdle);
-        config.setMaxWaitMillis(maxWait);
+        config.setPoolName(dsName);
+        if (maxActive != null) {
+            config.setMaximumPoolSize(maxActive);
+        } else {
+            config.setMaximumPoolSize(250); // 250 connections
+        }
+        if (maxIdle != null) {
+            config.setIdleTimeout(maxIdle * 1000);
+        } else {
+            config.setIdleTimeout(30000); // 30 seconds
+        }
+        if (maxWait != null) {
+            config.setMaxLifetime(maxWait);
+        } else {
+            config.setMaxLifetime(600000); // 10 minutes
+        }
 
-        if (timeBtwnEvictionRuns != null) {
-            config.setTimeBetweenEvictionRunsMillis(timeBtwnEvictionRuns);
+        // Connection pool properties
+        config.setMinimumIdle(5);           // Minimum number of idle connections in the pool
+        config.setConnectionTimeout(30000); // 30 seconds in milliseconds
+        config.setKeepaliveTime(600000);    // Keepalive time in milliseconds (10 minutes)
+        config.setIdleTimeout(300000); // 5 minutes
+        //config.setMinimumIdle(maxIdle);
+        //config.setConnectionTestQuery("/* ping */ SELECT 1"); // Connection test query
+
+        String isolationLevelString = "TRANSACTION_READ_COMMITTED";
+        if (isolationLevel == Connection.TRANSACTION_SERIALIZABLE) {
+            isolationLevelString = "TRANSACTION_SERIALIZABLE";
+        } else if (isolationLevel == Connection.TRANSACTION_READ_UNCOMMITTED) {
+            isolationLevelString = "TRANSACTION_READ_UNCOMMITTED";
+        } else if (isolationLevel == Connection.TRANSACTION_REPEATABLE_READ) {
+            isolationLevelString = "TRANSACTION_REPEATABLE_READ";
         }
-        if (minEvictableIdleTime != null) {
-            config.setMinEvictableIdleTimeMillis(minEvictableIdleTime);
-        }
-        if (testWhileIdle != null) {
-            config.setTestWhileIdle(testWhileIdle);
-        }
-        if (testOnBorrow != null) {
-            config.setTestOnBorrow(testOnBorrow);
-        }
-        return config;
+        config.setTransactionIsolation(isolationLevelString);
+
+        // Standard datasource config for MySQL
+        config.addDataSourceProperty("cachePrepStmts", "true");
+        config.addDataSourceProperty("prepStmtCacheSize", "250");
+        config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+        // Additional config for MySQL
+        config.addDataSourceProperty("useServerPrepStmts", "true");
+        config.addDataSourceProperty("useLocalSessionState", "true");
+        config.addDataSourceProperty("rewriteBatchedStatements", "true");
+        config.addDataSourceProperty("cacheResultSetMetadata", "true");
+        config.addDataSourceProperty("cacheServerConfiguration", "true");
+        config.addDataSourceProperty("elideSetAutoCommits", "true");
+        config.addDataSourceProperty("maintainTimeStats", "false");
+
+        HikariDataSource dataSource = new HikariDataSource(config);
+        return dataSource;
+     }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static DataSource getDefaultDataSource(final String database) {
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl("jdbc:mysql://localhost:3306/" + database + "?" + CONNECTION_PARAMS);
+        config.setUsername("cloud");
+        config.setPassword("cloud");
+        config.setPoolName(database);
+
+        config.setMaximumPoolSize(250); // 250 connections
+        config.setIdleTimeout(30000); // 30 seconds
+        config.setMaxLifetime(600000); // 10 minutes
+
+        // Connection pool properties
+        config.setConnectionTimeout(20000); // 20 seconds in milliseconds
+        config.setMinimumIdle(5);        // Minimum number of idle connections in the pool
+        config.setKeepaliveTime(600000);    // Keepalive time in milliseconds (10 minutes)
+        //config.setConnectionTestQuery("/* ping */ SELECT 1"); // Connection test query
+        config.setIdleTimeout(300000); // 5 minutes
+        config.setTransactionIsolation("TRANSACTION_READ_COMMITTED");
+
+        // Standard datasource config for MySQL
+        config.addDataSourceProperty("cachePrepStmts", "true");
+        config.addDataSourceProperty("prepStmtCacheSize", "250");
+        config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+        // Additional config for MySQL
+        config.addDataSourceProperty("useServerPrepStmts", "true");
+        config.addDataSourceProperty("useLocalSessionState", "true");
+        config.addDataSourceProperty("rewriteBatchedStatements", "true");
+        config.addDataSourceProperty("cacheResultSetMetadata", "true");
+        config.addDataSourceProperty("cacheServerConfiguration", "true");
+        config.addDataSourceProperty("elideSetAutoCommits", "true");
+        config.addDataSourceProperty("maintainTimeStats", "false");
+
+        HikariDataSource dataSource = new HikariDataSource(config);
+        return dataSource;
     }
 
     private static String getDBHAParams(String dbName, Properties dbProps) {
@@ -1273,14 +1325,6 @@ public class TransactionLegacy implements Closeable {
         sb.append("&").append("queriesBeforeRetrySource=" + dbProps.getProperty("db." + dbName + ".queriesBeforeRetrySource"));
         sb.append("&").append("initialTimeout=" + dbProps.getProperty("db." + dbName + ".initialTimeout"));
         return sb.toString();
-    }
-
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private static DataSource getDefaultDataSource(final String database) {
-        final ConnectionFactory connectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://localhost:3306/" + database  + "?" + CONNECTION_PARAMS, "cloud", "cloud");
-        final PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(connectionFactory, null);
-        final GenericObjectPool connectionPool = new GenericObjectPool(poolableConnectionFactory);
-        return new PoolingDataSource(connectionPool);
     }
 
     /**

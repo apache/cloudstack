@@ -100,7 +100,7 @@
         <cs.commons-validator.version>1.6</cs.commons-validator.version>
         <cs.configuration.version>1.10</cs.configuration.version>
         <cs.daemon.version>1.3.3</cs.daemon.version>
-        <cs.dbcp.version>2.12.0</cs.dbcp.version>
+        <cs.hikaricp.version>5.1.0</cs.hikaricp.version>
         <cs.discovery.version>0.5</cs.discovery.version>
         <cs.lang.version>2.6</cs.lang.version>
         <cs.pool.version>2.9.0</cs.pool.version>
@@ -363,15 +363,9 @@
                 <version>${cs.daemon.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.apache.commons</groupId>
-                <artifactId>commons-dbcp2</artifactId>
-                <version>${cs.dbcp.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>org.apache.commons</artifactId>
-                        <groupId>commons-pool2</groupId>
-                    </exclusion>
-                </exclusions>
+                <groupId>com.zaxxer</groupId>
+                <artifactId>HikariCP</artifactId>
+                <version>${cs.hikaricp.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-discovery</groupId>
