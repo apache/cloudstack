@@ -799,6 +799,7 @@ export default {
       icon: 'key-outlined',
       docHelp: 'adminguide/virtual_machines.html#using-ssh-keys-for-authentication',
       permission: ['listSSHKeyPairs'],
+      searchFilters: ['name', 'domainid', 'account', 'fingerprint'],
       columns: () => {
         var fields = ['name', 'fingerprint']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
