@@ -79,7 +79,7 @@
                           </span>
                           <global-outlined v-else style="margin-right: 5px" />
                         </span>
-                        <span v-if="(field.name.startsWith('domain') || field.name.startsWith('account'))">
+                        <span v-if="(field.name.startsWith('domain') || field.name === 'account')">
                           <span v-if="opt.icon">
                             <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
                           </span>
@@ -283,7 +283,7 @@ export default {
         if (item === 'groupid' && !('listInstanceGroups' in this.$store.getters.apis)) {
           return true
         }
-        if (['zoneid', 'domainid', 'imagestoreid', 'storageid', 'state', 'account', 'level', 'clusterid', 'podid', 'groupid', 'entitytype', 'type'].includes(item)) {
+        if (['zoneid', 'domainid', 'imagestoreid', 'storageid', 'state', 'account', 'level', 'clusterid', 'podid', 'groupid', 'entitytype', 'accounttype', 'type'].includes(item)) {
           type = 'list'
         } else if (item === 'tags') {
           type = 'tag'
@@ -335,6 +335,13 @@ export default {
         this.fields[entityTypeIndex].loading = true
         this.fields[entityTypeIndex].opts = this.fetchEntityType()
         this.fields[entityTypeIndex].loading = false
+      }
+
+      if (arrayField.includes('accounttype')) {
+        const accountTypeIndex = this.fields.findIndex(item => item.name === 'accounttype')
+        this.fields[accountTypeIndex].loading = true
+        this.fields[accountTypeIndex].opts = this.fetchAccountTypes()
+        this.fields[accountTypeIndex].loading = false
       }
 
       if (arrayField.includes('resourcetype')) {
@@ -714,6 +721,24 @@ export default {
         types.push({
           id: 'L2',
           name: 'label.l2'
+        })
+      }
+      return types
+    },
+    fetchAccountTypes () {
+      const types = []
+      if (this.apiName.indexOf('listAccounts') > -1) {
+        types.push({
+          id: '1',
+          name: 'Admin'
+        })
+        types.push({
+          id: '2',
+          name: 'DomainAdmin'
+        })
+        types.push({
+          id: '3',
+          name: 'User'
         })
       }
       return types
