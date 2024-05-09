@@ -95,10 +95,11 @@ public class LibvirtStoragePoolDefTest extends TestCase {
 
         LibvirtStoragePoolDef pool = new LibvirtStoragePoolDef(type, name, uuid, host, dir, targetPath, nfsMountOpts);
 
-        String expectedXml = "<pool type='" + type.toString() +
-                "/n<name>" +name + "</name>\n<uuid>" + uuid + "</uuid>\n" +
-                "<source>\n<host name='" + host + "'/>\n<dir path='" + dir + "'/>\n</source>\n<target>\n" +
-                "<path>" + targetPath + "</path>\n</target>\n";
+        String expectedXml = "<pool type='netfs'>\n" +
+                "<name>" +name + "</name>\n<uuid>" + uuid + "</uuid>\n" +
+                "<source>\n<host name='" + host + "'/>\n<dir path='" + dir + "'/>\n" +
+                "<format type='glusterfs'/>\n</source>\n<target>\n" +
+                "<path>" + targetPath + "</path>\n</target>\n</pool>\n";
 
         assertEquals(expectedXml, pool.toString());
     }

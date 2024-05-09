@@ -298,7 +298,7 @@ public class StorageManagerImplTest {
     }
 
     @Test
-    public void testgetStoragePoolMountFailureReason() {
+    public void testGetStoragePoolMountFailureReason() {
         String error = "Mount failed on kvm host. An incorrect mount option was specified.\nIncorrect mount option.";
         String failureReason = storageManagerImpl.getStoragePoolMountFailureReason(error);
         Assert.assertEquals(failureReason, "An incorrect mount option was specified");
