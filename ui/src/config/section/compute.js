@@ -630,7 +630,7 @@ export default {
       docHelp: 'adminguide/autoscale_with_virtual_router.html',
       resourceType: 'AutoScaleVmGroup',
       permission: ['listAutoScaleVmGroups'],
-      searchFilters: ['name', 'domainid', 'account', 'zoneid'],
+      searchFilters: ['name', 'zoneid', 'domainid', 'account'],
       columns: (store) => {
         var fields = ['name', 'state', 'associatednetworkname', 'publicip', 'publicport', 'privateport', 'minmembers', 'maxmembers', 'availablevirtualmachinecount', 'account']
         if (store.listAllProjects) {
@@ -741,7 +741,7 @@ export default {
       docHelp: 'adminguide/virtual_machines.html#changing-the-vm-name-os-or-group',
       resourceType: 'VMInstanceGroup',
       permission: ['listInstanceGroups'],
-      searchFilters: ['name', 'domainid', 'account', 'zoneid'],
+      searchFilters: ['name', 'zoneid', 'domainid', 'account'],
       columns: (store) => {
         var fields = ['name', 'account']
         if (store.listAllProjects) {
@@ -960,7 +960,7 @@ export default {
       icon: 'swap-outlined',
       docHelp: 'adminguide/virtual_machines.html#affinity-groups',
       permission: ['listAffinityGroups'],
-      searchFilters: ['name', 'domainid', 'account', 'zoneid', 'type'],
+      searchFilters: ['name', 'zoneid', 'domainid', 'account', 'type'],
       columns: () => {
         var fields = ['name', 'type', 'description']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
