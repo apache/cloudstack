@@ -1158,9 +1158,6 @@ public class TransactionLegacy implements Closeable {
         GenericObjectPoolConfig config = createPoolConfig(maxActive, maxIdle, maxWait, timeBtwnEvictionRuns, minEvictableIdleTime, testWhileIdle, testOnBorrow);
         ObjectPool<PoolableConnection> connectionPool = new GenericObjectPool<>(poolableConnectionFactory, config);
         poolableConnectionFactory.setPool(connectionPool);
-        if (validationQuery != null) {
-            poolableConnectionFactory.setValidationQuery(validationQuery);
-        }
         if (isolationLevel != null) {
             poolableConnectionFactory.setDefaultTransactionIsolation(isolationLevel);
         }
