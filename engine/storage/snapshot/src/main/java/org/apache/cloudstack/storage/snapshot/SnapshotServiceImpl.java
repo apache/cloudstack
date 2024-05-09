@@ -46,6 +46,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageAction;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
@@ -897,6 +898,37 @@ public class SnapshotServiceImpl implements SnapshotService {
         caller.setContext(context);
         QuerySnapshotZoneCopyCommand cmd = new QuerySnapshotZoneCopyCommand((SnapshotObjectTO)(snapshot.getTO()));
         ep.sendMessageAsync(cmd, caller);
+        return future;
+    }
+
+    public AsyncCallFuture<SnapshotResult> copySnapshot(SnapshotInfo sourceSnapshot, SnapshotInfo destSnapshot, SnapshotStrategy strategy) {
+        try {
+            if (destSnapshot.getStatus() == ObjectInDataStoreStateMachine.State.Allocated) {
+                destSnapshot.processEvent(Event.CreateOnlyRequested);
+            } else if (sourceSnapshot.getStatus() == ObjectInDataStoreStateMachine.State.Ready) {
+                destSnapshot.processEvent(Event.CopyRequested);
+            } else {
+                logger.info(String.format("Cannot copy snapshot to another storage in different zone. It's not in the right state %s", sourceSnapshot.getStatus()));
+                sourceSnapshot.processEvent(Event.OperationFailed);
+                throw new CloudRuntimeException(String.format("Cannot copy snapshot to another storage in different zone. It's not in the right state %s", sourceSnapshot.getStatus()));
+            }
+        } catch (Exception e) {
+            logger.debug("Failed to change snapshot state: " + e.toString());
+            sourceSnapshot.processEvent(Event.OperationFailed);
+            throw new CloudRuntimeException(e);
+        }
+
+        AsyncCallFuture<SnapshotResult> future = new AsyncCallFuture<SnapshotResult>();
+        try {
+            CopySnapshotContext<CommandResult> context = new CopySnapshotContext<>(null, sourceSnapshot, destSnapshot, future);
+            AsyncCallbackDispatcher<SnapshotServiceImpl, CreateCmdResult> caller = AsyncCallbackDispatcher.create(this);
+            caller.setCallback(caller.getTarget().copySnapshotZoneAsyncCallback(null, null)).setContext(context);
+            strategy.copySnapshot(sourceSnapshot, destSnapshot, caller);
+        } catch (Exception e) {
+            logger.debug("Failed to take snapshot: " + destSnapshot.getId(), e);
+            destSnapshot.processEvent(Event.OperationFailed);
+            throw new CloudRuntimeException("Failed to copy snapshot" + destSnapshot.getId());
+        }
         return future;
     }
 }
