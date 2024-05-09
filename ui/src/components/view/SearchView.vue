@@ -283,7 +283,7 @@ export default {
         if (item === 'groupid' && !('listInstanceGroups' in this.$store.getters.apis)) {
           return true
         }
-        if (['zoneid', 'domainid', 'imagestoreid', 'storageid', 'state', 'account', 'hypervisor', 'level', 'clusterid', 'podid', 'groupid', 'entitytype', 'accounttype', 'scope', 'type'].includes(item)) {
+        if (['zoneid', 'domainid', 'imagestoreid', 'storageid', 'state', 'account', 'hypervisor', 'level', 'clusterid', 'podid', 'groupid', 'entitytype', 'accounttype', 'scope', 'provider', 'type'].includes(item)) {
           type = 'list'
         } else if (item === 'tags') {
           type = 'tag'
@@ -349,6 +349,13 @@ export default {
         this.fields[scopeIndex].loading = true
         this.fields[scopeIndex].opts = this.fetchStoragePoolScope()
         this.fields[scopeIndex].loading = false
+      }
+
+      if (arrayField.includes('provider')) {
+        const providerIndex = this.fields.findIndex(item => item.name === 'provider')
+        this.fields[providerIndex].loading = true
+        this.fields[providerIndex].opts = this.fetchImageStoreProviders()
+        this.fields[providerIndex].loading = false
       }
 
       if (arrayField.includes('resourcetype')) {
@@ -798,6 +805,28 @@ export default {
         types.push({
           id: 'GLOBAL',
           name: 'label.global'
+        })
+      }
+      return types
+    },
+    fetchImageStoreProviders () {
+      const types = []
+      if (this.apiName.indexOf('listImageStores') > -1) {
+        types.push({
+          id: 'NFS',
+          name: 'NFS'
+        })
+        types.push({
+          id: 'SMB/CIFS',
+          name: 'SMB/CIFS'
+        })
+        types.push({
+          id: 'S3',
+          name: 'S3'
+        })
+        types.push({
+          id: 'Swift',
+          name: 'Swift'
         })
       }
       return types
