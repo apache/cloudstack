@@ -25,6 +25,7 @@ import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.AccountManager;
+import com.cloud.utils.Pair;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -32,6 +33,8 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.collections.MapUtils;
 import org.junit.Assert;
@@ -64,6 +67,8 @@ public class StorageManagerImplTest {
     DataCenterDao dataCenterDao;
     @Mock
     AccountManager accountManager;
+    @Mock
+    StoragePoolDetailsDao storagePoolDetailsDao;
 
     @Spy
     @InjectMocks
@@ -274,5 +279,28 @@ public class StorageManagerImplTest {
         Long accountId = 1L;
         Mockito.when(accountManager.isRootAdmin(accountId)).thenReturn(true);
         storageManagerImpl.checkNFSMountOptionsForUpdate(details, pool, accountId);
+    }
+
+    @Test
+    public void testGetStoragePoolMountOptions() {
+        Long poolId = 1L;
+        String key = "nfsmountopts";
+        String value = "vers=4.1,nconnect=2";
+        StoragePoolDetailVO nfsMountOpts = new StoragePoolDetailVO(poolId, key, value, true);
+        StoragePoolVO pool = new StoragePoolVO();
+        pool.setId(poolId);
+        pool.setPoolType(Storage.StoragePoolType.NetworkFilesystem);
+        Mockito.when(storagePoolDetailsDao.findDetail(poolId, ApiConstants.NFS_MOUNT_OPTIONS)).thenReturn(nfsMountOpts);
+
+        Pair<Map<String, String>, Boolean> details = storageManagerImpl.getStoragePoolNFSMountOpts(pool, null);
+        Assert.assertEquals(details.second(), true);
+        Assert.assertEquals(details.first().get(key), value);
+    }
+
+    @Test
+    public void testgetStoragePoolMountFailureReason() {
+        String error = "Mount failed on kvm host. An incorrect mount option was specified.\nIncorrect mount option.";
+        String failureReason = storageManagerImpl.getStoragePoolMountFailureReason(error);
+        Assert.assertEquals(failureReason, "An incorrect mount option was specified");
     }
 }

@@ -84,6 +84,26 @@ public class LibvirtStoragePoolDefTest extends TestCase {
     }
 
     @Test
+    public void testGlusterFSStoragePool() {
+        PoolType type = PoolType.GLUSTERFS;
+        String name = "myGFSPool";
+        String uuid = "89a605bc-d470-4637-b3df-27388be452f5";
+        String host = "127.0.0.1";
+        String dir  = "/export/primary";
+        String targetPath = "/mnt/" + uuid;
+        List<String> nfsMountOpts = new ArrayList<>();
+
+        LibvirtStoragePoolDef pool = new LibvirtStoragePoolDef(type, name, uuid, host, dir, targetPath, nfsMountOpts);
+
+        String expectedXml = "<pool type='" + type.toString() +
+                "/n<name>" +name + "</name>\n<uuid>" + uuid + "</uuid>\n" +
+                "<source>\n<host name='" + host + "'/>\n<dir path='" + dir + "'/>\n</source>\n<target>\n" +
+                "<path>" + targetPath + "</path>\n</target>\n";
+
+        assertEquals(expectedXml, pool.toString());
+    }
+
+    @Test
     public void testRbdStoragePool() {
         PoolType type = PoolType.RBD;
         String name = "myRBDPool";
