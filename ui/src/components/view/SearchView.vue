@@ -308,6 +308,11 @@ export default {
           this.fields[typeIndex].loading = true
           this.fields[typeIndex].opts = this.fetchGuestNetworkTypes()
           this.fields[typeIndex].loading = false
+        } else if (this.$route.path === '/role' || this.$route.path.includes('/role/')) {
+          const typeIndex = this.fields.findIndex(item => item.name === 'type')
+          this.fields[typeIndex].loading = true
+          this.fields[typeIndex].opts = this.fetchRoleTypes()
+          this.fields[typeIndex].loading = false
         }
       }
 
@@ -709,6 +714,28 @@ export default {
         types.push({
           id: 'L2',
           name: 'label.l2'
+        })
+      }
+      return types
+    },
+    fetchRoleTypes () {
+      const types = []
+      if (this.apiName.indexOf('listRoles') > -1) {
+        types.push({
+          id: 'Admin',
+          name: 'Admin'
+        })
+        types.push({
+          id: 'ResourceAdmin',
+          name: 'ResourceAdmin'
+        })
+        types.push({
+          id: 'DomainAdmin',
+          name: 'DomainAdmin'
+        })
+        types.push({
+          id: 'User',
+          name: 'User'
         })
       }
       return types
