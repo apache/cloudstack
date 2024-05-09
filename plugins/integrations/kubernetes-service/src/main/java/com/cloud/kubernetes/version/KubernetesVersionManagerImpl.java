@@ -279,7 +279,8 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
     }
 
     @Override
-    @ActionEvent(eventType = KubernetesVersionEventTypes.EVENT_KUBERNETES_VERSION_ADD, eventDescription = "Adding Kubernetes supported version")
+    @ActionEvent(eventType = KubernetesVersionEventTypes.EVENT_KUBERNETES_VERSION_ADD,
+            eventDescription = "Adding Kubernetes supported version")
     public KubernetesSupportedVersionResponse addKubernetesSupportedVersion(final AddKubernetesSupportedVersionCmd cmd) {
         if (!KubernetesClusterService.KubernetesServiceEnabled.value()) {
             throw new CloudRuntimeException("Kubernetes Service plugin is disabled");
@@ -336,7 +337,8 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
     }
 
     @Override
-    @ActionEvent(eventType = KubernetesVersionEventTypes.EVENT_KUBERNETES_VERSION_DELETE, eventDescription = "Deleting Kubernetes supported version", async = true)
+    @ActionEvent(eventType = KubernetesVersionEventTypes.EVENT_KUBERNETES_VERSION_DELETE,
+            eventDescription = "Deleting Kubernetes supported version", async = true)
     public boolean deleteKubernetesSupportedVersion(final DeleteKubernetesSupportedVersionCmd cmd) {
         if (!KubernetesClusterService.KubernetesServiceEnabled.value()) {
             throw new CloudRuntimeException("Kubernetes Service plugin is disabled");
@@ -367,7 +369,8 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
     }
 
     @Override
-    @ActionEvent(eventType = KubernetesVersionEventTypes.EVENT_KUBERNETES_VERSION_UPDATE, eventDescription = "Updating Kubernetes supported version")
+    @ActionEvent(eventType = KubernetesVersionEventTypes.EVENT_KUBERNETES_VERSION_UPDATE,
+            eventDescription = "Updating Kubernetes supported version")
     public KubernetesSupportedVersionResponse updateKubernetesSupportedVersion(final UpdateKubernetesSupportedVersionCmd cmd) {
         if (!KubernetesClusterService.KubernetesServiceEnabled.value()) {
             throw new CloudRuntimeException("Kubernetes Service plugin is disabled");

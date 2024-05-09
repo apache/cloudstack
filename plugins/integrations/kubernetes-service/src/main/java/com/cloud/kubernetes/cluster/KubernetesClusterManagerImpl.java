@@ -40,6 +40,8 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.UserVmService;
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -48,8 +50,10 @@ import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.AddVirtualMachinesToKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.CreateKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.DeleteKubernetesClusterCmd;
@@ -75,6 +79,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.checkerframework.checker.units.qual.C;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.dao.NetworkOfferingJoinDao;
@@ -1138,6 +1143,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     @Override
+    @ActionEvent(eventType = KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_CREATE,
+            eventDescription = "Creating Kubernetes cluster", create = true)
     public KubernetesCluster createUnmanagedKubernetesCluster(CreateKubernetesClusterCmd cmd) throws CloudRuntimeException {
         if (!KubernetesServiceEnabled.value()) {
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
@@ -1188,6 +1195,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     @Override
+    @ActionEvent(eventType = KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_CREATE,
+            eventDescription = "Creating Kubernetes cluster", create = true)
     public KubernetesCluster createManagedKubernetesCluster(CreateKubernetesClusterCmd cmd) throws CloudRuntimeException {
         if (!KubernetesServiceEnabled.value()) {
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
@@ -1270,29 +1279,64 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         return securityGroup;
     }
 
+    @Override
+    @ActionEvent(eventType = KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_CREATE,
+            eventDescription = "Creating Kubernetes cluster", async = true)
+    public void startKubernetesCluster(CreateKubernetesClusterCmd cmd) throws CloudRuntimeException {
+        final Long id = cmd.getEntityId();
+        if (KubernetesCluster.ClusterType.valueOf(cmd.getClusterType()) != KubernetesCluster.ClusterType.CloudManaged) {
+            return;
+        }
+        final KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.findById(id);
+        if (kubernetesCluster == null) {
+            throw new InvalidParameterValueException("Failed to find Kubernetes cluster with given ID");
+        }
+        if (!startKubernetesCluster(kubernetesCluster, true)) {
+            throw new CloudRuntimeException(String.format("Failed to start created Kubernetes cluster: %s",
+                    kubernetesCluster.getName()));
+        }
+    }
+
+    @Override
+    @ActionEvent(eventType = KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_START,
+            eventDescription = "Starting Kubernetes cluster", async = true)
+    public void startKubernetesCluster(StartKubernetesClusterCmd cmd) throws CloudRuntimeException {
+        final Long id = cmd.getId();
+        if (id == null || id < 1L) {
+            throw new InvalidParameterValueException("Invalid Kubernetes cluster ID provided");
+        }
+        final KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.findById(id);
+        if (kubernetesCluster == null) {
+            throw new InvalidParameterValueException("Given Kubernetes cluster was not found");
+        }
+        if (!isCommandSupported(kubernetesCluster, cmd.getActualCommandName())) {
+            throw new InvalidParameterValueException(String.format("Start kubernetes cluster is not supported for " +
+                    "an externally managed cluster (%s)", kubernetesCluster.getName()));
+        }
+        if (!startKubernetesCluster(kubernetesCluster, false)) {
+            throw new CloudRuntimeException(String.format("Failed to start Kubernetes cluster: %s",
+                    kubernetesCluster.getName()));
+        }
+    }
+
     /**
      * Start operation can be performed at two different life stages of Kubernetes cluster. First when a freshly created cluster
      * in which case there are no resources provisioned for the Kubernetes cluster. So during start all the resources
      * are provisioned from scratch. Second kind of start, happens on  Stopped Kubernetes cluster, in which all resources
      * are provisioned (like volumes, nics, networks etc). It just that VM's are not in running state. So just
      * start the VM's (which can possibly implicitly start the network also).
-     * @param kubernetesClusterId
+     * @param kubernetesCluster
      * @param onCreate
      * @return
      * @throws CloudRuntimeException
      */
-
-    @Override
-    public boolean startKubernetesCluster(long kubernetesClusterId, boolean onCreate) throws CloudRuntimeException {
+    public boolean startKubernetesCluster(KubernetesClusterVO kubernetesCluster, boolean onCreate) throws CloudRuntimeException {
         if (!KubernetesServiceEnabled.value()) {
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
         }
-        final KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.findById(kubernetesClusterId);
-        if (kubernetesCluster == null) {
-            throw new InvalidParameterValueException("Failed to find Kubernetes cluster with given ID");
-        }
         if (kubernetesCluster.getRemoved() != null) {
-            throw new InvalidParameterValueException(String.format("Kubernetes cluster : %s is already deleted", kubernetesCluster.getName()));
+            throw new InvalidParameterValueException(String.format("Kubernetes cluster : %s is already deleted",
+                    kubernetesCluster.getName()));
         }
         accountManager.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.OperateEntry, false, kubernetesCluster);
         if (kubernetesCluster.getState().equals(KubernetesCluster.State.Running)) {
@@ -1350,6 +1394,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     @Override
+    @ActionEvent(eventType = KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_STOP,
+            eventDescription = "Stopping Kubernetes cluster", async = true)
     public boolean stopKubernetesCluster(StopKubernetesClusterCmd cmd) throws CloudRuntimeException {
         long kubernetesClusterId = cmd.getId();
         if (!KubernetesServiceEnabled.value()) {
@@ -1384,6 +1430,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     @Override
+    @ActionEvent(eventType = KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_DELETE,
+            eventDescription = "Stopping Kubernetes cluster", async = true)
     public boolean deleteKubernetesCluster(DeleteKubernetesClusterCmd cmd) throws CloudRuntimeException {
         if (!KubernetesServiceEnabled.value()) {
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
@@ -1526,6 +1574,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     @Override
+    @ActionEvent(eventType = KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_SCALE,
+            eventDescription = "Scaling Kubernetes cluster", async = true)
     public boolean scaleKubernetesCluster(ScaleKubernetesClusterCmd cmd) throws CloudRuntimeException {
         if (!KubernetesServiceEnabled.value()) {
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
@@ -1549,6 +1599,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     @Override
+    @ActionEvent(eventType = KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_UPGRADE,
+            eventDescription = "Upgrading Kubernetes cluster", async = true)
     public boolean upgradeKubernetesCluster(UpgradeKubernetesClusterCmd cmd) throws CloudRuntimeException {
         if (!KubernetesServiceEnabled.value()) {
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");

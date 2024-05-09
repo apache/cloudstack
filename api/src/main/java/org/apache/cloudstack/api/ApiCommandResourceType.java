@@ -81,7 +81,9 @@ public enum ApiCommandResourceType {
     ManagementServer(org.apache.cloudstack.management.ManagementServerHost.class),
     ObjectStore(org.apache.cloudstack.storage.object.ObjectStore.class),
     Bucket(org.apache.cloudstack.storage.object.Bucket.class),
-    QuotaTariff(org.apache.cloudstack.quota.QuotaTariff.class);
+    QuotaTariff(org.apache.cloudstack.quota.QuotaTariff.class),
+    KubernetesCluster(org.apache.cloudstack.acl.ControlledEntity.class),
+    KubernetesSupportedVersion(org.apache.cloudstack.api.InternalIdentity.class);
 
     private final Class<?> clazz;
 
