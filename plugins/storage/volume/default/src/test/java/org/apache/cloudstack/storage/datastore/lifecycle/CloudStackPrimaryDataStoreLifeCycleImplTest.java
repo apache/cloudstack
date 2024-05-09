@@ -174,10 +174,6 @@ public class CloudStackPrimaryDataStoreLifeCycleImplTest extends TestCase {
 
     @Test
     public void testAttachClusterException() throws Exception {
-        Long clusterId = 1L;
-        Long poolId = 2L;
-        Long zoneId = 3L;
-        Long podId = 4L;
         String exceptionString = "Mount failed due to incorrect mount options.";
         String mountFailureReason = "Incorrect mount option specified.";
 
@@ -187,12 +183,9 @@ public class CloudStackPrimaryDataStoreLifeCycleImplTest extends TestCase {
         Mockito.when(storageManager.getStoragePoolMountFailureReason(exceptionString)).thenReturn(mountFailureReason);
         ReflectionTestUtils.setField(_cloudStackPrimaryDataStoreLifeCycle, "storageMgr", storageManager);
 
-        HostVO hostMock = Mockito.mock(HostVO.class);
-        List<HostVO> hosts = List.of(hostMock);
-        Mockito.when(_resourceMgr.listAllUpHosts(Host.Type.Routing, clusterId, poolId, zoneId)).thenReturn(hosts);
-
         try {
-            _cloudStackPrimaryDataStoreLifeCycle.attachCluster(store, new ClusterScope(clusterId, podId, zoneId));
+            _cloudStackPrimaryDataStoreLifeCycle.attachCluster(store, new ClusterScope(1L, 1L, 1L));
+            Assert.fail();
         } catch (Exception e) {
            Assert.assertEquals(e.getMessage(), mountFailureReason);
         }
