@@ -309,7 +309,6 @@ export default {
       const params = {}
       params.id = this.resource.id
       params.showunique = false
-      params.locationtype = 'Secondary'
       params.listall = true
       params.page = this.page
       params.pagesize = this.pageSize
@@ -320,6 +319,9 @@ export default {
       api('listSnapshots', params).then(json => {
         this.dataSource = json.listsnapshotsresponse.snapshot || []
         this.itemCount = json.listsnapshotsresponse.count || 0
+        if (this.itemCount > 0) {
+          this.dataSource = this.dataSource.filter((obj, index) => this.dataSource.findIndex((item) => item.zoneid === obj.zoneid) === index)
+        }
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
