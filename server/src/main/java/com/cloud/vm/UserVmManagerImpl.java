@@ -141,6 +141,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.w3c.dom.Document;
@@ -347,6 +348,7 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.Journal;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.crypt.DBEncryptionUtil;
@@ -595,8 +597,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Inject
     VMScheduleManager vmScheduleManager;
-    @Inject
-    KubernetesClusterHelper kubernetesClusterHelper;
 
 
     private ScheduledExecutorService _executor = null;
@@ -3284,6 +3284,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return  null;
     }
 
+    protected void checkPluginsIfVmCanBeDestroyed(UserVm vm) {
+        try {
+            KubernetesClusterHelper kubernetesClusterHelper =
+                    ComponentContext.getDelegateComponentOfType(KubernetesClusterHelper.class);
+            kubernetesClusterHelper.checkVmCanBeDestroyed(vm);
+        } catch (NoSuchBeanDefinitionException ignored) {
+            s_logger.debug("No KubernetesClusterHelper bean found");
+        }
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_DESTROY, eventDescription = "destroying Vm", async = true)
     public UserVm destroyVm(DestroyVMCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException {
@@ -3310,8 +3320,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // check if vm belongs to AutoScale vm group in Disabled state
         autoScaleManager.checkIfVmActionAllowed(vmId);
 
-        // check if vm belongs to CKS cluster
-        kubernetesClusterHelper.checkVmCanBeDestroyed(vm);
+        // check if vm belongs to any plugin resources
+        checkPluginsIfVmCanBeDestroyed(vm);
 
         // check if there are active volume snapshots tasks
         s_logger.debug("Checking if there are any ongoing snapshots on the ROOT volumes associated with VM with ID " + vmId);
