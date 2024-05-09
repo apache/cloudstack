@@ -741,7 +741,7 @@ export default {
       docHelp: 'adminguide/virtual_machines.html#changing-the-vm-name-os-or-group',
       resourceType: 'VMInstanceGroup',
       permission: ['listInstanceGroups'],
-
+      searchFilters: ['name', 'domainid', 'account', 'zoneid'],
       columns: (store) => {
         var fields = ['name', 'account']
         if (store.listAllProjects) {
