@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -3275,26 +3276,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
-    public List<HypervisorType> listAvailHypervisorInZone(final Long hostId, final Long zoneId) {
-        final SearchCriteria<String> sc = _hypervisorsInDC.create();
-        if (zoneId != null) {
-            sc.setParameters("dataCenter", zoneId);
+    public List<HypervisorType> listAvailHypervisorInZone(final Long zoneId) {
+        List<VMTemplateVO> systemVMTemplates = _templateDao.listAllReadySystemVMTemplates(zoneId);
+        final Set<HypervisorType> hypervisors = new HashSet<>();
+        for (final VMTemplateVO systemVMTemplate : systemVMTemplates) {
+            hypervisors.add(systemVMTemplate.getHypervisorType());
         }
-        if (hostId != null) {
-            // exclude the given host, since we want to check what hypervisor is already handled
-            // in adding this new host
-            sc.setParameters("id", hostId);
-        }
-        sc.setParameters("type", Host.Type.Routing);
-
-        // The search is not able to return list of enums, so getting
-        // list of hypervisors as strings and then converting them to enum
-        final List<String> hvs = _hostDao.customSearch(sc, null);
-        final List<HypervisorType> hypervisors = new ArrayList<HypervisorType>();
-        for (final String hv : hvs) {
-            hypervisors.add(HypervisorType.getType(hv));
-        }
-        return hypervisors;
+        return new ArrayList<>(hypervisors);
     }
 
     @Override

@@ -551,17 +551,22 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     }
 
     @Override
-    public VMTemplateVO findSystemVMReadyTemplate(long zoneId, HypervisorType hypervisorType) {
+    public List<VMTemplateVO> listAllReadySystemVMTemplates(Long zoneId) {
         SearchCriteria<VMTemplateVO> sc = readySystemTemplateSearch.create();
         sc.setParameters("templateType", Storage.TemplateType.SYSTEM);
         sc.setParameters("state", VirtualMachineTemplate.State.Active);
         sc.setJoinParameters("tmplHyper", "type", Host.Type.Routing);
-        sc.setJoinParameters("tmplHyper", "zoneId", zoneId);
+        if (zoneId != null) {
+            sc.setJoinParameters("tmplHyper", "zoneId", zoneId);
+        }
         sc.setJoinParameters("vmTemplateJoinTemplateStoreRef", "downloadState", new VMTemplateStorageResourceAssoc.Status[] {VMTemplateStorageResourceAssoc.Status.DOWNLOADED, VMTemplateStorageResourceAssoc.Status.BYPASSED});
-
         // order by descending order of id
-        List<VMTemplateVO> tmplts = listBy(sc, new Filter(VMTemplateVO.class, "id", false, null, null));
+        return listBy(sc, new Filter(VMTemplateVO.class, "id", false, null, null));
+    }
 
+    @Override
+    public VMTemplateVO findSystemVMReadyTemplate(long zoneId, HypervisorType hypervisorType) {
+        List<VMTemplateVO> tmplts = listAllReadySystemVMTemplates(zoneId);
         if (tmplts.size() > 0) {
             if (hypervisorType == HypervisorType.Any) {
                 return tmplts.get(0);
@@ -571,7 +576,6 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
                     return tmplt;
                 }
             }
-
         }
         return null;
     }

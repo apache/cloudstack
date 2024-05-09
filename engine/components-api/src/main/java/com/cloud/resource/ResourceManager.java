@@ -132,7 +132,7 @@ public interface ResourceManager extends ResourceService, Configurable {
 
     public List<HostVO> listAllHostsInAllZonesByType(Type type);
 
-    public List<HypervisorType> listAvailHypervisorInZone(Long hostId, Long zoneId);
+    public List<HypervisorType> listAvailHypervisorInZone(Long zoneId);
 
     public HostVO findHostByGuid(String guid);
 

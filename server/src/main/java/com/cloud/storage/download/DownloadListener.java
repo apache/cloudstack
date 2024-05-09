@@ -275,7 +275,7 @@ public class DownloadListener implements Listener {
     @Override
     public void processConnect(Host agent, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
         if (cmd instanceof StartupRoutingCommand) {
-            List<HypervisorType> hypers = _resourceMgr.listAvailHypervisorInZone(agent.getId(), agent.getDataCenterId());
+            List<HypervisorType> hypers = _resourceMgr.listAvailHypervisorInZone(agent.getDataCenterId());
             HypervisorType hostHyper = agent.getHypervisorType();
             if (hypers.contains(hostHyper)) {
                 return;

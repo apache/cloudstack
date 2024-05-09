@@ -438,7 +438,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#listAvailHypervisorInZone(java.lang.Long, java.lang.Long)
      */
     @Override
-    public List<HypervisorType> listAvailHypervisorInZone(final Long hostId, final Long zoneId) {
+    public List<HypervisorType> listAvailHypervisorInZone(final Long zoneId) {
         // TODO Auto-generated method stub
         return null;
     }

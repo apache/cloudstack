@@ -4207,7 +4207,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         // check if zone is configured, if not, just return empty list
         List<HypervisorType> hypers = null;
         if (!isIso) {
-            hypers = _resourceMgr.listAvailHypervisorInZone(null, null);
+            hypers = _resourceMgr.listAvailHypervisorInZone(null);
             if (hypers == null || hypers.isEmpty()) {
                 return new Pair<List<TemplateJoinVO>, Integer>(new ArrayList<TemplateJoinVO>(), 0);
             }
