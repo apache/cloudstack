@@ -55,7 +55,12 @@ public class KubernetesClusterHelperImpl extends AdapterBase implements Kubernet
             return;
         }
         logger.error(String.format("VM ID: %s is a part of Kubernetes cluster ID: %d", userVm.getId(), vmMapVO.getClusterId()));
-        throw new CloudRuntimeException("Instance is a part of a Kubernetes cluster");
+        KubernetesCluster kubernetesCluster = kubernetesClusterDao.findById(vmMapVO.getId());
+        String msg = "Instance is a part of a Kubernetes cluster";
+        if (kubernetesCluster != null) {
+            msg += String.format(": %s", kubernetesCluster.getName());
+        }
+        throw new CloudRuntimeException(msg);
     }
 
     @Override
