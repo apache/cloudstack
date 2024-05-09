@@ -1344,6 +1344,7 @@
 "label.min_balance": "Min balance",
 "label.mincpunumber": "Min CPU cores",
 "label.minimum": "Minimum",
+"label.minimumsemanticversion": "Minimum semantic version",
 "label.miniops": "Min IOPS",
 "label.minmaxiops": "Min IOPS / Max IOPS",
 "label.minmembers": "Min members",
