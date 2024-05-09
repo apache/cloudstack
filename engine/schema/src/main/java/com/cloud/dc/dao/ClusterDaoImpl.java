@@ -54,8 +54,6 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     protected final SearchBuilder<ClusterVO> ZoneSearch;
     protected final SearchBuilder<ClusterVO> ZoneHyTypeSearch;
     protected final SearchBuilder<ClusterVO> ZoneClusterSearch;
-    protected final SearchBuilder<ClusterVO> ClusterSearch;
-
     protected GenericSearchBuilder<ClusterVO, Long> ClusterIdSearch;
 
     private static final String GET_POD_CLUSTER_MAP_PREFIX = "SELECT pod_id, id FROM cloud.cluster WHERE cluster.id IN( ";
@@ -102,10 +100,6 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
         ClusterIdSearch = createSearchBuilder(Long.class);
         ClusterIdSearch.selectFields(ClusterIdSearch.entity().getId());
         ClusterIdSearch.and("dataCenterId", ClusterIdSearch.entity().getDataCenterId(), Op.EQ);
-        ClusterIdSearch.done();
-
-        ClusterSearch = createSearchBuilder();
-        ClusterSearch.select(null, Func.DISTINCT, ClusterSearch.entity().getHypervisorType());
         ClusterIdSearch.done();
     }
 
@@ -156,23 +150,17 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
             sc.setParameters("zoneId", zoneId);
         }
         List<ClusterVO> clusters = listBy(sc);
-        List<HypervisorType> hypers = new ArrayList<HypervisorType>(4);
+        List<HypervisorType> distinctHypervisors = new ArrayList<>(4);
         for (ClusterVO cluster : clusters) {
-            hypers.add(cluster.getHypervisorType());
+            distinctHypervisors.add(cluster.getHypervisorType());
         }
 
-        return hypers;
+        return distinctHypervisors;
     }
 
     @Override
-    public Set<HypervisorType> getDistictAvailableHypervisorsAcrossClusters() {
-        SearchCriteria<ClusterVO> sc = ClusterSearch.create();
-        List<ClusterVO> clusters = listBy(sc);
-        Set<HypervisorType> hypers = new HashSet<>();
-        for (ClusterVO cluster : clusters) {
-            hypers.add(cluster.getHypervisorType());
-        }
-        return hypers;
+    public Set<HypervisorType> getDistinctAvailableHypervisorsAcrossClusters() {
+        return new HashSet<>(getAvailableHypervisorInZone(null));
     }
 
     @Override
