@@ -5468,9 +5468,17 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     public SnapshotResponse listSnapshot(CopySnapshotCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
         List<Long> zoneIds = cmd.getDestinationZoneIds();
+        Long zoneId = null;
+        String location = null;
+        if (CollectionUtils.isNotEmpty(zoneIds)) {
+            zoneId = zoneIds.get(0);
+            location = Snapshot.LocationType.SECONDARY.name();
+        } else {
+            location = cmd.getSnapshot().getLocationType() != null ? cmd.getSnapshot().getLocationType().name() : null;
+        }
         Pair<List<SnapshotJoinVO>, Integer> result = searchForSnapshotsWithParams(cmd.getId(), null,
                 null, null, null, null,
-                null, null, zoneIds.get(0), Snapshot.LocationType.SECONDARY.name(),
+                null, null, zoneId, location,
                 false, null, null, null, null, null,
                 null, null, true, false, caller);
         ResponseView respView = ResponseView.Restricted;

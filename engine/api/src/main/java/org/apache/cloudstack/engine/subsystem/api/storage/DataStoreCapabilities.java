@@ -40,5 +40,14 @@ public enum DataStoreCapabilities {
     /**
      * indicates that this driver supports reverting a volume to a snapshot state
      */
-    CAN_REVERT_VOLUME_TO_SNAPSHOT
+    CAN_REVERT_VOLUME_TO_SNAPSHOT,
+    /**
+    * indicates that the driver supports copying snapshot between zones on pools of the same type
+    */
+    CAN_COPY_SNAPSHOT_BETWEEN_ZONES,
+    /**
+     * indicates that the storage does not need to delete the snapshot when creating a volume/template from it
+     * and the setting `snapshot.backup.to.secondary` is enabled
+     */
+    KEEP_SNAPSHOT_ON_PRIMARY_AND_BACKUP
 }

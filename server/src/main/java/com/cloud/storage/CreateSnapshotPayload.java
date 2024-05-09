@@ -28,6 +28,7 @@ public class CreateSnapshotPayload {
     private Snapshot.LocationType locationType;
     private boolean asyncBackup;
     private List<Long> zoneIds;
+    private List<Long> storagePoolIds;
 
     public Long getSnapshotPolicyId() {
         return snapshotPolicyId;
@@ -77,5 +78,13 @@ public class CreateSnapshotPayload {
 
     public void setZoneIds(List<Long> zoneIds) {
         this.zoneIds = zoneIds;
+    }
+
+    public List<Long> getStoragePoolIds() {
+        return storagePoolIds;
+    }
+
+    public void setStoragePoolIds(List<Long> storagePoolIds) {
+        this.storagePoolIds = storagePoolIds;
     }
 }

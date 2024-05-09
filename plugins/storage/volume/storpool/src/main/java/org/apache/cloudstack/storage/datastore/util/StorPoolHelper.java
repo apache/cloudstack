@@ -19,26 +19,6 @@
 
 package org.apache.cloudstack.storage.datastore.util;
 
-import java.sql.PreparedStatement;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
-import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
-import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpApiResponse;
-import org.apache.cloudstack.storage.snapshot.StorPoolConfigurationManager;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.commons.collections4.CollectionUtils;
-
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
@@ -49,6 +29,7 @@ import com.cloud.hypervisor.kvm.storage.StorPoolStorageAdaptor;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDetailsDao;
@@ -64,6 +45,26 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpApiResponse;
+import org.apache.cloudstack.storage.snapshot.StorPoolConfigurationManager;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+
+import java.sql.PreparedStatement;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class StorPoolHelper {
 
@@ -217,6 +218,22 @@ public class StorPoolHelper {
         }
     }
 
+    public static void setLocationIfNeeded(StoragePool storagePool, StoragePoolDetailsDao storagePoolDetails,
+            String location) {
+        if (location == null) {
+            return;
+        }
+        StoragePoolDetailVO storagePoolDetailVO = storagePoolDetails.findDetail(storagePool.getId(),
+                StorPoolConfigurationManager.StorPoolClusterLocation.key());
+        if (storagePoolDetailVO == null) {
+            storagePoolDetails.persist(new StoragePoolDetailVO(storagePool.getId(),
+                    StorPoolConfigurationManager.StorPoolClusterLocation.key(), location, true));
+        } else if (storagePoolDetailVO.getValue() == null || !storagePoolDetailVO.getValue().equals(location)) {
+            storagePoolDetailVO.setValue(location);
+            storagePoolDetails.update(storagePoolDetailVO.getId(), storagePoolDetailVO);
+        }
+    }
+
     public static Long findClusterIdByGlobalId(String globalId, ClusterDao clusterDao) {
         List<ClusterVO> clusterVo = clusterDao.listAll();
         if (clusterVo.size() == 1) {
@@ -224,7 +241,7 @@ public class StorPoolHelper {
             return null;
         }
         for (ClusterVO clusterVO2 : clusterVo) {
-            if (globalId != null && StorPoolConfigurationManager.StorPoolClusterId.valueIn(clusterVO2.getId()) != null
+            if (globalId != null && StringUtils.isNotEmpty(StorPoolConfigurationManager.StorPoolClusterId.valueIn(clusterVO2.getId()))
                     && globalId.contains(StorPoolConfigurationManager.StorPoolClusterId.valueIn(clusterVO2.getId()).toString())) {
                 StorPoolUtil.spLog("Found cluster with id=%s for object with globalId=%s", clusterVO2.getId(),
                         globalId);
@@ -237,7 +254,7 @@ public class StorPoolHelper {
 
     public static HostVO findHostByCluster(Long clusterId, HostDao hostDao) {
         List<HostVO> host = hostDao.findByClusterId(clusterId);
-        return host != null ? host.get(0) : null;
+        return CollectionUtils.isNotEmpty(host) ? host.get(0) : null;
     }
 
     public static int getTimeout(String cfg, ConfigurationDao configDao) {
