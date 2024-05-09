@@ -17,11 +17,24 @@
 
 package org.apache.cloudstack.storage.snapshot;
 
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-
-import javax.inject.Inject;
-
+import com.cloud.agent.api.Answer;
+import com.cloud.configuration.Config;
+import com.cloud.dc.DataCenter;
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.storage.CreateSnapshotPayload;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.SnapshotDetailsDao;
+import com.cloud.storage.template.TemplateConstants;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.NoTransitionException;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
@@ -38,6 +51,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -57,27 +71,12 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.heuristics.HeuristicRuleHelper;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.configuration.Config;
-import com.cloud.dc.DataCenter;
-import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventUtils;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.storage.CreateSnapshotPayload;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.storage.dao.SnapshotDetailsDao;
-import com.cloud.storage.template.TemplateConstants;
-import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionCallbackNoReturn;
-import com.cloud.utils.db.TransactionStatus;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.fsm.NoTransitionException;
+import javax.inject.Inject;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 public class SnapshotServiceImpl implements SnapshotService {
     protected Logger logger = LogManager.getLogger(getClass());
@@ -780,6 +779,37 @@ public class SnapshotServiceImpl implements SnapshotService {
         caller.setContext(context);
         QuerySnapshotZoneCopyCommand cmd = new QuerySnapshotZoneCopyCommand((SnapshotObjectTO)(snapshot.getTO()));
         ep.sendMessageAsync(cmd, caller);
+        return future;
+    }
+
+    public AsyncCallFuture<SnapshotResult> copySnapshot(SnapshotInfo sourceSnapshot, SnapshotInfo destSnapshot, SnapshotStrategy strategy) {
+        try {
+            if (destSnapshot.getStatus() == ObjectInDataStoreStateMachine.State.Allocated) {
+                destSnapshot.processEvent(Event.CreateOnlyRequested);
+            } else if (sourceSnapshot.getStatus() == ObjectInDataStoreStateMachine.State.Ready) {
+                destSnapshot.processEvent(Event.CopyRequested);
+            } else {
+                logger.info(String.format("Cannot copy snapshot to another storage in different zone. It's not in the right state %s", sourceSnapshot.getStatus()));
+                sourceSnapshot.processEvent(Event.OperationFailed);
+                throw new CloudRuntimeException(String.format("Cannot copy snapshot to another storage in different zone. It's not in the right state %s", sourceSnapshot.getStatus()));
+            }
+        } catch (Exception e) {
+            logger.debug("Failed to change snapshot state: " + e.toString());
+            sourceSnapshot.processEvent(Event.OperationFailed);
+            throw new CloudRuntimeException(e);
+        }
+
+        AsyncCallFuture<SnapshotResult> future = new AsyncCallFuture<SnapshotResult>();
+        try {
+            CopySnapshotContext<CommandResult> context = new CopySnapshotContext<>(null, sourceSnapshot, destSnapshot, future);
+            AsyncCallbackDispatcher<SnapshotServiceImpl, CreateCmdResult> caller = AsyncCallbackDispatcher.create(this);
+            caller.setCallback(caller.getTarget().copySnapshotZoneAsyncCallback(null, null)).setContext(context);
+            strategy.copySnapshot(sourceSnapshot, destSnapshot, caller);
+        } catch (Exception e) {
+            logger.debug("Failed to take snapshot: " + destSnapshot.getId(), e);
+            destSnapshot.processEvent(Event.OperationFailed);
+            throw new CloudRuntimeException("Failed to copy snapshot" + destSnapshot.getId());
+        }
         return future;
     }
 }
