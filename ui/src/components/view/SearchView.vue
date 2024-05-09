@@ -283,7 +283,7 @@ export default {
         if (item === 'groupid' && !('listInstanceGroups' in this.$store.getters.apis)) {
           return true
         }
-        if (['zoneid', 'domainid', 'imagestoreid', 'storageid', 'state', 'account', 'hypervisor', 'level', 'clusterid', 'podid', 'groupid', 'entitytype', 'accounttype', 'type'].includes(item)) {
+        if (['zoneid', 'domainid', 'imagestoreid', 'storageid', 'state', 'account', 'hypervisor', 'level', 'clusterid', 'podid', 'groupid', 'entitytype', 'accounttype', 'scope', 'type'].includes(item)) {
           type = 'list'
         } else if (item === 'tags') {
           type = 'tag'
@@ -342,6 +342,13 @@ export default {
         this.fields[accountTypeIndex].loading = true
         this.fields[accountTypeIndex].opts = this.fetchAccountTypes()
         this.fields[accountTypeIndex].loading = false
+      }
+
+      if (arrayField.includes('scope')) {
+        const scopeIndex = this.fields.findIndex(item => item.name === 'scope')
+        this.fields[scopeIndex].loading = true
+        this.fields[scopeIndex].opts = this.fetchStoragePoolScope()
+        this.fields[scopeIndex].loading = false
       }
 
       if (arrayField.includes('resourcetype')) {
@@ -765,6 +772,32 @@ export default {
         types.push({
           id: '3',
           name: 'User'
+        })
+      }
+      return types
+    },
+    fetchStoragePoolScope () {
+      const types = []
+      if (this.apiName.indexOf('listStoragePools') > -1) {
+        types.push({
+          id: 'HOST',
+          name: 'label.hostname'
+        })
+        types.push({
+          id: 'CLUSTER',
+          name: 'label.cluster'
+        })
+        types.push({
+          id: 'ZONE',
+          name: 'label.zone'
+        })
+        types.push({
+          id: 'REGION',
+          name: 'label.region'
+        })
+        types.push({
+          id: 'GLOBAL',
+          name: 'label.global'
         })
       }
       return types

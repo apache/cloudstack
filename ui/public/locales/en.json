@@ -932,6 +932,7 @@
 "label.fwdeviceid": "ID",
 "label.fwdevicestate": "Status",
 "label.gateway": "Gateway",
+"label.global": "Global",
 "label.global.settings": "Global Settings",
 "label.globo.dns": "GloboDNS",
 "label.globo.dns.configuration": "GloboDNS configuration",
