@@ -34,7 +34,7 @@
     <bean id="kubernetesClusterVmMapDaoImpl" class="com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDaoImpl" />
     <bean id="kubernetesClusterManagerImpl" class="com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl" />
 
-    <bean id="kubernetesClusterHelper" class="com.cloud.kubernetes.cluster.KubernetesClusterHelperImpl" >
+    <bean id="kubernetesClusterHelper" class="com.cloud.kubernetes.cluster.KubernetesServiceHelperImpl" >
         <property name="name" value="KubernetesClusterHelper" />
     </bean>
 

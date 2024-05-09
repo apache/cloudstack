@@ -16,33 +16,11 @@
 // under the License.
 package com.cloud.kubernetes.cluster;
 
-import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
-import com.cloud.utils.component.AdapterBase;
 import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
-import org.springframework.stereotype.Component;
 
-import javax.inject.Inject;
+import com.cloud.utils.component.Adapter;
 
-@Component
-public class KubernetesClusterHelperImpl extends AdapterBase implements KubernetesClusterHelper, Configurable {
+public interface KubernetesServiceHelper extends Adapter {
 
-    @Inject
-    private KubernetesClusterDao kubernetesClusterDao;
-
-    @Override
-    public ControlledEntity findByUuid(String uuid) {
-        return kubernetesClusterDao.findByUuid(uuid);
-    }
-
-    @Override
-    public String getConfigComponentName() {
-        return KubernetesClusterHelper.class.getSimpleName();
-    }
-
-    @Override
-    public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[]{};
-    }
+    ControlledEntity findByUuid(String uuid);
 }

@@ -29,6 +29,7 @@ import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.collections4.MapUtils;
 import org.apache.log4j.Logger;
 import org.springframework.aop.framework.Advised;
 import org.springframework.beans.BeansException;
