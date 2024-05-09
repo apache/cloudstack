@@ -960,6 +960,7 @@ export default {
       icon: 'swap-outlined',
       docHelp: 'adminguide/virtual_machines.html#affinity-groups',
       permission: ['listAffinityGroups'],
+      searchFilters: ['name', 'domainid', 'account', 'zoneid', 'type'],
       columns: () => {
         var fields = ['name', 'type', 'description']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {

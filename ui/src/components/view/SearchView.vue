@@ -366,6 +366,10 @@ export default {
           typeIndex = this.fields.findIndex(item => item.name === 'type')
           this.fields[typeIndex].loading = true
           promises.push(await this.fetchAlertTypes())
+        } else if (this.$route.path === '/affinitygroup') {
+          typeIndex = this.fields.findIndex(item => item.name === 'type')
+          this.fields[typeIndex].loading = true
+          promises.push(await this.fetchAffinityGroupTypes())
         }
       }
 
@@ -645,6 +649,41 @@ export default {
         return new Promise((resolve, reject) => {
           api('listAlertTypes').then(json => {
             const alerttypes = json.listalerttypesresponse.alerttype.map(a => { return { id: a.alerttypeid, name: a.name } })
+            this.alertTypes = alerttypes
+            resolve({
+              type: 'type',
+              data: alerttypes
+            })
+          }).catch(error => {
+            reject(error.response.headers['x-description'])
+          })
+        })
+      }
+    },
+    fetchAffinityGroupTypes () {
+      if (this.alertTypes.length > 0) {
+        return new Promise((resolve, reject) => {
+          resolve({
+            type: 'type',
+            data: this.alertTypes
+          })
+        })
+      } else {
+        return new Promise((resolve, reject) => {
+          api('listAffinityGroupTypes').then(json => {
+            const alerttypes = json.listaffinitygrouptypesresponse.affinityGroupType.map(a => {
+              let name = a.type
+              if (a.type === 'host anti-affinity') {
+                name = 'host anti-affinity (Strict)'
+              } else if (a.type === 'host affinity') {
+                name = 'host affinity (Strict)'
+              } else if (a.type === 'non-strict host anti-affinity') {
+                name = 'host anti-affinity (Non-Strict)'
+              } else if (a.type === 'non-strict host affinity') {
+                name = 'host affinity (Non-Strict)'
+              }
+              return { id: a.type, name: name }
+            })
             this.alertTypes = alerttypes
             resolve({
               type: 'type',
