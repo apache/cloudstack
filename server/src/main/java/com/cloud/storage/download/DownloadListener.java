@@ -53,7 +53,6 @@ import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.exception.ConnectionException;
 import com.cloud.host.Host;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.download.DownloadState.DownloadEvent;
@@ -275,6 +274,7 @@ public class DownloadListener implements Listener {
     @Override
     public void processConnect(Host agent, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
         if (cmd instanceof StartupRoutingCommand) {
+            /* FIXME: CPU and DB hotspot
             List<HypervisorType> hypers = _resourceMgr.listAvailHypervisorInZone(agent.getDataCenterId());
             HypervisorType hostHyper = agent.getHypervisorType();
             if (hypers.contains(hostHyper)) {
@@ -283,6 +283,7 @@ public class DownloadListener implements Listener {
             _imageSrv.handleSysTemplateDownload(hostHyper, agent.getDataCenterId());
             // update template_zone_ref for cross-zone templates
             _imageSrv.associateCrosszoneTemplatesToZone(agent.getDataCenterId());
+             */
         }
         /* This can be removed
         else if ( cmd instanceof StartupStorageCommand) {

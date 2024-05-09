@@ -95,6 +95,7 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
         // any state outdates should be checked against the time before this list was retrieved
         Date startTime = DateUtil.currentGMTTime();
         // for all running/stopping VMs, we provide monitoring of missing report
+        // FIXME: CPU & DB hotspot findByHostInStatesExcluding
         List<VMInstanceVO> vmsThatAreMissingReport = _instanceDao.findByHostInStatesExcluding(hostId, new ArrayList<>(translatedInfo.keySet()),
                 VirtualMachine.State.Running, VirtualMachine.State.Stopping, VirtualMachine.State.Starting);
 

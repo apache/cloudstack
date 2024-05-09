@@ -141,6 +141,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected List<Pair<Integer, StartupCommandProcessor>> _creationMonitors = new ArrayList<Pair<Integer, StartupCommandProcessor>>(17);
     protected List<Long> _loadingAgents = new ArrayList<Long>();
     private int _monitorId = 0;
+    // FIXME: this is causing contention
     private final Lock _agentStatusLock = new ReentrantLock();
 
     @Inject
@@ -1539,7 +1540,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     @Override
     public boolean agentStatusTransitTo(final HostVO host, final Status.Event e, final long msId) {
         try {
-            _agentStatusLock.lock();
+            //_agentStatusLock.lock();
             if (s_logger.isDebugEnabled()) {
                 final ResourceState state = host.getResourceState();
                 final StringBuilder msg = new StringBuilder("Transition:");
@@ -1557,7 +1558,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 throw new CloudRuntimeException("Cannot transit agent status with event " + e + " for host " + host.getId() + ", management server id is " + msId + "," + e1.getMessage());
             }
         } finally {
-            _agentStatusLock.unlock();
+            //_agentStatusLock.unlock();
         }
     }
 

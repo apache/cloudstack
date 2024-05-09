@@ -3777,13 +3777,17 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     public boolean processCommands(final long agentId, final long seq, final Command[] cmds) {
         boolean processed = false;
         for (final Command cmd : cmds) {
+            // FIXME: PingRoutingCommand handler is DB & CPU hotspot
             if (cmd instanceof PingRoutingCommand) {
                 final PingRoutingCommand ping = (PingRoutingCommand)cmd;
                 if (ping.getHostVmStateReport() != null) {
                     _syncMgr.processHostVmStatePingReport(agentId, ping.getHostVmStateReport(), ping.getOutOfBand());
                 }
 
-                scanStalledVMInTransitionStateOnUpHost(agentId);
+                // CPU and DB hotspot
+                // FIXME: CPU & DB hotspot: listStalledVMInTransitionStateOnUpHost
+                // FIXME: CPU & DB hotspot: listVMInTransitionStateWithRecentReportOnUpHost
+                // scanStalledVMInTransitionStateOnUpHost(agentId);
                 processed = true;
             }
         }
@@ -4970,6 +4974,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         // (which is relatively safe to do so)
         final long stallThresholdInMs = VmJobStateReportInterval.value() * 2;
         final Date cutTime = new Date(DateUtil.currentGMTTime().getTime() - stallThresholdInMs);
+        // FIXME: CPU & DB hotspot: listStalledVMInTransitionStateOnUpHost
         final List<Long> mostLikelyStoppedVMs = listStalledVMInTransitionStateOnUpHost(hostId, cutTime);
         for (final Long vmId : mostLikelyStoppedVMs) {
             final VMInstanceVO vm = _vmDao.findById(vmId);
@@ -4977,6 +4982,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             handlePowerOffReportWithNoPendingJobsOnVM(vm);
         }
 
+        // FIXME: CPU & DB hotspot: listVMInTransitionStateWithRecentReportOnUpHost
         final List<Long> vmsWithRecentReport = listVMInTransitionStateWithRecentReportOnUpHost(hostId, cutTime);
         for (final Long vmId : vmsWithRecentReport) {
             final VMInstanceVO vm = _vmDao.findById(vmId);

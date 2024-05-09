@@ -1153,12 +1153,16 @@ public class TransactionLegacy implements Closeable {
         config.setUsername(username);
         config.setPassword(password);
 
-        config.setPoolName(dsName);
+        int numOfCores = Runtime.getRuntime().availableProcessors();
+        config.setMaximumPoolSize(numOfCores * 2 + 2);
+        /*
         if (maxActive != null) {
             config.setMaximumPoolSize(maxActive);
         } else {
             config.setMaximumPoolSize(250); // 250 connections
         }
+         */
+
         if (maxIdle != null) {
             config.setIdleTimeout(maxIdle * 1000);
         } else {
@@ -1169,6 +1173,8 @@ public class TransactionLegacy implements Closeable {
         } else {
             config.setMaxLifetime(600000); // 10 minutes
         }
+
+        config.setPoolName("hikaricp-" + dsName);
 
         // Connection pool properties
         config.setMinimumIdle(5);           // Minimum number of idle connections in the pool
