@@ -921,7 +921,6 @@ export default {
       name: 's2svpn',
       title: 'label.site.to.site.vpn',
       icon: 'lock-outlined',
-      hidden: true,
       permission: ['listVpnGateways'],
       columns: ['publicip', 'account', 'domain'],
       details: ['publicip', 'account', 'domain'],
