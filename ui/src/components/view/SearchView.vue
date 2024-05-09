@@ -283,7 +283,7 @@ export default {
         if (item === 'groupid' && !('listInstanceGroups' in this.$store.getters.apis)) {
           return true
         }
-        if (['zoneid', 'domainid', 'imagestoreid', 'storageid', 'state', 'account', 'hypervisor', 'level', 'clusterid', 'podid', 'groupid', 'entitytype', 'accounttype', 'scope', 'provider', 'type'].includes(item)) {
+        if (['zoneid', 'domainid', 'imagestoreid', 'storageid', 'state', 'account', 'hypervisor', 'level', 'clusterid', 'podid', 'groupid', 'entitytype', 'accounttype', 'systemvmtype', 'scope', 'provider', 'type'].includes(item)) {
           type = 'list'
         } else if (item === 'tags') {
           type = 'tag'
@@ -342,6 +342,13 @@ export default {
         this.fields[accountTypeIndex].loading = true
         this.fields[accountTypeIndex].opts = this.fetchAccountTypes()
         this.fields[accountTypeIndex].loading = false
+      }
+
+      if (arrayField.includes('systemvmtype')) {
+        const systemVmTypeIndex = this.fields.findIndex(item => item.name === 'systemvmtype')
+        this.fields[systemVmTypeIndex].loading = true
+        this.fields[systemVmTypeIndex].opts = this.fetchSystemVmTypes()
+        this.fields[systemVmTypeIndex].loading = false
       }
 
       if (arrayField.includes('scope')) {
@@ -779,6 +786,20 @@ export default {
         types.push({
           id: '3',
           name: 'User'
+        })
+      }
+      return types
+    },
+    fetchSystemVmTypes () {
+      const types = []
+      if (this.apiName.indexOf('listSystemVms') > -1) {
+        types.push({
+          id: 'consoleproxy',
+          name: 'label.console.proxy.vm'
+        })
+        types.push({
+          id: 'secondarystoragevm',
+          name: 'label.secondary.storage.vm'
         })
       }
       return types
