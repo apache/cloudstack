@@ -1140,7 +1140,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
     @Override
     @ActionEvent(eventType = KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_CREATE,
-            eventDescription = "Creating Kubernetes cluster", create = true)
+            eventDescription = "creating Kubernetes cluster", create = true)
     public KubernetesCluster createUnmanagedKubernetesCluster(CreateKubernetesClusterCmd cmd) throws CloudRuntimeException {
         if (!KubernetesServiceEnabled.value()) {
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
@@ -1192,7 +1192,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
     @Override
     @ActionEvent(eventType = KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_CREATE,
-            eventDescription = "Creating Kubernetes cluster", create = true)
+            eventDescription = "creating Kubernetes cluster", create = true)
     public KubernetesCluster createManagedKubernetesCluster(CreateKubernetesClusterCmd cmd) throws CloudRuntimeException {
         if (!KubernetesServiceEnabled.value()) {
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
@@ -1277,7 +1277,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
     @Override
     @ActionEvent(eventType = KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_CREATE,
-            eventDescription = "Creating Kubernetes cluster", async = true)
+            eventDescription = "creating Kubernetes cluster", async = true)
     public void startKubernetesCluster(CreateKubernetesClusterCmd cmd) throws CloudRuntimeException {
         final Long id = cmd.getEntityId();
         if (KubernetesCluster.ClusterType.valueOf(cmd.getClusterType()) != KubernetesCluster.ClusterType.CloudManaged) {
@@ -1295,7 +1295,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
     @Override
     @ActionEvent(eventType = KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_START,
-            eventDescription = "Starting Kubernetes cluster", async = true)
+            eventDescription = "starting Kubernetes cluster", async = true)
     public void startKubernetesCluster(StartKubernetesClusterCmd cmd) throws CloudRuntimeException {
         final Long id = cmd.getId();
         if (id == null || id < 1L) {
@@ -1391,7 +1391,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
     @Override
     @ActionEvent(eventType = KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_STOP,
-            eventDescription = "Stopping Kubernetes cluster", async = true)
+            eventDescription = "stopping Kubernetes cluster", async = true)
     public boolean stopKubernetesCluster(StopKubernetesClusterCmd cmd) throws CloudRuntimeException {
         long kubernetesClusterId = cmd.getId();
         if (!KubernetesServiceEnabled.value()) {
@@ -1427,7 +1427,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
     @Override
     @ActionEvent(eventType = KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_DELETE,
-            eventDescription = "Stopping Kubernetes cluster", async = true)
+            eventDescription = "stopping Kubernetes cluster", async = true)
     public boolean deleteKubernetesCluster(DeleteKubernetesClusterCmd cmd) throws CloudRuntimeException {
         if (!KubernetesServiceEnabled.value()) {
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
@@ -1571,7 +1571,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
     @Override
     @ActionEvent(eventType = KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_SCALE,
-            eventDescription = "Scaling Kubernetes cluster", async = true)
+            eventDescription = "scaling Kubernetes cluster", async = true)
     public boolean scaleKubernetesCluster(ScaleKubernetesClusterCmd cmd) throws CloudRuntimeException {
         if (!KubernetesServiceEnabled.value()) {
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
@@ -1596,7 +1596,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
     @Override
     @ActionEvent(eventType = KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_UPGRADE,
-            eventDescription = "Upgrading Kubernetes cluster", async = true)
+            eventDescription = "upgrading Kubernetes cluster", async = true)
     public boolean upgradeKubernetesCluster(UpgradeKubernetesClusterCmd cmd) throws CloudRuntimeException {
         if (!KubernetesServiceEnabled.value()) {
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");

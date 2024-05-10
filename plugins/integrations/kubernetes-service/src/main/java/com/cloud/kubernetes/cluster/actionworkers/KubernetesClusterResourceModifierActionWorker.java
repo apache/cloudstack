@@ -31,12 +31,13 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.firewall.CreateFirewallRuleCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
-import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -321,18 +322,14 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     }
 
     protected void startKubernetesVM(final UserVm vm) throws ManagementServerException {
+        CallContext vmContext = CallContext.register(CallContext.current(), ApiCommandResourceType.VirtualMachine);
+        vmContext.setEventResourceId(vm.getId());
         try {
-            StartVMCmd startVm = new StartVMCmd();
-            startVm = ComponentContext.inject(startVm);
-            Field f = startVm.getClass().getDeclaredField("id");
-            f.setAccessible(true);
-            f.set(startVm, vm.getId());
-            itMgr.advanceStart(vm.getUuid(), null, null);
-            if (LOGGER.isInfoEnabled()) {
-                LOGGER.info(String.format("Started VM : %s in the Kubernetes cluster : %s", vm.getDisplayName(), kubernetesCluster.getName()));
-            }
-        } catch (IllegalAccessException | NoSuchFieldException | OperationTimedoutException | ResourceUnavailableException | InsufficientCapacityException ex) {
+            userVmManager.startVirtualMachine(vm);
+        } catch (OperationTimedoutException | ResourceUnavailableException | InsufficientCapacityException ex) {
             throw new ManagementServerException(String.format("Failed to start VM in the Kubernetes cluster : %s", kubernetesCluster.getName()), ex);
+        } finally {
+            CallContext.unregister();
         }
 
         UserVm startVm = userVmDao.findById(vm.getId());

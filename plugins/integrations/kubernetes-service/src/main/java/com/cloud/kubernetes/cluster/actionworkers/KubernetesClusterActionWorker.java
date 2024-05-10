@@ -91,7 +91,6 @@ import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmService;
 import com.cloud.vm.UserVmVO;
-import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
@@ -148,8 +147,6 @@ public class KubernetesClusterActionWorker {
     protected UserVmService userVmService;
     @Inject
     protected VlanDao vlanDao;
-    @Inject
-    protected VirtualMachineManager itMgr;
     @Inject
     protected LaunchPermissionDao launchPermissionDao;
     @Inject
