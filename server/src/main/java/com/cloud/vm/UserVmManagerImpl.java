@@ -7312,7 +7312,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         final ServiceOfferingVO offering = serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId());
         VirtualMachineTemplate template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
 
-        verifyResourceLimitsForAccountAndStorage(newAccount, vm, vmId, offering, volumes, template);
+        verifyResourceLimitsForAccountAndStorage(newAccount, vm, offering, volumes, template);
 
         validateIfNewOwnerHasAccessToTemplate(vm, newAccount, template);
 
@@ -7393,17 +7393,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      * If any limit is exceeded, throws a {@link ResourceAllocationException}.
      * @param account The account to check if CPU and RAM limit has been exceeded.
      * @param vm The VM which can exceed resource limits.
-     * @param vmId The ID for the VM which can exceed resource limits.
      * @param offering The service offering which can exceed resource limits.
      * @param volumes The volumes whose total size can exceed resource limits.
      * @throws ResourceAllocationException
      */
-    protected void verifyResourceLimitsForAccountAndStorage(Account account, UserVmVO vm, Long vmId, ServiceOfferingVO offering, List<VolumeVO> volumes, VirtualMachineTemplate template)
+    protected void verifyResourceLimitsForAccountAndStorage(Account account, UserVmVO vm, ServiceOfferingVO offering, List<VolumeVO> volumes, VirtualMachineTemplate template)
             throws ResourceAllocationException {
 
         logger.trace(String.format("Verifying if CPU and RAM for VM [%s] do not exceed account [%s] limit.", vm, account));
 
-        resourceCountIncrement(account.getAccountId(), vm.isDisplayVm(), offering, template);
+        if (!VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
+            resourceLimitService.checkVmResourceLimit(account, vm.isDisplayVm(), offering, template);
+        }
 
         logger.trace(String.format("Verifying if volume size for VM [%s] does not exceed account [%s] limit.", vm, account));
 
