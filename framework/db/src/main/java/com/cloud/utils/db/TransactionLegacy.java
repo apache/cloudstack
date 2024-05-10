@@ -1153,15 +1153,13 @@ public class TransactionLegacy implements Closeable {
         config.setUsername(username);
         config.setPassword(password);
 
-        int numOfCores = Runtime.getRuntime().availableProcessors();
-        config.setMaximumPoolSize(numOfCores * 2 + 2);
-        /*
+        //int numOfCores = Runtime.getRuntime().availableProcessors();
+        //config.setMaximumPoolSize(numOfCores * 4 + 16);
         if (maxActive != null) {
             config.setMaximumPoolSize(maxActive);
         } else {
             config.setMaximumPoolSize(250); // 250 connections
         }
-         */
 
         if (maxIdle != null) {
             config.setIdleTimeout(maxIdle * 1000);
@@ -1174,7 +1172,7 @@ public class TransactionLegacy implements Closeable {
             config.setMaxLifetime(600000); // 10 minutes
         }
 
-        config.setPoolName("hikaricp-" + dsName);
+        config.setPoolName("hikaricp-pool-" + dsName);
 
         // Connection pool properties
         config.setMinimumIdle(5);           // Minimum number of idle connections in the pool
@@ -1200,12 +1198,14 @@ public class TransactionLegacy implements Closeable {
         config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
         // Additional config for MySQL
         config.addDataSourceProperty("useServerPrepStmts", "true");
+        /*
         config.addDataSourceProperty("useLocalSessionState", "true");
         config.addDataSourceProperty("rewriteBatchedStatements", "true");
         config.addDataSourceProperty("cacheResultSetMetadata", "true");
         config.addDataSourceProperty("cacheServerConfiguration", "true");
         config.addDataSourceProperty("elideSetAutoCommits", "true");
         config.addDataSourceProperty("maintainTimeStats", "false");
+         */
 
         HikariDataSource dataSource = new HikariDataSource(config);
         return dataSource;

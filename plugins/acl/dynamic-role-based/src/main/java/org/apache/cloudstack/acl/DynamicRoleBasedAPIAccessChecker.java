@@ -107,6 +107,7 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
             return true;
         }
 
+        // FIXME: potential hotspot, could be cached?
         Account account = accountService.getAccount(user.getAccountId());
         if (account == null) {
             throw new PermissionDeniedException(String.format("The account id [%s] for user id [%s] is null.", user.getAccountId(), user.getUuid()));

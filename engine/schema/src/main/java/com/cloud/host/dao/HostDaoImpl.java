@@ -515,11 +515,14 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     @Override
     public Integer countAllCPUSockets() {
         final String sql = "SELECT SUM(host.cpu_sockets) FROM host WHERE host.type = 'Routing' AND host.removed IS NULL";
-        Integer cpuSockets = 0;
+        int cpuSockets = 0;
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         try (PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql)) {
-            ResultSet rs = pstmt.executeQuery();
-            cpuSockets = rs.getInt(1);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    cpuSockets = rs.getInt(1);
+                }
+            }
         } catch (SQLException e) {
             s_logger.debug("SQLException caught", e);
         }

@@ -1005,12 +1005,14 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
 
     private void getQueryHistory(DbMetricsResponse response) {
         Map<String, Object> dbStats = ApiDBUtils.getDbStatistics();
-        if (dbStats != null) {
-            response.setQueries((Long)dbStats.get(DbStatsCollection.queries));
-            response.setUptime((Long)dbStats.get(DbStatsCollection.uptime));
+        if (dbStats == null) {
+            return;
         }
 
-        List<Double> loadHistory = (List<Double>) dbStats.get(DbStatsCollection.loadAvarages);
+        response.setQueries((Long)dbStats.getOrDefault(DbStatsCollection.queries, -1L));
+        response.setUptime((Long)dbStats.getOrDefault(DbStatsCollection.uptime, -1L));
+
+        List<Double> loadHistory = (List<Double>) dbStats.getOrDefault(DbStatsCollection.loadAvarages, new ArrayList<Double>());
         double[] loadAverages = new double[loadHistory.size()];
 
         int index = 0;
