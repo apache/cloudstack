@@ -262,6 +262,11 @@ public class MockUsageEventDao implements UsageEventDao{
     }
 
     @Override
+    public UsageEventVO findOneBy(SearchCriteria<UsageEventVO> sc, Filter filter) {
+        return null;
+    }
+
+    @Override
     public Class<UsageEventVO> getEntityBeanType() {
         return null;
     }
@@ -289,6 +294,11 @@ public class MockUsageEventDao implements UsageEventDao{
 
     @Override
     public Integer countAll() {
+        return null;
+    }
+
+    @Override
+    public List<UsageEventVO> findByUuids(String... uuids) {
         return null;
     }
 

@@ -28,7 +28,6 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 import com.cloud.user.UserData;
@@ -39,7 +38,6 @@ import com.cloud.user.UserData;
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class DeleteUserDataCmd extends BaseCmd {
 
-    public static final Logger s_logger = Logger.getLogger(DeleteUserDataCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

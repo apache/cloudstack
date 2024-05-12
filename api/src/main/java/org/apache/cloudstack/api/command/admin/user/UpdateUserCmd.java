@@ -28,7 +28,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.region.RegionService;
-import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 import com.cloud.user.User;
@@ -37,7 +36,6 @@ import com.cloud.user.UserAccount;
 @APICommand(name = "updateUser", description = "Updates a user account", responseObject = UserResponse.class,
 requestHasSensitiveInfo = true, responseHasSensitiveInfo = true)
 public class UpdateUserCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateUserCmd.class.getName());
 
 
     /////////////////////////////////////////////////////

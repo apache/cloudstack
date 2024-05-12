@@ -15,8 +15,8 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-import CsHelper
-from CsDatabag import CsCmdLine
+from . import CsHelper
+from .CsDatabag import CsCmdLine
 import logging
 
 
@@ -28,7 +28,7 @@ class CsChain(object):
         self.count = {}
 
     def add(self, table, chain):
-        if table not in self.chain.keys():
+        if table not in list(self.chain.keys()):
             self.chain.setdefault(table, []).append(chain)
         else:
             self.chain[table].append(chain)
@@ -40,7 +40,7 @@ class CsChain(object):
         self.count[chain] += 1
 
     def get(self, table):
-        if table not in self.chain.keys():
+        if table not in list(self.chain.keys()):
             return {}
         return self.chain[table]
 
@@ -51,7 +51,7 @@ class CsChain(object):
         return self.last_added
 
     def has_chain(self, table, chain):
-        if table not in self.chain.keys():
+        if table not in list(self.chain.keys()):
             return False
         if chain not in self.chain[table]:
             return False
@@ -179,7 +179,7 @@ class CsNetfilters(object):
                 # For now raising the log.
                 # TODO: Need to fix in the framework.
                 if ret.returncode != 0:
-                    error = ret.communicate()[0]
+                    error = ret.communicate()[0].decode()
                     logging.debug("iptables command got failed ... continuing")
                 ruleSet.add(tupledFw)
                 self.chain.add_rule(rule_chain)
@@ -223,14 +223,15 @@ class CsNetfilters(object):
         self.rules[:] = [x for x in self.rules if not x == rule]
 
     def add_ip6_chain(self, address_family, table, chain, hook, action):
-            chain_policy = ""
-            if hook:
-                chain_policy = "type filter hook %s priority 0;" % hook
-            if chain_policy and action:
-                chain_policy = "%s policy %s;" % (chain_policy, action)
-            CsHelper.execute("nft add chain %s %s %s '{ %s }'" % (address_family, table, chain, chain_policy))
-            if hook == "input" or hook == "output":
-                CsHelper.execute("nft add rule %s %s %s icmpv6 type { echo-request, echo-reply, nd-neighbor-solicit, nd-router-advert, nd-neighbor-advert } accept" % (address_family, table, chain))
+        chain_policy = ""
+        if hook:
+            chain_policy = "type filter hook %s priority 0;" % hook
+        if chain_policy and action:
+            chain_policy = "%s policy %s;" % (chain_policy, action)
+        CsHelper.execute("nft add chain %s %s %s '{ %s }'" % (address_family, table, chain, chain_policy))
+        if hook == "input" or hook == "output":
+            CsHelper.execute("nft add rule %s %s %s icmpv6 type { echo-request, echo-reply, \
+                nd-neighbor-solicit, nd-router-advert, nd-neighbor-advert } accept" % (address_family, table, chain))
 
     def apply_ip6_rules(self, rules, type):
         if len(rules) == 0:
@@ -238,14 +239,14 @@ class CsNetfilters(object):
         address_family = 'ip6'
         table = 'ip6_firewall'
         default_chains = [
-            { "chain": "fw_input", "hook": "input", "action": "drop"},
-            { "chain": "fw_forward", "hook": "forward", "action": "accept"}
+            {"chain": "fw_input", "hook": "input", "action": "drop"},
+            {"chain": "fw_forward", "hook": "forward", "action": "accept"}
         ]
         if type == "acl":
             table = 'ip6_acl'
             default_chains = [
-                { "chain": "acl_input", "hook": "input", "action": "drop" },
-                { "chain": "acl_forward", "hook": "forward", "action": "accept"}
+                {"chain": "acl_input", "hook": "input", "action": "drop"},
+                {"chain": "acl_forward", "hook": "forward", "action": "accept"}
             ]
         CsHelper.execute("nft add table %s %s" % (address_family, table))
         for chain in default_chains:
@@ -287,7 +288,7 @@ class CsNetfilter(object):
         self.seen = True
 
     def __convert_to_dict(self, rule):
-        rule = unicode(rule.lstrip())
+        rule = str(rule.lstrip())
         rule = rule.replace('! -', '!_-')
         rule = rule.replace('-p all', '')
         rule = rule.replace('  ', ' ')
@@ -298,8 +299,8 @@ class CsNetfilter(object):
         rule = rule.replace('-m state', '-m2 state')
         rule = rule.replace('ESTABLISHED,RELATED', 'RELATED,ESTABLISHED')
         bits = rule.split(' ')
-        rule = dict(zip(bits[0::2], bits[1::2]))
-        if "-A" in rule.keys():
+        rule = dict(list(zip(bits[0::2], bits[1::2])))
+        if "-A" in list(rule.keys()):
             self.chain = rule["-A"]
         return rule
 
@@ -334,7 +335,7 @@ class CsNetfilter(object):
                  '--to-source', '--to-destination', '--mark']
         str = ''
         for k in order:
-            if k in self.rule.keys():
+            if k in list(self.rule.keys()):
                 printable = k.replace('-m2', '-m')
                 printable = printable.replace('!_-', '! -')
                 if delete:
@@ -351,7 +352,7 @@ class CsNetfilter(object):
             return False
         if rule.get_chain() != self.get_chain():
             return False
-        if len(rule.get_rule().items()) != len(self.get_rule().items()):
+        if len(list(rule.get_rule().items())) != len(list(self.get_rule().items())):
             return False
         common = set(rule.get_rule().items()) & set(self.get_rule().items())
         if len(common) != len(rule.get_rule()):

@@ -36,7 +36,8 @@ import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventBusException;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import com.cloud.configuration.Config;
@@ -56,7 +57,7 @@ import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.EntityManager;
 
 public class ActionEventUtils {
-    private static final Logger s_logger = Logger.getLogger(ActionEventUtils.class);
+    protected static Logger LOGGER = LogManager.getLogger(ActionEventUtils.class);
 
     private static EventDao s_eventDao;
     private static AccountDao s_accountDao;
@@ -236,7 +237,7 @@ public class ActionEventUtils {
         try {
             s_eventBus.publish(event);
         } catch (EventBusException e) {
-            s_logger.warn("Failed to publish action event on the event bus.");
+            LOGGER.warn("Failed to publish action event on the event bus.");
         }
     }
 
@@ -256,7 +257,7 @@ public class ActionEventUtils {
             try {
                 entityUuid = getEntityUuid(entityClass, param);
             } catch (Exception e){
-                s_logger.debug("Caught exception while finding entityUUID, moving on");
+                LOGGER.debug("Caught exception while finding entityUUID, moving on");
             }
         }
         if (param instanceof Long) {
@@ -344,7 +345,7 @@ public class ActionEventUtils {
             }
             return new Ternary<>(id, ((Identity)objVO).getUuid(), type.toString());
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-            s_logger.debug(String.format("Parent resource for resource ID: %d, type: %s can not be found using method %s", details.first(), type, methodName));
+            LOGGER.debug(String.format("Parent resource for resource ID: %d, type: %s can not be found using method %s", details.first(), type, methodName));
         }
         return details;
     }
@@ -371,7 +372,7 @@ public class ActionEventUtils {
     private static long getDomainId(long accountId) {
         AccountVO account = s_accountDao.findByIdIncludingRemoved(accountId);
         if (account == null) {
-            s_logger.error("Failed to find account(including removed ones) by id '" + accountId + "'");
+            LOGGER.error("Failed to find account(including removed ones) by id '" + accountId + "'");
             return 0;
         }
         return account.getDomainId();
@@ -390,7 +391,7 @@ public class ActionEventUtils {
                     eventDescription.put(ReflectUtil.getEntityName(clz), uuid);
                 }
             } catch (Exception e){
-                s_logger.trace("Caught exception while populating first class entities for event bus, moving on");
+                LOGGER.trace("Caught exception while populating first class entities for event bus, moving on");
             }
         }
 

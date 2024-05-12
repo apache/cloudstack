@@ -25,7 +25,10 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import com.cloud.usage.UsageManagerImpl;
+import com.cloud.utils.DateUtil;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.usage.UsageTypes;
@@ -41,7 +44,7 @@ import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 @Component
 public class NetworkUsageParser {
-    public static final Logger s_logger = Logger.getLogger(NetworkUsageParser.class.getName());
+    protected static Logger LOGGER = LogManager.getLogger(NetworkUsageParser.class);
 
     private static UsageDao s_usageDao;
     private static UsageNetworkDao s_usageNetworkDao;
@@ -58,8 +61,8 @@ public class NetworkUsageParser {
     }
 
     public static boolean parse(AccountVO account, Date startDate, Date endDate) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Parsing all Network usage events for account: " + account.getId());
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Parsing all Network usage events for account: " + account.getId());
         }
 
         if ((endDate == null) || endDate.after(new Date())) {
@@ -102,10 +105,10 @@ public class NetworkUsageParser {
             long totalBytesReceived = networkInfo.getBytesRcvd();
 
             if ((totalBytesSent > 0L) || (totalBytesReceived > 0L)) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Creating usage record, total bytes sent: " + toHumanReadableSize(totalBytesSent) + ", total bytes received: " + toHumanReadableSize(totalBytesReceived) + " for account: " +
-                        account.getId() + " in availability zone " + networkInfo.getZoneId() + ", start: " + startDate + ", end: " + endDate);
-                }
+                LOGGER.debug("Creating usage record, total bytes sent [{}], total bytes received [{}], startDate [{}], and endDate [{}], for account [{}] in " +
+                                "availability zone [{}].", toHumanReadableSize(totalBytesSent), toHumanReadableSize(totalBytesReceived),
+                        DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), startDate),
+                        DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), endDate), account.getId(), networkInfo.getZoneId());
 
                 Long hostId = null;
 
@@ -132,8 +135,8 @@ public class NetworkUsageParser {
                 usageRecords.add(usageRecord);
             } else {
                 // Don't charge anything if there were zero bytes processed
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("No usage record (0 bytes used) generated for account: " + account.getId());
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("No usage record (0 bytes used) generated for account: " + account.getId());
                 }
             }
         }

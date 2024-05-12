@@ -80,12 +80,9 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
-import org.apache.log4j.Logger;
 
 
 public class VnfTemplateManagerImpl extends ManagerBase implements VnfTemplateManager, PluggableService, Configurable {
-
-    static final Logger LOGGER = Logger.getLogger(VnfTemplateManagerImpl.class);
 
     public static final String VNF_SECURITY_GROUP_NAME = "VNF_SecurityGroup_";
     public static final String ACCESS_METHOD_SEPARATOR = ",";
@@ -267,17 +264,17 @@ public class VnfTemplateManagerImpl extends ManagerBase implements VnfTemplateMa
                     continue;
                 }
                 if (!networkModel.areServicesSupportedInNetwork(network.getId(), Network.Service.StaticNat)) {
-                    LOGGER.info(String.format("Network ID: %s does not support static nat, " +
+                    logger.info(String.format("Network ID: %s does not support static nat, " +
                             "skipping this network configuration for VNF appliance", network.getUuid()));
                     continue;
                 }
                 if (network.getVpcId() != null) {
-                    LOGGER.info(String.format("Network ID: %s is a VPC tier, " +
+                    logger.info(String.format("Network ID: %s is a VPC tier, " +
                             "skipping this network configuration for VNF appliance", network.getUuid()));
                     continue;
                 }
                 if (!networkModel.areServicesSupportedInNetwork(network.getId(), Network.Service.Firewall)) {
-                    LOGGER.info(String.format("Network ID: %s does not support firewall, " +
+                    logger.info(String.format("Network ID: %s does not support firewall, " +
                             "skipping this network configuration for VNF appliance", network.getUuid()));
                     continue;
                 }
@@ -296,10 +293,10 @@ public class VnfTemplateManagerImpl extends ManagerBase implements VnfTemplateMa
         if (!cmd.getVnfConfigureManagement()) {
             return null;
         }
-        LOGGER.debug("Creating security group and rules for VNF appliance");
+        logger.debug("Creating security group and rules for VNF appliance");
         Set<Integer> ports = getOpenPortsForVnfAppliance(template);
         if (ports.size() == 0) {
-            LOGGER.debug("No need to create security group and rules for VNF appliance as there is no ports to be open");
+            logger.debug("No need to create security group and rules for VNF appliance as there is no ports to be open");
             return null;
         }
         String securityGroupName = VNF_SECURITY_GROUP_NAME.concat(Long.toHexString(System.currentTimeMillis()));
@@ -325,7 +322,7 @@ public class VnfTemplateManagerImpl extends ManagerBase implements VnfTemplateMa
         Set<Integer> ports = getOpenPortsForVnfAppliance(template);
         for (Map.Entry<Network, String> entry : networkAndIpMap.entrySet()) {
             Network network = entry.getKey();
-            LOGGER.debug("Creating network rules for VNF appliance on isolated network " + network.getUuid());
+            logger.debug("Creating network rules for VNF appliance on isolated network " + network.getUuid());
             String ip = entry.getValue();
             IpAddress publicIp = networkService.allocateIP(owner, zone.getId(), network.getId(), null, null);
             if (publicIp == null) {
@@ -366,7 +363,7 @@ public class VnfTemplateManagerImpl extends ManagerBase implements VnfTemplateMa
                 });
                 firewallService.applyIngressFwRules(publicIp.getId(), owner);
             }
-            LOGGER.debug("Created network rules for VNF appliance on isolated network " + network.getUuid());
+            logger.debug("Created network rules for VNF appliance on isolated network " + network.getUuid());
         }
     }
 }

@@ -27,11 +27,12 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class BasicRestClient implements RestClient {
 
-    private static final Logger s_logger = Logger.getLogger(BasicRestClient.class);
+    protected Logger logger = LogManager.getLogger(BasicRestClient.class);
 
     private static final String HTTPS = HttpConstants.HTTPS;
     private static final int HTTPS_PORT = HttpConstants.HTTPS_PORT;
@@ -74,13 +75,13 @@ public class BasicRestClient implements RestClient {
         final URI uri = request.getURI();
         String query = uri.getQuery();
         query = query != null ? "?" + query : "";
-        s_logger.debug("Executig " + request.getMethod() + " request on " + clientContext.getTargetHost() + uri.getPath() + query);
+        logger.debug("Executig " + request.getMethod() + " request on " + clientContext.getTargetHost() + uri.getPath() + query);
     }
 
     @Override
     public void closeResponse(final CloseableHttpResponse response) throws CloudstackRESTException {
         try {
-            s_logger.debug("Closing HTTP connection");
+            logger.debug("Closing HTTP connection");
             response.close();
         } catch (final IOException e) {
             final StringBuilder sb = new StringBuilder();

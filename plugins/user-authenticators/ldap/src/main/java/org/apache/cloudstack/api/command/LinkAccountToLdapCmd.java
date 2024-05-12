@@ -36,7 +36,6 @@ import org.apache.cloudstack.api.response.LinkDomainToLdapResponse;
 import org.apache.cloudstack.ldap.LdapManager;
 import org.apache.cloudstack.ldap.LdapUser;
 import org.apache.cloudstack.ldap.NoLdapUserMatchingQueryException;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
@@ -46,7 +45,6 @@ import com.cloud.user.UserAccount;
 @APICommand(name = "linkAccountToLdap", description = "link a cloudstack account to a group or OU in ldap", responseObject = LinkDomainToLdapResponse.class, since = "4.11.0",
     requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin,RoleType.DomainAdmin})
 public class LinkAccountToLdapCmd extends BaseCmd {
-    public static final Logger LOGGER = Logger.getLogger(LinkAccountToLdapCmd.class.getName());
 
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = true, entityType = DomainResponse.class, description = "The id of the domain that is to contain the linked account.")
     private Long domainId;
@@ -79,7 +77,7 @@ public class LinkAccountToLdapCmd extends BaseCmd {
                 try {
                     ldapUser = _ldapManager.getUser(admin, type, ldapDomain, domainId);
                 } catch (NoLdapUserMatchingQueryException e) {
-                    LOGGER.debug("no ldap user matching username " + admin + " in the given group/ou", e);
+                    logger.debug("no ldap user matching username " + admin + " in the given group/ou", e);
                 }
                 if (ldapUser != null && !ldapUser.isDisabled()) {
                     Account account = _accountService.getActiveAccountByName(admin, domainId);
@@ -89,15 +87,15 @@ public class LinkAccountToLdapCmd extends BaseCmd {
                                     .createUserAccount(admin, "", ldapUser.getFirstname(), ldapUser.getLastname(), ldapUser.getEmail(), null, admin, Account.Type.DOMAIN_ADMIN, RoleType.DomainAdmin.getId(), domainId, null, null, UUID.randomUUID().toString(),
                                             UUID.randomUUID().toString(), User.Source.LDAP);
                             response.setAdminId(String.valueOf(userAccount.getAccountId()));
-                            LOGGER.info("created an account with name " + admin + " in the given domain " + domainId);
+                            logger.info("created an account with name " + admin + " in the given domain " + domainId);
                         } catch (Exception e) {
-                            LOGGER.info("an exception occurred while creating account with name " + admin + " in domain " + domainId, e);
+                            logger.info("an exception occurred while creating account with name " + admin + " in domain " + domainId, e);
                         }
                     } else {
-                        LOGGER.debug("an account with name " + admin + " already exists in the domain " + domainId);
+                        logger.debug("an account with name " + admin + " already exists in the domain " + domainId);
                     }
                 } else {
-                    LOGGER.debug("ldap user with username " + admin + " is disabled in the given group/ou");
+                    logger.debug("ldap user with username " + admin + " is disabled in the given group/ou");
                 }
             }
             response.setObjectName(this.getActualCommandName());

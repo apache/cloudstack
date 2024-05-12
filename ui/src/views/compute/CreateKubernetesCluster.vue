@@ -259,18 +259,12 @@ export default {
     this.apiParams = this.$getApiParams('createKubernetesCluster')
   },
   created () {
-    this.networks = [
-      {
-        id: null,
-        name: ''
-      }
-    ]
-    this.keyPairs = [
-      {
-        id: null,
-        name: ''
-      }
-    ]
+    this.emptyEntry = {
+      id: null,
+      name: ''
+    }
+    this.networks = [this.emptyEntry]
+    this.keyPairs = [this.emptyEntry]
     this.initForm()
     this.fetchData()
   },
@@ -278,7 +272,7 @@ export default {
     initForm () {
       this.formRef = ref()
       this.form = reactive({
-        controlnodes: 2,
+        controlnodes: 3,
         size: 1,
         noderootdisksize: 8
       })
@@ -322,7 +316,6 @@ export default {
     },
     fetchData () {
       this.fetchZoneData()
-      this.fetchNetworkData()
       this.fetchKeyPairData()
     },
     isValidValueForKey (obj, key) {
@@ -342,7 +335,6 @@ export default {
         const listZones = json.listzonesresponse.zone
         if (listZones) {
           this.zones = this.zones.concat(listZones)
-          this.zones = this.zones.filter(zone => zone.type !== 'Edge')
         }
       }).finally(() => {
         this.zoneLoading = false
@@ -355,6 +347,7 @@ export default {
     handleZoneChange (zone) {
       this.selectedZone = zone
       this.fetchKubernetesVersionData()
+      this.fetchNetworkData()
     },
     fetchKubernetesVersionData () {
       this.kubernetesVersions = []
@@ -413,14 +406,20 @@ export default {
     },
     fetchNetworkData () {
       const params = {}
+      if (!this.isObjectEmpty(this.selectedZone)) {
+        params.zoneid = this.selectedZone.id
+      }
       this.networkLoading = true
+      this.networks = []
       api('listNetworks', params).then(json => {
-        const listNetworks = json.listnetworksresponse.network
+        var listNetworks = json.listnetworksresponse.network
         if (this.arrayHasItems(listNetworks)) {
-          this.networks = this.networks.concat(listNetworks)
+          listNetworks = listNetworks.filter(n => n.type !== 'L2')
+          this.networks = listNetworks
         }
       }).finally(() => {
         this.networkLoading = false
+        this.networks = [this.emptyEntry].concat(this.networks)
         if (this.arrayHasItems(this.networks)) {
           this.form.networkid = 0
         }

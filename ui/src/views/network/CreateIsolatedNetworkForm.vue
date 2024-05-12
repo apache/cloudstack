@@ -497,8 +497,10 @@ export default {
       this.updateVPCCheckAndFetchNetworkOfferingData()
     },
     fetchDomainData () {
-      this.domain.loading = true
-      this.loadMore('listDomains', 1, this.domain)
+      if ('listDomains' in this.$store.getters.apis) {
+        this.domain.loading = true
+        this.loadMore('listDomains', 1, this.domain)
+      }
     },
     loadMore (apiToCall, page, sema) {
       const params = {}
@@ -573,6 +575,9 @@ export default {
       this.selectedNetworkOffering = {}
       api('listNetworkOfferings', params).then(json => {
         this.networkOfferings = json.listnetworkofferingsresponse.networkoffering
+        if (this.selectedZone.isnsxenabled) {
+          this.networkOfferings = this.networkOfferings.filter(offering => offering.fornsx)
+        }
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
@@ -638,6 +643,7 @@ export default {
       this.formRef.value.validate().then(() => {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
+        console.log(values)
         this.actionLoading = true
         var params = {
           zoneId: this.selectedZone.id,

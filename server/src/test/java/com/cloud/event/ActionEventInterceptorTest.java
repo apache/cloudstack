@@ -172,6 +172,7 @@ public class ActionEventInterceptorTest {
         account.setId(ACCOUNT_ID);
         user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone",
                 UUID.randomUUID().toString(), User.Source.UNKNOWN);
+        CallContext.register(user, account);
 
         Mockito.when(accountDao.findById(ACCOUNT_ID)).thenReturn(account);
     }
@@ -196,6 +197,8 @@ public class ActionEventInterceptorTest {
         }
 
         utils.init();
+
+        CallContext.unregister();
 
         componentContextMocked.close();
     }
@@ -265,7 +268,6 @@ public class ActionEventInterceptorTest {
 
     @Test
     public void testInterceptExceptionResource() throws NoSuchMethodException {
-        CallContext.register(user, account);
         Long resourceId = 1L;
         ApiCommandResourceType resourceType = ApiCommandResourceType.VirtualMachine;
         CallContext.current().setEventResourceId(resourceId);
@@ -282,7 +284,6 @@ public class ActionEventInterceptorTest {
         Assert.assertEquals(eventVO.getState(), com.cloud.event.Event.State.Completed);
         Assert.assertEquals(eventVO.getResourceId(), resourceId);
         Assert.assertEquals(eventVO.getResourceType(), resourceType.toString());
-        CallContext.unregister();
     }
 
     @Test

@@ -21,17 +21,27 @@ package com.cloud.utils;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.ssh.SshHelper;
 import org.apache.commons.io.FileUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class FileUtil {
-    private static final Logger s_logger = Logger.getLogger(FileUtil.class);
+    protected static Logger LOGGER = LogManager.getLogger(FileUtil.class);
 
     public static void copyfile(File source, File destination) throws IOException {
         FileUtils.copyFile(source, destination);
@@ -52,9 +62,33 @@ public class FileUtil {
             } catch (Exception e) {
                 finalErrMsg = String.format("Failed to scp files to system VM due to, %s",
                         e.getCause() != null ? e.getCause().getLocalizedMessage() : e.getLocalizedMessage());
-                s_logger.error(finalErrMsg);
+                LOGGER.error(finalErrMsg);
             }
         }
         throw new CloudRuntimeException(finalErrMsg);
     }
+
+    public static List<String> getFilesPathsUnderResourceDirectory(String resourceDirectory) {
+        LOGGER.info(String.format("Searching for files under resource directory [%s].", resourceDirectory));
+
+        URL resourceDirectoryUrl = Thread.currentThread().getContextClassLoader().getResource(resourceDirectory);
+        if (resourceDirectoryUrl == null) {
+            throw new CloudRuntimeException(String.format("Resource directory [%s] does not exist or is empty.", resourceDirectory));
+        }
+
+        URI resourceDirectoryUri;
+        try {
+            resourceDirectoryUri = resourceDirectoryUrl.toURI();
+        } catch (URISyntaxException e) {
+            throw new CloudRuntimeException(String.format("Unable to get URI from URL [%s].", resourceDirectoryUrl), e);
+        }
+
+        try (FileSystem fs = FileSystems.newFileSystem(resourceDirectoryUri, Collections.emptyMap());
+                Stream<Path> paths = Files.walk(fs.getPath(resourceDirectory))) {
+            return paths.filter(Files::isRegularFile).map(Path::toString).collect(Collectors.toList());
+        } catch (IOException e) {
+            throw new CloudRuntimeException(String.format("Error while trying to list files under resource directory [%s].", resourceDirectoryUri), e);
+        }
+    }
+
 }

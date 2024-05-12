@@ -20,7 +20,6 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.auth.UserAuthenticator;
 import org.apache.cxf.common.util.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
@@ -30,7 +29,6 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 
 public class SAML2UserAuthenticator extends AdapterBase implements UserAuthenticator {
-    public static final Logger s_logger = Logger.getLogger(SAML2UserAuthenticator.class);
 
     @Inject
     private UserAccountDao _userAccountDao;
@@ -39,18 +37,18 @@ public class SAML2UserAuthenticator extends AdapterBase implements UserAuthentic
 
     @Override
     public Pair<Boolean, ActionOnFailedAuthentication> authenticate(String username, String password, Long domainId, Map<String, Object[]> requestParameters) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Trying SAML2 auth for user: " + username);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Trying SAML2 auth for user: " + username);
         }
 
         if (StringUtils.isEmpty(username) || StringUtils.isEmpty(password)) {
-            s_logger.debug("Username or Password cannot be empty");
+            logger.debug("Username or Password cannot be empty");
             return new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
         }
 
         final UserAccount userAccount = _userAccountDao.getUserAccount(username, domainId);
         if (userAccount == null || userAccount.getSource() != User.Source.SAML2) {
-            s_logger.debug("Unable to find user with " + username + " in domain " + domainId + ", or user source is not SAML2");
+            logger.debug("Unable to find user with " + username + " in domain " + domainId + ", or user source is not SAML2");
             return new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
         } else {
             User user = _userDao.getUser(userAccount.getId());

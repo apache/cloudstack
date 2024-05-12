@@ -23,7 +23,8 @@ import java.io.IOException;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.ConfigurableWebApplicationContext;
 import org.springframework.web.context.ContextLoaderListener;
@@ -35,7 +36,7 @@ public class CloudStackContextLoaderListener extends ContextLoaderListener {
     public static final String WEB_PARENT_MODULE = "parentModule";
     public static final String WEB_PARENT_MODULE_DEFAULT = "web";
 
-    private static final Logger log = Logger.getLogger(CloudStackContextLoaderListener.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     CloudStackSpringContext cloudStackContext;
     String configuredParentName;
@@ -47,13 +48,13 @@ public class CloudStackContextLoaderListener extends ContextLoaderListener {
 
     @Override
     public void contextInitialized(ServletContextEvent event) {
-        log.trace("context initialized");
+        logger.trace("context initialized");
         try {
             cloudStackContext = new CloudStackSpringContext();
             cloudStackContext.registerShutdownHook();
             event.getServletContext().setAttribute(CloudStackSpringContext.CLOUDSTACK_CONTEXT_SERVLET_KEY, cloudStackContext);
         } catch (IOException e) {
-            log.error("Failed to start CloudStack", e);
+            logger.error("Failed to start CloudStack", e);
             throw new RuntimeException("Failed to initialize CloudStack Spring modules", e);
         }
 
@@ -67,7 +68,7 @@ public class CloudStackContextLoaderListener extends ContextLoaderListener {
 
     @Override
     protected void customizeContext(ServletContext servletContext, ConfigurableWebApplicationContext applicationContext) {
-        log.trace("customize context");
+        logger.trace("customize context");
         super.customizeContext(servletContext, applicationContext);
 
         String[] newLocations = cloudStackContext.getConfigLocationsForWeb(configuredParentName, applicationContext.getConfigLocations());

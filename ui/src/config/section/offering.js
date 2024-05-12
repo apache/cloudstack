@@ -36,7 +36,8 @@ export default {
         }
         return params
       },
-      columns: ['name', 'displaytext', 'cpunumber', 'cpuspeed', 'memory', 'domain', 'zone', 'order'],
+      filters: ['active', 'inactive'],
+      columns: ['name', 'displaytext', 'state', 'cpunumber', 'cpuspeed', 'memory', 'domain', 'zone', 'order'],
       details: () => {
         var fields = ['name', 'id', 'displaytext', 'offerha', 'provisioningtype', 'storagetype', 'iscustomized', 'iscustomizediops', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'hosttags', 'tags', 'storagetags', 'domain', 'zone', 'created', 'dynamicscalingenabled', 'diskofferingstrictness', 'encryptroot']
         if (store.getters.apis.createServiceOffering &&
@@ -47,6 +48,13 @@ export default {
           store.getters.apis.createServiceOffering.params.filter(x => x.name === 'rootdisksize').length > 0) {
           fields.splice(12, 0, 'rootdisksize')
         }
+        const detailFields = ['minmemory', 'maxmemory', 'mincpunumber', 'maxcpunumber']
+        for (const field of detailFields) {
+          if (store.getters.apis.createServiceOffering &&
+              store.getters.apis.createServiceOffering.params.filter(x => field === x.name).length > 0) {
+            fields.push(field)
+          }
+        }
         return fields
       },
       resourceType: 'ServiceOffering',
@@ -54,6 +62,12 @@ export default {
         {
           name: 'details',
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'events',
+          resourceType: 'ServiceOffering',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+          show: () => { return 'listEvents' in store.getters.apis }
         },
         {
           name: 'comments',
@@ -89,15 +103,33 @@ export default {
         dataView: true,
         popup: true,
         component: shallowRef(defineAsyncComponent(() => import('@/views/offering/UpdateOfferingAccess.vue')))
+      },
+      {
+        api: 'updateServiceOffering',
+        icon: 'play-circle-outlined',
+        label: 'label.action.enable.service.offering',
+        message: 'message.action.enable.service.offering',
+        dataView: true,
+        args: ['state'],
+        mapping: {
+          state: {
+            value: (record) => { return 'Active' }
+          }
+        },
+        groupAction: true,
+        popup: true,
+        show: (record) => { return record.state !== 'Active' },
+        groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Active' } }) }
       }, {
         api: 'deleteServiceOffering',
-        icon: 'delete-outlined',
-        label: 'label.action.delete.service.offering',
-        message: 'message.action.delete.service.offering',
+        icon: 'pause-circle-outlined',
+        label: 'label.action.disable.service.offering',
+        message: 'message.action.disable.service.offering',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true,
         groupAction: true,
         popup: true,
+        show: (record) => { return record.state === 'Active' },
         groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
       }]
     },
@@ -108,8 +140,27 @@ export default {
       docHelp: 'adminguide/service_offerings.html#system-service-offerings',
       permission: ['listServiceOfferings', 'listInfrastructure'],
       params: { issystem: 'true', isrecursive: 'true' },
-      columns: ['name', 'systemvmtype', 'cpunumber', 'cpuspeed', 'memory', 'storagetype', 'order'],
+      columns: ['name', 'state', 'systemvmtype', 'cpunumber', 'cpuspeed', 'memory', 'storagetype', 'order'],
+      filters: ['active', 'inactive'],
       details: ['name', 'id', 'displaytext', 'systemvmtype', 'provisioningtype', 'storagetype', 'iscustomized', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'storagetags', 'hosttags', 'tags', 'domain', 'zone', 'created', 'dynamicscalingenabled', 'diskofferingstrictness'],
+      resourceType: 'ServiceOffering',
+      tabs: [
+        {
+          name: 'details',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'events',
+          resourceType: 'ServiceOffering',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+          show: () => { return 'listEvents' in store.getters.apis }
+        },
+        {
+          name: 'comments',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue'))),
+          show: (record, route, user) => { return ['Admin', 'DomainAdmin'].includes(user.roletype) }
+        }
+      ],
       actions: [{
         api: 'createServiceOffering',
         icon: 'plus-outlined',
@@ -128,15 +179,33 @@ export default {
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         args: ['name', 'displaytext', 'storagetags', 'hosttags']
       }, {
+        api: 'updateServiceOffering',
+        icon: 'play-circle-outlined',
+        label: 'label.action.enable.system.service.offering',
+        message: 'message.action.enable.system.service.offering',
+        dataView: true,
+        params: { issystem: 'true' },
+        args: ['state'],
+        mapping: {
+          state: {
+            value: (record) => { return 'Active' }
+          }
+        },
+        groupAction: true,
+        popup: true,
+        show: (record) => { return record.state !== 'Active' },
+        groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Active' } }) }
+      }, {
         api: 'deleteServiceOffering',
-        icon: 'delete-outlined',
-        label: 'label.action.delete.system.service.offering',
-        message: 'message.action.delete.system.service.offering',
+        icon: 'pause-circle-outlined',
+        label: 'label.action.disable.system.service.offering',
+        message: 'message.action.disable.system.service.offering',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true,
         params: { issystem: 'true' },
         groupAction: true,
         popup: true,
+        show: (record) => { return record.state === 'Active' },
         groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
       }]
     },
@@ -153,9 +222,10 @@ export default {
         }
         return params
       },
-      columns: ['name', 'displaytext', 'disksize', 'domain', 'zone', 'order'],
+      columns: ['name', 'displaytext', 'state', 'disksize', 'domain', 'zone', 'order'],
+      filters: ['active', 'inactive'],
       details: () => {
-        var fields = ['name', 'id', 'displaytext', 'disksize', 'provisioningtype', 'storagetype', 'iscustomized', 'disksizestrictness', 'iscustomizediops', 'tags', 'domain', 'zone', 'created', 'encrypt']
+        var fields = ['name', 'id', 'displaytext', 'disksize', 'provisioningtype', 'storagetype', 'iscustomized', 'disksizestrictness', 'iscustomizediops', 'diskIopsReadRate', 'diskIopsWriteRate', 'diskBytesReadRate', 'diskBytesWriteRate', 'miniops', 'maxiops', 'tags', 'domain', 'zone', 'created', 'encrypt']
         if (store.getters.apis.createDiskOffering &&
           store.getters.apis.createDiskOffering.params.filter(x => x.name === 'storagepolicy').length > 0) {
           fields.splice(6, 0, 'vspherestoragepolicy')
@@ -167,6 +237,12 @@ export default {
         {
           name: 'details',
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'events',
+          resourceType: 'DiskOffering',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+          show: () => { return 'listEvents' in store.getters.apis }
         },
         {
           name: 'comments',
@@ -203,14 +279,32 @@ export default {
         popup: true,
         component: shallowRef(defineAsyncComponent(() => import('@/views/offering/UpdateOfferingAccess.vue')))
       }, {
+        api: 'updateDiskOffering',
+        icon: 'play-circle-outlined',
+        label: 'label.action.enable.disk.offering',
+        message: 'message.action.enable.disk.offering',
+        dataView: true,
+        params: { issystem: 'true' },
+        args: ['state'],
+        mapping: {
+          state: {
+            value: (record) => { return 'Active' }
+          }
+        },
+        groupAction: true,
+        popup: true,
+        show: (record) => { return record.state !== 'Active' },
+        groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Active' } }) }
+      }, {
         api: 'deleteDiskOffering',
-        icon: 'delete-outlined',
-        label: 'label.action.delete.disk.offering',
-        message: 'message.action.delete.disk.offering',
+        icon: 'pause-circle-outlined',
+        label: 'label.action.disable.disk.offering',
+        message: 'message.action.disable.disk.offering',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true,
         groupAction: true,
         popup: true,
+        show: (record) => { return record.state === 'Active' },
         groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
       }]
     },
@@ -227,6 +321,18 @@ export default {
         title: 'label.instances',
         param: 'backupofferingid'
       }],
+      tabs: [
+        {
+          name: 'details',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'events',
+          resourceType: 'BackupOffering',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+          show: () => { return 'listEvents' in store.getters.apis }
+        }
+      ],
       actions: [{
         api: 'importBackupOffering',
         icon: 'plus-outlined',
@@ -262,12 +368,18 @@ export default {
       docHelp: 'adminguide/networking.html#network-offerings',
       permission: ['listNetworkOfferings'],
       columns: ['name', 'state', 'guestiptype', 'traffictype', 'networkrate', 'domain', 'zone', 'order'],
-      details: ['name', 'id', 'displaytext', 'guestiptype', 'traffictype', 'internetprotocol', 'networkrate', 'ispersistent', 'egressdefaultpolicy', 'availability', 'conservemode', 'specifyvlan', 'specifyipranges', 'supportspublicaccess', 'supportsstrechedl2subnet', 'service', 'tags', 'domain', 'zone'],
+      details: ['name', 'id', 'displaytext', 'guestiptype', 'traffictype', 'internetprotocol', 'networkrate', 'ispersistent', 'egressdefaultpolicy', 'availability', 'conservemode', 'specifyvlan', 'specifyipranges', 'supportspublicaccess', 'supportsstrechedl2subnet', 'forvpc', 'fornsx', 'nsxmode', 'service', 'tags', 'domain', 'zone'],
       resourceType: 'NetworkOffering',
       tabs: [
         {
           name: 'details',
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'events',
+          resourceType: 'NetworkOffering',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+          show: () => { return 'listEvents' in store.getters.apis }
         },
         {
           name: 'comments',
@@ -355,12 +467,24 @@ export default {
       permission: ['listVPCOfferings'],
       resourceType: 'VpcOffering',
       columns: ['name', 'state', 'displaytext', 'domain', 'zone', 'order'],
-      details: ['name', 'id', 'displaytext', 'internetprotocol', 'distributedvpcrouter', 'tags', 'service', 'domain', 'zone', 'created'],
+      details: ['name', 'id', 'displaytext', 'internetprotocol', 'distributedvpcrouter', 'tags', 'service', 'fornsx', 'nsxmode', 'domain', 'zone', 'created'],
       related: [{
         name: 'vpc',
         title: 'label.vpc',
         param: 'vpcofferingid'
       }],
+      tabs: [
+        {
+          name: 'details',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'events',
+          resourceType: 'VpcOffering',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+          show: () => { return 'listEvents' in store.getters.apis }
+        }
+      ],
       actions: [{
         api: 'createVPCOffering',
         icon: 'plus-outlined',

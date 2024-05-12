@@ -51,7 +51,8 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.protocol.HTTP;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.utils.net.NetUtils;
 import com.google.common.net.InternetDomainName;
@@ -66,7 +67,7 @@ import com.google.gson.JsonParser;
  */
 public class RedfishClient {
 
-    private static final Logger LOGGER = Logger.getLogger(RedfishClient.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private String username;
     private String password;
@@ -226,19 +227,19 @@ public class RedfishClient {
     }
 
     protected HttpResponse retryHttpRequest(String url, HttpRequestBase httpReq, HttpClient client) {
-        LOGGER.warn(String.format("Failed to execute HTTP %s request [URL: %s]. Executing the request again.", httpReq.getMethod(), url));
+        logger.warn(String.format("Failed to execute HTTP %s request [URL: %s]. Executing the request again.", httpReq.getMethod(), url));
         HttpResponse response = null;
         for (int attempt = 1; attempt < redfishRequestMaxRetries + 1; attempt++) {
             try {
                 TimeUnit.SECONDS.sleep(WAIT_FOR_REQUEST_RETRY);
-                LOGGER.debug(String.format("HTTP %s request retry attempt %d/%d [URL: %s].", httpReq.getMethod(), attempt, redfishRequestMaxRetries, url));
+                logger.debug(String.format("HTTP %s request retry attempt %d/%d [URL: %s].", httpReq.getMethod(), attempt, redfishRequestMaxRetries, url));
                 response = client.execute(httpReq);
                 break;
             } catch (IOException | InterruptedException e) {
                 if (attempt == redfishRequestMaxRetries) {
                     throw new RedfishException(String.format("Failed to execute HTTP %s request retry attempt %d/%d [URL: %s] due to exception %s", httpReq.getMethod(), attempt, redfishRequestMaxRetries,url, e));
                 } else {
-                    LOGGER.warn(
+                    logger.warn(
                             String.format("Failed to execute HTTP %s request retry attempt %d/%d [URL: %s] due to exception %s", httpReq.getMethod(), attempt, redfishRequestMaxRetries,
                                     url, e));
                 }
@@ -249,7 +250,7 @@ public class RedfishClient {
             throw new RedfishException(String.format("Failed to execute HTTP %s request [URL: %s].", httpReq.getMethod(), url));
         }
 
-        LOGGER.debug(String.format("Successfully executed HTTP %s request [URL: %s].", httpReq.getMethod(), url));
+        logger.debug(String.format("Successfully executed HTTP %s request [URL: %s].", httpReq.getMethod(), url));
         return response;
     }
 
@@ -307,7 +308,7 @@ public class RedfishClient {
             throw new RedfishException(String.format("Failed to get System power state for host '%s' with request '%s: %s'. The expected HTTP status code is '%s' but it got '%s'.",
                     HttpGet.METHOD_NAME, url, hostAddress, EXPECTED_HTTP_STATUS, statusCode));
         }
-        LOGGER.debug(String.format("Sending ComputerSystem.Reset Command '%s' to host '%s' with request '%s %s'", resetCommand, hostAddress, HttpPost.METHOD_NAME, url));
+        logger.debug(String.format("Sending ComputerSystem.Reset Command '%s' to host '%s' with request '%s %s'", resetCommand, hostAddress, HttpPost.METHOD_NAME, url));
     }
 
     /**
@@ -325,7 +326,7 @@ public class RedfishClient {
 
         String systemId = processGetSystemIdResponse(response);
 
-        LOGGER.debug(String.format("Retrieved System ID '%s' with request '%s: %s'", systemId, HttpGet.METHOD_NAME, url));
+        logger.debug(String.format("Retrieved System ID '%s' with request '%s: %s'", systemId, HttpGet.METHOD_NAME, url));
 
         return systemId;
     }
@@ -370,7 +371,7 @@ public class RedfishClient {
         }
 
         RedfishPowerState powerState = processGetSystemRequestResponse(response);
-        LOGGER.debug(String.format("Retrieved System power state '%s' with request '%s: %s'", powerState, HttpGet.METHOD_NAME, url));
+        logger.debug(String.format("Retrieved System power state '%s' with request '%s: %s'", powerState, HttpGet.METHOD_NAME, url));
         return powerState;
     }
 

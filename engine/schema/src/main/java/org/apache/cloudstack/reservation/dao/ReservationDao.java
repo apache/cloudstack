@@ -18,11 +18,18 @@
 //
 package org.apache.cloudstack.reservation.dao;
 
-import com.cloud.configuration.Resource;
 import org.apache.cloudstack.reservation.ReservationVO;
+
+import com.cloud.configuration.Resource;
 import com.cloud.utils.db.GenericDao;
 
+import java.util.List;
+
 public interface ReservationDao extends GenericDao<ReservationVO, Long> {
-    long getAccountReservation(Long account, Resource.ResourceType resourceType);
-    long getDomainReservation(Long domain, Resource.ResourceType resourceType);
+    long getAccountReservation(Long account, Resource.ResourceType resourceType, String tag);
+    long getDomainReservation(Long domain, Resource.ResourceType resourceType, String tag);
+    void setResourceId(Resource.ResourceType type, Long resourceId);
+    List<Long> getResourceIds(long accountId, Resource.ResourceType type);
+    List<ReservationVO> getReservationsForAccount(long accountId, Resource.ResourceType type, String tag);
+    void removeByIds(List<Long> reservationIds);
 }

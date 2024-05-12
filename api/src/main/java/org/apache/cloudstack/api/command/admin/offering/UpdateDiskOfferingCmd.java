@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.admin.offering;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.cloud.offering.DiskOffering.State;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -27,8 +28,8 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.domain.Domain;
@@ -39,7 +40,6 @@ import com.cloud.user.Account;
 @APICommand(name = "updateDiskOffering", description = "Updates a disk offering.", responseObject = DiskOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateDiskOfferingCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateDiskOfferingCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -122,6 +122,9 @@ public class UpdateDiskOfferingCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.CACHE_MODE, type = CommandType.STRING, description = "the cache mode to use for this disk offering", since = "4.15")
     private String cacheMode;
+
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "state of the disk offering")
+    private String diskOfferingState;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -261,6 +264,13 @@ public class UpdateDiskOfferingCmd extends BaseCmd {
 
     public Long getIopsWriteRateMaxLength() {
         return iopsWriteRateMaxLength;
+    }
+    public State getState() {
+        State state = EnumUtils.getEnumIgnoreCase(State.class, diskOfferingState);
+        if (StringUtils.isNotBlank(diskOfferingState) && state == null) {
+            throw new InvalidParameterValueException("Invalid state value: " + diskOfferingState);
+        }
+        return state;
     }
 
     /////////////////////////////////////////////////////

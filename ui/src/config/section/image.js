@@ -47,6 +47,9 @@ export default {
           fields.push('size')
           fields.push('account')
         }
+        if (store.getters.listAllProjects) {
+          fields.push('project')
+        }
         if (['Admin'].includes(store.getters.userInfo.roletype)) {
           fields.push('templatetype')
           fields.push('order')
@@ -58,7 +61,7 @@ export default {
           'crossZones', 'templatetype', 'directdownload', 'deployasis', 'ispublic', 'isfeatured', 'isextractable', 'isdynamicallyscalable', 'crosszones', 'type',
           'account', 'domain', 'created', 'userdatadetails', 'userdatapolicy']
         if (['Admin'].includes(store.getters.userInfo.roletype)) {
-          fields.push('url')
+          fields.push('templatetag', 'templatetype', 'url')
         }
         return fields
       },
@@ -220,12 +223,15 @@ export default {
           fields.push('size')
           fields.push('account')
         }
+        if (store.getters.listAllProjects) {
+          fields.push('project')
+        }
         if (['Admin'].includes(store.getters.userInfo.roletype)) {
           fields.push('order')
         }
         return fields
       },
-      details: ['name', 'id', 'displaytext', 'checksum', 'ostypename', 'size', 'bootable', 'isready', 'directdownload', 'isextractable', 'ispublic', 'isfeatured', 'crosszones', 'account', 'domain', 'created', 'userdatadetails', 'userdatapolicy', 'url'],
+      details: ['name', 'id', 'displaytext', 'checksum', 'ostypename', 'size', 'bootable', 'isready', 'passwordenabled', 'directdownload', 'isextractable', 'ispublic', 'isfeatured', 'crosszones', 'account', 'domain', 'created', 'userdatadetails', 'userdatapolicy', 'url'],
       searchFilters: () => {
         var filters = ['name', 'zoneid', 'tags']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {

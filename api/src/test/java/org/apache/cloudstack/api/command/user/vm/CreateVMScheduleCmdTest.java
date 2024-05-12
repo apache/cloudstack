@@ -23,6 +23,7 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.api.response.VMScheduleResponse;
 import org.apache.cloudstack.vm.schedule.VMScheduleManager;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,9 +42,16 @@ public class CreateVMScheduleCmdTest {
     @InjectMocks
     private CreateVMScheduleCmd createVMScheduleCmd = new CreateVMScheduleCmd();
 
+    private AutoCloseable closeable;
+
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     /**

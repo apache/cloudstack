@@ -20,11 +20,6 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
-import com.cloud.server.ResourceIcon;
-import com.cloud.server.ResourceTag;
-import org.apache.cloudstack.api.response.ResourceIconResponse;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.DomainDetails;
@@ -34,14 +29,17 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ResourceIconResponse;
+import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.domain.Domain;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.server.ResourceIcon;
+import com.cloud.server.ResourceTag;
 
 @APICommand(name = "listDomains", description = "Lists domains and provides detailed information for listed domains", responseObject = DomainResponse.class, responseView = ResponseView.Restricted, entityType = {Domain.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListDomainsCmd extends BaseListCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(ListDomainsCmd.class.getName());
 
     private static final String s_name = "listdomainsresponse";
 
@@ -72,6 +70,9 @@ public class ListDomainsCmd extends BaseListCmd implements UserCmd {
     @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN,
             description = "flag to display the resource icon for domains")
     private Boolean showIcon;
+
+    @Parameter(name = ApiConstants.TAG, type = CommandType.STRING, description = "Tag for resource type to return usage", since = "4.20.0")
+    private String tag;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -112,8 +113,12 @@ public class ListDomainsCmd extends BaseListCmd implements UserCmd {
         return dv;
     }
 
-    public Boolean getShowIcon() {
+    public boolean getShowIcon() {
         return showIcon != null ? showIcon : false;
+    }
+
+    public String getTag() {
+        return tag;
     }
 
     /////////////////////////////////////////////////////
@@ -130,12 +135,17 @@ public class ListDomainsCmd extends BaseListCmd implements UserCmd {
         ListResponse<DomainResponse> response = _queryService.searchForDomains(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
-        if (response != null && response.getCount() > 0 && getShowIcon()) {
-            updateDomainResponse(response.getResponses());
-        }
+        updateDomainResponse(response.getResponses());
     }
 
-    private void updateDomainResponse(List<DomainResponse> response) {
+    protected void updateDomainResponse(List<DomainResponse> response) {
+        if (CollectionUtils.isEmpty(response)) {
+            return;
+        }
+        _resourceLimitService.updateTaggedResourceLimitsAndCountsForDomains(response, getTag());
+        if (!getShowIcon()) {
+            return;
+        }
         for (DomainResponse domainResponse : response) {
             ResourceIcon resourceIcon = resourceIconManager.getByResourceTypeAndUuid(ResourceTag.ResourceObjectType.Domain, domainResponse.getId());
             if (resourceIcon == null) {

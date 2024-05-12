@@ -44,7 +44,8 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.secstorage.CommandExecLogDao;
@@ -53,7 +54,7 @@ import com.cloud.utils.Pair;
 
 public class SecondaryStorageServiceImpl implements SecondaryStorageService {
 
-    private static final Logger s_logger = Logger.getLogger(SecondaryStorageServiceImpl.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
     DataMotionService motionSrv;
@@ -126,11 +127,11 @@ public class SecondaryStorageServiceImpl implements SecondaryStorageService {
             else {
                 // Check if template in destination store, if yes, do not proceed
                 if (srcDataObject instanceof TemplateInfo) {
-                    s_logger.debug("Checking if template present at destination");
+                    logger.debug("Checking if template present at destination");
                     TemplateDataStoreVO templateStoreVO = templateStoreDao.findByStoreTemplate(destDatastore.getId(), srcDataObject.getId());
                     if (templateStoreVO != null) {
                         String msg = "Template already exists in destination store";
-                        s_logger.debug(msg);
+                        logger.debug(msg);
                         res.setResult(msg);
                         res.setSuccess(true);
                         future.complete(res);
@@ -143,9 +144,9 @@ public class SecondaryStorageServiceImpl implements SecondaryStorageService {
                 migrateJob(future, srcDataObject, destDataObject, destDatastore);
             }
         } catch (Exception e) {
-            s_logger.debug("Failed to copy Data", e);
+            logger.debug("Failed to copy Data", e);
             if (destDataObject != null) {
-                s_logger.info("Deleting data on destination store: " + destDataObject.getDataStore().getName());
+                logger.info("Deleting data on destination store: " + destDataObject.getDataStore().getName());
                 destDataObject.getDataStore().delete(destDataObject);
             }
             if (!(srcDataObject instanceof VolumeInfo)) {
@@ -178,7 +179,7 @@ public class SecondaryStorageServiceImpl implements SecondaryStorageService {
         Answer answer = result.getAnswer();
         try {
             if (!answer.getResult()) {
-                s_logger.warn("Migration failed for "+srcData.getUuid());
+                logger.warn("Migration failed for "+srcData.getUuid());
                 res.setResult(result.getResult());
                 if (!(srcData instanceof VolumeInfo) ) {
                     srcData.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
@@ -200,14 +201,14 @@ public class SecondaryStorageServiceImpl implements SecondaryStorageService {
                     destData.processEvent(ObjectInDataStoreStateMachine.Event.OperationSuccessed, answer);
                 }
                 updateDataObject(srcData, destData);
-                s_logger.debug("Deleting source data");
+                logger.debug("Deleting source data");
                 srcData.getDataStore().delete(srcData);
-                s_logger.debug("Successfully migrated "+srcData.getUuid());
+                logger.debug("Successfully migrated "+srcData.getUuid());
             }
             _cmdExecLogDao.expunge(Long.parseLong(answer.getContextParam("cmd")));
             future.complete(res);
         } catch (Exception e) {
-            s_logger.error("Failed to process migrate data callback", e);
+            logger.error("Failed to process migrate data callback", e);
             res.setResult(e.toString());
             _cmdExecLogDao.expunge(Long.parseLong(answer.getContextParam("cmd")));
             future.complete(res);
@@ -243,7 +244,7 @@ public class SecondaryStorageServiceImpl implements SecondaryStorageService {
                 templateStoreDao.update(destTemplate.getId(), destTemplate);
             }
         } else {
-            s_logger.debug("Unsupported data object type");
+            logger.debug("Unsupported data object type");
         }
     }
 }

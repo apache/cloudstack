@@ -24,12 +24,15 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import com.cloud.network.Network;
+import com.cloud.network.VirtualRouterProvider;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -47,10 +50,19 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.user.Account;
 
+import static com.cloud.network.Network.Service.Dhcp;
+import static com.cloud.network.Network.Service.Dns;
+import static com.cloud.network.Network.Service.Lb;
+import static com.cloud.network.Network.Service.StaticNat;
+import static com.cloud.network.Network.Service.SourceNat;
+import static com.cloud.network.Network.Service.PortForwarding;
+import static com.cloud.network.Network.Service.NetworkACL;
+import static com.cloud.network.Network.Service.UserData;
+import static com.cloud.network.Network.Service.Firewall;
+
 @APICommand(name = "createNetworkOffering", description = "Creates a network offering.", responseObject = NetworkOfferingResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateNetworkOfferingCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateNetworkOfferingCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -74,7 +86,8 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.SPECIFY_VLAN, type = CommandType.BOOLEAN, description = "true if network offering supports vlans")
     private Boolean specifyVlan;
 
-    @Parameter(name = ApiConstants.AVAILABILITY, type = CommandType.STRING, description = "the availability of network offering. Default value is Optional")
+    @Parameter(name = ApiConstants.AVAILABILITY, type = CommandType.STRING, description = "the availability of network offering. The default value is Optional. "
+            + " Another value is Required, which will make it as the default network offering for new networks ")
     private String availability;
 
     @Parameter(name = ApiConstants.NETWORKRATE, type = CommandType.INTEGER, description = "data transfer rate in megabits per second allowed")
@@ -126,6 +139,30 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
             type = CommandType.BOOLEAN,
             description = "true if network offering is meant to be used for VPC, false otherwise.")
     private Boolean forVpc;
+
+    @Parameter(name = ApiConstants.FOR_NSX,
+            type = CommandType.BOOLEAN,
+            description = "true if network offering is meant to be used for NSX, false otherwise.",
+            since = "4.20.0")
+    private Boolean forNsx;
+
+    @Parameter(name = ApiConstants.NSX_MODE,
+            type = CommandType.STRING,
+            description = "Indicates the mode with which the network will operate. Valid option: NATTED or ROUTED",
+            since = "4.20.0")
+    private String nsxMode;
+
+    @Parameter(name = ApiConstants.NSX_SUPPORT_LB,
+            type = CommandType.BOOLEAN,
+            description = "true if network offering for NSX network offering supports Load balancer service.",
+            since = "4.20.0")
+    private Boolean nsxSupportsLbService;
+
+    @Parameter(name = ApiConstants.NSX_SUPPORTS_INTERNAL_LB,
+            type = CommandType.BOOLEAN,
+            description = "true if network offering for NSX network offering supports Internal Load balancer service.",
+            since = "4.20.0")
+    private Boolean nsxSupportsInternalLbService;
 
     @Parameter(name = ApiConstants.FOR_TUNGSTEN,
             type = CommandType.BOOLEAN,
@@ -211,7 +248,27 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     }
 
     public List<String> getSupportedServices() {
-        return supportedServices == null ? new ArrayList<String>() : supportedServices;
+        if (!isForNsx()) {
+            return supportedServices == null ? new ArrayList<String>() : supportedServices;
+        } else {
+            List<String> services = new ArrayList<>(List.of(
+                    Dhcp.getName(),
+                    Dns.getName(),
+                    StaticNat.getName(),
+                    SourceNat.getName(),
+                    PortForwarding.getName(),
+                    UserData.getName()
+            ));
+            if (getNsxSupportsLbService()) {
+                services.add(Lb.getName());
+            }
+            if (Boolean.TRUE.equals(forVpc)) {
+                services.add(NetworkACL.getName());
+            } else {
+                services.add(Firewall.getName());
+            }
+            return services;
+        }
     }
 
     public String getGuestIpType() {
@@ -241,6 +298,22 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
         return forVpc;
     }
 
+    public boolean isForNsx() {
+        return BooleanUtils.isTrue(forNsx);
+    }
+
+    public String getNsxMode() {
+        return nsxMode;
+    }
+
+    public boolean getNsxSupportsLbService() {
+        return BooleanUtils.isTrue(nsxSupportsLbService);
+    }
+
+    public boolean getNsxSupportsInternalLbService() {
+        return BooleanUtils.isTrue(nsxSupportsInternalLbService);
+    }
+
     public Boolean getForTungsten() {
         return forTungsten;
     }
@@ -261,9 +334,8 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     }
 
     public Map<String, List<String>> getServiceProviders() {
-        Map<String, List<String>> serviceProviderMap = null;
-        if (serviceProviderList != null && !serviceProviderList.isEmpty()) {
-            serviceProviderMap = new HashMap<String, List<String>>();
+        Map<String, List<String>> serviceProviderMap = new HashMap<>();
+        if (serviceProviderList != null && !serviceProviderList.isEmpty() && !isForNsx()) {
             Collection servicesCollection = serviceProviderList.values();
             Iterator iter = servicesCollection.iterator();
             while (iter.hasNext()) {
@@ -279,9 +351,35 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
                 providerList.add(provider);
                 serviceProviderMap.put(service, providerList);
             }
+        } else if (Boolean.TRUE.equals(forNsx)) {
+            getServiceProviderMapForNsx(serviceProviderMap);
         }
-
         return serviceProviderMap;
+    }
+
+    private void getServiceProviderMapForNsx(Map<String, List<String>> serviceProviderMap) {
+        String routerProvider = Boolean.TRUE.equals(getForVpc()) ? VirtualRouterProvider.Type.VPCVirtualRouter.name() :
+                VirtualRouterProvider.Type.VirtualRouter.name();
+        List<String> unsupportedServices = new ArrayList<>(List.of("Vpn", "SecurityGroup", "Connectivity",
+                "Gateway", "BaremetalPxeService"));
+        List<String> routerSupported = List.of("Dhcp", "Dns", "UserData");
+        List<String> allServices = Service.listAllServices().stream().map(Service::getName).collect(Collectors.toList());
+        if (routerProvider.equals(VirtualRouterProvider.Type.VPCVirtualRouter.name())) {
+            unsupportedServices.add("Firewall");
+        } else {
+            unsupportedServices.add("NetworkACL");
+        }
+        for (String service : allServices) {
+            if (unsupportedServices.contains(service))
+                continue;
+            if (routerSupported.contains(service))
+                serviceProviderMap.put(service, List.of(routerProvider));
+            else
+                serviceProviderMap.put(service, List.of(Network.Provider.Nsx.getName()));
+            if (!getNsxSupportsLbService()) {
+                serviceProviderMap.remove(Lb.getName());
+            }
+        }
     }
 
     public Map<Capability, String> getServiceCapabilities(Service service) {

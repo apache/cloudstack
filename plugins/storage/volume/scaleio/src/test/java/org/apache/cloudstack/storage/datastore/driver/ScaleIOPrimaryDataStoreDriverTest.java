@@ -49,6 +49,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
@@ -96,6 +97,8 @@ public class ScaleIOPrimaryDataStoreDriverTest {
 
     static MockedStatic<RemoteHostEndPoint> remoteHostEndPointMock;
 
+    private AutoCloseable closeable;
+
     @BeforeClass
     public static void init() {
         remoteHostEndPointMock = mockStatic(RemoteHostEndPoint.class);
@@ -108,8 +111,14 @@ public class ScaleIOPrimaryDataStoreDriverTest {
 
     @Before
     public void initMocks() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
     }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
+    }
+
     @Test
     public void testSameScaleIOStorageInstance() {
         DataStore srcStore = Mockito.mock(DataStore.class);
@@ -532,5 +541,38 @@ public class ScaleIOPrimaryDataStoreDriverTest {
         Answer answer = scaleIOPrimaryDataStoreDriver.copyOfflineVolume(srcData, destData, destHost);
 
         Assert.assertEquals(false, answer.getResult());
+    }
+
+    @Test
+    public void testGetVolumeSizeRequiredOnPool() {
+        Assert.assertEquals(16L * (1024 * 1024 * 1024),
+                scaleIOPrimaryDataStoreDriver.getVolumeSizeRequiredOnPool(
+                        10L * (1024 * 1024 * 1024),
+                        null,
+                        true));
+
+        Assert.assertEquals(16L * (1024 * 1024 * 1024),
+                scaleIOPrimaryDataStoreDriver.getVolumeSizeRequiredOnPool(
+                        10L * (1024 * 1024 * 1024),
+                        null,
+                        false));
+
+        Assert.assertEquals(16L * (1024 * 1024 * 1024),
+                scaleIOPrimaryDataStoreDriver.getVolumeSizeRequiredOnPool(
+                        16L * (1024 * 1024 * 1024),
+                        null,
+                        false));
+
+        Assert.assertEquals(16L * (1024 * 1024 * 1024),
+                scaleIOPrimaryDataStoreDriver.getVolumeSizeRequiredOnPool(
+                        16L * (1024 * 1024 * 1024),
+                        16L * (1024 * 1024 * 1024),
+                        false));
+
+        Assert.assertEquals(24L * (1024 * 1024 * 1024),
+                scaleIOPrimaryDataStoreDriver.getVolumeSizeRequiredOnPool(
+                        16L * (1024 * 1024 * 1024),
+                        16L * (1024 * 1024 * 1024),
+                        true));
     }
 }
