@@ -11,15 +11,13 @@ activ
 actuall
 acuiring
 acumulate
-adddress
 addes
 additionals
 addreess
 addresse
 addrress
 addtion
-addtional
-adminstered
+adminstrator
 adres
 adress
 adresse
@@ -31,7 +29,6 @@ againt
 ags
 aktion
 aktive
-algin
 algoritm
 alle
 allo
@@ -45,7 +42,6 @@ als
 alue
 ammended
 ammount
-analagous
 ans
 anull
 apche
@@ -73,7 +69,6 @@ atomation
 attache
 attch
 attches
-attrbutes
 authenciation
 authenitcation
 authenitication
@@ -82,7 +77,6 @@ autorisation
 auxiliar
 availiability
 bais
-bandwidht
 beacause
 beacuse
 becase
@@ -98,18 +92,18 @@ bord
 bu
 cant
 capabilites
+capablity
 capcity
 caracter
 caracteres
 carrefully
 cavaet
-ccompiler
 certificat
 chaing
 checkd
 childs
 choosen
-chunck
+chould
 claus
 clenup
 cliente
@@ -128,12 +122,11 @@ compleet
 complet
 complient
 componentes
-comptability
 concious
 conectix
 confg
+configruation
 configuable
-confiugre
 connexion
 considere
 constrait
@@ -151,6 +144,7 @@ convienient
 convinience
 copie
 coputer
+copyied
 correcponding
 correspoding
 correspondant
@@ -182,7 +176,6 @@ defered
 definiton
 defualt
 deleteable
-delimeter
 delt
 delte
 dependancy
@@ -214,7 +207,6 @@ disale
 disbale
 discrepency
 disover
-dispays
 dissapper
 dissassociated
 divice
@@ -230,7 +222,6 @@ eanbled
 earch
 ect
 editer
-elelment
 elemnt
 eles
 elments
@@ -265,9 +256,9 @@ exisits
 existin
 existsing
 exite
+exitting
 expcted
 expection
-expessions
 explaination
 explicitely
 faield
@@ -280,7 +271,6 @@ filenname
 fillled
 findout
 fisrt
-fle
 fo
 followin
 folowing
@@ -302,7 +292,6 @@ gracefull
 gradiant
 groupe
 groupes
-guarenteed
 handeling
 hanling
 happend
@@ -310,6 +299,7 @@ hasing
 hasnt
 hda
 hel
+hostanme
 hould
 hsould
 hte
@@ -339,6 +329,7 @@ inital
 initalize
 initalized
 initator
+initilization
 inspite
 instace
 instal
@@ -348,7 +339,6 @@ intefaces
 intepret
 intereface
 interfer
-interger
 interm
 interpretted
 intialize
@@ -359,6 +349,7 @@ invokation
 isnt
 ist
 itens
+klunky
 lable
 langage
 lates
@@ -370,19 +361,15 @@ lik
 limite
 linke
 listner
-litterally
 lokal
 lokale
 lokales
-mainenance
-maintaince
 maintainence
 maintenace
 maintenence
 maks
 mamagement
 mambers
-managment
 manaully
 manuel
 manuell
@@ -406,7 +393,6 @@ momento
 mor
 mot
 mulitply
-multipe
 multipl
 multple
 mutliple
@@ -416,8 +402,6 @@ neccessary
 necesary
 ned
 netowrk
-nework
-newtork
 nin
 nodel
 noe
@@ -426,15 +410,14 @@ noone
 nowe
 numbe
 numer
+occured
 occurence
 occuring
 oder
 offfering
 ofthe
 omited
-onlyonce
 onother
-opearation
 opeation
 optin
 orginal
@@ -442,6 +425,7 @@ otherwse
 outter
 overriden
 overwritting
+paramater
 paramemeter
 paramenter
 paramete
@@ -466,9 +450,8 @@ polcies
 policys
 poluting
 possibile
+possiblity
 potenial
-preceeding
-precense
 prefered
 preffered
 pressenter
@@ -492,7 +475,6 @@ prozess
 psudo
 pyhsical
 quitt
-raison
 readabilty
 readd
 reccuring
@@ -522,7 +504,6 @@ reserverd
 reseted
 reseting
 resorce
-respones
 resposne
 ressource
 ressources
@@ -557,8 +538,6 @@ sepcified
 sepcify
 seprated
 ser
-serices
-serivce
 servies
 serwer
 seting
@@ -568,7 +547,6 @@ shoul
 shoule
 sie
 signle
-similary
 singature
 sist
 skiping
@@ -593,15 +571,14 @@ storeage
 strat
 streched
 strutural
-substitions
 succesfull
 successfull
 suceessful
 suces
 sucessfully
 suiteable
-suppoerted
 suppots
+suppport
 suppposed
 supression
 syncronous
@@ -618,7 +595,6 @@ therefor
 theres
 theses
 thi
-thigns
 thorugh
 throught
 ths
@@ -635,6 +611,7 @@ ues
 unavailibility
 uncommited
 uncompressible
+underfined
 uneccessarily
 unexepected
 unexpect
@@ -654,7 +631,6 @@ usin
 utilis
 utiliza
 utlization
-vaguaries
 vai
 vaidate
 valiate
@@ -662,7 +638,6 @@ valide
 valule
 valus
 varibles
-varius
 vas
 verfy
 verfying
@@ -673,14 +648,12 @@ vie
 vill
 virtuell
 virutal
+visable
 vise
-vitual
 volums
 vor
 wakup
 wil
 wit
 wll
-womens
-wont
 wth
