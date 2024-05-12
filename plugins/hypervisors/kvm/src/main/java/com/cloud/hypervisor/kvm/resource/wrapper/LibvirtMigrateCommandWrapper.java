@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -188,6 +189,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             // migrateStorage's value should always only be associated with the initial state of mapMigrateStorage.
             final boolean migrateStorage = MapUtils.isNotEmpty(mapMigrateStorage);
             final boolean migrateStorageManaged = command.isMigrateStorageManaged();
+            Set<String> migrateDiskLabels = null;
 
             if (migrateStorage) {
                 if (logger.isDebugEnabled()) {
@@ -197,6 +199,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 if (logger.isDebugEnabled()) {
                     logger.debug(String.format("Changed VM [%s] XML configuration of used storage. New XML configuration is [%s].", vmName, xmlDesc));
                 }
+                migrateDiskLabels = getMigrateStorageDeviceLabels(disks, mapMigrateStorage);
             }
 
             Map<String, DpdkTO> dpdkPortsMapping = command.getDpdkInterfaceMapping();
@@ -225,7 +228,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
 
             final Callable<Domain> worker = new MigrateKVMAsync(libvirtComputingResource, dm, dconn, xmlDesc,
                     migrateStorage, migrateNonSharedInc,
-                    command.isAutoConvergence(), vmName, command.getDestinationIp());
+                    command.isAutoConvergence(), vmName, command.getDestinationIp(), migrateDiskLabels);
             final Future<Domain> migrateThread = executor.submit(worker);
             executor.shutdown();
             long sleeptime = 0;
@@ -363,6 +366,30 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
 
         return new MigrateAnswer(command, result == null, result, null);
     }
+
+    /**
+     * Gets the disk labels (vda, vdb...) of the disks mapped for migration on mapMigrateStorage.
+     * @param diskDefinitions list of all the disksDefinitions of the VM.
+     * @param mapMigrateStorage map of the disks that should be migrated.
+     * @return set with the labels of the disks that should be migrated.
+     * */
+    protected Set<String> getMigrateStorageDeviceLabels(List<DiskDef> diskDefinitions, Map<String, MigrateCommand.MigrateDiskInfo> mapMigrateStorage) {
+        HashSet<String> setOfLabels = new HashSet<>();
+        logger.debug("Searching for disk labels of disks [{}].", mapMigrateStorage.keySet());
+        for (String fileName : mapMigrateStorage.keySet()) {
+            for (DiskDef diskDef : diskDefinitions) {
+                String diskPath = diskDef.getDiskPath();
+                if (diskPath != null && diskPath.contains(fileName)) {
+                    setOfLabels.add(diskDef.getDiskLabel());
+                    logger.debug("Found label [{}] for disk [{}].", diskDef.getDiskLabel(), fileName);
+                    break;
+                }
+            }
+        }
+
+        return setOfLabels;
+    }
+
 
     /**
      * Checks if the CPU shares are equal in the source host and destination host.

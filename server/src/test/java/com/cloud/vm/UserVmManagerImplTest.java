@@ -40,6 +40,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.offering.DiskOffering;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVnfApplianceCmd;
@@ -1296,7 +1297,7 @@ public class UserVmManagerImplTest {
     }
 
     @Test(expected = InvalidParameterValueException.class)
-    public void testRestoreVMNoVM() throws ResourceUnavailableException, InsufficientCapacityException {
+    public void testRestoreVMNoVM() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         CallContext callContextMock = Mockito.mock(CallContext.class);
         Mockito.lenient().doReturn(accountMock).when(callContextMock).getCallingAccount();
 
@@ -1309,7 +1310,7 @@ public class UserVmManagerImplTest {
     }
 
     @Test(expected = CloudRuntimeException.class)
-    public void testRestoreVMWithVolumeSnapshots() throws ResourceUnavailableException, InsufficientCapacityException {
+    public void testRestoreVMWithVolumeSnapshots() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         CallContext callContextMock = Mockito.mock(CallContext.class);
         Mockito.lenient().doReturn(accountMock).when(callContextMock).getCallingAccount();
         Mockito.lenient().doNothing().when(accountManager).checkAccess(accountMock, null, true, userVmVoMock);
@@ -1323,7 +1324,7 @@ public class UserVmManagerImplTest {
     }
 
     @Test(expected = InvalidParameterValueException.class)
-    public void testRestoreVirtualMachineNoOwner() throws ResourceUnavailableException, InsufficientCapacityException {
+    public void testRestoreVirtualMachineNoOwner() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         long userId = 1l;
         long accountId = 2l;
         long newTemplateId = 2l;
@@ -1336,7 +1337,7 @@ public class UserVmManagerImplTest {
     }
 
     @Test(expected = PermissionDeniedException.class)
-    public void testRestoreVirtualMachineOwnerDisabled() throws ResourceUnavailableException, InsufficientCapacityException {
+    public void testRestoreVirtualMachineOwnerDisabled() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         long userId = 1l;
         long accountId = 2l;
         long newTemplateId = 2l;
@@ -1350,7 +1351,7 @@ public class UserVmManagerImplTest {
     }
 
     @Test(expected = CloudRuntimeException.class)
-    public void testRestoreVirtualMachineNotInRightState() throws ResourceUnavailableException, InsufficientCapacityException {
+    public void testRestoreVirtualMachineNotInRightState() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         long userId = 1l;
         long accountId = 2l;
         long newTemplateId = 2l;
@@ -1365,7 +1366,7 @@ public class UserVmManagerImplTest {
     }
 
     @Test(expected = InvalidParameterValueException.class)
-    public void testRestoreVirtualMachineNoRootVolume() throws ResourceUnavailableException, InsufficientCapacityException {
+    public void testRestoreVirtualMachineNoRootVolume() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         long userId = 1l;
         long accountId = 2l;
         long currentTemplateId = 1l;
@@ -1386,7 +1387,7 @@ public class UserVmManagerImplTest {
     }
 
     @Test(expected = InvalidParameterValueException.class)
-    public void testRestoreVirtualMachineMoreThanOneRootVolume() throws ResourceUnavailableException, InsufficientCapacityException {
+    public void testRestoreVirtualMachineMoreThanOneRootVolume() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         long userId = 1l;
         long accountId = 2l;
         long currentTemplateId = 1l;
@@ -1413,7 +1414,7 @@ public class UserVmManagerImplTest {
     }
 
     @Test(expected = InvalidParameterValueException.class)
-    public void testRestoreVirtualMachineWithVMSnapshots() throws ResourceUnavailableException, InsufficientCapacityException {
+    public void testRestoreVirtualMachineWithVMSnapshots() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         long userId = 1l;
         long accountId = 2l;
         long currentTemplateId = 1l;
@@ -1562,5 +1563,38 @@ public class UserVmManagerImplTest {
         } catch (ResourceAllocationException e) {
             Assert.fail(e.getMessage());
         }
+    }
+
+    @Test
+    public void testGetRootVolumeSizeForVmRestore() {
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(template.getSize()).thenReturn(10L * GiB_TO_BYTES);
+        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+        Mockito.when(userVm.getId()).thenReturn(1L);
+        DiskOffering diskOffering = Mockito.mock(DiskOffering.class);
+        Mockito.when(diskOffering.isCustomized()).thenReturn(false);
+        Mockito.when(diskOffering.getDiskSize()).thenReturn(8L * GiB_TO_BYTES);
+        Map<String, String> details = new HashMap<>();
+        details.put(VmDetailConstants.ROOT_DISK_SIZE, "16");
+        UserVmDetailVO vmRootDiskSizeDetail = Mockito.mock(UserVmDetailVO.class);
+        Mockito.when(vmRootDiskSizeDetail.getValue()).thenReturn("20");
+        Mockito.when(userVmDetailsDao.findDetail(1L, VmDetailConstants.ROOT_DISK_SIZE)).thenReturn(vmRootDiskSizeDetail);
+        Long actualSize = userVmManagerImpl.getRootVolumeSizeForVmRestore(null, template, userVm, diskOffering, details, false);
+        Assert.assertEquals(16 * GiB_TO_BYTES, actualSize.longValue());
+    }
+
+    @Test
+    public void testGetRootVolumeSizeForVmRestoreNullDiskOfferingAndEmptyDetails() {
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(template.getSize()).thenReturn(10L * GiB_TO_BYTES);
+        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+        Mockito.when(userVm.getId()).thenReturn(1L);
+        DiskOffering diskOffering = null;
+        Map<String, String> details = new HashMap<>();
+        UserVmDetailVO vmRootDiskSizeDetail = Mockito.mock(UserVmDetailVO.class);
+        Mockito.when(vmRootDiskSizeDetail.getValue()).thenReturn("20");
+        Mockito.when(userVmDetailsDao.findDetail(1L, VmDetailConstants.ROOT_DISK_SIZE)).thenReturn(vmRootDiskSizeDetail);
+        Long actualSize = userVmManagerImpl.getRootVolumeSizeForVmRestore(null, template, userVm, diskOffering, details, false);
+        Assert.assertEquals(20 * GiB_TO_BYTES, actualSize.longValue());
     }
 }
