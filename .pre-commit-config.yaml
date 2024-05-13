@@ -36,6 +36,8 @@ repos:
       - id: check-vcs-permalinks
       #- id: check-yaml
       - id: destroyed-symlinks
+      - id: detect-aws-credentials
+        args: [--allow-missing-credentials]
       - id: detect-private-key
         exclude: >
           (?x)
@@ -53,6 +55,7 @@ repos:
       - id: end-of-file-fixer
         exclude: \.vhd$
       #- id: fix-byte-order-marker
+      - id: forbid-submodules
       - id: mixed-line-ending
         exclude: \.(cs|xml)$
       # - id: trailing-whitespace
