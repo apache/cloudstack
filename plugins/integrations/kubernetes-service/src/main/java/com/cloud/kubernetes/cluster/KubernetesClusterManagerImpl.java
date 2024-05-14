@@ -1187,6 +1187,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info(String.format("Kubernetes cluster with name: %s and ID: %s has been created", cluster.getName(), cluster.getUuid()));
         }
+        CallContext.current().putContextParameter(KubernetesCluster.class, cluster.getUuid());
         return cluster;
     }
 
@@ -1249,6 +1250,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info(String.format("Kubernetes cluster name: %s and ID: %s has been created", cluster.getName(), cluster.getUuid()));
         }
+        CallContext.current().putContextParameter(KubernetesCluster.class, cluster.getUuid());
         return cluster;
     }
 
