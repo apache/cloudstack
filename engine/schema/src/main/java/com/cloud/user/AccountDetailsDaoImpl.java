@@ -23,6 +23,7 @@ import java.util.Optional;
 
 import javax.inject.Inject;
 
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
@@ -40,6 +41,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 
 public class AccountDetailsDaoImpl extends GenericDaoBase<AccountDetailVO, Long> implements AccountDetailsDao, ScopedConfigStorage {
     protected final SearchBuilder<AccountDetailVO> accountSearch;
@@ -119,7 +121,7 @@ public class AccountDetailsDaoImpl extends GenericDaoBase<AccountDetailVO, Long>
     public String getConfigValue(long id, ConfigKey<?> key) {
         // check if account level setting is configured
         AccountDetailVO vo = findDetail(id, key.key());
-        String value = vo == null ? null : vo.getValue();
+        String value = vo == null ? null : getActualValue(vo);
         if (value != null) {
             return value;
         }
@@ -140,7 +142,7 @@ public class AccountDetailsDaoImpl extends GenericDaoBase<AccountDetailVO, Long>
                 while (domain != null) {
                     DomainDetailVO domainVO = _domainDetailsDao.findDetail(domain.getId(), key.key());
                     if (domainVO != null) {
-                        value = domainVO.getValue();
+                        value = _domainDetailsDao.getActualValue(domainVO);
                         break;
                     } else if (domain.getParent() != null) {
                         domain = _domainDao.findById(domain.getParent());
@@ -151,5 +153,14 @@ public class AccountDetailsDaoImpl extends GenericDaoBase<AccountDetailVO, Long>
             }
         }
         return value;
+    }
+
+    @Override
+    public String getActualValue(AccountDetailVO accountDetailVO) {
+        ConfigurationVO configurationVO = _configDao.findByName(accountDetailVO.getName());
+        if (configurationVO != null && configurationVO.isEncrypted()) {
+            return DBEncryptionUtil.decrypt(accountDetailVO.getValue());
+        }
+        return accountDetailVO.getValue();
     }
 }
