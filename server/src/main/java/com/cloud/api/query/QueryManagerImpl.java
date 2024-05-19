@@ -100,6 +100,7 @@ import org.apache.cloudstack.api.command.admin.storage.ListStorageTagsCmd;
 import org.apache.cloudstack.api.command.admin.storage.heuristics.ListSecondaryStorageSelectorsCmd;
 import org.apache.cloudstack.api.command.admin.template.ListTemplatesCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
+import org.apache.cloudstack.api.command.admin.vm.FindAffectedVmsForStorageScopeChangeCmd;
 import org.apache.cloudstack.api.command.admin.zone.ListZonesCmdByAdmin;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
@@ -155,6 +156,7 @@ import org.apache.cloudstack.api.response.StorageTagResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VirtualMachineResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.BackupOfferingVO;
@@ -243,8 +245,10 @@ import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DedicatedResourceVO;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
@@ -592,6 +596,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private StoragePoolHostDao storagePoolHostDao;
+
+    @Inject
+    private ClusterDao clusterDao;
+
 
     private SearchCriteria<ServiceOfferingJoinVO> getMinimumCpuServiceOfferingJoinSearchCriteria(int cpu) {
         SearchCriteria<ServiceOfferingJoinVO> sc = _srvOfferingJoinDao.createSearchCriteria();
@@ -1144,6 +1152,41 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 result.first().toArray(new UserVmJoinVO[result.first().size()]));
 
         response.setResponses(vmResponses, result.second());
+        return response;
+    }
+
+    @Override
+    public ListResponse<VirtualMachineResponse> findAffectedVmsForStorageScopeChange(FindAffectedVmsForStorageScopeChangeCmd cmd) {
+        Long poolId = cmd.getStorageId();
+        StoragePoolVO pool = storagePoolDao.findById(poolId);
+        if (pool == null) {
+            throw new IllegalArgumentException("Unable to find storage pool with ID: " + poolId);
+        }
+        if (!pool.getStatus().equals(StoragePoolStatus.Disabled)) {
+            throw new InvalidParameterValueException("Scope change of Storage pool is only allowed in Disabled state");
+        }
+        ListResponse<VirtualMachineResponse> response = new ListResponse<>();
+        if (pool.getScope() != ScopeType.ZONE) {
+            response.setResponses(null, 0);
+            return response;
+        }
+
+        Pair<List<VMInstanceVO>, Integer> vms = _vmInstanceDao.listByVmsNotInClusterUsingPool(cmd.getClusterIdForScopeChange(), poolId);
+        List<VirtualMachineResponse> responsesList = new ArrayList<>();
+        for (VMInstanceVO vm : vms.first()) {
+            VirtualMachineResponse resp = new VirtualMachineResponse();
+            resp.setObjectName(VirtualMachine.class.getSimpleName().toLowerCase());
+            resp.setId(vm.getUuid());
+            resp.setVmType(vm.getType().toString());
+            HostVO host = hostDao.findById(vm.getHostId());
+            resp.setHostId(host.getUuid());
+            resp.setHostName(host.getName());
+            ClusterVO cluster = clusterDao.findById(host.getClusterId());
+            resp.setClusterId(cluster.getUuid());
+            resp.setClusterName(cluster.getName());
+            responsesList.add(resp);
+        }
+        response.setResponses(responsesList, vms.second());
         return response;
     }
 
