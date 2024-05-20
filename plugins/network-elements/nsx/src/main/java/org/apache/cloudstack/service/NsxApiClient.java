@@ -48,13 +48,13 @@ import com.vmware.nsx_policy.model.GroupListResult;
 import com.vmware.nsx_policy.model.ICMPTypeServiceEntry;
 import com.vmware.nsx_policy.model.L4PortSetServiceEntry;
 import com.vmware.nsx_policy.model.LBAppProfileListResult;
+import com.vmware.nsx_policy.model.LBIcmpMonitorProfile;
 import com.vmware.nsx_policy.model.LBMonitorProfileListResult;
 import com.vmware.nsx_policy.model.LBPool;
 import com.vmware.nsx_policy.model.LBPoolListResult;
 import com.vmware.nsx_policy.model.LBPoolMember;
 import com.vmware.nsx_policy.model.LBService;
 import com.vmware.nsx_policy.model.LBTcpMonitorProfile;
-import com.vmware.nsx_policy.model.LBUdpMonitorProfile;
 import com.vmware.nsx_policy.model.LBVirtualServer;
 import com.vmware.nsx_policy.model.LBVirtualServerListResult;
 import com.vmware.nsx_policy.model.LocaleServicesListResult;
@@ -128,7 +128,7 @@ public class NsxApiClient {
     // TODO: Pass as global / zone-level setting?
     protected static final String NSX_LB_PASSIVE_MONITOR = "/infra/lb-monitor-profiles/default-passive-lb-monitor";
     protected static final String TCP_MONITOR_PROFILE = "LBTcpMonitorProfile";
-    protected static final String UDP_MONITOR_PROFILE = "LBUdpMonitorProfile";
+    protected static final String ICMP_MONITOR_PROFILE = "LBIcmpMonitorProfile";
     protected static final String NAT_ID = "USER";
 
     private enum PoolAllocation { ROUTING, LB_SMALL, LB_MEDIUM, LB_LARGE, LB_XLARGE }
@@ -680,13 +680,10 @@ public class NsxApiClient {
                     .build();
             lbActiveMonitor.patch(lbMonitorProfileId, lbTcpMonitorProfile);
         } else if ("UDP".equals(protocol.toUpperCase(Locale.ROOT))) {
-            LBUdpMonitorProfile lbUdpMonitorProfile = new LBUdpMonitorProfile.Builder(UDP_MONITOR_PROFILE)
+            LBIcmpMonitorProfile icmpMonitorProfile = new LBIcmpMonitorProfile.Builder(ICMP_MONITOR_PROFILE)
                     .setDisplayName(lbMonitorProfileId)
-                    .setMonitorPort(Long.parseLong(port))
-                    .setSend("")
-                    .setReceive("")
                     .build();
-            lbActiveMonitor.patch(lbMonitorProfileId, lbUdpMonitorProfile);
+            lbActiveMonitor.patch(lbMonitorProfileId, icmpMonitorProfile);
         }
 
         LBMonitorProfileListResult listResult = listLBActiveMonitors(lbActiveMonitor);
