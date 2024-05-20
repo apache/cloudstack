@@ -32,6 +32,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.storage.VMTemplateVO;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.framework.ca.Certificate;
@@ -685,7 +686,8 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.StartRequested);
         DeployDestination dest = null;
         try {
-            dest = plan(domainId, accountId);
+            VMTemplateVO clusterTemplate = templateDao.findById(kubernetesCluster.getTemplateId());
+            dest = plan(domainId, accountId, clusterTemplate.getHypervisorType());
         } catch (InsufficientCapacityException e) {
             logTransitStateAndThrow(Level.ERROR, String.format("Provisioning the cluster failed due to insufficient capacity in the Kubernetes cluster: %s", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed, e);
         }

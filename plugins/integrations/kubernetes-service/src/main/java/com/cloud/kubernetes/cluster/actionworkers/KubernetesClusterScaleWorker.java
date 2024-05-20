@@ -30,6 +30,7 @@ import javax.inject.Inject;
 
 import com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType;
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.storage.VMTemplateVO;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -331,11 +332,12 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         }
         if (newVmRequiredCount > 0) {
             final DataCenter zone = dataCenterDao.findById(kubernetesCluster.getZoneId());
+            VMTemplateVO clusterTemplate = templateDao.findById(kubernetesCluster.getTemplateId());
             try {
                 if (originalState.equals(KubernetesCluster.State.Running)) {
-                    plan(newVmRequiredCount, zone, clusterServiceOffering, kubernetesCluster.getDomainId(), kubernetesCluster.getAccountId());
+                    plan(newVmRequiredCount, zone, clusterServiceOffering, kubernetesCluster.getDomainId(), kubernetesCluster.getAccountId(), clusterTemplate.getHypervisorType());
                 } else {
-                    plan(kubernetesCluster.getTotalNodeCount() + newVmRequiredCount, zone, clusterServiceOffering, kubernetesCluster.getDomainId(), kubernetesCluster.getAccountId());
+                    plan(kubernetesCluster.getTotalNodeCount() + newVmRequiredCount, zone, clusterServiceOffering, kubernetesCluster.getDomainId(), kubernetesCluster.getAccountId(), clusterTemplate.getHypervisorType());
                 }
             } catch (InsufficientCapacityException e) {
                 logTransitStateToFailedIfNeededAndThrow(Level.WARN, String.format("Scaling failed for Kubernetes cluster : %s in zone : %s, insufficient capacity", kubernetesCluster.getName(), zone.getName()));

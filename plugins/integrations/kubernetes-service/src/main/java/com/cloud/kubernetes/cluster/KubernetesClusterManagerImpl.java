@@ -558,7 +558,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     private DeployDestination plan(final long nodesCount, final DataCenter zone, final ServiceOffering offering,
-                                   final Long domainId, final Long accountId) throws InsufficientServerCapacityException {
+                                   final Long domainId, final Long accountId, Hypervisor.HypervisorType hypervisorType) throws InsufficientServerCapacityException {
         final int cpu_requested = offering.getCpu() * offering.getSpeed();
         final long ram_requested = offering.getRamSize() * 1024L * 1024L;
         boolean useDedicatedHosts = false;
@@ -578,6 +578,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
         if (hosts.isEmpty()) {
             hosts = resourceManager.listAllHostsInOneZoneByType(Host.Type.Routing, zone.getId());
+        }
+        if (hypervisorType != null) {
+            hosts = hosts.stream().filter(x -> x.getHypervisorType() == hypervisorType).collect(Collectors.toList());
         }
         final Map<String, Pair<HostVO, Integer>> hosts_with_resevered_capacity = new ConcurrentHashMap<String, Pair<HostVO, Integer>>();
         for (HostVO h : hosts) {
@@ -1412,6 +1415,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 CONTROL.name(), controlNodeCount, ETCD.name(), etcdNodes);
         final Account owner = accountService.getActiveAccountById(cmd.getEntityOwnerId());
         final KubernetesSupportedVersion clusterKubernetesVersion = kubernetesSupportedVersionDao.findById(cmd.getKubernetesVersionId());
+        final Hypervisor.HypervisorType hypervisor = cmd.getHypervisorType();
 
         Map<String, Long> serviceOfferingNodeTypeMap = cmd.getServiceOfferingNodeTypeMap();
         Long defaultServiceOfferingId = cmd.getServiceOfferingId();
@@ -1424,7 +1428,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 accountId = account.getId();
             }
         }
-        Hypervisor.HypervisorType hypervisorType = getHypervisorTypeAndValidateNodeDeployments(serviceOfferingNodeTypeMap, defaultServiceOfferingId, nodeTypeCount, zone, domainId, accountId);
+        Hypervisor.HypervisorType hypervisorType = getHypervisorTypeAndValidateNodeDeployments(serviceOfferingNodeTypeMap, defaultServiceOfferingId, nodeTypeCount, zone, domainId, accountId, hypervisor);
 
         SecurityGroup securityGroup = null;
         if (zone.isSecurityGroupEnabled()) {
@@ -1510,8 +1514,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     protected Hypervisor.HypervisorType getHypervisorTypeAndValidateNodeDeployments(Map<String, Long> serviceOfferingNodeTypeMap,
                                                                                     Long defaultServiceOfferingId,
                                                                                     Map<String, Long> nodeTypeCount,
-                                                                                    DataCenter zone, Long domainId, Long accountId) {
-        Hypervisor.HypervisorType hypervisorType = null;
+                                                                                    DataCenter zone, Long domainId, Long accountId,
+                                                                                    Hypervisor.HypervisorType hypervisorType) {
+        Hypervisor.HypervisorType deploymentHypervisor = null;
         for (String nodeType : CLUSTER_NODES_TYPES_LIST) {
             if (!nodeTypeCount.containsKey(nodeType)) {
                 continue;
@@ -1524,18 +1529,23 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                         (!serviceOfferingNodeTypeMap.containsKey(ETCD.name()) || nodes == 0)) {
                     continue;
                 }
-                DeployDestination deployDestination = plan(nodes, zone, serviceOffering, domainId, accountId);
+                DeployDestination deployDestination = plan(nodes, zone, serviceOffering, domainId, accountId, hypervisorType);
                 if (deployDestination.getCluster() == null) {
                     logAndThrow(Level.ERROR, String.format("Creating Kubernetes cluster failed due to error while finding suitable deployment plan for cluster in zone : %s", zone.getName()));
                 }
-                if (hypervisorType == null) {
-                    hypervisorType = deployDestination.getCluster().getHypervisorType();
+                if (deploymentHypervisor == null) {
+                    deploymentHypervisor = deployDestination.getCluster().getHypervisorType();
+                    if (hypervisorType != deploymentHypervisor) {
+                        String msg = String.format("The hypervisor type planned for the CKS cluster deployment %s is different " +
+                                "from the selected hypervisor %s", deployDestination.getCluster().getHypervisorType(), hypervisorType);
+                        LOGGER.warn(msg);
+                    }
                 }
             } catch (InsufficientCapacityException e) {
                 logAndThrow(Level.ERROR, String.format("Creating Kubernetes cluster failed due to insufficient capacity for %d nodes cluster in zone : %s with service offering : %s", nodes, zone.getName(), serviceOffering.getName()));
             }
         }
-        return hypervisorType;
+        return deploymentHypervisor;
     }
 
     private SecurityGroup getOrCreateSecurityGroupForAccount(Account owner) {

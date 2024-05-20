@@ -25,6 +25,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.kubernetes.cluster.KubernetesClusterHelper;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -170,6 +171,9 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.CLUSTER_TYPE, type = CommandType.STRING, description = "type of the cluster: CloudManaged, ExternalManaged. The default value is CloudManaged.", since="4.19.0")
     private String clusterType;
 
+    @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "(optional) the hypervisor on which to deploy the CKS cluster nodes.")
+    private String hypervisor;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -276,6 +280,10 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
 
     public Map<String, Long> getTemplateNodeTypeMap() {
         return kubernetesClusterHelper.getTemplateNodeTypeMap(templateNodeTypeMap);
+    }
+
+    public Hypervisor.HypervisorType getHypervisorType() {
+        return hypervisor == null ? null : Hypervisor.HypervisorType.getType(hypervisor);
     }
 
     /////////////////////////////////////////////////////

@@ -65,6 +65,25 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-form-item ref="hypervisor" name="hypervisor">
+          <template #label>
+            <tooltip-label :title="$t('label.hypervisor')" :tooltip="apiParams.hypervisor.description"/>
+          </template>
+          <a-select
+            v-model:value="form.hypervisor"
+            :loading="hypervisorLoading"
+            :placeholder="apiParams.hypervisor.description"
+            showSearch
+            optionFilterProp="label"
+            @change="val => { handleZoneHypervisorChange(val) }">
+            :filterOption="(input, option) => {
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option v-for="(opt, optIndex) in selectedZoneHypervisors" :key="optIndex" :label="opt.name || opt.description">
+              {{ opt.name || opt.description }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
         <a-form-item name="kubernetesversionid" ref="kubernetesversionid">
           <template #label>
             <tooltip-label :title="$t('label.kubernetesversionid')" :tooltip="apiParams.kubernetesversionid.description"/>
@@ -386,7 +405,9 @@ export default {
       keyPairLoading: false,
       loading: false,
       templates: [],
-      templateLoading: false
+      templateLoading: false,
+      selectedZoneHypervisors: [],
+      hypervisorLoading: false
     }
   },
   beforeCreate () {
@@ -408,7 +429,8 @@ export default {
       this.form = reactive({
         controlnodes: 3,
         size: 1,
-        noderootdisksize: 8
+        noderootdisksize: 8,
+        hypervisor: null
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.kubecluster.name') }],
@@ -483,6 +505,7 @@ export default {
       this.selectedZone = zone
       this.fetchKubernetesVersionData()
       this.fetchNetworkData()
+      this.fetchZoneHypervisors()
     },
     fetchKubernetesVersionData () {
       this.kubernetesVersions = []
@@ -595,6 +618,24 @@ export default {
         }
       })
     },
+    fetchZoneHypervisors () {
+      const params = {
+        zoneid: this.selectedZone.id
+      }
+      this.hypervisorLoading = true
+
+      api('listHypervisors', params).then(json => {
+        const listResponse = json.listhypervisorsresponse.hypervisor || []
+        if (listResponse) {
+          this.selectedZoneHypervisors = listResponse
+        }
+      }).finally(() => {
+        this.hypervisorLoading = false
+      })
+    },
+    handleZoneHypervisorChange (index) {
+      this.form.hypervisor = index
+    },
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
@@ -610,6 +651,9 @@ export default {
           serviceofferingid: this.serviceOfferings[values.serviceofferingid].id,
           size: values.size,
           clustertype: 'CloudManaged'
+        }
+        if (values.hypervisor !== null) {
+          params.hypervisor = this.selectedZoneHypervisors[values.hypervisor].name.toLowerCase()
         }
         var advancedOfferings = 0
         if (this.isValidValueForKey(values, 'advancedmode') && values.advancedmode && this.isValidValueForKey(values, 'controlofferingid') && this.arrayHasItems(this.serviceOfferings) && this.serviceOfferings[values.controlofferingid].id != null) {
