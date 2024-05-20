@@ -43,10 +43,10 @@ public class ApiServerTest {
     @InjectMocks
     ApiServer apiServer = new ApiServer();
 
-    private final String PROJECT_ACCESSIBLE_CMD_NAME = "projectcommand";
-    private final String PROJECT_INACCESSIBLE_CMD_NAME = "noprojectcommand";
-    private final String ACCESSIBLE_CMD_NAME = "command";
-    private final String INACCESSIBLE_CMD_NAME = "nocommand";
+    private static final String PROJECT_ACCESSIBLE_CMD_NAME = "projectcommand";
+    private static final String PROJECT_INACCESSIBLE_CMD_NAME = "noprojectcommand";
+    private static final String ACCESSIBLE_CMD_NAME = "command";
+    private static final String INACCESSIBLE_CMD_NAME = "nocommand";
     private User user = Mockito.mock(User.class);
     private CallContext callContext = Mockito.mock(CallContext.class);
     MockedStatic<CallContext> mockedCallContext;
