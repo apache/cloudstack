@@ -60,6 +60,8 @@ public class KubernetesClusterHelperImpl extends AdapterBase implements Kubernet
         if (kubernetesCluster != null) {
             msg += String.format(": %s", kubernetesCluster.getName());
         }
+        msg += ". Use Instance delete option from Kubernetes cluster details or scale API for " +
+                "Kubernetes clusters with 'nodeids' to destroy the instance.";
         throw new CloudRuntimeException(msg);
     }
 
