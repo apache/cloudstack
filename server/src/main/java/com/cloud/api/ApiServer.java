@@ -47,6 +47,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -1223,6 +1224,27 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         return true;
     }
 
+    protected boolean checkCommandAccessWithCheckers(final User user, final String commandName) throws
+            PermissionDeniedException {
+        List<APIChecker> accessCheckers = apiAccessCheckers;
+        if (CallContext.current().getProject() != null) {
+            APIChecker projectRoleChecker = apiAccessCheckers.stream()
+                    .filter(APIChecker::isProjectRoleBasedChecker).findFirst().orElse(null);
+            if (projectRoleChecker != null) {
+                if (projectRoleChecker.checkAccess(user, commandName)) {
+                    return true;
+                }
+                accessCheckers = apiAccessCheckers.stream()
+                        .filter(c -> !c.isProjectRoleBasedChecker())
+                        .collect(Collectors.toList());
+            }
+        }
+        for (final APIChecker apiChecker : accessCheckers) {
+            apiChecker.checkAccess(user, commandName);
+        }
+        return true;
+    }
+
     private void checkCommandAvailable(final User user, final String commandName, final InetAddress remoteAddress) throws PermissionDeniedException {
         if (user == null) {
             throw new PermissionDeniedException("User is null for role based API access check for command" + commandName);
@@ -1239,11 +1261,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 throw new OriginDeniedException("Calls from disallowed origin", account, remoteAddress);
                 }
         }
-
-
-        for (final APIChecker apiChecker : apiAccessCheckers) {
-            apiChecker.checkAccess(user, commandName);
-        }
+        checkCommandAccessWithCheckers(user, commandName);
     }
 
     @Override

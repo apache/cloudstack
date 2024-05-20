@@ -16,12 +16,12 @@
 // under the License.
 package org.apache.cloudstack.acl;
 
+import java.util.List;
+
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.component.Adapter;
-
-import java.util.List;
 
 /**
  * APICheckers is designed to verify the ownership of resources and to control the access to APIs.
@@ -43,4 +43,8 @@ public interface APIChecker extends Adapter {
      */
     List<String> getApisAllowedToUser(Role role, User user, List<String> apiNames) throws PermissionDeniedException;
     boolean isEnabled();
+
+    default boolean isProjectRoleBasedChecker() {
+        return false;
+    }
 }

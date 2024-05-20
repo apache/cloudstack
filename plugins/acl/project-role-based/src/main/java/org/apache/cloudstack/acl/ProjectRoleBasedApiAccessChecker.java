@@ -21,8 +21,8 @@ import java.util.Map;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
-import org.apache.cloudstack.acl.RolePermissionEntity.Permission;
 
+import org.apache.cloudstack.acl.RolePermissionEntity.Permission;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
@@ -196,5 +196,10 @@ public class ProjectRoleBasedApiAccessChecker  extends AdapterBase implements AP
     @Inject
     public void setServices(List<PluggableService> services) {
         this.services = services;
+    }
+
+    @Override
+    public boolean isProjectRoleBasedChecker() {
+        return true;
     }
 }
