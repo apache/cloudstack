@@ -44,6 +44,7 @@ import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.BaseCmd;
@@ -864,13 +865,15 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 LOGGER.info(String.format("Creating network for account ID: %s from the network offering ID: %s as part of Kubernetes cluster: %s deployment process", owner.getUuid(), networkOffering.getUuid(), clusterName));
             }
 
+            CallContext networkContext = CallContext.register(CallContext.current(), ApiCommandResourceType.Network);
             try {
-                network = networkMgr.createGuestNetwork(networkOffering.getId(), clusterName + "-network", owner.getAccountName() + "-network",
-                        null, null, null, false, null, owner, null, physicalNetwork, zone.getId(),
-                        ControlledEntity.ACLType.Account, null, null, null, null, true, null,
-                        null, null, null, null, null, null, null, null, null);
+                network = networkService.createGuestNetwork(networkOffering.getId(), clusterName + "-network",
+                        owner.getAccountName() + "-network", owner, physicalNetwork, zone.getId(),
+                        ControlledEntity.ACLType.Account);
             } catch (ConcurrentOperationException | InsufficientCapacityException | ResourceAllocationException e) {
                 logAndThrow(Level.ERROR, String.format("Unable to create network for the Kubernetes cluster: %s", clusterName));
+            } finally {
+                CallContext.unregister();
             }
         }
         return network;
