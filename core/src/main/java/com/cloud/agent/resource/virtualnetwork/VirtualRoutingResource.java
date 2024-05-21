@@ -178,7 +178,7 @@ public class VirtualRoutingResource {
 
     protected Answer execute(final HandleCksIsoCommand cmd) {
         String routerIp = getRouterSshControlIp(cmd);
-        s_logger.info("Attempting to mount CKS ISO on Virtual Router");
+        logger.info("Attempting to mount CKS ISO on Virtual Router");
         ExecutionResult result = _vrDeployer.executeInVR(routerIp, VRScripts.CKS_ISO_MOUNT_SERVE, String.valueOf(cmd.isMountCksIso()));
         return new Answer(cmd, result.isSuccess(), result.getDetails());
     }

@@ -31,7 +31,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.vm.RebootVMCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Level;
+import org.apache.logging.log4j.Level;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -77,7 +77,7 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
             updateKubernetesCluster(kubernetesCluster.getId(), nodesAddedAndMemory);
             if (nodeIds.size() != nodesAdded) {
                 String msg = String.format("Not every node was added to the CKS cluster %s, nodes added: %s out of %s", kubernetesCluster.getUuid(), nodesAdded, nodeIds.size());
-                LOGGER.info(msg);
+                logger.info(msg);
                 detachCksIsoFromNodesAddedToCluster(nodeIds, kubernetesCluster.getId(), mountCksIsoOnVr);
                 stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
                 ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), CallContext.current().getCallingAccountId(),
@@ -105,7 +105,7 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
         if (mountCksIsoOnVr) {
             detachIsoOnVirtualRouter(kubernetesClusterId);
         } else {
-            LOGGER.info("Detaching CKS ISO from the nodes");
+            logger.info("Detaching CKS ISO from the nodes");
             List<UserVm> vms = nodeIds.stream().map(nodeId -> userVmDao.findById(nodeId)).collect(Collectors.toList());
             detachIsoKubernetesVMs(vms);
         }
@@ -120,7 +120,7 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
             networkService.handleCksIsoOnNetworkVirtualRouter(virtualRouterId, false);
         } catch (ResourceUnavailableException e) {
             String err = String.format("Error trying to handle ISO %s on virtual router %s", isoId, virtualRouterId);
-            LOGGER.error(err);
+            logger.error(err);
             throw new CloudRuntimeException(err);
         }
 
@@ -128,7 +128,7 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
             templateService.detachIso(virtualRouterId, isoId, true, true);
         } catch (CloudRuntimeException e) {
             String err = String.format("Error trying to detach ISO %s from virtual router %s", isoId, virtualRouterId);
-            LOGGER.error(err, e);
+            logger.error(err, e);
         }
     }
 
@@ -136,7 +136,7 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
         if (mountCksIsoOnVr) {
             attachAndServeIsoOnVirtualRouter(kubernetesClusterId);
         } else {
-            LOGGER.info("Attaching CKS ISO to the nodes");
+            logger.info("Attaching CKS ISO to the nodes");
             List<UserVm> vms = nodeIds.stream().map(nodeId -> userVmDao.findById(nodeId)).collect(Collectors.toList());
             attachIsoKubernetesVMs(vms);
         }
@@ -151,7 +151,7 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
             templateService.attachIso(isoId, virtualRouterId, true, true);
         } catch (CloudRuntimeException e) {
             String err = String.format("Error trying to attach ISO %s to virtual router %s", isoId, virtualRouterId);
-            LOGGER.error(err);
+            logger.error(err);
             throw new CloudRuntimeException(err);
         }
 
@@ -159,7 +159,7 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
             networkService.handleCksIsoOnNetworkVirtualRouter(virtualRouterId, true);
         } catch (ResourceUnavailableException e) {
             String err = String.format("Error trying to handle ISO %s on virtual router %s", isoId, virtualRouterId);
-            LOGGER.error(err);
+            logger.error(err);
             throw new CloudRuntimeException(err);
         }
     }
@@ -192,10 +192,10 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
                         msg, vm.getId(), ApiCommandResourceType.VirtualMachine.toString(), 0);
             }
             if (Boolean.FALSE.equals(result.first())) {
-                LOGGER.error(String.format("Failed to add node %s [%s] to Kubernetes cluster : %s", vm.getName(), vm.getUuid(), kubernetesCluster.getName()));
+                logger.error(String.format("Failed to add node %s [%s] to Kubernetes cluster : %s", vm.getName(), vm.getUuid(), kubernetesCluster.getName()));
             }
             if (System.currentTimeMillis() > addNodeTimeoutTime) {
-                LOGGER.error(String.format("Failed to add node %s to Kubernetes cluster : %s", nodeId, kubernetesCluster.getName()));
+                logger.error(String.format("Failed to add node %s to Kubernetes cluster : %s", nodeId, kubernetesCluster.getName()));
             }
             nodeIndex = result.second();
         }
@@ -229,7 +229,7 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
             finalNodeIds.add(nodeId);
         } catch (ResourceUnavailableException | NetworkRuleConflictException | NoSuchFieldException |
                  InsufficientCapacityException | IllegalAccessException e) {
-            LOGGER.error(String.format("Failed to activate API port forwarding rules for the Kubernetes cluster : %s", kubernetesCluster.getName()));
+            logger.error(String.format("Failed to activate API port forwarding rules for the Kubernetes cluster : %s", kubernetesCluster.getName()));
             // remove added Firewall and PF rules
             revertNetworkRules(network, nodeId, sshStartPort);
             return new Pair<>( false, nodeIndex);
@@ -262,12 +262,12 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
             Pair<Boolean, String> result = SshHelper.sshExecute(publicIp.getAddress().addr(), nodeSshPort, getControlNodeLoginUser(),
                     pkFile, null, command, 10000, 10000, 10 * 60 * 1000);
             if (Boolean.FALSE.equals(result.first())) {
-                LOGGER.error(String.format("Node with ID: %s cannot be added as a worker node as it does not have " +
+                logger.error(String.format("Node with ID: %s cannot be added as a worker node as it does not have " +
                         "the following dependencies: %s ", nodeId, result.second()));
                 return false;
             }
         } catch (Exception e) {
-            LOGGER.error(String.format("Failed to validate node with ID: %s", nodeId), e);
+            logger.error(String.format("Failed to validate node with ID: %s", nodeId), e);
             return false;
         }
         UserVmVO userVm = userVmDao.findById(nodeId);
@@ -281,10 +281,10 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
             Pair<Boolean, String> result = SshHelper.sshExecute(publicIp.getAddress().addr(), nodeSshPort, getControlNodeLoginUser(),
                     pkFile, null, command, 10000, 10000, 10 * 60 * 1000);
             if (Boolean.FALSE.equals(result.first())) {
-                LOGGER.error(String.format("Failed to cleanup previous applied userdata on node: %s; This may hamper to addition of the node to the cluster ", userVm.getName()));
+                logger.error(String.format("Failed to cleanup previous applied userdata on node: %s; This may hamper to addition of the node to the cluster ", userVm.getName()));
             }
         } catch (Exception e) {
-            LOGGER.error(String.format("Failed to cleanup previous applied userdata on node: %s; This may hamper to addition of the node to the cluster ", userVm.getName()), e);
+            logger.error(String.format("Failed to cleanup previous applied userdata on node: %s; This may hamper to addition of the node to the cluster ", userVm.getName()), e);
         }
     }
 

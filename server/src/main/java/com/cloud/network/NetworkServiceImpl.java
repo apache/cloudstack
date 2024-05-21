@@ -6149,7 +6149,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         DomainRouterVO router = routerDao.findById(virtualRouterId);
         if (router == null) {
             String err = String.format("Cannot find VR with ID %s", virtualRouterId);
-            s_logger.error(err);
+            logger.error(err);
             throw new CloudRuntimeException(err);
         }
         Commands commands = new Commands(Command.OnError.Stop);
@@ -6159,7 +6159,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
         Answer answer = commands.getAnswer("handleCksIso");
         if (answer == null || !answer.getResult()) {
-            s_logger.error(String.format("Could not handle the CKS ISO properly: %s", answer.getDetails()));
+            logger.error(String.format("Could not handle the CKS ISO properly: %s", answer.getDetails()));
             return false;
         }
         return true;

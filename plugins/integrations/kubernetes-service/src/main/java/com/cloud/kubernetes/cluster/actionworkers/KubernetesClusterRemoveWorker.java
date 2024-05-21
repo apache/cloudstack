@@ -75,14 +75,14 @@ public class KubernetesClusterRemoveWorker extends KubernetesClusterActionWorker
         for (Long nodeId : nodeIds) {
             UserVmVO vm = userVmDao.findById(nodeId);
             if (vm == null) {
-                LOGGER.debug(String.format("Couldn't find a VM with ID %s, skipping removal from Kubernetes cluster", nodeId));
+                logger.debug(String.format("Couldn't find a VM with ID %s, skipping removal from Kubernetes cluster", nodeId));
                 continue;
             }
             try {
                 removeNodeVmFromCluster(nodeId, vm.getDisplayName(), publicIp.getAddress().addr());
                 result &= removeNodePortForwardingRules(nodeId, network, vm);
                 if (System.currentTimeMillis() > removeNodeTimeoutTime) {
-                    LOGGER.error(String.format("Removal of node %s from Kubernetes cluster %s timed out", vm.getName(), kubernetesCluster.getName()));
+                    logger.error(String.format("Removal of node %s from Kubernetes cluster %s timed out", vm.getName(), kubernetesCluster.getName()));
                     result = false;
                     continue;
                 }
@@ -91,13 +91,13 @@ public class KubernetesClusterRemoveWorker extends KubernetesClusterActionWorker
                 removedMemory += offeringVO.getRamSize();
                 removedCores += offeringVO.getCpu();
                 String description = String.format("Successfully removed the node %s from Kubernetes cluster %s", vm.getUuid(), kubernetesCluster.getUuid());
-                LOGGER.info(description);
+                logger.info(description);
                 ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), CallContext.current().getCallingAccountId(),
                         EventVO.LEVEL_INFO, KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_NODES_REMOVE,
                         description, vm.getId(), ApiCommandResourceType.VirtualMachine.toString(), 0);
             } catch (Exception e) {
                 String err = String.format("Error trying to remove node %s from Kubernetes Cluster %s: %s", vm.getUuid(), kubernetesCluster.getUuid(), e.getMessage());
-                LOGGER.error(err, e);
+                logger.error(err, e);
                 result = false;
             }
         }
@@ -117,7 +117,7 @@ public class KubernetesClusterRemoveWorker extends KubernetesClusterActionWorker
                 }
             } catch (Exception e) {
                 String err = String.format("Failed to cleanup network rules for node %s, due to: %s", vm.getName(), e.getMessage());
-                LOGGER.error(err, e);
+                logger.error(err, e);
             }
         }
         return result;
@@ -131,7 +131,7 @@ public class KubernetesClusterRemoveWorker extends KubernetesClusterActionWorker
         Pair<Boolean, String> result = SshHelper.sshExecute(publicIp, CLUSTER_NODES_DEFAULT_START_SSH_PORT, getControlNodeLoginUser(),
                 pkFile, null, command, 10000, 10000, 10 * 60 * 1000);
         if (Boolean.FALSE.equals(result.first())) {
-            LOGGER.error(String.format("Node: %s failed to be gracefully drained as a worker node from cluster %s ", nodeName, kubernetesCluster.getName()));
+            logger.error(String.format("Node: %s failed to be gracefully drained as a worker node from cluster %s ", nodeName, kubernetesCluster.getName()));
         }
         List<PortForwardingRuleVO> nodePfRules = portForwardingRulesDao.listByVm(nodeId);
         Optional<PortForwardingRuleVO> nodeSshPort = nodePfRules.stream().filter(rule -> rule.getDestinationPortStart() == DEFAULT_SSH_PORT
@@ -142,13 +142,13 @@ public class KubernetesClusterRemoveWorker extends KubernetesClusterActionWorker
             result = SshHelper.sshExecute(publicIp, nodeSshPort.get().getSourcePortStart(), getControlNodeLoginUser(),
                     pkFile, null, command, 10000, 10000, 10 * 60 * 1000);
             if (Boolean.FALSE.equals(result.first())) {
-                LOGGER.error(String.format("Failed to reset node: %s from cluster %s ", nodeName, kubernetesCluster.getName()));
+                logger.error(String.format("Failed to reset node: %s from cluster %s ", nodeName, kubernetesCluster.getName()));
             }
             command = String.format("%s%s %s %s %s", scriptPath, removeNodeFromClusterScript, nodeName, "control", "delete");
             result = SshHelper.sshExecute(publicIp, CLUSTER_NODES_DEFAULT_START_SSH_PORT, getControlNodeLoginUser(),
                     pkFile, null, command, 10000, 10000, 10 * 60 * 1000);
             if (Boolean.FALSE.equals(result.first())) {
-                LOGGER.error(String.format("Node: %s failed to be gracefully delete node from cluster %s ", nodeName, kubernetesCluster.getName()));
+                logger.error(String.format("Node: %s failed to be gracefully delete node from cluster %s ", nodeName, kubernetesCluster.getName()));
             }
 
         }
