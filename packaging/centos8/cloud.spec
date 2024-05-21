@@ -36,7 +36,7 @@ Group:     System Environment/Libraries
 Source0:   %{name}-%{_maventag}.tgz
 BuildRoot: %{_tmppath}/%{name}-%{_maventag}-%{release}-build
 
-BuildRequires: java-11-openjdk-devel
+BuildRequires: (java-11-openjdk-devel or java-17-openjdk-devel)
 #BuildRequires: ws-commons-util
 BuildRequires: jpackage-utils
 BuildRequires: gcc
