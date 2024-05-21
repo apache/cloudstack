@@ -64,14 +64,9 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
     @Override
     public QuotaTariffVO addQuotaTariff(final QuotaTariffVO plan) {
         if (plan.getIdObj() != null) {
-            throw new IllegalStateException("The QuotaTariffVO being added should not have an Id set ");
+            throw new IllegalStateException("The QuotaTariffVO being added should not have an Id set.");
         }
-        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<QuotaTariffVO>() {
-            @Override
-            public QuotaTariffVO doInTransaction(final TransactionStatus status) {
-                return persist(plan);
-            }
-        });
+        return Transaction.execute(TransactionLegacy.USAGE_DB, (TransactionCallback<QuotaTariffVO>) status -> persist(plan));
     }
 
     @Override
