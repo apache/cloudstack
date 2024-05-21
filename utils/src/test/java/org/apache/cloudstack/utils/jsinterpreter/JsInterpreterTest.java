@@ -42,11 +42,9 @@ import javax.script.ScriptEngine;
 
 @RunWith(MockitoJUnitRunner.class)
 public class JsInterpreterTest {
-    private long timeout = 2000;
-
     @InjectMocks
     @Spy
-    JsInterpreter jsInterpreterSpy = new JsInterpreter(timeout);
+    JsInterpreter jsInterpreterSpy = new JsInterpreter();
 
     @Mock
     ExecutorService executorMock;
