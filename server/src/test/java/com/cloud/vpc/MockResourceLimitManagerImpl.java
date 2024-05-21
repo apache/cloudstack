@@ -279,6 +279,12 @@ public class MockResourceLimitManagerImpl extends ManagerBase implements Resourc
     }
 
     @Override
+    public void checkPrimaryStorageResourceLimit(Account owner, Boolean display, Long size,
+            DiskOffering diskOffering) {
+
+    }
+
+    @Override
     public void incrementVolumeResourceCount(long accountId, Boolean display, Long size, DiskOffering diskOffering) {
 
     }

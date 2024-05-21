@@ -776,7 +776,7 @@ class VirtualMachine:
         if response[0] == FAIL:
             raise Exception(response[1])
 
-    def restore(self, apiclient, templateid=None, expunge=None):
+    def restore(self, apiclient, templateid=None, diskofferingid=None, rootdisksize=None, expunge=None, details=None):
         """Restore the instance"""
         cmd = restoreVirtualMachine.restoreVirtualMachineCmd()
         cmd.virtualmachineid = self.id
@@ -784,6 +784,18 @@ class VirtualMachine:
             cmd.templateid = templateid
         if expunge:
             cmd.expunge = expunge
+        if diskofferingid:
+            cmd.diskofferingid = diskofferingid
+        if rootdisksize:
+            cmd.rootdisksize = rootdisksize
+        if expunge is not None:
+            cmd.expunge = expunge
+        if details:
+            for key, value in list(details.items()):
+                cmd.details.append({
+                    'key': key,
+                    'value': value
+                })
         return apiclient.restoreVirtualMachine(cmd)
 
     def get_ssh_client(

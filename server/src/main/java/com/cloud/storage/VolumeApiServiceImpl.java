@@ -1240,6 +1240,16 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         long currentSize = volume.getSize();
+        VolumeInfo volInfo = volFactory.getVolume(volume.getId());
+        boolean isEncryptionRequired = volume.getPassphraseId() != null;
+        if (newDiskOffering != null) {
+            isEncryptionRequired = newDiskOffering.getEncrypt();
+        }
+
+        DataStore dataStore = volInfo.getDataStore();
+        if (dataStore != null && dataStore.getDriver() instanceof PrimaryDataStoreDriver) {
+            newSize = ((PrimaryDataStoreDriver) dataStore.getDriver()).getVolumeSizeRequiredOnPool(newSize, null, isEncryptionRequired);
+        }
         validateVolumeResizeWithSize(volume, currentSize, newSize, shrinkOk, diskOffering, newDiskOffering);
 
         // Note: The storage plug-in in question should perform validation on the IOPS to check if a sufficient number of IOPS is available to perform
@@ -1982,6 +1992,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         newMaxIops = updateNewMaxIops[0];
         newHypervisorSnapshotReserve = updateNewHypervisorSnapshotReserve[0];
         long currentSize = volume.getSize();
+
+        VolumeInfo volInfo = volFactory.getVolume(volume.getId());
+
+        DataStore dataStore = volInfo.getDataStore();
+        if (dataStore != null && dataStore.getDriver() instanceof PrimaryDataStoreDriver) {
+            newSize = ((PrimaryDataStoreDriver) dataStore.getDriver()).getVolumeSizeRequiredOnPool(newSize, null, newDiskOffering.getEncrypt());
+        }
+
         validateVolumeResizeWithSize(volume, currentSize, newSize, shrinkOk, existingDiskOffering, newDiskOffering);
 
         /* If this volume has never been beyond allocated state, short circuit everything and simply update the database. */
