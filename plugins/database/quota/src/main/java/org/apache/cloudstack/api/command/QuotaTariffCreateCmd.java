@@ -54,10 +54,7 @@ public class QuotaTariffCreateCmd extends BaseCmd {
     @Parameter(name = "value", type = CommandType.DOUBLE, required = true, description = "The quota tariff value of the resource as per the default unit.")
     private Double value;
 
-    @Parameter(name = ApiConstants.ACTIVATION_RULE, type = CommandType.STRING, description = "Quota tariff's activation rule. It can receive a JS script that results in either " +
-            "a boolean or a numeric value: if it results in a boolean value, the tariff value will be applied according to the result; if it results in a numeric value, the " +
-            "numeric value will be applied; if the result is neither a boolean nor a numeric value, the tariff will not be applied. If the rule is not informed, the tariff " +
-            "value will be applied.", length = 65535)
+    @Parameter(name = ApiConstants.ACTIVATION_RULE, type = CommandType.STRING, description = org.apache.cloudstack.api.ApiConstants.PARAMETER_DESCRIPTION_ACTIVATION_RULE, length = 65535)
     private String activationRule;
 
     @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "The effective start date on/after which the quota tariff is effective. Inform null to " +
@@ -80,7 +77,7 @@ public class QuotaTariffCreateCmd extends BaseCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create new quota tariff.");
         }
 
-        QuotaTariffResponse response = responseBuilder.createQuotaTariffResponse(result);
+        QuotaTariffResponse response = responseBuilder.createQuotaTariffResponse(result, true);
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }

@@ -1142,6 +1142,11 @@ public class ApiConstants {
 
     public static final String NFS_MOUNT_OPTIONS = "nfsmountopts";
 
+    public static final String PARAMETER_DESCRIPTION_ACTIVATION_RULE = "Quota tariff's activation rule. It can receive a JS script that results in either " +
+            "a boolean or a numeric value: if it results in a boolean value, the tariff value will be applied according to the result; if it results in a numeric value, the " +
+            "numeric value will be applied; if the result is neither a boolean nor a numeric value, the tariff will not be applied. If the rule is not informed, the tariff " +
+            "value will be applied.";
+
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.
      * Qemu guests support "threads" and "native" options Since 0.8.8 ; "io_uring" is supported Since 6.3.0 (QEMU 5.0).
