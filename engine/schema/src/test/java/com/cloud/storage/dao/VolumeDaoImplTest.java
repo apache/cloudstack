@@ -40,7 +40,7 @@ import com.cloud.utils.db.TransactionLegacy;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(TransactionLegacy.class)
-@PowerMockIgnore("javax.management.*")
+@PowerMockIgnore({"javax.management.*", "javax.net.ssl.*"})
 public class VolumeDaoImplTest {
     @Mock
     private PreparedStatement preparedStatementMock;

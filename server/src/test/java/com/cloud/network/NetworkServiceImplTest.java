@@ -101,7 +101,7 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.exception.InvalidParameterValueException;
 
-@PowerMockIgnore("javax.management.*")
+@PowerMockIgnore({"javax.management.*", "javax.net.ssl.*"})
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ComponentContext.class, CallContext.class})
 public class NetworkServiceImplTest {

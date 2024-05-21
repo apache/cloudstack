@@ -95,7 +95,7 @@ import com.cloud.vm.dao.NicDao;
 import com.googlecode.ipv6.IPv6Network;
 import com.googlecode.ipv6.IPv6NetworkMask;
 
-@PowerMockIgnore("javax.management.*")
+@PowerMockIgnore({"javax.management.*", "javax.net.ssl.*"})
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ApiDBUtils.class, ActionEventUtils.class, UsageEventUtils.class})
 public class Ipv6ServiceImplTest {
