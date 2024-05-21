@@ -126,13 +126,14 @@
                         </executions>
                         <configuration>
                             <executable>java</executable>
+                            <workingDirectory>${basedir}/..</workingDirectory>
                             <includePluginDependencies>true</includePluginDependencies>
                             <arguments>
                                 <argument>--add-opens=java.base/java.lang=ALL-UNNAMED</argument>
                                 <argument>-classpath</argument>
                                 <classpath />
-                                <!-- db properties file -->
                                 <argument>com.cloud.upgrade.DatabaseCreator</argument>
+                                <!-- db properties file -->
                                 <argument>${basedir}/../utils/conf/db.properties</argument>
                                 <argument>${basedir}/../utils/conf/db.properties.override</argument>
                                 <!-- Create default schema and db table views -->
@@ -185,14 +186,19 @@
                                 <phase>process-resources</phase>
                                 <id>create-schema-simulator</id>
                                 <goals>
-                                    <goal>java</goal>
+                                    <goal>exec</goal>
                                 </goals>
                             </execution>
                         </executions>
                         <configuration>
-                            <mainClass>com.cloud.upgrade.DatabaseCreator</mainClass>
+                            <executable>java</executable>
+                            <workingDirectory>${basedir}/..</workingDirectory>
                             <includePluginDependencies>true</includePluginDependencies>
                             <arguments>
+                                <argument>--add-opens=java.base/java.lang=ALL-UNNAMED</argument>
+                                <argument>-classpath</argument>
+                                <classpath />
+                                <argument>com.cloud.upgrade.DatabaseCreator</argument>
                                 <!-- db properties file -->
                                 <argument>${basedir}/../utils/conf/db.properties</argument>
                                 <argument>${basedir}/../utils/conf/db.properties.override</argument>
@@ -236,14 +242,19 @@
                                 <phase>process-resources</phase>
                                 <id>create-schema-simulator</id>
                                 <goals>
-                                    <goal>java</goal>
+                                    <goal>exec</goal>
                                 </goals>
                             </execution>
                         </executions>
                         <configuration>
-                            <mainClass>com.cloud.upgrade.DatabaseCreator</mainClass>
+                            <executable>java</executable>
+                            <workingDirectory>${basedir}/..</workingDirectory>
                             <includePluginDependencies>true</includePluginDependencies>
                             <arguments>
+                                <argument>--add-opens=java.base/java.lang=ALL-UNNAMED</argument>
+                                <argument>-classpath</argument>
+                                <classpath />
+                                <argument>com.cloud.upgrade.DatabaseCreator</argument>
                                 <!-- db properties file -->
                                 <argument>${basedir}/../utils/conf/db.properties</argument>
                                 <argument>${basedir}/../utils/conf/db.properties.override</argument>
