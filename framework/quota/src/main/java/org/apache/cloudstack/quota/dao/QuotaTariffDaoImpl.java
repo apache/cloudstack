@@ -53,12 +53,7 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
 
     @Override
     public Boolean updateQuotaTariff(final QuotaTariffVO plan) {
-        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<Boolean>() {
-            @Override
-            public Boolean doInTransaction(final TransactionStatus status) {
-                return update(plan.getId(), plan);
-            }
-        });
+        return Transaction.execute(TransactionLegacy.USAGE_DB, (TransactionCallback<Boolean>) status -> update(plan.getId(), plan));
     }
 
     @Override
