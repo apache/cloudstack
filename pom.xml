@@ -55,7 +55,7 @@
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
 
         <!-- Build properties -->
-        <cs.jdk.version>17</cs.jdk.version>
+        <cs.jdk.version>11</cs.jdk.version>
         <cs.target.dir>target</cs.target.dir>
         <cs.replace.properties>build/replace.properties</cs.replace.properties>
         <argLine>-Djava.security.egd=file:/dev/./urandom -noverify --add-opens=java.base/java.lang=ALL-UNNAMED --add-exports=java.base/sun.security.x509=ALL-UNNAMED</argLine>
