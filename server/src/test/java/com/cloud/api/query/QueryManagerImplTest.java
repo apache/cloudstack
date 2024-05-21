@@ -20,16 +20,22 @@ package com.cloud.api.query;
 import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.api.query.vo.TemplateJoinVO;
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.EventJoinDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.network.Network;
 import com.cloud.network.VNF;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.server.ResourceTag;
 import com.cloud.storage.BucketVO;
+import com.cloud.storage.ScopeType;
+import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.dao.BucketDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -41,10 +47,14 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.VMInstanceDao;
+
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.command.admin.storage.ListObjectStoragePoolsCmd;
+import org.apache.cloudstack.api.command.admin.vm.FindAffectedVmsForStorageScopeChangeCmd;
 import org.apache.cloudstack.api.command.user.bucket.ListBucketsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.api.command.user.resource.ListDetailOptionsCmd;
@@ -52,9 +62,12 @@ import org.apache.cloudstack.api.response.DetailOptionsResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ObjectStoreResponse;
+import org.apache.cloudstack.api.response.VirtualMachineResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -65,6 +78,7 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -111,6 +125,18 @@ public class QueryManagerImplTest {
 
     @Mock
     ObjectStoreDao objectStoreDao;
+
+    @Mock
+    VMInstanceDao vmInstanceDao;
+
+    @Mock
+    PrimaryDataStoreDao storagePoolDao;
+
+    @Mock
+    HostDao hostDao;
+
+    @Mock
+    ClusterDao clusterDao;
 
     @Mock
     BucketDao bucketDao;
@@ -351,5 +377,44 @@ public class QueryManagerImplTest {
         when(bucketDao.createSearchBuilder()).thenReturn(sb);
         when(bucketDao.searchAndCount(any(), any())).thenReturn(new Pair<>(buckets, 2));
         queryManagerImplSpy.searchForBuckets(listBucketsCmd);
+    }
+
+    @Test
+    public void testFindAffectedVmsForScopeChange() {
+        Long clusterId = 1L;
+        Long poolId = 2L;
+        Long hostId = 3L;
+        FindAffectedVmsForStorageScopeChangeCmd cmd = new FindAffectedVmsForStorageScopeChangeCmd();
+        ReflectionTestUtils.setField(cmd, "clusterIdForScopeChange", clusterId);
+        ReflectionTestUtils.setField(cmd, "storageId", poolId);
+
+        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+        Mockito.when(pool.getStatus()).thenReturn(StoragePoolStatus.Up);
+        Mockito.when(pool.getScope()).thenReturn(ScopeType.ZONE);
+        Mockito.when(storagePoolDao.findById(poolId)).thenReturn(pool);
+        try {
+            queryManager.findAffectedVmsForStorageScopeChange(cmd);
+            Assert.fail();
+        } catch (InvalidParameterValueException ex) {
+            Assert.assertEquals(ex.getMessage(), "Scope change of Storage pool is only allowed in Disabled state");
+        }
+
+        VMInstanceVO instance = Mockito.mock(VMInstanceVO.class);
+        String instanceUuid = String.valueOf(UUID.randomUUID());
+        Pair<List<VMInstanceVO>, Integer> vms = new Pair<>(List.of(instance), 1);
+        HostVO host = Mockito.mock(HostVO.class);
+        ClusterVO cluster = Mockito.mock(ClusterVO.class);
+
+        Mockito.when(pool.getStatus()).thenReturn(StoragePoolStatus.Disabled);
+        Mockito.when(instance.getUuid()).thenReturn(instanceUuid);
+        Mockito.when(instance.getType()).thenReturn(VirtualMachine.Type.Instance);
+        Mockito.when(instance.getHostId()).thenReturn(hostId);
+        Mockito.when(vmInstanceDao.listByVmsNotInClusterUsingPool(clusterId, poolId)).thenReturn(vms);
+        Mockito.when(hostDao.findById(hostId)).thenReturn(host);
+        Mockito.when(host.getClusterId()).thenReturn(clusterId);
+        Mockito.when(clusterDao.findById(clusterId)).thenReturn(cluster);
+
+        ListResponse<VirtualMachineResponse> response = queryManager.findAffectedVmsForStorageScopeChange(cmd);
+        Assert.assertEquals(response.getResponses().get(0).getId(), instanceUuid);
     }
 }

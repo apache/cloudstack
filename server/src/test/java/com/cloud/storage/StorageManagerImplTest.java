@@ -29,9 +29,9 @@ import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.AccountManagerImpl;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 
 import org.apache.cloudstack.framework.config.ConfigDepot;
@@ -50,7 +50,6 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -323,10 +322,9 @@ public class StorageManagerImplTest {
         final ClusterVO cluster = new ClusterVO();
         Mockito.when(clusterDao.findById(1L)).thenReturn(cluster);
 
-        List<VolumeVO> volumes = new ArrayList<>();
-        volumes.add(new VolumeVO());
-        List<VirtualMachine.State> states = Arrays.asList(VirtualMachine.State.Starting, VirtualMachine.State.Running, VirtualMachine.State.Stopping, VirtualMachine.State.Migrating, VirtualMachine.State.Restoring);
-        Mockito.when(_volumeDao.listByPoolIdVMStatesNotInCluster(1L, states, 1L)).thenReturn(volumes);
+        VMInstanceVO instance = Mockito.mock(VMInstanceVO.class);
+        Pair<List<VMInstanceVO>, Integer> vms = new Pair<>(List.of(instance), 1);
+        Mockito.when(vmInstanceDao.listByVmsNotInClusterUsingPool(1L, 1L)).thenReturn(vms);
 
         ChangeStoragePoolScopeCmd cmd = mockChangeStoragePooolScopeCmd("CLUSTER");
         storageManagerImpl.changeStoragePoolScope(cmd);

@@ -24,7 +24,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.commons.collections.CollectionUtils;
@@ -32,8 +31,6 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.storage.ScopeType;
@@ -48,7 +45,6 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
-import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
@@ -56,9 +52,6 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
 public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements VolumeDao {
@@ -79,14 +72,9 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     protected GenericSearchBuilder<VolumeVO, SumCount> primaryStorageSearch2;
     protected GenericSearchBuilder<VolumeVO, SumCount> secondaryStorageSearch;
     private final SearchBuilder<VolumeVO> poolAndPathSearch;
-    protected SearchBuilder<VolumeVO> volumePoolNotInClusterSearch;
 
     @Inject
     ResourceTagDao tagsDao;
-    @Inject
-    HostDao hostDao;
-    @Inject
-    VMInstanceDao vmDao;
 
     protected static final String SELECT_VM_SQL = "SELECT DISTINCT instance_id from volumes v where v.host_id = ? and v.mirror_state = ?";
     // need to account for zone-wide primary storage where storage_pool has
@@ -508,19 +496,6 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         poolAndPathSearch.done();
     }
 
-    @PostConstruct
-    public void init() {
-        volumePoolNotInClusterSearch = createSearchBuilder();
-        volumePoolNotInClusterSearch.and("poolId", volumePoolNotInClusterSearch.entity().getPoolId(), Op.EQ);
-        SearchBuilder<VMInstanceVO> vmSearch = vmDao.createSearchBuilder();
-        vmSearch.and("vmStates", vmSearch.entity().getState(), Op.IN);
-        SearchBuilder<HostVO> hostSearch = hostDao.createSearchBuilder();
-        hostSearch.and("clusterId", hostSearch.entity().getClusterId(), SearchCriteria.Op.NEQ);
-        vmSearch.join("hostSearch", hostSearch, hostSearch.entity().getId(), vmSearch.entity().getHostId(), JoinType.INNER);
-        volumePoolNotInClusterSearch.join("vmSearch", vmSearch, vmSearch.entity().getId(), volumePoolNotInClusterSearch.entity().getInstanceId(), JoinType.INNER);
-        volumePoolNotInClusterSearch.done();
-    }
-
     @Override
     @DB()
     public Pair<Long, Long> getCountAndTotalByPool(long poolId) {
@@ -864,15 +839,6 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         }
         SearchCriteria<VolumeVO> sc = volumeIdSearch.create();
         sc.setParameters("idIN", ids.toArray());
-        return listBy(sc, null);
-    }
-
-    @Override
-    public List<VolumeVO> listByPoolIdVMStatesNotInCluster(long clusterId, List<VirtualMachine.State> states, long poolId) {
-        SearchCriteria<VolumeVO> sc = volumePoolNotInClusterSearch.create();
-        sc.setParameters("poolId", poolId);
-        sc.setParameters("vmSearch", "vmStates", states);
-        sc.setJoinParameters("hostSearch", "clusterId", clusterId);
         return listBy(sc, null);
     }
 }
