@@ -1286,34 +1286,18 @@ public class TransactionLegacy implements Closeable {
         config.setUsername("cloud");
         config.setPassword("cloud");
         config.setPoolName(database);
-
-        config.setMaximumPoolSize(250); // 250 connections
-        config.setIdleTimeout(30000); // 30 seconds
-        config.setMaxLifetime(600000); // 10 minutes
-
-        // Connection pool properties
-        config.setConnectionTimeout(20000); // 20 seconds in milliseconds
-        config.setMinimumIdle(5);        // Minimum number of idle connections in the pool
-        config.setKeepaliveTime(600000);    // Keepalive time in milliseconds (10 minutes)
-        //config.setConnectionTestQuery("/* ping */ SELECT 1"); // Connection test query
-        config.setIdleTimeout(300000); // 5 minutes
+        config.setDriverClassName("com.mysql.cj.jdbc.Driver");
+        config.setMaximumPoolSize(250);
+        config.setConnectionTimeout(1000);
+        config.setIdleTimeout(1000);
+        config.setKeepaliveTime(1000);
+        config.setMaxLifetime(1000);
         config.setTransactionIsolation("TRANSACTION_READ_COMMITTED");
-
-        // Standard datasource config for MySQL
+        config.setInitializationFailTimeout(-1L);
         config.addDataSourceProperty("cachePrepStmts", "true");
         config.addDataSourceProperty("prepStmtCacheSize", "250");
         config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
-        // Additional config for MySQL
-        config.addDataSourceProperty("useServerPrepStmts", "true");
-        config.addDataSourceProperty("useLocalSessionState", "true");
-        config.addDataSourceProperty("rewriteBatchedStatements", "true");
-        config.addDataSourceProperty("cacheResultSetMetadata", "true");
-        config.addDataSourceProperty("cacheServerConfiguration", "true");
-        config.addDataSourceProperty("elideSetAutoCommits", "true");
-        config.addDataSourceProperty("maintainTimeStats", "false");
-
-        HikariDataSource dataSource = new HikariDataSource(config);
-        return dataSource;
+        return new HikariDataSource(config);
     }
 
     private static String getDBHAParams(String dbName, Properties dbProps) {
