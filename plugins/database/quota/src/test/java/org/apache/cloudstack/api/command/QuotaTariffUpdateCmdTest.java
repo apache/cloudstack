@@ -60,8 +60,8 @@ public class QuotaTariffUpdateCmdTest extends TestCase {
         }
 
         Mockito.when(responseBuilder.updateQuotaTariffPlan(Mockito.eq(cmd))).thenReturn(tariff);
-        Mockito.when(responseBuilder.createQuotaTariffResponse(Mockito.eq(tariff))).thenReturn(new QuotaTariffResponse());
+        Mockito.when(responseBuilder.createQuotaTariffResponse(Mockito.eq(tariff), Mockito.eq(true))).thenReturn(new QuotaTariffResponse());
         cmd.execute();
-        Mockito.verify(responseBuilder, Mockito.times(1)).createQuotaTariffResponse(Mockito.eq(tariff));
+        Mockito.verify(responseBuilder, Mockito.times(1)).createQuotaTariffResponse(Mockito.eq(tariff), Mockito.eq(true));
     }
 }
