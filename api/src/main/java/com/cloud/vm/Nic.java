@@ -125,7 +125,7 @@ public interface Nic extends Identity, InternalIdentity {
     /**
      * @return the vm instance id that this nic belongs to.
      */
-    Long getInstanceId();
+    long getInstanceId();
 
     int getDeviceId();
 

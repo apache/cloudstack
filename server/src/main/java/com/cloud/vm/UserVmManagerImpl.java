@@ -1566,7 +1566,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         // check to see if nic is attached to VM
-        if (!nic.getInstanceId().equals(vmId)) {
+        if (nic.getInstanceId() != vmId) {
             throw new InvalidParameterValueException(nic + " is not a nic on " + vmInstance);
         }
 
@@ -1637,7 +1637,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Network existingdefaultnet = _networkModel.getDefaultNetworkForVm(vmId);
 
         //check to see if nic is attached to VM
-        if (!nic.getInstanceId().equals(vmId)) {
+        if (nic.getInstanceId() != vmId) {
             throw new InvalidParameterValueException(nic + " is not a nic on  " + vmInstance);
         }
         // if current default equals chosen new default, Throw an exception
