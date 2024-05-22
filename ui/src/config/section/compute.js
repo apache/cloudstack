@@ -612,6 +612,9 @@ export default {
           groupAction: true,
           popup: true,
           args: (record, store, group) => {
+            if (record.clustertype === 'CloudManaged') {
+              return []
+            }
             return (['Admin'].includes(store.userInfo.roletype) || store.features.allowuserexpungerecovervm)
               ? ['cleanup', 'expunge'] : ['cleanup']
           },
@@ -623,7 +626,7 @@ export default {
       name: 'autoscalevmgroup',
       title: 'label.autoscale.vm.groups',
       icon: 'fullscreen-outlined',
-      docHelp: 'adminguide/autoscale_without_netscaler.html',
+      docHelp: 'adminguide/autoscale_with_virtual_router.html',
       resourceType: 'AutoScaleVmGroup',
       permission: ['listAutoScaleVmGroups'],
       columns: (store) => {
