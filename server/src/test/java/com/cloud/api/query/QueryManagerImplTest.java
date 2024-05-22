@@ -18,8 +18,10 @@
 package com.cloud.api.query;
 
 import com.cloud.api.query.dao.TemplateJoinDao;
+import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.api.query.vo.TemplateJoinVO;
+import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.event.EventVO;
@@ -140,6 +142,9 @@ public class QueryManagerImplTest {
 
     @Mock
     BucketDao bucketDao;
+
+    @Mock
+    UserVmJoinDao userVmJoinDao;
 
     private AccountVO account;
     private UserVO user;
@@ -384,6 +389,9 @@ public class QueryManagerImplTest {
         Long clusterId = 1L;
         Long poolId = 2L;
         Long hostId = 3L;
+        Long vmId = 4L;
+        String vmName = "VM1";
+
         ListAffectedVmsForStorageScopeChangeCmd cmd = new ListAffectedVmsForStorageScopeChangeCmd();
         ReflectionTestUtils.setField(cmd, "clusterIdForScopeChange", clusterId);
         ReflectionTestUtils.setField(cmd, "storageId", poolId);
@@ -400,6 +408,7 @@ public class QueryManagerImplTest {
         }
 
         VMInstanceVO instance = Mockito.mock(VMInstanceVO.class);
+        UserVmJoinVO userVM = Mockito.mock(UserVmJoinVO.class);
         String instanceUuid = String.valueOf(UUID.randomUUID());
         Pair<List<VMInstanceVO>, Integer> vms = new Pair<>(List.of(instance), 1);
         HostVO host = Mockito.mock(HostVO.class);
@@ -409,12 +418,16 @@ public class QueryManagerImplTest {
         Mockito.when(instance.getUuid()).thenReturn(instanceUuid);
         Mockito.when(instance.getType()).thenReturn(VirtualMachine.Type.Instance);
         Mockito.when(instance.getHostId()).thenReturn(hostId);
+        Mockito.when(instance.getId()).thenReturn(vmId);
+        Mockito.when(userVM.getDisplayName()).thenReturn(vmName);
         Mockito.when(vmInstanceDao.listByVmsNotInClusterUsingPool(clusterId, poolId)).thenReturn(vms);
+        Mockito.when(userVmJoinDao.findById(vmId)).thenReturn(userVM);
         Mockito.when(hostDao.findById(hostId)).thenReturn(host);
         Mockito.when(host.getClusterId()).thenReturn(clusterId);
         Mockito.when(clusterDao.findById(clusterId)).thenReturn(cluster);
 
         ListResponse<VirtualMachineResponse> response = queryManager.listAffectedVmsForStorageScopeChange(cmd);
         Assert.assertEquals(response.getResponses().get(0).getId(), instanceUuid);
+        Assert.assertEquals(response.getResponses().get(0).getName(), vmName);
     }
 }
