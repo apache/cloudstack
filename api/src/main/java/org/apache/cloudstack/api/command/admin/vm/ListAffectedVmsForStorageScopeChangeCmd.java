@@ -30,12 +30,12 @@ import org.apache.cloudstack.api.response.VirtualMachineResponse;
 
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "findAffectedVmsForStorageScopeChange",
+@APICommand(name = "listAffectedVmsForStorageScopeChange",
         description = "List user and system VMs that need to be stopped and destroyed respectively for changing the scope of the storage pool from Zone to Cluster.",
         responseObject = VirtualMachineResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.1",
         authorized = {RoleType.Admin})
-public class FindAffectedVmsForStorageScopeChangeCmd extends BaseListCmd {
+public class ListAffectedVmsForStorageScopeChangeCmd extends BaseListCmd {
 
     @Parameter(name = ApiConstants.CLUSTER_ID,
             type = CommandType.UUID,
@@ -69,7 +69,7 @@ public class FindAffectedVmsForStorageScopeChangeCmd extends BaseListCmd {
 
     @Override
     public void execute() {
-        ListResponse<VirtualMachineResponse> response = _queryService.findAffectedVmsForStorageScopeChange(this);
+        ListResponse<VirtualMachineResponse> response = _queryService.listAffectedVmsForStorageScopeChange(this);
         response.setResponseName(getCommandName());
         response.setObjectName(VirtualMachine.class.getSimpleName().toLowerCase());
         setResponseObject(response);

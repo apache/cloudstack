@@ -1213,11 +1213,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         Long id = primaryStorage.getId();
         Pair<List<VMInstanceVO>, Integer> vmsNotInClusterUsingPool = _vmInstanceDao.listByVmsNotInClusterUsingPool(clusterId, id);
         if (vmsNotInClusterUsingPool.second() != 0) {
-            throw new CloudRuntimeException(String.format("Cannot change scope of the storage pool [%s] to cluster [%s] %s %s %s",
-                    primaryStorage.getName(), clusterVO.getName(),
-                    "as there are VMs with volumes in this pool that are running on other clusters.",
-                    "All such User VMs must be stopped and System VMs must be destroyed before proceeding.",
-                    "Please use the API findAffectedVmsForStorageScopeChange to get the list."));
+            throw new CloudRuntimeException(String.format("Cannot change scope of the storage pool [%s] to cluster [%s] " +
+                    "as there are %s VMs with volumes in this pool that are running on other clusters. " +
+                    "All such User VMs must be stopped and System VMs must be destroyed before proceeding. " +
+                    "Please use the API listAffectedVmsForStorageScopeChange to get the list.",
+                    primaryStorage.getName(), clusterVO.getName(), vmsNotInClusterUsingPool.second()));
         }
 
         DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(primaryStorage.getStorageProviderName());

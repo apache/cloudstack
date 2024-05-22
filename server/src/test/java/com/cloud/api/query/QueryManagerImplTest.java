@@ -54,7 +54,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.command.admin.storage.ListObjectStoragePoolsCmd;
-import org.apache.cloudstack.api.command.admin.vm.FindAffectedVmsForStorageScopeChangeCmd;
+import org.apache.cloudstack.api.command.admin.vm.ListAffectedVmsForStorageScopeChangeCmd;
 import org.apache.cloudstack.api.command.user.bucket.ListBucketsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.api.command.user.resource.ListDetailOptionsCmd;
@@ -380,11 +380,11 @@ public class QueryManagerImplTest {
     }
 
     @Test
-    public void testFindAffectedVmsForScopeChange() {
+    public void testListAffectedVmsForScopeChange() {
         Long clusterId = 1L;
         Long poolId = 2L;
         Long hostId = 3L;
-        FindAffectedVmsForStorageScopeChangeCmd cmd = new FindAffectedVmsForStorageScopeChangeCmd();
+        ListAffectedVmsForStorageScopeChangeCmd cmd = new ListAffectedVmsForStorageScopeChangeCmd();
         ReflectionTestUtils.setField(cmd, "clusterIdForScopeChange", clusterId);
         ReflectionTestUtils.setField(cmd, "storageId", poolId);
 
@@ -393,7 +393,7 @@ public class QueryManagerImplTest {
         Mockito.when(pool.getScope()).thenReturn(ScopeType.ZONE);
         Mockito.when(storagePoolDao.findById(poolId)).thenReturn(pool);
         try {
-            queryManager.findAffectedVmsForStorageScopeChange(cmd);
+            queryManager.listAffectedVmsForStorageScopeChange(cmd);
             Assert.fail();
         } catch (InvalidParameterValueException ex) {
             Assert.assertEquals(ex.getMessage(), "Scope change of Storage pool is only allowed in Disabled state");
@@ -414,7 +414,7 @@ public class QueryManagerImplTest {
         Mockito.when(host.getClusterId()).thenReturn(clusterId);
         Mockito.when(clusterDao.findById(clusterId)).thenReturn(cluster);
 
-        ListResponse<VirtualMachineResponse> response = queryManager.findAffectedVmsForStorageScopeChange(cmd);
+        ListResponse<VirtualMachineResponse> response = queryManager.listAffectedVmsForStorageScopeChange(cmd);
         Assert.assertEquals(response.getResponses().get(0).getId(), instanceUuid);
     }
 }

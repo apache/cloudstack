@@ -38,19 +38,19 @@ public class VirtualMachineResponse extends BaseResponse {
     private String name;
 
     @SerializedName("clusterid")
-    @Param(description = "the Pod ID for the system VM")
+    @Param(description = "the cluster ID for the VM")
     private String clusterId;
 
     @SerializedName("clustername")
-    @Param(description = "the Pod name for the system VM", since = "4.13.2")
+    @Param(description = "the cluster name for the VM")
     private String clusterName;
 
     @SerializedName("hostid")
-    @Param(description = "the host ID for the system VM")
+    @Param(description = "the host ID for the VM")
     private String hostId;
 
     @SerializedName("hostname")
-    @Param(description = "the hostname for the system VM")
+    @Param(description = "the hostname for the VM")
     private String hostName;
 
     @Override
@@ -72,6 +72,14 @@ public class VirtualMachineResponse extends BaseResponse {
 
     public void setVmType(String type) {
         this.type = type;
+    }
+
+    public String getVmName() {
+        return name;
+    }
+
+    public void setVmName(String name) {
+        this.name = name;
     }
 
     public String getClusterId() {

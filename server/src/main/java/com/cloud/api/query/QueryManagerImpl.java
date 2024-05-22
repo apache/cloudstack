@@ -100,7 +100,7 @@ import org.apache.cloudstack.api.command.admin.storage.ListStorageTagsCmd;
 import org.apache.cloudstack.api.command.admin.storage.heuristics.ListSecondaryStorageSelectorsCmd;
 import org.apache.cloudstack.api.command.admin.template.ListTemplatesCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
-import org.apache.cloudstack.api.command.admin.vm.FindAffectedVmsForStorageScopeChangeCmd;
+import org.apache.cloudstack.api.command.admin.vm.ListAffectedVmsForStorageScopeChangeCmd;
 import org.apache.cloudstack.api.command.admin.zone.ListZonesCmdByAdmin;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
@@ -1156,7 +1156,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     }
 
     @Override
-    public ListResponse<VirtualMachineResponse> findAffectedVmsForStorageScopeChange(FindAffectedVmsForStorageScopeChangeCmd cmd) {
+    public ListResponse<VirtualMachineResponse> listAffectedVmsForStorageScopeChange(ListAffectedVmsForStorageScopeChangeCmd cmd) {
         Long poolId = cmd.getStorageId();
         StoragePoolVO pool = storagePoolDao.findById(poolId);
         if (pool == null) {
@@ -1167,8 +1167,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
         ListResponse<VirtualMachineResponse> response = new ListResponse<>();
         if (pool.getScope() != ScopeType.ZONE) {
-            response.setResponses(null, 0);
-            return response;
+            throw new InvalidParameterValueException("The current scope of the storage pool should be Zone-wide");
         }
 
         Pair<List<VMInstanceVO>, Integer> vms = _vmInstanceDao.listByVmsNotInClusterUsingPool(cmd.getClusterIdForScopeChange(), poolId);
@@ -1178,12 +1177,31 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             resp.setObjectName(VirtualMachine.class.getSimpleName().toLowerCase());
             resp.setId(vm.getUuid());
             resp.setVmType(vm.getType().toString());
+
+            UserVmJoinVO userVM = null;
+            if (!vm.getType().isUsedBySystem()) {
+                userVM = _userVmJoinDao.findById(vm.getId());
+            }
+            if (userVM != null) {
+                if (userVM.getDisplayName() != null) {
+                    resp.setVmName(userVM.getDisplayName());
+                } else {
+                    resp.setVmName(userVM.getName());
+                }
+            } else {
+                resp.setVmName(vm.getInstanceName());
+            }
+
             HostVO host = hostDao.findById(vm.getHostId());
-            resp.setHostId(host.getUuid());
-            resp.setHostName(host.getName());
-            ClusterVO cluster = clusterDao.findById(host.getClusterId());
-            resp.setClusterId(cluster.getUuid());
-            resp.setClusterName(cluster.getName());
+            if (host != null) {
+                resp.setHostId(host.getUuid());
+                resp.setHostName(host.getName());
+                ClusterVO cluster = clusterDao.findById(host.getClusterId());
+                if (cluster != null) {
+                    resp.setClusterId(cluster.getUuid());
+                    resp.setClusterName(cluster.getName());
+                }
+            }
             responsesList.add(resp);
         }
         response.setResponses(responsesList, vms.second());
