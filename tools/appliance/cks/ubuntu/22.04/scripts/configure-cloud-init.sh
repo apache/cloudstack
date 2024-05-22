@@ -47,6 +47,3 @@ EOF
 }
 
 configure_services
-
-
-
