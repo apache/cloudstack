@@ -24,6 +24,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
@@ -1041,6 +1042,8 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         sc.setParameters("vmStates", State.Starting, State.Running, State.Stopping, State.Migrating, State.Restoring);
         sc.setJoinParameters("volumeSearch", "poolId", poolId);
         sc.setJoinParameters("hostSearch2", "clusterId", clusterId);
-        return searchAndCount(sc, null, false);
+        List<VMInstanceVO> vms = search(sc, null);
+        List<VMInstanceVO> uniqueVms = vms.stream().distinct().collect(Collectors.toList());
+        return new Pair<>(uniqueVms, uniqueVms.size());
     }
 }
