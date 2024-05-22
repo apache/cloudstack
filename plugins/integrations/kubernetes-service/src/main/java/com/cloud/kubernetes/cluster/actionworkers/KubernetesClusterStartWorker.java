@@ -466,8 +466,8 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                             Collections.singletonList(affinityGroupId) : null, customParameterMap, null, null, null, null, true, UserVmManager.CKS_NODE, null);
         }
 
-        if (LOGGER.isInfoEnabled()) {
-            LOGGER.info(String.format("Created control VM ID : %s, %s in the Kubernetes cluster : %s", etcdNode.getUuid(), hostName, kubernetesCluster.getName()));
+        if (logger.isInfoEnabled()) {
+            logger.info(String.format("Created control VM ID : %s, %s in the Kubernetes cluster : %s", etcdNode.getUuid(), hostName, kubernetesCluster.getName()));
         }
         return etcdNode;
     }
@@ -532,8 +532,8 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                 throw new ManagementServerException(String.format("Failed to provision additional control VM for Kubernetes cluster : %s" , kubernetesCluster.getName()));
             }
             etcdNodeVms.add(vm);
-            if (LOGGER.isInfoEnabled()) {
-                LOGGER.info(String.format("Provisioned additional control VM : %s in to the Kubernetes cluster : %s", vm.getDisplayName(), kubernetesCluster.getName()));
+            if (logger.isInfoEnabled()) {
+                logger.info(String.format("Provisioned additional control VM : %s in to the Kubernetes cluster : %s", vm.getDisplayName(), kubernetesCluster.getName()));
             }
         }
         return new Pair<>(etcdNodeVms, etcdNodeGuestIps);
@@ -596,8 +596,8 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
 
     protected void setupKubernetesEtcdNetworkRules(List<UserVm> etcdVms, Network network) throws ManagementServerException, ResourceUnavailableException {
         if (!Network.GuestType.Isolated.equals(network.getGuestType())) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(String.format("Network : %s for Kubernetes cluster : %s is not an isolated network, therefore, no need for network rules", network.getName(), kubernetesCluster.getName()));
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("Network : %s for Kubernetes cluster : %s is not an isolated network, therefore, no need for network rules", network.getName(), kubernetesCluster.getName()));
             }
         }
         List<Long> etcdVmIds = etcdVms.stream().map(UserVm::getId).collect(Collectors.toList());

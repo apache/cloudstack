@@ -1538,7 +1538,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                     if (hypervisorType != deploymentHypervisor) {
                         String msg = String.format("The hypervisor type planned for the CKS cluster deployment %s is different " +
                                 "from the selected hypervisor %s", deployDestination.getCluster().getHypervisorType(), hypervisorType);
-                        LOGGER.warn(msg);
+                        logger.warn(msg);
                     }
                 }
             } catch (InsufficientCapacityException e) {
