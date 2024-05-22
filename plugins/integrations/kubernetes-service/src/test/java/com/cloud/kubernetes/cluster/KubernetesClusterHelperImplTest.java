@@ -24,6 +24,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -33,6 +34,8 @@ import com.cloud.vm.UserVmManager;
 public class KubernetesClusterHelperImplTest {
     @Mock
     KubernetesClusterVmMapDao kubernetesClusterVmMapDao;
+    @Mock
+    KubernetesClusterDao kubernetesClusterDao;
 
     @InjectMocks
     KubernetesClusterHelperImpl kubernetesClusterHelper = new KubernetesClusterHelperImpl();
@@ -59,7 +62,10 @@ public class KubernetesClusterHelperImplTest {
         UserVm vm = Mockito.mock(UserVm.class);
         Mockito.when(vm.getId()).thenReturn(1L);
         Mockito.when(vm.getUserVmType()).thenReturn(UserVmManager.CKS_NODE);
-        Mockito.when(kubernetesClusterVmMapDao.findByVmId(1L)).thenReturn(Mockito.mock(KubernetesClusterVmMapVO.class));
+        KubernetesClusterVmMapVO map = Mockito.mock(KubernetesClusterVmMapVO.class);
+        Mockito.when(map.getClusterId()).thenReturn(1L);
+        Mockito.when(kubernetesClusterVmMapDao.findByVmId(1L)).thenReturn(map);
+        Mockito.when(kubernetesClusterDao.findById(1L)).thenReturn(Mockito.mock(KubernetesClusterVO.class));
         kubernetesClusterHelper.checkVmCanBeDestroyed(vm);
     }
 }
