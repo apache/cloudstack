@@ -243,6 +243,8 @@ public interface ResourceLimitService {
     void checkVolumeResourceLimitForDiskOfferingChange(Account owner, Boolean display, Long currentSize, Long newSize,
             DiskOffering currentOffering, DiskOffering newOffering) throws ResourceAllocationException;
 
+    void checkPrimaryStorageResourceLimit(Account owner, Boolean display, Long size, DiskOffering diskOffering) throws ResourceAllocationException;
+
     void incrementVolumeResourceCount(long accountId, Boolean display, Long size, DiskOffering diskOffering);
     void decrementVolumeResourceCount(long accountId, Boolean display, Long size, DiskOffering diskOffering);
 
