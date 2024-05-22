@@ -32,7 +32,6 @@ import org.apache.cloudstack.api.response.KubernetesClusterResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
@@ -47,8 +46,6 @@ public class AddNodesToKubernetesClusterCmd extends BaseAsyncCmd {
 
     @Inject
     public KubernetesClusterService kubernetesClusterService;
-
-    public static final Logger LOGGER = Logger.getLogger(AddNodesToKubernetesClusterCmd.class.getName());
 
     @Parameter(name = ApiConstants.NODE_IDS,
             type = CommandType.LIST,
