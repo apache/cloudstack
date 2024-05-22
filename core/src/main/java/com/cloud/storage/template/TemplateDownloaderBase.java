@@ -41,6 +41,7 @@ public abstract class TemplateDownloaderBase extends ManagedContextRunnable impl
     protected long _start;
     protected StorageLayer _storage;
     protected boolean _inited = false;
+    protected boolean followRedirects = false;
     private long maxTemplateSizeInBytes;
 
     public TemplateDownloaderBase(StorageLayer storage, String downloadUrl, String toDir, long maxTemplateSizeInBytes, DownloadCompleteCallback callback) {
@@ -146,5 +147,10 @@ public abstract class TemplateDownloaderBase extends ManagedContextRunnable impl
     @Override
     public boolean isInited() {
         return _inited;
+    }
+
+    @Override
+    public void setFollowRedirects(boolean followRedirects) {
+        this.followRedirects = followRedirects;
     }
 }

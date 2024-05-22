@@ -1074,6 +1074,7 @@ export default {
       this.sourceHypervisor = value
       this.sourceActions = this.AllSourceActions.filter(x => x.sourceDestHypervisors[value])
       this.form.sourceAction = this.sourceActions[0].name || ''
+      this.selectedVmwareVcenter = undefined
       this.onSelectSourceAction(this.form.sourceAction)
     },
     onSelectSourceAction (value) {
