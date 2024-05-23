@@ -462,6 +462,15 @@ ALTER TABLE `cloud`.`service_offering` ADD INDEX `i_service_offering__ram_size` 
 ALTER TABLE `cloud`.`op_host_planner_reservation` ADD INDEX `i_op_host_planner_reservation__resource_usage`(`resource_usage`);
 
 ALTER TABLE `cloud`.`storage_pool` ADD INDEX `i_storage_pool__pool_type` (`pool_type`);
+ALTER TABLE `cloud`.`storage_pool` ADD INDEX `i_storage_pool__data_center_id_status_scope_hypervisor` (`data_center_id`, `status`, `scope`, `hypervisor`);
+
+ALTER TABLE `cloud`.`router_network_ref` ADD INDEX `i_router_network_ref__guest_type` (`guest_type`);
+
+ALTER TABLE `cloud`.`domain_router` ADD INDEX `i_domain_router__role` (`role`);
+
+ALTER TABLE `cloud`.`async_job` ADD INDEX `i_async_job__instance_type_job_status` (`instance_type`, `job_status`);
+
+ALTER TABLE `cloud`.`cluster` ADD INDEX `i_cluster__managed_state` (`managed_state`);
 
 -- speeds up user_vm_view (listVM) queries by forcing index on user_ip_address table
 DROP VIEW IF EXISTS `cloud`.`user_vm_view`;
