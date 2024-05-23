@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.user.kubernetes.cluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterEventTypes;
 import com.cloud.kubernetes.cluster.KubernetesClusterService;
 
-import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -109,14 +108,13 @@ public class AddNodesToKubernetesClusterCmd extends BaseAsyncCmd {
     @Override
     public void execute() {
         try {
-            if (!kubernetesClusterService.addNodesToKubernetesCluster(this)) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to add node(s) Kubernetes cluster ID: %d", getClusterId()));
-            }
+            kubernetesClusterService.addNodesToKubernetesCluster(this);
             final KubernetesClusterResponse response = kubernetesClusterService.createKubernetesClusterResponse(getClusterId());
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } catch (Exception e) {
-            throw new CloudRuntimeException(String.format("Failed to add nodes to cluster due to: %s", e.getLocalizedMessage()), e);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to add nodes to cluster ID %s due to: %s",
+                    getClusterId(), e.getLocalizedMessage()), e);
         }
     }
 
