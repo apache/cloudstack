@@ -310,7 +310,7 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item v-if="form.advancedmode && form?.etcdnodes > 0" name="controltemplateid" ref="controltemplateid">
+        <a-form-item v-if="form.advancedmode && form?.etcdnodes > 0" name="etcdtemplateid" ref="etcdtemplateid">
           <template #label>
             <tooltip-label :title="$t('label.cks.cluster.etcd.nodes.templateid')" :tooltip="$t('label.cks.cluster.etcd.nodes.templateid')"/>
           </template>
