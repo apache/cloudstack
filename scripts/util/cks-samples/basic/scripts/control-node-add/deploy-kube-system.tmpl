@@ -1,0 +1,27 @@
+#!/bin/bash -e
+
+if [[ -f "/home/cloud/success" ]]; then
+  echo "Already provisioned!"
+  exit 0
+fi
+
+if [[ $(systemctl is-active setup-kube-system) != "inactive" ]]; then
+  echo "setup-kube-system is running!"
+  exit 1
+fi
+modprobe ip_vs
+modprobe ip_vs_wrr
+modprobe ip_vs_sh
+modprobe nf_conntrack
+if [[ "$PATH" != *:/opt/bin && "$PATH" != *:/opt/bin:* ]]; then
+  export PATH=$PATH:/opt/bin
+fi
+kubeadm join {{ k8s_control_node.join_ip }}:6443 --token {{ k8s_control_node.cluster.token }} --control-plane --certificate-key {{ k8s_control_node.cluster.ha.certificate.key }} --discovery-token-unsafe-skip-ca-verification
+
+mkdir -p /root/.kube
+cp -i /etc/kubernetes/admin.conf /root/.kube/config
+chown $(id -u):$(id -g) /root/.kube/config
+
+sudo touch /home/cloud/success
+echo "true" > /home/cloud/success
+

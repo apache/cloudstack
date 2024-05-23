@@ -1,0 +1,163 @@
+#!/bin/bash -e
+
+if [ $# -lt 8 ]; then
+  echo "Usage: /bin/bash $0 BINARIES_DIR CLUSTER_TOKEN CLUSTER_INITARGS REGISTRY_URL REGISTRY_URL_ENDPOINT REGISTRY_USERNAME REGISTRY_PASSWORD REGISTRY_TOKEN" >&2
+  exit 1
+fi
+
+BINARIES_DIR="$1"
+CLUSTER_TOKEN="$2"
+CLUSTER_INITARGS="$3"
+REGISTRY_URL="$4"
+REGISTRY_URL_ENDPOINT="$5"
+REGISTRY_USERNAME="$6"
+REGISTRY_PASSWORD="$7"
+REGISTRY_TOKEN="$8"
+
+K8S_CONFIG_SCRIPTS_COPY_DIR=/tmp/k8sconfigscripts/
+K8S_HELM=/tmp/k8shelm/
+ATTEMPT_ONLINE_INSTALL=false
+setup_complete=false
+
+MAX_SETUP_CRUCIAL_CMD_ATTEMPTS=3
+crucial_cmd_attempts=1
+
+if [[ "$PATH" != *:/opt/bin && "$PATH" != *:/opt/bin:* ]]; then
+  export PATH=$PATH:/opt/bin
+fi
+
+if [ -f ${BINARIES_DIR}/scripts/control-node/deploy-kube-system.tmpl ]; then
+  sed -e "s/{{ k8s_control_node.cluster.token }}/${CLUSTER_TOKEN}/g" -e "s/{{ k8s_control_node.cluster.initargs }}/${CLUSTER_INITARGS}/g" ${BINARIES_DIR}/scripts/control-node/deploy-kube-system.tmpl > /opt/bin/deploy-kube-system
+fi
+
+if [ -f ${BINARIES_DIR}/scripts/control-node/setup-containerd.tmpl ]; then
+  sed -e "s/{{registry.url}}/${REGISTRY_URL}/g" -e "s/{{registry.url.endpoint}}/${REGISTRY_URL_ENDPOINT}/g" -e "s/{{registry.username}}/${REGISTRY_USERNAME}/g" -e "s/{{registry.password}}/${REGISTRY_PASSWORD}/g" -e "s/{{registry.token}}/${REGISTRY_TOKEN}/g" ${BINARIES_DIR}/scripts/control-node/setup-containerd.tmpl > /opt/bin/setup-containerd
+fi
+
+if [ -d "$BINARIES_DIR" ]; then
+  ### Binaries available offline ###
+  echo "Installing binaries from ${BINARIES_DIR}"
+  mkdir -p /opt/cni/bin
+  tar -f "${BINARIES_DIR}/cni/cni-plugins-"*64.tgz -C /opt/cni/bin -xz
+
+  mkdir -p /opt/bin
+  tar -f "${BINARIES_DIR}/cri-tools/crictl-linux-"*64.tar.gz -C /opt/bin -xz
+
+  mkdir -p /opt/bin
+  cd /opt/bin
+  cp -a ${BINARIES_DIR}/k8s/{kubeadm,kubelet,kubectl} .
+  chmod +x {kubeadm,kubelet,kubectl}
+
+  if [ -f ${BINARIES_DIR}/installs/helm-*-linux-amd64.tar.gz ]
+  then
+    TMPDIR=$(mktemp -d)
+    tar -xzf ${BINARIES_DIR}/installs/helm-*-linux-amd64.tar.gz -C ${TMPDIR}
+    /bin/mv ${TMPDIR}/linux-amd64/helm /usr/local/bin/helm	
+    /bin/rm -rf ${TMPDIR}
+  fi
+
+  if [ -f ${BINARIES_DIR}/installs/cilium-*-cli-*.tar.gz ]
+  then
+    tar -xzf ${BINARIES_DIR}/installs/cilium-*-cli-*.tar.gz -C /usr/local/bin
+    chmod 755 /usr/local/bin/cilium
+  fi
+
+  sed "s:/usr/bin:/opt/bin:g" ${BINARIES_DIR}/kubelet.service > /etc/systemd/system/kubelet.service
+  mkdir -p /etc/systemd/system/kubelet.service.d
+  sed "s:/usr/bin:/opt/bin:g" ${BINARIES_DIR}/10-kubeadm.conf > /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+
+  echo "KUBELET_EXTRA_ARGS=--cgroup-driver=systemd" > /etc/default/kubelet
+
+  output=`ls ${BINARIES_DIR}/docker/`
+  if [ "$output" != "" ]; then
+    while read -r line; do
+      crucial_cmd_attempts=1
+      while true; do
+        if (( "$crucial_cmd_attempts" > "$MAX_SETUP_CRUCIAL_CMD_ATTEMPTS" )); then
+          echo "Loading docker image ${BINARIES_DIR}/docker/$line failed!"
+          break;
+        fi
+        retval=0
+        set +e
+        ctr -n k8s.io image import "${BINARIES_DIR}/docker/$line"
+        retval=$?
+        set -e
+        if [ $retval -eq 0 ]; then
+          break;
+        fi
+        crucial_cmd_attempts=$[$crucial_cmd_attempts + 1]
+      done
+    done <<< "$output"
+    setup_complete=true
+  fi
+  mkdir -p "${K8S_CONFIG_SCRIPTS_COPY_DIR}"
+  cp ${BINARIES_DIR}/*.yaml "${K8S_CONFIG_SCRIPTS_COPY_DIR}"
+  if [ -e "${BINARIES_DIR}/autoscaler.yaml" ]; then
+    mkdir -p /opt/autoscaler
+    cp "${BINARIES_DIR}/autoscaler.yaml" /opt/autoscaler/autoscaler_tmpl.yaml
+  fi
+  if [ -e "${BINARIES_DIR}/provider.yaml" ]; then
+    mkdir -p /opt/provider
+    cp "${BINARIES_DIR}/provider.yaml" /opt/provider/provider.yaml
+  fi
+  mkdir -p "${K8S_HELM}/charts"
+  if [ -d "${BINARIES_DIR}/installs/charts" ]; then
+    cp ${BINARIES_DIR}/installs/charts/*.*gz "${K8S_HELM}/charts"
+  fi
+  mkdir -p "${K8S_HELM}/overrides"
+  if [ -d "${BINARIES_DIR}/installs/helm-overrides" ]; then
+    cp ${BINARIES_DIR}/installs/helm-overrides/*.yaml "${K8S_HELM}/overrides"
+  fi
+
+  PAUSE_IMAGE=`ctr -n k8s.io images ls -q | grep "pause" | sort | tail -n 1`
+  echo $PAUSE_IMAGE
+  if [ -n "$PAUSE_IMAGE" ]; then
+    sed -i "s|sandbox_image = .*|sandbox_image = \"$PAUSE_IMAGE\"|g" /etc/containerd/config.toml
+  fi
+  systemctl daemon-reload
+  systemctl restart containerd
+
+fi
+if [ "$setup_complete" = false ] && [ "$ATTEMPT_ONLINE_INSTALL" = true ]; then
+  ###  Binaries not available offline ###
+  RELEASE="v1.16.3"
+  CNI_VERSION="v0.7.5"
+  CRICTL_VERSION="v1.16.0"
+  echo "Warning: ${BINARIES_DIR} not found. Will get binaries and docker images from Internet."
+  mkdir -p /opt/cni/bin
+  curl -L "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-amd64-${CNI_VERSION}.tgz" | tar -C /opt/cni/bin -xz
+
+  mkdir -p /opt/bin
+  curl -L "https://github.com/kubernetes-incubator/cri-tools/releases/download/${CRICTL_VERSION}/crictl-${CRICTL_VERSION}-linux-amd64.tar.gz" | tar -C /opt/bin -xz
+
+  mkdir -p /opt/bin
+  cd /opt/bin
+  curl -L --remote-name-all https://storage.googleapis.com/kubernetes-release/release/${RELEASE}/bin/linux/amd64/{kubeadm,kubelet,kubectl}
+  chmod +x {kubeadm,kubelet,kubectl}
+
+  curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/kubelet.service" | sed "s:/usr/bin:/opt/bin:g" > /etc/systemd/system/kubelet.service
+  mkdir -p /etc/systemd/system/kubelet.service.d
+  curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/10-kubeadm.conf" | sed "s:/usr/bin:/opt/bin:g" > /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+fi
+
+systemctl enable kubelet && systemctl start kubelet
+modprobe overlay && modprobe br_netfilter && sysctl net.bridge.bridge-nf-call-iptables=1
+
+if [ -d "$BINARIES_DIR" ] && [ "$ATTEMPT_ONLINE_INSTALL" = true ]; then
+  crucial_cmd_attempts=1
+  while true; do
+    if (( "$crucial_cmd_attempts" > "$MAX_SETUP_CRUCIAL_CMD_ATTEMPTS" )); then
+      echo "Warning: kubeadm pull images failed after multiple tries!"
+      break;
+    fi
+    retval=0
+    set +e
+    kubeadm config images pull --cri-socket /run/containerd/containerd.sock
+    retval=$?
+    set -e
+    if [ $retval -eq 0 ]; then
+      break;
+    fi
+    crucial_cmd_attempts=$[$crucial_cmd_attempts + 1]
+  done
+fi

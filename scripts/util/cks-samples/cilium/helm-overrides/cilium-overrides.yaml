@@ -1,0 +1,6 @@
+image:
+  useDigest: false
+
+operator:
+  image:
+    useDigest: false
