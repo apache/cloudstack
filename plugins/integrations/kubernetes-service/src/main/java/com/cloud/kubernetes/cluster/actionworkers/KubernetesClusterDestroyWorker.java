@@ -246,6 +246,12 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
         }
         if (cleanupNetwork) { // if network has additional VM, cannot proceed with cluster destroy
             NetworkVO network = networkDao.findById(kubernetesCluster.getNetworkId());
+            List<KubernetesClusterVmMapVO> externalNodes = clusterVMs.stream().filter(KubernetesClusterVmMapVO::isExternalNode).collect(Collectors.toList());
+            if (!externalNodes.isEmpty()) {
+                String errMsg = String.format("Failed to delete kubernetes cluster %s as there are %s external node(s) present. Please remove the external node(s) from the cluster (and network) or delete them before deleting the cluster.", kubernetesCluster.getName(), externalNodes.size());
+                LOGGER.error(errMsg);
+                throw new CloudRuntimeException(errMsg);
+            }
             if (network != null) {
                 List<VMInstanceVO> networkVMs = vmInstanceDao.listNonRemovedVmsByTypeAndNetwork(network.getId(), VirtualMachine.Type.User);
                 if (networkVMs.size() > clusterVMs.size()) {
