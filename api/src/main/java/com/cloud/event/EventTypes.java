@@ -740,6 +740,15 @@ public class EventTypes {
     public static final String EVENT_QUOTA_TARIFF_DELETE = "QUOTA.TARIFF.DELETE";
     public static final String EVENT_QUOTA_TARIFF_UPDATE = "QUOTA.TARIFF.UPDATE";
 
+    // Routing
+    public static final String EVENT_ZONE_IP4_SUBNET_CREATE = "ZONE.IP4.SUBNET.CREATE";
+    public static final String EVENT_ZONE_IP4_SUBNET_UPDATE = "ZONE.IP4.SUBNET.UPDATE";
+    public static final String EVENT_ZONE_IP4_SUBNET_DELETE = "ZONE.IP4.SUBNET.DELETE";
+    public static final String EVENT_ZONE_IP4_SUBNET_DEDICATE = "ZONE.IP4.SUBNET.DEDICATE";
+    public static final String EVENT_ZONE_IP4_SUBNET_RELEASE = "ZONE.IP4.SUBNET.RELEASE";
+    public static final String EVENT_IP4_GUEST_SUBNET_CREATE = "IP4.GUEST.SUBNET.CREATE";
+    public static final String EVENT_IP4_GUEST_SUBNET_DELETE = "IP4.GUEST.SUBNET.DELETE";
+
     static {
 
         // TODO: need a way to force author adding event types to declare the entity details as well, with out braking

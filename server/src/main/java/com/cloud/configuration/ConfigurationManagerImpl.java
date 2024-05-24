@@ -6121,20 +6121,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Network Offering cannot be for both Tungsten-Fabric and NSX");
         }
 
-        if (Boolean.TRUE.equals(forNsx)) {
-            if (Objects.isNull(routingMode)) {
-                throw new InvalidParameterValueException("Mode for an NSX offering needs to be specified. Valid values: " + Arrays.toString(NetworkOffering.RoutingMode.values()));
-            }
-            if (!EnumUtils.isValidEnum(NetworkOffering.RoutingMode.class, routingMode)) {
-                throw new InvalidParameterValueException("Invalid mode passed. Valid values: " + Arrays.toString(NetworkOffering.RoutingMode.values()));
-            }
-        } else {
-            if (Objects.nonNull(routingMode)) {
-                if (logger.isTraceEnabled()) {
-                    logger.trace("routingMode has is ignored for non-NSX enabled zones");
-                }
-                routingMode = null;
-            }
+        if (routingMode != null && !EnumUtils.isValidEnum(NetworkOffering.RoutingMode.class, routingMode)) {
+            throw new InvalidParameterValueException("Invalid mode passed. Valid values: " + Arrays.toString(NetworkOffering.RoutingMode.values()));
         }
 
         // Verify traffic type
@@ -6551,7 +6539,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                                    final Long serviceOfferingId,
                                                    final boolean conserveMode, final Map<Service, Map<Capability, String>> serviceCapabilityMap, final boolean specifyIpRanges, final boolean isPersistent,
                                                    final Map<Detail, String> details, final boolean egressDefaultPolicy, final Integer maxconn, final boolean enableKeepAlive, Boolean forVpc,
-                                                   Boolean forTungsten, boolean forNsx, String mode, final List<Long> domainIds, final List<Long> zoneIds, final boolean enableOffering, final NetUtils.InternetProtocol internetProtocol) {
+                                                   Boolean forTungsten, boolean forNsx, String routingMode, final List<Long> domainIds, final List<Long> zoneIds, final boolean enableOffering, final NetUtils.InternetProtocol internetProtocol) {
 
         String servicePackageUuid;
         String spDescription = null;
@@ -6585,6 +6573,22 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // isPersistent should always be false for Shared network Offerings
         if (isPersistent && type == GuestType.Shared) {
             throw new InvalidParameterValueException("isPersistent should be false if network offering's type is " + type);
+        }
+
+        // Validate Routing mode
+        if (routingMode != null) {
+            if (type != GuestType.Isolated) {
+                throw new InvalidParameterValueException("routingMode should be set only for Isolated network offerings");
+            }
+        }
+
+        if (NetworkOffering.RoutingMode.ROUTED.toString().equals(routingMode)
+                && (serviceProviderMap.containsKey(Service.SourceNat)
+                || serviceProviderMap.containsKey(Service.StaticNat)
+                || serviceProviderMap.containsKey(Service.Lb)
+                || serviceProviderMap.containsKey(Service.PortForwarding)
+                || serviceProviderMap.containsKey(Service.Vpn))) {
+            throw new InvalidParameterValueException("SourceNat/StaticNat/Lb/PortForwarding/Vpn service are not supported in Routed mode");
         }
 
         // validate availability value
@@ -6713,9 +6717,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         offeringFinal.setForTungsten(Objects.requireNonNullElse(forTungsten, false));
         offeringFinal.setForNsx(Objects.requireNonNullElse(forNsx, false));
-        if (Boolean.TRUE.equals(forNsx)) {
-            offeringFinal.setRoutingMode(mode);
-        }
+        offeringFinal.setRoutingMode(routingMode);
 
         if (enableOffering) {
             offeringFinal.setState(NetworkOffering.State.Enabled);

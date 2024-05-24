@@ -146,12 +146,6 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
             since = "4.20.0")
     private Boolean forNsx;
 
-    @Parameter(name = ApiConstants.NSX_MODE,
-            type = CommandType.STRING,
-            description = "Indicates the mode with which the network will operate. Valid option: NATTED or ROUTED",
-            since = "4.20.0")
-    private String routingMode;
-
     @Parameter(name = ApiConstants.NSX_SUPPORT_LB,
             type = CommandType.BOOLEAN,
             description = "true if network offering for NSX network offering supports Load balancer service.",
@@ -163,6 +157,12 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
             description = "true if network offering for NSX network offering supports Internal Load balancer service.",
             since = "4.20.0")
     private Boolean nsxSupportsInternalLbService;
+
+    @Parameter(name = ApiConstants.ROUTING_MODE,
+            type = CommandType.STRING,
+            description = "Indicates the mode with which the network will operate. Valid option: NATTED or ROUTED",
+            since = "4.20.0")
+    private String routingMode;
 
     @Parameter(name = ApiConstants.FOR_TUNGSTEN,
             type = CommandType.BOOLEAN,

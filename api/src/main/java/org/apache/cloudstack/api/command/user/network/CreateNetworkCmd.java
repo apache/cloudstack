@@ -191,6 +191,11 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
             since = "4.19")
     private String sourceNatIP;
 
+    @Parameter(name = ApiConstants.CIDR_SIZE, type = CommandType.INTEGER,
+            description = "the CIDR size of IPv4 network. For regular users, this is required for isolated networks with ROUTED mode.",
+            since = "4.20")
+    private Integer cidrSize;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -362,6 +367,10 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
             return null;
         }
         return NetUtils.standardizeIp6Cidr(ip6Cidr);
+    }
+
+    public Integer getCidrSize() {
+        return cidrSize;
     }
 
     public Long getAclId() {

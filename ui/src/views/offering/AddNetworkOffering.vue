@@ -147,19 +147,19 @@
             </a-form-item>
           </a-col>
         </a-row>
-        <a-form-item name="routingmode" ref="routingmode" v-if="forNsx">
+        <a-form-item name="routingmode" ref="routingmode" v-if="guestType === 'isolated'">
           <template #label>
             <tooltip-label :title="$t('label.routingmode')" :tooltip="apiParams.routingmode.description"/>
           </template>
           <a-select
-            v-if="showMode"
             optionFilterProp="label"
             v-model:value="form.routingmode"
+            @change="val => { handleForRoutingModeChange(val) }"
             :filterOption="(input, option) => {
               return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :placeholder="apiParams.routingmode.description">
-            <a-select-option v-for="(opt) in modes" :key="opt.name" :label="opt.name">
+            <a-select-option v-for="(opt) in routingmodes" :key="opt.name" :label="opt.name">
               {{ opt.name }}
             </a-select-option>
           </a-select>
@@ -562,7 +562,6 @@ export default {
       selectedZones: [],
       forVpc: false,
       forNsx: false,
-      showMode: false,
       lbType: 'publicLb',
       macLearningValue: '',
       supportedServices: [],
@@ -591,7 +590,8 @@ export default {
       zoneLoading: false,
       ipv6NetworkOfferingEnabled: false,
       loading: false,
-      modes: [
+      routingmode: '',
+      routingmodes: [
         {
           id: 0,
           name: 'NATTED'
@@ -717,6 +717,8 @@ export default {
     },
     handleGuestTypeChange (val) {
       this.guestType = val
+      this.routingmode = ''
+      this.form.routingmode = ''
       if (val === 'l2') {
         this.form.forvpc = false
         this.form.lbtype = 'publicLb'
@@ -736,8 +738,8 @@ export default {
         this.firewallServiceChecked = false
         this.firewallServiceProvider = ''
         this.selectedServiceProviderMap = {}
-        this.updateSupportedServices()
       }
+      this.fetchSupportedServiceData()
     },
     fetchSupportedServiceData () {
       this.supportedServiceLoading = true
@@ -841,6 +843,11 @@ export default {
       var supportedServices = this.supportedServices
       var self = this
       if (!this.forNsx) {
+        if (this.routingmode === 'ROUTED' && this.guestType === 'isolated') {
+          supportedServices = supportedServices.filter(service => {
+            return !['SourceNat', 'StaticNat', 'Lb', 'PortForwarding', 'Vpn'].includes(service.name)
+          })
+        }
         supportedServices.forEach(function (svc, index) {
           if (svc.name !== 'Connectivity') {
             var providers = svc.provider
@@ -900,7 +907,6 @@ export default {
     },
     handleForNsxChange (forNsx) {
       this.forNsx = forNsx
-      this.showMode = forNsx
       this.nsxSupportedServicesMap = {
         Dhcp: this.forVpc ? this.VPCVR : this.VR,
         Dns: this.forVpc ? this.VPCVR : this.VR,
@@ -912,6 +918,10 @@ export default {
         ...(this.forVpc && { NetworkACL: this.NSX }),
         ...(!this.forVpc && { Firewall: this.NSX })
       }
+      this.fetchSupportedServiceData()
+    },
+    handleForRoutingModeChange (routingMode) {
+      this.routingmode = routingMode
       this.fetchSupportedServiceData()
     },
     handleNsxLbService (supportLb) {
@@ -1031,9 +1041,11 @@ export default {
         }
         if (values.fornsx === true) {
           params.fornsx = true
-          params.routingmode = values.routingmode
           params.nsxsupportlb = values.nsxsupportlb
           params.nsxsupportsinternallb = values.nsxsupportsinternallb
+        }
+        if (values.guestiptype === 'isolated') {
+          params.routingmode = values.routingmode
         }
         if (values.guestiptype === 'shared' || values.guestiptype === 'isolated') {
           if (values.conservemode !== true) {

@@ -62,6 +62,7 @@ public class NetworkProfile implements Network {
     private final String guruName;
     private boolean strechedL2Subnet;
     private String externalId;
+    private Integer networkCidrSize;
 
     public NetworkProfile(Network network) {
         id = network.getId();
@@ -98,6 +99,7 @@ public class NetworkProfile implements Network {
         isRedundant = network.isRedundant();
         isRollingRestart = network.isRollingRestart();
         externalId = network.getExternalId();
+        networkCidrSize = network.getNetworkCidrSize();
     }
 
     @Override
@@ -365,6 +367,11 @@ public class NetworkProfile implements Network {
     @Override
     public Integer getPrivateMtu() {
         return null;
+    }
+
+    @Override
+    public Integer getNetworkCidrSize() {
+        return networkCidrSize;
     }
 
 }

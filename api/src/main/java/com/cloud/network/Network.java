@@ -503,4 +503,6 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
     Integer getPublicMtu();
 
     Integer getPrivateMtu();
+
+    Integer getNetworkCidrSize();
 }

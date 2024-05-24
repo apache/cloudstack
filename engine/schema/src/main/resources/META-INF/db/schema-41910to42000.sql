@@ -150,3 +150,34 @@ SET
 WHERE
     name IN ("quota.usage.smtp.useStartTLS", "quota.usage.smtp.useAuth", "alert.smtp.useAuth", "project.smtp.useAuth")
     AND value NOT IN ("true", "y", "t", "1", "on", "yes");
+
+-- Create tables for routing mode
+CREATE TABLE `cloud`.`dc_ip4_guest_subnets` (
+   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+   `uuid` varchar(40) DEFAULT NULL,
+   `data_center_id` bigint(20) unsigned NOT NULL COMMENT 'zone it belongs to',
+   `subnet` varchar(255) NOT NULL COMMENT 'subnet of the ip4 network',
+   `domain_id` bigint unsigned NOT NULL COMMENT 'domain the subnet belongs to',
+   `account_id` bigint unsigned NOT NULL COMMENT 'owner of this subnet',
+   `created` datetime default NULL,
+   `removed` datetime default NULL,
+   PRIMARY KEY (`id`),
+   CONSTRAINT `fk_dc_ip4_guest_subnets__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`),
+   CONSTRAINT `uc_dc_ip4_guest_subnets__uuid` UNIQUE (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`ip4_guest_subnet_network_map` (
+   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+   `uuid` varchar(40) DEFAULT NULL,
+   `parent_id` bigint(20) unsigned NOT NULL COMMENT 'ip4 guest subnet which subnet belongs to',
+   `subnet` varchar(255) NOT NULL COMMENT 'subnet of the ip4 network',
+   `network_id` bigint(20) unsigned DEFAULT NULL COMMENT 'network which subnet is associated to',
+   `state` varchar(255) NOT NULL COMMENT 'state of the subnet',
+   `allocated` datetime default NULL,
+   `created` datetime default NULL,
+   `removed` datetime default NULL,
+   PRIMARY KEY (`id`),
+   CONSTRAINT `fk_ip4_guest_subnet_network_map__parent_id` FOREIGN KEY (`parent_id`) REFERENCES `dc_ip4_guest_subnets`(`id`),
+   CONSTRAINT `fk_ip4_guest_subnet_network_map__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`),
+   CONSTRAINT `uc_ip4_guest_subnet_network_map__uuid` UNIQUE (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

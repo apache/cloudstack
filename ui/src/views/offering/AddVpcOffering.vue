@@ -85,19 +85,19 @@
             </a-form-item>
           </a-col>
         </a-row>
-        <a-form-item name="routingmode" ref="routingmode" v-if="forNsx">
+        <a-form-item name="routingmode" ref="routingmode">
           <template #label>
             <tooltip-label :title="$t('label.routingmode')" :tooltip="apiParams.routingmode.description"/>
           </template>
           <a-select
-            v-if="showMode"
             optionFilterProp="label"
             v-model:value="form.routingmode"
+            @change="val => { handleForRoutingModeChange(val) }"
             :filterOption="(input, option) => {
               return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :placeholder="apiParams.routingmode.description">
-            <a-select-option v-for="(opt) in modes" :key="opt.name" :label="opt.name">
+            <a-select-option v-for="(opt) in routingmodes" :key="opt.name" :label="opt.name">
               {{ opt.name }}
             </a-select-option>
           </a-select>
@@ -247,7 +247,6 @@ export default {
       zones: [],
       zoneLoading: false,
       forNsx: false,
-      showMode: false,
       loading: false,
       supportedServices: [],
       supportedServiceLoading: false,
@@ -258,7 +257,8 @@ export default {
       sourceNatServiceChecked: false,
       selectedServiceProviderMap: {},
       ipv6NetworkOfferingEnabled: false,
-      modes: [
+      routingmode: '',
+      routingmodes: [
         {
           id: 0,
           name: 'NATTED'
@@ -479,6 +479,11 @@ export default {
         })
       }
       this.supportedServices = []
+      if (this.routingmode === 'ROUTED') {
+        services = services.filter(service => {
+          return !['SourceNat', 'StaticNat', 'Lb', 'PortForwarding', 'Vpn'].includes(service.name)
+        })
+      }
       for (var i in services) {
         services[i].description = services[i].name
       }
@@ -490,7 +495,6 @@ export default {
     },
     async handleForNsxChange (forNsx) {
       this.forNsx = forNsx
-      this.showMode = forNsx
       if (forNsx) {
         this.form.nsxsupportlb = true
         this.handleNsxLbService(true)
@@ -532,6 +536,10 @@ export default {
       if (this.isVpcVirtualRouterForAtLeastOneService && this.serviceOfferings.length === 0) {
         this.fetchServiceOfferingData()
       }
+    },
+    handleForRoutingModeChange (routingMode) {
+      this.routingmode = routingMode
+      this.fetchSupportedServiceData()
     },
     fetchServiceOfferingData () {
       const params = {}
@@ -585,9 +593,9 @@ export default {
         }
         if (values.fornsx === true) {
           params.fornsx = true
-          params.routingmode = values.routingmode
           params.nsxsupportlb = values.nsxsupportlb
         }
+        params.routingmode = values.routingmode
         if (this.selectedServiceProviderMap != null) {
           var supportedServices = Object.keys(this.selectedServiceProviderMap)
           params.supportedservices = []

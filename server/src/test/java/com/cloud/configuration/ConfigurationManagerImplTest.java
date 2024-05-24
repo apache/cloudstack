@@ -82,8 +82,6 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.anyBoolean;
-import static org.mockito.Mockito.anyInt;
-import static org.mockito.Mockito.anyList;
 import static org.mockito.Mockito.anyMap;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doNothing;
@@ -446,13 +444,8 @@ public class ConfigurationManagerImplTest {
         when(createNetworkOfferingCmd.getTraffictype()).thenReturn(Networks.TrafficType.Guest.name());
         when(createNetworkOfferingCmd.getGuestIpType()).thenReturn(Network.GuestType.Isolated.name());
         when(createNetworkOfferingCmd.getAvailability()).thenReturn(NetworkOffering.Availability.Optional.name());
-        lenient().when(configurationManagerImplSpy.createNetworkOffering(anyString(), anyString(), any(Networks.TrafficType.class), anyString(),
-                        anyBoolean(), any(NetworkOffering.Availability.class), anyInt(), anyMap(), anyBoolean(), any(Network.GuestType.class),
-                        anyBoolean(), anyLong(), anyBoolean(), anyMap(), anyBoolean(), anyBoolean(), anyMap(), anyBoolean(), anyInt(),
-                        anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(), anyString(), anyList(), anyList(), anyBoolean(), any(NetUtils.InternetProtocol.class)))
-                .thenReturn(offeringVO);
         when(configDao.getValue(anyString())).thenReturn("1000");
-        lenient().when(networkOfferingDao.persist(any(NetworkOfferingVO.class), anyMap())).thenReturn(offeringVO);
+        when(networkOfferingDao.persist(any(NetworkOfferingVO.class), anyMap())).thenReturn(offeringVO);
         doNothing().when(networkService).validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouter(anyLong());
         doNothing().when(networkModel).canProviderSupportServices(anyMap());
 

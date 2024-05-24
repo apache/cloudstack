@@ -70,8 +70,8 @@ public class VpcOfferingResponse extends BaseResponse {
     @Param(description = "true if vpc offering can be used by NSX networks only")
     private Boolean forNsx;
 
-    @SerializedName(ApiConstants.NSX_MODE)
-    @Param(description = "Mode in which the network will operate. This parameter is only relevant for NSX offerings")
+    @SerializedName(ApiConstants.ROUTING_MODE)
+    @Param(description = "Mode in which the network will operate. The valid values are NATTED and ROUTED")
     private String routingMode;
 
     @SerializedName(ApiConstants.DOMAIN_ID)

@@ -365,13 +365,13 @@ public class VpcManagerImplTest {
         manager.createVpcGuestNetwork(1L, "vpcNet1", "vpc tier 1", null,
                 "10.10.10.0/24", null, null, accountMock, null, physicalNetwork,
                 1L, null, null, 1L, null, accountMock,
-                true, null, null, null, null, null, null, null, new Pair<>(1000, 1000));
+                true, null, null, null, null, null, null, null, new Pair<>(1000, 1000), null);
 
         Mockito.verify(networkMgr, times(1)).createGuestNetwork(1L, "vpcNet1", "vpc tier 1", null,
                 "10.10.10.0/24", null, false, "cs1cloud.internal", accountMock, null,
                 physicalNetwork, zoneId, null, null, 1L, null, null,
                 true, null, null, null, null,
-                null, null, null, null, null, new Pair<>(1000, 1000));
+                null, null, null, null, null, new Pair<>(1000, 1000), null);
     }
 
     @Test

@@ -38,6 +38,7 @@ import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.network.Ipv4GuestSubnetManager;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerService;
 import org.apache.cloudstack.network.lb.InternalLoadBalancerVMService;
 import org.apache.cloudstack.query.QueryService;
@@ -218,6 +219,8 @@ public abstract class BaseCmd {
     @Inject
     public BucketApiService _bucketService;
 
+    @Inject
+    public Ipv4GuestSubnetManager ipv4GuestSubnetManager;
 
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
         ResourceAllocationException, NetworkRuleConflictException;

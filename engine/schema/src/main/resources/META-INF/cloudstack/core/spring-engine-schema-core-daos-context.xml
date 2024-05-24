@@ -289,4 +289,6 @@
   <bean id="ClusterDrsPlanDetailsDaoImpl" class="org.apache.cloudstack.cluster.dao.ClusterDrsPlanMigrationDaoImpl" />
   <bean id="objectStoreDetailsDaoImpl" class="org.apache.cloudstack.storage.datastore.db.ObjectStoreDetailsDaoImpl" />
   <bean id="bucketStatisticsDaoImpl" class="com.cloud.usage.dao.BucketStatisticsDaoImpl" />
+  <bean id="dataCenterIpv4GuestSubnetDaoImpl" class="org.apache.cloudstack.datacenter.dao.DataCenterIpv4GuestSubnetDaoImpl" />
+  <bean id="ipv4GuestSubnetNetworkMapDaoImpl" class="org.apache.cloudstack.network.dao.Ipv4GuestSubnetNetworkMapDaoImpl" />
 </beans>

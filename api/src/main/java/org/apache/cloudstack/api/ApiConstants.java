@@ -30,6 +30,7 @@ public class ApiConstants {
     public static final String ALGORITHM = "algorithm";
     public static final String ALIAS = "alias";
     public static final String ALLOCATED_ONLY = "allocatedonly";
+    public static final String ALLOCATED_TIME = "allocatedtime";
     public static final String ANNOTATION = "annotation";
     public static final String API_KEY = "apikey";
     public static final String ARCHIVED = "archived";
@@ -87,6 +88,8 @@ public class ApiConstants {
     public static final String DNS_SEARCH_ORDER = "dnssearchorder";
     public static final String CHAIN_INFO = "chaininfo";
     public static final String CIDR = "cidr";
+    public static final String CIDR_SIZE = "cidrsize";
+
     public static final String IP6_CIDR = "ip6cidr";
     public static final String CIDR_LIST = "cidrlist";
     public static final String DEST_CIDR_LIST = "destcidrlist";
@@ -313,7 +316,7 @@ public class ApiConstants {
     public static final String MIGRATIONS = "migrations";
     public static final String MEMORY = "memory";
     public static final String MODE = "mode";
-    public static final String NSX_MODE = "routingmode";
+    public static final String ROUTING_MODE = "routingmode";
     public static final String NSX_ENABLED = "isnsxenabled";
     public static final String NAME = "name";
     public static final String METHOD_NAME = "methodname";

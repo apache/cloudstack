@@ -19,10 +19,8 @@ package com.cloud.network;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
@@ -310,7 +308,6 @@ public class NetworkServiceImplTest {
         Mockito.when(networkOfferingDao.findById(1L)).thenReturn(offering);
         Mockito.when(physicalNetworkDao.findById(Mockito.anyLong())).thenReturn(phyNet);
         Mockito.when(dcDao.findById(Mockito.anyLong())).thenReturn(dc);
-        Mockito.lenient().doNothing().when(accountManager).checkAccess(accountMock, networkOffering, dc);
         Mockito.when(accountManager.isRootAdmin(accountMock.getId())).thenReturn(true);
     }
 
@@ -430,7 +427,6 @@ public class NetworkServiceImplTest {
         Mockito.when(dc.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
         Map<String, String> networkProvidersMap = new HashMap<String, String>();
         Mockito.when(networkManager.finalizeServicesAndProvidersForNetwork(ArgumentMatchers.any(NetworkOffering.class), anyLong())).thenReturn(networkProvidersMap);
-        lenient().doNothing().when(alertManager).sendAlert(any(AlertService.AlertType.class), anyLong(), anyLong(), anyString(), anyString());
         Mockito.when(configMgr.isOfferingForVpc(offering)).thenReturn(false);
         Mockito.when(offering.isInternalLb()).thenReturn(false);
 
@@ -439,7 +435,7 @@ public class NetworkServiceImplTest {
                 null, null, false, null, accountMock, null, phyNet,
                 1L, null, null, null, null, null,
                 true, null, null, null, null, null,
-                null, null, null, null, new Pair<>(1500, privateMtu));
+                null, null, null, null, new Pair<>(1500, privateMtu), null);
     }
     @Test
     public void testValidateMtuConfigWhenMtusExceedThreshold() {
@@ -488,7 +484,7 @@ public class NetworkServiceImplTest {
         Mockito.verify(vpcMgr, times(1)).createVpcGuestNetwork(1L, "testNetwork", "Test Network", null,
                 null, null, null, accountMock, null, phyNet,
                 1L, null, null, 1L, null, accountMock,
-                true, null, null, null, null, null, null, null, new Pair<>(0, 1000));
+                true, null, null, null, null, null, null, null, new Pair<>(0, 1000), null);
 
     }
 
@@ -598,6 +594,7 @@ public class NetworkServiceImplTest {
         CreateNetworkCmd cmd = Mockito.mock(CreateNetworkCmd.class);
         prepareCreateNetworkDnsMocks(cmd, Network.GuestType.Isolated, false, false, true);
         Mockito.when(cmd.getIp4Dns1()).thenReturn(ip4Dns[0]);
+        Mockito.when(cmd.getCidrSize()).thenReturn(null);
         try {
             service.createGuestNetwork(cmd);
         } catch (InsufficientCapacityException | ResourceAllocationException e) {

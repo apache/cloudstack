@@ -83,6 +83,14 @@ public interface NetworkService {
             "allow.end.users.to.specify.vr.mtu", "false", "Allow end users to specify VR MTU",
             true, ConfigKey.Scope.Zone);
 
+    ConfigKey<Integer> RoutedIPv4NetworkMaxCidrSize = new ConfigKey<>("Network", Integer.class,
+            "routed.ipv4.network.max.cidr.size", "32", "The maximum value of the cidr size for isolated networks in ROUTED mode",
+            true, ConfigKey.Scope.Zone);
+
+    ConfigKey<Integer> RoutedIPv4NetworkMinCidrSize = new ConfigKey<>("Network", Integer.class,
+            "routed.ipv4.network.min.cidr.size", "24", "The minimum value of the cidr size for isolated networks in ROUTED mode",
+            true, ConfigKey.Scope.Zone);
+
     List<? extends Network> getIsolatedNetworksOwnedByAccountInZone(long zoneId, Account owner);
 
     IpAddress allocateIP(Account ipOwner, long zoneId, Long networkId, Boolean displayIp, String ipaddress) throws ResourceAllocationException, InsufficientAddressCapacityException,

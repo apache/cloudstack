@@ -1377,6 +1377,34 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
     }
 
+    void validateNetworkCidrSize(Account caller, Integer cidrSize, String cidr, NetworkOffering networkOffering, long zoneId) {
+        if (!GuestType.Isolated.equals(networkOffering.getGuestType())) {
+            if (cidrSize != null) {
+                throw new InvalidParameterValueException("network cidr size is only applicable on Isolated networks");
+            }
+            return;
+        }
+        if (NetworkOffering.RoutingMode.ROUTED.equals(networkOffering.getRoutingMode())) {
+            if (cidr != null) {
+                if (!_accountMgr.isRootAdmin(caller.getId())) {
+                    throw new InvalidParameterValueException("Only root admin can set the gateway/netmask of Isolated networks with ROUTED mode");
+                }
+                return;
+            }
+            if (cidrSize == null) {
+                throw new InvalidParameterValueException("network cidr size is required for Isolated networks with ROUTED mode");
+            }
+            if (cidrSize > RoutedIPv4NetworkMaxCidrSize.valueIn(zoneId)) {
+                throw new InvalidParameterValueException("network cidr size cannot be bigger than maximum cidr size " + RoutedIPv4NetworkMaxCidrSize.value());
+            }
+            if (cidrSize < RoutedIPv4NetworkMinCidrSize.valueIn(zoneId)) {
+                throw new InvalidParameterValueException("network cidr size cannot be bigger than minimum cidr size " + RoutedIPv4NetworkMinCidrSize.value());
+            }
+        } else if (cidrSize != null) {
+            throw new InvalidParameterValueException("network cidr size is only applicable on Isolated networks with ROUTED mode: " + cidrSize);
+        }
+    }
+
     void validateSharedNetworkRouterIPs(String gateway, String startIP, String endIP, String netmask, String routerIPv4, String routerIPv6, String startIPv6, String endIPv6, String ip6Cidr, NetworkOffering ntwkOff) {
         if (ntwkOff.getGuestType() == GuestType.Shared) {
             validateSharedNetworkRouterIPv4(routerIPv4, startIP, endIP, gateway, netmask);
@@ -1476,6 +1504,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         String ip4Dns2 = cmd.getIp4Dns2();
         String ip6Dns1 = cmd.getIp6Dns1();
         String ip6Dns2 = cmd.getIp6Dns2();
+        // TODO: specify Network IP (first IP of network)
+        Integer networkCidrSize = cmd.getCidrSize();
 
         // Validate network offering id
         NetworkOffering ntwkOff = getAndValidateNetworkOffering(networkOfferingId);
@@ -1607,6 +1637,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
         }
 
+        validateNetworkCidrSize(caller, networkCidrSize, cidr, ntwkOff, zone.getId());
+
         validateSharedNetworkRouterIPs(gateway, startIP, endIP, netmask, routerIPv4, routerIPv6, startIPv6, endIPv6, ip6Cidr, ntwkOff);
 
         Pair<String, String> ip6GatewayCidr = null;
@@ -1700,6 +1732,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             // Only support advance shared network in IPv6, which means createVlan is a must
             if (ipv6 && ntwkOff.getGuestType() != GuestType.Isolated) {
                 createVlan = true;
+            } else if (ntwkOff.getGuestType() == GuestType.Isolated && NetworkOffering.RoutingMode.ROUTED.equals(ntwkOff.getRoutingMode())) {
+                createVlan = true;
             }
         }
 
@@ -1729,7 +1763,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         Network network = commitNetwork(networkOfferingId, gateway, startIP, endIP, netmask, networkDomain, vlanId, bypassVlanOverlapCheck, name, displayText, caller, physicalNetworkId, zone.getId(),
                 domainId, isDomainSpecific, subdomainAccess, vpcId, startIPv6, endIPv6, ip6Gateway, ip6Cidr, displayNetwork, aclId, secondaryVlanId, privateVlanType, ntwkOff, pNtwk, aclType, owner, cidr, createVlan,
-                externalId, routerIPv4, routerIPv6, associatedNetwork, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2, interfaceMTUs);
+                externalId, routerIPv4, routerIPv6, associatedNetwork, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2, interfaceMTUs, networkCidrSize);
 
         // retrieve, acquire and associate the correct IP addresses
         checkAndSetRouterSourceNatIp(owner, cmd, network);
@@ -2153,7 +2187,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                                   final boolean isDomainSpecific, final Boolean subdomainAccessFinal, final Long vpcId, final String startIPv6, final String endIPv6, final String ip6Gateway, final String ip6Cidr,
                                   final Boolean displayNetwork, final Long aclId, final String isolatedPvlan, final PVlanType isolatedPvlanType, final NetworkOffering ntwkOff, final PhysicalNetwork pNtwk, final ACLType aclType, final Account ownerFinal,
                                   final String cidr, final boolean createVlan, final String externalId, String routerIp, String routerIpv6,
-                                  final Network associatedNetwork, final String ip4Dns1, final String ip4Dns2, final String ip6Dns1, final String ip6Dns2, Pair<Integer, Integer> vrIfaceMTUs) throws InsufficientCapacityException, ResourceAllocationException {
+                                  final Network associatedNetwork, final String ip4Dns1, final String ip4Dns2, final String ip6Dns1, final String ip6Dns2, Pair<Integer, Integer> vrIfaceMTUs,
+                                  final Integer networkCidrSize) throws InsufficientCapacityException, ResourceAllocationException {
         try {
             Network network = Transaction.execute(new TransactionCallbackWithException<Network, Exception>() {
                 @Override
@@ -2209,7 +2244,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                             }
                         }
                         network = _vpcMgr.createVpcGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, networkDomain, owner, sharedDomainId, pNtwk, zoneId, aclType,
-                                subdomainAccess, vpcId, aclId, caller, displayNetwork, externalId, ip6Gateway, ip6Cidr, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2, vrIfaceMTUs);
+                                subdomainAccess, vpcId, aclId, caller, displayNetwork, externalId, ip6Gateway, ip6Cidr, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2, vrIfaceMTUs, networkCidrSize);
                     } else {
                         if (_configMgr.isOfferingForVpc(ntwkOff)) {
                             throw new InvalidParameterValueException("Network offering can be used for VPC networks only");
@@ -2218,7 +2253,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                             throw new InvalidParameterValueException("Internal Lb can be enabled on vpc networks only");
                         }
                         network = _networkMgr.createGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, bypassVlanOverlapCheck, networkDomain, owner, sharedDomainId, pNtwk,
-                                zoneId, aclType, subdomainAccess, vpcId, ip6Gateway, ip6Cidr, displayNetwork, isolatedPvlan, isolatedPvlanType, externalId, routerIp, routerIpv6, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2, vrIfaceMTUs);
+                                zoneId, aclType, subdomainAccess, vpcId, ip6Gateway, ip6Cidr, displayNetwork, isolatedPvlan, isolatedPvlanType, externalId, routerIp, routerIpv6, ip4Dns1, ip4Dns2,
+                                ip6Dns1, ip6Dns2, vrIfaceMTUs, networkCidrSize);
                     }
 
                     if (createVlan && network != null) {
@@ -6096,7 +6132,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {AllowDuplicateNetworkName, AllowEmptyStartEndIpAddress, VRPrivateInterfaceMtu, VRPublicInterfaceMtu, AllowUsersToSpecifyVRMtu};
+        return new ConfigKey<?>[] {AllowDuplicateNetworkName, AllowEmptyStartEndIpAddress, VRPrivateInterfaceMtu, VRPublicInterfaceMtu, AllowUsersToSpecifyVRMtu,
+                RoutedIPv4NetworkMaxCidrSize, RoutedIPv4NetworkMinCidrSize};
     }
 
     public boolean isDefaultAcl(Long aclId) {

@@ -464,9 +464,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final List<Long> domainIds = cmd.getDomainIds();
         final List<Long> zoneIds = cmd.getZoneIds();
         final Boolean forNsx = cmd.isForNsx();
-        String routingMode = cmd.getRoutingMode();
+        final String routingMode = cmd.getRoutingMode();
         final boolean enable = cmd.getEnable();
-        routingMode = validateRoutingMode(forNsx, routingMode);
+
+        if (routingMode != null && !EnumUtils.isValidEnum(NetworkOffering.RoutingMode.class, routingMode)) {
+            throw new InvalidParameterValueException("Invalid mode passed. Valid values: " + Arrays.toString(NetworkOffering.RoutingMode.values()));
+        }
 
         // check if valid domain
         if (CollectionUtils.isNotEmpty(cmd.getDomainIds())) {
@@ -494,30 +497,11 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 domainIds, zoneIds, (enable ? State.Enabled : State.Disabled));
     }
 
-    private String validateRoutingMode(Boolean forNsx, String routingMode) {
-        if (Boolean.TRUE.equals(forNsx)) {
-            if (Objects.isNull(routingMode)) {
-                throw new InvalidParameterValueException("Mode for an NSX offering needs to be specified.Valid values: " + Arrays.toString(NetworkOffering.RoutingMode.values()));
-            }
-            if (!EnumUtils.isValidEnum(NetworkOffering.RoutingMode.class, routingMode)) {
-                throw new InvalidParameterValueException("Invalid mode passed. Valid values: " + Arrays.toString(NetworkOffering.RoutingMode.values()));
-            }
-        } else {
-            if (Objects.nonNull(routingMode)) {
-                if (logger.isTraceEnabled()) {
-                    logger.trace("routingMode has is ignored for non-NSX enabled zones");
-                }
-                routingMode = null;
-            }
-        }
-        return routingMode;
-    }
-
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_OFFERING_CREATE, eventDescription = "creating vpc offering", create = true)
     public VpcOffering createVpcOffering(final String name, final String displayText, final List<String> supportedServices, final Map<String, List<String>> serviceProviders,
                                          final Map serviceCapabilityList, final NetUtils.InternetProtocol internetProtocol, final Long serviceOfferingId,
-                                         final Boolean forNsx, final String mode, List<Long> domainIds, List<Long> zoneIds, State state) {
+                                         final Boolean forNsx, final String routingMode, List<Long> domainIds, List<Long> zoneIds, State state) {
 
         if (!Ipv6Service.Ipv6OfferingCreationEnabled.value() && !(internetProtocol == null || NetUtils.InternetProtocol.IPv4.equals(internetProtocol))) {
             throw new InvalidParameterValueException(String.format("Configuration %s needs to be enabled for creating IPv6 supported VPC offering", Ipv6Service.Ipv6OfferingCreationEnabled.key()));
@@ -559,7 +543,16 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
         }
 
-        if (!sourceNatSvc) {
+        if (NetworkOffering.RoutingMode.ROUTED.toString().equals(routingMode)
+                && (svcProviderMap.containsKey(Service.SourceNat)
+                || svcProviderMap.containsKey(Service.StaticNat)
+                || svcProviderMap.containsKey(Service.Lb)
+                || svcProviderMap.containsKey(Service.PortForwarding)
+                || svcProviderMap.containsKey(Service.Vpn))) {
+            throw new InvalidParameterValueException("SourceNat/StaticNat/Lb/PortForwarding/Vpn service are not supported in VPC Routed mode");
+        }
+
+        if (!NetworkOffering.RoutingMode.ROUTED.toString().equals(routingMode) && !sourceNatSvc) {
             logger.debug("Automatically adding source nat service to the list of VPC services");
             svcProviderMap.put(Service.SourceNat, defaultProviders);
         }
@@ -602,7 +595,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final boolean offersRegionLevelVPC = isVpcOfferingForRegionLevelVpc(serviceCapabilityList);
         final boolean redundantRouter = isVpcOfferingRedundantRouter(serviceCapabilityList);
         final VpcOfferingVO offering = createVpcOffering(name, displayText, svcProviderMap, false, state, serviceOfferingId, supportsDistributedRouter, offersRegionLevelVPC,
-                redundantRouter, forNsx, mode);
+                redundantRouter, forNsx, routingMode);
 
         if (offering != null) {
             List<VpcOfferingDetailsVO> detailsVO = new ArrayList<>();
@@ -630,7 +623,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @DB
     protected VpcOfferingVO createVpcOffering(final String name, final String displayText, final Map<Network.Service, Set<Network.Provider>> svcProviderMap,
                                               final boolean isDefault, final State state, final Long serviceOfferingId, final boolean supportsDistributedRouter, final boolean offersRegionLevelVPC,
-                                              final boolean redundantRouter, Boolean forNsx, String mode) {
+                                              final boolean redundantRouter, Boolean forNsx, String routingMode) {
 
         return Transaction.execute(new TransactionCallback<VpcOfferingVO>() {
             @Override
@@ -642,7 +635,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     offering.setState(state);
                 }
                 offering.setForNsx(forNsx);
-                offering.setRoutingMode(mode);
+                offering.setRoutingMode(routingMode);
                 logger.debug("Adding vpc offering " + offering);
                 offering = _vpcOffDao.persist(offering);
                 // populate services and providers
@@ -3091,8 +3084,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Override
     public Network createVpcGuestNetwork(final long ntwkOffId, final String name, final String displayText, final String gateway, final String cidr, final String vlanId,
             String networkDomain, final Account owner, final Long domainId, final PhysicalNetwork pNtwk, final long zoneId, final ACLType aclType, final Boolean subdomainAccess,
-            final long vpcId, final Long aclId, final Account caller, final Boolean isDisplayNetworkEnabled, String externalId, String ip6Gateway, String ip6Cidr, final String ip4Dns1, final String ip4Dns2, final String ip6Dns1, final String ip6Dns2, Pair<Integer, Integer> vrIfaceMTUs) throws ConcurrentOperationException, InsufficientCapacityException,
-            ResourceAllocationException {
+            final long vpcId, final Long aclId, final Account caller, final Boolean isDisplayNetworkEnabled, String externalId, String ip6Gateway, String ip6Cidr,
+            final String ip4Dns1, final String ip4Dns2, final String ip6Dns1, final String ip6Dns2, Pair<Integer, Integer> vrIfaceMTUs, Integer networkCidrSize)
+            throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
 
         final Vpc vpc = getActiveVpc(vpcId);
 
@@ -3116,7 +3110,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         // 2) Create network
         final Network guestNetwork = _ntwkMgr.createGuestNetwork(ntwkOffId, name, displayText, gateway, cidr, vlanId, false, networkDomain, owner, domainId, pNtwk, zoneId, aclType,
-                subdomainAccess, vpcId, ip6Gateway, ip6Cidr, isDisplayNetworkEnabled, null, null, externalId, null, null, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2, vrIfaceMTUs);
+                subdomainAccess, vpcId, ip6Gateway, ip6Cidr, isDisplayNetworkEnabled, null, null, externalId, null, null, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2, vrIfaceMTUs, networkCidrSize);
 
         if (guestNetwork != null) {
             guestNetwork.setNetworkACLId(aclId);

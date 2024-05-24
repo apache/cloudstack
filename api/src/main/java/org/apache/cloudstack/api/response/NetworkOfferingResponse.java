@@ -107,8 +107,8 @@ public class NetworkOfferingResponse extends BaseResponseWithAnnotations {
     @Param(description = "true if network offering can be used by Tungsten-Fabric networks only")
     private Boolean forTungsten;
 
-    @SerializedName(ApiConstants.NSX_MODE)
-    @Param(description = "Mode in which the network will operate. This parameter is only relevant for NSX offerings")
+    @SerializedName(ApiConstants.ROUTING_MODE)
+    @Param(description = "Mode in which the network will operate. The valid values are NATTED and ROUTED")
     private String routingMode;
 
     @SerializedName(ApiConstants.IS_PERSISTENT)

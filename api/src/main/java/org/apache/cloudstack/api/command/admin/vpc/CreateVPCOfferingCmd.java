@@ -118,12 +118,6 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
             since = "4.20.0")
     private Boolean forNsx;
 
-    @Parameter(name = ApiConstants.NSX_MODE,
-            type = CommandType.STRING,
-            description = "Indicates the mode with which the network will operate. Valid option: NATTED or ROUTED",
-            since = "4.20.0")
-    private String routingMode;
-
     @Parameter(name = ApiConstants.NSX_SUPPORT_LB,
             type = CommandType.BOOLEAN,
             description = "true if network offering for NSX VPC offering supports Load balancer service.",
@@ -135,6 +129,12 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
             description = "set to true if the offering is to be enabled during creation. Default is false",
             since = "4.16")
     private Boolean enable;
+
+    @Parameter(name = ApiConstants.ROUTING_MODE,
+            type = CommandType.STRING,
+            description = "Indicates the mode with which the network will operate. Valid option: NATTED or ROUTED",
+            since = "4.20.0")
+    private String routingMode;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
