@@ -112,7 +112,7 @@ router.beforeEach((to, from, next) => {
               } else {
                 next({ path: redirect })
               }
-              const project = vueProps.$localStorage.get(CURRENT_PROJECT)
+              var project = vueProps.$localStorage.get(CURRENT_PROJECT)
               if (project == null) {
                 project = {}
                 store.commit('SET_PROJECT', project)
