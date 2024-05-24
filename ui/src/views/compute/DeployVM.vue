@@ -392,7 +392,7 @@
                 <template #description>
                   <div v-if="zoneSelected" style="margin-top: 5px">
                     <div style="margin-bottom: 10px">
-                      {{ $t('message.network.selection') }}
+                      {{ $t('message.network.selection') + ('createNetwork' in $store.getters.apis ? ' ' + $t('message.network.selection.new.network') : '') }}
                     </div>
                     <div v-if="vm.templateid && templateNics && templateNics.length > 0">
                       <instance-nics-network-select-list-view
