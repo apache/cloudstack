@@ -536,7 +536,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
 
     private List<Long> ssvmWithLeastMigrateJobs() {
         logger.debug("Picking ssvm from the pool with least commands running on it");
-        String query = "select host_id, count(*) from cmd_exec_log group by host_id order by 2;";
+        String query = "select cel.host_id, count(*) from cmd_exec_log cel join host h on cel.host_id = h.id where h.removed is NULL group by cel.host_id order by 2;";
         TransactionLegacy txn = TransactionLegacy.currentTxn();
 
         List<Long> result = new ArrayList<Long>();
