@@ -19,19 +19,10 @@
 
 package org.apache.cloudstack.utils.process;
 
-import com.cloud.utils.Pair;
-import com.cloud.utils.Ternary;
-import com.google.common.base.Preconditions;
-import com.google.common.io.CharStreams;
-import org.apache.log4j.Logger;
-import org.joda.time.Duration;
-
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -42,6 +33,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.joda.time.Duration;
+
+import com.cloud.utils.Ternary;
+import com.google.common.base.Preconditions;
+import com.google.common.io.CharStreams;
 
 public final class ProcessRunner {
     public static final Logger LOG = Logger.getLogger(ProcessRunner.class);
