@@ -321,6 +321,12 @@ export default {
       }
 
       keys = Object.keys(data[0])
+      for (var i = 1; i < data.length; ++i) {
+        const rowKeys = Object.keys(data[i])
+        if (rowKeys.length > keys.length) {
+          keys = rowKeys
+        }
+      }
 
       result = ''
       result += keys.join(columnDelimiter)
