@@ -6353,6 +6353,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         serviceCapabilityMap.put(Service.StaticNat, staticNatServiceCapabilityMap);
         serviceCapabilityMap.put(Service.Connectivity, connectivityServiceCapabilityMap);
 
+        final Map<Capability, String> gatewayServiceCapabilityMap = cmd.getServiceCapabilities(Service.Gateway);
+        if (MapUtils.isNotEmpty(gatewayServiceCapabilityMap)) {
+            serviceCapabilityMap.put(Service.Gateway, gatewayServiceCapabilityMap);
+        }
+
         // if Firewall service is missing, add Firewall service/provider
         // combination
         if (firewallProvider != null) {
@@ -6582,13 +6587,23 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
-        if (NetworkOffering.RoutingMode.ROUTED.toString().equals(routingMode)
-                && (serviceProviderMap.containsKey(Service.SourceNat)
-                || serviceProviderMap.containsKey(Service.StaticNat)
-                || serviceProviderMap.containsKey(Service.Lb)
-                || serviceProviderMap.containsKey(Service.PortForwarding)
-                || serviceProviderMap.containsKey(Service.Vpn))) {
-            throw new InvalidParameterValueException("SourceNat/StaticNat/Lb/PortForwarding/Vpn service are not supported in Routed mode");
+        if (NetworkOffering.RoutingMode.ROUTED.name().equals(routingMode)) {
+            for (Service service : serviceProviderMap.keySet()) {
+                if (Arrays.asList(Service.SourceNat, Service.StaticNat, Service.Lb, Service.PortForwarding, Service.Vpn).contains(service)) {
+                    Set<Provider> providers = serviceProviderMap.get(service);
+                    if (providers != null && (providers.contains(Provider.VirtualRouter) || providers.contains(Provider.VPCVirtualRouter))) {
+                        throw new InvalidParameterValueException("SourceNat/StaticNat/Lb/PortForwarding/Vpn service are not supported in ROUTED mode");
+                    }
+                }
+            }
+            if (!serviceProviderMap.containsKey(Service.SourceNat)) {
+                // Add VirtualRouter/VPCVirtualRouter as provider of Gateway service
+                if (forVpc) {
+                    serviceProviderMap.put(Service.Gateway, Sets.newHashSet(Provider.VPCVirtualRouter));
+                } else {
+                    serviceProviderMap.put(Service.Gateway, Sets.newHashSet(Provider.VirtualRouter));
+                }
+            }
         }
 
         // validate availability value
@@ -6667,9 +6682,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
 
             final Map<Capability, String> sourceNatServiceCapabilityMap = serviceCapabilityMap.get(Service.SourceNat);
-            if (sourceNatServiceCapabilityMap != null && !sourceNatServiceCapabilityMap.isEmpty()) {
+            if (MapUtils.isNotEmpty(sourceNatServiceCapabilityMap)) {
                 sharedSourceNat = isSharedSourceNat(serviceProviderMap, sourceNatServiceCapabilityMap);
-                redundantRouter = isRedundantRouter(serviceProviderMap, sourceNatServiceCapabilityMap);
+                redundantRouter = isRedundantRouter(serviceProviderMap.get(Service.SourceNat), Service.SourceNat, sourceNatServiceCapabilityMap);
+            }
+
+            final Map<Capability, String> gatewayServiceCapabilityMap = serviceCapabilityMap.get(Service.Gateway);
+            if (MapUtils.isNotEmpty(gatewayServiceCapabilityMap)) {
+                redundantRouter = redundantRouter || isRedundantRouter(serviceProviderMap.get(Service.Gateway), Service.Gateway, gatewayServiceCapabilityMap);
             }
 
             final Map<Capability, String> staticNatServiceCapabilityMap = serviceCapabilityMap.get(Service.StaticNat);
@@ -6821,11 +6841,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         });
     }
 
-    boolean isRedundantRouter(Map<Service, Set<Provider>> serviceProviderMap, Map<Capability, String> sourceNatServiceCapabilityMap) {
+    boolean isRedundantRouter(Set<Provider> providers, Service service, Map<Capability, String> sourceNatServiceCapabilityMap) {
         boolean redundantRouter = false;
         String param = sourceNatServiceCapabilityMap.get(Capability.RedundantRouter);
         if (param != null) {
-            _networkModel.checkCapabilityForProvider(serviceProviderMap.get(Service.SourceNat), Service.SourceNat, Capability.RedundantRouter, param);
+            _networkModel.checkCapabilityForProvider(providers, service, Capability.RedundantRouter, param);
             redundantRouter = param.contains("true");
         }
         return redundantRouter;

@@ -412,7 +412,7 @@ class CsIP:
         self.fw.append(["filter", "", "-P FORWARD DROP"])
 
     def fw_router(self):
-        if self.config.is_vpc():
+        if self.config.is_vpc() or self.config.is_routed():
             return
 
         self.fw.append(["mangle", "front", "-A PREROUTING " +
@@ -500,7 +500,7 @@ class CsIP:
         self.fw.append(['', '', '-A NETWORK_STATS -i eth2 ! -o eth0 -p tcp'])
 
     def fw_vpcrouter(self):
-        if not self.config.is_vpc():
+        if not self.config.is_vpc() or self.config.is_routed():
             return
 
         self.fw.append(["filter", "", "-A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT"])

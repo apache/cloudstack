@@ -116,6 +116,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -629,11 +630,11 @@ public class ConfigurationManagerTest {
 
     @Test
     public void isRedundantRouter() {
-        Map<Network.Service, Set<Network.Provider>> serviceCapabilityMap = new HashMap<>();
+        Set<Network.Provider> providers = new HashSet<>();
         Map<Capability, String> sourceNatServiceCapabilityMap = new HashMap<>();
         sourceNatServiceCapabilityMap.put(Capability.SupportedSourceNatTypes, "peraccount");
         sourceNatServiceCapabilityMap.put(Capability.RedundantRouter, "true");
-        Assert.assertTrue(configurationMgr.isRedundantRouter(serviceCapabilityMap, sourceNatServiceCapabilityMap));
+        Assert.assertTrue(configurationMgr.isRedundantRouter(providers, Network.Service.SourceNat, sourceNatServiceCapabilityMap));
     }
 
     @Test

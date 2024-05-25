@@ -314,7 +314,7 @@
           name="redundantroutercapability"
           ref="redundantroutercapability"
           :label="$t('label.redundantrouter')"
-          v-if="(guestType === 'shared' || guestType === 'isolated') && sourceNatServiceChecked && !isVpcVirtualRouterForAtLeastOneService">
+          v-if="(guestType === 'shared' || guestType === 'isolated') && (sourceNatServiceChecked || routingmode === 'ROUTED') && !isVpcVirtualRouterForAtLeastOneService">
           <a-switch v-model:checked="form.redundantroutercapability" />
         </a-form-item>
         <a-form-item name="sourcenattype" ref="sourcenattype" :label="$t('label.sourcenattype')" v-if="(guestType === 'shared' || guestType === 'isolated') && sourceNatServiceChecked">
@@ -1089,6 +1089,10 @@ export default {
             serviceCapabilityIndex++
             delete params.redundantroutercapability
             delete params.sourcenattype
+          } else if (values.redundantroutercapability === true) {
+            params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'Gateway'
+            params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'RedundantRouter'
+            params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
           }
           if (supportedServices.includes('SourceNat')) {
             if (values.elasticip === true) {

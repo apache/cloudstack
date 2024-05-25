@@ -103,7 +103,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Service Vpn = new Service("Vpn", Capability.SupportedVpnProtocols, Capability.VpnTypes);
         public static final Service Dhcp = new Service("Dhcp", Capability.ExtraDhcpOptions);
         public static final Service Dns = new Service("Dns", Capability.AllowDnsSuffixModification);
-        public static final Service Gateway = new Service("Gateway");
+        public static final Service Gateway = new Service("Gateway", Capability.RedundantRouter);
         public static final Service Firewall = new Service("Firewall", Capability.SupportedProtocols, Capability.MultipleIps, Capability.TrafficStatistics,
                 Capability.SupportedTrafficDirection, Capability.SupportedEgressProtocols);
         public static final Service Lb = new Service("Lb", Capability.SupportedLBAlgorithms, Capability.SupportedLBIsolation, Capability.SupportedProtocols,

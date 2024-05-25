@@ -43,6 +43,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.configuration.ConfigurationManager;
+import com.google.common.collect.Sets;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -543,16 +544,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
         }
 
-        if (NetworkOffering.RoutingMode.ROUTED.toString().equals(routingMode)
-                && (svcProviderMap.containsKey(Service.SourceNat)
-                || svcProviderMap.containsKey(Service.StaticNat)
-                || svcProviderMap.containsKey(Service.Lb)
-                || svcProviderMap.containsKey(Service.PortForwarding)
-                || svcProviderMap.containsKey(Service.Vpn))) {
-            throw new InvalidParameterValueException("SourceNat/StaticNat/Lb/PortForwarding/Vpn service are not supported in VPC Routed mode");
-        }
-
-        if (!NetworkOffering.RoutingMode.ROUTED.toString().equals(routingMode) && !sourceNatSvc) {
+        if (!NetworkOffering.RoutingMode.ROUTED.name().equals(routingMode) && !sourceNatSvc) {
             logger.debug("Automatically adding source nat service to the list of VPC services");
             svcProviderMap.put(Service.SourceNat, defaultProviders);
         }
@@ -573,6 +565,11 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         if (provider == null) {
                             throw new InvalidParameterValueException("Invalid service provider: " + prvNameStr);
                         }
+                        if (NetworkOffering.RoutingMode.ROUTED.name().equals(routingMode)
+                                && Arrays.asList(Service.SourceNat, Service.StaticNat, Service.Lb, Service.PortForwarding, Service.Vpn).contains(service)
+                                && Provider.VPCVirtualRouter.equals(provider)) {
+                            throw new InvalidParameterValueException("SourceNat/StaticNat/Lb/PortForwarding/Vpn service are not supported by VPC in ROUTED mode");
+                        }
 
                         providers.add(provider);
                     }
@@ -585,15 +582,19 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         // add gateway provider (if sourceNat provider is enabled)
         final Set<Provider> sourceNatServiceProviders = svcProviderMap.get(Service.SourceNat);
+        Service redundantRouterService = Service.SourceNat;
         if (CollectionUtils.isNotEmpty(sourceNatServiceProviders)) {
             svcProviderMap.put(Service.Gateway, sourceNatServiceProviders);
+        } else if (NetworkOffering.RoutingMode.ROUTED.name().equals(routingMode)) {
+            svcProviderMap.put(Service.Gateway, Sets.newHashSet(Provider.VPCVirtualRouter));
+            redundantRouterService = Service.Gateway;
         }
 
         validateConnectivtyServiceCapabilities(svcProviderMap.get(Service.Connectivity), serviceCapabilityList);
 
         final boolean supportsDistributedRouter = isVpcOfferingSupportsDistributedRouter(serviceCapabilityList);
         final boolean offersRegionLevelVPC = isVpcOfferingForRegionLevelVpc(serviceCapabilityList);
-        final boolean redundantRouter = isVpcOfferingRedundantRouter(serviceCapabilityList);
+        final boolean redundantRouter = isVpcOfferingRedundantRouter(serviceCapabilityList, redundantRouterService);
         final VpcOfferingVO offering = createVpcOffering(name, displayText, svcProviderMap, false, state, serviceOfferingId, supportsDistributedRouter, offersRegionLevelVPC,
                 redundantRouter, forNsx, routingMode);
 
@@ -742,8 +743,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         return findCapabilityForService(serviceCapabilitystList, Capability.DistributedRouter, Service.Connectivity);
     }
 
-    private boolean isVpcOfferingRedundantRouter(final Map serviceCapabilitystList) {
-        return findCapabilityForService(serviceCapabilitystList, Capability.RedundantRouter, Service.SourceNat);
+    private boolean isVpcOfferingRedundantRouter(final Map serviceCapabilitystList, Service redundantRouterService) {
+        return findCapabilityForService(serviceCapabilitystList, Capability.RedundantRouter, redundantRouterService);
     }
 
     @Override
@@ -3203,8 +3204,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Override
     public boolean isSrcNatIpRequired(long vpcOfferingId) {
         final Map<Network.Service, Set<Network.Provider>> vpcOffSvcProvidersMap = getVpcOffSvcProvidersMap(vpcOfferingId);
-        return Objects.nonNull(vpcOffSvcProvidersMap.get(Network.Service.SourceNat)) && (vpcOffSvcProvidersMap.get(Network.Service.SourceNat).contains(Network.Provider.VPCVirtualRouter) ||
-                vpcOffSvcProvidersMap.get(Service.SourceNat).contains(Provider.Nsx));
+        return Objects.nonNull(vpcOffSvcProvidersMap.get(Network.Service.SourceNat))
+                && (vpcOffSvcProvidersMap.get(Network.Service.SourceNat).contains(Network.Provider.VPCVirtualRouter)
+                || vpcOffSvcProvidersMap.get(Service.Gateway).contains(Network.Provider.VPCVirtualRouter)
+                || vpcOffSvcProvidersMap.get(Service.SourceNat).contains(Provider.Nsx));
     }
 
     /**

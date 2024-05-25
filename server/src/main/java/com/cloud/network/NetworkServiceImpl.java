@@ -1384,7 +1384,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
             return;
         }
-        if (NetworkOffering.RoutingMode.ROUTED.equals(networkOffering.getRoutingMode())) {
+        if (NetworkOffering.RoutingMode.ROUTED.name().equals(networkOffering.getRoutingMode())
+                && (_ntwkOfferingSrvcDao.canProviderSupportServiceInNetworkOffering(networkOffering.getId(), Service.Gateway, Provider.VirtualRouter)
+                || _ntwkOfferingSrvcDao.canProviderSupportServiceInNetworkOffering(networkOffering.getId(), Service.Gateway, Provider.VPCVirtualRouter))) {
             if (cidr != null) {
                 if (!_accountMgr.isRootAdmin(caller.getId())) {
                     throw new InvalidParameterValueException("Only root admin can set the gateway/netmask of Isolated networks with ROUTED mode");
@@ -1732,8 +1734,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             // Only support advance shared network in IPv6, which means createVlan is a must
             if (ipv6 && ntwkOff.getGuestType() != GuestType.Isolated) {
                 createVlan = true;
-            } else if (ntwkOff.getGuestType() == GuestType.Isolated && NetworkOffering.RoutingMode.ROUTED.equals(ntwkOff.getRoutingMode())) {
-                createVlan = true;
             }
         }
 
@@ -1801,7 +1801,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         return _networkMgr.createGuestNetwork(networkOfferingId, name, displayText,
                 null, null, null, false, null, owner, null, physicalNetwork, zoneId,
                 aclType, null, null, null, null, true, null,
-                null, null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null, null);
     }
 
     void checkAndSetRouterSourceNatIp(Account owner, CreateNetworkCmd cmd, Network network) throws InsufficientAddressCapacityException, ResourceAllocationException {

@@ -553,7 +553,9 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         dhcpCapabilities.put(Capability.DhcpAccrossMultipleSubnets, "true");
         capabilities.put(Service.Dhcp, dhcpCapabilities);
 
-        capabilities.put(Service.Gateway, null);
+        final Map<Capability, String> gatewayCapabilities = new HashMap<Capability, String>();
+        gatewayCapabilities.put(Capability.RedundantRouter, "true");
+        capabilities.put(Service.Gateway, gatewayCapabilities);
 
         final Map<Capability, String> sourceNatCapabilities = new HashMap<Capability, String>();
         sourceNatCapabilities.put(Capability.SupportedSourceNatTypes, "peraccount");

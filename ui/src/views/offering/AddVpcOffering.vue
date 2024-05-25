@@ -128,7 +128,7 @@
         <a-form-item name="distributedrouter" ref="distributedrouter" :label="$t('label.service.connectivity.distributedroutercapabilitycheckbox')" v-if="connectivityServiceChecked">
           <a-switch v-model:checked="form.distributedrouter" />
         </a-form-item>
-        <a-form-item name="redundantrouter" ref="redundantrouter" :label="$t('label.redundantrouter')" v-if="sourceNatServiceChecked">
+        <a-form-item name="redundantrouter" ref="redundantrouter" :label="$t('label.redundantrouter')" v-if="sourceNatServiceChecked || routingmode === 'ROUTED'">
           <a-switch v-model:checked="form.redundantrouter" />
         </a-form-item>
         <a-form-item name="serviceofferingid" ref="serviceofferingid">
@@ -623,6 +623,11 @@ export default {
           }
           if (supportedServices.includes('SourceNat') && values.redundantrouter === true) {
             params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'SourceNat'
+            params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'RedundantRouter'
+            params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
+            serviceCapabilityIndex++
+          } else if (values.redundantrouter === true) {
+            params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'Gateway'
             params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'RedundantRouter'
             params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
             serviceCapabilityIndex++

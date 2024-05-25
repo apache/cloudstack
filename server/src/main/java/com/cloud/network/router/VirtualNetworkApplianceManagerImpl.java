@@ -2138,6 +2138,12 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         final StringBuilder buf = new StringBuilder();
 
+        final NetworkOffering offering = _networkOfferingDao.findById(guestNetwork.getNetworkOfferingId());
+        boolean ipv4Routed = NetworkOffering.RoutingMode.ROUTED.name().equals(offering.getRoutingMode());
+        if (ipv4Routed) {
+            buf.append(" is_routed=true");
+        }
+
         boolean isIpv6Supported = _networkOfferingDao.isIpv6Supported(guestNetwork.getNetworkOfferingId());
         if (isIpv6Supported) {
             buf.append(" ip6firewall=true");
