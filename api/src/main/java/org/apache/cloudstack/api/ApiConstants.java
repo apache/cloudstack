@@ -454,6 +454,7 @@ public class ApiConstants {
     public static final String TEMPLATE_IDS = "templateids";
     public static final String TEMPLATE_NAME = "templatename";
     public static final String TEMPLATE_TYPE = "templatetype";
+    public static final String TEMPLATE_FORMAT = "templateformat";
     public static final String TIMEOUT = "timeout";
     public static final String TIMEZONE = "timezone";
     public static final String TIMEZONEOFFSET = "timezoneoffset";
