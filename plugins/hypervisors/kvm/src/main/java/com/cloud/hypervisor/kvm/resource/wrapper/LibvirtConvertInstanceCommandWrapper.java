@@ -73,8 +73,6 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         Hypervisor.HypervisorType destinationHypervisorType = cmd.getDestinationHypervisorType();
         List<String> destinationStoragePools = cmd.getDestinationStoragePools();
         DataStoreTO conversionTemporaryLocation = cmd.getConversionTemporaryLocation();
-        String ovaTemplateDirAndNameOnConversionLocation = cmd.getTemplateDirAndNameOnConversionLocation();
-        String sourceOVAFile = ovaTemplateDirAndNameOnConversionLocation + ".ova";
         long timeout = (long) cmd.getWait() * 1000;
 
         if (cmd.getCheckConversionSupport() && !serverResource.hostSupportsInstanceConversion()) {
@@ -94,11 +92,38 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
 
         final KVMStoragePoolManager storagePoolMgr = serverResource.getStoragePoolMgr();
         KVMStoragePool temporaryStoragePool = getTemporaryStoragePool(conversionTemporaryLocation, storagePoolMgr);
+        final String temporaryConvertPath = temporaryStoragePool.getLocalPath();
+
+        String ovaTemplateDirAndNameOnConversionLocation;
+        String sourceOVAFile;
+        String sourceOVAFilePath;
+        boolean ovaExported = false;
+        if (cmd.getExportOvaToConversionLocation()) {
+            String exportInstanceOVAUrl = getExportInstanceOVAUrl(sourceInstance);
+            if (StringUtils.isBlank(exportInstanceOVAUrl)) {
+                String err = String.format("Couldn't export OVA for the VM %s, due to empty url", sourceInstanceName);
+                s_logger.error(err);
+                return new ConvertInstanceAnswer(cmd, false, err);
+            }
+
+            ovaTemplateDirAndNameOnConversionLocation = UUID.randomUUID().toString();
+            temporaryStoragePool.createFolder(ovaTemplateDirAndNameOnConversionLocation);
+            sourceOVAFile = ovaTemplateDirAndNameOnConversionLocation + ".ova";
+            sourceOVAFilePath = String.format("%s/%s/%s", temporaryConvertPath, ovaTemplateDirAndNameOnConversionLocation, sourceOVAFile);
+            ovaExported = exportOVAFromVMonVCenter(exportInstanceOVAUrl, sourceOVAFilePath, timeout);
+            if (!ovaExported) {
+                String err = String.format("Export OVA for the VM %s failed", sourceInstanceName);
+                s_logger.error(err);
+                return new ConvertInstanceAnswer(cmd, false, err);
+            }
+        } else {
+            ovaTemplateDirAndNameOnConversionLocation = cmd.getTemplateDirAndNameOnConversionLocation();
+            sourceOVAFile = ovaTemplateDirAndNameOnConversionLocation + ".ova";
+            sourceOVAFilePath = String.format("%s/%s/%s", temporaryConvertPath, ovaTemplateDirAndNameOnConversionLocation, sourceOVAFile);
+        }
 
         s_logger.info(String.format("Attempting to convert the OVA %s of the instance %s from %s to KVM", sourceOVAFile, sourceInstanceName, sourceHypervisorType));
         final String temporaryConvertUuid = UUID.randomUUID().toString();
-        final String temporaryConvertPath = temporaryStoragePool.getLocalPath();
-        final String sourceOVAFilePath = String.format("%s/%s/%s", temporaryConvertPath, ovaTemplateDirAndNameOnConversionLocation, sourceOVAFile);
         boolean verboseModeEnabled = serverResource.isConvertInstanceVerboseModeEnabled();
 
         try {
@@ -131,6 +156,11 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
             s_logger.error(error, e);
             return new ConvertInstanceAnswer(cmd, false, error);
         } finally {
+            if (ovaExported && StringUtils.isNotBlank(ovaTemplateDirAndNameOnConversionLocation)) {
+                String sourceOVADir = String.format("%s/%s", temporaryConvertPath, ovaTemplateDirAndNameOnConversionLocation);
+                s_logger.debug("Cleaning up exported OVA at dir " + sourceOVADir);
+                Script.runSimpleBashScript("rm -rf " + sourceOVADir);
+            }
             if (conversionTemporaryLocation instanceof NfsTO) {
                 s_logger.debug("Cleaning up secondary storage temporary location");
                 storagePoolMgr.deleteStoragePool(temporaryStoragePool.getType(), temporaryStoragePool.getUuid());
@@ -152,6 +182,27 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
                                                                   Hypervisor.HypervisorType destinationHypervisorType) {
         return destinationHypervisorType == Hypervisor.HypervisorType.KVM &&
                 supportedInstanceConvertSourceHypervisors.contains(sourceHypervisorType);
+    }
+
+    private String getExportInstanceOVAUrl(RemoteInstanceTO sourceInstance) {
+        String url = null;
+        if (sourceInstance.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
+            url = getExportOVAUrlFromRemoteInstance(sourceInstance);
+        }
+        return url;
+    }
+
+    private String getExportOVAUrlFromRemoteInstance(RemoteInstanceTO vmwareInstance) {
+        String vcenter = vmwareInstance.getVcenterHost();
+        String username = vmwareInstance.getVcenterUsername();
+        String password = vmwareInstance.getVcenterPassword();
+        String datacenter = vmwareInstance.getDatacenterName();
+        String vm = vmwareInstance.getInstanceName();
+
+        String encodedUsername = encodeUsername(username);
+        String encodedPassword = encodeUsername(password);
+        return String.format("vi://%s:%s@%s/%s/vm/%s",
+                encodedUsername, encodedPassword, vcenter, datacenter, vm);
     }
 
     protected List<KVMPhysicalDisk> getTemporaryDisksFromParsedXml(KVMStoragePool pool, LibvirtDomainXMLParser xmlParser, String convertedBasePath) {
@@ -314,6 +365,21 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
             }
         }
         return new Pair<>(sourceHostIp, sourcePath);
+    }
+
+    private boolean exportOVAFromVMonVCenter(String vmExportUrl,
+                                             String targetOvaPath,
+                                             long timeout) {
+        Script script = new Script("ovftool", timeout, s_logger);
+        script.add("--noSSLVerify");
+        script.add(vmExportUrl);
+        script.add(targetOvaPath);
+
+        String logPrefix = "export ova";
+        OutputInterpreter.LineByLineOutputLogger outputLogger = new OutputInterpreter.LineByLineOutputLogger(s_logger, logPrefix);
+        script.execute(outputLogger);
+        int exitValue = script.getExitValue();
+        return exitValue == 0;
     }
 
     protected boolean performInstanceConversion(String sourceOVAFilePath,

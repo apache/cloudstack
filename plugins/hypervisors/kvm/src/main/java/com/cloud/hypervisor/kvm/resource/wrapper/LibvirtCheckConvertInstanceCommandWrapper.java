@@ -41,6 +41,10 @@ public class LibvirtCheckConvertInstanceCommandWrapper extends CommandWrapper<Ch
             return new CheckConvertInstanceAnswer(cmd, false, msg);
         }
 
+        if (serverResource.hostSupportsOvaExport()) {
+            return new CheckConvertInstanceAnswer(cmd, true, true, "");
+        }
+
         return new CheckConvertInstanceAnswer(cmd, true, "");
     }
 }

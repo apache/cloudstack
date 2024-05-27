@@ -37,6 +37,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VmwareDatacenterResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.vm.VmImportService;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -152,6 +153,10 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
             description = "(only for importing migrated VMs from VMware to KVM) optional - the temporary storage pool to perform the virt-v2v migration from VMware to KVM.")
     private Long convertStoragePoolId;
 
+    @Parameter(name = ApiConstants.USE_MS_FOR_OVA_EXPORT, type = CommandType.BOOLEAN,
+            description = "(only for importing migrated VMs from VMware to KVM) optional - if true, forces to use MS for OVA export, else uses Host if ovftool is available, fallback to MS if not.")
+    private Boolean useMsForOvaExport;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -198,6 +203,10 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
 
     public Long getConvertStoragePoolId() {
         return convertStoragePoolId;
+    }
+
+    public Boolean getUseMsForOvaExport() {
+        return BooleanUtils.toBooleanDefaultIfNull(useMsForOvaExport, false);
     }
 
     public String getHypervisor() {

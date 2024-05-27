@@ -306,7 +306,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public static final String TUNGSTEN_PATH = "scripts/vm/network/tungsten";
 
-    public static final String INSTANCE_CONVERSION_SUPPORTED_CHECK_CMD = "which virt-v2v";
+    public static final String INSTANCE_CONVERSION_SUPPORTED_CHECK_CMD = "virt-v2v --version";
+    public static final String OVA_EXPORT_SUPPORTED_CHECK_CMD = "ovftool --version";
 
     private String modifyVlanPath;
     private String versionStringPath;
@@ -5143,6 +5144,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public boolean hostSupportsInstanceConversion() {
         int exitValue = Script.runSimpleBashScriptForExitValue(INSTANCE_CONVERSION_SUPPORTED_CHECK_CMD);
+        return exitValue == 0;
+    }
+
+    public boolean hostSupportsOvaExport() {
+        int exitValue = Script.runSimpleBashScriptForExitValue(OVA_EXPORT_SUPPORTED_CHECK_CMD);
         return exitValue == 0;
     }
 

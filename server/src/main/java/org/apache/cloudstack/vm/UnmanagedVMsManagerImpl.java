@@ -19,6 +19,7 @@ package org.apache.cloudstack.vm;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.CheckConvertInstanceAnswer;
 import com.cloud.agent.api.CheckConvertInstanceCommand;
 import com.cloud.agent.api.CheckVolumeAnswer;
 import com.cloud.agent.api.CheckVolumeCommand;
@@ -1597,7 +1598,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         String ovaTemplateDirAndNameOnConvertLocation = null;
         try {
             HostVO convertHost = selectInstanceConversionKVMHostInCluster(destinationCluster, convertInstanceHostId);
-            checkConversionSupportOnHost(convertHost, sourceVM);
+            CheckConvertInstanceAnswer conversionSupportAnswer = checkConversionSupportOnHost(convertHost, sourceVM);
             LOGGER.debug(String.format("The host %s (%s) is selected to execute the conversion of the instance %s" +
                     " from VMware to KVM ", convertHost.getId(), convertHost.getName(), sourceVM));
 
@@ -1606,10 +1607,20 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             clonedInstance = cloneSourceVmwareUnmanagedInstance(vcenter, datacenterName, username, password, clusterName, sourceHostName, sourceVM);
             String instanceName = getGeneratedInstanceName(owner);
             checkNetworkingBeforeConvertingVmwareInstance(zone, owner, instanceName, hostName, clonedInstance, nicNetworkMap, nicIpAddressMap, forced);
-            ovaTemplateDirAndNameOnConvertLocation = createOvaTemplateFileOfSourceVmwareUnmanagedInstance(vcenter, datacenterName, username, password,
-                    clusterName, sourceHostName, clonedInstance.getName(), temporaryConvertLocation);
-            UnmanagedInstanceTO convertedInstance = convertVmwareInstanceToKVM(sourceVM, clonedInstance, convertHost, convertStoragePools,
-                    temporaryConvertLocation, ovaTemplateDirAndNameOnConvertLocation);
+
+            UnmanagedInstanceTO convertedInstance;
+            if (cmd.getUseMsForOvaExport() || !conversionSupportAnswer.isOvaExportSupported()) {
+                // Uses MS for OVA export
+                ovaTemplateDirAndNameOnConvertLocation = createOvaTemplateFileOfSourceVmwareUnmanagedInstance(vcenter, datacenterName, username, password,
+                        clusterName, sourceHostName, clonedInstance.getName(), temporaryConvertLocation);
+                convertedInstance = convertVmwareInstanceToKVMWithOVAOnConvertLocation(sourceVM, clonedInstance, convertHost, convertStoragePools,
+                        temporaryConvertLocation, ovaTemplateDirAndNameOnConvertLocation);
+            } else {
+                // Uses KVM Host for OVA export, through ovftool
+                convertedInstance = convertVmwareInstanceToKVMAfterExportingOVAOnConvertLocation(sourceVM, clonedInstance, convertHost, convertStoragePools,
+                        temporaryConvertLocation, vcenter, username, password, datacenterName);
+            }
+
             sanitizeConvertedInstance(convertedInstance, clonedInstance);
             UserVm userVm = importVirtualMachineInternal(convertedInstance, instanceName, zone, destinationCluster, null,
                     template, displayName, hostName, caller, owner, userId,
@@ -1796,15 +1807,15 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         throw new CloudRuntimeException(err);
     }
 
-    private void checkConversionSupportOnHost(HostVO convertHost, String sourceVM) {
+    private CheckConvertInstanceAnswer checkConversionSupportOnHost(HostVO convertHost, String sourceVM) {
         LOGGER.debug(String.format("Checking the conversion support on the host %s (%s)", convertHost.getId(), convertHost.getName()));
         CheckConvertInstanceCommand cmd = new CheckConvertInstanceCommand();
         int timeoutSeconds = 60;
         cmd.setWait(timeoutSeconds);
 
-        Answer checkConvertInstanceAnswer;
+        CheckConvertInstanceAnswer checkConvertInstanceAnswer;
         try {
-            checkConvertInstanceAnswer = agentManager.send(convertHost.getId(), cmd);
+            checkConvertInstanceAnswer = (CheckConvertInstanceAnswer) agentManager.send(convertHost.getId(), cmd);
         } catch (AgentUnavailableException | OperationTimedoutException e) {
             String err = String.format("Failed to check conversion support on the host %s for converting instance %s from VMware to KVM due to: %s",
                     convertHost.getName(), sourceVM, e.getMessage());
@@ -1818,24 +1829,58 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             LOGGER.error(err);
             throw new CloudRuntimeException(err);
         }
+
+        return checkConvertInstanceAnswer;
     }
 
-    private UnmanagedInstanceTO convertVmwareInstanceToKVM(String sourceVM, UnmanagedInstanceTO clonedInstance, HostVO convertHost,
-                                                           List<StoragePoolVO> convertStoragePools, DataStoreTO temporaryConvertLocation,
-                                                           String ovaTemplateDirAndNameOnConvertLocation) {
-        LOGGER.debug(String.format("Delegating the conversion of instance %s from VMware to KVM to the host %s (%s)",
-                sourceVM, convertHost.getId(), convertHost.getName()));
+    private UnmanagedInstanceTO convertVmwareInstanceToKVMWithOVAOnConvertLocation(String sourceVM, UnmanagedInstanceTO clonedInstance, HostVO convertHost,
+                                                                                   List<StoragePoolVO> convertStoragePools, DataStoreTO temporaryConvertLocation,
+                                                                                   String ovaTemplateDirAndNameOnConvertLocation) {
+        LOGGER.debug(String.format("Delegating the conversion of instance %s from VMware to KVM to the host %s (%s) using OVA %s.ova on conversion datastore",
+                sourceVM, convertHost.getId(), convertHost.getName(), ovaTemplateDirAndNameOnConvertLocation));
 
         RemoteInstanceTO remoteInstanceTO = new RemoteInstanceTO(sourceVM);
         List<String> destinationStoragePools = selectInstanceConversionStoragePools(convertStoragePools, clonedInstance.getDisks());
         ConvertInstanceCommand cmd = new ConvertInstanceCommand(remoteInstanceTO,
-                Hypervisor.HypervisorType.KVM, destinationStoragePools, temporaryConvertLocation, ovaTemplateDirAndNameOnConvertLocation, false);
+                Hypervisor.HypervisorType.KVM, destinationStoragePools, temporaryConvertLocation, ovaTemplateDirAndNameOnConvertLocation, false, false);
         int timeoutSeconds = StorageManager.ConvertVmwareInstanceToKvmTimeout.value() * 60 * 60;
         cmd.setWait(timeoutSeconds);
 
         Answer convertAnswer;
         try {
              convertAnswer = agentManager.send(convertHost.getId(), cmd);
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
+            String err = String.format("Could not send the convert instance command to host %s (%s) due to: %s",
+                    convertHost.getId(), convertHost.getName(), e.getMessage());
+            LOGGER.error(err, e);
+            throw new CloudRuntimeException(err);
+        }
+
+        if (!convertAnswer.getResult()) {
+            String err = String.format("The convert process failed for instance %s from VMware to KVM on host %s: %s",
+                    sourceVM, convertHost.getName(), convertAnswer.getDetails());
+            LOGGER.error(err);
+            throw new CloudRuntimeException(err);
+        }
+        return ((ConvertInstanceAnswer) convertAnswer).getConvertedInstance();
+    }
+
+    private UnmanagedInstanceTO convertVmwareInstanceToKVMAfterExportingOVAOnConvertLocation(String sourceVM, UnmanagedInstanceTO clonedInstance,HostVO convertHost,
+                                                                                             List<StoragePoolVO> convertStoragePools, DataStoreTO temporaryConvertLocation,
+                                                                                             String vcenterHost, String vcenterUsername, String vcenterPassword, String datacenterName) {
+        LOGGER.debug(String.format("Delegating the conversion of instance %s from VMware to KVM to the host %s (%s) after export OVA through ovftool",
+                sourceVM, convertHost.getId(), convertHost.getName()));
+
+        RemoteInstanceTO remoteInstanceTO = new RemoteInstanceTO(clonedInstance.getName(), vcenterHost, vcenterUsername, vcenterPassword, datacenterName);
+        List<String> destinationStoragePools = selectInstanceConversionStoragePools(convertStoragePools, clonedInstance.getDisks());
+        ConvertInstanceCommand cmd = new ConvertInstanceCommand(remoteInstanceTO,
+                Hypervisor.HypervisorType.KVM, destinationStoragePools, temporaryConvertLocation, null, false, true);
+        int timeoutSeconds = StorageManager.ConvertVmwareInstanceToKvmTimeout.value() * 60 * 60;
+        cmd.setWait(timeoutSeconds);
+
+        Answer convertAnswer;
+        try {
+            convertAnswer = agentManager.send(convertHost.getId(), cmd);
         } catch (AgentUnavailableException | OperationTimedoutException e) {
             String err = String.format("Could not send the convert instance command to host %s (%s) due to: %s",
                     convertHost.getId(), convertHost.getName(), e.getMessage());

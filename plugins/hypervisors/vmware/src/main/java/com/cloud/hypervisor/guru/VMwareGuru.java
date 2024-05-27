@@ -1410,7 +1410,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             clonedInstance.setCloneSourcePowerState(sourceVmPowerState == VirtualMachinePowerState.POWERED_ON ? UnmanagedInstanceTO.PowerState.PowerOn : UnmanagedInstanceTO.PowerState.PowerOff);
             return clonedInstance;
         } catch (Exception e) {
-            String err = String.format("Error cloning VM: %s from external vCenter %s: %s", vmName, vcenter, e.getMessage());
+            String err = String.format("Error cloning VM: %s from vCenter %s: %s", vmName, vcenter, e.getMessage());
             s_logger.error(err, e);
             throw new CloudRuntimeException(err, e);
         }
