@@ -51,7 +51,7 @@
                     <template #suffixIcon><filter-outlined class="ant-select-suffix" /></template>
                     <a-select-option
                       v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) &&
-                      ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool', 'kubernetes'].includes($route.name) ||
+                      ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool', 'kubernetes', 'computeoffering', 'systemoffering', 'diskoffering'].includes($route.name) ||
                       ['account'].includes($route.name)"
                       key="all"
                       :label="$t('label.all')">
@@ -690,7 +690,7 @@ export default {
       if (['volume'].includes(routeName)) {
         return 'user'
       }
-      if (['event'].includes(routeName)) {
+      if (['event', 'computeoffering', 'systemoffering', 'diskoffering'].includes(routeName)) {
         return 'active'
       }
       return 'self'
@@ -768,6 +768,9 @@ export default {
       if (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) &&
         'isofilter' in params && this.routeName === 'iso') {
         params.isofilter = 'all'
+      }
+      if (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) && ['computeoffering', 'systemoffering', 'diskoffering'].includes(this.routeName) && this.$route.params.id) {
+        params.state = 'all'
       }
       if (Object.keys(this.$route.query).length > 0) {
         if ('page' in this.$route.query) {
@@ -985,6 +988,12 @@ export default {
           this.items = []
         }
         this.itemCount = apiItemCount
+
+        if (this.dataView && this.$route.path.includes('/zone/') && 'listVmwareDcs' in this.$store.getters.apis) {
+          api('listVmwareDcs', { zoneid: this.items[0].id }).then(response => {
+            this.items[0].vmwaredc = response.listvmwaredcsresponse.VMwareDC
+          })
+        }
 
         if (['listTemplates', 'listIsos'].includes(this.apiName) && this.items.length > 1) {
           this.items = [...new Map(this.items.map(x => [x.id, x])).values()]
@@ -1757,6 +1766,8 @@ export default {
         } else {
           query.clustertype = filter === 'cloud.managed' ? 'CloudManaged' : 'ExternalManaged'
         }
+      } else if (['computeoffering', 'systemoffering', 'diskoffering'].includes(this.$route.name)) {
+        query.state = filter
       }
       query.filter = filter
       query.page = '1'

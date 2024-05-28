@@ -201,6 +201,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Ipv6GuestPrefixSubnetNetworkMapVO;
@@ -3244,6 +3245,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     }
                 }
                 if (detailEntry.getKey().startsWith(ApiConstants.EXTRA_CONFIG)) {
+                    validateExtraConfigInServiceOfferingDetail(detailEntry.getKey());
                     try {
                         detailEntryValue = URLDecoder.decode(detailEntry.getValue(), "UTF-8");
                     } catch (UnsupportedEncodingException | IllegalArgumentException e) {
@@ -3306,6 +3308,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             return serviceOffering;
         } else {
             return null;
+        }
+    }
+
+    @Override
+    public void validateExtraConfigInServiceOfferingDetail(String detailName) {
+        if (!detailName.equals(DpdkHelper.DPDK_NUMA) && !detailName.equals(DpdkHelper.DPDK_HUGE_PAGES)
+                && !detailName.startsWith(DpdkHelper.DPDK_INTERFACE_PREFIX)) {
+            throw new InvalidParameterValueException("Only extraconfig for DPDK are supported in service offering details");
         }
     }
 
@@ -3446,6 +3456,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final List<Long> zoneIds = cmd.getZoneIds();
         String storageTags = cmd.getStorageTags();
         String hostTags = cmd.getHostTags();
+        ServiceOffering.State state = cmd.getState();
 
         if (userId == null) {
             userId = Long.valueOf(User.UID_SYSTEM);
@@ -3530,7 +3541,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException(String.format("Unable to update service offering: %s by id user: %s because it is not root-admin or domain-admin", offeringHandle.getUuid(), user.getUuid()));
         }
 
-        final boolean updateNeeded = name != null || displayText != null || sortKey != null || storageTags != null || hostTags != null;
+        final boolean updateNeeded = name != null || displayText != null || sortKey != null || storageTags != null || hostTags != null || state != null;
         final boolean detailsUpdateNeeded = !filteredDomainIds.equals(existingDomainIds) || !filteredZoneIds.equals(existingZoneIds);
         if (!updateNeeded && !detailsUpdateNeeded) {
             return _serviceOfferingDao.findById(id);
@@ -3550,8 +3561,17 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             offering.setSortKey(sortKey);
         }
 
+        if (state != null) {
+            offering.setState(state);
+        }
+
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(offeringHandle.getDiskOfferingId());
         updateOfferingTagsIfIsNotNull(storageTags, diskOffering);
+
+        if (diskOffering.isComputeOnly() && state != null) {
+            diskOffering.setState(state == ServiceOffering.State.Active ? DiskOffering.State.Active : DiskOffering.State.Inactive);
+        }
+
         _diskOfferingDao.update(diskOffering.getId(), diskOffering);
 
         updateServiceOfferingHostTagsIfNotNull(hostTags, offering);
@@ -3906,6 +3926,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Long iopsWriteRateMax = cmd.getIopsWriteRateMax();
         Long iopsWriteRateMaxLength = cmd.getIopsWriteRateMaxLength();
         String cacheMode = cmd.getCacheMode();
+        DiskOffering.State state = cmd.getState();
 
         // Check if diskOffering exists
         final DiskOffering diskOfferingHandle = _entityMgr.findById(DiskOffering.class, diskOfferingId);
@@ -3959,7 +3980,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException(String.format("Unable to update disk offering: %s by id user: %s because it is not root-admin or domain-admin", diskOfferingHandle.getUuid(), user.getUuid()));
         }
 
-        boolean updateNeeded = shouldUpdateDiskOffering(name, displayText, sortKey, displayDiskOffering, tags, cacheMode) ||
+        boolean updateNeeded = shouldUpdateDiskOffering(name, displayText, sortKey, displayDiskOffering, tags, cacheMode, state) ||
                 shouldUpdateIopsRateParameters(iopsReadRate, iopsReadRateMax, iopsReadRateMaxLength, iopsWriteRate, iopsWriteRateMax, iopsWriteRateMaxLength) ||
                 shouldUpdateBytesRateParameters(bytesReadRate, bytesReadRateMax, bytesReadRateMaxLength, bytesWriteRate, bytesWriteRateMax, bytesWriteRateMaxLength);
 
@@ -3985,6 +4006,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (cacheMode != null) {
             validateCacheMode(cacheMode);
             diskOffering.setCacheMode(DiskOffering.DiskCacheMode.valueOf(cacheMode.toUpperCase()));
+        }
+
+        if (state != null) {
+            diskOffering.setState(state);
         }
 
         if (updateNeeded && !_diskOfferingDao.update(diskOfferingId, diskOffering)) {
@@ -4207,8 +4232,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
      * Check if it needs to update any parameter when updateDiskoffering is called
      * Verify if name or displayText are not blank, tags is not null, sortkey and displayDiskOffering is not null
      */
-    protected boolean shouldUpdateDiskOffering(String name, String displayText, Integer sortKey, Boolean displayDiskOffering, String tags, String cacheMode) {
-        return !StringUtils.isAllBlank(name, displayText, cacheMode) || tags != null || sortKey != null || displayDiskOffering != null;
+    protected boolean shouldUpdateDiskOffering(String name, String displayText, Integer sortKey, Boolean displayDiskOffering, String tags, String cacheMode, DiskOffering.State state) {
+        return !StringUtils.isAllBlank(name, displayText, cacheMode) || tags != null || sortKey != null || displayDiskOffering != null || state != null;
     }
 
     protected boolean shouldUpdateBytesRateParameters(Long bytesReadRate, Long bytesReadRateMax, Long bytesReadRateMaxLength, Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength) {
@@ -4306,7 +4331,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         if (offering.getDefaultUse()) {
-            throw new InvalidParameterValueException("Default service offerings cannot be deleted");
+            throw new InvalidParameterValueException(String.format("The system service offering [%s] is marked for default use and cannot be deleted", offering.getDisplayText()));
         }
 
         final User user = _userDao.findById(userId);
@@ -5323,7 +5348,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     @DB
-    public boolean deleteVlanAndPublicIpRange(final long userId, final long vlanDbId, final Account caller) {
+    public VlanVO deleteVlanAndPublicIpRange(final long userId, final long vlanDbId, final Account caller) {
         VlanVO vlanRange = _vlanDao.findById(vlanDbId);
         if (vlanRange == null) {
             throw new InvalidParameterValueException("Please specify a valid IP range id.");
@@ -5429,9 +5454,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         });
 
-        messageBus.publish(_name, MESSAGE_DELETE_VLAN_IP_RANGE_EVENT, PublishScope.LOCAL, vlanRange);
-
-        return true;
+        return vlanRange;
     }
 
     @Override
@@ -5937,7 +5960,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Please specify a valid IP range id.");
         }
 
-        return deleteVlanAndPublicIpRange(CallContext.current().getCallingUserId(), vlanDbId, CallContext.current().getCallingAccount());
+        return deleteAndPublishVlanAndPublicIpRange(CallContext.current().getCallingUserId(), vlanDbId, CallContext.current().getCallingAccount());
+    }
+
+    private boolean deleteAndPublishVlanAndPublicIpRange(final long userId, final long vlanDbId, final Account caller) {
+        VlanVO deletedVlan = deleteVlanAndPublicIpRange(userId, vlanDbId, caller);
+        if (deletedVlan != null) {
+            messageBus.publish(_name, MESSAGE_DELETE_VLAN_IP_RANGE_EVENT, PublishScope.LOCAL, deletedVlan);
+            return true;
+        }
+        return false;
     }
 
     @Override

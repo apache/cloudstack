@@ -2977,7 +2977,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         ListResponse<StoragePoolResponse> response = new ListResponse<>();
 
         List<StoragePoolResponse> poolResponses = ViewResponseHelper.createStoragePoolResponse(storagePools.first().toArray(new StoragePoolJoinVO[storagePools.first().size()]));
-        Map<String, Long> poolUuidToIdMap = storagePools.first().stream().collect(Collectors.toMap(StoragePoolJoinVO::getUuid, StoragePoolJoinVO::getId));
+        Map<String, Long> poolUuidToIdMap = storagePools.first().stream().collect(Collectors.toMap(StoragePoolJoinVO::getUuid, StoragePoolJoinVO::getId, (a, b) -> a));
         for (StoragePoolResponse poolResponse : poolResponses) {
             DataStore store = dataStoreManager.getPrimaryDataStore(poolResponse.getId());
             if (store != null) {
@@ -3332,6 +3332,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long storagePoolId = cmd.getStoragePoolId();
         Boolean encrypt = cmd.getEncrypt();
         String storageType = cmd.getStorageType();
+        DiskOffering.State state = cmd.getState();
 
         Filter searchFilter = new Filter(DiskOfferingVO.class, "sortKey", SortKeyAscending.value(), cmd.getStartIndex(), cmd.getPageSizeVal());
         searchFilter.addOrderBy(DiskOfferingVO.class, "id", true);
@@ -3339,7 +3340,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         diskOfferingSearch.select(null, Func.DISTINCT, diskOfferingSearch.entity().getId()); // select distinct
 
         diskOfferingSearch.and("computeOnly", diskOfferingSearch.entity().isComputeOnly(), Op.EQ);
-        diskOfferingSearch.and("activeState", diskOfferingSearch.entity().getState(), Op.EQ);
+
+        if (state != null) {
+            diskOfferingSearch.and("state", diskOfferingSearch.entity().getState(), Op.EQ);
+        }
 
         // Keeping this logic consistent with domain specific zones
         // if a domainId is provided, we just return the disk offering
@@ -3452,7 +3456,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         SearchCriteria<DiskOfferingVO> sc = diskOfferingSearch.create();
 
         sc.setParameters("computeOnly", false);
-        sc.setParameters("activeState", DiskOffering.State.Active);
+
+        if (state != null) {
+            sc.setParameters("state", state);
+        }
 
         if (keyword != null) {
             sc.setParameters("keywordDisplayText", "%" + keyword + "%");
@@ -3595,6 +3602,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Integer cpuSpeed = cmd.getCpuSpeed();
         Boolean encryptRoot = cmd.getEncryptRoot();
         String storageType = cmd.getStorageType();
+        ServiceOffering.State state = cmd.getState();
 
         final Account owner = accountMgr.finalizeOwner(caller, accountName, domainId, projectId);
 
@@ -3629,7 +3637,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         SearchBuilder<ServiceOfferingVO> serviceOfferingSearch = _srvOfferingDao.createSearchBuilder();
         serviceOfferingSearch.select(null, Func.DISTINCT, serviceOfferingSearch.entity().getId()); // select distinct
-        serviceOfferingSearch.and("activeState", serviceOfferingSearch.entity().getState(), Op.EQ);
+
+        if (state != null) {
+            serviceOfferingSearch.and("state", serviceOfferingSearch.entity().getState(), Op.EQ);
+        }
 
         if (vmId != null) {
             currentVmOffering = _srvOfferingDao.findByIdIncludingRemoved(vmInstance.getId(), vmInstance.getServiceOfferingId());
@@ -3779,9 +3790,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 List<String> storageTags = com.cloud.utils.StringUtils.csvTagsToList(diskOffering.getTags());
                 if (!storageTags.isEmpty() && VolumeApiServiceImpl.MatchStoragePoolTagsWithDiskOffering.value()) {
                     for (String tag : storageTags) {
-                        diskOfferingSearch.and(tag, diskOfferingSearch.entity().getTags(), Op.EQ);
+                        diskOfferingSearch.and("storageTag" + tag, diskOfferingSearch.entity().getTags(), Op.FIND_IN_SET);
                     }
-                    diskOfferingSearch.done();
                 }
             }
 
@@ -3893,22 +3903,30 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                     srvOffrDomainDetailSearch.entity().getName(), serviceOfferingSearch.entity().setString(ApiConstants.DOMAIN_ID));
         }
 
+        List<String> hostTags = new ArrayList<>();
         if (currentVmOffering != null) {
-            List<String> hostTags = com.cloud.utils.StringUtils.csvTagsToList(currentVmOffering.getHostTag());
-            if (!hostTags.isEmpty()) {
+            hostTags.addAll(com.cloud.utils.StringUtils.csvTagsToList(currentVmOffering.getHostTag()));
+        }
 
-                serviceOfferingSearch.and().op("hostTag", serviceOfferingSearch.entity().getHostTag(), Op.NULL);
-                serviceOfferingSearch.or().op();
-
-                for(String tag : hostTags) {
-                    serviceOfferingSearch.and(tag, serviceOfferingSearch.entity().getHostTag(), Op.EQ);
+        if (!hostTags.isEmpty()) {
+            serviceOfferingSearch.and().op("hostTag", serviceOfferingSearch.entity().getHostTag(), Op.NULL);
+            serviceOfferingSearch.or();
+            boolean flag = true;
+            for(String tag : hostTags) {
+                if (flag) {
+                    flag = false;
+                    serviceOfferingSearch.op("hostTag" + tag, serviceOfferingSearch.entity().getHostTag(), Op.FIND_IN_SET);
+                } else {
+                    serviceOfferingSearch.and("hostTag" + tag, serviceOfferingSearch.entity().getHostTag(), Op.FIND_IN_SET);
                 }
-                serviceOfferingSearch.cp().cp().done();
             }
+            serviceOfferingSearch.cp().cp();
         }
 
         SearchCriteria<ServiceOfferingVO> sc = serviceOfferingSearch.create();
-        sc.setParameters("activeState", ServiceOffering.State.Active);
+        if (state != null) {
+            sc.setParameters("state", state);
+        }
 
         if (vmId != null) {
             if (!currentVmOffering.isDynamic()) {
@@ -4019,22 +4037,18 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setJoinParameters("domainDetailSearchNormalUser", "domainIdIN", domainIds.toArray());
         }
 
-        if (currentVmOffering != null) {
-
-            if (diskOffering != null) {
-                List<String> storageTags = com.cloud.utils.StringUtils.csvTagsToList(diskOffering.getTags());
-                if (!storageTags.isEmpty() && VolumeApiServiceImpl.MatchStoragePoolTagsWithDiskOffering.value()) {
-                    for(String tag : storageTags) {
-                        sc.setJoinParameters("diskOfferingSearch", tag, tag);
-                    }
+        if (diskOffering != null) {
+            List<String> storageTags = com.cloud.utils.StringUtils.csvTagsToList(diskOffering.getTags());
+            if (!storageTags.isEmpty() && VolumeApiServiceImpl.MatchStoragePoolTagsWithDiskOffering.value()) {
+                for (String tag : storageTags) {
+                    sc.setJoinParameters("diskOfferingSearch", "storageTag" + tag, tag);
                 }
             }
+        }
 
-            List<String> hostTags = com.cloud.utils.StringUtils.csvTagsToList(currentVmOffering.getHostTag());
-            if (!hostTags.isEmpty()) {
-                for(String tag : hostTags) {
-                    sc.setParameters(tag, tag);
-                }
+        if (!hostTags.isEmpty()) {
+            for(String tag : hostTags) {
+                sc.setParameters("hostTag" + tag, tag);
             }
         }
 

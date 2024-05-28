@@ -8,13 +8,13 @@ A modern role-based progressive CloudStack UI based on VueJS and Ant Design.
 
 Install node: (Debian/Ubuntu)
 
-    curl -sL https://deb.nodesource.com/setup_14.x | sudo -E bash -
+    curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
     sudo apt-get install -y nodejs
     # Or use distro provided: sudo apt-get install npm nodejs
 
 Install node: (CentOS/Fedora/RHEL)
 
-    curl -sL https://rpm.nodesource.com/setup_14.x | sudo bash -
+    curl -sL https://rpm.nodesource.com/setup_16.x | sudo bash -
     sudo yum install nodejs
 
 Install node: (Mac OS)
