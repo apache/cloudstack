@@ -77,7 +77,7 @@ public class Value extends GenericPresetVariable {
     @PresetVariableDefinition(description = "Disk offering of the volume.", supportedTypes = {QuotaTypes.VOLUME})
     private GenericPresetVariable diskOffering;
 
-    @PresetVariableDefinition(description = "Storage where the volume or snapshot is. While handling with snapshots, this value can be from the primary storage if the global" +
+    @PresetVariableDefinition(description = "Storage where the volume or snapshot is. While handling with snapshots, this value can be from the primary storage if the global " +
             "setting 'snapshot.backup.to.secondary' is false, otherwise it will be from secondary storage.", supportedTypes = {QuotaTypes.VOLUME, QuotaTypes.SNAPSHOT})
     private Storage storage;
 
