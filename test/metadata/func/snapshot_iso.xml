@@ -18,38 +18,38 @@ under the License.
 -->
 <snapshots>
 
-<!-- 
+<!--
 	  STEPS + TEST CASES COVERED:
 	1.Creating a Normal User
 	2.Register that User
 	3.Deploy a Smaller Disk Offering VM(Small VM)from an ISO image
 		a.List the Root Disk of the Small VM
 		b.List the Data Disk of the Small VM
-	4.Wait for some time for the management server to respond	
+	4.Wait for some time for the management server to respond
 	5.Create a Snapshot from the root disk of the Small VM (create from ISO)
 	6.Create a Snapshot from the data disk of the Small VM (create from ISO)
 	7.Create a Template from the snapshot taken of the root disk of the Small VM (create from ISO)
 	8.Deploy a VM from the template created from the snapshot taken of the root disk of the Small VM(create from ISO)
 	9.Create a Volume from the snapshot taken of the root disk of the Small VM(create from ISO)
 	10.Create a Volume from the snapshot taken of the data disk of the Small VM(create from ISO)
-	
+
 	11.Attach the volume created from the snapshot taken of the root disk of the Small VM to the VM created from the template created from the snapshot taken of the root disk of the Small VM(create from ISO)
 	12.Attach the volume created from the snapshot taken of the root disk of the Small VM to a different VM(create from ISO).
 	13.Reboot,start,stop VM created from the template created from the snapshot taken of the root disk of the Small VM(create from ISO).
 	14.Delete a Snapshot taken of an attached Volume
-	
+
 	15.Destroy VM created from the template created from the snapshot taken of the root disk of the Small VM(create from ISO).
-	16.Create a Snapshot from the root disk of the VM(create from ISO) immediately after its destruction. 
+	16.Create a Snapshot from the root disk of the VM(create from ISO) immediately after its destruction.
  	17.Create a Snapshot from the destroyed root disk of the VM(create from ISO) after expunge delay time duration.
  	18.Destroy VM created from the template created from the snapshot taken of the root disk of the Small VM(create from ISO).
- 	19.Execute the cleanup - Delete a user 
+ 	19.Execute the cleanup - Delete a user
 -->
 
 <!-- 1. Create a Normal User -->
-<command> 
+<command>
 		<name>createUser</name>
 		<testcase>Create a user</testcase>
-		
+
 		<parameters>
 			<item random="true">
 			    <name>username</name>
@@ -87,7 +87,7 @@ under the License.
 		</returnvalue>
 	</command>
 
-<!-- 2.Register that User -->	
+<!-- 2.Register that User -->
 	<command>
 		<name>registerUserKeys</name>
 		<testcase>Registering the user</testcase>
@@ -108,8 +108,8 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-<!-- Test case # - register Iso command -->	
+
+<!-- Test case # - register Iso command -->
 		<command>
 		<name>registerIso</name>
 		<testcase>Register iso</testcase>
@@ -176,9 +176,9 @@ under the License.
 				<param>registerdisplay</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
-<!-- 3.Deploy a Smaller Disk Offering VM(Small VM) -->	
+	</command>
+
+<!-- 3.Deploy a Smaller Disk Offering VM(Small VM) -->
 	<command>
 		<name>deployVirtualMachine</name>
 		<testcase>Deploying VM from small diskOffering</testcase>
@@ -195,7 +195,7 @@ under the License.
 			<item>
 			    <name>diskofferingid</name>
 				<value>5</value>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>privateisoid</param>
@@ -224,7 +224,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 <!-- a.List the Root Disk of the Small VM -->
 	<command>
 		<name>listVolumes</name>
@@ -245,7 +245,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-<!-- b.List the Data Disk of the Small VM -->	
+<!-- b.List the Data Disk of the Small VM -->
 	<command>
 		<name>listVolumes</name>
 		<parameters>
@@ -265,7 +265,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 <!-- 4.Wait for some time for the management server to respond -->
 	<command>
 		<name>sleep.sh</name>
@@ -277,7 +277,7 @@ under the License.
 				<value>200</value>
 			</item>
 		</parameters>
-	</command>	
+	</command>
 
 <!-- 5.Create a Snapshot from the root disk of the Small VM -->
 	<command>
@@ -316,7 +316,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 <!-- 7.Create a Template from the snapshot taken of the root disk of the Small VM -->
 	<command>
 		<name>createTemplate</name>
@@ -346,7 +346,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 <!-- 8.Deploy a VM from the template created from the snapshot taken of the root disk of the Small VM -->
 	<command>
 		<name>deployVirtualMachine</name>
@@ -364,7 +364,7 @@ under the License.
 			<item>
 			    <name>diskofferingid</name>
 				<value>5</value>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>smalltemplateid</param>
@@ -394,7 +394,7 @@ under the License.
 		</returnvalue>
 	</command>
 
-<!-- 9.Create a Volume from the snapshot taken of the root disk of the Small VM -->	
+<!-- 9.Create a Volume from the snapshot taken of the root disk of the Small VM -->
 	<command>
 		<name>createVolume</name>
 		<testcase>Create a volume from smaller disk snapshot</testcase>
@@ -416,7 +416,7 @@ under the License.
 		</returnvalue>
 	</command>
 
-<!-- 10.Create a Volume from the snapshot taken of the data disk of the Small VM -->	
+<!-- 10.Create a Volume from the snapshot taken of the data disk of the Small VM -->
 	<command>
 		<name>createVolume</name>
 		<testcase>Create a volume from smaller disk snapshot</testcase>
@@ -456,7 +456,7 @@ under the License.
 	</command>
 
 <!-- 12.Attach the volume created from the snapshot taken of the root disk of the Small VM to a different VM. -->
-	
+
 	<command>
 		<name>attachVolume</name>
 		<testcase>Attach small volume to a different VM</testcase>
@@ -472,7 +472,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-		
+
 	<command>
 		<name>listConfiguration</name>
 		<testcase>Getting value of the expunge.delay configuration parameter</testcase>
@@ -489,8 +489,8 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-<!-- 13.Reboot,start,stop VM created from the template created from the snapshot taken of the root disk of the Small VM -->		
+
+<!-- 13.Reboot,start,stop VM created from the template created from the snapshot taken of the root disk of the Small VM -->
 <!-- Reboot small vm, start/stop medium vm -->
 	<command>
 		<name>rebootVirtualMachine</name>
@@ -502,7 +502,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>stopVirtualMachine</name>
 		<testcase>stop medium vm</testcase>
@@ -513,7 +513,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>startVirtualMachine</name>
 		<testcase>stop medium vm</testcase>
@@ -548,9 +548,9 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
 
-	
+
+
 <!-- 16.Create a Snapshot from the root disk of the VM immediately after destruction-->
 
 	<command>
@@ -570,8 +570,8 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	
+
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -583,7 +583,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -595,8 +595,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 <!-- 17.Create a Snapshot from the destroyed root disk of the VM after expunge delay time duration -->
 
 	<command>
@@ -617,7 +617,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 <!-- 18.Destroy VM created from the template created from the snapshot taken of the root disk of the Small VM -->
 	<command>
 		<name>destroyVirtualMachine</name>
@@ -629,8 +629,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 <!-- 19. Execute the cleanup - Delete a user -->
 	<command>
 		<name>deleteUser</name>
@@ -642,5 +642,5 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-		
+
 </snapshots>

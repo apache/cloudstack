@@ -28,7 +28,7 @@ under the License.
 		d.List the Data Disk of the Medium VM
 	5.Create a Snapshot from the root disk of the Small VM
 	6.Create a Snapshot from the data disk of the Small VM
-	7.Create a Snapshot from the root disk of the Medium VM 
+	7.Create a Snapshot from the root disk of the Medium VM
 	8.Create a Snapshot from the data disk of the Medium VM
 	9.Create a Template from the snapshot taken of the root disk of the Small VM
 	10.Create a Template from the snapshot taken of the root disk of the Medium VM
@@ -38,9 +38,9 @@ under the License.
 	14.Create a Volume from the snapshot taken of the root disk of the Medium VM
 	15.Attach the volume created from the snapshot taken of the root disk of the Small VM to the VM created from the template created from the snapshot taken of the root disk of the Small VM
 	16.Attach the volume created from the snapshot taken of the root disk of the Medium VM to the VM created from the template created from the snapshot taken of the root disk of the Medium VM
-	17.Reboot,start,stop,destroy VM created from the template created from the snapshot taken of the root disk of the Small VM 
- 	18.Reboot,start,stop,destroy VM created from the template created from the snapshot taken of the root disk of the Medium VM 
-	19.Clean Up 
+	17.Reboot,start,stop,destroy VM created from the template created from the snapshot taken of the root disk of the Small VM
+ 	18.Reboot,start,stop,destroy VM created from the template created from the snapshot taken of the root disk of the Medium VM
+	19.Clean Up
  -->
 <!-- 1. Create a Normal User -->
 
@@ -103,20 +103,20 @@ under the License.
 				<name>account</name>
 				<param>accountvar</param>
 			</item>
-		</parameters>		
+		</parameters>
 		<returnvalue>
 			<item setparam="true">
 				<name>id</name>
 				<param>userid</param>
-			</item>			
+			</item>
 		</returnvalue>
 	</command>
 
-<!-- 
-<command> 
+<!--
+<command>
 		<name>createUser</name>
 		<testcase>Create a user</testcase>
-		
+
 		<parameters>
 			<item random="true">
 			    <name>username</name>
@@ -153,7 +153,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
--->	
+-->
 	<command>
 		<name>registerUserKeys</name>
 		<testcase>Registering the user</testcase>
@@ -173,8 +173,8 @@ under the License.
 				<param>secretkey</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>createNetwork</name>
 		<testcase>	[Creating default network]</testcase>
@@ -211,7 +211,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>deployVirtualMachine</name>
 		<testcase>Deploying vm from small diskOffering</testcase>
@@ -228,7 +228,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>globaltemplateid</param>
@@ -261,7 +261,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 		<command>
 		<name>deployVirtualMachine</name>
 		<testcase>Deploying vm from Medium disk offering</testcase>
@@ -278,7 +278,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>mediumglobaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>globaltemplateid</param>
@@ -319,7 +319,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>listVolumes</name>
 		<parameters>
@@ -339,7 +339,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>listVolumes</name>
 		<parameters>
@@ -359,7 +359,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>listVolumes</name>
 		<parameters>
@@ -379,7 +379,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>listVolumes</name>
 		<parameters>
@@ -411,7 +411,7 @@ under the License.
 				<value>200</value>
 			</item>
 		</parameters>
-	</command>	
+	</command>
 
 <!--  Create a snapshot from Root and DataDisk volumes of user vms (Small vm and Large vm) -->
 	<command>
@@ -431,7 +431,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>createSnapshot</name>
 		<testcase>Creating snapshot of Data disk of small vm</testcase>
@@ -449,7 +449,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>createSnapshot</name>
 		<testcase>Creating snapshot of ROOT disk of medium vm</testcase>
@@ -467,7 +467,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>createSnapshot</name>
 		<testcase>Creating snapshot of DATA disk of medium vm</testcase>
@@ -485,7 +485,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 <!--  Create templates from root snapshots and start vms from them -->
 	<command>
 		<name>createTemplate</name>
@@ -515,7 +515,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>createTemplate</name>
 		<testcase>Creating template of ROOT snapshot of large vm</testcase>
@@ -544,7 +544,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>deployVirtualMachine</name>
 		<testcase>Deploy a vm from template created from snapshot of ROOT disk of small vm</testcase>
@@ -561,7 +561,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>smalltemplateid</param>
@@ -602,7 +602,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>deployVirtualMachine</name>
 		<testcase>Deploy a vm from template created from snapshot of ROOT disk of medium vm</testcase>
@@ -619,7 +619,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>mediumglobaldiskofferinigid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>largetemplateid</param>
@@ -703,8 +703,8 @@ under the License.
 				<param>largevolumeid</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>attachVolume</name>
 		<testcase>Attach small volume to the vm created from small snapshot</testcase>
@@ -720,7 +720,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>attachVolume</name>
 		<testcase>Attach medium volume to the vm created from medium snapshot</testcase>
@@ -736,8 +736,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 <!--  Reboot small vm, start/stop medium vm -->
 	<command>
 		<name>rebootVirtualMachine</name>
@@ -749,7 +749,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>stopVirtualMachine</name>
 		<testcase>stop medium vm</testcase>
@@ -760,7 +760,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>startVirtualMachine</name>
 		<testcase>stop medium vm</testcase>
@@ -784,7 +784,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>destroyVirtualMachine</name>
 		<testcase>Destroy large vm</testcase>
@@ -796,7 +796,7 @@ under the License.
 		</parameters>
 	</command>
 
-	
+
 <!--  Execute the cleanup - Delete a user -->
 
 	<command>
@@ -808,9 +808,9 @@ under the License.
 				<param>accountid</param>
 			</item>
 		</parameters>
-	</command>	
+	</command>
 
-<!-- 
+<!--
 	<command>
 		<name>deleteUser</name>
 		<testcase>Deleting a user</testcase>
@@ -820,8 +820,8 @@ under the License.
 				<param>userid</param>
 			</item>
 		</parameters>
-	</command>	
+	</command>
 -->
-	
-	
+
+
 </snapshots>

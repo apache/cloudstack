@@ -28,11 +28,11 @@
     <bean id="name" class="java.lang.String" >
         <constructor-arg value="child1" />
     </bean>
-    
+
     <bean id="child1" class="java.lang.String" >
         <constructor-arg value="child1" />
     </bean>
-    
+
     <bean id="override" class="org.apache.cloudstack.spring.module.factory.InitTest" />
-    
+
 </beans>
