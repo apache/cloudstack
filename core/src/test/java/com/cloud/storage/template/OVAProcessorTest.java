@@ -131,7 +131,6 @@ public class OVAProcessorTest {
         Assert.assertEquals(virtualSize, processor.getVirtualSize(mockFile));
         Mockito.verify(mockFile, Mockito.times(0)).length();
     }
-    
     @Test
     public void testProcessWithLargeFileSize() throws Exception {
         String templatePath = "/tmp";

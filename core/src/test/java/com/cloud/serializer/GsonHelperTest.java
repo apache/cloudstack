@@ -16,24 +16,22 @@
 // under the License.
 
 package com.cloud.serializer;
+
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.storage.DataStoreRole;
 import com.google.gson.Gson;
 import org.junit.Before;
 import org.junit.Test;
 
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-
 
 /**
  * Test cases to verify working order of GsonHelper.java
  * with regards to a concrete implementation of the DataStoreTO
  * interface
  */
-
 public class GsonHelperTest {
 
     private Gson gson;
@@ -51,7 +49,6 @@ public class GsonHelperTest {
     public void testGsonSerialization() {
         String json = gson.toJson(nfsTO);
         assertNotNull(json);
-        System.out.println("Serialized JSON: " + json);
         assertTrue(json.contains("\"_url\":\"http://example.com\""));
         assertTrue(json.contains("\"_role\":\"Primary\""));
     }
@@ -72,10 +69,10 @@ public class GsonHelperTest {
         assertTrue(json.contains("\"_url\":\"http://example.com\""));
         assertTrue(json.contains("\"_role\":\"Primary\""));
     }
-    
+
     @Test
     public void testGsonLoggerDeserialization() {
-        String json = "{\"_url\":\"http://example.com\",\"_role\":\"Primary\"}";
+        String json ="{\"_url\":\"http://example.com\",\"_role\":\"Primary\"}";
         NfsTO deserializedNfsTO = gsonLogger.fromJson(json, NfsTO.class);
         assertNotNull(deserializedNfsTO);
         assertEquals("http://example.com", deserializedNfsTO.getUrl());
