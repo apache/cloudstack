@@ -540,7 +540,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     }
 
     protected boolean canIpUsedForNonConserveService(PublicIp ip, Service service) {
-        // If it's non-conserve mode, then the new ip should not be used by any other services
+        // If it's non-conserve mode, then the new IP should not be used by any other services
         List<PublicIp> ipList = new ArrayList<PublicIp>();
         ipList.add(ip);
         Map<PublicIp, Set<Service>> ipToServices = getIpToServices(ipList, false, false);
@@ -549,7 +549,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (services == null || services.isEmpty()) {
             return true;
         }
-        // Since it's non-conserve mode, only one service should used for IP
+        // Since it's non-conserve mode, only one service should be used for IP
         if (services.size() != 1) {
             throw new InvalidParameterException("There are multiple services used ip " + ip.getAddress() + ".");
         }
@@ -920,7 +920,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 ip6addr = ipv6AddrMgr.allocateGuestIpv6(network, ipv6Address);
             }
         } else if (network.getGuestType() == Network.GuestType.Shared) {
-            //for basic zone, need to provide the podId to ensure proper ip alloation
+            //for basic zone, need to provide the podId to ensure proper IP allocation
             Long podId = null;
             DataCenter dc = _dcDao.findById(network.getDataCenterId());
 
@@ -951,7 +951,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         if (!StringUtils.isAllBlank(ipaddr, ip6addr)) {
-            // we got the ip addr so up the nics table and secodary ip
+            // we got the IP addr so up the nics table and secondary IP
             final String ip4AddrFinal = ipaddr;
             final String ip6AddrFinal = ip6addr;
             long id = Transaction.execute(new TransactionCallback<Long>() {
@@ -1016,7 +1016,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         List<NicSecondaryIpVO> ipList = _nicSecondaryIpDao.listByNicId(nicId);
         boolean lastIp = false;
         if (ipList.size() == 1) {
-            // this is the last secondary ip to nic
+            // this is the last secondary IP to NIC
             lastIp = true;
         }
 
@@ -1027,7 +1027,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         logger.debug("Calling secondary ip " + secIpVO.getIp4Address() + " release ");
         if (dc.getNetworkType() == NetworkType.Advanced && network.getGuestType() == Network.GuestType.Isolated) {
-            //check PF or static NAT is configured on this ip address
+            //check PF or static NAT is configured on this IP address
             String secondaryIp = secIpVO.getIp4Address();
             List<FirewallRuleVO> fwRulesList = _firewallDao.listByNetworkAndPurpose(network.getId(), Purpose.PortForwarding);
 
@@ -1039,7 +1039,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                     }
                 }
             }
-            //check if the secondary ip associated with any static nat rule
+            //check if the secondary IP associated with any static nat rule
             IPAddressVO publicIpVO = _ipAddressDao.findByIpAndNetworkId(secIpVO.getNetworkId(), secondaryIp);
             if (publicIpVO != null) {
                 logger.debug("VM nic IP " + secondaryIp + " is associated with the static NAT rule public IP address id " + publicIpVO.getId());
@@ -1290,7 +1290,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             throw new IllegalArgumentException("only ip addresses that belong to a virtual network may be disassociated.");
         }
 
-        // don't allow releasing system ip address
+        // don't allow releasing system IP address
         if (ipVO.getSystem()) {
             throwInvalidIdException("Can't release system IP address with specified id", ipVO.getUuid(), "systemIpAddrId");
         }
@@ -1729,7 +1729,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 domainId, isDomainSpecific, subdomainAccess, vpcId, startIPv6, endIPv6, ip6Gateway, ip6Cidr, displayNetwork, aclId, secondaryVlanId, privateVlanType, ntwkOff, pNtwk, aclType, owner, cidr, createVlan,
                 externalId, routerIPv4, routerIPv6, associatedNetwork, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2, interfaceMTUs);
 
-        // retrieve, acquire and associate the correct ip adresses
+        // retrieve, acquire and associate the correct IP addresses
         checkAndSetRouterSourceNatIp(owner, cmd, network);
 
         if (hideIpAddressUsage) {
@@ -1787,7 +1787,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (! userIps.isEmpty()) {
             try {
                 _ipAddrMgr.updateSourceNatIpAddress(requestedIp, userIps);
-            } catch (Exception e) { // pokemon execption from transaction
+            } catch (Exception e) { // pokemon exception from transaction
                 String msg = String.format("Update of source NAT ip to %s for network \"%s\"/%s failed due to %s",
                         requestedIp.getAddress().addr(), network.getName(), network.getUuid(), e.getLocalizedMessage());
                 logger.error(msg);
@@ -1806,7 +1806,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         } else {
             logger.info(String.format("updating network %s to have source NAT ip %s", cmd.getNetworkName(), sourceNatIp));
         }
-        // check if the address is already aqcuired for this network
+        // check if the address is already acquired for this network
         IPAddressVO requestedIp = _ipAddressDao.findByIp(sourceNatIp);
         if (requestedIp == null || requestedIp.getAssociatedWithNetworkId() == null || ! requestedIp.getAssociatedWithNetworkId().equals(network.getId())) {
             logger.warn(String.format("Source NAT IP %s is not associated with network %s/%s. It cannot be used as source NAT IP.",
@@ -1815,7 +1815,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
         // check if it is the current source NAT address
         if (requestedIp.isSourceNat()) {
-            logger.info(String.format("IP address %s is allready the source Nat address. Not updating!", sourceNatIp));
+            logger.info(String.format("IP address %s is already the source Nat address. Not updating!", sourceNatIp));
             return null;
         }
         return requestedIp;
@@ -3051,7 +3051,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         // network offering and domain suffix can be updated for Isolated networks only in 3.0
         if ((networkOfferingId != null || domainSuffix != null) && network.getGuestType() != GuestType.Isolated) {
-            throw new InvalidParameterValueException("NetworkOffering and domain suffix upgrade can be perfomed for Isolated networks only");
+            throw new InvalidParameterValueException("NetworkOffering and domain suffix upgrade can be performed for Isolated networks only");
         }
 
         boolean networkOfferingChanged = false;
@@ -3953,7 +3953,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             return false;
         }
 
-        // Check all ips
+        // Check all IPs
         List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), null);
         List<PublicIp> publicIps = new ArrayList<PublicIp>();
         if (userIps != null && !userIps.isEmpty()) {
@@ -4103,10 +4103,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                     // add security group provider to the physical network
                     addDefaultSecurityGroupProviderToPhysicalNetwork(pNetwork.getId());
 
-                    // add VPCVirtualRouter as the defualt network service provider
+                    // add VPCVirtualRouter as the default network service provider
                     addDefaultVpcVirtualRouterToPhysicalNetwork(pNetwork.getId());
 
-                    // add baremetal as the defualt network service provider
+                    // add baremetal as the default network service provider
                     addDefaultBaremetalProvidersToPhysicalNetwork(pNetwork.getId());
 
                     //Add Internal Load Balancer element as a default network service provider
@@ -4187,7 +4187,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         // If tags are null, then check if there are any other networks with null tags
-        // of the same traffic type. If so then dont update the tags
+        // of the same traffic type. If so then don't update the tags
         if (tags != null && tags.size() == 0) {
             checkForPhysicalNetworksWithoutTag(network);
         }
@@ -4272,7 +4272,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 vnetsInDb.addAll(tempVnets);
             }
 
-            //sorting the vnets in Db to generate a comma separated list of  the vnet string.
+            //sorting the vnets in Db to generate a comma separated list of the vnet string.
             if (vnetsInDb.size() != 0) {
                 commaSeparatedStringOfVnetRanges = generateVnetString(new ArrayList<String>(vnetsInDb));
             }
@@ -4316,7 +4316,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
             // for GRE phynets allow up to 32bits
             // TODO: Not happy about this test.
-            // What about guru-like objects for physical networs?
+            // What about guru-like objects for physical networks?
             logger.debug("ISOLATION METHODS:" + network.getIsolationMethods());
             // Java does not have unsigned types...
             if (network.getIsolationMethods().contains("GRE")) {
@@ -5070,7 +5070,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         if (enabledServices != null) {
-            // check if services can be turned of
+            // check if services can be turned off
             if (!element.canEnableIndividualServices()) {
                 throw new InvalidParameterValueException("Cannot update set of Services for this Service Provider '" + provider.getProviderName() + "'");
             }
@@ -5228,7 +5228,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         // Check if there are more than 1 physical network with null tags in same traffic type.
-        // If so then dont allow to add traffic type.
+        // If so then don't allow to add traffic type.
         List<String> tags = network.getTags();
         if (CollectionUtils.isEmpty(tags)) {
             checkForPhysicalNetworksWithoutTag(network, trafficType);
@@ -5578,14 +5578,14 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         Network network = _networksDao.findById(networkId);
         if (network == null) {
-            // release the acquired IP addrress before throwing the exception
+            // release the acquired IP address before throwing the exception
             // else it will always be in allocating state
             releaseIpAddress(ipId);
             throw new InvalidParameterValueException("Invalid network id is given");
         }
 
         if (network.getVpcId() != null) {
-            // release the acquired IP addrress before throwing the exception
+            // release the acquired IP address before throwing the exception
             // else it will always be in allocating state
             releaseIpAddress(ipId);
             throw new InvalidParameterValueException("Can't assign ip to the network directly when network belongs" + " to VPC.Specify vpcId to associate ip address to VPC");
@@ -5622,7 +5622,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         // VALIDATE IP INFO
-        // if end ip is not specified, default it to startIp
+        // if end IP is not specified, default it to startIp
         if (!NetUtils.isValidIp4(startIp)) {
             throw new InvalidParameterValueException("Invalid format for the ip address parameter");
         }
@@ -5646,7 +5646,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             URI uri = BroadcastDomainType.fromString(broadcastUriString);
             uriString = uri.toString();
             BroadcastDomainType tiep = BroadcastDomainType.getSchemeValue(uri);
-            // numeric vlan or vlan uri are ok for now
+            // numeric vlan or vlan URI are ok for now
             // TODO make a test for any supported scheme
             if (!(tiep == BroadcastDomainType.Vlan || tiep == BroadcastDomainType.Lswitch)) {
                 throw new InvalidParameterValueException("unsupported type of broadcastUri specified: " + broadcastUriString);

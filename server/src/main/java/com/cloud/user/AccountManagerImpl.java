@@ -440,6 +440,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
+    public List<String> getApiNameList() {
+        return apiNameList;
+    }
+
+    @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         _systemAccount = _accountDao.findById(Account.ACCOUNT_ID_SYSTEM);
         if (_systemAccount == null) {
@@ -872,7 +877,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 _messageBus.publish(_name, MESSAGE_REMOVE_ACCOUNT_EVENT, PublishScope.LOCAL, accountId);
             }
 
-            // delete all vm groups belonging to accont
+            // delete all vm groups belonging to account
             List<InstanceGroupVO> groups = _vmGroupDao.listByAccountId(accountId);
             for (InstanceGroupVO group : groups) {
                 if (!_vmMgr.deleteVmGroup(group.getId())) {

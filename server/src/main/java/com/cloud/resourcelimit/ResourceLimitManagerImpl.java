@@ -1642,6 +1642,19 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     }
 
     @Override
+    public void checkPrimaryStorageResourceLimit(Account owner, Boolean display, Long size, DiskOffering diskOffering) throws ResourceAllocationException {
+        List<String> tags = getResourceLimitStorageTagsForResourceCountOperation(display, diskOffering);
+        if (CollectionUtils.isEmpty(tags)) {
+            return;
+        }
+        if (size != null) {
+            for (String tag : tags) {
+                checkResourceLimitWithTag(owner, ResourceType.primary_storage, tag, size);
+            }
+        }
+    }
+
+    @Override
     public void checkVolumeResourceLimitForDiskOfferingChange(Account owner, Boolean display, Long currentSize, Long newSize,
             DiskOffering currentOffering, DiskOffering newOffering
     ) throws ResourceAllocationException {

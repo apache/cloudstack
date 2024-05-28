@@ -3934,7 +3934,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                     srvOffrDomainDetailSearch.entity().getName(), serviceOfferingSearch.entity().setString(ApiConstants.DOMAIN_ID));
         }
 
-        List<String> hostTags = getHostTagsFromTemplateForServiceOfferingsListing(caller, templateId);
+        List<String> hostTags = new ArrayList<>();
         if (currentVmOffering != null) {
             hostTags.addAll(com.cloud.utils.StringUtils.csvTagsToList(currentVmOffering.getHostTag()));
         }
@@ -4799,7 +4799,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         boolean showRemovedISO = cmd.getShowRemoved();
         Account caller = CallContext.current().getCallingAccount();
 
-        boolean listAll = false;
+        boolean listAll = cmd.listAll();
         if (isoFilter != null && isoFilter == TemplateFilter.all) {
             if (caller.getType() == Account.Type.NORMAL) {
                 throw new InvalidParameterValueException("Filter " + TemplateFilter.all + " can be specified by admin only");

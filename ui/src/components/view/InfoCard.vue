@@ -530,7 +530,7 @@
           <div class="resource-detail-item__details">
             <resource-icon v-if="resource.icon" :image="getImage(resource.icon.base64image)" size="1x" style="margin-right: 5px"/>
             <SaveOutlined v-else />
-            <router-link :to="{ path: '/template/' + resource.templateid }">{{ resource.templatedisplaytext || resource.templatename || resource.templateid }} </router-link>
+            <router-link :to="{ path: (resource.templateformat === 'ISO' ? '/iso/' : '/template/') + resource.templateid }">{{ resource.templatedisplaytext || resource.templatename || resource.templateid }} </router-link>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.isoid">

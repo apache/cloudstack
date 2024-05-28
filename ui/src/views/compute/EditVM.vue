@@ -177,7 +177,8 @@ export default {
         isdynamicallyscalable: this.resource.isdynamicallyscalable,
         group: this.resource.group,
         securitygroupids: this.resource.securitygroup.map(x => x.id),
-        userdata: ''
+        userdata: '',
+        haenable: this.resource.haenable
       })
       this.rules = reactive({})
     },

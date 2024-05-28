@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -93,12 +93,12 @@ uncompress() {
 	;;
   esac
 
-  if [ $? -gt 0 ] 
+  if [ $? -gt 0 ]
   then
     printf "Failed to uncompress file, exiting "
-    exit 1 
+    exit 1
   fi
- 
+
   mv $tmpfile $imgfile
   printf "$imgfile"
 
@@ -185,10 +185,10 @@ then
   volfs=${volfs:1}
 fi
 
-if [ ! -d /$volfs ] 
+if [ ! -d /$volfs ]
 then
   zfs create -p $volfs
-  if [ $? -gt 0 ] 
+  if [ $? -gt 0 ]
   then
     printf "Failed to create user fs $volfs\n" >&2
     exit 1
@@ -204,7 +204,7 @@ fi
 volimg2=$(uncompress $volimg)
 volimg2=$(untar $volimg2 /$volfs vmi-root)
 
-if [ ! -f $volimg2 ] 
+if [ ! -f $volimg2 ]
 then
   rollback_if_needed $volfs 2 "root disk file $volimg doesn't exist\n"
   exit 3
@@ -218,15 +218,15 @@ fi
 
 #determine source file size -- it needs to be less than or equal to volsize
 imgsize=$(ls -lh $volimg2| awk -F" " '{print $5}')
-if [ ${imgsize:(-1)} == G ] 
+if [ ${imgsize:(-1)} == G ]
 then
-  imgsize=${imgsize%G} #strip out the G 
+  imgsize=${imgsize%G} #strip out the G
   imgsize=${imgsize%.*} #...and any decimal part
   let imgsize=imgsize+1 # add 1 to compensate for decimal part
   volsizetmp=${volsize%G}
   if [ $volsizetmp -lt $imgsize ]
   then
-    volsize=${imgsize}G  
+    volsize=${imgsize}G
   fi
 fi
 
@@ -235,11 +235,11 @@ tgtfile=${volfs}/vmi-root-${volname}
 create_from_file $volfs $volimg2 $tgtfile  $volsize $cleanup
 
 volswap=$(ls -lh /$volfs | grep swap)
-if [ $? -eq 0 ] 
+if [ $? -eq 0 ]
 then
   swapsize=$(echo $volswap | awk '{print $5}')
   volswap=$(echo $volswap | awk '{print $NF}')
-  volswap=/${volfs}/${volswap} 
+  volswap=/${volfs}/${volswap}
   tgtfile=${volfs}/vmi-swap-${volname}
   create_from_file $volfs $volswap $tgtfile $swapsize $cleanup
 fi

@@ -1240,7 +1240,7 @@ public class VolumeServiceImpl implements VolumeService {
 
         volumeInfo.processEvent(Event.DestroyRequested);
 
-        Volume newVol = _volumeMgr.allocateDuplicateVolume(volume, null);
+        Volume newVol = _volumeMgr.allocateDuplicateVolume(volume, null, null);
         VolumeVO newVolume = (VolumeVO) newVol;
         newVolume.set_iScsiName(null);
         volDao.update(newVolume.getId(), newVolume);
