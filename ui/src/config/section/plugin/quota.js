@@ -16,6 +16,8 @@
 // under the License.
 
 import { shallowRef, defineAsyncComponent } from 'vue'
+import { i18n } from '@/locales'
+
 export default {
   name: 'quota',
   title: 'label.quota',
@@ -78,9 +80,89 @@ export default {
       icon: 'credit-card-outlined',
       docHelp: 'plugins/quota.html#quota-tariff',
       permission: ['quotaTariffList'],
-      columns: ['usageName', 'usageTypeDescription', 'usageUnit', 'tariffValue', 'tariffActions'],
-      details: ['usageName', 'usageTypeDescription', 'usageUnit', 'tariffValue'],
-      component: shallowRef(() => import('@/views/plugins/quota/QuotaTariff.vue'))
+      customParamHandler: (params, query) => {
+        params.listall = false
+
+        if (['all', 'removed'].includes(query.filter) || params.id) {
+          params.listall = true
+        }
+
+        if (['removed'].includes(query.filter)) {
+          params.listonlyremoved = true
+        }
+
+        return params
+      },
+      columns: [
+        'name',
+        {
+          field: 'usageName',
+          customTitle: 'usageType',
+          usageName: (record) => i18n.global.t(record.usageName)
+        },
+        {
+          field: 'usageUnit',
+          customTitle: 'usageUnit',
+          usageUnit: (record) => i18n.global.t(record.usageUnit)
+        },
+        {
+          field: 'tariffValue',
+          customTitle: 'quota.tariff.value'
+        },
+        // {
+        //   field: 'hasActivationRule',
+        //   customTitle: 'quota.tariff.hasactivationrule',
+        //   hasActivationRule: (record) => record.activationRule ? i18n.global.t('label.yes') : i18n.global.t('label.no')
+        // },
+        {
+          field: 'effectiveDate',
+          customTitle: 'start.date'
+        },
+        {
+          field: 'endDate',
+          customTitle: 'end.date'
+        },
+        'removed'
+      ],
+      details: [
+        'uuid',
+        'name',
+        'description',
+        {
+          field: 'usageName',
+          customTitle: 'usageType'
+        },
+        'usageUnit',
+        {
+          field: 'tariffValue',
+          customTitle: 'quota.tariff.value'
+        },
+        {
+          field: 'effectiveDate',
+          customTitle: 'start.date'
+        },
+        {
+          field: 'endDate',
+          customTitle: 'end.date'
+        },
+        'removed'
+        // {
+        //   field: 'activationRule',
+        //   customTitle: 'quota.tariff.activationrule'
+        // }
+      ],
+      filters: ['all', 'active', 'removed'],
+      searchFilters: ['usagetype'],
+      actions: [
+        {
+          api: 'quotaTariffDelete',
+          icon: 'delete-outlined',
+          label: 'label.action.quota.tariff.remove',
+          message: 'message.action.quota.tariff.remove',
+          dataView: true,
+          show: (record) => !record.removed
+        }
+      ]
     },
     {
       name: 'quotaemailtemplate',
