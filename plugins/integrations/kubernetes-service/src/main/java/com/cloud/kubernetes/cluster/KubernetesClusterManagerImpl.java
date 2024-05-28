@@ -1436,31 +1436,22 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
 
         Map<String, Long> templateNodeTypeMap = cmd.getTemplateNodeTypeMap();
+        final VMTemplateVO finalTemplate = getKubernetesServiceTemplate(zone, hypervisorType, templateNodeTypeMap, DEFAULT);
+        final VMTemplateVO controlNodeTemplate = getKubernetesServiceTemplate(zone, hypervisorType, templateNodeTypeMap, CONTROL);
+        final VMTemplateVO workerNodeTemplate = getKubernetesServiceTemplate(zone, hypervisorType, templateNodeTypeMap, WORKER);
+        final VMTemplateVO etcdNodeTemplate = getKubernetesServiceTemplate(zone, hypervisorType, templateNodeTypeMap, ETCD);
         final Network defaultNetwork = getKubernetesClusterNetworkIfMissing(cmd.getName(), zone, owner, (int)controlNodeCount, (int)clusterSize, cmd.getExternalLoadBalancerIpAddress(), cmd.getNetworkId());
-        VMTemplateVO finalTemplate = null;
-        VMTemplateVO controlNodeTemplate = null;
-        VMTemplateVO workerNodeTemplate = null;
-        VMTemplateVO etcdNodeTemplate = null;
-        finalTemplate = getKubernetesServiceTemplate(zone, hypervisorType, templateNodeTypeMap, DEFAULT);
-        controlNodeTemplate = getKubernetesServiceTemplate(zone, hypervisorType, templateNodeTypeMap, CONTROL);
-        workerNodeTemplate = getKubernetesServiceTemplate(zone, hypervisorType, templateNodeTypeMap, WORKER);
-        etcdNodeTemplate = getKubernetesServiceTemplate(zone, hypervisorType, templateNodeTypeMap, ETCD);
-
-        final ServiceOffering defaultServiceOffering = serviceOfferingDao.findById(defaultServiceOfferingId);
-        Pair<Long, Long> capacityPair = calculateClusterCapacity(serviceOfferingNodeTypeMap, nodeTypeCount, defaultServiceOfferingId);
-        final long cores = capacityPair.first();
-        final long memory = capacityPair.second();
-
         final SecurityGroup finalSecurityGroup = securityGroup;
-        VMTemplateVO finalDefaultTemplate = finalTemplate;
-        VMTemplateVO finalControlNodeTemplate = controlNodeTemplate;
-        VMTemplateVO finalEtcdNodeTemplate = etcdNodeTemplate;
-        VMTemplateVO finalWorkerNodeTemplate = workerNodeTemplate;
         final KubernetesClusterVO cluster = Transaction.execute(new TransactionCallback<KubernetesClusterVO>() {
             @Override
             public KubernetesClusterVO doInTransaction(TransactionStatus status) {
+                final ServiceOffering defaultServiceOffering = serviceOfferingDao.findById(defaultServiceOfferingId);
+                Pair<Long, Long> capacityPair = calculateClusterCapacity(serviceOfferingNodeTypeMap, nodeTypeCount, defaultServiceOfferingId);
+                final long cores = capacityPair.first();
+                final long memory = capacityPair.second();
+
                 KubernetesClusterVO newCluster = new KubernetesClusterVO(cmd.getName(), cmd.getDisplayName(), zone.getId(), clusterKubernetesVersion.getId(),
-                        defaultServiceOffering.getId(), Objects.nonNull(finalDefaultTemplate) ? finalDefaultTemplate.getId() : null,
+                        defaultServiceOffering.getId(), Objects.nonNull(finalTemplate) ? finalTemplate.getId() : null,
                         defaultNetwork.getId(), owner.getDomainId(), owner.getAccountId(), controlNodeCount, clusterSize,
                         KubernetesCluster.State.Created, cmd.getSSHKeyPairName(), cores, memory,
                         cmd.getNodeRootDiskSize(), "", KubernetesCluster.ClusterType.CloudManaged);
@@ -1471,23 +1462,22 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                     newCluster.setControlServiceOfferingId(serviceOfferingNodeTypeMap.get(CONTROL.name()));
                 }
                 if (etcdNodes > 0) {
-                    newCluster.setEtcdTemplateId(finalEtcdNodeTemplate.getId());
+                    newCluster.setEtcdTemplateId(etcdNodeTemplate.getId());
                     newCluster.setEtcdNodeCount(etcdNodes);
                     if (serviceOfferingNodeTypeMap.containsKey(ETCD.name())) {
                         newCluster.setEtcdServiceOfferingId(serviceOfferingNodeTypeMap.get(ETCD.name()));
                     }
                 }
-                newCluster.setWorkerTemplateId(finalWorkerNodeTemplate.getId());
-                newCluster.setControlTemplateId(finalControlNodeTemplate.getId());
+                newCluster.setWorkerTemplateId(workerNodeTemplate.getId());
+                newCluster.setControlTemplateId(controlNodeTemplate.getId());
                 if (zone.isSecurityGroupEnabled()) {
                     newCluster.setSecurityGroupId(finalSecurityGroup.getId());
                 }
                 kubernetesClusterDao.persist(newCluster);
+                addKubernetesClusterDetails(newCluster, defaultNetwork, cmd);
                 return newCluster;
             }
         });
-
-        addKubernetesClusterDetails(cluster, defaultNetwork, cmd);
 
         if (logger.isInfoEnabled()) {
             logger.info(String.format("Kubernetes cluster name: %s and ID: %s has been created", cluster.getName(), cluster.getUuid()));
