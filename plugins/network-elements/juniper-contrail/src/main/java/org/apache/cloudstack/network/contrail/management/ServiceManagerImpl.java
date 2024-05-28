@@ -134,7 +134,7 @@ public class ServiceManagerImpl implements ServiceManager {
         } catch (InsufficientCapacityException ex) {
             throw new CloudRuntimeException("Insufficient capacity", ex);
         }
-        CallContext.current().setEventDetails("Vm Id: " + svm.getId());
+        CallContext.current().setEventDetails("VM Id: " + svm.getId());
         return svm;
     }
 

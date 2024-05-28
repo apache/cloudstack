@@ -115,7 +115,7 @@ public class RebootVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
-        CallContext.current().setEventDetails("Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()));
+        CallContext.current().setEventDetails("VM Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()));
         UserVm result;
         result = _userVmService.rebootVirtualMachine(this);
         if (result !=null){

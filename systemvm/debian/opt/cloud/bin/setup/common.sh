@@ -478,7 +478,7 @@ setup_dnsmasq() {
   then
       sed -i -e "/^[#]*dhcp-option.*=119.*$/d" /etc/dnsmasq.conf
       echo "dhcp-option-force=119,$DNS_SEARCH_ORDER" >> /etc/dnsmasq.conf
-      # set the domain search order as a space seprated list for option 15
+      # set the domain search order as a space separated list for option 15
       DNS_SEARCH_ORDER=$(echo $DNS_SEARCH_ORDER | sed 's/,/ /g')
       #send domain name to dhcp clients
       sed -i s/[#]*dhcp-option=15.*$/dhcp-option=15,\""$DNS_SEARCH_ORDER"\"/ /etc/dnsmasq.conf
@@ -539,7 +539,7 @@ setup_dnsmasq() {
   [ $ETH0_IP ] && echo "dhcp-option=6,$NS" >> /etc/dnsmasq.conf
   [ $ETH0_IP6 ] && echo "dhcp-option=option6:dns-server,$NS6" >> /etc/dnsmasq.conf
   #adding the name data-server to the /etc/hosts for allowing the access to user-data service and ssh-key reset in every subnet.
-  #removing the existing entires to avoid duplicates on restarts.
+  #removing the existing entries to avoid duplicates on restarts.
   sed -i  '/data-server/d' /etc/hosts
   if [ -n "$ETH0_IP" ]
           then
@@ -731,7 +731,7 @@ parse_cmd_line() {
       KEY=$(echo $i | cut -d= -f1)
       VALUE=$(echo $i | cut -d= -f2)
       echo -en ${COMMA} >> ${CHEF_TMP_FILE}
-      # Two lines so values do not accidentally interpretted as escapes!!
+      # Two lines so values do not accidentally interpreted as escapes!!
       echo -n \"${KEY}\"': '\"${VALUE}\" >> ${CHEF_TMP_FILE}
       COMMA=",\n\t"
       case $KEY in

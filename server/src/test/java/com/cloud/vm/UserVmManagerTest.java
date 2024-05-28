@@ -292,7 +292,7 @@ public class UserVmManagerTest {
 
         lenient().when(_vmInstanceDao.findById(anyLong())).thenReturn(_vmInstance);
 
-        // UserContext.current().setEventDetails("Vm Id: "+getId());
+        // UserContext.current().setEventDetails("VM Id: "+getId());
         Account account = new AccountVO("testaccount", 1L, "networkdomain", Account.Type.NORMAL, "uuid");
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         //AccountVO(String accountName, long domainId, String networkDomain, short type, int regionId)
@@ -402,7 +402,7 @@ public class UserVmManagerTest {
         serviceOfferingIdField.setAccessible(true);
         serviceOfferingIdField.set(cmd, 1L);
 
-        //UserContext.current().setEventDetails("Vm Id: "+getId());
+        //UserContext.current().setEventDetails("VM Id: "+getId());
         //Account account = (Account) new AccountVO("testaccount", 1L, "networkdomain", (short) 0, 1);
         //AccountVO(String accountName, long domainId, String networkDomain, short type, int regionId)
         //UserContext.registerContext(1, account, null, true);

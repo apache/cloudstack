@@ -277,7 +277,7 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException {
-        CallContext.current().setEventDetails("Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()));
+        CallContext.current().setEventDetails("VM Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()));
         UserVm result = null;
         try {
             result = _userVmService.updateVirtualMachine(this);

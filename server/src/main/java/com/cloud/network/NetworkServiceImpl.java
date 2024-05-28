@@ -3390,7 +3390,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                                     long vmId = nic.getInstanceId();
                                     VMInstanceVO vm = _vmDao.findById(vmId);
                                     if (vm == null) {
-                                        logger.error("Vm for nic " + nic.getId() + " not found with Vm Id:" + vmId);
+                                        logger.error("Vm for nic " + nic.getId() + " not found with VM Id:" + vmId);
                                         continue;
                                     }
                                     long isDefault = (nic.isDefaultNic()) ? 1 : 0;
