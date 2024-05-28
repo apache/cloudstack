@@ -17,6 +17,7 @@
 package org.apache.cloudstack.service;
 
 import com.cloud.network.Network;
+import com.cloud.network.nsx.NsxService;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.vmware.nsx.cluster.Status;
 import com.vmware.nsx.model.ClusterStatus;
@@ -460,7 +461,7 @@ public class NsxApiClient {
                 String t1GatewayName = getTier1GatewayName(domainId, accountId, zoneId, networkId, false);
                 deleteLoadBalancer(getLoadBalancerName(t1GatewayName));
             }
-            removeSegment(segmentName);
+            removeSegment(segmentName, zoneId);
             DhcpRelayConfigs dhcpRelayConfig = (DhcpRelayConfigs) nsxService.apply(DhcpRelayConfigs.class);
             String dhcpRelayConfigId = NsxControllerUtils.getNsxDhcpRelayConfigId(zoneId, domainId, accountId, vpcId, networkId);
             logger.debug(String.format("Removing the DHCP relay config with ID %s", dhcpRelayConfigId));
@@ -473,7 +474,8 @@ public class NsxApiClient {
         }
     }
 
-    protected void removeSegment(String segmentName) {
+
+    protected void removeSegment(String segmentName, long zoneId) {
         logger.debug(String.format("Removing the segment with ID %s", segmentName));
         Segments segmentService = (Segments) nsxService.apply(Segments.class);
         String errMsg = String.format("The segment with ID %s is not found, skipping removal", segmentName);
@@ -492,15 +494,16 @@ public class NsxApiClient {
         SegmentPorts segmentPortsService = (SegmentPorts) nsxService.apply(SegmentPorts.class);
         PolicyGroupMembersListResult segmentPortsList = getSegmentPortList(segmentPortsService, segmentName, enforcementPointPath);
         Long portCount = segmentPortsList.getResultCount();
-        portCount = retrySegmentDeletion(segmentPortsService, portCount, segmentName, enforcementPointPath);
-        logger.info("Port count: " + portCount);
+        if (portCount > 0L) {
+            portCount = retrySegmentDeletion(segmentPortsService, segmentName, enforcementPointPath, zoneId);
+        }
         if (portCount == 0L) {
             logger.debug(String.format("Removing the segment with ID %s", segmentName));
             removeGroupForSegment(segmentName);
             segmentService.delete(segmentName);
         } else {
             String msg = String.format("Cannot remove the NSX segment %s because there are still %s port group(s) attached to it", segmentName, portCount);
-            logger.debug(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
     }
@@ -510,13 +513,16 @@ public class NsxApiClient {
                 false, null, 50L, false, null);
     }
 
-    private Long retrySegmentDeletion(SegmentPorts segmentPortsService, Long portCount, String segmentName, String enforcementPointPath) {
-        int retries = 20;
+    private Long retrySegmentDeletion(SegmentPorts segmentPortsService, String segmentName, String enforcementPointPath, long zoneId) {
+        int retries = NsxService.NSX_API_FAILURE_RETRIES.valueIn(zoneId);
+        int waitingSecs = NsxService.NSX_API_FAILURE_INTERVAL.valueIn(zoneId);
         int count = 1;
+        Long portCount;
         do {
             try {
-                logger.info("Waiting for all port groups to be unlinked from the segment - Attempt: " + count++ + " Waiting for 5 secs");
-                Thread.sleep(5000);
+                logger.info(String.format("Waiting for all port groups to be unlinked from the segment %s - " +
+                        "Attempt: %s. Waiting for %s secs", segmentName, count++, waitingSecs));
+                Thread.sleep(waitingSecs * 1000L);
                 portCount = getSegmentPortList(segmentPortsService, segmentName, enforcementPointPath).getResultCount();
                 retries--;
             } catch (InterruptedException e) {
