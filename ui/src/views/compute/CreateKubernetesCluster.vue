@@ -565,9 +565,12 @@ export default {
         }
       })
     },
+    isAdminOrDomainAdmin () {
+      return ['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype)
+    },
     fetchCksTemplates () {
       const params = {
-        templatefilter: 'all',
+        templatefilter: this.isAdminOrDomainAdmin() ? 'all' : 'self',
         forcks: true
       }
       this.templateLoading = true
