@@ -1609,15 +1609,15 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             checkNetworkingBeforeConvertingVmwareInstance(zone, owner, instanceName, hostName, clonedInstance, nicNetworkMap, nicIpAddressMap, forced);
 
             UnmanagedInstanceTO convertedInstance;
-            if (cmd.getUseMsForOvaExport() || !conversionSupportAnswer.isOvaExportSupported()) {
-                // Uses MS for OVA export
+            if (cmd.getForceMsToDownloadVmFiles() || !conversionSupportAnswer.isOvaExportSupported()) {
+                // Uses MS for OVA export to temporary conversion location
                 ovaTemplateDirAndNameOnConvertLocation = createOvaTemplateFileOfSourceVmwareUnmanagedInstance(vcenter, datacenterName, username, password,
                         clusterName, sourceHostName, clonedInstance.getName(), temporaryConvertLocation);
                 convertedInstance = convertVmwareInstanceToKVMWithOVAOnConvertLocation(sourceVM, clonedInstance, convertHost, convertStoragePools,
                         temporaryConvertLocation, ovaTemplateDirAndNameOnConvertLocation);
             } else {
-                // Uses KVM Host for OVA export, through ovftool
-                convertedInstance = convertVmwareInstanceToKVMAfterExportingOVAOnConvertLocation(sourceVM, clonedInstance, convertHost, convertStoragePools,
+                // Uses KVM Host for OVA export to temporary conversion location, through ovftool
+                convertedInstance = convertVmwareInstanceToKVMAfterExportingOVAToConvertLocation(sourceVM, clonedInstance, convertHost, convertStoragePools,
                         temporaryConvertLocation, vcenter, username, password, datacenterName);
             }
 
@@ -1865,10 +1865,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return ((ConvertInstanceAnswer) convertAnswer).getConvertedInstance();
     }
 
-    private UnmanagedInstanceTO convertVmwareInstanceToKVMAfterExportingOVAOnConvertLocation(String sourceVM, UnmanagedInstanceTO clonedInstance,HostVO convertHost,
+    private UnmanagedInstanceTO convertVmwareInstanceToKVMAfterExportingOVAToConvertLocation(String sourceVM, UnmanagedInstanceTO clonedInstance, HostVO convertHost,
                                                                                              List<StoragePoolVO> convertStoragePools, DataStoreTO temporaryConvertLocation,
                                                                                              String vcenterHost, String vcenterUsername, String vcenterPassword, String datacenterName) {
-        LOGGER.debug(String.format("Delegating the conversion of instance %s from VMware to KVM to the host %s (%s) after export OVA through ovftool",
+        LOGGER.debug(String.format("Delegating the conversion of instance %s from VMware to KVM to the host %s (%s) after OVA export through ovftool",
                 sourceVM, convertHost.getId(), convertHost.getName()));
 
         RemoteInstanceTO remoteInstanceTO = new RemoteInstanceTO(clonedInstance.getName(), vcenterHost, vcenterUsername, vcenterPassword, datacenterName);

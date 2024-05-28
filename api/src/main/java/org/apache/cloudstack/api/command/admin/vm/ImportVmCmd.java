@@ -153,9 +153,9 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
             description = "(only for importing migrated VMs from VMware to KVM) optional - the temporary storage pool to perform the virt-v2v migration from VMware to KVM.")
     private Long convertStoragePoolId;
 
-    @Parameter(name = ApiConstants.USE_MS_FOR_OVA_EXPORT, type = CommandType.BOOLEAN,
-            description = "(only for importing migrated VMs from VMware to KVM) optional - if true, forces to use MS for OVA export, else uses Host if ovftool is available, fallback to MS if not.")
-    private Boolean useMsForOvaExport;
+    @Parameter(name = ApiConstants.FORCE_MS_TO_DOWNLOAD_VM_FILES, type = CommandType.BOOLEAN,
+            description = "(only for importing migrated VMs from VMware to KVM) optional - if true, forces MS to download VM file(s) to temporary storage, else uses Host if ovftool is available, falls back to MS if not.")
+    private Boolean forceMsToDownloadVmFiles;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -205,8 +205,8 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
         return convertStoragePoolId;
     }
 
-    public Boolean getUseMsForOvaExport() {
-        return BooleanUtils.toBooleanDefaultIfNull(useMsForOvaExport, false);
+    public Boolean getForceMsToDownloadVmFiles() {
+        return BooleanUtils.toBooleanDefaultIfNull(forceMsToDownloadVmFiles, false);
     }
 
     public String getHypervisor() {
