@@ -115,7 +115,7 @@
             </template>
             <template v-if="column.key === 'port'" :name="text" :record="record">
               <span v-if="record.isexternalnode || (!record.isexternalnode && !record.isetcdnode)"> {{ cksSshStartingPort + index }} </span>
-              <span v-else> {{ etcdSshPort }} </span>
+              <span v-else> {{ parseInt(etcdSshPort) + parseInt(getEtcdIndex(record.name)) }} </span>
             </template>
             <template v-if="column.key === 'actions'">
               <a-tooltip placement="bottom" >
@@ -490,6 +490,14 @@ export default {
       }).finally(() => {
         this.parentFetchData()
       })
+    },
+    getEtcdIndex (name) {
+      const lastIndex = name.lastIndexOf('-')
+      if (lastIndex > 0) {
+        return name.charAt(lastIndex - 1)
+      } else {
+        return null
+      }
     }
   }
 }
