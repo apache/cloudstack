@@ -155,6 +155,14 @@ export default {
       searchFilters: ['usagetype'],
       actions: [
         {
+          api: 'quotaTariffCreate',
+          icon: 'plus-outlined',
+          label: 'label.action.quota.tariff.create',
+          listView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/plugins/quota/CreateQuotaTariff.vue')))
+        },
+        {
           api: 'quotaTariffDelete',
           icon: 'delete-outlined',
           label: 'label.action.quota.tariff.remove',
