@@ -1,11 +1,6 @@
-accesible
-accont
 accouns
-accout
-accouts
 acess
 acheived
-acknoledgment
 acount
 activ
 actuall
@@ -15,7 +10,6 @@ addes
 additionals
 addreess
 addresse
-addrress
 addtion
 adminstrator
 adres
@@ -34,7 +28,6 @@ alle
 allo
 alloacate
 allocted
-allready
 alocation
 alogrithm
 alpha-numeric
@@ -174,7 +167,6 @@ defalut
 defaut
 defered
 definiton
-defualt
 deleteable
 delt
 delte
@@ -439,7 +431,6 @@ passiv
 passord
 passowrd
 passsed
-perfomed
 perfromed
 permissble
 persistant
@@ -529,7 +520,6 @@ scalled
 scipt
 scirpt
 scrip
-secodary
 seconadry
 seconday
 secund
