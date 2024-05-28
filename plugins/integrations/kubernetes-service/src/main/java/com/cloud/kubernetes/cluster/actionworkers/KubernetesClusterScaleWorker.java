@@ -527,10 +527,12 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         ServiceOffering defaultServiceOffering = serviceOfferingNodeTypeMap.getOrDefault(DEFAULT.name(), null);
 
         for (KubernetesClusterNodeType nodeType : Arrays.asList(CONTROL, ETCD, WORKER)) {
-            if (!hasDefaultOffering && !serviceOfferingNodeTypeMap.containsKey(nodeType.name())) {
+            boolean isWorkerNodeOrAllNodes = WORKER == nodeType;
+            final long newVMRequired = (!isWorkerNodeOrAllNodes || clusterSize == null) ? 0 : clusterSize - originalClusterSize;
+            if (!hasDefaultOffering && !serviceOfferingNodeTypeMap.containsKey(nodeType.name()) && newVMRequired == 0) {
                 continue;
             }
-            boolean isWorkerNodeOrAllNodes = WORKER == nodeType;
+
             boolean serviceOfferingScalingNeeded = isServiceOfferingScalingNeededForNodeType(nodeType, serviceOfferingNodeTypeMap, kubernetesCluster, existingDefaultOfferingId);
             ServiceOffering serviceOffering = serviceOfferingNodeTypeMap.getOrDefault(nodeType.name(), defaultServiceOffering);
             boolean updateNodeOffering = serviceOfferingNodeTypeMap.containsKey(nodeType.name());
@@ -544,7 +546,6 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
                 return autoScaled;
             }
             final boolean clusterSizeScalingNeeded = isWorkerNodeOrAllNodes && clusterSize != null && clusterSize != originalClusterSize;
-            final long newVMRequired = (!isWorkerNodeOrAllNodes || clusterSize == null) ? 0 : clusterSize - originalClusterSize;
             if (serviceOfferingScalingNeeded && clusterSizeScalingNeeded) {
                 if (newVMRequired > 0) {
                     scaleKubernetesClusterOffering(nodeType, serviceOffering, updateNodeOffering, updateClusterOffering);
@@ -578,9 +579,6 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
             logAndThrow(Level.ERROR, String.format("Cannot find the global service offering with ID %s set on the Kubernetes cluster %s", existingOfferingId, kubernetesCluster.getName()));
         }
         ServiceOffering newOffering = map.containsKey(DEFAULT.name()) ? map.get(DEFAULT.name()) : map.get(nodeType.name());
-        if (newOffering == null) {
-            logAndThrow(Level.ERROR, String.format("Cannot find the requested service offering with ID %s", newOffering));
-        }
         return newOffering != null && newOffering.getId() != existingOffering.getId();
     }
 
