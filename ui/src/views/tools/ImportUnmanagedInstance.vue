@@ -167,7 +167,7 @@
               <a-form-item name="convertstorageoption" ref="convertstorageoption">
                 <check-box-select-pair
                   layout="vertical"
-                  style="margin-bottom: 20px"
+                  style="margin-bottom: 5px"
                   v-if="cluster.hypervisortype === 'KVM' && selectedVmwareVcenter"
                   :resourceKey="cluster.id"
                   :selectOptions="storageOptionsForConversion"
@@ -191,6 +191,12 @@
                     {{ pool.name }}
                   </a-select-option>
                 </a-select>
+              </a-form-item>
+              <a-form-item name="forcemstodownloadvmfiles" ref="forcemstodownloadvmfiles" v-if="selectedVmwareVcenter">
+                <template #label>
+                  <tooltip-label :title="$t('label.force.ms.to.download.vm.files')" :tooltip="apiParams.forcemstodownloadvmfiles.description"/>
+                </template>
+                <a-switch v-model:checked="form.forcemstodownloadvmfiles" @change="val => { switches.forceMsToDownloadVmFiles = val }" />
               </a-form-item>
               <a-form-item name="serviceofferingid" ref="serviceofferingid">
                 <template #label>
@@ -518,6 +524,12 @@ export default {
     this.apiConfig.params.forEach(param => {
       this.apiParams[param.name] = param
     })
+    this.apiConfig = this.$store.getters.apis.importVm || {}
+    this.apiConfig.params.forEach(param => {
+      if (!(param.name in this.apiParams)) {
+        this.apiParams[param.name] = param
+      }
+    })
   },
   created () {
     this.initForm()
@@ -696,6 +708,7 @@ export default {
         rootdiskid: 0,
         migrateallowed: this.switches.migrateAllowed,
         forced: this.switches.forced,
+        forcemstodownloadvmfiles: this.switches.forceMsToDownloadVmFiles,
         domainid: null,
         account: null
       })
@@ -1089,8 +1102,9 @@ export default {
           if (this.selectedStoragePoolForConversion) {
             params.convertinstancepoolid = this.selectedStoragePoolForConversion
           }
+          params.forcemstodownloadvmfiles = values.forcemstodownloadvmfiles
         }
-        var keys = ['hostname', 'domainid', 'projectid', 'account', 'migrateallowed', 'forced']
+        var keys = ['hostname', 'domainid', 'projectid', 'account', 'migrateallowed', 'forced', 'forcemstodownloadvmfiles']
         if (this.templateType !== 'auto') {
           keys.push('templateid')
         }

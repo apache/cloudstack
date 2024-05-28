@@ -918,6 +918,7 @@
 "label.for": "for",
 "label.forbidden": "Forbidden",
 "label.forced": "Force",
+"label.force.ms.to.download.vm.files": "Force MS to download VM file(s) to temporary storage",
 "label.force.stop": "Force stop",
 "label.force.reboot": "Force reboot",
 "label.forceencap": "Force UDP encapsulation of ESP packets",
