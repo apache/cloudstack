@@ -220,7 +220,7 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
 
     private Pair<Boolean, Integer> validateAndSetupNode(Network network, IpAddress publicIp, Account account,
                                    Long nodeId, int nodeIndex, String base64UserData) {
-        int startSshPortNumber = KubernetesClusterActionWorker.CLUSTER_NODES_DEFAULT_START_SSH_PORT + (int) kubernetesCluster.getTotalNodeCount();
+        int startSshPortNumber = KubernetesClusterActionWorker.CLUSTER_NODES_DEFAULT_START_SSH_PORT + (int) kubernetesCluster.getTotalNodeCount() - kubernetesCluster.getEtcdNodeCount().intValue();
         int sshStartPort = startSshPortNumber + nodeIndex;
         try {
             if (Objects.isNull(network.getVpcId())) {

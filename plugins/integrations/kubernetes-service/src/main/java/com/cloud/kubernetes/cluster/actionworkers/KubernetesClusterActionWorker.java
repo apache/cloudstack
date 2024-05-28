@@ -922,7 +922,7 @@ public class KubernetesClusterActionWorker {
         try {
             List<KubernetesClusterVmMapVO> clusterVmList = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
             List<KubernetesClusterVmMapVO> externalNodes = clusterVmList.stream().filter(KubernetesClusterVmMapVO::isExternalNode).collect(Collectors.toList());
-            int endPort = (CLUSTER_NODES_DEFAULT_START_SSH_PORT + clusterVmList.size() - externalNodes.size() - 1);
+            int endPort = (CLUSTER_NODES_DEFAULT_START_SSH_PORT + clusterVmList.size() - externalNodes.size() - kubernetesCluster.getEtcdNodeCount().intValue() - 1);
             provisionFirewallRules(publicIp, owner, CLUSTER_NODES_DEFAULT_START_SSH_PORT, endPort);
             if (logger.isInfoEnabled()) {
                 logger.info(String.format("Provisioned firewall rule to open up port %d to %d on %s for Kubernetes cluster : %s", CLUSTER_NODES_DEFAULT_START_SSH_PORT, endPort, publicIp.getAddress().addr(), kubernetesCluster.getName()));
