@@ -37,6 +37,7 @@ export default {
       icon: 'team-outlined',
       docHelp: 'adminguide/accounts.html#using-an-ldap-server-for-user-authentication',
       permission: ['listLdapConfigurations'],
+      searchFilters: ['domainid', 'hostname', 'port'],
       columns: ['hostname', 'port', 'domainid'],
       details: ['hostname', 'port', 'domainid'],
       actions: [
@@ -118,6 +119,7 @@ export default {
       icon: 'database-outlined',
       docHelp: 'adminguide/hosts.html?highlight=Hypervisor%20capabilities#hypervisor-capabilities',
       permission: ['listHypervisorCapabilities'],
+      searchFilters: ['hypervisor'],
       columns: ['hypervisor', 'hypervisorversion', 'maxguestslimit', 'maxhostspercluster'],
       details: ['hypervisor', 'hypervisorversion', 'maxguestslimit', 'maxdatavolumeslimit', 'maxhostspercluster', 'securitygroupenabled', 'storagemotionenabled'],
       actions: [

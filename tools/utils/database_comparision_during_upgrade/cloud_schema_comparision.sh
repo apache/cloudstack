@@ -52,20 +52,20 @@ do
                 cat $path1/upgradedschema >> $tablename.diff
                 sort $tablename.diff > $tablename.sort
                 uniq -u $tablename.sort > $tablename.uniq
-		
+
                 if [ -s $tablename.uniq ]
                 then
-                        echo $tablename  "table schema is different."                        
+                        echo $tablename  "table schema is different."
                         cat $path1/upgradedschema > $tablename
-                        rm -rf $tablename.diff $tablename.sort  
+                        rm -rf $tablename.diff $tablename.sort
 
                         # do something as file has data
                 else
 
-                        rm -rf $tablename.diff $tablename.sort $tablename.uniq 
+                        rm -rf $tablename.diff $tablename.sort $tablename.uniq
                 fi
 
-		
+
         fi
 done
 
