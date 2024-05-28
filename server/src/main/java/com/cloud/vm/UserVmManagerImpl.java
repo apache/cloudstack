@@ -7844,10 +7844,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
             vm.setPassword(password);
         }
-        UserVmDetailVO userVmPasswordDetail = userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.PASSWORD);
         if (needRestart) {
             try {
-                if (Objects.nonNull(userVmPasswordDetail)) {
+                if (Objects.nonNull(password)) {
                     params = new HashMap<>();
                     params.put(VirtualMachineProfile.Param.VmPassword, password);
                 }
