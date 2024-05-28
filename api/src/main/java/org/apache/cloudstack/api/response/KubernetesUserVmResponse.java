@@ -34,6 +34,11 @@ public class KubernetesUserVmResponse extends UserVmResponse {
     @Param(description = "If the VM is an etcd node")
     private boolean isEtcdNode;
 
+    @SerializedName(ApiConstants.KUBERNETES_NODE_VERSION)
+    @Param(description = "Kubernetes version of the node")
+    private String nodeVersion;
+
+
     public void setExternalNode(boolean externalNode) {
         isExternalNode = externalNode;
     }
@@ -41,4 +46,6 @@ public class KubernetesUserVmResponse extends UserVmResponse {
     public void setEtcdNode(boolean etcdNode) {
         isEtcdNode = etcdNode;
     }
+
+    public void setNodeVersion(String nodeVersion) { this.nodeVersion = nodeVersion;}
 }

@@ -1458,6 +1458,7 @@
 "label.no.items": "No available Items",
 "label.no.matching.offering": "No matching offering found",
 "label.no.matching.network": "No matching Networks found",
+"label.node.version": "Node version",
 "label.noderootdisksize": "Node root disk size (in GB)",
 "label.nodiskcache": "No disk cache",
 "label.none": "None",

@@ -51,6 +51,9 @@ public class KubernetesClusterVmMapVO implements KubernetesClusterVmMap {
     @Column(name = "manual_upgrade")
     boolean manualUpgrade;
 
+    @Column(name = "kubernetes_node_version")
+    String nodeVersion;
+
     public KubernetesClusterVmMapVO() {
     }
 
@@ -115,5 +118,13 @@ public class KubernetesClusterVmMapVO implements KubernetesClusterVmMap {
 
     public void setManualUpgrade(boolean manualUpgrade) {
         this.manualUpgrade = manualUpgrade;
+    }
+
+    public String getNodeVersion() {
+        return nodeVersion;
+    }
+
+    public void setNodeVersion(String nodeVersion) {
+        this.nodeVersion = nodeVersion;
     }
 }

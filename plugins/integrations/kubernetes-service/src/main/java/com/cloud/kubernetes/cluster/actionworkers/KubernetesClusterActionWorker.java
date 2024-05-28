@@ -363,6 +363,7 @@ public class KubernetesClusterActionWorker {
     protected KubernetesClusterVmMapVO addKubernetesClusterVm(final long kubernetesClusterId, final long vmId,
                                                               boolean isControlNode, boolean isExternalNode,
                                                               boolean isEtcdNode,  boolean markForManualUpgrade) {
+        KubernetesSupportedVersion kubernetesVersion = kubernetesSupportedVersionDao.findById(kubernetesCluster.getKubernetesVersionId());
         return Transaction.execute(new TransactionCallback<KubernetesClusterVmMapVO>() {
             @Override
             public KubernetesClusterVmMapVO doInTransaction(TransactionStatus status) {
@@ -370,6 +371,7 @@ public class KubernetesClusterActionWorker {
                 newClusterVmMap.setExternalNode(isExternalNode);
                 newClusterVmMap.setManualUpgrade(markForManualUpgrade);
                 newClusterVmMap.setEtcdNode(isEtcdNode);
+                newClusterVmMap.setNodeVersion(kubernetesVersion.getSemanticVersion());
                 kubernetesClusterVmMapDao.persist(newClusterVmMap);
                 return newClusterVmMap;
             }

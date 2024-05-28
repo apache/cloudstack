@@ -117,6 +117,9 @@
               <span v-if="record.isexternalnode || (!record.isexternalnode && !record.isetcdnode)"> {{ cksSshStartingPort + index }} </span>
               <span v-else> {{ parseInt(etcdSshPort) + parseInt(getEtcdIndex(record.name)) }} </span>
             </template>
+            <template v-if="column.key === 'kubernetesnodeversion'">
+              <span> {{ text ? text : '' }} </span>
+            </template>
             <template v-if="column.key === 'actions'">
               <a-tooltip placement="bottom" >
                 <template #title>
@@ -238,6 +241,11 @@ export default {
         key: 'port',
         title: this.$t('label.ssh.port'),
         dataIndex: 'port'
+      },
+      {
+        key: 'kubernetesnodeversion',
+        title: this.$t('label.node.version'),
+        dataIndex: 'kubernetesnodeversion'
       },
       {
         title: this.$t('label.zonename'),

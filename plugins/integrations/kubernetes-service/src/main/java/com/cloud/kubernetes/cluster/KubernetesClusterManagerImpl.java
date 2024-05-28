@@ -756,6 +756,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                     }
                     kubernetesUserVmResponse.setExternalNode(vmMapVO.isExternalNode());
                     kubernetesUserVmResponse.setEtcdNode(vmMapVO.isEtcdNode());
+                    kubernetesUserVmResponse.setNodeVersion(vmMapVO.getNodeVersion());
                     vmResponses.add(kubernetesUserVmResponse);
                 }
             }

@@ -31,6 +31,8 @@ import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 
+import com.cloud.kubernetes.cluster.KubernetesClusterVmMapVO;
+import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
 import org.apache.cloudstack.utils.security.SSLUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
@@ -333,7 +335,7 @@ public class KubernetesClusterUtil {
                                                     final String ipAddress, final int port,
                                                     final String user, final File sshKeyFile,
                                                     final String hostName,
-                                                    final long timeoutTime, final long waitDuration) {
+                                                    final long timeoutTime, final long waitDuration, final long vmId, KubernetesClusterVmMapDao vmMapDao) {
         int retry = 10;
         while (System.currentTimeMillis() < timeoutTime && retry-- > 0) {
             if (LOGGER.isDebugEnabled()) {
@@ -345,7 +347,10 @@ public class KubernetesClusterUtil {
                         user, sshKeyFile, null,
                         String.format(CLUSTER_NODE_VERSION_COMMAND, hostName.toLowerCase()),
                         10000, 10000, 20000);
-                if (clusterNodeVersionMatches(result, version)) {
+                Pair<Boolean, String> clusterVersionMatchesAndValue = clusterNodeVersionMatches(result, version);
+                if (Boolean.TRUE.equals(clusterVersionMatchesAndValue.first())) {
+                    KubernetesClusterVmMapVO vmMapVO = vmMapDao.findById(vmId);
+                    vmMapVO.setNodeVersion(clusterVersionMatchesAndValue.second());
                     return true;
                 }
             } catch (Exception e) {
@@ -362,11 +367,11 @@ public class KubernetesClusterUtil {
         return false;
     }
 
-    protected static boolean clusterNodeVersionMatches(final Pair<Boolean, String> result, final String version) {
+    protected static Pair<Boolean, String> clusterNodeVersionMatches(final Pair<Boolean, String> result, final String version) {
         if (result == null || Boolean.FALSE.equals(result.first()) || StringUtils.isBlank(result.second())) {
-            return false;
+            return new Pair<>(false, null);
         }
         String response = result.second();
-        return response.contains(String.format("v%s", version));
+        return new Pair<>(response.contains(String.format("v%s", version)), response);
     }
 }
