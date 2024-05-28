@@ -321,6 +321,10 @@ export default {
       }
 
       keys = Object.keys(data[0])
+      for (var i = 1; i < data.length; ++i) {
+        const rowKeys = Object.keys(data[i])
+        keys = keys.concat(rowKeys.filter(k => !keys.includes(k)))
+      }
 
       result = ''
       result += keys.join(columnDelimiter)
