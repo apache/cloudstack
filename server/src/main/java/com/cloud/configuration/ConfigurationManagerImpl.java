@@ -6588,15 +6588,24 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         if (NetworkOffering.RoutingMode.ROUTED.name().equals(routingMode)) {
+            boolean useVirtualRouterOnly = true;
             for (Service service : serviceProviderMap.keySet()) {
+                Set<Provider> providers = serviceProviderMap.get(service);
                 if (Arrays.asList(Service.SourceNat, Service.StaticNat, Service.Lb, Service.PortForwarding, Service.Vpn).contains(service)) {
-                    Set<Provider> providers = serviceProviderMap.get(service);
-                    if (providers != null && (providers.contains(Provider.VirtualRouter) || providers.contains(Provider.VPCVirtualRouter))) {
+                    if (providers != null) {
                         throw new InvalidParameterValueException("SourceNat/StaticNat/Lb/PortForwarding/Vpn service are not supported in ROUTED mode");
                     }
                 }
+                if (useVirtualRouterOnly && Arrays.asList(Service.Firewall, Service.NetworkACL).contains(service)) {
+                    for (Provider provider : providers) {
+                        if (!Provider.VirtualRouter.equals(provider) && !Provider.VPCVirtualRouter.equals(provider)) {
+                            useVirtualRouterOnly = false;
+                            break;
+                        }
+                    }
+                }
             }
-            if (!serviceProviderMap.containsKey(Service.SourceNat)) {
+            if (useVirtualRouterOnly) {
                 // Add VirtualRouter/VPCVirtualRouter as provider of Gateway service
                 if (forVpc) {
                     serviceProviderMap.put(Service.Gateway, Sets.newHashSet(Provider.VPCVirtualRouter));

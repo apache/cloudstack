@@ -64,11 +64,11 @@ public class ListIpv4GuestSubnetsCmd extends BaseListCmd {
 
     @Override
     public void execute() {
-        List<? extends DataCenterIpv4GuestSubnet> subnets = ipv4GuestSubnetManager.listDataCenterIpv4GuestSubnets(this);
+        List<? extends DataCenterIpv4GuestSubnet> subnets = routedIpv4Manager.listDataCenterIpv4GuestSubnets(this);
         ListResponse<DataCenterIpv4SubnetResponse> response = new ListResponse<>();
         List<DataCenterIpv4SubnetResponse> subnetResponses = new ArrayList<>();
         for (DataCenterIpv4GuestSubnet subnet : subnets) {
-            DataCenterIpv4SubnetResponse subnetResponse = ipv4GuestSubnetManager.createDataCenterIpv4SubnetResponse(subnet);
+            DataCenterIpv4SubnetResponse subnetResponse = routedIpv4Manager.createDataCenterIpv4SubnetResponse(subnet);
             subnetResponse.setObjectName("zoneipv4subnet");
             subnetResponses.add(subnetResponse);
         }

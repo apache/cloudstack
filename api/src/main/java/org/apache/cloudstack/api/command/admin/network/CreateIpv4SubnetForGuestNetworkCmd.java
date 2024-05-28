@@ -95,9 +95,9 @@ public class CreateIpv4SubnetForGuestNetworkCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
             ResourceAllocationException {
-        Ipv4GuestSubnetNetworkMap result = ipv4GuestSubnetManager.createIpv4SubnetForGuestNetwork(this);
+        Ipv4GuestSubnetNetworkMap result = routedIpv4Manager.createIpv4SubnetForGuestNetwork(this);
         if (result != null) {
-            Ipv4SubnetForGuestNetworkResponse response = ipv4GuestSubnetManager.createIpv4SubnetForGuestNetworkResponse(result);
+            Ipv4SubnetForGuestNetworkResponse response = routedIpv4Manager.createIpv4SubnetForGuestNetworkResponse(result);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {

@@ -82,6 +82,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.network.NetworkPermissionVO;
+import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.network.dao.NetworkPermissionDao;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 import org.apache.commons.collections.CollectionUtils;
@@ -415,6 +416,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     NsxProviderDao nsxProviderDao;
     @Inject
     private VirtualRouterProviderDao virtualRouterProviderDao;
+    @Inject
+    RoutedIpv4Manager routedIpv4Manager;
+
     List<InternalLoadBalancerElementService> internalLoadBalancerElementServices = new ArrayList<>();
     Map<String, InternalLoadBalancerElementService> internalLoadBalancerElementServiceMap = new HashMap<>();
 
@@ -1385,8 +1389,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             return;
         }
         if (NetworkOffering.RoutingMode.ROUTED.name().equals(networkOffering.getRoutingMode())
-                && (_ntwkOfferingSrvcDao.canProviderSupportServiceInNetworkOffering(networkOffering.getId(), Service.Gateway, Provider.VirtualRouter)
-                || _ntwkOfferingSrvcDao.canProviderSupportServiceInNetworkOffering(networkOffering.getId(), Service.Gateway, Provider.VPCVirtualRouter))) {
+                && routedIpv4Manager.isVirtualRouterGateway(networkOffering)) {
             if (cidr != null) {
                 if (!_accountMgr.isRootAdmin(caller.getId())) {
                     throw new InvalidParameterValueException("Only root admin can set the gateway/netmask of Isolated networks with ROUTED mode");
@@ -1774,6 +1777,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         if (ip6GatewayCidr != null) {
             ipv6Service.assignIpv6SubnetToNetwork(ip6Cidr, network.getId());
+        }
+
+        // assign to network
+        if (NetworkOffering.RoutingMode.ROUTED.name().equals(ntwkOff.getRoutingMode())) {
+            routedIpv4Manager.assignIpv4SubnetToNetwork(network.getCidr(), network.getId());
         }
 
         // if the network offering has persistent set to true, implement the network

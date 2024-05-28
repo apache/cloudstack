@@ -2141,7 +2141,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         final NetworkOffering offering = _networkOfferingDao.findById(guestNetwork.getNetworkOfferingId());
         boolean ipv4Routed = NetworkOffering.RoutingMode.ROUTED.name().equals(offering.getRoutingMode());
         if (ipv4Routed) {
-            buf.append(" is_routed=true");
+            buf.append(" is_routing=true");
         }
 
         boolean isIpv6Supported = _networkOfferingDao.isIpv6Supported(guestNetwork.getNetworkOfferingId());

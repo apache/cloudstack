@@ -69,7 +69,7 @@ public class Ipv4GuestSubnetNetworkMapVO implements Ipv4GuestSubnetNetworkMap {
         uuid = UUID.randomUUID().toString();
     }
 
-    protected Ipv4GuestSubnetNetworkMapVO(long parentId, String subnet, Long networkId, Ipv4GuestSubnetNetworkMap.State state) {
+    protected Ipv4GuestSubnetNetworkMapVO(Long parentId, String subnet, Long networkId, Ipv4GuestSubnetNetworkMap.State state) {
         this.parentId = parentId;
         this.subnet = subnet;
         this.networkId = networkId;

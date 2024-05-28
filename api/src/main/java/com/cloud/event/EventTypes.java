@@ -28,7 +28,9 @@ import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.config.Configuration;
+import org.apache.cloudstack.datacenter.DataCenterIpv4GuestSubnet;
 import org.apache.cloudstack.ha.HAConfig;
+import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMap;
 import org.apache.cloudstack.quota.QuotaTariff;
 import org.apache.cloudstack.storage.object.Bucket;
 import org.apache.cloudstack.storage.object.ObjectStore;
@@ -748,6 +750,9 @@ public class EventTypes {
     public static final String EVENT_ZONE_IP4_SUBNET_RELEASE = "ZONE.IP4.SUBNET.RELEASE";
     public static final String EVENT_IP4_GUEST_SUBNET_CREATE = "IP4.GUEST.SUBNET.CREATE";
     public static final String EVENT_IP4_GUEST_SUBNET_DELETE = "IP4.GUEST.SUBNET.DELETE";
+    public static final String EVENT_ROUTING_IPV4_FIREWALL_RULE_CREATE = "ROUTING.IPV4.FIREWALL.RULE.CREATE";
+    public static final String EVENT_ROUTING_IPV4_FIREWALL_RULE_UPDATE = "ROUTING.IPV4.FIREWALL.RULE.UPDATE";
+    public static final String EVENT_ROUTING_IPV4_FIREWALL_RULE_DELETE = "ROUTING.IPV4.FIREWALL.RULE.DELETE";
 
     static {
 
@@ -1204,6 +1209,18 @@ public class EventTypes {
         entityEventDetails.put(EVENT_QUOTA_TARIFF_CREATE, QuotaTariff.class);
         entityEventDetails.put(EVENT_QUOTA_TARIFF_DELETE, QuotaTariff.class);
         entityEventDetails.put(EVENT_QUOTA_TARIFF_UPDATE, QuotaTariff.class);
+
+        // Routing
+        entityEventDetails.put(EVENT_ZONE_IP4_SUBNET_CREATE, DataCenterIpv4GuestSubnet.class);
+        entityEventDetails.put(EVENT_ZONE_IP4_SUBNET_UPDATE, DataCenterIpv4GuestSubnet.class);
+        entityEventDetails.put(EVENT_ZONE_IP4_SUBNET_DELETE, DataCenterIpv4GuestSubnet.class);
+        entityEventDetails.put(EVENT_ZONE_IP4_SUBNET_DEDICATE, DataCenterIpv4GuestSubnet.class);
+        entityEventDetails.put(EVENT_ZONE_IP4_SUBNET_RELEASE, DataCenterIpv4GuestSubnet.class);
+        entityEventDetails.put(EVENT_IP4_GUEST_SUBNET_CREATE, Ipv4GuestSubnetNetworkMap.class);
+        entityEventDetails.put(EVENT_IP4_GUEST_SUBNET_DELETE, Ipv4GuestSubnetNetworkMap.class);
+        entityEventDetails.put(EVENT_ROUTING_IPV4_FIREWALL_RULE_CREATE, FirewallRule.class);
+        entityEventDetails.put(EVENT_ROUTING_IPV4_FIREWALL_RULE_UPDATE, FirewallRule.class);
+        entityEventDetails.put(EVENT_ROUTING_IPV4_FIREWALL_RULE_DELETE, FirewallRule.class);
     }
 
     public static boolean isNetworkEvent(String eventType) {

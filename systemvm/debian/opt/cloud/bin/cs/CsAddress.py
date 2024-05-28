@@ -307,6 +307,7 @@ class CsIP:
         self.fw = config.get_fw()
         self.cl = config.cmdline()
         self.config = config
+        self.nft_ipv4_fw = config.get_nft_ipv4_fw()
 
     def setAddress(self, address):
         self.address = address
@@ -341,7 +342,7 @@ class CsIP:
 
             interfaces = [CsInterface(address, self.config)]
             CsHelper.reconfigure_interfaces(self.cl, interfaces)
-            if self.get_type() in ['public']:
+            if self.get_type() in ['public'] and not self.config.is_routing():
                 self.set_mark()
 
             if 'gateway' in self.address:
@@ -399,8 +400,22 @@ class CsIP:
             return self.address['mtu']
         return CsIP.DEFAULT_MTU
 
+    def fw_router_routing(self):
+        if self.config.is_vpc() or not self.config.is_routing():
+            return
+
+        self.nft_ipv4_fw.append({'type': "chain", 'chain': 'INPUT',
+                                 'rule': 'iifname "eth1" tcp dport 3922 ct state established,new counter accept'})
+
+    def fw_vpcrouter_routing(self):
+        if not self.config.is_vpc() or not self.config.is_routing():
+            return
+
+        self.nft_ipv4_fw.append({'type': "chain", 'chain': 'INPUT',
+                                 'rule': 'iifname "eth0" tcp dport 3922 ct state established,new counter accept'})
+
     def setup_router_control(self):
-        if self.config.is_vpc():
+        if self.config.is_vpc() or self.config.is_routing():
             return
 
         self.fw.append(
@@ -412,7 +427,7 @@ class CsIP:
         self.fw.append(["filter", "", "-P FORWARD DROP"])
 
     def fw_router(self):
-        if self.config.is_vpc() or self.config.is_routed():
+        if self.config.is_vpc() or self.config.is_routing():
             return
 
         self.fw.append(["mangle", "front", "-A PREROUTING " +
@@ -500,7 +515,7 @@ class CsIP:
         self.fw.append(['', '', '-A NETWORK_STATS -i eth2 ! -o eth0 -p tcp'])
 
     def fw_vpcrouter(self):
-        if not self.config.is_vpc() or self.config.is_routed():
+        if not self.config.is_vpc() or self.config.is_routing():
             return
 
         self.fw.append(["filter", "", "-A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT"])
@@ -647,8 +662,16 @@ class CsIP:
                 CsHelper.execute("sudo ip route flush cache")
                 CsRule(self.dev).delMark()
 
-        self.fw_router()
-        self.fw_vpcrouter()
+        if self.config.is_routing():
+            if self.config.is_vpc():
+                self.nft_ipv4_fw.append({'type': "chain", 'chain': 'INPUT',
+                                         'rule': 'iifname "eth0" tcp dport 3922 ct state established,new counter accept'})
+            else:
+                self.nft_ipv4_fw.append({'type': "chain", 'chain': 'INPUT',
+                                         'rule': 'iifname "eth1" tcp dport 3922 ct state established,new counter accept'})
+        else:
+            self.fw_router()
+            self.fw_vpcrouter()
 
         cmdline = self.config.cmdline()
 
@@ -688,7 +711,7 @@ class CsIP:
                     elif method == "delete":
                         CsPasswdSvc(self.get_gateway() + "," + self.address['public_ip']).stop()
 
-        if self.get_type() == "public" and self.config.is_vpc() and method == "add":
+        if self.get_type() == "public" and self.config.is_vpc() and method == "add" and not self.config.is_routing():
             if self.address["source_nat"]:
                 vpccidr = cmdline.get_vpccidr()
                 self.fw.append(

@@ -557,9 +557,7 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
         final long accountId = network.getAccountId();
         final long domainId = network.getDomainId();
 
-        if (FirewallRule.TrafficType.Egress.equals(trafficType)) {
-            accountManager.checkAccess(caller, null, true, network);
-        }
+        accountManager.checkAccess(caller, null, true, network);
 
         // Verify that the network guru supports the protocol specified
         Map<Network.Capability, String> caps = networkModel.getNetworkServiceCapabilities(network.getId(), Network.Service.Firewall);

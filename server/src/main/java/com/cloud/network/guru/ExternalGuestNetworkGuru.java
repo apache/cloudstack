@@ -24,7 +24,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.network.Ipv4GuestSubnetManager;
+import org.apache.cloudstack.network.RoutedIpv4Manager;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -89,7 +89,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     @Inject
     FirewallRulesCidrsDao _fwRulesCidrDao;
     @Inject
-    Ipv4GuestSubnetManager ipv4GuestSubnetManager;
+    RoutedIpv4Manager routedIpv4Manager;
 
     public ExternalGuestNetworkGuru() {
         super();
@@ -126,12 +126,12 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         }
         if (NetworkOffering.RoutingMode.ROUTED.name().equals(offering.getRoutingMode())) {
             if (userSpecified.getCidr() != null) {
-                ipv4GuestSubnetManager.getOrCreateIpv4SubnetForGuestNetwork(config, userSpecified.getCidr());
+                routedIpv4Manager.getOrCreateIpv4SubnetForGuestNetwork(config, userSpecified.getCidr());
             } else {
                 if (userSpecified.getNetworkCidrSize() == null) {
                     throw new CloudRuntimeException("The network CIDR or CIDR size must be specified.");
                 }
-                ipv4GuestSubnetManager.getOrCreateIpv4SubnetForGuestNetwork(config, userSpecified.getNetworkCidrSize());
+                routedIpv4Manager.getOrCreateIpv4SubnetForGuestNetwork(config, userSpecified.getNetworkCidrSize());
             }
         }
         return updateNetworkDesignForIPv6IfNeeded(config, userSpecified);

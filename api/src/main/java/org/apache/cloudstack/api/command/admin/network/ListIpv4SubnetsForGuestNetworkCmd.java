@@ -75,11 +75,11 @@ public class ListIpv4SubnetsForGuestNetworkCmd extends BaseListCmd {
 
     @Override
     public void execute() {
-        List<? extends Ipv4GuestSubnetNetworkMap> subnets = ipv4GuestSubnetManager.listIpv4GuestSubnetsForGuestNetwork(this);
+        List<? extends Ipv4GuestSubnetNetworkMap> subnets = routedIpv4Manager.listIpv4GuestSubnetsForGuestNetwork(this);
         ListResponse<Ipv4SubnetForGuestNetworkResponse> response = new ListResponse<>();
         List<Ipv4SubnetForGuestNetworkResponse> subnetResponses = new ArrayList<>();
         for (Ipv4GuestSubnetNetworkMap subnet : subnets) {
-            Ipv4SubnetForGuestNetworkResponse subnetResponse = ipv4GuestSubnetManager.createIpv4SubnetForGuestNetworkResponse(subnet);
+            Ipv4SubnetForGuestNetworkResponse subnetResponse = routedIpv4Manager.createIpv4SubnetForGuestNetworkResponse(subnet);
             subnetResponse.setObjectName("ipv4subnetforguestnetwork");
             subnetResponses.add(subnetResponse);
         }

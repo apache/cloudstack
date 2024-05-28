@@ -460,6 +460,7 @@ public class NetworkVO implements Network {
         return cidr;
     }
 
+    @Override
     public void setCidr(String cidr) {
         this.cidr = cidr;
     }

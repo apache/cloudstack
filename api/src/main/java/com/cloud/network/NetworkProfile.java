@@ -218,6 +218,10 @@ public class NetworkProfile implements Network {
     }
 
     @Override
+    public void setCidr(String cidr) {
+    }
+
+    @Override
     public String getNetworkCidr() {
         return networkCidr;
     }

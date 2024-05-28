@@ -418,6 +418,8 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
     // "cidr" will still continue to be the effective address space for CloudStack managed vms in that Guest network
     String getCidr();
 
+    void setCidr(String cidr);
+
     // "networkcidr" is the network CIDR of the guest network which uses IP reservation.
     // It is the summation of "cidr" and the reservedIPrange(the address space used for non CloudStack purposes).
     // For networks not configured with IP reservation, "networkcidr" is always null

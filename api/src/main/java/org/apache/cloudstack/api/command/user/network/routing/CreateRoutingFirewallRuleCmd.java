@@ -14,11 +14,12 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.command.user.ipv6;
+package org.apache.cloudstack.api.command.user.network.routing;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import com.cloud.exception.NetworkRuleConflictException;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -35,40 +36,41 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.user.Account;
 import com.cloud.utils.net.NetUtils;
 
-@APICommand(name = "createIpv6FirewallRule",
-        description = "Creates an Ipv6 firewall rule in the given network (the network must not belong to VPC)",
+@APICommand(name = "createRoutingFirewallRule",
+        description = "Creates a routing firewall rule in the given network in ROUTED mode",
         responseObject = FirewallRuleResponse.class,
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class CreateIpv6FirewallRuleCmd extends BaseAsyncCreateCmd {
+public class CreateRoutingFirewallRuleCmd extends BaseAsyncCreateCmd {
 
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, required = true, description = "the protocol for the Ipv6 firewall rule. Valid values are TCP/UDP/ICMP/ALL or valid protocol number")
+    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, required = true, description = "the protocol for the firewall rule. Valid values are TCP/UDP/ICMP/ALL or valid protocol number")
     private String protocol;
 
-    @Parameter(name = ApiConstants.START_PORT, type = CommandType.INTEGER, description = "the starting port of Ipv6 firewall rule")
+    @Parameter(name = ApiConstants.START_PORT, type = CommandType.INTEGER, description = "the starting port of firewall rule")
     private Integer publicStartPort;
 
-    @Parameter(name = ApiConstants.END_PORT, type = CommandType.INTEGER, description = "the ending port of Ipv6 firewall rule")
+    @Parameter(name = ApiConstants.END_PORT, type = CommandType.INTEGER, description = "the ending port of firewall rule")
     private Integer publicEndPort;
 
-    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the source CIDR list to allow traffic from. Multiple entries must be separated by a single comma character (,).")
-    private List<String> sourceCidrList;
+    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING,
+            description = "the source CIDR list to allow traffic from. Multiple entries must be separated by a single comma character (,).")
+    protected List<String> sourceCidrList;
 
-    @Parameter(name = ApiConstants.DEST_CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the destination CIDR list to allow traffic to. Multiple entries must be separated by a single comma character (,).")
-    private List<String> destinationCidrlist;
+    @Parameter(name = ApiConstants.DEST_CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING,
+            description = "the destination CIDR list to allow traffic to. Multiple entries must be separated by a single comma character (,).")
+    protected List<String> destinationCidrlist;
 
     @Parameter(name = ApiConstants.ICMP_TYPE, type = CommandType.INTEGER, description = "type of the ICMP message being sent")
     private Integer icmpType;
@@ -76,13 +78,16 @@ public class CreateIpv6FirewallRuleCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.ICMP_CODE, type = CommandType.INTEGER, description = "error code for this ICMP message")
     private Integer icmpCode;
 
-    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "The network of the VM the Ipv6 firewall rule will be created for", required = true)
+    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class,
+            description = "The network of the VM the firewall rule will be created for", required = true)
     private Long networkId;
 
-    @Parameter(name = ApiConstants.TRAFFIC_TYPE, type = CommandType.STRING, description = "the traffic type for the Ipv6 firewall rule, can be ingress or egress, defaulted to ingress if not specified")
+    @Parameter(name = ApiConstants.TRAFFIC_TYPE, type = CommandType.STRING,
+            description = "the traffic type for the Routing firewall rule, can be ingress or egress, defaulted to ingress if not specified")
     private String trafficType;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the rule to the end user or not", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN,
+            description = "an optional field, whether to the display the rule to the end user or not", authorized = {RoleType.Admin})
     private Boolean display;
 
     // ///////////////////////////////////////////////////
@@ -125,7 +130,7 @@ public class CreateIpv6FirewallRuleCmd extends BaseAsyncCreateCmd {
             return sourceCidrList;
         } else {
             List<String> oneCidrList = new ArrayList<String>();
-            oneCidrList.add(NetUtils.ALL_IP6_CIDRS);
+            oneCidrList.add(NetUtils.ALL_IP4_CIDRS);
             return oneCidrList;
         }
     }
@@ -135,7 +140,7 @@ public class CreateIpv6FirewallRuleCmd extends BaseAsyncCreateCmd {
             return destinationCidrlist;
         } else {
             List<String> oneCidrList = new ArrayList<String>();
-            oneCidrList.add(NetUtils.ALL_IP6_CIDRS);
+            oneCidrList.add(NetUtils.ALL_IP4_CIDRS);
             return oneCidrList;
         }
     }
@@ -188,12 +193,12 @@ public class CreateIpv6FirewallRuleCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_IPV6_FIREWALL_RULE_CREATE;
+        return EventTypes.EVENT_ROUTING_IPV4_FIREWALL_RULE_CREATE;
     }
 
     @Override
     public String getEventDescription() {
-        return "Creating ipv6 firewall rule";
+        return "Creating ipv4 firewall rule for routed network";
     }
 
     public Integer getIcmpCode() {
@@ -218,7 +223,7 @@ public class CreateIpv6FirewallRuleCmd extends BaseAsyncCreateCmd {
     @Override
     public void create() {
         try {
-            FirewallRule result = ipv6Service.createIpv6FirewallRule(this);
+            FirewallRule result = routedIpv4Manager.createRoutingFirewallRule(this);
             setEntityId(result.getId());
             setEntityUuid(result.getUuid());
         } catch (NetworkRuleConflictException e) {
@@ -230,23 +235,23 @@ public class CreateIpv6FirewallRuleCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute() throws ResourceUnavailableException {
         boolean success = false;
-        FirewallRule rule = ipv6Service.getIpv6FirewallRule(getEntityId());
+        FirewallRule rule = _firewallService.getFirewallRule(getEntityId());
         try {
             CallContext.current().setEventDetails("Rule ID: " + getEntityId());
-            success = ipv6Service.applyIpv6FirewallRule(rule.getId());
+            success = routedIpv4Manager.applyRoutingFirewallRule(rule.getId());
 
             // State is different after the rule is applied, so get new object here
-            rule = ipv6Service.getIpv6FirewallRule(getEntityId());
+            rule = _firewallService.getFirewallRule(getEntityId());
             FirewallResponse ruleResponse = new FirewallResponse();
             if (rule != null) {
-                ruleResponse = _responseGenerator.createIpv6FirewallRuleResponse(rule);
+                ruleResponse = _responseGenerator.createFirewallResponse(rule);
                 setResponseObject(ruleResponse);
             }
             ruleResponse.setResponseName(getCommandName());
         } finally {
             if (!success || rule == null) {
-                ipv6Service.revokeIpv6FirewallRule(getEntityId());
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create ipv6 firewall rule");
+                routedIpv4Manager.revokeRoutingFirewallRule(getEntityId());
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Routing firewall rule");
             }
         }
     }

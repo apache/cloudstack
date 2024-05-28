@@ -2793,8 +2793,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setPublicIpAddress(ip.getAddress().addr());
         }
 
-            Network network = ApiDBUtils.findNetworkById(fwRule.getNetworkId());
-            response.setNetworkId(network.getUuid());
+        Network network = ApiDBUtils.findNetworkById(fwRule.getNetworkId());
+        response.setNetworkId(network.getUuid());
 
         FirewallRule.State state = fwRule.getState();
         String stateToSet = state.toString();

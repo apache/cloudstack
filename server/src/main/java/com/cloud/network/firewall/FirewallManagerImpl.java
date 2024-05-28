@@ -39,6 +39,7 @@ import org.apache.cloudstack.api.command.user.ipv6.ListIpv6FirewallRulesCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Config;
@@ -154,6 +155,8 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     List<NetworkACLServiceProvider> _networkAclElements;
     @Inject
     IpAddressManager _ipAddrMgr;
+    @Inject
+    RoutedIpv4Manager routedIpv4Manager;
 
     private boolean _elbEnabled = false;
     static Boolean rulesContinueOnErrFlag = true;
@@ -538,6 +541,9 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         } else if (purpose == Purpose.PortForwarding) {
             caps = _networkModel.getNetworkServiceCapabilities(network.getId(), Service.PortForwarding);
         } else if (purpose == Purpose.Firewall) {
+            if (routedIpv4Manager.isVirtualRouterGateway(network)) {
+                throw new CloudRuntimeException("Unable to create routing firewall rule. Please use routing firewall API instead.");
+            }
             caps = _networkModel.getNetworkServiceCapabilities(network.getId(), Service.Firewall);
         }
 

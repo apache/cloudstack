@@ -70,9 +70,9 @@ public class UpdateIpv4GuestSubnetCmd extends BaseAsyncCmd {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
             ResourceAllocationException {
         try {
-            DataCenterIpv4GuestSubnet result = ipv4GuestSubnetManager.updateDataCenterIpv4GuestSubnet(this);
+            DataCenterIpv4GuestSubnet result = routedIpv4Manager.updateDataCenterIpv4GuestSubnet(this);
             if (result != null) {
-                DataCenterIpv4SubnetResponse response = ipv4GuestSubnetManager.createDataCenterIpv4SubnetResponse(result);
+                DataCenterIpv4SubnetResponse response = routedIpv4Manager.createDataCenterIpv4SubnetResponse(result);
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {

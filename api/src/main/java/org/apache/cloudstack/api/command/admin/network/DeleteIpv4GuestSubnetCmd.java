@@ -70,7 +70,7 @@ public class DeleteIpv4GuestSubnetCmd extends BaseAsyncCmd {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
             ResourceAllocationException {
         try {
-            boolean result = ipv4GuestSubnetManager.deleteDataCenterIpv4GuestSubnet(this);
+            boolean result = routedIpv4Manager.deleteDataCenterIpv4GuestSubnet(this);
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 response.setResponseName(getCommandName());

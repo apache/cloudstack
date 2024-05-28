@@ -16,6 +16,13 @@
 // under the License.
 package org.apache.cloudstack.network;
 
+import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.network.Network;
+import com.cloud.network.rules.FirewallRule;
+import com.cloud.offering.NetworkOffering;
+import com.cloud.utils.Pair;
+import com.cloud.utils.component.PluggableService;
+
 import org.apache.cloudstack.api.command.admin.network.CreateIpv4GuestSubnetCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateIpv4SubnetForGuestNetworkCmd;
 import org.apache.cloudstack.api.command.admin.network.DedicateIpv4GuestSubnetCmd;
@@ -25,17 +32,17 @@ import org.apache.cloudstack.api.command.admin.network.ListIpv4GuestSubnetsCmd;
 import org.apache.cloudstack.api.command.admin.network.ListIpv4SubnetsForGuestNetworkCmd;
 import org.apache.cloudstack.api.command.admin.network.ReleaseDedicatedIpv4GuestSubnetCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateIpv4GuestSubnetCmd;
+import org.apache.cloudstack.api.command.user.network.routing.CreateRoutingFirewallRuleCmd;
+import org.apache.cloudstack.api.command.user.network.routing.ListRoutingFirewallRulesCmd;
+import org.apache.cloudstack.api.command.user.network.routing.UpdateRoutingFirewallRuleCmd;
 import org.apache.cloudstack.api.response.DataCenterIpv4SubnetResponse;
 import org.apache.cloudstack.api.response.Ipv4SubnetForGuestNetworkResponse;
 import org.apache.cloudstack.datacenter.DataCenterIpv4GuestSubnet;
 import org.apache.cloudstack.framework.config.Configurable;
 
-import com.cloud.network.Network;
-import com.cloud.utils.component.PluggableService;
-
 import java.util.List;
 
-public interface Ipv4GuestSubnetManager extends PluggableService, Configurable {
+public interface RoutedIpv4Manager extends PluggableService, Configurable {
 
     // Methods for DataCenterIpv4GuestSubnet APIs
     DataCenterIpv4GuestSubnet createDataCenterIpv4GuestSubnet(CreateIpv4GuestSubnetCmd createIpv4GuestSubnetCmd);
@@ -65,5 +72,22 @@ public interface Ipv4GuestSubnetManager extends PluggableService, Configurable {
     void getOrCreateIpv4SubnetForGuestNetwork(Network network, String networkCidr);
 
     void getOrCreateIpv4SubnetForGuestNetwork(Network network, Integer networkCidrSize);
+
+    void assignIpv4SubnetToNetwork(String cidr, long networkId);
+
+    // Methods for Routing firewall rules
+    FirewallRule createRoutingFirewallRule(CreateRoutingFirewallRuleCmd createRoutingFirewallRuleCmd) throws NetworkRuleConflictException;
+
+    Pair<List<? extends FirewallRule>, Integer> listRoutingFirewallRules(ListRoutingFirewallRulesCmd listRoutingFirewallRulesCmd);
+
+    FirewallRule updateRoutingFirewallRule(UpdateRoutingFirewallRuleCmd updateRoutingFirewallRuleCmd);
+
+    boolean revokeRoutingFirewallRule(Long id);
+
+    boolean applyRoutingFirewallRule(long id);
+
+    boolean isVirtualRouterGateway(Network network);
+
+    boolean isVirtualRouterGateway(NetworkOffering networkOffering);
 
 }
