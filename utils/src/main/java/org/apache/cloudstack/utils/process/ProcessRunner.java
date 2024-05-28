@@ -94,9 +94,7 @@ public final class ProcessRunner {
         int retVal = -2;
         String stdOutput = null;
         String stdError = null;
-
-        String oneLineCommand = StringUtils.join(commands, " ");
-        String commandLog = removeCommandSensitiveInfoForLogging(oneLineCommand);
+        String commandLog = removeCommandSensitiveInfoForLogging(StringUtils.join(commands, " "));
 
         try {
             LOG.debug(String.format("Preparing command [%s] to execute.", commandLog));
