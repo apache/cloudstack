@@ -349,8 +349,11 @@ public class KubernetesClusterUtil {
                         10000, 10000, 20000);
                 Pair<Boolean, String> clusterVersionMatchesAndValue = clusterNodeVersionMatches(result, version);
                 if (Boolean.TRUE.equals(clusterVersionMatchesAndValue.first())) {
-                    KubernetesClusterVmMapVO vmMapVO = vmMapDao.findById(vmId);
-                    vmMapVO.setNodeVersion(clusterVersionMatchesAndValue.second());
+                    KubernetesClusterVmMapVO vmMapVO = vmMapDao.getClusterMapFromVmId(vmId);
+                    String newNodeVersion = clusterVersionMatchesAndValue.second();
+                    LOGGER.debug(String.format("Updating node %s Kubernetes version to %s", hostName, newNodeVersion));
+                    vmMapVO.setNodeVersion(newNodeVersion);
+                    vmMapDao.update(vmMapVO.getId(), vmMapVO);
                     return true;
                 }
             } catch (Exception e) {

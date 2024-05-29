@@ -371,7 +371,9 @@ public class KubernetesClusterActionWorker {
                 newClusterVmMap.setExternalNode(isExternalNode);
                 newClusterVmMap.setManualUpgrade(markForManualUpgrade);
                 newClusterVmMap.setEtcdNode(isEtcdNode);
-                newClusterVmMap.setNodeVersion(kubernetesVersion.getSemanticVersion());
+                if (!isEtcdNode) {
+                    newClusterVmMap.setNodeVersion(kubernetesVersion.getSemanticVersion());
+                }
                 kubernetesClusterVmMapDao.persist(newClusterVmMap);
                 return newClusterVmMap;
             }
