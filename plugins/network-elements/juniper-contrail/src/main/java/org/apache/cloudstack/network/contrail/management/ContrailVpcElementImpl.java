@@ -31,6 +31,7 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.element.NetworkACLServiceProvider;
@@ -196,4 +197,8 @@ public class ContrailVpcElementImpl extends ContrailElementImpl implements Netwo
         return true;
     }
 
+    @Override
+    public boolean updateVpcSourceNatIp(Vpc vpc, IpAddress address) {
+        return true;
+    }
 }

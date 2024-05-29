@@ -204,7 +204,7 @@
             />
           </a-col>
         </a-row>
-        <a-row class="chart-row" v-if="resourceType === 'VirtualMachine'">
+        <a-row class="chart-row" v-if="resourceIsVirtualMachine">
           <a-col>
             <strong>{{ $t('label.network') }}</strong>
             <InfoCircleOutlined class="info-icon" :title="$t('label.see.more.info.network.usage')" @click="onClickShowResourceInfoModal('NET')"/>

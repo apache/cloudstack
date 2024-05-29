@@ -39,6 +39,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
@@ -898,5 +899,10 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
         cmdList.add(ConfigureInternalLoadBalancerElementCmd.class);
         cmdList.add(ListInternalLoadBalancerElementsCmd.class);
         return cmdList;
+    }
+
+    @Override
+    public boolean updateVpcSourceNatIp(Vpc vpc, IpAddress address) {
+        return nsxService.updateVpcSourceNatIp(vpc, address);
     }
 }

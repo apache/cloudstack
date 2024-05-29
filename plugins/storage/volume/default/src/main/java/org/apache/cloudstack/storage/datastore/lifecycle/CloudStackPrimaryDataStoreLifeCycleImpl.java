@@ -148,7 +148,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
         String uri = String.format("%s://%s%s", scheme, storageHost, hostPath);
 
         Object localStorage = dsInfos.get("localStorage");
-           if (localStorage != null) {
+        if (localStorage != null) {
             hostPath = hostPath.contains("//") ? hostPath.replaceFirst("/", "") : hostPath;
             hostPath = hostPath.replace("+", " ");
         }
