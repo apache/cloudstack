@@ -275,9 +275,6 @@ public class VolumeJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "external_uuid")
     private String externalUuid = null;
 
-    @Column(name = "passphrase_id")
-    private Long passphraseId;
-
     @Column(name = "encrypt_format")
     private String encryptFormat;
 
@@ -614,10 +611,6 @@ public class VolumeJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     public void setExternalUuid(String externalUuid) {
         this.externalUuid = externalUuid;
-    }
-
-    public Long getPassphraseId() {
-        return passphraseId;
     }
 
     public String getEncryptFormat() {
