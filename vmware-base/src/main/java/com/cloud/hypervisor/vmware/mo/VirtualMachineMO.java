@@ -1182,7 +1182,7 @@ public class VirtualMachineMO extends BaseMO {
     }
 
     public boolean configureVm(VirtualMachineConfigSpec vmConfigSpec) throws Exception {
-        logger.debug(String.format("Reconfiguring virtual machine [%s] using spec [%s].", this, GSON.toJson(vmConfigSpec)));
+        logger.debug("Reconfiguring virtual machine {} using spec {}.", this, GSON.toJson(vmConfigSpec));
         ManagedObjectReference morTask = _context.getService().reconfigVMTask(_mor, vmConfigSpec);
 
         boolean result = _context.getVimClient().waitForTask(morTask);
