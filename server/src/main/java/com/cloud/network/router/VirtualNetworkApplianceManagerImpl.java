@@ -65,6 +65,7 @@ import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.network.topology.NetworkTopology;
 import org.apache.cloudstack.network.topology.NetworkTopologyContext;
 import org.apache.cloudstack.utils.CloudStackVersion;
@@ -341,6 +342,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
     @Inject protected CommandSetupHelper _commandSetupHelper;
     @Inject private ManagementServer mgr;
+    @Inject
+    RoutedIpv4Manager routedIpv4Manager;
 
     private int _routerRamSize;
     private int _routerCpuMHz;
@@ -2411,6 +2414,17 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         return controlNic;
     }
 
+    protected NicProfile getGuestNic(final VirtualMachineProfile profile) {
+        NicProfile guestNic = null;
+        for (final NicProfile nic : profile.getNics()) {
+            if (nic.getTrafficType() == TrafficType.Guest) {
+                guestNic = nic;
+                break;
+            }
+        }
+        return guestNic;
+    }
+
     protected void finalizeSshAndVersionAndNetworkUsageOnStart(final Commands cmds, final VirtualMachineProfile profile, final DomainRouterVO router, final NicProfile controlNic) {
         final DomainRouterVO vr = _routerDao.findById(profile.getId());
         cmds.addCommand("checkSsh", new CheckSshCommand(profile.getInstanceName(), controlNic.getIPv4Address(), 3922));
@@ -2424,7 +2438,13 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         // Network usage command to create iptables rules
         final boolean forVpc = vr.getVpcId() != null;
         if (!forVpc) {
-            cmds.addCommand("networkUsage", new NetworkUsageCommand(controlNic.getIPv4Address(), router.getHostName(), "create", forVpc));
+            final NicProfile guestNic = getGuestNic(profile);
+            if (guestNic != null) {
+                Network network = _networkDao.findById(guestNic.getNetworkId());
+                if (!routedIpv4Manager.isRoutedNetwork(network)) {
+                    cmds.addCommand("networkUsage", new NetworkUsageCommand(controlNic.getIPv4Address(), router.getHostName(), "create", forVpc));
+                }
+            }
         }
     }
 
@@ -3134,6 +3154,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 //[TODO] Avoiding the NPE now, but I have to find out what is going on with the network. - Wilder Rodrigues
                 if (network == null) {
                     logger.error("Could not find a network with ID => " + routerNic.getNetworkId() + ". It might be a problem!");
+                    continue;
+                }
+                if (routedIpv4Manager.isRoutedNetwork(network)) {
                     continue;
                 }
                 if (forVpc && network.getTrafficType() == TrafficType.Public || !forVpc && network.getTrafficType() == TrafficType.Guest

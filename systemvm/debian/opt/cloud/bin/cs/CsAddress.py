@@ -352,7 +352,7 @@ class CsIP:
             self.post_config_change("add")
 
         '''For isolated/redundant and dhcpsrvr routers, call this method after the post_config is complete '''
-        if not self.config.is_vpc():
+        if self.get_type() in ["control"]:
             self.setup_router_control()
 
         if self.config.is_vpc() or self.cl.is_redundant():
@@ -400,22 +400,20 @@ class CsIP:
             return self.address['mtu']
         return CsIP.DEFAULT_MTU
 
-    def fw_router_routing(self):
-        if self.config.is_vpc() or not self.config.is_routing():
-            return
-
-        self.nft_ipv4_fw.append({'type': "chain", 'chain': 'INPUT',
-                                 'rule': 'iifname "eth1" tcp dport 3922 ct state established,new counter accept'})
-
-    def fw_vpcrouter_routing(self):
-        if not self.config.is_vpc() or not self.config.is_routing():
-            return
-
-        self.nft_ipv4_fw.append({'type': "chain", 'chain': 'INPUT',
-                                 'rule': 'iifname "eth0" tcp dport 3922 ct state established,new counter accept'})
+    def setup_router_control_routing(self):
+        if self.config.is_vpc():
+            self.nft_ipv4_fw.append({'type': "", 'chain': 'INPUT',
+                                     'rule': 'iifname "eth0" tcp dport 3922 ct state established,new counter accept'})
+        else:
+            self.nft_ipv4_fw.append({'type': "", 'chain': 'INPUT',
+                                     'rule': 'iifname "eth1" tcp dport 3922 ct state established,new counter accept'})
 
     def setup_router_control(self):
-        if self.config.is_vpc() or self.config.is_routing():
+        if self.config.is_routing():
+            self.setup_router_control_routing()
+            return
+
+        if self.config.is_vpc():
             return
 
         self.fw.append(
@@ -618,6 +616,27 @@ class CsIP:
         self.fw.append(["filter", "", "-P INPUT DROP"])
         self.fw.append(["filter", "", "-P FORWARD DROP"])
 
+    def fw_router_routing(self):
+        if self.config.is_vpc() or not self.config.is_routing():
+            return
+        if self.get_type() in ["guest"]:
+            guestNetworkCidr = self.address['network']
+            self.nft_ipv4_fw.append({'type': "", 'chain': 'INPUT',
+                                     'rule': "iifname %s udp dport 67 counter accept" % self.dev})
+            self.nft_ipv4_fw.append({'type': "", 'chain': 'INPUT',
+                                     'rule': "iifname %s ip saddr %s tcp dport 53 counter accept" % (self.dev, guestNetworkCidr)})
+            self.nft_ipv4_fw.append({'type': "", 'chain': 'INPUT',
+                                     'rule': "iifname %s ip saddr %s udp dport 53 counter accept" % (self.dev, guestNetworkCidr)})
+            self.nft_ipv4_fw.append({'type': "", 'chain': 'INPUT',
+                                     'rule': "iifname %s ip saddr %s tcp dport 80 ct state new counter accept" % (self.dev, guestNetworkCidr)})
+            self.nft_ipv4_fw.append({'type': "", 'chain': 'INPUT',
+                                     'rule': "iifname %s ip saddr %s tcp dport 443 ct state new counter accept" % (self.dev, guestNetworkCidr)})
+            self.nft_ipv4_fw.append({'type': "", 'chain': 'INPUT',
+                                     'rule': "iifname %s ip saddr %s tcp dport 8080 ct state new counter accept" % (self.dev, guestNetworkCidr)})
+    def fw_vpcrouter_routing(self):
+        if not self.config.is_vpc() or not self.config.is_routing():
+            return
+
     def post_config_change(self, method):
         route = CsRoute()
         tableName = "Table_" + self.dev
@@ -662,16 +681,10 @@ class CsIP:
                 CsHelper.execute("sudo ip route flush cache")
                 CsRule(self.dev).delMark()
 
-        if self.config.is_routing():
-            if self.config.is_vpc():
-                self.nft_ipv4_fw.append({'type': "chain", 'chain': 'INPUT',
-                                         'rule': 'iifname "eth0" tcp dport 3922 ct state established,new counter accept'})
-            else:
-                self.nft_ipv4_fw.append({'type': "chain", 'chain': 'INPUT',
-                                         'rule': 'iifname "eth1" tcp dport 3922 ct state established,new counter accept'})
-        else:
-            self.fw_router()
-            self.fw_vpcrouter()
+        self.fw_router()
+        self.fw_vpcrouter()
+        self.fw_router_routing()
+        self.fw_vpcrouter_routing()
 
         cmdline = self.config.cmdline()
 

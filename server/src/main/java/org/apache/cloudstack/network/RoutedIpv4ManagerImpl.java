@@ -31,6 +31,8 @@ import com.cloud.network.firewall.FirewallService;
 import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRuleVO;
+import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
@@ -95,6 +97,8 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     NetworkModel networkModel;
     @Inject
     AccountManager accountManager;
+    @Inject
+    VpcOfferingDao vpcOfferingDao;
 
     @Override
     public String getConfigComponentName() {
@@ -236,7 +240,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         }
 
         // TODO: if not,
-        subnetMap = new Ipv4GuestSubnetNetworkMapVO(null, networkCidr, 0L, State.Allocated);
+        subnetMap = new Ipv4GuestSubnetNetworkMapVO(null, networkCidr, null, State.Allocated);
         ipv4GuestSubnetNetworkMapDao.persist(subnetMap);
     }
 
@@ -373,7 +377,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
             @Override
             public FirewallRuleVO doInTransaction(TransactionStatus status) throws NetworkRuleConflictException {
                 FirewallRuleVO newRule =
-                        new FirewallRuleVO(null, null, portStart, portEnd, protocol.toLowerCase(), networkId, accountId, domainId, FirewallRule.Purpose.Ipv6Firewall,
+                        new FirewallRuleVO(null, null, portStart, portEnd, protocol.toLowerCase(), networkId, accountId, domainId, FirewallRule.Purpose.Firewall,
                                 sourceCidrList, destinationCidrList, icmpCode, icmpType, null, trafficType);
                 newRule.setType(type);
                 newRule.setDisplay(forDisplay);
@@ -440,6 +444,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         }
         logger.debug(String.format("Applying routing firewall rules for rule with ID: %s", rule.getUuid()));
         List<FirewallRuleVO> rules = firewallDao.listByNetworkPurposeTrafficType(rule.getNetworkId(), rule.getPurpose(), FirewallRule.TrafficType.Egress);
+        rules.addAll(firewallDao.listByNetworkPurposeTrafficType(rule.getNetworkId(), rule.getPurpose(), FirewallRule.TrafficType.Ingress));
         return firewallManager.applyFirewallRules(rules, false, CallContext.current().getCallingAccount());
     }
 
@@ -453,5 +458,15 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     public boolean isVirtualRouterGateway(NetworkOffering networkOffering) {
         return networkOfferingServiceMapDao.canProviderSupportServiceInNetworkOffering(networkOffering.getId(), Service.Gateway, Provider.VirtualRouter)
                 || networkOfferingServiceMapDao.canProviderSupportServiceInNetworkOffering(networkOffering.getId(), Service.Gateway, Provider.VPCVirtualRouter);
+    }
+
+    @Override
+    public boolean isRoutedNetwork(Network network) {
+        return NetworkOffering.RoutingMode.ROUTED.name().equals(networkOfferingDao.findById(network.getNetworkOfferingId()).getRoutingMode());
+    }
+
+    @Override
+    public boolean isRoutedVpc(Vpc vpc) {
+        return NetworkOffering.RoutingMode.ROUTED.name().equals(vpcOfferingDao.findById(vpc.getVpcOfferingId()).getRoutingMode());
     }
 }

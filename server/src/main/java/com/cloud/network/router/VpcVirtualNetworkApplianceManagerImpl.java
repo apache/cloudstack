@@ -461,6 +461,9 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                             domainRouterVO.getInstanceName(), domainRouterVO.getType(), details);
                     cmds.addCommand(plugNicCmd);
                     final VpcVO vpc = _vpcDao.findById(domainRouterVO.getVpcId());
+                    if (routedIpv4Manager.isRoutedVpc(vpc)) {
+                        continue;
+                    }
                     final NetworkUsageCommand netUsageCmd = new NetworkUsageCommand(domainRouterVO.getPrivateIpAddress(), domainRouterVO.getInstanceName(), true, publicNic.getIPv4Address(), vpc.getCidr());
                     usageCmds.add(netUsageCmd);
                     UserStatisticsVO stats = _userStatsDao.findBy(domainRouterVO.getAccountId(), domainRouterVO.getDataCenterId(), publicNtwk.getId(), publicNic.getIPv4Address(), domainRouterVO.getId(),

@@ -19,6 +19,7 @@ package org.apache.cloudstack.network;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.network.Network;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.PluggableService;
@@ -89,5 +90,9 @@ public interface RoutedIpv4Manager extends PluggableService, Configurable {
     boolean isVirtualRouterGateway(Network network);
 
     boolean isVirtualRouterGateway(NetworkOffering networkOffering);
+
+    boolean isRoutedNetwork(Network network);
+
+    boolean isRoutedVpc(Vpc vpc);
 
 }

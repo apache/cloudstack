@@ -264,7 +264,7 @@ class CsNetfilters(object):
             CsHelper.execute("nft delete table %s %s" % (address_family, table))
         CsHelper.execute("nft add table %s %s" % (address_family, table))
         for chain in default_chains:
-            self.add_ip6_chain(address_family, table, chain['chain'], chain['hook'], chain['action'])
+            self.add_ip4_chain(address_family, table, chain['chain'], chain['hook'], chain['action'])
         for fw in rules:
             chain = fw['chain']
             type = fw['type']
@@ -277,7 +277,7 @@ class CsNetfilters(object):
                     hook = "output"
                 elif "input" in chain:
                     hook = "input"
-                self.add_ip6_chain(address_family, table, chain, hook, rule)
+                self.add_ip4_chain(address_family, table, chain, hook, rule)
             else:
                 logging.info("Add: rule=%s in address_family=%s table=%s, chain=%s", rule, address_family, table, chain)
                 CsHelper.execute("nft add rule %s %s %s %s" % (address_family, table, chain, rule))

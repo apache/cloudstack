@@ -248,6 +248,8 @@ public class CreateRoutingFirewallRuleCmd extends BaseAsyncCreateCmd {
                 setResponseObject(ruleResponse);
             }
             ruleResponse.setResponseName(getCommandName());
+        } catch (Exception ex) {
+            logger.error("Got exception when create Routing firewall rules: " + ex);
         } finally {
             if (!success || rule == null) {
                 routedIpv4Manager.revokeRoutingFirewallRule(getEntityId());

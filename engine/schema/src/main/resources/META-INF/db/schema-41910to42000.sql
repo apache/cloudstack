@@ -77,9 +77,9 @@ CREATE TABLE `cloud`.`nsx_providers` (
 
 -- NSX Plugin --
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.network_offerings','for_nsx', 'int(1) unsigned DEFAULT "0" COMMENT "is nsx enabled for the resource"');
-CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.network_offerings','routing_mode', 'varchar(32) COMMENT "mode in which the network would route traffic"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.network_offerings','nsx_mode', 'varchar(32) COMMENT "mode in which the network would route traffic"');
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vpc_offerings','for_nsx', 'int(1) unsigned DEFAULT "0" COMMENT "is nsx enabled for the resource"');
-CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vpc_offerings','routing_mode', 'varchar(32) COMMENT "mode in which the network would route traffic"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vpc_offerings','nsx_mode', 'varchar(32) COMMENT "mode in which the network would route traffic"');
 
 -- Create table to persist quota email template configurations
 CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_email_configuration`(
@@ -181,3 +181,7 @@ CREATE TABLE `cloud`.`ip4_guest_subnet_network_map` (
    CONSTRAINT `fk_ip4_guest_subnet_network_map__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`),
    CONSTRAINT `uc_ip4_guest_subnet_network_map__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `cloud`.`network_offerings` RENAME COLUMN `nsx_mode` TO `routing_mode`;
+ALTER TABLE `cloud`.`vpc_offerings` RENAME COLUMN `nsx_mode` TO `routing_mode`;
+ALTER TABLE `cloud`.`event` MODIFY COLUMN `type` varchar(50) NOT NULL;
