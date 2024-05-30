@@ -6270,4 +6270,37 @@ public class LibvirtComputingResourceTest {
         Mockito.verify(loggerMock).debug("Skipping the memory balloon stats period setting for the VM (Libvirt Domain) with ID [1] and name [fake-VM-name] because this"
                 + " VM has no memory balloon.");
     }
+
+    @Test
+    public void testGetHostTags() throws ConfigurationException {
+        PowerMockito.mockStatic(AgentPropertiesFileHandler.class);
+        PowerMockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.eq(AgentProperties.HOST_TAGS)))
+                .thenReturn("aa,bb,cc,dd");
+
+        List<String> hostTagsList = libvirtComputingResourceSpy.getHostTags();
+        Assert.assertEquals(4, hostTagsList.size());
+        Assert.assertEquals("aa,bb,cc,dd", StringUtils.join(hostTagsList, ","));
+    }
+
+    @Test
+    public void testGetHostTagsWithSpace() throws ConfigurationException {
+        PowerMockito.mockStatic(AgentPropertiesFileHandler.class);
+        PowerMockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.eq(AgentProperties.HOST_TAGS)))
+                .thenReturn(" aa, bb , cc , dd ");
+
+        List<String> hostTagsList = libvirtComputingResourceSpy.getHostTags();
+        Assert.assertEquals(4, hostTagsList.size());
+        Assert.assertEquals("aa,bb,cc,dd", StringUtils.join(hostTagsList, ","));
+    }
+
+    @Test
+    public void testGetHostTagsWithEmptyPropertyValue() throws ConfigurationException {
+        PowerMockito.mockStatic(AgentPropertiesFileHandler.class);
+        PowerMockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.eq(AgentProperties.HOST_TAGS)))
+                .thenReturn(" ");
+
+        List<String> hostTagsList = libvirtComputingResourceSpy.getHostTags();
+        Assert.assertEquals(0, hostTagsList.size());
+        Assert.assertEquals("", StringUtils.join(hostTagsList, ","));
+    }
 }

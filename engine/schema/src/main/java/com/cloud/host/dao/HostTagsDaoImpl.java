@@ -19,7 +19,9 @@ package com.cloud.host.dao;
 import java.util.ArrayList;
 import java.util.List;
 
-
+import org.apache.cloudstack.api.response.HostTagResponse;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.host.HostTagVO;
@@ -30,14 +32,23 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.SearchCriteria.Func;
 
+import javax.inject.Inject;
+
 @Component
 public class HostTagsDaoImpl extends GenericDaoBase<HostTagVO, Long> implements HostTagsDao {
     protected final SearchBuilder<HostTagVO> HostSearch;
     protected final GenericSearchBuilder<HostTagVO, String> DistinctImplictTagsSearch;
+    private final SearchBuilder<HostTagVO> stSearch;
+    private final SearchBuilder<HostTagVO> tagIdsearch;
+    private final SearchBuilder<HostTagVO> ImplicitTagsSearch;
+
+    @Inject
+    private ConfigurationDao _configDao;
 
     public HostTagsDaoImpl() {
         HostSearch = createSearchBuilder();
         HostSearch.and("hostId", HostSearch.entity().getHostId(), SearchCriteria.Op.EQ);
+        HostSearch.and("isImplicit", HostSearch.entity().getIsImplicit(), SearchCriteria.Op.EQ);
         HostSearch.done();
 
         DistinctImplictTagsSearch = createSearchBuilder(String.class);
@@ -45,6 +56,19 @@ public class HostTagsDaoImpl extends GenericDaoBase<HostTagVO, Long> implements 
         DistinctImplictTagsSearch.and("hostIds", DistinctImplictTagsSearch.entity().getHostId(), SearchCriteria.Op.IN);
         DistinctImplictTagsSearch.and("implicitTags", DistinctImplictTagsSearch.entity().getTag(), SearchCriteria.Op.IN);
         DistinctImplictTagsSearch.done();
+
+        stSearch = createSearchBuilder();
+        stSearch.and("idIN", stSearch.entity().getId(), SearchCriteria.Op.IN);
+        stSearch.done();
+
+        tagIdsearch = createSearchBuilder();
+        tagIdsearch.and("id", tagIdsearch.entity().getId(), SearchCriteria.Op.EQ);
+        tagIdsearch.done();
+
+        ImplicitTagsSearch = createSearchBuilder();
+        ImplicitTagsSearch.and("hostId", ImplicitTagsSearch.entity().getHostId(), SearchCriteria.Op.EQ);
+        ImplicitTagsSearch.and("isImplicit", ImplicitTagsSearch.entity().getIsImplicit(), SearchCriteria.Op.EQ);
+        ImplicitTagsSearch.done();
     }
 
     @Override
@@ -80,12 +104,43 @@ public class HostTagsDaoImpl extends GenericDaoBase<HostTagVO, Long> implements 
     }
 
     @Override
+    public boolean updateImplicitTags(long hostId, List<String> hostTags) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        txn.start();
+        SearchCriteria<HostTagVO> sc = ImplicitTagsSearch.create();
+        sc.setParameters("hostId", hostId);
+        sc.setParameters("isImplicit", true);
+        boolean expunged = expunge(sc) > 0;
+        boolean persisted = false;
+        for (String tag : hostTags) {
+            if (StringUtils.isNotBlank(tag)) {
+                HostTagVO vo = new HostTagVO(hostId, tag.trim());
+                vo.setIsImplicit(true);
+                persist(vo);
+                persisted = true;
+            }
+        }
+        txn.commit();
+        return expunged || persisted;
+    }
+
+    @Override
+    public List<HostTagVO> getExplicitHostTags(long hostId) {
+        SearchCriteria<HostTagVO> sc = ImplicitTagsSearch.create();
+        sc.setParameters("hostId", hostId);
+        sc.setParameters("isImplicit", false);
+
+        return search(sc, null);
+    }
+
+    @Override
     public void persist(long hostId, List<String> hostTags) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
 
         txn.start();
         SearchCriteria<HostTagVO> sc = HostSearch.create();
         sc.setParameters("hostId", hostId);
+        sc.setParameters("isImplicit", false);
         expunge(sc);
 
         for (String tag : hostTags) {
@@ -96,5 +151,72 @@ public class HostTagsDaoImpl extends GenericDaoBase<HostTagVO, Long> implements 
             }
         }
         txn.commit();
+    }
+
+    @Override
+    public HostTagResponse newHostTagResponse(HostTagVO tag) {
+        HostTagResponse tagResponse = new HostTagResponse();
+
+        tagResponse.setName(tag.getTag());
+        tagResponse.setHostId(tag.getHostId());
+
+        tagResponse.setObjectName("hosttag");
+
+        return tagResponse;
+    }
+
+    @Override
+    public List<HostTagVO> searchByIds(Long... tagIds) {
+        String batchCfg = _configDao.getValue("detail.batch.query.size");
+
+        final int detailsBatchSize = batchCfg != null ? Integer.parseInt(batchCfg) : 2000;
+
+        // query details by batches
+        List<HostTagVO> tagList = new ArrayList<>();
+        int curr_index = 0;
+
+        if (tagIds.length > detailsBatchSize) {
+            while ((curr_index + detailsBatchSize) <= tagIds.length) {
+                Long[] ids = new Long[detailsBatchSize];
+
+                for (int k = 0, j = curr_index; j < curr_index + detailsBatchSize; j++, k++) {
+                    ids[k] = tagIds[j];
+                }
+
+                SearchCriteria<HostTagVO> sc = stSearch.create();
+
+                sc.setParameters("idIN", (Object[])ids);
+
+                List<HostTagVO> vms = searchIncludingRemoved(sc, null, null, false);
+
+                if (vms != null) {
+                    tagList.addAll(vms);
+                }
+
+                curr_index += detailsBatchSize;
+            }
+        }
+
+        if (curr_index < tagIds.length) {
+            int batch_size = (tagIds.length - curr_index);
+            // set the ids value
+            Long[] ids = new Long[batch_size];
+
+            for (int k = 0, j = curr_index; j < curr_index + batch_size; j++, k++) {
+                ids[k] = tagIds[j];
+            }
+
+            SearchCriteria<HostTagVO> sc = stSearch.create();
+
+            sc.setParameters("idIN", (Object[])ids);
+
+            List<HostTagVO> tags = searchIncludingRemoved(sc, null, null, false);
+
+            if (tags != null) {
+                tagList.addAll(tags);
+            }
+        }
+
+        return tagList;
     }
 }

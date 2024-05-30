@@ -39,6 +39,9 @@ public class HostTagVO implements InternalIdentity {
     @Column(name = "tag")
     private String tag;
 
+    @Column(name = "is_implicit")
+    private boolean isImplicit = false;
+
     protected HostTagVO() {
     }
 
@@ -57,6 +60,14 @@ public class HostTagVO implements InternalIdentity {
 
     public void setTag(String tag) {
         this.tag = tag;
+    }
+
+    public void setIsImplicit(boolean isImplicit) {
+        this.isImplicit = isImplicit;
+    }
+
+    public boolean getIsImplicit() {
+        return isImplicit;
     }
 
     @Override

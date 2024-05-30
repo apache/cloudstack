@@ -3586,6 +3586,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmd.setGatewayIpAddress(_localGateway);
         cmd.setIqn(getIqn());
         cmd.getHostDetails().put(HOST_VOLUME_ENCRYPTION, String.valueOf(hostSupportsVolumeEncryption()));
+        cmd.setHostTags(getHostTags());
         HealthCheckResult healthCheckResult = getHostHealthCheckResult();
         if (healthCheckResult != HealthCheckResult.IGNORE) {
             cmd.setHostHealthCheckResult(healthCheckResult == HealthCheckResult.SUCCESS);
@@ -3612,6 +3613,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             i++;
         }
         return startupCommandsArray;
+    }
+
+    protected List<String> getHostTags() {
+        List<String> hostTagsList = new ArrayList<>();
+        String hostTags = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST_TAGS);
+        if (StringUtils.isNotBlank(hostTags)) {
+            for (String hostTag : hostTags.split(",")) {
+                if (!hostTagsList.contains(hostTag.trim())) {
+                    hostTagsList.add(hostTag.trim());
+                }
+            }
+        }
+        return hostTagsList;
     }
 
     private StartupStorageCommand createLocalStoragePool(String localStoragePath, String localStorageUUID, StartupRoutingCommand cmd) {
