@@ -604,14 +604,14 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         Integer startPort = KubernetesClusterService.KubernetesEtcdNodeStartPort.value();
         IpAddress publicIp = ipAddressDao.findByIpAndDcId(kubernetesCluster.getZoneId(), publicIpAddress);
         for (int i = 0; i < etcdVmIds.size(); i++) {
-            startPort += i;
+            int etcdStartPort = startPort + i;
             try {
-                provisionFirewallRules(publicIp, owner, startPort, startPort);
+                provisionFirewallRules(publicIp, owner, etcdStartPort, etcdStartPort);
             } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException |
                      NetworkRuleConflictException e) {
                 throw new ManagementServerException(String.format("Failed to provision firewall rules for etcd nodes for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
             }
-            provisionPublicIpPortForwardingRule(publicIp, network, owner, etcdVmIds.get(i), startPort, DEFAULT_SSH_PORT);
+            provisionPublicIpPortForwardingRule(publicIp, network, owner, etcdVmIds.get(i), etcdStartPort, DEFAULT_SSH_PORT);
         }
     }
 
