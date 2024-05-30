@@ -1432,7 +1432,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
     @Override
     @ActionEvent(eventType = KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_DELETE,
-            eventDescription = "stopping Kubernetes cluster", async = true)
+            eventDescription = "deleting Kubernetes cluster", async = true)
     public boolean deleteKubernetesCluster(DeleteKubernetesClusterCmd cmd) throws CloudRuntimeException {
         if (!KubernetesServiceEnabled.value()) {
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
