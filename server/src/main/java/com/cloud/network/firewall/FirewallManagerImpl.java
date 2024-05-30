@@ -815,16 +815,12 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         if (apply) {
             // ingress firewall rule
             if (rule.getSourceIpAddressId() != null) {
-                //feteches ingress firewall, ingress firewall rules associated with the ip
+                //fetches ingress firewall, ingress firewall rules associated with the ip
                 List<FirewallRuleVO> rules = _firewallDao.listByIpAndPurpose(rule.getSourceIpAddressId(), Purpose.Firewall);
                 return applyFirewallRules(rules, false, caller);
-                //egress firewall rule
             } else if (networkId != null) {
-                boolean isIpv6 = Purpose.Ipv6Firewall.equals(rule.getPurpose());
-                List<FirewallRuleVO> rules = _firewallDao.listByNetworkPurposeTrafficType(rule.getNetworkId(), rule.getPurpose(), FirewallRule.TrafficType.Egress);
-                if (isIpv6) {
-                    rules.addAll(_firewallDao.listByNetworkPurposeTrafficType(rule.getNetworkId(), Purpose.Ipv6Firewall, FirewallRule.TrafficType.Ingress));
-                }
+                //egress firewall rule, or ipv4/ipv6 routing firewall rule
+                List<FirewallRuleVO> rules = _firewallDao.listByNetworkPurposeTrafficType(rule.getNetworkId(), rule.getPurpose(), rule.getTrafficType());
                 return applyFirewallRules(rules, false, caller);
             }
         } else {

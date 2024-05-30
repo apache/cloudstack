@@ -292,7 +292,7 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     private String internetProtocol;
 
     @SerializedName(ApiConstants.IPV6_ROUTING)
-    @Param(description = "The routing mode of network offering", since = "4.17.0")
+    @Param(description = "The Ipv6 routing mode of network offering", since = "4.17.0")
     private String ipv6Routing;
 
     @SerializedName(ApiConstants.IPV6_ROUTES)
@@ -314,6 +314,14 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     @SerializedName(ApiConstants.IP6_DNS2)
     @Param(description = "the second IPv6 DNS for the network", since = "4.18.0")
     private String ipv6Dns2;
+
+    @SerializedName(ApiConstants.IPV4_ROUTING)
+    @Param(description = "The IPv4 routing mode of network", since = "4.20.0")
+    private String ipv4Routing;
+
+    @SerializedName(ApiConstants.IPV4_ROUTES)
+    @Param(description = "The routes for the network to ease adding route in upstream router", since = "4.20.0")
+    private Set<Ipv4RouteResponse> ipv4Routes;
 
     public NetworkResponse() {}
 
@@ -621,6 +629,18 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
 
     public void setInternetProtocol(String internetProtocol) {
         this.internetProtocol = internetProtocol;
+    }
+
+    public void setIpv4Routing(String ipv4Routing) {
+        this.ipv4Routing = ipv4Routing;
+    }
+
+    public void setIpv4Routes(Set<Ipv4RouteResponse> ipv4Routes) {
+        this.ipv4Routes = ipv4Routes;
+    }
+
+    public void addIpv4Route(Ipv4RouteResponse ipv4Route) {
+        this.ipv4Routes.add(ipv4Route);
     }
 
     public void setIpv6Routing(String ipv6Routing) {

@@ -43,6 +43,9 @@ from cs.CsProcess import CsProcess
 from cs.CsStaticRoutes import CsStaticRoutes
 from cs.CsVpcGuestNetwork import CsVpcGuestNetwork
 
+ICMP_TYPE_ANY = "{ echo-reply, destination-unreachable, source-quench, redirect, echo-request, time-exceeded, \
+    parameter-problem, timestamp-request, timestamp-reply, info-request, info-reply, address-mask-request, \
+    address-mask-reply, router-advertisement, router-solicitation }"
 ICMPV6_TYPE_ANY = "{ destination-unreachable, packet-too-big, time-exceeded, parameter-problem, \
     echo-request, echo-reply, mld-listener-query, mld-listener-report, mld-listener-done, \
     nd-router-solicit, nd-router-advert, nd-neighbor-solicit, nd-neighbor-advert, nd-redirect, router-renumbering }"
@@ -331,7 +334,7 @@ class CsAcl(CsDataBag):
                 proto = protocol
                 if proto == "icmp":
                     proto = proto_str = "icmp"
-                    icmp_type = ICMPV6_TYPE_ANY
+                    icmp_type = ICMP_TYPE_ANY
                     if 'icmp_type' in rule and rule['icmp_type'] != -1:
                         icmp_type = str(rule['icmp_type'])
                     proto = "%s type %s" % (proto_str, icmp_type)
@@ -449,7 +452,7 @@ class CsAcl(CsDataBag):
                     proto = protocol
                     if proto == "icmp":
                         proto = proto_str = "icmp"
-                        icmp_type = ICMPV6_TYPE_ANY
+                        icmp_type = ICMP_TYPE_ANY
                         if 'icmp_type' in rule and rule['icmp_type'] != -1:
                             icmp_type = str(rule['icmp_type'])
                         proto = "%s type %s" % (proto_str, icmp_type)

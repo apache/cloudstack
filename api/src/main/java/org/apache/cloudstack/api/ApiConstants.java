@@ -700,6 +700,8 @@ public class ApiConstants {
     public static final String LIST_ALL = "listall";
     public static final String LIST_SYSTEM_VMS = "listsystemvms";
     public static final String IP_RANGES = "ipranges";
+    public static final String IPV4_ROUTING = "ip4routing";
+    public static final String IPV4_ROUTES = "ip4routes";
     public static final String IPV6_ROUTING = "ip6routing";
     public static final String IPV6_ROUTES = "ip6routes";
     public static final String SPECIFY_IP_RANGES = "specifyipranges";

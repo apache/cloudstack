@@ -156,6 +156,14 @@ public class VpcResponse extends BaseResponseWithAnnotations implements Controll
     @Param(description = "the second IPv6 DNS for the VPC", since = "4.18.0")
     private String ipv6Dns2;
 
+    @SerializedName(ApiConstants.IPV4_ROUTING)
+    @Param(description = "The IPv4 routing mode of VPC", since = "4.20.0")
+    private String ipv4Routing;
+
+    @SerializedName(ApiConstants.IPV4_ROUTES)
+    @Param(description = "The routes for the VPC to ease adding route in upstream router", since = "4.20.0")
+    private Set<Ipv4RouteResponse> ipv4Routes;
+
     public void setId(final String id) {
         this.id = id;
     }
@@ -268,6 +276,18 @@ public class VpcResponse extends BaseResponseWithAnnotations implements Controll
     @Override
     public void setResourceIconResponse(ResourceIconResponse icon) {
         this.icon = icon;
+    }
+
+    public void setIpv4Routing(String ipv4Routing) {
+        this.ipv4Routing = ipv4Routing;
+    }
+
+    public void setIpv4Routes(Set<Ipv4RouteResponse> ipv4Routes) {
+        this.ipv4Routes = ipv4Routes;
+    }
+
+    public void addIpv4Route(Ipv4RouteResponse ipv4Route) {
+        this.ipv4Routes.add(ipv4Route);
     }
 
     public void setIpv6Routes(Set<Ipv6RouteResponse> ipv6Routes) {

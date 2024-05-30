@@ -108,6 +108,7 @@ import org.apache.cloudstack.api.response.InternalLoadBalancerElementResponse;
 import org.apache.cloudstack.api.response.IpForwardingRuleResponse;
 import org.apache.cloudstack.api.response.IpQuarantineResponse;
 import org.apache.cloudstack.api.response.IpRangeResponse;
+import org.apache.cloudstack.api.response.Ipv4RouteResponse;
 import org.apache.cloudstack.api.response.Ipv6RouteResponse;
 import org.apache.cloudstack.api.response.IsolationMethodResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckPolicyResponse;
@@ -345,6 +346,7 @@ import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcOffering;
 import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Detail;
@@ -490,6 +492,8 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Inject
     ObjectStoreDao _objectStoreDao;
+    @Inject
+    VpcOfferingDao vpcOfferingDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -2718,6 +2722,16 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setBytesReceived(bytesReceived);
         response.setBytesSent(bytesSent);
 
+        if (networkOfferingDao.isRoutedNetwork(network.getNetworkOfferingId())) {
+            response.setIpv4Routing(Network.Routing.Static.toString());
+            response.setIpv4Routes(new LinkedHashSet<>());
+            List<IPAddressVO> ips = userIpAddressDao.listByAssociatedNetwork(network.getId(), true);
+            for (IpAddress ip : ips) {
+                Ipv4RouteResponse route = new Ipv4RouteResponse(network.getCidr(), ip.getAddress().addr());
+                response.addIpv4Route(route);
+            }
+        }
+
         if (networkOfferingDao.isIpv6Supported(network.getNetworkOfferingId())) {
             response.setInternetProtocol(networkOfferingDao.getNetworkOfferingInternetProtocol(network.getNetworkOfferingId(), NetUtils.InternetProtocol.IPv4).toString());
             response.setIpv6Routing(Network.Routing.Static.toString());
@@ -2805,6 +2819,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setIcmpCode(fwRule.getIcmpCode());
         response.setIcmpType(fwRule.getIcmpType());
         response.setForDisplay(fwRule.isDisplay());
+        response.setTrafficType(fwRule.getTrafficType().toString());
 
         // set tag information
         List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(ResourceObjectType.FirewallRule, fwRule.getId());
@@ -3442,6 +3457,20 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setDns2(vpc.getIp4Dns2());
         response.setIpv6Dns1(vpc.getIp6Dns1());
         response.setIpv6Dns2(vpc.getIp6Dns2());
+
+        // add IPv4 routes
+        if (vpcOfferingDao.isRoutedVpc(vpc.getVpcOfferingId())) {
+            response.setIpv4Routing(Network.Routing.Static.toString());
+            response.setIpv4Routes(new LinkedHashSet<>());
+            List<IPAddressVO> ips = userIpAddressDao.listByAssociatedVpc(vpc.getId(), true);
+            for (Network network : networkDao.listByVpc(vpc.getId())) {
+                for (IPAddressVO ip : ips) {
+                    Ipv4RouteResponse route = new Ipv4RouteResponse(network.getCidr(), ip.getAddress().addr());
+                    response.addIpv4Route(route);
+                }
+            }
+        }
+
         response.setObjectName("vpc");
         return response;
     }

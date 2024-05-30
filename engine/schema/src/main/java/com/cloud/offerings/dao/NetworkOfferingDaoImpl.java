@@ -292,4 +292,9 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         NetUtils.InternetProtocol internetProtocol = getNetworkOfferingInternetProtocol(offeringId);
         return NetUtils.InternetProtocol.isIpv6EnabledProtocol(internetProtocol);
     }
+
+    @Override
+    public boolean isRoutedNetwork(long offeringId) {
+        return NetworkOffering.RoutingMode.ROUTED.name().equals(findById(offeringId).getRoutingMode());
+    }
 }

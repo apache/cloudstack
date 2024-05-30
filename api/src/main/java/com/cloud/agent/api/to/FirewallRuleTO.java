@@ -155,9 +155,7 @@ public class FirewallRuleTO implements InternalIdentity {
             rule.getIcmpType(),
             rule.getIcmpCode());
         this.trafficType = trafficType;
-        if (FirewallRule.Purpose.Ipv6Firewall.equals(purpose)) {
-            this.destCidrList = rule.getDestinationCidrList();
-        }
+        this.destCidrList = rule.getDestinationCidrList();
     }
 
     public FirewallRuleTO(FirewallRule rule, String srcVlanTag, String srcIp, FirewallRule.Purpose purpose, FirewallRule.TrafficType trafficType,
