@@ -36,6 +36,8 @@ repos:
       - id: check-vcs-permalinks
       #- id: check-yaml
       - id: destroyed-symlinks
+      - id: detect-aws-credentials
+        args: [--allow-missing-credentials]
       - id: detect-private-key
         exclude: >
           (?x)
@@ -53,9 +55,12 @@ repos:
       - id: end-of-file-fixer
         exclude: \.vhd$
       #- id: fix-byte-order-marker
+      - id: forbid-submodules
       - id: mixed-line-ending
         exclude: \.(cs|xml)$
-      # - id: trailing-whitespace
+      - id: trailing-whitespace
+        files: \.(in|java|md|py|rb|sh|vue|yaml|yml)$
+        args: [--markdown-linebreak-ext=md]
   - repo: https://github.com/pycqa/flake8
     rev: 7.0.0
     hooks:
@@ -72,3 +77,12 @@ repos:
         ^scripts/vm/hypervisor/xenserver/vmopspremium$|
         ^setup/bindir/cloud-setup-encryption\.in$|
         ^venv/.*$
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.40.0
+    hooks:
+      - id: markdownlint
+        name: run markdownlint
+        description: check Markdown files with markdownlint
+        args: [--config=.github/linters/.markdown-lint.yml]
+        types: [markdown]
+        files: \.(md|mdown|markdown)$

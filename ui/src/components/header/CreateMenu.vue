@@ -19,7 +19,7 @@
   <a-dropdown>
     <template #overlay>
       <a-menu>
-        <a-menu-item style="width: 100%; padding: 12px">
+        <a-menu-item style="width: 100%; padding: 12px" v-if="'deployVirtualMachine' in $store.getters.apis">
           <router-link :to="{ path: '/action/deployVirtualMachine'}">
             <a-row>
               <a-col style="margin-right: 12px">
@@ -38,7 +38,7 @@
             </a-row>
           </router-link>
         </a-menu-item>
-        <a-menu-item style="width: 100%; padding: 12px" v-if="'listKubernetesClusters' in $store.getters.apis">
+        <a-menu-item style="width: 100%; padding: 12px" v-if="'createKubernetesCluster' in $store.getters.apis">
           <router-link :to="{ path: '/kubernetes', query: { action: 'createKubernetesCluster' } }">
             <a-row>
               <a-col style="margin-right: 12px">
@@ -57,7 +57,7 @@
             </a-row>
           </router-link>
         </a-menu-item>
-        <a-menu-item style="width: 100%; padding: 12px">
+        <a-menu-item style="width: 100%; padding: 12px" v-if="'createVolume' in $store.getters.apis">
           <router-link :to="{ path: '/volume', query: { action: 'createVolume' } }">
             <a-row>
               <a-col style="margin-right: 12px">
@@ -76,7 +76,7 @@
             </a-row>
           </router-link>
         </a-menu-item>
-        <a-menu-item style="width: 100%; padding: 12px">
+        <a-menu-item style="width: 100%; padding: 12px" v-if="'createNetwork' in $store.getters.apis">
           <router-link :to="{ path: '/guestnetwork', query: { action: 'createNetwork' } }">
             <a-row>
               <a-col style="margin-right: 12px">
@@ -95,7 +95,7 @@
             </a-row>
           </router-link>
         </a-menu-item>
-        <a-menu-item style="width: 100%; padding: 12px">
+        <a-menu-item style="width: 100%; padding: 12px" v-if="'createVPC' in $store.getters.apis">
           <router-link :to="{ path: '/vpc', query: { action: 'createVPC' } }">
             <a-row>
               <a-col style="margin-right: 12px">
@@ -114,7 +114,7 @@
             </a-row>
           </router-link>
         </a-menu-item>
-        <a-menu-item style="width: 100%; padding: 12px">
+        <a-menu-item style="width: 100%; padding: 12px" v-if="'registerTemplate' in $store.getters.apis">
           <router-link :to="{ path: '/template', query: { action: 'registerTemplate' } }">
             <a-row>
               <a-col style="margin-right: 12px">

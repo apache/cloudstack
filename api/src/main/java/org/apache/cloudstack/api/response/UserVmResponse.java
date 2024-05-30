@@ -137,6 +137,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "the type of the template for the virtual machine", since = "4.19.0")
     private String templateType;
 
+    @SerializedName(ApiConstants.TEMPLATE_FORMAT)
+    @Param(description = "the format of the template for the virtual machine", since = "4.19.1")
+    private String templateFormat;
+
     @SerializedName("templatedisplaytext")
     @Param(description = " an alternate display text of the template for the virtual machine")
     private String templateDisplayText;
@@ -1074,6 +1078,14 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public void setTemplateType(String templateType) {
         this.templateType = templateType;
+    }
+
+    public String getTemplateFormat() {
+        return templateFormat;
+    }
+
+    public void setTemplateFormat(String templateFormat) {
+        this.templateFormat = templateFormat;
     }
 
     public List<VnfNicResponse> getVnfNics() {
