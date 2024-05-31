@@ -77,7 +77,8 @@ public interface VmStatsDao extends GenericDao<VmStatsVO, Long> {
      * a given Date.
      * @param limitDate the maximum date to keep stored. Records that exceed this limit will be removed.
      * @param limitPerQuery the maximum amount of rows to be removed in a single query. We loop if there are still rows to be removed after a given query.
+     *                      If 0 or negative, no limit is used.
      */
-    void removeAllByTimestampLessThan(Date limitDate, Long limitPerQuery);
+    void removeAllByTimestampLessThan(Date limitDate, long limitPerQuery);
 
 }

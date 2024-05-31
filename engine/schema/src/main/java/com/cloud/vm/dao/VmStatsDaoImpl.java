@@ -116,7 +116,7 @@ public class VmStatsDaoImpl extends GenericDaoBase<VmStatsVO, Long> implements V
     }
 
     @Override
-    public void removeAllByTimestampLessThan(Date limitDate, Long limitPerQuery) {
+    public void removeAllByTimestampLessThan(Date limitDate, long limitPerQuery) {
         SearchCriteria<VmStatsVO> sc = timestampSearch.create();
         sc.setParameters("timestamp", limitDate);
 
