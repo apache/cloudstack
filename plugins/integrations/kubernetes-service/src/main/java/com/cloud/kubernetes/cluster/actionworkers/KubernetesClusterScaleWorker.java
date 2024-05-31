@@ -445,10 +445,10 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         if (existingServiceOffering == null) {
             logAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster : %s failed, service offering for the Kubernetes cluster not found!", kubernetesCluster.getName()));
         }
-        final boolean autscalingChanged = isAutoscalingChanged();
+        final boolean autoscalingChanged = isAutoscalingChanged();
         final boolean serviceOfferingScalingNeeded = serviceOffering != null && serviceOffering.getId() != existingServiceOffering.getId();
 
-        if (autscalingChanged) {
+        if (autoscalingChanged) {
             boolean autoScaled = autoscaleCluster(this.isAutoscalingEnabled, minSize, maxSize);
             if (autoScaled && serviceOfferingScalingNeeded) {
                 scaleKubernetesClusterOffering();

@@ -1584,16 +1584,21 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         validateKubernetesClusterScaleParameters(cmd);
 
         KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.findById(cmd.getId());
+        final Long clusterSize = cmd.getClusterSize();
+        if (clusterSize != null) {
+            CallContext.current().setEventDetails(String.format("Kubernetes cluster ID: %s scaling from size: %d to %d",
+                    kubernetesCluster.getUuid(), kubernetesCluster.getNodeCount(), clusterSize));
+        }
         String[] keys = getServiceUserKeys(kubernetesCluster);
         KubernetesClusterScaleWorker scaleWorker =
             new KubernetesClusterScaleWorker(kubernetesClusterDao.findById(cmd.getId()),
-                serviceOfferingDao.findById(cmd.getServiceOfferingId()),
-                cmd.getClusterSize(),
-                cmd.getNodeIds(),
-                cmd.isAutoscalingEnabled(),
-                cmd.getMinSize(),
-                cmd.getMaxSize(),
-                this);
+                    serviceOfferingDao.findById(cmd.getServiceOfferingId()),
+                    clusterSize,
+                    cmd.getNodeIds(),
+                    cmd.isAutoscalingEnabled(),
+                    cmd.getMinSize(),
+                    cmd.getMaxSize(),
+                    this);
         scaleWorker.setKeys(keys);
         scaleWorker = ComponentContext.inject(scaleWorker);
         return scaleWorker.scaleCluster();
