@@ -31,7 +31,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.network.vpc.NetworkACL;
 import com.cloud.storage.VMTemplateVO;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.InternalIdentity;
@@ -606,7 +609,19 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         for (int i = 0; i < etcdVmIds.size(); i++) {
             int etcdStartPort = startPort + i;
             try {
-                provisionFirewallRules(publicIp, owner, etcdStartPort, etcdStartPort);
+                if (Objects.isNull(network.getVpcId())) {
+                    provisionFirewallRules(publicIp, owner, etcdStartPort, etcdStartPort);
+                } else if (network.getNetworkACLId() != NetworkACL.DEFAULT_ALLOW) {
+                    try {
+                        provisionVpcTierAllowPortACLRule(network, ETCD_NODE_CLIENT_REQUEST_PORT, ETCD_NODE_CLIENT_REQUEST_PORT);
+                        if (LOGGER.isInfoEnabled()) {
+                            LOGGER.info(String.format("Provisioned ACL rule to open up port %d on %s for etcd nodes for Kubernetes cluster %s",
+                                    ETCD_NODE_CLIENT_REQUEST_PORT, publicIpAddress, kubernetesCluster.getName()));
+                        }
+                    } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException | InvalidParameterValueException | PermissionDeniedException e) {
+                        throw new ManagementServerException(String.format("Failed to provision ACL rules for etcd client access for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
+                    }
+                }
             } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException |
                      NetworkRuleConflictException e) {
                 throw new ManagementServerException(String.format("Failed to provision firewall rules for etcd nodes for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
