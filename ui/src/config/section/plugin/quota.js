@@ -146,10 +146,6 @@ export default {
           customTitle: 'end.date'
         },
         'removed'
-        // {
-        //   field: 'activationRule',
-        //   customTitle: 'quota.tariff.activationrule'
-        // }
       ],
       filters: ['all', 'active', 'removed'],
       searchFilters: ['usagetype'],
@@ -161,6 +157,15 @@ export default {
           listView: true,
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/plugins/quota/CreateQuotaTariff.vue')))
+        },
+        {
+          api: 'quotaTariffUpdate',
+          icon: 'edit-outlined',
+          label: 'label.action.quota.tariff.edit',
+          dataView: true,
+          popup: true,
+          show: (record) => !record.removed,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/plugins/quota/EditQuotaTariff.vue')))
         },
         {
           api: 'quotaTariffDelete',
