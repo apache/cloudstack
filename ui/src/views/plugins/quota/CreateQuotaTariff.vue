@@ -73,7 +73,7 @@
           v-model:value="form.startDate"
           :disabled-date="disabledStartDate"
           :placeholder="$t('placeholder.quota.tariff.startdate')"
-          show-time />
+        />
       </a-form-item>
       <a-form-item ref="endDate" name="endDate">
         <template #label>
@@ -83,7 +83,7 @@
           v-model:value="form.endDate"
           :disabled-date="disabledEndDate"
           :placeholder="$t('placeholder.quota.tariff.enddate')"
-          show-time />
+        />
       </a-form-item>
       <div :span="24" class="action-button">
         <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
@@ -145,11 +145,11 @@ export default {
         values.usageType = values.usageType.split('-')[0]
 
         if (values.startDate) {
-          values.startDate = getMomentFormattedAndNormalized({ value: values.startDate })
+          values.startDate = getMomentFormattedAndNormalized({ value: values.startDate, format: 'YYYY-MM-DD' })
         }
 
         if (values.endDate) {
-          values.endDate = getMomentFormattedAndNormalized({ value: values.endDate })
+          values.endDate = getMomentFormattedAndNormalized({ value: values.endDate, format: 'YYYY-MM-DD' })
         }
 
         this.loading = true
