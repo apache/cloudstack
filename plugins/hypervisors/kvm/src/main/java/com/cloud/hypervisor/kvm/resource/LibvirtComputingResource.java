@@ -308,6 +308,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public static final String INSTANCE_CONVERSION_SUPPORTED_CHECK_CMD = "virt-v2v --version";
     public static final String OVA_EXPORT_SUPPORTED_CHECK_CMD = "ovftool --version";
+    public static final String WINDOWS_GUEST_CONVERSION_SUPPORTED_CHECK_CMD = "rpm -qa | grep -i virtio-win";
+    public static final String UBUNTU_WINDOWS_GUEST_CONVERSION_SUPPORTED_CHECK_CMD = "dpkg -l virtio-win";
+    public static final String UBUNTU_NBDKIT_PKG_CHECK_CMD = "dpkg -l nbdkit";
 
     private String modifyVlanPath;
     private String versionStringPath;
@@ -5144,6 +5147,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public boolean hostSupportsInstanceConversion() {
         int exitValue = Script.runSimpleBashScriptForExitValue(INSTANCE_CONVERSION_SUPPORTED_CHECK_CMD);
+        if (isUbuntuHost() && exitValue == 0) {
+            exitValue = Script.runSimpleBashScriptForExitValue(UBUNTU_NBDKIT_PKG_CHECK_CMD);
+        }
+        return exitValue == 0;
+    }
+
+    public boolean hostSupportsWindowsGuestConversion() {
+        if (isUbuntuHost()) {
+            int exitValue = Script.runSimpleBashScriptForExitValue(UBUNTU_WINDOWS_GUEST_CONVERSION_SUPPORTED_CHECK_CMD);
+            return exitValue == 0;
+        }
+        int exitValue = Script.runSimpleBashScriptForExitValue(WINDOWS_GUEST_CONVERSION_SUPPORTED_CHECK_CMD);
         return exitValue == 0;
     }
 

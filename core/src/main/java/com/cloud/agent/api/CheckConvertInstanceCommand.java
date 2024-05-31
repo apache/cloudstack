@@ -17,11 +17,21 @@
 package com.cloud.agent.api;
 
 public class CheckConvertInstanceCommand extends Command {
+    boolean checkWindowsGuestConversionSupport = false;
+
     public CheckConvertInstanceCommand() {
+    }
+
+    public CheckConvertInstanceCommand(boolean checkWindowsGuestConversionSupport) {
+        this.checkWindowsGuestConversionSupport = checkWindowsGuestConversionSupport;
     }
 
     @Override
     public boolean executeInSequence() {
         return false;
+    }
+
+    public boolean getCheckWindowsGuestConversionSupport() {
+        return checkWindowsGuestConversionSupport;
     }
 }

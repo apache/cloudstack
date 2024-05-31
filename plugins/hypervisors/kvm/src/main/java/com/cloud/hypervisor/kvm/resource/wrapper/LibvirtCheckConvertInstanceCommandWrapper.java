@@ -36,7 +36,14 @@ public class LibvirtCheckConvertInstanceCommandWrapper extends CommandWrapper<Ch
     public Answer execute(CheckConvertInstanceCommand cmd, LibvirtComputingResource serverResource) {
         if (!serverResource.hostSupportsInstanceConversion()) {
             String msg = String.format("Cannot convert the instance from VMware as the virt-v2v binary is not found on host %s. " +
-                    "Please install virt-v2v on the host before attempting the instance conversion.", serverResource.getPrivateIp());
+                    "Please install virt-v2v%s on the host before attempting the instance conversion.", serverResource.getPrivateIp(), serverResource.isUbuntuHost()? ", nbdkit" : "");
+            s_logger.info(msg);
+            return new CheckConvertInstanceAnswer(cmd, false, msg);
+        }
+
+        if (cmd.getCheckWindowsGuestConversionSupport() && !serverResource.hostSupportsWindowsGuestConversion()) {
+            String msg = String.format("Cannot convert the instance from VMware as the virtio-win package is not found on host %s. " +
+                    "Please install virtio-win package on the host before attempting the windows guest instance conversion.", serverResource.getPrivateIp());
             s_logger.info(msg);
             return new CheckConvertInstanceAnswer(cmd, false, msg);
         }

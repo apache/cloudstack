@@ -1598,16 +1598,20 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         String ovaTemplateDirAndNameOnConvertLocation = null;
         try {
             HostVO convertHost = selectInstanceConversionKVMHostInCluster(destinationCluster, convertInstanceHostId);
-            CheckConvertInstanceAnswer conversionSupportAnswer = checkConversionSupportOnHost(convertHost, sourceVM);
+            CheckConvertInstanceAnswer conversionSupportAnswer = checkConversionSupportOnHost(convertHost, sourceVM, false);
             LOGGER.debug(String.format("The host %s (%s) is selected to execute the conversion of the instance %s" +
                     " from VMware to KVM ", convertHost.getId(), convertHost.getName(), sourceVM));
 
             temporaryConvertLocation = selectInstanceConversionTemporaryLocation(destinationCluster, convertStoragePoolId);
             List<StoragePoolVO> convertStoragePools = findInstanceConversionStoragePoolsInCluster(destinationCluster);
             clonedInstance = cloneSourceVmwareUnmanagedInstance(vcenter, datacenterName, username, password, clusterName, sourceHostName, sourceVM);
+            boolean isWindowsVm = clonedInstance.getOperatingSystem().toLowerCase().contains("windows");
+            if (isWindowsVm) {
+                checkConversionSupportOnHost(convertHost, sourceVM, true);
+            }
+
             String instanceName = getGeneratedInstanceName(owner);
             checkNetworkingBeforeConvertingVmwareInstance(zone, owner, instanceName, hostName, clonedInstance, nicNetworkMap, nicIpAddressMap, forced);
-
             UnmanagedInstanceTO convertedInstance;
             if (cmd.getForceMsToDownloadVmFiles() || !conversionSupportAnswer.isOvaExportSupported()) {
                 // Uses MS for OVA export to temporary conversion location
@@ -1807,9 +1811,9 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         throw new CloudRuntimeException(err);
     }
 
-    private CheckConvertInstanceAnswer checkConversionSupportOnHost(HostVO convertHost, String sourceVM) {
-        LOGGER.debug(String.format("Checking the conversion support on the host %s (%s)", convertHost.getId(), convertHost.getName()));
-        CheckConvertInstanceCommand cmd = new CheckConvertInstanceCommand();
+    private CheckConvertInstanceAnswer checkConversionSupportOnHost(HostVO convertHost, String sourceVM, boolean checkWindowsGuestConversionSupport) {
+        LOGGER.debug(String.format("Checking the %s conversion support on the host %s (%s)", checkWindowsGuestConversionSupport? "windows guest" : "", convertHost.getId(), convertHost.getName()));
+        CheckConvertInstanceCommand cmd = new CheckConvertInstanceCommand(checkWindowsGuestConversionSupport);
         int timeoutSeconds = 60;
         cmd.setWait(timeoutSeconds);
 
@@ -1817,8 +1821,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         try {
             checkConvertInstanceAnswer = (CheckConvertInstanceAnswer) agentManager.send(convertHost.getId(), cmd);
         } catch (AgentUnavailableException | OperationTimedoutException e) {
-            String err = String.format("Failed to check conversion support on the host %s for converting instance %s from VMware to KVM due to: %s",
-                    convertHost.getName(), sourceVM, e.getMessage());
+            String err = String.format("Failed to check %s conversion support on the host %s for converting instance %s from VMware to KVM due to: %s",
+                    checkWindowsGuestConversionSupport? "windows guest" : "", convertHost.getName(), sourceVM, e.getMessage());
             LOGGER.error(err);
             throw new CloudRuntimeException(err);
         }
