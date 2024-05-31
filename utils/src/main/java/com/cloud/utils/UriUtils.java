@@ -214,7 +214,7 @@ public class UriUtils {
     }
 
     // Get the size of a file from URL response header.
-    public static long getRemoteSize(String url) {
+    public static long getRemoteSize(String url, Boolean followRedirect) {
         long remoteSize = 0L;
         final String[] methods = new String[]{"HEAD", "GET"};
         IllegalArgumentException exception = null;
@@ -229,6 +229,7 @@ public class UriUtils {
                 httpConn.setRequestMethod(method);
                 httpConn.setConnectTimeout(2000);
                 httpConn.setReadTimeout(5000);
+                httpConn.setInstanceFollowRedirects(Boolean.TRUE.equals(followRedirect));
                 String contentLength = httpConn.getHeaderField("content-length");
                 if (contentLength != null) {
                     remoteSize = Long.parseLong(contentLength);

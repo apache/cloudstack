@@ -82,3 +82,7 @@ CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_email_configuration`(
 
 -- Remove on delete cascade from snapshot schedule
 ALTER TABLE `cloud`.`snapshot_schedule` DROP CONSTRAINT `fk__snapshot_schedule_async_job_id`;
+
+-- Add `is_implicit` column to `host_tags` table
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.host_tags', 'is_implicit', 'int(1) UNSIGNED NOT NULL DEFAULT 0 COMMENT "If host tag is implicit or explicit" ');
+

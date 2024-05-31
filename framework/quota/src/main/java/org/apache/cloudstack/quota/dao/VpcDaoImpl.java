@@ -14,17 +14,10 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.query.dao;
+package org.apache.cloudstack.quota.dao;
 
-import java.util.List;
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.utils.db.GenericDaoBase;
 
-import org.apache.cloudstack.api.response.HostTagResponse;
-
-import com.cloud.api.query.vo.HostTagVO;
-import com.cloud.utils.db.GenericDao;
-
-public interface HostTagDao extends GenericDao<HostTagVO, Long> {
-    HostTagResponse newHostTagResponse(HostTagVO hostTag);
-
-    List<HostTagVO> searchByIds(Long... hostTagIds);
+public class VpcDaoImpl extends GenericDaoBase<VpcVO, Long> implements VpcDao {
 }
