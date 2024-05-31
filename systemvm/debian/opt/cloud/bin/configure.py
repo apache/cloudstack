@@ -436,12 +436,12 @@ class CsAcl(CsDataBag):
             if direction == "ingress":
                 cidr_key = "daddr"
             parent_chain_rule = "ip %s %s jump %s" % (cidr_key, tier_cidr, chain)
-            self.nft_ipv4_acl.insert(0, {'type': "", 'chain': parent_chain, 'rule': parent_chain_rule})
+            self.nft_ipv4_acl.append({'type': "", 'chain': parent_chain, 'rule': parent_chain_rule})
             self.nft_ipv4_acl.insert(0, {'type': "chain", 'chain': chain})
             for rule in rule_list:
                 cidr = rule['cidr']
                 if cidr is not None and cidr != "":
-                    cidr = removeUndesiredCidrs(cidr, 4)
+                    cidr = removeUndesiredCidrs(cidr, 6)
                     if cidr is None or cidr == "":
                         continue
                 addr = ""
@@ -500,6 +500,7 @@ class CsAcl(CsDataBag):
                     self.nft_ipv4_acl.insert(0, {'type': type, 'chain': chain, 'rule': rstr})
                 else:
                     self.nft_ipv4_acl.append({'type': type, 'chain': chain, 'rule': rstr})
+
             rstr = "counter packets 0 bytes 0 drop"
             self.nft_ipv4_acl.append({'type': "", 'chain': chain, 'rule': rstr})
 
@@ -657,12 +658,12 @@ class CsAcl(CsDataBag):
             return
         # Flush all iptables rules for routing networks, which are replaced by nftables rules
         logging.info("Flush all iptables rules")
-        CsHelper.execute("iptables -F filter || true")
-        CsHelper.execute("iptables -F nat || true")
-        CsHelper.execute("iptables -F mangle || true")
-        CsHelper.execute("nft delete table ip filter || true")
-        CsHelper.execute("nft delete table ip nat || true")
-        CsHelper.execute("nft delete table ip mangle || true")
+        CsHelper.execute("iptables -F filter")
+        CsHelper.execute("iptables -F nat")
+        CsHelper.execute("iptables -F mangle")
+        CsHelper.execute("nft delete table ip filter")
+        CsHelper.execute("nft delete table ip nat")
+        CsHelper.execute("nft delete table ip mangle")
 
     def flushAllowAllEgressRules(self):
         if self.config.is_routing():
@@ -679,7 +680,7 @@ class CsAcl(CsDataBag):
         if not self.config.is_routing():
             return
         logging.info("Flush all Routing firewall rules")
-        address_family = 'ip4'
+        address_family = 'ip'
         table = 'ip4_firewall'
         tables = CsHelper.execute("nft list tables %s | grep %s" % (address_family, table))
         if any(table in t for t in tables):
@@ -689,7 +690,7 @@ class CsAcl(CsDataBag):
         if not self.config.is_routing():
             return
         logging.info("Flush all ACL rules for routing network")
-        address_family = 'ip4'
+        address_family = 'ip'
         table = 'ip4_acl'
         tables = CsHelper.execute("nft list tables %s | grep %s" % (address_family, table))
         if any(table in t for t in tables):

@@ -99,6 +99,9 @@ patch() {
 cleanup() {
   rm -rf /var/cache/cloud/agent.zip
   mv /var/cache/cloud/cloud-scripts.tgz /usr/share/cloud/cloud-scripts.tgz
+  if [ "$TYPE" != "consoleproxy" ] && [ "$TYPE" != "secstorage" ]; then
+    rm -rf /usr/local/cloud/systemvm/
+  fi
 }
 
 start() {

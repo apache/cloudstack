@@ -638,7 +638,29 @@ class CsIP:
     def fw_vpcrouter_routing(self):
         if not self.config.is_vpc() or not self.config.is_routing():
             return
-        # TODO
+        if self.get_type() in ["guest"]:
+            guestNetworkCidr = self.address['network']
+            self.nft_ipv4_acl.append({'type': "", 'chain': 'INPUT',
+                                      'rule': "iifname %s udp dport 67 counter accept" % self.dev})
+            self.nft_ipv4_acl.append({'type': "", 'chain': 'INPUT',
+                                      'rule': "iifname %s ip saddr %s tcp dport 53 counter accept" % (self.dev, guestNetworkCidr)})
+            self.nft_ipv4_acl.append({'type': "", 'chain': 'INPUT',
+                                      'rule': "iifname %s ip saddr %s udp dport 53 counter accept" % (self.dev, guestNetworkCidr)})
+            self.nft_ipv4_acl.append({'type': "", 'chain': 'INPUT',
+                                      'rule': "iifname %s ip saddr %s tcp dport 80 ct state new counter accept" % (self.dev, guestNetworkCidr)})
+            self.nft_ipv4_acl.append({'type': "", 'chain': 'INPUT',
+                                      'rule': "iifname %s ip saddr %s tcp dport 443 ct state new counter accept" % (self.dev, guestNetworkCidr)})
+            self.nft_ipv4_acl.append({'type': "", 'chain': 'INPUT',
+                                      'rule': "iifname %s ip saddr %s tcp dport 8080 ct state new counter accept" % (self.dev, guestNetworkCidr)})
+
+            # Add default rules for VPC tiers
+            self.nft_ipv4_acl.append({'type': "", 'chain': 'FORWARD',
+                       'rule': "oifname %s ip daddr %s ct state related,established counter accept" % (self.dev, guestNetworkCidr)})
+            self.nft_ipv4_acl.append({'type': "", 'chain': 'FORWARD',
+                       'rule': "iifname %s oifname %s ct state new counter accept" % (self.dev, self.dev)})
+            self.nft_ipv4_acl.append({'type': "", 'chain': 'FORWARD',
+                       'rule': "iifname %s oifname %s ct state related,established counter accept" % (self.dev, self.dev)})
+
 
     def post_config_change(self, method):
         route = CsRoute()
