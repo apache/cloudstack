@@ -2473,9 +2473,13 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         // Fetch firewall Egress rules.
         if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.Firewall, provider)) {
             firewallRulesEgress.addAll(_rulesDao.listByNetworkPurposeTrafficType(guestNetworkId, Purpose.Firewall, FirewallRule.TrafficType.Egress));
-            //create egress default rule for VR
+            // create egress default rule for VR
             createDefaultEgressFirewallRule(firewallRulesEgress, guestNetworkId);
 
+            // add routing ingress firewall rules which do not have public IPs
+            firewallRulesEgress.addAll(_rulesDao.listRoutingIngressFirewallRules(guestNetworkId));
+
+            // create egress default Ipv6 rules for VR
             createDefaultEgressIpv6FirewallRule(ipv6firewallRules, guestNetworkId);
             ipv6firewallRules.addAll(_rulesDao.listByNetworkPurposeTrafficType(guestNetworkId, Purpose.Ipv6Firewall, FirewallRule.TrafficType.Egress));
             ipv6firewallRules.addAll(_rulesDao.listByNetworkPurposeTrafficType(guestNetworkId, Purpose.Ipv6Firewall, FirewallRule.TrafficType.Ingress));

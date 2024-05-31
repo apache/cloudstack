@@ -439,6 +439,7 @@ export default {
       setMTU: false,
       isNsxEnabled: false,
       isOfferingNatMode: false,
+      isOfferingRoutedMode: false,
       displayCollapsible: []
     }
   },
@@ -539,6 +540,7 @@ export default {
           const vpcOffering = json?.listvpcofferingsresponse?.vpcoffering[0]
           resolve(vpcOffering)
           this.isOfferingNatMode = vpcOffering?.routingmode === 'NATTED' || false
+          this.isOfferingRoutedMode = vpcOffering?.routingmode === 'ROUTED' || false
         }).catch(e => {
           reject(e)
         })
@@ -572,7 +574,7 @@ export default {
         guestiptype: 'Isolated',
         state: 'Enabled'
       }
-      if (!this.isNsxEnabled) {
+      if (!this.isNsxEnabled && !this.isOfferingRoutedMode) {
         params.supportedServices = 'SourceNat'
       }
       api('listNetworkOfferings', params).then(json => {

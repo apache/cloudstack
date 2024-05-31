@@ -1909,7 +1909,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         // 2) Only Isolated networks with Source nat service enabled can be
         // added to vpc
-        if (!guestNtwkOff.isForNsx() && !(guestNtwkOff.getGuestType() == GuestType.Isolated && supportedSvcs.contains(Service.SourceNat))) {
+        if (!guestNtwkOff.isForNsx()
+                && !(guestNtwkOff.getGuestType() == GuestType.Isolated && (supportedSvcs.contains(Service.SourceNat) || supportedSvcs.contains(Service.Gateway)))) {
 
             throw new InvalidParameterValueException("Only network offerings of type " + GuestType.Isolated + " with service " + Service.SourceNat.getName()
                     + " are valid for vpc ");
@@ -3204,10 +3205,11 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Override
     public boolean isSrcNatIpRequired(long vpcOfferingId) {
         final Map<Network.Service, Set<Network.Provider>> vpcOffSvcProvidersMap = getVpcOffSvcProvidersMap(vpcOfferingId);
-        return Objects.nonNull(vpcOffSvcProvidersMap.get(Network.Service.SourceNat))
+        return (Objects.nonNull(vpcOffSvcProvidersMap.get(Network.Service.SourceNat))
                 && (vpcOffSvcProvidersMap.get(Network.Service.SourceNat).contains(Network.Provider.VPCVirtualRouter)
-                || vpcOffSvcProvidersMap.get(Service.Gateway).contains(Network.Provider.VPCVirtualRouter)
-                || vpcOffSvcProvidersMap.get(Service.SourceNat).contains(Provider.Nsx));
+                || vpcOffSvcProvidersMap.get(Service.SourceNat).contains(Provider.Nsx)))
+                || (Objects.nonNull(vpcOffSvcProvidersMap.get(Network.Service.Gateway))
+                && vpcOffSvcProvidersMap.get(Service.Gateway).contains(Network.Provider.VPCVirtualRouter));
     }
 
     /**

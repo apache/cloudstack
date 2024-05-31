@@ -65,6 +65,8 @@ public interface RoutedIpv4Manager extends PluggableService, Configurable {
 
     boolean deleteIpv4SubnetForGuestNetwork(DeleteIpv4SubnetForGuestNetworkCmd deleteIpv4SubnetForGuestNetworkCmd);
 
+    boolean releaseIpv4SubnetForGuestNetwork(long networkId);
+
     List<? extends Ipv4GuestSubnetNetworkMap> listIpv4GuestSubnetsForGuestNetwork(ListIpv4SubnetsForGuestNetworkCmd listIpv4SubnetsForGuestNetworkCmd);
 
     Ipv4SubnetForGuestNetworkResponse createIpv4SubnetForGuestNetworkResponse(Ipv4GuestSubnetNetworkMap subnet);

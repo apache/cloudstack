@@ -56,6 +56,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.network.dao.NetworkPermissionDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
@@ -430,6 +431,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     NicSecondaryIpDao _nicSecondaryIpDao;
     @Inject
     ClusterDao clusterDao;
+    @Inject
+    RoutedIpv4Manager routedIpv4Manager;
 
     protected StateMachine2<Network.State, Network.Event, Network> _stateMachine;
     ScheduledExecutorService _executor;
@@ -3379,6 +3382,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         } else {
                             // commit transaction only when ips and vlans for the network are released successfully
 
+                            routedIpv4Manager.releaseIpv4SubnetForGuestNetwork(networkId);
                             ipv6Service.releaseIpv6SubnetForNetwork(networkId);
                             ipv6Service.removePublicIpv6PlaceholderNics(networkFinal);
                             try {

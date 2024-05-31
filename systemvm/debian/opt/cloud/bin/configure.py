@@ -303,6 +303,13 @@ class CsAcl(CsDataBag):
                 else:
                     egress_policy = "drop"
                 chains_added = True
+                # Add default rules
+                fw.append({'type': "", 'chain': 'FORWARD',
+                           'rule': 'iifname "eth2" oifname "eth0" ct state related,established counter accept'})
+                fw.append({'type': "", 'chain': 'FORWARD',
+                           'rule': 'iifname "eth0" oifname "eth0" ct state new counter accept'})
+                fw.append({'type': "", 'chain': 'FORWARD',
+                           'rule': 'iifname "eth0" oifname "eth0" ct state related,established counter accept'})
 
             rstr = ""
 
@@ -650,12 +657,12 @@ class CsAcl(CsDataBag):
             return
         # Flush all iptables rules for routing networks, which are replaced by nftables rules
         logging.info("Flush all iptables rules")
-        CsHelper.execute("iptables -F filter")
-        CsHelper.execute("iptables -F nat")
-        CsHelper.execute("iptables -F mangle")
-        CsHelper.execute("nft delete table ip filter")
-        CsHelper.execute("nft delete table ip nat")
-        CsHelper.execute("nft delete table ip mangle")
+        CsHelper.execute("iptables -F filter || true")
+        CsHelper.execute("iptables -F nat || true")
+        CsHelper.execute("iptables -F mangle || true")
+        CsHelper.execute("nft delete table ip filter || true")
+        CsHelper.execute("nft delete table ip nat || true")
+        CsHelper.execute("nft delete table ip mangle || true")
 
     def flushAllowAllEgressRules(self):
         if self.config.is_routing():

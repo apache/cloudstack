@@ -208,6 +208,15 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     @Override
+    public boolean releaseIpv4SubnetForGuestNetwork(long networkId) {
+        // TODO
+        // check if the network has corresponding subnet
+        // if parent_id is NULL, remove it
+        // otherwise, release it
+        return false;
+    }
+
+    @Override
     public List<? extends Ipv4GuestSubnetNetworkMap> listIpv4GuestSubnetsForGuestNetwork(ListIpv4SubnetsForGuestNetworkCmd cmd) {
         // TODO
         // search via ipv4GuestSubnetNetworkMapDao

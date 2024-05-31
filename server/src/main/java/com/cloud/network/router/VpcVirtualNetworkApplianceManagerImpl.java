@@ -353,6 +353,9 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 if (defaultIp6Dns2 != null) {
                     buf.append(" ip6dns2=").append(defaultIp6Dns2);
                 }
+                if (routedIpv4Manager.isRoutedVpc(vpc)) {
+                    buf.append(" is_routing=true");
+                }
             }
         }
 

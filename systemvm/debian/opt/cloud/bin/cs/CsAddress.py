@@ -308,6 +308,7 @@ class CsIP:
         self.cl = config.cmdline()
         self.config = config
         self.nft_ipv4_fw = config.get_nft_ipv4_fw()
+        self.nft_ipv4_acl = config.get_nft_ipv4_acl()
 
     def setAddress(self, address):
         self.address = address
@@ -402,8 +403,8 @@ class CsIP:
 
     def setup_router_control_routing(self):
         if self.config.is_vpc():
-            self.nft_ipv4_fw.append({'type': "", 'chain': 'INPUT',
-                                     'rule': 'iifname "eth0" tcp dport 3922 ct state established,new counter accept'})
+            self.nft_ipv4_acl.append({'type': "", 'chain': 'INPUT',
+                                      'rule': 'iifname "eth0" tcp dport 3922 ct state established,new counter accept'})
         else:
             self.nft_ipv4_fw.append({'type': "", 'chain': 'INPUT',
                                      'rule': 'iifname "eth1" tcp dport 3922 ct state established,new counter accept'})
@@ -633,9 +634,11 @@ class CsIP:
                                      'rule': "iifname %s ip saddr %s tcp dport 443 ct state new counter accept" % (self.dev, guestNetworkCidr)})
             self.nft_ipv4_fw.append({'type': "", 'chain': 'INPUT',
                                      'rule': "iifname %s ip saddr %s tcp dport 8080 ct state new counter accept" % (self.dev, guestNetworkCidr)})
+
     def fw_vpcrouter_routing(self):
         if not self.config.is_vpc() or not self.config.is_routing():
             return
+        # TODO
 
     def post_config_change(self, method):
         route = CsRoute()
