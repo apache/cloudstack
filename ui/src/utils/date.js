@@ -17,26 +17,18 @@
 import * as momentLib from 'moment'
 import store from '@/store/'
 
-export function getMomentFormattedAndNormalized ({ value, keepMoment = true, format = true }) {
-  console.log('value =', value)
-  console.log('keepMoment =', keepMoment)
-  console.log('format =', format)
-
-  // if (typeof value === 'string') {
-  value = moment(value)
-  // }
-
-  console.log('moment value before =', value)
-
-  if (!store.getters.usebrowsertimezone) {
-    value = value.utc(keepMoment)
+export function getMomentFormattedAndNormalized ({ value, format = null, keepMoment = true }) {
+  if (typeof value === 'string') {
+    value = moment(value)
   }
 
-  console.log('moment value after =', value)
-  console.log('moment value formatted =', value.format())
+  if (!store.getters.usebrowsertimezone) {
+    const utcOffsetInMinutes = value.utcOffset() * -1
+    value = value.add(utcOffsetInMinutes, 'minute')
+  }
 
   if (format) {
-    return value.format()
+    return value.format(format)
   }
 
   return value
