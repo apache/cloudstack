@@ -43,6 +43,7 @@ public class ExtraConfigurationUtility {
             String paramValue = configParams.get(paramKey);
 
             //Map params
+            LOGGER.debug("Applying [{}] configuration as [{}].", paramKey, paramValue);
             if (paramKey.contains(":")) {
                 applyConfigWithNestedKeyValue(conn, vm, recordMap, paramKey, paramValue);
             } else {
@@ -53,6 +54,11 @@ public class ExtraConfigurationUtility {
 
     private static boolean isValidOperation(Map<String, Object> recordMap, String actualParam) {
         return recordMap.containsKey(actualParam);
+    }
+
+    private static Map<String, String> putInMap(Map<String, String> map, String key, String value) {
+        map.put(key, value);
+        return map;
     }
 
     /**
@@ -71,26 +77,27 @@ public class ExtraConfigurationUtility {
         try {
             switch (actualParam) {
                 case "VCPUs_params":
-                    vm.addToVCPUsParams(conn, keyName, paramValue);
+                    vm.setVCPUsParams(conn, putInMap(vm.getVCPUsParams(conn), keyName, paramValue));
                     break;
                 case "platform":
-                    vm.addToOtherConfig(conn, keyName, paramValue);
+                    vm.setOtherConfig(conn, putInMap(vm.getOtherConfig(conn), keyName, paramValue));
                     break;
                 case "HVM_boot_params":
-                    vm.addToHVMBootParams(conn, keyName, paramValue);
+                    vm.setHVMBootParams(conn, putInMap(vm.getHVMBootParams(conn), keyName, paramValue));
                     break;
                 case "other_config":
-                    vm.addToOtherConfig(conn, keyName, paramValue);
+                    vm.setOtherConfig(conn, putInMap(vm.getOtherConfig(conn), keyName, paramValue));
                     break;
                 case "xenstore_data":
-                    vm.addToXenstoreData(conn, keyName, paramValue);
+                    vm.setXenstoreData(conn, putInMap(vm.getXenstoreData(conn), keyName, paramValue));
                     break;
                 default:
                     String msg = String.format("Passed configuration %s is not supported", paramKey);
                     LOGGER.warn(msg);
             }
         } catch (XmlRpcException | Types.XenAPIException e) {
-            LOGGER.error("Exception caught while setting VM configuration. exception: " + e.getMessage());
+            LOGGER.error("Exception caught while setting VM configuration: [{}]", e.getMessage() == null ? e.toString() : e.getMessage());
+            LOGGER.debug("Exception caught while setting VM configuration", e);
             throw new CloudRuntimeException("Exception caught while setting VM configuration", e);
         }
     }

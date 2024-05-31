@@ -982,25 +982,43 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         return domainToBeMoved;
     }
 
-    protected void validateNewParentDomainResourceLimits(DomainVO domainToBeMoved, DomainVO newParentDomain) throws ResourceAllocationException {
+    protected void validateNewParentDomainResourceLimit(DomainVO domainToBeMoved, DomainVO newParentDomain,
+            Resource.ResourceType resourceType, String tag) throws ResourceAllocationException {
         long domainToBeMovedId = domainToBeMoved.getId();
         long newParentDomainId = newParentDomain.getId();
+        long currentDomainResourceCount = _resourceCountDao.getResourceCount(domainToBeMovedId, ResourceOwnerType.Domain, resourceType, tag);
+        long newParentDomainResourceCount = _resourceCountDao.getResourceCount(newParentDomainId, ResourceOwnerType.Domain, resourceType, tag);
+        long newParentDomainResourceLimit = resourceLimitService.findCorrectResourceLimitForDomain(newParentDomain, resourceType, tag);
+
+        if (newParentDomainResourceLimit == Resource.RESOURCE_UNLIMITED) {
+            return;
+        }
+
+        if (currentDomainResourceCount + newParentDomainResourceCount > newParentDomainResourceLimit) {
+            String message = String.format("Cannot move domain [%s] to parent domain [%s] as maximum domain resource limit of type [%s] would be exceeded. The current resource "
+                            + "count for domain [%s] is [%s], the resource count for the new parent domain [%s] is [%s], and the limit is [%s].", domainToBeMoved.getUuid(),
+                    newParentDomain.getUuid(), resourceType, domainToBeMoved.getUuid(), currentDomainResourceCount, newParentDomain.getUuid(), newParentDomainResourceCount,
+                    newParentDomainResourceLimit);
+            logger.error(message);
+            throw new ResourceAllocationException(message, resourceType);
+        }
+    }
+
+
+    protected void validateNewParentDomainResourceLimits(DomainVO domainToBeMoved, DomainVO newParentDomain) throws ResourceAllocationException {
+        List<String> hostTags = resourceLimitService.getResourceLimitHostTags();
+        List<String> storageTags = resourceLimitService.getResourceLimitStorageTags();
         for (Resource.ResourceType resourceType : Resource.ResourceType.values()) {
-            long currentDomainResourceCount = _resourceCountDao.getResourceCount(domainToBeMovedId, ResourceOwnerType.Domain, resourceType);
-            long newParentDomainResourceCount = _resourceCountDao.getResourceCount(newParentDomainId, ResourceOwnerType.Domain, resourceType);
-            long newParentDomainResourceLimit = resourceLimitService.findCorrectResourceLimitForDomain(newParentDomain, resourceType);
-
-            if (newParentDomainResourceLimit == Resource.RESOURCE_UNLIMITED) {
-                return;
+            validateNewParentDomainResourceLimit(domainToBeMoved, newParentDomain, resourceType, null);
+            if (ResourceLimitService.HostTagsSupportingTypes.contains(resourceType)) {
+                for (String tag : hostTags) {
+                    validateNewParentDomainResourceLimit(domainToBeMoved, newParentDomain, resourceType, tag);
+                }
             }
-
-            if (currentDomainResourceCount + newParentDomainResourceCount > newParentDomainResourceLimit) {
-                String message = String.format("Cannot move domain [%s] to parent domain [%s] as maximum domain resource limit of type [%s] would be exceeded. The current resource "
-                        + "count for domain [%s] is [%s], the resource count for the new parent domain [%s] is [%s], and the limit is [%s].", domainToBeMoved.getUuid(),
-                        newParentDomain.getUuid(), resourceType, domainToBeMoved.getUuid(), currentDomainResourceCount, newParentDomain.getUuid(), newParentDomainResourceCount,
-                        newParentDomainResourceLimit);
-                logger.error(message);
-                throw new ResourceAllocationException(message, resourceType);
+            if (ResourceLimitService.StorageTagsSupportingTypes.contains(resourceType)) {
+                for (String tag : storageTags) {
+                    validateNewParentDomainResourceLimit(domainToBeMoved, newParentDomain, resourceType, tag);
+                }
             }
         }
     }

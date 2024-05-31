@@ -28,7 +28,7 @@ import org.apache.cloudstack.api.response.VlanIpRangeResponse;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteVlanIpRange", description = "Creates a VLAN IP range.", responseObject = SuccessResponse.class,
+@APICommand(name = "deleteVlanIpRange", description = "Deletes a VLAN IP range.", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteVlanIpRangeCmd extends BaseCmd {
 

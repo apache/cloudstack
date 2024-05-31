@@ -43,6 +43,7 @@ import org.apache.cloudstack.api.response.VnfNicResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.query.QueryService;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
@@ -196,6 +197,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             userVmResponse.setTemplateDisplayText(userVm.getTemplateDisplayText());
             userVmResponse.setPasswordEnabled(userVm.isPasswordEnabled());
             userVmResponse.setTemplateType(userVm.getTemplateType().toString());
+            userVmResponse.setTemplateFormat(userVm.getTemplateFormat().toString());
         }
         if (details.contains(VMDetails.all) || details.contains(VMDetails.iso)) {
             userVmResponse.setIsoId(userVm.getIsoUuid());
@@ -679,4 +681,30 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         return searchByIds(vmIdSet.toArray(new Long[vmIdSet.size()]));
     }
 
+    @Override
+    public List<UserVmJoinVO> listByAccountServiceOfferingTemplateAndNotInState(long accountId, List<State> states,
+            List<Long> offeringIds, List<Long> templateIds) {
+        SearchBuilder<UserVmJoinVO> userVmSearch = createSearchBuilder();
+        userVmSearch.and("accountId", userVmSearch.entity().getAccountId(), Op.EQ);
+        userVmSearch.and("serviceOfferingId", userVmSearch.entity().getServiceOfferingId(), Op.IN);
+        userVmSearch.and("templateId", userVmSearch.entity().getTemplateId(), Op.IN);
+        userVmSearch.and("state", userVmSearch.entity().getState(), SearchCriteria.Op.NIN);
+        userVmSearch.and("displayVm", userVmSearch.entity().isDisplayVm(), Op.EQ);
+        userVmSearch.groupBy(userVmSearch.entity().getId()); // select distinct
+        userVmSearch.done();
+
+        SearchCriteria<UserVmJoinVO> sc = userVmSearch.create();
+        sc.setParameters("accountId", accountId);
+        if (CollectionUtils.isNotEmpty(offeringIds)) {
+            sc.setParameters("serviceOfferingId", offeringIds.toArray());
+        }
+        if (CollectionUtils.isNotEmpty(templateIds)) {
+            sc.setParameters("templateId", templateIds.toArray());
+        }
+        if (CollectionUtils.isNotEmpty(states)) {
+            sc.setParameters("state", states.toArray());
+        }
+        sc.setParameters("displayVm", 1);
+        return listBy(sc);
+    }
 }

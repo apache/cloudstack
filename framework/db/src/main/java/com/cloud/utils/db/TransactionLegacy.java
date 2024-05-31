@@ -83,6 +83,7 @@ public class TransactionLegacy implements Closeable {
     public static final short SIMULATOR_DB = 3;
 
     public static final short CONNECTED_DB = -1;
+    public static final String CONNECTION_PARAMS = "scrollTolerantForwardOnly=true";
 
     private static AtomicLong s_id = new AtomicLong();
     private static final TransactionMBeanImpl s_mbean = new TransactionMBeanImpl();
@@ -1212,6 +1213,9 @@ public class TransactionLegacy implements Closeable {
             connectionUri.append(loadBalanceStrategy);
         }
 
+        connectionUri.append("&");
+        connectionUri.append(CONNECTION_PARAMS);
+
         return connectionUri.toString();
     }
 
@@ -1276,7 +1280,7 @@ public class TransactionLegacy implements Closeable {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private static DataSource getDefaultDataSource(final String database) {
-        final ConnectionFactory connectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://localhost:3306/" + database, "cloud", "cloud");
+        final ConnectionFactory connectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://localhost:3306/" + database  + "?" + CONNECTION_PARAMS, "cloud", "cloud");
         final PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(connectionFactory, null);
         final GenericObjectPool connectionPool = new GenericObjectPool(poolableConnectionFactory);
         return new PoolingDataSource(connectionPool);

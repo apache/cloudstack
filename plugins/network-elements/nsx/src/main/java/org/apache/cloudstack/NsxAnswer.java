@@ -14,17 +14,18 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.query.dao;
+package org.apache.cloudstack;
 
-import java.util.List;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
 
-import org.apache.cloudstack.api.response.HostTagResponse;
+public class NsxAnswer extends Answer {
+    public NsxAnswer(final Command command, final boolean success, final String details) {
+        super(command, success, details);
+    }
 
-import com.cloud.api.query.vo.HostTagVO;
-import com.cloud.utils.db.GenericDao;
+    public NsxAnswer(final Command command, final Exception e) {
+        super(command, e);
+    }
 
-public interface HostTagDao extends GenericDao<HostTagVO, Long> {
-    HostTagResponse newHostTagResponse(HostTagVO hostTag);
-
-    List<HostTagVO> searchByIds(Long... hostTagIds);
 }

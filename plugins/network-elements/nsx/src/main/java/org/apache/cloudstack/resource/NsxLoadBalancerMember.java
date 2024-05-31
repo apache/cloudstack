@@ -14,48 +14,28 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.query.vo;
+package org.apache.cloudstack.resource;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+public class NsxLoadBalancerMember {
+    private long vmId;
+    private String vmIp;
+    private int port;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
-/**
- * Storage Tags DB view.
- *
- */
-@Entity
-@Table(name = "host_tags")
-public class HostTagVO extends BaseViewVO implements InternalIdentity {
-    private static final long serialVersionUID = 1L;
-
-    @Id
-    @Column(name = "id")
-    private long id;
-
-    @Column(name = "tag")
-    private String name;
-
-    @Column(name = "host_id")
-    long hostId;
-
-    @Override
-    public long getId() {
-        return id;
+    public NsxLoadBalancerMember(long vmId, String vmIp, int port) {
+        this.vmId = vmId;
+        this.vmIp = vmIp;
+        this.port = port;
     }
 
-    public String getName() {
-        return name;
+    public long getVmId() {
+        return vmId;
     }
 
-    public long getHostId() {
-        return hostId;
+    public String getVmIp() {
+        return vmIp;
     }
 
-    public void setHostId(long hostId) {
-        this.hostId = hostId;
+    public int getPort() {
+        return port;
     }
 }

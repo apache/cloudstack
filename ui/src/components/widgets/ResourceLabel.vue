@@ -58,11 +58,11 @@ export default {
   created () {
     if (this.resourceType) {
       var routePrefix = this.$getRouteFromResourceType(this.resourceType)
-      if (routePrefix && this.resourceId) {
+      if (routePrefix && this.resourceId && this.resourceType !== 'QuotaTariff') {
         this.resourceRoute = '/' + routePrefix + '/' + this.resourceId
       }
       this.resourceIcon = this.$getIconFromResourceType(this.resourceType)
-      this.resourceIconTooltip = this.$t('label.' + this.resourceType.toString().toLowerCase())
+      this.resourceIconTooltip = this.$t('label.' + this.resourceType.toString().match(/[A-Z][a-z]*/g).join('.').toLowerCase())
     }
   }
 }

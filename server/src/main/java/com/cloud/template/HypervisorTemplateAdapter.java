@@ -88,6 +88,7 @@ import com.cloud.server.StatsCollector;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.TemplateProfile;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
@@ -159,7 +160,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
      * @param url url
      */
     private Long performDirectDownloadUrlValidation(final String format, final Hypervisor.HypervisorType hypervisor,
-                                                    final String url, final List<Long> zoneIds) {
+                                                    final String url, final List<Long> zoneIds, final boolean followRedirects) {
         HostVO host = null;
         if (zoneIds != null && !zoneIds.isEmpty()) {
             for (Long zoneId : zoneIds) {
@@ -178,7 +179,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         Integer socketTimeout = DirectDownloadManager.DirectDownloadSocketTimeout.value();
         Integer connectRequestTimeout = DirectDownloadManager.DirectDownloadConnectionRequestTimeout.value();
         Integer connectTimeout = DirectDownloadManager.DirectDownloadConnectTimeout.value();
-        CheckUrlCommand cmd = new CheckUrlCommand(format, url, connectTimeout, connectRequestTimeout, socketTimeout);
+        CheckUrlCommand cmd = new CheckUrlCommand(format, url, connectTimeout, connectRequestTimeout, socketTimeout, followRedirects);
         logger.debug("Performing URL " + url + " validation on host " + host.getId());
         Answer answer = _agentMgr.easySend(host.getId(), cmd);
         if (answer == null || !answer.getResult()) {
@@ -202,6 +203,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         TemplateProfile profile = super.prepare(cmd);
         String url = profile.getUrl();
         UriUtils.validateUrl(ImageFormat.ISO.getFileExtension(), url);
+        boolean followRedirects = StorageManager.DataStoreDownloadFollowRedirects.value();
         if (cmd.isDirectDownload()) {
             DigestHelper.validateChecksumString(cmd.getChecksum());
             List<Long> zoneIds = null;
@@ -210,12 +212,14 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                 zoneIds.add(cmd.getZoneId());
             }
             Long templateSize = performDirectDownloadUrlValidation(ImageFormat.ISO.getFileExtension(),
-                    Hypervisor.HypervisorType.KVM, url, zoneIds);
+                    Hypervisor.HypervisorType.KVM, url, zoneIds, followRedirects);
             profile.setSize(templateSize);
         }
         profile.setUrl(url);
         // Check that the resource limit for secondary storage won't be exceeded
-        _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(cmd.getEntityOwnerId()), ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
+        _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(cmd.getEntityOwnerId()),
+                ResourceType.secondary_storage,
+                UriUtils.getRemoteSize(url, followRedirects));
         return profile;
     }
 
@@ -234,15 +238,18 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         String url = profile.getUrl();
         UriUtils.validateUrl(cmd.getFormat(), url, cmd.isDirectDownload());
         Hypervisor.HypervisorType hypervisor = Hypervisor.HypervisorType.getType(cmd.getHypervisor());
+        boolean followRedirects = StorageManager.DataStoreDownloadFollowRedirects.value();
         if (cmd.isDirectDownload()) {
             DigestHelper.validateChecksumString(cmd.getChecksum());
             Long templateSize = performDirectDownloadUrlValidation(cmd.getFormat(),
-                    hypervisor, url, cmd.getZoneIds());
+                    hypervisor, url, cmd.getZoneIds(), followRedirects);
             profile.setSize(templateSize);
         }
         profile.setUrl(url);
         // Check that the resource limit for secondary storage won't be exceeded
-        _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(cmd.getEntityOwnerId()), ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
+        _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(cmd.getEntityOwnerId()),
+                ResourceType.secondary_storage,
+                UriUtils.getRemoteSize(url, followRedirects));
         return profile;
     }
 
@@ -297,12 +304,12 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             zonesIds = _dcDao.listAllZones().stream().map(DataCenterVO::getId).collect(Collectors.toList());
         }
 
-        List<DataStore> imageStores = getImageStoresThrowsExceptionIfNotFound(zonesIds, profile);
 
         for (long zoneId : zonesIds) {
             DataStore imageStore = verifyHeuristicRulesForZone(template, zoneId);
 
             if (imageStore == null) {
+                List<DataStore> imageStores = getImageStoresThrowsExceptionIfNotFound(zoneId, profile);
                 standardImageStoreAllocation(imageStores, template);
             } else {
                 validateSecondaryStorageAndCreateTemplate(List.of(imageStore), template, null);
@@ -310,8 +317,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         }
     }
 
-    protected List<DataStore> getImageStoresThrowsExceptionIfNotFound(List<Long> zonesIds, TemplateProfile profile) {
-        List<DataStore> imageStores = storeMgr.getImageStoresByZoneIds(zonesIds.toArray(new Long[0]));
+    protected List<DataStore> getImageStoresThrowsExceptionIfNotFound(long zoneId, TemplateProfile profile) {
+        List<DataStore> imageStores = storeMgr.getImageStoresByZoneIds(zoneId);
         if (imageStores == null || imageStores.size() == 0) {
             throw new CloudRuntimeException(String.format("Unable to find image store to download the template [%s].", profile.getTemplate()));
         }
@@ -417,11 +424,10 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                 List<TemplateOrVolumePostUploadCommand> payloads = new LinkedList<>();
 
                 if (imageStore == null) {
-                    List<DataStore> imageStores = getImageStoresThrowsExceptionIfNotFound(List.of(zoneId), profile);
+                    List<DataStore> imageStores = getImageStoresThrowsExceptionIfNotFound(zoneId, profile);
                     postUploadAllocation(imageStores, template, payloads);
                 } else {
                     postUploadAllocation(List.of(imageStore), template, payloads);
-
                 }
 
                 if(payloads.isEmpty()) {
@@ -470,7 +476,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             Account account = _accountDao.findById(accountId);
             Domain domain = _domainDao.findById(account.getDomainId());
 
-            payload.setDefaultMaxSecondaryStorageInGB(_resourceLimitMgr.findCorrectResourceLimitForAccountAndDomain(account, domain, ResourceType.secondary_storage));
+            payload.setDefaultMaxSecondaryStorageInGB(_resourceLimitMgr.findCorrectResourceLimitForAccountAndDomain(account, domain, ResourceType.secondary_storage, null));
             payload.setAccountId(accountId);
             payload.setRemoteEndPoint(ep.getPublicAddr());
             payload.setRequiresHvm(template.requiresHvm());

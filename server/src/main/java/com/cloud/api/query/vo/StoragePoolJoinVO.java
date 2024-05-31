@@ -36,6 +36,7 @@ import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.util.HypervisorTypeConverter;
 
 /**
  * Storage Pool DB view.
@@ -138,7 +139,7 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
     private Long capacityIops;
 
     @Column(name = "hypervisor")
-    @Enumerated(value = EnumType.STRING)
+    @Convert(converter = HypervisorTypeConverter.class)
     private HypervisorType hypervisor;
 
     @Column(name = "storage_provider_name")

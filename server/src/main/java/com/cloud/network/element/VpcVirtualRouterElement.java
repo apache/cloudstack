@@ -530,6 +530,11 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     }
 
     @Override
+    public boolean reorderAclRules(Vpc vpc, List<? extends Network> networks, List<? extends NetworkACLItem> networkACLItems) {
+        return true;
+    }
+
+    @Override
     protected Type getVirtualRouterProvider() {
         return Type.VPCVirtualRouter;
     }
@@ -710,5 +715,10 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
             result = result && _vpcRouterMgr.stopRemoteAccessVpn(vpn, domainRouterVO);
         }
         return result;
+    }
+
+    @Override
+    public boolean updateVpcSourceNatIp(Vpc vpc, IpAddress address) {
+        return true;
     }
 }

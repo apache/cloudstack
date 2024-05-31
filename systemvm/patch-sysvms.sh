@@ -84,7 +84,7 @@ restart_services() {
             break
           fi
         fi
-      done	
+      done
       if [ $patchfailed == 1 ]; then
         return
       fi
@@ -104,16 +104,18 @@ cleanup_systemVM() {
   rm -rf $backupfolder
   mv "$newpath"cloud-scripts.tgz /usr/share/cloud/cloud-scripts.tgz
   rm -rf "$newpath""agent.zip" "$newpath""patch-sysvms.sh"
+  if [ "$TYPE" != "consoleproxy" ] && [ "$TYPE" != "secstorage" ]; then
+    rm -rf /usr/local/cloud/systemvm/
+  fi
 }
 
 patch_systemvm() {
   rm -rf /usr/local/cloud/systemvm
 
-  if [ "$TYPE" == "consoleproxy" ] || [ "$TYPE" == "secstorage" ]; then
-    echo "All" | unzip $newpath/agent.zip -d /usr/local/cloud/systemvm >> $logfile 2>&1
-    mkdir -p /usr/local/cloud/systemvm
-    find /usr/local/cloud/systemvm/ -name \*.sh | xargs chmod 555
-  fi
+  echo "All" | unzip $newpath/agent.zip -d /usr/local/cloud/systemvm >> $logfile 2>&1
+  mkdir -p /usr/local/cloud/systemvm
+  find /usr/local/cloud/systemvm/ -name \*.sh | xargs chmod 555
+
   echo "Extracting cloud scripts" >> $logfile 2>&1
   tar -xvf $newpath/cloud-scripts.tgz -C / >> $logfile 2>&1
 
@@ -123,6 +125,10 @@ patch_systemvm() {
   fi
 
   update_checksum $newpath/cloud-scripts.tgz
+
+  if [ -f /opt/cloud/bin/setup/patch.sh ];then
+    . /opt/cloud/bin/setup/patch.sh && patch_system_vm
+  fi
 
   if [ "$TYPE" == "consoleproxy" ] || [ "$TYPE" == "secstorage" ] || [[ "$TYPE" == *router ]]; then
     restart_services

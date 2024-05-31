@@ -25,6 +25,8 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.usage.UsageManagerImpl;
+import com.cloud.utils.DateUtil;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
@@ -108,11 +110,10 @@ public class VmDiskUsageParser {
             long bytesWrite = vmDiskInfo.getBytesWrite();
 
             if ((ioRead > 0L) || (ioWrite > 0L) || (bytesRead > 0L) || (bytesWrite > 0L)) {
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Creating vm disk usage record, io read:" + toHumanReadableSize(ioRead) + ", io write: " + toHumanReadableSize(ioWrite) + ", bytes read:" + toHumanReadableSize(bytesRead) + ", bytes write: " +
-                            toHumanReadableSize(bytesWrite) + " for account: " + account.getId() + " in availability zone " + vmDiskInfo.getZoneId() + ", start: " + startDate + ", end: " +
-                        endDate);
-                }
+                LOGGER.debug("Creating vm disk usage record, io read [{}], io write [{}], bytes read [{}], bytes write [{}], startDate [{}], and endDate [{}], " +
+                                "for account [{}] in availability zone [{}].", toHumanReadableSize(ioRead), toHumanReadableSize(ioWrite), toHumanReadableSize(bytesRead),
+                        toHumanReadableSize(bytesWrite), DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), startDate),
+                        DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageAggregationTimeZone(), endDate), account.getId(), vmDiskInfo.getZoneId());
 
                 Long vmId = null;
                 Long volumeId = null;

@@ -367,6 +367,10 @@ public class NetworkVO implements Network {
         return mode;
     }
 
+    public void setAccountId(long accountId) {
+        this.accountId = accountId;
+    }
+
     @Override
     public long getAccountId() {
         return accountId;

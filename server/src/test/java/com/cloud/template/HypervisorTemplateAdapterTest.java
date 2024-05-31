@@ -153,6 +153,8 @@ public class HypervisorTemplateAdapterTest {
 
     private AutoCloseable closeable;
 
+    private static final long zoneId = 1L;
+
     @Before
     public void before() {
         closeable = MockitoAnnotations.openMocks(this);
@@ -325,7 +327,6 @@ public class HypervisorTemplateAdapterTest {
         VMTemplateVO vmTemplateVOMock = Mockito.mock(VMTemplateVO.class);
 
         Mockito.when(templateProfileMock.getZoneIdList()).thenReturn(null);
-        Mockito.doReturn(null).when(_adapter).getImageStoresThrowsExceptionIfNotFound(Mockito.any(List.class), Mockito.any(TemplateProfile.class));
 
         _adapter.createTemplateWithinZones(templateProfileMock, vmTemplateVOMock);
 
@@ -339,7 +340,7 @@ public class HypervisorTemplateAdapterTest {
         List<Long> zoneIds = List.of(1L);
 
         Mockito.when(templateProfileMock.getZoneIdList()).thenReturn(zoneIds);
-        Mockito.doReturn(null).when(_adapter).getImageStoresThrowsExceptionIfNotFound(Mockito.any(List.class), Mockito.any(TemplateProfile.class));
+        Mockito.doReturn(null).when(_adapter).getImageStoresThrowsExceptionIfNotFound(Mockito.any(Long.class), Mockito.any(TemplateProfile.class));
         Mockito.doReturn(null).when(_adapter).verifyHeuristicRulesForZone(Mockito.any(VMTemplateVO.class), Mockito.anyLong());
         Mockito.doNothing().when(_adapter).standardImageStoreAllocation(Mockito.isNull(), Mockito.any(VMTemplateVO.class));
 
@@ -352,10 +353,10 @@ public class HypervisorTemplateAdapterTest {
     public void createTemplateWithinZonesTestZoneDoesNotHaveActiveHeuristicRulesShouldCallStandardImageStoreAllocation() {
         TemplateProfile templateProfileMock = Mockito.mock(TemplateProfile.class);
         VMTemplateVO vmTemplateVOMock = Mockito.mock(VMTemplateVO.class);
-        List<Long> zoneIds = List.of(1L);
+        List<Long> zoneIds = List.of(zoneId);
 
         Mockito.when(templateProfileMock.getZoneIdList()).thenReturn(zoneIds);
-        Mockito.doReturn(null).when(_adapter).getImageStoresThrowsExceptionIfNotFound(Mockito.any(List.class), Mockito.any(TemplateProfile.class));
+        Mockito.doReturn(null).when(_adapter).getImageStoresThrowsExceptionIfNotFound(Mockito.any(Long.class), Mockito.any(TemplateProfile.class));
         Mockito.doReturn(null).when(_adapter).verifyHeuristicRulesForZone(Mockito.any(VMTemplateVO.class), Mockito.anyLong());
         Mockito.doNothing().when(_adapter).standardImageStoreAllocation(Mockito.isNull(), Mockito.any(VMTemplateVO.class));
 
@@ -372,7 +373,6 @@ public class HypervisorTemplateAdapterTest {
         List<Long> zoneIds = List.of(1L);
 
         Mockito.when(templateProfileMock.getZoneIdList()).thenReturn(zoneIds);
-        Mockito.doReturn(null).when(_adapter).getImageStoresThrowsExceptionIfNotFound(Mockito.any(List.class), Mockito.any(TemplateProfile.class));
         Mockito.doReturn(dataStoreMock).when(_adapter).verifyHeuristicRulesForZone(Mockito.any(VMTemplateVO.class), Mockito.anyLong());
         Mockito.doNothing().when(_adapter).validateSecondaryStorageAndCreateTemplate(Mockito.any(List.class), Mockito.any(VMTemplateVO.class), Mockito.isNull());
 
@@ -384,34 +384,31 @@ public class HypervisorTemplateAdapterTest {
     @Test(expected = CloudRuntimeException.class)
     public void getImageStoresThrowsExceptionIfNotFoundTestNullImageStoreShouldThrowCloudRuntimeException() {
         TemplateProfile templateProfileMock = Mockito.mock(TemplateProfile.class);
-        List<Long> zoneIds = List.of(1L);
 
         Mockito.when(dataStoreManagerMock.getImageStoresByZoneIds(Mockito.anyLong())).thenReturn(null);
 
-        _adapter.getImageStoresThrowsExceptionIfNotFound(zoneIds, templateProfileMock);
+        _adapter.getImageStoresThrowsExceptionIfNotFound(zoneId, templateProfileMock);
     }
 
     @Test(expected = CloudRuntimeException.class)
     public void getImageStoresThrowsExceptionIfNotFoundTestEmptyImageStoreShouldThrowCloudRuntimeException() {
         TemplateProfile templateProfileMock = Mockito.mock(TemplateProfile.class);
-        List<Long> zoneIds = List.of(1L);
         List<DataStore> imageStoresList = new ArrayList<>();
 
         Mockito.when(dataStoreManagerMock.getImageStoresByZoneIds(Mockito.anyLong())).thenReturn(imageStoresList);
 
-        _adapter.getImageStoresThrowsExceptionIfNotFound(zoneIds, templateProfileMock);
+        _adapter.getImageStoresThrowsExceptionIfNotFound(zoneId, templateProfileMock);
     }
 
     @Test
     public void getImageStoresThrowsExceptionIfNotFoundTestNonEmptyImageStoreShouldNotThrowCloudRuntimeException() {
         TemplateProfile templateProfileMock = Mockito.mock(TemplateProfile.class);
-        List<Long> zoneIds = List.of(1L);
         DataStore dataStoreMock = Mockito.mock(DataStore.class);
         List<DataStore> imageStoresList = List.of(dataStoreMock);
 
         Mockito.when(dataStoreManagerMock.getImageStoresByZoneIds(Mockito.anyLong())).thenReturn(imageStoresList);
 
-        _adapter.getImageStoresThrowsExceptionIfNotFound(zoneIds, templateProfileMock);
+        _adapter.getImageStoresThrowsExceptionIfNotFound(zoneId, templateProfileMock);
     }
 
     @Test

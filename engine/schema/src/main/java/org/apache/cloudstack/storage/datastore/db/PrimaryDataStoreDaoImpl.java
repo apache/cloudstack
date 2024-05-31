@@ -20,12 +20,16 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.Filter;
 import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.host.Status;
@@ -58,6 +62,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     private final SearchBuilder<StoragePoolVO> DcLocalStorageSearch;
     private final GenericSearchBuilder<StoragePoolVO, Long> StatusCountSearch;
     private final SearchBuilder<StoragePoolVO> ClustersSearch;
+    private final SearchBuilder<StoragePoolVO> IdsSearch;
 
     @Inject
     private StoragePoolDetailsDao _detailsDao;
@@ -144,6 +149,11 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         ClustersSearch = createSearchBuilder();
         ClustersSearch.and("clusterIds", ClustersSearch.entity().getClusterId(), Op.IN);
         ClustersSearch.and("status", ClustersSearch.entity().getStatus(), Op.EQ);
+        ClustersSearch.done();
+
+        IdsSearch = createSearchBuilder();
+        IdsSearch.and("ids", IdsSearch.entity().getId(), SearchCriteria.Op.IN);
+        IdsSearch.done();
 
     }
 
@@ -244,6 +254,11 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
 
     @Override
     public List<StoragePoolVO> listBy(long datacenterId, Long podId, Long clusterId, ScopeType scope) {
+        return listBy(datacenterId, podId, clusterId, scope, null);
+    }
+
+    @Override
+    public List<StoragePoolVO> listBy(long datacenterId, Long podId, Long clusterId, ScopeType scope, String keyword) {
         SearchCriteria<StoragePoolVO> sc = null;
         if (clusterId != null) {
             sc = DcPodSearch.create();
@@ -255,6 +270,9 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         sc.setParameters("datacenterId", datacenterId);
         sc.setParameters("podId", podId);
         sc.setParameters("status", Status.Up);
+        if (keyword != null) {
+            sc.addAnd("name", Op.LIKE,  "%" + keyword + "%");
+        }
         if (scope != null) {
             sc.setParameters("scope", scope);
         }
@@ -444,9 +462,14 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
 
     @Override
     public List<StoragePoolVO> findLocalStoragePoolsByTags(long dcId, long podId, Long clusterId, String[] tags, boolean validateTagRule) {
+        return findLocalStoragePoolsByTags(dcId, podId, clusterId, tags, validateTagRule, null);
+    }
+
+    @Override
+    public List<StoragePoolVO> findLocalStoragePoolsByTags(long dcId, long podId, Long clusterId, String[] tags, boolean validateTagRule, String keyword) {
         List<StoragePoolVO> storagePools = null;
         if (tags == null || tags.length == 0) {
-            storagePools = listBy(dcId, podId, clusterId, ScopeType.HOST);
+            storagePools = listBy(dcId, podId, clusterId, ScopeType.HOST, keyword);
 
             if (validateTagRule) {
                 storagePools = getPoolsWithoutTagRule(storagePools);
@@ -583,11 +606,19 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
 
     @Override
     public List<StoragePoolVO> findZoneWideStoragePoolsByHypervisor(long dataCenterId, HypervisorType hypervisorType) {
+        return findZoneWideStoragePoolsByHypervisor(dataCenterId, hypervisorType, null);
+    }
+
+    @Override
+    public List<StoragePoolVO> findZoneWideStoragePoolsByHypervisor(long dataCenterId, HypervisorType hypervisorType, String keyword) {
         QueryBuilder<StoragePoolVO> sc = QueryBuilder.create(StoragePoolVO.class);
         sc.and(sc.entity().getDataCenterId(), Op.EQ, dataCenterId);
         sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
         sc.and(sc.entity().getScope(), Op.EQ, ScopeType.ZONE);
         sc.and(sc.entity().getHypervisor(), Op.EQ, hypervisorType);
+        if (keyword != null) {
+            sc.and(sc.entity().getName(), Op.LIKE,  "%" + keyword + "%");
+        }
         return sc.list();
     }
 
@@ -612,10 +643,13 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     }
 
     @Override
-    public List<StoragePoolVO> findPoolsInClusters(List<Long> clusterIds) {
+    public List<StoragePoolVO> findPoolsInClusters(List<Long> clusterIds, String keyword) {
         SearchCriteria<StoragePoolVO> sc = ClustersSearch.create();
         sc.setParameters("clusterIds", clusterIds.toArray());
         sc.setParameters("status", StoragePoolStatus.Up);
+        if (keyword != null) {
+            sc.addAnd("name", Op.LIKE, "%" + keyword + "%");
+        }
         return listBy(sc);
     }
 
@@ -645,5 +679,93 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         } catch (Throwable e) {
             throw new CloudRuntimeException("Caught: " + sql, e);
         }
+    }
+
+    @Override
+    public Pair<List<Long>, Integer> searchForIdsAndCount(Long storagePoolId, String storagePoolName, Long zoneId,
+            String path, Long podId, Long clusterId, String address, ScopeType scopeType, StoragePoolStatus status,
+            String keyword, Filter searchFilter) {
+        SearchCriteria<StoragePoolVO> sc = createStoragePoolSearchCriteria(storagePoolId, storagePoolName, zoneId, path, podId, clusterId, address, scopeType, status, keyword);
+        Pair<List<StoragePoolVO>, Integer> uniquePair = searchAndCount(sc, searchFilter);
+        List<Long> idList = uniquePair.first().stream().map(StoragePoolVO::getId).collect(Collectors.toList());
+        return new Pair<>(idList, uniquePair.second());
+    }
+
+    @Override
+    public List<StoragePoolVO> listByIds(List<Long> ids) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return Collections.emptyList();
+        }
+        SearchCriteria<StoragePoolVO> sc = IdsSearch.create();
+        sc.setParameters("ids", ids.toArray());
+        return listBy(sc);
+    }
+
+    private SearchCriteria<StoragePoolVO> createStoragePoolSearchCriteria(Long storagePoolId, String storagePoolName,
+            Long zoneId, String path, Long podId, Long clusterId, String address, ScopeType scopeType,
+            StoragePoolStatus status, String keyword) {
+        SearchBuilder<StoragePoolVO> sb = createSearchBuilder();
+        sb.select(null, SearchCriteria.Func.DISTINCT, sb.entity().getId()); // select distinct
+        // ids
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
+        sb.and("path", sb.entity().getPath(), SearchCriteria.Op.EQ);
+        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
+        sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
+        sb.and("hostAddress", sb.entity().getHostAddress(), SearchCriteria.Op.EQ);
+        sb.and("scope", sb.entity().getScope(), SearchCriteria.Op.EQ);
+        sb.and("status", sb.entity().getStatus(), SearchCriteria.Op.EQ);
+        sb.and("parent", sb.entity().getParent(), SearchCriteria.Op.EQ);
+
+        SearchCriteria<StoragePoolVO> sc = sb.create();
+
+        if (keyword != null) {
+            SearchCriteria<StoragePoolVO> ssc = createSearchCriteria();
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("poolType", SearchCriteria.Op.LIKE, new Storage.StoragePoolType("%" + keyword + "%"));
+
+            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        }
+
+        if (storagePoolId != null) {
+            sc.setParameters("id", storagePoolId);
+        }
+
+        if (storagePoolName != null) {
+            sc.setParameters("name", storagePoolName);
+        }
+
+        if (path != null) {
+            sc.setParameters("path", path);
+        }
+        if (zoneId != null) {
+            sc.setParameters("dataCenterId", zoneId);
+        }
+        if (podId != null) {
+            SearchCriteria<StoragePoolVO> ssc = createSearchCriteria();
+            ssc.addOr("podId", SearchCriteria.Op.EQ, podId);
+            ssc.addOr("podId", SearchCriteria.Op.NULL);
+
+            sc.addAnd("podId", SearchCriteria.Op.SC, ssc);
+        }
+        if (address != null) {
+            sc.setParameters("hostAddress", address);
+        }
+        if (clusterId != null) {
+            SearchCriteria<StoragePoolVO> ssc = createSearchCriteria();
+            ssc.addOr("clusterId", SearchCriteria.Op.EQ, clusterId);
+            ssc.addOr("clusterId", SearchCriteria.Op.NULL);
+
+            sc.addAnd("clusterId", SearchCriteria.Op.SC, ssc);
+        }
+        if (scopeType != null) {
+            sc.setParameters("scope", scopeType.toString());
+        }
+        if (status != null) {
+            sc.setParameters("status", status.toString());
+        }
+        sc.setParameters("parent", 0);
+        return sc;
     }
 }

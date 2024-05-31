@@ -713,7 +713,7 @@ export default {
         page: 1
       })
       this.fetchKvmHostsForConversion()
-      if (this.resource.disk.length > 1) {
+      if (this.resource?.disk?.length > 1) {
         this.updateSelectedRootDisk()
       }
     },

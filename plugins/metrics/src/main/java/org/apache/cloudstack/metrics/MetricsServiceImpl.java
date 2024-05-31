@@ -27,9 +27,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 
+import com.cloud.dc.ClusterVO;
+import com.cloud.utils.Ternary;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ListClustersMetricsCmd;
 import org.apache.cloudstack.api.ListDbMetricsCmd;
@@ -55,6 +59,7 @@ import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.cluster.ClusterDrsAlgorithm;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.management.ManagementServerHost.State;
 import org.apache.cloudstack.response.ClusterMetricsResponse;
@@ -629,6 +634,7 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
     @Override
     public List<StoragePoolMetricsResponse> listStoragePoolMetrics(List<StoragePoolResponse> poolResponses) {
         final List<StoragePoolMetricsResponse> metricsResponses = new ArrayList<>();
+        Map<String, Long> clusterUuidToIdMap = clusterDao.findByUuids(poolResponses.stream().map(StoragePoolResponse::getClusterId).toArray(String[]::new)).stream().collect(Collectors.toMap(ClusterVO::getUuid, ClusterVO::getId));
         for (final StoragePoolResponse poolResponse: poolResponses) {
             StoragePoolMetricsResponse metricsResponse = new StoragePoolMetricsResponse();
 
@@ -638,11 +644,7 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to generate storagepool metrics response");
             }
 
-            Long poolClusterId = null;
-            final Cluster cluster = clusterDao.findByUuid(poolResponse.getClusterId());
-            if (cluster != null) {
-                poolClusterId = cluster.getId();
-            }
+            Long poolClusterId = clusterUuidToIdMap.get(poolResponse.getClusterId());
             final Double storageThreshold = AlertManager.StorageCapacityThreshold.valueIn(poolClusterId);
             final Double storageDisableThreshold = CapacityManager.StorageCapacityDisableThreshold.valueIn(poolClusterId);
 
@@ -760,9 +762,12 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
             final Long clusterId = cluster.getId();
 
             // CPU and memory capacities
-            final CapacityDaoImpl.SummedCapacity cpuCapacity = getCapacity((int) Capacity.CAPACITY_TYPE_CPU, null, clusterId);
-            final CapacityDaoImpl.SummedCapacity memoryCapacity = getCapacity((int) Capacity.CAPACITY_TYPE_MEMORY, null, clusterId);
+            final CapacityDaoImpl.SummedCapacity cpuCapacity = getCapacity(Capacity.CAPACITY_TYPE_CPU, null, clusterId);
+            final CapacityDaoImpl.SummedCapacity memoryCapacity = getCapacity(Capacity.CAPACITY_TYPE_MEMORY, null, clusterId);
             final HostMetrics hostMetrics = new HostMetrics(cpuCapacity, memoryCapacity);
+
+            List<Ternary<Long, Long, Long>> cpuList = new ArrayList<>();
+            List<Ternary<Long, Long, Long>> memoryList = new ArrayList<>();
 
             for (final Host host: hostDao.findByClusterId(clusterId)) {
                 if (host == null || host.getType() != Host.Type.Routing) {
@@ -772,7 +777,18 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
                     hostMetrics.incrUpResources();
                 }
                 hostMetrics.incrTotalResources();
-                updateHostMetrics(hostMetrics, hostJoinDao.findById(host.getId()));
+                HostJoinVO hostJoin = hostJoinDao.findById(host.getId());
+                updateHostMetrics(hostMetrics, hostJoin);
+
+                cpuList.add(new Ternary<>(hostJoin.getCpuUsedCapacity(), hostJoin.getCpuReservedCapacity(), hostJoin.getCpus() * hostJoin.getSpeed()));
+                memoryList.add(new Ternary<>(hostJoin.getMemUsedCapacity(), hostJoin.getMemReservedCapacity(), hostJoin.getTotalMemory()));
+            }
+
+            try {
+                Double imbalance = ClusterDrsAlgorithm.getClusterImbalance(clusterId, cpuList, memoryList, null);
+                metricsResponse.setDrsImbalance(imbalance.isNaN() ? null : 100.0 * imbalance);
+            } catch (ConfigurationException e) {
+                logger.warn("Failed to get cluster imbalance for cluster " + clusterId, e);
             }
 
             metricsResponse.setState(clusterResponse.getAllocationState(), clusterResponse.getManagedState());

@@ -174,6 +174,10 @@ public class StartupRoutingCommand extends StartupCommand {
         this.hostTags.add(hostTag);
     }
 
+    public void setHostTags(List<String> hostTags) {
+        this.hostTags = hostTags;
+    }
+
     public  HashMap<String, HashMap<String, VgpuTypesInfo>> getGpuGroupDetails() {
         return groupDetails;
     }

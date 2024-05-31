@@ -6225,6 +6225,42 @@ public class LibvirtComputingResourceTest {
     }
 
     @Test
+    public void testGetHostTags() throws ConfigurationException {
+        try (MockedStatic<AgentPropertiesFileHandler> ignored = Mockito.mockStatic(AgentPropertiesFileHandler.class)) {
+            Mockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.eq(AgentProperties.HOST_TAGS)))
+                    .thenReturn("aa,bb,cc,dd");
+
+            List<String> hostTagsList = libvirtComputingResourceSpy.getHostTags();
+            Assert.assertEquals(4, hostTagsList.size());
+            Assert.assertEquals("aa,bb,cc,dd", StringUtils.join(hostTagsList, ","));
+        }
+    }
+
+    @Test
+    public void testGetHostTagsWithSpace() throws ConfigurationException {
+        try (MockedStatic<AgentPropertiesFileHandler> ignored = Mockito.mockStatic(AgentPropertiesFileHandler.class)) {
+            Mockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.eq(AgentProperties.HOST_TAGS)))
+                    .thenReturn(" aa, bb , cc , dd ");
+
+            List<String> hostTagsList = libvirtComputingResourceSpy.getHostTags();
+            Assert.assertEquals(4, hostTagsList.size());
+            Assert.assertEquals("aa,bb,cc,dd", StringUtils.join(hostTagsList, ","));
+        }
+    }
+
+    @Test
+    public void testGetHostTagsWithEmptyPropertyValue() throws ConfigurationException {
+        try (MockedStatic<AgentPropertiesFileHandler> ignored = Mockito.mockStatic(AgentPropertiesFileHandler.class)) {
+            Mockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.eq(AgentProperties.HOST_TAGS)))
+                    .thenReturn(" ");
+
+            List<String> hostTagsList = libvirtComputingResourceSpy.getHostTags();
+            Assert.assertEquals(0, hostTagsList.size());
+            Assert.assertEquals("", StringUtils.join(hostTagsList, ","));
+        }
+    }
+
+    @Test
     public void getVmStatTestVmIsNullReturnsNull() throws LibvirtException {
         doReturn(null).when(libvirtComputingResourceSpy).getDomain(connMock, VM_NAME);
 
