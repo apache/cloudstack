@@ -79,3 +79,42 @@ CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_email_configuration`(
     PRIMARY KEY (`account_id`, `email_template_id`),
     CONSTRAINT `FK_quota_email_configuration_account_id` FOREIGN KEY (`account_id`) REFERENCES `cloud_usage`.`quota_account`(`account_id`),
     CONSTRAINT `FK_quota_email_configuration_email_template_id` FOREIGN KEY (`email_template_id`) REFERENCES `cloud_usage`.`quota_email_templates`(`id`));
+
+CREATE TABLE `cloud`.`storage_fileshare`(
+    `id` bigint unsigned NOT NULL auto_increment COMMENT 'ID',
+    `uuid` varchar(40) COMMENT 'UUID',
+    `name` varchar(255) NOT NULL COMMENT 'Name of the file share',
+    `description` varchar(1024) COMMENT 'Description',
+    `domain_id` bigint unsigned NOT NULL COMMENT 'Domain ID',
+    `account_id` bigint unsigned NOT NULL COMMENT 'Account ID',
+    `project_id` bigint unsigned NOT NULL COMMENT 'Project ID',
+    `data_center_id` bigint unsigned NOT NULL COMMENT 'Data center ID',
+    `state` varchar(10) NOT NULL COMMENT 'State of the file share in the FSM',
+    `endpoint_ip` varchar(40) COMMENT 'IP address of the file share server',
+    `endpoint_path` varchar(255) COMMENT 'Path of the file share',
+    `fs_provider_name` varchar(255) COMMENT 'Name of the file share provider',
+    `size` bigint unsigned COMMENT 'Size of the file share in bytes',
+    `protocol` varchar(10) COMMENT 'Protocol supported by the file share',
+    `volume_id` bigint unsigned NOT NULL COMMENT 'Volume which the file share is using as storage',
+    `vm_id` bigint unsigned COMMENT 'vm on which the file share is hosted',
+    `mount_options` varchar(255) COMMENT 'default mount options to be used while mounting the file share',
+    `fs_type` varchar(10) NOT NULL COMMENT 'The filesystem format to be used for the file share',
+    `disk_offering_id` bigint unsigned COMMENT 'Disk offering used for the volume',
+    `service_offering_id` bigint unsigned COMMENT 'Service offering gor the vm',
+    `created` datetime NOT NULL COMMENT 'date created',
+    `removed` datetime COMMENT 'date removed if not null',
+    PRIMARY KEY (`id`),
+    CONSTRAINT `uc_storage_fileshare__uuid` UNIQUE (`uuid`),
+    INDEX `i_storage_fileshare__account_id`(`account_id`),
+    INDEX `i_storage_fileshare__project_id`(`project_id`),
+    INDEX `i_storage_fileshare__state`(`state`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`storagevm_fs_map`(
+    `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+    `vm_id` bigint unsigned NOT NULL,
+    `fileshare_id` bigint unsigned NOT NULL,
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_storagevm_fs_map__vm_id` FOREIGN KEY `fk_storagevm_fs_map__vm_id` (`vm_id`) REFERENCES `vm_instance` (`id`)  ON DELETE CASCADE,
+    INDEX `i_storagevm_fs_map__vm_id`(`vm_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
