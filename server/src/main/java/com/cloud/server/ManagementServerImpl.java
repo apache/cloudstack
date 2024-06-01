@@ -502,10 +502,6 @@ import org.apache.cloudstack.api.command.user.ssh.CreateSSHKeyPairCmd;
 import org.apache.cloudstack.api.command.user.ssh.DeleteSSHKeyPairCmd;
 import org.apache.cloudstack.api.command.user.ssh.ListSSHKeyPairsCmd;
 import org.apache.cloudstack.api.command.user.ssh.RegisterSSHKeyPairCmd;
-import org.apache.cloudstack.api.command.user.storage.fileshare.CreateFileShareCmd;
-import org.apache.cloudstack.api.command.user.storage.fileshare.ListFileShareCmd;
-import org.apache.cloudstack.api.command.user.storage.fileshare.RemoveFileShareCmd;
-import org.apache.cloudstack.api.command.user.storage.fileshare.UpdateFileShareCmd;
 import org.apache.cloudstack.api.command.user.tag.CreateTagsCmd;
 import org.apache.cloudstack.api.command.user.tag.DeleteTagsCmd;
 import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
@@ -4045,11 +4041,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(DeleteBucketCmd.class);
         cmdList.add(ListBucketsCmd.class);
 
-        // file share APIs
-        cmdList.add(CreateFileShareCmd.class);
-        cmdList.add(ListFileShareCmd.class);
-        cmdList.add(UpdateFileShareCmd.class);
-        cmdList.add(RemoveFileShareCmd.class);
         return cmdList;
     }
 

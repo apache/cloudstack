@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.storage.fileshare;
 
+import javax.inject.Inject;
+
 import com.cloud.exception.ResourceAllocationException;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -26,10 +28,14 @@ import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.FileShareResponse;
 import org.apache.cloudstack.storage.fileshare.FileShare;
+import org.apache.cloudstack.storage.fileshare.FileShareService;
 
 @APICommand(name = "createFileShare", responseObject= FileShareResponse.class, description = "Creates a new file share of specified size and disk offering and attached to the given guest network",
         responseView = ResponseObject.ResponseView.Restricted, entityType = FileShare.class, requestHasSensitiveInfo = false, since = "4.20.0")
 public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
+
+    @Inject
+    FileShareService fileShareService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

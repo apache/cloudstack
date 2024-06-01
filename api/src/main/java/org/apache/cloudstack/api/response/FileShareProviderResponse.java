@@ -14,24 +14,25 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.command.user.storage.fileshare;
 
-import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.ResponseObject;
-import org.apache.cloudstack.api.response.FileShareResponse;
-import org.apache.cloudstack.storage.fileshare.FileShare;
+package org.apache.cloudstack.api.response;
 
-@APICommand(name = "listFileShare", responseObject= FileShareResponse.class, description = "Lists File Shares by.. ",
-        responseView = ResponseObject.ResponseView.Restricted, entityType = FileShare.class, requestHasSensitiveInfo = false, since = "4.20.0")
-public class ListFileShareCmd extends BaseCmd {
-    @Override
-    public void execute() {
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseResponse;
 
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
+
+public class FileShareProviderResponse extends BaseResponse {
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "the name of the file share provider")
+    private String name;
+
+    public String getName() {
+        return name;
     }
 
-    @Override
-    public long getEntityOwnerId() {
-        return 0;
+    public void setName(String name) {
+        this.name = name;
     }
 }
