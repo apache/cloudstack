@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -104,7 +104,7 @@ perl -pi -e "s/-SNAPSHOT//" tools/docker/Dockerfile
 perl -pi -e "s/-SNAPSHOT//" tools/docker/Dockerfile.marvin
 perl -pi -e "s/-SNAPSHOT//" tools/docker/Dockerfile.centos6
 
-case "$currentversion" in 
+case "$currentversion" in
   *-SNAPSHOT*)
     perl -pi -e 's/-SNAPSHOT//' debian/rules
     ;;
@@ -112,7 +112,7 @@ esac
 
 # set debian changelog entry
 tmpfilenm=$$.tmp
-echo "cloudstack ($version) unstable; urgency=low" >>$tmpfilenm 
+echo "cloudstack ($version) unstable; urgency=low" >>$tmpfilenm
 echo >>$tmpfilenm
 echo "  * Update the version to $version" >>$tmpfilenm
 echo >>$tmpfilenm

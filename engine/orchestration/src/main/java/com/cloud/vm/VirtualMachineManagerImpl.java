@@ -52,6 +52,7 @@ import javax.persistence.EntityExistsException;
 import com.cloud.configuration.Resource;
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.user.dao.AccountDao;
@@ -1407,7 +1408,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                             logger.warn("unexpected InsufficientCapacityException : {}", e.getScope().getName(), e);
                         }
                     }
-                } catch (ExecutionException | NoTransitionException e) {
+                } catch (ExecutionException | NoTransitionException | ResourceAllocationException e) {
                     logger.error("Failed to start instance {}", vm, e);
                     throw new AgentUnavailableException("Unable to start instance due to " + e.getMessage(), destHostId, e);
                 } catch (final StorageAccessException e) {
