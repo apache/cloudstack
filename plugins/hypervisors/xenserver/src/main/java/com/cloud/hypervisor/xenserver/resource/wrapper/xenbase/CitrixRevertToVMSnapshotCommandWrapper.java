@@ -63,11 +63,13 @@ public final class CitrixRevertToVMSnapshotCommandWrapper extends CommandWrapper
             }
 
             final VM vmSnapshot = vmSnapshots.iterator().next();
+            citrixResourceBase.listAllVms(conn, vmName);
 
             // find target VM or creating a work VM
             try {
                 vm = citrixResourceBase.getVM(conn, vmName);
             } catch (final Exception e) {
+                s_logger.debug(String.format("Failed to find VM with name: %s due to:", vmName), e);
                 vm = citrixResourceBase.createWorkingVM(conn, vmName, command.getGuestOSType(), command.getPlatformEmulator(), listVolumeTo);
             }
 
@@ -90,7 +92,7 @@ public final class CitrixRevertToVMSnapshotCommandWrapper extends CommandWrapper
             }
 
             if (!snapshotMemory) {
-                vm.destroy(conn);
+                citrixResourceBase.destroyVm(vm, conn);
                 vmState = PowerState.PowerOff;
             } else {
                 vmState = PowerState.PowerOn;
