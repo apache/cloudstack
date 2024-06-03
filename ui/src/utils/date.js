@@ -15,23 +15,18 @@
 // specific language governing permissions and limitations
 // under the License.
 import * as momentLib from 'moment'
-import store from '@/store/'
+// import dayjs from 'dayjs'
 
-export function getMomentFormattedAndNormalized ({ value, format = null, keepMoment = true }) {
+export function getMomentFormattedAndNormalized ({ value, format }) {
   if (typeof value === 'string') {
     value = moment(value)
   }
 
-  if (!store.getters.usebrowsertimezone) {
-    const utcOffsetInMinutes = value.utcOffset() * -1
-    value = value.add(utcOffsetInMinutes, 'minute')
+  if (!format) {
+    return value
   }
 
-  if (format) {
-    return value.format(format)
-  }
-
-  return value
+  return value.format(format)
 }
 
 export const moment = momentLib

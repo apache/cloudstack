@@ -97,7 +97,7 @@ export default {
       this.form = reactive({
         description: this.resource.description,
         value: this.resource.tariffValue,
-        endDate: dayjs(this.resource.endDate, 'YYYY-MM-DD')
+        endDate: this.resource.endDate ? dayjs(this.resource.endDate, 'YYYY-MM-DD') : null
       })
       this.rules = reactive({
         value: [{ required: true, message: this.$t('message.action.quota.tariff.create.error.valuerequired') }]

@@ -109,11 +109,6 @@ export default {
           field: 'tariffValue',
           customTitle: 'quota.tariff.value'
         },
-        // {
-        //   field: 'hasActivationRule',
-        //   customTitle: 'quota.tariff.hasactivationrule',
-        //   hasActivationRule: (record) => record.activationRule ? i18n.global.t('label.yes') : i18n.global.t('label.no')
-        // },
         {
           field: 'effectiveDate',
           customTitle: 'start.date'
