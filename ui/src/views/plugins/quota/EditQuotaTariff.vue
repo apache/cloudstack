@@ -42,7 +42,6 @@
           v-model:value="form.value"
           :placeholder="$t('placeholder.quota.tariff.value')" />
       </a-form-item>
-      {{ form.endDate }}
       <a-form-item ref="endDate" name="endDate">
         <template #label>
           <tooltip-label :title="$t('label.end.date')" :tooltip="apiParams.enddate.description"/>
