@@ -99,7 +99,9 @@ export default {
         value: this.resource.tariffValue,
         endDate: dayjs(this.resource.endDate, 'YYYY-MM-DD')
       })
-      this.rules = reactive({})
+      this.rules = reactive({
+        value: [{ required: true, message: this.$t('message.action.quota.tariff.create.error.valuerequired') }]
+      })
     },
     closeModal () {
       this.$emit('close-action')
