@@ -52,3 +52,8 @@ webapp.dir=/usr/share/cloudstack-management/webapp
 
 # The path to access log file
 access.log=/var/log/cloudstack/management/access.log
+
+# Minimum and maximum threads for the server
+threads.min=10
+threads.max=500
+
