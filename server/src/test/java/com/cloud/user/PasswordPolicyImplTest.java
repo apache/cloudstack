@@ -159,7 +159,7 @@ public class PasswordPolicyImplTest {
         Mockito.doReturn(null).when(passwordPolicySpy).getPasswordPolicyRegex(null);
         passwordPolicySpy.validateIfPasswordMatchesRegex("abcd123", "user", null);
     }
-    
+
     @Test
     public void validateCombinationOfPolicies() {
         Mockito.doReturn(2).when(passwordPolicySpy).getPasswordPolicyMinimumSpecialCharacters(null);
