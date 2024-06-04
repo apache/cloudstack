@@ -364,8 +364,11 @@
         <status :text="record.enabled ? record.enabled.toString() : 'false'" />
         {{ record.enabled ? 'Enabled' : 'Disabled' }}
       </template>
-      <template v-if="['created', 'sent'].includes(column.key) || (['startdate'].includes(column.key) && ['webhook'].includes($route.path.split('/')[1]))">
+      <template v-if="['created', 'sent', 'removed'].includes(column.key) || (['startdate'].includes(column.key) && ['webhook'].includes($route.path.split('/')[1]))">
         {{ $toLocaleDate(text) }}
+      </template>
+      <template v-if="['effectiveDate', 'endDate'].includes(column.key) && $route.name === 'quotatariff'">
+        {{ text ? parseDate({ value: text, format: 'DD MMM YYYY' }) : '' }}
       </template>
       <template v-if="['startdate', 'enddate'].includes(column.key) && ['vm', 'vnfapp'].includes($route.path.split('/')[1])">
         {{ getDateAtTimeZone(text, record.timezone) }}
@@ -525,6 +528,7 @@ import ResourceLabel from '@/components/widgets/ResourceLabel'
 import { createPathBasedOnVmType } from '@/utils/plugins'
 import cronstrue from 'cronstrue/i18n'
 import moment from 'moment-timezone'
+import { parseDate } from '../../utils/date'
 
 export default {
   name: 'ListView',
@@ -624,6 +628,7 @@ export default {
     }
   },
   methods: {
+    parseDate,
     isTungstenPath () {
       return ['/tungstennetworkroutertable', '/tungstenpolicy', '/tungsteninterfaceroutertable',
         '/tungstenpolicyset', '/tungstenroutingpolicy', '/firewallrule', '/tungstenfirewallpolicy'].includes(this.$route.path)
@@ -651,6 +656,9 @@ export default {
     getDateAtTimeZone (date, timezone) {
       return date ? moment(date).tz(timezone).format('YYYY-MM-DD HH:mm:ss') : null
     },
+    // getDateWithoutTime (date) {
+    //   return date ? moment(date).format('YYYY-MM-DD') : ''
+    // },
     fetchColumns () {
       if (this.isOrderUpdatable()) {
         return this.columns

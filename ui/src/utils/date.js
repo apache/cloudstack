@@ -14,12 +14,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import * as momentLib from 'moment'
-// import dayjs from 'dayjs'
+import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc'
 
-export function getMomentFormattedAndNormalized ({ value, format }) {
+dayjs.extend(utc)
+
+export function parseDate ({ value, format }) {
   if (typeof value === 'string') {
-    value = moment(value)
+    value = dayjs.utc(value)
   }
 
   if (!format) {
@@ -29,4 +31,4 @@ export function getMomentFormattedAndNormalized ({ value, format }) {
   return value.format(format)
 }
 
-export const moment = momentLib
+export { dayjs }

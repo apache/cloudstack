@@ -62,11 +62,10 @@
 
 <script>
 import { api } from '@/api'
-import { moment, getMomentFormattedAndNormalized } from '@/utils/date'
+import { dayjs, parseDate } from '@/utils/date'
 import { mixinForm } from '@/utils/mixin'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import { ref, reactive, toRaw } from 'vue'
-import dayjs from 'dayjs'
 
 export default {
   name: 'EditQuotaTariff',
@@ -82,7 +81,7 @@ export default {
   },
   data: () => ({
     loading: false,
-    moment: moment
+    dayjs
   }),
   inject: ['parentFetchData'],
   beforeCreate () {
@@ -127,7 +126,7 @@ export default {
         }
 
         if (this.resource.endDate !== values.endDate) {
-          params.enddate = getMomentFormattedAndNormalized({ value: values.endDate, format: 'YYYY-MM-DD' })
+          params.enddate = parseDate({ value: values.endDate, format: 'YYYY-MM-DD' })
         }
 
         if (Object.keys(params).length === 1) {
@@ -158,7 +157,7 @@ export default {
       })
     },
     disabledEndDate (current) {
-      return current < moment().startOf('day')
+      return current < dayjs().startOf('day')
     }
   }
 }
