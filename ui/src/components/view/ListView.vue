@@ -525,7 +525,6 @@ import ResourceLabel from '@/components/widgets/ResourceLabel'
 import { createPathBasedOnVmType } from '@/utils/plugins'
 import cronstrue from 'cronstrue/i18n'
 import moment from 'moment-timezone'
-import { parseDayJsObject } from '../../utils/date'
 
 export default {
   name: 'ListView',
@@ -625,7 +624,6 @@ export default {
     }
   },
   methods: {
-    parseDate: parseDayJsObject,
     isTungstenPath () {
       return ['/tungstennetworkroutertable', '/tungstenpolicy', '/tungsteninterfaceroutertable',
         '/tungstenpolicyset', '/tungstenroutingpolicy', '/firewallrule', '/tungstenfirewallpolicy'].includes(this.$route.path)
@@ -653,9 +651,6 @@ export default {
     getDateAtTimeZone (date, timezone) {
       return date ? moment(date).tz(timezone).format('YYYY-MM-DD HH:mm:ss') : null
     },
-    // getDateWithoutTime (date) {
-    //   return date ? moment(date).format('YYYY-MM-DD') : ''
-    // },
     fetchColumns () {
       if (this.isOrderUpdatable()) {
         return this.columns
