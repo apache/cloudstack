@@ -29,12 +29,14 @@ DROP INDEX `i_resource_count__type_domaintId`,
 ADD UNIQUE INDEX `i_resource_count__type_tag_accountId` (`type`,`tag`,`account_id`),
 ADD UNIQUE INDEX `i_resource_count__type_tag_domaintId` (`type`,`tag`,`domain_id`);
 
-
-ALTER TABLE `cloud`.`resource_reservation`
-    ADD COLUMN `resource_id` bigint unsigned NULL;
-
 ALTER TABLE `cloud`.`resource_reservation`
     MODIFY COLUMN `amount` bigint NOT NULL;
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.resource_reservation', 'resource_id', 'bigint unsigned NULL COMMENT "id of the resource" ');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.resource_reservation', 'mgmt_server_id', 'bigint unsigned NULL COMMENT "management server id" ');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.resource_reservation', 'created', 'datetime DEFAULT NULL COMMENT "date when the reservation was created" ');
+
+UPDATE `cloud`.`resource_reservation` SET `created` = now() WHERE created IS NULL;
 
 
 -- Update Default System offering for Router to 512MiB
