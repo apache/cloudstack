@@ -14,16 +14,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import store from '@/store'
 import dayjs from 'dayjs'
-import utc from 'dayjs/plugin/utc'
-
-dayjs.extend(utc)
+import store from '@/store'
 
 export function parseDayJsObject ({ value, format }) {
   if (!format) {
     return value
   }
+
   return value.format(format)
 }
 
@@ -38,12 +36,12 @@ export function parseDateToDatePicker (value) {
 
 export function toLocalDate ({ date, timezoneoffset = store.getters.timezoneoffset, usebrowsertimezone = store.getters.usebrowsertimezone }) {
   if (usebrowsertimezone) {
-    // Since GMT+530 is returned as -330 (mins to GMT)
+    // Since GMT+530 is returned as -330 (minutes to GMT)
     timezoneoffset = new Date().getTimezoneOffset() / -60
   }
 
   const milliseconds = Date.parse(date)
-  // e.g. "Tue, 08 Jun 2010 19:13:49 GMT", "Tue, 25 May 2010 12:07:01 UTC"
+  // e.g. "Tue, 08 Jun 2010 19:13:49 GMT"; "Tue, 25 May 2010 12:07:01 UTC"
   return new Date(milliseconds + (timezoneoffset * 60 * 60 * 1000))
 }
 
@@ -53,16 +51,20 @@ export function toLocaleDate ({ date, timezoneoffset = store.getters.timezoneoff
   }
 
   let dateWithOffset = toLocalDate({ date, timezoneoffset, usebrowsertimezone }).toUTCString()
-  // e.g. "08 Jun 2010 19:13:49 GMT", "25 May 2010 12:07:01 UTC"
+
+  // e.g. "Mon, 03 Jun 2024 19:22:55 GMT" -> "03 Jun 2024 19:22:55 GMT"
   dateWithOffset = dateWithOffset.substring(dateWithOffset.indexOf(', ') + 2)
-  // e.g. "08 Jun 2010 19:13:49", "25 May 2010 12:10:16"
+
+  // e.g. "03 Jun 2024 19:22:55 GMT" -> "03 Jun 2024 19:22:55"
   dateWithOffset = dateWithOffset.substring(0, dateWithOffset.length - 4)
 
   if (dateOnly) {
+    // e.g. "03 Jun 2024 19:22:55" -> "03 Jun 2024"
     return dateWithOffset.substring(0, dateWithOffset.length - 9)
   }
 
   if (hourOnly) {
+    // e.g. "03 Jun 2024 19:22:55" -> "19:22:55"
     return dateWithOffset.substring(dateWithOffset.length - 8, dateWithOffset.length)
   }
 

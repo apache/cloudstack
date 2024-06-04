@@ -84,12 +84,9 @@
             <span v-if="['USER.LOGIN', 'USER.LOGOUT', 'ROUTER.HEALTH.CHECKS', 'FIREWALL.CLOSE', 'ALERT.SERVICE.DOMAINROUTER'].includes(dataResource[item])">{{ $t(dataResource[item].toLowerCase()) }}</span>
             <span v-else>{{ dataResource[item] }}</span>
           </div>
-          <div v-else-if="['created', 'sent', 'lastannotated', 'collectiontime', 'lastboottime', 'lastserverstart', 'lastserverstop', 'endDate', 'effectiveDate', 'removed'].includes(item)">
+          <div v-else-if="['created', 'sent', 'lastannotated', 'collectiontime', 'lastboottime', 'lastserverstart', 'lastserverstop', 'removed', 'effectiveDate', 'endDate'].includes(item)">
             {{ $toLocaleDate(dataResource[item]) }}
           </div>
-<!--          <div v-else-if="['endDate', 'removed', 'effectiveDate'].includes(item)">-->
-<!--            {{ parseDate({ value: dataResource[item], format: 'DD MMM YYYY' }) }}-->
-<!--          </div>-->
           <div style="white-space: pre-wrap;" v-else-if="$route.meta.name === 'quotatariff' && item === 'description'">{{ dataResource[item] }}</div>
           <div v-else-if="$route.meta.name === 'userdata' && item === 'userdata'">
             <div style="white-space: pre-wrap;"> {{ decodeUserData(dataResource.userdata)}} </div>

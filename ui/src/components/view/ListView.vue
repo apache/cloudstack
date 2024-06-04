@@ -372,15 +372,9 @@
         <status :text="record.enabled ? record.enabled.toString() : 'false'" />
         {{ record.enabled ? 'Enabled' : 'Disabled' }}
       </template>
-      <template v-if="['created', 'sent', 'removed'].includes(column.key) || (['startdate'].includes(column.key) && ['webhook'].includes($route.path.split('/')[1]))">
+      <template v-if="['created', 'sent', 'removed', 'effectiveDate', 'endDate'].includes(column.key) || (['startdate'].includes(column.key) && ['webhook'].includes($route.path.split('/')[1]))">
         {{ $toLocaleDate(text) }}
       </template>
-      <template v-if="['effectiveDate', 'endDate'].includes(column.key)">
-        {{ $toLocaleDate(text, { dateOnly: true }) }}
-      </template>
-<!--      <template v-if="['effectiveDate', 'endDate'].includes(column.key) && $route.name === 'quotatariff'">-->
-<!--        {{ text ? parseDate({ value: text, format: 'DD MMM YYYY' }) : '' }}-->
-<!--      </template>-->
       <template v-if="['startdate', 'enddate'].includes(column.key) && ['vm', 'vnfapp'].includes($route.path.split('/')[1])">
         {{ getDateAtTimeZone(text, record.timezone) }}
       </template>
