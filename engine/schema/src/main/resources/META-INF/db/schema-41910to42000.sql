@@ -80,6 +80,9 @@ CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_email_configuration`(
     CONSTRAINT `FK_quota_email_configuration_account_id` FOREIGN KEY (`account_id`) REFERENCES `cloud_usage`.`quota_account`(`account_id`),
     CONSTRAINT `FK_quota_email_configuration_email_template_id` FOREIGN KEY (`email_template_id`) REFERENCES `cloud_usage`.`quota_email_templates`(`id`));
 
+-- Add `is_implicit` column to `host_tags` table
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.host_tags', 'is_implicit', 'int(1) UNSIGNED NOT NULL DEFAULT 0 COMMENT "If host tag is implicit or explicit" ');
+
 -- Create command_timeout table and populate it
 CREATE TABLE IF NOT EXISTS `cloud`.`command_timeout` (
      id bigint(20) unsigned not null auto_increment primary key,

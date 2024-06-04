@@ -60,6 +60,7 @@ import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 
 import com.amazonaws.util.CollectionUtils;
+import org.apache.commons.lang3.ArrayUtils;
 
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
@@ -1636,8 +1637,12 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         } else if (attr.getValue() != null && attr.getValue() instanceof Long) {
             pstmt.setLong(j, (Long)attr.getValue());
         } else if(attr.field.getDeclaredAnnotation(Convert.class) != null) {
-            Object val = _conversionSupport.convertToDatabaseColumn(attr.field, value);
-            pstmt.setObject(j, val);
+            if (value instanceof String) {
+                pstmt.setString(j, (String)value);
+            } else {
+                Object val = _conversionSupport.convertToDatabaseColumn(attr.field, value);
+                pstmt.setObject(j, val);
+            }
         } else if (attr.field.getType() == String.class) {
             final String str;
             try {
@@ -2190,6 +2195,9 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
     @Override
     public List<T> findByUuids(String... uuidArray) {
+        if (ArrayUtils.isEmpty(uuidArray)) {
+            return new ArrayList<T>();
+        }
         SearchCriteria<T> sc = createSearchCriteria();
         sc.addAnd("uuid", SearchCriteria.Op.IN, uuidArray);
         return search(sc, null);

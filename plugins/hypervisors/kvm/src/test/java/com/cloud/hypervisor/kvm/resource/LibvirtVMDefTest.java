@@ -318,6 +318,20 @@ public class LibvirtVMDefTest extends TestCase {
     }
 
     @Test
+    public void testDiskDefWithGeometry() {
+        DiskDef disk = new DiskDef();
+        disk.defBlockBasedDisk("disk1", 1, DiskDef.DiskBus.VIRTIO);
+        disk.setGeometry(new DiskDef.DiskGeometry(16383, 16, 63));
+        String expectedXML = "<disk  device='disk' type='block'>\n" +
+                "<driver name='qemu' type='raw' cache='none' />\n" +
+                "<source dev='disk1'/>\n" +
+                "<target dev='vdb' bus='virtio'/>\n" +
+                "<geometry cyls='16383' heads='16' secs='63'/>\n" +
+                "</disk>\n";
+        assertEquals(expectedXML, disk.toString());
+    }
+
+    @Test
     public void testDiskDefWithMultipleHosts() {
         String path = "/mnt/primary1";
         String host = "10.11.12.13,10.11.12.14,10.11.12.15";
@@ -532,5 +546,18 @@ public class LibvirtVMDefTest extends TestCase {
                 "<driver queues='4'/>\n" +
                 "</controller>\n";
         assertEquals(expected, str);
+    }
+
+    @Test
+    public void testTopology() {
+        LibvirtVMDef.CpuModeDef cpuModeDef = new LibvirtVMDef.CpuModeDef();
+        cpuModeDef.setTopology(2, 1, 4);
+        assertEquals("<cpu><topology sockets='4' cores='2' threads='1' /></cpu>", cpuModeDef.toString());
+    }
+
+    public void testTopologyNoInfo() {
+        LibvirtVMDef.CpuModeDef cpuModeDef = new LibvirtVMDef.CpuModeDef();
+        cpuModeDef.setTopology(-1, -1, 4);
+        assertEquals("<cpu></cpu>", cpuModeDef.toString());
     }
 }
