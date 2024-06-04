@@ -59,5 +59,10 @@
             <version>1.20.0</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-admin-client</artifactId>
+            <version>24.0.0</version>
+        </dependency>
     </dependencies>
 </project>
