@@ -125,7 +125,7 @@ export default {
           params.value = values.value
         }
 
-        if (this.resource.endDate !== values.endDate) {
+        if (values.endDate && this.resource.endDate !== values.endDate) {
           params.enddate = parseDayJsObject({ value: values.endDate, format: 'YYYY-MM-DD' })
         }
 
@@ -157,7 +157,7 @@ export default {
       })
     },
     disabledEndDate (current) {
-      return current < dayjs().startOf('day')
+      return current < dayjs(this.resource.effectiveDate).startOf('day')
     }
   }
 }
