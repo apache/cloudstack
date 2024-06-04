@@ -14,7 +14,10 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.storage.fileshare;
+package org.apache.cloudstack.storage.fileshare.dao;
+
+import org.apache.cloudstack.storage.fileshare.FileShare;
+import org.apache.cloudstack.storage.fileshare.FileShareVO;
 
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
