@@ -86,10 +86,11 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.host_tags', 'is_implicit', 'int(1) U
 -- Create command_timeout table and populate it
 CREATE TABLE IF NOT EXISTS `cloud`.`command_timeout` (
      id bigint(20) unsigned not null auto_increment primary key,
-     command_classpath text unique key,
+     command_classpath text not null,
      timeout int not null,
      created datetime not null,
-     updated datetime not null
+     updated datetime not null,
+     unique key (command_classpath(50))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 INSERT INTO `cloud`.`command_timeout` (command_classpath, timeout, created, updated)
