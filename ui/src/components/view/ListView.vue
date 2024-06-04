@@ -367,9 +367,12 @@
       <template v-if="['created', 'sent', 'removed'].includes(column.key) || (['startdate'].includes(column.key) && ['webhook'].includes($route.path.split('/')[1]))">
         {{ $toLocaleDate(text) }}
       </template>
-      <template v-if="['effectiveDate', 'endDate'].includes(column.key) && $route.name === 'quotatariff'">
-        {{ text ? parseDate({ value: text, format: 'DD MMM YYYY' }) : '' }}
+      <template v-if="['effectiveDate', 'endDate'].includes(column.key)">
+        {{ $toLocaleDate(text, { dateOnly: true }) }}
       </template>
+<!--      <template v-if="['effectiveDate', 'endDate'].includes(column.key) && $route.name === 'quotatariff'">-->
+<!--        {{ text ? parseDate({ value: text, format: 'DD MMM YYYY' }) : '' }}-->
+<!--      </template>-->
       <template v-if="['startdate', 'enddate'].includes(column.key) && ['vm', 'vnfapp'].includes($route.path.split('/')[1])">
         {{ getDateAtTimeZone(text, record.timezone) }}
       </template>
@@ -528,7 +531,7 @@ import ResourceLabel from '@/components/widgets/ResourceLabel'
 import { createPathBasedOnVmType } from '@/utils/plugins'
 import cronstrue from 'cronstrue/i18n'
 import moment from 'moment-timezone'
-import { parseDate } from '../../utils/date'
+import { parseDayJsObject } from '../../utils/date'
 
 export default {
   name: 'ListView',
@@ -628,7 +631,7 @@ export default {
     }
   },
   methods: {
-    parseDate,
+    parseDate: parseDayJsObject,
     isTungstenPath () {
       return ['/tungstennetworkroutertable', '/tungstenpolicy', '/tungsteninterfaceroutertable',
         '/tungstenpolicyset', '/tungstenroutingpolicy', '/firewallrule', '/tungstenfirewallpolicy'].includes(this.$route.path)

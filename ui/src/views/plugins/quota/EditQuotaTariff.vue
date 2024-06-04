@@ -62,7 +62,7 @@
 
 <script>
 import { api } from '@/api'
-import { dayjs, parseDate } from '@/utils/date'
+import { dayjs, parseDateToDatePicker, parseDayJsObject } from '@/utils/date'
 import { mixinForm } from '@/utils/mixin'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import { ref, reactive, toRaw } from 'vue'
@@ -96,7 +96,7 @@ export default {
       this.form = reactive({
         description: this.resource.description,
         value: this.resource.tariffValue,
-        endDate: this.resource.endDate ? dayjs(this.resource.endDate, 'YYYY-MM-DD') : null
+        endDate: parseDateToDatePicker(this.resource.endDate)
       })
       this.rules = reactive({
         value: [{ required: true, message: this.$t('message.action.quota.tariff.create.error.valuerequired') }]
@@ -126,7 +126,7 @@ export default {
         }
 
         if (this.resource.endDate !== values.endDate) {
-          params.enddate = parseDate({ value: values.endDate, format: 'YYYY-MM-DD' })
+          params.enddate = parseDayJsObject({ value: values.endDate, format: 'YYYY-MM-DD' })
         }
 
         if (Object.keys(params).length === 1) {
