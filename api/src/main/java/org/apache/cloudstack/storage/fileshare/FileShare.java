@@ -99,6 +99,8 @@ public interface FileShare extends StateObject<FileShare.State> {
         RecoveryRequested,
     }
 
+    Long getId();
+
     String getName();
 
     String getUuid();

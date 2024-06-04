@@ -14,11 +14,18 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.storage.fileshare;
+package org.apache.cloudstack.storage.fileshare.dao;
+
+import org.apache.cloudstack.storage.fileshare.FileShare;
+import org.apache.cloudstack.storage.fileshare.FileShareVO;
 
 import com.cloud.utils.db.GenericDaoBase;
 
-public class FIleShareDaoImpl extends GenericDaoBase<FileShareVO, Long> implements FileShareDao {
+public class FileShareDaoImpl extends GenericDaoBase<FileShareVO, Long> implements FileShareDao {
+
+    public FileShareDaoImpl() {
+    }
+
     @Override
     public boolean updateState(FileShare.State currentState, FileShare.Event event, FileShare.State nextState, FileShare vo, Object data) {
         return false;

@@ -26,7 +26,11 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+
+import java.util.Date;
 import java.util.UUID;
+
+import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name = "storage_fileshare")
@@ -97,8 +101,17 @@ public class FileShareVO implements FileShare {
     @Column(name = "service_offering_id")
     private Long serviceOfferingId;
 
+    @Column(name = GenericDao.CREATED_COLUMN)
+    protected Date created;
+
+    @Column(name = GenericDao.REMOVED_COLUMN)
+    protected Date removed;
+
+    public FileShareVO() {
+    }
+
     public FileShareVO(String name, String description, long domainId, long accountId, long projectId, long dataCenterId, String fsProviderName,
-                       Long size, Protocol protocol, String mountOptions, FileSystemType fsType, Long diskOfferingId, Long serviceOfferingId) {
+                       Long size, Protocol protocol, long volumeId, String mountOptions, FileSystemType fsType, Long diskOfferingId, Long serviceOfferingId) {
         this.name = name;
         this.description = description;
         this.domainId = domainId;
@@ -108,6 +121,7 @@ public class FileShareVO implements FileShare {
         this.fsProviderName = fsProviderName;
         this.size = size;
         this.protocol = protocol;
+        this.volumeId = volumeId;
         this.mountOptions = mountOptions;
         this.fsType = fsType;
         this.diskOfferingId = diskOfferingId;
@@ -115,6 +129,11 @@ public class FileShareVO implements FileShare {
         this.uuid = UUID.randomUUID().toString();
     }
 
+
+    @Override
+    public Long getId() {
+        return id;
+    }
 
     @Override
     public String getName() {
