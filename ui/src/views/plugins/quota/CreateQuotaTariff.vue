@@ -98,7 +98,7 @@ import { api } from '@/api'
 import { ref, reactive, toRaw } from 'vue'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import { getQuotaTypes } from '@/utils/quota'
-import { dayjs, parseDayJsObject } from '@/utils/date'
+import { dayjs, isDayJsObjectToday, parseDayJsObject } from '@/utils/date'
 import { mixinForm } from '@/utils/mixin'
 
 export default {
@@ -145,7 +145,7 @@ export default {
         values.usageType = values.usageType.split('-')[0]
 
         if (values.startDate) {
-          values.startDate = parseDayJsObject({ value: values.startDate, format: 'YYYY-MM-DD' })
+          values.startDate = isDayJsObjectToday(values.startDate) ? null : parseDayJsObject({ value: values.startDate, format: 'YYYY-MM-DD' })
         }
 
         if (values.endDate) {
