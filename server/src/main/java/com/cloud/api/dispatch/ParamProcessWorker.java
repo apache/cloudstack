@@ -60,6 +60,7 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.UuidUtils;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 
 public class ParamProcessWorker implements DispatchWorker {
 
@@ -117,8 +118,21 @@ public class ParamProcessWorker implements DispatchWorker {
         }
     }
 
+    private void validateNameForRFCCompliance(final Object param, final String argName) {
+        String value = String.valueOf(param);
+        if (StringUtils.isBlank(value) || !NetUtils.verifyDomainNameLabel(value, true)) {
+            String msg = "it can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
+                    + "and the hyphen ('-'), must be between 1 and 63 characters long, and can't start or end with \"-\" and can't start with digit";
+            throwInvalidParameterValueException(argName, msg);
+        }
+    }
+
     protected void throwInvalidParameterValueException(String argName) {
-        throw new InvalidParameterValueException(String.format("Invalid value provided for API arg: %s", argName));
+        throwInvalidParameterValueException(argName, null);
+    }
+
+    protected void throwInvalidParameterValueException(String argName, String customMsg) {
+        throw new InvalidParameterValueException(String.format("Invalid value provided for API arg: %s%s", argName, StringUtils.isBlank(customMsg)? "" : " - " + customMsg));
     }
 
     private void validateField(final Object paramObj, final Parameter annotation) throws ServerApiException {
@@ -155,6 +169,12 @@ public class ParamProcessWorker implements DispatchWorker {
                             break;
                     }
                     break;
+                case RFCComplianceDomainName:
+                    switch (annotation.type()) {
+                        case STRING:
+                            validateNameForRFCCompliance(paramObj, argName);
+                            break;
+                    }
             }
         }
     }
