@@ -5861,28 +5861,6 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         }
     }
 
-    public void listAllVms(Connection conn, String vmName) {
-        try {
-            final Map<VM, VM.Record> vms = VM.getAllRecords(conn);
-            for (final Map.Entry<VM, VM.Record> entry : vms.entrySet()) {
-                VM foundVm = entry.getKey();
-                VM.Record record = entry.getValue();
-                s_logger.info(String.format("VM found:::::::::::::::::::::::::%s", record.nameLabel));
-                if (!record.isATemplate && !record.isASnapshot && !record.isControlDomain) {
-                    s_logger.info(String.format("VM found is an actual VM:::::::::::::::::::::::::%s", record.nameLabel));
-                }
-            }
-            Set<VM> vmList = VM.getByNameLabel(conn, vmName);
-            s_logger.info(String.format("%d VM found with name label(%s):::::::::::::::::::::::::", vmList.size(), vmName));
-            for (final VM vm : vmList) {
-                s_logger.info(String.format("VM found with name label(%s):::::::::::::::::::::::::%s,%s", vmName, vm.getNameLabel(conn), vm.getUuid(conn)));
-            }
-
-        } catch (XenAPIException | XmlRpcException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     public boolean isDestroyHaltedVms() {
         ComparableVersion version = new ComparableVersion(getHost().getProductVersion());
         if (version.compareTo(new ComparableVersion("8.0")) >= 0) {

@@ -93,7 +93,6 @@ public final class CitrixCreateVMSnapshotCommandWrapper extends CommandWrapper<C
                     }
                 }
             }
-            citrixResourceBase.listAllVms(conn, vmName);
 
             // create a new task if there is no existing task for this VM snapshot
             if (task == null) {

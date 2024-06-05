@@ -63,7 +63,6 @@ public final class CitrixRevertToVMSnapshotCommandWrapper extends CommandWrapper
             }
 
             final VM vmSnapshot = vmSnapshots.iterator().next();
-            citrixResourceBase.listAllVms(conn, vmName);
 
             // find target VM or creating a work VM
             try {
