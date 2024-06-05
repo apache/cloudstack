@@ -107,6 +107,9 @@ public class FileShareVO implements FileShare {
     @Column(name = GenericDao.REMOVED_COLUMN)
     protected Date removed;
 
+    public FileShareVO() {
+    }
+
     public FileShareVO(String name, String description, long domainId, long accountId, long projectId, long dataCenterId, String fsProviderName,
                        Long size, Protocol protocol, String mountOptions, FileSystemType fsType, Long diskOfferingId, Long serviceOfferingId) {
         this.name = name;
