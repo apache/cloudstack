@@ -1292,7 +1292,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
      - Caller should not be of Unknown role type
      - New role's type should not be Unknown
      - Caller should not be able to escalate or de-escalate an account's role which is of same or higher role type
-     - New role should not of type Admin with domain other than ROOT domain
+     - New role should not be of type Admin with domain other than ROOT domain
      */
     protected void validateRoleChange(Account account, Role role, Account caller) {
         Role currentRole = roleService.findRole(account.getRoleId());
