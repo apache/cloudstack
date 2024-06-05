@@ -14,48 +14,29 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.query.vo;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+package com.cloud.agent.api;
 
-import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
 
-/**
- * Storage Tags DB view.
- *
- */
-@Entity
-@Table(name = "host_tags")
-public class HostTagVO extends BaseViewVO implements InternalIdentity {
-    private static final long serialVersionUID = 1L;
+import java.util.List;
 
-    @Id
-    @Column(name = "id")
-    private long id;
+public class GetVolumesOnStorageAnswer extends Answer {
+    private List<VolumeOnStorageTO> volumes;
 
-    @Column(name = "tag")
-    private String name;
-
-    @Column(name = "host_id")
-    long hostId;
-
-    @Override
-    public long getId() {
-        return id;
+    GetVolumesOnStorageAnswer() {
     }
 
-    public String getName() {
-        return name;
+    public GetVolumesOnStorageAnswer(GetVolumesOnStorageCommand cmd, List<VolumeOnStorageTO> volumes) {
+        super(cmd, true, null);
+        this.volumes = volumes;
     }
 
-    public long getHostId() {
-        return hostId;
+    public GetVolumesOnStorageAnswer(final GetVolumesOnStorageCommand cmd, final boolean success, final String details) {
+        super(cmd, success, details);
     }
 
-    public void setHostId(long hostId) {
-        this.hostId = hostId;
+    public List<VolumeOnStorageTO> getVolumes() {
+        return volumes;
     }
 }

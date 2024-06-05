@@ -134,7 +134,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         response.setName(tariff.getName());
         response.setEndDate(tariff.getEndDate());
         response.setDescription(tariff.getDescription());
-        response.setUuid(tariff.getUuid());
+        response.setId(tariff.getUuid());
         response.setRemoved(tariff.getRemoved());
         return response;
     }
@@ -376,8 +376,8 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
     @Override
     public Pair<List<QuotaTariffVO>, Integer> listQuotaTariffPlans(final QuotaTariffListCmd cmd) {
-        Date startDate = _quotaService.computeAdjustedTime(cmd.getEffectiveDate());
-        Date endDate = _quotaService.computeAdjustedTime(cmd.getEndDate());
+        Date startDate = cmd.getEffectiveDate();
+        Date endDate = cmd.getEndDate();
         Integer usageType = cmd.getUsageType();
         String name = cmd.getName();
         boolean listAll = cmd.isListAll();
@@ -395,10 +395,10 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     public QuotaTariffVO updateQuotaTariffPlan(QuotaTariffUpdateCmd cmd) {
         String name = cmd.getName();
         Double value = cmd.getValue();
-        Date endDate = _quotaService.computeAdjustedTime(cmd.getEndDate());
+        Date endDate = cmd.getEndDate();
         String description = cmd.getDescription();
         String activationRule = cmd.getActivationRule();
-        Date now = _quotaService.computeAdjustedTime(new Date());
+        Date now = new Date();
 
         warnQuotaTariffUpdateDeprecatedFields(cmd);
 
@@ -488,7 +488,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
                     endDate, startDate));
         }
 
-        Date now = _quotaService.computeAdjustedTime(new Date());
+        Date now = new Date();
         if (endDate.compareTo(now) < 0) {
             throw new InvalidParameterValueException(String.format("The quota tariff's end date [%s] cannot be less than now [%s].",
                     endDate, now));
@@ -499,7 +499,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
     @Override
     public QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Double amount, Long updatedBy, Boolean enforce) {
-        Date despositedOn = _quotaService.computeAdjustedTime(new Date());
+        Date despositedOn = new Date();
         QuotaBalanceVO qb = _quotaBalanceDao.findLaterBalanceEntry(accountId, domainId, despositedOn);
 
         if (qb != null) {
@@ -643,8 +643,8 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         int usageType = cmd.getUsageType();
         Date startDate = cmd.getStartDate();
         Date now = new Date();
-        startDate = _quotaService.computeAdjustedTime(startDate == null ? now : startDate);
-        Date endDate = _quotaService.computeAdjustedTime(cmd.getEndDate());
+        startDate = startDate == null ? now : startDate;
+        Date endDate = cmd.getEndDate();
         Double value = cmd.getValue();
         String description = cmd.getDescription();
         String activationRule = cmd.getActivationRule();
@@ -675,10 +675,8 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Quota tariff with the provided UUID does not exist.");
         }
 
-        quotaTariff.setRemoved(_quotaService.computeAdjustedTime(new Date()));
-
+        quotaTariff.setRemoved(new Date());
         CallContext.current().setEventResourceId(quotaTariff.getId());
-
         return _quotaTariffDao.updateQuotaTariff(quotaTariff);
     }
 

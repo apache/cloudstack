@@ -185,6 +185,9 @@ import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.apache.cloudstack.api.ApiConstants.MAX_IOPS;
+import static org.apache.cloudstack.api.ApiConstants.MIN_IOPS;
+
 public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     public static final String VM_IMPORT_DEFAULT_TEMPLATE_NAME = "system-default-vm-import-dummy-template.iso";
     public static final String KVM_VM_IMPORT_DEFAULT_TEMPLATE_NAME = "kvm-default-vm-import-dummy-template";
@@ -852,7 +855,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
         StoragePool storagePool = getStoragePool(disk, zone, cluster);
         DiskProfile profile = volumeManager.importVolume(type, name, diskOffering, diskSize,
-                minIops, maxIops, vm, template, owner, deviceId, storagePool.getId(), path, chainInfo);
+                minIops, maxIops, vm.getDataCenterId(), vm.getHypervisorType(), vm, template, owner, deviceId, storagePool.getId(), path, chainInfo);
 
         return new Pair<DiskProfile, StoragePool>(profile, storagePool);
     }
@@ -1200,12 +1203,12 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 throw new InvalidParameterValueException(String.format("Root disk ID: %s size is invalid", rootDisk.getDiskId()));
             }
             Long minIops = null;
-            if (details.containsKey("minIops")) {
-                minIops = Long.parseLong(details.get("minIops"));
+            if (details.containsKey(MIN_IOPS)) {
+                minIops = Long.parseLong(details.get(MIN_IOPS));
             }
             Long maxIops = null;
-            if (details.containsKey("maxIops")) {
-                maxIops = Long.parseLong(details.get("maxIops"));
+            if (details.containsKey(MAX_IOPS)) {
+                maxIops = Long.parseLong(details.get(MAX_IOPS));
             }
             DiskOfferingVO diskOffering = diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
             diskProfileStoragePoolList.add(importDisk(rootDisk, userVm, cluster, diskOffering, Volume.Type.ROOT, String.format("ROOT-%d", userVm.getId()),

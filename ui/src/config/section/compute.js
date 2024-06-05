@@ -164,33 +164,10 @@ export default {
           label: 'label.reinstall.vm',
           message: 'message.reinstall.vm',
           dataView: true,
-          args: ['virtualmachineid', 'templateid'],
-          filters: (record) => {
-            var filters = {}
-            var filterParams = {}
-            filterParams.hypervisortype = record.hypervisor
-            filterParams.zoneid = record.zoneid
-            filters.templateid = filterParams
-            return filters
-          },
+          popup: true,
           show: (record) => { return ['Running', 'Stopped'].includes(record.state) },
-          mapping: {
-            virtualmachineid: {
-              value: (record) => { return record.id }
-            }
-          },
           disabled: (record) => { return record.hostcontrolstate === 'Offline' },
-          successMethod: (obj, result) => {
-            const vm = result.jobresult.virtualmachine || {}
-            if (result.jobstatus === 1 && vm.password) {
-              const name = vm.displayname || vm.name || vm.id
-              obj.$notification.success({
-                message: `${obj.$t('label.reinstall.vm')}: ` + name,
-                description: `${obj.$t('label.password.reset.confirm')}: ` + vm.password,
-                duration: 0
-              })
-            }
-          }
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ReinstallVm.vue')))
         },
         {
           api: 'createVMSnapshot',
@@ -543,6 +520,7 @@ export default {
       title: 'label.kubernetes',
       icon: ['fa-solid', 'fa-dharmachakra'],
       docHelp: 'plugins/cloudstack-kubernetes-service.html',
+      searchFilters: ['name', 'domainid', 'account', 'state'],
       permission: ['listKubernetesClusters'],
       columns: (store) => {
         var fields = ['name', 'state', 'clustertype', 'size', 'cpunumber', 'memory', 'kubernetesversionname']
@@ -635,6 +613,9 @@ export default {
           groupAction: true,
           popup: true,
           args: (record, store, group) => {
+            if (record.clustertype === 'CloudManaged') {
+              return []
+            }
             return (['Admin'].includes(store.userInfo.roletype) || store.features.allowuserexpungerecovervm)
               ? ['cleanup', 'expunge'] : ['cleanup']
           },
@@ -646,9 +627,10 @@ export default {
       name: 'autoscalevmgroup',
       title: 'label.autoscale.vm.groups',
       icon: 'fullscreen-outlined',
-      docHelp: 'adminguide/autoscale_without_netscaler.html',
+      docHelp: 'adminguide/autoscale_with_virtual_router.html',
       resourceType: 'AutoScaleVmGroup',
       permission: ['listAutoScaleVmGroups'],
+      searchFilters: ['name', 'zoneid', 'domainid', 'account'],
       columns: (store) => {
         var fields = ['name', 'state', 'associatednetworkname', 'publicip', 'publicport', 'privateport', 'minmembers', 'maxmembers', 'availablevirtualmachinecount', 'account']
         if (store.listAllProjects) {
@@ -759,7 +741,7 @@ export default {
       docHelp: 'adminguide/virtual_machines.html#changing-the-vm-name-os-or-group',
       resourceType: 'VMInstanceGroup',
       permission: ['listInstanceGroups'],
-
+      searchFilters: ['name', 'zoneid', 'domainid', 'account'],
       columns: (store) => {
         var fields = ['name', 'account']
         if (store.listAllProjects) {
@@ -817,6 +799,7 @@ export default {
       icon: 'key-outlined',
       docHelp: 'adminguide/virtual_machines.html#using-ssh-keys-for-authentication',
       permission: ['listSSHKeyPairs'],
+      searchFilters: ['name', 'domainid', 'account', 'fingerprint'],
       columns: () => {
         var fields = ['name', 'fingerprint']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
@@ -977,6 +960,7 @@ export default {
       icon: 'swap-outlined',
       docHelp: 'adminguide/virtual_machines.html#affinity-groups',
       permission: ['listAffinityGroups'],
+      searchFilters: ['name', 'zoneid', 'domainid', 'account', 'type'],
       columns: () => {
         var fields = ['name', 'type', 'description']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {

@@ -1484,6 +1484,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 }
                 diskdef.setPhysicalBlockIOSize(attachingPool.getSupportedPhysicalBlockSize());
                 diskdef.setLogicalBlockIOSize(attachingPool.getSupportedLogicalBlockSize());
+                attachingPool.customizeLibvirtDiskDef(diskdef);
             }
 
             attachOrDetachDevice(conn, attach, vmName, diskdef, waitDetachDevice);
