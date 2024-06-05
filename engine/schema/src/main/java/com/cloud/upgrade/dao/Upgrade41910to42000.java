@@ -29,12 +29,12 @@ import java.util.Map;
 import com.cloud.upgrade.SystemVmTemplateRegistration;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class Upgrade41900to42000 extends DbUpgradeAbstractImpl implements DbUpgrade, DbUpgradeSystemVmTemplate {
+public class Upgrade41910to42000 extends DbUpgradeAbstractImpl implements DbUpgrade, DbUpgradeSystemVmTemplate {
     private SystemVmTemplateRegistration systemVmTemplateRegistration;
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[] {"4.19.0.0", "4.20.0.0"};
+        return new String[] {"4.19.1.0", "4.20.0.0"};
     }
 
     @Override
@@ -49,7 +49,7 @@ public class Upgrade41900to42000 extends DbUpgradeAbstractImpl implements DbUpgr
 
     @Override
     public InputStream[] getPrepareScripts() {
-        final String scriptFile = "META-INF/db/schema-41900to42000.sql";
+        final String scriptFile = "META-INF/db/schema-41910to42000.sql";
         final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
         if (script == null) {
             throw new CloudRuntimeException("Unable to find " + scriptFile);
@@ -65,7 +65,7 @@ public class Upgrade41900to42000 extends DbUpgradeAbstractImpl implements DbUpgr
 
     @Override
     public InputStream[] getCleanupScripts() {
-        final String scriptFile = "META-INF/db/schema-41900to42000-cleanup.sql";
+        final String scriptFile = "META-INF/db/schema-41910to42000-cleanup.sql";
         final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
         if (script == null) {
             throw new CloudRuntimeException("Unable to find " + scriptFile);

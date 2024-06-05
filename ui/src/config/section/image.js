@@ -231,7 +231,7 @@ export default {
         }
         return fields
       },
-      details: ['name', 'id', 'displaytext', 'checksum', 'ostypename', 'size', 'bootable', 'isready', 'passwordenabled', 'directdownload', 'isextractable', 'ispublic', 'isfeatured', 'crosszones', 'account', 'domain', 'created', 'userdatadetails', 'userdatapolicy', 'url'],
+      details: ['name', 'id', 'displaytext', 'checksum', 'ostypename', 'size', 'bootable', 'isready', 'passwordenabled', 'directdownload', 'isextractable', 'ispublic', 'isfeatured', 'isdynamicallyscalable', 'crosszones', 'account', 'domain', 'created', 'userdatadetails', 'userdatapolicy', 'url'],
       searchFilters: () => {
         var filters = ['name', 'zoneid', 'tags']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
@@ -367,6 +367,7 @@ export default {
       icon: ['fa-solid', 'fa-dharmachakra'],
       docHelp: 'plugins/cloudstack-kubernetes-service.html#kubernetes-supported-versions',
       permission: ['listKubernetesSupportedVersions'],
+      searchFilters: ['zoneid', 'minimumsemanticversion'],
       columns: ['name', 'state', 'semanticversion', 'isostate', 'mincpunumber', 'minmemory', 'zonename'],
       details: ['name', 'semanticversion', 'supportsautoscaling', 'zoneid', 'zonename', 'isoid', 'isoname', 'isostate', 'mincpunumber', 'minmemory', 'supportsha', 'state', 'created'],
       actions: [
