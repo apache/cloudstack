@@ -281,9 +281,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     protected static ConfigKey<Boolean> vmStatsIncrementMetrics = new ConfigKey<>("Advanced", Boolean.class, "vm.stats.increment.metrics", "true",
             "When set to 'true', VM metrics(NetworkReadKBs, NetworkWriteKBs, DiskWriteKBs, DiskReadKBs, DiskReadIOs and DiskWriteIOs) that are collected from the hypervisor are summed before being returned."
                     + "On the other hand, when set to 'false', the VM metrics API will just display the latest metrics collected.", true);
-    private static final ConfigKey<Boolean> VM_STATS_INCREMENT_METRICS_IN_MEMORY = new ConfigKey<>("Advanced", Boolean.class, "vm.stats.increment.metrics.in.memory", "true",
-            "When set to 'true', VM metrics(NetworkReadKBs, NetworkWriteKBs, DiskWriteKBs, DiskReadKBs, DiskReadIOs and DiskWriteIOs) that are collected from the hypervisor are summed and stored in memory. "
-            + "On the other hand, when set to 'false', the VM metrics API will just display the latest metrics collected.", true);
     protected static ConfigKey<Integer> vmStatsMaxRetentionTime = new ConfigKey<>("Advanced", Integer.class, "vm.stats.max.retention.time", "720",
             "The maximum time (in minutes) for keeping VM stats records in the database. The VM stats cleanup process will be disabled if this is set to 0 or less than 0.", true);
 
@@ -2131,7 +2128,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {vmDiskStatsInterval, vmDiskStatsIntervalMin, vmNetworkStatsInterval, vmNetworkStatsIntervalMin, StatsTimeout, statsOutputUri,
             vmStatsIncrementMetrics, vmStatsMaxRetentionTime, vmStatsCollectUserVMOnly, vmDiskStatsRetentionEnabled, vmDiskStatsMaxRetentionTime,
-                VM_STATS_INCREMENT_METRICS_IN_MEMORY,
                 MANAGEMENT_SERVER_STATUS_COLLECTION_INTERVAL,
                 DATABASE_SERVER_STATUS_COLLECTION_INTERVAL,
                 DATABASE_SERVER_LOAD_HISTORY_RETENTION_NUMBER};
