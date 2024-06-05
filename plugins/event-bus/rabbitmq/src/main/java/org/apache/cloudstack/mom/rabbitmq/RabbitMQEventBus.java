@@ -189,9 +189,7 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
             throw new EventBusException("Invalid EventSubscriber/EventTopic object passed.");
         }
 
-        if (logger.isDebugEnabled()) {
-            logger.debug("subscribing '{}' to events of type '{}' from '{}'", subscriber.toString(), topic.getEventType(), topic.getEventSource());
-        }
+        logger.debug("subscribing '{}' to events of type '{}' from '{}'", subscriber.toString(), topic.getEventType(), topic.getEventSource());
 
         // create a UUID, that will be used for managing subscriptions and also used as queue name
         // for on the queue used for the subscriber on the AMQP broker
