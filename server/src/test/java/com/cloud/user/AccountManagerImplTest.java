@@ -16,23 +16,15 @@
 // under the License.
 package com.cloud.user;
 
-import com.cloud.acl.DomainChecker;
-import com.cloud.api.auth.SetupUserTwoFactorAuthenticationCmd;
-import com.cloud.domain.Domain;
-import com.cloud.domain.DomainVO;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.projects.Project;
-import com.cloud.projects.ProjectAccountVO;
-import com.cloud.user.Account.State;
-import com.cloud.utils.Pair;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.UserVmManagerImpl;
-import com.cloud.vm.UserVmVO;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.snapshot.VMSnapshotVO;
+import static org.mockito.ArgumentMatchers.nullable;
+
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleService;
@@ -55,15 +47,23 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static org.mockito.ArgumentMatchers.nullable;
+import com.cloud.acl.DomainChecker;
+import com.cloud.api.auth.SetupUserTwoFactorAuthenticationCmd;
+import com.cloud.domain.Domain;
+import com.cloud.domain.DomainVO;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.projects.Project;
+import com.cloud.projects.ProjectAccountVO;
+import com.cloud.user.Account.State;
+import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.UserVmManagerImpl;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.snapshot.VMSnapshotVO;
 
 @RunWith(MockitoJUnitRunner.class)
 public class AccountManagerImplTest extends AccountManagetImplTestBase {
@@ -1091,7 +1091,6 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Role newRole = Mockito.mock(Role.class);
         Mockito.when(newRole.getRoleType()).thenReturn(RoleType.Admin);
         Role accountRole = Mockito.mock(Role.class);
-        Mockito.when(accountRole.getRoleType()).thenReturn(RoleType.DomainAdmin);
         Role callerRole = Mockito.mock(Role.class);
         Mockito.when(callerRole.getRoleType()).thenReturn(RoleType.Admin);
         Account caller = Mockito.mock(Account.class);
