@@ -252,7 +252,7 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
         } catch (Exception e) {
             String errMsg = String.format("Unexpected exception while trying to add the external node %s to the Kubernetes cluster %s: %s",
                     nodeId, kubernetesCluster.getName(), e.getMessage());
-            LOGGER.error(errMsg, e);
+            logger.error(errMsg, e);
             revertNetworkRules(network, nodeId, sshStartPort);
             throw new CloudRuntimeException(e);
         }
@@ -309,15 +309,15 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
     }
 
     private void revertNetworkRules(Network network, long vmId, int port) {
-        LOGGER.debug(String.format("Reverting network rules for VM ID %s on network %s", vmId, network.getName()));
+        logger.debug(String.format("Reverting network rules for VM ID %s on network %s", vmId, network.getName()));
         FirewallRuleVO ruleVO = firewallRulesDao.findByNetworkIdAndPorts(network.getId(), port, port);
         if (Objects.isNull(network.getVpcId())) {
-            LOGGER.debug(String.format("Removing firewall rule %s", ruleVO.getId()));
+            logger.debug(String.format("Removing firewall rule %s", ruleVO.getId()));
             firewallService.revokeIngressFirewallRule(ruleVO.getId(), true);
         }
         List<PortForwardingRuleVO> pfRules = portForwardingRulesDao.listByVm(vmId);
         for (PortForwardingRuleVO pfRule : pfRules) {
-            LOGGER.debug(String.format("Removing port forwarding rule %s", pfRule.getId()));
+            logger.debug(String.format("Removing port forwarding rule %s", pfRule.getId()));
             rulesService.revokePortForwardingRule(pfRule.getId(), true);
         }
     }

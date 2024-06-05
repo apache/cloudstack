@@ -614,8 +614,8 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                 } else if (network.getNetworkACLId() != NetworkACL.DEFAULT_ALLOW) {
                     try {
                         provisionVpcTierAllowPortACLRule(network, ETCD_NODE_CLIENT_REQUEST_PORT, ETCD_NODE_CLIENT_REQUEST_PORT);
-                        if (LOGGER.isInfoEnabled()) {
-                            LOGGER.info(String.format("Provisioned ACL rule to open up port %d on %s for etcd nodes for Kubernetes cluster %s",
+                        if (logger.isInfoEnabled()) {
+                            logger.info(String.format("Provisioned ACL rule to open up port %d on %s for etcd nodes for Kubernetes cluster %s",
                                     ETCD_NODE_CLIENT_REQUEST_PORT, publicIpAddress, kubernetesCluster.getName()));
                         }
                     } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException | InvalidParameterValueException | PermissionDeniedException e) {
