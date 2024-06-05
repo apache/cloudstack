@@ -1297,7 +1297,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     protected void validateRoleChange(Account account, Role role, Account caller) {
         Role currentRole = roleService.findRole(account.getRoleId());
         Role callerRole = roleService.findRole(caller.getRoleId());
-        String errorMsg = String.format("Unable to update account role to %s", role.getName());
+        String errorMsg = String.format("Unable to update account role to %s, ", role.getName());
         if (RoleType.Unknown.equals(callerRole.getRoleType())) {
             throw new PermissionDeniedException(String.format("%s as the caller privileges are unknown", errorMsg));
         }
