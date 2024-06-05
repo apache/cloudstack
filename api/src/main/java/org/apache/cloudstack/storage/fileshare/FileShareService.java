@@ -35,5 +35,7 @@ public interface FileShareService extends PluggableService {
 
     void setFileShareProviders(List<FileShareProvider> fileShareProviders);
 
-    public FileShare createFileShare(CreateFileShareCmd cmd);
+    FileShareProvider getFileShareProvider(String fileShareProviderName);
+
+    public FileShare allocFileShare(CreateFileShareCmd cmd);
 }

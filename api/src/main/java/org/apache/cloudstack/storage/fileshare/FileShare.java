@@ -113,7 +113,7 @@ public interface FileShare extends StateObject<FileShare.State> {
 
     Long getProjectId();
 
-    Long getdataCenterId();
+    Long getDataCenterId();
 
     State getState();
 

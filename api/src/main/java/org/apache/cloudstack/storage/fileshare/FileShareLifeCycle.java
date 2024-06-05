@@ -14,17 +14,19 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 package org.apache.cloudstack.storage.fileshare;
 
-import com.cloud.utils.component.Adapter;
+import com.cloud.storage.Volume;
 
-public interface FileShareProvider extends Adapter {
+public interface FileShareLifeCycle {
+    Volume allocateFileShareVolume(FileShare fileShare);
 
-    enum FileShareProviderType {
-        SIMULATOR, STORAGEFSVM
-    }
+    boolean createFileShare(FileShare fileShare);
 
-    void configure();
+    boolean initializeFileShare(FileShare fileShare);
 
-    FileShareLifeCycle getFileShareLifeCycle();
+    boolean deleteFileShareVolume(FileShare fileShare);
+
+    boolean deleteFileShare(FileShare fileShare);
 }

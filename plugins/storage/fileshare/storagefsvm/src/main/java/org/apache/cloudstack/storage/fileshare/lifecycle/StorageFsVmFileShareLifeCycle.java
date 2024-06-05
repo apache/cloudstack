@@ -15,31 +15,36 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.storage.fileshare.provider;
+package org.apache.cloudstack.storage.fileshare.lifecycle;
 
+import org.apache.cloudstack.storage.fileshare.FileShare;
 import org.apache.cloudstack.storage.fileshare.FileShareLifeCycle;
-import org.apache.cloudstack.storage.fileshare.FileShareProvider;
-import org.apache.cloudstack.storage.fileshare.lifecycle.SimulatorFileShareLifeCycle;
 
-import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.component.ComponentContext;
+import com.cloud.storage.Volume;
 
-public class SimulatorFileShareProvider extends AdapterBase implements FileShareProvider {
-    protected String name = String.valueOf(FileShareProviderType.SIMULATOR);
-    protected FileShareLifeCycle lifecycle;
-
+public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
     @Override
-    public String getName() {
-        return name;
+    public Volume allocateFileShareVolume(FileShare fileShare) {
+        return null;
     }
 
     @Override
-    public void configure() {
-        lifecycle = ComponentContext.inject(SimulatorFileShareLifeCycle.class);
+    public boolean createFileShare(FileShare fileShare) {
+        return false;
     }
 
     @Override
-    public FileShareLifeCycle getFileShareLifeCycle() {
-        return lifecycle;
+    public boolean initializeFileShare(FileShare fileShare) {
+        return false;
+    }
+
+    @Override
+    public boolean deleteFileShareVolume(FileShare fileShare) {
+        return false;
+    }
+
+    @Override
+    public boolean deleteFileShare(FileShare fileShare) {
+        return false;
     }
 }

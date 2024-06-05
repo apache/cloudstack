@@ -17,11 +17,29 @@
 
 package org.apache.cloudstack.storage.fileshare.provider;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
+import org.apache.cloudstack.storage.fileshare.FileShareLifeCycle;
 import org.apache.cloudstack.storage.fileshare.FileShareProvider;
+import org.apache.cloudstack.storage.fileshare.lifecycle.StorageFsVmFileShareLifeCycle;
 
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.component.ComponentContext;
 
 public class StorageFsVmFileShareProvider extends AdapterBase implements FileShareProvider {
-    private final String providerName = DataStoreProvider.SWIFT_IMAGE;
+    protected String name = String.valueOf(FileShareProviderType.STORAGEFSVM);
+    protected FileShareLifeCycle lifecycle;
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public void configure() {
+        lifecycle = ComponentContext.inject(StorageFsVmFileShareLifeCycle.class);
+    }
+
+    @Override
+    public FileShareLifeCycle getFileShareLifeCycle() {
+        return lifecycle;
+    }
 }

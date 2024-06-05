@@ -18,15 +18,20 @@ package org.apache.cloudstack.api.command.user.storage.fileshare;
 
 import javax.inject.Inject;
 
+import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.FileShareResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.fileshare.FileShare;
 import org.apache.cloudstack.storage.fileshare.FileShareService;
 
@@ -58,6 +63,12 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
             description = "the size of the file share in bytes")
     private Long size;
 
+    @Parameter(name = ApiConstants.ZONE_ID,
+            type = CommandType.UUID,
+            entityType = ZoneResponse.class,
+            description = "the zone id.")
+    private Long zoneId;
+
     @Parameter(name = ApiConstants.DISK_OFFERING_ID,
             type = CommandType.UUID,
             entityType = DiskOfferingResponse.class,
@@ -79,23 +90,61 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
             description = "the provider to be used for the file share.")
     private String fileShareProviderName;
 
+    public String getName() {
+        return name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public Long getSize() {
+        return size;
+    }
+
+    public Long getZoneId() {
+        return zoneId;
+    }
+
+    public Long getDiskOfferingId() {
+        return diskOfferingId;
+    }
+
+    public String getMountOptions() {
+        return mountOptions;
+    }
+
+    public String getFsFormat() {
+        return fsFormat;
+    }
+
+    public String getFileShareProviderName() {
+        return fileShareProviderName;
+    }
+
     @Override
     public long getEntityOwnerId() {
-        return 0;
+        return CallContext.current().getCallingAccount().getId();
     }
 
     @Override
     public String getEventType() {
-        return null;
+        return EventTypes.EVENT_FILESHARE_CREATE;
     }
 
     @Override
     public String getEventDescription() {
-        return null;
+        return "Creating fileshare";
     }
 
     public void create() throws ResourceAllocationException {
-
+        FileShare fileShare = fileShareService.allocFileShare(this);
+        if (fileShare != null) {
+            setEntityId(fileShare.getId());
+            setEntityUuid(fileShare.getUuid());
+        } else {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to allocate Fileshare");
+        }
     }
 
     @Override

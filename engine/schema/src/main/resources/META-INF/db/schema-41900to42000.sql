@@ -95,7 +95,7 @@ CREATE TABLE `cloud`.`storage_fileshare`(
     `fs_provider_name` varchar(255) COMMENT 'Name of the file share provider',
     `size` bigint unsigned COMMENT 'Size of the file share in bytes',
     `protocol` varchar(10) COMMENT 'Protocol supported by the file share',
-    `volume_id` bigint unsigned NOT NULL COMMENT 'Volume which the file share is using as storage',
+    `volume_id` bigint unsigned COMMENT 'Volume which the file share is using as storage',
     `vm_id` bigint unsigned COMMENT 'vm on which the file share is hosted',
     `mount_options` varchar(255) COMMENT 'default mount options to be used while mounting the file share',
     `fs_type` varchar(10) NOT NULL COMMENT 'The filesystem format to be used for the file share',

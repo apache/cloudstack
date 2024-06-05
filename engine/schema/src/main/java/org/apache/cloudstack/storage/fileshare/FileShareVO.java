@@ -107,11 +107,8 @@ public class FileShareVO implements FileShare {
     @Column(name = GenericDao.REMOVED_COLUMN)
     protected Date removed;
 
-    public FileShareVO() {
-    }
-
     public FileShareVO(String name, String description, long domainId, long accountId, long projectId, long dataCenterId, String fsProviderName,
-                       Long size, Protocol protocol, long volumeId, String mountOptions, FileSystemType fsType, Long diskOfferingId, Long serviceOfferingId) {
+                       Long size, Protocol protocol, String mountOptions, FileSystemType fsType, Long diskOfferingId, Long serviceOfferingId) {
         this.name = name;
         this.description = description;
         this.domainId = domainId;
@@ -121,7 +118,6 @@ public class FileShareVO implements FileShare {
         this.fsProviderName = fsProviderName;
         this.size = size;
         this.protocol = protocol;
-        this.volumeId = volumeId;
         this.mountOptions = mountOptions;
         this.fsType = fsType;
         this.diskOfferingId = diskOfferingId;
@@ -166,7 +162,7 @@ public class FileShareVO implements FileShare {
     }
 
     @Override
-    public Long getdataCenterId() {
+    public Long getDataCenterId() {
         return dataCenterId;
     }
 
