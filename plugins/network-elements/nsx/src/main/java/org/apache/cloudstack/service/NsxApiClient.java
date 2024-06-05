@@ -209,17 +209,17 @@ public class NsxApiClient {
             Status statusService = (Status) nsxService.apply(Status.class);
             ClusterStatus clusterStatus = statusService.get();
             if (clusterStatus == null) {
-                LOGGER.error("Cannot get NSX Cluster Status");
+                logger.error("Cannot get NSX Cluster Status");
                 return false;
             }
             ControllerClusterStatus status = clusterStatus.getControlClusterStatus();
             if (status == null) {
-                LOGGER.error("Cannot get NSX Controller Cluster Status");
+                logger.error("Cannot get NSX Controller Cluster Status");
                 return false;
             }
             return CLUSTER_STATUS_STABLE.equalsIgnoreCase(status.getStatus());
         } catch (Error error) {
-            LOGGER.error(String.format("Error checking NSX Controller Health: %s", error.getMessage()));
+            logger.error(String.format("Error checking NSX Controller Health: %s", error.getMessage()));
             return false;
         }
     }
