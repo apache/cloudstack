@@ -14,15 +14,27 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import dayjs from 'dayjs'
 import store from '@/store'
 
+import dayjs from 'dayjs'
+import isToday from 'dayjs/plugin/isToday'
+
+dayjs.extend(isToday)
+
 export function parseDayJsObject ({ value, format }) {
+  if (!value) {
+    return null
+  }
+
   if (!format) {
     return value
   }
 
   return value.format(format)
+}
+
+export function isDayJsObjectToday (dayJsObject) {
+  return dayJsObject.isToday()
 }
 
 export function parseDateToDatePicker (value) {
