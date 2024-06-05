@@ -125,8 +125,10 @@ export default {
           params.value = values.value
         }
 
-        if (values.endDate && this.resource.endDate !== values.endDate) {
-          params.enddate = parseDayJsObject({ value: values.endDate, format: 'YYYY-MM-DD' })
+        const resourceEndDate = this.resource.endDate?.split('T')[0]
+        const parsedEndDate = parseDayJsObject({ value: values.endDate, format: 'YYYY-MM-DD' })
+        if (parsedEndDate && resourceEndDate !== parsedEndDate) {
+          params.enddate = parsedEndDate
         }
 
         if (Object.keys(params).length === 1) {
