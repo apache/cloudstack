@@ -187,7 +187,6 @@
   <bean id="storageNetworkIpAddressDaoImpl" class="com.cloud.dc.dao.StorageNetworkIpAddressDaoImpl" />
   <bean id="storageNetworkIpRangeDaoImpl" class="com.cloud.dc.dao.StorageNetworkIpRangeDaoImpl" />
   <bean id="storagePoolJoinDaoImpl" class="com.cloud.api.query.dao.StoragePoolJoinDaoImpl" />
-  <bean id="hostTagDaoImpl" class="com.cloud.api.query.dao.HostTagDaoImpl" />
   <bean id="storagePoolWorkDaoImpl" class="com.cloud.storage.dao.StoragePoolWorkDaoImpl" />
   <bean id="uploadDaoImpl" class="com.cloud.storage.dao.UploadDaoImpl" />
   <bean id="usageDaoImpl" class="com.cloud.usage.dao.UsageDaoImpl" />
