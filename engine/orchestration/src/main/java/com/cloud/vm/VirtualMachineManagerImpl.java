@@ -1453,13 +1453,17 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     private void updateOverCommitRatioForVmProfile(VirtualMachineProfile vmProfile, long clusterId) {
         final ClusterDetailsVO clusterDetailCpu = _clusterDetailsDao.findDetail(clusterId, VmDetailConstants.CPU_OVER_COMMIT_RATIO);
         final ClusterDetailsVO clusterDetailRam = _clusterDetailsDao.findDetail(clusterId, VmDetailConstants.MEMORY_OVER_COMMIT_RATIO);
+        final float parsedClusterCpuDetailCpu = Float.parseFloat(clusterDetailCpu.getValue());
+        final float parsedClusterDetailRam = Float.parseFloat(clusterDetailRam.getValue());
+        UserVmDetailVO vmDetailCpu = userVmDetailsDao.findDetail(vmProfile.getId(), VmDetailConstants.CPU_OVER_COMMIT_RATIO);
+        UserVmDetailVO vmDetailRam = userVmDetailsDao.findDetail(vmProfile.getId(), VmDetailConstants.MEMORY_OVER_COMMIT_RATIO);
 
-        if (userVmDetailsDao.findDetail(vmProfile.getId(), VmDetailConstants.CPU_OVER_COMMIT_RATIO) == null &&
-                (Float.parseFloat(clusterDetailCpu.getValue()) > 1f || Float.parseFloat(clusterDetailRam.getValue()) > 1f)) {
+        if ((vmDetailCpu == null && parsedClusterCpuDetailCpu > 1f) ||
+                (vmDetailCpu != null && Float.parseFloat(vmDetailCpu.getValue()) != parsedClusterCpuDetailCpu)) {
             userVmDetailsDao.addDetail(vmProfile.getId(), VmDetailConstants.CPU_OVER_COMMIT_RATIO, clusterDetailCpu.getValue(), true);
-            userVmDetailsDao.addDetail(vmProfile.getId(), VmDetailConstants.MEMORY_OVER_COMMIT_RATIO, clusterDetailRam.getValue(), true);
-        } else if (userVmDetailsDao.findDetail(vmProfile.getId(), VmDetailConstants.CPU_OVER_COMMIT_RATIO) != null) {
-            userVmDetailsDao.addDetail(vmProfile.getId(), VmDetailConstants.CPU_OVER_COMMIT_RATIO, clusterDetailCpu.getValue(), true);
+        }
+        if ((vmDetailRam == null && parsedClusterDetailRam > 1f) ||
+                (vmDetailRam != null && Float.parseFloat(vmDetailRam.getValue()) != parsedClusterDetailRam)) {
             userVmDetailsDao.addDetail(vmProfile.getId(), VmDetailConstants.MEMORY_OVER_COMMIT_RATIO, clusterDetailRam.getValue(), true);
         }
 
