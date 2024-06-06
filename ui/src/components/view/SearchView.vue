@@ -161,6 +161,7 @@ import { isAdmin } from '@/role'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import Status from '@/components/widgets/Status'
+import { i18n } from '@/locales'
 
 export default {
   name: 'SearchView',
@@ -284,9 +285,13 @@ export default {
         if (item === 'groupid' && !('listInstanceGroups' in this.$store.getters.apis)) {
           return true
         }
+        if (item === 'usagetype' && !('listUsageTypes' in this.$store.getters.apis)) {
+          return true
+        }
+
         if (['zoneid', 'domainid', 'imagestoreid', 'storageid', 'state', 'account', 'hypervisor', 'level',
           'clusterid', 'podid', 'groupid', 'entitytype', 'accounttype', 'systemvmtype', 'scope', 'provider',
-          'type', 'scope', 'managementserverid', 'serviceofferingid', 'diskofferingid'].includes(item)
+          'type', 'scope', 'managementserverid', 'serviceofferingid', 'diskofferingid', 'usagetype'].includes(item)
         ) {
           type = 'list'
         } else if (item === 'tags') {
@@ -408,6 +413,7 @@ export default {
       let managementServerIdIndex = -1
       let serviceOfferingIndex = -1
       let diskOfferingIndex = -1
+      let usageTypeIndex = -1
 
       if (arrayField.includes('type')) {
         if (this.$route.path === '/alert') {
@@ -493,6 +499,13 @@ export default {
         promises.push(await this.fetchDiskOfferings(searchKeyword))
       }
 
+      if (arrayField.includes('usagetype')) {
+        usageTypeIndex = this.fields.findIndex(item => item.name === 'usagetype')
+      }
+
+      this.fields[usageTypeIndex].loading = true
+      promises.push(await this.fetchUsageTypes())
+
       Promise.all(promises).then(response => {
         if (typeIndex > -1) {
           const types = response.filter(item => item.type === 'type')
@@ -575,6 +588,12 @@ export default {
             this.fields[diskOfferingIndex].opts = this.sortArray(diskOfferings[0].data)
           }
         }
+        if (usageTypeIndex > -1) {
+          const usageTypes = response.filter(item => item.type === 'usagetype')
+          if (usageTypes?.length > 0) {
+            this.fields[usageTypeIndex].opts = this.sortArray(usageTypes[0].data)
+          }
+        }
       }).finally(() => {
         if (typeIndex > -1) {
           this.fields[typeIndex].loading = false
@@ -608,6 +627,9 @@ export default {
         }
         if (diskOfferingIndex > -1) {
           this.fields[diskOfferingIndex].loading = false
+        }
+        if (usageTypeIndex > -1) {
+          this.fields[usageTypeIndex].loading = false
         }
         this.fillFormFieldValues()
       })
@@ -1143,6 +1165,27 @@ export default {
         name: 'label.error.upper'
       })
       return levels
+    },
+    fetchUsageTypes () {
+      return new Promise((resolve, reject) => {
+        api('listUsageTypes')
+          .then(json => {
+            const usageTypes = json.listusagetypesresponse.usagetype.map(entry => {
+              return {
+                id: entry.id,
+                name: i18n.global.t(entry.name)
+              }
+            })
+
+            resolve({
+              type: 'usagetype',
+              data: usageTypes
+            })
+          })
+          .catch(error => {
+            reject(error.response.headers['x-description'])
+          })
+      })
     },
     onSearch (value) {
       this.paramsFilter = {}
