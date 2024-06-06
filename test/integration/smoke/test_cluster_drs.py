@@ -295,7 +295,7 @@ class TestClusterDRS(cloudstackTestCase):
         }
 
         # this is one if no svm is considered to be migrated, it might be higher
-        self.assertTrue(len(vm_to_dest_host_map) <= 1, msg="DRS plan should have 1 migrations")
+        self.assertTrue(len(vm_to_dest_host_map) >= 1, msg="DRS plan should have at least 1 migrations")
 
         executed_plan = self.cluster.executeDrsPlan(self.apiclient, vm_to_dest_host_map)
         self.wait_for_plan_completion(executed_plan)
