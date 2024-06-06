@@ -40,6 +40,7 @@
         <div class="rules-table__col rules-table__col--permission">
           <permission-editable
             :defaultValue="newRulePermission"
+            :allowOptionAllowed="false"
             @onChange="onPermissionChange(null, $event)" />
         </div>
         <div class="rules-table__col rules-table__col--description">

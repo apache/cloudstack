@@ -25,7 +25,7 @@
     :filterOption="(input, option) => {
       return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
     }" >
-    <a-select-option value="allow" :label="$t('label.allow')">{{ $t('label.allow') }}</a-select-option>
+    <a-select-option v-if="allowOptionAllowed" value="allow" :label="$t('label.allow')">{{ $t('label.allow') }}</a-select-option>
     <a-select-option value="deny" :label="$t('label.deny')">{{ $t('label.deny') }}</a-select-option>
   </a-select>
 </template>
@@ -36,6 +36,10 @@ export default {
     defaultValue: {
       type: String,
       required: true
+    },
+    allowOptionAllowed: {
+      type: Boolean,
+      default: true
     }
   },
   data () {
