@@ -1031,9 +1031,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 command.add(NAME_OPTION, snapshotName);
                 command.add("-p", snapshotDestPath);
 
-                if (isCreatedFromVmSnapshot) {
-                    descName = UUID.randomUUID().toString();
-                }
+                descName = UUID.randomUUID().toString();
 
                 command.add("-t", descName);
                 final String result = command.execute();
