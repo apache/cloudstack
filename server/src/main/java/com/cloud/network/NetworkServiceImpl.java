@@ -2390,12 +2390,18 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 }
             }
             mainSearchCriteria.addAnd("id", SearchCriteria.Op.SC, additionalSearchCriteria);
+        } else {
+            if (skipProjectNetworks) {
+                mainSearchCriteria.setJoinParameters("accountSearch", "typeNEQ", Account.Type.PROJECT);
+            } else {
+                mainSearchCriteria.setJoinParameters("accountSearch", "typeEQ", Account.Type.PROJECT);
+            }
         }
         Pair<List<NetworkVO>, Integer> result = _networksDao.searchAndCount(mainSearchCriteria, searchFilter);
         networksToReturn = result.first();
 
         if (supportedServicesStr != null && !supportedServicesStr.isEmpty() && !networksToReturn.isEmpty()) {
-            List<NetworkVO> supportedNetworks = new ArrayList<NetworkVO>();
+            List<NetworkVO> supportedNetworks = new ArrayList<>();
             Service[] supportedServices = new Service[supportedServicesStr.size()];
             int i = 0;
             for (String supportedServiceStr : supportedServicesStr) {
@@ -2416,7 +2422,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         if (canUseForDeploy != null) {
-            List<NetworkVO> networksForDeploy = new ArrayList<NetworkVO>();
+            List<NetworkVO> networksForDeploy = new ArrayList<>();
             for (NetworkVO network : networksToReturn) {
                 if (_networkModel.canUseForDeploy(network) == canUseForDeploy) {
                     networksForDeploy.add(network);
@@ -2432,7 +2438,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 Pair<List<? extends Network>, Integer> listWPagination = new Pair<>(wPagination, networksToReturn.size());
                 return listWPagination;
             }
-            return new Pair<List<? extends Network>, Integer>(networksToReturn, networksToReturn.size());
+            return new Pair<>(networksToReturn, networksToReturn.size());
         }
 
         return new Pair<>(result.first(), result.second());
@@ -2690,7 +2696,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
     private SearchCriteria<NetworkVO> getAccountSpecificNetworksSearchCriteria(SearchBuilder<NetworkVO> sb,
            List<Long> permittedAccounts, boolean skipProjectNetworks) {
-        SearchCriteria<NetworkVO> accountSC = _networksDao.createSearchCriteria();
+        SearchCriteria<NetworkVO> accountSC = sb.create();
         if (skipProjectNetworks) {
             accountSC.setJoinParameters("accountSearch", "typeNEQ", Account.Type.PROJECT);
         } else {
