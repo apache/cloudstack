@@ -159,7 +159,7 @@ export default {
       })
     },
     disabledEndDate (current) {
-      return current < dayjs(this.resource.effectiveDate).startOf('day')
+      return current < dayjs.utc(this.resource.effectiveDate).startOf('day')
     }
   }
 }
