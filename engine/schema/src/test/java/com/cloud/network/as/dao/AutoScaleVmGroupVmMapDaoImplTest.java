@@ -19,15 +19,10 @@
 
 package com.cloud.network.as.dao;
 
-import static org.mockito.Mockito.when;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
-import com.cloud.network.as.AutoScaleVmGroupVmMapVO;
-import com.cloud.utils.db.GenericSearchBuilder;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
-import com.cloud.vm.VirtualMachine;
-
-import org.apache.commons.collections.CollectionUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,13 +30,14 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import com.cloud.network.as.AutoScaleVmGroupVmMapVO;
+import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.vm.VirtualMachine;
 
 @RunWith(MockitoJUnitRunner.class)
 public class AutoScaleVmGroupVmMapDaoImplTest {
