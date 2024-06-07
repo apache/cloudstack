@@ -25,34 +25,27 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @RunWith(MockitoJUnitRunner.class)
-public class CreateServiceOfferingCmdTest {
+public class UpdateServiceOfferingCmdTest {
 
     @InjectMocks
-    private CreateServiceOfferingCmd createServiceOfferingCmd;
-
-    @Test
-    public void testGetDisplayTextWhenEmpty() {
-        String netName = "net-offering";
-        ReflectionTestUtils.setField(createServiceOfferingCmd, "serviceOfferingName", netName);
-        Assert.assertEquals(createServiceOfferingCmd.getDisplayText(), netName);
-    }
+    private UpdateServiceOfferingCmd updateServiceOfferingCmd;
 
     @Test
     public void testIsPurgeResourcesNoOrNullValue() {
-        Assert.assertFalse(createServiceOfferingCmd.isPurgeResources());
-        ReflectionTestUtils.setField(createServiceOfferingCmd, "purgeResources", false);
-        Assert.assertFalse(createServiceOfferingCmd.isPurgeResources());
+        Assert.assertFalse(updateServiceOfferingCmd.isPurgeResources());
+        ReflectionTestUtils.setField(updateServiceOfferingCmd, "purgeResources", false);
+        Assert.assertFalse(updateServiceOfferingCmd.isPurgeResources());
     }
 
     @Test
     public void testIsPurgeResourcesFalse() {
-        ReflectionTestUtils.setField(createServiceOfferingCmd, "purgeResources", false);
-        Assert.assertFalse(createServiceOfferingCmd.isPurgeResources());
+        ReflectionTestUtils.setField(updateServiceOfferingCmd, "purgeResources", false);
+        Assert.assertFalse(updateServiceOfferingCmd.isPurgeResources());
     }
 
     @Test
     public void testIsPurgeResourcesTrue() {
-        ReflectionTestUtils.setField(createServiceOfferingCmd, "purgeResources", true);
-        Assert.assertTrue(createServiceOfferingCmd.isPurgeResources());
+        ReflectionTestUtils.setField(updateServiceOfferingCmd, "purgeResources", true);
+        Assert.assertTrue(updateServiceOfferingCmd.isPurgeResources());
     }
 }

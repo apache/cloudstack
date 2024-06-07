@@ -17,11 +17,13 @@
 package com.cloud.vm.dao;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.Filter;
@@ -431,6 +433,9 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
 
     @Override
     public List<NicVO> searchRemovedByVms(List<Long> vmIds, Long batchSize) {
+        if (CollectionUtils.isEmpty(vmIds)) {
+            return new ArrayList<>();
+        }
         SearchBuilder<NicVO> sb = createSearchBuilder();
         sb.and("vmIds", sb.entity().getInstanceId(), SearchCriteria.Op.IN);
         sb.and("removed", sb.entity().getRemoved(), SearchCriteria.Op.NNULL);
