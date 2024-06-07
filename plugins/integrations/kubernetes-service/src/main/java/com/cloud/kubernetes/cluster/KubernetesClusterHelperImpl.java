@@ -28,14 +28,15 @@ import javax.inject.Inject;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import java.util.Objects;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 @Component
 public class KubernetesClusterHelperImpl extends AdapterBase implements KubernetesClusterHelper, Configurable {
-    private static final Logger logger = Logger.getLogger(KubernetesClusterHelperImpl.class);
+    private static final Logger logger = LogManager.getLogger(KubernetesClusterHelperImpl.class);
 
     @Inject
     private KubernetesClusterDao kubernetesClusterDao;
