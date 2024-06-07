@@ -52,8 +52,18 @@ public class UpdateIpv4GuestSubnetCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DataCenterIpv4SubnetResponse.class, required = true, description = "Id of the guest network IPv4 subnet")
     private Long id;
 
+    @Parameter(name = ApiConstants.SUBNET,
+            type = CommandType.STRING,
+            required = true,
+            description = "The new CIDR of the IPv4 subnet.")
+    private String subnet;
+
     public Long getId() {
         return id;
+    }
+
+    public String getSubnet() {
+        return subnet;
     }
 
     @Override

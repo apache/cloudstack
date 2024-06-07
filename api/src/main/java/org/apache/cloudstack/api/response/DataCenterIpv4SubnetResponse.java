@@ -41,9 +41,9 @@ public class DataCenterIpv4SubnetResponse extends BaseResponse {
     @Param(description = "id of zone to which the IPv4 subnet belongs to." )
     private String zoneId;
 
-    @SerializedName(ApiConstants.USED_SUBNETS)
-    @Param(description = "count of the used IPv4 subnets for the subnet." )
-    private Integer usedSubnets;
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "name of zone to which the IPv4 subnet belongs to." )
+    private String zoneName;
 
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "date when this IPv4 subnet was created." )
@@ -61,8 +61,8 @@ public class DataCenterIpv4SubnetResponse extends BaseResponse {
         this.zoneId = zoneId;
     }
 
-    public void setUsedSubnets(Integer usedSubnets) {
-        this.usedSubnets = usedSubnets;
+    public void setZoneName(String zoneName) {
+        this.zoneName = zoneName;
     }
 
     public void setCreated(Date created) {

@@ -45,9 +45,17 @@ public class Ipv4SubnetForGuestNetworkResponse extends BaseResponse {
     @Param(description = "id of zone to which the IPv4 subnet belongs to." )
     private String zoneId;
 
+    @SerializedName(ApiConstants.ZONE_NAME)
+    @Param(description = "id of zone to which the IPv4 subnet belongs to." )
+    private String zoneName;
+
     @SerializedName(ApiConstants.NETWORK_ID)
     @Param(description = "id of network which the IPv4 subnet is associated to." )
-    private Integer networkId;
+    private String networkId;
+
+    @SerializedName(ApiConstants.NETWORK_NAME)
+    @Param(description = "name of network which the IPv4 subnet is associated to." )
+    private String networkName;
 
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "date when this IPv4 subnet was created." )
@@ -73,12 +81,20 @@ public class Ipv4SubnetForGuestNetworkResponse extends BaseResponse {
         this.subnet = subnet;
     }
 
-    public void setNetworkId(Integer networkId) {
+    public void setNetworkId(String networkId) {
         this.networkId = networkId;
+    }
+
+    public void setNetworkName(String networkName) {
+        this.networkName = networkName;
     }
 
     public void setZoneId(String zoneId) {
         this.zoneId = zoneId;
+    }
+
+    public void setZoneName(String zoneName) {
+        this.zoneName = zoneName;
     }
 
     public void setCreated(Date created) {

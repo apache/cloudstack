@@ -24,7 +24,10 @@ import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMap;
 import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMapVO;
 
 public interface Ipv4GuestSubnetNetworkMapDao extends GenericDao<Ipv4GuestSubnetNetworkMapVO, Long> {
+    List<Ipv4GuestSubnetNetworkMapVO> listByParent(long parentId);
     List<Ipv4GuestSubnetNetworkMapVO> listUsedByParent(long parentId);
+    List<Ipv4GuestSubnetNetworkMapVO> listUsedByOtherDomains(long parentId, Long domainId);
+    List<Ipv4GuestSubnetNetworkMapVO> listUsedByOtherAccounts(long parentId, Long accountId);
     Ipv4GuestSubnetNetworkMapVO findFirstAvailable(long parentId);
     Ipv4GuestSubnetNetworkMapVO findByNetworkId(long networkId);
     Ipv4GuestSubnetNetworkMapVO findBySubnet(String subnet);

@@ -88,7 +88,7 @@ public class Ipv4GuestSubnetNetworkMapVO implements Ipv4GuestSubnetNetworkMap {
     }
 
     @Override
-    public long getParentId() {
+    public Long getParentId() {
         return parentId;
     }
 
@@ -119,10 +119,12 @@ public class Ipv4GuestSubnetNetworkMapVO implements Ipv4GuestSubnetNetworkMap {
         this.allocated = allocated;
     }
 
+    @Override
     public Date getAllocated() {
         return allocated;
     }
 
+    @Override
     public Date getCreated() {
         return created;
     }

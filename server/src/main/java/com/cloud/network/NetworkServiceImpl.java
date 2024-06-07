@@ -1509,7 +1509,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         String ip4Dns2 = cmd.getIp4Dns2();
         String ip6Dns1 = cmd.getIp6Dns1();
         String ip6Dns2 = cmd.getIp6Dns2();
-        // TODO: specify Network IP (first IP of network)
         Integer networkCidrSize = cmd.getCidrSize();
 
         // Validate network offering id

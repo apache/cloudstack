@@ -25,7 +25,9 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.DataCenterIpv4SubnetResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.datacenter.DataCenterIpv4GuestSubnet;
 
@@ -50,6 +52,28 @@ public class ListIpv4GuestSubnetsCmd extends BaseListCmd {
             description = "UUID of zone to which the IPv4 subnet belongs to.")
     private Long zoneId;
 
+    @Parameter(name = ApiConstants.SUBNET,
+            type = CommandType.STRING,
+            description = "CIDR of the IPv4 subnet.")
+    private String subnet;
+
+    @Parameter(name = ApiConstants.ACCOUNT,
+            type = CommandType.STRING,
+            description = "the account which the IPv4 subnet is dedicated to. Must be used with the domainId parameter.")
+    private String accountName;
+
+    @Parameter(name = ApiConstants.PROJECT_ID,
+            type = CommandType.UUID,
+            entityType = ProjectResponse.class,
+            description = "project who which the IPv4 subnet is dedicated to")
+    private Long projectId;
+
+    @Parameter(name = ApiConstants.DOMAIN_ID,
+            type = CommandType.UUID,
+            entityType = DomainResponse.class,
+            description = "the domain ID which the IPv4 subnet is dedicated to.")
+    private Long domainId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -60,6 +84,22 @@ public class ListIpv4GuestSubnetsCmd extends BaseListCmd {
 
     public Long getZoneId() {
         return zoneId;
+    }
+
+    public String getSubnet() {
+        return subnet;
+    }
+
+    public String getAccountName() {
+        return accountName;
+    }
+
+    public Long getProjectId() {
+        return projectId;
+    }
+
+    public Long getDomainId() {
+        return domainId;
     }
 
     @Override

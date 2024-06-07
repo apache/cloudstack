@@ -20,7 +20,13 @@ package org.apache.cloudstack.network;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
+import java.util.Date;
+
 public interface Ipv4GuestSubnetNetworkMap extends Identity, InternalIdentity {
+    Date getAllocated();
+
+    Date getCreated();
+
     enum State {
         Allocating, // The subnet will be assigned to a network
         Allocated,  // The subnet is in use.
@@ -28,11 +34,12 @@ public interface Ipv4GuestSubnetNetworkMap extends Identity, InternalIdentity {
         Free        // The subnet is ready to be allocated.
     }
 
-    long getParentId();
+    Long getParentId();
 
     String getSubnet();
 
     Long getNetworkId();
 
     State getState();
+
 }

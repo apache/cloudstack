@@ -20,15 +20,19 @@ package org.apache.cloudstack.network.dao;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
+import javax.inject.Inject;
 
 import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMap;
 import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMapVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
@@ -41,6 +45,10 @@ public class Ipv4GuestSubnetNetworkMapDaoImpl extends GenericDaoBase<Ipv4GuestSu
     protected SearchBuilder<Ipv4GuestSubnetNetworkMapVO> NetworkIdSearch;
     protected SearchBuilder<Ipv4GuestSubnetNetworkMapVO> SubnetSearch;
     protected SearchBuilder<Ipv4GuestSubnetNetworkMapVO> StatesSearch;
+    protected SearchBuilder<Ipv4GuestSubnetNetworkMapVO> DomainAccountNeqSearch;
+
+    @Inject
+    NetworkDao networkDao;
 
     @PostConstruct
     public void init() {
@@ -60,6 +68,21 @@ public class Ipv4GuestSubnetNetworkMapDaoImpl extends GenericDaoBase<Ipv4GuestSu
         StatesSearch = createSearchBuilder();
         StatesSearch.and("state", StatesSearch.entity().getState(), SearchCriteria.Op.IN);
         StatesSearch.done();
+
+        final SearchBuilder<NetworkVO> networkSearchBuilder = networkDao.createSearchBuilder();
+        networkSearchBuilder.and("domainId", networkSearchBuilder.entity().getDomainId(), SearchCriteria.Op.NEQ);
+        networkSearchBuilder.and("accountId", networkSearchBuilder.entity().getAccountId(), SearchCriteria.Op.NEQ);
+        DomainAccountNeqSearch = createSearchBuilder();
+        DomainAccountNeqSearch.join("network", networkSearchBuilder, networkSearchBuilder.entity().getId(),
+                DomainAccountNeqSearch.entity().getNetworkId(), JoinBuilder.JoinType.INNER);
+        DomainAccountNeqSearch.done();
+    }
+
+    @Override
+    public List<Ipv4GuestSubnetNetworkMapVO> listByParent(long parentId) {
+        SearchCriteria<Ipv4GuestSubnetNetworkMapVO> sc = ParentIdSearch.create();
+        sc.setParameters("parentId", parentId);
+        return listBy(sc, null);
     }
 
     @Override
@@ -67,8 +90,21 @@ public class Ipv4GuestSubnetNetworkMapDaoImpl extends GenericDaoBase<Ipv4GuestSu
         SearchCriteria<Ipv4GuestSubnetNetworkMapVO> sc = ParentStateSearch.create();
         sc.setParameters("parentId", parentId);
         sc.setParameters("state", (Object[]) new Ipv4GuestSubnetNetworkMap.State[]{Ipv4GuestSubnetNetworkMap.State.Allocated, Ipv4GuestSubnetNetworkMap.State.Allocating});
-        Filter searchFilter = new Filter(Ipv4GuestSubnetNetworkMapVO.class, "id", true, null, 1L);
-        return listBy(sc, searchFilter);
+        return listBy(sc, null);
+    }
+
+    @Override
+    public List<Ipv4GuestSubnetNetworkMapVO> listUsedByOtherDomains(long parentId, Long domainId) {
+        SearchCriteria<Ipv4GuestSubnetNetworkMapVO> sc = DomainAccountNeqSearch.create();
+        sc.setJoinParameters("network", "domainId", domainId);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<Ipv4GuestSubnetNetworkMapVO> listUsedByOtherAccounts(long parentId, Long accountId) {
+        SearchCriteria<Ipv4GuestSubnetNetworkMapVO> sc = DomainAccountNeqSearch.create();
+        sc.setJoinParameters("network", "accountId", accountId);
+        return listBy(sc);
     }
 
     @Override
