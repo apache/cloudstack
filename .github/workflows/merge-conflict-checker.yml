@@ -18,7 +18,7 @@
 name: "PR Merge Conflict Check"
 on:
   push:
-  pull_request_target:
+  pull_request:
     types: [synchronize]
 
 permissions:  # added using https://github.com/step-security/secure-workflows
