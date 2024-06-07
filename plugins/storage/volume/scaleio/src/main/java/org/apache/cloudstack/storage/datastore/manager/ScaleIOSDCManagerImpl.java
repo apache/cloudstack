@@ -23,6 +23,7 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClient;
 import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClientConnectionPool;
@@ -61,6 +62,9 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager {
     @Inject
     ConfigurationDao configDao;
 
+    private static final String POWERFLEX_SDC_HOSTID_SYSTEMID_LOCK_FORMAT = "PowerFlexSDC-HostId:%s-SystemId:%s";
+    private static final String POWERFLEX_SDC_SYSTEMID_LOCK_FORMAT = "PowerFlexSDC-SystemId:%s";
+
     public ScaleIOSDCManagerImpl() {
 
     }
@@ -97,7 +101,7 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager {
         GlobalLock hostIdStorageSystemIdLock = null;
         GlobalLock storageSystemIdLock = null;
         try {
-            String hostIdStorageSystemIdLockString = "HostId:" + host.getId() + "-SystemId:" + systemId;
+            String hostIdStorageSystemIdLockString = String.format(POWERFLEX_SDC_HOSTID_SYSTEMID_LOCK_FORMAT, host.getId(), systemId);
             hostIdStorageSystemIdLock = GlobalLock.getInternLock(hostIdStorageSystemIdLockString);
             if (hostIdStorageSystemIdLock == null) {
                 throw new CloudRuntimeException("Unable to prepare SDC, couldn't get global lock on " + hostIdStorageSystemIdLockString);
@@ -116,7 +120,7 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager {
                 return sdcId;
             }
 
-            String storageSystemIdLockString = "PowerflexSystemId:" + systemId;
+            String storageSystemIdLockString = String.format(POWERFLEX_SDC_SYSTEMID_LOCK_FORMAT, systemId);
             storageSystemIdLock = GlobalLock.getInternLock(storageSystemIdLockString);
             if (storageSystemIdLock == null) {
                 LOGGER.error("Unable to prepare SDC, couldn't get global lock on: " + storageSystemIdLockString);
@@ -171,7 +175,7 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager {
         LOGGER.debug(String.format("Preparing SDC on the host %s (%s)", host.getId(), host.getName()));
         Map<String,String> details = new HashMap<>();
         details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemId);
-        PrepareStorageClientCommand cmd = new PrepareStorageClientCommand(details);
+        PrepareStorageClientCommand cmd = new PrepareStorageClientCommand(((PrimaryDataStore) dataStore).getPoolType(), dataStore.getUuid(), details);
         int timeoutSeconds = 60;
         cmd.setWait(timeoutSeconds);
 
@@ -227,7 +231,7 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager {
 
         GlobalLock lock = null;
         try {
-            String hostIdStorageSystemIdLockString = "HostId:" + host.getId() + "-SystemId:" + systemId;
+            String hostIdStorageSystemIdLockString = String.format(POWERFLEX_SDC_HOSTID_SYSTEMID_LOCK_FORMAT, host.getId(), systemId);
             lock = GlobalLock.getInternLock(hostIdStorageSystemIdLockString);
             if (lock == null) {
                 throw new CloudRuntimeException("Unable to unprepare SDC, couldn't get global lock on " + hostIdStorageSystemIdLockString);
@@ -247,7 +251,7 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager {
                 return true;
             }
 
-            return unprepareSDCOnHost(host);
+            return unprepareSDCOnHost(host, dataStore);
         } finally {
             if (lock != null) {
                 lock.unlock();
@@ -256,9 +260,9 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager {
         }
     }
 
-    private boolean unprepareSDCOnHost(Host host) {
+    private boolean unprepareSDCOnHost(Host host, DataStore dataStore) {
         LOGGER.debug(String.format("Unpreparing SDC on the host %s (%s)", host.getId(), host.getName()));
-        UnprepareStorageClientCommand cmd = new UnprepareStorageClientCommand();
+        UnprepareStorageClientCommand cmd = new UnprepareStorageClientCommand(((PrimaryDataStore) dataStore).getPoolType(), dataStore.getUuid());
         int timeoutSeconds = 60;
         cmd.setWait(timeoutSeconds);
 

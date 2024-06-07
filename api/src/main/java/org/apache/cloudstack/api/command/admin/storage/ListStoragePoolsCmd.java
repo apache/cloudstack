@@ -133,7 +133,7 @@ public class ListStoragePoolsCmd extends BaseListCmd {
     }
 
     public Boolean getCustomStats() {
-        return customStats != null ? customStats : false;
+        return customStats != null && customStats;
     }
 
     /////////////////////////////////////////////////////

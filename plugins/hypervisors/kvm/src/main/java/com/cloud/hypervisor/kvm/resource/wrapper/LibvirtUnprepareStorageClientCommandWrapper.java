@@ -19,15 +19,16 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import org.apache.cloudstack.storage.datastore.util.ScaleIOUtil;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.UnprepareStorageClientAnswer;
 import com.cloud.agent.api.UnprepareStorageClientCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
+import com.cloud.utils.Pair;
 
 @ResourceWrapper(handles = UnprepareStorageClientCommand.class)
 public class LibvirtUnprepareStorageClientCommandWrapper extends CommandWrapper<UnprepareStorageClientCommand, Answer, LibvirtComputingResource> {
@@ -35,21 +36,14 @@ public class LibvirtUnprepareStorageClientCommandWrapper extends CommandWrapper<
     private static final Logger s_logger = Logger.getLogger(LibvirtUnprepareStorageClientCommandWrapper.class);
 
     @Override
-    public Answer execute(UnprepareStorageClientCommand cmd, LibvirtComputingResource serverResource) {
-        if (!ScaleIOUtil.isSDCServiceInstalled()) {
-            s_logger.debug("SDC service not installed on host, no need to unprepare the SDC client");
-            return new UnprepareStorageClientAnswer(cmd, true);
+    public Answer execute(UnprepareStorageClientCommand cmd, LibvirtComputingResource libvirtComputingResource) {
+        final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
+        Pair<Boolean, String> unprepareStorageClientResult = storagePoolMgr.unprepareStorageClient(cmd.getPoolType(), cmd.getPoolUuid());
+        if (!unprepareStorageClientResult.first()) {
+            String msg = unprepareStorageClientResult.second();
+            s_logger.debug("Couldn't unprepare storage client, due to: " + msg);
+            return new UnprepareStorageClientAnswer(cmd, false, msg);
         }
-
-        if (!ScaleIOUtil.isSDCServiceEnabled()) {
-            s_logger.debug("SDC service not enabled on host, no need to unprepare the SDC client");
-            return new UnprepareStorageClientAnswer(cmd, true);
-        }
-
-        if (!ScaleIOUtil.stopSDCService()) {
-            return new UnprepareStorageClientAnswer(cmd, false, "Couldn't stop SDC service on host");
-        }
-
         return new UnprepareStorageClientAnswer(cmd, true);
     }
 }

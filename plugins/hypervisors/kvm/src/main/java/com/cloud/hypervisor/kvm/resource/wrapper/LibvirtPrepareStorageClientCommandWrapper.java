@@ -19,19 +19,18 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClient;
-import org.apache.cloudstack.storage.datastore.util.ScaleIOUtil;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.PrepareStorageClientAnswer;
 import com.cloud.agent.api.PrepareStorageClientCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
+import com.cloud.utils.Ternary;
 
 @ResourceWrapper(handles = PrepareStorageClientCommand.class)
 public class LibvirtPrepareStorageClientCommandWrapper extends CommandWrapper<PrepareStorageClientCommand, Answer, LibvirtComputingResource> {
@@ -39,46 +38,15 @@ public class LibvirtPrepareStorageClientCommandWrapper extends CommandWrapper<Pr
     private static final Logger s_logger = Logger.getLogger(LibvirtPrepareStorageClientCommandWrapper.class);
 
     @Override
-    public Answer execute(PrepareStorageClientCommand cmd, LibvirtComputingResource serverResource) {
-        if (!ScaleIOUtil.isSDCServiceInstalled()) {
-            s_logger.debug("SDC service not installed on host, preparing the SDC client not possible");
-            return new PrepareStorageClientAnswer(cmd, false, "SDC service not installed on host");
+    public Answer execute(PrepareStorageClientCommand cmd, LibvirtComputingResource libvirtComputingResource) {
+        final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
+        Ternary<Boolean, Map<String, String>, String> prepareStorageClientResult = storagePoolMgr.prepareStorageClient(cmd.getPoolType(), cmd.getPoolUuid(), cmd.getDetails());
+        if (!prepareStorageClientResult.first()) {
+            String msg = prepareStorageClientResult.third();
+            s_logger.debug("Unable to prepare storage client, due to: " + msg);
+            return new PrepareStorageClientAnswer(cmd, false, msg);
         }
-
-        if (!ScaleIOUtil.isSDCServiceEnabled()) {
-            s_logger.debug("SDC service not enabled on host, enabling it");
-            if (!ScaleIOUtil.enableSDCService()) {
-                return new PrepareStorageClientAnswer(cmd, false, "SDC service not enabled on host");
-            }
-        }
-
-        if (!ScaleIOUtil.isSDCServiceActive()) {
-            if (!ScaleIOUtil.startSDCService()) {
-                return new PrepareStorageClientAnswer(cmd, false, "Couldn't start SDC service on host");
-            }
-        } else if (!ScaleIOUtil.restartSDCService()) {
-            return new PrepareStorageClientAnswer(cmd, false, "Couldn't restart SDC service on host");
-        }
-
-        return new PrepareStorageClientAnswer(cmd, true, getSDCDetails(cmd.getDetails()));
-    }
-
-    private Map<String, String> getSDCDetails(Map<String, String> details) {
-        Map<String, String> sdcDetails = new HashMap<String, String>();
-        if (details == null || !details.containsKey(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID))  {
-            return sdcDetails;
-        }
-
-        String storageSystemId = details.get(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID);
-        String sdcId = ScaleIOUtil.getSdcId(storageSystemId);
-        if (sdcId != null) {
-            sdcDetails.put(ScaleIOGatewayClient.SDC_ID, sdcId);
-        } else {
-            String sdcGuId = ScaleIOUtil.getSdcGuid();
-            if (sdcGuId != null) {
-                sdcDetails.put(ScaleIOGatewayClient.SDC_GUID, sdcGuId);
-            }
-        }
-        return sdcDetails;
+        Map<String, String> details = prepareStorageClientResult.second();
+        return new PrepareStorageClientAnswer(cmd, true, details);
     }
 }

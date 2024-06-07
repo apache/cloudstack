@@ -19,12 +19,30 @@
 
 package com.cloud.agent.api;
 
+import com.cloud.storage.Storage.StoragePoolType;
+
 public class UnprepareStorageClientCommand extends Command {
+    private StoragePoolType poolType;
+    private String poolUuid;
+
     public UnprepareStorageClientCommand() {
+    }
+
+    public UnprepareStorageClientCommand(StoragePoolType poolType, String poolUuid) {
+        this.poolType = poolType;
+        this.poolUuid = poolUuid;
     }
 
     @Override
     public boolean executeInSequence() {
         return false;
+    }
+
+    public StoragePoolType getPoolType() {
+        return poolType;
+    }
+
+    public String getPoolUuid() {
+        return poolUuid;
     }
 }

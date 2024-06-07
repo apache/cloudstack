@@ -21,19 +21,33 @@ package com.cloud.agent.api;
 
 import java.util.Map;
 
+import com.cloud.storage.Storage.StoragePoolType;
+
 public class PrepareStorageClientCommand extends Command {
+    private StoragePoolType poolType;
+    private String poolUuid;
     private Map<String, String> details;
 
     public PrepareStorageClientCommand() {
     }
 
-    public PrepareStorageClientCommand(Map<String, String> details) {
+    public PrepareStorageClientCommand(StoragePoolType poolType, String poolUuid, Map<String, String> details) {
+        this.poolType = poolType;
+        this.poolUuid = poolUuid;
         this.details = details;
     }
 
     @Override
     public boolean executeInSequence() {
         return false;
+    }
+
+    public StoragePoolType getPoolType() {
+        return poolType;
+    }
+
+    public String getPoolUuid() {
+        return poolUuid;
     }
 
     public Map<String, String> getDetails() {
