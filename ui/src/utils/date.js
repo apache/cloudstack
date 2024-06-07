@@ -17,8 +17,10 @@
 import store from '@/store'
 
 import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc'
 import isToday from 'dayjs/plugin/isToday'
 
+dayjs.extend(utc)
 dayjs.extend(isToday)
 
 export function parseDayJsObject ({ value, format }) {
