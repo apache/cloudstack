@@ -30,9 +30,8 @@ import javax.management.NotCompliantMBeanException;
 import javax.naming.ConfigurationException;
 
 import org.apache.commons.collections.MapUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
-import org.apache.commons.collections4.MapUtils;
+import org.apache.logging.log4j.Logger;
 import org.springframework.aop.framework.Advised;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
