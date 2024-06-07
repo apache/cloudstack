@@ -74,6 +74,7 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.api.ApiDBUtils;
@@ -384,8 +385,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     protected void validateIsolatedNetworkIpRules(long ipId, FirewallRule.Purpose purpose, Network network, int clusterTotalNodeCount) {
         List<FirewallRuleVO> rules = firewallRulesDao.listByIpAndPurposeAndNotRevoked(ipId, purpose);
         for (FirewallRuleVO rule : rules) {
-            Integer startPort = rule.getSourcePortStart();
-            Integer endPort = rule.getSourcePortEnd();
+            int startPort = ObjectUtils.defaultIfNull(rule.getSourcePortStart(), 1);
+            int endPort = ObjectUtils.defaultIfNull(rule.getSourcePortEnd(), KubernetesClusterActionWorker.MAX_PORT);
             if (logger.isDebugEnabled()) {
                 logger.debug(String.format("Validating rule with purpose: %s for network: %s with ports: %d-%d", purpose.toString(), network.getUuid(), startPort, endPort));
             }
