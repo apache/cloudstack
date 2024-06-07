@@ -509,46 +509,64 @@ public class ResourceLimitManagerImplTest extends TestCase {
     }
 
     @Test
-    public void testFindCorrectResourceLimitForDomainProjects() {
+    public void testResourceUnlimitedForDomainProjects() {
             DomainVO domain = Mockito.mock(DomainVO.class);
             Mockito.when(domain.getId()).thenReturn(1L);
+
             long result = resourceLimitManager.findCorrectResourceLimitForDomain(domain, Resource.ResourceType.project,
                             hostTags.get(0));
             Assert.assertEquals(Resource.RESOURCE_UNLIMITED, result);
+    }
+    @Test
+    public void testSpecificLimitForDomainProjects() {
+        DomainVO domain = Mockito.mock(DomainVO.class);
+        Mockito.when(domain.getId()).thenReturn(2L);
+        Mockito.when(domain.getParent()).thenReturn(null);
 
-            Mockito.when(domain.getId()).thenReturn(2L);
-            Mockito.when(domain.getParent()).thenReturn(null);
-            ResourceLimitVO limit = new ResourceLimitVO();
-            limit.setMax(100L);
-            Mockito.when(resourceLimitDao.findByOwnerIdAndTypeAndTag(2L, Resource.ResourceOwnerType.Domain,
-                            Resource.ResourceType.project, hostTags.get(0))).thenReturn(limit);
-            result = resourceLimitManager.findCorrectResourceLimitForDomain(domain, Resource.ResourceType.project,
-                            hostTags.get(0));
-            Assert.assertEquals(100L, result);
+        ResourceLimitVO limit = new ResourceLimitVO();
+        limit.setMax(100L);
+        Mockito.when(resourceLimitDao.findByOwnerIdAndTypeAndTag(2L, Resource.ResourceOwnerType.Domain, Resource.ResourceType.project, hostTags.get(0))).thenReturn(limit);
 
+        long result = resourceLimitManager.findCorrectResourceLimitForDomain(domain, Resource.ResourceType.project, hostTags.get(0));
+        Assert.assertEquals(100L, result);
+    }
+
+    @Test
+    public void testParentDomainLimitForDomainProjects() {
+            DomainVO domain = Mockito.mock(DomainVO.class);
             Mockito.when(domain.getId()).thenReturn(3L);
+
             DomainVO parentDomain = Mockito.mock(DomainVO.class);
             Mockito.when(domain.getParent()).thenReturn(5L);
             Mockito.when(domainDao.findById(5L)).thenReturn(parentDomain);
-            limit = new ResourceLimitVO();
+
+            ResourceLimitVO limit = new ResourceLimitVO();
             limit.setMax(200L);
             Mockito.when(resourceLimitDao.findByOwnerIdAndTypeAndTag(3L, Resource.ResourceOwnerType.Domain,
                             Resource.ResourceType.project, hostTags.get(0))).thenReturn(null);
             Mockito.when(resourceLimitDao.findByOwnerIdAndTypeAndTag(5L, Resource.ResourceOwnerType.Domain,
                             Resource.ResourceType.project, hostTags.get(0))).thenReturn(limit);
-            result = resourceLimitManager.findCorrectResourceLimitForDomain(domain, Resource.ResourceType.project,
+
+            long result = resourceLimitManager.findCorrectResourceLimitForDomain(domain, Resource.ResourceType.project,
                             hostTags.get(0));
             Assert.assertEquals(200L, result);
+    }
 
-            long defaultDomainProjectsMax = 250L;
+    @Test
+    public void testDefaultDomainProjectLimit() {
+            DomainVO domain = Mockito.mock(DomainVO.class);
             Mockito.when(domain.getId()).thenReturn(4L);
             Mockito.when(domain.getParent()).thenReturn(null);
+
+            long defaultDomainProjectsMax = 250L;
             Map<String, Long> domainResourceLimitMap = new HashMap<>();
             domainResourceLimitMap.put(Resource.ResourceType.project.name(), defaultDomainProjectsMax);
             resourceLimitManager.domainResourceLimitMap = domainResourceLimitMap;
+
             Mockito.when(resourceLimitDao.findByOwnerIdAndTypeAndTag(4L, Resource.ResourceOwnerType.Domain,
                             Resource.ResourceType.project, hostTags.get(0))).thenReturn(null);
-            result = resourceLimitManager.findCorrectResourceLimitForDomain(domain, Resource.ResourceType.project,
+
+            long result = resourceLimitManager.findCorrectResourceLimitForDomain(domain, Resource.ResourceType.project,
                             hostTags.get(0));
             Assert.assertEquals(defaultDomainProjectsMax, result);
     }
