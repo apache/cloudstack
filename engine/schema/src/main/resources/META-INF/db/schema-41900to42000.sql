@@ -110,6 +110,14 @@ CREATE TABLE `cloud`.`storage_fileshare`(
     INDEX `i_storage_fileshare__state`(`state`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`storagefsvm`(
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+    `fileshare_id` bigint unsigned NOT NULL COMMENT 'corresponding file share ID',
+    PRIMARY KEY (`id`),
+    KEY `fk_storage_fileshare__id` (`fileshare_id`),
+    CONSTRAINT `fk_storagefsvm__id` FOREIGN KEY (`id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE `cloud`.`storagevm_fs_map`(
     `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
     `vm_id` bigint unsigned NOT NULL,

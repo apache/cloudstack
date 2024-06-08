@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.storage.fileshare;
 
+import java.util.List;
+
 import javax.inject.Inject;
 
 import com.cloud.event.EventTypes;
@@ -30,6 +32,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.FileShareResponse;
+import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.fileshare.FileShare;
@@ -90,6 +93,13 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
             description = "the provider to be used for the file share.")
     private String fileShareProviderName;
 
+    @Parameter(name = ApiConstants.NETWORK_IDS,
+            type = CommandType.LIST,
+            collectionType = CommandType.UUID,
+            entityType = NetworkResponse.class,
+            description = "list of network ids to attach file share to")
+    private List<Long> networkIds;
+
     public String getName() {
         return name;
     }
@@ -116,6 +126,10 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     public String getFsFormat() {
         return fsFormat;
+    }
+
+    public List<Long> getNetworkIds() {
+        return networkIds;
     }
 
     public String getFileShareProviderName() {

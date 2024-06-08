@@ -21,6 +21,8 @@ import com.cloud.utils.fsm.StateObject;
 
 public interface FileShare extends StateObject<FileShare.State> {
 
+    String FileShareVmNamePrefix = "fs";
+
     enum FileSystemType {
         EXT3, EXT4, XFS
     }
@@ -145,5 +147,5 @@ public interface FileShare extends StateObject<FileShare.State> {
 
     Long getDiskOfferingId();
 
-    Long getserviceOfferingId();
+    Long getServiceOfferingId();
 }

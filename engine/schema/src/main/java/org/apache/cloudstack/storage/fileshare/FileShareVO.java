@@ -110,8 +110,8 @@ public class FileShareVO implements FileShare {
     public FileShareVO() {
     }
 
-    public FileShareVO(String name, String description, long domainId, long accountId, long projectId, long dataCenterId, String fsProviderName,
-                       Long size, Protocol protocol, String mountOptions, FileSystemType fsType, Long diskOfferingId, Long serviceOfferingId) {
+    public FileShareVO(String name, String description, long domainId, long accountId, long projectId, long dataCenterId,
+                       String fsProviderName, Long size, Protocol protocol, String mountOptions, FileSystemType fsType, Long diskOfferingId) {
         this.name = name;
         this.description = description;
         this.domainId = domainId;
@@ -121,10 +121,10 @@ public class FileShareVO implements FileShare {
         this.fsProviderName = fsProviderName;
         this.size = size;
         this.protocol = protocol;
+        this.state = State.Allocated;
         this.mountOptions = mountOptions;
         this.fsType = fsType;
         this.diskOfferingId = diskOfferingId;
-        this.serviceOfferingId = serviceOfferingId;
         this.uuid = UUID.randomUUID().toString();
     }
 
@@ -245,7 +245,7 @@ public class FileShareVO implements FileShare {
     }
 
     @Override
-    public Long getserviceOfferingId() {
+    public Long getServiceOfferingId() {
         return serviceOfferingId;
     }
 }
