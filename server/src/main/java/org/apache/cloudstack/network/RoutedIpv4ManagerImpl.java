@@ -431,25 +431,24 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     private void assignIpv4GuestSubnetToNetwork(Ipv4GuestSubnetNetworkMapVO subnetMap, Long networkId) {
-        subnetMap.setNetworkId(networkId);
+        if (networkId != null && networkId > 0L) {
+            subnetMap.setNetworkId(networkId);
+        }
         subnetMap.setState(State.Allocated);
         subnetMap.setAllocated(new Date());
         ipv4GuestSubnetNetworkMapDao.update(subnetMap.getId(), subnetMap);
     }
 
     @Override
-    public void getOrCreateIpv4SubnetForGuestNetwork(Network network, Integer networkCidrSize) {
+    public Ipv4GuestSubnetNetworkMap getOrCreateIpv4SubnetForGuestNetwork(Network network, Integer networkCidrSize) {
         // TODO
         Ipv4GuestSubnetNetworkMap subnet = getIpv4SubnetForAccount(network.getAccountId(), networkCidrSize);
-
         if (subnet != null) {
             // TODO: assign to the network, then return
-            return;
+            return subnet;
         }
 
-        subnet = createIpv4SubnetForAccount(network.getAccountId(), networkCidrSize);
-        // TODO: assign to the network, then return
-        network.setCidr(subnet.getSubnet());
+        return createIpv4SubnetForAccount(network.getAccountId(), networkCidrSize);
     }
 
     private Ipv4GuestSubnetNetworkMap getIpv4SubnetForAccount(long accountId, Integer networkCidrSize) {
@@ -642,13 +641,15 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
 
     @Override
     public boolean isVirtualRouterGateway(Network network) {
-        return networkServiceMapDao.canProviderSupportServiceInNetwork(network.getId(), Service.Gateway, Provider.VirtualRouter)
+        return isRoutedNetwork(network)
+                && (networkServiceMapDao.canProviderSupportServiceInNetwork(network.getId(), Service.Gateway, Provider.VirtualRouter))
                 || networkServiceMapDao.canProviderSupportServiceInNetwork(network.getId(), Service.Gateway, Provider.VPCVirtualRouter);
     }
 
     @Override
     public boolean isVirtualRouterGateway(NetworkOffering networkOffering) {
-        return networkOfferingServiceMapDao.canProviderSupportServiceInNetworkOffering(networkOffering.getId(), Service.Gateway, Provider.VirtualRouter)
+        return NetworkOffering.RoutingMode.ROUTED.name().equals(networkOffering.getRoutingMode())
+                && networkOfferingServiceMapDao.canProviderSupportServiceInNetworkOffering(networkOffering.getId(), Service.Gateway, Provider.VirtualRouter)
                 || networkOfferingServiceMapDao.canProviderSupportServiceInNetworkOffering(networkOffering.getId(), Service.Gateway, Provider.VPCVirtualRouter);
     }
 

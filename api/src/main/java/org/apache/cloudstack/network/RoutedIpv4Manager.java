@@ -74,7 +74,7 @@ public interface RoutedIpv4Manager extends PluggableService, Configurable {
     // Methods for internal calls
     void getOrCreateIpv4SubnetForGuestNetwork(Network network, String networkCidr);
 
-    void getOrCreateIpv4SubnetForGuestNetwork(Network network, Integer networkCidrSize);
+    Ipv4GuestSubnetNetworkMap getOrCreateIpv4SubnetForGuestNetwork(Network network, Integer networkCidrSize);
 
     void assignIpv4SubnetToNetwork(String cidr, long networkId);
 

@@ -24,6 +24,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMap;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 
 import com.cloud.dc.DataCenter;
@@ -131,7 +132,10 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
                 if (userSpecified.getNetworkCidrSize() == null) {
                     throw new CloudRuntimeException("The network CIDR or CIDR size must be specified.");
                 }
-                routedIpv4Manager.getOrCreateIpv4SubnetForGuestNetwork(config, userSpecified.getNetworkCidrSize());
+                Ipv4GuestSubnetNetworkMap subnet = routedIpv4Manager.getOrCreateIpv4SubnetForGuestNetwork(config, userSpecified.getNetworkCidrSize());
+                if (subnet != null) {
+                    userSpecified.setCidr(subnet.getSubnet());
+                }
             }
         }
         return updateNetworkDesignForIPv6IfNeeded(config, userSpecified);
