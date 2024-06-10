@@ -82,3 +82,6 @@ mvn install:install-file -Dfile=manageontap.jar     -DgroupId=com.cloud.com.neta
 # New version can be found at https://github.com/Juniper/contrail-maven/tree/master/releases/net/juniper/contrail/juniper-contrail-api/1.2
 mvn install:install-file -Dfile=juniper-contrail-api-1.0-SNAPSHOT.jar -DgroupId=net.juniper.contrail -DartifactId=juniper-contrail-api -Dversion=1.0-SNAPSHOT -Dpackaging=jar
 
+# From https://github.com/radu-todirica/tungsten-api/raw/master/net/juniper/tungsten/juniper-tungsten-api/2.0/juniper-tungsten-api-2.0.jar
+mvn install:install-file -Dfile=juniper-tungsten-api-2.0.jar -DgroupId=net.juniper.tungsten -DartifactId=juniper-tungsten-api -Dversion=2.0 -Dpackaging=jar
+
