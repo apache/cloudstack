@@ -36,14 +36,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.network.dao.PublicIpQuarantineDao;
-import com.cloud.offering.ServiceOffering;
-import com.cloud.service.dao.ServiceOfferingDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.alert.AlertService;
@@ -164,6 +160,7 @@ import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.dao.PublicIpQuarantineDao;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.OvsProviderVO;
 import com.cloud.network.element.VirtualRouterElement;
@@ -190,6 +187,7 @@ import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
@@ -198,6 +196,8 @@ import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
@@ -253,7 +253,6 @@ import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.googlecode.ipv6.IPv6Address;
-import com.cloud.service.ServiceOfferingVO;
 
 /**
  * NetworkServiceImpl implements NetworkService.
