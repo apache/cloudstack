@@ -62,12 +62,28 @@ public class CheckedReservation  implements AutoCloseable {
         return String.format("%s-%s", ResourceReservation.class.getSimpleName(), type.getName());
     }
 
+    private void removeAllReservations() {
+        if (CollectionUtils.isEmpty(reservations)) {
+            return;
+        }
+        CallContext.current().removeContextParameter(getContextParameterKey());
+        for (ResourceReservation reservation : reservations) {
+            reservationDao.remove(reservation.getId());
+        }
+        this.reservations = null;
+    }
+
     protected void checkLimitAndPersistReservations(Account account, ResourceType resourceType, Long resourceId, List<String> resourceLimitTags, Long amount) throws ResourceAllocationException {
-        checkLimitAndPersistReservation(account, resourceType, resourceId, null, amount);
-        if (CollectionUtils.isNotEmpty(resourceLimitTags)) {
-            for (String tag : resourceLimitTags) {
-                checkLimitAndPersistReservation(account, resourceType, resourceId, tag, amount);
+        try {
+            checkLimitAndPersistReservation(account, resourceType, resourceId, null, amount);
+            if (CollectionUtils.isNotEmpty(resourceLimitTags)) {
+                for (String tag : resourceLimitTags) {
+                    checkLimitAndPersistReservation(account, resourceType, resourceId, tag, amount);
+                }
             }
+        } catch (ResourceAllocationException rae) {
+            removeAllReservations();
+            throw rae;
         }
     }
 
@@ -147,14 +163,7 @@ public class CheckedReservation  implements AutoCloseable {
 
     @Override
     public void close() throws Exception {
-        if (CollectionUtils.isEmpty(reservations)) {
-            return;
-        }
-        CallContext.current().removeContextParameter(getContextParameterKey());
-        for (ResourceReservation reservation : reservations) {
-            reservationDao.remove(reservation.getId());
-        }
-        reservations = null;
+        removeAllReservations();
     }
 
     public Account getAccount() {

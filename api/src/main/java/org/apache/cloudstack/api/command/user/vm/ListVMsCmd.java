@@ -16,9 +16,10 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
-import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -45,6 +46,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.server.ResourceIcon;
@@ -56,7 +58,6 @@ import com.cloud.vm.VirtualMachine;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements UserCmd {
 
-    private static final String s_name = "listvirtualmachinesresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -96,7 +97,8 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
                collectionType = CommandType.STRING,
                description = "comma separated list of vm details requested, "
                    + "value can be a list of [all, group, nics, stats, secgrp, tmpl, servoff, diskoff, backoff, iso, volume, min, affgrp]."
-                   + " If no parameter is passed in, the details will be defaulted to all")
+                   + " If no parameter is passed in, the details will be defaulted to all. When return.vm.stats.on.vm.list is true, the default" +
+                       "details change to [group, nics, secgrp, tmpl, servoff, diskoff, backoff, iso, volume, min, affgrp], thus the stats will not be returned. ")
     private List<String> viewDetails;
 
     @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.UUID, entityType = TemplateResponse.class, description = "list vms by template")
@@ -237,22 +239,32 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
         return autoScaleVmGroupId;
     }
 
+    protected boolean isViewDetailsEmpty() {
+        return CollectionUtils.isEmpty(viewDetails);
+    }
+
     public EnumSet<VMDetails> getDetails() throws InvalidParameterValueException {
-        EnumSet<VMDetails> dv;
-        if (viewDetails == null || viewDetails.size() <= 0) {
-            dv = EnumSet.of(VMDetails.all);
-        } else {
-            try {
-                ArrayList<VMDetails> dc = new ArrayList<VMDetails>();
-                for (String detail : viewDetails) {
-                    dc.add(VMDetails.valueOf(detail));
-                }
-                dv = EnumSet.copyOf(dc);
-            } catch (IllegalArgumentException e) {
-                throw new InvalidParameterValueException("The details parameter contains a non permitted value. The allowed values are " + EnumSet.allOf(VMDetails.class));
+        if (isViewDetailsEmpty()) {
+            if (_queryService.ReturnVmStatsOnVmList.value()) {
+                return EnumSet.of(VMDetails.all);
             }
+
+            Set<VMDetails> allDetails = new HashSet<>(Set.of(VMDetails.values()));
+            allDetails.remove(VMDetails.stats);
+            allDetails.remove(VMDetails.all);
+            return EnumSet.copyOf(allDetails);
         }
-        return dv;
+
+        try {
+            Set<VMDetails> dc = new HashSet<>();
+            for (String detail : viewDetails) {
+                dc.add(VMDetails.valueOf(detail));
+            }
+
+            return EnumSet.copyOf(dc);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidParameterValueException("The details parameter contains a non permitted value. The allowed values are " + EnumSet.allOf(VMDetails.class));
+        }
     }
 
     @Override
@@ -275,10 +287,6 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public ApiCommandResourceType getApiResourceType() {

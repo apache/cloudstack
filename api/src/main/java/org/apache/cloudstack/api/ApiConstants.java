@@ -175,6 +175,8 @@ public class ApiConstants {
     public static final String END_IPV6 = "endipv6";
     public static final String END_PORT = "endport";
     public static final String ENTRY_TIME = "entrytime";
+    public static final String EVENT_ID = "eventid";
+    public static final String EVENT_TYPE = "eventtype";
     public static final String EXPIRES = "expires";
     public static final String EXTRA_CONFIG = "extraconfig";
     public static final String EXTRA_DHCP_OPTION = "extradhcpoption";
@@ -209,6 +211,7 @@ public class ApiConstants {
     public static final String HA_PROVIDER = "haprovider";
     public static final String HA_STATE = "hastate";
     public static final String HEALTH = "health";
+    public static final String HEADERS = "headers";
     public static final String HIDE_IP_ADDRESS_USAGE = "hideipaddressusage";
     public static final String HOST_ID = "hostid";
     public static final String HOST_IDS = "hostids";
@@ -281,6 +284,7 @@ public class ApiConstants {
     public static final String JOB_STATUS = "jobstatus";
     public static final String KEEPALIVE_ENABLED = "keepaliveenabled";
     public static final String KERNEL_VERSION = "kernelversion";
+    public static final String KEY = "key";
     public static final String LABEL = "label";
     public static final String LASTNAME = "lastname";
     public static final String LAST_BOOT = "lastboottime";
@@ -355,6 +359,7 @@ public class ApiConstants {
     public static final String SSHKEY_ENABLED = "sshkeyenabled";
     public static final String PATH = "path";
     public static final String PAYLOAD = "payload";
+    public static final String PAYLOAD_URL = "payloadurl";
     public static final String POD_ID = "podid";
     public static final String POD_NAME = "podname";
     public static final String POD_IDS = "podids";
@@ -400,11 +405,9 @@ public class ApiConstants {
     public static final String QUERY_FILTER = "queryfilter";
     public static final String SCHEDULE = "schedule";
     public static final String SCOPE = "scope";
-    public static final String SECRET_KEY = "usersecretkey";
-    public static final String SECONDARY_IP = "secondaryip";
-    public static final String SINCE = "since";
-    public static final String KEY = "key";
     public static final String SEARCH_BASE = "searchbase";
+    public static final String SECONDARY_IP = "secondaryip";
+    public static final String SECRET_KEY = "secretkey";
     public static final String SECURITY_GROUP_IDS = "securitygroupids";
     public static final String SECURITY_GROUP_NAMES = "securitygroupnames";
     public static final String SECURITY_GROUP_NAME = "securitygroupname";
@@ -422,6 +425,7 @@ public class ApiConstants {
     public static final String SHOW_UNIQUE = "showunique";
     public static final String SIGNATURE = "signature";
     public static final String SIGNATURE_VERSION = "signatureversion";
+    public static final String SINCE = "since";
     public static final String SIZE = "size";
     public static final String SNAPSHOT = "snapshot";
     public static final String SNAPSHOT_ID = "snapshotid";
@@ -429,8 +433,7 @@ public class ApiConstants {
     public static final String SNAPSHOT_TYPE = "snapshottype";
     public static final String SNAPSHOT_QUIESCEVM = "quiescevm";
     public static final String SOURCE_ZONE_ID = "sourcezoneid";
-    public static final String SUITABLE_FOR_VM = "suitableforvirtualmachine";
-    public static final String SUPPORTS_STORAGE_SNAPSHOT = "supportsstoragesnapshot";
+    public static final String SSL_VERIFICATION = "sslverification";
     public static final String START_DATE = "startdate";
     public static final String START_ID = "startid";
     public static final String START_IP = "startip";
@@ -449,6 +452,9 @@ public class ApiConstants {
     public static final String SYSTEM_VM_TYPE = "systemvmtype";
     public static final String TAGS = "tags";
     public static final String STORAGE_TAGS = "storagetags";
+    public static final String SUCCESS = "success";
+    public static final String SUITABLE_FOR_VM = "suitableforvirtualmachine";
+    public static final String SUPPORTS_STORAGE_SNAPSHOT = "supportsstoragesnapshot";
     public static final String TARGET_IQN = "targetiqn";
     public static final String TEMPLATE_FILTER = "templatefilter";
     public static final String TEMPLATE_ID = "templateid";
@@ -482,6 +488,7 @@ public class ApiConstants {
     public static final String USERNAME = "username";
     public static final String USER_CONFIGURABLE = "userconfigurable";
     public static final String USER_SECURITY_GROUP_LIST = "usersecuritygrouplist";
+    public static final String USER_SECRET_KEY = "usersecretkey";
     public static final String USE_VIRTUAL_NETWORK = "usevirtualnetwork";
     public static final String UPDATE_IN_SEQUENCE = "updateinsequence";
     public static final String VALUE = "value";
@@ -561,6 +568,7 @@ public class ApiConstants {
     public static final String ALLOCATION_STATE = "allocationstate";
     public static final String MANAGED_STATE = "managedstate";
     public static final String MANAGEMENT_SERVER_ID = "managementserverid";
+    public static final String MANAGEMENT_SERVER_NAME = "managementservername";
     public static final String STORAGE = "storage";
     public static final String STORAGE_ID = "storageid";
     public static final String PING_STORAGE_SERVER_IP = "pingstorageserverip";
@@ -1120,6 +1128,9 @@ public class ApiConstants {
     public static final String IS_TAG_A_RULE = "istagarule";
 
     public static final String PARAMETER_DESCRIPTION_IS_TAG_A_RULE = "Whether the informed tag is a JS interpretable rule or not.";
+
+    public static final String WEBHOOK_ID = "webhookid";
+    public static final String WEBHOOK_NAME = "webhookname";
 
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.
