@@ -533,3 +533,8 @@ CREATE VIEW `cloud`.`host_view` AS
         `cloud`.`user` ON `user`.`uuid` = `last_annotation_view`.`user_uuid`
     GROUP BY
         `host`.`id`;
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.resource_reservation', 'mgmt_server_id', 'bigint unsigned NULL COMMENT "management server id" ');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.resource_reservation', 'created', 'datetime DEFAULT NULL COMMENT "date when the reservation was created" ');
+
+UPDATE `cloud`.`resource_reservation` SET `created` = now() WHERE created IS NULL;
