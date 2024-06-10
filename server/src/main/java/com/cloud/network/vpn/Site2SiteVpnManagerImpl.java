@@ -26,6 +26,7 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.command.user.vpn.CreateVpnConnectionCmd;
@@ -263,27 +264,15 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         _accountMgr.checkAccess(caller, null, false, owner);
 
         Long customerGatewayId = cmd.getCustomerGatewayId();
-        Site2SiteCustomerGateway customerGateway = _customerGatewayDao.findById(customerGatewayId);
-        if (customerGateway == null) {
-            throw new InvalidParameterValueException("Unable to found specified Site to Site VPN customer gateway " + customerGatewayId + " !");
-        }
-        _accountMgr.checkAccess(caller, null, false, customerGateway);
+        Site2SiteCustomerGateway customerGateway = getAndValidateSite2SiteCustomerGateway(customerGatewayId, "Unable to found specified Site to Site VPN customer gateway %s !", caller);
 
         Long vpnGatewayId = cmd.getVpnGatewayId();
-        Site2SiteVpnGateway vpnGateway = _vpnGatewayDao.findById(vpnGatewayId);
-        if (vpnGateway == null) {
-            throw new InvalidParameterValueException("Unable to found specified Site to Site VPN gateway " + vpnGatewayId + " !");
-        }
-        _accountMgr.checkAccess(caller, null, false, vpnGateway);
+        Site2SiteVpnGateway vpnGateway = getAndValidateSite2SiteVpnGateway(vpnGatewayId, "Unable to found specified Site to Site VPN gateway %s !", caller);
 
-        if (customerGateway.getAccountId() != vpnGateway.getAccountId() || customerGateway.getDomainId() != vpnGateway.getDomainId()) {
-            throw new InvalidParameterValueException("VPN connection can only be esitablished between same account's VPN gateway and customer gateway!");
-        }
+        validateVpnConnectionOfTheRightAccount(customerGateway, vpnGateway);
+        validateVpnConnectionDoesntExist(vpnGatewayId, customerGatewayId);
+        validatePrerequisiteVpnGateway(vpnGateway);
 
-        if (_vpnConnectionDao.findByVpnGatewayIdAndCustomerGatewayId(vpnGatewayId, customerGatewayId) != null) {
-            throw new InvalidParameterValueException("The vpn connection with customer gateway id " + customerGatewayId + " and vpn gateway id " + vpnGatewayId +
-                " already existed!");
-        }
         String[] cidrList = customerGateway.getGuestCidrList().split(",");
 
         // Remote sub nets cannot overlap VPC's sub net
@@ -324,6 +313,46 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
 
         _vpnConnectionDao.persist(conn);
         return conn;
+    }
+
+    @NotNull
+    private Site2SiteCustomerGateway getAndValidateSite2SiteCustomerGateway(Long customerGatewayId, String errMsg, Account caller) {
+        Site2SiteCustomerGateway customerGateway = _customerGatewayDao.findById(customerGatewayId);
+        if (customerGateway == null) {
+            throw new InvalidParameterValueException(String.format(errMsg, customerGatewayId));
+        }
+        _accountMgr.checkAccess(caller, null, false, customerGateway);
+        return customerGateway;
+    }
+
+    @NotNull
+    private Site2SiteVpnGateway getAndValidateSite2SiteVpnGateway(Long vpnGatewayId, String errMsg, Account caller) {
+        Site2SiteVpnGateway vpnGateway = _vpnGatewayDao.findById(vpnGatewayId);
+        if (vpnGateway == null) {
+            throw new InvalidParameterValueException(String.format(errMsg, vpnGatewayId));
+        }
+        _accountMgr.checkAccess(caller, null, false, vpnGateway);
+        return vpnGateway;
+    }
+
+    private static void validateVpnConnectionOfTheRightAccount(Site2SiteCustomerGateway customerGateway, Site2SiteVpnGateway vpnGateway) {
+        if (customerGateway.getAccountId() != vpnGateway.getAccountId() || customerGateway.getDomainId() != vpnGateway.getDomainId()) {
+            throw new InvalidParameterValueException("VPN connection can only be esitablished between same account's VPN gateway and customer gateway!");
+        }
+    }
+
+    private void validateVpnConnectionDoesntExist(Long vpnGatewayId, Long customerGatewayId) {
+        if (_vpnConnectionDao.findByVpnGatewayIdAndCustomerGatewayId(vpnGatewayId, customerGatewayId) != null) {
+            throw new InvalidParameterValueException("The vpn connection with customer gateway id " + customerGatewayId + " and vpn gateway id " + vpnGatewayId +
+                " already existed!");
+        }
+    }
+
+    private void validatePrerequisiteVpnGateway(Site2SiteVpnGateway vpnGateway) {
+        // check if gateway has been defined on the VPC
+        if (_vpnGatewayDao.findByVpcId(vpnGateway.getVpcId()) == null) {
+            throw new InvalidParameterValueException("we can not create a VPN connection for a VPC that does not have a VPN gateway defined");
+        }
     }
 
     @Override
@@ -382,11 +411,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         Account caller = CallContext.current().getCallingAccount();
 
         Long id = cmd.getId();
-        Site2SiteCustomerGateway customerGateway = _customerGatewayDao.findById(id);
-        if (customerGateway == null) {
-            throw new InvalidParameterValueException("Fail to find customer gateway with " + id + " !");
-        }
-        _accountMgr.checkAccess(caller, null, false, customerGateway);
+        Site2SiteCustomerGateway customerGateway = getAndValidateSite2SiteCustomerGateway(id, "Fail to find customer gateway with %s !", caller);
 
         return doDeleteCustomerGateway(customerGateway);
     }
@@ -417,12 +442,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         Account caller = CallContext.current().getCallingAccount();
 
         Long id = cmd.getId();
-        Site2SiteVpnGateway vpnGateway = _vpnGatewayDao.findById(id);
-        if (vpnGateway == null) {
-            throw new InvalidParameterValueException("Fail to find vpn gateway with " + id + " !");
-        }
-
-        _accountMgr.checkAccess(caller, null, false, vpnGateway);
+        Site2SiteVpnGateway vpnGateway = getAndValidateSite2SiteVpnGateway(id, "Fail to find vpn gateway with %s !", caller);
 
         doDeleteVpnGateway(vpnGateway);
         return true;
