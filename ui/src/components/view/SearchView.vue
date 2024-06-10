@@ -507,10 +507,9 @@ export default {
 
       if (arrayField.includes('usagetype')) {
         usageTypeIndex = this.fields.findIndex(item => item.name === 'usagetype')
+        this.fields[usageTypeIndex].loading = true
+        promises.push(await this.fetchUsageTypes())
       }
-
-      this.fields[usageTypeIndex].loading = true
-      promises.push(await this.fetchUsageTypes())
 
       Promise.all(promises).then(response => {
         if (typeIndex > -1) {

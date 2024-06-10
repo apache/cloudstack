@@ -145,7 +145,6 @@
 import DedicateData from './DedicateData'
 import HostInfo from '@/views/infra/HostInfo'
 import VmwareData from './VmwareData'
-import { parseDayJsObject } from '@/utils/date'
 
 export default {
   name: 'DetailsTab',
@@ -329,7 +328,6 @@ export default {
     }
   },
   methods: {
-    parseDate: parseDayJsObject,
     decodeUserData (userdata) {
       const decodedData = Buffer.from(userdata, 'base64')
       return decodedData.toString('utf-8')
