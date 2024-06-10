@@ -1349,7 +1349,7 @@
 "label.miniops": "Min IOPS",
 "label.minmaxiops": "Min IOPS / Max IOPS",
 "label.minmembers": "Min members",
-"label.minmemory": "Min memory (in MB)",
+"label.minmemory": "Min. memory (MiB)",
 "label.minorsequence": "Minor Sequence",
 "label.minsize": "Minimum size",
 "label.minute.past.hour": "minute(s) past the hour",
