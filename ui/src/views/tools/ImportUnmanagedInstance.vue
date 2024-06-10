@@ -773,9 +773,9 @@ export default {
       if (!('listall' in options)) {
         options.listall = true
       }
-      if (['networks'].includes(name) && form.domainid &&  form.account) {
-        options.domainid = domainid
-        options.account = account
+      if (['networks'].includes(name) && this.form.domainid &&  this.form.account) {
+        options.domainid = this.form.domainid
+        options.account = this.form.account
       }
       api(param.list, options).then((response) => {
         param.loading = false
