@@ -50,6 +50,7 @@
           v-model:value="form.endDate"
           :disabled-date="disabledEndDate"
           :placeholder="$t('placeholder.quota.tariff.enddate')"
+          show-time
         />
       </a-form-item>
       <div :span="24" class="action-button">
@@ -66,6 +67,7 @@ import { dayjs, parseDateToDatePicker, parseDayJsObject } from '@/utils/date'
 import { mixinForm } from '@/utils/mixin'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import { ref, reactive, toRaw } from 'vue'
+import store from '@/store'
 
 export default {
   name: 'EditQuotaTariff',
@@ -125,10 +127,8 @@ export default {
           params.value = values.value
         }
 
-        const resourceEndDate = this.resource.endDate?.split('T')[0]
-        const parsedEndDate = parseDayJsObject({ value: values.endDate, format: 'YYYY-MM-DD' })
-        if (parsedEndDate && resourceEndDate !== parsedEndDate) {
-          params.enddate = parsedEndDate
+        if (values.endDate && !values.endDate.isSame(this.resource.endDate)) {
+          params.enddate = parseDayJsObject({ value: values.endDate })
         }
 
         if (Object.keys(params).length === 1) {
@@ -159,7 +159,13 @@ export default {
       })
     },
     disabledEndDate (current) {
-      return current < dayjs.utc(this.resource.effectiveDate).startOf('day')
+      const lowerEndDateLimit = dayjs(this.resource.effectiveDate)
+      const startOfToday = dayjs().startOf('day')
+
+      if (store.getters.usebrowsertimezone) {
+        return current < startOfToday || current < lowerEndDateLimit.startOf('day')
+      }
+      return current < startOfToday || current < lowerEndDateLimit.utc(false).startOf('day')
     }
   }
 }

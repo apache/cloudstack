@@ -73,6 +73,7 @@
           v-model:value="form.startDate"
           :disabled-date="disabledStartDate"
           :placeholder="$t('placeholder.quota.tariff.startdate')"
+          show-time
         />
       </a-form-item>
       <a-form-item ref="endDate" name="endDate">
@@ -83,6 +84,7 @@
           v-model:value="form.endDate"
           :disabled-date="disabledEndDate"
           :placeholder="$t('placeholder.quota.tariff.enddate')"
+          show-time
         />
       </a-form-item>
       <div :span="24" class="action-button">
@@ -98,7 +100,7 @@ import { api } from '@/api'
 import { ref, reactive, toRaw } from 'vue'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import { getQuotaTypes } from '@/utils/quota'
-import { dayjs, isDayJsObjectToday, parseDayJsObject } from '@/utils/date'
+import { dayjs, parseDayJsObject } from '@/utils/date'
 import { mixinForm } from '@/utils/mixin'
 
 export default {
@@ -145,11 +147,11 @@ export default {
         values.usageType = values.usageType.split('-')[0]
 
         if (values.startDate) {
-          values.startDate = isDayJsObjectToday(values.startDate) ? null : parseDayJsObject({ value: values.startDate, format: 'YYYY-MM-DD' })
+          values.startDate = parseDayJsObject({ value: values.startDate })
         }
 
         if (values.endDate) {
-          values.endDate = parseDayJsObject({ value: values.endDate, format: 'YYYY-MM-DD' })
+          values.endDate = parseDayJsObject({ value: values.endDate })
         }
 
         this.loading = true

@@ -18,34 +18,52 @@ import store from '@/store'
 
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
-import isToday from 'dayjs/plugin/isToday'
 
 dayjs.extend(utc)
-dayjs.extend(isToday)
 
-export function parseDayJsObject ({ value, format }) {
+export function parseDayJsObject ({ value, format = true, keepMoment = true }) {
+  console.log(value)
+
   if (!value) {
     return null
+  }
+
+  if (typeof value === 'string') {
+    value = dayjs(value)
+  }
+
+  if (!store.getters.usebrowsertimezone) {
+    value = value.utc(keepMoment)
   }
 
   if (!format) {
     return value
   }
 
-  return value.format(format)
+  return value.format()
 }
 
-export function isDayJsObjectToday (dayJsObject) {
-  return dayJsObject.isToday()
-}
-
+/**
+ * When passing a string/dayjs to the date picker component, it converts the value to the browser timezone; therefore,
+ * we need to normalize the value to UTC if user is not using browser's timezone.
+ * @param {*} value The datetime to normalize.
+ * @returns A dayjs object with the datetime normalized to UTC if user is not using browser's timezone;
+ * otherwise, a correspondent dayjs object based on the value passed.
+ */
 export function parseDateToDatePicker (value) {
   if (!value) {
     return null
   }
 
-  const format = 'YYYY-MM-DD'
-  return dayjs(value, format)
+  if (typeof value === 'string') {
+    value = dayjs(value)
+  }
+
+  if (store.getters.usebrowsertimezone) {
+    return value
+  }
+
+  return value.utc(false)
 }
 
 export function toLocalDate ({ date, timezoneoffset = store.getters.timezoneoffset, usebrowsertimezone = store.getters.usebrowsertimezone }) {
