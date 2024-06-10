@@ -3336,6 +3336,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             logger.error(String.format("Role [%s] of [%s] does not have permission for expunging VMs.", callingAccount.getRoleId(), callingAccount));
             throw new PermissionDeniedException("Account does not have permission for expunging.");
         }
+    }
 
     protected void checkPluginsIfVmCanBeDestroyed(UserVm vm) {
         try {
