@@ -773,7 +773,7 @@ export default {
       if (!('listall' in options)) {
         options.listall = true
       }
-      if (['networks'].includes(name) && this.form.domainid &&  this.form.account) {
+      if (['networks'].includes(name) && this.form.domainid && this.form.account) {
         options.domainid = this.form.domainid
         options.account = this.form.account
       }
