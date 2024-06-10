@@ -78,3 +78,7 @@ mvn install:install-file -Dfile=nsx-policy-java-sdk-4.1.0.2.0.jar -DgroupId=com.
 if [ -e cloud-manageontap.jar ]; then mv cloud-manageontap.jar manageontap.jar;  fi
 mvn install:install-file -Dfile=manageontap.jar     -DgroupId=com.cloud.com.netapp -DartifactId=manageontap     -Dversion=4.0   -Dpackaging=jar
 
+# From https://juniper.github.io/contrail-maven/snapshots/net/juniper/contrail/juniper-contrail-api/1.0-SNAPSHOT/juniper-contrail-api-1.0-20131001.003401-3.jar
+# New version can be found at https://github.com/Juniper/contrail-maven/tree/master/releases/net/juniper/contrail/juniper-contrail-api/1.2
+mvn install:install-file -Dfile=juniper-contrail-api-1.0-SNAPSHOT.jar -DgroupId=net.juniper.contrail -DartifactId=juniper-contrail-api -Dversion=1.0-SNAPSHOT -Dpackaging=jar
+
