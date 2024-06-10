@@ -1197,7 +1197,7 @@
 "label.maxinstance": "Max instances",
 "label.maxiops": "Max IOPS",
 "label.maxmembers": "Max members",
-"label.maxmemory": "Max. memory (MB)",
+"label.maxmemory": "Max. memory (MiB)",
 "label.maxnetwork": "Max. networks",
 "label.maxprimarystorage": "Max. primary storage (GiB)",
 "label.maxproject": "Max. projects",
