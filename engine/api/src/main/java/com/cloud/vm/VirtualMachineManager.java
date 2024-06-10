@@ -130,6 +130,9 @@ public interface VirtualMachineManager extends Manager {
 
     boolean stateTransitTo(VirtualMachine vm, VirtualMachine.Event e, Long hostId) throws NoTransitionException;
 
+    void startForHA(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlanner planner)
+            throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException;
+
     void advanceStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlanner planner) throws InsufficientCapacityException, ResourceUnavailableException,
             ConcurrentOperationException, OperationTimedoutException;
 

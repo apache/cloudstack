@@ -47,6 +47,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
+import com.cloud.event.ActionEvent;
 import com.cloud.event.ActionEventUtils;
 import com.google.gson.Gson;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -986,6 +987,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final long vmGroupCount = _affinityGroupVMMapDao.countAffinityGroupsForVm(vm.getId());
 
         return vmGroupCount > 0;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VM_START, eventDescription = "Restarting VM for HA")
+    public void startForHA(String vmUuid, Map<VirtualMachineProfile.Param, Object> params,
+           DeploymentPlanner planner) throws InsufficientCapacityException, ResourceUnavailableException,
+            ConcurrentOperationException {
+        advanceStart(vmUuid, params, planner);
     }
 
     @Override
