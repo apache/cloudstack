@@ -41,6 +41,11 @@ public interface StorageAdaptor {
 
     public boolean deleteStoragePool(String uuid);
 
+    public default KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool,
+                                                      PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, Long usableSize, byte[] passphrase) {
+        return createPhysicalDisk(name, pool, format, provisioningType, size, passphrase);
+    }
+
     public KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool,
             PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, byte[] passphrase);
 

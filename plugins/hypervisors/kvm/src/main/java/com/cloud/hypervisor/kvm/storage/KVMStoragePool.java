@@ -26,6 +26,10 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 
 public interface KVMStoragePool {
+    public default KVMPhysicalDisk createPhysicalDisk(String volumeUuid, PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, Long usableSize, byte[] passphrase) {
+        return createPhysicalDisk(volumeUuid, format, provisioningType, size, passphrase);
+    }
+
     public KVMPhysicalDisk createPhysicalDisk(String volumeUuid, PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, byte[] passphrase);
 
     public KVMPhysicalDisk createPhysicalDisk(String volumeUuid, Storage.ProvisioningType provisioningType, long size, byte[] passphrase);
