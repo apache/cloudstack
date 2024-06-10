@@ -87,7 +87,8 @@
                 </template>
                 <a-input
                   v-model:value="form.account"
-                  :placeholder="apiParams.account.description"/>
+                  :placeholder="apiParams.account.description"
+                  @change="handleAccountChange"/>
               </a-form-item>
               <a-form-item name="projectid" ref="projectid">
                 <template #label>
@@ -772,6 +773,10 @@ export default {
       if (!('listall' in options)) {
         options.listall = true
       }
+      if (['networks'].includes(name) && form.domainid &&  form.account) {
+        options.domainid = domainid
+        options.account = account
+      }
       api(param.list, options).then((response) => {
         param.loading = false
         _.map(response, (responseItem, responseKey) => {
@@ -974,6 +979,12 @@ export default {
       rootDisk.name = `${rootDisk.label} (${rootDisk.size} GB)`
       rootDisk.meta = this.getMeta(rootDisk, { controller: 'controller', datastorename: 'datastore', position: 'position' })
       this.selectedRootDiskSources = [rootDisk]
+    },
+    handleAccountChange (e) {
+      const accountValue = e.target.value
+      if (accountValue) {
+        this.fetchOptions(this.params.networks, 'networks')
+      }
     },
     handleSubmit (e) {
       e.preventDefault()
