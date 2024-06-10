@@ -470,7 +470,7 @@ public class VMwareGuruTest {
         }); MockedConstruction<DatacenterMO> ignored3 = Mockito.mockConstruction(DatacenterMO.class, withSettings().spiedInstance(dataCenterMO), (mockDatacenterMO, contextDatacenterMO) -> {
             Mockito.doReturn(null).when(mockDatacenterMO).findVm(vmName);
         })) {
-            vMwareGuru.createVMTemplateFileOutOfBand(hostIp, vmName, params, dataStore);
+            vMwareGuru.createVMTemplateOutOfBand(hostIp, vmName, params, dataStore);
         }
     }
 
@@ -511,9 +511,9 @@ public class VMwareGuruTest {
         }); MockedConstruction<DatacenterMO> ignored3 = Mockito.mockConstruction(DatacenterMO.class, withSettings().spiedInstance(dataCenterMO), (mockDatacenterMO, contextDatacenterMO) -> {
             Mockito.doReturn(vmMo).when(mockDatacenterMO).findVm(vmName);
         })) {
-            String templateDirAndName = vMwareGuru.createVMTemplateFileOutOfBand(hostIp, vmName, params, dataStore);
-            assertNotNull(templateDirAndName);
-            assertTrue(UuidUtils.isUuid(templateDirAndName));
+            String vmTemplate = vMwareGuru.createVMTemplateOutOfBand(hostIp, vmName, params, dataStore);
+            assertNotNull(vmTemplate);
+            assertTrue(UuidUtils.isUuid(vmTemplate));
         }
     }
 
@@ -599,8 +599,8 @@ public class VMwareGuruTest {
     public void testRemoveVMTemplateFileOutOfBand() throws Exception {
         NfsTO dataStore = Mockito.mock(NfsTO.class);
         Mockito.doReturn("nfs://10.1.1.4/testdir").when(dataStore).getUrl();
-        String templateDirAndName = "f887b7b3-3d1f-4a7d-93e5-3147f58866c6";
-        boolean result = vMwareGuru.removeVMTemplateFileOutOfBand(dataStore, templateDirAndName);
+        String templateDir = "f887b7b3-3d1f-4a7d-93e5-3147f58866c6";
+        boolean result = vMwareGuru.removeVMTemplateOutOfBand(dataStore, templateDir);
         assertTrue(result);
     }
 }

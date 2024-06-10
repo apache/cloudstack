@@ -127,20 +127,20 @@ public interface HypervisorGuru extends Adapter {
     boolean removeClonedHypervisorVMOutOfBand(String hostIp, String vmName, Map<String, String> params);
 
     /**
-     * Will create an OVA template of a VM on an external host (if the guru can handle)
+     * Create an OVA/OVF template of a VM on an external host (if the guru can handle)
      * @param hostIp VM's source host IP
      * @param vmName name of the source VM to create template from
      * @param params hypervisor specific additional parameters
      * @param templateLocation datastore to create the template file
      * @return the created template dir/name
      */
-    String createVMTemplateFileOutOfBand(String hostIp, String vmName, Map<String, String> params, DataStoreTO templateLocation);
+    String createVMTemplateOutOfBand(String hostIp, String vmName, Map<String, String> params, DataStoreTO templateLocation);
 
     /**
-     * Removes the template file on the location
+     * Removes the template on the location
      * @param templateLocation datastore to remove the template file
-     * @param templateDirAndName the template dir to remove from datastore
+     * @param templateDir the template dir to remove from datastore
      * @return true if the operation succeeds, false if not
      */
-    boolean removeVMTemplateFileOutOfBand(DataStoreTO templateLocation, String templateDirAndName);
+    boolean removeVMTemplateOutOfBand(DataStoreTO templateLocation, String templateDir);
 }

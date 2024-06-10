@@ -28,23 +28,24 @@ public class ConvertInstanceCommand extends Command {
     private Hypervisor.HypervisorType destinationHypervisorType;
     private List<String> destinationStoragePools;
     private DataStoreTO conversionTemporaryLocation;
-    private String templateDirAndNameOnConversionLocation;
+    private String templateDirOnConversionLocation;
     private boolean checkConversionSupport;
-    private boolean exportOvaToConversionLocation;
+    private boolean exportOvfToConversionLocation;
+    private int threadsCountToExportOvf = 0;
 
     public ConvertInstanceCommand() {
     }
 
     public ConvertInstanceCommand(RemoteInstanceTO sourceInstance, Hypervisor.HypervisorType destinationHypervisorType,
                                   List<String> destinationStoragePools, DataStoreTO conversionTemporaryLocation,
-                                  String templateDirAndNameOnConversionLocation, boolean checkConversionSupport, boolean exportOvaToConversionLocation) {
+                                  String templateDirOnConversionLocation, boolean checkConversionSupport, boolean exportOvfToConversionLocation) {
         this.sourceInstance = sourceInstance;
         this.destinationHypervisorType = destinationHypervisorType;
         this.destinationStoragePools = destinationStoragePools;
         this.conversionTemporaryLocation = conversionTemporaryLocation;
-        this.templateDirAndNameOnConversionLocation = templateDirAndNameOnConversionLocation;
+        this.templateDirOnConversionLocation = templateDirOnConversionLocation;
         this.checkConversionSupport = checkConversionSupport;
-        this.exportOvaToConversionLocation = exportOvaToConversionLocation;
+        this.exportOvfToConversionLocation = exportOvfToConversionLocation;
     }
 
     public RemoteInstanceTO getSourceInstance() {
@@ -63,16 +64,24 @@ public class ConvertInstanceCommand extends Command {
         return conversionTemporaryLocation;
     }
 
-    public String getTemplateDirAndNameOnConversionLocation() {
-        return templateDirAndNameOnConversionLocation;
+    public String getTemplateDirOnConversionLocation() {
+        return templateDirOnConversionLocation;
     }
 
     public boolean getCheckConversionSupport() {
         return checkConversionSupport;
     }
 
-    public boolean getExportOvaToConversionLocation() {
-        return exportOvaToConversionLocation;
+    public boolean getExportOvfToConversionLocation() {
+        return exportOvfToConversionLocation;
+    }
+
+    public int getThreadsCountToExportOvf() {
+        return threadsCountToExportOvf;
+    }
+
+    public void setThreadsCountToExportOvf(int threadsCountToExportOvf) {
+        this.threadsCountToExportOvf = threadsCountToExportOvf;
     }
 
     @Override

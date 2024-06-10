@@ -1368,14 +1368,14 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         return clonedVM;
     }
 
-    private String createOVATemplateFileOfVM(VirtualMachineMO vmMO, DataStoreTO convertLocation) throws Exception {
+    private String createOVFTemplateOfVM(VirtualMachineMO vmMO, DataStoreTO convertLocation) throws Exception {
         String dataStoreUrl = getDataStoreUrlForTemplate(convertLocation);
-        String vmOvaDirAndName = UUID.randomUUID().toString();
-        String vmOvaCreationPath = createDirOnStorage(vmOvaDirAndName, dataStoreUrl, null);
-        s_logger.debug(String.format("Creating OVA %s.ova for the VM %s at %s", vmOvaDirAndName, vmMO.getName(), vmOvaCreationPath));
-        vmMO.exportVm(vmOvaCreationPath, vmOvaDirAndName, true, true);
-        s_logger.debug(String.format("Created OVA %s.ova for the VM %s at %s", vmOvaDirAndName, vmMO.getName(), vmOvaCreationPath));
-        return vmOvaDirAndName;
+        String vmOvfName = UUID.randomUUID().toString();
+        String vmOvfCreationPath = createDirOnStorage(vmOvfName, dataStoreUrl, null);
+        s_logger.debug(String.format("Creating OVF %s for the VM %s at %s", vmOvfName, vmMO.getName(), vmOvfCreationPath));
+        vmMO.exportVm(vmOvfCreationPath, vmOvfName, false, false);
+        s_logger.debug(String.format("Created OVF %s for the VM %s at %s", vmOvfName, vmMO.getName(), vmOvfCreationPath));
+        return vmOvfName;
     }
 
     @Override
@@ -1433,7 +1433,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     }
 
     @Override
-    public String createVMTemplateFileOutOfBand(String hostIp, String vmName, Map<String, String> params, DataStoreTO templateLocation) {
+    public String createVMTemplateOutOfBand(String hostIp, String vmName, Map<String, String> params, DataStoreTO templateLocation) {
         String vcenter = params.get(VmDetailConstants.VMWARE_VCENTER_HOST);
         String datacenter = params.get(VmDetailConstants.VMWARE_DATACENTER_NAME);
         String username = params.get(VmDetailConstants.VMWARE_VCENTER_USERNAME);
@@ -1449,9 +1449,9 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 s_logger.error(err);
                 throw new CloudRuntimeException(err);
             }
-            String ovaTemplateDirAndName = createOVATemplateFileOfVM(vmMo, templateLocation);
-            s_logger.debug(String.format("OVA %s/%s.ova created successfully on the datastore", ovaTemplateDirAndName, ovaTemplateDirAndName));
-            return ovaTemplateDirAndName;
+            String ovaTemplate = createOVFTemplateOfVM(vmMo, templateLocation);
+            s_logger.debug(String.format("OVF %s created successfully on the datastore", ovaTemplate));
+            return ovaTemplate;
         } catch (Exception e) {
             String err = String.format("Error create template file of the VM: %s from vCenter %s: %s", vmName, vcenter, e.getMessage());
             s_logger.error(err, e);
@@ -1487,14 +1487,14 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     }
 
     @Override
-    public boolean removeVMTemplateFileOutOfBand(DataStoreTO templateLocation, String templateDirAndName) {
-        s_logger.debug(String.format("Removing template file %s/%s.ova", templateDirAndName, templateDirAndName));
+    public boolean removeVMTemplateOutOfBand(DataStoreTO templateLocation, String templateDir) {
+        s_logger.debug(String.format("Removing template %s", templateDir));
 
         try {
             String dataStoreUrl = getDataStoreUrlForTemplate(templateLocation);
-            return deleteDirOnStorage(templateDirAndName, dataStoreUrl, null);
+            return deleteDirOnStorage(templateDir, dataStoreUrl, null);
         } catch (Exception e) {
-            String err = String.format("Error removing template file %s/%s.ova: %s", templateDirAndName, templateDirAndName, e.getMessage());
+            String err = String.format("Error removing template file %s: %s", templateDir, e.getMessage());
             s_logger.error(err, e);
             return false;
         }

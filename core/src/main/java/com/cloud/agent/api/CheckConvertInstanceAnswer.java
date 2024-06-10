@@ -18,7 +18,7 @@ package com.cloud.agent.api;
 
 public class CheckConvertInstanceAnswer extends Answer {
 
-    private boolean ovaExportSupported = false;
+    private boolean ovfExportSupported = false;
 
     public CheckConvertInstanceAnswer() {
         super();
@@ -32,12 +32,12 @@ public class CheckConvertInstanceAnswer extends Answer {
         super(command, success, details);
     }
 
-    public CheckConvertInstanceAnswer(Command command, boolean success, boolean ovaExportSupported, String details) {
+    public CheckConvertInstanceAnswer(Command command, boolean success, boolean ovfExportSupported, String details) {
         super(command, success, details);
-        this.ovaExportSupported = ovaExportSupported;
+        this.ovfExportSupported = ovfExportSupported;
     }
 
-    public boolean isOvaExportSupported() {
-        return ovaExportSupported;
+    public boolean isOvfExportSupported() {
+        return ovfExportSupported;
     }
 }

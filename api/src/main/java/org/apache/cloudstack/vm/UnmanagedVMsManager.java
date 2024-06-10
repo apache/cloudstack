@@ -35,6 +35,21 @@ public interface UnmanagedVMsManager extends VmImportService, UnmanageVMService,
             "Advanced",
             "30",
             "Timeout (in mins) to prepare and copy the disks of remote KVM instance while importing the instance from an external host",
+
+    ConfigKey<Integer> ConvertVmwareInstanceToKvmTimeout = new ConfigKey<>(Integer.class,
+            "convert.vmware.instance.to.kvm.timeout",
+            "Advanced",
+            "8",
+            "Timeout (in hours) for the instance conversion process from VMware through the virt-v2v binary on a KVM host",
+            true,
+            ConfigKey.Scope.Global,
+            null);
+
+    ConfigKey<Integer> ThreadsOnKVMHostToTransferVMwareVMFiles = new ConfigKey<>(Integer.class,
+            "threads.on.kvm.host.to.transfer.vmware.vm.files",
+            "Advanced",
+            "0",
+            "Number of threads to use on the KVM host (by ovftool) to transfer VMware VM files, zero (or less than zero) would use total disks count. Default (0)",
             true,
             ConfigKey.Scope.Global,
             null);

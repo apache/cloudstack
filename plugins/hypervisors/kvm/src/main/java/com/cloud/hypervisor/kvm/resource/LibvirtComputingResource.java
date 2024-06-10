@@ -307,7 +307,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public static final String TUNGSTEN_PATH = "scripts/vm/network/tungsten";
 
     public static final String INSTANCE_CONVERSION_SUPPORTED_CHECK_CMD = "virt-v2v --version";
-    public static final String OVA_EXPORT_SUPPORTED_CHECK_CMD = "ovftool --version";
+    public static final String OVF_EXPORT_SUPPORTED_CHECK_CMD = "ovftool --version";
     public static final String WINDOWS_GUEST_CONVERSION_SUPPORTED_CHECK_CMD = "rpm -qa | grep -i virtio-win";
     public static final String UBUNTU_WINDOWS_GUEST_CONVERSION_SUPPORTED_CHECK_CMD = "dpkg -l virtio-win";
     public static final String UBUNTU_NBDKIT_PKG_CHECK_CMD = "dpkg -l nbdkit";
@@ -5162,8 +5162,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return exitValue == 0;
     }
 
-    public boolean hostSupportsOvaExport() {
-        int exitValue = Script.runSimpleBashScriptForExitValue(OVA_EXPORT_SUPPORTED_CHECK_CMD);
+    public boolean hostSupportsOvfExport() {
+        int exitValue = Script.runSimpleBashScriptForExitValue(OVF_EXPORT_SUPPORTED_CHECK_CMD);
         return exitValue == 0;
     }
 

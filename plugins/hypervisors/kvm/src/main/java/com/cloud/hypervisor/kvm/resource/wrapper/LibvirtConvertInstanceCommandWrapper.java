@@ -94,11 +94,10 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         KVMStoragePool temporaryStoragePool = getTemporaryStoragePool(conversionTemporaryLocation, storagePoolMgr);
         final String temporaryConvertPath = temporaryStoragePool.getLocalPath();
 
-        String ovaTemplateDirAndNameOnConversionLocation;
-        String sourceOVAFile;
-        String sourceOVAFilePath;
-        boolean ovaExported = false;
-        if (cmd.getExportOvaToConversionLocation()) {
+        String ovfTemplateDirOnConversionLocation;
+        String sourceOVFDirPath;
+        boolean ovfExported = false;
+        if (cmd.getExportOvfToConversionLocation()) {
             String exportInstanceOVAUrl = getExportInstanceOVAUrl(sourceInstance);
             if (StringUtils.isBlank(exportInstanceOVAUrl)) {
                 String err = String.format("Couldn't export OVA for the VM %s, due to empty url", sourceInstanceName);
@@ -106,32 +105,32 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
                 return new ConvertInstanceAnswer(cmd, false, err);
             }
 
-            ovaTemplateDirAndNameOnConversionLocation = UUID.randomUUID().toString();
-            temporaryStoragePool.createFolder(ovaTemplateDirAndNameOnConversionLocation);
-            sourceOVAFile = ovaTemplateDirAndNameOnConversionLocation + ".ova";
-            sourceOVAFilePath = String.format("%s/%s/%s", temporaryConvertPath, ovaTemplateDirAndNameOnConversionLocation, sourceOVAFile);
-            ovaExported = exportOVAFromVMonVCenter(exportInstanceOVAUrl, sourceOVAFilePath, timeout);
-            if (!ovaExported) {
+            int noOfThreads = cmd.getThreadsCountToExportOvf();
+            ovfTemplateDirOnConversionLocation = UUID.randomUUID().toString();
+            temporaryStoragePool.createFolder(ovfTemplateDirOnConversionLocation);
+            sourceOVFDirPath = String.format("%s/%s/", temporaryConvertPath, ovfTemplateDirOnConversionLocation);
+            ovfExported = exportOVAFromVMOnVcenter(exportInstanceOVAUrl, sourceOVFDirPath, noOfThreads, timeout);
+            if (!ovfExported) {
                 String err = String.format("Export OVA for the VM %s failed", sourceInstanceName);
                 s_logger.error(err);
                 return new ConvertInstanceAnswer(cmd, false, err);
             }
+            sourceOVFDirPath = String.format("%s%s/", sourceOVFDirPath, sourceInstanceName);
         } else {
-            ovaTemplateDirAndNameOnConversionLocation = cmd.getTemplateDirAndNameOnConversionLocation();
-            sourceOVAFile = ovaTemplateDirAndNameOnConversionLocation + ".ova";
-            sourceOVAFilePath = String.format("%s/%s/%s", temporaryConvertPath, ovaTemplateDirAndNameOnConversionLocation, sourceOVAFile);
+            ovfTemplateDirOnConversionLocation = cmd.getTemplateDirOnConversionLocation();
+            sourceOVFDirPath = String.format("%s/%s/", temporaryConvertPath, ovfTemplateDirOnConversionLocation);
         }
 
-        s_logger.info(String.format("Attempting to convert the OVA %s of the instance %s from %s to KVM", sourceOVAFile, sourceInstanceName, sourceHypervisorType));
+        s_logger.info(String.format("Attempting to convert the OVF %s of the instance %s from %s to KVM", ovfTemplateDirOnConversionLocation, sourceInstanceName, sourceHypervisorType));
         final String temporaryConvertUuid = UUID.randomUUID().toString();
         boolean verboseModeEnabled = serverResource.isConvertInstanceVerboseModeEnabled();
 
         try {
-            boolean result = performInstanceConversion(sourceOVAFilePath, temporaryConvertPath, temporaryConvertUuid,
+            boolean result = performInstanceConversion(sourceOVFDirPath, temporaryConvertPath, temporaryConvertUuid,
                     timeout, verboseModeEnabled);
             if (!result) {
-                String err = String.format("The virt-v2v conversion for the OVA %s failed. " +
-                                "Please check the agent logs for the virt-v2v output", sourceOVAFile);
+                String err = String.format("The virt-v2v conversion for the OVF %s failed. " +
+                                "Please check the agent logs for the virt-v2v output", ovfTemplateDirOnConversionLocation);
                 s_logger.error(err);
                 return new ConvertInstanceAnswer(cmd, false, err);
             }
@@ -156,10 +155,10 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
             s_logger.error(error, e);
             return new ConvertInstanceAnswer(cmd, false, error);
         } finally {
-            if (ovaExported && StringUtils.isNotBlank(ovaTemplateDirAndNameOnConversionLocation)) {
-                String sourceOVADir = String.format("%s/%s", temporaryConvertPath, ovaTemplateDirAndNameOnConversionLocation);
-                s_logger.debug("Cleaning up exported OVA at dir " + sourceOVADir);
-                Script.runSimpleBashScript("rm -rf " + sourceOVADir);
+            if (ovfExported && StringUtils.isNotBlank(ovfTemplateDirOnConversionLocation)) {
+                String sourceOVFDir = String.format("%s/%s", temporaryConvertPath, ovfTemplateDirOnConversionLocation);
+                s_logger.debug("Cleaning up exported OVA at dir " + sourceOVFDir);
+                Script.runSimpleBashScript("rm -rf " + sourceOVFDir);
             }
             if (conversionTemporaryLocation instanceof NfsTO) {
                 s_logger.debug("Cleaning up secondary storage temporary location");
@@ -367,29 +366,35 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         return new Pair<>(sourceHostIp, sourcePath);
     }
 
-    private boolean exportOVAFromVMonVCenter(String vmExportUrl,
-                                             String targetOvaPath,
+    private boolean exportOVAFromVMOnVcenter(String vmExportUrl,
+                                             String targetOvfDir,
+                                             int noOfThreads,
                                              long timeout) {
+        if (noOfThreads <= 0) {
+            // '--parallelThreads': Value must be greater than zero
+            noOfThreads = 1;
+        }
         Script script = new Script("ovftool", timeout, s_logger);
         script.add("--noSSLVerify");
+        script.add(String.format("--parallelThreads=%s", noOfThreads));
         script.add(vmExportUrl);
-        script.add(targetOvaPath);
+        script.add(targetOvfDir);
 
-        String logPrefix = "export ova";
+        String logPrefix = "export ovf";
         OutputInterpreter.LineByLineOutputLogger outputLogger = new OutputInterpreter.LineByLineOutputLogger(s_logger, logPrefix);
         script.execute(outputLogger);
         int exitValue = script.getExitValue();
         return exitValue == 0;
     }
 
-    protected boolean performInstanceConversion(String sourceOVAFilePath,
+    protected boolean performInstanceConversion(String sourceOVFDirPath,
                                                 String temporaryConvertFolder,
                                                 String temporaryConvertUuid,
                                                 long timeout, boolean verboseModeEnabled) {
         Script script = new Script("virt-v2v", timeout, s_logger);
         script.add("--root", "first");
         script.add("-i", "ova");
-        script.add(sourceOVAFilePath);
+        script.add(sourceOVFDirPath);
         script.add("-o", "local");
         script.add("-os", temporaryConvertFolder);
         script.add("-of", "qcow2");
@@ -398,7 +403,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
             script.add("-v");
         }
 
-        String logPrefix = String.format("virt-v2v ova source: %s progress", sourceOVAFilePath);
+        String logPrefix = String.format("virt-v2v ovf source: %s progress", sourceOVFDirPath);
         OutputInterpreter.LineByLineOutputLogger outputLogger = new OutputInterpreter.LineByLineOutputLogger(s_logger, logPrefix);
         script.execute(outputLogger);
         int exitValue = script.getExitValue();
