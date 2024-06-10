@@ -189,8 +189,6 @@ import io.netty.handler.logging.LoggingHandler;
 public class NfsSecondaryStorageResource extends ServerResourceBase implements SecondaryStorageResource {
 
     public static final Logger s_logger = Logger.getLogger(NfsSecondaryStorageResource.class);
-    public static final String OUTPUT_CHAIN = "OUTPUT";
-    public static final String INPUT_CHAIN = "INPUT";
 
     private static final String TEMPLATE_ROOT_DIR = "template/tmpl";
     private static final String VOLUME_ROOT_DIR = "volumes";
@@ -2290,37 +2288,18 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return null;
         }
         String intf = "eth1";
-        String rule =  String.format("-o %s -d %s -p tcp -m state --state NEW -m tcp  -j ACCEPT", intf, destCidr);
+        String rule =  String.format("-o %s -d %s -p tcp -m state --state NEW -m tcp -j ACCEPT", intf, destCidr);
+        String errMsg = String.format("Error in allowing outgoing to %s , err=", destCidr);
 
         s_logger.info(String.format("Adding rule if required: " + rule));
-        if (needsAdding(OUTPUT_CHAIN, rule)) {
-            Script command = new Script("/bin/bash", s_logger);
-            command.add("-c");
-            command.add("iptables -I " + OUTPUT_CHAIN);
-            command.add(rule);
-
-            String result = command.execute();
-            if (result != null) {
-                s_logger.warn("Error in allowing outgoing to " + destCidr + ", err=" + result);
-                return "Error in allowing outgoing to " + destCidr + ", err=" + result;
-            }
-        } else {
-            s_logger.warn("Rule already defined in SVM: Error in allowing outgoing to " + destCidr);
+        String result = IpTablesHelper.addConditionally(IpTablesHelper.OUTPUT_CHAIN, true, rule, errMsg);
+        if (result != null) {
+            return result;
         }
 
         addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, destCidr);
 
         return null;
-    }
-
-    private boolean needsAdding(String chain, String rule) {
-        Script command = new Script("/bin/bash", s_logger);
-        command.add("-c");
-        command.add("iptables -C " + chain);
-        command.add(rule);
-
-        String r1 = command.execute();
-        return (r1 != null && r1.contains("iptables: Bad rule (does a matching rule exist in that chain?)."));
     }
 
     private Answer execute(SecStorageFirewallCfgCommand cmd) {
@@ -2853,16 +2832,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             s_logger.warn("Error in starting sshd service err=" + result);
         }
         String rule = "-i eth1 -p tcp -m state --state NEW -m tcp --dport 3922 -j ACCEPT";
-        if (needsAdding(INPUT_CHAIN, rule)) {
-            command = new Script("/bin/bash", s_logger);
-            command.add("-c");
-            command.add("iptables -I " + INPUT_CHAIN);
-            command.add(rule);
-            result = command.execute();
-            if (result != null) {
-                s_logger.warn("Error in opening up ssh port err=" + result);
-            }
-        }
+        IpTablesHelper.addConditionally(IpTablesHelper.INPUT_CHAIN, true, rule, "Error in opening up ssh port err=");
     }
 
     private void addRouteToInternalIpOrCidr(String localgw, String eth1ip, String eth1mask, String destIpOrCidr) {

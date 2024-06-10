@@ -60,6 +60,7 @@ import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand.RequestType;
 import org.apache.cloudstack.storage.NfsMountManagerImpl.PathParser;
+import org.apache.cloudstack.storage.resource.IpTablesHelper;
 import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
 import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
 import org.apache.log4j.Logger;
@@ -1092,18 +1093,14 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     }
 
     private void blockOutgoingOnPrivate() {
-        // TODO add a check if rule exists
-        Script command = new Script("/bin/bash", LOGGER);
-        String intf = "eth1";
-        command.add("-c");
-        command.add("iptables -A OUTPUT -o " + intf + " -p tcp -m state --state NEW -m tcp --dport " + "80" + " -j REJECT;" + "iptables -A OUTPUT -o " + intf +
-                " -p tcp -m state --state NEW -m tcp --dport " + "443" + " -j REJECT;");
-
-        String result = command.execute();
-        if (result != null) {
-            LOGGER.warn("Error in blocking outgoing to port 80/443 err=" + result);
-            return;
-        }
+        IpTablesHelper.addConditionally(IpTablesHelper.OUTPUT_CHAIN
+                , false
+                , "-o " + TemplateConstants.TMPLT_COPY_INTF_PRIVATE + " -p tcp -m state --state NEW -m tcp --dport 80 -j REJECT;"
+                , "Error in blocking outgoing to port 80 err=");
+        IpTablesHelper.addConditionally(IpTablesHelper.OUTPUT_CHAIN
+                , false
+                , "-o " + TemplateConstants.TMPLT_COPY_INTF_PRIVATE + " -p tcp -m state --state NEW -m tcp --dport 443 -j REJECT;"
+                , "Error in blocking outgoing to port 443 err=");
     }
 
     @Override
@@ -1129,18 +1126,20 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         if (result != null) {
             LOGGER.warn("Error in stopping httpd service err=" + result);
         }
-        String port = Integer.toString(TemplateConstants.DEFAULT_TMPLT_COPY_PORT);
-        String intf = TemplateConstants.DEFAULT_TMPLT_COPY_INTF;
 
         // TODO add a check if rule exists
-        command = new Script("/bin/bash", LOGGER);
-        command.add("-c");
-        command.add("iptables -I INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + port + " -j ACCEPT;" + "iptables -I INPUT -i " + intf +
-                " -p tcp -m state --state NEW -m tcp --dport " + "443" + " -j ACCEPT;");
-
-        result = command.execute();
+        IpTablesHelper.addConditionally(IpTablesHelper.INPUT_CHAIN
+                , true
+                , "-i " + TemplateConstants.TMPLT_COPY_INTF_PRIVATE + " -p tcp -m state --state NEW -m tcp --dport " + TemplateConstants.DEFAULT_TMPLT_COPY_PORT + " -j ACCEPT"
+                , "Error in opening up apache2 port " + TemplateConstants.TMPLT_COPY_INTF_PRIVATE + " err=");
         if (result != null) {
-            LOGGER.warn("Error in opening up apache2 port err=" + result);
+            return;
+        }
+        IpTablesHelper.addConditionally(IpTablesHelper.INPUT_CHAIN
+                , false
+                , "-i " + TemplateConstants.TMPLT_COPY_INTF_PRIVATE + " -p tcp -m state --state NEW -m tcp --dport 443 -j ACCEPT;"
+                , "Error in opening up apache2 port 443 err=");
+        if (result != null) {
             return;
         }
 
