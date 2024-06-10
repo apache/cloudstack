@@ -73,3 +73,8 @@ mvn install:install-file -Dfile=nsx-java-sdk-4.1.0.2.0.jar -DgroupId=com.vmware 
 mvn install:install-file -Dfile=nsx-gpm-java-sdk-4.1.0.2.0.jar -DgroupId=com.vmware -DartifactId=nsx-gpm-java-sdk -Dversion=4.1.0.2.0 -Dpackaging=jar
 mvn install:install-file -Dfile=nsx-policy-java-sdk-4.1.0.2.0.jar -DgroupId=com.vmware -DartifactId=nsx-policy-java-sdk -Dversion=4.1.0.2.0 -Dpackaging=jar
 
+# From http://support.netapp.com/  (not available online, contact your support representative)
+# Version: 4.0 (http://community.netapp.com/t5/Developer-Network-Articles-and-Resources/NetApp-Manageability-NM-SDK-Introduction-and-Download-Information/ta-p/86418)
+if [ -e cloud-manageontap.jar ]; then mv cloud-manageontap.jar manageontap.jar;  fi
+mvn install:install-file -Dfile=manageontap.jar     -DgroupId=com.cloud.com.netapp -DartifactId=manageontap     -Dversion=4.0   -Dpackaging=jar
+
