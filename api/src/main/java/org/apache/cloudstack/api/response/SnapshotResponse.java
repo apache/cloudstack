@@ -71,6 +71,10 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
     @Param(description = "type of the disk volume")
     private String volumeType;
 
+    @SerializedName(ApiConstants.VOLUME_STATE)
+    @Param(description = "state of the disk volume")
+    private String volumeState;
+
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "  the date the snapshot was created")
     private Date created;
@@ -197,6 +201,10 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
 
     public void setVolumeType(String volumeType) {
         this.volumeType = volumeType;
+    }
+
+    public void setVolumeState(String volumeState) {
+        this.volumeState = volumeState;
     }
 
     public void setCreated(Date created) {
