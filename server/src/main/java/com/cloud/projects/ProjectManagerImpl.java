@@ -18,6 +18,7 @@ package com.cloud.projects;
 
 import java.io.UnsupportedEncodingException;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +36,7 @@ import javax.inject.Inject;
 import javax.mail.MessagingException;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ProjectRole;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.acl.dao.ProjectRoleDao;
@@ -48,7 +50,9 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.utils.mailing.MailAddress;
 import org.apache.cloudstack.utils.mailing.SMTPMailProperties;
 import org.apache.cloudstack.utils.mailing.SMTPMailSender;
+import org.apache.cloudstack.webhook.WebhookHelper;
 import org.apache.commons.lang3.BooleanUtils;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
@@ -89,6 +93,7 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -162,6 +167,17 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
     protected int _projectCleanupExpInvInterval = 60; //Interval defining how often project invitation cleanup thread is running
     private String senderAddress;
     protected SMTPMailSender mailSender;
+
+    protected List<? extends ControlledEntity> listWebhooksForProject(Project project) {
+        List<? extends ControlledEntity> webhooks = new ArrayList<>();
+        try {
+            WebhookHelper webhookService = ComponentContext.getDelegateComponentOfType(WebhookHelper.class);
+            webhooks = webhookService.listWebhooksByAccount(project.getProjectAccountId());
+        } catch (NoSuchBeanDefinitionException ignored) {
+            logger.debug("No WebhookHelper bean found");
+        }
+        return webhooks;
+    }
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
@@ -339,8 +355,9 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
             List<VolumeVO> volumes = _volumeDao.findDetachedByAccount(project.getProjectAccountId());
             List<NetworkVO> networks = _networkDao.listByOwner(project.getProjectAccountId());
             List<? extends Vpc> vpcs = _vpcMgr.getVpcsForAccount(project.getProjectAccountId());
+            List<? extends ControlledEntity> webhooks = listWebhooksForProject(project);
 
-            Optional<String> message = Stream.of(userTemplates, vmSnapshots, vms, volumes, networks, vpcs)
+            Optional<String> message = Stream.of(userTemplates, vmSnapshots, vms, volumes, networks, vpcs, webhooks)
                     .filter(entity -> !entity.isEmpty())
                     .map(entity -> entity.size() + " " +  entity.get(0).getEntityType().getSimpleName() + " to clean up")
                     .findFirst();
