@@ -2444,107 +2444,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         return new Pair<>(result.first(), result.second());
     }
 
-    private void addNetworksToReturnIfNotExist(final List<NetworkVO> networksToReturn, final List<NetworkVO> sharedNetworks) {
-        Set<Long> networkIds = networksToReturn.stream()
-                .map(NetworkVO::getId)
-                .collect(Collectors.toSet());
-        List<NetworkVO> sharedNetworksToReturn = sharedNetworks.stream()
-                .filter(network -> ! networkIds.contains(network.getId()))
-                .collect(Collectors.toList());
-        networksToReturn.addAll(sharedNetworksToReturn);
-    }
-
-    private SearchCriteria<NetworkVO> buildNetworkSearchCriteria(SearchBuilder<NetworkVO> sb, String keyword, Long id,
-            Boolean isSystem, Long zoneId, String guestIpType, String trafficType, Long physicalNetworkId,
-            Long networkOfferingId, String aclType, boolean skipProjectNetworks, Boolean restartRequired,
-            Boolean specifyIpRanges, Long vpcId, Map<String, String> tags, Boolean display, String vlanId, Long associatedNetworkId) {
-
-        SearchCriteria<NetworkVO> sc = sb.create();
-
-        if (isSystem != null) {
-            sc.setJoinParameters("networkOfferingSearch", "systemOnly", isSystem);
-        }
-
-        if (keyword != null) {
-            SearchCriteria<NetworkVO> ssc = _networksDao.createSearchCriteria();
-            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
-        }
-
-        if (display != null) {
-            sc.addAnd("displayNetwork", SearchCriteria.Op.EQ, display);
-        }
-
-        if (id != null) {
-            sc.addAnd("id", SearchCriteria.Op.EQ, id);
-        }
-
-        if (zoneId != null) {
-            sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
-        }
-
-        if (guestIpType != null) {
-            sc.addAnd("guestType", SearchCriteria.Op.EQ, guestIpType);
-        }
-
-        if (trafficType != null) {
-            sc.addAnd("trafficType", SearchCriteria.Op.EQ, trafficType);
-        }
-
-        if (aclType != null) {
-            sc.addAnd("aclType", SearchCriteria.Op.EQ, aclType.toString());
-        }
-
-        if (physicalNetworkId != null) {
-            sc.addAnd("physicalNetworkId", SearchCriteria.Op.EQ, physicalNetworkId);
-        }
-
-        if (skipProjectNetworks) {
-            sc.setJoinParameters("accountSearch", "typeNEQ", Account.Type.PROJECT);
-        } else {
-            sc.setJoinParameters("accountSearch", "typeEQ", Account.Type.PROJECT);
-        }
-
-        if (restartRequired != null) {
-            sc.addAnd("restartRequired", SearchCriteria.Op.EQ, restartRequired);
-        }
-
-        if (specifyIpRanges != null) {
-            sc.addAnd("specifyIpRanges", SearchCriteria.Op.EQ, specifyIpRanges);
-        }
-
-        if (vpcId != null) {
-            sc.addAnd("vpcId", SearchCriteria.Op.EQ, vpcId);
-        }
-
-        if (tags != null && !tags.isEmpty()) {
-            int count = 0;
-            sc.setJoinParameters("tagSearch", "resourceType", ResourceObjectType.Network.toString());
-            for (Map.Entry<String, String> entry : tags.entrySet()) {
-                sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), entry.getKey());
-                sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), entry.getValue());
-                count++;
-            }
-        }
-
-        if (networkOfferingId != null) {
-            sc.addAnd(NETWORK_OFFERING_ID, SearchCriteria.Op.EQ, networkOfferingId);
-        }
-
-        if (associatedNetworkId != null) {
-            sc.setJoinParameters("associatedNetworkSearch", "name", Network.AssociatedNetworkId);
-            sc.setJoinParameters("associatedNetworkSearch", "value", String.valueOf(associatedNetworkId));
-        }
-
-        if (vlanId != null) {
-            SearchCriteria<NetworkVO> ssc = _networksDao.createSearchCriteria();
-            ssc.addOr("broadcastUri", SearchCriteria.Op.EQ, vlanId);
-            ssc.addOr("broadcastUri", SearchCriteria.Op.LIKE, "%://" + vlanId);
-            sc.addAnd("broadcastUri", SearchCriteria.Op.SC, ssc);
-        }
-        return sc;
-    }
-
     private SearchCriteria<NetworkVO> createNetworkSearchCriteria(SearchBuilder<NetworkVO> sb, String keyword, Long id,
                                                                  Boolean isSystem, Long zoneId, String guestIpType, String trafficType, Long physicalNetworkId,
                                                                  Long networkOfferingId, String aclType, Boolean restartRequired,
@@ -2630,33 +2529,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         return sc;
     }
 
-    private List<NetworkVO> listDomainLevelNetworks(SearchCriteria<NetworkVO> sc, Filter searchFilter, long domainId, boolean parentDomainsOnly) {
-        List<Long> networkIds = new ArrayList<Long>();
-        Set<Long> allowedDomains = _domainMgr.getDomainParentIds(domainId);
-        List<NetworkDomainVO> maps = _networkDomainDao.listDomainNetworkMapByDomain(allowedDomains.toArray());
-
-        for (NetworkDomainVO map : maps) {
-            if (map.getDomainId() == domainId && parentDomainsOnly) {
-                continue;
-            }
-            boolean subdomainAccess = (map.isSubdomainAccess() != null) ? map.isSubdomainAccess() : getAllowSubdomainAccessGlobal();
-            if (map.getDomainId() == domainId || subdomainAccess) {
-                networkIds.add(map.getNetworkId());
-            }
-        }
-
-        if (!networkIds.isEmpty()) {
-            SearchCriteria<NetworkVO> domainSC = _networksDao.createSearchCriteria();
-            domainSC.addAnd("id", SearchCriteria.Op.IN, networkIds.toArray());
-            domainSC.addAnd("aclType", SearchCriteria.Op.EQ, ACLType.Domain.toString());
-
-            sc.addAnd("id", SearchCriteria.Op.SC, domainSC);
-            return _networksDao.search(sc, searchFilter);
-        } else {
-            return new ArrayList<NetworkVO>();
-        }
-    }
-
     private SearchCriteria<NetworkVO> getDomainLevelNetworksSearchCriteria(SearchBuilder<NetworkVO> sb, long domainId, boolean parentDomainsOnly) {
         List<Long> networkIds = new ArrayList<>();
         Set<Long> allowedDomains = _domainMgr.getDomainParentIds(domainId);
@@ -2682,18 +2554,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         return null;
     }
 
-    private List<NetworkVO> listAccountSpecificNetworks(SearchCriteria<NetworkVO> sc, Filter searchFilter, List<Long> permittedAccounts) {
-        SearchCriteria<NetworkVO> accountSC = _networksDao.createSearchCriteria();
-        if (!permittedAccounts.isEmpty()) {
-            accountSC.addAnd("accountId", SearchCriteria.Op.IN, permittedAccounts.toArray());
-        }
-
-        accountSC.addAnd("aclType", SearchCriteria.Op.EQ, ACLType.Account.toString());
-
-        sc.addAnd("id", SearchCriteria.Op.SC, accountSC);
-        return _networksDao.search(sc, searchFilter);
-    }
-
     private SearchCriteria<NetworkVO> getAccountSpecificNetworksSearchCriteria(SearchBuilder<NetworkVO> sb,
            List<Long> permittedAccounts, boolean skipProjectNetworks) {
         SearchCriteria<NetworkVO> accountSC = sb.create();
@@ -2707,22 +2567,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
         accountSC.addAnd("aclType", SearchCriteria.Op.EQ, ACLType.Account.toString());
         return accountSC;
-    }
-
-    private List<NetworkVO> listAccountSpecificNetworksByDomainPath(SearchCriteria<NetworkVO> sc, Filter searchFilter, String path, boolean isRecursive) {
-        SearchCriteria<NetworkVO> accountSC = _networksDao.createSearchCriteria();
-        accountSC.addAnd("aclType", SearchCriteria.Op.EQ, ACLType.Account.toString());
-
-        if (path != null) {
-            if (isRecursive) {
-                sc.setJoinParameters("domainSearch", "path", path + "%");
-            } else {
-                sc.setJoinParameters("domainSearch", "path", path);
-            }
-        }
-
-        sc.addAnd("id", SearchCriteria.Op.SC, accountSC);
-        return _networksDao.search(sc, searchFilter);
     }
 
     private SearchCriteria<NetworkVO> getAccountSpecificNetworksByDomainPathSearchCriteria(SearchBuilder<NetworkVO> sb,
@@ -2744,38 +2588,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         return accountSC;
-    }
-
-    private List<NetworkVO> listDomainSpecificNetworksByDomainPath(SearchCriteria<NetworkVO> sc, Filter searchFilter, String path, boolean isRecursive) {
-
-        Set<Long> allowedDomains = new HashSet<Long>();
-        if (path != null) {
-            if (isRecursive) {
-                allowedDomains = _domainMgr.getDomainChildrenIds(path);
-            } else {
-                Domain domain = _domainDao.findDomainByPath(path);
-                allowedDomains.add(domain.getId());
-            }
-        }
-
-        List<Long> networkIds = new ArrayList<Long>();
-
-        List<NetworkDomainVO> maps = _networkDomainDao.listDomainNetworkMapByDomain(allowedDomains.toArray());
-
-        for (NetworkDomainVO map : maps) {
-            networkIds.add(map.getNetworkId());
-        }
-
-        if (!networkIds.isEmpty()) {
-            SearchCriteria<NetworkVO> domainSC = _networksDao.createSearchCriteria();
-            domainSC.addAnd("id", SearchCriteria.Op.IN, networkIds.toArray());
-            domainSC.addAnd("aclType", SearchCriteria.Op.EQ, ACLType.Domain.toString());
-
-            sc.addAnd("id", SearchCriteria.Op.SC, domainSC);
-            return _networksDao.search(sc, searchFilter);
-        } else {
-            return new ArrayList<NetworkVO>();
-        }
     }
 
     private SearchCriteria<NetworkVO> getDomainSpecificNetworksByDomainPathSearchCriteria(SearchBuilder<NetworkVO> sb,
@@ -2809,17 +2621,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         return null;
     }
 
-    private List<NetworkVO> listSharedNetworks(SearchCriteria<NetworkVO> sc, Filter searchFilter, List<Long> permittedAccounts) {
-        List<Long> sharedNetworkIds = _networkPermissionDao.listPermittedNetworkIdsByAccounts(permittedAccounts);
-        if (!sharedNetworkIds.isEmpty()) {
-            SearchCriteria<NetworkVO> ssc = _networksDao.createSearchCriteria();
-            ssc.addAnd("id", SearchCriteria.Op.IN, sharedNetworkIds.toArray());
-            sc.addAnd("id", SearchCriteria.Op.SC, ssc);
-            return _networksDao.search(sc, searchFilter);
-        }
-        return new ArrayList<NetworkVO>();
-    }
-
     private SearchCriteria<NetworkVO> getSharedNetworksSearchCriteria(SearchBuilder<NetworkVO> sb, List<Long> permittedAccounts) {
         List<Long> sharedNetworkIds = _networkPermissionDao.listPermittedNetworkIdsByAccounts(permittedAccounts);
         if (!sharedNetworkIds.isEmpty()) {
@@ -2829,38 +2630,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             return ssc;
         }
         return null;
-    }
-
-    private List<NetworkVO> listSharedNetworksByDomainPath(SearchCriteria<NetworkVO> sc, Filter searchFilter, String path, boolean isRecursive) {
-        Set<Long> allowedDomains = new HashSet<Long>();
-        if (path != null) {
-            if (isRecursive) {
-                allowedDomains = _domainMgr.getDomainChildrenIds(path);
-            } else {
-                Domain domain = _domainDao.findDomainByPath(path);
-                allowedDomains.add(domain.getId());
-            }
-        }
-        List<Long> allowedDomainsList = new ArrayList<Long>(allowedDomains);
-
-        if (!allowedDomainsList.isEmpty()) {
-            GenericSearchBuilder<AccountVO, Long> accountIdSearch = _accountDao.createSearchBuilder(Long.class);
-            accountIdSearch.and("domainId", accountIdSearch.entity().getDomainId(), SearchCriteria.Op.IN);
-            accountIdSearch.selectFields(accountIdSearch.entity().getId());
-            accountIdSearch.done();
-            SearchCriteria<Long> scAccount = accountIdSearch.create();
-            scAccount.setParameters("domainId", allowedDomainsList.toArray());
-            List<Long> allowedAccountsList = _accountDao.customSearch(scAccount, null);
-
-            List<Long> sharedNetworkIds = _networkPermissionDao.listPermittedNetworkIdsByAccounts(allowedAccountsList);
-            if (!sharedNetworkIds.isEmpty()) {
-                SearchCriteria<NetworkVO> ssc = _networksDao.createSearchCriteria();
-                ssc.addAnd("id", SearchCriteria.Op.IN, sharedNetworkIds.toArray());
-                sc.addAnd("id", SearchCriteria.Op.SC, ssc);
-                return _networksDao.search(sc, searchFilter);
-            }
-        }
-        return new ArrayList<NetworkVO>();
     }
 
     private SearchCriteria<NetworkVO> getSharedNetworksByDomainPathSearchCriteria(SearchBuilder<NetworkVO> sb, String path, boolean isRecursive) {
