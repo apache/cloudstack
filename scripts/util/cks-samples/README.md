@@ -5,13 +5,27 @@ Example files that can be used when creating the CloudStack Kubernetes Service I
 
 ## Usage
 
-### The basic directory
+### The basic template - create-scripts.sh
 
-In the basic directory, there is a scripts directory that can be used as a template to start the customization. It is basically the original cloud-init scripts, but they can then be modified as needed for the CKS cluster. To start, just copy the scripts directory into the util directory, peer with the create-kubernetes-binaries-iso.sh script.
+If you want to override the CKS installation starting with the basic CKS installation scripts, just run:
 
-### The cilium directory
+```
+bash create-scripts.sh ${CLOUDSTACK_REPO_HOME}/plugins/integrations/kubernetes-service/src/main/resources/conf ${CLOUDSTACK_REPO_HOME}/scripts/util/scripts
+```
 
-In the cilium directory, there is a modified version of create-kubernetes-binaries-iso.sh which contains what would be needed to install Helm and install Cilium instead of Weave. Helm needs to be installed and in the path on the OS where the ISO build will be run. There is no need to customize anything under the cilium directory if you are only looking to run Cilium instead of Weave, but just like the basic directory, other aspects can be customized.
+You can make any adjustments to the scripts under ${CLOUDSTACK_REPO_HOME}/scripts/util/scripts as necessary. Then you can run create-kubernetes-binaries-iso.sh in the parent directory as you would normally to create your ISO.
+
+### Cilium - create-scripts-cilium.sh
+
+If you want a CKS installation that installs both Cilium (instead of Weave) and Helm, you can run the Cilium create script like so:
+
+```
+bash create-scripts-cilium.sh ${CLOUDSTACK_REPO_HOME}/plugins/integrations/kubernetes-service/src/main/resources/conf ${CLOUDSTACK_REPO_HOME}/scripts/util/cks-samples/scripts
+```
+
+You can make any adjustments to the scripts under ${CLOUDSTACK_REPO_HOME}/scripts/util/cks-samples/scripts as necessary, although by default, the scripts should install what is necessary to install Cilium. There are helm-overrides for Cilium under the helm-overrides directory that can be modified as well.
+
+Once any adjustments are made (not required), you can run create-kubernetes-binaries-iso-cilium.sh in a similar fashion to how create-kubernetes-binaries-iso.sh would be run, replacing the Weave URL with the Cilium version and Helm version (see examples in the usage).
 
 
 ## References in CloudStack

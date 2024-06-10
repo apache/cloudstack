@@ -19,8 +19,8 @@
 set -e
 
 if [ $# -lt 8 ]; then
-    echo "Invalid input. Valid usage: ./create-kubernetes-binaries-iso.sh OUTPUT_PATH KUBERNETES_VERSION CNI_VERSION CRICTL_VERSION CILIUM_VERSION HELM_VERSION DASHBOARD_YAML_CONFIG BUILD_NAME"
-    echo "eg: ./create-kubernetes-binaries-iso.sh ./ 1.27.14 1.4.0 1.29.0 1.15.1 3.14.2 https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml setup-v1.27.14"
+    echo "Invalid input. Valid usage: ./create-kubernetes-binaries-iso-cilium.sh OUTPUT_PATH KUBERNETES_VERSION CNI_VERSION CRICTL_VERSION CILIUM_VERSION HELM_VERSION DASHBOARD_YAML_CONFIG BUILD_NAME"
+    echo "eg: ./create-kubernetes-binaries-iso-cilium.sh ./ 1.27.14 1.4.0 1.29.0 1.15.1 3.14.2 https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml setup-v1.27.14"
     exit 1
 fi
 
