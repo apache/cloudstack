@@ -87,8 +87,7 @@
                 </template>
                 <a-input
                   v-model:value="form.account"
-                  :placeholder="apiParams.account.description"
-                  @change="handleAccountChange"/>
+                  :placeholder="apiParams.account.description"/>
               </a-form-item>
               <a-form-item name="projectid" ref="projectid">
                 <template #label>
@@ -298,6 +297,8 @@
                 <multi-network-selection
                   :items="nics"
                   :zoneId="cluster.zoneid"
+                  :domainid="form.domainid"
+                  :account="form.account"
                   :selectionEnabled="false"
                   :filterUnimplementedNetworks="true"
                   :hypervisor="this.cluster.hypervisortype"
@@ -694,7 +695,9 @@ export default {
       this.form = reactive({
         rootdiskid: 0,
         migrateallowed: this.switches.migrateAllowed,
-        forced: this.switches.forced
+        forced: this.switches.forced,
+        domainid: null,
+        account: null
       })
       this.rules = reactive({
         displayname: [{ required: true, message: this.$t('message.error.input.value') }],
@@ -772,10 +775,6 @@ export default {
       const options = param.options || {}
       if (!('listall' in options)) {
         options.listall = true
-      }
-      if (['networks'].includes(name) && this.form.domainid && this.form.account) {
-        options.domainid = this.form.domainid
-        options.account = this.form.account
       }
       api(param.list, options).then((response) => {
         param.loading = false
@@ -979,12 +978,6 @@ export default {
       rootDisk.name = `${rootDisk.label} (${rootDisk.size} GB)`
       rootDisk.meta = this.getMeta(rootDisk, { controller: 'controller', datastorename: 'datastore', position: 'position' })
       this.selectedRootDiskSources = [rootDisk]
-    },
-    handleAccountChange (e) {
-      const accountValue = e.target.value
-      if (accountValue) {
-        this.fetchOptions(this.params.networks, 'networks')
-      }
     },
     handleSubmit (e) {
       e.preventDefault()
