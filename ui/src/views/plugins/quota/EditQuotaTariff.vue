@@ -22,7 +22,6 @@
       layout="vertical"
       :ref="formRef"
       :model="form"
-      :rules="rules"
       @finish="handleSubmit"
       v-ctrl-enter="handleSubmit">
       <a-form-item ref="description" name="description">
@@ -100,9 +99,6 @@ export default {
         value: this.resource.tariffValue,
         endDate: parseDateToDatePicker(this.resource.endDate)
       })
-      this.rules = reactive({
-        value: [{ required: true, message: this.$t('message.action.quota.tariff.create.error.valuerequired') }]
-      })
     },
     closeModal () {
       this.$emit('close-action')
@@ -123,7 +119,7 @@ export default {
           params.description = values.description
         }
 
-        if (this.resource.tariffValue !== values.value) {
+        if (values.value && this.resource.tariffValue !== values.value) {
           params.value = values.value
         }
 
