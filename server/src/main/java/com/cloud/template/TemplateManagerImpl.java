@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.user.*;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
@@ -184,12 +185,6 @@ import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.template.TemplateAdapter.TemplateAdapterType;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.AccountService;
-import com.cloud.user.AccountVO;
-import com.cloud.user.ResourceLimitService;
-import com.cloud.user.UserData;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.DateUtil;
@@ -1448,6 +1443,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         // Input validation
         final Long id = cmd.getId();
         final Account caller = CallContext.current().getCallingAccount();
+        final User user = CallContext.current().getCallingUser();
         List<String> accountNames = cmd.getAccountNames();
         List<Long> projectIds = cmd.getProjectIds();
         Boolean isFeatured = cmd.isFeatured();
@@ -1517,9 +1513,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         if (owner.getType() == Account.Type.PROJECT) {
-            // Currently project owned templates cannot be shared outside project but is available to all users within project by default.
-            throw new InvalidParameterValueException("Update template permissions is an invalid operation on template " + template.getName() +
-                    ". Project owned templates cannot be shared outside template.");
+            _accountMgr.checkAccess(user, template);
+//            throw new InvalidParameterValueException("Update template permissions is an invalid operation on template " + template.getName() +
+//                    ". Project owned templates cannot be shared outside the project.");
         }
 
         // check configuration parameter(allow.public.user.templates) value for
