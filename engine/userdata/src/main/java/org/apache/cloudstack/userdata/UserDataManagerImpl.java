@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.exception.InvalidParameterValueException;
@@ -33,6 +34,7 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class UserDataManagerImpl extends ManagerBase implements UserDataManager {
+    private static final Logger s_logger = Logger.getLogger(UserDataManagerImpl.class);
     private static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
     private static final int MAX_HTTP_GET_LENGTH = 2 * MAX_USER_DATA_LENGTH_BYTES;
     private static final int NUM_OF_2K_BLOCKS = 512;
@@ -89,6 +91,7 @@ public class UserDataManagerImpl extends ManagerBase implements UserDataManager 
     @Override
     public String validateUserData(String userData, BaseCmd.HTTPMethod httpmethod) {
         if (StringUtils.isBlank(userData)) {
+            s_logger.debug("Null/empty user data set");
             return null;
         }
 
@@ -96,7 +99,7 @@ public class UserDataManagerImpl extends ManagerBase implements UserDataManager 
             try {
                 userData = URLDecoder.decode(userData, "UTF-8");
             } catch (UnsupportedEncodingException e) {
-                throw new InvalidParameterValueException("Url decoding of userdata failed.");
+                throw new InvalidParameterValueException("Url decoding of user data failed.");
             }
         }
 
@@ -124,11 +127,14 @@ public class UserDataManagerImpl extends ManagerBase implements UserDataManager 
         }
 
         int userDataLength = decodedUserData.length;
+        s_logger.info(String.format("Configured user data size: %d bytes", userDataLength));
 
         if (userDataLength > maxHTTPLength) {
+            s_logger.warn(String.format("User data (size: %d bytes) too long for http %s request (accepted size: %d bytes)", userDataLength, httpMethod.toString(), maxHTTPLength));
             throw new InvalidParameterValueException(String.format("User data is too long for http %s request", httpMethod.toString()));
         }
         if (userDataLength > ConfigurationManager.VM_USERDATA_MAX_LENGTH.value()) {
+            s_logger.warn(String.format("User data (size: %d bytes) has exceeded configurable max length of %d bytes", userDataLength, ConfigurationManager.VM_USERDATA_MAX_LENGTH.value()));
             throw new InvalidParameterValueException("User data has exceeded configurable max length : " + ConfigurationManager.VM_USERDATA_MAX_LENGTH.value());
         }
 
