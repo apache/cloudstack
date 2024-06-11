@@ -2473,12 +2473,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 if (!storagePoolMgr.connectPhysicalDisk(destPrimaryStore.getPoolType(), destPrimaryStore.getUuid(), destVolumePath, destPrimaryStore.getDetails())) {
                     s_logger.warn("Failed to connect dest volume at path: " + destVolumePath + ", in storage pool id: " + destPrimaryStore.getUuid());
                 }
-                if (destPrimaryStore.getPoolType() == StoragePoolType.FiberChannel) {
-                    destVolumeName = destData.getPath();
-                } else {
-                    String managedStoreTarget = destPrimaryStore.getDetails() != null ? destPrimaryStore.getDetails().get("managedStoreTarget") : null;
-                    destVolumeName = managedStoreTarget != null ? managedStoreTarget : destVolumePath;
-                }
+                destVolumeName = derivePath(destPrimaryStore, destData, destPrimaryStore.getDetails());
             } else {
                 final String volumeName = UUID.randomUUID().toString();
                 destVolumeName = volumeName + "." + destFormat.getFileExtension();

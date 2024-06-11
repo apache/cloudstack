@@ -222,11 +222,17 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
             return false;
         }
         ScriptResult result = runScript(disconnectScript, 60000L, address.getAddress().toLowerCase());
+
+        if (result.getExitCode() != 0) {
+            LOGGER.warn(String.format("Disconnect failed for path [%s] with return code [%s]", address.getAddress().toLowerCase(), result.getExitCode()));
+        }
+
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("multipath flush output: " + result.getResult());
             LOGGER.debug(String.format("disconnectPhysicalDisk(volumePath,pool) called with args (%s, %s) COMPLETE [rc=%s]", volumePath, pool.getUuid(), result.getResult()));
         }
-        return true;
+
+        return (result.getExitCode() == 0);
     }
 
     @Override
@@ -247,11 +253,14 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
             for (String oui: SUPPORTED_OUI_LIST) {
                 if (multipathName.length() > 1 && multipathName.substring(2).startsWith(oui)) {
                     ScriptResult result = runScript(disconnectScript, 60000L, multipathName);
+                    if (result.getExitCode() != 0) {
+                        LOGGER.warn(String.format("Disconnect failed for path [%s] with return code [%s]", multipathName, result.getExitCode()));
+                    }
                     if (LOGGER.isDebugEnabled()) {
                         LOGGER.debug("multipath flush output: " + result.getResult());
                         LOGGER.debug(String.format("disconnectPhysicalDiskByPath(localPath) called with args (%s) COMPLETE [rc=%s]", localPath, result.getExitCode()));
                     }
-                    return true;
+                    return (result.getExitCode() == 0);
                 }
             }
         }
