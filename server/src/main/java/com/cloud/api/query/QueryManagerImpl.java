@@ -5686,6 +5686,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {AllowUserViewDestroyedVM, UserVMDeniedDetails, UserVMReadOnlyDetails, SortKeyAscending,
-                AllowUserViewAllDomainAccounts, SharePublicTemplatesWithOtherDomains};
+                AllowUserViewAllDomainAccounts, SharePublicTemplatesWithOtherDomains, ReturnVmStatsOnVmList};
     }
 }
