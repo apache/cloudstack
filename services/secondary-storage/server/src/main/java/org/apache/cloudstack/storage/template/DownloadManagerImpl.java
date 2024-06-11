@@ -1136,7 +1136,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             return;
         }
         IpTablesHelper.addConditionally(IpTablesHelper.INPUT_CHAIN
-                , false
+                , true
                 , "-i " + TemplateConstants.TMPLT_COPY_INTF_PRIVATE + " -p tcp -m state --state NEW -m tcp --dport 443 -j ACCEPT;"
                 , "Error in opening up apache2 port 443 err=");
         if (result != null) {
