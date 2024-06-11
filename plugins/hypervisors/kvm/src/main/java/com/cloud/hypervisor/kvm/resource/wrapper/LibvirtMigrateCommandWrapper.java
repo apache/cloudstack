@@ -182,7 +182,9 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             // Replace CDROM ISO path
             String oldCdromIsoPath = getOldVolumePathForCdrom(disks, vmName);
             String newCdromIsoPath = getNewVolumePathForCdrom(libvirtComputingResource, conn, to);
-            xmlDesc = replaceCdromIsoPath(xmlDesc, vmName, oldCdromIsoPath, newCdromIsoPath);
+            if (newCdromIsoPath != null && !newCdromIsoPath.equals(oldCdromIsoPath)) {
+                xmlDesc = replaceCdromIsoPath(xmlDesc, vmName, oldCdromIsoPath, newCdromIsoPath);
+            }
 
             // delete the metadata of vm snapshots before migration
             vmsnapshots = libvirtComputingResource.cleanVMSnapshotMetadata(dm);
