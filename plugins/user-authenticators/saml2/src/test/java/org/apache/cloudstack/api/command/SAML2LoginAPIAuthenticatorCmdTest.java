@@ -276,6 +276,7 @@ public class SAML2LoginAPIAuthenticatorCmdTest {
         f.setAccessible(true);
         f.set(configKey, o);
     }
+
     @Test
     public void testFailOnSAMLSignatureCheckWhenFalse() throws NoSuchFieldException, IllegalAccessException {
         overrideDefaultConfigValue(SAML2AuthManager.SAMLCheckSignature, "_defaultValue", "false");
