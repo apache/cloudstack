@@ -2039,6 +2039,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         Long[] updateNewMinIops = {newMinIops};
         Long[] updateNewMaxIops = {newMaxIops};
         Integer[] updateNewHypervisorSnapshotReserve = {newHypervisorSnapshotReserve};
+        validateChangeDiskOffering(existingDiskOffering, newDiskOffering);
         validateVolumeResizeWithNewDiskOfferingAndLoad(volume, existingDiskOffering, newDiskOffering, updateNewSize, updateNewMinIops, updateNewMaxIops, updateNewHypervisorSnapshotReserve);
         newSize = updateNewSize[0];
         newMinIops = updateNewMinIops[0];
@@ -2244,6 +2245,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         } else {
             newMinIops[0] = newDiskOffering.getMinIops();
             newMaxIops[0] = newDiskOffering.getMaxIops();
+        }
+    }
+
+    private void validateChangeDiskOffering(DiskOfferingVO existingDiskOffering, DiskOfferingVO newDiskOffering) {
+        if (existingDiskOffering.getEncrypt() != newDiskOffering.getEncrypt()) {
+            throw new InvalidParameterValueException("Cannot change the encryption type of a volume, please check the selected disk offering");
         }
     }
 
