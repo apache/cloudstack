@@ -1451,7 +1451,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {ProjectSmtpEnabledSecurityProtocols, ProjectSmtpUseStartTLS};
+        return new ConfigKey<?>[] {ProjectSmtpEnabledSecurityProtocols, ProjectSmtpUseStartTLS, ProjectSmtpUseAuth};
     }
 
     protected void updateProjectNameAndDisplayText(final ProjectVO project, String name, String displayText) {

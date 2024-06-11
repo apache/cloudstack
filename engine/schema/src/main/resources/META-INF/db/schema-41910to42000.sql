@@ -133,3 +133,20 @@ CREATE TABLE `cloud`.`webhook_delivery` (
   CONSTRAINT `fk_webhook__event_id` FOREIGN KEY (`event_id`) REFERENCES `event`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_webhook__webhook_id` FOREIGN KEY (`webhook_id`) REFERENCES `webhook`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Normalize quota.usage.smtp.useStartTLS, quota.usage.smtp.useAuth, alert.smtp.useAuth and project.smtp.useAuth values
+UPDATE
+    `cloud`.`configuration`
+SET
+    value = "true"
+WHERE
+    name IN ("quota.usage.smtp.useStartTLS", "quota.usage.smtp.useAuth", "alert.smtp.useAuth", "project.smtp.useAuth")
+    AND value IN ("true", "y", "t", "1", "on", "yes");
+
+UPDATE
+    `cloud`.`configuration`
+SET
+    value = "false"
+WHERE
+    name IN ("quota.usage.smtp.useStartTLS", "quota.usage.smtp.useAuth", "alert.smtp.useAuth", "project.smtp.useAuth")
+    AND value NOT IN ("true", "y", "t", "1", "on", "yes");
