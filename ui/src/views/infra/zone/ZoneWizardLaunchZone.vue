@@ -1358,7 +1358,7 @@ export default {
       hostData.clusterid = this.stepData.clusterReturned.id
       hostData.hypervisor = this.stepData.clusterReturned.hypervisortype
       hostData.clustertype = this.stepData.clusterReturned.clustertype
-      hostData.hosttags = this.prefillContent?.hostTags || null
+      hostData.hosttags = this.prefillContent?.hostTags || ''
       hostData.username = this.prefillContent?.hostUserName || null
       hostData.password = hostPassword
       const hostname = this.prefillContent?.hostName || null

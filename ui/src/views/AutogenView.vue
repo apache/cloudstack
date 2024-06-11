@@ -798,7 +798,7 @@ export default {
       this.projectView = Boolean(store.getters.project && store.getters.project.id)
       this.hasProjectId = ['vm', 'vmgroup', 'ssh', 'affinitygroup', 'userdata', 'volume', 'snapshot', 'vmsnapshot', 'guestnetwork',
         'vpc', 'securitygroups', 'publicip', 'vpncustomergateway', 'template', 'iso', 'event', 'kubernetes',
-        'autoscalevmgroup', 'vnfapp'].includes(this.$route.name)
+        'autoscalevmgroup', 'vnfapp', 'webhook'].includes(this.$route.name)
 
       if ((this.$route && this.$route.params && this.$route.params.id) || this.$route.query.dataView) {
         this.dataView = true
@@ -819,7 +819,7 @@ export default {
       }
 
       if (this.$route && this.$route.meta && this.$route.meta.permission) {
-        this.apiName = this.$route.meta.permission[0]
+        this.apiName = (this.$route.meta.getApiToCall && this.$route.meta.getApiToCall()) || this.$route.meta.permission[0]
         if (this.$route.meta.columns) {
           const columns = this.$route.meta.columns
           if (columns && typeof columns === 'function') {
@@ -1553,13 +1553,16 @@ export default {
               continue
             }
             if (input === undefined || input === null ||
-              (input === '' && !['updateStoragePool', 'updateHost', 'updatePhysicalNetwork', 'updateDiskOffering', 'updateNetworkOffering', 'updateServiceOffering', 'updateZone', 'updateAccount'].includes(action.api))) {
+              (input === '' && !['updateStoragePool', 'updateHost', 'updatePhysicalNetwork',
+                'updateDiskOffering', 'updateNetworkOffering', 'updateServiceOffering',
+                'updateZone', 'updateAccount', 'updateWebhook'].includes(action.api))) {
               if (param.type === 'boolean') {
                 params[key] = false
               }
               break
             }
-            if (input === '' && !['tags', 'hosttags', 'storagetags', 'dns2', 'ip6dns1', 'ip6dns2', 'internaldns2', 'networkdomain'].includes(key)) {
+            if (input === '' && !['tags', 'hosttags', 'storagetags', 'dns2', 'ip6dns1',
+              'ip6dns2', 'internaldns2', 'networkdomain', 'secretkey'].includes(key)) {
               break
             }
             if (action.mapping && key in action.mapping && action.mapping[key].options) {

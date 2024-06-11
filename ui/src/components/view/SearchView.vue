@@ -85,6 +85,9 @@
                           </span>
                           <block-outlined v-else style="margin-right: 5px" />
                         </span>
+                        <span v-if="(field.name.startsWith('managementserver'))">
+                          <status :text="opt.state" />
+                        </span>
                         {{ $t(opt.path || opt.name) }}
                       </div>
                     </a-select-option>
@@ -154,14 +157,17 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import { isAdmin } from '@/role'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
+import Status from '@/components/widgets/Status'
 
 export default {
   name: 'SearchView',
   components: {
     TooltipButton,
-    ResourceIcon
+    ResourceIcon,
+    Status
   },
   props: {
     searchFilters: {
@@ -206,13 +212,7 @@ export default {
       if (to && to.query && 'q' in to.query) {
         this.searchQuery = to.query.q
       }
-      this.isFiltered = false
-      this.searchFilters.some(item => {
-        if (this.searchParams[item]) {
-          this.isFiltered = true
-          return true
-        }
-      })
+      this.updateIsFiltered()
     }
   },
   mounted () {
@@ -220,6 +220,7 @@ export default {
     if (this.$route && this.$route.query && 'q' in this.$route.query) {
       this.searchQuery = this.$route.query.q
     }
+    this.updateIsFiltered()
   },
   computed: {
     styleSearch () {
@@ -285,7 +286,7 @@ export default {
         }
         if (['zoneid', 'domainid', 'imagestoreid', 'storageid', 'state', 'account', 'hypervisor', 'level',
           'clusterid', 'podid', 'groupid', 'entitytype', 'accounttype', 'systemvmtype', 'scope', 'provider',
-          'type'].includes(item)
+          'type', 'scope', 'managementserverid'].includes(item)
         ) {
           type = 'list'
         } else if (item === 'tags') {
@@ -317,6 +318,13 @@ export default {
           this.fields[typeIndex].opts = this.fetchRoleTypes()
           this.fields[typeIndex].loading = false
         }
+      }
+
+      if (arrayField.includes('scope')) {
+        const scopeIndex = this.fields.findIndex(item => item.name === 'scope')
+        this.fields[scopeIndex].loading = true
+        this.fields[scopeIndex].opts = this.fetchScope()
+        this.fields[scopeIndex].loading = false
       }
 
       if (arrayField.includes('state')) {
@@ -397,6 +405,7 @@ export default {
       let podIndex = -1
       let clusterIndex = -1
       let groupIndex = -1
+      let managementServerIdIndex = -1
 
       if (arrayField.includes('type')) {
         if (this.$route.path === '/alert') {
@@ -464,6 +473,12 @@ export default {
         promises.push(await this.fetchInstanceGroups(searchKeyword))
       }
 
+      if (arrayField.includes('managementserverid')) {
+        managementServerIdIndex = this.fields.findIndex(item => item.name === 'managementserverid')
+        this.fields[managementServerIdIndex].loading = true
+        promises.push(await this.fetchManagementServers(searchKeyword))
+      }
+
       Promise.all(promises).then(response => {
         if (typeIndex > -1) {
           const types = response.filter(item => item.type === 'type')
@@ -525,6 +540,12 @@ export default {
             this.fields[groupIndex].opts = this.sortArray(groups[0].data)
           }
         }
+        if (managementServerIdIndex > -1) {
+          const managementServers = response.filter(item => item.type === 'managementserverid')
+          if (managementServers && managementServers.length > 0) {
+            this.fields[managementServerIdIndex].opts = this.sortArray(managementServers[0].data)
+          }
+        }
       }).finally(() => {
         if (typeIndex > -1) {
           this.fields[typeIndex].loading = false
@@ -549,6 +570,9 @@ export default {
         }
         if (groupIndex > -1) {
           this.fields[groupIndex].loading = false
+        }
+        if (managementServerIdIndex > -1) {
+          this.fields[managementServerIdIndex].loading = false
         }
         this.fillFormFieldValues()
       })
@@ -757,6 +781,19 @@ export default {
         })
       }
     },
+    fetchManagementServers (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        api('listManagementServers', { listAll: true, keyword: searchKeyword }).then(json => {
+          const managementservers = json.listmanagementserversresponse.managementserver
+          resolve({
+            type: 'managementserverid',
+            data: managementservers
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
     fetchGuestNetworkTypes () {
       const types = []
       if (this.apiName.indexOf('listNetworks') > -1) {
@@ -877,9 +914,30 @@ export default {
       }
       return types
     },
+    fetchScope () {
+      const scope = []
+      if (this.apiName.indexOf('listWebhooks') > -1) {
+        scope.push({
+          id: 'Local',
+          name: 'label.local'
+        })
+        scope.push({
+          id: 'Domain',
+          name: 'label.domain'
+        })
+        if (isAdmin()) {
+          scope.push({
+            id: 'Global',
+            name: 'label.global'
+          })
+        }
+      }
+      return scope
+    },
     fetchState () {
+      var state = []
       if (this.apiName.includes('listVolumes')) {
-        return [
+        state = [
           {
             id: 'Allocated',
             name: 'label.allocated'
@@ -906,7 +964,7 @@ export default {
           }
         ]
       } else if (this.apiName.includes('listKubernetesClusters')) {
-        return [
+        state = [
           {
             id: 'Created',
             name: 'label.created'
@@ -956,8 +1014,19 @@ export default {
             name: 'label.error'
           }
         ]
+      } else if (this.apiName.indexOf('listWebhooks') > -1) {
+        state = [
+          {
+            id: 'Enabled',
+            name: 'label.enabled'
+          },
+          {
+            id: 'Disabled',
+            name: 'label.disabled'
+          }
+        ]
       }
-      return []
+      return state
     },
     fetchEntityType () {
       const entityType = []
@@ -1052,6 +1121,13 @@ export default {
     },
     changeFilter (filter) {
       this.$emit('change-filter', filter)
+    },
+    updateIsFiltered () {
+      this.isFiltered = this.searchFilters.some(item => {
+        if (this.searchParams[item]) {
+          return true
+        }
+      })
     }
   }
 }
