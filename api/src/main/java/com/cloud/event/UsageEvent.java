@@ -29,6 +29,8 @@ public interface UsageEvent extends InternalIdentity {
 
     Long getSize();
 
+    Long getVmInstanceId();
+
     Long getTemplateId();
 
     Long getOfferingId();

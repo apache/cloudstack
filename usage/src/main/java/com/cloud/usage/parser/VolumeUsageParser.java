@@ -87,9 +87,10 @@ public class VolumeUsageParser {
             long zoneId = usageVol.getZoneId();
             Long templateId = usageVol.getTemplateId();
             long size = usageVol.getSize();
+            Long vmId = usageVol.getVmInstanceId();
             String key = volId + "-" + doId + "-" + size;
 
-            diskOfferingMap.put(key, new VolInfo(volId, zoneId, doId, templateId, size));
+            diskOfferingMap.put(key, new VolInfo(volId, vmId, zoneId, doId, templateId, size));
 
             Date volCreateDate = usageVol.getCreated();
             Date volDeleteDate = usageVol.getDeleted();
@@ -120,7 +121,7 @@ public class VolumeUsageParser {
             // Only create a usage record if we have a runningTime of bigger than zero.
             if (useTime > 0L) {
                 VolInfo info = diskOfferingMap.get(volIdKey);
-                createUsageRecord(UsageTypes.VOLUME, useTime, startDate, endDate, account, info.getVolumeId(), info.getZoneId(), info.getDiskOfferingId(),
+                createUsageRecord(UsageTypes.VOLUME, useTime, startDate, endDate, account, info.getVolumeId(), info.getVmInstanceId(), info.getZoneId(), info.getDiskOfferingId(),
                     info.getTemplateId(), info.getSize());
             }
         }
@@ -140,7 +141,7 @@ public class VolumeUsageParser {
         usageDataMap.put(key, volUsageInfo);
     }
 
-    private static void createUsageRecord(int type, long runningTime, Date startDate, Date endDate, AccountVO account, long volId, long zoneId, Long doId,
+    private static void createUsageRecord(int type, long runningTime, Date startDate, Date endDate, AccountVO account, long volId, Long vmId, long zoneId, Long doId,
         Long templateId, long size) {
         // Our smallest increment is hourly for now
         if (s_logger.isDebugEnabled()) {
@@ -166,20 +167,22 @@ public class VolumeUsageParser {
             usageDesc += " (DiskOffering: " + doId + ")";
         }
 
-        UsageVO usageRecord = new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type, new Double(usage), null, null, doId, templateId, volId,
+        UsageVO usageRecord = new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type, new Double(usage), vmId, null, doId, templateId, volId,
                 size, startDate, endDate);
         s_usageDao.persist(usageRecord);
     }
 
     private static class VolInfo {
         private long volId;
+        private Long vmId;
         private long zoneId;
         private Long diskOfferingId;
         private Long templateId;
         private long size;
 
-        public VolInfo(long volId, long zoneId, Long diskOfferingId, Long templateId, long size) {
+        public VolInfo(long volId, Long vmId, long zoneId, Long diskOfferingId, Long templateId, long size) {
             this.volId = volId;
+            this.vmId = vmId;
             this.zoneId = zoneId;
             this.diskOfferingId = diskOfferingId;
             this.templateId = templateId;
@@ -192,6 +195,10 @@ public class VolumeUsageParser {
 
         public long getVolumeId() {
             return volId;
+        }
+
+        public Long getVmInstanceId() {
+            return vmId;
         }
 
         public Long getDiskOfferingId() {

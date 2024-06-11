@@ -65,3 +65,7 @@ CREATE TABLE IF NOT EXISTS `cloud_usage`.`usage_vpc` (
 CALL `cloud_usage`.`IDEMPOTENT_ADD_COLUMN`('cloud_usage.cloud_usage', 'state', 'VARCHAR(100) DEFAULT NULL');
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.user_data', 'removed', 'datetime COMMENT "date removed or null, if still present"');
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.usage_event', 'vm_instance_id', 'bigint(20) unsigned DEFAULT NULL');
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud_usage.usage_volume', 'vm_instance_id', 'bigint(20) unsigned DEFAULT NULL');

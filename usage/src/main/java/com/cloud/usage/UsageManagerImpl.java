@@ -1112,7 +1112,10 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
 
     private boolean isVolumeEvent(String eventType) {
         return eventType != null &&
-                (eventType.equals(EventTypes.EVENT_VOLUME_CREATE) || eventType.equals(EventTypes.EVENT_VOLUME_DELETE) || eventType.equals(EventTypes.EVENT_VOLUME_RESIZE) || eventType.equals(EventTypes.EVENT_VOLUME_UPLOAD));
+                (eventType.equals(EventTypes.EVENT_VOLUME_CREATE) || eventType.equals(EventTypes.EVENT_VOLUME_DELETE) ||
+                        eventType.equals(EventTypes.EVENT_VOLUME_RESIZE) || eventType.equals(EventTypes.EVENT_VOLUME_UPLOAD) ||
+                        eventType.equals(EventTypes.EVENT_VOLUME_ASSIGN) || eventType.equals(EventTypes.EVENT_VOLUME_RELEASE) ||
+                        eventType.equals(EventTypes.EVENT_VOLUME_ATTACH) || eventType.equals(EventTypes.EVENT_VOLUME_DETACH));
     }
 
     private boolean isTemplateEvent(String eventType) {

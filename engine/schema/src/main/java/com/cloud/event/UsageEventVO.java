@@ -57,6 +57,9 @@ public class UsageEventVO implements UsageEvent {
     @Column(name = "resource_name")
     private String resourceName;
 
+    @Column(name = "vm_instance_id")
+    private Long vmInstanceId;
+
     @Column(name = "offering_id")
     private Long offeringId;
 
@@ -134,6 +137,18 @@ public class UsageEventVO implements UsageEvent {
         this.resourceType = resourceType;
     }
 
+    public UsageEventVO(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long vmInstanceId, Long offeringId, Long templateId, String resourceType) {
+        this.type = usageType;
+        this.accountId = accountId;
+        this.zoneId = zoneId;
+        this.resourceId = resourceId;
+        this.resourceName = resourceName;
+        this.vmInstanceId = vmInstanceId;
+        this.offeringId = offeringId;
+        this.templateId = templateId;
+        this.resourceType = resourceType;
+    }
+
     //Security Group usage event
     public UsageEventVO(String usageType, long accountId, long zoneId, long vmId, long securityGroupId) {
         this.type = usageType;
@@ -199,6 +214,11 @@ public class UsageEventVO implements UsageEvent {
 
     public String getResourceName() {
         return resourceName;
+    }
+
+    @Override
+    public Long getVmInstanceId() {
+        return vmInstanceId;
     }
 
     public void setOfferingId(long offeringId) {

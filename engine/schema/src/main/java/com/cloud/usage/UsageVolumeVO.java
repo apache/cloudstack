@@ -50,6 +50,9 @@ public class UsageVolumeVO implements InternalIdentity {
     @Column(name = "volume_id")
     private long volumeId;
 
+    @Column(name = "vm_instance_id")
+    private Long vmInstanceId;
+
     @Column(name = "disk_offering_id")
     private Long diskOfferingId;
 
@@ -97,6 +100,10 @@ public class UsageVolumeVO implements InternalIdentity {
     @Override
     public long getId() {
         return id;
+    }
+
+    public Long getVmInstanceId() {
+        return vmInstanceId;
     }
 
     public Long getDiskOfferingId() {
