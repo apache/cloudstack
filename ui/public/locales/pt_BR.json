@@ -1155,6 +1155,7 @@
 "label.ovmnetworklabel": "R\u00f3tulo de tr\u00e1fego OVM",
 "label.ovs": "OVS",
 "label.owner.account": "Dono da conta",
+"label.owner.type": "Tipo de dono",
 "label.owners": "Donos",
 "label.pa": "Palo Alto",
 "label.page": "p\u00e1gina",
