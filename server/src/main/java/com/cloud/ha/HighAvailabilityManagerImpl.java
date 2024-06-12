@@ -66,7 +66,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.VirtualNetworkApplianceService;
+import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
@@ -147,7 +147,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
     @Inject
     DataStoreProviderManager dataStoreProviderMgr;
     @Inject
-    VirtualNetworkApplianceService virtualNetworkApplianceService;
+    VpcVirtualNetworkApplianceService routerService;
     @Inject
     UserVmManager userVmManager;
 
@@ -448,7 +448,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             ConcurrentOperationException, OperationTimedoutException {
         switch (vm.getType()) {
             case DomainRouter:
-                virtualNetworkApplianceService.startRouterForHA(vm.getUuid(), params, planner);
+                routerService.startRouterForHA(vm.getUuid(), params, planner);
                 break;
             case ConsoleProxy:
                 consoleProxyManager.startProxyForHA(vm.getUuid(), params, planner);
