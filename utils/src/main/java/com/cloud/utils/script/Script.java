@@ -242,7 +242,7 @@ public class Script implements Callable<String> {
                     if (_process.waitFor(_timeout, TimeUnit.MILLISECONDS)) {
                         //process completed successfully
                         if (_process.exitValue() == 0) {
-                            _logger.debug("Execution is successfullish.");
+                            _logger.debug("Execution is successful.");
                             String result;
                             String method;
                             if (interpreter != null) {

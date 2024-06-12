@@ -1127,17 +1127,16 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             LOGGER.warn("Error in stopping httpd service err=" + result);
         }
 
-        // TODO add a check if rule exists
         IpTablesHelper.addConditionally(IpTablesHelper.INPUT_CHAIN
                 , true
-                , "-i " + TemplateConstants.TMPLT_COPY_INTF_PRIVATE + " -p tcp -m state --state NEW -m tcp --dport " + TemplateConstants.DEFAULT_TMPLT_COPY_PORT + " -j ACCEPT"
+                , "-i " + TemplateConstants.DEFAULT_TMPLT_COPY_INTF + " -p tcp -m state --state NEW -m tcp --dport " + TemplateConstants.DEFAULT_TMPLT_COPY_PORT + " -j ACCEPT"
                 , "Error in opening up apache2 port " + TemplateConstants.TMPLT_COPY_INTF_PRIVATE + " err=");
         if (result != null) {
             return;
         }
         IpTablesHelper.addConditionally(IpTablesHelper.INPUT_CHAIN
                 , true
-                , "-i " + TemplateConstants.TMPLT_COPY_INTF_PRIVATE + " -p tcp -m state --state NEW -m tcp --dport 443 -j ACCEPT;"
+                , "-i " + TemplateConstants.DEFAULT_TMPLT_COPY_INTF + " -p tcp -m state --state NEW -m tcp --dport 443 -j ACCEPT;"
                 , "Error in opening up apache2 port 443 err=");
         if (result != null) {
             return;
