@@ -304,5 +304,5 @@ class TestClusterDRS(cloudstackTestCase):
         vm_2_host_id = self.get_vm_host_id(self.virtual_machine_2.id)
 
         self.assertTrue(
-            vm_1_host_id != self.virtual_machine_1.hostid or vm_2_host_id != self.virtual_machine_1.hostid,
+            vm_1_host_id != self.virtual_machine_1.hostid or vm_2_host_id != self.virtual_machine_2.hostid,
                         msg="At least one VM should have been migrated to a different host")
