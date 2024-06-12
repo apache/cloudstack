@@ -103,6 +103,9 @@ public class ListVolumesCmd extends BaseListRetrieveOnlyResourceCountCmd impleme
     @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "state of the volume. Possible values are: Ready, Allocated, Destroy, Expunging, Expunged.")
     private String state;
 
+    @Parameter(name = ApiConstants.IS_ENCRYPTED, type = CommandType.BOOLEAN, description = "list only volumes that are encrypted", since = "4.19.1",
+            authorized = { RoleType.Admin })
+    private Boolean encrypted;
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -162,6 +165,10 @@ public class ListVolumesCmd extends BaseListRetrieveOnlyResourceCountCmd impleme
 
     public String getState() {
         return state;
+    }
+
+    public Boolean isEncrypted() {
+        return encrypted;
     }
 
     /////////////////////////////////////////////////////

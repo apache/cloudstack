@@ -298,8 +298,8 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
     private Map<String, String> volumeRepairResult;
 
     @SerializedName(ApiConstants.ENCRYPT_FORMAT)
-    @Param(description = "the encrypt format of the volume", since = "4.19.1")
-    private String encryptFormat;
+    @Param(description = "the format of the disk encryption if applicable", since = "4.19.1")
+    private String encryptionFormat;
 
     public String getPath() {
         return path;
@@ -847,7 +847,7 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
         this.volumeRepairResult = volumeRepairResult;
     }
 
-    public void setEncryptFormat(String encryptFormat) {
-        this.encryptFormat = encryptFormat;
+    public void setEncryptionFormat(String encryptionFormat) {
+        this.encryptionFormat = encryptionFormat;
     }
 }
