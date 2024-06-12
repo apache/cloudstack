@@ -263,6 +263,7 @@ public class ApiConstants {
     public static final String IS_CLEANUP_REQUIRED = "iscleanuprequired";
     public static final String IS_DYNAMIC = "isdynamic";
     public static final String IS_EDGE = "isedge";
+    public static final String IS_ENCRYPTED = "isencrypted";
     public static final String IS_EXTRACTABLE = "isextractable";
     public static final String IS_FEATURED = "isfeatured";
     public static final String IS_PORTABLE = "isportable";
@@ -448,6 +449,7 @@ public class ApiConstants {
     public static final String TEMPLATE_IDS = "templateids";
     public static final String TEMPLATE_NAME = "templatename";
     public static final String TEMPLATE_TYPE = "templatetype";
+    public static final String TEMPLATE_FORMAT = "templateformat";
     public static final String TIMEOUT = "timeout";
     public static final String TIMEZONE = "timezone";
     public static final String TIMEZONEOFFSET = "timezoneoffset";

@@ -16,10 +16,13 @@
 // under the License.
 package com.cloud.kubernetes.cluster;
 
-import com.cloud.utils.component.Adapter;
 import org.apache.cloudstack.acl.ControlledEntity;
+
+import com.cloud.uservm.UserVm;
+import com.cloud.utils.component.Adapter;
 
 public interface KubernetesClusterHelper extends Adapter {
 
     ControlledEntity findByUuid(String uuid);
+    void checkVmCanBeDestroyed(UserVm userVm);
 }

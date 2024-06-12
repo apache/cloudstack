@@ -142,7 +142,6 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
             LOGGER.info(String.format("Block copy has started for the volume %s : %s ", destDiskLabel, srcPath));
 
             return checkBlockJobStatus(command, dm, destDiskLabel, srcPath, destPath, libvirtComputingResource, conn, srcSecretUUID);
-
         } catch (Exception e) {
             String msg = "Migrate volume failed due to " + e.toString();
             LOGGER.warn(msg, e);
@@ -168,17 +167,27 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
     protected MigrateVolumeAnswer checkBlockJobStatus(MigrateVolumeCommand command, Domain dm, String diskLabel, String srcPath, String destPath, LibvirtComputingResource libvirtComputingResource, Connect conn, String srcSecretUUID) throws LibvirtException {
         int timeBetweenTries = 1000; // Try more frequently (every sec) and return early if disk is found
         int waitTimeInSec = command.getWait();
+        double blockCopyProgress = 0;
         while (waitTimeInSec > 0) {
             DomainBlockJobInfo blockJobInfo = dm.getBlockJobInfo(diskLabel, 0);
             if (blockJobInfo != null) {
-                LOGGER.debug(String.format("Volume %s : %s block copy progress: %s%% current value:%s end value:%s", diskLabel, srcPath, (blockJobInfo.end == 0)? 0 : 100*(blockJobInfo.cur / (double) blockJobInfo.end), blockJobInfo.cur, blockJobInfo.end));
+                blockCopyProgress = (blockJobInfo.end == 0)? blockCopyProgress : 100 * (blockJobInfo.cur / (double) blockJobInfo.end);
+                LOGGER.debug(String.format("Volume %s : %s, block copy progress: %s%%, current value: %s end value: %s, job info - type: %s, bandwidth: %s",
+                        diskLabel, srcPath, blockCopyProgress, blockJobInfo.cur, blockJobInfo.end, blockJobInfo.type, blockJobInfo.bandwidth));
                 if (blockJobInfo.cur == blockJobInfo.end) {
-                    LOGGER.info(String.format("Block copy completed for the volume %s : %s", diskLabel, srcPath));
-                    dm.blockJobAbort(diskLabel, Domain.BlockJobAbortFlags.PIVOT);
-                    if (StringUtils.isNotEmpty(srcSecretUUID)) {
-                        libvirtComputingResource.removeLibvirtVolumeSecret(conn, srcSecretUUID);
+                    if (blockJobInfo.end > 0) {
+                        LOGGER.info(String.format("Block copy completed for the volume %s : %s", diskLabel, srcPath));
+                        dm.blockJobAbort(diskLabel, Domain.BlockJobAbortFlags.PIVOT);
+                        if (StringUtils.isNotEmpty(srcSecretUUID)) {
+                            libvirtComputingResource.removeLibvirtVolumeSecret(conn, srcSecretUUID);
+                        }
+                        break;
+                    } else {
+                        // cur = 0, end = 0 - at this point, disk does not have an active block job (so, no need to abort job)
+                        String msg = String.format("No active block copy job for the volume %s : %s - job stopped at %s progress", diskLabel, srcPath, blockCopyProgress);
+                        LOGGER.warn(msg);
+                        return new MigrateVolumeAnswer(command, false, msg, null);
                     }
-                    break;
                 }
             } else {
                 LOGGER.info("Failed to get the block copy status, trying to abort the job");

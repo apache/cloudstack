@@ -202,7 +202,7 @@
             <a-progress
             status="active"
             :percent="parseFloat(getPercentUsed(entity[usageType + 'total'], entity[usageType + 'limit']))"
-            :format="p => resource[item + 'limit'] !== '-1' && resource[item + 'limit'] !== 'Unlimited' ? p.toFixed(0) + '%' : ''"
+            :format="p => entity[usageType + 'limit'] !== '-1' && entity[usageType + 'limit'] !== 'Unlimited' ? p.toFixed(0) + '%' : ''"
             stroke-color="#52c41a"
             size="small"
             />
@@ -238,7 +238,7 @@
             <a-progress
             status="active"
             :percent="parseFloat(getPercentUsed(entity[usageType + 'total'], entity[usageType + 'limit']))"
-            :format="p => resource[item + 'limit'] !== '-1' && resource[item + 'limit'] !== 'Unlimited' ? p.toFixed(0) + '%' : ''"
+            :format="p => entity[usageType + 'limit'] !== '-1' && entity[usageType + 'limit'] !== 'Unlimited' ? p.toFixed(0) + '%' : ''"
             stroke-color="#52c41a"
             size="small"
             />
@@ -274,7 +274,7 @@
             <a-progress
             status="active"
             :percent="parseFloat(getPercentUsed(entity[usageType + 'total'], entity[usageType + 'limit']))"
-            :format="p => resource[item + 'limit'] !== '-1' && resource[item + 'limit'] !== 'Unlimited' ? p.toFixed(0) + '%' : ''"
+            :format="p => entity[usageType + 'limit'] !== '-1' && entity[usageType + 'limit'] !== 'Unlimited' ? p.toFixed(0) + '%' : ''"
             stroke-color="#52c41a"
             size="small"
             />

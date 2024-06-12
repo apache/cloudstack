@@ -1590,7 +1590,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             }
 
             s_logger.debug(String.format("Creating empty stub disk for full clone migration of disk [%s] with size [%s] and format [%s].", volume.getUuid(), toHumanReadableSize(volume.getSize()), toHumanReadableSize(volume.getSize())));
-            vol = primaryPool.createPhysicalDisk(volume.getUuid(), format, volume.getProvisioningType(), disksize, volume.getPassphrase());
+            vol = primaryPool.createPhysicalDisk(volume.getUuid(), format, volume.getProvisioningType(), disksize, volume.getUsableSize(), volume.getPassphrase());
 
             final VolumeObjectTO newVol = new VolumeObjectTO();
             if(vol != null) {

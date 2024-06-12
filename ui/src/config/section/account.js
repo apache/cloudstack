@@ -24,6 +24,7 @@ export default {
   icon: 'team-outlined',
   docHelp: 'adminguide/accounts.html',
   permission: ['listAccounts'],
+  searchFilters: ['name', 'accounttype', 'domainid'],
   columns: ['name', 'state', 'rolename', 'roletype', 'domainpath'],
   details: ['name', 'id', 'rolename', 'roletype', 'domainpath', 'networkdomain', 'iptotal', 'vmtotal', 'volumetotal', 'receivedbytes', 'sentbytes', 'created'],
   related: [{

@@ -24,6 +24,7 @@ export default {
   icon: 'database-outlined',
   docHelp: 'conceptsandterminology/concepts.html#about-hosts',
   permission: ['listHostsMetrics'],
+  searchFilters: ['name', 'zoneid', 'podid', 'clusterid', 'hypervisor'],
   resourceType: 'Host',
   filters: () => {
     const filters = ['enabled', 'disabled', 'maintenance', 'up', 'down', 'alert']
@@ -149,6 +150,7 @@ export default {
       message: 'label.outofbandmanagement.configure',
       docHelp: 'adminguide/hosts.html#out-of-band-management',
       dataView: true,
+      post: true,
       args: ['hostid', 'address', 'port', 'username', 'password', 'driver'],
       mapping: {
         hostid: {

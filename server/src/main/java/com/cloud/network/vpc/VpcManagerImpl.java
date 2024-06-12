@@ -1677,6 +1677,17 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         return result;
     }
 
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VPC_CREATE, eventDescription = "creating vpc", async = true)
+    public void startVpc(final CreateVPCCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+        if (!cmd.isStart()) {
+            s_logger.debug("Not starting VPC as " + ApiConstants.START + "=false was passed to the API");
+            return;
+        }
+        startVpc(cmd.getEntityId(), true);
+    }
+
     protected boolean startVpc(final Vpc vpc, final DeployDestination dest, final ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException,
             InsufficientCapacityException {
         // deploy provider
