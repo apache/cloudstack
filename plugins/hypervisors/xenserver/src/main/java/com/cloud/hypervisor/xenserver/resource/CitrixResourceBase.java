@@ -2710,7 +2710,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                 String description = isoSR.getNameDescription(conn);
                 if (description.endsWith(ConfigDrive.CONFIGDRIVEDIR)) {
                     throw new CloudRuntimeException(String.format("VM %s already has %s ISO attached. Please " +
-                            "stop-start VM for allowing attaching both ISOs", vmName, ConfigDrive.CONFIGDRIVEDIR));
+                            "stop-start VM to allow attaching-detaching both ISOs", vmName, ConfigDrive.CONFIGDRIVEDIR));
                 }
             } catch (XenAPIException | XmlRpcException e) {
                 throw new CloudRuntimeException(String.format("Unable to retrieve name description for the already " +
