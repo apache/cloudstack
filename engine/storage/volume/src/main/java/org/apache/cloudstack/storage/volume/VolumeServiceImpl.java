@@ -2801,7 +2801,7 @@ public class VolumeServiceImpl implements VolumeService {
 
     @Override
     public void validateChangeDiskOfferingEncryptionType(long existingDiskOfferingId, long newDiskOfferingId) {
-        DiskOfferingVO existingDiskOffering = diskOfferingDao.findById(existingDiskOfferingId);
+        DiskOfferingVO existingDiskOffering = diskOfferingDao.findByIdIncludingRemoved(existingDiskOfferingId);
         DiskOfferingVO newDiskOffering = diskOfferingDao.findById(newDiskOfferingId);
 
         if (existingDiskOffering.getEncrypt() != newDiskOffering.getEncrypt()) {

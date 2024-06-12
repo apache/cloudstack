@@ -2028,7 +2028,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     private Volume changeDiskOfferingForVolumeInternal(VolumeVO volume, Long newDiskOfferingId, Long newSize, Long newMinIops, Long newMaxIops, boolean autoMigrateVolume, boolean shrinkOk) throws ResourceAllocationException {
         long existingDiskOfferingId = volume.getDiskOfferingId();
-        DiskOfferingVO existingDiskOffering = _diskOfferingDao.findById(existingDiskOfferingId);
+        DiskOfferingVO existingDiskOffering = _diskOfferingDao.findByIdIncludingRemoved(existingDiskOfferingId);
         DiskOfferingVO newDiskOffering = _diskOfferingDao.findById(newDiskOfferingId);
         Integer newHypervisorSnapshotReserve = null;
 
