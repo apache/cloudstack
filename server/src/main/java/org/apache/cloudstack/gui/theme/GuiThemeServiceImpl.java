@@ -166,7 +166,7 @@ public class GuiThemeServiceImpl implements GuiThemeService {
 
     protected void persistDetailValueIfNotNull(long guiThemeId, String providedParameter, String type) {
         if (providedParameter == null) {
-            logger.trace(String.format("GUI theme provided parameter `%s` is null; therefore, it will be ignored.", type));
+            logger.trace("GUI theme provided parameter `{}` is null; therefore, it will be ignored.", type);
             return;
         }
         for (String splitParameter : StringUtils.deleteWhitespace(providedParameter).split(",")) {
@@ -258,7 +258,7 @@ public class GuiThemeServiceImpl implements GuiThemeService {
             Set<Map.Entry<String, JsonElement>> entries = jsonElement.getAsJsonObject().entrySet();
             entries.stream().forEach(entry -> validateJsonAttributes(entry, jsonObject));
         } catch (JsonSyntaxException exception) {
-            logger.error(String.format("The following exception was thrown while parsing the JSON object: [%s].", exception.getMessage()));
+            logger.error("The following exception was thrown while parsing the JSON object: [{}].", exception.getMessage());
             throw new CloudRuntimeException("Specified JSON configuration is not a valid JSON object.");
         }
     }
@@ -272,7 +272,7 @@ public class GuiThemeServiceImpl implements GuiThemeService {
         String entryKey = entry.getKey();
 
         if (entryValue.isJsonPrimitive() && ALLOWED_PRIMITIVE_PROPERTIES.contains(entryKey)) {
-            logger.trace("The JSON attribute [%s] is a valid option.");
+            logger.trace("The JSON attribute [{}] is a valid option.", entryKey);
             jsonObject.add(entryKey, entryValue);
         } else if (entryValue.isJsonObject() && ERROR.equals(entryKey)) {
             validateErrorAttribute(entry, jsonObject);
@@ -330,7 +330,7 @@ public class GuiThemeServiceImpl implements GuiThemeService {
     }
 
     protected void warnOfInvalidJsonAttribute(String entryKey) {
-        logger.warn(String.format("The JSON attribute [%s] is not a valid option, therefore, it will be ignored.", entryKey));
+        logger.warn("The JSON attribute [{}] is not a valid option, therefore, it will be ignored.", entryKey);
     }
 
     /**
@@ -407,7 +407,7 @@ public class GuiThemeServiceImpl implements GuiThemeService {
                 guiThemeVO.setRecursiveDomains(recursiveDomains);
             }
 
-            logger.trace(String.format("Persisting GUI theme [%s] with CSS [%s] and JSON configuration [%s].", guiThemeVO, guiThemeVO.getCss(), guiThemeVO.getJsonConfiguration()));
+            logger.trace("Persisting GUI theme [{}] with CSS [{}] and JSON configuration [{}].", guiThemeVO, guiThemeVO.getCss(), guiThemeVO.getJsonConfiguration());
 
             guiThemeDao.persist(guiThemeVO);
             guiThemeDetailsDao.expungeByGuiThemeId(guiThemeId);
@@ -433,7 +433,7 @@ public class GuiThemeServiceImpl implements GuiThemeService {
         if (guiThemeVO != null) {
             guiThemeDao.remove(guiThemeId);
         } else {
-            logger.error(String.format("Unable to find a GUI theme with the specified ID [%s].", guiThemeId));
+            logger.error("Unable to find a GUI theme with the specified ID [{}].", guiThemeId);
             throw new CloudRuntimeException("Unable to find a GUI theme with the specified ID.");
         }
     }
