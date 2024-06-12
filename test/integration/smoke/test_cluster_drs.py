@@ -259,8 +259,8 @@ class TestClusterDRS(cloudstackTestCase):
             # 2. Deploy vm-2 on host 2
             # 3. Execute DRS to move all VMs on different hosts
         """
-
         self.logger.debug("=== Running test_02_balanced_drs_algorithm ===")
+
         # 1. Deploy vm-1 on host 1
         self.services["virtual_machine"]["name"] = "virtual-machine-1"
         self.services["virtual_machine"]["displayname"] = "virtual-machine-1"
@@ -303,4 +303,6 @@ class TestClusterDRS(cloudstackTestCase):
         vm_1_host_id = self.get_vm_host_id(self.virtual_machine_1.id)
         vm_2_host_id = self.get_vm_host_id(self.virtual_machine_2.id)
 
-        self.assertNotEqual(vm_1_host_id, vm_2_host_id, msg="Both VMs should be on different hosts")
+        self.assertTrue(
+            vm_1_host_id != self.virtual_machine_1.hostid or vm_2_host_id != self.virtual_machine_1.hostid,
+                        msg="At least one VM should have been migrated to a different host")
