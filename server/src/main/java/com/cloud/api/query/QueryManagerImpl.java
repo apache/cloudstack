@@ -2407,7 +2407,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         String storageId = cmd.getStorageId();
         Long clusterId = cmd.getClusterId();
         Long serviceOfferingId = cmd.getServiceOfferingId();
-        Long diskOffId = cmd.getDiskOfferingId();
+        Long diskOfferingId = cmd.getDiskOfferingId();
         Boolean display = cmd.getDisplay();
         String state = cmd.getState();
         boolean shouldListSystemVms = shouldListSystemVms(cmd, caller.getId());
@@ -2417,10 +2417,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
 
-        if (diskOffId == null && serviceOfferingId != null) {
+        if (diskOfferingId == null && serviceOfferingId != null) {
             ServiceOfferingVO serviceOffering = _srvOfferingDao.findById(serviceOfferingId);
             if (serviceOffering != null) {
-                diskOffId = serviceOffering.getDiskOfferingId();
+                diskOfferingId = serviceOffering.getDiskOfferingId();
             }
         }
 
@@ -2547,8 +2547,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
         }
 
-        if (diskOffId != null) {
-            sc.setParameters("diskOfferingId", diskOffId);
+        if (diskOfferingId != null) {
+            sc.setParameters("diskOfferingId", diskOfferingId);
         }
 
         if (id != null) {
