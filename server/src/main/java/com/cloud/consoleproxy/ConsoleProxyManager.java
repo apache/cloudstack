@@ -27,6 +27,7 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.ConsoleProxyVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
@@ -58,7 +59,7 @@ public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
 
     ConsoleProxyVO startProxy(long proxyVmId, boolean ignoreRestartSetting);
 
-    void startProxyForHA(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlanner planner)
+    void startProxyForHA(VirtualMachine vm, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlanner planner)
             throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException,
             OperationTimedoutException;
 

@@ -289,11 +289,11 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_SSVM_START, eventDescription = "Restarting secondary storage VM for HA", async = true)
-    public void startSecStorageVmForHA(String vmUuid, Map<VirtualMachineProfile.Param, Object> params,
+    @ActionEvent(eventType = EventTypes.EVENT_SSVM_START, eventDescription = "restarting secondary storage VM for HA", async = true)
+    public void startSecStorageVmForHA(VirtualMachine vm, Map<VirtualMachineProfile.Param, Object> params,
            DeploymentPlanner planner) throws InsufficientCapacityException, ResourceUnavailableException,
             ConcurrentOperationException, OperationTimedoutException {
-        _itMgr.advanceStart(vmUuid, params, planner);
+        _itMgr.advanceStart(vm.getUuid(), params, planner);
     }
 
     SecondaryStorageVmVO getSSVMfromHost(HostVO ssAHost) {

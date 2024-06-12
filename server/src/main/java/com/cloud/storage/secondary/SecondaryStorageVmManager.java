@@ -33,6 +33,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.SecondaryStorageVm;
 import com.cloud.vm.SecondaryStorageVmVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 public interface SecondaryStorageVmManager extends Manager {
@@ -54,7 +55,7 @@ public interface SecondaryStorageVmManager extends Manager {
 
     public SecondaryStorageVmVO startSecStorageVm(long ssVmVmId);
 
-    void startSecStorageVmForHA(String vmUuid, Map<VirtualMachineProfile.Param, Object> params,
+    void startSecStorageVmForHA(VirtualMachine vm, Map<VirtualMachineProfile.Param, Object> params,
             DeploymentPlanner planner) throws InsufficientCapacityException, ResourceUnavailableException,
             ConcurrentOperationException, OperationTimedoutException;
 

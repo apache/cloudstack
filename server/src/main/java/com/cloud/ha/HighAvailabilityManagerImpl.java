@@ -28,6 +28,8 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
@@ -446,21 +448,30 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
     protected void startVm(VirtualMachine vm, Map<VirtualMachineProfile.Param, Object> params,
            DeploymentPlanner planner) throws InsufficientCapacityException, ResourceUnavailableException,
             ConcurrentOperationException, OperationTimedoutException {
-        switch (vm.getType()) {
-            case DomainRouter:
-                routerService.startRouterForHA(vm.getUuid(), params, planner);
-                break;
-            case ConsoleProxy:
-                consoleProxyManager.startProxyForHA(vm.getUuid(), params, planner);
-                break;
-            case SecondaryStorageVm:
-                secondaryStorageVmManager.startSecStorageVmForHA(vm.getUuid(), params, planner);
-                break;
-            case User:
-                userVmManager.startVirtualMachineForHA(vm.getUuid(), params, planner);
-                break;
-            default:
-                _itMgr.advanceStart(vm.getUuid(), params, planner);
+        CallContext ctx = CallContext.register(CallContext.current(), ApiCommandResourceType.VirtualMachine);
+        ctx.setEventResourceId(vm.getId());
+        try {
+            switch (vm.getType()) {
+                case DomainRouter:
+                    ctx.setEventResourceType(ApiCommandResourceType.DomainRouter);
+                    routerService.startRouterForHA(vm, params, planner);
+                    break;
+                case ConsoleProxy:
+                    ctx.setEventResourceType(ApiCommandResourceType.ConsoleProxy);
+                    consoleProxyManager.startProxyForHA(vm, params, planner);
+                    break;
+                case SecondaryStorageVm:
+                    ctx.setEventResourceType(ApiCommandResourceType.SystemVm);
+                    secondaryStorageVmManager.startSecStorageVmForHA(vm, params, planner);
+                    break;
+                case User:
+                    userVmManager.startVirtualMachineForHA(vm, params, planner);
+                    break;
+                default:
+                    _itMgr.advanceStart(vm.getUuid(), params, planner);
+            }
+        } finally {
+            CallContext.unregister();
         }
     }
 

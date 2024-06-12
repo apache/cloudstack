@@ -41,6 +41,7 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.ConsoleProxyDao;
@@ -184,7 +185,7 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
     }
 
     @Override
-    public void startProxyForHA(String vmUuid, Map<VirtualMachineProfile.Param, Object> params,
+    public void startProxyForHA(VirtualMachine vm, Map<VirtualMachineProfile.Param, Object> params,
             DeploymentPlanner planner) {
     }
 

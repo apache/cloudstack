@@ -497,11 +497,11 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_PROXY_START, eventDescription = "Restarting console proxy VM for HA", async = true)
-    public void startProxyForHA(String vmUuid, Map<VirtualMachineProfile.Param, Object> params,
+    @ActionEvent(eventType = EventTypes.EVENT_PROXY_START, eventDescription = "restarting console proxy VM for HA", async = true)
+    public void startProxyForHA(VirtualMachine vm, Map<VirtualMachineProfile.Param, Object> params,
             DeploymentPlanner planner) throws InsufficientCapacityException, ResourceUnavailableException,
             ConcurrentOperationException, OperationTimedoutException {
-        virtualMachineManager.advanceStart(vmUuid, params, planner);
+        virtualMachineManager.advanceStart(vm.getUuid(), params, planner);
     }
 
     public ConsoleProxyVO assignProxyFromRunningPool(long dataCenterId) {

@@ -31,6 +31,7 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.vm.Nic;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 public interface VirtualNetworkApplianceService {
@@ -66,7 +67,7 @@ public interface VirtualNetworkApplianceService {
 
     VirtualRouter startRouter(long id) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException;
 
-    void startRouterForHA(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlanner planner)
+    void startRouterForHA(VirtualMachine vm, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlanner planner)
             throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException,
             OperationTimedoutException;
 

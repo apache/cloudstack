@@ -3012,11 +3012,11 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_ROUTER_START, eventDescription = "Restarting router VM for HA", async = true)
-    public void startRouterForHA(String vmUuid, Map<Param, Object> params, DeploymentPlanner planner)
+    @ActionEvent(eventType = EventTypes.EVENT_ROUTER_START, eventDescription = "restarting router VM for HA", async = true)
+    public void startRouterForHA(VirtualMachine vm, Map<Param, Object> params, DeploymentPlanner planner)
             throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException,
             OperationTimedoutException {
-        _itMgr.advanceStart(vmUuid, params, planner);
+        _itMgr.advanceStart(vm.getUuid(), params, planner);
     }
 
     @Override
