@@ -30,7 +30,6 @@ import com.cloud.utils.db.TransactionStatus;
 import org.apache.cloudstack.secret.dao.PassphraseDao;
 import org.apache.cloudstack.secret.PassphraseVO;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
-import com.cloud.storage.MigrationOptions;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -115,7 +114,6 @@ public class VolumeObject implements VolumeInfo {
     PassphraseDao passphraseDao;
 
     private Object payload;
-    private MigrationOptions migrationOptions;
     private boolean directDownload;
     private String vSphereStoragePolicyId;
     private boolean followRedirects;
@@ -326,16 +324,6 @@ public class VolumeObject implements VolumeInfo {
     public DiskCacheMode getCacheMode() {
         DiskOfferingVO diskOfferingVO = getDiskOfferingVO();
         return diskOfferingVO == null ? null : diskOfferingVO.getCacheMode();
-    }
-
-    @Override
-    public MigrationOptions getMigrationOptions() {
-        return migrationOptions;
-    }
-
-    @Override
-    public void setMigrationOptions(MigrationOptions migrationOptions) {
-        this.migrationOptions = migrationOptions;
     }
 
     @Override

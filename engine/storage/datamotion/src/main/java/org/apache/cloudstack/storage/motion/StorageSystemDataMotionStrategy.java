@@ -43,7 +43,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
@@ -102,7 +101,6 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceState;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.MigrationOptions;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
@@ -112,7 +110,6 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStoragePoolVO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeDetailVO;
@@ -1844,39 +1841,6 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     }
 
     /**
-     * Return expected MigrationOptions for a linked clone volume live storage migration
-     */
-    protected MigrationOptions createLinkedCloneMigrationOptions(VolumeInfo srcVolumeInfo, VolumeInfo destVolumeInfo, String srcVolumeBackingFile, String srcPoolUuid, Storage.StoragePoolType srcPoolType) {
-        VMTemplateStoragePoolVO ref = templatePoolDao.findByPoolTemplate(destVolumeInfo.getPoolId(), srcVolumeInfo.getTemplateId(), null);
-        boolean updateBackingFileReference = ref == null;
-        String backingFile = !updateBackingFileReference ? ref.getInstallPath() : srcVolumeBackingFile;
-        return new MigrationOptions(srcPoolUuid, srcPoolType, backingFile, updateBackingFileReference, srcVolumeInfo.getDataStore().getScope().getScopeType());
-    }
-
-    /**
-     * Return expected MigrationOptions for a full clone volume live storage migration
-     */
-    protected MigrationOptions createFullCloneMigrationOptions(VolumeInfo srcVolumeInfo, VirtualMachineTO vmTO, Host srcHost, String srcPoolUuid, Storage.StoragePoolType srcPoolType) {
-        return new MigrationOptions(srcPoolUuid, srcPoolType, srcVolumeInfo.getPath(), srcVolumeInfo.getDataStore().getScope().getScopeType());
-    }
-
-    /**
-     * Configures the destination volume to be a full clone if the destination storage pool is not managed.
-     */
-    protected void setVolumeMigrationOptions(VolumeInfo srcVolumeInfo, VolumeInfo destVolumeInfo,
-                                             VirtualMachineTO vmTO, Host srcHost, StoragePoolVO destStoragePool) {
-        if (!destStoragePool.isManaged()) {
-            String srcPoolUuid = srcVolumeInfo.getDataStore().getUuid();
-            StoragePoolVO srcPool = _storagePoolDao.findById(srcVolumeInfo.getPoolId());
-            Storage.StoragePoolType srcPoolType = srcPool.getPoolType();
-
-            MigrationOptions migrationOptions = createFullCloneMigrationOptions(srcVolumeInfo, vmTO, srcHost, srcPoolUuid, srcPoolType);
-            migrationOptions.setTimeout(StorageManager.KvmStorageOnlineMigrationWait.value());
-            destVolumeInfo.setMigrationOptions(migrationOptions);
-        }
-    }
-
-    /**
      * For each disk to migrate:
      * <ul>
      *  <li>Create a volume on the target storage system.</li>
@@ -1931,8 +1895,6 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 // move the volume from Ready to Migrating
                 destVolumeInfo.processEvent(Event.MigrationRequested);
 
-                setVolumeMigrationOptions(srcVolumeInfo, destVolumeInfo, vmTO, srcHost, destStoragePool);
-
                 // create a volume on the destination storage
                 destDataStore.getDriver().createAsync(destDataStore, destVolumeInfo, null);
 
@@ -1945,8 +1907,6 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 setVolumePath(destVolume);
 
                 _volumeDao.update(destVolume.getId(), destVolume);
-
-                postVolumeCreationActions(srcVolumeInfo, destVolumeInfo, vmTO, srcHost);
 
                 destVolumeInfo = _volumeDataFactory.getVolume(destVolume.getId(), destDataStore);
 
@@ -2262,33 +2222,6 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         }
 
         return modifyTargetsAnswer.getConnectedPaths();
-    }
-
-    /**
-     * Update reference on template_spool_ref table of copied template to destination storage
-     */
-    protected void updateCopiedTemplateReference(VolumeInfo srcVolumeInfo, VolumeInfo destVolumeInfo) {
-        VMTemplateStoragePoolVO ref = templatePoolDao.findByPoolTemplate(srcVolumeInfo.getPoolId(), srcVolumeInfo.getTemplateId(), null);
-        VMTemplateStoragePoolVO newRef = new VMTemplateStoragePoolVO(destVolumeInfo.getPoolId(), ref.getTemplateId(), null);
-        newRef.setDownloadPercent(100);
-        newRef.setDownloadState(VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
-        newRef.setState(ObjectInDataStoreStateMachine.State.Ready);
-        newRef.setTemplateSize(ref.getTemplateSize());
-        newRef.setLocalDownloadPath(ref.getLocalDownloadPath());
-        newRef.setInstallPath(ref.getInstallPath());
-        templatePoolDao.persist(newRef);
-    }
-
-    /**
-     * Handle post destination volume creation actions depending on the migrating volume type: full clone or linked clone
-     */
-    protected void postVolumeCreationActions(VolumeInfo srcVolumeInfo, VolumeInfo destVolumeInfo, VirtualMachineTO vmTO, Host srcHost) {
-        MigrationOptions migrationOptions = destVolumeInfo.getMigrationOptions();
-        if (migrationOptions != null) {
-            if (migrationOptions.getType() == MigrationOptions.Type.LinkedClone && migrationOptions.isCopySrcTemplate()) {
-                updateCopiedTemplateReference(srcVolumeInfo, destVolumeInfo);
-            }
-        }
     }
 
     /**
