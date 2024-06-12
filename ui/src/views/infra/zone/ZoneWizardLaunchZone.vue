@@ -2093,7 +2093,11 @@ export default {
           resolve()
         }).catch(error => {
           message = error.response.headers['x-description']
-          reject(message)
+          if (message.includes('is already in the database')) {
+            resolve()
+          } else {
+            reject(message)
+          }
         })
       })
     },
