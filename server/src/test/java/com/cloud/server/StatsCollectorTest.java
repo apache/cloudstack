@@ -28,7 +28,6 @@ import com.cloud.user.VmDiskStatisticsVO;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VmStats;
 import com.cloud.vm.VmStatsVO;
-import com.cloud.vm.dao.VmStatsDao;
 import com.cloud.vm.dao.VmStatsDaoImpl;
 import com.google.gson.Gson;
 import com.tngtech.java.junit.dataprovider.DataProvider;
