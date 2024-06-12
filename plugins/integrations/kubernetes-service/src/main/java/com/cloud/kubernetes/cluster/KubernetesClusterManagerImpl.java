@@ -383,7 +383,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     protected void validateIsolatedNetworkIpRules(long ipId, FirewallRule.Purpose purpose, Network network, int clusterTotalNodeCount) {
-        List<FirewallRuleVO> rules = firewallRulesDao.listByIpPurposeProtocolAndNotRevoked(ipId, purpose, "tcp");
+        List<FirewallRuleVO> rules = firewallRulesDao.listByIpPurposeProtocolAndNotRevoked(ipId, purpose, NetUtils.TCP_PROTO);
         for (FirewallRuleVO rule : rules) {
             int startPort = ObjectUtils.defaultIfNull(rule.getSourcePortStart(), 1);
             int endPort = ObjectUtils.defaultIfNull(rule.getSourcePortEnd(), KubernetesClusterActionWorker.MAX_PORT);
