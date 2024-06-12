@@ -180,6 +180,7 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
 
         if (view == ResponseView.Full) {
             volResponse.setPath(volume.getPath());
+            volResponse.setEncryptFormat(volume.getEncryptFormat());
         }
 
         // populate owner.

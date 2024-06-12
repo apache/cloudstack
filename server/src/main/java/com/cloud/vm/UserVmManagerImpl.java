@@ -130,8 +130,8 @@ import org.apache.cloudstack.storage.template.VnfTemplateManager;
 import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.security.ParserUtils;
-import org.apache.cloudstack.vm.schedule.VMScheduleManager;
 import org.apache.cloudstack.vm.UnmanagedVMsManager;
+import org.apache.cloudstack.vm.schedule.VMScheduleManager;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -141,6 +141,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.w3c.dom.Document;
@@ -241,6 +242,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
+import com.cloud.kubernetes.cluster.KubernetesClusterHelper;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
@@ -346,6 +348,7 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.Journal;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.crypt.DBEncryptionUtil;
@@ -594,6 +597,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Inject
     VMScheduleManager vmScheduleManager;
+
 
     private ScheduledExecutorService _executor = null;
     private ScheduledExecutorService _vmIpFetchExecutor = null;
@@ -3280,6 +3284,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return  null;
     }
 
+    protected void checkPluginsIfVmCanBeDestroyed(UserVm vm) {
+        try {
+            KubernetesClusterHelper kubernetesClusterHelper =
+                    ComponentContext.getDelegateComponentOfType(KubernetesClusterHelper.class);
+            kubernetesClusterHelper.checkVmCanBeDestroyed(vm);
+        } catch (NoSuchBeanDefinitionException ignored) {
+            s_logger.debug("No KubernetesClusterHelper bean found");
+        }
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_DESTROY, eventDescription = "destroying Vm", async = true)
     public UserVm destroyVm(DestroyVMCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException {
@@ -3305,6 +3319,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // check if vm belongs to AutoScale vm group in Disabled state
         autoScaleManager.checkIfVmActionAllowed(vmId);
+
+        // check if vm belongs to any plugin resources
+        checkPluginsIfVmCanBeDestroyed(vm);
 
         // check if there are active volume snapshots tasks
         s_logger.debug("Checking if there are any ongoing snapshots on the ROOT volumes associated with VM with ID " + vmId);
@@ -7699,8 +7716,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
         _accountMgr.checkAccess(caller, null, true, vm);
 
+        VMTemplateVO template;
+        if (newTemplateId != null) {
+            template = _templateDao.findById(newTemplateId);
+            if (template == null) {
+                throw new InvalidParameterValueException("Cannot find template with ID " + newTemplateId);
+            }
+        } else {
+            template = _templateDao.findById(vm.getTemplateId());
+            if (template == null) {
+                throw new InvalidParameterValueException("Cannot find template linked with VM");
+            }
+        }
         DiskOffering diskOffering = rootDiskOfferingId != null ? validateAndGetDiskOffering(rootDiskOfferingId, vm, caller) : null;
-        VMTemplateVO template = _templateDao.findById(newTemplateId);
         if (template.getSize() != null) {
             String rootDiskSize = details.get(VmDetailConstants.ROOT_DISK_SIZE);
             Long templateSize = template.getSize();
@@ -7835,7 +7863,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         DiskOffering diskOffering = rootDiskOfferingId != null ? _diskOfferingDao.findById(rootDiskOfferingId) : null;
         for (VolumeVO root : rootVols) {
             if ( !Volume.State.Allocated.equals(root.getState()) || newTemplateId != null ) {
-                _volumeService.validateDestroyVolume(root, caller, expunge, false);
+                _volumeService.validateDestroyVolume(root, caller, Volume.State.Allocated.equals(root.getState()) || expunge, false);
                 final UserVmVO userVm = vm;
                 Pair<UserVmVO, Volume> vmAndNewVol = Transaction.execute(new TransactionCallbackWithException<Pair<UserVmVO, Volume>, CloudRuntimeException>() {
                     @Override
@@ -7852,19 +7880,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         Volume newVol = null;
                         if (newTemplateId != null) {
                             if (isISO) {
-                                newVol = volumeMgr.allocateDuplicateVolume(root, null);
+                                newVol = volumeMgr.allocateDuplicateVolume(root, diskOffering, null);
                                 userVm.setIsoId(newTemplateId);
                                 userVm.setGuestOSId(template.getGuestOSId());
                                 userVm.setTemplateId(newTemplateId);
                             } else {
-                                newVol = volumeMgr.allocateDuplicateVolume(root, newTemplateId);
+                                newVol = volumeMgr.allocateDuplicateVolume(root, diskOffering, newTemplateId);
                                 userVm.setGuestOSId(template.getGuestOSId());
                                 userVm.setTemplateId(newTemplateId);
                             }
                             // check and update VM if it can be dynamically scalable with the new template
                             updateVMDynamicallyScalabilityUsingTemplate(userVm, newTemplateId);
                         } else {
-                            newVol = volumeMgr.allocateDuplicateVolume(root, null);
+                            newVol = volumeMgr.allocateDuplicateVolume(root, diskOffering, null);
                         }
 
                         updateVolume(newVol, template, userVm, diskOffering, details);
@@ -7898,7 +7926,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 // Detach, destroy and create the usage event for the old root volume.
                 _volsDao.detachVolume(root.getId());
-                _volumeService.destroyVolume(root.getId(), caller, expunge, false);
+                destroyVolumeInContext(vm, Volume.State.Allocated.equals(root.getState()) || expunge, root);
 
                 // For VMware hypervisor since the old root volume is replaced by the new root volume, force expunge old root volume if it has been created in storage
                 if (vm.getHypervisorType() == HypervisorType.VMware) {
@@ -7964,17 +7992,25 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private void updateVolume(Volume vol, VMTemplateVO template, UserVmVO userVm, DiskOffering diskOffering, Map<String, String> details) {
         VolumeVO resizedVolume = (VolumeVO) vol;
 
-        if (userVmDetailsDao.findDetail(userVm.getId(), VmDetailConstants.ROOT_DISK_SIZE) == null && !vol.getSize().equals(template.getSize())) {
-            if (template.getSize() != null) {
+        if (template != null && template.getSize() != null) {
+            UserVmDetailVO vmRootDiskSizeDetail = userVmDetailsDao.findDetail(userVm.getId(), VmDetailConstants.ROOT_DISK_SIZE);
+            if (vmRootDiskSizeDetail == null) {
                 resizedVolume.setSize(template.getSize());
+            } else {
+                long rootDiskSize = Long.parseLong(vmRootDiskSizeDetail.getValue()) * GiB_TO_BYTES;
+                if (template.getSize() >= rootDiskSize) {
+                    resizedVolume.setSize(template.getSize());
+                    userVmDetailsDao.remove(vmRootDiskSizeDetail.getId());
+                } else {
+                    resizedVolume.setSize(rootDiskSize);
+                }
             }
         }
 
         if (diskOffering != null) {
             resizedVolume.setDiskOfferingId(diskOffering.getId());
-            resizedVolume.setSize(diskOffering.getDiskSize());
-            if (diskOffering.isCustomized()) {
-                resizedVolume.setSize(vol.getSize());
+            if (!diskOffering.isCustomized()) {
+                resizedVolume.setSize(diskOffering.getDiskSize());
             }
             if (diskOffering.getMinIops() != null) {
                 resizedVolume.setMinIops(diskOffering.getMinIops());
@@ -7988,6 +8024,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (StringUtils.isNumeric(details.get(VmDetailConstants.ROOT_DISK_SIZE))) {
                 Long rootDiskSize = Long.parseLong(details.get(VmDetailConstants.ROOT_DISK_SIZE)) * GiB_TO_BYTES;
                 resizedVolume.setSize(rootDiskSize);
+                UserVmDetailVO vmRootDiskSizeDetail = userVmDetailsDao.findDetail(userVm.getId(), VmDetailConstants.ROOT_DISK_SIZE);
+                if (vmRootDiskSizeDetail != null) {
+                    vmRootDiskSizeDetail.setValue(details.get(VmDetailConstants.ROOT_DISK_SIZE));
+                    userVmDetailsDao.update(vmRootDiskSizeDetail.getId(), vmRootDiskSizeDetail);
+                } else {
+                    userVmDetailsDao.persist(new UserVmDetailVO(userVm.getId(), VmDetailConstants.ROOT_DISK_SIZE,
+                            details.get(VmDetailConstants.ROOT_DISK_SIZE), true));
+                }
             }
 
             String minIops = details.get(MIN_IOPS);

@@ -24,6 +24,7 @@ export default {
   icon: 'team-outlined',
   docHelp: 'adminguide/accounts.html',
   permission: ['listAccounts'],
+  searchFilters: ['name', 'accounttype', 'domainid'],
   columns: ['name', 'state', 'rolename', 'roletype', 'domainpath'],
   details: ['name', 'id', 'rolename', 'roletype', 'domainpath', 'networkdomain', 'iptotal', 'vmtotal', 'volumetotal', 'receivedbytes', 'sentbytes', 'created'],
   related: [{
@@ -91,7 +92,7 @@ export default {
       icon: 'edit-outlined',
       label: 'label.action.edit.account',
       dataView: true,
-      args: ['newname', 'account', 'domainid', 'networkdomain'],
+      args: ['newname', 'account', 'domainid', 'networkdomain', 'roleid'],
       mapping: {
         account: {
           value: (record) => { return record.name }
