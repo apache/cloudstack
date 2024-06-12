@@ -167,6 +167,7 @@ public class ViewResponseHelper {
                 // update nics, securitygroups, tags, affinitygroups for 1 to many mapping fields
                 userVmData = ApiDBUtils.fillVmDetails(view, userVmData, userVm);
             }
+            userVmData.setIpAddress(userVmData.getNics());
             vmDataList.put(userVm.getId(), userVmData);
         }
         return new ArrayList<UserVmResponse>(vmDataList.values());
