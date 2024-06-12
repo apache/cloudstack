@@ -42,9 +42,11 @@ import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
 
 import com.cloud.dc.DataCenter;
+import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ManagementServerException;
+import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
@@ -109,6 +111,10 @@ public interface UserVmService {
 
     UserVm startVirtualMachine(StartVMCmd cmd) throws StorageUnavailableException, ExecutionException, ConcurrentOperationException, ResourceUnavailableException,
         InsufficientCapacityException, ResourceAllocationException;
+
+    void startVirtualMachineForHA(String vmUuid, Map<VirtualMachineProfile.Param, Object> params,
+            DeploymentPlanner planner) throws InsufficientCapacityException, ResourceUnavailableException,
+            ConcurrentOperationException, OperationTimedoutException;
 
     UserVm rebootVirtualMachine(RebootVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException;
 

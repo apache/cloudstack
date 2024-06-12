@@ -3231,6 +3231,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VM_START, eventDescription = "Restarting VM for HA", async = true)
+    public void startVirtualMachineForHA(String vmUuid, Map<VirtualMachineProfile.Param, Object> params,
+           DeploymentPlanner planner) throws InsufficientCapacityException, ResourceUnavailableException,
+            ConcurrentOperationException, OperationTimedoutException {
+        _itMgr.advanceStart(vmUuid, params, planner);
+    }
+
+    @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_REBOOT, eventDescription = "rebooting Vm", async = true)
     public UserVm rebootVirtualMachine(RebootVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException {
         Account caller = CallContext.current().getCallingAccount();

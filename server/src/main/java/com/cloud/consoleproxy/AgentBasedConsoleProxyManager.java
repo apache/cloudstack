@@ -22,16 +22,16 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.consoleproxy.ConsoleAccessManager;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.security.keys.KeysManager;
 import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.StartupProxyCommand;
+import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.info.ConsoleProxyInfo;
@@ -42,6 +42,7 @@ import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -180,6 +181,11 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
     @Override
     public ConsoleProxyVO startProxy(long proxyVmId, boolean ignoreRestartSetting) {
         return null;
+    }
+
+    @Override
+    public void startProxyForHA(String vmUuid, Map<VirtualMachineProfile.Param, Object> params,
+            DeploymentPlanner planner) {
     }
 
     @Override
