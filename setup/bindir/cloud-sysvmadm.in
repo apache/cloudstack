@@ -122,8 +122,8 @@ prepare_ids_clause() {
 
 stop_start_system() {
     prepare_ids_clause
-    secondary=(`mysql -h $db --user=$user --password=$password --skip-column-names -U cloud -e "select id from $vmtable where state=\"Running\" and type=\"SecondaryStorageVm\"$zone$vmidsclause"`)
-    console=(`mysql -h $db --user=$user --password=$password --skip-column-names -U cloud -e "select id from $vmtable where state=\"Running\" and type=\"ConsoleProxy\"$zone$vmidsclause"`)
+    secondary=(`mysql -h $db --user=$user --password=$password --skip-column-names -U cloud -e "select uuid from $vmtable where state=\"Running\" and type=\"SecondaryStorageVm\"$zone$vmidsclause"`)
+    console=(`mysql -h $db --user=$user --password=$password --skip-column-names -U cloud -e "select uuid from $vmtable where state=\"Running\" and type=\"ConsoleProxy\"$zone$vmidsclause"`)
     length_secondary=(${#secondary[@]})
     length_console=(${#console[@]})
 
@@ -159,7 +159,7 @@ stop_start_system() {
 
     for d in "${console[@]}"; do
         echo "[$(date "+%Y.%m.%d-%H.%M.%S")] INFO: Stopping console proxy with id $d" >>$LOGFILE
-          jobresult=$(send_request stopSystemVm $d)
+        jobresult=$(send_request stopSystemVm $d)
         if [ "$jobresult" != "1" ]; then
             echo -e "ERROR: Failed to stop console proxy vm with id $d \n"
             echo "[$(date "+%Y.%m.%d-%H.%M.%S")] ERROR: Failed to stop console proxy vm with id $d" >>$LOGFILE
@@ -183,7 +183,7 @@ stop_start_system() {
 
 stop_start_router() {
     prepare_ids_clause
-    router=(`mysql -h $db --user=$user --password=$password --skip-column-names -U cloud -e "select id from vm_instance where state=\"Running\" and type=\"DomainRouter\"$zone$vmidsclause"`)
+    router=(`mysql -h $db --user=$user --password=$password --skip-column-names -U cloud -e "select uuid from vm_instance where state=\"Running\" and type=\"DomainRouter\"$zone$vmidsclause"`)
     length_router=(${#router[@]})
 
     echo -e "\nStopping and starting $length_router running routing vm(s)$inzone$withids... "
@@ -391,7 +391,7 @@ restart_vpc(){
 
 
 restart_vpcs(){
-    vpcs=(`mysql -h $db --user=$user --password=$password --skip-column-names -U cloud -e "select id from vpc WHERE removed is null$zone"`)
+    vpcs=(`mysql -h $db --user=$user --password=$password --skip-column-names -U cloud -e "select uuid from vpc WHERE removed is null$zone"`)
     length_vpcs=(${#vpcs[@]})
 
     echo -e "\nRestarting $length_vpcs vpcs... "
@@ -456,7 +456,7 @@ restart_vpcs(){
 query_async_job_result() {
     while [ 1 ]
     do
-        jobstatus=`curl -sS "http://$ms:$integrationport/?command=queryAsyncJobResult&jobId=$1&response=json" | sed 's/\"//g' | sed 's/ //g' | sed 's/{//g' | sed 's/}//g' | awk -F, {'print $4'} | awk -F: {'print $2'}`
+        jobstatus=`curl -sS "http://$ms:$integrationport/?command=queryAsyncJobResult&jobId=$1&response=json" | sed 's/\"//g' | sed 's/ //g' | sed 's/{//g' | sed 's/}//g' | awk -F, {'print $7'} | awk -F: {'print $2'}`
         if [ "$jobstatus" != "0" ]; then
             echo $jobstatus
             break
