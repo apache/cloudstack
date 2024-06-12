@@ -2289,7 +2289,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
         String intf = "eth1";
         String rule =  String.format("-o %s -d %s -p tcp -m state --state NEW -m tcp -j ACCEPT", intf, destCidr);
-        String errMsg = String.format("Error in allowing outgoing to %s , err=", destCidr);
+        String errMsg = String.format("Error in allowing outgoing to %s", destCidr);
 
         s_logger.info(String.format("Adding rule if required: " + rule));
         String result = IpTablesHelper.addConditionally(IpTablesHelper.OUTPUT_CHAIN, true, rule, errMsg);
@@ -2832,7 +2832,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             s_logger.warn("Error in starting sshd service err=" + result);
         }
         String rule = "-i eth1 -p tcp -m state --state NEW -m tcp --dport 3922 -j ACCEPT";
-        IpTablesHelper.addConditionally(IpTablesHelper.INPUT_CHAIN, true, rule, "Error in opening up ssh port err=");
+        IpTablesHelper.addConditionally(IpTablesHelper.INPUT_CHAIN, true, rule, "Error in opening up ssh port");
     }
 
     private void addRouteToInternalIpOrCidr(String localgw, String eth1ip, String eth1mask, String destIpOrCidr) {

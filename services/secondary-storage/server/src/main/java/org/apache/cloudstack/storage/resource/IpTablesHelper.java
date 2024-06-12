@@ -55,7 +55,7 @@ public class IpTablesHelper {
             String result = command.execute();
             LOGGER.debug(String.format("Executed [%s] with result [%s]", command, result));
             if (result != null) {
-                LOGGER.warn(errMsg + result);
+                LOGGER.warn(String.format("%s , err = %s", errMsg, result));
                 return errMsg + result;
             }
         } else {
