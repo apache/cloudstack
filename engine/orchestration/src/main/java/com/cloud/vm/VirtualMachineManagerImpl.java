@@ -1077,6 +1077,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             return;
         }
         Host lastHost = _hostDao.findById(vm.getLastHostId());
+        if (lastHost == null) {
+            logger.warn("Could not find last host with id [{}], skipping migrate VM [{}] across cluster check." , vm.getLastHostId(), vm.getUuid());
+            return;
+        }
         if (destinationClusterId.equals(lastHost.getClusterId())) {
             return;
         }
