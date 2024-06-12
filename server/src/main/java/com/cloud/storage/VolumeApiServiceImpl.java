@@ -2027,7 +2027,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     private Volume changeDiskOfferingForVolumeInternal(VolumeVO volume, Long newDiskOfferingId, Long newSize, Long newMinIops, Long newMaxIops, boolean autoMigrateVolume, boolean shrinkOk) throws ResourceAllocationException {
-        DiskOfferingVO existingDiskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
+        long existingDiskOfferingId = volume.getDiskOfferingId();
+        DiskOfferingVO existingDiskOffering = _diskOfferingDao.findById(existingDiskOfferingId);
         DiskOfferingVO newDiskOffering = _diskOfferingDao.findById(newDiskOfferingId);
         Integer newHypervisorSnapshotReserve = null;
 
@@ -2039,7 +2040,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         Long[] updateNewMinIops = {newMinIops};
         Long[] updateNewMaxIops = {newMaxIops};
         Integer[] updateNewHypervisorSnapshotReserve = {newHypervisorSnapshotReserve};
-        validateChangeDiskOffering(existingDiskOffering, newDiskOffering);
+        validateChangeDiskOffering(existingDiskOfferingId, newDiskOfferingId);
         validateVolumeResizeWithNewDiskOfferingAndLoad(volume, existingDiskOffering, newDiskOffering, updateNewSize, updateNewMinIops, updateNewMaxIops, updateNewHypervisorSnapshotReserve);
         newSize = updateNewSize[0];
         newMinIops = updateNewMinIops[0];
@@ -2248,9 +2249,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
     }
 
-    private void validateChangeDiskOffering(DiskOfferingVO existingDiskOffering, DiskOfferingVO newDiskOffering) {
+    @Override
+    public void validateChangeDiskOffering(long existingDiskOfferingId, long newDiskOfferingId) {
+        DiskOfferingVO existingDiskOffering = _diskOfferingDao.findById(existingDiskOfferingId);
+        DiskOfferingVO newDiskOffering = _diskOfferingDao.findById(newDiskOfferingId);
+
         if (existingDiskOffering.getEncrypt() != newDiskOffering.getEncrypt()) {
-            throw new InvalidParameterValueException("Cannot change the encryption type of a volume, please check the selected disk offering");
+            throw new InvalidParameterValueException("Cannot change the encryption type of a volume, please check the selected offering");
         }
     }
 

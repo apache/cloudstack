@@ -184,4 +184,6 @@ public interface VolumeApiService {
     boolean stateTransitTo(Volume vol, Volume.Event event) throws NoTransitionException;
 
     Pair<String, String> checkAndRepairVolume(CheckAndRepairVolumeCmd cmd) throws ResourceAllocationException;
+
+    void validateChangeDiskOffering(long existingDiskOfferingId, long newDiskOfferingId);
 }
