@@ -260,7 +260,9 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
                 return newRule;
             });
         } finally {
-            _ipAddressDao.releaseFromLockTable(ipAddrId);
+            if (ipAddrId != null) {
+                _ipAddressDao.releaseFromLockTable(ipAddrId);
+            }
         }
     }
 
