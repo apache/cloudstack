@@ -255,6 +255,8 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.googlecode.ipv6.IPv6Address;
 
+import static com.cloud.configuration.ConfigurationManager.MESSAGE_DELETE_VLAN_IP_RANGE_EVENT;
+
 /**
  * NetworkManagerImpl implements NetworkManager.
  */
@@ -1409,6 +1411,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         if (isNetworkImplemented(network)) {
             s_logger.debug("Network id=" + networkId + " is already implemented");
             implemented.set(guru, network);
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_UPDATE, network.getAccountId(), network.getDataCenterId(), network.getId(),
+                    network.getName(), network.getNetworkOfferingId(), null, network.getState().name(), Network.class.getName(), network.getUuid(), true);
             return implemented;
         }
 
@@ -1469,6 +1473,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             network.setRestartRequired(false);
             _networksDao.update(network.getId(), network);
             implemented.set(guru, network);
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_CREATE, network.getAccountId(), network.getDataCenterId(), network.getId(),
+                    network.getName(), network.getNetworkOfferingId(), null, null, null, network.getState().name(), network.getUuid());
             return implemented;
         } catch (final NoTransitionException e) {
             s_logger.error(e.getMessage());
@@ -3294,16 +3300,16 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
             final NetworkVO networkFinal = network;
             try {
-                Transaction.execute(new TransactionCallbackNoReturn() {
+                final List<VlanVO> deletedVlanRangeToPublish = Transaction.execute(new TransactionCallback<List<VlanVO>>() {
                     @Override
-                    public void doInTransactionWithoutResult(final TransactionStatus status) {
+                    public List<VlanVO> doInTransaction(TransactionStatus status) {
                         final NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, networkFinal.getGuruName());
 
                         if (!guru.trash(networkFinal, _networkOfferingDao.findById(networkFinal.getNetworkOfferingId()))) {
                             throw new CloudRuntimeException("Failed to trash network.");
                         }
-
-                        if (!deleteVlansInNetwork(networkFinal, context.getCaller().getId(), callerAccount)) {
+                        Pair<Boolean, List<VlanVO>> deletedVlans = deleteVlansInNetwork(networkFinal, context.getCaller().getId(), callerAccount);
+                        if (!deletedVlans.first()) {
                             s_logger.warn("Failed to delete network " + networkFinal + "; was unable to cleanup corresponding ip ranges");
                             throw new CloudRuntimeException("Failed to delete network " + networkFinal + "; was unable to cleanup corresponding ip ranges");
                         } else {
@@ -3337,13 +3343,17 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                                 _resourceLimitMgr.decrementResourceCount(networkFinal.getAccountId(), ResourceType.network, networkFinal.getDisplayNetwork());
                             }
                         }
+                        return deletedVlans.second();
                     }
                 });
+                publishDeletedVlanRanges(deletedVlanRangeToPublish);
                 if (_networksDao.findById(network.getId()) == null) {
                     // remove its related ACL permission
                     final Pair<Class<?>, Long> networkMsg = new Pair<Class<?>, Long>(Network.class, networkFinal.getId());
                     _messageBus.publish(_name, EntityManager.MESSAGE_REMOVE_ENTITY_EVENT, PublishScope.LOCAL, networkMsg);
                 }
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_DELETE, network.getAccountId(), network.getDataCenterId(), network.getId(),
+                        network.getName(), network.getNetworkOfferingId(), null, null, null, Network.class.getName(), network.getUuid());
                 return true;
             } catch (final CloudRuntimeException e) {
                 s_logger.error("Failed to delete network", e);
@@ -3354,6 +3364,14 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return success;
     }
 
+    private void publishDeletedVlanRanges(List<VlanVO> deletedVlanRangeToPublish) {
+        if (CollectionUtils.isNotEmpty(deletedVlanRangeToPublish)) {
+            for (VlanVO vlan : deletedVlanRangeToPublish) {
+                _messageBus.publish(_name, MESSAGE_DELETE_VLAN_IP_RANGE_EVENT, PublishScope.LOCAL, vlan);
+            }
+        }
+    }
+
     @Override
     public boolean resourceCountNeedsUpdate(final NetworkOffering ntwkOff, final ACLType aclType) {
         //Update resource count only for Isolated account specific non-system networks
@@ -3361,15 +3379,19 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return updateResourceCount;
     }
 
-    protected boolean deleteVlansInNetwork(final NetworkVO network, final long userId, final Account callerAccount) {
+    protected Pair<Boolean, List<VlanVO>> deleteVlansInNetwork(final NetworkVO network, final long userId, final Account callerAccount) {
         final long networkId = network.getId();
         //cleanup Public vlans
         final List<VlanVO> publicVlans = _vlanDao.listVlansByNetworkId(networkId);
+        List<VlanVO> deletedPublicVlanRange = new ArrayList<>();
         boolean result = true;
         for (final VlanVO vlan : publicVlans) {
-            if (!_configMgr.deleteVlanAndPublicIpRange(userId, vlan.getId(), callerAccount)) {
+            VlanVO vlanRange = _configMgr.deleteVlanAndPublicIpRange(userId, vlan.getId(), callerAccount);
+            if (vlanRange == null) {
                 s_logger.warn("Failed to delete vlan " + vlan.getId() + ");");
                 result = false;
+            } else {
+                deletedPublicVlanRange.add(vlanRange);
             }
         }
 
@@ -3389,7 +3411,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             _dcDao.releaseVnet(BroadcastDomainType.getValue(network.getBroadcastUri()), network.getDataCenterId(),
                     network.getPhysicalNetworkId(), network.getAccountId(), network.getReservationId());
         }
-        return result;
+        return new Pair<>(result, deletedPublicVlanRange);
     }
 
     public class NetworkGarbageCollector extends ManagedContextRunnable {

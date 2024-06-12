@@ -37,6 +37,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import com.cloud.event.UsageEventUtils;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -1147,7 +1148,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     + "and the hyphen ('-'); can't start or end with \"-\"");
         }
 
-        return Transaction.execute(new TransactionCallback<VpcVO>() {
+        VpcVO vpcVO = Transaction.execute(new TransactionCallback<VpcVO>() {
             @Override
             public VpcVO doInTransaction(final TransactionStatus status) {
                 final VpcVO persistedVpc = vpcDao.persist(vpc, finalizeServicesAndProvidersForVpc(vpc.getZoneId(), vpc.getVpcOfferingId()));
@@ -1157,6 +1158,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 return persistedVpc;
             }
         });
+        if (vpcVO != null) {
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VPC_CREATE, vpcVO.getAccountId(), vpcVO.getZoneId(), vpcVO.getId(), vpcVO.getName(), Vpc.class.getName(), vpcVO.getUuid(), vpcVO.isDisplay());
+        }
+        return vpcVO;
     }
 
     private Map<String, List<String>> finalizeServicesAndProvidersForVpc(final long zoneId, final long offeringId) {
@@ -1255,6 +1260,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         // executed successfully
         if (vpcDao.remove(vpc.getId())) {
             s_logger.debug("Vpc " + vpc + " is destroyed successfully");
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VPC_DELETE, vpc.getAccountId(), vpc.getZoneId(), vpc.getId(), vpc.getName(), Vpc.class.getName(), vpc.getUuid(), vpc.isDisplay());
             return true;
         } else {
             s_logger.warn("Vpc " + vpc + " failed to destroy");
@@ -1669,6 +1675,17 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
         }
         return result;
+    }
+
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VPC_CREATE, eventDescription = "creating vpc", async = true)
+    public void startVpc(final CreateVPCCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+        if (!cmd.isStart()) {
+            s_logger.debug("Not starting VPC as " + ApiConstants.START + "=false was passed to the API");
+            return;
+        }
+        startVpc(cmd.getEntityId(), true);
     }
 
     protected boolean startVpc(final Vpc vpc, final DeployDestination dest, final ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException,

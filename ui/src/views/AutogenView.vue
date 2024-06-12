@@ -819,7 +819,7 @@ export default {
       }
 
       if (this.$route && this.$route.meta && this.$route.meta.permission) {
-        this.apiName = this.$route.meta.permission[0]
+        this.apiName = (this.$route.meta.getApiToCall && this.$route.meta.getApiToCall()) || this.$route.meta.permission[0]
         if (this.$route.meta.columns) {
           const columns = this.$route.meta.columns
           if (columns && typeof columns === 'function') {
@@ -988,6 +988,12 @@ export default {
           this.items = []
         }
         this.itemCount = apiItemCount
+
+        if (this.dataView && this.$route.path.includes('/zone/') && 'listVmwareDcs' in this.$store.getters.apis) {
+          api('listVmwareDcs', { zoneid: this.items[0].id }).then(response => {
+            this.items[0].vmwaredc = response.listvmwaredcsresponse.VMwareDC
+          })
+        }
 
         if (['listTemplates', 'listIsos'].includes(this.apiName) && this.items.length > 1) {
           this.items = [...new Map(this.items.map(x => [x.id, x])).values()]
