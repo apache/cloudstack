@@ -798,7 +798,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         if (copyTimeout <= 0) {
             copyTimeout = Integer.valueOf(UnmanagedVMsManager.RemoteKvmInstanceDisksCopyTimeout.defaultValue());
         }
-        int copyTimeoutInSecs = copyTimeout * 60 * 60;
+        int copyTimeoutInSecs = copyTimeout * 60;
         copyRemoteVolumeCommand.setWait(copyTimeoutInSecs);
         Answer answer = agentManager.easySend(dest.getHost().getId(), copyRemoteVolumeCommand);
         if (!(answer instanceof CopyRemoteVolumeAnswer)) {
