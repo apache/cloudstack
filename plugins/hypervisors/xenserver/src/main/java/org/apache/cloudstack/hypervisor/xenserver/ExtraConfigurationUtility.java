@@ -73,7 +73,7 @@ public class ExtraConfigurationUtility {
                     vm.addToVCPUsParams(conn, keyName, paramValue);
                     break;
                 case "platform":
-                    vm.addToOtherConfig(conn, keyName, paramValue);
+                    vm.addToPlatform(conn, keyName, paramValue);
                     break;
                 case "HVM_boot_params":
                     vm.addToHVMBootParams(conn, keyName, paramValue);
