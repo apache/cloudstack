@@ -32,6 +32,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
@@ -188,10 +189,7 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
 
         if (volume.getDiskOfferingId() > 0) {
             DiskOffering computeOnlyDiskOffering  = ApiDBUtils.findComputeOnlyDiskOfferingById(volume.getDiskOfferingId());
-            ServiceOffering serviceOffering = null;
-            if (computeOnlyDiskOffering != null) {
-                serviceOffering = ApiDBUtils.findServiceOfferingByComputeOnlyDiskOffering(volume.getDiskOfferingId());
-            }
+            ServiceOffering serviceOffering = getServiceOfferingForDiskOffering(volume, computeOnlyDiskOffering);
             if (serviceOffering != null) {
                 volResponse.setServiceOfferingId(String.valueOf(serviceOffering.getId()));
                 volResponse.setServiceOfferingName(serviceOffering.getName());
@@ -284,6 +282,19 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
         volResponse.setExternalUuid(volume.getExternalUuid());
         volResponse.setEncryptionFormat(volume.getEncryptionFormat());
         return volResponse;
+    }
+
+    private static ServiceOffering getServiceOfferingForDiskOffering(VolumeJoinVO volume, DiskOffering computeOnlyDiskOffering) {
+        ServiceOffering serviceOffering = null;
+        // first try existing ones
+        if (computeOnlyDiskOffering != null) {
+            serviceOffering = ApiDBUtils.findServiceOfferingByComputeOnlyDiskOffering(volume.getDiskOfferingId(), false);
+        }
+        // else try removed ones
+        if (serviceOffering == null) {
+            serviceOffering = ApiDBUtils.findServiceOfferingByComputeOnlyDiskOffering(volume.getDiskOfferingId(), true);
+        }
+        return serviceOffering;
     }
 
     @Override
