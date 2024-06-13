@@ -79,6 +79,20 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
 
     public static final String MINIMUN_AUTOSCALER_SUPPORTED_VERSION = "1.15.0";
 
+    protected void updateTemplateDetailsInKubernetesSupportedVersionResponse(
+            final KubernetesSupportedVersion kubernetesSupportedVersion, KubernetesSupportedVersionResponse response) {
+        TemplateJoinVO template = templateJoinDao.findById(kubernetesSupportedVersion.getIsoId());
+        if (template == null) {
+            return;
+        }
+        response.setIsoId(template.getUuid());
+        response.setIsoName(template.getName());
+        if (template.getState() != null) {
+            response.setIsoState(template.getState().toString());
+        }
+        response.setDirectDownload(template.isDirectDownload());
+    }
+
     private KubernetesSupportedVersionResponse createKubernetesSupportedVersionResponse(final KubernetesSupportedVersion kubernetesSupportedVersion) {
         KubernetesSupportedVersionResponse response = new KubernetesSupportedVersionResponse();
         response.setObjectName("kubernetessupportedversion");
@@ -98,15 +112,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         response.setSupportsHA(compareSemanticVersions(kubernetesSupportedVersion.getSemanticVersion(),
             KubernetesClusterService.MIN_KUBERNETES_VERSION_HA_SUPPORT)>=0);
         response.setSupportsAutoscaling(versionSupportsAutoscaling(kubernetesSupportedVersion));
-        TemplateJoinVO template = templateJoinDao.findById(kubernetesSupportedVersion.getIsoId());
-        if (template != null) {
-            response.setIsoId(template.getUuid());
-            response.setIsoName(template.getName());
-            if (template.getState() != null) {
-                response.setIsoState(template.getState().toString());
-            }
-            response.setDirectDownload(template.isDirectDownload());
-        }
+        updateTemplateDetailsInKubernetesSupportedVersionResponse(kubernetesSupportedVersion, response);
         response.setCreated(kubernetesSupportedVersion.getCreated());
         return response;
     }

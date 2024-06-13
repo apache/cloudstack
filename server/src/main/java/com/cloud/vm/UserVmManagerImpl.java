@@ -8096,7 +8096,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
         if (needRestart) {
             try {
-                if (vm.getDetail(VmDetailConstants.PASSWORD) != null) {
+                if (Objects.nonNull(password)) {
                     params = new HashMap<>();
                     params.put(VirtualMachineProfile.Param.VmPassword, password);
                 }
