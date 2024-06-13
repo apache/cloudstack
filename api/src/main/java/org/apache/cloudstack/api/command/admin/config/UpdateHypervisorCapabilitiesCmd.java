@@ -45,7 +45,7 @@ public class UpdateHypervisorCapabilitiesCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HypervisorCapabilitiesResponse.class, description = "ID of the hypervisor capability")
     private Long id;
 
-    @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "the hypervisor of the hypervisor capability", since = "4.19.1")
+    @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "the hypervisor for which the hypervisor capabilities are to be updated", since = "4.19.1")
     private String hypervisor;
 
     @Parameter(name = ApiConstants.HYPERVISOR_VERSION, type = CommandType.STRING, description = "the hypervisor version of the hypervisor capability", since = "4.19.1")
