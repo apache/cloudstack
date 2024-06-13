@@ -343,6 +343,7 @@ public class VolumeServiceTest extends TestCase{
         DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
 
         Mockito.when(diskOffering.getEncrypt()).thenReturn(encryption);
+        Mockito.when(diskOfferingDaoMock.findByIdIncludingRemoved(diskOfferingId)).thenReturn(diskOffering);
         Mockito.when(diskOfferingDaoMock.findById(diskOfferingId)).thenReturn(diskOffering);
     }
 }
