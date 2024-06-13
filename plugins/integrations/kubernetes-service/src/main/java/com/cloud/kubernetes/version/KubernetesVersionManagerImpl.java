@@ -52,6 +52,7 @@ import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.template.TemplateApiService;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.AccountManager;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.Filter;
@@ -119,13 +120,14 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         return response;
     }
 
-    private ListResponse<KubernetesSupportedVersionResponse> createKubernetesSupportedVersionListResponse(List<KubernetesSupportedVersionVO> versions) {
+    private ListResponse<KubernetesSupportedVersionResponse> createKubernetesSupportedVersionListResponse(
+            List<KubernetesSupportedVersionVO> versions, Integer count) {
         List<KubernetesSupportedVersionResponse> responseList = new ArrayList<>();
         for (KubernetesSupportedVersionVO version : versions) {
             responseList.add(createKubernetesSupportedVersionResponse(version));
         }
         ListResponse<KubernetesSupportedVersionResponse> response = new ListResponse<>();
-        response.setResponses(responseList);
+        response.setResponses(responseList, count);
         return response;
     }
 
@@ -280,10 +282,12 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         if(keyword != null){
             sc.setParameters("keyword", "%" + keyword + "%");
         }
-        List <KubernetesSupportedVersionVO> versions = kubernetesSupportedVersionDao.search(sc, searchFilter);
-        versions = filterKubernetesSupportedVersions(versions, minimumSemanticVersion);
+        Pair<List<KubernetesSupportedVersionVO>, Integer> versionsAndCount =
+                kubernetesSupportedVersionDao.searchAndCount(sc, searchFilter);
+        List<KubernetesSupportedVersionVO> versions =
+                filterKubernetesSupportedVersions(versionsAndCount.first(), minimumSemanticVersion);
 
-        return createKubernetesSupportedVersionListResponse(versions);
+        return createKubernetesSupportedVersionListResponse(versions, versionsAndCount.second());
     }
 
     @Override
