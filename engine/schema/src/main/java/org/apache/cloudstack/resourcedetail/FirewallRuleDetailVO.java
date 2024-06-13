@@ -79,4 +79,8 @@ public class FirewallRuleDetailVO implements ResourceDetail {
     public boolean isDisplay() {
         return display;
     }
+
+    public void setValue(String value) {
+        this.value = value;
+    }
 }

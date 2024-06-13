@@ -1982,7 +1982,11 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             KubernetesClusterUpgradeTimeout,
             KubernetesClusterUpgradeRetries,
             KubernetesClusterExperimentalFeaturesEnabled,
-            KubernetesMaxClusterSize
+            KubernetesMaxClusterSize,
+            KubernetesControlNodeInstallAttemptWait,
+            KubernetesControlNodeInstallReattempts,
+            KubernetesWorkerNodeInstallAttemptWait,
+            KubernetesWorkerNodeInstallReattempts
         };
     }
 }
