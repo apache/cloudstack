@@ -138,9 +138,9 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
     public OauthProviderVO registerOauthProvider(RegisterOAuthProviderCmd cmd) {
         String description = cmd.getDescription();
         String provider = cmd.getProvider();
-        String clientId = cmd.getClientId();
-        String redirectUri = cmd.getRedirectUri();
-        String secretKey = cmd.getSecretKey();
+        String clientId = cmd.getClientId().replaceAll("\\s", "");
+        String redirectUri = cmd.getRedirectUri().replaceAll("\\s", "");
+        String secretKey = cmd.getSecretKey().replaceAll("\\s", "");
 
         if (!isOAuthPluginEnabled()) {
             throw new CloudRuntimeException("OAuth is not enabled, please enable to register");
@@ -170,9 +170,9 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
     public OauthProviderVO updateOauthProvider(UpdateOAuthProviderCmd cmd) {
         Long id = cmd.getId();
         String description = cmd.getDescription();
-        String clientId = cmd.getClientId();
-        String redirectUri = cmd.getRedirectUri();
-        String secretKey = cmd.getSecretKey();
+        String clientId = cmd.getClientId().replaceAll("\\s", "");
+        String redirectUri = cmd.getRedirectUri().replaceAll("\\s", "");
+        String secretKey = cmd.getSecretKey().replaceAll("\\s", "");
         Boolean enabled = cmd.getEnabled();
 
         OauthProviderVO providerVO = _oauthProviderDao.findById(id);
