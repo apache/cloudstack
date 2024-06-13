@@ -2281,7 +2281,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 Pair<String, Long> secStoreUrlAndId = mgr.getSecondaryStorageStoreUrlAndId(Long.parseLong(_dcId));
                 String secStoreUrl = secStoreUrlAndId.first();
                 if (secStoreUrl == null) {
-                    String msg = String.format("NFS secondary or cache storage of dc %s either doesn't have enough capacity (less than %d usage) or not ready yet, or non-NFS secondary storage is used",
+                    String msg = String.format("NFS secondary or cache storage of dc %s either doesn't have enough capacity (has reached %d usage threshold) or not ready yet, or non-NFS secondary storage is used",
                             _dcId, Math.round(CapacityManager.SecondaryStorageCapacityThreshold.value() * 100));
                     throw new Exception(msg);
                 }
@@ -4615,7 +4615,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             for (Pair<String, Long> secStoreUrlAndId : secStoreUrlAndIdList) {
                 String secStoreUrl = secStoreUrlAndId.first();
                 if (secStoreUrl == null) {
-                    String msg = String.format("NFS secondary or cache storage of dc %s either doesn't have enough capacity (less than %d usage) or not ready yet, or non-NFS secondary storage is used",
+                    String msg = String.format("NFS secondary or cache storage of dc %s either doesn't have enough capacity (has reached %d usage threshold) or not ready yet, or non-NFS secondary storage is used",
                             _dcId, Math.round(CapacityManager.SecondaryStorageCapacityThreshold.value() * 100));
                     throw new Exception(msg);
                 }
@@ -7344,7 +7344,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 Pair<String, Long> secStoreUrlAndId = mgr.getSecondaryStorageStoreUrlAndId(Long.parseLong(_dcId));
                 String secStoreUrl = secStoreUrlAndId.first();
                 if (secStoreUrl == null) {
-                    String msg = String.format("NFS secondary or cache storage of dc %s either doesn't have enough capacity (less than %d usage) or not ready yet, or non-NFS secondary storage is used",
+                    String msg = String.format("NFS secondary or cache storage of dc %s either doesn't have enough capacity (has reached %d usage threshold) or not ready yet, or non-NFS secondary storage is used",
                             _dcId, Math.round(CapacityManager.SecondaryStorageCapacityThreshold.value() * 100));
                     throw new Exception(msg);
                 }
