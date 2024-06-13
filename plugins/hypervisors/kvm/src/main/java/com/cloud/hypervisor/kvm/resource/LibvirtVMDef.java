@@ -185,6 +185,7 @@ public class LibvirtVMDef {
                 guestDef.append("<entry name='manufacturer'>Apache Software Foundation</entry>\n");
                 guestDef.append("<entry name='product'>CloudStack " + _type.toString() + " Hypervisor</entry>\n");
                 guestDef.append("<entry name='uuid'>" + _uuid + "</entry>\n");
+                guestDef.append("<entry name='serial'>" + _uuid + "</entry>\n");
                 guestDef.append("</system>\n");
                 guestDef.append("</sysinfo>\n");
 
