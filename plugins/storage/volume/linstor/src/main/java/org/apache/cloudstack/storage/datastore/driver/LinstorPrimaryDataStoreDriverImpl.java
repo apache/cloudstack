@@ -29,7 +29,6 @@ import com.linbit.linstor.api.model.ResourceDefinitionCreate;
 import com.linbit.linstor.api.model.ResourceDefinitionModify;
 import com.linbit.linstor.api.model.ResourceGroupSpawn;
 import com.linbit.linstor.api.model.ResourceMakeAvailable;
-import com.linbit.linstor.api.model.ResourceWithVolumes;
 import com.linbit.linstor.api.model.Snapshot;
 import com.linbit.linstor.api.model.SnapshotRestore;
 import com.linbit.linstor.api.model.VolumeDefinition;
@@ -343,25 +342,6 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         return answers.stream().filter(ApiCallRc::isError).findFirst().map(ApiCallRc::getMessage).orElse(null);
     }
 
-    private String getDeviceName(DevelopersApi linstorApi, String rscName) throws ApiException {
-        List<ResourceWithVolumes> resources = linstorApi.viewResources(
-            Collections.emptyList(),
-            Collections.singletonList(rscName),
-            Collections.emptyList(),
-            null,
-            null,
-            null);
-        if (!resources.isEmpty() && !resources.get(0).getVolumes().isEmpty())
-        {
-            logger.info("Linstor: Created drbd device: " + resources.get(0).getVolumes().get(0).getDevicePath());
-            return resources.get(0).getVolumes().get(0).getDevicePath();
-        } else
-        {
-            logger.error("Linstor: viewResources didn't return resources or volumes.");
-            throw new CloudRuntimeException("Linstor: viewResources didn't return resources or volumes.");
-        }
-    }
-
     private void applyQoSSettings(StoragePoolVO storagePool, DevelopersApi api, String rscName, Long maxIops)
         throws ApiException
     {
@@ -447,7 +427,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
 
             applyAuxProps(api, rscName, volName, vmName);
 
-            return getDeviceName(api, rscName);
+            return LinstorUtil.getDevicePath(api, rscName);
         } catch (ApiException apiEx)
         {
             logger.error("Linstor: ApiEx - " + apiEx.getMessage());
@@ -467,7 +447,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         {
             applyQoSSettings(storagePoolVO, linstorApi, rscName, vol.getMaxIops());
 
-            return deviceName;
+            return LinstorUtil.getDevicePath(linstorApi, rscName);
         } catch (ApiException apiEx)
         {
             logger.error("Linstor: ApiEx - " + apiEx.getMessage());
@@ -519,7 +499,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                 applyAuxProps(linstorApi, rscName, volumeInfo.getName(), volumeInfo.getAttachedVmName());
                 applyQoSSettings(storagePoolVO, linstorApi, rscName, volumeInfo.getMaxIops());
 
-                return getDeviceName(linstorApi, rscName);
+                return LinstorUtil.getDevicePath(linstorApi, rscName);
             } catch (ApiException apiEx) {
                 logger.error("Linstor: ApiEx - " + apiEx.getMessage());
                 throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
@@ -571,7 +551,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             applyAuxProps(linstorApi, rscName, volumeVO.getName(), null);
             applyQoSSettings(storagePoolVO, linstorApi, rscName, volumeVO.getMaxIops());
 
-            return getDeviceName(linstorApi, rscName);
+            return LinstorUtil.getDevicePath(linstorApi, rscName);
         } catch (ApiException apiEx) {
             logger.error("Linstor: ApiEx - " + apiEx.getMessage());
             throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
@@ -940,7 +920,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
 
         api.resourceSnapshotRestore(rscName, snapshotName, sr);
 
-        return getDeviceName(api, restoredName);
+        return LinstorUtil.getDevicePath(api, restoredName);
     }
 
     private Answer copyTemplate(DataObject srcData, DataObject dstData) {

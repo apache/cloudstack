@@ -154,6 +154,11 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
         return MapStorageUuidToStoragePool.remove(uuid) != null;
     }
 
+    @Override
+    public KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool, QemuImg.PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, byte[] passphrase) {
+        return createPhysicalDisk(name, pool, format, provisioningType, size, null, passphrase);
+    }
+
     /**
      * ScaleIO doesn't need to communicate with the hypervisor normally to create a volume. This is used only to prepare a ScaleIO data disk for encryption.
      * Thin encrypted volumes are provisioned in QCOW2 format, which insulates the guest from zeroes/unallocated blocks in the block device that would
@@ -163,11 +168,12 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
      * @param format disk format
      * @param provisioningType provisioning type
      * @param size disk size
+     * @param usableSize usage disk size
      * @param passphrase passphrase
      * @return the disk object
      */
     @Override
-    public KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool, QemuImg.PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, byte[] passphrase) {
+    public KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool, QemuImg.PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, Long usableSize, byte[] passphrase) {
         if (passphrase == null || passphrase.length == 0) {
             return null;
         }
@@ -185,7 +191,12 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
                 QemuImg qemuImg = new QemuImg(0, true, false);
                 Map<String, String> options = new HashMap<>();
                 List<QemuObject> qemuObjects = new ArrayList<>();
-                long formattedSize = getUsableBytesFromRawBytes(disk.getSize());
+                long formattedSize;
+                if (usableSize != null && usableSize > 0) {
+                    formattedSize = usableSize;
+                } else {
+                    formattedSize = getUsableBytesFromRawBytes(disk.getSize());
+                }
 
                 options.put("preallocation", QemuImg.PreallocationType.Metadata.toString());
                 qemuObjects.add(QemuObject.prepareSecretForQemuImg(disk.getFormat(), disk.getQemuEncryptFormat(), keyFile.toString(), "sec0", options));

@@ -140,6 +140,12 @@
             <status class="status" :text="resource.resourcestate" displayText/>
           </div>
         </div>
+        <div class="resource-detail-item" v-if="('success' in resource) && $route.meta.name === 'webhookdeliveries'">
+          <div class="resource-detail-item__label">{{ $t('label.success') }}</div>
+          <div class="resource-detail-item__details">
+            <status class="status" :text="resource.success ? 'success' : 'error'"/>
+          </div>
+        </div>
 
         <div class="resource-detail-item" v-if="resource.id">
           <div class="resource-detail-item__label">{{ $t('label.id') }}</div>
@@ -670,6 +676,22 @@
             <block-outlined v-else />
             <router-link v-if="!isStatic && $store.getters.userInfo.roletype !== 'User'" :to="{ path: '/domain/' + resource.domainid, query: { tab: 'details'}  }">{{ resource.domain || resource.domainid }}</router-link>
             <span v-else>{{ resource.domain || resource.domainid }}</span>
+          </div>
+        </div>
+        <div class="resource-detail-item" v-if="resource.payloadurl">
+          <div class="resource-detail-item__label">{{ $t('label.payloadurl') }}</div>
+          <div class="resource-detail-item__details">
+          <link-outlined/>
+            <a v-if="!isStatic" :href="resource.payloadurl">{{ resource.payloadurl }}</a>
+            <span v-else>{{ resource.payloadurl }}</span>
+          </div>
+        </div>
+        <div class="resource-detail-item" v-if="resource.webhookid">
+          <div class="resource-detail-item__label">{{ $t('label.webhook') }}</div>
+          <div class="resource-detail-item__details">
+            <node-index-outlined />
+            <router-link v-if="!isStatic && $router.resolve('/webhook/' + resource.webhookid).matched[0].redirect !== '/exception/404'" :to="{ path: '/webhook/' + resource.webhookid }">{{ resource.webhookname || resource.webhookid }}</router-link>
+            <span v-else>{{ resource.webhookname || resource.webhookid }}</span>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.managementserverid">
