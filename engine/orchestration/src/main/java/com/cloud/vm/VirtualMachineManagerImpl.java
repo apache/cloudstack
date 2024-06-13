@@ -4802,7 +4802,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    protected ApiCommandResourceType getApiCommandResourceTypeForVm(VirtualMachine vm) {
+    private ApiCommandResourceType getApiCommandResourceTypeForVm(VirtualMachine vm) {
         switch (vm.getType()) {
             case DomainRouter:
                 return ApiCommandResourceType.DomainRouter;

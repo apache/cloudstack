@@ -445,7 +445,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
 
     }
 
-    protected void startVm(VirtualMachine vm, Map<VirtualMachineProfile.Param, Object> params,
+    private void startVm(VirtualMachine vm, Map<VirtualMachineProfile.Param, Object> params,
            DeploymentPlanner planner) throws InsufficientCapacityException, ResourceUnavailableException,
             ConcurrentOperationException, OperationTimedoutException {
         CallContext ctx = CallContext.register(CallContext.current(), ApiCommandResourceType.VirtualMachine);
