@@ -48,7 +48,7 @@ public class UpdateHypervisorCapabilitiesCmd extends BaseCmd {
     @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "the hypervisor for which the hypervisor capabilities are to be updated", since = "4.19.1")
     private String hypervisor;
 
-    @Parameter(name = ApiConstants.HYPERVISOR_VERSION, type = CommandType.STRING, description = "the hypervisor version of the hypervisor capability", since = "4.19.1")
+    @Parameter(name = ApiConstants.HYPERVISOR_VERSION, type = CommandType.STRING, description = "the hypervisor version for which the hypervisor capabilities are to be updated", since = "4.19.1")
     private String hypervisorVersion;
 
     @Parameter(name = ApiConstants.SECURITY_GROUP_EANBLED, type = CommandType.BOOLEAN, description = "set true to enable security group for this hypervisor.")
