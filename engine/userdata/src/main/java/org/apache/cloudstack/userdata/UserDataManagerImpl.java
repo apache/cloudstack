@@ -90,6 +90,7 @@ public class UserDataManagerImpl extends ManagerBase implements UserDataManager 
 
     @Override
     public String validateUserData(String userData, BaseCmd.HTTPMethod httpmethod) {
+        s_logger.trace(String.format("Validating user data: [%s].", userData));
         if (StringUtils.isBlank(userData)) {
             s_logger.debug("Null/empty user data set");
             return null;
@@ -126,6 +127,7 @@ public class UserDataManagerImpl extends ManagerBase implements UserDataManager 
             throw new InvalidParameterValueException("User data is too short.");
         }
 
+        s_logger.trace(String.format("Decoded user data: [%s].", decodedUserData));
         int userDataLength = decodedUserData.length;
         s_logger.info(String.format("Configured user data size: %d bytes", userDataLength));
 
