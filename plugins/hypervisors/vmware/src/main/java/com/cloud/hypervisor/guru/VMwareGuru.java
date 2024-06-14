@@ -769,7 +769,11 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     protected VolumeVO updateVolume(VirtualDisk disk, Map<VirtualDisk, VolumeVO> disksMapping, VirtualMachineMO vmToImport, Long poolId, VirtualMachine vm) throws Exception {
         VolumeVO volume = disksMapping.get(disk);
         String volumeName = getVolumeName(disk, vmToImport);
-        volume.setPath(volumeName);
+        if (volume.get_iScsiName() != null) {
+            volume.setPath(String.format("[%s] %s.vmdk", volumeName, volumeName));
+        } else {
+            volume.setPath(volumeName);
+        }
         volume.setPoolId(poolId);
         VirtualMachineDiskInfo diskInfo = getDiskInfo(vmToImport, poolId, volumeName);
         volume.setChainInfo(GSON.toJson(diskInfo));
