@@ -17,12 +17,15 @@
 package com.cloud.api;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
@@ -1106,8 +1109,8 @@ public class ApiDBUtils {
         return null;
     }
 
-    public static ServiceOfferingVO findServiceOfferingByComputeOnlyDiskOffering(Long diskOfferingId) {
-        ServiceOfferingVO off = s_serviceOfferingDao.findServiceOfferingByComputeOnlyDiskOffering(diskOfferingId);
+    public static ServiceOfferingVO findServiceOfferingByComputeOnlyDiskOffering(Long diskOfferingId, boolean includingRemoved) {
+        ServiceOfferingVO off = s_serviceOfferingDao.findServiceOfferingByComputeOnlyDiskOffering(diskOfferingId, includingRemoved);
         return off;
     }
     public static DomainVO findDomainById(Long domainId) {
@@ -2080,6 +2083,29 @@ public class ApiDBUtils {
             }
         }
         return response;
+    }
+
+    public static List<AccountResponse> newAccountResponses(ResponseView view, EnumSet<DomainDetails> details, AccountJoinVO... accounts) {
+        List<AccountResponse> responseList = new ArrayList<>();
+
+        List<Long> roleIdList = Arrays.stream(accounts).map(AccountJoinVO::getRoleId).collect(Collectors.toList());
+        Map<Long,Role> roleIdMap = s_roleService.findRoles(roleIdList, false).stream().collect(Collectors.toMap(Role::getId, Function.identity()));
+
+        for (AccountJoinVO account : accounts) {
+            AccountResponse response = s_accountJoinDao.newAccountResponse(view, details, account);
+            // Populate account role information
+            if (account.getRoleId() != null) {
+                Role role = roleIdMap.get(account.getRoleId());
+                if (role != null) {
+                    response.setRoleId(role.getUuid());
+                    response.setRoleType(role.getRoleType());
+                    response.setRoleName(role.getName());
+                }
+            }
+            responseList.add(response);
+        }
+
+        return responseList;
     }
 
     public static AccountJoinVO newAccountView(Account e) {

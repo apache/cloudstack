@@ -54,6 +54,8 @@ import org.apache.cloudstack.api.command.user.userdata.DeleteUserDataCmd;
 import org.apache.cloudstack.api.command.user.userdata.ListUserDataCmd;
 import org.apache.cloudstack.api.command.user.userdata.RegisterUserDataCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.userdata.UserDataManager;
 import org.junit.After;
@@ -644,5 +646,42 @@ public class ManagementServerImplTest {
         Assert.assertFalse(result.first());
         Assert.assertNotNull(result.second());
         Assert.assertEquals(0, result.second().size());
+    }
+
+    @Test
+    public void testZoneWideVolumeRequiresStorageMotionNonManaged() {
+        PrimaryDataStore dataStore = Mockito.mock(PrimaryDataStore.class);
+        Mockito.when(dataStore.isManaged()).thenReturn(false);
+        Assert.assertFalse(spy.zoneWideVolumeRequiresStorageMotion(dataStore,
+                Mockito.mock(Host.class), Mockito.mock(Host.class)));
+    }
+
+    @Test
+    public void testZoneWideVolumeRequiresStorageMotionSameClusterHost() {
+        PrimaryDataStore dataStore = Mockito.mock(PrimaryDataStore.class);
+        Mockito.when(dataStore.isManaged()).thenReturn(true);
+        Host host1 = Mockito.mock(Host.class);
+        Mockito.when(host1.getClusterId()).thenReturn(1L);
+        Host host2 = Mockito.mock(Host.class);
+        Mockito.when(host2.getClusterId()).thenReturn(1L);
+        Assert.assertFalse(spy.zoneWideVolumeRequiresStorageMotion(dataStore, host1, host2));
+    }
+
+    @Test
+    public void testZoneWideVolumeRequiresStorageMotionDriverDependent() {
+        PrimaryDataStore dataStore = Mockito.mock(PrimaryDataStore.class);
+        Mockito.when(dataStore.isManaged()).thenReturn(true);
+        PrimaryDataStoreDriver driver = Mockito.mock(PrimaryDataStoreDriver.class);
+        Mockito.when(dataStore.getDriver()).thenReturn(driver);
+        Host host1 = Mockito.mock(Host.class);
+        Mockito.when(host1.getClusterId()).thenReturn(1L);
+        Host host2 = Mockito.mock(Host.class);
+        Mockito.when(host2.getClusterId()).thenReturn(2L);
+
+        Mockito.when(driver.zoneWideVolumesAvailableWithoutClusterMotion()).thenReturn(true);
+        Assert.assertFalse(spy.zoneWideVolumeRequiresStorageMotion(dataStore, host1, host2));
+
+        Mockito.when(driver.zoneWideVolumesAvailableWithoutClusterMotion()).thenReturn(false);
+        Assert.assertTrue(spy.zoneWideVolumeRequiresStorageMotion(dataStore, host1, host2));
     }
 }

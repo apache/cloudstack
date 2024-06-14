@@ -166,6 +166,7 @@ public class ViewResponseHelper {
                 // update nics, securitygroups, tags, affinitygroups for 1 to many mapping fields
                 userVmData = ApiDBUtils.fillVmDetails(view, userVmData, userVm);
             }
+            userVmData.setIpAddress(userVmData.getNics());
             vmDataList.put(userVm.getId(), userVmData);
         }
         return new ArrayList<UserVmResponse>(vmDataList.values());
@@ -541,11 +542,7 @@ public class ViewResponseHelper {
     }
 
     public static List<AccountResponse> createAccountResponse(ResponseView view, EnumSet<DomainDetails> details, AccountJoinVO... accounts) {
-        List<AccountResponse> respList = new ArrayList<AccountResponse>();
-        for (AccountJoinVO vt : accounts){
-            respList.add(ApiDBUtils.newAccountResponse(view, details, vt));
-        }
-        return respList;
+        return ApiDBUtils.newAccountResponses(view, details, accounts);
     }
 
     public static List<AsyncJobResponse> createAsyncJobResponse(AsyncJobJoinVO... jobs) {

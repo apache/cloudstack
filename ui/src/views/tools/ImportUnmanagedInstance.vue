@@ -297,6 +297,8 @@
                 <multi-network-selection
                   :items="nics"
                   :zoneId="cluster.zoneid"
+                  :domainid="form.domainid"
+                  :account="form.account"
                   :selectionEnabled="false"
                   :filterUnimplementedNetworks="true"
                   :hypervisor="this.cluster.hypervisortype"
@@ -693,7 +695,9 @@ export default {
       this.form = reactive({
         rootdiskid: 0,
         migrateallowed: this.switches.migrateAllowed,
-        forced: this.switches.forced
+        forced: this.switches.forced,
+        domainid: null,
+        account: null
       })
       this.rules = reactive({
         displayname: [{ required: true, message: this.$t('message.error.input.value') }],
@@ -713,7 +717,7 @@ export default {
         page: 1
       })
       this.fetchKvmHostsForConversion()
-      if (this.resource.disk.length > 1) {
+      if (this.resource?.disk?.length > 1) {
         this.updateSelectedRootDisk()
       }
     },

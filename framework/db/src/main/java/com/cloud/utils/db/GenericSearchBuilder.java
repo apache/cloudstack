@@ -80,6 +80,12 @@ public class GenericSearchBuilder<T, K> extends SearchBase<GenericSearchBuilder<
         return this;
     }
 
+    public GenericSearchBuilder<T, K> and(String joinName, String name, Object field, Op op) {
+        SearchBase<?, ?, ?> join = _joins.get(joinName).getT();
+        constructCondition(joinName, name, " AND ", join._specifiedAttrs.get(0), op);
+        return this;
+    }
+
     /**
      * Adds an AND condition.  Some prefer this method because it looks like
      * the actual SQL query.
@@ -134,6 +140,12 @@ public class GenericSearchBuilder<T, K> extends SearchBase<GenericSearchBuilder<
         return this;
     }
 
+    protected GenericSearchBuilder<T, K> left(String joinName, Object field, Op op, String name) {
+        SearchBase<?, ?, ?> joinSb = _joins.get(joinName).getT();
+        constructCondition(joinName, name, " ( ", joinSb._specifiedAttrs.get(0), op);
+        return this;
+    }
+
     protected Preset left(Object field, Op op) {
         Condition condition = constructCondition(UUID.randomUUID().toString(), " ( ", _specifiedAttrs.get(0), op);
         return new Preset(this, condition);
@@ -169,6 +181,10 @@ public class GenericSearchBuilder<T, K> extends SearchBase<GenericSearchBuilder<
         return left(field, op, name);
     }
 
+    public GenericSearchBuilder<T, K> op(String joinName, String name, Object field, Op op) {
+        return left(joinName, field, op, name);
+    }
+
     /**
      * Adds an OR condition to the SearchBuilder.
      *
@@ -179,6 +195,12 @@ public class GenericSearchBuilder<T, K> extends SearchBase<GenericSearchBuilder<
      */
     public GenericSearchBuilder<T, K> or(String name, Object field, Op op) {
         constructCondition(name, " OR ", _specifiedAttrs.get(0), op);
+        return this;
+    }
+
+    public GenericSearchBuilder<T, K> or(String joinName, String name, Object field, Op op) {
+        SearchBase<?, ?, ?> join = _joins.get(joinName).getT();
+        constructCondition(joinName, name, " OR ", join._specifiedAttrs.get(0), op);
         return this;
     }
 

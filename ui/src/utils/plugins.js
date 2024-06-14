@@ -390,6 +390,10 @@ export const resourceTypePlugin = {
           return 'publicip'
         case 'NetworkAcl':
           return 'acllist'
+        case 'KubernetesCluster':
+          return 'kubernetes'
+        case 'KubernetesSupportedVersion':
+          return 'kubernetesiso'
         case 'SystemVm':
         case 'PhysicalNetwork':
         case 'Backup':
@@ -417,6 +421,7 @@ export const resourceTypePlugin = {
         case 'AffinityGroup':
         case 'VpnCustomerGateway':
         case 'AutoScaleVmGroup':
+        case 'QuotaTariff':
           return resourceType.toLowerCase()
       }
       return ''

@@ -37,6 +37,10 @@ public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
     @Param(description = "the name of the service offering")
     private String name;
 
+    @SerializedName("state")
+    @Param(description = "state of the service offering")
+    private String state;
+
     @SerializedName("displaytext")
     @Param(description = "an alternate display text of the service offering.")
     private String displayText;
@@ -247,6 +251,14 @@ public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
     }
 
     public Boolean getIsSystem() {

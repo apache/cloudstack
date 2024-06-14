@@ -24,6 +24,7 @@ export default {
   icon: 'picture-outlined',
   docHelp: 'adminguide/storage.html#secondary-storage',
   permission: ['listImageStores'],
+  searchFilters: ['name', 'zoneid', 'provider'],
   columns: () => {
     var fields = ['name', 'url', 'protocol', 'scope', 'zonename']
     if (store.getters.apis.listImageStores.params.filter(x => x.name === 'readonly').length > 0) {

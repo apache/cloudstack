@@ -97,6 +97,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -239,6 +240,7 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.JoinBuilder;
@@ -382,6 +384,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Inject
     protected BucketDao _bucketDao;
+    @Inject
+    ConfigDepot configDepot;
+    @Inject
+    ConfigurationDao configurationDao;
+
     protected List<StoragePoolDiscoverer> _discoverers;
 
     public List<StoragePoolDiscoverer> getDiscoverers() {
@@ -439,6 +446,23 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             return false;
         } else {
             return true;
+        }
+    }
+
+    protected void enableDefaultDatastoreDownloadRedirectionForExistingInstallations() {
+        if (!configDepot.isNewConfig(DataStoreDownloadFollowRedirects)) {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace(String.format("%s is not a new configuration, skipping updating its value",
+                        DataStoreDownloadFollowRedirects.key()));
+            }
+            return;
+        }
+        List<DataCenterVO> zones =
+                _dcDao.listAll(new Filter(1));
+        if (CollectionUtils.isNotEmpty(zones)) {
+            s_logger.debug(String.format("Updating value for configuration: %s to true",
+                DataStoreDownloadFollowRedirects.key()));
+            configurationDao.update(DataStoreDownloadFollowRedirects.key(), "true");
         }
     }
 
@@ -673,7 +697,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         _executor.scheduleWithFixedDelay(new DownloadURLGarbageCollector(), _downloadUrlCleanupInterval, _downloadUrlCleanupInterval, TimeUnit.SECONDS);
-
+        enableDefaultDatastoreDownloadRedirectionForExistingInstallations();
         return true;
     }
 
@@ -1900,6 +1924,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     @DB
+    @ActionEvent(eventType = EventTypes.EVENT_MAINTENANCE_PREPARE_PRIMARY_STORAGE,
+            eventDescription = "preparing storage pool for maintenance", async = true)
     public PrimaryDataStoreInfo preparePrimaryStorageForMaintenance(Long primaryStorageId) throws ResourceUnavailableException, InsufficientCapacityException {
         StoragePoolVO primaryStorage = null;
         primaryStorage = _storagePoolDao.findById(primaryStorageId);
@@ -1968,6 +1994,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     @DB
+    @ActionEvent(eventType = EventTypes.EVENT_MAINTENANCE_CANCEL_PRIMARY_STORAGE,
+            eventDescription = "canceling maintenance for primary storage pool", async = true)
     public PrimaryDataStoreInfo cancelPrimaryStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd) throws ResourceUnavailableException {
         Long primaryStorageId = cmd.getId();
         StoragePoolVO primaryStorage = null;
@@ -2800,18 +2828,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         List<Pair<Volume, Answer>> answers = new ArrayList<Pair<Volume, Answer>>();
 
         for (Pair<Volume, DiskProfile> volumeDiskProfilePair : volumes) {
-            String storagePolicyId = null;
             Volume volume = volumeDiskProfilePair.first();
             DiskProfile diskProfile = volumeDiskProfilePair.second();
-            if (volume.getVolumeType() == Type.ROOT) {
-                Long vmId = volume.getInstanceId();
-                if (vmId != null) {
-                    VMInstanceVO vm = _vmInstanceDao.findByIdIncludingRemoved(vmId);
-                    storagePolicyId = _serviceOfferingDetailsDao.getDetail(vm.getServiceOfferingId(), ApiConstants.STORAGE_POLICY);
-                }
-            } else {
-                storagePolicyId = _diskOfferingDetailsDao.getDetail(diskProfile.getDiskOfferingId(), ApiConstants.STORAGE_POLICY);
-            }
+            String storagePolicyId = _diskOfferingDetailsDao.getDetail(diskProfile.getDiskOfferingId(), ApiConstants.STORAGE_POLICY);
             if (StringUtils.isNotEmpty(storagePolicyId)) {
                 VsphereStoragePolicyVO storagePolicyVO = _vsphereStoragePolicyDao.findById(Long.parseLong(storagePolicyId));
                 List<Long> hostIds = getUpHostsInPool(pool.getId());
@@ -3719,7 +3738,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 MountDisabledStoragePool,
                 VmwareCreateCloneFull,
                 VmwareAllowParallelExecution,
-                ConvertVmwareInstanceToKvmTimeout
+                ConvertVmwareInstanceToKvmTimeout,
+                DataStoreDownloadFollowRedirects
         };
     }
 

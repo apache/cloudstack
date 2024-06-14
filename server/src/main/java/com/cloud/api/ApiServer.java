@@ -234,42 +234,42 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     @Inject
     private MessageBus messageBus;
 
-    private static final ConfigKey<Integer> IntegrationAPIPort = new ConfigKey<Integer>("Advanced"
+    private static final ConfigKey<Integer> IntegrationAPIPort = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED
             , Integer.class
             , "integration.api.port"
             , "0"
             , "Integration (unauthenticated) API port. To disable set it to 0 or negative."
             , false
             , ConfigKey.Scope.Global);
-    private static final ConfigKey<Long> ConcurrentSnapshotsThresholdPerHost = new ConfigKey<Long>("Advanced"
+    private static final ConfigKey<Long> ConcurrentSnapshotsThresholdPerHost = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED
             , Long.class
             , "concurrent.snapshots.threshold.perhost"
             , null
             , "Limits number of snapshots that can be handled by the host concurrently; default is NULL - unlimited"
             , true // not sure if this is to be dynamic
             , ConfigKey.Scope.Global);
-    private static final ConfigKey<Boolean> EncodeApiResponse = new ConfigKey<Boolean>("Advanced"
+    private static final ConfigKey<Boolean> EncodeApiResponse = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED
             , Boolean.class
             , "encode.api.response"
             , "false"
             , "Do URL encoding for the api response, false by default"
             , false
             , ConfigKey.Scope.Global);
-    static final ConfigKey<String> JSONcontentType = new ConfigKey<String>( "Advanced"
+    static final ConfigKey<String> JSONcontentType = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED
             , String.class
             , "json.content.type"
             , "application/json; charset=UTF-8"
             , "Http response content type for .js files (default is text/javascript)"
             , false
             , ConfigKey.Scope.Global);
-    static final ConfigKey<Boolean> EnableSecureSessionCookie = new ConfigKey<Boolean>("Advanced"
+    static final ConfigKey<Boolean> EnableSecureSessionCookie = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED
             , Boolean.class
             , "enable.secure.session.cookie"
             , "false"
             , "Session cookie is marked as secure if this is enabled. Secure cookies only work when HTTPS is used."
             , false
             , ConfigKey.Scope.Global);
-    private static final ConfigKey<String> JSONDefaultContentType = new ConfigKey<String> ("Advanced"
+    private static final ConfigKey<String> JSONDefaultContentType = new ConfigKey<> (ConfigKey.CATEGORY_ADVANCED
             , String.class
             , "json.content.type"
             , "application/json; charset=UTF-8"
@@ -277,11 +277,32 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             , false
             , ConfigKey.Scope.Global);
 
-    private static final ConfigKey<Boolean> UseEventAccountInfo = new ConfigKey<Boolean>( "advanced"
+    private static final ConfigKey<Boolean> UseEventAccountInfo = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED
             , Boolean.class
             , "event.accountinfo"
             , "false"
             , "use account info in event logging"
+            , true
+            , ConfigKey.Scope.Global);
+    static final ConfigKey<Boolean> useForwardHeader = new ConfigKey<>(ConfigKey.CATEGORY_NETWORK
+            , Boolean.class
+            , "proxy.header.verify"
+            , "false"
+            , "enables/disables checking of ipaddresses from a proxy set header. See \"proxy.header.names\" for the headers to allow."
+            , true
+            , ConfigKey.Scope.Global);
+    static final ConfigKey<String> listOfForwardHeaders = new ConfigKey<>(ConfigKey.CATEGORY_NETWORK
+            , String.class
+            , "proxy.header.names"
+            , "X-Forwarded-For,HTTP_CLIENT_IP,HTTP_X_FORWARDED_FOR"
+            , "a list of names to check for allowed ipaddresses from a proxy set header. See \"proxy.cidr\" for the proxies allowed to set these headers."
+            , true
+            , ConfigKey.Scope.Global);
+    static final ConfigKey<String> proxyForwardList = new ConfigKey<>(ConfigKey.CATEGORY_NETWORK
+            , String.class
+            , "proxy.cidr"
+            , ""
+            , "a list of cidrs for which \"proxy.header.names\" are honoured if the \"Remote_Addr\" is in this list."
             , true
             , ConfigKey.Scope.Global);
 
@@ -1499,7 +1520,10 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 ConcurrentSnapshotsThresholdPerHost,
                 EncodeApiResponse,
                 EnableSecureSessionCookie,
-                JSONDefaultContentType
+                JSONDefaultContentType,
+                proxyForwardList,
+                useForwardHeader,
+                listOfForwardHeaders
         };
     }
 }
