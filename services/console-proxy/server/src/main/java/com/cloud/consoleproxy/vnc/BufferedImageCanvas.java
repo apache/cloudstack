@@ -27,8 +27,10 @@ import java.io.IOException;
 import java.util.List;
 
 import com.cloud.consoleproxy.util.ImageHelper;
-import com.cloud.consoleproxy.util.Logger;
 import com.cloud.consoleproxy.util.TileInfo;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * A <code>BuffereImageCanvas</code> component represents frame buffer image on
@@ -36,7 +38,7 @@ import com.cloud.consoleproxy.util.TileInfo;
  */
 public class BufferedImageCanvas extends Canvas implements FrameBufferCanvas {
     private static final long serialVersionUID = 1L;
-    protected Logger logger = Logger.getLogger(BufferedImageCanvas.class);
+    protected Logger logger = LogManager.getLogger(BufferedImageCanvas.class);
 
     // Offline screen buffer
     private BufferedImage offlineImage;

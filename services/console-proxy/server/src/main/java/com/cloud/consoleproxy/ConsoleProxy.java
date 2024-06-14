@@ -39,17 +39,19 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.eclipse.jetty.websocket.api.Session;
 
-import com.cloud.consoleproxy.util.Logger;
 import com.cloud.utils.PropertiesUtil;
 import com.google.gson.Gson;
 import com.sun.net.httpserver.HttpServer;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  *
  * ConsoleProxy, singleton class that manages overall activities in console proxy process. To make legacy code work, we still
  */
 public class ConsoleProxy {
-    protected static Logger LOGGER = Logger.getLogger(ConsoleProxy.class);
+    protected static Logger LOGGER = LogManager.getLogger(ConsoleProxy.class);
 
     public static final int KEYBOARD_RAW = 0;
     public static final int KEYBOARD_COOKED = 1;
@@ -280,7 +282,6 @@ public class ConsoleProxy {
     public static void startWithContext(Properties conf, Object context, byte[] ksBits, String ksPassword, String password, Boolean isSourceIpCheckEnabled) {
         setEncryptorPassword(password);
         configLog4j();
-        Logger.setFactory(new ConsoleProxyLoggerFactory());
         LOGGER.info("Start console proxy with context");
 
         if (conf != null) {
@@ -427,7 +428,6 @@ public class ConsoleProxy {
     public static void main(String[] argv) {
         standaloneStart = true;
         configLog4j();
-        Logger.setFactory(new ConsoleProxyLoggerFactory());
 
         InputStream confs = ConsoleProxy.class.getResourceAsStream("/conf/consoleproxy.properties");
         Properties conf = new Properties();
