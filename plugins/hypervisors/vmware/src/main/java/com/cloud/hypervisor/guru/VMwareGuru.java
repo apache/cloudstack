@@ -533,11 +533,20 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     /**
      * Get pool ID from datastore UUID
      */
-    private Long getPoolIdFromDatastoreUuid(String datastoreUuid) {
-        String poolUuid = UuidUtils.normalize(datastoreUuid);
-        StoragePoolVO pool = _storagePoolDao.findByUuid(poolUuid);
+    private Long getPoolIdFromDatastoreUuid(long zoneId, String datastoreUuid) {
+        StoragePoolVO pool = null;
+        try {
+            String poolUuid = UuidUtils.normalize(datastoreUuid);
+            pool = _storagePoolDao.findByUuid(poolUuid);
+        } catch (CloudRuntimeException ex) {
+            s_logger.warn("Unable to get pool by datastore UUID: " + ex.getMessage());
+        }
         if (pool == null) {
-            throw new CloudRuntimeException("Couldn't find storage pool " + poolUuid);
+            s_logger.info("Trying to find pool by path: " + datastoreUuid);
+            pool = _storagePoolDao.findPoolByZoneAndPath(zoneId, datastoreUuid);
+        }
+        if (pool == null) {
+            throw new CloudRuntimeException("Couldn't find storage pool " + datastoreUuid);
         }
         return pool.getId();
     }
@@ -545,13 +554,13 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     /**
      * Get pool ID for disk
      */
-    private Long getPoolId(VirtualDisk disk) {
+    private Long getPoolId(long zoneId, VirtualDisk disk) {
         VirtualDeviceBackingInfo backing = disk.getBacking();
         checkBackingInfo(backing);
         VirtualDiskFlatVer2BackingInfo info = (VirtualDiskFlatVer2BackingInfo)backing;
         String[] fileNameParts = info.getFileName().split(" ");
         String datastoreUuid = StringUtils.substringBetween(fileNameParts[0], "[", "]");
-        return getPoolIdFromDatastoreUuid(datastoreUuid);
+        return getPoolIdFromDatastoreUuid(zoneId, datastoreUuid);
     }
 
     /**
@@ -588,12 +597,12 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     /**
      * Get template pool ID
      */
-    private Long getTemplatePoolId(VirtualMachineMO template) throws Exception {
+    private Long getTemplatePoolId(long zoneId, VirtualMachineMO template) throws Exception {
         VirtualMachineConfigSummary configSummary = template.getConfigSummary();
         String vmPathName = configSummary.getVmPathName();
         String[] pathParts = vmPathName.split(" ");
         String dataStoreUuid = pathParts[0].replace("[", "").replace("]", "");
-        return getPoolIdFromDatastoreUuid(dataStoreUuid);
+        return getPoolIdFromDatastoreUuid(zoneId, dataStoreUuid);
     }
 
     /**
@@ -643,14 +652,14 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     /**
      * Get template ID for VM being imported. If it is not found, it is created
      */
-    private Long getImportingVMTemplate(List<VirtualDisk> virtualDisks, DatacenterMO dcMo, String vmInternalName, Long guestOsId, long accountId, Map<VirtualDisk, VolumeVO> disksMapping, Backup backup) throws Exception {
+    private Long getImportingVMTemplate(List<VirtualDisk> virtualDisks, long zoneId, DatacenterMO dcMo, String vmInternalName, Long guestOsId, long accountId, Map<VirtualDisk, VolumeVO> disksMapping, Backup backup) throws Exception {
         for (VirtualDisk disk : virtualDisks) {
             if (isRootDisk(disk, disksMapping, backup)) {
                 VolumeVO volumeVO = disksMapping.get(disk);
                 if (volumeVO == null) {
                     String templatePath = getRootDiskTemplatePath(disk);
                     VirtualMachineMO template = getTemplate(dcMo, templatePath);
-                    Long poolId = getTemplatePoolId(template);
+                    Long poolId = getTemplatePoolId(zoneId, template);
                     Long templateSize = getTemplateSize(template, vmInternalName, disksMapping, backup);
                     long templateId = getTemplateId(templatePath, vmInternalName, guestOsId, accountId);
                     updateTemplateRef(templateId, poolId, templatePath, templateSize);
@@ -779,7 +788,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
 
         String operation = "";
         for (VirtualDisk disk : virtualDisks) {
-            Long poolId = getPoolId(disk);
+            Long poolId = getPoolId(zoneId, disk);
             Volume volume = null;
             if (disksMapping.containsKey(disk) && disksMapping.get(disk) != null) {
                 volume = updateVolume(disk, disksMapping, vmToImport, poolId, vmInstanceVO);
@@ -1068,7 +1077,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
 
         long guestOsId = getImportingVMGuestOs(configSummary);
         long serviceOfferingId = getImportingVMServiceOffering(configSummary, runtimeInfo);
-        long templateId = getImportingVMTemplate(virtualDisks, dcMo, vmInternalName, guestOsId, accountId, disksMapping, backup);
+        long templateId = getImportingVMTemplate(virtualDisks, zoneId, dcMo, vmInternalName, guestOsId, accountId, disksMapping, backup);
 
         VMInstanceVO vm = getVM(vmInternalName, templateId, guestOsId, serviceOfferingId, zoneId, accountId, userId, domainId);
         syncVMVolumes(vm, virtualDisks, disksMapping, vmToImport, backup);
