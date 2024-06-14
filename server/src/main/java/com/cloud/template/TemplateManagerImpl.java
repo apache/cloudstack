@@ -1519,9 +1519,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         if (owner.getType() == Account.Type.PROJECT) {
+            // if it is a project owned template/iso, the user must at least have access to be allowed to share it.
             _accountMgr.checkAccess(user, template);
-//            throw new InvalidParameterValueException("Update template permissions is an invalid operation on template " + template.getName() +
-//                    ". Project owned templates cannot be shared outside the project.");
         }
 
         // check configuration parameter(allow.public.user.templates) value for
