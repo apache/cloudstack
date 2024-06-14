@@ -178,7 +178,7 @@ public class ExtraConfigurationUtility {
         }
     }
 
-    private static Pair<String, String> prepareKeyValuePair(String cfg) {
+    protected static Pair<String, String> prepareKeyValuePair(String cfg) {
         // cfg is either param=value or map-param:key=value
         int indexOfEqualSign = cfg.indexOf("=");
         if (indexOfEqualSign <= 0) {
