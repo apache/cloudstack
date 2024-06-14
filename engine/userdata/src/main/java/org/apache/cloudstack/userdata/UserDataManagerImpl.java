@@ -28,7 +28,6 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
-import com.cloud.configuration.ConfigurationManager;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -36,9 +35,9 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class UserDataManagerImpl extends ManagerBase implements UserDataManager {
     private static final Logger s_logger = Logger.getLogger(UserDataManagerImpl.class);
     private static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
-    private static final int MAX_HTTP_GET_LENGTH = 2 * MAX_USER_DATA_LENGTH_BYTES;
+    private static final int MAX_HTTP_GET_LENGTH = 2 * MAX_USER_DATA_LENGTH_BYTES; // 4KB
     private static final int NUM_OF_2K_BLOCKS = 512;
-    private static final int MAX_HTTP_POST_LENGTH = NUM_OF_2K_BLOCKS * MAX_USER_DATA_LENGTH_BYTES;
+    private static final int MAX_HTTP_POST_LENGTH = NUM_OF_2K_BLOCKS * MAX_USER_DATA_LENGTH_BYTES; // 1MB
     private List<UserDataProvider> userDataProviders;
     private static Map<String, UserDataProvider> userDataProvidersMap = new HashMap<>();
 
@@ -67,7 +66,7 @@ public class UserDataManagerImpl extends ManagerBase implements UserDataManager 
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey[] {};
+        return new ConfigKey[] {VM_USERDATA_MAX_LENGTH};
     }
 
     protected UserDataProvider getUserdataProvider(String name) {
@@ -90,9 +89,9 @@ public class UserDataManagerImpl extends ManagerBase implements UserDataManager 
 
     @Override
     public String validateUserData(String userData, BaseCmd.HTTPMethod httpmethod) {
-        s_logger.trace(String.format("Validating user data: [%s].", userData));
+        s_logger.trace(String.format("Validating base64 encoded user data: [%s].", userData));
         if (StringUtils.isBlank(userData)) {
-            s_logger.debug("Null/empty user data set");
+            s_logger.debug("Null/empty base64 encoded user data set");
             return null;
         }
 
@@ -128,16 +127,17 @@ public class UserDataManagerImpl extends ManagerBase implements UserDataManager 
         }
 
         s_logger.trace(String.format("Decoded user data: [%s].", decodedUserData));
-        int userDataLength = decodedUserData.length;
-        s_logger.info(String.format("Configured user data size: %d bytes", userDataLength));
+        int userDataLength = userData.length();
+        int decodedUserDataLength = decodedUserData.length;
+        s_logger.info(String.format("Configured base64 encoded user data size: %d bytes, actual user data size: %d bytes", userDataLength, decodedUserDataLength));
 
         if (userDataLength > maxHTTPLength) {
-            s_logger.warn(String.format("User data (size: %d bytes) too long for http %s request (accepted size: %d bytes)", userDataLength, httpMethod.toString(), maxHTTPLength));
+            s_logger.warn(String.format("Base64 encoded user data (size: %d bytes) too long for http %s request (accepted size: %d bytes)", userDataLength, httpMethod.toString(), maxHTTPLength));
             throw new InvalidParameterValueException(String.format("User data is too long for http %s request", httpMethod.toString()));
         }
-        if (userDataLength > ConfigurationManager.VM_USERDATA_MAX_LENGTH.value()) {
-            s_logger.warn(String.format("User data (size: %d bytes) has exceeded configurable max length of %d bytes", userDataLength, ConfigurationManager.VM_USERDATA_MAX_LENGTH.value()));
-            throw new InvalidParameterValueException("User data has exceeded configurable max length : " + ConfigurationManager.VM_USERDATA_MAX_LENGTH.value());
+        if (userDataLength > VM_USERDATA_MAX_LENGTH.value()) {
+            s_logger.warn(String.format("Base64 encoded user data (size: %d bytes) has exceeded configurable max length of %d bytes", userDataLength, VM_USERDATA_MAX_LENGTH.value()));
+            throw new InvalidParameterValueException("User data has exceeded configurable max length: " + VM_USERDATA_MAX_LENGTH.value());
         }
 
         return decodedUserData;
