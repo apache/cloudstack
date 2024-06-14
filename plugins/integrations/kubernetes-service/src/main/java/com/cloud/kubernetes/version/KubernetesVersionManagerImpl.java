@@ -22,6 +22,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.kubernetes.version.AddKubernetesSupportedVersionCmd;
 import org.apache.cloudstack.api.command.admin.kubernetes.version.DeleteKubernetesSupportedVersionCmd;
@@ -31,6 +32,7 @@ import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.version.ListKubernetesSupportedVersionsCmd;
 import org.apache.cloudstack.api.response.KubernetesSupportedVersionResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -161,6 +163,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
 
     private VirtualMachineTemplate registerKubernetesVersionIso(final Long zoneId, final String versionName, final String isoUrl, final String isoChecksum, final boolean directDownload) throws IllegalAccessException, NoSuchFieldException,
             IllegalArgumentException, ResourceAllocationException {
+        CallContext.register(CallContext.current(), ApiCommandResourceType.Iso);
         String isoName = String.format("%s-Kubernetes-Binaries-ISO", versionName);
         RegisterIsoCmd registerIsoCmd = new RegisterIsoCmd();
         registerIsoCmd = ComponentContext.inject(registerIsoCmd);
@@ -178,15 +181,25 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         registerIsoCmd.setDirectDownload(directDownload);
         registerIsoCmd.setAccountName(accountManager.getSystemAccount().getAccountName());
         registerIsoCmd.setDomainId(accountManager.getSystemAccount().getDomainId());
-        return templateService.registerIso(registerIsoCmd);
+        try {
+            return templateService.registerIso(registerIsoCmd);
+        } finally {
+            CallContext.unregister();
+        }
     }
 
     private void deleteKubernetesVersionIso(long templateId) throws IllegalAccessException, NoSuchFieldException,
             IllegalArgumentException {
+        CallContext isoContext = CallContext.register(CallContext.current(), ApiCommandResourceType.Iso);
+        isoContext.setEventResourceId(templateId);
         DeleteIsoCmd deleteIsoCmd = new DeleteIsoCmd();
         deleteIsoCmd = ComponentContext.inject(deleteIsoCmd);
         deleteIsoCmd.setId(templateId);
-        templateService.deleteIso(deleteIsoCmd);
+        try {
+            templateService.deleteIso(deleteIsoCmd);
+        } finally {
+            CallContext.unregister();
+        }
     }
 
     public static int compareSemanticVersions(String v1, String v2) throws IllegalArgumentException {
@@ -291,7 +304,8 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
     }
 
     @Override
-    @ActionEvent(eventType = KubernetesVersionEventTypes.EVENT_KUBERNETES_VERSION_ADD, eventDescription = "Adding Kubernetes supported version")
+    @ActionEvent(eventType = KubernetesVersionEventTypes.EVENT_KUBERNETES_VERSION_ADD,
+            eventDescription = "Adding Kubernetes supported version")
     public KubernetesSupportedVersionResponse addKubernetesSupportedVersion(final AddKubernetesSupportedVersionCmd cmd) {
         if (!KubernetesClusterService.KubernetesServiceEnabled.value()) {
             throw new CloudRuntimeException("Kubernetes Service plugin is disabled");
@@ -343,12 +357,14 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
 
         KubernetesSupportedVersionVO supportedVersionVO = new KubernetesSupportedVersionVO(name, semanticVersion, template.getId(), zoneId, minimumCpu, minimumRamSize);
         supportedVersionVO = kubernetesSupportedVersionDao.persist(supportedVersionVO);
+        CallContext.current().putContextParameter(KubernetesSupportedVersion.class, supportedVersionVO.getUuid());
 
         return createKubernetesSupportedVersionResponse(supportedVersionVO);
     }
 
     @Override
-    @ActionEvent(eventType = KubernetesVersionEventTypes.EVENT_KUBERNETES_VERSION_DELETE, eventDescription = "Deleting Kubernetes supported version", async = true)
+    @ActionEvent(eventType = KubernetesVersionEventTypes.EVENT_KUBERNETES_VERSION_DELETE,
+            eventDescription = "deleting Kubernetes supported version", async = true)
     public boolean deleteKubernetesSupportedVersion(final DeleteKubernetesSupportedVersionCmd cmd) {
         if (!KubernetesClusterService.KubernetesServiceEnabled.value()) {
             throw new CloudRuntimeException("Kubernetes Service plugin is disabled");
@@ -379,7 +395,8 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
     }
 
     @Override
-    @ActionEvent(eventType = KubernetesVersionEventTypes.EVENT_KUBERNETES_VERSION_UPDATE, eventDescription = "Updating Kubernetes supported version")
+    @ActionEvent(eventType = KubernetesVersionEventTypes.EVENT_KUBERNETES_VERSION_UPDATE,
+            eventDescription = "Updating Kubernetes supported version")
     public KubernetesSupportedVersionResponse updateKubernetesSupportedVersion(final UpdateKubernetesSupportedVersionCmd cmd) {
         if (!KubernetesClusterService.KubernetesServiceEnabled.value()) {
             throw new CloudRuntimeException("Kubernetes Service plugin is disabled");

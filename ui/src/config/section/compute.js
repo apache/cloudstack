@@ -542,10 +542,12 @@ export default {
         return filters
       },
       details: ['name', 'description', 'zonename', 'kubernetesversionname', 'autoscalingenabled', 'minsize', 'maxsize', 'size', 'controlnodes', 'cpunumber', 'memory', 'keypair', 'associatednetworkname', 'account', 'domain', 'zonename', 'clustertype', 'created'],
-      tabs: [{
-        name: 'k8s',
-        component: shallowRef(defineAsyncComponent(() => import('@/views/compute/KubernetesServiceTab.vue')))
-      }],
+      tabs: [
+        {
+          name: 'k8s',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/KubernetesServiceTab.vue')))
+        }
+      ],
       resourceType: 'KubernetesCluster',
       actions: [
         {

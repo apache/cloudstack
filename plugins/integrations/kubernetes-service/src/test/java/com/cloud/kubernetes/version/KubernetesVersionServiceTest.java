@@ -215,9 +215,12 @@ public class KubernetesVersionServiceTest {
         when(cmd.getMinimumRamSize()).thenReturn(KubernetesClusterService.MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE);
         Account systemAccount =  new AccountVO("system", 1L, "", Account.Type.ADMIN, "uuid");
         when(accountManager.getSystemAccount()).thenReturn(systemAccount);
-        try (MockedStatic<ComponentContext> mockedComponentContext = Mockito.mockStatic(ComponentContext.class)) {
+        CallContext callContext = Mockito.mock(CallContext.class);
+        try (MockedStatic<ComponentContext> mockedComponentContext = Mockito.mockStatic(ComponentContext.class);
+            MockedStatic<CallContext> mockedCallContext = Mockito.mockStatic(CallContext.class)) {
             mockedComponentContext.when(() -> ComponentContext.inject(Mockito.any(RegisterIsoCmd.class))).thenReturn(
                     new RegisterIsoCmd());
+            mockedCallContext.when(CallContext::current).thenReturn(callContext);
 
             when(templateService.registerIso(Mockito.any(RegisterIsoCmd.class))).thenReturn(
                     Mockito.mock(VirtualMachineTemplate.class));
