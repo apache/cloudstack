@@ -45,6 +45,7 @@ import com.cloud.dc.DataCenter;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ManagementServerException;
+import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
@@ -66,10 +67,7 @@ public interface UserVmService {
     /**
      * Destroys one virtual machine
      *
-     * @param userId
-     *            the id of the user performing the action
-     * @param vmId
-     *            the id of the virtual machine.
+     * @param cmd the API Command Object containg the parameters to use for this service action
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
      */
@@ -112,6 +110,8 @@ public interface UserVmService {
 
     UserVm rebootVirtualMachine(RebootVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ResourceAllocationException;
 
+    void startVirtualMachine(UserVm vm) throws OperationTimedoutException, ResourceUnavailableException, InsufficientCapacityException;
+
     UserVm updateVirtualMachine(UpdateVMCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException;
 
     /**
@@ -148,14 +148,6 @@ public interface UserVmService {
      * Creates a Basic Zone User VM in the database and returns the VM to the
      * caller.
      *
-     *
-     *
-     * @param sshKeyPair
-     *            - name of the ssh key pair used to login to the virtual
-     *            machine
-     * @param cpuSpeed
-     * @param memory
-     * @param cpuNumber
      * @param zone
      *            - availability zone for the virtual machine
      * @param serviceOffering
@@ -231,9 +223,6 @@ public interface UserVmService {
      * Creates a User VM in Advanced Zone (Security Group feature is enabled) in
      * the database and returns the VM to the caller.
      *
-     *
-     *
-     * @param type
      * @param zone
      *            - availability zone for the virtual machine
      * @param serviceOffering
@@ -309,14 +298,6 @@ public interface UserVmService {
      * Creates a User VM in Advanced Zone (Security Group feature is disabled)
      * in the database and returns the VM to the caller.
      *
-     *
-     *
-     * @param sshKeyPair
-     *            - name of the ssh key pair used to login to the virtual
-     *            machine
-     * @param cpuSpeed
-     * @param memory
-     * @param cpuNumber
      * @param zone
      *            - availability zone for the virtual machine
      * @param serviceOffering

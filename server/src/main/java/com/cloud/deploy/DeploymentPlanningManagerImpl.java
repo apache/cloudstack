@@ -458,10 +458,9 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             DeploymentPlanner planner, VirtualMachine vm, DataCenter dc, ServiceOffering offering, int cpuRequested, long ramRequested,
             boolean volumesRequireEncryption) throws InsufficientServerCapacityException {
         HostVO host = _hostDao.findById(vm.getLastHostId());
-        _hostDao.loadHostTags(host);
-        _hostDao.loadDetails(host);
-
         if (canUseLastHost(host, avoids, plan, vm, offering, volumesRequireEncryption)) {
+            _hostDao.loadHostTags(host);
+            _hostDao.loadDetails(host);
             if (host.getStatus() != Status.Up) {
                 logger.debug("Cannot deploy VM [{}] to the last host [{}] because this host is not in UP state or is not enabled. Host current status [{}] and resource status [{}].",
                         vm.getUuid(), host.getUuid(), host.getState().name(), host.getResourceState());

@@ -54,7 +54,7 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 
-import com.cloud.kubernetes.cluster.KubernetesClusterHelper;
+import com.cloud.kubernetes.cluster.KubernetesServiceHelper;
 import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.element.NsxProviderVO;
 import com.cloud.user.AccountVO;
@@ -137,8 +137,8 @@ import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.cloudstack.utils.security.ParserUtils;
-import org.apache.cloudstack.vm.schedule.VMScheduleManager;
 import org.apache.cloudstack.vm.UnmanagedVMsManager;
+import org.apache.cloudstack.vm.schedule.VMScheduleManager;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -147,6 +147,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.w3c.dom.Document;
@@ -352,6 +353,7 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.Journal;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.crypt.DBEncryptionUtil;
@@ -602,6 +604,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Inject
     NsxProviderDao nsxProviderDao;
 
+
     private ScheduledExecutorService _executor = null;
     private ScheduledExecutorService _vmIpFetchExecutor = null;
     private int _expungeInterval;
@@ -609,7 +612,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private boolean _dailyOrHourly = false;
     private int capacityReleaseInterval;
     private ExecutorService _vmIpFetchThreadExecutor;
-    private List<KubernetesClusterHelper> kubernetesClusterHelpers;
+    private List<KubernetesServiceHelper> kubernetesClusterHelpers;
 
 
     private String _instance;
@@ -623,11 +626,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private static final int NUM_OF_2K_BLOCKS = 512;
     private static final int MAX_HTTP_POST_LENGTH = NUM_OF_2K_BLOCKS * MAX_USER_DATA_LENGTH_BYTES;
 
-    public List<KubernetesClusterHelper> getKubernetesClusterHelpers() {
+    public List<KubernetesServiceHelper> getKubernetesClusterHelpers() {
         return kubernetesClusterHelpers;
     }
 
-    public void setKubernetesClusterHelpers(final List<KubernetesClusterHelper> kubernetesClusterHelpers) {
+    public void setKubernetesClusterHelpers(final List<KubernetesServiceHelper> kubernetesClusterHelpers) {
         this.kubernetesClusterHelpers = kubernetesClusterHelpers;
     }
 
@@ -1013,7 +1016,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         if (cmd.getNames() == null || cmd.getNames().isEmpty()) {
-            throw new InvalidParameterValueException("'keypair' or 'keyparis' must be specified");
+            throw new InvalidParameterValueException("'keypair' or 'keypairs' must be specified");
         }
 
         String keypairnames = "";
@@ -1022,7 +1025,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         pairs = _sshKeyPairDao.findByNames(owner.getAccountId(), owner.getDomainId(), cmd.getNames());
         if (pairs == null || pairs.size() != cmd.getNames().size()) {
-            throw new InvalidParameterValueException("Not all specified keyparis exist");
+            throw new InvalidParameterValueException("Not all specified keypairs exist");
         }
         sshPublicKeys = pairs.stream().map(p -> p.getPublicKey()).collect(Collectors.joining("\n"));
         keypairnames = String.join(",", cmd.getNames());
@@ -3275,6 +3278,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VM_START, eventDescription = "starting Vm", async = true)
+    public void startVirtualMachine(UserVm vm) throws OperationTimedoutException, ResourceUnavailableException, InsufficientCapacityException {
+        _itMgr.advanceStart(vm.getUuid(), null, null);
+    }
+
+    @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_REBOOT, eventDescription = "rebooting Vm", async = true)
     public UserVm rebootVirtualMachine(RebootVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ResourceAllocationException {
         Account caller = CallContext.current().getCallingAccount();
@@ -3328,6 +3337,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return  null;
     }
 
+    protected void checkPluginsIfVmCanBeDestroyed(UserVm vm) {
+        try {
+            KubernetesServiceHelper kubernetesServiceHelper =
+                    ComponentContext.getDelegateComponentOfType(KubernetesServiceHelper.class);
+            kubernetesServiceHelper.checkVmCanBeDestroyed(vm);
+        } catch (NoSuchBeanDefinitionException ignored) {
+            logger.debug("No KubernetesClusterHelper bean found");
+        }
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_DESTROY, eventDescription = "destroying Vm", async = true)
     public UserVm destroyVm(DestroyVMCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException {
@@ -3353,6 +3372,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // check if vm belongs to AutoScale vm group in Disabled state
         autoScaleManager.checkIfVmActionAllowed(vmId);
+
+        // check if vm belongs to any plugin resources
+        checkPluginsIfVmCanBeDestroyed(vm);
 
         // check if there are active volume snapshots tasks
         logger.debug("Checking if there are any ongoing snapshots on the ROOT volumes associated with VM with ID " + vmId);
@@ -4234,7 +4256,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (!sshKeyPairs.isEmpty()) {
                 List<SSHKeyPairVO> pairs = _sshKeyPairDao.findByNames(owner.getAccountId(), owner.getDomainId(), sshKeyPairs);
                 if (pairs == null || pairs.size() != sshKeyPairs.size()) {
-                    throw new InvalidParameterValueException("Not all specified keyparis exist");
+                    throw new InvalidParameterValueException("Not all specified keypairs exist");
                 }
 
                 sshPublicKeys = pairs.stream().map(p -> p.getPublicKey()).collect(Collectors.joining("\n"));
@@ -5517,7 +5539,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             final ServiceOfferingVO offering = serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
             Pair<Boolean, Boolean> cpuCapabilityAndCapacity = _capacityMgr.checkIfHostHasCpuCapabilityAndCapacity(destinationHost, offering, false);
             if (!cpuCapabilityAndCapacity.first() || !cpuCapabilityAndCapacity.second()) {
-                String errorMsg = "Cannot deploy the VM to specified host " + hostId + "; host has cpu capability? " + cpuCapabilityAndCapacity.first() + ", host has capacity? " + cpuCapabilityAndCapacity.second();
+                String errorMsg;
+                if (!cpuCapabilityAndCapacity.first()) {
+                    errorMsg = String.format("Cannot deploy the VM to specified host %d, requested CPU and speed is more than the host capability", hostId);
+                } else {
+                    errorMsg = String.format("Cannot deploy the VM to specified host %d, host does not have enough free CPU or RAM, please check the logs", hostId);
+                }
                 logger.info(errorMsg);
                 if (!AllowDeployVmIfGivenHostFails.value()) {
                     throw new InvalidParameterValueException(errorMsg);
@@ -8069,7 +8096,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 // Detach, destroy and create the usage event for the old root volume.
                 _volsDao.detachVolume(root.getId());
-                _volumeService.destroyVolume(root.getId(), caller, Volume.State.Allocated.equals(root.getState()) || expunge, false);
+                destroyVolumeInContext(vm, Volume.State.Allocated.equals(root.getState()) || expunge, root);
 
                 if (currentTemplate.getId() != template.getId() && VirtualMachine.Type.User.equals(vm.type) && !VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
                     ServiceOfferingVO serviceOffering = serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
@@ -8105,7 +8132,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
         if (needRestart) {
             try {
-                if (vm.getDetail(VmDetailConstants.PASSWORD) != null) {
+                if (Objects.nonNull(password)) {
                     params = new HashMap<>();
                     params.put(VirtualMachineProfile.Param.VmPassword, password);
                 }
