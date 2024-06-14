@@ -1141,6 +1141,10 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                     s_logger.error("Error parsing task", e);
                 }
             } else if (task.getType() == Task.Type.DISCONNECT) {
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException e) {
+                }
                 reconnect(task.getLink());
                 return;
             } else if (task.getType() == Task.Type.OTHER) {
