@@ -544,6 +544,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         StoragePoolVO pool = null;
         try {
             String poolUuid = UuidUtils.normalize(datastoreUuid);
+            s_logger.info("Trying to find pool by UUID: " + poolUuid);
             pool = _storagePoolDao.findByUuid(poolUuid);
         } catch (CloudRuntimeException ex) {
             s_logger.warn("Unable to get pool by datastore UUID: " + ex.getMessage());
@@ -551,6 +552,14 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         if (pool == null) {
             s_logger.info("Trying to find pool by path: " + datastoreUuid);
             pool = _storagePoolDao.findPoolByZoneAndPath(zoneId, datastoreUuid);
+        }
+        if (pool == null && datastoreUuid.startsWith("-iqn") && datastoreUuid.endsWith("-0")) {
+            String iScsiName = "/iqn" + datastoreUuid.substring(4, datastoreUuid.length() - 2) + "/0";
+            s_logger.info("Trying to find volume by iScsi name: " + iScsiName);
+            VolumeVO volumeVO = _volumeDao.findOneByIScsiName(iScsiName);
+            if (volumeVO != null) {
+                pool = _storagePoolDao.findById(volumeVO.getPoolId());
+            }
         }
         if (pool == null) {
             throw new CloudRuntimeException("Couldn't find storage pool " + datastoreUuid);
