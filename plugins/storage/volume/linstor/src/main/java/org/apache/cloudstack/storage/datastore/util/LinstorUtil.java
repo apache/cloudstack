@@ -113,7 +113,8 @@ public class LinstorUtil {
                 Collections.singletonList(storagePoolName),
                 Collections.emptyList(),
                 null,
-                null
+                null,
+                true
         );
         return sps != null ? sps : Collections.emptyList();
     }
@@ -167,7 +168,8 @@ public class LinstorUtil {
                 rscGrps.get(0).getSelectFilter().getStoragePoolList(),
                 null,
                 null,
-                null
+                null,
+                true
         );
     }
 

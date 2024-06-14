@@ -21,7 +21,7 @@ import org.apache.cloudstack.acl.ControlledEntity;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Adapter;
 
-public interface KubernetesClusterHelper extends Adapter {
+public interface KubernetesServiceHelper extends Adapter {
 
     ControlledEntity findByUuid(String uuid);
     ControlledEntity findByVmId(long vmId);
