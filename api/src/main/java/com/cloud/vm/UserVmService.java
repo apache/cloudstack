@@ -112,8 +112,10 @@ public interface UserVmService {
     UserVm startVirtualMachine(StartVMCmd cmd) throws StorageUnavailableException, ExecutionException, ConcurrentOperationException, ResourceUnavailableException,
         InsufficientCapacityException, ResourceAllocationException;
 
+    void startVirtualMachine(UserVm vm) throws OperationTimedoutException, ResourceUnavailableException, InsufficientCapacityException;
+
     void startVirtualMachineForHA(VirtualMachine vm, Map<VirtualMachineProfile.Param, Object> params,
-            DeploymentPlanner planner) throws InsufficientCapacityException, ResourceUnavailableException,
+          DeploymentPlanner planner) throws InsufficientCapacityException, ResourceUnavailableException,
             ConcurrentOperationException, OperationTimedoutException;
 
     UserVm rebootVirtualMachine(RebootVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException;

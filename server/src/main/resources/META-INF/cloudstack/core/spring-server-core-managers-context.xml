@@ -316,7 +316,7 @@
     </bean>
 
     <bean id="annotationService" class="org.apache.cloudstack.annotation.AnnotationManagerImpl">
-        <property name="kubernetesClusterHelpers" value="#{kubernetesClusterHelperRegistry.registered}" />
+        <property name="kubernetesServiceHelpers" value="#{kubernetesServiceHelperRegistry.registered}" />
     </bean>
 
     <bean id="indirectAgentLBService" class="org.apache.cloudstack.agent.lb.IndirectAgentLBServiceImpl" />

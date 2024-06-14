@@ -16,29 +16,55 @@
 // under the License.
 package com.cloud.kubernetes.cluster;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+
 import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.event.EventTypes;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
+import com.cloud.kubernetes.version.KubernetesSupportedVersion;
+import com.cloud.kubernetes.version.KubernetesVersionEventTypes;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmManager;
 
 @Component
-public class KubernetesClusterHelperImpl extends AdapterBase implements KubernetesClusterHelper, Configurable {
-    private static final Logger logger = Logger.getLogger(KubernetesClusterHelperImpl.class);
+public class KubernetesServiceHelperImpl extends AdapterBase implements KubernetesServiceHelper, Configurable {
+    private static final Logger logger = Logger.getLogger(KubernetesServiceHelperImpl.class);
 
     @Inject
     private KubernetesClusterDao kubernetesClusterDao;
     @Inject
     private KubernetesClusterVmMapDao kubernetesClusterVmMapDao;
+
+    protected void setEventTypeEntityDetails(Class<?> eventTypeDefinedClass, Class<?> entityClass) {
+        Field[] declaredFields = eventTypeDefinedClass.getDeclaredFields();
+        for (Field field : declaredFields) {
+            int modifiers = field.getModifiers();
+            if (!Modifier.isPublic(modifiers) || !Modifier.isStatic(modifiers)) {
+                continue;
+            }
+            try {
+                Object value = field.get(null);
+                if (ObjectUtils.allNotNull(value, value.toString())) {
+                    EventTypes.addEntityEventDetail(value.toString(), entityClass);
+                }
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
 
     @Override
     public ControlledEntity findByUuid(String uuid) {
@@ -67,11 +93,21 @@ public class KubernetesClusterHelperImpl extends AdapterBase implements Kubernet
 
     @Override
     public String getConfigComponentName() {
-        return KubernetesClusterHelper.class.getSimpleName();
+        return KubernetesServiceHelper.class.getSimpleName();
     }
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[]{};
+    }
+
+    @Override
+    public boolean start() {
+        setEventTypeEntityDetails(KubernetesClusterEventTypes.class, KubernetesCluster.class);
+        setEventTypeEntityDetails(KubernetesVersionEventTypes.class, KubernetesSupportedVersion.class);
+        ApiCommandResourceType.setClassMapping(ApiCommandResourceType.KubernetesCluster, KubernetesCluster.class);
+        ApiCommandResourceType.setClassMapping(ApiCommandResourceType.KubernetesSupportedVersion,
+                KubernetesSupportedVersion.class);
+        return super.start();
     }
 }
