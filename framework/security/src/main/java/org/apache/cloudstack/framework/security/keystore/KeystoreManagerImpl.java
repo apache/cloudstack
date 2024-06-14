@@ -57,7 +57,7 @@ public class KeystoreManagerImpl extends ManagerBase implements KeystoreManager 
         }
 
         if (!verifyCertificateHeaders(certificate)) {
-            errMsg = "Certificate headers verification failed: Invalid PEM format.";
+            errMsg = "Certificate delimiters verification failed: Invalid PEM format.";
             s_logger.error(errMsg);
             return new Pair<>(false, errMsg);
         }
@@ -71,7 +71,7 @@ public class KeystoreManagerImpl extends ManagerBase implements KeystoreManager 
             errMsg = String.format("Unable to construct keystore for domain: %s", domainSuffix);
             s_logger.error(errMsg);
         } catch (Exception e) {
-            errMsg = String.format("Certificate validation failed due to exception for domain: %d", domainSuffix);
+            errMsg = String.format("Certificate validation failed due to exception for domain: %s", domainSuffix);
             s_logger.error(errMsg, e);
         }
         return new Pair<>(false, errMsg);
