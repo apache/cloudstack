@@ -18,6 +18,7 @@ package com.cloud.hypervisor.guru;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -149,16 +150,22 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
+import com.vmware.vim25.DistributedVirtualPort;
+import com.vmware.vim25.DistributedVirtualSwitchPortConnection;
+import com.vmware.vim25.DistributedVirtualSwitchPortCriteria;
 import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.VMwareDVSPortSetting;
 import com.vmware.vim25.VirtualDevice;
 import com.vmware.vim25.VirtualDeviceBackingInfo;
 import com.vmware.vim25.VirtualDeviceConnectInfo;
 import com.vmware.vim25.VirtualDisk;
 import com.vmware.vim25.VirtualDiskFlatVer2BackingInfo;
 import com.vmware.vim25.VirtualEthernetCard;
+import com.vmware.vim25.VirtualEthernetCardDistributedVirtualPortBackingInfo;
 import com.vmware.vim25.VirtualEthernetCardNetworkBackingInfo;
 import com.vmware.vim25.VirtualMachineConfigSummary;
 import com.vmware.vim25.VirtualMachineRuntimeInfo;
+import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
 
 public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Configurable {
     private static final Logger s_logger = Logger.getLogger(VMwareGuru.class);
@@ -912,8 +919,13 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         Map<String, NetworkVO> mapping = new HashMap<>();
         for (String networkName : vmNetworkNames) {
             NetworkVO networkVO = getGuestNetworkFromNetworkMorName(networkName, accountId, zoneId, domainId);
-            s_logger.debug(String.format("Mapping network name [%s] to networkVO [id: %s].", networkName, networkVO.getUuid()));
-            mapping.put(networkName, networkVO);
+            URI broadcastUri = networkVO.getBroadcastUri();
+            if (broadcastUri == null) {
+                continue;
+            }
+            String vlan = broadcastUri.getHost();
+            s_logger.debug(String.format("Mapping network vlan [%s] to networkVO [id: %s].", vlan, networkVO.getUuid()));
+            mapping.put(vlan, networkVO);
         }
         return mapping;
     }
@@ -923,7 +935,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
      */
     private NetworkMO getNetworkMO(VirtualEthernetCard nic, VmwareContext context) {
         VirtualDeviceConnectInfo connectable = nic.getConnectable();
-        VirtualEthernetCardNetworkBackingInfo info = (VirtualEthernetCardNetworkBackingInfo)nic.getBacking();
+        VirtualEthernetCardNetworkBackingInfo info = (VirtualEthernetCardNetworkBackingInfo) nic.getBacking();
         ManagedObjectReference networkMor = info.getNetwork();
         if (networkMor == null) {
             throw new CloudRuntimeException("Could not find network for NIC on: " + nic.getMacAddress());
@@ -931,22 +943,80 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         return new NetworkMO(context, networkMor);
     }
 
-    private Pair<String, String> getNicMacAddressAndNetworkName(VirtualDevice nicDevice, VmwareContext context) throws Exception {
+    private Pair<String, String> getNicMacAddressAndVlan(VirtualDevice nicDevice, VmwareContext context) throws Exception {
         VirtualEthernetCard nic = (VirtualEthernetCard)nicDevice;
         String macAddress = nic.getMacAddress();
-        NetworkMO networkMO = getNetworkMO(nic, context);
-        String networkName = networkMO.getName();
-        return new Pair<>(macAddress, networkName);
+        VirtualDeviceBackingInfo backing = nic.getBacking();
+        if (backing instanceof VirtualEthernetCardNetworkBackingInfo) {
+            VirtualEthernetCardNetworkBackingInfo backingInfo = (VirtualEthernetCardNetworkBackingInfo) backing;
+            String deviceName = backingInfo.getDeviceName();
+            String vlan = getVlanFromDeviceName(deviceName);
+            return new Pair<>(macAddress, vlan);
+        } else if (backing instanceof VirtualEthernetCardDistributedVirtualPortBackingInfo) {
+            VirtualEthernetCardDistributedVirtualPortBackingInfo portInfo = (VirtualEthernetCardDistributedVirtualPortBackingInfo) backing;
+            DistributedVirtualSwitchPortConnection port = portInfo.getPort();
+            String portKey = port.getPortKey();
+            String portGroupKey = port.getPortgroupKey();
+            String dvSwitchUuid = port.getSwitchUuid();
+            String vlan = getVlanFromDvsPort(context, dvSwitchUuid, portGroupKey, portKey);
+            return new Pair<>(macAddress, vlan);
+        }
+        return new Pair<>(macAddress, null);
+    }
+
+    private String getVlanFromDeviceName(String networkName) {
+        String prefix = "cloud.guest.";
+        if (!networkName.startsWith(prefix)) {
+            return null;
+        }
+        String nameWithoutPrefix = networkName.replace(prefix, "");
+        String[] parts = nameWithoutPrefix.split("\\.");
+        String vlan = parts[0];
+        return vlan;
+    }
+
+    private String getVlanFromDvsPort(VmwareContext context, String dvSwitchUuid, String portGroupKey, String portKey) {
+        try {
+            ManagedObjectReference dvSwitchManager = context.getVimClient().getServiceContent().getDvSwitchManager();
+            ManagedObjectReference dvSwitch = context.getVimClient().getService().queryDvsByUuid(dvSwitchManager, dvSwitchUuid);
+
+            // Get all ports
+            DistributedVirtualSwitchPortCriteria criteria = new DistributedVirtualSwitchPortCriteria();
+            criteria.setInside(true);
+            criteria.getPortgroupKey().add(portGroupKey);
+            List<DistributedVirtualPort> dvPorts = context.getVimClient().getService().fetchDVPorts(dvSwitch, criteria);
+
+            for (DistributedVirtualPort dvPort : dvPorts) {
+                if (!portKey.equals(dvPort.getKey())) {
+                    continue;
+                }
+                VMwareDVSPortSetting settings = (VMwareDVSPortSetting) dvPort.getConfig().getSetting();
+                VmwareDistributedVirtualSwitchVlanIdSpec vlanId = (VmwareDistributedVirtualSwitchVlanIdSpec) settings.getVlan();
+                s_logger.debug("Found port " + dvPort.getKey() + " with vlan " + vlanId.getVlanId());
+                return String.valueOf(vlanId.getVlanId());
+            }
+        } catch (Exception ex) {
+            s_logger.error("Got exception while get vlan from DVS port: " + ex.getMessage());
+        }
+        return null;
     }
 
     private void syncVMNics(VirtualDevice[] nicDevices, DatacenterMO dcMo, Map<String, NetworkVO> networksMapping, VMInstanceVO vm) throws Exception {
         VmwareContext context = dcMo.getContext();
         List<NicVO> allNics = nicDao.listByVmId(vm.getId());
         for (VirtualDevice nicDevice : nicDevices) {
-            Pair<String, String> pair = getNicMacAddressAndNetworkName(nicDevice, context);
+            Pair<String, String> pair = getNicMacAddressAndVlan(nicDevice, context);
             String macAddress = pair.first();
-            String networkName = pair.second();
-            NetworkVO networkVO = networksMapping.get(networkName);
+            String vlanId = pair.second();
+            if (vlanId == null) {
+                s_logger.warn(String.format("vlanId for MAC address [%s] is null", macAddress));
+                continue;
+            }
+            NetworkVO networkVO = networksMapping.get(vlanId);
+            if (networkVO == null) {
+                s_logger.warn(String.format("Cannot find network for MAC address [%s] and vlanId [%s]", macAddress, vlanId));
+                continue;
+            }
             NicVO nicVO = nicDao.findByNetworkIdAndMacAddressIncludingRemoved(networkVO.getId(), macAddress);
             if (nicVO != null) {
                 s_logger.warn(String.format("Find NIC in DB with networkId [%s] and MAC Address [%s], so this NIC will be removed from list of unmapped NICs of VM [id: %s, name: %s].",
