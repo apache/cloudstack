@@ -34,7 +34,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import javax.naming.ConfigurationException;
 
-import com.cloud.agent.api.ManageServiceCommand;
+import org.apache.cloudstack.agent.routing.ManageServiceCommand;
 import com.cloud.agent.api.routing.UpdateNetworkCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.network.router.VirtualRouter;
@@ -280,9 +280,12 @@ public class VirtualRoutingResource {
         String args = cmd.getAction() + " " + cmd.getServiceName();
         ExecutionResult result = _vrDeployer.executeInVR(routerIp, VRScripts.MANAGE_SERVICE, args);
         if (result.isSuccess()) {
-            return new Answer(cmd, true, "Keepalived stopped successfully. Details: " + result.getDetails());
+            return new Answer(cmd, true,
+                    String.format("Successfully executed action: %s on service: %s. Details: %s",
+                            cmd.getAction(), cmd.getServiceName(), result.getDetails()));
         } else {
-            return new Answer(cmd, false, "Failed to stop keepalived. Detail: " + result.getDetails());
+            return new Answer(cmd, false, String.format("Failed to execute action: %s on service: %s. Details: %s",
+                    cmd.getAction(), cmd.getServiceName(), result.getDetails()));
         }
     }
 

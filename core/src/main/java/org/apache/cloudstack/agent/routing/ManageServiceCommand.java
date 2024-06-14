@@ -17,7 +17,7 @@
 // under the License.
 //
 
-package com.cloud.agent.api;
+package org.apache.cloudstack.agent.routing;
 
 import com.cloud.agent.api.routing.NetworkElementCommand;
 

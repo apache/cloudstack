@@ -27,7 +27,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.agent.api.ManageServiceCommand;
+import org.apache.cloudstack.agent.routing.ManageServiceCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
