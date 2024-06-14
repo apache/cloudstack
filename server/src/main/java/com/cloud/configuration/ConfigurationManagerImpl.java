@@ -683,7 +683,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public String updateConfiguration(final long userId, final String name, final String category, String value, final String scope, final Long resourceId) {
         final String validationMsg = validateConfigurationValue(name, value, scope);
         if (validationMsg != null) {
-            logger.error("Invalid value [%s] for configuration [%s] due to [%s].", value, name, validationMsg);
+            logger.error("Invalid value [{}] for configuration [{}] due to [{}].", value, name, validationMsg);
             throw new InvalidParameterValueException(validationMsg);
         }
 
