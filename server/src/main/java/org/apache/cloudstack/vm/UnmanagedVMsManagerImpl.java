@@ -2479,11 +2479,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new InvalidParameterValueException("Please specify a valid zone.");
         }
         final String hypervisorType = cmd.getHypervisor();
-        if (Hypervisor.HypervisorType.KVM.toString().equalsIgnoreCase(hypervisorType)) {
-            if (StringUtils.isBlank(cmd.getUsername())) {
-                throw new InvalidParameterValueException("Username need to be provided.");
-            }
-        } else {
+        if (!Hypervisor.HypervisorType.KVM.toString().equalsIgnoreCase(hypervisorType)) {
             throw new InvalidParameterValueException(String.format("VM Import is currently not supported for hypervisor: %s", hypervisorType));
         }
 

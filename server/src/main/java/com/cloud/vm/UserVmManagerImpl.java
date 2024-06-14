@@ -54,7 +54,7 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 
-import com.cloud.kubernetes.cluster.KubernetesClusterHelper;
+import com.cloud.kubernetes.cluster.KubernetesServiceHelper;
 import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.element.NsxProviderVO;
 import com.cloud.user.AccountVO;
@@ -611,7 +611,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private boolean _dailyOrHourly = false;
     private int capacityReleaseInterval;
     private ExecutorService _vmIpFetchThreadExecutor;
-    private List<KubernetesClusterHelper> kubernetesClusterHelpers;
+    private List<KubernetesServiceHelper> kubernetesClusterHelpers;
 
 
     private String _instance;
@@ -625,11 +625,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private static final int NUM_OF_2K_BLOCKS = 512;
     private static final int MAX_HTTP_POST_LENGTH = NUM_OF_2K_BLOCKS * MAX_USER_DATA_LENGTH_BYTES;
 
-    public List<KubernetesClusterHelper> getKubernetesClusterHelpers() {
+    public List<KubernetesServiceHelper> getKubernetesClusterHelpers() {
         return kubernetesClusterHelpers;
     }
 
-    public void setKubernetesClusterHelpers(final List<KubernetesClusterHelper> kubernetesClusterHelpers) {
+    public void setKubernetesClusterHelpers(final List<KubernetesServiceHelper> kubernetesClusterHelpers) {
         this.kubernetesClusterHelpers = kubernetesClusterHelpers;
     }
 
@@ -3262,6 +3262,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VM_START, eventDescription = "starting Vm", async = true)
+    public void startVirtualMachine(UserVm vm) throws OperationTimedoutException, ResourceUnavailableException, InsufficientCapacityException {
+        _itMgr.advanceStart(vm.getUuid(), null, null);
+    }
+
+    @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_REBOOT, eventDescription = "rebooting Vm", async = true)
     public UserVm rebootVirtualMachine(RebootVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ResourceAllocationException {
         Account caller = CallContext.current().getCallingAccount();
@@ -3317,9 +3323,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     protected void checkPluginsIfVmCanBeDestroyed(UserVm vm) {
         try {
-            KubernetesClusterHelper kubernetesClusterHelper =
-                    ComponentContext.getDelegateComponentOfType(KubernetesClusterHelper.class);
-            kubernetesClusterHelper.checkVmCanBeDestroyed(vm);
+            KubernetesServiceHelper kubernetesServiceHelper =
+                    ComponentContext.getDelegateComponentOfType(KubernetesServiceHelper.class);
+            kubernetesServiceHelper.checkVmCanBeDestroyed(vm);
         } catch (NoSuchBeanDefinitionException ignored) {
             logger.debug("No KubernetesClusterHelper bean found");
         }
@@ -5508,7 +5514,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             final ServiceOfferingVO offering = serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
             Pair<Boolean, Boolean> cpuCapabilityAndCapacity = _capacityMgr.checkIfHostHasCpuCapabilityAndCapacity(destinationHost, offering, false);
             if (!cpuCapabilityAndCapacity.first() || !cpuCapabilityAndCapacity.second()) {
-                String errorMsg = "Cannot deploy the VM to specified host " + hostId + "; host has cpu capability? " + cpuCapabilityAndCapacity.first() + ", host has capacity? " + cpuCapabilityAndCapacity.second();
+                String errorMsg;
+                if (!cpuCapabilityAndCapacity.first()) {
+                    errorMsg = String.format("Cannot deploy the VM to specified host %d, requested CPU and speed is more than the host capability", hostId);
+                } else {
+                    errorMsg = String.format("Cannot deploy the VM to specified host %d, host does not have enough free CPU or RAM, please check the logs", hostId);
+                }
                 logger.info(errorMsg);
                 if (!AllowDeployVmIfGivenHostFails.value()) {
                     throw new InvalidParameterValueException(errorMsg);
