@@ -99,4 +99,9 @@ public class DiagnosticsDataObject implements DataObject {
     public Long getRefCount() {
         return null;
     }
+
+    @Override
+    public String getName() {
+        return dataStore.getName();
+    }
 }
