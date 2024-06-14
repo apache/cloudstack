@@ -97,8 +97,6 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
-import com.cloud.utils.DateUtil;
-import com.cloud.utils.StringUtils;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 
