@@ -5121,7 +5121,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             return hpvCapabilities;
         }
         if (StringUtils.isNotBlank(hypervisorVersion) && !hpvCapabilities.getHypervisorVersion().equals(hypervisorVersion)) {
-            s_logger.debug("Hypervisor capabilities for hypervisor: %s and version: %s does not exist, creating a copy from the parent version: %s for update");
+            s_logger.debug(String.format("Hypervisor capabilities for hypervisor: %s and version: %s does not exist, creating a copy from the parent version: %s for update.", hypervisorStr, hypervisorVersion, hpvCapabilities.getHypervisorVersion()));
             HypervisorCapabilitiesVO copy = new HypervisorCapabilitiesVO(hpvCapabilities);
             copy.setHypervisorVersion(hypervisorVersion);
             hpvCapabilities = _hypervisorCapabilitiesDao.persist(copy);
