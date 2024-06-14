@@ -283,13 +283,20 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
         return volResponse;
     }
 
+    /**
+     * gets the {@see ServiceOffering} for the {@see Volume} with {@see DiskOffering}
+     * It will first try existing ones
+     * If not found it will try to get a removed one
+     *
+     * @param volume
+     * @param computeOnlyDiskOffering
+     * @return the resulting offering or null
+     */
     private static ServiceOffering getServiceOfferingForDiskOffering(VolumeJoinVO volume, DiskOffering computeOnlyDiskOffering) {
         ServiceOffering serviceOffering = null;
-        // first try existing ones
         if (computeOnlyDiskOffering != null) {
             serviceOffering = ApiDBUtils.findServiceOfferingByComputeOnlyDiskOffering(volume.getDiskOfferingId(), false);
         }
-        // else try removed ones
         if (serviceOffering == null) {
             serviceOffering = ApiDBUtils.findServiceOfferingByComputeOnlyDiskOffering(volume.getDiskOfferingId(), true);
         }
