@@ -2042,6 +2042,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
         UnmanagedInstanceTO unmanagedInstanceTO = null;
         if (ImportSource.EXTERNAL == importSource) {
+            if (StringUtils.isBlank(cmd.getUsername())) {
+                throw new InvalidParameterValueException("Username need to be provided.");
+            }
+
             HashMap<String, UnmanagedInstanceTO> instancesMap = getRemoteVmsOnKVMHost(zoneId, remoteUrl, cmd.getUsername(), cmd.getPassword());
             unmanagedInstanceTO = instancesMap.get(cmd.getName());
             if (unmanagedInstanceTO == null) {
