@@ -106,6 +106,9 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
             }
 
             int noOfThreads = cmd.getThreadsCountToExportOvf();
+            if (noOfThreads > 1 && !serverResource.ovfExportToolSupportsParallelThreads()) {
+                noOfThreads = 0;
+            }
             ovfTemplateDirOnConversionLocation = UUID.randomUUID().toString();
             temporaryStoragePool.createFolder(ovfTemplateDirOnConversionLocation);
             sourceOVFDirPath = String.format("%s/%s/", temporaryConvertPath, ovfTemplateDirOnConversionLocation);
@@ -370,13 +373,11 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
                                              String targetOvfDir,
                                              int noOfThreads,
                                              long timeout) {
-        if (noOfThreads <= 0) {
-            // '--parallelThreads': Value must be greater than zero
-            noOfThreads = 1;
-        }
         Script script = new Script("ovftool", timeout, s_logger);
         script.add("--noSSLVerify");
-        script.add(String.format("--parallelThreads=%s", noOfThreads));
+        if (noOfThreads > 1) {
+            script.add(String.format("--parallelThreads=%s", noOfThreads));
+        }
         script.add(vmExportUrl);
         script.add(targetOvfDir);
 

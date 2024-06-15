@@ -49,7 +49,9 @@ public interface UnmanagedVMsManager extends VmImportService, UnmanageVMService,
             "threads.on.kvm.host.to.transfer.vmware.vm.files",
             "Advanced",
             "0",
-            "Number of threads to use on the KVM host (by ovftool) to transfer VMware VM files, zero (or less than zero) would use total disks count. Default (0)",
+            "Threads to use on the KVM host (by OVF Tool, supported from version >= 4.4.0) to transfer VMware VM files," +
+                    " less than zero - disabled, zero - uses total disks count, value should be less than 100 which is approximated to the number" +
+                    " of CPU cores minus one. Default: 0.",
             true,
             ConfigKey.Scope.Global,
             null);

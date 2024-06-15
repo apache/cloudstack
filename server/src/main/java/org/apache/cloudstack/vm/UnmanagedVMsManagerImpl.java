@@ -1881,8 +1881,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         int timeoutSeconds = UnmanagedVMsManager.ConvertVmwareInstanceToKvmTimeout.value() * 60 * 60;
         cmd.setWait(timeoutSeconds);
         int noOfThreads = UnmanagedVMsManager.ThreadsOnKVMHostToTransferVMwareVMFiles.value();
-        if (noOfThreads <= 0) {
-            // Use threads as the disks count
+        if (noOfThreads == 0) {
+            // Use no. of threads as the disks count
             noOfThreads = clonedInstance.getDisks().size();
         }
         cmd.setThreadsCountToExportOvf(noOfThreads);

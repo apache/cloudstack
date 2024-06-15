@@ -307,7 +307,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public static final String TUNGSTEN_PATH = "scripts/vm/network/tungsten";
 
     public static final String INSTANCE_CONVERSION_SUPPORTED_CHECK_CMD = "virt-v2v --version";
+    // virt-v2v --version => sample output: virt-v2v 1.42.0rhel=8,release=22.module+el8.10.0+1590+a67ab969
     public static final String OVF_EXPORT_SUPPORTED_CHECK_CMD = "ovftool --version";
+    // ovftool --version => sample output: VMware ovftool 4.6.0 (build-21452615)
+    public static final String OVF_EXPORT_TOOl_GET_VERSION_CMD = "ovftool --version | awk '{print $3}'";
+
     public static final String WINDOWS_GUEST_CONVERSION_SUPPORTED_CHECK_CMD = "rpm -qa | grep -i virtio-win";
     public static final String UBUNTU_WINDOWS_GUEST_CONVERSION_SUPPORTED_CHECK_CMD = "dpkg -l virtio-win";
     public static final String UBUNTU_NBDKIT_PKG_CHECK_CMD = "dpkg -l nbdkit";
@@ -5165,6 +5169,26 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public boolean hostSupportsOvfExport() {
         int exitValue = Script.runSimpleBashScriptForExitValue(OVF_EXPORT_SUPPORTED_CHECK_CMD);
         return exitValue == 0;
+    }
+
+    public boolean ovfExportToolSupportsParallelThreads() {
+        String ovfExportToolVersion = Script.runSimpleBashScript(OVF_EXPORT_TOOl_GET_VERSION_CMD);
+        if (StringUtils.isBlank(ovfExportToolVersion)) {
+            return false;
+        }
+        String[] ovfExportToolVersions = ovfExportToolVersion.trim().split("\\.");
+        if (ovfExportToolVersions.length > 1) {
+            try {
+                int majorVersion = Integer.parseInt(ovfExportToolVersions[0]);
+                int minorVersion = Integer.parseInt(ovfExportToolVersions[1]);
+                //ovftool version >= 4.4 supports parallel threads
+                if (majorVersion > 4 || (majorVersion == 4 && minorVersion >= 4)) {
+                    return true;
+                }
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        return false;
     }
 
     private void setCpuTopology(CpuModeDef cmd, int vCpusInDef, Map<String, String> details) {

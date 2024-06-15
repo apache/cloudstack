@@ -559,6 +559,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         configValuesForValidation.add(StorageManager.STORAGE_POOL_CLIENT_MAX_CONNECTIONS.key());
         configValuesForValidation.add(UserDataManager.VM_USERDATA_MAX_LENGTH_STRING);
         configValuesForValidation.add(UnmanagedVMsManager.RemoteKvmInstanceDisksCopyTimeout.key());
+        configValuesForValidation.add(UnmanagedVMsManager.ThreadsOnKVMHostToTransferVMwareVMFiles.key());
     }
 
     private void weightBasedParametersForValidation() {
@@ -1290,6 +1291,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (UserDataManager.VM_USERDATA_MAX_LENGTH_STRING.equalsIgnoreCase(name)) {
                     if (val > 1048576) {
                         throw new InvalidParameterValueException("Please enter a value less than 1048576 for the configuration parameter:" + name);
+                    }
+                }
+
+                if (UnmanagedVMsManager.ThreadsOnKVMHostToTransferVMwareVMFiles.key().equalsIgnoreCase(name)) {
+                    if (val >= 100) {
+                        throw new InvalidParameterValueException("Please enter a value less than 100 for the configuration parameter:" + name);
                     }
                 }
             } catch (final NumberFormatException e) {
