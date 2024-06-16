@@ -467,9 +467,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     private long _defaultPageSize = Long.parseLong(Config.DefaultPageSize.getDefaultValue());
     private static final String DOMAIN_NAME_PATTERN = "^((?!-)[A-Za-z0-9-]{1,63}(?<!-)\\.)+[A-Za-z]{1,63}$";
-    protected Set<String> configValuesForValidation;
-    private Set<String> weightBasedParametersForValidation;
-    private Set<String> overprovisioningFactorsForValidation;
+    private Set<String> configValuesForValidation = new HashSet<String>();
+    private Set<String> weightBasedParametersForValidation = new HashSet<String>();
+    private Set<String> overprovisioningFactorsForValidation = new HashSet<String>();
 
     public static final ConfigKey<Boolean> SystemVMUseLocalStorage = new ConfigKey<Boolean>(Boolean.class, "system.vm.use.local.storage", "Advanced", "false",
             "Indicates whether to use local storage pools or shared storage pools for system VMs.", false, ConfigKey.Scope.Zone, null);
@@ -530,8 +530,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return true;
     }
 
-    private void populateConfigValuesForValidationSet() {
-        configValuesForValidation = new HashSet<String>();
+    protected void populateConfigValuesForValidationSet() {
         configValuesForValidation.add("event.purge.interval");
         configValuesForValidation.add("account.cleanup.interval");
         configValuesForValidation.add("alert.wait");
@@ -559,11 +558,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         configValuesForValidation.add(StorageManager.STORAGE_POOL_CLIENT_MAX_CONNECTIONS.key());
         configValuesForValidation.add(UserDataManager.VM_USERDATA_MAX_LENGTH_STRING);
         configValuesForValidation.add(UnmanagedVMsManager.RemoteKvmInstanceDisksCopyTimeout.key());
-        configValuesForValidation.add(UnmanagedVMsManager.ThreadsOnKVMHostToTransferVMwareVMFiles.key());
+        configValuesForValidation.add(UnmanagedVMsManager.ConvertVmwareInstanceToKvmTimeout.key());
     }
 
     private void weightBasedParametersForValidation() {
-        weightBasedParametersForValidation = new HashSet<String>();
         weightBasedParametersForValidation.add(AlertManager.CPUCapacityThreshold.key());
         weightBasedParametersForValidation.add(AlertManager.StorageAllocatedCapacityThreshold.key());
         weightBasedParametersForValidation.add(AlertManager.StorageCapacityThreshold.key());
@@ -583,11 +581,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         weightBasedParametersForValidation.add(CapacityManager.SecondaryStorageCapacityThreshold.key());
         weightBasedParametersForValidation.add(ClusterDrsService.ClusterDrsImbalanceThreshold.key());
         weightBasedParametersForValidation.add(ClusterDrsService.ClusterDrsImbalanceSkipThreshold.key());
-
     }
 
     private void overProvisioningFactorsForValidation() {
-        overprovisioningFactorsForValidation = new HashSet<String>();
         overprovisioningFactorsForValidation.add(CapacityManager.MemOverprovisioningFactor.key());
         overprovisioningFactorsForValidation.add(CapacityManager.CpuOverprovisioningFactor.key());
         overprovisioningFactorsForValidation.add(CapacityManager.StorageOverprovisioningFactor.key());
@@ -1174,8 +1170,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return new Pair<Configuration, String>(_configDao.findByName(name), newValue);
     }
 
-    private String validateConfigurationValue(final String name, String value, final String scope) {
-
+    protected String validateConfigurationValue(final String name, String value, final String scope) {
         final ConfigurationVO cfg = _configDao.findByName(name);
         if (cfg == null) {
             s_logger.error("Missing configuration variable " + name + " in configuration table");
@@ -1257,19 +1252,23 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             return null;
         }
 
-        if (type.equals(Integer.class) && NetworkModel.MACIdentifier.key().equalsIgnoreCase(name)) {
+        if (type.equals(Integer.class)) {
             try {
                 final int val = Integer.parseInt(value);
-                //The value need to be between 0 to 255 because the mac generation needs a value of 8 bit
-                //0 value is considered as disable.
-                if(val < 0 || val > 255){
-                    throw new InvalidParameterValueException(name+" value should be between 0 and 255. 0 value will disable this feature");
+
+                if (NetworkModel.MACIdentifier.key().equalsIgnoreCase(name)) {
+                    //The value need to be between 0 to 255 because the mac generation needs a value of 8 bit
+                    //0 value is considered as disable.
+                    if(val < 0 || val > 255){
+                        throw new InvalidParameterValueException(name + " value should be between 0 and 255. 0 value will disable this feature");
+                    }
                 }
-            } catch (final NumberFormatException e) {
-                s_logger.error("There was an error trying to parse the integer value for:" + name);
-                throw new InvalidParameterValueException("There was an error trying to parse the integer value for:" + name);
-            }
-        }
+
+                if (UnmanagedVMsManager.ThreadsOnKVMHostToTransferVMwareVMFiles.key().equalsIgnoreCase(name)) {
+                    if (val >= 100) {
+                        throw new InvalidParameterValueException("Please enter a value less than 100 for the configuration parameter:" + name);
+                    }
+                }
 
         if (type.equals(Integer.class) && configValuesForValidation.contains(name)) {
             try {
@@ -1288,7 +1287,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         throw new InvalidParameterValueException("Please enter a value less than 257 for the configuration parameter:" + name);
                     }
                 }
-                if (UserDataManager.VM_USERDATA_MAX_LENGTH_STRING.equalsIgnoreCase(name)) {
+                if (VM_USERDATA_MAX_LENGTH_STRING.equalsIgnoreCase(name)) {
                     if (val > 1048576) {
                         throw new InvalidParameterValueException("Please enter a value less than 1048576 for the configuration parameter:" + name);
                     }
@@ -1300,8 +1299,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     }
                 }
             } catch (final NumberFormatException e) {
-                s_logger.error("There was an error trying to parse the integer value for:" + name);
-                throw new InvalidParameterValueException("There was an error trying to parse the integer value for:" + name);
+                s_logger.error("There was an error trying to parse the integer value for configuration parameter: " + name);
+                throw new InvalidParameterValueException("There was an error trying to parse the integer value for configuration parameter: " + name);
             }
         }
 
@@ -1312,8 +1311,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     throw new InvalidParameterValueException("Please enter a value between 0 and 1 for the configuration parameter: " + name);
                 }
             } catch (final NumberFormatException e) {
-                s_logger.error("There was an error trying to parse the float value for:" + name);
-                throw new InvalidParameterValueException("There was an error trying to parse the float value for:" + name);
+                s_logger.error("There was an error trying to parse the float value for configuration parameter: " + name);
+                throw new InvalidParameterValueException("There was an error trying to parse the float value for configuration parameter: " + name);
             }
         }
 
