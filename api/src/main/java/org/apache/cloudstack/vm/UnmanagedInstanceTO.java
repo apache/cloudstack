@@ -317,6 +317,16 @@ public class UnmanagedInstanceTO {
         public int getDatastorePort() {
             return datastorePort;
         }
+
+        @Override
+        public String toString() {
+            return "Disk {" +
+                    "diskId='" + diskId + '\'' +
+                    ", capacity=" + capacity +
+                    ", controller='" + controller + '\'' +
+                    ", controllerUnit=" + controllerUnit +
+                    "}";
+        }
     }
 
     public static class Nic {
@@ -408,6 +418,15 @@ public class UnmanagedInstanceTO {
 
         public void setPciSlot(String pciSlot) {
             this.pciSlot = pciSlot;
+        }
+
+        @Override
+        public String toString() {
+            return "Nic{" +
+                    "nicId='" + nicId + '\'' +
+                    ", adapterType='" + adapterType + '\'' +
+                    ", macAddress='" + macAddress + '\'' +
+                    "}";
         }
     }
 }

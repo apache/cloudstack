@@ -1603,6 +1603,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
             temporaryConvertLocation = selectInstanceConversionTemporaryLocation(destinationCluster, convertStoragePoolId);
             List<StoragePoolVO> convertStoragePools = findInstanceConversionStoragePoolsInCluster(destinationCluster);
+            long importStartTime = System.currentTimeMillis();
             clonedInstance = cloneSourceVmwareUnmanagedInstance(vcenter, datacenterName, username, password, clusterName, sourceHostName, sourceVM);
             boolean isWindowsVm = clonedInstance.getOperatingSystem().toLowerCase().contains("windows");
             if (isWindowsVm) {
@@ -1630,7 +1631,9 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                     serviceOffering, dataDiskOfferingMap,
                     nicNetworkMap, nicIpAddressMap,
                     details, false, forced, false);
-            LOGGER.debug(String.format("VM %s imported successfully", sourceVM));
+            long timeElapsedInSecs = (System.currentTimeMillis() - importStartTime) / 1000;
+            LOGGER.debug(String.format("VMware VM %s imported successfully to CloudStack instance %s, Time taken: %d secs, Source VMware VM details - OS: %s, Disks: %s, NICs: %s",
+                    sourceVM, instanceName, timeElapsedInSecs, clonedInstance.getOperatingSystem(), clonedInstance.getDisks(), clonedInstance.getNics()));
             return userVm;
         } catch (CloudRuntimeException e) {
             LOGGER.error(String.format("Error importing VM: %s", e.getMessage()), e);
