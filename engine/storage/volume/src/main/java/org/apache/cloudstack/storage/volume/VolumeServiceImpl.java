@@ -502,8 +502,10 @@ public class VolumeServiceImpl implements VolumeService {
                         if (!supportsStorageSystemSnapshots) {
                             _snapshotStoreDao.remove(snapStoreVo.getId());
                         }
-                    } else {
+                    } else if (!HypervisorType.KVM.equals(vo.getHypervisorType())) {
                         _snapshotStoreDao.remove(snapStoreVo.getId());
+                    } else {
+                        deleteKvmSnapshotOnPrimary(snapStoreVo);
                     }
                 }
                 snapshotApiService.markVolumeSnapshotsAsDestroyed(vo);
@@ -516,6 +518,21 @@ public class VolumeServiceImpl implements VolumeService {
         }
         context.getFuture().complete(apiResult);
         return null;
+    }
+
+    /**
+     * Deletes the snapshot from primary storage if the only storage associated with the snapshot is of the Primary role; else, just removes the primary record on the DB.
+     * */
+    protected void deleteKvmSnapshotOnPrimary(SnapshotDataStoreVO snapshotDataStoreVO) {
+        List<SnapshotDataStoreVO> snapshotDataStoreVOList = _snapshotStoreDao.findBySnapshotId(snapshotDataStoreVO.getSnapshotId());
+        for (SnapshotDataStoreVO snapshotStore : snapshotDataStoreVOList) {
+            if (DataStoreRole.Image.equals(snapshotStore.getRole())) {
+                _snapshotStoreDao.remove(snapshotDataStoreVO.getId());
+                return;
+            }
+        }
+
+        snapshotApiService.deleteSnapshot(snapshotDataStoreVO.getSnapshotId(), null);
     }
 
     @Override

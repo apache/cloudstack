@@ -262,4 +262,12 @@ public class SnapshotHelper {
 
         return snapshotIdsOnlyInPrimaryStorage;
     }
+
+    public SnapshotInfo convertSnapshotIfNeeded(SnapshotInfo snapshotInfo) {
+        if (snapshotInfo.getParent() == null) {
+            return snapshotInfo;
+        }
+
+        return snapshotService.convertSnapshot(snapshotInfo);
+    }
 }

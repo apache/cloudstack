@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.cloudstack.utils.cryptsetup.KeyFile;
+import org.apache.cloudstack.utils.qemu.QemuImageOptions;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
@@ -1379,13 +1380,13 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     } else {
                         destFile = new QemuImgFile(destPath, destFormat);
                         try {
-                            qemu.convert(srcFile, destFile);
+                            qemu.convert(srcFile, destFile, null, null, new QemuImageOptions(srcFile.getFormat(), srcFile.getFileName(), null), null, false, true);
                             Map<String, String> destInfo = qemu.info(destFile);
                             Long virtualSize = Long.parseLong(destInfo.get(QemuImg.VIRTUAL_SIZE));
                             newDisk.setVirtualSize(virtualSize);
                             newDisk.setSize(virtualSize);
-                        } catch (QemuImgException | LibvirtException e) {
-                            logger.error("Failed to convert " + srcFile.getFileName() + " to " + destFile.getFileName() + " the error was: " + e.getMessage());
+                        } catch (QemuImgException e) {
+                            logger.error("Failed to convert [{}] to [{}] due to: [{}].", srcFile.getFileName(), destFile.getFileName(), e.getMessage(), e);
                             newDisk = null;
                         }
                     }

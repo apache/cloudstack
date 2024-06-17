@@ -461,35 +461,48 @@ public class DefaultEndPointSelector implements EndPointSelector {
 
     @Override
     public EndPoint select(DataObject object, StorageAction action, boolean encryptionRequired) {
-        if (action == StorageAction.TAKESNAPSHOT) {
-            SnapshotInfo snapshotInfo = (SnapshotInfo)object;
-            if (snapshotInfo.getHypervisorType() == Hypervisor.HypervisorType.KVM) {
-                VolumeInfo volumeInfo = snapshotInfo.getBaseVolume();
-                VirtualMachine vm = volumeInfo.getAttachedVM();
-                if ((vm != null) && (vm.getState() == VirtualMachine.State.Running)) {
-                    Long hostId = vm.getHostId();
-                    return getEndPointFromHostId(hostId);
+        switch (action) {
+            case DELETESNAPSHOT:
+            case TAKESNAPSHOT:
+            case CONVERTSNAPSHOT:
+                SnapshotInfo snapshotInfo = (SnapshotInfo) object;
+                if (Hypervisor.HypervisorType.KVM.equals(snapshotInfo.getHypervisorType())) {
+                    VolumeInfo volumeInfo = snapshotInfo.getBaseVolume();
+                    VirtualMachine vm = volumeInfo.getAttachedVM();
+                    if (vm == null) {
+                        break;
+                    }
+                    if (vm.getState() == VirtualMachine.State.Running) {
+                        Long hostId = vm.getHostId();
+                        return getEndPointFromHostId(hostId);
+                    }
+                    Long hostId = vm.getLastHostId();
+                    return hostId != null ? getEndPointFromHostId(hostId) : select(object, encryptionRequired);
                 }
-            }
-        } else if (action == StorageAction.MIGRATEVOLUME) {
-            VolumeInfo volume = (VolumeInfo)object;
-            if (volume.getHypervisorType() == Hypervisor.HypervisorType.Hyperv || volume.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
-                VirtualMachine vm = volume.getAttachedVM();
-                if ((vm != null) && (vm.getState() == VirtualMachine.State.Running)) {
-                    Long hostId = vm.getHostId();
-                    return getEndPointFromHostId(hostId);
-                }
-            }
-        } else if (action == StorageAction.DELETEVOLUME) {
-            VolumeInfo volume = (VolumeInfo)object;
-            if (volume.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
-                VirtualMachine vm = volume.getAttachedVM();
-                if (vm != null) {
-                    Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
-                    if (hostId != null) {
+                break;
+            case MIGRATEVOLUME: {
+                VolumeInfo volume = (VolumeInfo) object;
+                if (volume.getHypervisorType() == Hypervisor.HypervisorType.Hyperv || volume.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
+                    VirtualMachine vm = volume.getAttachedVM();
+                    if ((vm != null) && (vm.getState() == VirtualMachine.State.Running)) {
+                        Long hostId = vm.getHostId();
                         return getEndPointFromHostId(hostId);
                     }
                 }
+                break;
+            }
+            case DELETEVOLUME: {
+                VolumeInfo volume = (VolumeInfo) object;
+                if (volume.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
+                    VirtualMachine vm = volume.getAttachedVM();
+                    if (vm != null) {
+                        Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
+                        if (hostId != null) {
+                            return getEndPointFromHostId(hostId);
+                        }
+                    }
+                }
+                break;
             }
         }
         return select(object, encryptionRequired);

@@ -21,6 +21,7 @@ package com.cloud.utils.script;
 
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.concurrency.NamedThreadFactory;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter.TimedOutLogger;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.commons.io.IOUtils;
@@ -695,5 +696,18 @@ public class Script implements Callable<String> {
         } else {
             return result.trim();
         }
+    }
+
+    public static String runSimpleBashScriptWithFullResult(String command, int timeout) {
+        Script script = new Script("/bin/bash", Duration.standardSeconds(timeout));
+        script.add("-c");
+        script.add(command);
+
+        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+
+        if (script.execute(parser) != null) {
+            throw new CloudRuntimeException(String.format("Error executing command [%s]", script));
+        }
+        return parser.getLines();
     }
 }
