@@ -1264,7 +1264,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     }
                 }
 
-                if (UnmanagedVMsManager.ThreadsOnKVMHostToTransferVMwareVMFiles.key().equalsIgnoreCase(name)) {
+                if (UnmanagedVMsManager.ThreadsOnMSToDownloadVMwareVMFiles.key().equalsIgnoreCase(name)) {
+                    if (val > 10) {
+                        throw new InvalidParameterValueException("Please enter a value less than 10 for the configuration parameter:" + name);
+                    }
+                }
+
+                if (UnmanagedVMsManager.ThreadsOnKVMHostToDownloadVMwareVMFiles.key().equalsIgnoreCase(name)) {
                     if (val >= 100) {
                         throw new InvalidParameterValueException("Please enter a value less than 100 for the configuration parameter:" + name);
                     }

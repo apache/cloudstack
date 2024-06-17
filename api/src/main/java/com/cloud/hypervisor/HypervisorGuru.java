@@ -109,13 +109,13 @@ public interface HypervisorGuru extends Adapter {
 
 
     /**
-     * Will perform a clone of a VM on an external host (if the guru can handle)
+     * Will return the hypervisor VM (clone VM for PowerOn VMs), performs a clone of a VM if required on an external host (if the guru can handle)
      * @param hostIp VM's source host IP
-     * @param vmName name of the source VM to clone from
+     * @param vmName name of the source VM (clone VM name if cloned)
      * @param params hypervisor specific additional parameters
-     * @return a reference to the cloned VM
+     * @return a reference to the hypervisor or cloned VM, and cloned flag
      */
-    UnmanagedInstanceTO cloneHypervisorVMOutOfBand(String hostIp, String vmName, Map<String, String> params);
+    Pair<UnmanagedInstanceTO, Boolean> getHypervisorVMOutOfBandAndCloneIfRequired(String hostIp, String vmName, Map<String, String> params);
 
     /**
      * Removes a VM created as a clone of a VM on an external host
@@ -134,7 +134,7 @@ public interface HypervisorGuru extends Adapter {
      * @param templateLocation datastore to create the template file
      * @return the created template dir/name
      */
-    String createVMTemplateOutOfBand(String hostIp, String vmName, Map<String, String> params, DataStoreTO templateLocation);
+    String createVMTemplateOutOfBand(String hostIp, String vmName, Map<String, String> params, DataStoreTO templateLocation, int threadsCountToExportOvf);
 
     /**
      * Removes the template on the location

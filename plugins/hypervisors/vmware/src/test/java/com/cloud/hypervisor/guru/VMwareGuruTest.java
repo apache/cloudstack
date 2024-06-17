@@ -22,6 +22,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -236,7 +237,7 @@ public class VMwareGuruTest {
         }); MockedConstruction<DatacenterMO> ignored3 = Mockito.mockConstruction(DatacenterMO.class, withSettings().spiedInstance(dataCenterMO), (mockDatacenterMO, contextDatacenterMO) -> {
             Mockito.doReturn(null).when(mockDatacenterMO).findVm(vmName);
         })) {
-            vMwareGuru.cloneHypervisorVMOutOfBand(hostIp, vmName, params);
+            vMwareGuru.getHypervisorVMOutOfBandAndCloneIfRequired(hostIp, vmName, params);
         }
     }
 
@@ -280,7 +281,7 @@ public class VMwareGuruTest {
         }); MockedConstruction<DatacenterMO> ignored3 = Mockito.mockConstruction(DatacenterMO.class, withSettings().spiedInstance(dataCenterMO), (mockDatacenterMO, contextDatacenterMO) -> {
             Mockito.doReturn(vmMo).when(mockDatacenterMO).findVm(vmName);
         })) {
-            vMwareGuru.cloneHypervisorVMOutOfBand(hostIp, vmName, params);
+            vMwareGuru.getHypervisorVMOutOfBandAndCloneIfRequired(hostIp, vmName, params);
         }
     }
 
@@ -307,8 +308,12 @@ public class VMwareGuruTest {
         DatacenterMO dataCenterMO = spy(new DatacenterMO(vmwareContext, datacenterName));
         VirtualMachineMO vmMo = Mockito.mock(VirtualMachineMO.class);
         HostMO hostMo = Mockito.mock(HostMO.class);
-        Mockito.doReturn(VirtualMachinePowerState.POWERED_OFF).when(vmMo).getPowerState();
+        Mockito.doReturn(VirtualMachinePowerState.POWERED_ON).when(vmMo).getPowerState();
         Mockito.doReturn(hostMo).when(vmMo).getRunningHost();
+        UnmanagedInstanceTO instance = Mockito.mock(UnmanagedInstanceTO.class);
+        Mockito.doReturn("CentOS").when(instance).getOperatingSystem();
+        Mockito.doReturn("test-cluster").when(instance).getClusterName();
+        when(VmwareHelper.getUnmanagedInstance(hostMo, vmMo)).thenReturn(instance);
         List<DatastoreMO> datastores = new ArrayList<>();
         Mockito.doReturn(datastores).when(vmMo).getAllDatastores();
 
@@ -323,7 +328,7 @@ public class VMwareGuruTest {
         }); MockedConstruction<DatacenterMO> ignored3 = Mockito.mockConstruction(DatacenterMO.class, withSettings().spiedInstance(dataCenterMO), (mockDatacenterMO, contextDatacenterMO) -> {
             Mockito.doReturn(vmMo).when(mockDatacenterMO).findVm(vmName);
         })) {
-            vMwareGuru.cloneHypervisorVMOutOfBand(hostIp, vmName, params);
+            vMwareGuru.getHypervisorVMOutOfBandAndCloneIfRequired(hostIp, vmName, params);
         }
     }
 
@@ -350,9 +355,13 @@ public class VMwareGuruTest {
         DatacenterMO dataCenterMO = spy(new DatacenterMO(vmwareContext, datacenterName));
         VirtualMachineMO vmMo = Mockito.mock(VirtualMachineMO.class);
         HostMO hostMo = Mockito.mock(HostMO.class);
-        Mockito.doReturn(VirtualMachinePowerState.POWERED_OFF).when(vmMo).getPowerState();
+        Mockito.doReturn(VirtualMachinePowerState.POWERED_ON).when(vmMo).getPowerState();
         Mockito.doReturn(hostMo).when(vmMo).getRunningHost();
         Mockito.doReturn(mor).when(hostMo).getHyperHostOwnerResourcePool();
+        UnmanagedInstanceTO instance = Mockito.mock(UnmanagedInstanceTO.class);
+        Mockito.doReturn("CentOS").when(instance).getOperatingSystem();
+        Mockito.doReturn("test-cluster").when(instance).getClusterName();
+        when(VmwareHelper.getUnmanagedInstance(hostMo, vmMo)).thenReturn(instance);
         DatastoreMO datastoreMO = Mockito.mock(DatastoreMO.class);
         Mockito.doReturn(mor).when(datastoreMO).getMor();
         List<DatastoreMO> datastores = new ArrayList<>();
@@ -373,7 +382,7 @@ public class VMwareGuruTest {
             Mockito.doReturn(mor).when(mockDatacenterMO).getVmFolder();
             Mockito.doReturn(mor).when(mockDatacenterMO).getMor();
         })) {
-            vMwareGuru.cloneHypervisorVMOutOfBand(hostIp, vmName, params);
+            vMwareGuru.getHypervisorVMOutOfBandAndCloneIfRequired(hostIp, vmName, params);
         }
     }
 
@@ -400,7 +409,7 @@ public class VMwareGuruTest {
         DatacenterMO dataCenterMO = spy(new DatacenterMO(vmwareContext, datacenterName));
         VirtualMachineMO vmMo = Mockito.mock(VirtualMachineMO.class);
         HostMO hostMo = Mockito.mock(HostMO.class);
-        Mockito.doReturn(VirtualMachinePowerState.POWERED_OFF).when(vmMo).getPowerState();
+        Mockito.doReturn(VirtualMachinePowerState.POWERED_ON).when(vmMo).getPowerState();
         Mockito.doReturn(hostMo).when(vmMo).getRunningHost();
         Mockito.doReturn(mor).when(hostMo).getHyperHostOwnerResourcePool();
         Mockito.doReturn(mor).when(hostMo).getMor();
@@ -411,6 +420,8 @@ public class VMwareGuruTest {
         Mockito.doReturn(datastores).when(vmMo).getAllDatastores();
         Mockito.lenient().doReturn(true).when(vmMo).createFullClone(anyString(), any(ManagedObjectReference.class), any(ManagedObjectReference.class), any(ManagedObjectReference.class), any(Storage.ProvisioningType.class));
         UnmanagedInstanceTO instance = Mockito.mock(UnmanagedInstanceTO.class);
+        Mockito.doReturn("CentOS").when(instance).getOperatingSystem();
+        Mockito.doReturn("test-cluster").when(instance).getClusterName();
         when(VmwareHelper.getUnmanagedInstance(hostMo, vmMo)).thenReturn(instance);
         UnmanagedInstanceTO.Disk disk = Mockito.mock(UnmanagedInstanceTO.Disk.class);
         Mockito.doReturn("1").when(disk).getDiskId();
@@ -431,7 +442,7 @@ public class VMwareGuruTest {
             Mockito.doReturn(mor).when(mockDatacenterMO).getVmFolder();
             Mockito.doReturn(mor).when(mockDatacenterMO).getMor();
         })) {
-            UnmanagedInstanceTO clonedVm = vMwareGuru.cloneHypervisorVMOutOfBand(hostIp, vmName, params);
+            Pair<UnmanagedInstanceTO, Boolean> clonedVm = vMwareGuru.getHypervisorVMOutOfBandAndCloneIfRequired(hostIp, vmName, params);
             assertNotNull(clonedVm);
         }
     }
@@ -470,7 +481,7 @@ public class VMwareGuruTest {
         }); MockedConstruction<DatacenterMO> ignored3 = Mockito.mockConstruction(DatacenterMO.class, withSettings().spiedInstance(dataCenterMO), (mockDatacenterMO, contextDatacenterMO) -> {
             Mockito.doReturn(null).when(mockDatacenterMO).findVm(vmName);
         })) {
-            vMwareGuru.createVMTemplateOutOfBand(hostIp, vmName, params, dataStore);
+            vMwareGuru.createVMTemplateOutOfBand(hostIp, vmName, params, dataStore, -1);
         }
     }
 
@@ -496,7 +507,7 @@ public class VMwareGuruTest {
         Mockito.doReturn(mor).when(vimClient).getDecendentMoRef(any(ManagedObjectReference.class), anyString(), anyString());
         DatacenterMO dataCenterMO = spy(new DatacenterMO(vmwareContext, datacenterName));
         VirtualMachineMO vmMo = Mockito.mock(VirtualMachineMO.class);
-        Mockito.doNothing().when(vmMo).exportVm(anyString(), anyString(), anyBoolean(), anyBoolean());
+        Mockito.doNothing().when(vmMo).exportVm(anyString(), anyString(), anyBoolean(), anyBoolean(), anyInt());
         NfsTO dataStore = Mockito.mock(NfsTO.class);
         Mockito.doReturn("nfs://10.1.1.4/testdir").when(dataStore).getUrl();
 
@@ -511,7 +522,7 @@ public class VMwareGuruTest {
         }); MockedConstruction<DatacenterMO> ignored3 = Mockito.mockConstruction(DatacenterMO.class, withSettings().spiedInstance(dataCenterMO), (mockDatacenterMO, contextDatacenterMO) -> {
             Mockito.doReturn(vmMo).when(mockDatacenterMO).findVm(vmName);
         })) {
-            String vmTemplate = vMwareGuru.createVMTemplateOutOfBand(hostIp, vmName, params, dataStore);
+            String vmTemplate = vMwareGuru.createVMTemplateOutOfBand(hostIp, vmName, params, dataStore, -1);
             assertNotNull(vmTemplate);
             assertTrue(UuidUtils.isUuid(vmTemplate));
         }

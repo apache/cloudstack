@@ -327,7 +327,7 @@ public class ConfigurationManagerImplTest {
     public void testValidateConfig_ThreadsOnKVMHostToTransferVMwareVMFiles_Failure() {
         ConfigurationVO cfg = mock(ConfigurationVO.class);
         when(cfg.getScope()).thenReturn(ConfigKey.Scope.Global.toString());
-        ConfigKey<Integer> configKey = UnmanagedVMsManager.ThreadsOnKVMHostToTransferVMwareVMFiles;
+        ConfigKey<Integer> configKey = UnmanagedVMsManager.ThreadsOnKVMHostToDownloadVMwareVMFiles;
         Mockito.doReturn(cfg).when(configDaoMock).findByName(Mockito.anyString());
         Mockito.doReturn(configKey).when(configurationManagerImplSpy._configDepot).get(configKey.key());
         configurationManagerImplSpy.validateConfigurationValue(configKey.key(), "100", configKey.scope().toString());
@@ -337,7 +337,7 @@ public class ConfigurationManagerImplTest {
     public void testValidateConfig_ThreadsOnKVMHostToTransferVMwareVMFiles_Success() {
         ConfigurationVO cfg = mock(ConfigurationVO.class);
         when(cfg.getScope()).thenReturn(ConfigKey.Scope.Global.toString());
-        ConfigKey<Integer> configKey = UnmanagedVMsManager.ThreadsOnKVMHostToTransferVMwareVMFiles;
+        ConfigKey<Integer> configKey = UnmanagedVMsManager.ThreadsOnKVMHostToDownloadVMwareVMFiles;
         Mockito.doReturn(cfg).when(configDaoMock).findByName(Mockito.anyString());
         Mockito.doReturn(configKey).when(configurationManagerImplSpy._configDepot).get(configKey.key());
         String msg = configurationManagerImplSpy.validateConfigurationValue(configKey.key(), "10", configKey.scope().toString());

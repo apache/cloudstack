@@ -1368,23 +1368,22 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         return clonedVM;
     }
 
-    private String createOVFTemplateOfVM(VirtualMachineMO vmMO, DataStoreTO convertLocation) throws Exception {
+    private String createOVFTemplateOfVM(VirtualMachineMO vmMO, DataStoreTO convertLocation, int threadsCountToExportOvf) throws Exception {
         String dataStoreUrl = getDataStoreUrlForTemplate(convertLocation);
         String vmOvfName = UUID.randomUUID().toString();
         String vmOvfCreationPath = createDirOnStorage(vmOvfName, dataStoreUrl, null);
         s_logger.debug(String.format("Creating OVF %s for the VM %s at %s", vmOvfName, vmMO.getName(), vmOvfCreationPath));
-        vmMO.exportVm(vmOvfCreationPath, vmOvfName, false, false);
+        vmMO.exportVm(vmOvfCreationPath, vmOvfName, false, false, threadsCountToExportOvf);
         s_logger.debug(String.format("Created OVF %s for the VM %s at %s", vmOvfName, vmMO.getName(), vmOvfCreationPath));
         return vmOvfName;
     }
 
     @Override
-    public UnmanagedInstanceTO cloneHypervisorVMOutOfBand(String hostIp, String vmName, Map<String, String> params) {
+    public Pair<UnmanagedInstanceTO, Boolean> getHypervisorVMOutOfBandAndCloneIfRequired(String hostIp, String vmName, Map<String, String> params) {
         String vcenter = params.get(VmDetailConstants.VMWARE_VCENTER_HOST);
         String datacenter = params.get(VmDetailConstants.VMWARE_DATACENTER_NAME);
         String username = params.get(VmDetailConstants.VMWARE_VCENTER_USERNAME);
         String password = params.get(VmDetailConstants.VMWARE_VCENTER_PASSWORD);
-        s_logger.debug(String.format("Cloning VM %s at VMware host %s on vCenter %s", vmName, hostIp, vcenter));
 
         try {
             VmwareContext context = connectToVcenter(vcenter, username, password);
@@ -1395,22 +1394,41 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 s_logger.error(err);
                 throw new CloudRuntimeException(err);
             }
+
             VirtualMachinePowerState sourceVmPowerState = vmMo.getPowerState();
-            if (sourceVmPowerState == VirtualMachinePowerState.POWERED_ON && isWindowsVm(vmMo)) {
-                String err = String.format("VM %s is a Windows VM and its Running, cannot be imported." +
-                                "Please gracefully shut it down before attempting the import", vmName);
-                s_logger.error(err);
-                throw new CloudRuntimeException(err);
+            if (sourceVmPowerState == VirtualMachinePowerState.POWERED_OFF) {
+                // Don't clone for powered off VMs, can export OVF from it
+                UnmanagedInstanceTO instanceTO = VmwareHelper.getUnmanagedInstance(vmMo.getRunningHost(), vmMo);
+                return new Pair<>(instanceTO, false);
             }
 
+            if (sourceVmPowerState == VirtualMachinePowerState.POWERED_ON) {
+                if (isWindowsVm(vmMo)) {
+                    String err = String.format("VM %s is a Windows VM and its Running, cannot be imported." +
+                            " Please gracefully shut it down before attempting the import", vmName);
+                    s_logger.error(err);
+                    throw new CloudRuntimeException(err);
+                }
+
+                if (isVMOnStandaloneHost(vmMo)) { // or datacenter.equalsIgnoreCase("ha-datacenter")? [Note: default datacenter name on standalone host: ha-datacenter]
+                    String err = String.format("VM %s might be on standalone host and is Running, cannot be imported." +
+                            " Please shut it down before attempting the import", vmName);
+                    s_logger.error(err);
+                    throw new CloudRuntimeException(err);
+                }
+            }
+
+            s_logger.debug(String.format("Cloning VM %s at VMware host %s on vCenter %s", vmName, hostIp, vcenter));
             VirtualMachineMO clonedVM = createCloneFromSourceVM(vmName, vmMo, dataCenterMO);
-            s_logger.debug(String.format("VM %s cloned successfully", vmName));
+            s_logger.debug(String.format("VM %s cloned successfully, to VM %s", vmName, clonedVM.getName()));
             UnmanagedInstanceTO clonedInstance = VmwareHelper.getUnmanagedInstance(vmMo.getRunningHost(), clonedVM);
             setDisksFromSourceVM(clonedInstance, vmMo);
             clonedInstance.setCloneSourcePowerState(sourceVmPowerState == VirtualMachinePowerState.POWERED_ON ? UnmanagedInstanceTO.PowerState.PowerOn : UnmanagedInstanceTO.PowerState.PowerOff);
-            return clonedInstance;
+            return new Pair<>(clonedInstance, true);
+        } catch (CloudRuntimeException cre) {
+            throw cre;
         } catch (Exception e) {
-            String err = String.format("Error cloning VM: %s from vCenter %s: %s", vmName, vcenter, e.getMessage());
+            String err = String.format("Error while finding or cloning VM: %s from vCenter %s: %s", vmName, vcenter, e.getMessage());
             s_logger.error(err, e);
             throw new CloudRuntimeException(err, e);
         }
@@ -1419,6 +1437,11 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     private boolean isWindowsVm(VirtualMachineMO vmMo) throws Exception {
         UnmanagedInstanceTO sourceInstance = VmwareHelper.getUnmanagedInstance(vmMo.getRunningHost(), vmMo);
         return sourceInstance.getOperatingSystem().toLowerCase().contains("windows");
+    }
+
+    private boolean isVMOnStandaloneHost(VirtualMachineMO vmMo) throws Exception {
+        UnmanagedInstanceTO sourceInstance = VmwareHelper.getUnmanagedInstance(vmMo.getRunningHost(), vmMo);
+        return StringUtils.isEmpty(sourceInstance.getClusterName());
     }
 
     private void setDisksFromSourceVM(UnmanagedInstanceTO clonedInstance, VirtualMachineMO vmMo) throws Exception {
@@ -1433,7 +1456,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     }
 
     @Override
-    public String createVMTemplateOutOfBand(String hostIp, String vmName, Map<String, String> params, DataStoreTO templateLocation) {
+    public String createVMTemplateOutOfBand(String hostIp, String vmName, Map<String, String> params, DataStoreTO templateLocation, int threadsCountToExportOvf) {
         String vcenter = params.get(VmDetailConstants.VMWARE_VCENTER_HOST);
         String datacenter = params.get(VmDetailConstants.VMWARE_DATACENTER_NAME);
         String username = params.get(VmDetailConstants.VMWARE_VCENTER_USERNAME);
@@ -1449,7 +1472,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 s_logger.error(err);
                 throw new CloudRuntimeException(err);
             }
-            String ovaTemplate = createOVFTemplateOfVM(vmMo, templateLocation);
+            String ovaTemplate = createOVFTemplateOfVM(vmMo, templateLocation, threadsCountToExportOvf);
             s_logger.debug(String.format("OVF %s created successfully on the datastore", ovaTemplate));
             return ovaTemplate;
         } catch (Exception e) {

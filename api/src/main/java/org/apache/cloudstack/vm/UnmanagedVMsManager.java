@@ -45,12 +45,22 @@ public interface UnmanagedVMsManager extends VmImportService, UnmanageVMService,
             ConfigKey.Scope.Global,
             null);
 
-    ConfigKey<Integer> ThreadsOnKVMHostToTransferVMwareVMFiles = new ConfigKey<>(Integer.class,
-            "threads.on.kvm.host.to.transfer.vmware.vm.files",
+    ConfigKey<Integer> ThreadsOnMSToDownloadVMwareVMFiles = new ConfigKey<>(Integer.class,
+            "threads.on.ms.to.download.vmware.vm.files",
             "Advanced",
             "0",
-            "Threads to use on the KVM host (by OVF Tool, supported from version >= 4.4.0) to transfer VMware VM files," +
-                    " less than zero - disabled, zero - uses total disks count, value should be less than 100 which is approximated to the number" +
+            "Threads to use on the management server to download VMware VM files per import VM," +
+                    " single disk or less than zero - disabled, zero - uses total disks count, maximum value is 10. Default: 0.",
+            true,
+            ConfigKey.Scope.Global,
+            null);
+
+    ConfigKey<Integer> ThreadsOnKVMHostToDownloadVMwareVMFiles = new ConfigKey<>(Integer.class,
+            "threads.on.kvm.host.to.download.vmware.vm.files",
+            "Advanced",
+            "0",
+            "Threads to use on the KVM host (by OVF Tool, supported from version >= 4.4.0) to download VMware VM files per import VM," +
+                    " single disk or less than zero - disabled, zero - uses total disks count, value should be less than 100 which is approximated to the number" +
                     " of CPU cores minus one. Default: 0.",
             true,
             ConfigKey.Scope.Global,

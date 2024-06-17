@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.vm;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 import java.util.List;
 
 public class UnmanagedInstanceTO {
@@ -322,7 +324,7 @@ public class UnmanagedInstanceTO {
         public String toString() {
             return "Disk {" +
                     "diskId='" + diskId + '\'' +
-                    ", capacity=" + capacity +
+                    ", capacity=" + toHumanReadableSize(capacity) +
                     ", controller='" + controller + '\'' +
                     ", controllerUnit=" + controllerUnit +
                     "}";
