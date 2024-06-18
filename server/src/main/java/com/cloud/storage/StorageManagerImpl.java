@@ -2036,6 +2036,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     @DB
+    @ActionEvent(eventType = EventTypes.EVENT_MAINTENANCE_PREPARE_PRIMARY_STORAGE,
+            eventDescription = "preparing storage pool for maintenance", async = true)
     public PrimaryDataStoreInfo preparePrimaryStorageForMaintenance(Long primaryStorageId) throws ResourceUnavailableException, InsufficientCapacityException {
         StoragePoolVO primaryStorage = null;
         primaryStorage = _storagePoolDao.findById(primaryStorageId);
@@ -2104,6 +2106,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     @DB
+    @ActionEvent(eventType = EventTypes.EVENT_MAINTENANCE_CANCEL_PRIMARY_STORAGE,
+            eventDescription = "canceling maintenance for primary storage pool", async = true)
     public PrimaryDataStoreInfo cancelPrimaryStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd) throws ResourceUnavailableException {
         Long primaryStorageId = cmd.getId();
         StoragePoolVO primaryStorage = null;
@@ -2936,18 +2940,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         List<Pair<Volume, Answer>> answers = new ArrayList<Pair<Volume, Answer>>();
 
         for (Pair<Volume, DiskProfile> volumeDiskProfilePair : volumes) {
-            String storagePolicyId = null;
             Volume volume = volumeDiskProfilePair.first();
             DiskProfile diskProfile = volumeDiskProfilePair.second();
-            if (volume.getVolumeType() == Type.ROOT) {
-                Long vmId = volume.getInstanceId();
-                if (vmId != null) {
-                    VMInstanceVO vm = _vmInstanceDao.findByIdIncludingRemoved(vmId);
-                    storagePolicyId = _serviceOfferingDetailsDao.getDetail(vm.getServiceOfferingId(), ApiConstants.STORAGE_POLICY);
-                }
-            } else {
-                storagePolicyId = _diskOfferingDetailsDao.getDetail(diskProfile.getDiskOfferingId(), ApiConstants.STORAGE_POLICY);
-            }
+            String storagePolicyId = _diskOfferingDetailsDao.getDetail(diskProfile.getDiskOfferingId(), ApiConstants.STORAGE_POLICY);
             if (StringUtils.isNotEmpty(storagePolicyId)) {
                 VsphereStoragePolicyVO storagePolicyVO = _vsphereStoragePolicyDao.findById(Long.parseLong(storagePolicyId));
                 List<Long> hostIds = getUpHostsInPool(pool.getId());

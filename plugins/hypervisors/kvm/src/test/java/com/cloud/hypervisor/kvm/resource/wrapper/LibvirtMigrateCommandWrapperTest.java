@@ -132,6 +132,7 @@ public class LibvirtMigrateCommandWrapperTest {
 "    </disk>\n" +
 "    <disk type='file' device='cdrom'>\n" +
 "      <driver name='qemu' type='raw' cache='none'/>\n" +
+"      <source file='/mnt/ec8dfdd8-f341-3b0a-988f-cfbc93e46fc4/251-2-2b2071a4-21c7-340e-a861-1bd30fb5cbed.iso'/>\n" +
 "      <backingStore/>\n" +
 "      <target dev='hdc' bus='ide'/>\n" +
 "      <readonly/>\n" +
@@ -249,6 +250,7 @@ public class LibvirtMigrateCommandWrapperTest {
 "    </disk>\n" +
 "    <disk type='file' device='cdrom'>\n" +
 "      <driver name='qemu' type='raw' cache='none'/>\n" +
+"      <source file='/mnt/ec8dfdd8-f341-3b0a-988f-cfbc93e46fc4/251-2-2b2071a4-21c7-340e-a861-1bd30fb5cbed.iso'/>\n" +
 "      <backingStore/>\n" +
 "      <target dev='hdc' bus='ide'/>\n" +
 "      <readonly/>\n" +
@@ -1007,4 +1009,14 @@ public class LibvirtMigrateCommandWrapperTest {
         assertTrue(result.containsAll(Arrays.asList("vda", "vdb")));
     }
 
+    @Test
+    public void replaceCdromIsoPathTest() throws ParserConfigurationException, IOException, TransformerException,
+            SAXException {
+        String oldIsoVolumePath = "/mnt/ec8dfdd8-f341-3b0a-988f-cfbc93e46fc4/251-2-2b2071a4-21c7-340e-a861-1bd30fb5cbed.iso";
+        String newIsoVolumePath = "/mnt/50bf9d15-1b0f-3cc1-9e8a-55df3e17e0c4/251-2-2b2071a4-21c7-340e-a861-1bd30fb5cbed.iso";
+
+        String finalXml = libvirtMigrateCmdWrapper.replaceCdromIsoPath(fullfile, null, oldIsoVolumePath, newIsoVolumePath);
+
+        Assert.assertTrue(finalXml.contains(newIsoVolumePath));
+    }
 }
