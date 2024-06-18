@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,26 +15,35 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.user;
+//
 
-import java.util.Map;
+package org.apache.cloudstack.agent.routing;
 
-import com.cloud.utils.db.GenericDao;
+import com.cloud.agent.api.routing.NetworkElementCommand;
 
-public interface AccountDetailsDao extends GenericDao<AccountDetailVO, Long> {
-    Map<String, String> findDetails(long accountId);
+public class ManageServiceCommand extends NetworkElementCommand {
 
-    void persist(long accountId, Map<String, String> details);
+    String serviceName;
+    String action;
 
-    AccountDetailVO findDetail(long accountId, String name);
+    @Override
+    public boolean executeInSequence() {
+        return true;
+    }
 
-    void deleteDetails(long accountId);
+    protected ManageServiceCommand() {
+    }
 
-    /*
-     * For these existing entries, they will get updated. For these new entries,
-     * they will get created
-     */
-    void update(long accountId, Map<String, String> details);
+    public ManageServiceCommand(String serviceName, String action) {
+        this.serviceName = serviceName;
+        this.action = action;
+    }
 
-    String getActualValue(AccountDetailVO accountDetailVO);
+    public String getServiceName() {
+        return serviceName;
+    }
+
+    public String getAction() {
+        return action;
+    }
 }
