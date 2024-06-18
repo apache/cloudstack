@@ -204,6 +204,20 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
         return false;
     }
 
+    @Override
+    public boolean stopKeepAlivedOnRouter(VirtualRouter router,
+            Network network) throws ConcurrentOperationException, ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean startKeepAlivedOnRouter(VirtualRouter router,
+            Network network) throws ConcurrentOperationException, ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.network.router.VpcVirtualNetworkApplianceManager#destroyPrivateGateway(com.cloud.network.vpc.PrivateGateway, com.cloud.network.router.VirtualRouter)
      */
