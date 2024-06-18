@@ -1986,7 +1986,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     private Volume changeDiskOfferingForVolumeInternal(VolumeVO volume, Long newDiskOfferingId, Long newSize, Long newMinIops, Long newMaxIops, boolean autoMigrateVolume, boolean shrinkOk) throws ResourceAllocationException {
-        DiskOfferingVO existingDiskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
+        long existingDiskOfferingId = volume.getDiskOfferingId();
+        DiskOfferingVO existingDiskOffering = _diskOfferingDao.findByIdIncludingRemoved(existingDiskOfferingId);
         DiskOfferingVO newDiskOffering = _diskOfferingDao.findById(newDiskOfferingId);
         Integer newHypervisorSnapshotReserve = null;
 
@@ -1998,6 +1999,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         Long[] updateNewMinIops = {newMinIops};
         Long[] updateNewMaxIops = {newMaxIops};
         Integer[] updateNewHypervisorSnapshotReserve = {newHypervisorSnapshotReserve};
+        volService.validateChangeDiskOfferingEncryptionType(existingDiskOfferingId, newDiskOfferingId);
         validateVolumeResizeWithNewDiskOfferingAndLoad(volume, existingDiskOffering, newDiskOffering, updateNewSize, updateNewMinIops, updateNewMaxIops, updateNewHypervisorSnapshotReserve);
         newSize = updateNewSize[0];
         newMinIops = updateNewMinIops[0];
