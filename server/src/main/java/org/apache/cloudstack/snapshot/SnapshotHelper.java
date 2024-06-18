@@ -101,7 +101,7 @@ public class SnapshotHelper {
             return;
         }
 
-        if (!snapInfo.getDataStore().getRole().equals(DataStoreRole.Image)) {
+        if (!DataStoreRole.Image.equals(snapInfo.getDataStore().getRole())) {
             logger.debug(String.format("Expunge template for Snapshot [%s] is called for primary storage role. Not expunging it, " +
                     "but we will still expunge the database reference of the snapshot for image storage role if any", snapInfo.getId()));
         } else {
