@@ -49,6 +49,9 @@ public class CreateNetworkCmdByAdmin extends CreateNetworkCmd implements AdminCm
             validations = {ApiArgValidator.NotNullOrEmpty})
     private String routerIpv6;
 
+    @Parameter(name=ApiConstants.AS_NUMBER, type=CommandType.LONG, description="the AS Number of the network")
+    private Long asNumber;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -77,5 +80,9 @@ public class CreateNetworkCmdByAdmin extends CreateNetworkCmd implements AdminCm
 
     public String getRouterIpv6() {
         return routerIpv6;
+    }
+
+    public Long getAsNumber() {
+        return asNumber;
     }
 }

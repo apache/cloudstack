@@ -34,7 +34,7 @@ export default {
     fields.push('order')
     return fields
   },
-  details: ['name', 'id', 'allocationstate', 'type', 'networktype', 'guestcidraddress', 'localstorageenabled', 'securitygroupsenabled', 'dns1', 'dns2', 'internaldns1', 'internaldns2'],
+  details: ['name', 'id', 'allocationstate', 'type', 'networktype', 'guestcidraddress', 'localstorageenabled', 'securitygroupsenabled', 'dns1', 'dns2', 'internaldns1', 'internaldns2', 'asnrange'],
   related: [{
     name: 'pod',
     title: 'label.pods',
@@ -255,6 +255,30 @@ export default {
           value: (record) => { return record.id }
         }
       }
+    },
+    {
+      api: 'createASNRange',
+      icon: 'plus-outlined',
+      label: 'label.create.asnrange',
+      message: 'label.create.asnrange',
+      dataView: true,
+      args: ['startasn', 'endasn', 'zoneid'],
+      mapping: {
+        zoneid: {
+          value: (record) => { return record.id }
+        }
+      },
+      show: (record) => { return record.networktype === 'Advanced' }
+    },
+    {
+      api: 'deleteASNRange',
+      icon: 'minus-outlined',
+      label: 'label.delete.asnrange',
+      message: 'label.delete.asnrange',
+      dataView: true,
+      show: (record) => { return record.networktype === 'Advanced' },
+      popup: true,
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/DeleteASNRangeForm.vue')))
     },
     {
       api: 'deleteZone',

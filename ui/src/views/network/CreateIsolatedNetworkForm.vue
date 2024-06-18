@@ -97,6 +97,25 @@
               </a-select-option>
             </a-select>
           </a-form-item>
+          <a-form-item ref="asnumber" name="asnumber" v-if="isASNumberRequired()">
+            <template #label>
+              <tooltip-label :title="$t('label.asnumber')" :tooltip="apiParams.asnumber.description"/>
+            </template>
+            <a-select
+             v-model:value="form.asnumber"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              :loading="asNumberLoading"
+              :placeholder="apiParams.asnumber.description"
+              @change="val => { handleASNumberChange(val) }">
+              <a-select-option v-for="(opt, optIndex) in asNumbersZone" :key="optIndex" :label="opt.asnumber">
+                {{ opt.asnumber }}
+              </a-select-option>
+            </a-select>
+          </a-form-item>
           <a-row :gutter="12" v-if="setMTU">
             <a-col :md="12" :lg="12">
               <a-form-item
@@ -334,7 +353,10 @@ export default {
       minMTU: 68,
       errorPublicMtu: '',
       errorPrivateMtu: '',
-      setMTU: false
+      setMTU: false,
+      asNumberLoading: false,
+      selectedAsNumber: 0,
+      asNumbersZone: []
     }
   },
   watch: {
@@ -390,6 +412,9 @@ export default {
     isAdminOrDomainAdmin () {
       return isAdminOrDomainAdmin()
     },
+    isASNumberRequired () {
+      return !this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyasnumber && this.selectedNetworkOffering.routingmode && this.selectedNetworkOffering.routingmode.toLowerCase() === 'dynamic'
+    },
     isObjectEmpty (obj) {
       return !(obj !== null && obj !== undefined && Object.keys(obj).length > 0 && obj.constructor === Object)
     },
@@ -427,6 +452,21 @@ export default {
       this.privateMtuMax = zone?.routerprivateinterfacemaxmtu || 1500
       this.publicMtuMax = zone?.routerpublicinterfacemaxmtu || 1500
       this.updateVPCCheckAndFetchNetworkOfferingData()
+      if (this.isAdminOrDomainAdmin()) {
+        this.fetchZoneASNumbers()
+      }
+    },
+    fetchZoneASNumbers () {
+      const params = {}
+      params.zoneid = this.selectedZone.id
+      params.isallocated = false
+      api('listASNumbers', params).then(json => {
+        this.asNumbersZone = json.listasnumbersresponse.asnumber
+      })
+    },
+    handleASNumberChange (selectedIndex) {
+      this.selectedAsNumber = this.asNumbersZone[selectedIndex].asnumber
+      this.form.asnumber = this.selectedAsNumber
     },
     fetchOwnerOptions (OwnerOptions) {
       this.owner = {
@@ -537,7 +577,6 @@ export default {
       this.formRef.value.validate().then(() => {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
-        console.log(values)
         this.actionLoading = true
         var params = {
           zoneId: this.selectedZone.id,
@@ -567,6 +606,10 @@ export default {
         } else if (this.owner.projectid) {
           params.domainid = this.owner.domainid
           params.projectid = this.owner.projectid
+        }
+
+        if ('asnumber' in values && this.isASNumberRequired()) {
+          params.asnumber = values.asnumber
         }
 
         api('createNetwork', params).then(json => {

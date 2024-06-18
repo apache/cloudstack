@@ -289,4 +289,6 @@
   <bean id="ClusterDrsPlanDetailsDaoImpl" class="org.apache.cloudstack.cluster.dao.ClusterDrsPlanMigrationDaoImpl" />
   <bean id="objectStoreDetailsDaoImpl" class="org.apache.cloudstack.storage.datastore.db.ObjectStoreDetailsDaoImpl" />
   <bean id="bucketStatisticsDaoImpl" class="com.cloud.usage.dao.BucketStatisticsDaoImpl" />
+  <bean id="ASNumberDaoImpl" class="com.cloud.dc.dao.ASNumberDaoImpl" />
+  <bean id="ASNumberRangeDaoImpl" class="com.cloud.dc.dao.ASNumberRangeDaoImpl" />
 </beans>

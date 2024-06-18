@@ -63,6 +63,8 @@ SELECT
     `network_offerings`.`for_nsx` AS `for_nsx`,
     `network_offerings`.`nsx_mode` AS `nsx_mode`,
     `network_offerings`.`service_package_id` AS `service_package_id`,
+    `network_offerings`.`routing_mode` AS `routing_mode`,
+    `network_offerings`.`specify_as_number` AS `specify_as_number`,
     GROUP_CONCAT(DISTINCT(domain.id)) AS domain_id,
     GROUP_CONCAT(DISTINCT(domain.uuid)) AS domain_uuid,
     GROUP_CONCAT(DISTINCT(domain.name)) AS domain_name,

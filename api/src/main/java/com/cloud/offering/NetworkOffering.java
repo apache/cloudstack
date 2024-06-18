@@ -48,6 +48,10 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
         ROUTED
     }
 
+    enum RoutingMode {
+        Static, Dynamic
+    }
+
     public final static String SystemPublicNetwork = "System-Public-Network";
     public final static String SystemControlNetwork = "System-Control-Network";
     public final static String SystemManagementNetwork = "System-Management-Network";
@@ -165,4 +169,8 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     String getServicePackage();
 
     Date getCreated();
+
+    RoutingMode getRoutingMode();
+
+    Boolean isSpecifyAsNumber();
 }

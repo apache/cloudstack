@@ -447,9 +447,10 @@ public class ConfigurationManagerImplTest {
         when(createNetworkOfferingCmd.getGuestIpType()).thenReturn(Network.GuestType.Isolated.name());
         when(createNetworkOfferingCmd.getAvailability()).thenReturn(NetworkOffering.Availability.Optional.name());
         lenient().when(configurationManagerImplSpy.createNetworkOffering(anyString(), anyString(), any(Networks.TrafficType.class), anyString(),
-                        anyBoolean(), any(NetworkOffering.Availability.class), anyInt(), anyMap(), anyBoolean(), any(Network.GuestType.class),
-                        anyBoolean(), anyLong(), anyBoolean(), anyMap(), anyBoolean(), anyBoolean(), anyMap(), anyBoolean(), anyInt(),
-                        anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(), anyString(), anyList(), anyList(), anyBoolean(), any(NetUtils.InternetProtocol.class)))
+                anyBoolean(), any(NetworkOffering.Availability.class), anyInt(), anyMap(), anyBoolean(), any(Network.GuestType.class),
+                anyBoolean(), anyLong(), anyBoolean(), anyMap(), anyBoolean(), anyBoolean(), anyMap(), anyBoolean(), anyInt(),
+                anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(), anyString(), anyList(), anyList(), anyBoolean(), any(NetUtils.InternetProtocol.class),
+                any(NetworkOffering.RoutingMode.class), anyBoolean()))
                 .thenReturn(offeringVO);
         when(configDao.getValue(anyString())).thenReturn("1000");
         lenient().when(networkOfferingDao.persist(any(NetworkOfferingVO.class), anyMap())).thenReturn(offeringVO);

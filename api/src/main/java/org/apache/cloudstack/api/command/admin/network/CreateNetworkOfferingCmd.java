@@ -211,6 +211,15 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
             since = "4.16")
     private Boolean enable;
 
+    @Parameter(name = ApiConstants.SPECIFY_AS_NUMBER, type = CommandType.BOOLEAN,
+            description = "true if network offering supports choosing AS number")
+    private Boolean specifyAsNumber;
+
+    @Parameter(name = ApiConstants.ROUTING_MODE,
+            type = CommandType.STRING,
+            description = "the routing mode for the network offering. Supported types are: Static or Dynamic.")
+    private String routingMode;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -460,6 +469,14 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
             return enable;
         }
         return false;
+    }
+
+    public boolean getSpecifyAsNumber() {
+        return BooleanUtils.toBoolean(specifyAsNumber);
+    }
+
+    public String getRoutingMode() {
+        return routingMode;
     }
 
     /////////////////////////////////////////////////////

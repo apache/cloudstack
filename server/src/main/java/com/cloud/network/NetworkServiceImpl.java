@@ -41,7 +41,9 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.ASNumberVO;
 import com.cloud.dc.VlanDetailsVO;
+import com.cloud.dc.dao.ASNumberDao;
 import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.dao.PublicIpQuarantineDao;
@@ -86,6 +88,7 @@ import org.apache.cloudstack.network.dao.NetworkPermissionDao;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -415,6 +418,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     NsxProviderDao nsxProviderDao;
     @Inject
     private VirtualRouterProviderDao virtualRouterProviderDao;
+    @Inject
+    private ASNumberDao asNumberDao;
     List<InternalLoadBalancerElementService> internalLoadBalancerElementServices = new ArrayList<>();
     Map<String, InternalLoadBalancerElementService> internalLoadBalancerElementServiceMap = new HashMap<>();
 
@@ -1452,6 +1457,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         boolean hideIpAddressUsage = adminCalledUs && ((CreateNetworkCmdByAdmin)cmd).getHideIpAddressUsage();
         String routerIPv4 = adminCalledUs ? ((CreateNetworkCmdByAdmin)cmd).getRouterIp() : null;
         String routerIPv6 = adminCalledUs ? ((CreateNetworkCmdByAdmin)cmd).getRouterIpv6() : null;
+        Long asNumber = adminCalledUs ? ((CreateNetworkCmdByAdmin)cmd).getAsNumber() : null;
 
         String name = cmd.getNetworkName();
         String displayText = cmd.getDisplayText();
@@ -1655,6 +1661,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             throw new InvalidParameterValueException("Only ROOT admin is allowed to specify vlanId or bypass vlan overlap check");
         }
 
+        // Check AS number if provided
+        ASNumberVO asNumberVO = checkAndSelectASNumber(asNumber, zone, ntwkOff);
+
         if (ipv4) {
             // For non-root admins check cidr limit - if it's allowed by global config value
             if (!_accountMgr.isRootAdmin(caller.getId()) && cidr != null) {
@@ -1742,11 +1751,51 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             ipv6Service.assignIpv6SubnetToNetwork(ip6Cidr, network.getId());
         }
 
+        if (asNumberVO != null) {
+            allocateASNumber(asNumberVO, network);
+        }
+
         // if the network offering has persistent set to true, implement the network
         if (ntwkOff.isPersistent()) {
             return implementedNetworkInCreation(caller, zone, network);
         }
         return network;
+    }
+
+    protected ASNumberVO checkAndSelectASNumber(Long asNumber, DataCenter zone, NetworkOffering networkOffering) {
+        if (NetworkOffering.RoutingMode.Dynamic != networkOffering.getRoutingMode()) {
+            return null;
+        }
+        return BooleanUtils.toBoolean(networkOffering.isSpecifyAsNumber()) ?
+                validateASNumber(asNumber) :
+                asNumberDao.findOneByAllocationStateAndZone(zone.getId(), false);
+    }
+
+    protected ASNumberVO validateASNumber(Long asNumber) {
+        if (asNumber == null) {
+            return null;
+        }
+        ASNumberVO asNumberVO = asNumberDao.findByAsNumber(asNumber);
+        if (asNumberVO == null || asNumberVO.isAllocated()) {
+            String msg = String.format("The AS Number %s is already allocated, please select a free AS Number", asNumber);
+            logger.error(msg);
+            throw new InvalidParameterValueException(msg);
+        }
+        return asNumberVO;
+    }
+
+    protected void allocateASNumber(ASNumberVO asNumber, Network network) {
+        if (asNumber == null) {
+            return;
+        }
+        logger.debug(String.format("Allocating the AS Number %s to network %s on zone %s", asNumber.getAsNumber(),
+                network.getName(), asNumber.getDataCenterId()));
+        asNumber.setAllocated(true);
+        asNumber.setAllocatedTime(new Date());
+        asNumber.setNetworkId(network.getId());
+        asNumber.setAccountId(network.getAccountId());
+        asNumber.setDomainId(network.getDomainId());
+        asNumberDao.update(asNumber.getId(), asNumber);
     }
 
     private void validateNetworkCreationSupported(long zoneId, String zoneName, GuestType guestType) {

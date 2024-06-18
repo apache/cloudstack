@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.cloud.dc.ASNumber;
+import com.cloud.dc.ASNumberRange;
 import org.apache.cloudstack.storage.object.Bucket;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -31,6 +33,8 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerResponse;
+import org.apache.cloudstack.api.response.ASNRangeResponse;
+import org.apache.cloudstack.api.response.ASNumberResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
@@ -549,4 +553,8 @@ public interface ResponseGenerator {
     ObjectStoreResponse createObjectStoreResponse(ObjectStore os);
 
     BucketResponse createBucketResponse(Bucket bucket);
+
+    ASNRangeResponse createASNumberRangeResponse(ASNumberRange asnRange);
+
+    ASNumberResponse createASNumberResponse(ASNumber asn);
 }

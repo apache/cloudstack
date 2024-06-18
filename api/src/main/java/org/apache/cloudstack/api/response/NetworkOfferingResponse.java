@@ -159,6 +159,14 @@ public class NetworkOfferingResponse extends BaseResponseWithAnnotations {
     @Param(description = "the internet protocol of the network offering")
     private String internetProtocol;
 
+    @SerializedName(ApiConstants.SPECIFY_AS_NUMBER)
+    @Param(description = "true if network offering supports choosing AS numbers")
+    private Boolean specifyAsNumber;
+
+    @SerializedName(ApiConstants.ROUTING_MODE)
+    @Param(description = "the routing mode for the network offering, supported types are Static or Dynamic.")
+    private String routingMode;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -305,5 +313,21 @@ public class NetworkOfferingResponse extends BaseResponseWithAnnotations {
 
     public void setInternetProtocol(String internetProtocol) {
         this.internetProtocol = internetProtocol;
+    }
+
+    public Boolean getSpecifyAsNumber() {
+        return specifyAsNumber;
+    }
+
+    public void setSpecifyAsNumber(Boolean specifyAsNumber) {
+        this.specifyAsNumber = specifyAsNumber;
+    }
+
+    public String getRoutingMode() {
+        return routingMode;
+    }
+
+    public void setRoutingMode(String routingMode) {
+        this.routingMode = routingMode;
     }
 }
