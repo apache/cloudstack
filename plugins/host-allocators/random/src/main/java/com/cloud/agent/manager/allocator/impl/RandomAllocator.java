@@ -121,7 +121,7 @@ public class RandomAllocator extends AdapterBase implements HostAllocator {
                 hostsCopy = _hostDao.listAllHostsThatHaveNoRuleTag(type, clusterId, podId, dcId);
             }
         }
-        hostsCopy = ListUtils.union(hostsCopy, _hostDao.findHostsWithTagRuleThatMatchComputeOferringTags(offeringHostTag));
+        hostsCopy = ListUtils.union(hostsCopy, _hostDao.findHostsWithTagRuleThatMatchComputeOfferingTags(hostTag));
 
         if (hostsCopy.isEmpty()) {
             logger.error(String.format("No suitable host found for vm [%s] with tags [%s].", vmProfile, hostTag));
