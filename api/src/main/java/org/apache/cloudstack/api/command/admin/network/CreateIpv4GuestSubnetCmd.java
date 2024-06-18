@@ -26,6 +26,8 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DataCenterIpv4SubnetResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.datacenter.DataCenterIpv4GuestSubnet;
 
@@ -63,6 +65,15 @@ public class CreateIpv4GuestSubnetCmd extends BaseAsyncCmd {
             description = "The CIDR of the IPv4 subnet.")
     private String subnet;
 
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "account who will own the IPv4 subnet")
+    private String accountName;
+
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "project who will own the IPv4 subnet")
+    private Long projectId;
+
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "domain ID of the account owning the IPv4 subnet")
+    private Long domainId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -76,9 +87,21 @@ public class CreateIpv4GuestSubnetCmd extends BaseAsyncCmd {
         return subnet;
     }
 
+    public String getAccountName() {
+        return accountName;
+    }
+
+    public Long getProjectId() {
+        return projectId;
+    }
+
+    public Long getDomainId() {
+        return domainId;
+    }
+
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_GUEST_IP6_PREFIX_CREATE;
+        return EventTypes.EVENT_ZONE_IP4_SUBNET_CREATE;
     }
 
     @Override

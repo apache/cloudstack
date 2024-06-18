@@ -49,6 +49,26 @@ public class DataCenterIpv4SubnetResponse extends BaseResponse {
     @Param(description = "date when this IPv4 subnet was created." )
     private Date created;
 
+    @SerializedName(ApiConstants.ACCOUNT)
+    @Param(description = "the account of the IPv4 subnet")
+    private String accountName;
+
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    @Param(description = "the domain ID of the IPv4 subnet")
+    private String domainId;
+
+    @SerializedName(ApiConstants.DOMAIN)
+    @Param(description = "the domain name of the IPv4 subnet")
+    private String domainName;
+
+    @SerializedName(ApiConstants.PROJECT_ID)
+    @Param(description = "the project id of the IPv4 subnet")
+    private String projectId;
+
+    @SerializedName(ApiConstants.PROJECT)
+    @Param(description = "the project name of the IPv4 subnet")
+    private String projectName;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -67,5 +87,25 @@ public class DataCenterIpv4SubnetResponse extends BaseResponse {
 
     public void setCreated(Date created) {
         this.created = created;
+    }
+
+    public void setAccountName(String accountName) {
+        this.accountName = accountName;
+    }
+
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
+    }
+
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
+    }
+
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
+    }
+
+    public void setDomainName(String domainName) {
+        this.domainName = domainName;
     }
 }

@@ -157,12 +157,14 @@ CREATE TABLE `cloud`.`dc_ip4_guest_subnets` (
    `uuid` varchar(40) DEFAULT NULL,
    `data_center_id` bigint(20) unsigned NOT NULL COMMENT 'zone it belongs to',
    `subnet` varchar(255) NOT NULL COMMENT 'subnet of the ip4 network',
-   `domain_id` bigint unsigned NOT NULL COMMENT 'domain the subnet belongs to',
-   `account_id` bigint unsigned NOT NULL COMMENT 'owner of this subnet',
+   `domain_id` bigint unsigned DEFAULT NULL COMMENT 'domain the subnet belongs to',
+   `account_id` bigint unsigned DEFAULT NULL COMMENT 'owner of this subnet',
    `created` datetime default NULL,
    `removed` datetime default NULL,
    PRIMARY KEY (`id`),
    CONSTRAINT `fk_dc_ip4_guest_subnets__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`),
+   CONSTRAINT `fk_dc_ip4_guest_subnets__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`),
+   CONSTRAINT `fk_dc_ip4_guest_subnets__account_id` FOREIGN KEY (`account_id`) REFERENCES `account`(`id`),
    CONSTRAINT `uc_dc_ip4_guest_subnets__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

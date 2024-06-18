@@ -19,6 +19,7 @@ package org.apache.cloudstack.network;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.dc.DataCenter;
+import com.cloud.domain.Domain;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -38,6 +39,7 @@ import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
+import com.cloud.projects.Project;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.Pair;
@@ -123,6 +125,8 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         cmdList.add(DeleteIpv4GuestSubnetCmd.class);
         cmdList.add(ListIpv4GuestSubnetsCmd.class);
         cmdList.add(UpdateIpv4GuestSubnetCmd.class);
+        cmdList.add(DedicateIpv4GuestSubnetCmd.class);
+        cmdList.add(ReleaseDedicatedIpv4GuestSubnetCmd.class);
         cmdList.add(CreateIpv4SubnetForGuestNetworkCmd.class);
         cmdList.add(ListIpv4SubnetsForGuestNetworkCmd.class);
         cmdList.add(DeleteIpv4SubnetForGuestNetworkCmd.class);
@@ -147,7 +151,26 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
             }
         }
 
+        Long domainId = cmd.getDomainId();
+        final Long projectId = cmd.getProjectId();
+        final String accountName = cmd.getAccountName();
+
+        Long accountId = null;
+        if (accountName != null || projectId != null) {
+            accountId = accountManager.finalyzeAccountId(accountName, domainId, projectId, false);
+        }
+        if (accountId != null) {
+            Account account = accountManager.getAccount(accountId);
+            domainId = account.getDomainId();
+        }
+
         DataCenterIpv4GuestSubnetVO subnetVO = new DataCenterIpv4GuestSubnetVO(zoneId, subnet);
+        if (domainId != null) {
+            subnetVO.setDomainId(domainId);
+        }
+        if (accountId != null) {
+            subnetVO.setAccountId(accountId);
+        }
         subnetVO = dataCenterIpv4GuestSubnetDao.persist(subnetVO);
         return subnetVO;
     }
@@ -163,6 +186,28 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         if (zone != null) {
             response.setZoneId(zone.getUuid());
             response.setZoneName(zone.getName());
+        }
+
+        if (subnet.getDomainId() != null) {
+            Domain domain = ApiDBUtils.findDomainById(subnet.getDomainId());
+            if (domain != null) {
+                response.setDomainId(domain.getUuid());
+                response.setDomainName(domain.getName());
+            }
+        }
+
+        if (subnet.getAccountId() != null) {
+            Account account = ApiDBUtils.findAccountById(subnet.getAccountId());
+            if (account != null) {
+                if (account.getType() == Account.Type.PROJECT) {
+                    // find the project
+                    Project project = ApiDBUtils.findProjectByProjectAccountId(account.getId());
+                    response.setProjectId(project.getUuid());
+                    response.setProjectName(project.getName());
+                } else {
+                    response.setAccountName(account.getAccountName());
+                }
+            }
         }
 
         return response;
@@ -187,15 +232,28 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     public DataCenterIpv4GuestSubnet updateDataCenterIpv4GuestSubnet(UpdateIpv4GuestSubnetCmd cmd) {
         Long subnetId = cmd.getId();
         String newSubnet = cmd.getSubnet();
+        DataCenterIpv4GuestSubnetVO subnetVO = dataCenterIpv4GuestSubnetDao.findById(subnetId);
+        if (subnetVO == null) {
+            throw new InvalidParameterValueException(String.format("Invalid subnet ID: %s", subnetId));
+        }
+
         if (!NetUtils.isValidIp4Cidr(newSubnet)) {
             throw new InvalidParameterValueException(String.format("Invalid IPv4 cidr: %s", newSubnet));
         }
 
+        // check conflicts
+        List<DataCenterIpv4GuestSubnetVO> existingSubnets = dataCenterIpv4GuestSubnetDao.listByDataCenterId(subnetVO.getDataCenterId());
+        for (DataCenterIpv4GuestSubnetVO existing : existingSubnets) {
+            if (existing.getId() != subnetId && NetUtils.isNetworksOverlap(existing.getSubnet(), newSubnet)) {
+                throw new InvalidParameterValueException(String.format("Existing subnet %s has overlap with: %s", existing.getSubnet(), newSubnet));
+            }
+        }
+
         // check if subnet can be updated
-        List<Ipv4GuestSubnetNetworkMapVO> createdSubnets = ipv4GuestSubnetNetworkMapDao.listByParent(subnetId);
-        for (Ipv4GuestSubnetNetworkMap created : createdSubnets) {
-            if (!NetUtils.isNetworkAWithinNetworkB(created.getSubnet(), newSubnet)) {
-                throw new InvalidParameterValueException(String.format("Created subnet %s is not within new cidr: %s", created.getSubnet(), newSubnet));
+        List<Ipv4GuestSubnetNetworkMapVO> usedSubnets = ipv4GuestSubnetNetworkMapDao.listByParent(subnetId);
+        for (Ipv4GuestSubnetNetworkMap used : usedSubnets) {
+            if (!NetUtils.isNetworkAWithinNetworkB(used.getSubnet(), newSubnet)) {
+                throw new InvalidParameterValueException(String.format("Used subnet for guest network %s is not within new cidr: %s", used.getSubnet(), newSubnet));
             }
         }
 
