@@ -1162,16 +1162,15 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (pool == null) {
             throw new IllegalArgumentException("Unable to find storage pool with ID: " + poolId);
         }
-        if (!pool.getStatus().equals(StoragePoolStatus.Disabled)) {
-            throw new InvalidParameterValueException("Scope change of Storage pool is only allowed in Disabled state");
-        }
+
         ListResponse<VirtualMachineResponse> response = new ListResponse<>();
+        List<VirtualMachineResponse> responsesList = new ArrayList<>();
         if (pool.getScope() != ScopeType.ZONE) {
-            throw new InvalidParameterValueException("The current scope of the storage pool should be Zone-wide");
+            response.setResponses(responsesList, 0);
+            return response;
         }
 
         Pair<List<VMInstanceVO>, Integer> vms = _vmInstanceDao.listByVmsNotInClusterUsingPool(cmd.getClusterIdForScopeChange(), poolId);
-        List<VirtualMachineResponse> responsesList = new ArrayList<>();
         for (VMInstanceVO vm : vms.first()) {
             VirtualMachineResponse resp = new VirtualMachineResponse();
             resp.setObjectName(VirtualMachine.class.getSimpleName().toLowerCase());

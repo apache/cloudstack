@@ -398,14 +398,10 @@ public class QueryManagerImplTest {
 
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
         Mockito.when(pool.getStatus()).thenReturn(StoragePoolStatus.Up);
-        Mockito.when(pool.getScope()).thenReturn(ScopeType.ZONE);
+        Mockito.when(pool.getScope()).thenReturn(ScopeType.CLUSTER);
         Mockito.when(storagePoolDao.findById(poolId)).thenReturn(pool);
-        try {
-            queryManager.listAffectedVmsForStorageScopeChange(cmd);
-            Assert.fail();
-        } catch (InvalidParameterValueException ex) {
-            Assert.assertEquals(ex.getMessage(), "Scope change of Storage pool is only allowed in Disabled state");
-        }
+        ListResponse<VirtualMachineResponse> response = queryManager.listAffectedVmsForStorageScopeChange(cmd);
+        Assert.assertEquals(response.getResponses().size(), 0);
 
         VMInstanceVO instance = Mockito.mock(VMInstanceVO.class);
         UserVmJoinVO userVM = Mockito.mock(UserVmJoinVO.class);
@@ -415,6 +411,7 @@ public class QueryManagerImplTest {
         ClusterVO cluster = Mockito.mock(ClusterVO.class);
 
         Mockito.when(pool.getStatus()).thenReturn(StoragePoolStatus.Disabled);
+        Mockito.when(pool.getScope()).thenReturn(ScopeType.ZONE);
         Mockito.when(instance.getUuid()).thenReturn(instanceUuid);
         Mockito.when(instance.getType()).thenReturn(VirtualMachine.Type.Instance);
         Mockito.when(instance.getHostId()).thenReturn(hostId);
@@ -426,7 +423,7 @@ public class QueryManagerImplTest {
         Mockito.when(host.getClusterId()).thenReturn(clusterId);
         Mockito.when(clusterDao.findById(clusterId)).thenReturn(cluster);
 
-        ListResponse<VirtualMachineResponse> response = queryManager.listAffectedVmsForStorageScopeChange(cmd);
+        response = queryManager.listAffectedVmsForStorageScopeChange(cmd);
         Assert.assertEquals(response.getResponses().get(0).getId(), instanceUuid);
         Assert.assertEquals(response.getResponses().get(0).getName(), vmName);
     }
