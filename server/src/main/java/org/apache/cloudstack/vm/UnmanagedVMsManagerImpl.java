@@ -2079,10 +2079,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 throw new InvalidParameterValueException("Username need to be provided.");
             }
 
-            HashMap<String, UnmanagedInstanceTO> instancesMap = getRemoteVms(zoneId, remoteUrl, cmd.getUsername(), cmd.getPassword());
+            HashMap<String, UnmanagedInstanceTO> instancesMap = getRemoteVmsOnKVMHost(zoneId, remoteUrl, cmd.getUsername(), cmd.getPassword());
             unmanagedInstanceTO = instancesMap.get(cmd.getName());
             if (unmanagedInstanceTO == null) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Vm with name: %s not found on remote host", instanceName));
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM with name: %s not found on remote host %s", instanceName, remoteUrl));
             }
         }
 
@@ -2479,11 +2479,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new InvalidParameterValueException("Please specify a valid zone.");
         }
         final String hypervisorType = cmd.getHypervisor();
-        if (Hypervisor.HypervisorType.KVM.toString().equalsIgnoreCase(hypervisorType)) {
-            if (StringUtils.isBlank(cmd.getUsername())) {
-                throw new InvalidParameterValueException("Username need to be provided.");
-            }
-        } else {
+        if (!Hypervisor.HypervisorType.KVM.toString().equalsIgnoreCase(hypervisorType)) {
             throw new InvalidParameterValueException(String.format("VM Import is currently not supported for hypervisor: %s", hypervisorType));
         }
 
@@ -2493,7 +2489,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
 
         List<UnmanagedInstanceResponse> responses = new ArrayList<>();
-        HashMap<String, UnmanagedInstanceTO> vmMap = getRemoteVms(zoneId, cmd.getHost(), cmd.getUsername(), cmd.getPassword());
+        HashMap<String, UnmanagedInstanceTO> vmMap = getRemoteVmsOnKVMHost(zoneId, cmd.getHost(), cmd.getUsername(), cmd.getPassword());
         for (String key : vmMap.keySet()) {
             UnmanagedInstanceTO instance = vmMap.get(key);
             if (StringUtils.isNotEmpty(keyword) &&
@@ -2508,17 +2504,17 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return listResponses;
     }
 
-    private HashMap<String, UnmanagedInstanceTO> getRemoteVms(long zoneId, String remoteUrl, String username, String password) {
+    private HashMap<String, UnmanagedInstanceTO> getRemoteVmsOnKVMHost(long zoneId, String remoteHostUrl, String username, String password) {
         //ToDo: add option to list one Vm by name
         List<HostVO> hosts = resourceManager.listAllUpAndEnabledHostsInOneZoneByHypervisor(Hypervisor.HypervisorType.KVM, zoneId);
         if(hosts.size() < 1) {
-            throw new CloudRuntimeException("No hosts available for Vm Import");
+            throw new CloudRuntimeException("No hosts available for VM import");
         }
         HostVO host = hosts.get(0);
-        GetRemoteVmsCommand getRemoteVmsCommand = new GetRemoteVmsCommand(remoteUrl, username, password);
+        GetRemoteVmsCommand getRemoteVmsCommand = new GetRemoteVmsCommand(remoteHostUrl, username, password);
         Answer answer = agentManager.easySend(host.getId(), getRemoteVmsCommand);
         if (!(answer instanceof GetRemoteVmsAnswer)) {
-            throw new CloudRuntimeException("Error while listing remote Vms");
+            throw new CloudRuntimeException("Failed to list VMs, due to: " + answer.getDetails());
         }
         GetRemoteVmsAnswer getRemoteVmsAnswer = (GetRemoteVmsAnswer) answer;
         return getRemoteVmsAnswer.getUnmanagedInstances();

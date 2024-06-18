@@ -162,7 +162,7 @@
         </a-form-item>
         <div
           v-if="form.protocol === 'nfs' || form.protocol === 'SMB' || form.protocol === 'iscsi' || form.protocol === 'vmfs'|| form.protocol === 'Gluster' || form.protocol === 'Linstor' ||
-            (form.protocol === 'PreSetup' && hypervisorType === 'VMware') || form.protocol === 'datastorecluster'">
+            (form.protocol === 'PreSetup' && hypervisorType === 'VMware') || form.protocol === 'datastorecluster' || form.provider === 'Linstor'">
           <a-form-item name="server" ref="server">
             <template #label>
               <tooltip-label :title="$t('label.server')" :tooltip="$t('message.server.description')"/>
@@ -376,7 +376,7 @@
             <a-input v-model:value="form.volume" :placeholder="$t('label.volume')"/>
           </a-form-item>
         </div>
-        <div v-if="form.protocol === 'Linstor'">
+        <div v-if="form.protocol === 'Linstor' || form.provider === 'Linstor'">
           <a-form-item name="capacityIops" ref="capacityIops">
             <template #label>
               <tooltip-label :title="$t('label.capacityiops')" :tooltip="apiParams.capacityiops.description"/>
@@ -852,13 +852,7 @@ export default {
           var lun = values.lun
           url = this.iscsiURL(server, iqn, lun)
         } else if (values.protocol === 'Linstor') {
-          url = this.linstorURL(server)
           params.provider = 'Linstor'
-          values.managed = false
-          params['details[0].resourceGroup'] = values.resourcegroup
-          if (values.capacityIops && values.capacityIops.length > 0) {
-            params.capacityIops = values.capacityIops.split(',').join('')
-          }
         } else if (values.protocol === 'Filesystem') {
           url = this.filesystemURL(values.host, path)
         } else if (values.provider === 'Primera') {
@@ -870,6 +864,16 @@ export default {
           params['details[0].api_password'] = values.flashArrayPassword
           url = values.flashArrayURL
         }
+
+        if (values.provider === 'Linstor') {
+          url = this.linstorURL(server)
+          values.managed = false
+          params['details[0].resourceGroup'] = values.resourcegroup
+          if (values.capacityIops && values.capacityIops.length > 0) {
+            params.capacityIops = values.capacityIops.split(',').join('')
+          }
+        }
+
         params.url = url
         if (values.provider !== 'DefaultPrimary' && values.provider !== 'PowerFlex') {
           if (values.managed) {
