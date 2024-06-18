@@ -261,7 +261,7 @@ export default {
               fields.push('domainid')
               fields.push('account')
             }
-            if (['Admin'].includes(store.userInfo.roletype) || store.getters.features.userpublictemplateenabled) {
+            if (['Admin'].includes(store.userInfo.roletype) || store.features.userpublictemplateenabled) {
               fields.push('ispublic')
             }
             if (['Admin'].includes(store.userInfo.roletype)) {
