@@ -37,7 +37,6 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.server.ResourceTag;
 import com.cloud.storage.BucketVO;
 import com.cloud.storage.ScopeType;
-import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.dao.BucketDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -397,7 +396,6 @@ public class QueryManagerImplTest {
         ReflectionTestUtils.setField(cmd, "storageId", poolId);
 
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
-        Mockito.when(pool.getStatus()).thenReturn(StoragePoolStatus.Up);
         Mockito.when(pool.getScope()).thenReturn(ScopeType.CLUSTER);
         Mockito.when(storagePoolDao.findById(poolId)).thenReturn(pool);
         ListResponse<VirtualMachineResponse> response = queryManager.listAffectedVmsForStorageScopeChange(cmd);
@@ -410,7 +408,6 @@ public class QueryManagerImplTest {
         HostVO host = Mockito.mock(HostVO.class);
         ClusterVO cluster = Mockito.mock(ClusterVO.class);
 
-        Mockito.when(pool.getStatus()).thenReturn(StoragePoolStatus.Disabled);
         Mockito.when(pool.getScope()).thenReturn(ScopeType.ZONE);
         Mockito.when(instance.getUuid()).thenReturn(instanceUuid);
         Mockito.when(instance.getType()).thenReturn(VirtualMachine.Type.Instance);
