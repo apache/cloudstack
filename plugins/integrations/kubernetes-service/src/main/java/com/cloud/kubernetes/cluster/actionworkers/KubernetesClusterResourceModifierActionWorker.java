@@ -567,7 +567,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         for (PortForwardingRuleVO pfRule : pfRules) {
             if (startPort <= pfRule.getSourcePortStart() && pfRule.getSourcePortStart() <= endPort) {
                 portForwardingRulesDao.remove(pfRule.getId());
-                logger.debug(String.format("The Port forwarding rule [%s] with the id [%s] was removed.", pfRule.getName(), pfRule.getId()));
+                logger.debug("The Port forwarding rule [{}] with the id [{}] was removed.", pfRule.getName(), pfRule.getId());
             }
         }
         rulesService.applyPortForwardingRules(publicIp.getId(), account);
@@ -579,7 +579,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         loadBalancerRules.stream().filter(lbRules -> lbRules.getNetworkId() == network.getId() && lbRules.getAccountId() == account.getId() && lbRules.getSourcePortStart() == CLUSTER_API_PORT
         && lbRules.getSourcePortEnd() == CLUSTER_API_PORT).forEach(lbRule -> {
             lbService.deleteLoadBalancerRule(lbRule.getId(), true);
-            logger.debug(String.format("The load balancing rule with the Id: %s was removed",lbRule.getId()));
+            logger.debug("The load balancing rule with the Id: {} was removed",lbRule.getId());
         });
     }
 
