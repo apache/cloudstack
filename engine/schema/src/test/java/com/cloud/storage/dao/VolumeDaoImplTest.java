@@ -26,16 +26,25 @@ import static org.powermock.api.mockito.PowerMockito.when;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.apache.commons.collections.CollectionUtils;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import com.cloud.storage.VolumeVO;
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
 @RunWith(PowerMockRunner.class)
@@ -48,6 +57,7 @@ public class VolumeDaoImplTest {
     @Mock
     private TransactionLegacy transactionMock;
 
+    @Spy
     private final VolumeDaoImpl volumeDao = new VolumeDaoImpl();
 
     @Test
@@ -94,4 +104,34 @@ public class VolumeDaoImplTest {
         verify(preparedStatementMock, times(2)).setLong(anyInt(), anyLong());
         verify(preparedStatementMock, times(1)).executeQuery();
     }
+
+    @Test
+    public void testSearchRemovedByVmsNoVms() {
+        Assert.assertTrue(CollectionUtils.isEmpty(volumeDao.searchRemovedByVms(
+                new ArrayList<>(), 100L)));
+        Assert.assertTrue(CollectionUtils.isEmpty(volumeDao.searchRemovedByVms(
+                null, 100L)));
+    }
+
+    @Test
+    public void testSearchRemovedByVms() {
+        SearchBuilder<VolumeVO> sb = Mockito.mock(SearchBuilder.class);
+        SearchCriteria<VolumeVO> sc = Mockito.mock(SearchCriteria.class);
+        Mockito.when(sb.create()).thenReturn(sc);
+        Mockito.doReturn(new ArrayList<>()).when(volumeDao).searchIncludingRemoved(
+                Mockito.any(SearchCriteria.class), Mockito.any(Filter.class), Mockito.eq(null),
+                Mockito.eq(false));
+        Mockito.when(volumeDao.createSearchBuilder()).thenReturn(sb);
+        final VolumeVO mockedVO = Mockito.mock(VolumeVO.class);
+        Mockito.when(sb.entity()).thenReturn(mockedVO);
+        List<Long> vmIds = List.of(1L, 2L);
+        Object[] array = vmIds.toArray();
+        Long batchSize = 50L;
+        volumeDao.searchRemovedByVms(List.of(1L, 2L), batchSize);
+        Mockito.verify(sc).setParameters("vmIds", array);
+        Mockito.verify(volumeDao, Mockito.times(1)).searchIncludingRemoved(
+                Mockito.any(SearchCriteria.class), Mockito.any(Filter.class), Mockito.eq(null),
+                Mockito.eq(false));
+    }
+
 }

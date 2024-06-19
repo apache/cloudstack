@@ -19,10 +19,7 @@
 
 package com.cloud.network.as.dao;
 
-import com.cloud.network.as.AutoScaleVmGroup;
-import com.cloud.network.as.AutoScaleVmGroupVO;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
+import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -34,7 +31,10 @@ import org.mockito.Spy;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.util.List;
+import com.cloud.network.as.AutoScaleVmGroup;
+import com.cloud.network.as.AutoScaleVmGroupVO;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 
 @RunWith(PowerMockRunner.class)
 public class AutoScaleVmGroupDaoImplTest {

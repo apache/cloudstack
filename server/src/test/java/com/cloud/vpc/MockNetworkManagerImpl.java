@@ -1060,4 +1060,8 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     @Override
     public void validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouter(final Long serviceOfferingId) {
     }
+
+    @Override
+    public void expungeLbVmRefs(List<Long> vmIds, Long batchSize) {
+    }
 }

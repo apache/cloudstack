@@ -29,4 +29,5 @@ public interface NicExtraDhcpOptionDao extends GenericDao<NicExtraDhcpOptionVO, 
      * @param extraDhcpOptions
      */
     void saveExtraDhcpOptions(List<NicExtraDhcpOptionVO> extraDhcpOptions);
+    int expungeByNicList(List<Long> nicIds, Long batchSize);
 }

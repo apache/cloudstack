@@ -91,4 +91,6 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
      * List all snapshots in 'snapshot_store_ref' with state 'Ready' by volume ID.
      */
     List<SnapshotDataStoreVO> listReadyByVolumeId(long volumeId);
+
+    int expungeBySnapshotList(List<Long> snapshotIds, Long batchSize);
 }

@@ -16,6 +16,15 @@
 // under the License.
 package com.cloud.storage.dao;
 
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,15 +40,6 @@ import com.cloud.storage.StoragePoolTagVO;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.doNothing;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 import junit.framework.TestCase;
 

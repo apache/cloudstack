@@ -1525,6 +1525,7 @@
 "label.publickey": "Public key",
 "label.publicnetwork": "Public network",
 "label.publicport": "Public port",
+"label.purgeresources": "Purge Resources",
 "label.purpose": "Purpose",
 "label.qostype": "QoS type",
 "label.quickview": "Quick view",
