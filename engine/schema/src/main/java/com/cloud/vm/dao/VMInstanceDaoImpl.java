@@ -318,6 +318,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         VmsNotInClusterUsingPool = createSearchBuilder();
         SearchBuilder<VolumeVO> volumeSearch = volumeDao.createSearchBuilder();
         volumeSearch.and("poolId", volumeSearch.entity().getPoolId(), Op.EQ);
+        volumeSearch.and("removed", volumeSearch.entity().getRemoved(), Op.NULL);
         VmsNotInClusterUsingPool.join("volumeSearch", volumeSearch, volumeSearch.entity().getInstanceId(), VmsNotInClusterUsingPool.entity().getId(), JoinType.INNER);
         SearchBuilder<HostVO> hostSearch2 = hostDao.createSearchBuilder();
         hostSearch2.and("clusterId", hostSearch2.entity().getClusterId(), SearchCriteria.Op.NEQ);
