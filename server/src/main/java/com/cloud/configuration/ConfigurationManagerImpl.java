@@ -1266,7 +1266,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
                 if (UnmanagedVMsManager.ThreadsOnMSToDownloadVMwareVMFiles.key().equalsIgnoreCase(name)) {
                     if (val > 10) {
-                        throw new InvalidParameterValueException("Please enter a value less than 10 for the configuration parameter:" + name);
+                        throw new InvalidParameterValueException("Please enter a value less than or equals to 10 for the configuration parameter:" + name);
                     }
                 }
 
@@ -1276,32 +1276,25 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     }
                 }
 
-        if (type.equals(Integer.class) && configValuesForValidation.contains(name)) {
-            try {
-                final int val = Integer.parseInt(value);
-                if (val <= 0) {
-                    throw new InvalidParameterValueException("Please enter a positive value for the configuration parameter:" + name);
-                }
-                if ("vm.password.length".equalsIgnoreCase(name) && val < 6) {
-                    throw new InvalidParameterValueException("Please enter a value greater than 5 for the configuration parameter:" + name);
-                }
-                if ("remote.access.vpn.psk.length".equalsIgnoreCase(name)) {
-                    if (val < 8) {
-                        throw new InvalidParameterValueException("Please enter a value greater than 7 for the configuration parameter:" + name);
+                if (configValuesForValidation.contains(name)) {
+                    if (val <= 0) {
+                        throw new InvalidParameterValueException("Please enter a positive value for the configuration parameter:" + name);
                     }
-                    if (val > 256) {
-                        throw new InvalidParameterValueException("Please enter a value less than 257 for the configuration parameter:" + name);
+                    if ("vm.password.length".equalsIgnoreCase(name) && val < 6) {
+                        throw new InvalidParameterValueException("Please enter a value greater than 5 for the configuration parameter:" + name);
                     }
-                }
-                if (VM_USERDATA_MAX_LENGTH_STRING.equalsIgnoreCase(name)) {
-                    if (val > 1048576) {
-                        throw new InvalidParameterValueException("Please enter a value less than 1048576 for the configuration parameter:" + name);
+                    if ("remote.access.vpn.psk.length".equalsIgnoreCase(name)) {
+                        if (val < 8) {
+                            throw new InvalidParameterValueException("Please enter a value greater than 7 for the configuration parameter:" + name);
+                        }
+                        if (val > 256) {
+                            throw new InvalidParameterValueException("Please enter a value less than 257 for the configuration parameter:" + name);
+                        }
                     }
-                }
-
-                if (UnmanagedVMsManager.ThreadsOnKVMHostToTransferVMwareVMFiles.key().equalsIgnoreCase(name)) {
-                    if (val >= 100) {
-                        throw new InvalidParameterValueException("Please enter a value less than 100 for the configuration parameter:" + name);
+                    if (UserDataManager.VM_USERDATA_MAX_LENGTH_STRING.equalsIgnoreCase(name)) {
+                        if (val > 1048576) {
+                            throw new InvalidParameterValueException("Please enter a value less than 1048576 for the configuration parameter:" + name);
+                        }
                     }
                 }
             } catch (final NumberFormatException e) {
