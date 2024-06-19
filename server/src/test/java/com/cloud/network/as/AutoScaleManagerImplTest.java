@@ -61,6 +61,7 @@ import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.userdata.UserDataManager;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -194,6 +195,9 @@ public class AutoScaleManagerImplTest {
 
     @Mock
     UserVmManager userVmMgr;
+
+    @Mock
+    UserDataManager userDataMgr;
 
     @Mock
     EntityManager entityManager;
@@ -412,7 +416,7 @@ public class AutoScaleManagerImplTest {
 
         userDataDetails.put("0", new HashMap<>() {{ put("key1", "value1"); put("key2", "value2"); }});
         Mockito.doReturn(userDataFinal).when(userVmMgr).finalizeUserData(any(), any(), any());
-        Mockito.doReturn(userDataFinal).when(userVmMgr).validateUserData(eq(userDataFinal), nullable(BaseCmd.HTTPMethod.class));
+        Mockito.doReturn(userDataFinal).when(userDataMgr).validateUserData(eq(userDataFinal), nullable(BaseCmd.HTTPMethod.class));
     }
 
     @After
@@ -767,7 +771,7 @@ public class AutoScaleManagerImplTest {
         Mockito.verify(autoScaleVmProfileDao).persist(Mockito.any());
 
         Mockito.verify(userVmMgr).finalizeUserData(any(), any(), any());
-        Mockito.verify(userVmMgr).validateUserData(eq(userDataFinal), nullable(BaseCmd.HTTPMethod.class));
+        Mockito.verify(userDataMgr).validateUserData(eq(userDataFinal), nullable(BaseCmd.HTTPMethod.class));
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -831,7 +835,7 @@ public class AutoScaleManagerImplTest {
         Mockito.verify(autoScaleVmProfileDao).persist(Mockito.any());
 
         Mockito.verify(userVmMgr).finalizeUserData(any(), any(), any());
-        Mockito.verify(userVmMgr).validateUserData(eq(userDataFinal), nullable(BaseCmd.HTTPMethod.class));
+        Mockito.verify(userDataMgr).validateUserData(eq(userDataFinal), nullable(BaseCmd.HTTPMethod.class));
     }
 
     @Test
