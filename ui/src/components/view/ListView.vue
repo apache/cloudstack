@@ -248,6 +248,11 @@
         </a>
         <span v-else>{{ text }}</span>
       </template>
+      <template v-if="column.key === 'subnet'">
+        <a href="javascript:;">
+          <router-link v-if="$route.path === '/ipv4subnets'" :to="{ path: '/ipv4subnets/' + record.id }">{{ text }}</router-link>
+        </a>
+      </template>
       <template v-if="column.key === 'hostname'">
         <router-link v-if="record.hostid" :to="{ path: '/host/' + record.hostid }">{{ text }}</router-link>
         <router-link v-else-if="record.hostname" :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>

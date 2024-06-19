@@ -1385,6 +1385,42 @@ export default {
         }
         return true
       }
+    },
+    {
+      name: 'ipv4subnets',
+      title: 'label.ipv4.subnets',
+      icon: 'pic-center-outlined',
+      permission: ['listIpv4SubnetsForGuestNetwork'],
+      columns: ['subnet', 'zonename', 'parentsubnet', 'networkname', 'created', 'allocatedtime'],
+      details: ['subnet', 'zonename', 'zoneid', 'parentsubnet', 'networkname', 'networkid', 'created', 'allocatedtime'],
+      searchFilters: ['zoneid'],
+      show: () => {
+        if (!store.getters.zones || store.getters.zones.length === 0) {
+          return false
+        }
+        return isAdmin()
+      },
+      actions: [
+        {
+          api: 'createIpv4SubnetForGuestNetwork',
+          icon: 'plus-outlined',
+          label: 'label.add.ipv4.subnet',
+          listView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/CreateIpv4SubnetForNetwork.vue')))
+        },
+        {
+          api: 'deleteIpv4SubnetForGuestNetwork',
+          icon: 'delete-outlined',
+          label: 'label.delete.ipv4.subnet',
+          message: 'message.action.delete.ipv4.subnet',
+          dataView: true,
+          disabled: (record, user) => { return (record.account !== user.userInfo.account && !['Admin', 'DomainAdmin'].includes(user.userInfo.roletype)) },
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+        }
+      ]
     }
   ]
 }

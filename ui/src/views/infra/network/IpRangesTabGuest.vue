@@ -48,10 +48,10 @@
           <div
             class="actions"
             style="text-align: right" >
-            <router-link :to="{ name: 'publicip', query: { vlanid: record.id }}" target="_blank">
+            <router-link :to="{ name: 'ipv4subnets', query: { parentid: record.id }}" target="_blank">
               <tooltip-button
                 tooltipPlacement="bottom"
-                :tooltip="$t('label.view') + ' ' + $t('label.public.ip.addresses')"
+                :tooltip="$t('label.view') + ' ' + $t('label.ipv4.subnets')"
                 icon="environment-outlined"/>
             </router-link>
             <tooltip-button
@@ -186,7 +186,7 @@
         class="form"
       >
         <a-form-item name="subnet" ref="subnet" :label="$t('label.subnet')" class="form__item">
-          <a-input v-model:value="ipv4SubnetForm.subnet" />
+          <a-input v-focus="true" v-model:value="ipv4SubnetForm.subnet" />
         </a-form-item>
         <div class="form__item">
           <div style="color: black;">{{ $t('label.set.reservation') }}</div>
@@ -242,7 +242,7 @@
       >
         <div>
           <a-form-item name="subnet" ref="subnet" :label="$t('label.subnet')" class="form__item">
-            <a-input v-model:value="formUpdateIpv4Subnet.subnet"></a-input>
+            <a-input v-focus="true" v-model:value="formUpdateIpv4Subnet.subnet"></a-input>
           </a-form-item>
         </div>
 

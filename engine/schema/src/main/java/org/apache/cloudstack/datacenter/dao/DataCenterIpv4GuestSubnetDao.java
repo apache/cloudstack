@@ -25,4 +25,6 @@ import java.util.List;
 public interface DataCenterIpv4GuestSubnetDao extends GenericDao<DataCenterIpv4GuestSubnetVO, Long> {
 
     List<DataCenterIpv4GuestSubnetVO> listByDataCenterId(long dcId);
+    List<DataCenterIpv4GuestSubnetVO> listByDataCenterIdAndAccountId(long dcId, long accountId);
+    List<DataCenterIpv4GuestSubnetVO> listByDataCenterIdAndDomainId(long dcId, long domainId);
 }

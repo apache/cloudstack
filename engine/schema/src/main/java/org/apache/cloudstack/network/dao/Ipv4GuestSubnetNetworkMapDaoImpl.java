@@ -55,6 +55,7 @@ public class Ipv4GuestSubnetNetworkMapDaoImpl extends GenericDaoBase<Ipv4GuestSu
         ParentStateSearch = createSearchBuilder();
         ParentStateSearch.and("parentId", ParentStateSearch.entity().getParentId(), SearchCriteria.Op.EQ);
         ParentStateSearch.and("state", ParentStateSearch.entity().getState(), SearchCriteria.Op.IN);
+        ParentStateSearch.and("subnet", ParentStateSearch.entity().getSubnet(), SearchCriteria.Op.LIKE);
         ParentStateSearch.done();
         ParentIdSearch = createSearchBuilder();
         ParentIdSearch.and("parentId", ParentIdSearch.entity().getParentId(), SearchCriteria.Op.EQ);
@@ -108,9 +109,10 @@ public class Ipv4GuestSubnetNetworkMapDaoImpl extends GenericDaoBase<Ipv4GuestSu
     }
 
     @Override
-    public Ipv4GuestSubnetNetworkMapVO findFirstAvailable(long parentId) {
+    public Ipv4GuestSubnetNetworkMapVO findFirstAvailable(long parentId, long cidrSize) {
         SearchCriteria<Ipv4GuestSubnetNetworkMapVO> sc = ParentStateSearch.create();
         sc.setParameters("parentId", parentId);
+        sc.setParameters("subnet", "%/" + cidrSize);
         sc.setParameters("state", (Object[]) new Ipv4GuestSubnetNetworkMap.State[]{Ipv4GuestSubnetNetworkMap.State.Free});
         Filter searchFilter = new Filter(Ipv4GuestSubnetNetworkMapVO.class, "id", true, null, 1L);
         List<Ipv4GuestSubnetNetworkMapVO> list = listBy(sc, searchFilter);

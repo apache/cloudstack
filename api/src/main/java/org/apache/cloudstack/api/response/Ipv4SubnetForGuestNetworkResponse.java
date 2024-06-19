@@ -37,6 +37,10 @@ public class Ipv4SubnetForGuestNetworkResponse extends BaseResponse {
     @Param(description = "id of the data center IPv4 subnet")
     private String parentId;
 
+    @SerializedName(ApiConstants.PARENT_SUBNET)
+    @Param(description = "subnet of the data center IPv4 subnet")
+    private String parentSubnet;
+
     @SerializedName(ApiConstants.SUBNET)
     @Param(description = "subnet of the IPv4 network")
     private String subnet;
@@ -75,6 +79,10 @@ public class Ipv4SubnetForGuestNetworkResponse extends BaseResponse {
 
     public void setParentId(String parentId) {
         this.parentId = parentId;
+    }
+
+    public void setParentSubnet(String parentSubnet) {
+        this.parentSubnet = parentSubnet;
     }
 
     public void setSubnet(String subnet) {

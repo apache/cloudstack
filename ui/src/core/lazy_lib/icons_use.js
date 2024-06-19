@@ -128,6 +128,7 @@ import {
   OrderedListOutlined,
   PaperClipOutlined,
   PauseCircleOutlined,
+  PicCenterOutlined,
   PictureOutlined,
   PieChartOutlined,
   PlayCircleOutlined,
@@ -293,6 +294,7 @@ export default {
     app.component('OrderedListOutlined', OrderedListOutlined)
     app.component('PaperClipOutlined', PaperClipOutlined)
     app.component('PauseCircleOutlined', PauseCircleOutlined)
+    app.component('PicCenterOutlined', PicCenterOutlined)
     app.component('PictureOutlined', PictureOutlined)
     app.component('PieChartOutlined', PieChartOutlined)
     app.component('PlayCircleOutlined', PlayCircleOutlined)
