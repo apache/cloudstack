@@ -335,9 +335,9 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         return vpnGateway;
     }
 
-    private static void validateVpnConnectionOfTheRightAccount(Site2SiteCustomerGateway customerGateway, Site2SiteVpnGateway vpnGateway) {
+    private void validateVpnConnectionOfTheRightAccount(Site2SiteCustomerGateway customerGateway, Site2SiteVpnGateway vpnGateway) {
         if (customerGateway.getAccountId() != vpnGateway.getAccountId() || customerGateway.getDomainId() != vpnGateway.getDomainId()) {
-            throw new InvalidParameterValueException("VPN connection can only be esitablished between same account's VPN gateway and customer gateway!");
+            throw new InvalidParameterValueException("VPN connection can only be established between same account's VPN gateway and customer gateway!");
         }
     }
 
