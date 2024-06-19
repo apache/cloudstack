@@ -99,8 +99,9 @@ public class CloudStackImageStoreDriverImpl extends NfsImageStoreDriverImpl {
         // Create Symlink at ssvm
         String path = installPath;
         String objectNameInUrl = createObjectNameForExtractUrl(path, format, dataObject);
+        String objectPathInUrl = UUID.randomUUID().toString();
         CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(((ImageStoreEntity)store).getMountPoint(),
-                                                                path, objectNameInUrl, dataObject == null ? null: dataObject.getTO());
+                                                                path, objectNameInUrl, objectPathInUrl, dataObject == null ? null: dataObject.getTO());
         Answer ans = null;
         if (ep == null) {
             String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
@@ -115,10 +116,10 @@ public class CloudStackImageStoreDriverImpl extends NfsImageStoreDriverImpl {
             throw new CloudRuntimeException(errorString);
         }
         // Construct actual URL locally now that the symlink exists at SSVM
-        return generateCopyUrl(ep.getPublicAddr(), objectNameInUrl);
+        return generateCopyUrl(ep.getPublicAddr(), objectNameInUrl, objectPathInUrl);
     }
 
-    private String generateCopyUrl(String ipAddress, String uuid) {
+    private String generateCopyUrl(String ipAddress, String fileName, String filePath) {
 
         String hostname = ipAddress;
         String scheme = "http";
@@ -141,7 +142,7 @@ public class CloudStackImageStoreDriverImpl extends NfsImageStoreDriverImpl {
             }
             scheme = "https";
         }
-        return scheme + "://" + hostname + "/userdata/" + uuid;
+        return scheme + "://" + hostname + "/userdata/" + filePath + "/" + fileName;
     }
 
     @Override
