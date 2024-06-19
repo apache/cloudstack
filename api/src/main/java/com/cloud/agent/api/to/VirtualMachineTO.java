@@ -30,8 +30,8 @@ public class VirtualMachineTO {
     private String name;
     private BootloaderType bootloader;
     private VirtualMachine.State state;
-    Type type;
-    int cpus;
+    private Type type;
+    private int cpus;
 
     /**
         'speed' is still here since 4.0.X/4.1.X management servers do not support
