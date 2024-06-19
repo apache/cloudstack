@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,19 +15,35 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.userdata;
+//
 
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
+package org.apache.cloudstack.agent.routing;
 
-import com.cloud.utils.component.Manager;
+import com.cloud.agent.api.routing.NetworkElementCommand;
 
-public interface UserDataManager extends Manager, Configurable {
-    String VM_USERDATA_MAX_LENGTH_STRING = "vm.userdata.max.length";
-    ConfigKey<Integer> VM_USERDATA_MAX_LENGTH = new ConfigKey<>("Advanced", Integer.class, VM_USERDATA_MAX_LENGTH_STRING, "32768",
-            "Max length of vm userdata after base64 encoding. Default is 32768 and maximum is 1048576", true);
+public class ManageServiceCommand extends NetworkElementCommand {
 
-    String concatenateUserData(String userdata1, String userdata2, String userdataProvider);
-    String validateUserData(String userData, BaseCmd.HTTPMethod httpmethod);
+    String serviceName;
+    String action;
+
+    @Override
+    public boolean executeInSequence() {
+        return true;
+    }
+
+    protected ManageServiceCommand() {
+    }
+
+    public ManageServiceCommand(String serviceName, String action) {
+        this.serviceName = serviceName;
+        this.action = action;
+    }
+
+    public String getServiceName() {
+        return serviceName;
+    }
+
+    public String getAction() {
+        return action;
+    }
 }
