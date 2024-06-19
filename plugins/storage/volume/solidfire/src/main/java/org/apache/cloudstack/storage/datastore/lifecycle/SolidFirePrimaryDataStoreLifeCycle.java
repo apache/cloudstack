@@ -392,7 +392,7 @@ public class SolidFirePrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLife
     public void changeStoragePoolScopeToZone(DataStore store, ClusterScope clusterScope, HypervisorType hypervisorType) {
         /*
          * We need to attach all VMware, Xenserver and KVM hosts in the zone.
-         * So pass hypervisorTpe as null.
+         * So pass hypervisorType as null.
          */
         super.changeStoragePoolScopeToZone(store, clusterScope, null);
     }

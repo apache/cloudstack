@@ -92,13 +92,11 @@ public class BasePrimaryDataStoreLifeCycleImpl {
                 DeleteStoragePoolCommand deleteCmd = new DeleteStoragePoolCommand(pool);
                 final Answer answer = agentMgr.easySend(host.getHostId(), deleteCmd);
 
-                if (answer != null && answer.getResult()) {
-                    if (HypervisorType.KVM != hypervisorType) {
-                        break;
-                    }
-                } else {
-                    if (answer != null) {
+                if (answer != null) {
+                    if (!answer.getResult()) {
                         s_logger.debug("Failed to delete storage pool: " + answer.getResult());
+                    } else if (HypervisorType.KVM != hypervisorType) {
+                        break;
                     }
                 }
             }

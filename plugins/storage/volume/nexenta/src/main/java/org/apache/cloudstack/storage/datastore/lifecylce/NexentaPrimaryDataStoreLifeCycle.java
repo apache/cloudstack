@@ -183,7 +183,7 @@ public class NexentaPrimaryDataStoreLifeCycle
     public void changeStoragePoolScopeToZone(DataStore store, ClusterScope clusterScope, Hypervisor.HypervisorType hypervisorType) {
         /*
          * We need to attach all VMware, Xenserver and KVM hosts in the zone.
-         * So pass hypervisorTpe as null.
+         * So pass hypervisorType as null.
          */
         super.changeStoragePoolScopeToZone(store, clusterScope, null);
     }
