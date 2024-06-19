@@ -25,7 +25,6 @@ import com.cloud.network.element.NetworkElement;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
-
 public class VirtualMachineTO {
     private long id;
     private String name;
@@ -43,47 +42,47 @@ public class VirtualMachineTO {
          So this is here for backwards compatibility with 4.0.X/4.1.X management servers
          and newer agents.
     */
-    Integer speed;
-    Integer minSpeed;
-    Integer maxSpeed;
+    private Integer speed;
+    private Integer minSpeed;
+    private Integer maxSpeed;
 
-    long minRam;
-    long maxRam;
-    String hostName;
-    String arch;
-    String os;
-    String platformEmulator;
-    String bootArgs;
-    String[] bootupScripts;
-    boolean enableHA;
-    boolean limitCpuUse;
-    boolean enableDynamicallyScaleVm;
+    private long minRam;
+    private long maxRam;
+    private String hostName;
+    private String arch;
+    private String os;
+    private String platformEmulator;
+    private String bootArgs;
+    private String[] bootupScripts;
+    private boolean enableHA;
+    private boolean limitCpuUse;
+    private boolean enableDynamicallyScaleVm;
     @LogLevel(LogLevel.Log4jLevel.Off)
-    String vncPassword;
-    String vncAddr;
-    Map<String, String> params;
-    String uuid;
-    String bootType;
-    String bootMode;
-    boolean enterHardwareSetup;
+    private String vncPassword;
+    private String vncAddr;
+    private Map<String, String> params;
+    private String uuid;
+    private String bootType;
+    private String bootMode;
+    private boolean enterHardwareSetup;
 
-    DiskTO[] disks;
-    NicTO[] nics;
-    GPUDeviceTO gpuDevice;
-    Integer vcpuMaxLimit;
-    List<String[]> vmData = null;
+    private DiskTO[] disks;
+    private NicTO[] nics;
+    private GPUDeviceTO gpuDevice;
+    private Integer vcpuMaxLimit;
+    private List<String[]> vmData = null;
 
-    String configDriveLabel = null;
-    String configDriveIsoRootFolder = null;
-    String configDriveIsoFile = null;
-    NetworkElement.Location configDriveLocation = NetworkElement.Location.SECONDARY;
+    private String configDriveLabel = null;
+    private String configDriveIsoRootFolder = null;
+    private String configDriveIsoFile = null;
+    private NetworkElement.Location configDriveLocation = NetworkElement.Location.SECONDARY;
 
-    Double cpuQuotaPercentage = null;
+    private Double cpuQuotaPercentage = null;
 
-    Map<String, String> guestOsDetails = new HashMap<String, String>();
-    Map<String, String> extraConfig = new HashMap<>();
-    Map<Long, String> networkIdToNetworkNameMap = new HashMap<>();
-    DeployAsIsInfoTO deployAsIsInfo;
+    private Map<String, String> guestOsDetails = new HashMap<String, String>();
+    private Map<String, String> extraConfig = new HashMap<>();
+    private Map<Long, String> networkIdToNetworkNameMap = new HashMap<>();
+    private DeployAsIsInfoTO deployAsIsInfo;
 
     public VirtualMachineTO(long id, String instanceName, VirtualMachine.Type type, int cpus, Integer speed, long minRam, long maxRam, BootloaderType bootloader,
             String os, boolean enableHA, boolean limitCpuUse, String vncPassword) {
