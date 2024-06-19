@@ -20,8 +20,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.agent.api.UnprepareStorageClientAnswer;
 import com.cloud.agent.api.UnprepareStorageClientCommand;
@@ -30,7 +29,7 @@ import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.storage.Storage;
 import com.cloud.utils.Pair;
 
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 public class LibvirtUnprepareStorageClientCommandWrapperTest {
 
     @Spy
@@ -42,7 +41,6 @@ public class LibvirtUnprepareStorageClientCommandWrapperTest {
     private final static String poolUuid = "345fc603-2d7e-47d2-b719-a0110b3732e6";
 
     @Test
-    @PrepareForTest(LibvirtPrepareStorageClientCommandWrapper.class)
     public void testUnprepareStorageClientSuccess() {
         UnprepareStorageClientCommand cmd = Mockito.mock(UnprepareStorageClientCommand.class);
         Mockito.when(cmd.getPoolType()).thenReturn(Storage.StoragePoolType.PowerFlex);
@@ -58,7 +56,6 @@ public class LibvirtUnprepareStorageClientCommandWrapperTest {
     }
 
     @Test
-    @PrepareForTest(LibvirtPrepareStorageClientCommandWrapper.class)
     public void testUnprepareStorageClientFailure() {
         UnprepareStorageClientCommand cmd = Mockito.mock(UnprepareStorageClientCommand.class);
         Mockito.when(cmd.getPoolType()).thenReturn(Storage.StoragePoolType.PowerFlex);

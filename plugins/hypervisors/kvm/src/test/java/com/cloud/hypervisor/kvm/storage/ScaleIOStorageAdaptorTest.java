@@ -24,26 +24,42 @@ import java.util.Map;
 
 import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClient;
 import org.apache.cloudstack.storage.datastore.util.ScaleIOUtil;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.mockito.Spy;
-import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.storage.Storage;
+import com.cloud.storage.StorageLayer;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.script.Script;
 
-@PrepareForTest({ScaleIOUtil.class, Script.class})
 @RunWith(MockitoJUnitRunner.class)
 public class ScaleIOStorageAdaptorTest {
 
-    @Spy
-    ScaleIOStorageAdaptor scaleIOStorageAdaptor = Mockito.spy(ScaleIOStorageAdaptor.class);
+    @Mock
+    StorageLayer storageLayer;
+    ScaleIOStorageAdaptor scaleIOStorageAdaptor;
 
     private final static String poolUuid = "345fc603-2d7e-47d2-b719-a0110b3732e6";
+    private static MockedStatic<Script> mockedScript;
+
+    @Before
+    public void setUp() {
+        mockedScript = Mockito.mockStatic(Script.class);
+        scaleIOStorageAdaptor = Mockito.spy(new ScaleIOStorageAdaptor(storageLayer));
+    }
+
+    @After
+    public void tearDown() {
+        mockedScript.close();
+    }
 
     @Test
     public void getUsableBytesFromRawBytesTest() {
@@ -55,8 +71,7 @@ public class ScaleIOStorageAdaptorTest {
 
     @Test
     public void testPrepareStorageClient_SDCServiceNotInstalled() {
-        PowerMockito.mockStatic(Script.class);
-        PowerMockito.when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl status scini"))).thenReturn(4);
+        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl status scini"))).thenReturn(4);
 
         Ternary<Boolean, Map<String, String>, String> result = scaleIOStorageAdaptor.prepareStorageClient(Storage.StoragePoolType.PowerFlex, poolUuid, new HashMap<>());
 
@@ -67,10 +82,9 @@ public class ScaleIOStorageAdaptorTest {
 
     @Test
     public void testPrepareStorageClient_SDCServiceNotEnabled() {
-        PowerMockito.mockStatic(Script.class);
-        PowerMockito.when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl status scini"))).thenReturn(3);
-        PowerMockito.when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl is-enabled scini"))).thenReturn(1);
-        PowerMockito.when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl enable scini"))).thenReturn(1);
+        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl status scini"))).thenReturn(3);
+        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl is-enabled scini"))).thenReturn(1);
+        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl enable scini"))).thenReturn(1);
 
         Ternary<Boolean, Map<String, String>, String> result = scaleIOStorageAdaptor.prepareStorageClient(Storage.StoragePoolType.PowerFlex, poolUuid, new HashMap<>());
 
@@ -81,11 +95,10 @@ public class ScaleIOStorageAdaptorTest {
 
     @Test
     public void testPrepareStorageClient_SDCServiceNotRestarted() {
-        PowerMockito.mockStatic(Script.class);
-        PowerMockito.when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl status scini"))).thenReturn(3);
-        PowerMockito.when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl is-enabled scini"))).thenReturn(0);
-        PowerMockito.when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl is-active scini"))).thenReturn(0);
-        PowerMockito.when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl restart scini"))).thenReturn(1);
+        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl status scini"))).thenReturn(3);
+        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl is-enabled scini"))).thenReturn(0);
+        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl is-active scini"))).thenReturn(0);
+        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl restart scini"))).thenReturn(1);
 
         Ternary<Boolean, Map<String, String>, String> result = scaleIOStorageAdaptor.prepareStorageClient(Storage.StoragePoolType.PowerFlex, poolUuid, new HashMap<>());
 
@@ -96,11 +109,10 @@ public class ScaleIOStorageAdaptorTest {
 
     @Test
     public void testPrepareStorageClient_SDCServiceRestarted() {
-        PowerMockito.mockStatic(Script.class);
-        PowerMockito.when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl status scini"))).thenReturn(3);
-        PowerMockito.when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl is-enabled scini"))).thenReturn(0);
-        PowerMockito.when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl is-active scini"))).thenReturn(0);
-        PowerMockito.when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl restart scini"))).thenReturn(0);
+        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl status scini"))).thenReturn(3);
+        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl is-enabled scini"))).thenReturn(0);
+        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl is-active scini"))).thenReturn(0);
+        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl restart scini"))).thenReturn(0);
 
         Ternary<Boolean, Map<String, String>, String> result = scaleIOStorageAdaptor.prepareStorageClient(Storage.StoragePoolType.PowerFlex, poolUuid, new HashMap<>());
 
@@ -111,11 +123,10 @@ public class ScaleIOStorageAdaptorTest {
 
     @Test
     public void testPrepareStorageClient_SDCServiceNotStarted() {
-        PowerMockito.mockStatic(Script.class);
-        PowerMockito.when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl status scini"))).thenReturn(3);
-        PowerMockito.when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl is-enabled scini"))).thenReturn(0);
-        PowerMockito.when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl is-active scini"))).thenReturn(1);
-        PowerMockito.when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl start scini"))).thenReturn(1);
+        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl status scini"))).thenReturn(3);
+        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl is-enabled scini"))).thenReturn(0);
+        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl is-active scini"))).thenReturn(1);
+        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl start scini"))).thenReturn(1);
 
         Ternary<Boolean, Map<String, String>, String> result = scaleIOStorageAdaptor.prepareStorageClient(Storage.StoragePoolType.PowerFlex, poolUuid, new HashMap<>());
 
@@ -130,19 +141,20 @@ public class ScaleIOStorageAdaptorTest {
         String systemId = "218ce1797566a00f";
         details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemId);
 
-        PowerMockito.mockStatic(ScaleIOUtil.class);
-        when(ScaleIOUtil.isSDCServiceInstalled()).thenReturn(true);
-        when(ScaleIOUtil.isSDCServiceEnabled()).thenReturn(true);
-        when(ScaleIOUtil.isSDCServiceActive()).thenReturn(false);
-        when(ScaleIOUtil.startSDCService()).thenReturn(true);
-        String sdcId = "301b852c00000003";
-        when(ScaleIOUtil.getSdcId(systemId)).thenReturn(sdcId);
+        try (MockedStatic<ScaleIOUtil> ignored = Mockito.mockStatic(ScaleIOUtil.class)) {
+            when(ScaleIOUtil.isSDCServiceInstalled()).thenReturn(true);
+            when(ScaleIOUtil.isSDCServiceEnabled()).thenReturn(true);
+            when(ScaleIOUtil.isSDCServiceActive()).thenReturn(false);
+            when(ScaleIOUtil.startSDCService()).thenReturn(true);
+            String sdcId = "301b852c00000003";
+            when(ScaleIOUtil.getSdcId(systemId)).thenReturn(sdcId);
 
-        Ternary<Boolean, Map<String, String>, String> result = scaleIOStorageAdaptor.prepareStorageClient(Storage.StoragePoolType.PowerFlex, poolUuid, details);
+            Ternary<Boolean, Map<String, String>, String> result = scaleIOStorageAdaptor.prepareStorageClient(Storage.StoragePoolType.PowerFlex, poolUuid, details);
 
-        Assert.assertTrue(result.first());
-        Assert.assertNotNull(result.second());
-        Assert.assertEquals(sdcId, result.second().get(ScaleIOGatewayClient.SDC_ID));
+            Assert.assertTrue(result.first());
+            Assert.assertNotNull(result.second());
+            Assert.assertEquals(sdcId, result.second().get(ScaleIOGatewayClient.SDC_ID));
+        }
     }
 
     @Test
@@ -151,26 +163,25 @@ public class ScaleIOStorageAdaptorTest {
         String systemId = "218ce1797566a00f";
         details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemId);
 
-        PowerMockito.mockStatic(ScaleIOUtil.class);
-        when(ScaleIOUtil.isSDCServiceInstalled()).thenReturn(true);
-        when(ScaleIOUtil.isSDCServiceEnabled()).thenReturn(true);
-        when(ScaleIOUtil.isSDCServiceActive()).thenReturn(false);
-        when(ScaleIOUtil.startSDCService()).thenReturn(true);
-        when(ScaleIOUtil.getSdcId(systemId)).thenReturn(null);
         String sdcGuid = "B0E3BFB8-C20B-43BF-93C8-13339E85AA50";
-        when(ScaleIOUtil.getSdcGuid()).thenReturn(sdcGuid);
+        try (MockedStatic<ScaleIOUtil> ignored = Mockito.mockStatic(ScaleIOUtil.class)) {
+            when(ScaleIOUtil.isSDCServiceInstalled()).thenReturn(true);
+            when(ScaleIOUtil.isSDCServiceEnabled()).thenReturn(true);
+            when(ScaleIOUtil.isSDCServiceActive()).thenReturn(false);
+            when(ScaleIOUtil.startSDCService()).thenReturn(true);
+            when(ScaleIOUtil.getSdcId(systemId)).thenReturn(null);
+            when(ScaleIOUtil.getSdcGuid()).thenReturn(sdcGuid);
 
-        Ternary<Boolean, Map<String, String>, String> result = scaleIOStorageAdaptor.prepareStorageClient(Storage.StoragePoolType.PowerFlex, poolUuid, details);
-
-        Assert.assertTrue(result.first());
-        Assert.assertNotNull(result.second());
-        Assert.assertEquals(sdcGuid, result.second().get(ScaleIOGatewayClient.SDC_GUID));
+            Ternary<Boolean, Map<String, String>, String> result = scaleIOStorageAdaptor.prepareStorageClient(Storage.StoragePoolType.PowerFlex, poolUuid, details);
+            Assert.assertTrue(result.first());
+            Assert.assertNotNull(result.second());
+            Assert.assertEquals(sdcGuid, result.second().get(ScaleIOGatewayClient.SDC_GUID));
+        }
     }
 
     @Test
     public void testUnprepareStorageClient_SDCServiceNotInstalled() {
-        PowerMockito.mockStatic(Script.class);
-        PowerMockito.when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl status scini"))).thenReturn(4);
+        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl status scini"))).thenReturn(4);
 
         Pair<Boolean, String> result = scaleIOStorageAdaptor.unprepareStorageClient(Storage.StoragePoolType.PowerFlex, poolUuid);
 
@@ -180,9 +191,8 @@ public class ScaleIOStorageAdaptorTest {
 
     @Test
     public void testUnprepareStorageClient_SDCServiceNotEnabled() {
-        PowerMockito.mockStatic(Script.class);
-        PowerMockito.when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl status scini"))).thenReturn(3);
-        PowerMockito.when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl is-enabled scini"))).thenReturn(1);
+        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl status scini"))).thenReturn(3);
+        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl is-enabled scini"))).thenReturn(1);
 
         Pair<Boolean, String> result = scaleIOStorageAdaptor.unprepareStorageClient(Storage.StoragePoolType.PowerFlex, poolUuid);
 
@@ -192,10 +202,9 @@ public class ScaleIOStorageAdaptorTest {
 
     @Test
     public void testUnprepareStorageClient_SDCServiceNotStopped() {
-        PowerMockito.mockStatic(Script.class);
-        PowerMockito.when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl status scini"))).thenReturn(3);
-        PowerMockito.when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl is-enabled scini"))).thenReturn(0);
-        PowerMockito.when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl stop scini"))).thenReturn(1);
+        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl status scini"))).thenReturn(3);
+        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl is-enabled scini"))).thenReturn(0);
+        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl stop scini"))).thenReturn(1);
 
         Pair<Boolean, String> result = scaleIOStorageAdaptor.unprepareStorageClient(Storage.StoragePoolType.PowerFlex, poolUuid);
 
@@ -205,10 +214,9 @@ public class ScaleIOStorageAdaptorTest {
 
     @Test
     public void testUnprepareStorageClient_SDCServiceStopped() {
-        PowerMockito.mockStatic(Script.class);
-        PowerMockito.when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl status scini"))).thenReturn(3);
-        PowerMockito.when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl is-enabled scini"))).thenReturn(0);
-        PowerMockito.when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl stop scini"))).thenReturn(0);
+        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl status scini"))).thenReturn(3);
+        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl is-enabled scini"))).thenReturn(0);
+        when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl stop scini"))).thenReturn(0);
 
         Pair<Boolean, String> result = scaleIOStorageAdaptor.unprepareStorageClient(Storage.StoragePoolType.PowerFlex, poolUuid);
 

@@ -24,8 +24,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.agent.api.PrepareStorageClientAnswer;
 import com.cloud.agent.api.PrepareStorageClientCommand;
@@ -34,7 +33,7 @@ import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.storage.Storage;
 import com.cloud.utils.Ternary;
 
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 public class LibvirtPrepareStorageClientCommandWrapperTest {
 
     @Spy
@@ -48,7 +47,6 @@ public class LibvirtPrepareStorageClientCommandWrapperTest {
     private final static String sdcId = "301b852c00000003";
 
     @Test
-    @PrepareForTest(LibvirtPrepareStorageClientCommandWrapper.class)
     public void testPrepareStorageClientSuccess() {
         Map<String, String> details = new HashMap<>();
         details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemId);
@@ -69,7 +67,6 @@ public class LibvirtPrepareStorageClientCommandWrapperTest {
     }
 
     @Test
-    @PrepareForTest(LibvirtPrepareStorageClientCommandWrapper.class)
     public void testPrepareStorageClientFailure() {
         Map<String, String> details = new HashMap<>();
         details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemId);
