@@ -253,6 +253,14 @@ public class VirtualMachineTO {
         this.bootupScripts = bootupScripts;
     }
 
+    public boolean isEnableHA() {
+        return enableHA;
+    }
+
+    public void setEnableHA(boolean enableHA) {
+        this.enableHA = enableHA;
+    }
+
     public DiskTO[] getDisks() {
         return disks;
     }
@@ -426,6 +434,46 @@ public class VirtualMachineTO {
 
     public void setDeployAsIsInfo(DeployAsIsInfoTO deployAsIsInfo) {
         this.deployAsIsInfo = deployAsIsInfo;
+    }
+
+    public void setSpeed(Integer speed) {
+        this.speed = speed;
+    }
+
+    public void setMinSpeed(Integer minSpeed) {
+        this.minSpeed = minSpeed;
+    }
+
+    public void setMaxSpeed(Integer maxSpeed) {
+        this.maxSpeed = maxSpeed;
+    }
+
+    public void setMinRam(long minRam) {
+        this.minRam = minRam;
+    }
+
+    public void setMaxRam(long maxRam) {
+        this.maxRam = maxRam;
+    }
+
+    public boolean isLimitCpuUse() {
+        return limitCpuUse;
+    }
+
+    public void setLimitCpuUse(boolean limitCpuUse) {
+        this.limitCpuUse = limitCpuUse;
+    }
+
+    public Map<String, String> getParams() {
+        return params;
+    }
+
+    public void setParams(Map<String, String> params) {
+        this.params = params;
+    }
+
+    public void setExtraConfig(Map<String, String> extraConfig) {
+        this.extraConfig = extraConfig;
     }
 
     @Override
