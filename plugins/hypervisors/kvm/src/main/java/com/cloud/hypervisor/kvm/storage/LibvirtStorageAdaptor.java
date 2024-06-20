@@ -367,10 +367,11 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
     private List<String> getNFSMountOptsFromDetails(StoragePoolType type, Map<String, String> details) {
         List<String> nfsMountOpts = null;
-        if (type.equals(StoragePoolType.NetworkFilesystem)) {
-            if (details != null && details.containsKey(ApiConstants.NFS_MOUNT_OPTIONS)) {
-                nfsMountOpts = Arrays.asList(details.get(ApiConstants.NFS_MOUNT_OPTIONS).replaceAll("\\s", "").split(","));
-            }
+        if (!type.equals(StoragePoolType.NetworkFilesystem) || details == null) {
+            return nfsMountOpts;
+        }
+        if (details.containsKey(ApiConstants.NFS_MOUNT_OPTIONS)) {
+            nfsMountOpts = Arrays.asList(details.get(ApiConstants.NFS_MOUNT_OPTIONS).replaceAll("\\s", "").split(","));
         }
         return nfsMountOpts;
     }
@@ -694,10 +695,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
 
         List<String> nfsMountOpts = getNFSMountOptsFromDetails(type, details);
-        if (sp != null && CollectionUtils.isNotEmpty(nfsMountOpts)) {
-            if (destroyStoragePoolOnNFSMountOptionsChange(sp, conn, nfsMountOpts)) {
-                sp = null;
-            }
+        if (sp != null && CollectionUtils.isNotEmpty(nfsMountOpts) &&
+            destroyStoragePoolOnNFSMountOptionsChange(sp, conn, nfsMountOpts)) {
+            sp = null;
         }
 
         if (sp == null) {
