@@ -25,6 +25,7 @@ import com.cloud.network.element.NetworkElement;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
+
 public class VirtualMachineTO {
     private long id;
     private String name;
