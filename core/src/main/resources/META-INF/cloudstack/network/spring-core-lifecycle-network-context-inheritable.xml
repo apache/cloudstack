@@ -103,4 +103,9 @@
         <property name="typeClass"
             value="org.apache.cloudstack.region.gslb.GslbServiceProvider" />
     </bean>
+
+    <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
+        <property name="registry" ref="internalLoadBalancerElementServiceRegistry" />
+        <property name="typeClass" value="org.apache.cloudstack.network.element.InternalLoadBalancerElementService" />
+    </bean>
 </beans>

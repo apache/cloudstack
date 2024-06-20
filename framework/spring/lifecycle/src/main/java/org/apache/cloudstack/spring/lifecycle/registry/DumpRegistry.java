@@ -22,7 +22,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.component.ComponentLifecycleBase;
 import com.cloud.utils.component.Named;
@@ -30,7 +29,6 @@ import com.cloud.utils.component.Registry;
 
 public class DumpRegistry extends ComponentLifecycleBase {
 
-    private static final Logger log = Logger.getLogger(DumpRegistry.class);
 
     List<Registry<?>> registries;
 
@@ -55,7 +53,7 @@ public class DumpRegistry extends ComponentLifecycleBase {
                 buffer.append(getName(o));
             }
 
-            log.info("Registry [" + registry.getName() + "] contains [" + buffer + "]");
+            logger.info("Registry [" + registry.getName() + "] contains [" + buffer + "]");
         }
 
         return super.start();

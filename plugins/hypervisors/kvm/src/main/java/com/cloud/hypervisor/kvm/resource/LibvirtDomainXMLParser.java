@@ -29,7 +29,8 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.cloudstack.utils.qemu.QemuObject;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -49,7 +50,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogAction
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogModel;
 
 public class LibvirtDomainXMLParser {
-    private static final Logger s_logger = Logger.getLogger(LibvirtDomainXMLParser.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     private final List<InterfaceDef> interfaces = new ArrayList<InterfaceDef>();
     private MemBalloonDef memBalloonDef = new MemBalloonDef();
     private final List<DiskDef> diskDefs = new ArrayList<DiskDef>();
@@ -332,7 +333,7 @@ public class LibvirtDomainXMLParser {
                 String bytes = getAttrValue("rate", "bytes", rng);
                 String period = getAttrValue("rate", "period", rng);
                 if (StringUtils.isAnyEmpty(bytes, period)) {
-                    s_logger.debug(String.format("Bytes and period in the rng section should not be null, please check the VM %s", name));
+                    logger.debug(String.format("Bytes and period in the rng section should not be null, please check the VM %s", name));
                 }
 
                 if (bytes == null) {
@@ -390,11 +391,11 @@ public class LibvirtDomainXMLParser {
             extractCpuModeDef(rootElement);
             return true;
         } catch (ParserConfigurationException e) {
-            s_logger.debug(e.toString());
+            logger.debug(e.toString());
         } catch (SAXException e) {
-            s_logger.debug(e.toString());
+            logger.debug(e.toString());
         } catch (IOException e) {
-            s_logger.debug(e.toString());
+            logger.debug(e.toString());
         }
         return false;
     }
@@ -419,6 +420,9 @@ public class LibvirtDomainXMLParser {
     }
 
     private static String getTagValue(String tag, Element eElement) {
+        if (eElement == null) {
+            return null;
+        }
         NodeList tagNodeList = eElement.getElementsByTagName(tag);
         if (tagNodeList == null || tagNodeList.getLength() == 0) {
             return null;
@@ -426,14 +430,20 @@ public class LibvirtDomainXMLParser {
 
         NodeList nlList = tagNodeList.item(0).getChildNodes();
 
+        if (nlList == null || nlList.getLength() == 0) {
+            return null;
+        }
         Node nValue = nlList.item(0);
 
         return nValue.getNodeValue();
     }
 
     private static String getAttrValue(String tag, String attr, Element eElement) {
+        if (eElement == null) {
+            return null;
+        }
         NodeList tagNode = eElement.getElementsByTagName(tag);
-        if (tagNode.getLength() == 0) {
+        if (tag == null || tagNode.getLength() == 0) {
             return null;
         }
         Element node = (Element)tagNode.item(0);
@@ -535,8 +545,9 @@ public class LibvirtDomainXMLParser {
             }
             final String sockets = getAttrValue("topology", "sockets", cpuModeDefElement);
             final String cores = getAttrValue("topology", "cores", cpuModeDefElement);
-            if (StringUtils.isNotBlank(sockets) && StringUtils.isNotBlank(cores)) {
-                cpuModeDef.setTopology(Integer.parseInt(cores), Integer.parseInt(sockets));
+            final String threads = getAttrValue("topology", "threads", cpuModeDefElement);
+            if (StringUtils.isNotBlank(sockets) && StringUtils.isNotBlank(cores) && StringUtils.isNotBlank(threads)) {
+                cpuModeDef.setTopology(Integer.parseInt(cores), Integer.parseInt(threads), Integer.parseInt(sockets));
             }
         }
     }

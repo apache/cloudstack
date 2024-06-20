@@ -31,7 +31,6 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.utils.db.Filter;
 import org.springframework.stereotype.Component;
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.utils.Pair;
@@ -50,8 +49,6 @@ import javax.inject.Inject;
 @Component
 @DB
 public class DedicatedResourceDaoImpl extends GenericDaoBase<DedicatedResourceVO, Long> implements DedicatedResourceDao {
-
-    public static Logger LOGGER = Logger.getLogger(DedicatedResourceDaoImpl.class.getName());
 
     @Inject
     protected HostDao hostDao;
@@ -451,7 +448,7 @@ public class DedicatedResourceDaoImpl extends GenericDaoBase<DedicatedResourceVO
 
     @Override
     public Map<Long, List<String>> listDomainsOfDedicatedResourcesUsedByDomainPath(String domainPath) {
-        LOGGER.debug(String.format("Retrieving the domains of the dedicated resources used by domain with path [%s].", domainPath));
+        logger.debug(String.format("Retrieving the domains of the dedicated resources used by domain with path [%s].", domainPath));
 
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         try (PreparedStatement pstmt = txn.prepareStatement(LIST_DOMAINS_OF_DEDICATED_RESOURCES_USED_BY_DOMAIN_PATH)) {
@@ -472,10 +469,10 @@ public class DedicatedResourceDaoImpl extends GenericDaoBase<DedicatedResourceVO
 
             return domainsOfDedicatedResourcesUsedByDomainPath;
         } catch (SQLException e) {
-            LOGGER.error(String.format("Failed to retrieve the domains of the dedicated resources used by domain with path [%s] due to [%s]. Returning an empty "
+            logger.error(String.format("Failed to retrieve the domains of the dedicated resources used by domain with path [%s] due to [%s]. Returning an empty "
                     + "list of domains.", domainPath, e.getMessage()));
 
-            LOGGER.debug(String.format("Failed to retrieve the domains of the dedicated resources used by domain with path [%s]. Returning an empty "
+            logger.debug(String.format("Failed to retrieve the domains of the dedicated resources used by domain with path [%s]. Returning an empty "
                     + "list of domains.", domainPath), e);
 
             return new HashMap<>();

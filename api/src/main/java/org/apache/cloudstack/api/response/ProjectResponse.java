@@ -216,6 +216,10 @@ public class ProjectResponse extends BaseResponse implements ResourceLimitAndCou
     @Param(description = "the date this project was created", since = "4.16.0")
     private Date created;
 
+    @SerializedName(ApiConstants.TAGGED_RESOURCES)
+    @Param(description = "The tagged resource limit and count for the project", since = "4.20.0")
+    List<TaggedResourceLimitAndCountResponse> taggedResources;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -446,5 +450,10 @@ public class ProjectResponse extends BaseResponse implements ResourceLimitAndCou
 
     public void setCreated(Date created) {
         this.created = created;
+    }
+
+    @Override
+    public void setTaggedResourceLimitsAndCounts(List<TaggedResourceLimitAndCountResponse> taggedResourceLimitsAndCounts) {
+        this.taggedResources = taggedResourceLimitsAndCounts;
     }
 }

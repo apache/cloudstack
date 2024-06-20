@@ -38,7 +38,6 @@ import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerService;
 import org.apache.cloudstack.network.lb.InternalLoadBalancerVMService;
 import org.apache.cloudstack.query.QueryService;
@@ -47,7 +46,8 @@ import org.apache.cloudstack.storage.ImageStoreService;
 import org.apache.cloudstack.storage.template.VnfTemplateManager;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.commons.collections.MapUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.configuration.ConfigurationService;
 import com.cloud.exception.ConcurrentOperationException;
@@ -95,7 +95,7 @@ import com.cloud.vm.UserVmService;
 import com.cloud.vm.snapshot.VMSnapshotService;
 
 public abstract class BaseCmd {
-    private static final Logger s_logger = Logger.getLogger(BaseCmd.class.getName());
+    protected transient Logger logger = LogManager.getLogger(getClass());
     public static final String RESPONSE_SUFFIX = "response";
     public static final String RESPONSE_TYPE_XML = HttpUtils.RESPONSE_TYPE_XML;
     public static final String RESPONSE_TYPE_JSON = HttpUtils.RESPONSE_TYPE_JSON;
@@ -199,8 +199,6 @@ public abstract class BaseCmd {
     public ApplicationLoadBalancerService _appLbService;
     @Inject
     public AffinityGroupService _affinityGroupService;
-    @Inject
-    public InternalLoadBalancerElementService _internalLbElementSvc;
     @Inject
     public InternalLoadBalancerVMService _internalLbSvc;
     @Inject
@@ -374,7 +372,7 @@ public abstract class BaseCmd {
             if (roleIsAllowed) {
                 validFields.add(field);
             } else {
-                s_logger.debug("Ignoring parameter " + parameterAnnotation.name() + " as the caller is not authorized to pass it in");
+                logger.debug("Ignoring parameter " + parameterAnnotation.name() + " as the caller is not authorized to pass it in");
             }
         }
 
@@ -419,7 +417,7 @@ public abstract class BaseCmd {
                 if(!isDisplay)
                     break;
             } catch (Exception e){
-                s_logger.trace("Caught exception while checking first class entities for display property, continuing on", e);
+                logger.trace("Caught exception while checking first class entities for display property, continuing on", e);
             }
         }
 

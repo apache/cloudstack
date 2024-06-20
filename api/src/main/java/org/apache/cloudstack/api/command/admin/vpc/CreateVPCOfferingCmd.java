@@ -24,12 +24,16 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.network.Network;
+import com.cloud.network.VirtualRouterProvider;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -45,10 +49,18 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.vpc.VpcOffering;
 import com.cloud.user.Account;
 
+import static com.cloud.network.Network.Service.Dhcp;
+import static com.cloud.network.Network.Service.Dns;
+import static com.cloud.network.Network.Service.Lb;
+import static com.cloud.network.Network.Service.StaticNat;
+import static com.cloud.network.Network.Service.SourceNat;
+import static com.cloud.network.Network.Service.PortForwarding;
+import static com.cloud.network.Network.Service.NetworkACL;
+import static com.cloud.network.Network.Service.UserData;
+
 @APICommand(name = "createVPCOffering", description = "Creates VPC offering", responseObject = VpcOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateVPCOfferingCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -62,7 +74,6 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
 
     @Parameter(name = ApiConstants.SUPPORTED_SERVICES,
                type = CommandType.LIST,
-               required = true,
                collectionType = CommandType.STRING,
                description = "services supported by the vpc offering")
     private List<String> supportedServices;
@@ -101,6 +112,24 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
             since = "4.13")
     private List<Long> zoneIds;
 
+    @Parameter(name = ApiConstants.FOR_NSX,
+            type = CommandType.BOOLEAN,
+            description = "true if network offering is meant to be used for NSX, false otherwise.",
+            since = "4.20.0")
+    private Boolean forNsx;
+
+    @Parameter(name = ApiConstants.NSX_MODE,
+            type = CommandType.STRING,
+            description = "Indicates the mode with which the network will operate. Valid option: NATTED or ROUTED",
+            since = "4.20.0")
+    private String nsxMode;
+
+    @Parameter(name = ApiConstants.NSX_SUPPORT_LB,
+            type = CommandType.BOOLEAN,
+            description = "true if network offering for NSX VPC offering supports Load balancer service.",
+            since = "4.20.0")
+    private Boolean nsxSupportsLbService;
+
     @Parameter(name = ApiConstants.ENABLE,
             type = CommandType.BOOLEAN,
             description = "set to true if the offering is to be enabled during creation. Default is false",
@@ -120,21 +149,49 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
     }
 
     public List<String> getSupportedServices() {
+        if (!isForNsx() && CollectionUtils.isEmpty(supportedServices)) {
+            throw new InvalidParameterValueException("Supported services needs to be provided");
+        }
+        if (isForNsx()) {
+            supportedServices = new ArrayList<>(List.of(
+                    Dhcp.getName(),
+                    Dns.getName(),
+                    StaticNat.getName(),
+                    SourceNat.getName(),
+                    NetworkACL.getName(),
+                    PortForwarding.getName(),
+                    UserData.getName()
+                    ));
+            if (getNsxSupportsLbService()) {
+                supportedServices.add(Lb.getName());
+            }
+        }
         return supportedServices;
     }
 
+    public boolean isForNsx() {
+        return BooleanUtils.isTrue(forNsx);
+    }
+
+    public String getNsxMode() {
+        return nsxMode;
+    }
+
+    public boolean getNsxSupportsLbService() {
+        return org.apache.commons.lang3.BooleanUtils.isTrue(nsxSupportsLbService);
+    }
+
     public Map<String, List<String>> getServiceProviders() {
-        Map<String, List<String>> serviceProviderMap = null;
-        if (serviceProviderList != null && !serviceProviderList.isEmpty()) {
-            serviceProviderMap = new HashMap<String, List<String>>();
+        Map<String, List<String>> serviceProviderMap = new HashMap<>();
+        if (serviceProviderList != null && !serviceProviderList.isEmpty() && !isForNsx()) {
             Collection<? extends Map<String, String>> servicesCollection = serviceProviderList.values();
             Iterator<? extends Map<String, String>> iter = servicesCollection.iterator();
             while (iter.hasNext()) {
                 Map<String, String> obj = iter.next();
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("service provider entry specified: " + obj);
+                if (logger.isTraceEnabled()) {
+                    logger.trace("service provider entry specified: " + obj);
                 }
-                HashMap<String, String> services = (HashMap<String, String>)obj;
+                HashMap<String, String> services = (HashMap<String, String>) obj;
                 String service = services.get("service");
                 String provider = services.get("provider");
                 List<String> providerList = null;
@@ -146,9 +203,29 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
                 providerList.add(provider);
                 serviceProviderMap.put(service, providerList);
             }
+        } else if (Boolean.TRUE.equals(forNsx)) {
+            getServiceProviderMapForNsx(serviceProviderMap);
         }
 
         return serviceProviderMap;
+    }
+
+    private void getServiceProviderMapForNsx(Map<String, List<String>> serviceProviderMap) {
+        List<String> unsupportedServices = List.of("Vpn", "BaremetalPxeService", "SecurityGroup", "Connectivity",
+                "Gateway", "Firewall");
+        List<String> routerSupported = List.of("Dhcp", "Dns", "UserData");
+        List<String> allServices = Network.Service.listAllServices().stream().map(Network.Service::getName).collect(Collectors.toList());
+        for (String service : allServices) {
+            if (unsupportedServices.contains(service))
+                continue;
+            if (routerSupported.contains(service))
+                serviceProviderMap.put(service, List.of(VirtualRouterProvider.Type.VPCVirtualRouter.name()));
+            else
+                serviceProviderMap.put(service, List.of(Network.Provider.Nsx.getName()));
+        }
+        if (!getNsxSupportsLbService()) {
+            serviceProviderMap.remove(Lb.getName());
+        }
     }
 
     public Map<String, List<String>> getServiceCapabilityList() {

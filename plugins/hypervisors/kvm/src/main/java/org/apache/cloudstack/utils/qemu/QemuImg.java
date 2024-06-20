@@ -32,12 +32,13 @@ import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 import com.cloud.storage.Storage;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import static java.util.regex.Pattern.CASE_INSENSITIVE;
 
 public class QemuImg {
-    private Logger logger = Logger.getLogger(this.getClass());
+    private Logger logger = LogManager.getLogger(this.getClass());
 
     public static final String BACKING_FILE = "backing_file";
     public static final String BACKING_FILE_FORMAT = "backing_file_format";
@@ -45,6 +46,7 @@ public class QemuImg {
     public static final String FILE_FORMAT = "file_format";
     public static final String IMAGE = "image";
     public static final String VIRTUAL_SIZE = "virtual_size";
+    public static final String ENCRYPTED = "encrypted";
     public static final String ENCRYPT_FORMAT = "encrypt.format";
     public static final String ENCRYPT_KEY_SECRET = "encrypt.key-secret";
     public static final String TARGET_ZERO_FLAG = "--target-is-zero";
@@ -554,9 +556,13 @@ public class QemuImg {
      * @return A HashMap with string key-value information as returned by 'qemu-img info'.
      */
     public Map<String, String> info(final QemuImgFile file) throws QemuImgException {
+        return info(file, true);
+    }
+
+    public Map<String, String> info(final QemuImgFile file, boolean secure) throws QemuImgException {
         final Script s = new Script(_qemuImgPath);
         s.add("info");
-        if (this.version >= QEMU_2_10) {
+        if (this.version >= QEMU_2_10 && secure) {
             s.add("-U");
         }
         s.add(file.getFileName());
@@ -811,5 +817,46 @@ public class QemuImg {
     protected static boolean helpSupportsImageFormat(String text, QemuImg.PhysicalDiskFormat format) {
         Pattern pattern = Pattern.compile("Supported\\sformats:[a-zA-Z0-9-_\\s]*?\\b" + format + "\\b", CASE_INSENSITIVE);
         return pattern.matcher(text).find();
+    }
+
+    /**
+     * check for any leaks for an image and repair.
+     *
+     * @param imageOptions
+     *         Qemu style image options to be used in the checking process.
+     * @param qemuObjects
+     *         Qemu style options (e.g. for passing secrets).
+     * @param repair
+     *         Boolean option whether to repair any leaks
+     */
+    public String checkAndRepair(final QemuImgFile file, final QemuImageOptions imageOptions, final List<QemuObject> qemuObjects, final String repair) throws QemuImgException {
+        final Script script = new Script(_qemuImgPath);
+        script.add("check");
+        if (imageOptions == null) {
+            script.add(file.getFileName());
+        }
+
+        for (QemuObject o : qemuObjects) {
+            script.add(o.toCommandFlag());
+        }
+
+        if (imageOptions != null) {
+            script.add(imageOptions.toCommandFlag());
+        }
+
+        if (StringUtils.isNotEmpty(repair)) {
+            script.add("-r");
+            script.add(repair);
+        }
+
+        script.add("--output=json");
+        script.add("2>/dev/null");
+
+        final String result = Script.runBashScriptIgnoreExitValue(script.toString(), 3);
+        if (result != null) {
+            logger.debug(String.format("Check volume execution result %s", result));
+        }
+
+        return result;
     }
 }

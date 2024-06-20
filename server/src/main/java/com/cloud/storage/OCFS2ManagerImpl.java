@@ -24,7 +24,6 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -53,7 +52,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class OCFS2ManagerImpl extends ManagerBase implements OCFS2Manager, ResourceListener {
-    private static final Logger s_logger = Logger.getLogger(OCFS2ManagerImpl.class);
 
     @Inject
     ClusterDetailsDao _clusterDetailsDao;
@@ -107,11 +105,11 @@ public class OCFS2ManagerImpl extends ManagerBase implements OCFS2Manager, Resou
         for (HostVO h : hosts) {
             Answer ans = _agentMgr.easySend(h.getId(), cmd);
             if (ans == null) {
-                s_logger.debug("Host " + h.getId() + " is not in UP state, skip preparing OCFS2 node on it");
+                logger.debug("Host " + h.getId() + " is not in UP state, skip preparing OCFS2 node on it");
                 continue;
             }
             if (!ans.getResult()) {
-                s_logger.warn("PrepareOCFS2NodesCommand failed on host " + h.getId() + " " + ans.getDetails());
+                logger.warn("PrepareOCFS2NodesCommand failed on host " + h.getId() + " " + ans.getDetails());
                 return false;
             }
         }
@@ -152,7 +150,7 @@ public class OCFS2ManagerImpl extends ManagerBase implements OCFS2Manager, Resou
         sc.and(sc.entity().getType(), Op.EQ, Host.Type.Routing);
         List<HostVO> hosts = sc.list();
         if (hosts.isEmpty()) {
-            s_logger.debug("There is no host in cluster " + clusterId + ", no need to prepare OCFS2 nodes");
+            logger.debug("There is no host in cluster " + clusterId + ", no need to prepare OCFS2 nodes");
             return true;
         }
 
@@ -200,10 +198,10 @@ public class OCFS2ManagerImpl extends ManagerBase implements OCFS2Manager, Resou
         if (hasOcfs2) {
             try {
                 if (!prepareNodes(host.getClusterId())) {
-                    s_logger.warn(errMsg);
+                    logger.warn(errMsg);
                 }
             } catch (Exception e) {
-                s_logger.error(errMsg, e);
+                logger.error(errMsg, e);
             }
         }
     }

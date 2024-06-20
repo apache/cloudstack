@@ -105,6 +105,9 @@ public interface NetworkOrchestrationService {
     static final ConfigKey<Boolean> TUNGSTEN_ENABLED = new ConfigKey<>(Boolean.class, "tungsten.plugin.enable", "Advanced", "false",
             "Indicates whether to enable the Tungsten plugin", false, ConfigKey.Scope.Zone, null);
 
+    static final ConfigKey<Boolean> NSX_ENABLED = new ConfigKey<>(Boolean.class, "nsx.plugin.enable", "Advanced", "false",
+            "Indicates whether to enable the NSX plugin", false, ConfigKey.Scope.Zone, null);
+
     List<? extends Network> setupNetwork(Account owner, NetworkOffering offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
         throws ConcurrentOperationException;
 
@@ -345,4 +348,6 @@ public interface NetworkOrchestrationService {
     Pair<NicProfile, Integer> importNic(final String macAddress, int deviceId, final Network network, final Boolean isDefaultNic, final VirtualMachine vm, final Network.IpAddresses ipAddresses, final DataCenter datacenter, boolean forced) throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException;
 
     void unmanageNics(VirtualMachineProfile vm);
+
+    void expungeLbVmRefs(List<Long> vmIds, Long batchSize);
 }

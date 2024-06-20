@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -287,6 +288,18 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
     @SerializedName(ApiConstants.EXTERNAL_UUID)
     @Param(description = "volume uuid that is given by virtualisation provider (only for VMware)")
     private String externalUuid;
+
+    @SerializedName(ApiConstants.VOLUME_CHECK_RESULT)
+    @Param(description = "details for the volume check result, they may vary for different hypervisors", since = "4.19.1")
+    private Map<String, String> volumeCheckResult;
+
+    @SerializedName(ApiConstants.VOLUME_REPAIR_RESULT)
+    @Param(description = "details for the volume repair result, they may vary for different hypervisors", since = "4.19.1")
+    private Map<String, String> volumeRepairResult;
+
+    @SerializedName(ApiConstants.ENCRYPT_FORMAT)
+    @Param(description = "the format of the disk encryption if applicable", since = "4.19.1")
+    private String encryptionFormat;
 
     public String getPath() {
         return path;
@@ -816,5 +829,25 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
 
     public void setExternalUuid(String externalUuid) {
         this.externalUuid = externalUuid;
+    }
+
+    public Map<String, String> getVolumeCheckResult() {
+        return volumeCheckResult;
+    }
+
+    public void setVolumeCheckResult(Map<String, String> volumeCheckResult) {
+        this.volumeCheckResult = volumeCheckResult;
+    }
+
+    public Map<String, String> getVolumeRepairResult() {
+        return volumeRepairResult;
+    }
+
+    public void setVolumeRepairResult(Map<String, String> volumeRepairResult) {
+        this.volumeRepairResult = volumeRepairResult;
+    }
+
+    public void setEncryptionFormat(String encryptionFormat) {
+        this.encryptionFormat = encryptionFormat;
     }
 }

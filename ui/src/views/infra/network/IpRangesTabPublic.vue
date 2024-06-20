@@ -54,6 +54,12 @@
           <div
             class="actions"
             style="text-align: right" >
+            <router-link :to="{ name: 'publicip', query: { vlanid: record.id }}" target="_blank">
+              <tooltip-button
+                tooltipPlacement="bottom"
+                :tooltip="$t('label.view') + ' ' + $t('label.public.ip.addresses')"
+                icon="environment-outlined"/>
+            </router-link>
             <tooltip-button
               v-if="!record.domain && !basicGuestNetwork && record.gateway && !record.ip6gateway"
               tooltipPlacement="bottom"

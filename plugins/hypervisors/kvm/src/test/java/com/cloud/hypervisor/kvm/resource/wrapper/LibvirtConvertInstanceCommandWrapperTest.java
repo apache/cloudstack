@@ -182,7 +182,6 @@ public class LibvirtConvertInstanceCommandWrapperTest {
     @Test
     public void testMoveTemporaryDisksToDestination() {
         KVMPhysicalDisk sourceDisk = Mockito.mock(KVMPhysicalDisk.class);
-        Mockito.when(sourceDisk.getPool()).thenReturn(temporaryPool);
         List<KVMPhysicalDisk> disks = List.of(sourceDisk);
         String destinationPoolUuid = UUID.randomUUID().toString();
         List<String> destinationPools = List.of(destinationPoolUuid);
@@ -215,6 +214,7 @@ public class LibvirtConvertInstanceCommandWrapperTest {
 
         LibvirtDomainXMLParser parser = Mockito.mock(LibvirtDomainXMLParser.class);
         Mockito.when(parser.getDisks()).thenReturn(List.of(diskDef));
+        Mockito.doReturn(new Pair<String, String>(null, null)).when(convertInstanceCommandWrapper).getNfsStoragePoolHostAndPath(destinationPool);
 
         List<UnmanagedInstanceTO.Disk> unmanagedInstanceDisks = convertInstanceCommandWrapper.getUnmanagedInstanceDisks(disks, parser);
         Assert.assertEquals(1, unmanagedInstanceDisks.size());

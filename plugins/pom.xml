@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack</artifactId>
-        <version>4.19.0.0-SNAPSHOT</version>
+        <version>4.20.0.0-SNAPSHOT</version>
     </parent>
     <build>
         <plugins>
@@ -79,6 +79,7 @@
         <module>event-bus/inmemory</module>
         <module>event-bus/kafka</module>
         <module>event-bus/rabbitmq</module>
+        <module>event-bus/webhook</module>
 
         <module>ha-planners/skip-heurestics</module>
 
@@ -100,7 +101,6 @@
 
         <module>network-elements/bigswitch</module>
         <module>network-elements/dns-notifier</module>
-        <module>network-elements/juniper-contrail</module>
         <module>network-elements/elastic-loadbalancer</module>
         <module>network-elements/globodns</module>
         <module>network-elements/internal-loadbalancer</module>
@@ -230,6 +230,8 @@
                 <module>backup/veeam</module>
                 <module>hypervisors/vmware</module>
                 <module>network-elements/cisco-vnmc</module>
+                <module>network-elements/nsx</module>
+                <module>network-elements/juniper-contrail</module>
             </modules>
         </profile>
         <profile>

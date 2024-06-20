@@ -49,7 +49,8 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.image.deployasis.DeployAsIsHelper;
 import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.commons.lang.BooleanUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -60,7 +61,7 @@ import java.util.List;
 import java.util.Map;
 
 class VmwareVmImplementer {
-    private static final Logger LOGGER = Logger.getLogger(VmwareVmImplementer.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
     DomainRouterDao domainRouterDao;
@@ -124,7 +125,7 @@ class VmwareVmImplementer {
                 try {
                     VirtualEthernetCardType.valueOf(nicDeviceType);
                 } catch (Exception e) {
-                    LOGGER.warn("Invalid NIC device type " + nicDeviceType + " is specified in VM details, switch to default E1000");
+                    logger.warn("Invalid NIC device type " + nicDeviceType + " is specified in VM details, switch to default E1000");
                     details.put(VmDetailConstants.NIC_ADAPTER, VirtualEthernetCardType.E1000.toString());
                 }
             }
@@ -135,7 +136,7 @@ class VmwareVmImplementer {
                 try {
                     VirtualEthernetCardType.valueOf(nicDeviceType);
                 } catch (Exception e) {
-                    LOGGER.warn(String.format("Invalid NIC device type [%s] specified in VM details, switching to value [%s] of configuration [%s].",
+                    logger.warn(String.format("Invalid NIC device type [%s] specified in VM details, switching to value [%s] of configuration [%s].",
                             nicDeviceType, vmwareMgr.VmwareUserVmNicDeviceType.value(), vmwareMgr.VmwareUserVmNicDeviceType.toString()));
                     details.put(VmDetailConstants.NIC_ADAPTER, vmwareMgr.VmwareUserVmNicDeviceType.value());
                 }
@@ -194,9 +195,9 @@ class VmwareVmImplementer {
     }
 
     private void setDetails(VirtualMachineTO to, Map<String, String> details) {
-        if (LOGGER.isTraceEnabled()) {
+        if (logger.isTraceEnabled()) {
             for (String key : details.keySet()) {
-                LOGGER.trace(String.format("Detail for VM %s: %s => %s", to.getName(), key, details.get(key)));
+                logger.trace(String.format("Detail for VM %s: %s => %s", to.getName(), key, details.get(key)));
             }
         }
         to.setDetails(details);
@@ -346,8 +347,8 @@ class VmwareVmImplementer {
         Boolean globalNestedVPerVMEnabled = getGlobalNestedVPerVMEnabled();
 
         Boolean shouldEnableNestedVirtualization = shouldEnableNestedVirtualization(globalNestedVirtualisationEnabled, globalNestedVPerVMEnabled, localNestedV);
-        if(LOGGER.isDebugEnabled()) {
-            LOGGER.debug(String.format(
+        if(logger.isDebugEnabled()) {
+            logger.debug(String.format(
                     "Due to '%B'(globalNestedVirtualisationEnabled) and '%B'(globalNestedVPerVMEnabled) I'm adding a flag with value %B to the vm configuration for Nested Virtualisation.",
                     globalNestedVirtualisationEnabled,
                     globalNestedVPerVMEnabled,
@@ -410,11 +411,11 @@ class VmwareVmImplementer {
     protected GuestOSHypervisorVO getGuestOsMapping(GuestOSVO guestOS , String hypervisorVersion) {
         GuestOSHypervisorVO guestOsMapping = guestOsHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), Hypervisor.HypervisorType.VMware.toString(), hypervisorVersion);
         if (guestOsMapping == null) {
-            LOGGER.debug(String.format("Cannot find guest os mappings for guest os \"%s\" on VMware %s", guestOS.getDisplayName(), hypervisorVersion));
+            logger.debug(String.format("Cannot find guest os mappings for guest os \"%s\" on VMware %s", guestOS.getDisplayName(), hypervisorVersion));
             String parentVersion = CloudStackVersion.getVMwareParentVersion(hypervisorVersion);
             if (parentVersion != null) {
                 guestOsMapping = guestOsHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), Hypervisor.HypervisorType.VMware.toString(), parentVersion);
-                LOGGER.debug(String.format("Found guest os mappings for guest os \"%s\" on VMware %s: %s", guestOS.getDisplayName(), parentVersion, guestOsMapping));
+                logger.debug(String.format("Found guest os mappings for guest os \"%s\" on VMware %s: %s", guestOS.getDisplayName(), parentVersion, guestOsMapping));
             }
         }
         return guestOsMapping;

@@ -20,11 +20,8 @@ package com.cloud.hypervisor.ovm3.objects;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
 
 public class CloudstackPlugin extends OvmObject {
-    private static final Logger LOGGER = Logger
-            .getLogger(CloudstackPlugin.class);
     private boolean checkstoragestarted = false;
     public CloudstackPlugin(Connection c) {
         setClient(c);
@@ -48,7 +45,7 @@ public class CloudstackPlugin extends OvmObject {
                 content);
     }
 
-    public static class ReturnCode {
+    public class ReturnCode {
         private Map<String, Object> returnCode = new HashMap<String, Object>() {
             {
                 put("rc", null);
@@ -73,7 +70,7 @@ public class CloudstackPlugin extends OvmObject {
             } else if (rc instanceof Long) {
                 c = (Long) rc;
             } else {
-                LOGGER.debug("Incorrect return code: " + rc);
+                logger.debug("Incorrect return code: " + rc);
                 return false;
             }
             returnCode.put("exit", c);
@@ -126,7 +123,7 @@ public class CloudstackPlugin extends OvmObject {
                 Thread.sleep(sleep * 1000);
             }
         } catch (Exception e) {
-            LOGGER.error("Dom0 port check failed: " + e);
+            logger.error("Dom0 port check failed: " + e);
         }
         return x;
     }

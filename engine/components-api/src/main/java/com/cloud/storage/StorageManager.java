@@ -199,6 +199,10 @@ public interface StorageManager extends StorageService {
             true,
             ConfigKey.Scope.Global,
             null);
+    static final ConfigKey<Boolean> DataStoreDownloadFollowRedirects = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED,
+            Boolean.class, "store.download.follow.redirects", "false",
+            "Whether HTTP redirect is followed during store downloads for objects such as template, volume etc.",
+            true, ConfigKey.Scope.Global);
 
     ConfigKey<Long> HEURISTICS_SCRIPT_TIMEOUT = new ConfigKey<>("Advanced", Long.class, "heuristics.script.timeout", "3000",
             "The maximum runtime, in milliseconds, to execute the heuristic rule; if it is reached, a timeout will happen.", true);
@@ -277,6 +281,8 @@ public interface StorageManager extends StorageService {
 
     CapacityVO getStoragePoolUsedStats(Long poolId, Long clusterId, Long podId, Long zoneId);
 
+    CapacityVO getStoragePoolUsedStats(Long zoneId, Long podId, Long clusterId, List<Long> poolIds);
+
     List<StoragePoolVO> ListByDataCenterHypervisor(long datacenterId, HypervisorType type);
 
     List<VMInstanceVO> listByStoragePool(long storagePoolId);
@@ -302,6 +308,9 @@ public interface StorageManager extends StorageService {
     HypervisorType getHypervisorTypeFromFormat(ImageFormat format);
 
     boolean storagePoolHasEnoughIops(List<Pair<Volume, DiskProfile>> volumeDiskProfilePairs, StoragePool pool);
+
+    boolean storagePoolHasEnoughIops(Long requestedIops, StoragePool pool);
+    boolean storagePoolHasEnoughSpace(Long size, StoragePool pool);
 
     boolean storagePoolHasEnoughSpace(List<Pair<Volume, DiskProfile>> volumeDiskProfilePairs, StoragePool pool);
 
@@ -335,6 +344,8 @@ public interface StorageManager extends StorageService {
 
     boolean isStoragePoolCompliantWithStoragePolicy(List<Pair<Volume, DiskProfile>> volumes, StoragePool pool) throws StorageUnavailableException;
 
+    boolean isStoragePoolCompliantWithStoragePolicy(long diskOfferingId, StoragePool pool) throws StorageUnavailableException;
+
     boolean registerHostListener(String providerUuid, HypervisorHostListener listener);
 
     boolean connectHostToSharedPool(long hostId, long poolId) throws StorageUnavailableException, StorageConflictException;
@@ -356,6 +367,8 @@ public interface StorageManager extends StorageService {
     Long getDiskIopsReadRate(ServiceOffering offering, DiskOffering diskOffering);
 
     Long getDiskIopsWriteRate(ServiceOffering offering, DiskOffering diskOffering);
+
+    ImageStore updateImageStoreStatus(Long id, String name, Boolean readonly, Long capacityBytes);
 
     void cleanupDownloadUrls();
 

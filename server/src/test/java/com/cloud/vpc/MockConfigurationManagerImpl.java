@@ -26,6 +26,7 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan;
+import com.cloud.dc.VlanVO;
 import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -515,9 +516,9 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      * @see com.cloud.configuration.ConfigurationManager#deleteVlanAndPublicIpRange(long, long, com.cloud.user.Account)
      */
     @Override
-    public boolean deleteVlanAndPublicIpRange(long userId, long vlanDbId, Account caller) {
+    public VlanVO deleteVlanAndPublicIpRange(long userId, long vlanDbId, Account caller) {
         // TODO Auto-generated method stub
-        return false;
+        return null;
     }
 
     /* (non-Javadoc)
@@ -546,7 +547,7 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
                                                    Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, GuestType type, boolean systemOnly, Long serviceOfferingId,
                                                    boolean conserveMode, Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges, boolean isPersistent,
                                                    Map<NetworkOffering.Detail, String> details, boolean egressDefaultPolicy, Integer maxconn, boolean enableKeepAlive, Boolean forVpc,
-                                                   Boolean forTungsten, List<Long> domainIds, List<Long> zoneIds, boolean enableOffering, NetUtils.InternetProtocol internetProtocol) {
+                                                   Boolean forTungsten, boolean forNsx, String mode, List<Long> domainIds, List<Long> zoneIds, boolean enableOffering, NetUtils.InternetProtocol internetProtocol) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -556,7 +557,7 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      */
     @Override
     public Vlan createVlanAndPublicIpRange(long zoneId, long networkId, long physicalNetworkId, boolean forVirtualNetwork, boolean forSystemVms, Long podId, String startIP, String endIP,
-        String vlanGateway, String vlanNetmask, String vlanId, boolean bypassVlanOverlapCheck, Domain domain, Account vlanOwner, String startIPv6, String endIPv6, String vlanGatewayv6, String vlanCidrv6)
+                                           String vlanGateway, String vlanNetmask, String vlanId, boolean bypassVlanOverlapCheck, Domain domain, Account vlanOwner, String startIPv6, String endIPv6, String vlanGatewayv6, String vlanCidrv6, boolean forNsx)
         throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException {
         // TODO Auto-generated method stub
         return null;
@@ -676,5 +677,10 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
     public List<ConfigurationSubGroupVO> getConfigurationSubGroups(Long groupId) {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public void validateExtraConfigInServiceOfferingDetail(String detailName) {
+        // TODO Auto-generated method stub
     }
 }

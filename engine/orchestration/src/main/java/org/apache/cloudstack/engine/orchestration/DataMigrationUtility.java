@@ -46,7 +46,6 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
-import org.apache.log4j.Logger;
 
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -62,9 +61,11 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class DataMigrationUtility {
-    private static Logger LOGGER = Logger.getLogger(DataMigrationUtility.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
     SecondaryStorageVmDao secStorageVmDao;
@@ -96,15 +97,15 @@ public class DataMigrationUtility {
         boolean isReady = true;
         for (TemplateDataStoreVO template : templates) {
             isReady &= (Arrays.asList(validStates).contains(template.getState()));
-            LOGGER.trace(String.format("template state: %s", template.getState()));
+            logger.trace("template state: {}", template.getState());
         }
         for (SnapshotDataStoreVO snapshot : snapshots) {
             isReady &= (Arrays.asList(validStates).contains(snapshot.getState()));
-            LOGGER.trace(String.format("snapshot state: %s", snapshot.getState()));
+            logger.trace("snapshot state: {}", snapshot.getState());
         }
         for (VolumeDataStoreVO volume : volumes) {
             isReady &= (Arrays.asList(validStates).contains(volume.getState()));
-            LOGGER.trace(String.format("volume state: %s", volume.getState()));
+            logger.trace("volume state: {}", volume.getState());
         }
         return isReady;
     }

@@ -37,7 +37,6 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import java.util.Map;
 
@@ -46,7 +45,6 @@ import java.util.Map;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true, since = "4.18.0")
 public class ResetVMUserDataCmd extends BaseCmd implements UserCmd {
 
-    public static final Logger s_logger = Logger.getLogger(ResetVMUserDataCmd.class.getName());
 
     private static final String s_name = "resetuserdataforvirtualmachineresponse";
 
@@ -62,7 +60,7 @@ public class ResetVMUserDataCmd extends BaseCmd implements UserCmd {
             description = "an optional binary data that can be sent to the virtual machine upon a successful deployment. " +
                     "This binary data must be base64 encoded before adding it to the request. " +
                     "Using HTTP GET (via querystring), you can send up to 4KB of data after base64 encoding. " +
-                    "Using HTTP POST(via POST body), you can send up to 1MB of data after base64 encoding." +
+                    "Using HTTP POST (via POST body), you can send up to 1MB of data after base64 encoding. " +
                     "You also need to change vm.userdata.max.length value",
             length = 1048576)
     private String userData;

@@ -26,6 +26,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.cloud.host.HostTagVO;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.vpc.VpcVO;
 import javax.inject.Inject;
 
 import com.cloud.hypervisor.Hypervisor;
@@ -36,7 +38,9 @@ import org.apache.cloudstack.backup.BackupOfferingVO;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
+import org.apache.cloudstack.quota.dao.NetworkDao;
 import org.apache.cloudstack.quota.dao.VmTemplateDao;
+import org.apache.cloudstack.quota.dao.VpcDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -47,7 +51,8 @@ import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.jsinterpreter.JsInterpreter;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenterVO;
@@ -99,7 +104,7 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 @Component
 public class PresetVariableHelper {
-    protected Logger logger = Logger.getLogger(PresetVariableHelper.class);
+    protected Logger logger = LogManager.getLogger(PresetVariableHelper.class);
 
     @Inject
     AccountDao accountDao;
@@ -169,6 +174,13 @@ public class PresetVariableHelper {
 
     @Inject
     BackupOfferingDao backupOfferingDao;
+
+    @Inject
+    NetworkDao networkDao;
+
+    @Inject
+    VpcDao vpcDao;
+
 
     protected boolean backupSnapshotAfterTakingSnapshot = SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value();
 
@@ -273,6 +285,8 @@ public class PresetVariableHelper {
         loadPresetVariableValueForNetworkOffering(usageRecord, value);
         loadPresetVariableValueForVmSnapshot(usageRecord, value);
         loadPresetVariableValueForBackup(usageRecord, value);
+        loadPresetVariableValueForNetwork(usageRecord, value);
+        loadPresetVariableValueForVpc(usageRecord, value);
 
         return value;
     }
@@ -687,6 +701,37 @@ public class PresetVariableHelper {
         backupOffering.setExternalId(backupOfferingVo.getExternalId());
 
         return backupOffering;
+    }
+
+    protected void loadPresetVariableValueForNetwork(UsageVO usageRecord, Value value) {
+        int usageType = usageRecord.getUsageType();
+        if (usageType != QuotaTypes.NETWORK) {
+            logNotLoadingMessageInTrace("Network", usageType);
+            return;
+        }
+
+        Long networkId = usageRecord.getUsageId();
+        NetworkVO network = networkDao.findByIdIncludingRemoved(networkId);
+        validateIfObjectIsNull(network, networkId, "Network");
+
+        value.setId(network.getUuid());
+        value.setName(network.getName());
+        value.setState(usageRecord.getState());
+    }
+
+    protected void loadPresetVariableValueForVpc(UsageVO usageRecord, Value value) {
+        int usageType = usageRecord.getUsageType();
+        if (usageType != QuotaTypes.VPC) {
+            logNotLoadingMessageInTrace("VPC", usageType);
+            return;
+        }
+
+        Long vpcId = usageRecord.getUsageId();
+        VpcVO vpc = vpcDao.findByIdIncludingRemoved(vpcId);
+        validateIfObjectIsNull(vpc, vpcId, "VPC");
+
+        value.setId(vpc.getUuid());
+        value.setName(vpc.getName());
     }
 
     /**

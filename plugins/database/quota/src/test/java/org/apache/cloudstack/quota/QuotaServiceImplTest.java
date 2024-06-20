@@ -30,13 +30,12 @@ import org.apache.cloudstack.quota.dao.QuotaUsageDao;
 import org.apache.cloudstack.quota.vo.QuotaAccountVO;
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import javax.naming.ConfigurationException;
 import java.lang.reflect.Field;
@@ -99,15 +98,7 @@ public class QuotaServiceImplTest extends TestCase {
         QuotaResponseBuilderField.set(quotaService, respBldr);
 
         Mockito.when(configDao.getValue(Mockito.eq(Config.UsageAggregationTimezone.toString()))).thenReturn("IST");
-        Mockito.when(configDao.getValue(Mockito.eq(Config.UsageStatsJobAggregationRange.toString()))).thenReturn("1");
         quotaService.configure("randomName", null);
-    }
-
-    @Test
-    public void testComputeAdjustedTime() {
-        DateTime now = new DateTime(DateTimeZone.UTC);
-        DateTime result = new DateTime(quotaService.computeAdjustedTime(now.toDate()));
-        // FIXME: fix this test
     }
 
     @Test
@@ -124,7 +115,6 @@ public class QuotaServiceImplTest extends TestCase {
         qb.setAccountId(accountId);
         records.add(qb);
 
-        Mockito.when(respBldr.startOfNextDay()).thenReturn(endDate);
         Mockito.when(respBldr.startOfNextDay(Mockito.any(Date.class))).thenReturn(startDate);
         Mockito.when(quotaBalanceDao.findQuotaBalance(Mockito.eq(accountId), Mockito.eq(domainId), Mockito.any(Date.class), Mockito.any(Date.class))).thenReturn(records);
         Mockito.when(quotaBalanceDao.lastQuotaBalanceVO(Mockito.eq(accountId), Mockito.eq(domainId), Mockito.any(Date.class))).thenReturn(records);
@@ -143,7 +133,6 @@ public class QuotaServiceImplTest extends TestCase {
         final Date startDate = new DateTime().minusDays(2).toDate();
         final Date endDate = new Date();
 
-        Mockito.when(respBldr.startOfNextDay()).thenReturn(endDate);
         quotaService.getQuotaUsage(accountId, accountName, domainId, QuotaTypes.IP_ADDRESS, startDate, endDate);
         Mockito.verify(quotaUsageDao, Mockito.times(1)).findQuotaUsage(Mockito.eq(accountId), Mockito.eq(domainId), Mockito.eq(QuotaTypes.IP_ADDRESS), Mockito.any(Date.class), Mockito.any(Date.class));
     }

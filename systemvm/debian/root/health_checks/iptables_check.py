@@ -24,7 +24,7 @@ from utility import getHealthChecksData, formatPort
 def main():
     portForwards = getHealthChecksData("portForwarding")
     if portForwards is None or len(portForwards) == 0:
-        print "No portforwarding rules provided to check, skipping"
+        print("No portforwarding rules provided to check, skipping")
         exit(0)
 
     failedCheck = False
@@ -47,7 +47,7 @@ def main():
                                               "for fetching rules by " + fetchIpTableEntriesCmd + "\n"
             continue
 
-        ipTablesMatchingEntries = pout.communicate()[0].strip().split('\n')
+        ipTablesMatchingEntries = pout.communicate()[0].decode().strip().split('\n')
         for pfEntryListExpected in entriesExpected:
             foundPfEntryList = False
             for ipTableEntry in ipTablesMatchingEntries:
@@ -68,10 +68,10 @@ def main():
                 failureMessage = failureMessage + str(pfEntryListExpected) + "\n"
 
     if failedCheck:
-        print failureMessage
+        print(failureMessage)
         exit(1)
     else:
-        print "Found all entries (count " + str(len(portForwards)) + ") in iptables"
+        print("Found all entries (count " + str(len(portForwards)) + ") in iptables")
         exit(0)
 
 

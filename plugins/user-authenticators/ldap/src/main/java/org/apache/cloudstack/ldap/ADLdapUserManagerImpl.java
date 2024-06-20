@@ -28,10 +28,8 @@ import javax.naming.directory.SearchResult;
 import javax.naming.ldap.LdapContext;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 public class ADLdapUserManagerImpl extends OpenLdapUserManagerImpl implements LdapUserManager {
-    public static final Logger s_logger = Logger.getLogger(ADLdapUserManagerImpl.class.getName());
     private static final String MICROSOFT_AD_NESTED_MEMBERS_FILTER = "memberOf:1.2.840.113556.1.4.1941:";
     private static final String MICROSOFT_AD_MEMBERS_FILTER = "memberOf";
 
@@ -77,7 +75,7 @@ public class ADLdapUserManagerImpl extends OpenLdapUserManagerImpl implements Ld
         result.append(memberOfFilter);
         result.append(")");
 
-        s_logger.debug("group search filter = " + result);
+        logger.debug("group search filter = " + result);
         return result.toString();
     }
 

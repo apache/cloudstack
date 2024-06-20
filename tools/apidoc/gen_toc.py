@@ -134,6 +134,9 @@ known_categories = {
     'removeTungstenFabricNetworkGatewayFromLogicalRouter': 'Tungsten',
     'updateTungstenFabricLBHealthMonitor': 'Tungsten',
     'listTungstenFabricLBHealthMonitor': 'Tungsten',
+    'listNsxControllers': 'NSX',
+    'addNsxController': 'NSX',
+    'deleteNsxController': 'NSX',
     'Vpn': 'VPN',
     'Limit': 'Limit',
     'ResourceCount': 'Limit',
@@ -271,7 +274,10 @@ known_categories = {
     'deleteBucket': 'Object Store',
     'listBuckets': 'Object Store',
     'listVmsForImport': 'Virtual Machine',
-    'importVm': 'Virtual Machine'
+    'importVm': 'Virtual Machine',
+    'Webhook': 'Webhook',
+    'Webhooks': 'Webhook',
+    'purgeExpungedResources': 'Resource'
 }
 
 

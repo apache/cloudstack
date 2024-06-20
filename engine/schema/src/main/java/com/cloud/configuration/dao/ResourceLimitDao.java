@@ -18,6 +18,7 @@ package com.cloud.configuration.dao;
 
 import java.util.List;
 
+import com.cloud.configuration.Resource;
 import com.cloud.configuration.Resource.ResourceOwnerType;
 import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceLimitVO;
@@ -31,7 +32,8 @@ public interface ResourceLimitDao extends GenericDao<ResourceLimitVO, Long> {
 
     ResourceCount.ResourceType getLimitType(String type);
 
-    ResourceLimitVO findByOwnerIdAndType(long ownerId, ResourceOwnerType ownerType, ResourceCount.ResourceType type);
+    ResourceLimitVO findByOwnerIdAndTypeAndTag(long ownerId, ResourceOwnerType ownerType, ResourceCount.ResourceType type, String tag);
 
     long removeEntriesByOwner(Long ownerId, ResourceOwnerType ownerType);
+    void removeResourceLimitsForNonMatchingTags(Long ownerId, ResourceOwnerType ownerType, List<Resource.ResourceType> types, List<String> tags);
 }

@@ -16,10 +16,9 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
-import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.log4j.Logger;
-
+import com.cloud.vm.VmDetailConstants;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -29,6 +28,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.UserCmd;
+import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -42,11 +42,12 @@ import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 
+import java.util.Map;
+
 @APICommand(name = "restoreVirtualMachine", description = "Restore a VM to original template/ISO or new template/ISO", responseObject = UserVmResponse.class, since = "3.0.0", responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = true)
 public class RestoreVMCmd extends BaseAsyncCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(RestoreVMCmd.class);
     private static final String s_name = "restorevmresponse";
 
     @ACL(accessType = AccessType.OperateEntry)
@@ -59,6 +60,28 @@ public class RestoreVMCmd extends BaseAsyncCmd implements UserCmd {
                entityType = TemplateResponse.class,
                description = "an optional template Id to restore vm from the new template. This can be an ISO id in case of restore vm deployed using ISO")
     private Long templateId;
+
+    @Parameter(name = ApiConstants.DISK_OFFERING_ID,
+               type = CommandType.UUID,
+               entityType = DiskOfferingResponse.class,
+               description = "Override root volume's diskoffering.", since = "4.19.1")
+    private Long rootDiskOfferingId;
+
+    @Parameter(name = ApiConstants.ROOT_DISK_SIZE,
+               type = CommandType.LONG,
+               description = "Override root volume's size (in GB). Analogous to details[0].rootdisksize, which takes precedence over this parameter if both are provided",
+               since = "4.19.1")
+    private Long rootDiskSize;
+
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, since = "4.19.1",
+               description = "used to specify the custom parameters")
+    private Map details;
+
+    @Parameter(name = ApiConstants.EXPUNGE,
+               type = CommandType.BOOLEAN,
+               description = "Optional field to expunge old root volume after restore.",
+               since = "4.19.1")
+    private Boolean expungeRootDisk;
 
     @Override
     public String getEventType() {
@@ -110,6 +133,22 @@ public class RestoreVMCmd extends BaseAsyncCmd implements UserCmd {
     // TODO - Remove vmid param and make it "id" in 5.0 so that we don't have two getters
     public Long getId() {
         return getVmId();
+    }
+
+    public Long getRootDiskOfferingId() {
+        return rootDiskOfferingId;
+    }
+
+    public Map<String, String> getDetails() {
+        Map<String, String> customparameterMap = convertDetailsToMap(details);
+        if (rootDiskSize != null && !customparameterMap.containsKey(VmDetailConstants.ROOT_DISK_SIZE)) {
+            customparameterMap.put(VmDetailConstants.ROOT_DISK_SIZE, rootDiskSize.toString());
+        }
+        return customparameterMap;
+    }
+
+    public Boolean getExpungeRootDisk() {
+        return expungeRootDisk != null && expungeRootDisk;
     }
 
     @Override

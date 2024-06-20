@@ -21,6 +21,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -32,7 +33,6 @@ import org.apache.cloudstack.api.response.KubernetesSupportedVersionResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -47,7 +47,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
         entityType = {KubernetesSupportedVersion.class},
         authorized = {RoleType.Admin})
 public class AddKubernetesSupportedVersionCmd extends BaseCmd implements AdminCmd {
-    public static final Logger LOGGER = Logger.getLogger(AddKubernetesSupportedVersionCmd.class.getName());
 
     @Inject
     private KubernetesVersionService kubernetesVersionService;
@@ -134,6 +133,11 @@ public class AddKubernetesSupportedVersionCmd extends BaseCmd implements AdminCm
     @Override
     public long getEntityOwnerId() {
         return CallContext.current().getCallingAccountId();
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.KubernetesSupportedVersion;
     }
 
     /////////////////////////////////////////////////////

@@ -16,12 +16,11 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.google.gson.annotations.SerializedName;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 public class CapacityResponse extends BaseResponse {
     @SerializedName(ApiConstants.TYPE)
@@ -71,6 +70,10 @@ public class CapacityResponse extends BaseResponse {
     @SerializedName("percentused")
     @Param(description = "the percentage of capacity currently in use")
     private String percentUsed;
+
+    @SerializedName(ApiConstants.TAG)
+    @Param(description = "The tag for the capacity type", since = "4.20.0")
+    private String tag;
 
     public Short getCapacityType() {
         return capacityType;
@@ -166,5 +169,9 @@ public class CapacityResponse extends BaseResponse {
 
     public void setPercentUsed(String percentUsed) {
         this.percentUsed = percentUsed;
+    }
+
+    public void setTag(String tag) {
+        this.tag = tag;
     }
 }

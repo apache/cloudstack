@@ -23,7 +23,6 @@ import java.util.Map;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.response.UserDataResponse;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -54,7 +53,6 @@ import com.cloud.vm.VirtualMachine;
         "Therefore, stop the VM manually before issuing this call.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
     requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction, UserCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateVMCmd.class.getName());
     private static final String s_name = "updatevirtualmachineresponse";
 
     /////////////////////////////////////////////////////
@@ -86,7 +84,7 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
                description = "an optional binary data that can be sent to the virtual machine upon a successful deployment. " +
                        "This binary data must be base64 encoded before adding it to the request. " +
                        "Using HTTP GET (via querystring), you can send up to 4KB of data after base64 encoding. " +
-                       "Using HTTP POST(via POST body), you can send up to 1MB of data after base64 encoding." +
+                       "Using HTTP POST (via POST body), you can send up to 1MB of data after base64 encoding. " +
                        "You also need to change vm.userdata.max.length value",
                length = 1048576,
                since = "4.16.0")

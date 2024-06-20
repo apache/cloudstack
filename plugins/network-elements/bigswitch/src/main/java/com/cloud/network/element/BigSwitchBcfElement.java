@@ -29,7 +29,6 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 import org.apache.commons.net.util.SubnetUtils;
@@ -128,7 +127,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 public class BigSwitchBcfElement extends AdapterBase implements BigSwitchBcfElementService,
 ConnectivityProvider, IpDeployer, SourceNatServiceProvider, StaticNatServiceProvider,
 NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
-    private static final Logger s_logger = Logger.getLogger(BigSwitchBcfElement.class);
 
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
 
@@ -194,18 +192,18 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
     }
 
     private boolean canHandle(Network network, Service service) {
-        s_logger.debug("Checking if BigSwitchBcfElement can handle service " + service.getName() + " on network " + network.getDisplayText());
+        logger.debug("Checking if BigSwitchBcfElement can handle service " + service.getName() + " on network " + network.getDisplayText());
         if (network.getBroadcastDomainType() != BroadcastDomainType.Vlan) {
             return false;
         }
 
         if (!_networkModel.isProviderForNetwork(getProvider(), network.getId())) {
-            s_logger.debug("BigSwitchBcfElement is not a provider for network " + network.getDisplayText());
+            logger.debug("BigSwitchBcfElement is not a provider for network " + network.getDisplayText());
             return false;
         }
 
         if (!_ntwkSrvcDao.canProviderSupportServiceInNetwork(network.getId(), service, BcfConstants.BIG_SWITCH_BCF)) {
-            s_logger.debug("BigSwitchBcfElement can't provide the " + service.getName() + " service on network " + network.getDisplayText());
+            logger.debug("BigSwitchBcfElement can't provide the " + service.getName() + " service on network " + network.getDisplayText());
             return false;
         }
 
@@ -298,7 +296,7 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
         }
 
         if (network.getBroadcastUri() == null) {
-            s_logger.error("Nic has no broadcast Uri");
+            logger.error("Nic has no broadcast Uri");
             return false;
         }
 
@@ -356,7 +354,7 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
     @Override
     public boolean verifyServicesCombination(Set<Service> services) {
         if (!services.contains(Service.Connectivity)) {
-            s_logger.warn("Unable to provide services without Connectivity service enabled for this element");
+            logger.warn("Unable to provide services without Connectivity service enabled for this element");
             return false;
         }
         return true;
@@ -642,14 +640,14 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
             String dstIp = rule.getDestIpAddress();
             String mac = rule.getSourceMacAddress();
             if(!rule.isForRevoke()) {
-                s_logger.debug("BCF enables static NAT for public IP: " + srcIp + " private IP " + dstIp
+                logger.debug("BCF enables static NAT for public IP: " + srcIp + " private IP " + dstIp
                         + " mac " + mac);
                 CreateBcfStaticNatCommand cmd = new CreateBcfStaticNatCommand(
                         tenantId, network.getUuid(), dstIp, srcIp, mac);
 
                 _bcfUtils.sendBcfCommandWithNetworkSyncCheck(cmd, network);
             } else {
-                s_logger.debug("BCF removes static NAT for public IP: " + srcIp + " private IP " + dstIp
+                logger.debug("BCF removes static NAT for public IP: " + srcIp + " private IP " + dstIp
                         + " mac " + mac);
                 DeleteBcfStaticNatCommand cmd = new DeleteBcfStaticNatCommand(tenantId, srcIp);
 
@@ -697,6 +695,11 @@ NetworkACLServiceProvider, FirewallServiceProvider, ResourceStateAdapter {
             }
         }
         updateBcfRouter(network);
+        return true;
+    }
+
+    @Override
+    public boolean reorderAclRules(Vpc vpc, List<? extends Network> networks, List<? extends NetworkACLItem> networkACLItems) {
         return true;
     }
 

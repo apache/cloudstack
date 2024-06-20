@@ -18,7 +18,9 @@
  */
 package org.apache.cloudstack.storage.resource;
 
-import static org.mockito.Matchers.any;
+import org.apache.logging.log4j.Logger;
+import static org.mockito.ArgumentMatchers.any;
+import org.mockito.Mock;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.spy;
 
@@ -36,17 +38,16 @@ import org.apache.cloudstack.storage.command.QuerySnapshotZoneCopyAnswer;
 import org.apache.cloudstack.storage.command.QuerySnapshotZoneCopyCommand;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.apache.log4j.Level;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import static org.mockito.Mockito.times;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.agent.api.to.DataStoreTO;
-import com.cloud.test.TestAppender;
 
 @RunWith(MockitoJUnitRunner.class)
 public class NfsSecondaryStorageResourceTest {
@@ -69,6 +70,9 @@ public class NfsSecondaryStorageResourceTest {
     private static final String EXPECTED_SIGNATURE = "expectedSignature";
 
     private static final String COMPUTED_SIGNATURE = "computedSignature";
+
+    @Mock
+    private Logger loggerMock;
 
     @Test
     public void testSwiftWriteMetadataFile() throws Exception {
@@ -101,18 +105,14 @@ public class NfsSecondaryStorageResourceTest {
     public void testCleanupStagingNfs() throws Exception{
 
         NfsSecondaryStorageResource spyResource = spy(resource);
+        spyResource.logger = loggerMock;
         RuntimeException exception = new RuntimeException();
         doThrow(exception).when(spyResource).execute(any(DeleteCommand.class));
         TemplateObjectTO mockTemplate = Mockito.mock(TemplateObjectTO.class);
 
-        TestAppender.TestAppenderBuilder appenderBuilder = new TestAppender.TestAppenderBuilder();
-        appenderBuilder.addExpectedPattern(Level.DEBUG, "Failed to clean up staging area:");
-        TestAppender testLogAppender = appenderBuilder.build();
-        TestAppender.safeAddAppender(NfsSecondaryStorageResource.s_logger, testLogAppender);
-
         spyResource.cleanupStagingNfs(mockTemplate);
 
-        testLogAppender.assertMessagesLogged();
+        Mockito.verify(loggerMock, times(1)).debug("Failed to clean up staging area:", exception);
 
     }
 

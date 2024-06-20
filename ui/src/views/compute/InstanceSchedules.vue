@@ -22,8 +22,9 @@
       style="width: 100%; margin-bottom: 10px"
       @click="showAddModal"
       :loading="loading"
-      :disabled="!('createVMSchedule' in $store.getters.apis)">
-      <template #icon><plus-outlined/></template> {{ $t('label.schedule.add') }}
+      :disabled="!('createVMSchedule' in $store.getters.apis)"
+    >
+      <template #icon><plus-outlined /></template> {{ $t('label.schedule.add') }}
     </a-button>
     <list-view
       :loading="tabLoading"
@@ -35,7 +36,8 @@
       @update-selected-columns="updateSelectedColumns"
       @update-vm-schedule="updateVMSchedule"
       @remove-vm-schedule="removeVMSchedule"
-      @refresh="this.fetchData"/>
+      @refresh="this.fetchData"
+    />
     <a-pagination
       class="row-element"
       style="margin-top: 10px"
@@ -43,12 +45,13 @@
       :current="page"
       :pageSize="pageSize"
       :total="totalCount"
-      :showTotal="total => `${$t('label.showing')} ${Math.min(total, 1+((page-1)*pageSize))}-${Math.min(page*pageSize, total)} ${$t('label.of')} ${total} ${$t('label.items')}`"
+      :showTotal="total => `${$t('label.showing')} ${Math.min(total, 1 + ((page - 1) * pageSize))}-${Math.min(page * pageSize, total)} ${$t('label.of')} ${total} ${$t('label.items')}`"
       :pageSizeOptions="pageSizeOptions"
       @change="changePage"
       @showSizeChange="changePage"
       showSizeChanger
-      showQuickJumper>
+      showQuickJumper
+    >
       <template #buildOptionText="props">
         <span>{{ props.value }} / {{ $t('label.page') }}</span>
       </template>
@@ -60,66 +63,68 @@
     :title="$t('label.schedule')"
     :maskClosable="false"
     :closable="true"
-    :footer="null"
-    @cancel="closeModal">
+    @cancel="closeModal"
+    @ok="submitForm"
+  >
     <a-form
       layout="vertical"
       :ref="formRef"
       :model="form"
       :rules="rules"
       @finish="submitForm"
-      v-ctrl-enter="submitForm">
-      <a-form-item name="description" ref="description">
+      v-ctrl-enter="submitForm"
+    >
+      <a-form-item
+        name="description"
+        ref="description"
+        :wrapperCol="{ span: 24 }"
+      >
         <template #label>
-          <tooltip-label :title="$t('label.description')" :tooltip="apiParams.description.description"/>
+          <tooltip-label
+            :title="$t('label.description')"
+            :tooltip="apiParams.description.description"
+          />
         </template>
         <a-input
           v-model:value="form.description"
-          v-focus="true" />
+          v-focus="true"
+        />
       </a-form-item>
-      <a-form-item name="action" ref="action">
+      <a-form-item
+        name="action"
+        ref="action"
+        :wrapperCol="{ span: 24 }"
+      >
         <template #label>
-          <tooltip-label :title="$t('label.action')" :tooltip="apiParams.action.description"/>
+          <tooltip-label
+            :title="$t('label.action')"
+            :tooltip="apiParams.action.description"
+          />
         </template>
         <a-radio-group
           v-model:value="form.action"
           button-style="solid"
-          :disabled="isEdit">
-          <a-radio-button v-for="action in actions" :key="action.id" :value="action.value">
+          :disabled="isEdit"
+        >
+          <a-radio-button
+            v-for="action in actions"
+            :key="action.id"
+            :value="action.value"
+          >
             {{ $t(action.label) }}
           </a-radio-button>
         </a-radio-group>
       </a-form-item>
-      <a-form-item name="schedule" ref="schedule">
+      <a-form-item
+        name="timezone"
+        ref="timezone"
+        :wrapperCol="{ span: 24 }"
+      >
         <template #label>
-          <tooltip-label :title="$t('label.schedule')" :tooltip="apiParams.schedule.description"/>
-        </template>
-        <label>{{ $t('label.advanced.mode') }}</label>
-        <a-switch
-          v-model:checked="form.useCronFormat"
-          >
-        </a-switch>
-        <br/>
-        <span v-if="!form.useCronFormat">
-        <cron-ant
-          v-model="form.schedule"
-          :periods="periods"
-          :button-props="{ type: 'primary', size: 'small', disabled: form.useCronFormat }"
-          @error="error=$event"/>
-      </span>
-      <span v-if="form.useCronFormat">
-        <label>{{ generateHumanReadableSchedule(form.schedule) }}</label>
-        <br/>
-      </span>
-        <a-input
-          :addonBefore="$t('label.cron')"
-          v-model:value="form.schedule"
-          :disabled="!form.useCronFormat"
-          v-focus="true" />
-      </a-form-item>
-      <a-form-item name="timezone" ref="timezone">
-        <template #label>
-          <tooltip-label :title="$t('label.timezone')" :tooltip="apiParams.timezone.description"/>
+          <tooltip-label
+            :title="$t('label.timezone')"
+            :tooltip="apiParams.timezone.description"
+          />
         </template>
         <a-select
           showSearch
@@ -128,54 +133,119 @@
           :filterOption="(input, option) => {
             return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }"
-          :loading="fetching">
-          <a-select-option v-for="opt in timeZoneMap" :key="opt.id" :label="opt.name || opt.description">
+          :loading="fetching"
+        >
+          <a-select-option
+            v-for="opt in timeZoneMap"
+            :key="opt.id"
+            :label="opt.name || opt.description"
+          >
             {{ opt.name || opt.description }}
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item name="startDate" ref="startDate">
+      <a-row justify="space-between">
+        <a-col>
+          <a-form-item
+            name="startDate"
+            ref="startDate"
+          >
+            <template #label>
+              <tooltip-label
+                :title="$t('label.start.date.and.time')"
+                :tooltip="apiParams.startdate.description"
+              />
+            </template>
+            <a-date-picker
+              v-model:value="form.startDate"
+              show-time
+              :locale="this.$i18n.locale"
+              :placeholder="$t('message.select.start.date.and.time')"
+            />
+          </a-form-item>
+        </a-col>
+        <a-col>
+          <a-form-item
+            name="endDate"
+            ref="endDate"
+          >
+            <template #label>
+              <tooltip-label
+                :title="$t('label.end.date.and.time')"
+                :tooltip="apiParams.enddate.description"
+              />
+            </template>
+            <a-date-picker
+              v-model:value="form.endDate"
+              show-time
+              :locale="this.$i18n.locale"
+              :placeholder="$t('message.select.end.date.and.time')"
+            />
+          </a-form-item>
+        </a-col>
+      </a-row>
+      <a-form-item
+        name="schedule"
+        ref="schedule"
+        :wrapperCol="{ span: 24 }"
+      >
         <template #label>
-          <tooltip-label :title="$t('label.start.date.and.time')" :tooltip="apiParams.startdate.description"/>
+          <tooltip-label
+            :title="$t('label.schedule')"
+            :tooltip="apiParams.schedule.description"
+          />
         </template>
-        <a-date-picker
-          v-model:value="form.startDate"
-          show-time
-          :locale="this.$i18n.locale"
-          :placeholder="$t('message.select.start.date.and.time')"/>
+        <a-row
+          style="margin-bottom: 15px; text-align: center;"
+          justify="space-around"
+          align="middle"
+        >
+          <cron-ant
+            v-if="!form.useCronFormat"
+            v-model="form.schedule"
+            :periods="periods"
+            :button-props="{ type: 'primary', size: 'small', disabled: form.useCronFormat }"
+            @error="error = $event"
+          />
+          <label
+            v-if="form.useCronFormat">
+            {{ generateHumanReadableSchedule(form.schedule) }}
+          </label>
+        </a-row>
+        <a-row
+          justify="space-between"
+          align="middle"
+        >
+          <a-col>
+            <label>{{ $t('label.cron.mode') }}</label>
+          </a-col>
+          <a-col>
+            <a-switch v-model:checked="form.useCronFormat">
+            </a-switch>
+          </a-col>
+          <a-col :span="12">
+            <a-input
+              :addonBefore="$t('label.cron')"
+              v-model:value="form.schedule"
+              :disabled="!form.useCronFormat"
+              v-focus="true"
+            />
+          </a-col>
+        </a-row>
       </a-form-item>
-      <a-form-item name="endDate" ref="endDate">
+      <a-form-item
+        name="enabled"
+        ref="enabled"
+        :wrapperCol="{ span: 24}"
+      >
         <template #label>
-          <tooltip-label :title="$t('label.end.date.and.time')" :tooltip="apiParams.enddate.description"/>
+          <tooltip-label
+            :title="$t('label.enabled')"
+            :tooltip="apiParams.enabled.description"
+          />
         </template>
-        <a-date-picker
-          v-model:value="form.endDate"
-          show-time
-          :locale="this.$i18n.locale"
-          :placeholder="$t('message.select.end.date.and.time')"/>
+        <a-switch v-model:checked="form.enabled" />
       </a-form-item>
-      <a-form-item name="enabled" ref="enabled">
-        <template #label>
-          <tooltip-label :title="$t('label.enabled')" :tooltip="apiParams.enabled.description"/>
-        </template>
-        <a-switch
-          v-model:checked="form.enabled">
-        </a-switch>
-      </a-form-item>
-      <div :span="24" class="action-button">
-        <a-button
-          :loading="loading"
-          @click="closeModal">
-          {{ $t('label.cancel') }}
-        </a-button>
-        <a-button
-          :loading="loading"
-          ref="submit"
-          type="primary"
-          htmlType="submit">
-          {{ $t('label.ok') }}
-        </a-button>
-      </div>
     </a-form>
   </a-modal>
 </template>
@@ -191,7 +261,12 @@ import { mixinForm } from '@/utils/mixin'
 import { timeZone } from '@/utils/timezone'
 import debounce from 'lodash/debounce'
 import cronstrue from 'cronstrue/i18n'
-import moment from 'moment-timezone'
+import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc'
+import timezone from 'dayjs/plugin/timezone'
+
+dayjs.extend(utc)
+dayjs.extend(timezone)
 
 export default {
   name: 'InstanceSchedules',
@@ -323,8 +398,8 @@ export default {
       this.isEdit = true
       Object.assign(this.form, schedule)
       // Some weird issue when we directly pass in the moment with tz object
-      this.form.startDate = moment(moment(schedule.startdate).tz(schedule.timezone).format(this.pattern))
-      this.form.endDate = schedule.enddate ? moment(moment(schedule.enddate).tz(schedule.timezone).format(this.pattern)) : ''
+      this.form.startDate = dayjs(schedule.startdate).tz(schedule.timezone)
+      this.form.endDate = schedule.enddate ? dayjs(dayjs(schedule.enddate).tz(schedule.timezone)) : null
       this.showAddModal()
     },
     showAddModal () {
@@ -431,7 +506,7 @@ export default {
       this.updateColumns()
     },
     generateHumanReadableSchedule (schedule) {
-      return cronstrue.toString(schedule, { locale: this.$i18n.locale, throwExceptionOnParseError: false })
+      return cronstrue.toString(schedule, { locale: this.$i18n.locale, throwExceptionOnParseError: false, verbose: true })
     },
     updateColumns () {
       this.columns = []

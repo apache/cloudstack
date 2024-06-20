@@ -117,6 +117,7 @@ public class ApiConstants {
     public static final String CURRENT_START_IP = "currentstartip";
     public static final String CURRENT_END_IP = "currentendip";
     public static final String ENCRYPT = "encrypt";
+    public static final String ENCRYPT_FORMAT = "encryptformat";
     public static final String ENCRYPT_ROOT = "encryptroot";
     public static final String ENCRYPTION_SUPPORTED = "encryptionsupported";
     public static final String MIN_IOPS = "miniops";
@@ -174,6 +175,8 @@ public class ApiConstants {
     public static final String END_IPV6 = "endipv6";
     public static final String END_PORT = "endport";
     public static final String ENTRY_TIME = "entrytime";
+    public static final String EVENT_ID = "eventid";
+    public static final String EVENT_TYPE = "eventtype";
     public static final String EXPIRES = "expires";
     public static final String EXTRA_CONFIG = "extraconfig";
     public static final String EXTRA_DHCP_OPTION = "extradhcpoption";
@@ -191,6 +194,7 @@ public class ApiConstants {
     public static final String FORMAT = "format";
     public static final String FOR_VIRTUAL_NETWORK = "forvirtualnetwork";
     public static final String FOR_SYSTEM_VMS = "forsystemvms";
+    public static final String FULL_PATH = "fullpath";
     public static final String GATEWAY = "gateway";
     public static final String IP6_GATEWAY = "ip6gateway";
     public static final String GROUP = "group";
@@ -207,6 +211,7 @@ public class ApiConstants {
     public static final String HA_PROVIDER = "haprovider";
     public static final String HA_STATE = "hastate";
     public static final String HEALTH = "health";
+    public static final String HEADERS = "headers";
     public static final String HIDE_IP_ADDRESS_USAGE = "hideipaddressusage";
     public static final String HOST_ID = "hostid";
     public static final String HOST_IDS = "hostids";
@@ -261,8 +266,10 @@ public class ApiConstants {
     public static final String IS_CLEANUP_REQUIRED = "iscleanuprequired";
     public static final String IS_DYNAMIC = "isdynamic";
     public static final String IS_EDGE = "isedge";
+    public static final String IS_ENCRYPTED = "isencrypted";
     public static final String IS_EXTRACTABLE = "isextractable";
     public static final String IS_FEATURED = "isfeatured";
+    public static final String IS_IMPLICIT = "isimplicit";
     public static final String IS_PORTABLE = "isportable";
     public static final String IS_PUBLIC = "ispublic";
     public static final String IS_PERSISTENT = "ispersistent";
@@ -278,6 +285,7 @@ public class ApiConstants {
     public static final String JOB_STATUS = "jobstatus";
     public static final String KEEPALIVE_ENABLED = "keepaliveenabled";
     public static final String KERNEL_VERSION = "kernelversion";
+    public static final String KEY = "key";
     public static final String LABEL = "label";
     public static final String LASTNAME = "lastname";
     public static final String LAST_BOOT = "lastboottime";
@@ -285,6 +293,7 @@ public class ApiConstants {
     public static final String LAST_SERVER_STOP = "lastserverstop";
     public static final String LEVEL = "level";
     public static final String LENGTH = "length";
+    public static final String LIMIT = "limit";
     public static final String LIMIT_CPU_USE = "limitcpuuse";
     public static final String LIST_HOSTS = "listhosts";
     public static final String LOCK = "lock";
@@ -302,6 +311,8 @@ public class ApiConstants {
     public static final String MIGRATIONS = "migrations";
     public static final String MEMORY = "memory";
     public static final String MODE = "mode";
+    public static final String NSX_MODE = "nsxmode";
+    public static final String NSX_ENABLED = "isnsxenabled";
     public static final String NAME = "name";
     public static final String METHOD_NAME = "methodname";
     public static final String NETWORK_DOMAIN = "networkdomain";
@@ -321,6 +332,7 @@ public class ApiConstants {
     public static final String IS_DEFAULT_USE = "defaultuse";
     public static final String OLD_FORMAT = "oldformat";
     public static final String OP = "op";
+    public static final String OPTION = "option";
     public static final String OPTIONS = "options";
     public static final String OS_CATEGORY_ID = "oscategoryid";
     public static final String OS_CATEGORY_NAME = "oscategoryname";
@@ -348,6 +360,7 @@ public class ApiConstants {
     public static final String SSHKEY_ENABLED = "sshkeyenabled";
     public static final String PATH = "path";
     public static final String PAYLOAD = "payload";
+    public static final String PAYLOAD_URL = "payloadurl";
     public static final String POD_ID = "podid";
     public static final String POD_NAME = "podname";
     public static final String POD_IDS = "podids";
@@ -375,10 +388,13 @@ public class ApiConstants {
     public static final String PUBLIC_START_PORT = "publicport";
     public static final String PUBLIC_END_PORT = "publicendport";
     public static final String PUBLIC_ZONE = "publiczone";
+    public static final String PURGE_RESOURCES = "purgeresources";
     public static final String RECEIVED_BYTES = "receivedbytes";
     public static final String RECONNECT = "reconnect";
     public static final String RECOVER = "recover";
+    public static final String REPAIR = "repair";
     public static final String REQUIRES_HVM = "requireshvm";
+    public static final String RESOURCE_COUNT = "resourcecount";
     public static final String RESOURCE_NAME = "resourcename";
     public static final String RESOURCE_TYPE = "resourcetype";
     public static final String RESOURCE_TYPE_NAME = "resourcetypename";
@@ -391,11 +407,9 @@ public class ApiConstants {
     public static final String QUERY_FILTER = "queryfilter";
     public static final String SCHEDULE = "schedule";
     public static final String SCOPE = "scope";
-    public static final String SECRET_KEY = "usersecretkey";
-    public static final String SECONDARY_IP = "secondaryip";
-    public static final String SINCE = "since";
-    public static final String KEY = "key";
     public static final String SEARCH_BASE = "searchbase";
+    public static final String SECONDARY_IP = "secondaryip";
+    public static final String SECRET_KEY = "secretkey";
     public static final String SECURITY_GROUP_IDS = "securitygroupids";
     public static final String SECURITY_GROUP_NAMES = "securitygroupnames";
     public static final String SECURITY_GROUP_NAME = "securitygroupname";
@@ -413,14 +427,15 @@ public class ApiConstants {
     public static final String SHOW_UNIQUE = "showunique";
     public static final String SIGNATURE = "signature";
     public static final String SIGNATURE_VERSION = "signatureversion";
+    public static final String SINCE = "since";
     public static final String SIZE = "size";
     public static final String SNAPSHOT = "snapshot";
     public static final String SNAPSHOT_ID = "snapshotid";
     public static final String SNAPSHOT_POLICY_ID = "snapshotpolicyid";
     public static final String SNAPSHOT_TYPE = "snapshottype";
     public static final String SNAPSHOT_QUIESCEVM = "quiescevm";
-    public static final String SUPPORTS_STORAGE_SNAPSHOT = "supportsstoragesnapshot";
     public static final String SOURCE_ZONE_ID = "sourcezoneid";
+    public static final String SSL_VERIFICATION = "sslverification";
     public static final String START_DATE = "startdate";
     public static final String START_ID = "startid";
     public static final String START_IP = "startip";
@@ -439,15 +454,20 @@ public class ApiConstants {
     public static final String SYSTEM_VM_TYPE = "systemvmtype";
     public static final String TAGS = "tags";
     public static final String STORAGE_TAGS = "storagetags";
+    public static final String SUCCESS = "success";
+    public static final String SUITABLE_FOR_VM = "suitableforvirtualmachine";
+    public static final String SUPPORTS_STORAGE_SNAPSHOT = "supportsstoragesnapshot";
     public static final String TARGET_IQN = "targetiqn";
     public static final String TEMPLATE_FILTER = "templatefilter";
     public static final String TEMPLATE_ID = "templateid";
     public static final String TEMPLATE_IDS = "templateids";
     public static final String TEMPLATE_NAME = "templatename";
     public static final String TEMPLATE_TYPE = "templatetype";
+    public static final String TEMPLATE_FORMAT = "templateformat";
     public static final String TIMEOUT = "timeout";
     public static final String TIMEZONE = "timezone";
     public static final String TIMEZONEOFFSET = "timezoneoffset";
+    public static final String TOTAL = "total";
     public static final String TOTAL_SUBNETS = "totalsubnets";
     public static final String TYPE = "type";
     public static final String TRUST_STORE = "truststore";
@@ -470,6 +490,7 @@ public class ApiConstants {
     public static final String USERNAME = "username";
     public static final String USER_CONFIGURABLE = "userconfigurable";
     public static final String USER_SECURITY_GROUP_LIST = "usersecuritygrouplist";
+    public static final String USER_SECRET_KEY = "usersecretkey";
     public static final String USE_VIRTUAL_NETWORK = "usevirtualnetwork";
     public static final String UPDATE_IN_SEQUENCE = "updateinsequence";
     public static final String VALUE = "value";
@@ -501,6 +522,9 @@ public class ApiConstants {
     public static final String IS_VOLATILE = "isvolatile";
     public static final String VOLUME_ID = "volumeid";
     public static final String VOLUMES = "volumes";
+    public static final String VOLUME_CHECK_RESULT = "volumecheckresult";
+    public static final String VOLUME_REPAIR_RESULT = "volumerepairresult";
+
     public static final String ZONE = "zone";
     public static final String ZONE_ID = "zoneid";
     public static final String ZONE_NAME = "zonename";
@@ -546,6 +570,8 @@ public class ApiConstants {
     public static final String ALLOCATION_STATE = "allocationstate";
     public static final String MANAGED_STATE = "managedstate";
     public static final String MANAGEMENT_SERVER_ID = "managementserverid";
+    public static final String MANAGEMENT_SERVER_NAME = "managementservername";
+    public static final String STORAGE = "storage";
     public static final String STORAGE_ID = "storageid";
     public static final String PING_STORAGE_SERVER_IP = "pingstorageserverip";
     public static final String PING_DIR = "pingdir";
@@ -695,6 +721,12 @@ public class ApiConstants {
     public static final String VSWITCH_TYPE_PUBLIC_TRAFFIC = "publicvswitchtype";
     public static final String VSWITCH_NAME_GUEST_TRAFFIC = "guestvswitchname";
     public static final String VSWITCH_NAME_PUBLIC_TRAFFIC = "publicvswitchname";
+
+    // NSX
+    public static final String EDGE_CLUSTER = "edgecluster";
+    public static final String TIER0_GATEWAY = "tier0gateway";
+
+    public static final String TRANSPORT_ZONE = "transportzone";
     // Tungsten-Fabric
     public static final String TUNGSTEN_VIRTUAL_ROUTER_UUID = "tungstenvirtualrouteruuid";
     public static final String TUNGSTEN_PROVIDER_HOSTNAME = "tungstenproviderhostname";
@@ -718,6 +750,7 @@ public class ApiConstants {
     public static final String POLICY_UUID = "policyuuid";
     public static final String RULE_UUID = "ruleuuid";
     public static final String DIRECTION = "direction";
+    public static final String TAGGED_RESOURCES = "taggedresources";
     public static final String TAG_UUID = "taguuid";
     public static final String TAG_TYPE = "tagtype";
     public static final String TAG_VALUE = "tagvalue";
@@ -815,6 +848,9 @@ public class ApiConstants {
     public static final String FORCE_ENCAP = "forceencap";
     public static final String SPLIT_CONNECTIONS = "splitconnections";
     public static final String FOR_VPC = "forvpc";
+    public static final String FOR_NSX = "fornsx";
+    public static final String NSX_SUPPORT_LB = "nsxsupportlb";
+    public static final String NSX_SUPPORTS_INTERNAL_LB = "nsxsupportsinternallb";
     public static final String FOR_TUNGSTEN = "fortungsten";
     public static final String SHRINK_OK = "shrinkok";
     public static final String NICIRA_NVP_DEVICE_ID = "nvpdeviceid";
@@ -824,6 +860,11 @@ public class ApiConstants {
     public static final String NICIRA_NVP_L2_GATEWAYSERVICE_UUID = "l2gatewayserviceuuid";
     public static final String NSX_LOGICAL_SWITCH = "nsxlogicalswitch";
     public static final String NSX_LOGICAL_SWITCH_PORT = "nsxlogicalswitchport";
+    public static final String NSX_PROVIDER_UUID = "nsxprovideruuid";
+    public static final String NSX_PROVIDER_HOSTNAME = "nsxproviderhostname";
+
+    public static final String NSX_PROVIDER_PORT = "nsxproviderport";
+    public static final String NSX_CONTROLLER_ID = "nsxcontrollerid";
     public static final String S3_ACCESS_KEY = "accesskey";
     public static final String S3_SECRET_KEY = "secretkey";
     public static final String S3_END_POINT = "endpoint";
@@ -869,6 +910,7 @@ public class ApiConstants {
     public static final String AUTOSCALE_VMGROUP_NAME = "autoscalevmgroupname";
     public static final String BAREMETAL_DISCOVER_NAME = "baremetaldiscovername";
     public static final String BAREMETAL_RCT_URL = "baremetalrcturl";
+    public static final String BATCH_SIZE = "batchsize";
     public static final String UCS_DN = "ucsdn";
     public static final String GSLB_PROVIDER = "gslbprovider";
     public static final String EXCLUSIVE_GSLB_PROVIDER = "isexclusivegslbprovider";
@@ -948,6 +990,7 @@ public class ApiConstants {
     public static final String SUPPORTS_REGION_LEVEL_VPC = "supportsregionLevelvpc";
     public static final String SUPPORTS_STRECHED_L2_SUBNET = "supportsstrechedl2subnet";
     public static final String SUPPORTS_PUBLIC_ACCESS = "supportspublicaccess";
+    public static final String SUPPORTS_INTERNAL_LB = "supportsinternallb";
     public static final String SUPPORTS_VM_AUTOSCALING = "supportsvmautoscaling";
     public static final String REGION_LEVEL_VPC = "regionlevelvpc";
     public static final String STRECHED_L2_SUBNET = "strechedl2subnet";
@@ -1066,14 +1109,13 @@ public class ApiConstants {
     public static final String SOURCE_NAT_IP = "sourcenatipaddress";
     public static final String SOURCE_NAT_IP_ID = "sourcenatipaddressid";
     public static final String HAS_RULES = "hasrules";
+    public static final String NSX_DETAIL_KEY = "forNsx";
     public static final String DISK_PATH = "diskpath";
     public static final String IMPORT_SOURCE = "importsource";
     public static final String TEMP_PATH = "temppath";
     public static final String OBJECT_STORAGE = "objectstore";
-
     public static final String HEURISTIC_RULE = "heuristicrule";
     public static final String HEURISTIC_TYPE_VALID_OPTIONS = "Valid options are: ISO, SNAPSHOT, TEMPLATE and VOLUME.";
-
     public static final String MANAGEMENT = "management";
     public static final String IS_VNF = "isvnf";
     public static final String VNF_NICS = "vnfnics";
@@ -1089,6 +1131,9 @@ public class ApiConstants {
     public static final String IS_TAG_A_RULE = "istagarule";
 
     public static final String PARAMETER_DESCRIPTION_IS_TAG_A_RULE = "Whether the informed tag is a JS interpretable rule or not.";
+
+    public static final String WEBHOOK_ID = "webhookid";
+    public static final String WEBHOOK_NAME = "webhookname";
 
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.
@@ -1111,6 +1156,14 @@ public class ApiConstants {
             return ioDriver;
         }
     }
+
+    public static final String PARAMETER_DESCRIPTION_START_DATE_POSSIBLE_FORMATS = "The recommended format is \"yyyy-MM-dd'T'HH:mm:ssZ\" (e.g.: \"2023-01-01T12:00:00+0100\"); " +
+            "however, the following formats are also accepted: \"yyyy-MM-dd HH:mm:ss\" (e.g.: \"2023-01-01 12:00:00\") and \"yyyy-MM-dd\" (e.g.: \"2023-01-01\" - if the time is not " +
+            "added, it will be interpreted as \"00:00:00\"). If the recommended format is not used, the date will be considered in the server timezone.";
+
+    public static final String PARAMETER_DESCRIPTION_END_DATE_POSSIBLE_FORMATS = "The recommended format is \"yyyy-MM-dd'T'HH:mm:ssZ\" (e.g.: \"2023-01-01T12:00:00+0100\"); " +
+            "however, the following formats are also accepted: \"yyyy-MM-dd HH:mm:ss\" (e.g.: \"2023-01-01 12:00:00\") and \"yyyy-MM-dd\" (e.g.: \"2023-01-01\" - if the time is not " +
+            "added, it will be interpreted as \"23:59:59\"). If the recommended format is not used, the date will be considered in the server timezone.";
 
     public enum BootType {
         UEFI, BIOS;

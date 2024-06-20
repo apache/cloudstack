@@ -28,7 +28,6 @@ import org.apache.cloudstack.api.response.QuotaResponseBuilder;
 import org.apache.cloudstack.api.response.QuotaTariffResponse;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
@@ -38,7 +37,6 @@ import java.util.List;
 
 @APICommand(name = "quotaTariffList", responseObject = QuotaTariffResponse.class, description = "Lists all quota tariff plans", since = "4.7.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class QuotaTariffListCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(QuotaTariffListCmd.class);
 
     @Inject
     QuotaResponseBuilder _responseBuilder;
@@ -46,18 +44,18 @@ public class QuotaTariffListCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.USAGE_TYPE, type = CommandType.INTEGER, description = "Usage type of the resource")
     private Integer usageType;
 
-    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "The start date of the quota tariff. Use yyyy-MM-dd as the date format, "
-            + "e.g. startDate=2009-06-03.")
+    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "The start date of the quota tariff. " +
+            ApiConstants.PARAMETER_DESCRIPTION_START_DATE_POSSIBLE_FORMATS)
     private Date effectiveDate;
 
-    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "The end date of the quota tariff. Use yyyy-MM-dd as the date format, e.g. "
-            + "endDate=2021-11-03.", since = "4.18.0.0")
+    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "The end date of the quota tariff. " +
+            ApiConstants.PARAMETER_DESCRIPTION_END_DATE_POSSIBLE_FORMATS, since = "4.18.0.0")
     private Date endDate;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the quota tariff.", since = "4.18.0.0")
     private String name;
 
-    @Parameter(name = ApiConstants.LIST_ALL, type = CommandType.BOOLEAN, description = "False will list only not removed quota tariffs. If set to True, we will "
+    @Parameter(name = ApiConstants.LIST_ALL, type = CommandType.BOOLEAN, description = "False will list only not removed quota tariffs. If set to true, we will "
             + "list all, including the removed ones. The default is false.", since = "4.18.0.0")
     private boolean listAll = false;
 
@@ -71,7 +69,7 @@ public class QuotaTariffListCmd extends BaseListCmd {
 
         final List<QuotaTariffResponse> responses = new ArrayList<>();
 
-        s_logger.trace(String.format("Adding quota tariffs [%s] to response of API quotaTariffList.", ReflectionToStringBuilderUtils.reflectCollection(responses)));
+        logger.trace(String.format("Adding quota tariffs [%s] to response of API quotaTariffList.", ReflectionToStringBuilderUtils.reflectCollection(responses)));
 
         for (final QuotaTariffVO resource : result.first()) {
             responses.add(_responseBuilder.createQuotaTariffResponse(resource));

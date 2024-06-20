@@ -26,7 +26,8 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.Answer;
@@ -58,8 +59,7 @@ import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SshHelper;
 
 public class Ovm3StoragePool {
-    private static final Logger LOGGER = Logger
-            .getLogger(Ovm3StoragePool.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     private Connection c;
     private Ovm3Configuration config;
     private OvmObject ovmObject = new OvmObject();
@@ -81,7 +81,7 @@ public class Ovm3StoragePool {
         } catch (Ovm3ResourceException e) {
             String msg = "Failed to set server role for host "
                     + config.getAgentHostname() + ": " + e.getMessage();
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new ConfigurationException(msg);
         }
     }
@@ -94,12 +94,12 @@ public class Ovm3StoragePool {
      */
     private void takeOwnership(Pool pool) throws ConfigurationException {
         try {
-            LOGGER.debug("Take ownership of host " + config.getAgentHostname());
+            logger.debug("Take ownership of host " + config.getAgentHostname());
             pool.takeOwnership(config.getAgentOwnedByUuid(), "");
         } catch (Ovm3ResourceException e) {
             String msg = "Failed to take ownership of host "
                     + config.getAgentHostname();
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new ConfigurationException(msg);
         }
     }
@@ -113,7 +113,7 @@ public class Ovm3StoragePool {
     /* FIXME: Placeholders for now, implement later!!!! */
     private void takeOwnership33x(Pool pool) throws ConfigurationException {
         try {
-            LOGGER.debug("Take ownership of host " + config.getAgentHostname());
+            logger.debug("Take ownership of host " + config.getAgentHostname());
             String event = "http://localhost:10024/event";
             String stats = "http://localhost:10024/stats";
             String mgrCert = "None";
@@ -126,7 +126,7 @@ public class Ovm3StoragePool {
         } catch (Ovm3ResourceException e) {
             String msg = "Failed to take ownership of host "
                     + config.getAgentHostname();
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new ConfigurationException(msg);
         }
     }
@@ -146,7 +146,7 @@ public class Ovm3StoragePool {
             /* setup pool and role, needs utility to be able to do things */
             if (host.getServerRoles().contentEquals(
                     pool.getValidRoles().toString())) {
-                LOGGER.info("Server role for host " + config.getAgentHostname()
+                logger.info("Server role for host " + config.getAgentHostname()
                         + " is ok");
             } else {
                 setRoles(pool);
@@ -161,19 +161,19 @@ public class Ovm3StoragePool {
                 if (host.getManagerUuid().equals(config.getAgentOwnedByUuid())) {
                     String msg = "Host " + config.getAgentHostname()
                             + " owned by us";
-                    LOGGER.debug(msg);
+                    logger.debug(msg);
                     return true;
                 } else {
                     String msg = "Host " + config.getAgentHostname()
                             + " already part of a pool, and not owned by us";
-                    LOGGER.error(msg);
+                    logger.error(msg);
                     throw new ConfigurationException(msg);
                 }
             }
         } catch (ConfigurationException | Ovm3ResourceException es) {
             String msg = "Failed to prepare " + config.getAgentHostname()
                     + " for pool: " + es.getMessage();
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new ConfigurationException(msg);
         }
         return true;
@@ -203,7 +203,7 @@ public class Ovm3StoragePool {
         PoolOCFS2 poolFs = new PoolOCFS2(c);
         if (config.getAgentIsPrimary()) {
             try {
-                LOGGER.debug("Create poolfs on " + config.getAgentHostname()
+                logger.debug("Create poolfs on " + config.getAgentHostname()
                         + " for repo " + primUuid);
                 /* double check if we're not overwritting anything here!@ */
                 poolFs.createPoolFs(fsType, mountPoint, clusterUuid, primUuid,
@@ -270,7 +270,7 @@ public class Ovm3StoragePool {
                     members.add(c.getIp());
                 }
             } else {
-                LOGGER.warn(c.getIp() + " noticed primary "
+                logger.warn(c.getIp() + " noticed primary "
                         + config.getOvm3PoolVip() + " is not part of pool");
                 return false;
             }
@@ -281,10 +281,10 @@ public class Ovm3StoragePool {
                 Pool poolM = new Pool(x);
                 if (poolM.isInAPool()) {
                     poolM.setPoolMemberList(members);
-                    LOGGER.debug("Added " + members + " to pool "
+                    logger.debug("Added " + members + " to pool "
                             + poolM.getPoolId() + " on member " + member);
                 } else {
-                    LOGGER.warn(member
+                    logger.warn(member
                             + " unable to be member of a pool it's not in");
                     return false;
                 }
@@ -308,7 +308,7 @@ public class Ovm3StoragePool {
             pool.leaveServerPool(cmd.getPool().getUuid());
             /* also connect to the primary and update the pool list ? */
         } catch (Ovm3ResourceException e) {
-            LOGGER.debug(
+            logger.debug(
                     "Delete storage pool on host "
                             + config.getAgentHostname()
                             + " failed, however, we leave to user for cleanup and tell management server it succeeded",
@@ -342,7 +342,7 @@ public class Ovm3StoragePool {
             try {
                 repo.mountRepoFs(mountPoint, ovsRepo);
             } catch (Ovm3ResourceException e) {
-                LOGGER.debug("Unable to mount NFS repository " + mountPoint
+                logger.debug("Unable to mount NFS repository " + mountPoint
                         + " on " + ovsRepo + " requested for "
                         + config.getAgentHostname() + ": " + e.getMessage());
             }
@@ -350,7 +350,7 @@ public class Ovm3StoragePool {
                 repo.addRepo(mountPoint, ovsRepo);
                 repoExists = true;
             } catch (Ovm3ResourceException e) {
-                LOGGER.debug("NFS repository " + mountPoint + " on " + ovsRepo
+                logger.debug("NFS repository " + mountPoint + " on " + ovsRepo
                         + " not found creating repo: " + e.getMessage());
             }
             if (!repoExists) {
@@ -364,7 +364,7 @@ public class Ovm3StoragePool {
                 } catch (Ovm3ResourceException e) {
                     msg = "NFS repository " + mountPoint + " on " + ovsRepo
                             + " create failed!";
-                    LOGGER.debug(msg);
+                    logger.debug(msg);
                     throw new CloudRuntimeException(msg + " " + e.getMessage(),
                             e);
                 }
@@ -375,14 +375,14 @@ public class Ovm3StoragePool {
                 try {
                     msg = "Configuring " + config.getAgentHostname() + "("
                             + config.getAgentIp() + ") for pool";
-                    LOGGER.debug(msg);
+                    logger.debug(msg);
                     setupPool(cmd);
                     msg = "Configured host for pool";
                     /* add clustering after pooling */
                     if (config.getAgentInOvm3Cluster()) {
                         msg = "Setup " + config.getAgentHostname() + "("
                                 + config.getAgentIp() + ")  for cluster";
-                        LOGGER.debug(msg);
+                        logger.debug(msg);
                         /* setup cluster */
                         /*
                          * From cluster.java
@@ -400,7 +400,7 @@ public class Ovm3StoragePool {
                 }
             } else {
                 msg = "no way dude I can't stand for this";
-                LOGGER.debug(msg);
+                logger.debug(msg);
             }
             /*
              * this is to create the .generic_fs_stamp else we're not allowed to
@@ -419,7 +419,7 @@ public class Ovm3StoragePool {
         } else {
             msg = "NFS repository " + mountPoint + " on " + ovsRepo
                     + " create failed, was type " + cmd.getType();
-            LOGGER.debug(msg);
+            logger.debug(msg);
             return false;
         }
 
@@ -428,7 +428,7 @@ public class Ovm3StoragePool {
             prepareSecondaryStorageStore(ovsRepo, cmd.getUuid(), cmd.getHost());
         } catch (Exception e) {
             msg = "systemvm.iso copy failed to " + ovsRepo;
-            LOGGER.debug(msg, e);
+            logger.debug(msg, e);
             return false;
         }
         return true;
@@ -449,7 +449,7 @@ public class Ovm3StoragePool {
         try {
             /* double check */
             if (config.getAgentHasPrimary() && config.getAgentInOvm3Pool()) {
-                LOGGER.debug("Skip systemvm iso copy, leave it to the primary");
+                logger.debug("Skip systemvm iso copy, leave it to the primary");
                 return;
             }
             if (lock.lock(3600)) {
@@ -466,12 +466,12 @@ public class Ovm3StoragePool {
                                 poolUuid, host, destPath + "/"
                                         + srcIso.getName());
                         if (fp.getSize() != srcIso.getTotalSpace()) {
-                            LOGGER.info(" System VM patch ISO file already exists: "
+                            logger.info(" System VM patch ISO file already exists: "
                                     + srcIso.getAbsolutePath().toString()
                                     + ", destination: " + destPath);
                         }
                     } catch (Exception e) {
-                        LOGGER.info("Copy System VM patch ISO file to secondary storage. source ISO: "
+                        logger.info("Copy System VM patch ISO file to secondary storage. source ISO: "
                                 + srcIso.getAbsolutePath()
                                 + ", destination: "
                                 + destPath);
@@ -484,12 +484,12 @@ public class Ovm3StoragePool {
                                             destPath, srcIso.getAbsolutePath()
                                                     .toString(), "0644");
                         } catch (Exception es) {
-                            LOGGER.error("Unexpected exception ", es);
+                            logger.error("Unexpected exception ", es);
                             String msg = "Unable to copy systemvm ISO on secondary storage. src location: "
                                     + srcIso.toString()
                                     + ", dest location: "
                                     + destPath;
-                            LOGGER.error(msg);
+                            logger.error(msg);
                             throw new CloudRuntimeException(msg, es);
                         }
                     }
@@ -518,7 +518,7 @@ public class Ovm3StoragePool {
                     "Secondary storage host can not be empty!");
         }
         String uuid = ovmObject.newUuid(uri.getHost() + ":" + uri.getPath());
-        LOGGER.info("Secondary storage with uuid: " + uuid);
+        logger.info("Secondary storage with uuid: " + uuid);
         return setupNfsStorage(uri, uuid);
     }
 
@@ -549,7 +549,7 @@ public class Ovm3StoragePool {
             } catch (Ovm3ResourceException ec) {
                 msg = "Nfs storage " + uri + " mount on " + mountPoint
                         + " FAILED " + ec.getMessage();
-                LOGGER.error(msg);
+                logger.error(msg);
                 throw ec;
             }
         } else {
@@ -565,7 +565,7 @@ public class Ovm3StoragePool {
      * @return
      */
     public GetStorageStatsAnswer execute(final GetStorageStatsCommand cmd) {
-        LOGGER.debug("Getting stats for: " + cmd.getStorageId());
+        logger.debug("Getting stats for: " + cmd.getStorageId());
         try {
             Linux host = new Linux(c);
             Linux.FileSystem fs = host.getFileSystemByUuid(cmd.getStorageId(),
@@ -577,7 +577,7 @@ public class Ovm3StoragePool {
                     || fs == null) {
                 String msg = "Null returned when retrieving stats for "
                         + cmd.getStorageId();
-                LOGGER.error(msg);
+                logger.error(msg);
                 return new GetStorageStatsAnswer(cmd, msg);
             }
             /* or is it mntUuid ish ? */
@@ -593,14 +593,14 @@ public class Ovm3StoragePool {
             if ("".equals(sd.getSize())) {
                 String msg = "No size when retrieving stats for "
                         + cmd.getStorageId();
-                LOGGER.debug(msg);
+                logger.debug(msg);
                 return new GetStorageStatsAnswer(cmd, msg);
             }
             long total = Long.parseLong(sd.getSize());
             long used = total - Long.parseLong(sd.getFreeSize());
             return new GetStorageStatsAnswer(cmd, total, used);
         } catch (Ovm3ResourceException e) {
-            LOGGER.debug("GetStorageStatsCommand for " + cmd.getStorageId()
+            logger.debug("GetStorageStatsCommand for " + cmd.getStorageId()
                     + " failed", e);
             return new GetStorageStatsAnswer(cmd, e.getMessage());
         }
@@ -617,18 +617,18 @@ public class Ovm3StoragePool {
         String systemVmIsoPath = Script.findScript("", "vms/" + iso);
         File isoFile = null;
         if (systemVmIsoPath != null) {
-            LOGGER.debug("found systemvm patch iso " + systemVmIsoPath);
+            logger.debug("found systemvm patch iso " + systemVmIsoPath);
             isoFile = new File(systemVmIsoPath);
         }
         if (isoFile == null || !isoFile.exists()) {
             String svm = "client/target/generated-webapp/WEB-INF/classes/vms/"
                     + iso;
-            LOGGER.debug("last resort for systemvm patch iso " + svm);
+            logger.debug("last resort for systemvm patch iso " + svm);
             isoFile = new File(svm);
         }
         assert isoFile != null;
         if (!isoFile.exists()) {
-            LOGGER.error("Unable to locate " + iso + " in your setup at "
+            logger.error("Unable to locate " + iso + " in your setup at "
                     + isoFile.toString());
         }
         return isoFile;
@@ -642,7 +642,7 @@ public class Ovm3StoragePool {
      * @throws XmlRpcException
      */
     private Boolean createOCFS2Sr(StorageFilerTO pool) throws XmlRpcException {
-        LOGGER.debug("OCFS2 Not implemented yet");
+        logger.debug("OCFS2 Not implemented yet");
         return false;
     }
 
@@ -654,7 +654,7 @@ public class Ovm3StoragePool {
      */
     public Answer execute(ModifyStoragePoolCommand cmd) {
         StorageFilerTO pool = cmd.getPool();
-        LOGGER.debug("modifying pool " + pool);
+        logger.debug("modifying pool " + pool);
         try {
             if (config.getAgentInOvm3Cluster()) {
                 // no native ovm cluster for now, I got to break it in horrible
@@ -679,7 +679,7 @@ public class Ovm3StoragePool {
             return new Answer(cmd, false, "The pool type: "
                     + pool.getType().name() + " is not supported.");
         } catch (Exception e) {
-            LOGGER.debug("ModifyStoragePoolCommand failed", e);
+            logger.debug("ModifyStoragePoolCommand failed", e);
             return new Answer(cmd, false, e.getMessage());
         }
     }
@@ -692,7 +692,7 @@ public class Ovm3StoragePool {
      */
     public Answer execute(CreateStoragePoolCommand cmd) {
         StorageFilerTO pool = cmd.getPool();
-        LOGGER.debug("creating pool " + pool);
+        logger.debug("creating pool " + pool);
         try {
             if (pool.getType() == StoragePoolType.NetworkFilesystem) {
                 createRepo(pool);
@@ -707,7 +707,7 @@ public class Ovm3StoragePool {
                 return new Answer(cmd, false,
                         "OCFS2 is unsupported at the moment");
             } else if (pool.getType() == StoragePoolType.PreSetup) {
-                LOGGER.warn("pre setup for pool " + pool);
+                logger.warn("pre setup for pool " + pool);
             } else {
                 return new Answer(cmd, false, "The pool type: "
                         + pool.getType().name() + " is not supported.");
@@ -717,7 +717,7 @@ public class Ovm3StoragePool {
                     + ", create StoragePool failed due to " + e.toString()
                     + " on host:" + config.getAgentHostname() + " pool: "
                     + pool.getHost() + pool.getPath();
-            LOGGER.warn(msg, e);
+            logger.warn(msg, e);
             return new Answer(cmd, false, msg);
         }
         return new Answer(cmd, true, "success");
@@ -741,7 +741,7 @@ public class Ovm3StoragePool {
             repo.importVirtualDisk(tmplturl, image, poolName);
             return new PrimaryStorageDownloadAnswer(image);
         } catch (Exception e) {
-            LOGGER.debug("PrimaryStorageDownloadCommand failed", e);
+            logger.debug("PrimaryStorageDownloadCommand failed", e);
             return new PrimaryStorageDownloadAnswer(e.getMessage());
         }
     }

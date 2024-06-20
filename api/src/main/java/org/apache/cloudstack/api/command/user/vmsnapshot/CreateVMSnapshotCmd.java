@@ -30,7 +30,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VMSnapshotResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
@@ -42,7 +41,6 @@ import com.cloud.vm.snapshot.VMSnapshot;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateVMSnapshotCmd extends BaseAsyncCreateCmd {
 
-    public static final Logger s_logger = Logger.getLogger(CreateVMSnapshotCmd.class.getName());
 
     @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, required = true, entityType = UserVmResponse.class, description = "The ID of the vm")
@@ -138,4 +136,10 @@ public class CreateVMSnapshotCmd extends BaseAsyncCreateCmd {
     public ApiCommandResourceType getApiResourceType() {
         return ApiCommandResourceType.VmSnapshot;
     }
+
+    @Override
+    public Long getApiResourceId() {
+        return getEntityId();
+    }
+
 }

@@ -390,6 +390,10 @@ export const resourceTypePlugin = {
           return 'publicip'
         case 'NetworkAcl':
           return 'acllist'
+        case 'KubernetesCluster':
+          return 'kubernetes'
+        case 'KubernetesSupportedVersion':
+          return 'kubernetesiso'
         case 'SystemVm':
         case 'PhysicalNetwork':
         case 'Backup':
@@ -417,6 +421,7 @@ export const resourceTypePlugin = {
         case 'AffinityGroup':
         case 'VpnCustomerGateway':
         case 'AutoScaleVmGroup':
+        case 'QuotaTariff':
           return resourceType.toLowerCase()
       }
       return ''
@@ -454,30 +459,45 @@ export const localesPlugin = {
   }
 }
 
-const KB = 1024
-const MB = 1024 * KB
-const GB = 1024 * MB
-const TB = 1024 * GB
+const KiB = 1024
+const MiB = 1024 * KiB
+const GiB = 1024 * MiB
+const TiB = 1024 * GiB
 
 export const fileSizeUtilPlugin = {
   install (app) {
+    app.config.globalProperties.$bytesToGiB = function (bytes) {
+      if (bytes == null || bytes === 0) {
+        return 0
+      }
+      return (bytes / GiB).toFixed(2)
+    }
     app.config.globalProperties.$bytesToHumanReadableSize = function (bytes) {
       if (bytes == null) {
         return ''
       }
-      if (bytes < KB && bytes >= 0) {
+      if (bytes < KiB && bytes >= 0) {
         return bytes + ' bytes'
       }
-      if (bytes < MB) {
-        return (bytes / KB).toFixed(2) + ' KB'
-      } else if (bytes < GB) {
-        return (bytes / MB).toFixed(2) + ' MB'
-      } else if (bytes < TB) {
-        return (bytes / GB).toFixed(2) + ' GB'
+      if (bytes < MiB) {
+        return (bytes / KiB).toFixed(2) + ' KiB'
+      } else if (bytes < GiB) {
+        return (bytes / MiB).toFixed(2) + ' MiB'
+      } else if (bytes < TiB) {
+        return (bytes / GiB).toFixed(2) + ' GiB'
       } else {
-        return (bytes / TB).toFixed(2) + ' TB'
+        return (bytes / TiB).toFixed(2) + ' TiB'
       }
     }
+  }
+}
+
+function isBase64 (str) {
+  try {
+    const decoded = new TextDecoder().decode(Uint8Array.from(atob(str), c => c.charCodeAt(0)))
+    return btoa(decoded) === str
+  } catch (err) {
+    return false
   }
 }
 
@@ -489,8 +509,7 @@ export const genericUtilPlugin = {
     }
 
     app.config.globalProperties.$toBase64AndURIEncoded = function (text) {
-      const base64regex = /^([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))?$/
-      if (base64regex.test(text)) {
+      if (isBase64(text)) {
         return text
       }
       return encodeURIComponent(btoa(unescape(encodeURIComponent(text))))

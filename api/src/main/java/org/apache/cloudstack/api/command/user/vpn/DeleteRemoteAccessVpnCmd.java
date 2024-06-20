@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.command.user.vpn;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -38,7 +37,6 @@ import com.cloud.network.RemoteAccessVpn;
 @APICommand(name = "deleteRemoteAccessVpn", description = "Destroys a l2tp/ipsec remote access vpn", responseObject = SuccessResponse.class, entityType = {RemoteAccessVpn.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteRemoteAccessVpnCmd.class.getName());
 
 
     /////////////////////////////////////////////////////

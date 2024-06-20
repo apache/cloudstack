@@ -31,14 +31,12 @@ import org.apache.cloudstack.api.response.QuotaResponseBuilder;
 import org.apache.cloudstack.api.response.QuotaStatementItemResponse;
 import org.apache.cloudstack.api.response.QuotaStatementResponse;
 import org.apache.cloudstack.quota.vo.QuotaUsageVO;
-import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 
 @APICommand(name = "quotaStatement", responseObject = QuotaStatementItemResponse.class, description = "Create a quota statement", since = "4.7.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class QuotaStatementCmd extends BaseCmd {
 
-    public static final Logger s_logger = Logger.getLogger(QuotaStatementCmd.class);
 
 
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required = true, description = "Optional, Account Id for which statement needs to be generated")
@@ -47,10 +45,12 @@ public class QuotaStatementCmd extends BaseCmd {
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = true, entityType = DomainResponse.class, description = "Optional, If domain Id is given and the caller is domain admin then the statement is generated for domain.")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, required = true, description = "End date range for quota query. Use yyyy-MM-dd as the date format, e.g. startDate=2009-06-03.")
+    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, required = true, description = "End of the period of the Quota statement. " +
+            ApiConstants.PARAMETER_DESCRIPTION_END_DATE_POSSIBLE_FORMATS)
     private Date endDate;
 
-    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, required = true, description = "Start date range quota query. Use yyyy-MM-dd as the date format, e.g. startDate=2009-06-01.")
+    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, required = true, description = "Start of the period of the Quota statement. " +
+            ApiConstants.PARAMETER_DESCRIPTION_START_DATE_POSSIBLE_FORMATS)
     private Date startDate;
 
     @Parameter(name = ApiConstants.TYPE, type = CommandType.INTEGER, description = "List quota usage records for the specified usage type")
