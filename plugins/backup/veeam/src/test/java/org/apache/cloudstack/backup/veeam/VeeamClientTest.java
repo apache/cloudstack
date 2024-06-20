@@ -195,7 +195,7 @@ public class VeeamClientTest {
         Mockito.when(mock.getRestoreVmErrorDescription("uuid")).thenCallRealMethod();
         Mockito.when(mock.executePowerShellCommands(Mockito.any())).thenReturn(null);
         String result = mock.getRestoreVmErrorDescription("uuid");
-        Assert.assertEquals("Failed to get description of failed restore session [uuid]. Please contact an administrator.", result);
+        Assert.assertEquals("Failed to get the description of the failed restore session [uuid]. Please contact an administrator.", result);
     }
 
     @Test
@@ -204,7 +204,7 @@ public class VeeamClientTest {
         Mockito.when(mock.getRestoreVmErrorDescription("uuid")).thenCallRealMethod();
         Mockito.when(mock.executePowerShellCommands(Mockito.any())).thenReturn(response);
         String result = mock.getRestoreVmErrorDescription("uuid");
-        Assert.assertEquals("Failed to get description of failed restore session [uuid]. Please contact an administrator.", result);
+        Assert.assertEquals("Failed to get the description of the failed restore session [uuid]. Please contact an administrator.", result);
     }
 
 

@@ -382,7 +382,7 @@ public class VeeamClient {
                         getRestoreVmErrorDescription(StringUtils.substringAfterLast(sessionUid, ":"))));
                 throw new CloudRuntimeException(String.format("Restore job [%s] failed.", sessionUid));
             }
-            LOG.debug(String.format("Waiting %s seconds, out of a total of %s seconds, for the backup process to finish.", j, restoreTimeout));
+            LOG.debug(String.format("Waiting %s seconds, out of a total of %s seconds, for the restore backup process to finish.", j, restoreTimeout));
 
             try {
                 Thread.sleep(1000);
@@ -943,12 +943,12 @@ public class VeeamClient {
     }
 
     /**
-     * Tries to retrieve the error's descripton of the Veeam restore task that errored.
-     * @param uid Session uid in Veeam of restore process;
-     * @return the description found in Veeam about the cause of error in restore process.
+     * Tries to retrieve the error's description of the Veeam restore task that resulted in an error.
+     * @param uid Session uid in Veeam of the restore process;
+     * @return the description found in Veeam about the cause of error in the restore process.
      */
     protected String getRestoreVmErrorDescription(String uid) {
-        LOG.debug(String.format("Trying to find cause of error in restore process [%s].", uid));
+        LOG.debug(String.format("Trying to find the cause of error in the restore process [%s].", uid));
         List<String> cmds = Arrays.asList(
                 String.format("$restoreUid = '%s'", uid),
                 "$restore = Get-VBRRestoreSession -Id $restoreUid",
@@ -962,7 +962,7 @@ public class VeeamClient {
         if (result != null && result.first()) {
             return result.second();
         }
-        return String.format("Failed to get description of failed restore session [%s]. Please contact an administrator.", uid);
+        return String.format("Failed to get the description of the failed restore session [%s]. Please contact an administrator.", uid);
     }
 
     private boolean isLegacyServer() {
