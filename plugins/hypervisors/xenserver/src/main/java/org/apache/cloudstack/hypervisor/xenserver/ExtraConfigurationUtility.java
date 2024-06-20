@@ -39,7 +39,7 @@ public class ExtraConfigurationUtility {
             // cfg is either param=value or map-param:key=value
             Pair<String, String> configParam = prepareKeyValuePair(cfg);
             if (configParam == null) {
-                LOG.warn("Invalid extra config passed: " + cfg);
+                LOGGER.warn("Invalid extra config passed: " + cfg);
                 continue;
             }
 

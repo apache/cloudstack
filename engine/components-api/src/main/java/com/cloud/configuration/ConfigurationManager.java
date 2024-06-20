@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.cloud.dc.VlanVO;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.impl.ConfigurationSubGroupVO;
 
 import com.cloud.dc.ClusterVO;
