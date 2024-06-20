@@ -1014,7 +1014,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
      */
     protected VirtualDisk findRestoredVolume(Backup.VolumeInfo volumeInfo, VirtualMachineMO vm, String volumeName, int deviceId) throws Exception {
         List<VirtualDisk> virtualDisks = Lists.reverse(vm.getVirtualDisks());
-        s_logger.debug(LogUtils.logGsonWithoutException("Trying to find restored volume with size [%s], name [%s] and deviceId (unitNumber in VMWare) [%s] "
+        logger.debug(LogUtils.logGsonWithoutException("Trying to find restored volume with size [%s], name [%s] and deviceId (unitNumber in VMWare) [%s] "
                 + "in VM [%s] disks [%s].", volumeInfo.getSize(), volumeName, deviceId, vm.getVmName(), virtualDisks));
         for (VirtualDisk disk : virtualDisks) {
             VirtualDeviceBackingInfo backingInfo = disk.getBacking();
@@ -1097,7 +1097,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         int newDeviceId = (int) (_volumeDao.findByInstance(vm.getId()).stream().mapToLong(VolumeVO::getDeviceId).max().orElse(0L) + 1);
         VirtualDisk restoredDisk = findRestoredVolume(volumeInfo, vmMo, restoredVolumeName.split(".vmdk")[0], newDeviceId);
         String diskPath = vmMo.getVmdkFileBaseName(restoredDisk);
-        s_logger.debug("Restored disk size=" + toHumanReadableSize(restoredDisk.getCapacityInKB()) + " path=" + diskPath);
+        logger.debug("Restored disk size={} path={}.", toHumanReadableSize(restoredDisk.getCapacityInKB()), diskPath);
         createVolume(restoredDisk, vmMo, vm.getDomainId(), vm.getDataCenterId(), vm.getAccountId(), vm.getId(), poolId, vm.getTemplateId(), backup, false);
         return true;
     }

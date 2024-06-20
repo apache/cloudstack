@@ -26,17 +26,15 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupOffering;
-import org.apache.cloudstack.backup.veeam.api.RestoreSession;
-import org.apache.http.HttpResponse;
 import org.apache.logging.log4j.core.Logger;
 import org.junit.Assert;
 import org.junit.Before;

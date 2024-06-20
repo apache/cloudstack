@@ -300,7 +300,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     }
 
     @Override
-    public Pair<Boolean, String> restoreBackedUpVolume(Backup backup, String volumeUuid, String host, String dataStore, VirtualMachine vm, Boolean startVm) {
+    public Pair<Boolean, String> restoreBackedUpVolume(Backup backup, String volumeUuid, String host, String dataStore, VirtualMachine vm) {
         Pair<Boolean, String> result = new Pair<>(false, "");
         final Long zoneId = backup.getZoneId();
         final String restorePointId = backup.getExternalId();
@@ -309,8 +309,8 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
         VolumeVO volumeVO = volumeDao.findByUuid(volumeUuid);
         long totalDeviceIds = volumeDao.findByInstance(vm.getId()).stream().mapToLong(VolumeVO::getDeviceId).max().orElse(0L);
         long newDeviceId = totalDeviceIds + 1;
-        LOG.debug(String.format("VM [%s] has [%s] deviceIds. Trying to restore volume [%s] using restorePoint [%s] and with [%s] as the new deviceId.", vm.getUuid(),
-                totalDeviceIds, volumeUuid, restorePointId, newDeviceId));
+        logger.debug("VM [{}] has [{}] deviceIds. Trying to restore volume [{}] using restorePoint [{}] and with [{}] as the new deviceId.", vm.getUuid(),
+                totalDeviceIds, volumeUuid, restorePointId, newDeviceId);
 
         VirtualMachineDiskInfo fromJson = GSON.fromJson(volumeVO.getChainInfo(), VirtualMachineDiskInfo.class);
         String type = fromJson.getControllerFromDeviceBusName().toUpperCase();
@@ -318,10 +318,10 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
         for (String name : fromJson.getDiskChain()) {
             String diskName = StringUtils.substringAfter(name, "/");
             try {
-                result = getClient(zoneId).restoreVolume(volumeUuid, vmVO.getUuid(), restorePointId, host, dataStore, type, virtualDeviceNode, diskName, newDeviceId, vm, startVm);
+                result = getClient(zoneId).restoreVolume(volumeUuid, vmVO.getUuid(), restorePointId, host, dataStore, type, virtualDeviceNode, diskName, newDeviceId, vm);
             } catch (Exception e) {
-                LOG.error(String.format("Failed to restore volume [%s] in VM [%s], with type [%s], node [%s] and disk name [%s], using target host [%s] and datastore [%s] due to [%s].",
-                        volumeUuid, vmVO.getUuid(), type, virtualDeviceNode, diskName, host, dataStore, e.getMessage()), e);
+                logger.error("Failed to restore volume [{}] in VM [{}], with type [{}], node [{}] and disk name [{}], using target host [{}] and datastore [{}] due to [{}].",
+                        volumeUuid, vmVO.getUuid(), type, virtualDeviceNode, diskName, host, dataStore, e.getMessage(), e);
             }
         }
         return result;

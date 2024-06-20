@@ -135,14 +135,14 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
 
     /**
      * Restore a backed up volume and attach it to a VM
+     *
      * @param backedUpVolumeUuid volume to be restored
-     * @param backupId backup containing the volume to be restored
-     * @param vmId VM to attach restored volume
-     * @param startVm automatically start the VM after the restore is done
+     * @param backupId           backup containing the volume to be restored
+     * @param vmId               VM to attach restored volume
      * @return returns operation success
      * @throws Exception
      */
-    boolean restoreBackupVolumeAndAttachToVM(final String backedUpVolumeUuid, final Long backupId, final Long vmId, final Boolean startVm) throws Exception;
+    boolean restoreBackupVolumeAndAttachToVM(final String backedUpVolumeUuid, final Long backupId, final Long vmId) throws Exception;
 
     /**
      * Deletes a backup

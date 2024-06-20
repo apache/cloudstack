@@ -919,10 +919,10 @@ public class VeeamClient {
         if (!UuidUtils.isUuid(datastore)) {
             return datastore;
         }
-        LOG.trace(String.format("Removing the dash symbol of datastore name [%s] because this name is a valid UUID used by ACS. This happens because when a new NFS storage is created via ACS, "
+        logger.trace("Removing the dash symbol of datastore name [{}] because this name is a valid UUID used by ACS. This happens because when a new NFS storage is created via ACS, "
                 + "this storage is created in vCenter with a name that uses the UUID in ACS, but removing the dashes. "
                 + "However, if the storage is created first in vCenter (e.g. VMFS), and its name contains dashes, if this name is not a valid UUID, the dashes will be keeped. But, if for some "
-                + "reason the name is a valid UUID, this causes ACS to remove the dashes, and then the restore backup fails, because Veeam does not find the datastore.", datastore));
+                + "reason the name is a valid UUID, this causes ACS to remove the dashes, and then the restore backup fails, because Veeam does not find the datastore.", datastore);
         return datastore.replace("-","");
     }
 
@@ -949,12 +949,12 @@ public class VeeamClient {
     }
 
     public Pair<Boolean, String> restoreVolume(String volumeUuid, String vmUuid, String restorePointId, String host, String datastore, String diskType, String diskDeviceNode,
-            String diskName, long device, VirtualMachine vm, Boolean startVm) {
+            String diskName, long device, VirtualMachine vm) {
         datastore = removeDashesIfDatastoreNameIsUuid(datastore);
         if (diskType.equals("IDE")) {
             String veeamLink = "https://www.veeam.com/kb1100";
-            LOG.warn(String.format("Veeam does not support restore of IDE virtual devices disks. We will use the type SCSI instead. "
-                    + "For more information, please see this link [%s].", veeamLink));
+            logger.warn("Veeam does not support restore of IDE virtual devices disks. We will use the type SCSI instead. "
+                    + "For more information, please see this link [{}].", veeamLink);
         }
         final List<String> cmds = Arrays.asList(
                 String.format("$point = Get-VBRRestorePoint -Id '%s'", restorePointId),
@@ -966,7 +966,7 @@ public class VeeamClient {
                     "if ($disk -and $ds -and $server -and $vm) { ",
                         String.format("$newdisk = Set-VBRViVirtualDevice -VirtualDevice $disk -VirtualDeviceNode %s -Type %s", device, diskType.equals("IDE") ? "SCSI" : diskType),
                         "$mapping = New-VBRViVirtualDeviceMappingRule -SourceVirtualDevice:$newdisk -Datastore:$ds",
-                        String.format("$job = Start-VBRViVirtualDiskRestore -RestorePoint:$point -VirtualDeviceMapping:$mapping -TargetVM $vm %s -RunAsync", startVm ? "-PowerOn" : ""),
+                        "$job = Start-VBRViVirtualDiskRestore -RestorePoint:$point -VirtualDeviceMapping:$mapping -TargetVM $vm -RunAsync",
                         "while (-not (Get-VBRRestoreSession -Id $job.Id).IsCompleted) { Start-Sleep -Seconds 10 }",
                         "Write-Output $disk.Name",
                     "} else { ",
@@ -982,8 +982,8 @@ public class VeeamClient {
         if (result != null && result.first()) {
             return new Pair<>(result.first(), result.second().split("\r\n")[0]);
         }
-        LOG.error(String.format("Failed to restore volume [uuid: %s, name: %s, type: %s, deviceId: %s] of VM [%s] to VM [%s] using restore point [%s], host [%s] and datastore [%s].",
-                volumeUuid, diskName, diskType, diskDeviceNode, vmUuid, vm.getUuid(), restorePointId, host, datastore));
+        logger.error("Failed to restore volume [uuid: {}, name: {}, type: {}, deviceId: {}] of VM [{}] to VM [{}] using restore point [%s], host [%s] and datastore [%s].",
+                volumeUuid, diskName, diskType, diskDeviceNode, vmUuid, vm.getUuid(), restorePointId, host, datastore);
         throw new CloudRuntimeException(String.format("Failed to restore volume [%s] of VM [%s] to VM [%s] using restore point [%s],", volumeUuid, vmUuid, vm.getUuid(), restorePointId));
     }
 }
