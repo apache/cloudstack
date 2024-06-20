@@ -345,26 +345,7 @@ public class VeeamClient {
                         String type = pair.second();
                         String path = url.replace(apiURI.toString(), "");
                         if (type.equals("RestoreSession")) {
-                            for (int j = 0; j < restoreTimeout; j++) {
-                                HttpResponse relatedResponse = get(path);
-                                RestoreSession session = parseRestoreSessionResponse(relatedResponse);
-                                if (session.getResult().equals("Success")) {
-                                    return true;
-                                }
-                                if (session.getResult().equalsIgnoreCase("Failed")) {
-                                    String sessionUid = session.getUid();
-                                    LOG.error(String.format("Failed to restore backup [%s] of VM [%s] due to [%s].",
-                                            sessionUid, session.getVmDisplayName(),
-                                            getRestoreVmErrorDescription(StringUtils.substringAfterLast(sessionUid, ":"))));
-                                    throw new CloudRuntimeException(String.format("Restore job [%s] failed.", sessionUid));
-                                }
-                                LOG.debug(String.format("Waiting %s seconds, out of a total of %s seconds, for the backup process to finish.", j, restoreTimeout));
-                                try {
-                                    Thread.sleep(1000);
-                                } catch (InterruptedException ignored) {
-                                }
-                            }
-                            throw new CloudRuntimeException("Related job type: " + type + " was not successful");
+                            checkIfRestoreSessionFinished(type, path);
                         }
                     }
                     return true;
@@ -380,17 +361,29 @@ public class VeeamClient {
         return false;
     }
 
+
+    /**
+     * Checks the status of the restore session. Checked states are "Success" and "Failure".<br/>
+     * There is also a timeout defined in the global configuration, backup.plugin.veeam.restore.timeout,<br/>
+     * that is used to wait for the restore to complete before throwing a {@link CloudRuntimeException}.
+     */
     protected boolean checkIfRestoreSessionFinished(String type, String path) throws IOException {
-        for (int j = 0; j < this.restoreTimeout; j++) {
+        for (int j = 0; j < restoreTimeout; j++) {
             HttpResponse relatedResponse = get(path);
             RestoreSession session = parseRestoreSessionResponse(relatedResponse);
             if (session.getResult().equals("Success")) {
                 return true;
             }
+
             if (session.getResult().equalsIgnoreCase("Failed")) {
                 String sessionUid = session.getUid();
+                LOG.error(String.format("Failed to restore backup [%s] of VM [%s] due to [%s].",
+                        sessionUid, session.getVmDisplayName(),
+                        getRestoreVmErrorDescription(StringUtils.substringAfterLast(sessionUid, ":"))));
                 throw new CloudRuntimeException(String.format("Restore job [%s] failed.", sessionUid));
             }
+            LOG.debug(String.format("Waiting %s seconds, out of a total of %s seconds, for the backup process to finish.", j, restoreTimeout));
+
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException ignored) {
