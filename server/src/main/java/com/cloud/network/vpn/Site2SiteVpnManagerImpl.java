@@ -312,7 +312,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
     private Site2SiteCustomerGateway getAndValidateSite2SiteCustomerGateway(Long customerGatewayId, Account caller) {
         Site2SiteCustomerGateway customerGateway = _customerGatewayDao.findById(customerGatewayId);
         if (customerGateway == null) {
-            throw new InvalidParameterValueException(String.format("Unable to found specified Site to Site VPN customer gateway %s !", customerGatewayId));
+            throw new InvalidParameterValueException(String.format("Unable to find specified Site to Site VPN customer gateway %s !", customerGatewayId));
         }
         _accountMgr.checkAccess(caller, null, false, customerGateway);
         return customerGateway;
@@ -322,7 +322,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
     private Site2SiteVpnGateway getAndValidateSite2SiteVpnGateway(Long vpnGatewayId, Account caller) {
         Site2SiteVpnGateway vpnGateway = _vpnGatewayDao.findById(vpnGatewayId);
         if (vpnGateway == null) {
-            throw new InvalidParameterValueException(String.format("Unable to found specified Site to Site VPN gateway %s !", vpnGatewayId));
+            throw new InvalidParameterValueException(String.format("Unable to find specified Site to Site VPN gateway %s !", vpnGatewayId));
         }
         _accountMgr.checkAccess(caller, null, false, vpnGateway);
         return vpnGateway;
