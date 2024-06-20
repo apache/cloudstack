@@ -412,6 +412,8 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
 
     String getGateway();
 
+    void setGateway(String gateway);
+
     // "cidr" is the Cloudstack managed address space, all CloudStack managed vms get IP address from "cidr",
     // In general "cidr" also serves as the network CIDR
     // But in case IP reservation is configured for a Guest network, "networkcidr" is the Effective network CIDR for that network,

@@ -290,6 +290,14 @@ class CsAcl(CsDataBag):
             guest_cidr = network.with_prefixlen
             if chains_added is False:
                 parent_chain = "FORWARD"
+                # Add default rules
+                fw.append({'type': "", 'chain': parent_chain,
+                           'rule': 'iifname "eth2" oifname "eth0" ct state related,established counter accept'})
+                fw.append({'type': "", 'chain': parent_chain,
+                           'rule': 'iifname "eth0" oifname "eth0" ct state new counter accept'})
+                fw.append({'type': "", 'chain': parent_chain,
+                           'rule': 'iifname "eth0" oifname "eth0" ct state related,established counter accept'})
+
                 chain = "fw_chain_egress"
                 parent_chain_rule = "ip saddr %s jump %s" % (guest_cidr, chain)
                 fw.append({'type': "chain", 'chain': chain})
@@ -303,13 +311,6 @@ class CsAcl(CsDataBag):
                 else:
                     egress_policy = "drop"
                 chains_added = True
-                # Add default rules
-                fw.append({'type': "", 'chain': 'FORWARD',
-                           'rule': 'iifname "eth2" oifname "eth0" ct state related,established counter accept'})
-                fw.append({'type': "", 'chain': 'FORWARD',
-                           'rule': 'iifname "eth0" oifname "eth0" ct state new counter accept'})
-                fw.append({'type': "", 'chain': 'FORWARD',
-                           'rule': 'iifname "eth0" oifname "eth0" ct state related,established counter accept'})
 
             rstr = ""
 

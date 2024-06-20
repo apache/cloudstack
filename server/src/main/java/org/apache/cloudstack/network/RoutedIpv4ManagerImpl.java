@@ -461,6 +461,15 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
                     response.setZoneName(zone.getName());
                 }
             }
+        } else if (subnet.getNetworkId() != null) {
+            Network network = ApiDBUtils.findNetworkById(subnet.getNetworkId());
+            if (network != null) {
+                DataCenter zone = ApiDBUtils.findZoneById(network.getDataCenterId());
+                if (zone != null) {
+                    response.setZoneId(zone.getUuid());
+                    response.setZoneName(zone.getName());
+                }
+            }
         }
         return response;
     }

@@ -192,6 +192,17 @@
              v-model:value="form.netmask"
               :placeholder="apiParams.netmask.description"/>
           </a-form-item>
+          <a-form-item
+            v-if="selectedNetworkOffering && selectedNetworkOffering.routingmode === 'ROUTED'"
+            ref="cidrsize"
+            name="cidrsize">
+            <template #label>
+              <tooltip-label :title="$t('label.cidrsize')" :tooltip="apiParams.cidrsize.description"/>
+            </template>
+            <a-input
+              v-model:value="form.cidrsize"
+              :placeholder="apiParams.cidrsize.description"/>
+          </a-form-item>
           <a-form-item v-if="selectedNetworkOffering && selectedNetworkOffering.specifyipranges" name="startip" ref="startip">
             <template #label>
               <tooltip-label :title="$t('label.startipv4')" :tooltip="apiParams.startip.description"/>
@@ -537,7 +548,6 @@ export default {
       this.formRef.value.validate().then(() => {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
-        console.log(values)
         this.actionLoading = true
         var params = {
           zoneId: this.selectedZone.id,
@@ -545,7 +555,7 @@ export default {
           displayText: values.displaytext,
           networkOfferingId: this.selectedNetworkOffering.id
         }
-        var usefulFields = ['gateway', 'netmask', 'startip', 'startipv4', 'endip', 'endipv4', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'sourcenatipaddress', 'externalid', 'vpcid', 'vlan', 'networkdomain']
+        var usefulFields = ['gateway', 'netmask', 'cidrsize', 'startip', 'startipv4', 'endip', 'endipv4', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'sourcenatipaddress', 'externalid', 'vpcid', 'vlan', 'networkdomain']
         for (var field of usefulFields) {
           if (this.isValidTextValueForKey(values, field)) {
             params[field] = values[field]

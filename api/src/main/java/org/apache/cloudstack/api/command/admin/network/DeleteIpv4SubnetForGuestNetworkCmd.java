@@ -24,7 +24,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.DataCenterIpv4SubnetResponse;
+import org.apache.cloudstack.api.response.Ipv4SubnetForGuestNetworkResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 
 import com.cloud.event.EventTypes;
@@ -49,7 +49,7 @@ public class DeleteIpv4SubnetForGuestNetworkCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DataCenterIpv4SubnetResponse.class, required = true, description = "Id of the guest network IPv4 subnet")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = Ipv4SubnetForGuestNetworkResponse.class, required = true, description = "Id of the guest network IPv4 subnet")
     private Long id;
 
     public Long getId() {

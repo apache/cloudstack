@@ -1397,7 +1397,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 return;
             }
             if (cidrSize == null) {
-                throw new InvalidParameterValueException("network cidr size is required for Isolated networks with ROUTED mode");
+                throw new InvalidParameterValueException("network cidr or cidr size is required for Isolated networks with ROUTED mode");
             }
             if (cidrSize > RoutedIPv4NetworkMaxCidrSize.valueIn(zoneId)) {
                 throw new InvalidParameterValueException("network cidr size cannot be bigger than maximum cidr size " + RoutedIPv4NetworkMaxCidrSize.value());

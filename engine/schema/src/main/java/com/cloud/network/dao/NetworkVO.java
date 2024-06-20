@@ -447,6 +447,7 @@ public class NetworkVO implements Network {
         return gateway;
     }
 
+    @Override
     public void setGateway(String gateway) {
         this.gateway = gateway;
     }

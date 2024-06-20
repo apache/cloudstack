@@ -48,7 +48,7 @@
           <div
             class="actions"
             style="text-align: right" >
-            <router-link :to="{ name: 'ipv4subnets', query: { parentid: record.id }}" target="_blank">
+            <router-link :to="{ name: 'ipv4subnets', query: { parentid: record.id }}">
               <tooltip-button
                 tooltipPlacement="bottom"
                 :tooltip="$t('label.view') + ' ' + $t('label.ipv4.subnets')"

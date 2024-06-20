@@ -134,7 +134,9 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
                 }
                 Ipv4GuestSubnetNetworkMap subnet = routedIpv4Manager.getOrCreateIpv4SubnetForGuestNetwork(config, userSpecified.getNetworkCidrSize());
                 if (subnet != null) {
-                    userSpecified.setCidr(subnet.getSubnet());
+                    final String[] cidrTuple = subnet.getSubnet().split("\\/");
+                    config.setGateway(NetUtils.getIpRangeStartIpFromCidr(cidrTuple[0], Long.parseLong(cidrTuple[1])));
+                    config.setCidr(subnet.getSubnet());
                 }
             }
         }
