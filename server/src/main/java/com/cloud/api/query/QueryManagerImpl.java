@@ -3137,7 +3137,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Override
     public ListResponse<ImageStoreResponse> searchForImageStores(ListImageStoresCmd cmd) {
         Pair<List<ImageStoreJoinVO>, Integer> result = searchForImageStoresInternal(cmd);
-        ListResponse<ImageStoreResponse> response = new ListResponse<ImageStoreResponse>();
+        ListResponse<ImageStoreResponse> response = new ListResponse<>();
 
         List<ImageStoreResponse> poolResponses = ViewResponseHelper.createImageStoreResponse(result.first().toArray(new ImageStoreJoinVO[result.first().size()]));
         response.setResponses(poolResponses, result.second());
