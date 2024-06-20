@@ -876,13 +876,13 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         String volumeData = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volumeInfo, "uuid", "size", "path", "type", "deviceId");
         String vmData = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "uuid", "hostName", "instanceName");
 
-        LOG.debug(String.format("Trying to attach restored volume [%s] to VM [%s] using datastore [%s].", volumeData, vmData, datastoreUuid));
+        logger.debug(String.format("Trying to attach restored volume [%s] to VM [%s] using datastore [%s].", volumeData, vmData, datastoreUuid));
         StoragePoolVO pool = primaryDataStoreDao.findByUuid(datastoreUuid);
         try {
             return guru.attachRestoredVolumeToVirtualMachine(zoneId, restoredVolumeLocation, volumeInfo, vm, pool.getId(), backup);
         } catch (Exception e) {
             String errorMsg = String.format("Failed to attach restored volume [%s] to VM [%s] due to [%s].", volumeData, vmData, e.getMessage());
-            LOG.error(errorMsg, e);
+            logger.error(errorMsg, e);
             throw new CloudRuntimeException(errorMsg);
         }
     }
