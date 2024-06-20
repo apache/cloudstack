@@ -89,6 +89,11 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
             description = "state of the service offering")
     private String serviceOfferingState;
 
+    @Parameter(name = ApiConstants.PURGE_RESOURCES, type = CommandType.BOOLEAN,
+            description = "Whether to cleanup VM and its associated resource upon expunge",
+            since="4.20")
+    private Boolean purgeResources;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -183,6 +188,10 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
             throw new InvalidParameterValueException("Invalid state value: " + serviceOfferingState);
         }
         return state;
+    }
+
+    public boolean isPurgeResources() {
+        return Boolean.TRUE.equals(purgeResources);
     }
 
     /////////////////////////////////////////////////////
