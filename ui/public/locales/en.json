@@ -1110,6 +1110,7 @@
 "label.ipv6.subnets": "IPv6 Subnets",
 "label.ip.addresses": "IP Addresses",
 "label.iqn": "Target IQN",
+"label.is.base64.encoded": "Base64 encoded",
 "label.is.in.progress": "is in progress",
 "label.is.shared": "Is shared",
 "label.is2faenabled": "Is 2FA enabled",

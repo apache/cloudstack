@@ -23,14 +23,11 @@ import com.cloud.agent.api.to.StorageFilerTO;
 
 @LogLevel(LogLevel.Log4jLevel.Trace)
 public class CopyRemoteVolumeCommand extends Command {
-
     String remoteIp;
     String username;
     String password;
     String srcFile;
-
     String tmpPath;
-
     StorageFilerTO storageFilerTO;
 
     public CopyRemoteVolumeCommand(String remoteIp, String username, String password) {
