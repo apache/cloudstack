@@ -5336,20 +5336,31 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     /*
     Scp volume from remote host to local directory
      */
-    public String copyVolume(String srcIp, String username, String password, String localDir, String remoteFile, String tmpPath) {
+    public String copyVolume(String srcIp, String username, String password, String localDir, String remoteFile, String tmpPath, int timeoutInSecs) {
+        String outputFile = UUID.randomUUID().toString();
         try {
-            String outputFile = UUID.randomUUID().toString();
             StringBuilder command = new StringBuilder("qemu-img convert -O qcow2 ");
             command.append(remoteFile);
-            command.append(" "+tmpPath);
+            command.append(" " + tmpPath);
             command.append(outputFile);
-            s_logger.debug("Converting remoteFile: "+remoteFile);
-            SshHelper.sshExecute(srcIp, 22, username, null, password, command.toString());
-            s_logger.debug("Copying remoteFile to: "+localDir);
-            SshHelper.scpFrom(srcIp, 22, username, null, password, localDir, tmpPath+outputFile);
-            s_logger.debug("Successfully copyied remoteFile to: "+localDir+"/"+outputFile);
+            s_logger.debug(String.format("Converting remote disk file: %s, output file: %s%s (timeout: %d secs)", remoteFile, tmpPath, outputFile, timeoutInSecs));
+            SshHelper.sshExecute(srcIp, 22, username, null, password, command.toString(), timeoutInSecs * 1000);
+            s_logger.debug("Copying converted remote disk file " + outputFile + " to: " + localDir);
+            SshHelper.scpFrom(srcIp, 22, username, null, password, localDir, tmpPath + outputFile);
+            s_logger.debug("Successfully copied converted remote disk file to: " + localDir + "/" + outputFile);
             return outputFile;
         } catch (Exception e) {
+            try {
+                String deleteRemoteConvertedFileCmd = String.format("rm -f %s%s", tmpPath, outputFile);
+                SshHelper.sshExecute(srcIp, 22, username, null, password, deleteRemoteConvertedFileCmd);
+            } catch (Exception ignored) {
+            }
+
+            try {
+                FileUtils.deleteQuietly(new File(localDir + "/" + outputFile));
+            } catch (Exception ignored) {
+            }
+
             throw new RuntimeException(e);
         }
     }
