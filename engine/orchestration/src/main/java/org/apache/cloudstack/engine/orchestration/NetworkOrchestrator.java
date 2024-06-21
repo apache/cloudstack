@@ -4739,6 +4739,19 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
+    public void expungeLbVmRefs(List<Long> vmIds, Long batchSize) {
+        if (CollectionUtils.isEmpty(networkElements) || CollectionUtils.isEmpty(vmIds)) {
+            return;
+        }
+        for (NetworkElement element : networkElements) {
+            if (element instanceof LoadBalancingServiceProvider) {
+                LoadBalancingServiceProvider lbProvider = (LoadBalancingServiceProvider)element;
+                lbProvider.expungeLbVmRefs(vmIds, batchSize);
+            }
+        }
+    }
+
+    @Override
     public String getConfigComponentName() {
         return NetworkOrchestrationService.class.getSimpleName();
     }

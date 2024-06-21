@@ -91,7 +91,7 @@ export default {
         }
       ],
       searchFilters: () => {
-        var filters = ['name', 'zoneid', 'domainid', 'account', 'state', 'tags']
+        var filters = ['name', 'zoneid', 'domainid', 'account', 'state', 'tags', 'serviceofferingid', 'diskofferingid']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           filters.push('storageid')
         }
@@ -256,10 +256,16 @@ export default {
                     (record.type !== 'ROOT' && !record.virtualmachineid && !['Allocated', 'Uploaded'].includes(record.state)))
           },
           args: (record, store) => {
-            var fields = ['volumeid', 'name', 'displaytext', 'ostypeid', 'ispublic', 'isfeatured', 'isdynamicallyscalable', 'requireshvm', 'passwordenabled']
+            var fields = ['volumeid', 'name', 'displaytext', 'ostypeid', 'isdynamicallyscalable', 'requireshvm', 'passwordenabled']
             if (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype)) {
               fields.push('domainid')
               fields.push('account')
+            }
+            if (['Admin'].includes(store.userInfo.roletype) || store.features.userpublictemplateenabled) {
+              fields.push('ispublic')
+            }
+            if (['Admin'].includes(store.userInfo.roletype)) {
+              fields.push('isfeatured')
             }
             return fields
           },

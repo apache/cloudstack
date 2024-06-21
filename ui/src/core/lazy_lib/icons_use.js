@@ -120,6 +120,7 @@ import {
   MinusSquareOutlined,
   MobileOutlined,
   MoreOutlined,
+  NodeIndexOutlined,
   NotificationOutlined,
   NumberOutlined,
   LaptopOutlined,
@@ -139,7 +140,9 @@ import {
   ReconciliationOutlined,
   RedoOutlined,
   ReloadOutlined,
+  RetweetOutlined,
   RightCircleOutlined,
+  RightSquareOutlined,
   RocketOutlined,
   SafetyCertificateOutlined,
   SafetyOutlined,
@@ -167,6 +170,8 @@ import {
   UserOutlined,
   UserSwitchOutlined,
   UploadOutlined,
+  VerticalAlignBottomOutlined,
+  VerticalAlignTopOutlined,
   WarningOutlined,
   WifiOutlined,
   SolutionOutlined
@@ -279,6 +284,7 @@ export default {
     app.component('MinusSquareOutlined', MinusSquareOutlined)
     app.component('MobileOutlined', MobileOutlined)
     app.component('MoreOutlined', MoreOutlined)
+    app.component('NodeIndexOutlined', NodeIndexOutlined)
     app.component('NotificationOutlined', NotificationOutlined)
     app.component('NumberOutlined', NumberOutlined)
     app.component('LaptopOutlined', LaptopOutlined)
@@ -298,7 +304,9 @@ export default {
     app.component('ReconciliationOutlined', ReconciliationOutlined)
     app.component('RedoOutlined', RedoOutlined)
     app.component('ReloadOutlined', ReloadOutlined)
+    app.component('RetweetOutlined', RetweetOutlined)
     app.component('RightCircleOutlined', RightCircleOutlined)
+    app.component('RightSquareOutlined', RightSquareOutlined)
     app.component('RocketOutlined', RocketOutlined)
     app.component('SafetyCertificateOutlined', SafetyCertificateOutlined)
     app.component('SafetyOutlined', SafetyOutlined)
@@ -326,6 +334,8 @@ export default {
     app.component('UserOutlined', UserOutlined)
     app.component('UserSwitchOutlined', UserSwitchOutlined)
     app.component('UploadOutlined', UploadOutlined)
+    app.component('VerticalAlignBottomOutlined', VerticalAlignBottomOutlined)
+    app.component('VerticalAlignTopOutlined', VerticalAlignTopOutlined)
     app.component('WarningOutlined', WarningOutlined)
     app.component('WifiOutlined', WifiOutlined)
     app.component('renderIcon', renderIcon)

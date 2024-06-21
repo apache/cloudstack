@@ -157,6 +157,7 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
+import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementService;
@@ -255,6 +256,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private AccountManager _accountMgr;
     @Inject
     private ConfigurationManager _configMgr;
+    @Inject
+    private ResourceManager _resourceMgr;
     @Inject
     private VolumeDao _volsDao;
     @Inject
@@ -566,7 +569,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(ownerId), ResourceType.secondary_storage);
         }
 
-        sanitizeFormat(format);
+        checkFormatWithSupportedHypervisorsInZone(format, zoneId);
 
         // Check that the disk offering specified is valid
         if (diskOfferingId != null) {
@@ -580,6 +583,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         return false;
+    }
+
+    private void checkFormatWithSupportedHypervisorsInZone(String format, Long zoneId) {
+        ImageFormat imageformat = ImageFormat.valueOf(format);
+        final List<HypervisorType> supportedHypervisorTypesInZone = _resourceMgr.getSupportedHypervisorTypes(zoneId, false, null);
+        final HypervisorType hypervisorTypeFromFormat = ApiDBUtils.getHypervisorTypeFromFormat(zoneId, imageformat);
+        if (!(supportedHypervisorTypesInZone.contains(hypervisorTypeFromFormat))) {
+            throw new InvalidParameterValueException(String.format("The %s hypervisor supported for %s file format, is not found on the zone", hypervisorTypeFromFormat.toString(), format));
+        }
     }
 
     public String getRandomVolumeName() {
@@ -1974,7 +1986,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     private Volume changeDiskOfferingForVolumeInternal(VolumeVO volume, Long newDiskOfferingId, Long newSize, Long newMinIops, Long newMaxIops, boolean autoMigrateVolume, boolean shrinkOk) throws ResourceAllocationException {
-        DiskOfferingVO existingDiskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
+        long existingDiskOfferingId = volume.getDiskOfferingId();
+        DiskOfferingVO existingDiskOffering = _diskOfferingDao.findByIdIncludingRemoved(existingDiskOfferingId);
         DiskOfferingVO newDiskOffering = _diskOfferingDao.findById(newDiskOfferingId);
         Integer newHypervisorSnapshotReserve = null;
 
@@ -1986,6 +1999,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         Long[] updateNewMinIops = {newMinIops};
         Long[] updateNewMaxIops = {newMaxIops};
         Integer[] updateNewHypervisorSnapshotReserve = {newHypervisorSnapshotReserve};
+        volService.validateChangeDiskOfferingEncryptionType(existingDiskOfferingId, newDiskOfferingId);
         validateVolumeResizeWithNewDiskOfferingAndLoad(volume, existingDiskOffering, newDiskOffering, updateNewSize, updateNewMinIops, updateNewMaxIops, updateNewHypervisorSnapshotReserve);
         newSize = updateNewSize[0];
         newMinIops = updateNewMinIops[0];

@@ -175,6 +175,8 @@ public class ApiConstants {
     public static final String END_IPV6 = "endipv6";
     public static final String END_PORT = "endport";
     public static final String ENTRY_TIME = "entrytime";
+    public static final String EVENT_ID = "eventid";
+    public static final String EVENT_TYPE = "eventtype";
     public static final String EXPIRES = "expires";
     public static final String EXTRA_CONFIG = "extraconfig";
     public static final String EXTRA_DHCP_OPTION = "extradhcpoption";
@@ -209,6 +211,7 @@ public class ApiConstants {
     public static final String HA_PROVIDER = "haprovider";
     public static final String HA_STATE = "hastate";
     public static final String HEALTH = "health";
+    public static final String HEADERS = "headers";
     public static final String HIDE_IP_ADDRESS_USAGE = "hideipaddressusage";
     public static final String HOST_ID = "hostid";
     public static final String HOST_IDS = "hostids";
@@ -263,8 +266,10 @@ public class ApiConstants {
     public static final String IS_CLEANUP_REQUIRED = "iscleanuprequired";
     public static final String IS_DYNAMIC = "isdynamic";
     public static final String IS_EDGE = "isedge";
+    public static final String IS_ENCRYPTED = "isencrypted";
     public static final String IS_EXTRACTABLE = "isextractable";
     public static final String IS_FEATURED = "isfeatured";
+    public static final String IS_IMPLICIT = "isimplicit";
     public static final String IS_PORTABLE = "isportable";
     public static final String IS_PUBLIC = "ispublic";
     public static final String IS_PERSISTENT = "ispersistent";
@@ -280,6 +285,7 @@ public class ApiConstants {
     public static final String JOB_STATUS = "jobstatus";
     public static final String KEEPALIVE_ENABLED = "keepaliveenabled";
     public static final String KERNEL_VERSION = "kernelversion";
+    public static final String KEY = "key";
     public static final String LABEL = "label";
     public static final String LASTNAME = "lastname";
     public static final String LAST_BOOT = "lastboottime";
@@ -355,6 +361,7 @@ public class ApiConstants {
     public static final String SSHKEY_ENABLED = "sshkeyenabled";
     public static final String PATH = "path";
     public static final String PAYLOAD = "payload";
+    public static final String PAYLOAD_URL = "payloadurl";
     public static final String POD_ID = "podid";
     public static final String POD_NAME = "podname";
     public static final String POD_IDS = "podids";
@@ -382,6 +389,7 @@ public class ApiConstants {
     public static final String PUBLIC_START_PORT = "publicport";
     public static final String PUBLIC_END_PORT = "publicendport";
     public static final String PUBLIC_ZONE = "publiczone";
+    public static final String PURGE_RESOURCES = "purgeresources";
     public static final String RECEIVED_BYTES = "receivedbytes";
     public static final String RECONNECT = "reconnect";
     public static final String RECOVER = "recover";
@@ -400,11 +408,9 @@ public class ApiConstants {
     public static final String QUERY_FILTER = "queryfilter";
     public static final String SCHEDULE = "schedule";
     public static final String SCOPE = "scope";
-    public static final String SECRET_KEY = "usersecretkey";
-    public static final String SECONDARY_IP = "secondaryip";
-    public static final String SINCE = "since";
-    public static final String KEY = "key";
     public static final String SEARCH_BASE = "searchbase";
+    public static final String SECONDARY_IP = "secondaryip";
+    public static final String SECRET_KEY = "secretkey";
     public static final String SECURITY_GROUP_IDS = "securitygroupids";
     public static final String SECURITY_GROUP_NAMES = "securitygroupnames";
     public static final String SECURITY_GROUP_NAME = "securitygroupname";
@@ -422,6 +428,7 @@ public class ApiConstants {
     public static final String SHOW_UNIQUE = "showunique";
     public static final String SIGNATURE = "signature";
     public static final String SIGNATURE_VERSION = "signatureversion";
+    public static final String SINCE = "since";
     public static final String SIZE = "size";
     public static final String SNAPSHOT = "snapshot";
     public static final String SNAPSHOT_ID = "snapshotid";
@@ -429,8 +436,7 @@ public class ApiConstants {
     public static final String SNAPSHOT_TYPE = "snapshottype";
     public static final String SNAPSHOT_QUIESCEVM = "quiescevm";
     public static final String SOURCE_ZONE_ID = "sourcezoneid";
-    public static final String SUITABLE_FOR_VM = "suitableforvirtualmachine";
-    public static final String SUPPORTS_STORAGE_SNAPSHOT = "supportsstoragesnapshot";
+    public static final String SSL_VERIFICATION = "sslverification";
     public static final String START_DATE = "startdate";
     public static final String START_ID = "startid";
     public static final String START_IP = "startip";
@@ -449,12 +455,16 @@ public class ApiConstants {
     public static final String SYSTEM_VM_TYPE = "systemvmtype";
     public static final String TAGS = "tags";
     public static final String STORAGE_TAGS = "storagetags";
+    public static final String SUCCESS = "success";
+    public static final String SUITABLE_FOR_VM = "suitableforvirtualmachine";
+    public static final String SUPPORTS_STORAGE_SNAPSHOT = "supportsstoragesnapshot";
     public static final String TARGET_IQN = "targetiqn";
     public static final String TEMPLATE_FILTER = "templatefilter";
     public static final String TEMPLATE_ID = "templateid";
     public static final String TEMPLATE_IDS = "templateids";
     public static final String TEMPLATE_NAME = "templatename";
     public static final String TEMPLATE_TYPE = "templatetype";
+    public static final String TEMPLATE_FORMAT = "templateformat";
     public static final String TIMEOUT = "timeout";
     public static final String TIMEZONE = "timezone";
     public static final String TIMEZONEOFFSET = "timezoneoffset";
@@ -481,6 +491,7 @@ public class ApiConstants {
     public static final String USERNAME = "username";
     public static final String USER_CONFIGURABLE = "userconfigurable";
     public static final String USER_SECURITY_GROUP_LIST = "usersecuritygrouplist";
+    public static final String USER_SECRET_KEY = "usersecretkey";
     public static final String USE_VIRTUAL_NETWORK = "usevirtualnetwork";
     public static final String UPDATE_IN_SEQUENCE = "updateinsequence";
     public static final String VALUE = "value";
@@ -560,6 +571,7 @@ public class ApiConstants {
     public static final String ALLOCATION_STATE = "allocationstate";
     public static final String MANAGED_STATE = "managedstate";
     public static final String MANAGEMENT_SERVER_ID = "managementserverid";
+    public static final String MANAGEMENT_SERVER_NAME = "managementservername";
     public static final String STORAGE = "storage";
     public static final String STORAGE_ID = "storageid";
     public static final String PING_STORAGE_SERVER_IP = "pingstorageserverip";
@@ -899,6 +911,7 @@ public class ApiConstants {
     public static final String AUTOSCALE_VMGROUP_NAME = "autoscalevmgroupname";
     public static final String BAREMETAL_DISCOVER_NAME = "baremetaldiscovername";
     public static final String BAREMETAL_RCT_URL = "baremetalrcturl";
+    public static final String BATCH_SIZE = "batchsize";
     public static final String UCS_DN = "ucsdn";
     public static final String GSLB_PROVIDER = "gslbprovider";
     public static final String EXCLUSIVE_GSLB_PROVIDER = "isexclusivegslbprovider";
@@ -1120,6 +1133,9 @@ public class ApiConstants {
 
     public static final String PARAMETER_DESCRIPTION_IS_TAG_A_RULE = "Whether the informed tag is a JS interpretable rule or not.";
 
+    public static final String WEBHOOK_ID = "webhookid";
+    public static final String WEBHOOK_NAME = "webhookname";
+
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.
      * Qemu guests support "threads" and "native" options Since 0.8.8 ; "io_uring" is supported Since 6.3.0 (QEMU 5.0).
@@ -1141,6 +1157,14 @@ public class ApiConstants {
             return ioDriver;
         }
     }
+
+    public static final String PARAMETER_DESCRIPTION_START_DATE_POSSIBLE_FORMATS = "The recommended format is \"yyyy-MM-dd'T'HH:mm:ssZ\" (e.g.: \"2023-01-01T12:00:00+0100\"); " +
+            "however, the following formats are also accepted: \"yyyy-MM-dd HH:mm:ss\" (e.g.: \"2023-01-01 12:00:00\") and \"yyyy-MM-dd\" (e.g.: \"2023-01-01\" - if the time is not " +
+            "added, it will be interpreted as \"00:00:00\"). If the recommended format is not used, the date will be considered in the server timezone.";
+
+    public static final String PARAMETER_DESCRIPTION_END_DATE_POSSIBLE_FORMATS = "The recommended format is \"yyyy-MM-dd'T'HH:mm:ssZ\" (e.g.: \"2023-01-01T12:00:00+0100\"); " +
+            "however, the following formats are also accepted: \"yyyy-MM-dd HH:mm:ss\" (e.g.: \"2023-01-01 12:00:00\") and \"yyyy-MM-dd\" (e.g.: \"2023-01-01\" - if the time is not " +
+            "added, it will be interpreted as \"23:59:59\"). If the recommended format is not used, the date will be considered in the server timezone.";
 
     public enum BootType {
         UEFI, BIOS;

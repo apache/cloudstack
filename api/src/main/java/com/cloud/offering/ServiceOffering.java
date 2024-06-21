@@ -34,6 +34,9 @@ public interface ServiceOffering extends InfrastructureEntity, InternalIdentity,
     static final String storageFsVMDefaultOffUniqueName = "Cloud.Com-StorageFsVm";
     // leaving cloud.com references as these are identifyers and no real world addresses (check against DB)
 
+
+    static final String PURGE_DB_ENTITIES_KEY = "purge.db.entities";
+
     enum State {
         Inactive, Active,
     }

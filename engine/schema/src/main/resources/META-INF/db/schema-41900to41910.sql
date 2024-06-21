@@ -63,3 +63,5 @@ CREATE TABLE IF NOT EXISTS `cloud_usage`.`usage_vpc` (
 ) ENGINE=InnoDB CHARSET=utf8;
 
 CALL `cloud_usage`.`IDEMPOTENT_ADD_COLUMN`('cloud_usage.cloud_usage', 'state', 'VARCHAR(100) DEFAULT NULL');
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.user_data', 'removed', 'datetime COMMENT "date removed or null, if still present"');
