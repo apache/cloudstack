@@ -48,7 +48,7 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
 
     @Override
     public GetUnmanagedInstancesAnswer execute(GetUnmanagedInstancesCommand command, LibvirtComputingResource libvirtComputingResource) {
-        LOGGER.info("Fetching unmanaged instance on host");
+        LOGGER.info("Fetching unmanaged instances on host");
 
         HashMap<String, UnmanagedInstanceTO> unmanagedInstances = new HashMap<>();
         try {

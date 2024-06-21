@@ -3771,14 +3771,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public List<String> getAllVmNames(final Connect conn) {
-        final ArrayList<String> la = new ArrayList<String>();
+        final ArrayList<String> domainNames = new ArrayList<String>();
         try {
             final String names[] = conn.listDefinedDomains();
             for (int i = 0; i < names.length; i++) {
-                la.add(names[i]);
+                domainNames.add(names[i]);
             }
         } catch (final LibvirtException e) {
-            s_logger.warn("Failed to list Defined domains", e);
+            s_logger.warn("Failed to list defined domains", e);
         }
 
         int[] ids = null;
@@ -3786,14 +3786,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             ids = conn.listDomains();
         } catch (final LibvirtException e) {
             s_logger.warn("Failed to list domains", e);
-            return la;
+            return domainNames;
         }
 
         Domain dm = null;
         for (int i = 0; i < ids.length; i++) {
             try {
                 dm = conn.domainLookupByID(ids[i]);
-                la.add(dm.getName());
+                domainNames.add(dm.getName());
             } catch (final LibvirtException e) {
                 s_logger.warn("Unable to get vms", e);
             } finally {
@@ -3807,7 +3807,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
         }
 
-        return la;
+        return domainNames;
     }
 
     private HashMap<String, HostVmStateReportEntry> getHostVmStateReport() {
