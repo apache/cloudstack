@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.db.*;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.context.CallContext;
@@ -132,8 +133,6 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.component.ManagerBase;
-import com.cloud.utils.db.GlobalLock;
-import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.events.SubscriptionMgr;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -1309,12 +1308,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
         try {
             _rulesMgr.getSystemIpAndEnableStaticNatForVm(profile.getVirtualMachine(), false);
-            IPAddressVO ipaddr = _ipAddressDao.findByAssociatedVmId(profile.getVirtualMachine().getId());
-            if (ipaddr != null && ipaddr.getSystem()) {
-                SecondaryStorageVmVO secVm = _secStorageVmDao.findById(profile.getId());
-                secVm.setPublicIpAddress(ipaddr.getAddress().addr());
-                _secStorageVmDao.update(secVm.getId(), secVm);
-            }
+            markIpAsSystem(profile);
         } catch (InsufficientAddressCapacityException ex) {
             s_logger.error(String.format("Failed to get system IP and enable static NAT for the VM [%s] due to [%s].", profile.toString(), ex.getMessage()), ex);
             return false;
@@ -1323,10 +1317,28 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         return true;
     }
 
+    private void markIpAsSystem(VirtualMachineProfile profile) {
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(final TransactionStatus status) {
+                IPAddressVO ipaddr = _ipAddressDao.findByAssociatedVmId(profile.getVirtualMachine().getId());
+                if (ipaddr != null) {
+                    ipaddr.setSystem(true);
+                    _ipAddressDao.update(ipaddr.getId(), ipaddr);
+                    SecondaryStorageVmVO secVm = _secStorageVmDao.findById(profile.getId());
+                    secVm.setPublicIpAddress(ipaddr.getAddress().addr());
+                    _secStorageVmDao.update(secVm.getId(), secVm);
+                }
+            }
+        });
+    }
+
     @Override
     public void finalizeStop(VirtualMachineProfile profile, Answer answer) {
         IPAddressVO ip = _ipAddressDao.findByAssociatedVmId(profile.getId());
-        if (ip != null && ip.getSystem()) {
+        if (ip != null) {
+            ip.setSystem(false);
+            _ipAddressDao.update(ip.getId(), ip);
             CallContext ctx = CallContext.current();
             try {
                 _rulesMgr.disableStaticNat(ip.getId(), ctx.getCallingAccount(), ctx.getCallingUserId(), true);
