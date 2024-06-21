@@ -27,7 +27,6 @@ import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.command.user.vpn.CreateVpnConnectionCmd;
@@ -314,7 +313,6 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         return conn;
     }
 
-    @NotNull
     private Site2SiteCustomerGateway getAndValidateSite2SiteCustomerGateway(Long customerGatewayId, Account caller) {
         Site2SiteCustomerGateway customerGateway = _customerGatewayDao.findById(customerGatewayId);
         if (customerGateway == null) {
@@ -324,7 +322,6 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         return customerGateway;
     }
 
-    @NotNull
     private Site2SiteVpnGateway getAndValidateSite2SiteVpnGateway(Long vpnGatewayId, Account caller) {
         Site2SiteVpnGateway vpnGateway = _vpnGatewayDao.findById(vpnGatewayId);
         if (vpnGateway == null) {
@@ -870,6 +867,15 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
                 }
             }
         }
+    }
+
+    public List<Site2SiteVpnServiceProvider> getS2sProviders() {
+        return _s2sProviders;
+    }
+
+    @Inject
+    public void setS2sProviders(List<Site2SiteVpnServiceProvider> s2sProviders) {
+        _s2sProviders = s2sProviders;
     }
 
     @Override
