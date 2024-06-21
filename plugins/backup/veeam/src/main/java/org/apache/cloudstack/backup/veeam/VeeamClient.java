@@ -367,12 +367,12 @@ public class VeeamClient {
      * There is also a timeout defined in the global configuration, backup.plugin.veeam.restore.timeout,<br/>
      * that is used to wait for the restore to complete before throwing a {@link CloudRuntimeException}.
      */
-    protected boolean checkIfRestoreSessionFinished(String type, String path) throws IOException {
+    protected void checkIfRestoreSessionFinished(String type, String path) throws IOException {
         for (int j = 0; j < restoreTimeout; j++) {
             HttpResponse relatedResponse = get(path);
             RestoreSession session = parseRestoreSessionResponse(relatedResponse);
             if (session.getResult().equals("Success")) {
-                return true;
+                return;
             }
 
             if (session.getResult().equalsIgnoreCase("Failed")) {

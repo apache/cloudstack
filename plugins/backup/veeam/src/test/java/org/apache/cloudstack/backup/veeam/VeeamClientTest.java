@@ -163,7 +163,7 @@ public class VeeamClientTest {
             Mockito.when(mockClient.get(Mockito.anyString())).thenReturn(httpResponse);
             Mockito.when(mockClient.parseRestoreSessionResponse(httpResponse)).thenReturn(restoreSession);
             Mockito.when(restoreSession.getResult()).thenReturn("No Success");
-            Mockito.when(mockClient.checkIfRestoreSessionFinished(Mockito.eq("RestoreTest"), Mockito.eq("any"))).thenCallRealMethod();
+            Mockito.doCallRealMethod().when(mockClient).checkIfRestoreSessionFinished(Mockito.eq("RestoreTest"), Mockito.eq("any"));
             mockClient.checkIfRestoreSessionFinished("RestoreTest", "any");
             fail();
         } catch (Exception e) {
