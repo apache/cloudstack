@@ -69,7 +69,6 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -81,7 +80,6 @@ import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo;
 import com.cloud.agent.api.ModifyTargetsAnswer;
 import com.cloud.agent.api.ModifyTargetsCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
-import com.cloud.agent.api.storage.CheckStorageAvailabilityCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.MigrateVolumeAnswer;
@@ -1905,7 +1903,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 throw new CloudRuntimeException("Invalid hypervisor type (only KVM supported for this operation at the time being)");
             }
 
-            verifyLiveMigrationForKVM(volumeDataStoreMap, destHost);
+            verifyLiveMigrationForKVM(volumeDataStoreMap);
 
             VMInstanceVO vmInstance = _vmDao.findById(vmTO.getId());
             vmTO.setState(vmInstance.getState());
@@ -2356,9 +2354,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     * At a high level: The source storage cannot be managed and
     *                  the destination storages can be all managed or all not managed, not mixed.
     */
-    protected void verifyLiveMigrationForKVM(Map<VolumeInfo, DataStore> volumeDataStoreMap, Host destHost) {
+    protected void verifyLiveMigrationForKVM(Map<VolumeInfo, DataStore> volumeDataStoreMap) {
         Boolean storageTypeConsistency = null;
-        Map<String, Storage.StoragePoolType> sourcePools = new HashMap<>();
         for (Map.Entry<VolumeInfo, DataStore> entry : volumeDataStoreMap.entrySet()) {
             VolumeInfo volumeInfo = entry.getKey();
 
@@ -2384,31 +2381,6 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 storageTypeConsistency = destStoragePoolVO.isManaged();
             } else if (storageTypeConsistency != destStoragePoolVO.isManaged()) {
                 throw new CloudRuntimeException("Destination storage pools must be either all managed or all not managed");
-            }
-        }
-        verifyDestinationStorage(sourcePools, destHost);
-    }
-
-
-    /**
-     * Perform storage validation on destination host for KVM live storage migrations.
-     * Validate that volume source storage pools are mounted on the destination host prior the migration
-     * @throws CloudRuntimeException if any source storage pool is not mounted on the destination host
-     */
-    private void verifyDestinationStorage(Map<String, Storage.StoragePoolType> sourcePools, Host destHost) {
-        if (MapUtils.isNotEmpty(sourcePools)) {
-            LOGGER.debug("Verifying source pools are already available on destination host " + destHost.getUuid());
-            CheckStorageAvailabilityCommand cmd = new CheckStorageAvailabilityCommand(sourcePools);
-            try {
-                Answer answer = agentManager.send(destHost.getId(), cmd);
-                if (answer == null || !answer.getResult()) {
-                    throw new CloudRuntimeException("Storage verification failed on host "
-                            + destHost.getUuid() +": " + answer.getDetails());
-                }
-            } catch (AgentUnavailableException | OperationTimedoutException e) {
-                e.printStackTrace();
-                throw new CloudRuntimeException("Cannot perform storage verification on host " + destHost.getUuid() +
-                        "due to: " + e.getMessage());
             }
         }
     }
