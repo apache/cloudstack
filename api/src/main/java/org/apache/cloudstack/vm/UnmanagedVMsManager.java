@@ -35,6 +35,9 @@ public interface UnmanagedVMsManager extends VmImportService, UnmanageVMService,
             "Advanced",
             "30",
             "Timeout (in mins) to prepare and copy the disks of remote KVM instance while importing the instance from an external host",
+            true,
+            ConfigKey.Scope.Global,
+            null);
 
     ConfigKey<Integer> ConvertVmwareInstanceToKvmTimeout = new ConfigKey<>(Integer.class,
             "convert.vmware.instance.to.kvm.timeout",
