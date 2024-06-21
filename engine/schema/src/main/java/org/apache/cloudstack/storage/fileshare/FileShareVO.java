@@ -128,9 +128,8 @@ public class FileShareVO implements FileShare {
         this.uuid = UUID.randomUUID().toString();
     }
 
-
     @Override
-    public Long getId() {
+    public long getId() {
         return id;
     }
 
@@ -220,12 +219,12 @@ public class FileShareVO implements FileShare {
     }
 
     @Override
-    public Long getStorageVmId() {
+    public Long getVmId() {
         return vmId;
     }
 
     @Override
-    public void setStorageVmId(Long vmId) {
+    public void setVmId(Long vmId) {
         this.vmId = vmId;
     }
 

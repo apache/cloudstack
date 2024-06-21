@@ -18,8 +18,10 @@ package org.apache.cloudstack.storage.fileshare;
 
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.fsm.StateObject;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface FileShare extends StateObject<FileShare.State> {
+public interface FileShare extends StateObject<FileShare.State>, Identity, InternalIdentity {
 
     String FileShareVmNamePrefix = "fs";
 
@@ -101,7 +103,7 @@ public interface FileShare extends StateObject<FileShare.State> {
         RecoveryRequested,
     }
 
-    Long getId();
+    long getId();
 
     String getName();
 
@@ -137,9 +139,9 @@ public interface FileShare extends StateObject<FileShare.State> {
 
     void setVolumeId(Long volumeId);
 
-    Long getStorageVmId();
+    Long getVmId();
 
-    void setStorageVmId(Long vmId);
+    void setVmId(Long vmId);
 
     String getMountOptions();
 

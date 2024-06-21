@@ -89,6 +89,7 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.ExtractResponse;
+import org.apache.cloudstack.api.response.FileShareResponse;
 import org.apache.cloudstack.api.response.FirewallResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
@@ -213,6 +214,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.fileshare.FileShare;
 import org.apache.cloudstack.storage.object.Bucket;
 import org.apache.cloudstack.storage.object.ObjectStore;
 import org.apache.cloudstack.usage.Usage;
@@ -5273,5 +5275,52 @@ public class ApiResponseHelper implements ResponseGenerator {
         bucketResponse.setProvider(objectStoreVO.getProviderName());
         populateAccount(bucketResponse, bucket.getAccountId());
         return bucketResponse;
+    }
+
+    @Override
+    public FileShareResponse createFileShareResponse(FileShare fileShare) {
+        FileShareResponse response = new FileShareResponse();
+        response.setId(fileShare.getUuid());
+        response.setName(fileShare.getName());
+        response.setObjectName(FileShare.class.getSimpleName().toLowerCase());
+
+        DataCenterVO zone = ApiDBUtils.findZoneById(fileShare.getDataCenterId());
+        if (zone != null) {
+            response.setZoneId(zone.getUuid());
+            response.setZoneName(zone.getName());
+        }
+
+        Long vmId = fileShare.getVmId();
+        if (vmId != null) {
+            VirtualMachine vm = ApiDBUtils.findVMInstanceById(vmId);
+            if (vm != null) {
+                response.setVirtualMachineId(vm.getUuid());
+            }
+        }
+
+        Volume vol = ApiDBUtils.findVolumeById(fileShare.getVolumeId());
+        if (vol != null) {
+            response.setVolumeId(vol.getUuid());
+        }
+
+        response.setState(fileShare.getState().toString());
+
+        Account account = ApiDBUtils.findAccountById(fileShare.getAccountId());
+        if (account != null) {
+            response.setAccountName(account.getAccountName());
+        }
+
+        Domain domain = ApiDBUtils.findDomainById(fileShare.getDomainId());
+        if (domain != null) {
+            response.setDomainId(domain.getUuid());
+            response.setDomainName(domain.getName());
+        }
+
+        Project project = ApiDBUtils.findProjectById(fileShare.getProjectId());
+        if (project != null) {
+            response.setProjectId(project.getUuid());
+            response.setProjectName(project.getName());
+        }
+        return response;
     }
 }

@@ -17,12 +17,11 @@
 
 package org.apache.cloudstack.storage.fileshare.provider;
 
+import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.component.ComponentContext;
 import org.apache.cloudstack.storage.fileshare.FileShareLifeCycle;
 import org.apache.cloudstack.storage.fileshare.FileShareProvider;
 import org.apache.cloudstack.storage.fileshare.lifecycle.SimulatorFileShareLifeCycle;
-
-import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.component.ComponentContext;
 
 public class SimulatorFileShareProvider extends AdapterBase implements FileShareProvider {
     protected String name = String.valueOf(FileShareProviderType.SIMULATOR);

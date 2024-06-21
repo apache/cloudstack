@@ -21,9 +21,12 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.command.user.storage.fileshare.CreateFileShareCmd;
 
 import com.cloud.utils.component.PluggableService;
+import org.apache.cloudstack.api.command.user.storage.fileshare.ListFileSharesCmd;
 
 public interface FileShareService extends PluggableService {
 
@@ -37,5 +40,13 @@ public interface FileShareService extends PluggableService {
 
     FileShareProvider getFileShareProvider(String fileShareProviderName);
 
-    public FileShare allocFileShare(CreateFileShareCmd cmd);
+    FileShare allocFileShare(CreateFileShareCmd cmd);
+
+    FileShare deployFileShare(Long fileShareId, List<Long> networkIds);
+
+    FileShare initializeFileShare(Long fileShareId);
+
+    Pair<List<? extends FileShare>, Integer> searchForFileShares(ListFileSharesCmd cmd);
+
+    FileShare deleteFileShare(Long fileShareId, Account owner);
 }

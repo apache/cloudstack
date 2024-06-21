@@ -17,20 +17,15 @@
 
 package org.apache.cloudstack.storage.fileshare.lifecycle;
 
+import java.util.List;
+
 import org.apache.cloudstack.storage.fileshare.FileShare;
 import org.apache.cloudstack.storage.fileshare.FileShareLifeCycle;
 
-import com.cloud.storage.Volume;
-
 public class SimulatorFileShareLifeCycle implements FileShareLifeCycle {
     @Override
-    public Volume allocateFileShareVolume(FileShare fileShare) {
-        return null;
-    }
-
-    @Override
-    public boolean createFileShare(FileShare fileShare) {
-        return false;
+    public Long deployFileShare(FileShare fileShare, List<Long> networkIds) {
+        return 0L;
     }
 
     @Override

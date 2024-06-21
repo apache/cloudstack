@@ -100,6 +100,10 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
             description = "list of network ids to attach file share to")
     private List<Long> networkIds;
 
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
     public String getName() {
         return name;
     }
@@ -136,6 +140,10 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
         return fileShareProviderName;
     }
 
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
+
     @Override
     public long getEntityOwnerId() {
         return CallContext.current().getCallingAccount().getId();
@@ -163,6 +171,15 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     @Override
     public void execute() {
-
+        FileShare fileShare = fileShareService.deployFileShare(this.getEntityId(), this.getNetworkIds());
+        if (fileShare != null) {
+            FileShareResponse response = _responseGenerator.createFileShareResponse(fileShare);
+            response.setObjectName(FileShare.class.getSimpleName().toLowerCase());
+            response.setResponseName(getCommandName());
+            setResponseObject(response);
+        } else {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to deploy file share");
+        }
+        //initialize
     }
 }
