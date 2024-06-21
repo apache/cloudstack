@@ -41,9 +41,6 @@ public class FiberChannelAdapter extends MultipathSCSIAdapterBase {
             if (hostname.indexOf(".") > 0) {
                 hostname = hostname.substring(0, hostname.indexOf(".")); // strip off domain
             }
-            if (hostname.indexOf(".") > 0) {
-                hostname = hostname.substring(0, hostname.indexOf(".")); // strip off domain
-            }
             hostnameFq = inetAddress.getCanonicalHostName(); // fully qualified hostname
             LOGGER.info("Loaded FiberChannelAdapter for StorageLayer on host [" + hostname + "]");
         } catch (UnknownHostException e) {

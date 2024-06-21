@@ -364,14 +364,6 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
         LOGGER.debug("Starting COPY from source path " + srcFile.getFileName() + " to target volume path: " + destDisk.getPath());
 
         ScriptResult result = runScript(copyScript, timeout, destDisk.getFormat().toString().toLowerCase(), srcFile.getFileName(), destFile.getFileName());
-        /**Script script = new Script(
-            String.format("%s %s %s %s", copyScript, destDisk.getFormat().toString().toLowerCase(), srcFile.getFileName(), destFile.getFileName()),
-            Duration.millis(timeout),
-            LOGGER);
-
-        script.execute();
-        int rc = script.getExitValue();
-        */
         int rc = result.getExitCode();
         if (rc != 0) {
             throw new CloudRuntimeException("Failed to convert from " + srcFile.getFileName() + " to " + destFile.getFileName() + " the error was: " + rc + " - " + result.getResult());

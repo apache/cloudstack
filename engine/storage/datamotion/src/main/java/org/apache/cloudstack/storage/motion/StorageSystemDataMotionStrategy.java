@@ -931,18 +931,18 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
     private VolumeInfo createTemporaryVolumeCopyOfSnapshotAdaptive(SnapshotInfo snapshotInfo) {
         VolumeInfo tempVolumeInfo = null;
-        VolumeVO volumeVO = null;
+        VolumeVO tempVolumeVO = null;
         try {
-            volumeVO = new VolumeVO(Volume.Type.DATADISK, snapshotInfo.getName() + "_" + System.currentTimeMillis() + ".TMP",
+            tempVolumeVO = new VolumeVO(Volume.Type.DATADISK, snapshotInfo.getName() + "_" + System.currentTimeMillis() + ".TMP",
                 snapshotInfo.getDataCenterId(), snapshotInfo.getDomainId(), snapshotInfo.getAccountId(), 0, ProvisioningType.THIN, snapshotInfo.getSize(), 0L, 0L, "");
-                volumeVO.setPoolId(snapshotInfo.getDataStore().getId());
-            _volumeDao.persist(volumeVO);
-            tempVolumeInfo = this._volFactory.getVolume(volumeVO.getId());
+                tempVolumeVO.setPoolId(snapshotInfo.getDataStore().getId());
+            _volumeDao.persist(tempVolumeVO);
+            tempVolumeInfo = this._volFactory.getVolume(tempVolumeVO.getId());
 
             if (snapshotInfo.getDataStore().getDriver().canCopy(snapshotInfo, tempVolumeInfo)) {
                 snapshotInfo.getDataStore().getDriver().copyAsync(snapshotInfo, tempVolumeInfo, null, null);
                 // refresh volume info as data could have changed
-                tempVolumeInfo = this._volFactory.getVolume(volumeVO.getId());
+                tempVolumeInfo = this._volFactory.getVolume(tempVolumeVO.getId());
             } else {
                 throw new CloudRuntimeException("Storage driver indicated it could create a volume from the snapshot but rejected the subsequent request to do so");
             }
@@ -954,8 +954,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 }
 
                 // cleanup temporary volume
-                if (volumeVO != null) {
-                    _volumeDao.remove(volumeVO.getId());
+                if (tempVolumeVO != null) {
+                    _volumeDao.remove(tempVolumeVO.getId());
                 }
             } catch (Throwable e2) {
                 LOGGER.warn("Failed to delete temporary volume created for copy", e2);
