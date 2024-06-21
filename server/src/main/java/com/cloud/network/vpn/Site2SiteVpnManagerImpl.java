@@ -63,11 +63,13 @@ import com.cloud.network.dao.Site2SiteVpnConnectionVO;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.dao.Site2SiteVpnGatewayVO;
 import com.cloud.network.element.Site2SiteVpnServiceProvider;
+import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
@@ -97,7 +99,11 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
     @Inject
     IPAddressDao _ipAddressDao;
     @Inject
+    AccountDao _accountDao;
+    @Inject
     ConfigurationDao _configDao;
+    @Inject
+    VpcManager _vpcMgr;
     @Inject
     AccountManager _accountMgr;
     @Inject
