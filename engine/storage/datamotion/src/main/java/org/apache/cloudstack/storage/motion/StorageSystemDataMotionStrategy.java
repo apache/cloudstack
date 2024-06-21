@@ -935,7 +935,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         try {
             tempVolumeVO = new VolumeVO(Volume.Type.DATADISK, snapshotInfo.getName() + "_" + System.currentTimeMillis() + ".TMP",
                 snapshotInfo.getDataCenterId(), snapshotInfo.getDomainId(), snapshotInfo.getAccountId(), 0, ProvisioningType.THIN, snapshotInfo.getSize(), 0L, 0L, "");
-                tempVolumeVO.setPoolId(snapshotInfo.getDataStore().getId());
+            tempVolumeVO.setPoolId(snapshotInfo.getDataStore().getId());
             _volumeDao.persist(tempVolumeVO);
             tempVolumeInfo = this._volFactory.getVolume(tempVolumeVO.getId());
 
