@@ -7290,3 +7290,120 @@ class Webhook:
         cmd.webhookid = self.id
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return apiclient.deleteWebhookDelivery(cmd)
+
+class ZoneIpv4Subnet:
+    """Manage IPv4 Subnet for Zone"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, zoneid, subnet, **kwargs):
+        """Create IPv4 Subnet for Zone"""
+        cmd = createIpv4SubnetForZone.createIpv4SubnetForZoneCmd()
+        cmd.zoneid = zoneid
+        cmd.subnet = subnet
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return ZoneIpv4Subnet(apiclient.createIpv4SubnetForZone(cmd).__dict__)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        cmd = listIpv4GuestSubnetsForZone.listIpv4GuestSubnetsForZoneCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.listIpv4GuestSubnetsForZone(cmd)
+
+    def delete(self, apiclient):
+        """Delete IPv4 Subnet for Zone"""
+        cmd = deleteIpv4GuestSubnetForZone.deleteIpv4GuestSubnetForZoneCmd()
+        cmd.id = self.id
+        apiclient.deleteIpv4GuestSubnetForZone(cmd)
+
+    def update(self, apiclient, **kwargs):
+        """Update IPv4 Subnet for Zone"""
+
+        cmd = updateIpv4GuestSubnetForZone.updateIpv4GuestSubnetForZoneCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.updateIpv4GuestSubnetForZone(cmd)
+
+    @classmethod
+    def dedicate(cls, apiclient, id, account=None, domainid=None, projectid=None):
+        """Dedicate IPv4 Subnet for Zone"""
+
+        cmd = dedicateIpv4GuestSubnetForZone.dedicateIpv4GuestSubnetForZoneCmd()
+        cmd.id = id
+        cmd.account = account
+        cmd.domainid = domainid
+        cmd.projectid = projectid
+        return ZoneIpv4Subnet(apiclient.dedicateIpv4GuestSubnetForZone(cmd).__dict__)
+
+    def release(self, apiclient):
+        """Release IPv4 Subnet for Zone"""
+
+        cmd = releaseIpv4GuestSubnetForZone.releaseIpv4GuestSubnetForZoneCmd()
+        cmd.id = self.id
+        return apiclient.releaseIpv4GuestSubnetForZone(cmd)
+
+class Ipv4SubnetForGuestNetwork:
+    """Manage IPv4 Subnet for Guest Network"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, parentid, subnet, cidrsize, **kwargs):
+        """Create IPv4 Subnet for Guest Network"""
+        cmd = createIpv4SubnetForGuestNetwork.createIpv4SubnetForGuestNetworkCmd()
+        cmd.parentid = parentid
+        cmd.subnet = subnet
+        cmd.cidrsize = cidrsize
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return Ipv4SubnetForGuestNetwork(apiclient.createIpv4SubnetForGuestNetwork(cmd).__dict__)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        cmd = listIpv4SubnetsForGuestNetwork.listIpv4SubnetsForGuestNetworkCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.listIpv4SubnetsForGuestNetwork(cmd)
+
+    def delete(self, apiclient):
+        """Delete IPv4 Subnet for Guest Network"""
+        cmd = deleteIpv4SubnetForGuestNetwork.deleteIpv4SubnetForGuestNetworkCmd()
+        cmd.id = self.id
+        apiclient.deleteIpv4SubnetForGuestNetwork(cmd)
+
+
+
+class RoutingFirewallRule:
+    """Manage IPv4 Routing Firewall rules"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, networkid, protocol, **kwargs):
+        """Create IPv4 Routing Firewall rule"""
+        cmd = createRoutingFirewallRule.createRoutingFirewallRuleCmd()
+        cmd.networkid = networkid
+        cmd.protocol = protocol
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return RoutingFirewallRule(apiclient.createRoutingFirewallRule(cmd).__dict__)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        cmd = listRoutingFirewallRules.listRoutingFirewallRulesCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.listIpv4SubnetsForGuestNetwork(cmd)
+
+    def delete(self, apiclient):
+        """Delete IPv4 Routing Firewall rule"""
+        cmd = deleteRoutingFirewallRule.deleteRoutingFirewallRuleCmd()
+        cmd.id = self.id
+        apiclient.deleteRoutingFirewallRule(cmd)
+
+    def update(self, apiclient, **kwargs):
+        """Update IPv4 Routing Firewall rule"""
+        cmd = updateRoutingFirewallRule.updateRoutingFirewallRuleCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        apiclient.updateRoutingFirewallRule(cmd)
