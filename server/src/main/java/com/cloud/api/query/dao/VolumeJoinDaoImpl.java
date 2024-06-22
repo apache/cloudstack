@@ -296,9 +296,10 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
         ServiceOffering serviceOffering = null;
         if (computeOnlyDiskOffering != null) {
             serviceOffering = ApiDBUtils.findServiceOfferingByComputeOnlyDiskOffering(volume.getDiskOfferingId(), false);
-        }
-        if (serviceOffering == null) {
-            serviceOffering = ApiDBUtils.findServiceOfferingByComputeOnlyDiskOffering(volume.getDiskOfferingId(), true);
+            if (serviceOffering == null) {
+                // Check again for removed ones
+                serviceOffering = ApiDBUtils.findServiceOfferingByComputeOnlyDiskOffering(volume.getDiskOfferingId(), true);
+            }
         }
         return serviceOffering;
     }
