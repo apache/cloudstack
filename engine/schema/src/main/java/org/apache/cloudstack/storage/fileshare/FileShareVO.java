@@ -139,6 +139,11 @@ public class FileShareVO implements FileShare {
     }
 
     @Override
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    @Override
     public String getUuid() {
         return uuid;
     }
@@ -146,6 +151,11 @@ public class FileShareVO implements FileShare {
     @Override
     public String getDescription() {
         return description;
+    }
+
+    @Override
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     @Override

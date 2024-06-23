@@ -107,9 +107,13 @@ public interface FileShare extends StateObject<FileShare.State>, Identity, Inter
 
     String getName();
 
+    void setName(String name);
+
     String getUuid();
 
     String getDescription();
+
+    void setDescription(String description);
 
     Long getDomainId();
 

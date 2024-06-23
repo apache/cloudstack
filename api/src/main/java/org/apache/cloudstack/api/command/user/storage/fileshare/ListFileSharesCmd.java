@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.cloud.utils.Pair;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
@@ -51,7 +52,7 @@ public class ListFileSharesCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "the ID of the network")
     private Long networkId;
 
-    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "the ID of the account")
+    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "the ID of the account", authorized = RoleType.Admin)
     private Long accountId;
 
     /////////////////////////////////////////////////////

@@ -17,21 +17,92 @@
 package org.apache.cloudstack.api.command.user.storage.fileshare;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.FileShareResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.fileshare.FileShare;
+import org.apache.cloudstack.storage.fileshare.FileShareService;
+
+import javax.inject.Inject;
 
 @APICommand(name = "updateFileShare", responseObject= FileShareResponse.class, description = "Update a File Share.. ",
         responseView = ResponseObject.ResponseView.Restricted, entityType = FileShare.class, requestHasSensitiveInfo = false, since = "4.20.0")
 public class UpdateFileShareCmd extends BaseCmd {
-    @Override
-    public void execute() {
 
+    @Inject
+    FileShareService fileShareService;
+
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name = ApiConstants.ID,
+            type = CommandType.UUID,
+            required = true,
+            entityType = FileShareResponse.class,
+            description = "the ID of the file share")
+    private Long id;
+
+    @Parameter(name = ApiConstants.NAME,
+            type = CommandType.STRING,
+            required = true,
+            description = "the name of the file share.")
+    private String name;
+
+    @Parameter(name = ApiConstants.DESCRIPTION,
+            type = CommandType.STRING,
+            description = "the description for the file share.")
+    private String description;
+
+    @Parameter(name = ApiConstants.MOUNT_OPTIONS,
+            type = CommandType.STRING,
+            description = "the comma separated list of mount options to use for mounting this file share.")
+    private String mountOptions;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Long getId() {
+        return id;
     }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public String getMountOptions() {
+        return mountOptions;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     @Override
     public long getEntityOwnerId() {
-        return 0;
+        return CallContext.current().getCallingAccount().getId();
+    }
+
+    @Override
+    public void execute() {
+        FileShare fileShare = fileShareService.updateFileShare(this);
+        if (fileShare != null) {
+            FileShareResponse response = _responseGenerator.createFileShareResponse(fileShare);
+            response.setObjectName(FileShare.class.getSimpleName().toLowerCase());
+            response.setResponseName(getCommandName());
+            setResponseObject(response);
+        } else {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update file share");
+        }
     }
 }

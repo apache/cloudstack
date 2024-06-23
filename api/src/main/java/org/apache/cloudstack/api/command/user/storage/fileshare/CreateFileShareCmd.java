@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.storage.fileshare;
 
-import java.util.List;
-
 import javax.inject.Inject;
 
 import com.cloud.event.EventTypes;
@@ -93,12 +91,11 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
             description = "the provider to be used for the file share.")
     private String fileShareProviderName;
 
-    @Parameter(name = ApiConstants.NETWORK_IDS,
-            type = CommandType.LIST,
-            collectionType = CommandType.UUID,
+    @Parameter(name = ApiConstants.NETWORK_ID,
+            type = CommandType.UUID,
             entityType = NetworkResponse.class,
-            description = "list of network ids to attach file share to")
-    private List<Long> networkIds;
+            description = "list of network id to attach file share to")
+    private Long networkId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -132,8 +129,8 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
         return fsFormat;
     }
 
-    public List<Long> getNetworkIds() {
-        return networkIds;
+    public Long getNetworkId() {
+        return networkId;
     }
 
     public String getFileShareProviderName() {
@@ -171,7 +168,7 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     @Override
     public void execute() {
-        FileShare fileShare = fileShareService.deployFileShare(this.getEntityId(), this.getNetworkIds());
+        FileShare fileShare = fileShareService.deployFileShare(this.getEntityId(), this.getNetworkId());
         if (fileShare != null) {
             FileShareResponse response = _responseGenerator.createFileShareResponse(fileShare);
             response.setObjectName(FileShare.class.getSimpleName().toLowerCase());

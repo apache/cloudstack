@@ -17,14 +17,10 @@
 
 package org.apache.cloudstack.storage.fileshare;
 
-import java.util.List;
-
 public interface FileShareLifeCycle {
-    Long deployFileShare(FileShare fileShare, List<Long> networkIds);
+    Long deployFileShare(FileShare fileShare, Long networkId);
 
     boolean initializeFileShare(FileShare fileShare);
-
-    boolean deleteFileShareVolume(FileShare fileShare);
 
     boolean deleteFileShare(FileShare fileShare);
 }

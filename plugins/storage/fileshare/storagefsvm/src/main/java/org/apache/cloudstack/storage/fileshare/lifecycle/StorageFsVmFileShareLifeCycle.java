@@ -24,17 +24,12 @@ import org.apache.cloudstack.storage.fileshare.FileShareLifeCycle;
 
 public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
     @Override
-    public Long deployFileShare(FileShare fileShare, List<Long> networkIds) {
+    public Long deployFileShare(FileShare fileShare, Long networkId) {
         return 0L;
     }
 
     @Override
     public boolean initializeFileShare(FileShare fileShare) {
-        return false;
-    }
-
-    @Override
-    public boolean deleteFileShareVolume(FileShare fileShare) {
         return false;
     }
 
