@@ -17,8 +17,6 @@
 
 package org.apache.cloudstack.storage.fileshare.lifecycle;
 
-import java.util.List;
-
 import org.apache.cloudstack.storage.fileshare.FileShare;
 import org.apache.cloudstack.storage.fileshare.FileShareLifeCycle;
 
