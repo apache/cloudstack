@@ -47,7 +47,7 @@ public class StorPoolConfigurationManager implements Configurable {
     public static final ConfigKey<Integer> DeleteAfterInterval = new ConfigKey<>("Advanced", Integer.class,
             "storpool.delete.after.interval", "0",
             "The interval (in seconds) after the StorPool snapshot will be deleted",
-            false);
+            false, ConfigKey.Scope.StoragePool);
 
     public static final ConfigKey<Integer> ListSnapshotsWithDeleteAfterInterval = new ConfigKey<>("Advanced", Integer.class,
             "storpool.list.snapshots.delete.after.interval", "360",

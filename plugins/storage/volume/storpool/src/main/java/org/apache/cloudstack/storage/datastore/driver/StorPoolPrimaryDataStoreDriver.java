@@ -409,7 +409,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             }
             try {
                 SpConnectionDesc conn = StorPoolUtil.getSpConnection(dataStore.getUuid(), dataStore.getId(), storagePoolDetailsDao, primaryStoreDao);
-                tryToSnapshotVolumeBeforeDelete(vinfo, name, conn);
+                tryToSnapshotVolumeBeforeDelete(vinfo, dataStore, name, conn);
                 SpApiResponse resp = StorPoolUtil.volumeDelete(name, conn);
                 if (resp.getError() == null) {
                     updateStoragePool(dataStore.getId(), - vinfo.getSize());
@@ -439,18 +439,18 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         callback.complete(res);
     }
 
-    private void tryToSnapshotVolumeBeforeDelete(VolumeInfo vinfo, String name, SpConnectionDesc conn) {
-        Integer deleteAfter = StorPoolConfigurationManager.DeleteAfterInterval.value();
+    private void tryToSnapshotVolumeBeforeDelete(VolumeInfo vinfo, DataStore dataStore, String name, SpConnectionDesc conn) {
+        Integer deleteAfter = StorPoolConfigurationManager.DeleteAfterInterval.valueIn(dataStore.getId());
         if (deleteAfter != null && deleteAfter > 0 && vinfo.getPassphraseId() == null) {
             createTemporarySnapshot(vinfo, name, deleteAfter, conn);
         } else {
-            StorPoolUtil.spLog("The volume [%s] is not marked to be snapshotted. Check the global setting `storpool.delete.after.interval` or the volume is encrypted [%s]", name, deleteAfter, vinfo.getPassphraseId() != null);
+            StorPoolUtil.spLog("The volume [%s] is not marked to be snapshot. Check the global setting `storpool.delete.after.interval` or the volume is encrypted [%s]", name, deleteAfter, vinfo.getPassphraseId() != null);
         }
     }
 
     private void createTemporarySnapshot(VolumeInfo vinfo, String name, Integer deleteAfter, SpConnectionDesc conn) {
         Map<String, String> tags = new HashMap<>();
-        tags.put("cs", "delayDelete");
+        tags.put("cs", StorPoolUtil.DELAY_DELETE);
         StorPoolSnapshotDef snapshot = new StorPoolSnapshotDef(name, deleteAfter, tags);
         StorPoolUtil.spLog("Creating backup snapshot before delete the volume [%s]", vinfo.getName());
         SpApiResponse snapshotResponse = StorPoolUtil.volumeSnapshot(snapshot, conn);
@@ -547,7 +547,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     StorPoolUtil.spLog("Created volume=%s with uuid=%s from snapshot=%s with uuid=%s", StorPoolUtil.getNameFromResponse(resp, false), to.getUuid(), snapshotName, sinfo.getUuid());
                 } else if (resp.getError().getName().equals("objectDoesNotExist")) {
                     //check if snapshot is on secondary storage
-                    StorPoolUtil.spLog("Snapshot %s does not exists on StorPool, will try to create a volume from a snopshot on secondary storage", snapshotName);
+                    StorPoolUtil.spLog("Snapshot %s does not exists on StorPool, will try to create a volume from a snapshot on secondary storage", snapshotName);
                     SnapshotDataStoreVO snap = getSnapshotImageStoreRef(sinfo.getId(), vinfo.getDataCenterId());
                     SnapshotDetailsVO snapshotDetail = snapshotDetailsDao.findDetail(sinfo.getId(), StorPoolUtil.SP_DELAY_DELETE);
                     if (snapshotDetail != null) {

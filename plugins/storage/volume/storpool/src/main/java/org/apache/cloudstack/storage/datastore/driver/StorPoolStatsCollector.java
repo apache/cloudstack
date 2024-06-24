@@ -96,9 +96,12 @@ public class StorPoolStatsCollector extends ManagerBase {
             if (StorPoolConfigurationManager.StorageStatsInterval.value() > 0 && storageStatsInterval > 0) {
                 executor.scheduleAtFixedRate(new StorPoolStorageStatsMonitorTask(), 120, StorPoolConfigurationManager.StorageStatsInterval.value(), TimeUnit.SECONDS);
             }
-            Integer deleteAfter = StorPoolConfigurationManager.DeleteAfterInterval.value();
-            if (deleteAfter != null && deleteAfter > 0) {
-                executor.scheduleAtFixedRate(new StorPoolSnapshotsWithDelayDelete(), 120, StorPoolConfigurationManager.ListSnapshotsWithDeleteAfterInterval.value(), TimeUnit.SECONDS);
+            for (StoragePoolVO pool: spPools) {
+                Integer deleteAfter = StorPoolConfigurationManager.DeleteAfterInterval.valueIn(pool.getId());
+                if (deleteAfter != null && deleteAfter > 0) {
+                    executor.scheduleAtFixedRate(new StorPoolSnapshotsWithDelayDelete(), 120, StorPoolConfigurationManager.ListSnapshotsWithDeleteAfterInterval.value(), TimeUnit.SECONDS);
+                    break;
+                }
             }
         }
 
@@ -212,11 +215,11 @@ public class StorPoolStatsCollector extends ManagerBase {
         public void run() {
             List<StoragePoolVO> spPools = storagePoolDao.findPoolsByProvider(StorPoolUtil.SP_PROVIDER_NAME);
             if (CollectionUtils.isNotEmpty(spPools)) {
-                Map<Long, StoragePoolVO> onePoolforZone = new HashMap<>();
+                Map<Long, StoragePoolVO> onePoolForZone = new HashMap<>();
                 for (StoragePoolVO storagePoolVO : spPools) {
-                    onePoolforZone.put(storagePoolVO.getDataCenterId(), storagePoolVO);
+                    onePoolForZone.put(storagePoolVO.getDataCenterId(), storagePoolVO);
                 }
-                for (StoragePoolVO storagePool : onePoolforZone.values()) {
+                for (StoragePoolVO storagePool : onePoolForZone.values()) {
                     List<SnapshotDetailsVO> snapshotsDetails = snapshotDetailsDao.findDetailsByZoneAndKey(storagePool.getDataCenterId(), StorPoolUtil.SP_DELAY_DELETE);
                     if (CollectionUtils.isEmpty(snapshotsDetails)) {
                         return;
@@ -284,7 +287,7 @@ public class StorPoolStatsCollector extends ManagerBase {
                 JsonObject tags = snapshot.getAsJsonObject().get("tags").getAsJsonObject();
                 if (!StringUtils.startsWith(name, "*") && StringUtils.containsNone(name, "@") && tags != null && !tags.entrySet().isEmpty()) {
                     String tag = tags.getAsJsonPrimitive("cs").getAsString();
-                    if (tag != null && tag.equals("delayDelete")) {
+                    if (tag != null && tag.equals(StorPoolUtil.DELAY_DELETE)) {
                         snapshotsWithDelayDelete.put(name, tag);
                     }
                 }

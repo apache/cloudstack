@@ -132,6 +132,9 @@ public class StorPoolUtil {
 
     public static final String SP_DELAY_DELETE = "SP_DELAY_DELETE";
 
+    public static final String DELAY_DELETE = "delayDelete";
+
+
     public static enum StorpoolRights {
         RO("ro"), RW("rw"), DETACH("detach");
 

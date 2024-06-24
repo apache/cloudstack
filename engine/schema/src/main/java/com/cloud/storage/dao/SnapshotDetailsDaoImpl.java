@@ -50,12 +50,12 @@ public class SnapshotDetailsDaoImpl extends ResourceDetailsDaoBase<SnapshotDetai
                         snapshotDetailsOnZone.add(toEntityBean(rs, false));
                     }
                 } catch (SQLException e) {
-                    throw new CloudRuntimeException("searchForZoneWideVlans:Exception:" + e.getMessage(), e);
+                    throw new CloudRuntimeException("Could not find details by given zone and key due to:" + e.getMessage(), e);
                 }
             }
             return snapshotDetailsOnZone;
         } catch (SQLException e) {
-            throw new CloudRuntimeException("searchForZoneWideVlans:Exception:" + e.getMessage(), e);
+            throw new CloudRuntimeException("Could not find details by given zone and key due to:" + e.getMessage(), e);
         }
     }
 }
