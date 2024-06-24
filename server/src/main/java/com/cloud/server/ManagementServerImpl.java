@@ -5127,7 +5127,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             hpvCapabilities = _hypervisorCapabilitiesDao.persist(copy);
         }
 
-        hpvCapabilities = _hypervisorCapabilitiesDao.createForUpdate(hpvCapabilities.getId());
+        id = hpvCapabilities.getId();
+        hpvCapabilities = _hypervisorCapabilitiesDao.createForUpdate(id);
 
         if (securityGroupEnabled != null) {
             hpvCapabilities.setSecurityGroupEnabled(securityGroupEnabled);
