@@ -2890,7 +2890,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             }
         }
 
-        handleAgentIfNotConnected(host, vms_migrating);
+        handleAgentConnectAndRestart(host, vms_migrating);
 
         try {
             resourceStateTransitTo(host, ResourceState.Event.AdminCancelMaintenance, _nodeId);
@@ -2905,16 +2905,16 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     /**
-     * Handle agent (if available) if its not connected before cancelling maintenance.
      * Agent must be connected before cancelling maintenance.
-     * If the host status is not Up:
+     * Connect and restart agent (if available) if its not connected before cancelling maintenance.
+     * Restart agent even if it is connected to refresh the storage pools
      * - If kvm.ssh.to.agent is true, then SSH into the host and restart the agent.
      * - If kvm.shh.to.agent is false, then fail cancelling maintenance
      */
-    protected void handleAgentIfNotConnected(HostVO host, boolean vmsMigrating) {
+    protected void handleAgentConnectAndRestart(HostVO host, boolean vmsMigrating) {
         final boolean isAgentOnHost = host.getHypervisorType() == HypervisorType.KVM ||
                 host.getHypervisorType() == HypervisorType.LXC;
-        if (!isAgentOnHost || vmsMigrating || host.getStatus() == Status.Up) {
+        if (!isAgentOnHost || vmsMigrating) {
             return;
         }
         final boolean sshToAgent = Boolean.parseBoolean(_configDao.getValue(KvmSshToAgentEnabled.key()));
