@@ -1982,7 +1982,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         LOGGER.trace("Removing older Volume stats records.");
         Date now = new Date();
         Date limit = DateUtils.addMinutes(now, -maxRetentionTime);
-        volumeStatsDao.removeAllByTimestampLessThan(limit);
+        volumeStatsDao.removeAllByTimestampLessThan(limit, DELETE_BATCH_QUERY_SIZE.value());
     }
 
     /**

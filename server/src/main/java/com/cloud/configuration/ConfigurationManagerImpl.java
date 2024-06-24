@@ -509,7 +509,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public static final ConfigKey<Long> DELETE_BATCH_QUERY_SIZE = new ConfigKey<>("Advanced", Long.class, "delete.batch.query.size", "0",
             "Indicates the limit applied while deleting entries in bulk. With this, ACS will run the delete query, applying the limit, as many times as necessary" +
                     " to delete all the entries. This is advised when retaining several days of records, which can lead to slowness. Zero (0) means that no limit will be applied, " +
-                    "therefore, the query will run once and without limit, keeping the default behavior. For now, this is used for deletion of vm stats only.", true);
+                    "therefore, the query will run once and without limit, keeping the default behavior. For now, this is used for deletion of vm & volume stats only.", true);
 
     private static final String IOPS_READ_RATE = "IOPS Read";
     private static final String IOPS_WRITE_RATE = "IOPS Write";
