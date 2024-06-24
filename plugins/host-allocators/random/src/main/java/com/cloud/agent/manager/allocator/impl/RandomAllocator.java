@@ -25,13 +25,10 @@ import javax.inject.Inject;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.ListUtils;
 import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.capacity.CapacityManager;
-import com.cloud.dc.ClusterDetailsDao;
-import com.cloud.dc.dao.ClusterDao;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.host.Host;
@@ -43,7 +40,6 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Component
@@ -53,142 +49,133 @@ public class RandomAllocator extends AdapterBase implements HostAllocator {
     @Inject
     private ResourceManager _resourceMgr;
     @Inject
-    private ClusterDao clusterDao;
-    @Inject
-    private ClusterDetailsDao clusterDetailsDao;
-    @Inject
     private CapacityManager capacityManager;
 
-    protected List<HostVO> listHostsByTags(Host.Type type, long dcId, Long podId, Long clusterId, String offeringHostTag, String templateTag) {
-        List<HostVO> taggedHosts = new ArrayList<>();
-        if (offeringHostTag != null) {
-            taggedHosts.addAll(_hostDao.listByHostTag(type, clusterId, podId, dcId, offeringHostTag));
-        }
-        if (templateTag != null) {
-            List<HostVO> templateTaggedHosts = _hostDao.listByHostTag(type, clusterId, podId, dcId, templateTag);
-            if (taggedHosts.isEmpty()) {
-                taggedHosts = templateTaggedHosts;
-            } else {
-                taggedHosts.retainAll(templateTaggedHosts);
-            }
-        }
-        if (logger.isDebugEnabled()) {
-            logger.debug(String.format("Found %d hosts %s with type: %s, zone ID: %d, pod ID: %d, cluster ID: %s, offering host tag(s): %s, template tag: %s",
-                    taggedHosts.size(),
-                    (taggedHosts.isEmpty() ? "" : String.format("(%s)", StringUtils.join(taggedHosts.stream().map(HostVO::toString).toArray(), ","))),
-                    type.name(), dcId, podId, clusterId, offeringHostTag, templateTag));
-        }
-        return taggedHosts;
-    }
-    private List<Host> findSuitableHosts(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type,
-                                         ExcludeList avoid, List<? extends Host> hosts, int returnUpTo,
+    protected List<Host> findSuitableHosts(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, List<? extends Host> hosts, int returnUpTo,
                                          boolean considerReservedCapacity) {
+        if (type == Host.Type.Storage) {
+            return null;
+        }
+
         long dcId = plan.getDataCenterId();
         Long podId = plan.getPodId();
         Long clusterId = plan.getClusterId();
         ServiceOffering offering = vmProfile.getServiceOffering();
-        List<? extends Host> hostsCopy = null;
-        List<Host> suitableHosts = new ArrayList<>();
 
-        if (type == Host.Type.Storage) {
-            return suitableHosts;
-        }
         String offeringHostTag = offering.getHostTag();
-        VMTemplateVO template = (VMTemplateVO)vmProfile.getTemplate();
-        String templateTag = template.getTemplateTag();
-        String hostTag = null;
-        if (ObjectUtils.anyNull(offeringHostTag, templateTag)) {
-            hostTag = offeringHostTag;
-            hostTag = hostTag == null ? templateTag : String.format("%s, %s", hostTag, templateTag);
-            logger.debug(String.format("Looking for hosts in dc [%s], pod [%s], cluster [%s] and complying with host tag(s): [%s]", dcId, podId, clusterId, hostTag));
-        } else {
-            logger.debug("Looking for hosts in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId);
-        }
-        if (hosts != null) {
-            // retain all computing hosts, regardless of whether they support routing...it's random after all
-            hostsCopy = new ArrayList<>(hosts);
-            if (ObjectUtils.anyNotNull(offeringHostTag, templateTag)) {
-                hostsCopy.retainAll(listHostsByTags(type, dcId, podId, clusterId, offeringHostTag, templateTag));
-            } else {
-                hostsCopy.retainAll(_hostDao.listAllHostsThatHaveNoRuleTag(type, clusterId, podId, dcId));
-            }
-        } else {
-            // list all computing hosts, regardless of whether they support routing...it's random after all
-            if (offeringHostTag != null) {
-                hostsCopy = listHostsByTags(type, dcId, podId, clusterId, offeringHostTag, templateTag);
-            } else {
-                hostsCopy = _hostDao.listAllHostsThatHaveNoRuleTag(type, clusterId, podId, dcId);
-            }
-        }
-        hostsCopy = ListUtils.union(hostsCopy, _hostDao.findHostsWithTagRuleThatMatchComputeOfferingTags(hostTag));
+        VMTemplateVO template = (VMTemplateVO) vmProfile.getTemplate();
+        logger.debug("Looking for hosts in zone [{}], pod [{}], cluster [{}].", dcId, podId, clusterId);
 
-        if (hostsCopy.isEmpty()) {
-            logger.info("No suitable host found for VM [{}] in {}.", vmProfile, hostTag);
+        List<? extends Host> availableHosts = retrieveHosts(type, (List<HostVO>) hosts, template, offeringHostTag, clusterId, podId, dcId);
+
+        if (availableHosts.isEmpty()) {
+            logger.info("No suitable host found for VM [{}] in zone [{}], pod [{}], cluster [{}].", vmProfile, dcId, podId, clusterId);
             return null;
         }
 
-        logger.debug("Random Allocator found {} hosts", hostsCopy.size());
-        if (hostsCopy.isEmpty()) {
-            return suitableHosts;
-        }
+        return filterAvailableHosts(avoid, returnUpTo, considerReservedCapacity, availableHosts, offering);
+    }
 
-        Collections.shuffle(hostsCopy);
-        for (Host host : hostsCopy) {
+    protected List<Host> filterAvailableHosts(ExcludeList avoid, int returnUpTo, boolean considerReservedCapacity, List<? extends Host> availableHosts, ServiceOffering offering) {
+        logger.debug("Random Allocator found [{}] available hosts. They will be checked if they are in the avoid set and for CPU capability and capacity.", availableHosts::size);
+        List<Host> suitableHosts = new ArrayList<>();
+
+        Collections.shuffle(availableHosts);
+        for (Host host : availableHosts) {
             if (suitableHosts.size() == returnUpTo) {
                 break;
             }
+
             if (avoid.shouldAvoid(host)) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug(String.format("Host %s is in avoid set, skipping this and trying other available hosts", host));
-                }
+                logger.debug("Host [{}] is in the avoid set, skipping it and trying other available hosts.", () -> host);
                 continue;
             }
-            Pair<Boolean, Boolean> cpuCapabilityAndCapacity = capacityManager.checkIfHostHasCpuCapabilityAndCapacity(host, offering, considerReservedCapacity);
-            if (!cpuCapabilityAndCapacity.first() || !cpuCapabilityAndCapacity.second()) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug(String.format("Not using host %s; host has cpu capability? %s, host has capacity? %s", host, cpuCapabilityAndCapacity.first(), cpuCapabilityAndCapacity.second()));
-                }
+
+            if (!hostHasCpuCapabilityAndCapacity(considerReservedCapacity, offering, host)) {
                 continue;
             }
-            if (logger.isDebugEnabled()) {
-                logger.debug(String.format("Found a suitable host, adding to list: %s", host));
-            }
+
+            logger.debug("Found the suitable host [{}], adding to list.", () -> host);
             suitableHosts.add(host);
         }
-        if (logger.isDebugEnabled()) {
-            logger.debug("Random Host Allocator returning " + suitableHosts.size() + " suitable hosts");
-        }
+
+        logger.debug("Random Host Allocator returning {} suitable hosts.", suitableHosts::size);
         return suitableHosts;
+    }
+
+
+    protected boolean hostHasCpuCapabilityAndCapacity(boolean considerReservedCapacity, ServiceOffering offering, Host host) {
+        Pair<Boolean, Boolean> cpuCapabilityAndCapacity = capacityManager.checkIfHostHasCpuCapabilityAndCapacity(host, offering, considerReservedCapacity);
+        Boolean hasCpuCapability = cpuCapabilityAndCapacity.first();
+        Boolean hasCpuCapacity = cpuCapabilityAndCapacity.second();
+
+        if (hasCpuCapability && hasCpuCapacity) {
+            logger.debug("Host {} has enough CPU capability and CPU capacity.", host);
+            return true;
+        }
+
+        logger.debug("Not using host [{}]. Does the host have cpu capability? {}. Does the host have capacity? {}.", () -> host, () -> hasCpuCapability, () -> hasCpuCapacity);
+        return false;
+    }
+
+    /**
+     * @return all computing hosts, regardless of whether they support routing.
+     */
+    protected List<HostVO> retrieveHosts(Type type, List<HostVO> hosts, VMTemplateVO template, String offeringHostTag, Long clusterId, Long podId, long dcId) {
+        List<HostVO> availableHosts;
+        String templateTag = template.getTemplateTag();
+
+        if (CollectionUtils.isNotEmpty(hosts)) {
+            availableHosts = new ArrayList<>(hosts);
+        } else {
+            availableHosts = _resourceMgr.listAllUpAndEnabledHosts(type, clusterId, podId, dcId);
+        }
+
+        if (ObjectUtils.anyNotNull(offeringHostTag, templateTag)) {
+            retainHostsWithMatchingTags(availableHosts, type, clusterId, podId, dcId, offeringHostTag, templateTag);
+        } else {
+            List<HostVO> hostsWithNoRuleTag = _hostDao.listAllHostsThatHaveNoRuleTag(type, clusterId, podId, dcId);
+            logger.debug("Retaining hosts {} because they do not have rule tags.", hostsWithNoRuleTag);
+            availableHosts.retainAll(hostsWithNoRuleTag);
+        }
+
+        List<HostVO> hostsWithTagRuleThatMatchComputeOfferingTags = _hostDao.findHostsWithTagRuleThatMatchComputeOfferingTags(offeringHostTag);
+        logger.debug("Adding hosts {} to the available pool hosts because they match the compute offering's tag.", hostsWithTagRuleThatMatchComputeOfferingTags, offeringHostTag);
+        availableHosts = ListUtils.union(availableHosts, hostsWithTagRuleThatMatchComputeOfferingTags);
+
+        return availableHosts;
+    }
+
+    protected void retainHostsWithMatchingTags(List<HostVO> availableHosts, Type type, long dcId, Long podId, Long clusterId, String offeringHostTag, String templateTag) {
+        logger.debug("Hosts {} will be checked for template and host tags compatibility.", availableHosts);
+
+        if (offeringHostTag != null) {
+            List<HostVO> hostsWithHostTag = _hostDao.listByHostTag(type, clusterId, podId, dcId, offeringHostTag);
+            logger.debug("Retaining hosts {} because they match the offering host tag {}.", hostsWithHostTag, offeringHostTag);
+            availableHosts.retainAll(hostsWithHostTag);
+        }
+
+        if (templateTag != null) {
+            List<HostVO> hostsWithTemplateTag = _hostDao.listByHostTag(type, clusterId, podId, dcId, templateTag);
+            logger.debug("Retaining hosts {} because they match the template tag {}.", hostsWithTemplateTag, offeringHostTag);
+            availableHosts.retainAll(hostsWithTemplateTag);
+        }
+
+        logger.debug("Remaining hosts after template tag and host tags validations are {}.", availableHosts);
     }
 
     @Override
     public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, int returnUpTo) {
-        return allocateTo(vmProfile, plan, type, avoid, returnUpTo, true);
+        return allocateTo(vmProfile, plan, type, avoid, null, returnUpTo, true);
     }
 
     @Override
-    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type,
-                                 ExcludeList avoid, List<? extends Host> hosts, int returnUpTo,
+    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, List<? extends Host> hosts, int returnUpTo,
                                  boolean considerReservedCapacity) {
         if (CollectionUtils.isEmpty(hosts)) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Random Allocator found 0 hosts as given host list is empty");
-            }
+            logger.debug("Random Allocator found 0 hosts as given host list is empty");
             return new ArrayList<>();
         }
         return findSuitableHosts(vmProfile, plan, type, avoid, hosts, returnUpTo, considerReservedCapacity);
-    }
-
-    @Override
-    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan,
-                                 Type type, ExcludeList avoid, int returnUpTo, boolean considerReservedCapacity) {
-        return findSuitableHosts(vmProfile, plan, type, avoid, null, returnUpTo, considerReservedCapacity);
-    }
-
-    @Override
-    public boolean isVirtualMachineUpgradable(VirtualMachine vm, ServiceOffering offering) {
-        // currently we do no special checks to rule out a VM being upgradable to an offering, so
-        // return true
-        return true;
     }
 }

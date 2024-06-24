@@ -212,7 +212,7 @@ public class ListHostsCmd extends BaseListCmd {
             for (Host host : result.first()) {
                 HostResponse hostResponse = _responseGenerator.createHostResponse(host, getDetails());
                 Boolean suitableForMigration = false;
-                if (hostsWithCapacity.contains(host)) {
+                if (hostsWithCapacity != null && hostsWithCapacity.contains(host)) {
                     suitableForMigration = true;
                 }
                 hostResponse.setSuitableForMigration(suitableForMigration);
