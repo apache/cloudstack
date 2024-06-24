@@ -46,7 +46,6 @@ public final class LibvirtCopyRemoteVolumeCommandWrapper extends CommandWrapper<
 
     @Override
     public Answer execute(final CopyRemoteVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
-        String result = null;
         String srcIp = command.getRemoteIp();
         String username = command.getUsername();
         String password = command.getPassword();
@@ -56,23 +55,25 @@ public final class LibvirtCopyRemoteVolumeCommandWrapper extends CommandWrapper<
         KVMStoragePoolManager poolMgr = libvirtComputingResource.getStoragePoolMgr();
         KVMStoragePool pool = poolMgr.getStoragePool(storageFilerTO.getType(), storageFilerTO.getUuid());
         String dstPath = pool.getLocalPath();
+        int timeoutInSecs = command.getWait();
 
         try {
             if (storageFilerTO.getType() == Storage.StoragePoolType.Filesystem ||
                     storageFilerTO.getType() == Storage.StoragePoolType.NetworkFilesystem) {
-                String filename = libvirtComputingResource.copyVolume(srcIp, username, password, dstPath, srcFile, tmpPath);
-                s_logger.debug("Volume Copy Successful");
+                String filename = libvirtComputingResource.copyVolume(srcIp, username, password, dstPath, srcFile, tmpPath, timeoutInSecs);
+                s_logger.debug("Volume " + srcFile + " copy successful, copied to file: " + filename);
                 final KVMPhysicalDisk vol = pool.getPhysicalDisk(filename);
                 final String path = vol.getPath();
                 long size = getVirtualSizeFromFile(path);
-                return  new CopyRemoteVolumeAnswer(command, "", filename, size);
+                return new CopyRemoteVolumeAnswer(command, "", filename, size);
             } else {
-                return new Answer(command, false, "Unsupported Storage Pool");
+                String msg = "Unsupported storage pool type: " + storageFilerTO.getType().toString() + ", only local and NFS pools are supported";
+                return new Answer(command, false, msg);
             }
-
         } catch (final Exception e) {
-            s_logger.error("Error while copying file from remote host: "+ e.getMessage());
-            return new Answer(command, false, result);
+            s_logger.error("Error while copying volume file from remote host: " + e.getMessage(), e);
+            String msg = "Failed to copy volume due to: " + e.getMessage();
+            return new Answer(command, false, msg);
         }
     }
 

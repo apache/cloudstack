@@ -30,6 +30,15 @@ public interface UnmanagedVMsManager extends VmImportService, UnmanageVMService,
             "If set to true, do not remove VM nics (and its MAC addresses) when unmanaging a VM, leaving them allocated but not reserved. " +
                     "If set to false, nics are removed and MAC addresses can be reassigned", true, ConfigKey.Scope.Zone);
 
+    ConfigKey<Integer> RemoteKvmInstanceDisksCopyTimeout = new ConfigKey<>(Integer.class,
+            "remote.kvm.instance.disks.copy.timeout",
+            "Advanced",
+            "30",
+            "Timeout (in mins) to prepare and copy the disks of remote KVM instance while importing the instance from an external host",
+            true,
+            ConfigKey.Scope.Global,
+            null);
+
     static boolean isSupported(Hypervisor.HypervisorType hypervisorType) {
         return hypervisorType == VMware || hypervisorType == KVM;
     }

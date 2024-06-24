@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
@@ -69,7 +70,6 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -81,7 +81,6 @@ import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo;
 import com.cloud.agent.api.ModifyTargetsAnswer;
 import com.cloud.agent.api.ModifyTargetsCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
-import com.cloud.agent.api.storage.CheckStorageAvailabilityCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.MigrateVolumeAnswer;
@@ -139,6 +138,9 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
+
+import static org.apache.cloudstack.vm.UnmanagedVMsManagerImpl.KVM_VM_IMPORT_DEFAULT_TEMPLATE_NAME;
+import static org.apache.cloudstack.vm.UnmanagedVMsManagerImpl.VM_IMPORT_DEFAULT_TEMPLATE_NAME;
 
 public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     private static final Logger LOGGER = Logger.getLogger(StorageSystemDataMotionStrategy.class);
@@ -1905,7 +1907,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 throw new CloudRuntimeException("Invalid hypervisor type (only KVM supported for this operation at the time being)");
             }
 
-            verifyLiveMigrationForKVM(volumeDataStoreMap, destHost);
+            verifyLiveMigrationForKVM(volumeDataStoreMap);
 
             VMInstanceVO vmInstance = _vmDao.findById(vmTO.getId());
             vmTO.setState(vmInstance.getState());
@@ -1932,7 +1934,10 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                     continue;
                 }
 
-                if (srcVolumeInfo.getTemplateId() != null) {
+                VMTemplateVO vmTemplate = _vmTemplateDao.findById(vmInstance.getTemplateId());
+                if (srcVolumeInfo.getTemplateId() != null &&
+                        Objects.nonNull(vmTemplate) &&
+                        !Arrays.asList(KVM_VM_IMPORT_DEFAULT_TEMPLATE_NAME, VM_IMPORT_DEFAULT_TEMPLATE_NAME).contains(vmTemplate.getName())) {
                     LOGGER.debug(String.format("Copying template [%s] of volume [%s] from source storage pool [%s] to target storage pool [%s].", srcVolumeInfo.getTemplateId(), srcVolumeInfo.getId(), sourceStoragePool.getId(), destStoragePool.getId()));
                     copyTemplateToTargetFilesystemStorageIfNeeded(srcVolumeInfo, sourceStoragePool, destDataStore, destStoragePool, destHost);
                 } else {
@@ -1976,8 +1981,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
                 MigrateCommand.MigrateDiskInfo migrateDiskInfo;
 
-                boolean isNonManagedNfsToNfsOrSharedMountPointToNfs = supportStoragePoolType(sourceStoragePool.getPoolType()) && destStoragePool.getPoolType() == StoragePoolType.NetworkFilesystem && !managedStorageDestination;
-                if (isNonManagedNfsToNfsOrSharedMountPointToNfs) {
+                boolean isNonManagedToNfs = supportStoragePoolType(sourceStoragePool.getPoolType(), StoragePoolType.Filesystem) && destStoragePool.getPoolType() == StoragePoolType.NetworkFilesystem && !managedStorageDestination;
+                if (isNonManagedToNfs) {
                     migrateDiskInfo = new MigrateCommand.MigrateDiskInfo(srcVolumeInfo.getPath(),
                             MigrateCommand.MigrateDiskInfo.DiskType.FILE,
                             MigrateCommand.MigrateDiskInfo.DriverType.QCOW2,
@@ -2151,7 +2156,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         if (srcVolumeInfo.getHypervisorType() == HypervisorType.KVM &&
                 srcVolumeInfo.getTemplateId() != null && srcVolumeInfo.getPoolId() != null) {
             VMTemplateVO template = _vmTemplateDao.findById(srcVolumeInfo.getTemplateId());
-            if (template.getFormat() != null && template.getFormat() != Storage.ImageFormat.ISO) {
+            if (Objects.nonNull(template) && template.getFormat() != null && template.getFormat() != Storage.ImageFormat.ISO) {
                 VMTemplateStoragePoolVO ref = templatePoolDao.findByPoolTemplate(srcVolumeInfo.getPoolId(), srcVolumeInfo.getTemplateId(), null);
                 return ref != null ? ref.getInstallPath() : null;
             }
@@ -2356,9 +2361,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     * At a high level: The source storage cannot be managed and
     *                  the destination storages can be all managed or all not managed, not mixed.
     */
-    protected void verifyLiveMigrationForKVM(Map<VolumeInfo, DataStore> volumeDataStoreMap, Host destHost) {
+    protected void verifyLiveMigrationForKVM(Map<VolumeInfo, DataStore> volumeDataStoreMap) {
         Boolean storageTypeConsistency = null;
-        Map<String, Storage.StoragePoolType> sourcePools = new HashMap<>();
         for (Map.Entry<VolumeInfo, DataStore> entry : volumeDataStoreMap.entrySet()) {
             VolumeInfo volumeInfo = entry.getKey();
 
@@ -2384,47 +2388,6 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 storageTypeConsistency = destStoragePoolVO.isManaged();
             } else if (storageTypeConsistency != destStoragePoolVO.isManaged()) {
                 throw new CloudRuntimeException("Destination storage pools must be either all managed or all not managed");
-            }
-
-            addSourcePoolToPoolsMap(sourcePools, srcStoragePoolVO, destStoragePoolVO);
-        }
-        verifyDestinationStorage(sourcePools, destHost);
-    }
-
-    /**
-     * Adds source storage pool to the migration map if the destination pool is not managed and it is NFS.
-     */
-    protected void addSourcePoolToPoolsMap(Map<String, Storage.StoragePoolType> sourcePools, StoragePoolVO srcStoragePoolVO, StoragePoolVO destStoragePoolVO) {
-        if (destStoragePoolVO.isManaged() || !StoragePoolType.NetworkFilesystem.equals(destStoragePoolVO.getPoolType())) {
-            LOGGER.trace(String.format("Skipping adding source pool [%s] to map due to destination pool [%s] is managed or not NFS.", srcStoragePoolVO, destStoragePoolVO));
-            return;
-        }
-
-        String sourceStoragePoolUuid = srcStoragePoolVO.getUuid();
-        if (!sourcePools.containsKey(sourceStoragePoolUuid)) {
-            sourcePools.put(sourceStoragePoolUuid, srcStoragePoolVO.getPoolType());
-        }
-    }
-
-    /**
-     * Perform storage validation on destination host for KVM live storage migrations.
-     * Validate that volume source storage pools are mounted on the destination host prior the migration
-     * @throws CloudRuntimeException if any source storage pool is not mounted on the destination host
-     */
-    private void verifyDestinationStorage(Map<String, Storage.StoragePoolType> sourcePools, Host destHost) {
-        if (MapUtils.isNotEmpty(sourcePools)) {
-            LOGGER.debug("Verifying source pools are already available on destination host " + destHost.getUuid());
-            CheckStorageAvailabilityCommand cmd = new CheckStorageAvailabilityCommand(sourcePools);
-            try {
-                Answer answer = agentManager.send(destHost.getId(), cmd);
-                if (answer == null || !answer.getResult()) {
-                    throw new CloudRuntimeException("Storage verification failed on host "
-                            + destHost.getUuid() +": " + answer.getDetails());
-                }
-            } catch (AgentUnavailableException | OperationTimedoutException e) {
-                e.printStackTrace();
-                throw new CloudRuntimeException("Cannot perform storage verification on host " + destHost.getUuid() +
-                        "due to: " + e.getMessage());
             }
         }
     }
