@@ -51,6 +51,11 @@ public class ListIpv4SubnetsForGuestNetworkCmd extends BaseListCmd {
             description = "UUID of zone Ipv4 subnet which the IPv4 subnet belongs to.")
     private Long parentId;
 
+    @Parameter(name = ApiConstants.SUBNET,
+            type = CommandType.STRING,
+            description = "The CIDR of the Ipv4 subnet.")
+    private String subnet;
+
     @Parameter(name = ApiConstants.ZONE_ID,
             type = CommandType.UUID,
             entityType = ZoneResponse.class,
@@ -71,6 +76,10 @@ public class ListIpv4SubnetsForGuestNetworkCmd extends BaseListCmd {
 
     public Long getZoneId() {
         return zoneId;
+    }
+
+    public String getSubnet() {
+        return subnet;
     }
 
     @Override

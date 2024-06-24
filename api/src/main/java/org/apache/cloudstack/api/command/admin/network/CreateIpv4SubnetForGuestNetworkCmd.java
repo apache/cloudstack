@@ -57,7 +57,7 @@ public class CreateIpv4SubnetForGuestNetworkCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.SUBNET,
             type = CommandType.STRING,
-            description = "The CIDR for this Ipv4 subnet.")
+            description = "The CIDR of this Ipv4 subnet.")
     private String subnet;
 
     @Parameter(name = ApiConstants.CIDR_SIZE,

@@ -418,6 +418,8 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         Long id = cmd.getId();
         Long zoneId = cmd.getZoneId();
         Long parentId = cmd.getParentId();
+        String subnet = cmd.getSubnet();
+        String keyword = cmd.getKeyword();
 
         SearchCriteria sc = ipv4GuestSubnetNetworkMapDao.createSearchCriteria();
         if (id != null) {
@@ -433,6 +435,12 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         }
         if (parentId != null) {
             sc.addAnd("parentId", SearchCriteria.Op.EQ, parentId);
+        }
+        if (subnet != null) {
+            sc.addAnd("subnet", SearchCriteria.Op.EQ, subnet);
+        }
+        if (keyword != null) {
+            sc.addAnd("subnet", SearchCriteria.Op.LIKE, keyword);
         }
         return ipv4GuestSubnetNetworkMapDao.search(sc, null);
     }
