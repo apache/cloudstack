@@ -800,6 +800,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
         int copyTimeoutInSecs = copyTimeout * 60;
         copyRemoteVolumeCommand.setWait(copyTimeoutInSecs);
+        LOGGER.error(String.format("Initiating copy remote volume %s from %s, timeout %d secs", path, remoteUrl, copyTimeoutInSecs));
         Answer answer = agentManager.easySend(dest.getHost().getId(), copyRemoteVolumeCommand);
         if (!(answer instanceof CopyRemoteVolumeAnswer)) {
             throw new CloudRuntimeException("Error while copying volume of remote instance: " + answer.getDetails());
@@ -2434,7 +2435,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return defaultNetwork;
     }
 
-    //generate unit test
     public ListResponse<UnmanagedInstanceResponse> listVmsForImport(ListVmsForImportCmd cmd) {
         final Account caller = CallContext.current().getCallingAccount();
         if (caller.getType() != Account.Type.ADMIN) {
@@ -2474,8 +2474,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     private HashMap<String, UnmanagedInstanceTO> getRemoteVmsOnKVMHost(long zoneId, String remoteHostUrl, String username, String password) {
         //ToDo: add option to list one Vm by name
         List<HostVO> hosts = resourceManager.listAllUpAndEnabledHostsInOneZoneByHypervisor(Hypervisor.HypervisorType.KVM, zoneId);
-        if(hosts.size() < 1) {
-            throw new CloudRuntimeException("No hosts available for VM import");
+        if (hosts.size() < 1) {
+            throw new CloudRuntimeException("No hosts available to list VMs on remote host " + remoteHostUrl);
         }
         HostVO host = hosts.get(0);
         GetRemoteVmsCommand getRemoteVmsCommand = new GetRemoteVmsCommand(remoteHostUrl, username, password);
