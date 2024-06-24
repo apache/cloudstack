@@ -84,8 +84,6 @@
 
         <module>ha-planners/skip-heurestics</module>
 
-        <module>host-allocators/random</module>
-
         <module>hypervisors/baremetal</module>
         <module>hypervisors/hyperv</module>
         <module>hypervisors/kvm</module>
