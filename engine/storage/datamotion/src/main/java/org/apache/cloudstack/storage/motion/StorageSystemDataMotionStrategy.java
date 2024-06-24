@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
@@ -139,6 +140,9 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
+
+import static org.apache.cloudstack.vm.UnmanagedVMsManagerImpl.KVM_VM_IMPORT_DEFAULT_TEMPLATE_NAME;
+import static org.apache.cloudstack.vm.UnmanagedVMsManagerImpl.VM_IMPORT_DEFAULT_TEMPLATE_NAME;
 
 public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     private static final Logger LOGGER = Logger.getLogger(StorageSystemDataMotionStrategy.class);
@@ -1932,7 +1936,10 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                     continue;
                 }
 
-                if (srcVolumeInfo.getTemplateId() != null) {
+                VMTemplateVO vmTemplate = _vmTemplateDao.findById(vmInstance.getTemplateId());
+                if (srcVolumeInfo.getTemplateId() != null &&
+                        Objects.nonNull(vmTemplate) &&
+                        !Arrays.asList(KVM_VM_IMPORT_DEFAULT_TEMPLATE_NAME, VM_IMPORT_DEFAULT_TEMPLATE_NAME).contains(vmTemplate.getName())) {
                     LOGGER.debug(String.format("Copying template [%s] of volume [%s] from source storage pool [%s] to target storage pool [%s].", srcVolumeInfo.getTemplateId(), srcVolumeInfo.getId(), sourceStoragePool.getId(), destStoragePool.getId()));
                     copyTemplateToTargetFilesystemStorageIfNeeded(srcVolumeInfo, sourceStoragePool, destDataStore, destStoragePool, destHost);
                 } else {
@@ -2151,7 +2158,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         if (srcVolumeInfo.getHypervisorType() == HypervisorType.KVM &&
                 srcVolumeInfo.getTemplateId() != null && srcVolumeInfo.getPoolId() != null) {
             VMTemplateVO template = _vmTemplateDao.findById(srcVolumeInfo.getTemplateId());
-            if (template.getFormat() != null && template.getFormat() != Storage.ImageFormat.ISO) {
+            if (Objects.nonNull(template) && template.getFormat() != null && template.getFormat() != Storage.ImageFormat.ISO) {
                 VMTemplateStoragePoolVO ref = templatePoolDao.findByPoolTemplate(srcVolumeInfo.getPoolId(), srcVolumeInfo.getTemplateId(), null);
                 return ref != null ? ref.getInstallPath() : null;
             }
