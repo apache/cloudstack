@@ -1889,7 +1889,7 @@ public class VirtualMachineMO extends BaseMO {
                                 ovfFiles[i] = ovfFile;
                             } else {
                                 String diskUrl = diskUrlStr;
-                                executor = Executors.newFixedThreadPool(threadsCountToExportOvf);
+                                executor = Executors.newFixedThreadPool(Math.min(threadsCountToExportOvf, deviceUrlsCount));
                                 if (s_logger.isInfoEnabled()) {
                                     s_logger.info("Download VMDK file for export url: " + deviceUrlStr + ", size: " + diskFileSize);
                                 }
