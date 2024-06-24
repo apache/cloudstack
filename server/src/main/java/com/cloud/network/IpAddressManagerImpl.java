@@ -1568,7 +1568,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 if (ip != null) {
                     try {
                         s_logger.warn("Failed to associate ip address, so releasing ip from the database " + ip);
-                        _ipAddressDao.markAsUnavailable(ip.getId());
+                        _ipAddressDao.markAsReleasing(ip.getId());
                         if (!applyIpAssociations(network, true)) {
                             // if fail to apply ip associations again, unassign ip address without updating resource
                             // count and generating usage event as there is no need to keep it in the db
@@ -1982,7 +1982,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                         }
                     }
 
-                    return _ipAddressDao.markAsUnavailable(addrId);
+                    return _ipAddressDao.markAsReleasing(addrId);
                 }
             });
         }

@@ -382,7 +382,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
 
     @Override
     @DB
-    public IPAddressVO markAsUnavailable(long ipAddressId) {
+    public IPAddressVO markAsReleasing(long ipAddressId) {
         SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("id", ipAddressId);
 

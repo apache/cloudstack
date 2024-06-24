@@ -26,7 +26,7 @@ import com.cloud.utils.net.Ip;
 
 public interface IPAddressDao extends GenericDao<IPAddressVO, Long> {
 
-    IPAddressVO markAsUnavailable(long ipAddressId);
+    IPAddressVO markAsReleasing(long ipAddressId);
 
     void unassignIpAddress(long ipAddressId);
 
