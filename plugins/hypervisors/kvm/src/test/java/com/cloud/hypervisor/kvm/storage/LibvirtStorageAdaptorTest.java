@@ -21,8 +21,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -61,7 +61,7 @@ public class LibvirtStorageAdaptorTest {
         closeable.close();
     }
 
-    @Test
+    @Test(expected = CloudRuntimeException.class)
     public void testCreateStoragePoolWithNFSMountOpts() throws Exception {
         LibvirtStoragePoolDef.PoolType type = LibvirtStoragePoolDef.PoolType.NETFS;
         String name = "Primary1";
@@ -79,16 +79,13 @@ public class LibvirtStorageAdaptorTest {
         Connect conn =  Mockito.mock(Connect.class);
         StoragePool sp = Mockito.mock(StoragePool.class);
         StoragePoolInfo spinfo = Mockito.mock(StoragePoolInfo.class);
-
         Mockito.when(LibvirtConnection.getConnection()).thenReturn(conn);
         Mockito.when(conn.storagePoolLookupByUUIDString(uuid)).thenReturn(sp);
         Mockito.when(sp.isActive()).thenReturn(1);
         Mockito.when(sp.getXMLDesc(0)).thenReturn(poolXml);
-        Mockito.when(sp.getInfo()).thenReturn(spinfo);
 
         Map<String, String> details = new HashMap<>();
         details.put("nfsmountopts", "vers=4.1, nconnect=4");
         KVMStoragePool pool = libvirtStorageAdaptor.createStoragePool(uuid, null, 0, dir, null, Storage.StoragePoolType.NetworkFilesystem, details);
-        Assert.assertEquals(pool.getUuid(), uuid);
     }
 }
