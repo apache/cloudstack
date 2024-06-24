@@ -192,11 +192,11 @@
                   </a-select-option>
                 </a-select>
               </a-form-item>
-              <a-form-item name="forcemstodownloadvmfiles" ref="forcemstodownloadvmfiles" v-if="selectedVmwareVcenter">
+              <a-form-item name="forcemstoimportvmfiles" ref="forcemstoimportvmfiles" v-if="selectedVmwareVcenter">
                 <template #label>
-                  <tooltip-label :title="$t('label.force.ms.to.download.vm.files')" :tooltip="apiParams.forcemstodownloadvmfiles.description"/>
+                  <tooltip-label :title="$t('label.force.ms.to.import.vm.files')" :tooltip="apiParams.forcemstoimportvmfiles.description"/>
                 </template>
-                <a-switch v-model:checked="form.forcemstodownloadvmfiles" @change="val => { switches.forceMsToDownloadVmFiles = val }" />
+                <a-switch v-model:checked="form.forcemstoimportvmfiles" @change="val => { switches.forceMsToImportVmFiles = val }" />
               </a-form-item>
               <a-form-item name="serviceofferingid" ref="serviceofferingid">
                 <template #label>
@@ -708,7 +708,7 @@ export default {
         rootdiskid: 0,
         migrateallowed: this.switches.migrateAllowed,
         forced: this.switches.forced,
-        forcemstodownloadvmfiles: this.switches.forceMsToDownloadVmFiles,
+        forcemstoimportvmfiles: this.switches.forceMsToImportVmFiles,
         domainid: null,
         account: null
       })
@@ -1102,9 +1102,9 @@ export default {
           if (this.selectedStoragePoolForConversion) {
             params.convertinstancepoolid = this.selectedStoragePoolForConversion
           }
-          params.forcemstodownloadvmfiles = values.forcemstodownloadvmfiles
+          params.forcemstoimportvmfiles = values.forcemstoimportvmfiles
         }
-        var keys = ['hostname', 'domainid', 'projectid', 'account', 'migrateallowed', 'forced', 'forcemstodownloadvmfiles']
+        var keys = ['hostname', 'domainid', 'projectid', 'account', 'migrateallowed', 'forced', 'forcemstoimportvmfiles']
         if (this.templateType !== 'auto') {
           keys.push('templateid')
         }

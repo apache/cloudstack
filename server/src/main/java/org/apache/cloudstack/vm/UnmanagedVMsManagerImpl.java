@@ -1616,9 +1616,9 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             String instanceName = getGeneratedInstanceName(owner);
             checkNetworkingBeforeConvertingVmwareInstance(zone, owner, instanceName, hostName, sourceVMwareInstance, nicNetworkMap, nicIpAddressMap, forced);
             UnmanagedInstanceTO convertedInstance;
-            if (cmd.getForceMsToDownloadVmFiles() || !conversionSupportAnswer.isOvfExportSupported()) {
+            if (cmd.getForceMsToImportVmFiles() || !conversionSupportAnswer.isOvfExportSupported()) {
                 // Uses MS for OVF export to temporary conversion location
-                int noOfThreads = UnmanagedVMsManager.ThreadsOnMSToDownloadVMwareVMFiles.value();
+                int noOfThreads = UnmanagedVMsManager.ThreadsOnMSToImportVMwareVMFiles.value();
                 ovfTemplateOnConvertLocation = createOvfTemplateOfSourceVmwareUnmanagedInstance(vcenter, datacenterName, username, password,
                         clusterName, sourceHostName, sourceVMwareInstance.getName(), temporaryConvertLocation, noOfThreads);
                 convertedInstance = convertVmwareInstanceToKVMWithOVFOnConvertLocation(sourceVMName, sourceVMwareInstance, convertHost, convertStoragePools,
@@ -1636,8 +1636,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                     nicNetworkMap, nicIpAddressMap,
                     details, false, forced, false);
             long timeElapsedInSecs = (System.currentTimeMillis() - importStartTime) / 1000;
-            LOGGER.debug(String.format("VMware VM %s imported successfully to CloudStack instance %s, Time taken: %d secs, OVF files downloaded from %s, Source VMware VM details - OS: %s, Disks: %s, NICs: %s",
-                    sourceVMName, instanceName, timeElapsedInSecs, (ovfTemplateOnConvertLocation != null)? "MS" : "KVM Host", sourceVMwareInstance.getOperatingSystem(), sourceVMwareInstance.getDisks(), sourceVMwareInstance.getNics()));
+            LOGGER.debug(String.format("VMware VM %s imported successfully to CloudStack instance %s (%s), Time taken: %d secs, OVF files imported from %s, Source VMware VM details - OS: %s, PowerState: %s, Disks: %s, NICs: %s",
+                    sourceVMName, instanceName, displayName, timeElapsedInSecs, (ovfTemplateOnConvertLocation != null)? "MS" : "KVM Host", sourceVMwareInstance.getOperatingSystem(), sourceVMwareInstance.getPowerState(), sourceVMwareInstance.getDisks(), sourceVMwareInstance.getNics()));
             return userVm;
         } catch (CloudRuntimeException e) {
             LOGGER.error(String.format("Error importing VM: %s", e.getMessage()), e);
@@ -1887,7 +1887,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 Hypervisor.HypervisorType.KVM, destinationStoragePools, temporaryConvertLocation, null, false, true);
         int timeoutSeconds = UnmanagedVMsManager.ConvertVmwareInstanceToKvmTimeout.value() * 60 * 60;
         cmd.setWait(timeoutSeconds);
-        int noOfThreads = UnmanagedVMsManager.ThreadsOnKVMHostToDownloadVMwareVMFiles.value();
+        int noOfThreads = UnmanagedVMsManager.ThreadsOnKVMHostToImportVMwareVMFiles.value();
         if (noOfThreads == 0) {
             // Use no. of threads as the disks count
             noOfThreads = sourceVMwareInstance.getDisks().size();
@@ -2647,8 +2647,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 UnmanageVMPreserveNic,
                 RemoteKvmInstanceDisksCopyTimeout,
                 ConvertVmwareInstanceToKvmTimeout,
-                ThreadsOnMSToDownloadVMwareVMFiles,
-                ThreadsOnKVMHostToDownloadVMwareVMFiles
+                ThreadsOnMSToImportVMwareVMFiles,
+                ThreadsOnKVMHostToImportVMwareVMFiles
         };
     }
 }
