@@ -80,6 +80,18 @@ public class HypervisorCapabilitiesVO implements HypervisorCapabilities {
         this.uuid = UUID.randomUUID().toString();
     }
 
+    public HypervisorCapabilitiesVO(HypervisorCapabilitiesVO source) {
+        this.hypervisorType = source.getHypervisorType();
+        this.hypervisorVersion = source.getHypervisorVersion();
+        this.maxGuestsLimit = source.getMaxGuestsLimit();
+        this.maxDataVolumesLimit = source.getMaxDataVolumesLimit();
+        this.maxHostsPerCluster = source.getMaxHostsPerCluster();
+        this.securityGroupEnabled = source.isSecurityGroupEnabled();
+        this.storageMotionSupported = source.isStorageMotionSupported();
+        this.vmSnapshotEnabled = source.isVmSnapshotEnabled();
+        this.uuid = UUID.randomUUID().toString();
+    }
+
     /**
      * @param hypervisorType the hypervisorType to set
      */

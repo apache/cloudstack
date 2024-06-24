@@ -70,7 +70,7 @@ public class ActionEventInterceptor implements ComponentMethodInterceptor, Metho
             if (async) {
                 CallContext ctx = CallContext.current();
 
-                String eventDescription = getEventDescription(actionEvent, ctx);
+                String eventDescription = getEventDescription(actionEvent, ctx, true);
                 Long eventResourceId = getEventResourceId(actionEvent, ctx);
                 String eventResourceType = getEventResourceType(actionEvent, ctx);
                 String eventType = getEventType(actionEvent, ctx);
@@ -183,17 +183,22 @@ public class ActionEventInterceptor implements ComponentMethodInterceptor, Metho
         return type == null ? actionEvent.eventType() : type;
     }
 
-    protected String getEventDescription(ActionEvent actionEvent, CallContext ctx) {
+    protected String getEventDescription(ActionEvent actionEvent, CallContext ctx, boolean capitalizeFirstLetter) {
         String eventDescription = ctx.getEventDescription();
         if (eventDescription == null) {
             eventDescription = actionEvent.eventDescription();
         }
-
         if (ctx.getEventDetails() != null) {
             eventDescription += ". " + ctx.getEventDetails();
         }
-
+        if (capitalizeFirstLetter && StringUtils.isNotBlank(eventDescription)) {
+            eventDescription = eventDescription.substring(0, 1).toUpperCase() + eventDescription.substring(1);
+        }
         return eventDescription;
+    }
+
+    protected String getEventDescription(ActionEvent actionEvent, CallContext ctx) {
+        return getEventDescription(actionEvent, ctx, false);
     }
 
     protected Long getEventResourceId(ActionEvent actionEvent, CallContext ctx) {

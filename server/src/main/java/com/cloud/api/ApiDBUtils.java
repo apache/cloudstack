@@ -1109,8 +1109,8 @@ public class ApiDBUtils {
         return null;
     }
 
-    public static ServiceOfferingVO findServiceOfferingByComputeOnlyDiskOffering(Long diskOfferingId) {
-        ServiceOfferingVO off = s_serviceOfferingDao.findServiceOfferingByComputeOnlyDiskOffering(diskOfferingId);
+    public static ServiceOfferingVO findServiceOfferingByComputeOnlyDiskOffering(Long diskOfferingId, boolean includingRemoved) {
+        ServiceOfferingVO off = s_serviceOfferingDao.findServiceOfferingByComputeOnlyDiskOffering(diskOfferingId, includingRemoved);
         return off;
     }
     public static DomainVO findDomainById(Long domainId) {

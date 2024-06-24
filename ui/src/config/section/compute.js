@@ -32,9 +32,9 @@ export default {
       getApiToCall: () => store.getters.metrics ? 'listVirtualMachinesMetrics' : 'listVirtualMachines',
       resourceType: 'UserVm',
       params: () => {
-        var params = { details: 'servoff,tmpl,iso,nics,backoff' }
+        var params = { details: 'group,nics,secgrp,tmpl,servoff,diskoff,iso,volume,affgrp' }
         if (store.getters.metrics) {
-          params = { details: 'servoff,tmpl,iso,nics,backoff,stats' }
+          params = { details: 'all,stats' }
         }
         params.isvnf = false
         return params
@@ -542,10 +542,12 @@ export default {
         return filters
       },
       details: ['name', 'description', 'zonename', 'kubernetesversionname', 'autoscalingenabled', 'minsize', 'maxsize', 'size', 'controlnodes', 'cpunumber', 'memory', 'keypair', 'associatednetworkname', 'account', 'domain', 'zonename', 'clustertype', 'created'],
-      tabs: [{
-        name: 'k8s',
-        component: shallowRef(defineAsyncComponent(() => import('@/views/compute/KubernetesServiceTab.vue')))
-      }],
+      tabs: [
+        {
+          name: 'k8s',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/KubernetesServiceTab.vue')))
+        }
+      ],
       resourceType: 'KubernetesCluster',
       actions: [
         {

@@ -1226,9 +1226,14 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         }
     }
 
-    // FIXME: Does not work for joins.
     @Override
     public int expunge(final SearchCriteria<T> sc) {
+        return expunge(sc, -1);
+    }
+
+    // FIXME: Does not work for joins.
+    @Override
+    public int expunge(final SearchCriteria<T> sc, long limit) {
         if (sc == null) {
             throw new CloudRuntimeException("Call to throw new expunge with null search Criteria");
         }
@@ -1239,6 +1244,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
         if (sc != null && sc.getWhereClause().length() > 0) {
             str.append(sc.getWhereClause());
+        }
+
+        if (limit > 0) {
+            str.append(" LIMIT ");
+            str.append(limit);
         }
 
         final String sql = str.toString();

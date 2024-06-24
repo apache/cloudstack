@@ -23,11 +23,17 @@ function filterNumber (value) {
 }
 
 function stringComparator (a, b) {
-  return a.toString().localeCompare(b.toString())
+  return a.toString().localeCompare(b.toString(), undefined, { numeric: true })
 }
 
 function numericComparator (a, b) {
   return filterNumber(a) < filterNumber(b) ? 1 : -1
+}
+
+function metricComparator (ma, mb) {
+  var a = ('' + ma).replace(/((%)|(Ghz)|(Mhz)|(MiB)|(GiB)|(GB)).*$/g, '')
+  var b = ('' + mb).replace(/((%)|(Ghz)|(Mhz)|(MiB)|(GiB)|(GB)).*$/g, '')
+  return parseFloat(a) < parseFloat(b) ? 1 : -1
 }
 
 function ipV4AddressCIDRComparator (a, b) {
@@ -76,6 +82,10 @@ function isNumeric (obj) {
   return !Array.isArray(obj) && !isNaN(filterNumber(obj))
 }
 
+function isMetric (value) {
+  return /^[0-9\\. ]*((%)|(Ghz)|(Mhz)|(MiB)|(GiB)|(GB))/.test(value)
+}
+
 /**
  * Compare elements, attempting to determine type of element to get the best comparison
  *
@@ -96,6 +106,9 @@ export function genericCompare (a, b) {
   }
   if (isNumeric(a) && isNumeric(b)) {
     comparator = numericComparator
+  }
+  if (isMetric(a) && isMetric(b)) {
+    comparator = metricComparator
   }
 
   return comparator(a, b)

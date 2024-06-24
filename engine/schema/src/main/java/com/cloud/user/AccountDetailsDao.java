@@ -34,4 +34,6 @@ public interface AccountDetailsDao extends GenericDao<AccountDetailVO, Long> {
      * they will get created
      */
     void update(long accountId, Map<String, String> details);
+
+    String getActualValue(AccountDetailVO accountDetailVO);
 }

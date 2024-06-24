@@ -29,7 +29,6 @@ public interface VpcVirtualNetworkApplianceService extends VirtualNetworkApplian
     /**
      * @param router
      * @param network
-     * @param isRedundant
      * @param params TODO
      * @return
      * @throws ConcurrentOperationException
@@ -42,11 +41,30 @@ public interface VpcVirtualNetworkApplianceService extends VirtualNetworkApplian
     /**
      * @param router
      * @param network
-     * @param isRedundant
      * @return
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
      */
     boolean removeVpcRouterFromGuestNetwork(VirtualRouter router, Network network) throws ConcurrentOperationException, ResourceUnavailableException;
+
+
+    /**
+     * @param router
+     * @param network
+     * @return
+     * @throws ConcurrentOperationException
+     * @throws ResourceUnavailableException
+     */
+    boolean stopKeepAlivedOnRouter(VirtualRouter router, Network network) throws ConcurrentOperationException, ResourceUnavailableException;
+
+
+    /**
+     * @param router
+     * @param network
+     * @return
+     * @throws ConcurrentOperationException
+     * @throws ResourceUnavailableException
+     */
+    boolean startKeepAlivedOnRouter(VirtualRouter router, Network network) throws ConcurrentOperationException, ResourceUnavailableException;
 
 }

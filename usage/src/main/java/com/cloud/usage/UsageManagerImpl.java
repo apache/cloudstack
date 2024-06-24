@@ -425,9 +425,14 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 cal.add(Calendar.MILLISECOND, -1);
                 endDate = cal.getTime().getTime();
             } else {
-                endDate = cal.getTime().getTime(); // current time
                 cal.add(Calendar.MINUTE, -1 * _aggregationDuration);
+                cal.set(Calendar.SECOND, 0);
+                cal.set(Calendar.MILLISECOND, 0);
                 startDate = cal.getTime().getTime();
+
+                cal.add(Calendar.MINUTE, _aggregationDuration);
+                cal.add(Calendar.MILLISECOND, -1);
+                endDate = cal.getTime().getTime();
             }
 
             parse(job, startDate, endDate);

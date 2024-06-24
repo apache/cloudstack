@@ -24,6 +24,7 @@ import javax.inject.Inject;
 
 import com.cloud.domain.DomainDetailVO;
 import com.cloud.domain.DomainVO;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchBuilder;
@@ -34,6 +35,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 
 public class DomainDetailsDaoImpl extends GenericDaoBase<DomainDetailVO, Long> implements DomainDetailsDao, ScopedConfigStorage {
     protected final SearchBuilder<DomainDetailVO> domainSearch;
@@ -111,7 +113,7 @@ public class DomainDetailsDaoImpl extends GenericDaoBase<DomainDetailVO, Long> i
         String enableDomainSettingsForChildDomain = _configDao.getValue("enable.domain.settings.for.child.domain");
         if (!Boolean.parseBoolean(enableDomainSettingsForChildDomain)) {
             vo = findDetail(id, key.key());
-            return vo == null ? null : vo.getValue();
+            return vo == null ? null : getActualValue(vo);
         }
         DomainVO domain = _domainDao.findById(id);
         // if value is not configured in domain then check its parent domain till ROOT
@@ -125,6 +127,15 @@ public class DomainDetailsDaoImpl extends GenericDaoBase<DomainDetailVO, Long> i
                 break;
             }
         }
-        return vo == null ? null : vo.getValue();
+        return vo == null ? null : getActualValue(vo);
+    }
+
+    @Override
+    public String getActualValue(DomainDetailVO domainDetailVO) {
+        ConfigurationVO configurationVO = _configDao.findByName(domainDetailVO.getName());
+        if (configurationVO != null && configurationVO.isEncrypted()) {
+            return DBEncryptionUtil.decrypt(domainDetailVO.getValue());
+        }
+        return domainDetailVO.getValue();
     }
 }

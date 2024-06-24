@@ -17,7 +17,6 @@
 
 package com.cloud.agent.api;
 
-@LogLevel(LogLevel.Log4jLevel.Trace)
 public class CopyRemoteVolumeAnswer extends Answer {
 
     private String remoteIp;

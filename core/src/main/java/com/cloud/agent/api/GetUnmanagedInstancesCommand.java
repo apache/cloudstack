@@ -28,10 +28,10 @@ import org.apache.commons.collections.CollectionUtils;
  * All managed instances will be filtered while trying to find unmanaged instances.
  */
 
-@LogLevel(LogLevel.Log4jLevel.Trace)
 public class GetUnmanagedInstancesCommand extends Command {
 
     String instanceName;
+    @LogLevel(LogLevel.Log4jLevel.Trace)
     List<String> managedInstancesNames;
 
     public GetUnmanagedInstancesCommand() {

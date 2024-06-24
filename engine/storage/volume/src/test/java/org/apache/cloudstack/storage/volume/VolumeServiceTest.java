@@ -22,13 +22,16 @@ package org.apache.cloudstack.storage.volume;
 import com.cloud.agent.api.storage.CheckAndRepairVolumeAnswer;
 import com.cloud.agent.api.storage.CheckAndRepairVolumeCommand;
 import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.storage.CheckAndRepairVolumePayload;
+import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotManager;
 import java.util.ArrayList;
@@ -88,6 +91,9 @@ public class VolumeServiceTest extends TestCase{
     @Mock
     HostDao hostDaoMock;
 
+    @Mock
+    DiskOfferingDao diskOfferingDaoMock;
+
     @Before
     public void setup(){
         volumeServiceImplSpy = Mockito.spy(new VolumeServiceImpl());
@@ -96,6 +102,7 @@ public class VolumeServiceTest extends TestCase{
         volumeServiceImplSpy.snapshotMgr = snapshotManagerMock;
         volumeServiceImplSpy._storageMgr = storageManagerMock;
         volumeServiceImplSpy._hostDao = hostDaoMock;
+        volumeServiceImplSpy.diskOfferingDao = diskOfferingDaoMock;
     }
 
     @Test(expected = InterruptedException.class)
@@ -302,5 +309,41 @@ public class VolumeServiceTest extends TestCase{
         Pair<String, String> result = volumeServiceImplSpy.checkAndRepairVolume(volume);
 
         Assert.assertEquals(null, result);
+    }
+
+    @Test
+    public void validateDiskOfferingCheckForEncryption1Test() {
+        prepareOfferingsForEncryptionValidation(1L, true);
+        prepareOfferingsForEncryptionValidation(2L, true);
+        volumeServiceImplSpy.validateChangeDiskOfferingEncryptionType(1L, 2L);
+    }
+
+    @Test
+    public void validateDiskOfferingCheckForEncryption2Test() {
+        prepareOfferingsForEncryptionValidation(1L, false);
+        prepareOfferingsForEncryptionValidation(2L, false);
+        volumeServiceImplSpy.validateChangeDiskOfferingEncryptionType(1L, 2L);
+    }
+
+    @Test (expected = InvalidParameterValueException.class)
+    public void validateDiskOfferingCheckForEncryptionFail1Test() {
+        prepareOfferingsForEncryptionValidation(1L, false);
+        prepareOfferingsForEncryptionValidation(2L, true);
+        volumeServiceImplSpy.validateChangeDiskOfferingEncryptionType(1L, 2L);
+    }
+
+    @Test (expected = InvalidParameterValueException.class)
+    public void validateDiskOfferingCheckForEncryptionFail2Test() {
+        prepareOfferingsForEncryptionValidation(1L, true);
+        prepareOfferingsForEncryptionValidation(2L, false);
+        volumeServiceImplSpy.validateChangeDiskOfferingEncryptionType(1L, 2L);
+    }
+
+    private void prepareOfferingsForEncryptionValidation(long diskOfferingId, boolean encryption) {
+        DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
+
+        Mockito.when(diskOffering.getEncrypt()).thenReturn(encryption);
+        Mockito.when(diskOfferingDaoMock.findByIdIncludingRemoved(diskOfferingId)).thenReturn(diskOffering);
+        Mockito.when(diskOfferingDaoMock.findById(diskOfferingId)).thenReturn(diskOffering);
     }
 }

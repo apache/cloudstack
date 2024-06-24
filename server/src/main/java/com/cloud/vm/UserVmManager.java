@@ -95,8 +95,6 @@ public interface UserVmManager extends UserVmService {
 
     String finalizeUserData(String userData, Long userDataId, VirtualMachineTemplate template);
 
-    String validateUserData(String userData, HTTPMethod httpmethod);
-
     void validateExtraConfig(long accountId, HypervisorType hypervisorType, String extraConfig);
 
     boolean isVMUsingLocalStorage(VMInstanceVO vm);

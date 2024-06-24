@@ -2203,7 +2203,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                     throw new Exception("Failed to find the newly create or relocated VM. vmName: " + vmInternalCSName);
                 }
             }
-            if (deployAsIs) {
+            if (deployAsIs && !vmMo.hasSnapshot()) {
                 s_logger.info("Mapping VM disks to spec disks and tearing down datadisks (if any)");
                 mapSpecDisksToClonedDisksAndTearDownDatadisks(vmMo, vmInternalCSName, specDisks);
             }
