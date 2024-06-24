@@ -5103,7 +5103,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public HypervisorCapabilities updateHypervisorCapabilities(UpdateHypervisorCapabilitiesCmd cmd) {
-        final Long id = cmd.getId();
+        Long id = cmd.getId();
         final String hypervisorStr = cmd.getHypervisor();
         final String hypervisorVersion = cmd.getHypervisorVersion();
         final Boolean securityGroupEnabled = cmd.getSecurityGroupEnabled();
