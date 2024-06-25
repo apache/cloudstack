@@ -1142,7 +1142,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                 }
             } else if (task.getType() == Task.Type.DISCONNECT) {
                 try {
-                    // an issue has been found if reconnect inmediatelly after disconnecting. please refer to https://github.com/apache/cloudstack/issues/8517
+                    // an issue has been found if reconnect immediately after disconnecting. please refer to https://github.com/apache/cloudstack/issues/8517
                     // wait 5 seconds before reconnecting
                     Thread.sleep(5000);
                 } catch (InterruptedException e) {
