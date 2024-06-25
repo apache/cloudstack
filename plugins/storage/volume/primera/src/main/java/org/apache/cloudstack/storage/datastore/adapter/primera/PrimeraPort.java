@@ -14,6 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 package org.apache.cloudstack.storage.datastore.adapter.primera;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -21,34 +22,19 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class PrimeraVolumePromoteRequest {
-    private Integer action = 4; // PROMOTE_VIRTUAL_COPY, https://support.hpe.com/hpesc/public/docDisplay?docId=a00114827en_us&page=v25706371.html
-    private Boolean online = true;
-    private Integer priority = 2; // MEDIUM
-    private Boolean allowRemoteCopyParent = true;
-    public Integer getAction() {
-        return action;
+public class PrimeraPort {
+    private String wwn;
+    private PrimeraPortPos portPos;
+    public String getWwn() {
+        return wwn;
     }
-    public void setAction(Integer action) {
-        this.action = action;
+    public void setWwn(String wwn) {
+        this.wwn = wwn;
     }
-    public Boolean getOnline() {
-        return online;
+    public PrimeraPortPos getPortPos() {
+        return portPos;
     }
-    public void setOnline(Boolean online) {
-        this.online = online;
+    public void setPortPos(PrimeraPortPos portPos) {
+        this.portPos = portPos;
     }
-    public Integer getPriority() {
-        return priority;
-    }
-    public void setPriority(Integer priority) {
-        this.priority = priority;
-    }
-    public Boolean getAllowRemoteCopyParent() {
-        return allowRemoteCopyParent;
-    }
-    public void setAllowRemoteCopyParent(Boolean allowRemoteCopyParent) {
-        this.allowRemoteCopyParent = allowRemoteCopyParent;
-    }
-
 }

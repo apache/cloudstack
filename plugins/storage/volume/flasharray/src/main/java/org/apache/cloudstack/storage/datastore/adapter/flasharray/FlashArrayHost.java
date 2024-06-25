@@ -14,28 +14,33 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.storage.datastore.adapter.primera;
 
-import java.util.Map;
+package org.apache.cloudstack.storage.datastore.adapter.flasharray;
 
-import org.apache.cloudstack.storage.datastore.adapter.ProviderAdapter;
-import org.apache.cloudstack.storage.datastore.adapter.ProviderAdapterFactory;
+import java.util.List;
 
-public class PrimeraAdapterFactory implements ProviderAdapterFactory {
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-    @Override
-    public String getProviderName() {
-        return "Primera";
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class FlashArrayHost {
+    public String getName() {
+        return name;
     }
-
-    @Override
-    public ProviderAdapter create(String url, Map<String, String> details) {
-        return new PrimeraAdapter(url, details);
+    public void setName(String name) {
+        this.name = name;
     }
-
-    @Override
-    public Object canDirectAttachSnapshot() {
-        return true;
+    public List<String> getWwns() {
+        return wwns;
     }
+    public void setWwns(List<String> wwns) {
+        this.wwns = wwns;
+    }
+    @JsonProperty("name")
+    private String name;
+    @JsonProperty("wwns")
+    private List<String> wwns;
 
 }
