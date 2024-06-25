@@ -42,6 +42,7 @@ public class Ipv4GuestSubnetNetworkMapDaoImpl extends GenericDaoBase<Ipv4GuestSu
 
     protected SearchBuilder<Ipv4GuestSubnetNetworkMapVO> ParentStateSearch;
     protected SearchBuilder<Ipv4GuestSubnetNetworkMapVO> ParentIdSearch;
+    protected SearchBuilder<Ipv4GuestSubnetNetworkMapVO> NoParentSearch;
     protected SearchBuilder<Ipv4GuestSubnetNetworkMapVO> NetworkIdSearch;
     protected SearchBuilder<Ipv4GuestSubnetNetworkMapVO> SubnetSearch;
     protected SearchBuilder<Ipv4GuestSubnetNetworkMapVO> StatesSearch;
@@ -60,8 +61,12 @@ public class Ipv4GuestSubnetNetworkMapDaoImpl extends GenericDaoBase<Ipv4GuestSu
         ParentIdSearch = createSearchBuilder();
         ParentIdSearch.and("parentId", ParentIdSearch.entity().getParentId(), SearchCriteria.Op.EQ);
         ParentIdSearch.done();
+        NoParentSearch = createSearchBuilder();
+        NoParentSearch.and("parentId", NoParentSearch.entity().getParentId(), SearchCriteria.Op.NULL);
+        NoParentSearch.done();
         NetworkIdSearch = createSearchBuilder();
         NetworkIdSearch.and("networkId", NetworkIdSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
+        NetworkIdSearch.and("vpcId", NetworkIdSearch.entity().getVpcId(), SearchCriteria.Op.EQ);
         NetworkIdSearch.done();
         SubnetSearch = createSearchBuilder();
         SubnetSearch.and("subnet", SubnetSearch.entity().getSubnet(), SearchCriteria.Op.EQ);
@@ -130,6 +135,13 @@ public class Ipv4GuestSubnetNetworkMapDaoImpl extends GenericDaoBase<Ipv4GuestSu
     }
 
     @Override
+    public Ipv4GuestSubnetNetworkMapVO findByVpcId(long vpcId) {
+        SearchCriteria<Ipv4GuestSubnetNetworkMapVO> sc = NetworkIdSearch.create();
+        sc.setParameters("vpcId", vpcId);
+        return findOneBy(sc);
+    }
+
+    @Override
     public Ipv4GuestSubnetNetworkMapVO findBySubnet(String subnet) {
         SearchCriteria<Ipv4GuestSubnetNetworkMapVO> sc = SubnetSearch.create();
         sc.setParameters("subnet", subnet);
@@ -148,5 +160,11 @@ public class Ipv4GuestSubnetNetworkMapDaoImpl extends GenericDaoBase<Ipv4GuestSu
         SearchCriteria<Ipv4GuestSubnetNetworkMapVO> sc = ParentIdSearch.create();
         sc.setParameters("parentId", parentId);
         remove(sc);
+    }
+
+    @Override
+    public List<Ipv4GuestSubnetNetworkMapVO> listAllNoParent() {
+        SearchCriteria<Ipv4GuestSubnetNetworkMapVO> sc = NoParentSearch.create();
+        return listBy(sc, null);
     }
 }

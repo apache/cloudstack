@@ -173,6 +173,7 @@ CREATE TABLE `cloud`.`ip4_guest_subnet_network_map` (
    `uuid` varchar(40) DEFAULT NULL,
    `parent_id` bigint(20) unsigned COMMENT 'ip4 guest subnet which subnet belongs to',
    `subnet` varchar(255) NOT NULL COMMENT 'subnet of the ip4 network',
+   `vpc_id` bigint(20) unsigned DEFAULT NULL COMMENT 'VPC which subnet is associated to',
    `network_id` bigint(20) unsigned DEFAULT NULL COMMENT 'network which subnet is associated to',
    `state` varchar(255) NOT NULL COMMENT 'state of the subnet',
    `allocated` datetime default NULL,

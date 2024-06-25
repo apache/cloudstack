@@ -1392,7 +1392,7 @@ export default {
       icon: 'pic-center-outlined',
       permission: ['listIpv4SubnetsForGuestNetwork'],
       columns: ['subnet', 'zonename', 'parentsubnet', 'networkname', 'created', 'allocatedtime'],
-      details: ['subnet', 'zonename', 'zoneid', 'parentsubnet', 'networkname', 'networkid', 'created', 'allocatedtime'],
+      details: ['subnet', 'zonename', 'zoneid', 'parentsubnet', 'networkname', 'networkid', 'created', 'allocatedtime', 'state'],
       searchFilters: ['zoneid'],
       show: () => {
         if (!store.getters.zones || store.getters.zones.length === 0) {
@@ -1415,7 +1415,7 @@ export default {
           label: 'label.delete.ipv4.subnet',
           message: 'message.action.delete.ipv4.subnet',
           dataView: true,
-          disabled: (record) => { return record.networkid },
+          show: (record) => { return !record.networkid },
           groupAction: true,
           popup: true,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }

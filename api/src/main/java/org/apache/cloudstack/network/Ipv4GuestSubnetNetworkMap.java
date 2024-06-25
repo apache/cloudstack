@@ -38,6 +38,8 @@ public interface Ipv4GuestSubnetNetworkMap extends Identity, InternalIdentity {
 
     String getSubnet();
 
+    Long getVpcId();
+
     Long getNetworkId();
 
     State getState();

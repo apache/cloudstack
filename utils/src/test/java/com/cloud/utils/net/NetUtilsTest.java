@@ -915,4 +915,10 @@ public class NetUtilsTest {
         Assert.assertEquals("192.168.1.0", NetUtils.long2Ip(ips[0]));
         Assert.assertEquals("192.168.1.255", NetUtils.long2Ip(ips[1]));
     }
+
+    @Test
+    public void testTransformCidr() {
+        Assert.assertEquals("192.168.0.0/24", NetUtils.transformCidr("192.168.0.100/24"));
+        Assert.assertEquals("10.10.10.10/32", NetUtils.transformCidr("10.10.10.10/32"));
+    }
 }

@@ -49,6 +49,9 @@ public class Ipv4GuestSubnetNetworkMapVO implements Ipv4GuestSubnetNetworkMap {
     @Column(name = "subnet")
     private String subnet;
 
+    @Column(name = "vpc_id")
+    private Long vpcId;
+
     @Column(name = "network_id")
     private Long networkId;
 
@@ -95,6 +98,15 @@ public class Ipv4GuestSubnetNetworkMapVO implements Ipv4GuestSubnetNetworkMap {
     @Override
     public String getSubnet() {
         return subnet;
+    }
+
+    @Override
+    public Long getVpcId() {
+        return vpcId;
+    }
+
+    public void setVpcId(Long vpcId) {
+        this.vpcId = vpcId;
     }
 
     @Override

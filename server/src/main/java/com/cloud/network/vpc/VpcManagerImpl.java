@@ -64,6 +64,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.EnumUtils;
@@ -268,6 +269,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     protected NetworkHelper networkHelper;
     @Inject
     private VpcPrivateGatewayTransactionCallable vpcTxCallable;
+    @Inject
+    RoutedIpv4Manager routedIpv4Manager;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("VpcChecker"));
     private List<VpcProvider> vpcElements = null;
@@ -1231,6 +1234,11 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     + "and the hyphen ('-'); can't start or end with \"-\"");
         }
 
+        // get or create Ipv4 subnet for ROUTED VPC
+        if (routedIpv4Manager.isRoutedVpc(vpc)) {
+            routedIpv4Manager.getOrCreateIpv4SubnetForVpc(vpc, cidr);
+        }
+
         VpcVO vpcVO = Transaction.execute(new TransactionCallback<VpcVO>() {
             @Override
             public VpcVO doInTransaction(final TransactionStatus status) {
@@ -1243,6 +1251,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         });
         if (vpcVO != null) {
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VPC_CREATE, vpcVO.getAccountId(), vpcVO.getZoneId(), vpcVO.getId(), vpcVO.getName(), Vpc.class.getName(), vpcVO.getUuid(), vpcVO.isDisplay());
+        }
+        // assign Ipv4 subnet to Routed VPC
+        if (routedIpv4Manager.isRoutedVpc(vpc)) {
+            routedIpv4Manager.assignIpv4SubnetToVpc(cidr, vpc.getId());
         }
         return vpcVO;
     }
@@ -2101,6 +2113,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         for (final NetworkACLVO networkAcl : acls) {
             _networkAclMgr.deleteNetworkACL(networkAcl);
         }
+
+        routedIpv4Manager.releaseIpv4SubnetForVpc(vpcId);
 
         VpcVO vpc = vpcDao.findById(vpcId);
         annotationDao.removeByEntityType(AnnotationService.EntityType.VPC.name(), vpc.getUuid());

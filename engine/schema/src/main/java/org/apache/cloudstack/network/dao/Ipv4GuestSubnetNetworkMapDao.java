@@ -30,7 +30,9 @@ public interface Ipv4GuestSubnetNetworkMapDao extends GenericDao<Ipv4GuestSubnet
     List<Ipv4GuestSubnetNetworkMapVO> listUsedByOtherAccounts(long parentId, Long accountId);
     Ipv4GuestSubnetNetworkMapVO findFirstAvailable(long parentId, long cidrSize);
     Ipv4GuestSubnetNetworkMapVO findByNetworkId(long networkId);
+    Ipv4GuestSubnetNetworkMapVO findByVpcId(long vpcId);
     Ipv4GuestSubnetNetworkMapVO findBySubnet(String subnet);
     List<Ipv4GuestSubnetNetworkMapVO> findSubnetsInStates(Ipv4GuestSubnetNetworkMap.State... states);
     void deleteByParentId(long parentId);
+    List<Ipv4GuestSubnetNetworkMapVO> listAllNoParent();
 }

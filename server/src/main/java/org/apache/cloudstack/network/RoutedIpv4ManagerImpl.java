@@ -118,7 +118,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey[] {
-                RoutedNetworkMaxCidrSize, RoutedNetworkMinCidrSize, RoutedNetworkCidrAutoAllocationEnabled
+                RoutedIPv4NetworkMaxCidrSize, RoutedIPv4NetworkMinCidrSize, RoutedIPv4NetworkCidrAutoAllocationEnabled
         };
     }
 
@@ -146,14 +146,13 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     public DataCenterIpv4GuestSubnet createDataCenterIpv4GuestSubnet(CreateIpv4GuestSubnetCmd cmd) {
         Long zoneId = cmd.getZoneId();
         String subnet = cmd.getSubnet();
+        if (!NetUtils.isValidIp4Cidr(subnet)) {
+            throw new InvalidParameterValueException("Invalid IPv4 subnet: " + subnet);
+        }
 
         // check conflicts
         List<DataCenterIpv4GuestSubnetVO> existingSubnets = dataCenterIpv4GuestSubnetDao.listByDataCenterId(zoneId);
-        for (DataCenterIpv4GuestSubnetVO existing : existingSubnets) {
-            if (NetUtils.isNetworksOverlap(existing.getSubnet(), subnet)) {
-                throw new InvalidParameterValueException(String.format("Existing subnet %s has overlap with: %s", existing.getSubnet(), subnet));
-            }
-        }
+        checkConflicts(existingSubnets, subnet, null);
 
         Long domainId = cmd.getDomainId();
         final Long projectId = cmd.getProjectId();
@@ -168,7 +167,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
             domainId = account.getDomainId();
         }
 
-        DataCenterIpv4GuestSubnetVO subnetVO = new DataCenterIpv4GuestSubnetVO(zoneId, subnet);
+        DataCenterIpv4GuestSubnetVO subnetVO = new DataCenterIpv4GuestSubnetVO(zoneId, NetUtils.transformCidr(subnet));
         if (domainId != null) {
             subnetVO.setDomainId(domainId);
         }
@@ -247,11 +246,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
 
         // check conflicts
         List<DataCenterIpv4GuestSubnetVO> existingSubnets = dataCenterIpv4GuestSubnetDao.listByDataCenterId(subnetVO.getDataCenterId());
-        for (DataCenterIpv4GuestSubnetVO existing : existingSubnets) {
-            if (existing.getId() != subnetId && NetUtils.isNetworksOverlap(existing.getSubnet(), newSubnet)) {
-                throw new InvalidParameterValueException(String.format("Existing subnet %s has overlap with: %s", existing.getSubnet(), newSubnet));
-            }
-        }
+        checkConflicts(existingSubnets, newSubnet, subnetId);
 
         // check if subnet can be updated
         List<Ipv4GuestSubnetNetworkMapVO> usedSubnets = ipv4GuestSubnetNetworkMapDao.listByParent(subnetId);
@@ -263,10 +258,18 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
 
         // update via dataCenterIpv4GuestSubnetDao
         DataCenterIpv4GuestSubnetVO subnet = dataCenterIpv4GuestSubnetDao.findById(subnetId);
-        subnet.setSubnet(newSubnet);
+        subnet.setSubnet(NetUtils.transformCidr(newSubnet));
         dataCenterIpv4GuestSubnetDao.update(subnetId, subnet);
 
         return dataCenterIpv4GuestSubnetDao.findById(subnetId);
+    }
+
+    private void checkConflicts(List<DataCenterIpv4GuestSubnetVO> existingSubnets, String newSubnet, Long ignoreSubnetId) {
+        for (DataCenterIpv4GuestSubnetVO existing : existingSubnets) {
+            if ((ignoreSubnetId == null || existing.getId() != ignoreSubnetId) && NetUtils.isNetworksOverlap(existing.getSubnet(), newSubnet)) {
+                throw new InvalidParameterValueException(String.format("Existing subnet %s has overlap with: %s", existing.getSubnet(), newSubnet));
+            }
+        }
     }
 
     @Override
@@ -390,23 +393,33 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     @Override
-    public boolean releaseIpv4SubnetForGuestNetwork(long networkId) {
+    public void releaseIpv4SubnetForGuestNetwork(long networkId) {
         // check if the network has corresponding subnet
         Ipv4GuestSubnetNetworkMapVO mapVO = ipv4GuestSubnetNetworkMapDao.findByNetworkId(networkId);
         if (mapVO == null) {
-            return true;
+            return;
         }
-        releaseIpv4SubnetForGuestNetworkInternal(mapVO);
-        return true;
+        releaseIpv4SubnetForGuestNetworkOrVpcInternal(mapVO);
     }
 
-    private void releaseIpv4SubnetForGuestNetworkInternal(Ipv4GuestSubnetNetworkMapVO mapVO) {
+    @Override
+    public void releaseIpv4SubnetForVpc(long vpcId) {
+        // check if the network has corresponding subnet
+        Ipv4GuestSubnetNetworkMapVO mapVO = ipv4GuestSubnetNetworkMapDao.findByVpcId(vpcId);
+        if (mapVO == null) {
+            return;
+        }
+        releaseIpv4SubnetForGuestNetworkOrVpcInternal(mapVO);
+    }
+
+    private void releaseIpv4SubnetForGuestNetworkOrVpcInternal(Ipv4GuestSubnetNetworkMapVO mapVO) {
         if (mapVO.getParentId() == null) {
             // if parent_id is NULL, remove it
             ipv4GuestSubnetNetworkMapDao.remove(mapVO.getId());
         } else {
             // otherwise, release it
             mapVO.setAllocated(null);
+            mapVO.setVpcId(null);
             mapVO.setNetworkId(null);
             mapVO.setState(State.Free);
             ipv4GuestSubnetNetworkMapDao.update(mapVO.getId(), mapVO);
@@ -451,6 +464,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
 
         response.setCreated(subnet.getCreated());
         response.setSubnet(subnet.getSubnet());
+        response.setState(subnet.getState().name());
         response.setId(subnet.getUuid());
         response.setAllocatedTime(subnet.getAllocated());
         if (subnet.getNetworkId() != null) {
@@ -484,36 +498,45 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
 
     @Override
     public void getOrCreateIpv4SubnetForGuestNetwork(Network network, String networkCidr) {
+        getOrCreateIpv4SubnetForGuestNetworkOrVpcInternal(networkCidr, network.getDomainId(), network.getAccountId(), network.getDataCenterId());
+    }
+
+    @Override
+    public void getOrCreateIpv4SubnetForVpc(Vpc vpc, String networkCidr) {
+        getOrCreateIpv4SubnetForGuestNetworkOrVpcInternal(networkCidr, vpc.getDomainId(), vpc.getAccountId(), vpc.getZoneId());
+    }
+
+    private void getOrCreateIpv4SubnetForGuestNetworkOrVpcInternal(String networkCidr, Long ownerDomainId, Long ownerAccountId, Long zoneId) {
         Ipv4GuestSubnetNetworkMapVO subnetMap = ipv4GuestSubnetNetworkMapDao.findBySubnet(networkCidr);
         if (subnetMap != null) {
             // check if the subnet is in use
-            if (subnetMap.getNetworkId() != null) {
+            if (subnetMap.getNetworkId() != null || subnetMap.getVpcId() != null) {
                 throw new InvalidParameterValueException("The subnet is in use");
             }
             // check if the subnet accessible by the owner
             if (subnetMap.getParentId() != null) {
                 DataCenterIpv4GuestSubnetVO parent = dataCenterIpv4GuestSubnetDao.findById(subnetMap.getParentId());
-                checkIfNetworkOwnerCanAccessIpv4Subnet(parent, network);
+                checkIfNetworkOwnerCanAccessIpv4Subnet(parent, ownerDomainId, ownerAccountId);
             }
             return;
         }
 
-        DataCenterIpv4GuestSubnet parent = getParentOfNetworkCidr(network.getDataCenterId(), networkCidr);
+        DataCenterIpv4GuestSubnet parent = getParentOfNetworkCidr(zoneId, networkCidr);
         if (parent != null) {
             // check if the parent subnet is accessible by the owner
-            checkIfNetworkOwnerCanAccessIpv4Subnet(parent, network);
+            checkIfNetworkOwnerCanAccessIpv4Subnet(parent, ownerDomainId, ownerAccountId);
         }
 
         // Create new record without networkId
         final Long parentId = parent != null ? parent.getId() : null;
-        subnetMap = new Ipv4GuestSubnetNetworkMapVO(parentId, networkCidr, null, State.Free);
+        subnetMap = new Ipv4GuestSubnetNetworkMapVO(parentId, NetUtils.transformCidr(networkCidr), null, State.Free);
         ipv4GuestSubnetNetworkMapDao.persist(subnetMap);
     }
 
-    private void checkIfNetworkOwnerCanAccessIpv4Subnet(DataCenterIpv4GuestSubnet parent, Network network) {
+    private void checkIfNetworkOwnerCanAccessIpv4Subnet(DataCenterIpv4GuestSubnet parent, Long ownerDomainId, Long ownerAccountId) {
         if (parent != null
-                && ((parent.getDomainId() != null && !parent.getDomainId().equals(network.getDomainId()))
-                ||  (parent.getAccountId() != null && !parent.getAccountId().equals(network.getAccountId())))) {
+                && ((parent.getDomainId() != null && !parent.getDomainId().equals(ownerDomainId))
+                ||  (parent.getAccountId() != null && !parent.getAccountId().equals(ownerAccountId)))) {
             throw new InvalidParameterValueException("The owner of the network has no permission to access the subnet");
         }
     }
@@ -522,22 +545,19 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         List<DataCenterIpv4GuestSubnetVO> existingSubnets = dataCenterIpv4GuestSubnetDao.listByDataCenterId(zoneId);
         for (DataCenterIpv4GuestSubnetVO existing : existingSubnets) {
             if (NetUtils.isNetworkAWithinNetworkB(networkCidr, existing.getSubnet())) {
+                // check conflicts
+                List<Ipv4GuestSubnetNetworkMapVO> subnetsForNetwork = ipv4GuestSubnetNetworkMapDao.listByParent(existing.getId());
+                checkConflicts(subnetsForNetwork, networkCidr);
                 return existing;
             }
             if (NetUtils.isNetworksOverlap(existing.getSubnet(), networkCidr)) {
                 throw new InvalidParameterValueException(String.format("Existing parent subnet %s has overlap with: %s", existing.getSubnet(), networkCidr));
             }
         }
+        // check conflicts
+        List<Ipv4GuestSubnetNetworkMapVO> subnetsForNetworkNoParents = ipv4GuestSubnetNetworkMapDao.listAllNoParent();
+        checkConflicts(subnetsForNetworkNoParents, networkCidr);
         return null;
-    }
-
-    private void assignIpv4GuestSubnetToNetwork(Ipv4GuestSubnetNetworkMapVO subnetMap, Long networkId) {
-        if (networkId != null && networkId > 0L) {
-            subnetMap.setNetworkId(networkId);
-        }
-        subnetMap.setState(State.Allocated);
-        subnetMap.setAllocated(new Date());
-        ipv4GuestSubnetNetworkMapDao.update(subnetMap.getId(), subnetMap);
     }
 
     @Override
@@ -549,20 +569,28 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         return createIpv4SubnetForAccount(network.getDomainId(), network.getAccountId(), network.getDataCenterId(), networkCidrSize);
     }
 
+    private void checkConflicts(List<Ipv4GuestSubnetNetworkMapVO> subnetsForNetwork, String networkCidr) {
+        for (Ipv4GuestSubnetNetworkMapVO subnetForNetwork : subnetsForNetwork) {
+            if (NetUtils.isNetworksOverlap(subnetForNetwork.getSubnet(), networkCidr)) {
+                throw new InvalidParameterValueException(String.format("Existing subnet %s has overlap with: %s", subnetForNetwork.getSubnet(), networkCidr));
+            }
+        }
+    }
+
     private void validateNetworkCidrSize(long accountId, Integer networkCidrSize) {
         if (networkCidrSize == null) {
             throw new CloudRuntimeException("networkCidrSize is null");
         }
-        Boolean isAutoAllocationEnabled = RoutedNetworkCidrAutoAllocationEnabled.valueIn(accountId);
+        Boolean isAutoAllocationEnabled = RoutedIPv4NetworkCidrAutoAllocationEnabled.valueIn(accountId);
         if (!Boolean.TRUE.equals(isAutoAllocationEnabled)) {
             throw new CloudRuntimeException("CIDR auto-allocation is disabled for this account");
         }
 
-        Integer maxCidrSize = RoutedNetworkMaxCidrSize.valueIn(accountId);
+        Integer maxCidrSize = RoutedIPv4NetworkMaxCidrSize.valueIn(accountId);
         if (networkCidrSize > maxCidrSize) {
             throw new CloudRuntimeException(String.format("networkCidrSize (%s) is greater than the max cidr size (%s)", networkCidrSize, maxCidrSize));
         }
-        Integer minCidrSize = RoutedNetworkMinCidrSize.valueIn(accountId);
+        Integer minCidrSize = RoutedIPv4NetworkMinCidrSize.valueIn(accountId);
         if (networkCidrSize < minCidrSize) {
             throw new CloudRuntimeException(String.format("networkCidrSize (%s) is smaller than the min cidr size (%s)", networkCidrSize, minCidrSize));
         }
@@ -641,7 +669,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
             throw new CloudRuntimeException("Failed to automatically allocate a subnet with specified cidrsize");
         }
         // create DB record
-        Ipv4GuestSubnetNetworkMapVO subnetMap = new Ipv4GuestSubnetNetworkMapVO(parent.getId(), networkCidr, null, State.Free);
+        Ipv4GuestSubnetNetworkMapVO subnetMap = new Ipv4GuestSubnetNetworkMapVO(parent.getId(), NetUtils.transformCidr(networkCidr), null, State.Free);
         return ipv4GuestSubnetNetworkMapDao.persist(subnetMap);
     }
 
@@ -666,14 +694,10 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         }
         // check conflicts
         List<Ipv4GuestSubnetNetworkMapVO> existingSubnets = ipv4GuestSubnetNetworkMapDao.listByParent(parent.getId());
-        for (Ipv4GuestSubnetNetworkMapVO existing : existingSubnets) {
-            if (NetUtils.isNetworksOverlap(existing.getSubnet(), networkCidr)) {
-                throw new InvalidParameterValueException(String.format("Existing subnet %s has overlap with: %s", existing.getSubnet(), networkCidr));
-            }
-        }
+        checkConflicts(existingSubnets, networkCidr);
 
         // create DB record
-        Ipv4GuestSubnetNetworkMapVO subnetMap = new Ipv4GuestSubnetNetworkMapVO(parent.getId(), networkCidr, null, State.Free);
+        Ipv4GuestSubnetNetworkMapVO subnetMap = new Ipv4GuestSubnetNetworkMapVO(parent.getId(), NetUtils.transformCidr(networkCidr), null, State.Free);
         return ipv4GuestSubnetNetworkMapDao.persist(subnetMap);
     }
 
@@ -681,7 +705,25 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     public void assignIpv4SubnetToNetwork(String cidr, long networkId) {
         Ipv4GuestSubnetNetworkMapVO subnetMap = ipv4GuestSubnetNetworkMapDao.findBySubnet(cidr);
         if (subnetMap != null) {
-            assignIpv4GuestSubnetToNetwork(subnetMap, networkId);
+            if (networkId > 0L) {
+                subnetMap.setNetworkId(networkId);
+            }
+            subnetMap.setState(State.Allocated);
+            subnetMap.setAllocated(new Date());
+            ipv4GuestSubnetNetworkMapDao.update(subnetMap.getId(), subnetMap);
+        }
+    }
+
+    @Override
+    public void assignIpv4SubnetToVpc(String cidr, long vpcId) {
+        Ipv4GuestSubnetNetworkMapVO subnetMap = ipv4GuestSubnetNetworkMapDao.findBySubnet(cidr);
+        if (subnetMap != null) {
+            if (vpcId > 0L) {
+                subnetMap.setNetworkId(vpcId);
+            }
+            subnetMap.setState(State.Allocated);
+            subnetMap.setAllocated(new Date());
+            ipv4GuestSubnetNetworkMapDao.update(subnetMap.getId(), subnetMap);
         }
     }
 

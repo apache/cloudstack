@@ -46,22 +46,16 @@ import java.util.List;
 
 public interface RoutedIpv4Manager extends PluggableService, Configurable {
 
-    ConfigKey<Integer> RoutedNetworkMaxCidrSize = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Integer.class,
-            "routed.network.max.cidr.size",
-            "30",
-            "The maximum cidr size of routed network.",
-            true,
-            ConfigKey.Scope.Account);
+    ConfigKey<Integer> RoutedIPv4NetworkMaxCidrSize = new ConfigKey<>(ConfigKey.CATEGORY_NETWORK, Integer.class,
+            "routed.ipv4.network.max.cidr.size", "30", "The maximum value of the cidr size for isolated networks in ROUTED mode",
+            true, ConfigKey.Scope.Account);
 
-    ConfigKey<Integer> RoutedNetworkMinCidrSize = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Integer.class,
-            "routed.network.min.cidr.size",
-            "24",
-            "The minimum cidr size of routed network.",
-            true,
-            ConfigKey.Scope.Account);
+    ConfigKey<Integer> RoutedIPv4NetworkMinCidrSize = new ConfigKey<>(ConfigKey.CATEGORY_NETWORK, Integer.class,
+            "routed.ipv4.network.min.cidr.size", "24", "The minimum value of the cidr size for isolated networks in ROUTED mode",
+            true, ConfigKey.Scope.Account);
 
-    ConfigKey<Boolean> RoutedNetworkCidrAutoAllocationEnabled = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class,
-            "routed.network.cidr.auto.allocation.enabled",
+    ConfigKey<Boolean> RoutedIPv4NetworkCidrAutoAllocationEnabled = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class,
+            "routed.ipv4.network.cidr.auto.allocation.enabled",
             "true",
             "Indicates whether the auto-allocation of network CIDR for routed network is enabled or not.",
             true,
@@ -87,7 +81,9 @@ public interface RoutedIpv4Manager extends PluggableService, Configurable {
 
     boolean deleteIpv4SubnetForGuestNetwork(DeleteIpv4SubnetForGuestNetworkCmd deleteIpv4SubnetForGuestNetworkCmd);
 
-    boolean releaseIpv4SubnetForGuestNetwork(long networkId);
+    void releaseIpv4SubnetForGuestNetwork(long networkId);
+
+    void releaseIpv4SubnetForVpc(long vpcId);
 
     List<? extends Ipv4GuestSubnetNetworkMap> listIpv4GuestSubnetsForGuestNetwork(ListIpv4SubnetsForGuestNetworkCmd listIpv4SubnetsForGuestNetworkCmd);
 
@@ -96,9 +92,13 @@ public interface RoutedIpv4Manager extends PluggableService, Configurable {
     // Methods for internal calls
     void getOrCreateIpv4SubnetForGuestNetwork(Network network, String networkCidr);
 
+    void getOrCreateIpv4SubnetForVpc(Vpc vpc, String networkCidr);
+
     Ipv4GuestSubnetNetworkMap getOrCreateIpv4SubnetForGuestNetwork(Network network, Integer networkCidrSize);
 
     void assignIpv4SubnetToNetwork(String cidr, long networkId);
+
+    void assignIpv4SubnetToVpc(String cidr, long vpcId);
 
     // Methods for Routing firewall rules
     FirewallRule createRoutingFirewallRule(CreateRoutingFirewallRuleCmd createRoutingFirewallRuleCmd) throws NetworkRuleConflictException;

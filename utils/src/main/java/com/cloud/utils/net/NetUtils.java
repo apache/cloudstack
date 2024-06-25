@@ -1846,4 +1846,16 @@ public class NetUtils {
         result[1] = end;
         return result;
     }
+
+    /**
+     Return the new format (startIp/cidrsize) of a CIDR
+     */
+    public static String transformCidr(final String cidr) {
+        String[] subnetCidrPair = cidr.split("\\/");
+        Long size = Long.valueOf(subnetCidrPair[1]);
+        final long ip = ip2Long(subnetCidrPair[0]);
+        final long startNetMask = ip2Long(getCidrNetmask(size));
+        final long start = (ip & startNetMask);
+        return String.format("%s/%s", long2Ip(start), size);
+    }
 }

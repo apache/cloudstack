@@ -45,6 +45,10 @@ public class Ipv4SubnetForGuestNetworkResponse extends BaseResponse {
     @Param(description = "subnet of the IPv4 network")
     private String subnet;
 
+    @SerializedName(ApiConstants.STATE)
+    @Param(description = "state of subnet of the IPv4 network")
+    private String state;
+
     @SerializedName(ApiConstants.ZONE_ID)
     @Param(description = "id of zone to which the IPv4 subnet belongs to." )
     private String zoneId;
@@ -87,6 +91,10 @@ public class Ipv4SubnetForGuestNetworkResponse extends BaseResponse {
 
     public void setSubnet(String subnet) {
         this.subnet = subnet;
+    }
+
+    public void setState(String state) {
+        this.state = state;
     }
 
     public void setNetworkId(String networkId) {
