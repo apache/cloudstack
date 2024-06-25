@@ -377,7 +377,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             return true;
         }
         hostDao.loadHostTags(host);
-        return host.checkHostServiceOfferingAndTemplateTags(serviceOffering, template);
+        return host.checkHostServiceOfferingAndTemplateTags(serviceOffering, template, UserVmManager.getStrictHostTags());
     }
 
     private boolean storagePoolSupportsDiskOffering(StoragePool pool, DiskOffering diskOffering) {
