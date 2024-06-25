@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.DataCenterIpv4SubnetResponse;
 import org.apache.cloudstack.api.response.Ipv4SubnetForGuestNetworkResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMap;
 
@@ -62,6 +63,12 @@ public class ListIpv4SubnetsForGuestNetworkCmd extends BaseListCmd {
             description = "UUID of zone to which the IPv4 subnet belongs to.")
     private Long zoneId;
 
+    @Parameter(name = ApiConstants.NETWORK_ID,
+            type = CommandType.UUID,
+            entityType = NetworkResponse.class,
+            description = "UUID of network to which the IPv4 subnet is associated to.")
+    private Long networkId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -80,6 +87,10 @@ public class ListIpv4SubnetsForGuestNetworkCmd extends BaseListCmd {
 
     public String getSubnet() {
         return subnet;
+    }
+
+    public Long getNetworkId() {
+        return networkId;
     }
 
     @Override

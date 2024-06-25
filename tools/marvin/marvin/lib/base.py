@@ -3552,7 +3552,7 @@ class Network:
                subdomainaccess=None, zoneid=None,
                gateway=None, netmask=None, vpcid=None, aclid=None, vlan=None,
                externalid=None, bypassvlanoverlapcheck=None, associatednetworkid=None, publicmtu=None, privatemtu=None,
-               sourcenatipaddress=None):
+               sourcenatipaddress=None, cidrsize=None):
         """Create Network for account"""
         cmd = createNetwork.createNetworkCmd()
         cmd.name = services["name"]
@@ -3579,6 +3579,10 @@ class Network:
             cmd.netmask = netmask
         elif "netmask" in services:
             cmd.netmask = services["netmask"]
+        if cidrsize:
+            cmd.cidrsize = cidrsize
+        elif "cidrsize" in services:
+            cmd.cidrsize = services["cidrsize"]
         if "startip" in services:
             cmd.startip = services["startip"]
         if "endip" in services:
@@ -7355,12 +7359,14 @@ class Ipv4SubnetForGuestNetwork:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, parentid, subnet, cidrsize, **kwargs):
+    def create(cls, apiclient, parentid, subnet=None, cidrsize=None, **kwargs):
         """Create IPv4 Subnet for Guest Network"""
         cmd = createIpv4SubnetForGuestNetwork.createIpv4SubnetForGuestNetworkCmd()
         cmd.parentid = parentid
-        cmd.subnet = subnet
-        cmd.cidrsize = cidrsize
+        if subnet:
+            cmd.subnet = subnet
+        if cidrsize:
+            cmd.cidrsize = cidrsize
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return Ipv4SubnetForGuestNetwork(apiclient.createIpv4SubnetForGuestNetwork(cmd).__dict__)
 
