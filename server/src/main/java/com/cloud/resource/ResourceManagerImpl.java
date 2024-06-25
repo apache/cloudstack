@@ -3074,6 +3074,24 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
+    public List<HostVO> listAllUpHostsNotInMaintenance(Type type, Long clusterId, Long podId, long dcId) {
+        final QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        if (type != null) {
+            sc.and(sc.entity().getType(), Op.EQ, type);
+        }
+        if (clusterId != null) {
+            sc.and(sc.entity().getClusterId(), Op.EQ, clusterId);
+        }
+        if (podId != null) {
+            sc.and(sc.entity().getPodId(), Op.EQ, podId);
+        }
+        sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
+        sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
+        sc.and(sc.entity().getResourceState(), Op.NEQ, ResourceState.Maintenance);
+        return sc.list();
+    }
+
+    @Override
     public List<HostVO> listAllUpAndEnabledNonHAHosts(final Type type, final Long clusterId, final Long podId, final long dcId) {
         final String haTag = _haMgr.getHaTag();
         return _hostDao.listAllUpAndEnabledNonHAHosts(type, clusterId, podId, dcId, haTag);

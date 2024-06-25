@@ -146,7 +146,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImplTest extends TestCase {
         when(dataStoreProvider.getName()).thenReturn("default");
         ((StorageManagerImpl)storageMgr).registerHostListener("default", hostListener);
 
-        when(_resourceMgr.listAllUpHosts(eq(Host.Type.Routing), anyLong(), anyLong(), anyLong())).thenReturn(hostList);
+        when(_resourceMgr.listAllUpHostsNotInMaintenance(eq(Host.Type.Routing), anyLong(), anyLong(), anyLong())).thenReturn(hostList);
         when(agentMgr.easySend(anyLong(), Mockito.any(ModifyStoragePoolCommand.class))).thenReturn(answer);
         when(answer.getResult()).thenReturn(true);
         when(answer.getPoolInfo()).thenReturn(info);
