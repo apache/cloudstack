@@ -117,6 +117,7 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager {
             long hostId = host.getId();
             String sdcId = getConnectedSdc(poolId, hostId);
             if (StringUtils.isNotBlank(sdcId)) {
+                LOGGER.debug(String.format("SDC %s already connected for the pool: %d on host: %d, no need to prepare/start it", sdcId, poolId, hostId));
                 return sdcId;
             }
 
