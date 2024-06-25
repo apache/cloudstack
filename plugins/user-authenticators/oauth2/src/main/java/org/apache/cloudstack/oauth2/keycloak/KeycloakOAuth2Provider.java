@@ -1,19 +1,20 @@
 // Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
+// or more contributor license agreements. See the NOTICE file
 // distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
+// regarding copyright ownership. The ASF licenses this file
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
+// with the License. You may obtain a copy of the License at
 //
-//   http://www.apache.org/licenses/LICENSE-2.0
+// http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
+// KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 package org.apache.cloudstack.oauth2.keycloak;
 
 import com.cloud.exception.CloudAuthenticationException;
@@ -25,12 +26,13 @@ import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
 import org.apache.commons.lang3.StringUtils;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.KeycloakBuilder;
-import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.AccessTokenResponse;
 
 import javax.inject.Inject;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class KeycloakOAuth2Provider extends AdapterBase implements UserOAuth2Authenticator {
 
@@ -74,31 +76,27 @@ public class KeycloakOAuth2Provider extends AdapterBase implements UserOAuth2Aut
     public String verifyCodeAndFetchEmail(String secretCode) {
         OauthProviderVO keycloakProvider = _oauthProviderDao.findByProvider(getName());
         String clientId = keycloakProvider.getClientId();
-        String clientSecret = keycloakProvider.getSecretKey();
-        String redirectUri = keycloakProvider.getRedirectUri();
-        String authServerUrl = keycloakProvider.getAuthenticationUri();
+        String secret = keycloakProvider.getSecretKey();
+        String authServerUrl = keycloakProvider.getAuthServerUrl();
+        String realm = keycloakProvider.getRealm();
 
-        Keycloak keycloak = KeycloakBuilder.builder()
-                .serverUrl(authServerUrl)
-                .realm(keycloakProvider.getProviderName())
-                .clientId(clientId)
-                .clientSecret(clientSecret)
-                .grantType(OAuth2Constants.AUTHORIZATION_CODE)
-                .redirectUri(redirectUri)
-                .code(secretCode)
-                .build();
-
+        Keycloak keycloak = Keycloak.getInstance(authServerUrl, realm, clientId, secret, OAuth2Constants.CLIENT_CREDENTIALS);
         AccessTokenResponse tokenResponse = keycloak.tokenManager().getAccessToken();
 
         accessToken = tokenResponse.getToken();
         refreshToken = tokenResponse.getRefreshToken();
 
-        List<UserRepresentation> users = keycloak.realm(keycloakProvider.getProviderName()).users().search("", 0, 1);
-        if (users.isEmpty()) {
-            throw new CloudRuntimeException("No user found with the provided secret");
+        RealmResource realmResource = keycloak.realm(realm);
+        UserResource userResource = realmResource.users().get(tokenResponse.getSubject());
+
+        Map<String, Object> attributes = new HashMap<>();
+        try {
+            attributes = userResource.toRepresentation().getAttributes();
+        } catch (Exception e) {
+            throw new CloudRuntimeException(String.format("Failed to fetch the email address with the provided secret: %s", e.getMessage()));
         }
 
-        return users.get(0).getEmail();
+        return (String) attributes.get("email");
     }
 
     protected void clearAccessAndRefreshTokens() {
@@ -111,4 +109,3 @@ public class KeycloakOAuth2Provider extends AdapterBase implements UserOAuth2Aut
         return null;
     }
 }
-
