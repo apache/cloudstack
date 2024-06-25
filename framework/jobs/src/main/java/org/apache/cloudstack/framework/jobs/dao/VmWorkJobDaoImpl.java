@@ -24,10 +24,10 @@ import java.util.List;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-
 import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
 import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO.Step;
 import org.apache.cloudstack.jobs.JobInfo;
+import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.Filter;
@@ -211,5 +211,17 @@ public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implemen
                 }
             }
         });
+    }
+
+    @Override
+    public int expungeByVmList(List<Long> vmIds, Long batchSize) {
+        if (CollectionUtils.isEmpty(vmIds)) {
+            return 0;
+        }
+        SearchBuilder<VmWorkJobVO> sb = createSearchBuilder();
+        sb.and("vmIds", sb.entity().getVmInstanceId(), SearchCriteria.Op.IN);
+        SearchCriteria<VmWorkJobVO> sc = sb.create();
+        sc.setParameters("vmIds", vmIds.toArray());
+        return batchExpunge(sc, batchSize);
     }
 }

@@ -782,7 +782,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
      */
     protected EnumMap<VmwareStorageProcessorConfigurableFields, Object> examineStorageSubSystemCommandFullCloneFlagForVmware(CopyCommand cmd,
             EnumMap<VmwareStorageProcessorConfigurableFields, Object> params) {
-        EnumMap<VmwareStorageProcessorConfigurableFields, Object> paramsCopy = new EnumMap<VmwareStorageProcessorConfigurableFields, Object>(params);
+        EnumMap<VmwareStorageProcessorConfigurableFields, Object> paramsCopy = new EnumMap<>(params);
         HypervisorType hypervisor = cmd.getDestTO().getHypervisorType();
         if (hypervisor != null && hypervisor.equals(HypervisorType.VMware)) {
             DataStoreTO destDataStore = cmd.getDestTO().getDataStore();
@@ -2201,7 +2201,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                     throw new Exception("Failed to find the newly create or relocated VM. vmName: " + vmInternalCSName);
                 }
             }
-            if (deployAsIs) {
+            if (deployAsIs && !vmMo.hasSnapshot()) {
                 logger.info("Mapping VM disks to spec disks and tearing down datadisks (if any)");
                 mapSpecDisksToClonedDisksAndTearDownDatadisks(vmMo, vmInternalCSName, specDisks);
             }
@@ -3070,7 +3070,10 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
     }
 
     private String appendFileType(String path, String fileType) {
-        if (path.toLowerCase().endsWith(fileType.toLowerCase())) {
+        if (StringUtils.isBlank(path)) {
+            throw new CloudRuntimeException("No path given, cannot append filetype " + fileType);
+        }
+        if (fileType == null || path.toLowerCase().endsWith(fileType.toLowerCase())) {
             return path;
         }
 

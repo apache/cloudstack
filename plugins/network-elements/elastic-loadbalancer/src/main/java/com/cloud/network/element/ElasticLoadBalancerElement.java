@@ -224,4 +224,8 @@ public class ElasticLoadBalancerElement extends AdapterBase implements LoadBalan
         return true;
     }
 
+    @Override
+    public void expungeLbVmRefs(List<Long> vmIds, Long batchSize) {
+        _lbMgr.expungeLbVmRefs(vmIds, batchSize);
+    }
 }

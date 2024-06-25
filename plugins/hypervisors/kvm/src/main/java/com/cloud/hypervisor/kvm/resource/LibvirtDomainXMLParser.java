@@ -420,6 +420,9 @@ public class LibvirtDomainXMLParser {
     }
 
     private static String getTagValue(String tag, Element eElement) {
+        if (eElement == null) {
+            return null;
+        }
         NodeList tagNodeList = eElement.getElementsByTagName(tag);
         if (tagNodeList == null || tagNodeList.getLength() == 0) {
             return null;
@@ -427,14 +430,20 @@ public class LibvirtDomainXMLParser {
 
         NodeList nlList = tagNodeList.item(0).getChildNodes();
 
+        if (nlList == null || nlList.getLength() == 0) {
+            return null;
+        }
         Node nValue = nlList.item(0);
 
         return nValue.getNodeValue();
     }
 
     private static String getAttrValue(String tag, String attr, Element eElement) {
+        if (eElement == null) {
+            return null;
+        }
         NodeList tagNode = eElement.getElementsByTagName(tag);
-        if (tagNode.getLength() == 0) {
+        if (tag == null || tagNode.getLength() == 0) {
             return null;
         }
         Element node = (Element)tagNode.item(0);
@@ -536,8 +545,9 @@ public class LibvirtDomainXMLParser {
             }
             final String sockets = getAttrValue("topology", "sockets", cpuModeDefElement);
             final String cores = getAttrValue("topology", "cores", cpuModeDefElement);
-            if (StringUtils.isNotBlank(sockets) && StringUtils.isNotBlank(cores)) {
-                cpuModeDef.setTopology(Integer.parseInt(cores), Integer.parseInt(sockets));
+            final String threads = getAttrValue("topology", "threads", cpuModeDefElement);
+            if (StringUtils.isNotBlank(sockets) && StringUtils.isNotBlank(cores) && StringUtils.isNotBlank(threads)) {
+                cpuModeDef.setTopology(Integer.parseInt(cores), Integer.parseInt(threads), Integer.parseInt(sockets));
             }
         }
     }

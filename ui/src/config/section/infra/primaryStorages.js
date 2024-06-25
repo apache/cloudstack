@@ -24,6 +24,7 @@ export default {
   icon: 'hdd-outlined',
   docHelp: 'adminguide/storage.html#primary-storage',
   permission: ['listStoragePoolsMetrics'],
+  searchFilters: ['name', 'zoneid', 'podid', 'clusterid', 'ipaddress', 'path', 'scope'],
   columns: () => {
     const fields = ['name', 'state', 'ipaddress', 'scope', 'type', 'path']
     const metricsFields = ['disksizeusedgb', 'disksizetotalgb', 'disksizeallocatedgb', 'disksizeunallocatedgb']

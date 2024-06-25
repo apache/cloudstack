@@ -113,6 +113,9 @@ public class UsageVO implements Usage, InternalIdentity {
     @Column(name = "is_hidden")
     private boolean isHidden = false;
 
+    @Column(name = "state")
+    private String state;
+
     public Integer getQuotaCalculated() {
         return quotaCalculated;
     }
@@ -399,6 +402,14 @@ public class UsageVO implements Usage, InternalIdentity {
 
     public void setHidden(boolean hidden) {
         this.isHidden = hidden;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
     }
 
     @Override

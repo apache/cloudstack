@@ -95,8 +95,7 @@ import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.events.EventBus;
-import org.apache.cloudstack.framework.events.EventBusException;
+import org.apache.cloudstack.framework.events.EventDistributor;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
@@ -132,10 +131,9 @@ import org.apache.http.protocol.ResponseConnControl;
 import org.apache.http.protocol.ResponseContent;
 import org.apache.http.protocol.ResponseDate;
 import org.apache.http.protocol.ResponseServer;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.dispatch.DispatchChainFactory;
@@ -197,25 +195,25 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     private static final String CONTROL_CHARACTERS = "[\000-\011\013-\014\016-\037\177]";
 
     @Inject
+    private AccountManager accountMgr;
+    @Inject
+    private APIAuthenticationManager authManager;
+    @Inject
     private ApiDispatcher dispatcher;
     @Inject
-    private DispatchChainFactory dispatchChainFactory;
+    private AsyncJobManager asyncMgr;
     @Inject
-    private AccountManager accountMgr;
+    private DispatchChainFactory dispatchChainFactory;
     @Inject
     private DomainManager domainMgr;
     @Inject
     private DomainDao domainDao;
     @Inject
-    private UUIDManager uuidMgr;
-    @Inject
-    private AsyncJobManager asyncMgr;
-    @Inject
     private EntityManager entityMgr;
     @Inject
-    private APIAuthenticationManager authManager;
-    @Inject
     private ProjectDao projectDao;
+    @Inject
+    private UUIDManager uuidMgr;
 
     private List<PluggableService> pluggableServices;
 
@@ -224,6 +222,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     @Inject
     private ApiAsyncJobDispatcher asyncDispatcher;
 
+    private EventDistributor eventDistributor = null;
     private static int s_workerCount = 0;
     private static Map<String, List<Class<?>>> s_apiNameCmdClassMap = new HashMap<String, List<Class<?>>>();
 
@@ -233,42 +232,42 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     @Inject
     private MessageBus messageBus;
 
-    private static final ConfigKey<Integer> IntegrationAPIPort = new ConfigKey<Integer>("Advanced"
+    private static final ConfigKey<Integer> IntegrationAPIPort = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED
             , Integer.class
             , "integration.api.port"
             , "0"
             , "Integration (unauthenticated) API port. To disable set it to 0 or negative."
             , false
             , ConfigKey.Scope.Global);
-    private static final ConfigKey<Long> ConcurrentSnapshotsThresholdPerHost = new ConfigKey<Long>("Advanced"
+    private static final ConfigKey<Long> ConcurrentSnapshotsThresholdPerHost = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED
             , Long.class
             , "concurrent.snapshots.threshold.perhost"
             , null
             , "Limits number of snapshots that can be handled by the host concurrently; default is NULL - unlimited"
             , true // not sure if this is to be dynamic
             , ConfigKey.Scope.Global);
-    private static final ConfigKey<Boolean> EncodeApiResponse = new ConfigKey<Boolean>("Advanced"
+    private static final ConfigKey<Boolean> EncodeApiResponse = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED
             , Boolean.class
             , "encode.api.response"
             , "false"
             , "Do URL encoding for the api response, false by default"
             , false
             , ConfigKey.Scope.Global);
-    static final ConfigKey<String> JSONcontentType = new ConfigKey<String>( "Advanced"
+    static final ConfigKey<String> JSONcontentType = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED
             , String.class
             , "json.content.type"
             , "application/json; charset=UTF-8"
             , "Http response content type for .js files (default is text/javascript)"
             , false
             , ConfigKey.Scope.Global);
-    static final ConfigKey<Boolean> EnableSecureSessionCookie = new ConfigKey<Boolean>("Advanced"
+    static final ConfigKey<Boolean> EnableSecureSessionCookie = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED
             , Boolean.class
             , "enable.secure.session.cookie"
             , "false"
             , "Session cookie is marked as secure if this is enabled. Secure cookies only work when HTTPS is used."
             , false
             , ConfigKey.Scope.Global);
-    private static final ConfigKey<String> JSONDefaultContentType = new ConfigKey<String> ("Advanced"
+    private static final ConfigKey<String> JSONDefaultContentType = new ConfigKey<> (ConfigKey.CATEGORY_ADVANCED
             , String.class
             , "json.content.type"
             , "application/json; charset=UTF-8"
@@ -276,11 +275,32 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             , false
             , ConfigKey.Scope.Global);
 
-    private static final ConfigKey<Boolean> UseEventAccountInfo = new ConfigKey<Boolean>( "advanced"
+    private static final ConfigKey<Boolean> UseEventAccountInfo = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED
             , Boolean.class
             , "event.accountinfo"
             , "false"
             , "use account info in event logging"
+            , true
+            , ConfigKey.Scope.Global);
+    static final ConfigKey<Boolean> useForwardHeader = new ConfigKey<>(ConfigKey.CATEGORY_NETWORK
+            , Boolean.class
+            , "proxy.header.verify"
+            , "false"
+            , "enables/disables checking of ipaddresses from a proxy set header. See \"proxy.header.names\" for the headers to allow."
+            , true
+            , ConfigKey.Scope.Global);
+    static final ConfigKey<String> listOfForwardHeaders = new ConfigKey<>(ConfigKey.CATEGORY_NETWORK
+            , String.class
+            , "proxy.header.names"
+            , "X-Forwarded-For,HTTP_CLIENT_IP,HTTP_X_FORWARDED_FOR"
+            , "a list of names to check for allowed ipaddresses from a proxy set header. See \"proxy.cidr\" for the proxies allowed to set these headers."
+            , true
+            , ConfigKey.Scope.Global);
+    static final ConfigKey<String> proxyForwardList = new ConfigKey<>(ConfigKey.CATEGORY_NETWORK
+            , String.class
+            , "proxy.cidr"
+            , ""
+            , "a list of cidrs for which \"proxy.header.names\" are honoured if the \"Remote_Addr\" is in this list."
             , true
             , ConfigKey.Scope.Global);
 
@@ -288,6 +308,10 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         messageBus.subscribe(AsyncJob.Topics.JOB_EVENT_PUBLISH, MessageDispatcher.getDispatcher(this));
         return true;
+    }
+
+    public void setEventDistributor(EventDistributor eventDistributor) {
+        this.eventDistributor = eventDistributor;
     }
 
     @MessageHandler(topic = AsyncJob.Topics.JOB_EVENT_PUBLISH)
@@ -301,12 +325,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
         if (logger.isTraceEnabled())
             logger.trace("Handle asyjob publish event " + jobEvent);
-
-        EventBus eventBus = null;
-        try {
-            eventBus = ComponentContext.getComponent(EventBus.class);
-        } catch (NoSuchBeanDefinitionException nbe) {
-            return; // no provider is configured to provide events bus, so just return
+        if (eventDistributor == null) {
+            setEventDistributor(ComponentContext.getComponent(EventDistributor.class));
         }
 
         if (!job.getDispatcher().equalsIgnoreCase("ApiAsyncJobDispatcher")) {
@@ -319,7 +339,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         // Get the event type from the cmdInfo json string
         String info = job.getCmdInfo();
         String cmdEventType = "unknown";
-        Map<String, Object> cmdInfoObj = new HashMap<String, Object>();
+        Map<String, Object> cmdInfoObj = new HashMap<>();
         if (info != null) {
             Type type = new TypeToken<Map<String, String>>(){}.getType();
             Map<String, String> cmdInfo = ApiGsonHelper.getBuilder().create().fromJson(info, type);
@@ -347,7 +367,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         org.apache.cloudstack.framework.events.Event event = new org.apache.cloudstack.framework.events.Event("management-server", EventCategory.ASYNC_JOB_CHANGE_EVENT.getName(),
                 jobEvent, instanceType, instanceUuid);
 
-        Map<String, Object> eventDescription = new HashMap<String, Object>();
+        Map<String, Object> eventDescription = new HashMap<>();
         eventDescription.put("command", job.getCmd());
         eventDescription.put("user", userJobOwner.getUuid());
         eventDescription.put("account", jobOwner.getUuid());
@@ -368,13 +388,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             eventDescription.put("domainname", domain.getName());
         }
         event.setDescription(eventDescription);
-
-        try {
-            eventBus.publish(event);
-        } catch (EventBusException evx) {
-            String errMsg = "Failed to publish async job event on the event bus.";
-            logger.warn(errMsg, evx);
-        }
+        eventDistributor.publish(event);
     }
 
     @Override
@@ -469,7 +483,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                     if(parameterMap.putIfAbsent(param.getName(), new String[]{param.getValue()}) != null) {
                         String message = String.format("Query parameter '%s' has multiple values [%s, %s]. Only the last value will be respected." +
                             "It is advised to pass only a single parameter", param.getName(), param.getValue(), parameterMap.get(param.getName()));
-                        logger.warn(message);
+                        logger.warn(StringUtils.cleanString(message));
                     }
                 }
             }
@@ -1500,7 +1514,10 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 ConcurrentSnapshotsThresholdPerHost,
                 EncodeApiResponse,
                 EnableSecureSessionCookie,
-                JSONDefaultContentType
+                JSONDefaultContentType,
+                proxyForwardList,
+                useForwardHeader,
+                listOfForwardHeaders
         };
     }
 }

@@ -1482,6 +1482,9 @@ public class KVMStorageProcessor implements StorageProcessor {
                 if (ioDriver != null) {
                     resource.setDiskIoDriver(diskdef, resource.getIoDriverForTheStorage(ioDriver.toUpperCase()));
                 }
+                diskdef.setPhysicalBlockIOSize(attachingPool.getSupportedPhysicalBlockSize());
+                diskdef.setLogicalBlockIOSize(attachingPool.getSupportedLogicalBlockSize());
+                attachingPool.customizeLibvirtDiskDef(diskdef);
             }
 
             attachOrDetachDevice(conn, attach, vmName, diskdef, waitDetachDevice);
@@ -1630,7 +1633,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 }
             } else {
                 vol = primaryPool.createPhysicalDisk(volume.getUuid(), format,
-                        volume.getProvisioningType(), disksize, volume.getPassphrase());
+                        volume.getProvisioningType(), disksize, volume.getUsableSize(), volume.getPassphrase());
             }
 
             final VolumeObjectTO newVol = new VolumeObjectTO();
@@ -2379,7 +2382,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             Long templateSize = null;
             if (StringUtils.isNotBlank(cmd.getUrl())) {
                 String url = cmd.getUrl();
-                templateSize = UriUtils.getRemoteSize(url);
+                templateSize = UriUtils.getRemoteSize(url, cmd.isFollowRedirects());
             }
 
             logger.debug("Checking for free space on the host for downloading the template with physical size: " + templateSize + " and virtual size: " + cmd.getTemplateSize());

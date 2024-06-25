@@ -372,12 +372,19 @@ public class Script implements Callable<String> {
                         //process completed successfully
                         if (_process.exitValue() == 0 || _process.exitValue() == exitValue) {
                             _logger.debug("Execution is successful.");
+                            String result;
+                            String method;
                             if (interpreter != null) {
-                                return interpreter.drain() ? task.getResult() : interpreter.interpret(ir);
+                                _logger.debug("interpreting the result...");
+                                method = "result interpretation of execution: ";
+                                result= interpreter.drain() ? task.getResult() : interpreter.interpret(ir);
                             } else {
                                 // null return exitValue apparently
-                                return String.valueOf(_process.exitValue());
+                                method = "return code of execution: ";
+                                result = String.valueOf(_process.exitValue());
                             }
+                            _logger.debug(method + result);
+                            return result;
                         } else { //process failed
                             break;
                         }
