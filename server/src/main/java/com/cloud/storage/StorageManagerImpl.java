@@ -1259,7 +1259,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         if (currentScope != ScopeType.ZONE && currentScope != ScopeType.CLUSTER) {
-            throw new InvalidParameterValueException("This opearation is supported only for Primary storages having scope "
+            throw new InvalidParameterValueException("This operation is supported only for Primary storages having scope "
                     + ScopeType.CLUSTER + " or " + ScopeType.ZONE);
         }
 
