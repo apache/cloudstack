@@ -116,7 +116,7 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
             _consoleProxyPort = NumbersUtil.parseInt(value, ConsoleProxyManager.DEFAULT_PROXY_VNC_PORT);
         }
 
-        value = configs.get("consoleproxy.sslEnabled");
+        value = configs.get(ConsoleProxySslEnabled.key());
         if (value != null && value.equalsIgnoreCase("true")) {
             _sslEnabled = true;
         }

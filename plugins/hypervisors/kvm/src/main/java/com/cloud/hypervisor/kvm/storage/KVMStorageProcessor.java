@@ -149,6 +149,10 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.storage.S3.S3Utils;
 import com.cloud.vm.VmDetailConstants;
+import org.apache.cloudstack.utils.cryptsetup.KeyFile;
+import org.apache.cloudstack.utils.qemu.QemuImageOptions;
+import org.apache.cloudstack.utils.qemu.QemuObject.EncryptFormat;
+import java.util.ArrayList;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -331,7 +335,7 @@ public class KVMStorageProcessor implements StorageProcessor {
 
                 Map<String, String> details = primaryStore.getDetails();
 
-                String path = details != null ? details.get("managedStoreTarget") : null;
+                String path = derivePath(primaryStore, destData, details);
 
                 if (!storagePoolMgr.connectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path, details)) {
                     logger.warn("Failed to connect physical disk at path: " + path + ", in storage pool id: " + primaryStore.getUuid());
@@ -389,6 +393,16 @@ public class KVMStorageProcessor implements StorageProcessor {
                 logger.debug("Failed to clean up secondary storage", e);
             }
         }
+    }
+
+    private String derivePath(PrimaryDataStoreTO primaryStore, DataTO destData, Map<String, String> details) {
+        String path = null;
+        if (primaryStore.getPoolType() == StoragePoolType.FiberChannel) {
+            path = destData.getPath();
+        } else {
+            path = details != null ? details.get("managedStoreTarget") : null;
+        }
+        return path;
     }
 
     // this is much like PrimaryStorageDownloadCommand, but keeping it separate. copies template direct to root disk
@@ -470,7 +484,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 vol = templateToPrimaryDownload(templatePath, primaryPool, volume.getUuid(), volume.getSize(), cmd.getWaitInMillSeconds());
             } if (storagePoolMgr.supportsPhysicalDiskCopy(primaryPool.getType())) {
                 Map<String, String> details = primaryStore.getDetails();
-                String path = details != null ? details.get("managedStoreTarget") : null;
+                String path = derivePath(primaryStore, destData, details);
 
                 if (!storagePoolMgr.connectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), templatePath, details)) {
                     logger.warn("Failed to connect base template volume at path: " + templatePath + ", in storage pool id: " + primaryStore.getUuid());
@@ -1111,7 +1125,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             srcVolume.clearPassphrase();
             if (isCreatedFromVmSnapshot) {
                 logger.debug("Ignoring removal of vm snapshot on primary as this snapshot is created from vm snapshot");
-            } else if (primaryPool.getType() != StoragePoolType.RBD) {
+            } else if (primaryPool != null && primaryPool.getType() != StoragePoolType.RBD) {
                 deleteSnapshotOnPrimary(cmd, snapshot, primaryPool);
             }
 
@@ -2177,7 +2191,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             String directoryPath = fullSnapPathAndDirPath.second();
             relativePath = directoryPath + File.separator + snapshotName;
 
-            String convertResult = convertBaseFileToSnapshotFileInStorageDir(ObjectUtils.defaultIfNull(secondaryPool, primaryPool), diskPath, snapshotPath, directoryPath, volume, cmd.getWait());
+            String convertResult = convertBaseFileToSnapshotFileInStorageDir(ObjectUtils.defaultIfNull(secondaryPool, primaryPool), disk, snapshotPath, directoryPath, volume, cmd.getWait());
 
             mergeSnapshotIntoBaseFile(vm, diskLabel, diskPath, snapshotName, volume, conn);
 
@@ -2435,26 +2449,43 @@ public class KVMStorageProcessor implements StorageProcessor {
      * @return null if the conversion occurs successfully or an error message that must be handled.
      */
 
-    protected String convertBaseFileToSnapshotFileInStorageDir(KVMStoragePool pool, String baseFile, String snapshotPath, String snapshotFolder, VolumeObjectTO volume, int wait) {
-        try {
-            logger.debug("Trying to convert volume [{}] ({}) to snapshot [{}].", volume, baseFile, snapshotPath);
+    protected String convertBaseFileToSnapshotFileInStorageDir(KVMStoragePool pool,
+            KVMPhysicalDisk baseFile, String snapshotPath, String snapshotFolder, VolumeObjectTO volume, int wait) {
+        try (KeyFile srcKey = new KeyFile(volume.getPassphrase())) {
+            logger.debug(
+                    "Trying to convert volume [{}] ({}) to snapshot [{}].", volume, baseFile, snapshotPath);
 
-            pool.createFolder(snapshotFolder);
-
-            QemuImgFile srcFile = new QemuImgFile(baseFile);
-            srcFile.setFormat(PhysicalDiskFormat.QCOW2);
-
-            QemuImgFile destFile = new QemuImgFile(snapshotPath);
-            destFile.setFormat(PhysicalDiskFormat.QCOW2);
-
-            QemuImg q = new QemuImg(wait);
-            q.convert(srcFile, destFile);
-
-            logger.debug(String.format("Converted volume [%s] (from path \"%s\") to snapshot [%s].", volume, baseFile, snapshotPath));
-            return null;
-        } catch (QemuImgException | LibvirtException ex) {
-            return String.format("Failed to convert %s snapshot of volume [%s] to [%s] due to [%s].", volume, baseFile, snapshotPath, ex.getMessage());
+            pool.createFolder(TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR);
+            convertTheBaseFileToSnapshot(baseFile, snapshotPath, wait, srcKey);
+        } catch (QemuImgException | LibvirtException | IOException ex) {
+            return String.format("Failed to convert %s snapshot of volume [%s] to [%s] due to [%s].", volume, baseFile,
+                    snapshotPath, ex.getMessage());
         }
+
+        logger.debug(String.format("Converted volume [%s] (from path \"%s\") to snapshot [%s].", volume, baseFile,
+                snapshotPath));
+        return null;
+    }
+
+    private void convertTheBaseFileToSnapshot(KVMPhysicalDisk baseFile, String snapshotPath, int wait, KeyFile srcKey)
+            throws LibvirtException, QemuImgException {
+        List<QemuObject> qemuObjects = new ArrayList<>();
+        Map<String, String> options = new HashMap<>();
+        QemuImageOptions qemuImageOpts = new QemuImageOptions(baseFile.getPath());
+        if (srcKey.isSet()) {
+            String srcKeyName = "sec0";
+            qemuObjects.add(QemuObject.prepareSecretForQemuImg(baseFile.getFormat(), EncryptFormat.LUKS,
+                    srcKey.toString(), srcKeyName, options));
+            qemuImageOpts = new QemuImageOptions(baseFile.getFormat(), baseFile.getPath(), srcKeyName);
+        }
+        QemuImgFile srcFile = new QemuImgFile(baseFile.getPath());
+        srcFile.setFormat(PhysicalDiskFormat.QCOW2);
+
+        QemuImgFile destFile = new QemuImgFile(snapshotPath);
+        destFile.setFormat(PhysicalDiskFormat.QCOW2);
+
+        QemuImg q = new QemuImg(wait);
+        q.convert(srcFile, destFile, options, qemuObjects, qemuImageOpts, null, true);
     }
 
     protected String getSnapshotOrCheckpointPathInPrimaryStorage(String primaryStoragePath, String snapshotName, boolean checkpoint) {
@@ -2994,8 +3025,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 if (!storagePoolMgr.connectPhysicalDisk(destPrimaryStore.getPoolType(), destPrimaryStore.getUuid(), destVolumePath, destPrimaryStore.getDetails())) {
                     logger.warn("Failed to connect dest volume at path: " + destVolumePath + ", in storage pool id: " + destPrimaryStore.getUuid());
                 }
-                String managedStoreTarget = destPrimaryStore.getDetails() != null ? destPrimaryStore.getDetails().get("managedStoreTarget") : null;
-                destVolumeName = managedStoreTarget != null ? managedStoreTarget : destVolumePath;
+                destVolumeName = derivePath(destPrimaryStore, destData, destPrimaryStore.getDetails());
             } else {
                 final String volumeName = UUID.randomUUID().toString();
                 destVolumeName = volumeName + "." + destFormat.getFileExtension();

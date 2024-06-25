@@ -54,12 +54,13 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.storage.vmsnapshot.DefaultVMSnapshotStrategy;
 import org.apache.cloudstack.storage.vmsnapshot.VMSnapshotHelper;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 @Component
 public class LinstorVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
-    private static final Logger log = Logger.getLogger(LinstorVMSnapshotStrategy.class);
+    private static final Logger log = LogManager.getLogger(LinstorVMSnapshotStrategy.class);
 
     @Inject
     private VMSnapshotHelper _vmSnapshotHelper;

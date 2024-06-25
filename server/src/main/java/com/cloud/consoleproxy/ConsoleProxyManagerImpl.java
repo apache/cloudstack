@@ -1118,7 +1118,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
         Map<String, String> configs = configurationDao.getConfiguration("management-server", params);
 
-        String value = configs.get("consoleproxy.sslEnabled");
+        String value = configs.get(ConsoleProxySslEnabled.key());
         if (value != null && value.equalsIgnoreCase("true")) {
             sslEnabled = true;
         }
@@ -1607,7 +1607,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] { NoVncConsoleDefault, NoVncConsoleSourceIpCheckEnabled };
+        return new ConfigKey<?>[] { ConsoleProxySslEnabled, NoVncConsoleDefault, NoVncConsoleSourceIpCheckEnabled };
     }
 
     protected ConsoleProxyStatus parseJsonToConsoleProxyStatus(String json) throws JsonParseException {
