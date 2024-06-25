@@ -79,13 +79,13 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager {
 
             int connectedSdcsCount = getScaleIOClient(storagePoolId).getConnectedSdcsCount();
             if (connectedSdcsCount < connectedClientsLimit) {
-                LOGGER.debug(String.format("SDC connections are within the limit (%d), on Powerflex Storage with pool id: %d", connectedClientsLimit, storagePoolId));
+                LOGGER.debug(String.format("Current connected SDCs count: %d - SDC connections are within the limit (%d) on PowerFlex Storage with pool id: %d", connectedSdcsCount, connectedClientsLimit, storagePoolId));
                 return true;
             }
-            LOGGER.debug(String.format("SDC connections limit (%d) reached on Powerflex Storage with pool id: %d", connectedClientsLimit, storagePoolId));
+            LOGGER.debug(String.format("Current connected SDCs count: %d - SDC connections limit (%d) reached on PowerFlex Storage with pool id: %d", connectedSdcsCount, connectedClientsLimit, storagePoolId));
             return false;
         } catch (Exception e) {
-            String errMsg = "Unable to check SDC connections for the Powerflex storage pool with id: " + storagePoolId + " due to " + e.getMessage();
+            String errMsg = "Unable to check SDC connections for the PowerFlex storage pool with id: " + storagePoolId + " due to " + e.getMessage();
             LOGGER.warn(errMsg, e);
             return false;
         }
@@ -155,7 +155,8 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager {
                 }
             }
 
-            if (isHostSdcConnected(sdcId, poolId)) {
+            int waitTimeInSecs = 15; // Wait for 15 secs (usual tests with SDC service start took 10-15 secs)
+            if (hostSdcConnected(sdcId, poolId, waitTimeInSecs)) {
                 return sdcId;
             }
             return null;
@@ -310,6 +311,22 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager {
         }
 
         return null;
+    }
+
+    private boolean hostSdcConnected(String sdcId, long poolId, int waitTimeInSecs) {
+        LOGGER.debug(String.format("Waiting (for %d secs) for the SDC %s of the pool id: %d to connect", waitTimeInSecs, sdcId, poolId));
+        int timeBetweenTries = 1000; // Try more frequently (every sec) and return early if connected
+        while (waitTimeInSecs > 0) {
+            if (isHostSdcConnected(sdcId, poolId)) {
+                return true;
+            }
+            waitTimeInSecs--;
+            try {
+                Thread.sleep(timeBetweenTries);
+            } catch (Exception ignore) {
+            }
+        }
+        return isHostSdcConnected(sdcId, poolId);
     }
 
     private boolean isHostSdcConnected(String sdcId, long poolId) {
