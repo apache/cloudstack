@@ -33,6 +33,10 @@ import org.apache.cloudstack.api.command.QuotaEmailTemplateListCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateUpdateCmd;
 import org.apache.cloudstack.api.command.QuotaEnabledCmd;
 import org.apache.cloudstack.api.command.QuotaListEmailConfigurationCmd;
+<<<<<<< HEAD
+=======
+import org.apache.cloudstack.api.command.QuotaPresetVariablesListCmd;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 import org.apache.cloudstack.api.command.QuotaStatementCmd;
 import org.apache.cloudstack.api.command.QuotaSummaryCmd;
 import org.apache.cloudstack.api.command.QuotaTariffCreateCmd;
@@ -119,6 +123,10 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
         cmdList.add(QuotaTariffDeleteCmd.class);
         cmdList.add(QuotaConfigureEmailCmd.class);
         cmdList.add(QuotaListEmailConfigurationCmd.class);
+<<<<<<< HEAD
+=======
+        cmdList.add(QuotaPresetVariablesListCmd.class);
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         return cmdList;
     }
 

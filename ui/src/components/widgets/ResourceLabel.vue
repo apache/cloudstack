@@ -18,7 +18,17 @@
 <template>
   <div v-if="resourceType && resourceId" >
     <a-tooltip v-if="resourceIcon" placement="top" :title="resourceIconTooltip">
+<<<<<<< HEAD
       <render-icon style="font-size: 16px; margin-right: 5px" :icon="resourceIcon" />
+=======
+      <font-awesome-icon
+        v-if="resourceIcon && Array.isArray(resourceIcon)"
+        :icon="resourceIcon"
+        size="1x"
+        class="anticon"
+        :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]" />
+      <render-icon v-else style="font-size: 16px; margin-right: 5px" :icon="resourceIcon" />
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     </a-tooltip>
     <a-tag v-else>{{ resourceType }}</a-tag>
     <router-link v-if="resourceRoute && $router.resolve(resourceRoute)" :to="{ path: resourceRoute }">{{ resourceName || resourceId }}</router-link>
@@ -67,3 +77,15 @@ export default {
   }
 }
 </script>
+<<<<<<< HEAD
+=======
+
+<style lang="scss" scoped>
+
+.anticon {
+  margin-right: 5px;
+  vertical-align: center;
+}
+
+</style>
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002

@@ -19,7 +19,11 @@
   <a-table
     class="table"
     size="small"
+<<<<<<< HEAD
     :columns="volumeColumns"
+=======
+    :columns="columns"
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     :dataSource="volumes"
     :rowKey="item => item.id"
     :pagination="false"
@@ -40,6 +44,13 @@
       <template v-if="column.key === 'size'">
         {{ parseFloat(record.size / (1024.0 * 1024.0 * 1024.0)).toFixed(2) }} GB
       </template>
+<<<<<<< HEAD
+=======
+      <template v-if="column.key === 'storage'">
+        <router-link v-if="record.storageid" :to="{ path: '/storagepool/' + record.storageid }">{{ text }}</router-link>
+        <span v-else>{{ text }}</span>
+      </template>
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     </template>
   </a-table>
 </template>
@@ -64,11 +75,27 @@ export default {
     }
   },
   inject: ['parentFetchData'],
+<<<<<<< HEAD
+=======
+  computed: {
+    columns () {
+      if (this.volumes?.[0]) {
+        return this.allColumns.filter(col => col.dataIndex in this.volumes[0])
+      }
+      return this.allColumns.filter(col => this.defaultColumns.includes(col.dataIndex))
+    }
+  },
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
   data () {
     return {
       vm: {},
       volumes: [],
+<<<<<<< HEAD
       volumeColumns: [
+=======
+      defaultColumns: ['name', 'state', 'type', 'size'],
+      allColumns: [
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         {
           key: 'name',
           title: this.$t('label.name'),
@@ -87,6 +114,14 @@ export default {
           key: 'size',
           title: this.$t('label.size'),
           dataIndex: 'size'
+<<<<<<< HEAD
+=======
+        },
+        {
+          key: 'storage',
+          title: this.$t('label.storage'),
+          dataIndex: 'storage'
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         }
       ]
     }

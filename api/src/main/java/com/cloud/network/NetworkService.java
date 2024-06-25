@@ -20,6 +20,10 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.dc.DataCenter;
+<<<<<<< HEAD
+=======
+import org.apache.cloudstack.acl.ControlledEntity;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 import org.apache.cloudstack.api.command.admin.address.ReleasePodIpCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
@@ -102,6 +106,13 @@ public interface NetworkService {
 
     Network createGuestNetwork(CreateNetworkCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException;
 
+<<<<<<< HEAD
+=======
+    Network createGuestNetwork(long networkOfferingId, String name, String displayText, Account owner,
+           PhysicalNetwork physicalNetwork, long zoneId, ControlledEntity.ACLType aclType) throws
+            InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException;
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     Pair<List<? extends Network>, Integer> searchForNetworks(ListNetworksCmd cmd);
 
     boolean deleteNetwork(long networkId, boolean forced);

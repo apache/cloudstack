@@ -66,6 +66,11 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.api.Answer;
+<<<<<<< HEAD
+=======
+import com.cloud.agent.api.GetVolumeStatAnswer;
+import com.cloud.agent.api.GetVolumeStatCommand;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 import com.cloud.agent.api.storage.MigrateVolumeCommand;
 import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.agent.api.to.DataObjectType;
@@ -491,10 +496,17 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     public CreateObjectAnswer createVolume(VolumeInfo volumeInfo, long storagePoolId) {
+<<<<<<< HEAD
         return createVolume(volumeInfo, storagePoolId, false);
     }
 
     public CreateObjectAnswer createVolume(VolumeInfo volumeInfo, long storagePoolId, boolean migrationInvolved) {
+=======
+        return createVolume(volumeInfo, storagePoolId, false, null);
+    }
+
+    public CreateObjectAnswer createVolume(VolumeInfo volumeInfo, long storagePoolId, boolean migrationInvolved, Long usageSize) {
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         logger.debug("Creating PowerFlex volume");
 
         StoragePoolVO storagePool = storagePoolDao.findById(storagePoolId);
@@ -544,6 +556,12 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 VolumeObjectTO prepVolume = (VolumeObjectTO) createdObject.getTO();
                 prepVolume.setPath(volumePath);
                 prepVolume.setUuid(volumePath);
+<<<<<<< HEAD
+=======
+                if (usageSize != null) {
+                    prepVolume.setUsableSize(usageSize);
+                }
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
                 CreateObjectCommand cmd = new CreateObjectCommand(prepVolume);
                 EndPoint ep = selector.select(volumeInfo, true);
                 if (ep == null) {
@@ -846,7 +864,12 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         // Volume migration across different PowerFlex/ScaleIO clusters
         final long srcVolumeId = srcData.getId();
         DataStore srcStore = srcData.getDataStore();
+<<<<<<< HEAD
         Map<String, String> srcDetails = getVolumeDetails((VolumeInfo) srcData, srcStore);
+=======
+        VolumeInfo srcVolumeInfo = (VolumeInfo) srcData;
+        Map<String, String> srcDetails = getVolumeDetails(srcVolumeInfo, srcStore);
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
         DataStore destStore = destData.getDataStore();
         final long destPoolId = destStore.getId();
@@ -858,8 +881,22 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         EndPoint ep = RemoteHostEndPoint.getHypervisorHostEndPoint(host);
 
         Answer answer = null;
+<<<<<<< HEAD
         try {
             CreateObjectAnswer createAnswer = createVolume((VolumeInfo) destData, destStore.getId(), true);
+=======
+        Long srcVolumeUsableSize = null;
+        try {
+            GetVolumeStatCommand statCmd = new GetVolumeStatCommand(srcVolumeInfo.getPath(), srcVolumeInfo.getStoragePoolType(), srcStore.getUuid());
+            GetVolumeStatAnswer statAnswer = (GetVolumeStatAnswer) ep.sendMessage(statCmd);
+            if (!statAnswer.getResult() ) {
+                logger.warn(String.format("Unable to get volume %s stats", srcVolumeInfo.getId()));
+            } else if (statAnswer.getVirtualSize() > 0) {
+                srcVolumeUsableSize = statAnswer.getVirtualSize();
+            }
+
+            CreateObjectAnswer createAnswer = createVolume((VolumeInfo) destData, destStore.getId(), true, srcVolumeUsableSize);
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
             destVolumePath = createAnswer.getData().getPath();
             destVolTO.setPath(destVolumePath);
 

@@ -37,6 +37,10 @@ import com.cloud.serializer.Param;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 import com.google.gson.annotations.SerializedName;
+<<<<<<< HEAD
+=======
+import org.apache.commons.collections.CollectionUtils;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
 @SuppressWarnings("unused")
 @EntityReference(value = {VirtualMachine.class, UserVm.class, VirtualRouter.class})
@@ -273,6 +277,13 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "the hypervisor on which the template runs")
     private String hypervisor;
 
+<<<<<<< HEAD
+=======
+    @SerializedName(ApiConstants.IP_ADDRESS)
+    @Param(description = "the VM's primary IP address")
+    private String ipAddress;
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     @SerializedName(ApiConstants.PUBLIC_IP_ID)
     @Param(description = "public IP address id associated with vm via Static nat rule")
     private String publicIpId;
@@ -627,6 +638,13 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         return hypervisor;
     }
 
+<<<<<<< HEAD
+=======
+    public String getIpAddress() {
+        return ipAddress;
+    }
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     public String getPublicIpId() {
         return publicIpId;
     }
@@ -863,6 +881,16 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public void setNics(Set<NicResponse> nics) {
         this.nics = nics;
+<<<<<<< HEAD
+=======
+        setIpAddress(nics);
+    }
+
+    public void setIpAddress(final Set<NicResponse> nics) {
+        if (CollectionUtils.isNotEmpty(nics)) {
+            this.ipAddress = nics.iterator().next().getIpaddress();
+        }
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     }
 
     public void addNic(NicResponse nic) {

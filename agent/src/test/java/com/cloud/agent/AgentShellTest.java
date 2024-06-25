@@ -350,4 +350,19 @@ public class AgentShellTest {
 
         Mockito.verify(agentShellSpy).setHosts(expected);
     }
+<<<<<<< HEAD
+=======
+
+    @Test
+    public void updateAndGetConnectedHost() {
+        String expected = "test";
+
+        AgentShell shell = new AgentShell();
+        shell.setHosts("test");
+        shell.getNextHost();
+        shell.updateConnectedHost();
+
+        Assert.assertEquals(expected, shell.getConnectedHost());
+    }
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 }

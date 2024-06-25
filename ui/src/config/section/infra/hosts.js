@@ -146,6 +146,10 @@ export default {
       message: 'label.outofbandmanagement.configure',
       docHelp: 'adminguide/hosts.html#out-of-band-management',
       dataView: true,
+<<<<<<< HEAD
+=======
+      post: true,
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
       args: ['hostid', 'address', 'port', 'username', 'password', 'driver'],
       mapping: {
         hostid: {

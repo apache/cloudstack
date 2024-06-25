@@ -185,11 +185,19 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
      */
     @Override
     public UUID subscribe(EventTopic topic, EventSubscriber subscriber) throws EventBusException {
+<<<<<<< HEAD
 
+=======
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         if (subscriber == null || topic == null) {
             throw new EventBusException("Invalid EventSubscriber/EventTopic object passed.");
         }
 
+<<<<<<< HEAD
+=======
+        logger.debug("subscribing '{}' to events of type '{}' from '{}'", subscriber.toString(), topic.getEventType(), topic.getEventSource());
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         // create a UUID, that will be used for managing subscriptions and also used as queue name
         // for on the queue used for the subscriber on the AMQP broker
         UUID queueId = UUID.randomUUID();
@@ -250,6 +258,10 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
 
     @Override
     public void unsubscribe(UUID subscriberId, EventSubscriber subscriber) throws EventBusException {
+<<<<<<< HEAD
+=======
+        logger.debug("unsubscribing '{}'", subscriberId);
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         try {
             String classname = subscriber.getClass().getName();
             String queueName = UUID.nameUUIDFromBytes(classname.getBytes()).toString();
@@ -265,6 +277,10 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
     // publish event on to the exchange created on AMQP server
     @Override
     public void publish(Event event) throws EventBusException {
+<<<<<<< HEAD
+=======
+        logger.trace("publish '{}'", event.getDescription());
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
         String routingKey = createRoutingKey(event);
         String eventDescription = event.getDescription();

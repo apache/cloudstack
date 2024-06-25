@@ -1004,6 +1004,15 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (!isAdmin) {
             return;
         }
+<<<<<<< HEAD
+=======
+        try {
+            nic.getInstanceId();
+        } catch (NullPointerException ex) {
+            return;
+        }
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         VirtualMachine vm = ApiDBUtils.findVMInstanceById(nic.getInstanceId());
         if (vm == null) {
             return;

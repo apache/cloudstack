@@ -22,9 +22,16 @@
       :title="$t('label.select.period')"
       :maskClosable="false"
       :footer="null">
+<<<<<<< HEAD
       <filter-stats
         :startDateProp="startDate"
         :endDateProp="endDate"
+=======
+      <date-time-filter
+        :startDateProp="startDate"
+        :endDateProp="endDate"
+        :allDataMessage="$t('message.alert.show.all.stats.data')"
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         @closeAction="closeAction"
         @onSubmit="handleSubmit"/>
     </a-modal>
@@ -251,7 +258,11 @@
 import { api } from '@/api'
 import moment from 'moment'
 import 'chartjs-adapter-moment'
+<<<<<<< HEAD
 import FilterStats from './stats/FilterStats'
+=======
+import DateTimeFilter from './DateTimeFilter'
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 import ResourceStatsInfo from './stats/ResourceStatsInfo'
 import ResourceStatsLineChart from './stats/ResourceStatsLineChart'
 
@@ -267,7 +278,11 @@ export default {
     }
   },
   components: {
+<<<<<<< HEAD
     FilterStats,
+=======
+    DateTimeFilter,
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     ResourceStatsInfo,
     ResourceStatsLineChart
   },

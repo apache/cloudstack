@@ -70,7 +70,11 @@ public class ActionEventInterceptor implements ComponentMethodInterceptor, Metho
             if (async) {
                 CallContext ctx = CallContext.current();
 
+<<<<<<< HEAD
                 String eventDescription = getEventDescription(actionEvent, ctx);
+=======
+                String eventDescription = getEventDescription(actionEvent, ctx, true);
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
                 Long eventResourceId = getEventResourceId(actionEvent, ctx);
                 String eventResourceType = getEventResourceType(actionEvent, ctx);
                 String eventType = getEventType(actionEvent, ctx);
@@ -183,11 +187,16 @@ public class ActionEventInterceptor implements ComponentMethodInterceptor, Metho
         return type == null ? actionEvent.eventType() : type;
     }
 
+<<<<<<< HEAD
     protected String getEventDescription(ActionEvent actionEvent, CallContext ctx) {
+=======
+    protected String getEventDescription(ActionEvent actionEvent, CallContext ctx, boolean capitalizeFirstLetter) {
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         String eventDescription = ctx.getEventDescription();
         if (eventDescription == null) {
             eventDescription = actionEvent.eventDescription();
         }
+<<<<<<< HEAD
 
         if (ctx.getEventDetails() != null) {
             eventDescription += ". " + ctx.getEventDetails();
@@ -196,6 +205,21 @@ public class ActionEventInterceptor implements ComponentMethodInterceptor, Metho
         return eventDescription;
     }
 
+=======
+        if (ctx.getEventDetails() != null) {
+            eventDescription += ". " + ctx.getEventDetails();
+        }
+        if (capitalizeFirstLetter && StringUtils.isNotBlank(eventDescription)) {
+            eventDescription = eventDescription.substring(0, 1).toUpperCase() + eventDescription.substring(1);
+        }
+        return eventDescription;
+    }
+
+    protected String getEventDescription(ActionEvent actionEvent, CallContext ctx) {
+        return getEventDescription(actionEvent, ctx, false);
+    }
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     protected Long getEventResourceId(ActionEvent actionEvent, CallContext ctx) {
         Long resourceId = ctx.getEventResourceId();
         if (resourceId != null) {

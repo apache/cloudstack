@@ -228,7 +228,13 @@ export default {
       columns: ['name', 'displaytext', 'state', 'disksize', 'domain', 'zone', 'order'],
       filters: ['active', 'inactive'],
       details: () => {
+<<<<<<< HEAD
         var fields = ['name', 'id', 'displaytext', 'disksize', 'provisioningtype', 'storagetype', 'iscustomized', 'disksizestrictness', 'iscustomizediops', 'diskIopsReadRate', 'diskIopsWriteRate', 'diskBytesReadRate', 'diskBytesWriteRate', 'miniops', 'maxiops', 'tags', 'domain', 'zone', 'created', 'encrypt']
+=======
+        var fields = ['name', 'id', 'displaytext', 'disksize', 'provisioningtype', 'storagetype', 'iscustomized', 'disksizestrictness', 'iscustomizediops',
+          'diskIopsReadRate', 'diskIopsWriteRate', 'diskBytesReadRate', 'diskBytesReadRateMax', 'diskBytesWriteRate', 'diskBytesWriteRateMax', 'miniops', 'maxiops', 'tags',
+          'domain', 'zone', 'created', 'encrypt']
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         if (store.getters.apis.createDiskOffering &&
           store.getters.apis.createDiskOffering.params.filter(x => x.name === 'storagepolicy').length > 0) {
           fields.splice(6, 0, 'vspherestoragepolicy')

@@ -124,6 +124,17 @@
             v-model:value="form.diskbytesreadrate"
             :placeholder="apiParams.bytesreadrate.description"/>
         </a-form-item>
+<<<<<<< HEAD
+=======
+        <a-form-item v-if="form.qostype === 'hypervisor'" name="diskbytesreadratemax" ref="diskbytesreadratemax">
+          <template #label>
+            <tooltip-label :title="$t('label.diskbytesreadratemax')" :tooltip="apiParams.bytesreadratemax.description"/>
+          </template>
+          <a-input
+            v-model:value="form.diskbytesreadratemax"
+            :placeholder="apiParams.bytesreadratemax.description"/>
+        </a-form-item>
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         <a-form-item v-if="form.qostype === 'hypervisor'" name="diskbyteswriterate" ref="diskbyteswriterate">
           <template #label>
             <tooltip-label :title="$t('label.diskbyteswriterate')" :tooltip="apiParams.byteswriterate.description"/>
@@ -132,6 +143,17 @@
             v-model:value="form.diskbyteswriterate"
             :placeholder="apiParams.byteswriterate.description"/>
         </a-form-item>
+<<<<<<< HEAD
+=======
+        <a-form-item v-if="form.qostype === 'hypervisor'" name="diskbyteswriteratemax" ref="diskbyteswriteratemax">
+          <template #label>
+            <tooltip-label :title="$t('label.diskbyteswriteratemax')" :tooltip="apiParams.byteswriteratemax.description"/>
+          </template>
+          <a-input
+            v-model:value="form.diskbyteswriteratemax"
+            :placeholder="apiParams.byteswriteratemax.description"/>
+        </a-form-item>
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         <a-form-item v-if="form.qostype === 'hypervisor'" name="diskiopsreadrate" ref="diskiopsreadrate">
           <template #label>
             <tooltip-label :title="$t('label.diskiopsreadrate')" :tooltip="apiParams.iopsreadrate.description"/>
@@ -362,7 +384,13 @@ export default {
           { type: 'number', validator: this.validateNumber }
         ],
         diskbytesreadrate: [{ type: 'number', validator: this.validateNumber }],
+<<<<<<< HEAD
         diskbyteswriterate: [{ type: 'number', validator: this.validateNumber }],
+=======
+        diskbytesreadratemax: [{ type: 'number', validator: this.validateNumber }],
+        diskbyteswriterate: [{ type: 'number', validator: this.validateNumber }],
+        diskbyteswriteratemax: [{ type: 'number', validator: this.validateNumber }],
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         diskiopsreadrate: [{ type: 'number', validator: this.validateNumber }],
         diskiopswriterate: [{ type: 'number', validator: this.validateNumber }],
         diskiopsmin: [{ type: 'number', validator: this.validateNumber }],
@@ -504,9 +532,21 @@ export default {
           if (values.diskbytesreadrate != null && values.diskbytesreadrate.length > 0) {
             params.bytesreadrate = values.diskbytesreadrate
           }
+<<<<<<< HEAD
           if (values.diskbyteswriterate != null && values.diskbyteswriterate.length > 0) {
             params.byteswriterate = values.diskbyteswriterate
           }
+=======
+          if (values.diskbytesreadratemax != null && values.diskbytesreadratemax.length > 0) {
+            params.bytesreadratemax = values.diskbytesreadratemax
+          }
+          if (values.diskbyteswriterate != null && values.diskbyteswriterate.length > 0) {
+            params.byteswriterate = values.diskbyteswriterate
+          }
+          if (values.diskbyteswriteratemax != null && values.diskbyteswriteratemax.length > 0) {
+            params.byteswriteratemax = values.diskbyteswriteratemax
+          }
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
           if (values.diskiopsreadrate != null && values.diskiopsreadrate.length > 0) {
             params.iopsreadrate = values.diskiopsreadrate
           }

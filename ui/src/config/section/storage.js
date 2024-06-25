@@ -91,7 +91,11 @@ export default {
         }
       ],
       searchFilters: () => {
+<<<<<<< HEAD
         var filters = ['name', 'zoneid', 'domainid', 'account', 'state', 'tags']
+=======
+        var filters = ['name', 'zoneid', 'domainid', 'account', 'state', 'tags', 'serviceofferingid', 'diskofferingid']
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           filters.push('storageid')
         }

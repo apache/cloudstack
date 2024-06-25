@@ -120,6 +120,10 @@ import {
   MinusSquareOutlined,
   MobileOutlined,
   MoreOutlined,
+<<<<<<< HEAD
+=======
+  NodeIndexOutlined,
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
   NotificationOutlined,
   NumberOutlined,
   LaptopOutlined,
@@ -139,7 +143,13 @@ import {
   ReconciliationOutlined,
   RedoOutlined,
   ReloadOutlined,
+<<<<<<< HEAD
   RightCircleOutlined,
+=======
+  RetweetOutlined,
+  RightCircleOutlined,
+  RightSquareOutlined,
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
   RocketOutlined,
   SafetyCertificateOutlined,
   SafetyOutlined,
@@ -281,6 +291,10 @@ export default {
     app.component('MinusSquareOutlined', MinusSquareOutlined)
     app.component('MobileOutlined', MobileOutlined)
     app.component('MoreOutlined', MoreOutlined)
+<<<<<<< HEAD
+=======
+    app.component('NodeIndexOutlined', NodeIndexOutlined)
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     app.component('NotificationOutlined', NotificationOutlined)
     app.component('NumberOutlined', NumberOutlined)
     app.component('LaptopOutlined', LaptopOutlined)
@@ -300,7 +314,13 @@ export default {
     app.component('ReconciliationOutlined', ReconciliationOutlined)
     app.component('RedoOutlined', RedoOutlined)
     app.component('ReloadOutlined', ReloadOutlined)
+<<<<<<< HEAD
     app.component('RightCircleOutlined', RightCircleOutlined)
+=======
+    app.component('RetweetOutlined', RetweetOutlined)
+    app.component('RightCircleOutlined', RightCircleOutlined)
+    app.component('RightSquareOutlined', RightSquareOutlined)
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     app.component('RocketOutlined', RocketOutlined)
     app.component('SafetyCertificateOutlined', SafetyCertificateOutlined)
     app.component('SafetyOutlined', SafetyOutlined)

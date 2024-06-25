@@ -54,7 +54,11 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 
+<<<<<<< HEAD
 import com.cloud.kubernetes.cluster.KubernetesClusterHelper;
+=======
+import com.cloud.kubernetes.cluster.KubernetesServiceHelper;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.element.NsxProviderVO;
 import com.cloud.user.AccountVO;
@@ -136,8 +140,13 @@ import org.apache.cloudstack.storage.template.VnfTemplateManager;
 import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.security.ParserUtils;
+<<<<<<< HEAD
 import org.apache.cloudstack.vm.schedule.VMScheduleManager;
 import org.apache.cloudstack.vm.UnmanagedVMsManager;
+=======
+import org.apache.cloudstack.vm.UnmanagedVMsManager;
+import org.apache.cloudstack.vm.schedule.VMScheduleManager;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -146,6 +155,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.jetbrains.annotations.NotNull;
+<<<<<<< HEAD
+=======
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.w3c.dom.Document;
@@ -351,6 +364,10 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.Journal;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+<<<<<<< HEAD
+=======
+import com.cloud.utils.component.ComponentContext;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.crypt.DBEncryptionUtil;
@@ -601,6 +618,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Inject
     NsxProviderDao nsxProviderDao;
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     private ScheduledExecutorService _executor = null;
     private ScheduledExecutorService _vmIpFetchExecutor = null;
     private int _expungeInterval;
@@ -608,7 +629,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private boolean _dailyOrHourly = false;
     private int capacityReleaseInterval;
     private ExecutorService _vmIpFetchThreadExecutor;
+<<<<<<< HEAD
     private List<KubernetesClusterHelper> kubernetesClusterHelpers;
+=======
+    private List<KubernetesServiceHelper> kubernetesServiceHelpers;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
 
     private String _instance;
@@ -622,12 +647,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private static final int NUM_OF_2K_BLOCKS = 512;
     private static final int MAX_HTTP_POST_LENGTH = NUM_OF_2K_BLOCKS * MAX_USER_DATA_LENGTH_BYTES;
 
+<<<<<<< HEAD
     public List<KubernetesClusterHelper> getKubernetesClusterHelpers() {
         return kubernetesClusterHelpers;
     }
 
     public void setKubernetesClusterHelpers(final List<KubernetesClusterHelper> kubernetesClusterHelpers) {
         this.kubernetesClusterHelpers = kubernetesClusterHelpers;
+=======
+    public List<KubernetesServiceHelper> getKubernetesServiceHelpers() {
+        return kubernetesServiceHelpers;
+    }
+
+    public void setKubernetesServiceHelpers(final List<KubernetesServiceHelper> kubernetesServiceHelpers) {
+        this.kubernetesServiceHelpers = kubernetesServiceHelpers;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     }
 
     @Inject
@@ -2561,7 +2595,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // cleanup port forwarding rules
         VMInstanceVO vmInstanceVO = _vmInstanceDao.findById(vmId);
         NsxProviderVO nsx = nsxProviderDao.findByZoneId(vmInstanceVO.getDataCenterId());
+<<<<<<< HEAD
         if (Objects.isNull(nsx) || Objects.isNull(kubernetesClusterHelpers.get(0).findByVmId(vmId))) {
+=======
+        if (Objects.isNull(nsx) || Objects.isNull(kubernetesServiceHelpers.get(0).findByVmId(vmId))) {
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
             if (_rulesMgr.revokePortForwardingRulesForVm(vmId)) {
                 logger.debug("Port forwarding rules are removed successfully as a part of vm id=" + vmId + " expunge");
             } else {
@@ -3259,6 +3297,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
+<<<<<<< HEAD
+=======
+    @ActionEvent(eventType = EventTypes.EVENT_VM_START, eventDescription = "starting Vm", async = true)
+    public void startVirtualMachine(UserVm vm) throws OperationTimedoutException, ResourceUnavailableException, InsufficientCapacityException {
+        _itMgr.advanceStart(vm.getUuid(), null, null);
+    }
+
+    @Override
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     @ActionEvent(eventType = EventTypes.EVENT_VM_REBOOT, eventDescription = "rebooting Vm", async = true)
     public UserVm rebootVirtualMachine(RebootVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ResourceAllocationException {
         Account caller = CallContext.current().getCallingAccount();
@@ -3312,6 +3359,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return  null;
     }
 
+<<<<<<< HEAD
+=======
+    protected void checkPluginsIfVmCanBeDestroyed(UserVm vm) {
+        try {
+            KubernetesServiceHelper kubernetesServiceHelper =
+                    ComponentContext.getDelegateComponentOfType(KubernetesServiceHelper.class);
+            kubernetesServiceHelper.checkVmCanBeDestroyed(vm);
+        } catch (NoSuchBeanDefinitionException ignored) {
+            logger.debug("No KubernetesClusterHelper bean found");
+        }
+    }
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_DESTROY, eventDescription = "destroying Vm", async = true)
     public UserVm destroyVm(DestroyVMCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException {
@@ -3338,6 +3398,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // check if vm belongs to AutoScale vm group in Disabled state
         autoScaleManager.checkIfVmActionAllowed(vmId);
 
+<<<<<<< HEAD
+=======
+        // check if vm belongs to any plugin resources
+        checkPluginsIfVmCanBeDestroyed(vm);
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         // check if there are active volume snapshots tasks
         logger.debug("Checking if there are any ongoing snapshots on the ROOT volumes associated with VM with ID " + vmId);
         if (checkStatusOfVolumeSnapshots(vmId, Volume.Type.ROOT)) {
@@ -5492,7 +5558,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             final ServiceOfferingVO offering = serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
             Pair<Boolean, Boolean> cpuCapabilityAndCapacity = _capacityMgr.checkIfHostHasCpuCapabilityAndCapacity(destinationHost, offering, false);
             if (!cpuCapabilityAndCapacity.first() || !cpuCapabilityAndCapacity.second()) {
+<<<<<<< HEAD
                 String errorMsg = "Cannot deploy the VM to specified host " + hostId + "; host has cpu capability? " + cpuCapabilityAndCapacity.first() + ", host has capacity? " + cpuCapabilityAndCapacity.second();
+=======
+                String errorMsg;
+                if (!cpuCapabilityAndCapacity.first()) {
+                    errorMsg = String.format("Cannot deploy the VM to specified host %d, requested CPU and speed is more than the host capability", hostId);
+                } else {
+                    errorMsg = String.format("Cannot deploy the VM to specified host %d, host does not have enough free CPU or RAM, please check the logs", hostId);
+                }
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
                 logger.info(errorMsg);
                 if (!AllowDeployVmIfGivenHostFails.value()) {
                     throw new InvalidParameterValueException(errorMsg);
@@ -8080,7 +8155,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
         if (needRestart) {
             try {
+<<<<<<< HEAD
                 if (vm.getDetail(VmDetailConstants.PASSWORD) != null) {
+=======
+                if (Objects.nonNull(password)) {
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
                     params = new HashMap<>();
                     params.put(VirtualMachineProfile.Param.VmPassword, password);
                 }

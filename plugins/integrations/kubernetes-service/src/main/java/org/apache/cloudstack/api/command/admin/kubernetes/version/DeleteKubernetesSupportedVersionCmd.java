@@ -21,6 +21,10 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+<<<<<<< HEAD
+=======
+import org.apache.cloudstack.api.ApiCommandResourceType;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -85,6 +89,14 @@ public class DeleteKubernetesSupportedVersionCmd extends BaseAsyncCmd implements
         return description;
     }
 
+<<<<<<< HEAD
+=======
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.KubernetesSupportedVersion;
+    }
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

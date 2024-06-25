@@ -390,6 +390,13 @@ export const resourceTypePlugin = {
           return 'publicip'
         case 'NetworkAcl':
           return 'acllist'
+<<<<<<< HEAD
+=======
+        case 'KubernetesCluster':
+          return 'kubernetes'
+        case 'KubernetesSupportedVersion':
+          return 'kubernetesiso'
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         case 'SystemVm':
         case 'PhysicalNetwork':
         case 'Backup':

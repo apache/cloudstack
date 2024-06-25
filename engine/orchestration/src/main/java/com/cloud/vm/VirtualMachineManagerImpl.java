@@ -1077,6 +1077,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             return;
         }
         Host lastHost = _hostDao.findById(vm.getLastHostId());
+<<<<<<< HEAD
+=======
+        if (lastHost == null) {
+            logger.warn("Could not find last host with id [{}], skipping migrate VM [{}] across cluster check." , vm.getLastHostId(), vm.getUuid());
+            return;
+        }
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         if (destinationClusterId.equals(lastHost.getClusterId())) {
             return;
         }
@@ -3007,7 +3014,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             executeManagedStorageChecksWhenTargetStoragePoolNotProvided(targetHost, currentPool, volume);
             if (ScopeType.HOST.equals(currentPool.getScope()) || isStorageCrossClusterMigration(plan.getClusterId(), currentPool)) {
                 createVolumeToStoragePoolMappingIfPossible(profile, plan, volumeToPoolObjectMap, volume, currentPool);
+<<<<<<< HEAD
             } else if (shouldMapVolume(profile, volume, currentPool)){
+=======
+            } else if (shouldMapVolume(profile, currentPool)){
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
                 volumeToPoolObjectMap.put(volume, currentPool);
             }
         }
@@ -3019,11 +3030,18 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
      * Some context: VMware migration workflow requires all volumes to be mapped (even if volume stays on its current pool);
      *  however, this is not necessary/desirable for the KVM flow.
      */
+<<<<<<< HEAD
     protected boolean shouldMapVolume(VirtualMachineProfile profile, Volume volume, StoragePoolVO currentPool) {
         boolean isManaged = currentPool.isManaged();
         boolean isNotKvm = HypervisorType.KVM != profile.getHypervisorType();
         boolean isNotDatadisk = Type.DATADISK != volume.getVolumeType();
         return isNotKvm || isNotDatadisk || isManaged;
+=======
+    protected boolean shouldMapVolume(VirtualMachineProfile profile, StoragePoolVO currentPool) {
+        boolean isManaged = currentPool.isManaged();
+        boolean isNotKvm = HypervisorType.KVM != profile.getHypervisorType();
+        return isNotKvm || isManaged;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     }
 
     /**

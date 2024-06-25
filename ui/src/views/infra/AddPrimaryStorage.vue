@@ -162,7 +162,11 @@
         </a-form-item>
         <div
           v-if="form.protocol === 'nfs' || form.protocol === 'SMB' || form.protocol === 'iscsi' || form.protocol === 'vmfs'|| form.protocol === 'Gluster' || form.protocol === 'Linstor' ||
+<<<<<<< HEAD
             (form.protocol === 'PreSetup' && hypervisorType === 'VMware') || form.protocol === 'datastorecluster'">
+=======
+            (form.protocol === 'PreSetup' && hypervisorType === 'VMware') || form.protocol === 'datastorecluster' || form.provider === 'Linstor'">
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
           <a-form-item name="server" ref="server">
             <template #label>
               <tooltip-label :title="$t('label.server')" :tooltip="$t('message.server.description')"/>
@@ -376,7 +380,11 @@
             <a-input v-model:value="form.volume" :placeholder="$t('label.volume')"/>
           </a-form-item>
         </div>
+<<<<<<< HEAD
         <div v-if="form.protocol === 'Linstor'">
+=======
+        <div v-if="form.protocol === 'Linstor' || form.provider === 'Linstor'">
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
           <a-form-item name="capacityIops" ref="capacityIops">
             <template #label>
               <tooltip-label :title="$t('label.capacityiops')" :tooltip="apiParams.capacityiops.description"/>
@@ -852,6 +860,7 @@ export default {
           var lun = values.lun
           url = this.iscsiURL(server, iqn, lun)
         } else if (values.protocol === 'Linstor') {
+<<<<<<< HEAD
           url = this.linstorURL(server)
           params.provider = 'Linstor'
           values.managed = false
@@ -859,6 +868,9 @@ export default {
           if (values.capacityIops && values.capacityIops.length > 0) {
             params.capacityIops = values.capacityIops.split(',').join('')
           }
+=======
+          params.provider = 'Linstor'
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         } else if (values.protocol === 'Filesystem') {
           url = this.filesystemURL(values.host, path)
         } else if (values.provider === 'Primera') {
@@ -870,6 +882,19 @@ export default {
           params['details[0].api_password'] = values.flashArrayPassword
           url = values.flashArrayURL
         }
+<<<<<<< HEAD
+=======
+
+        if (values.provider === 'Linstor') {
+          url = this.linstorURL(server)
+          values.managed = false
+          params['details[0].resourceGroup'] = values.resourcegroup
+          if (values.capacityIops && values.capacityIops.length > 0) {
+            params.capacityIops = values.capacityIops.split(',').join('')
+          }
+        }
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         params.url = url
         if (values.provider !== 'DefaultPrimary' && values.provider !== 'PowerFlex') {
           if (values.managed) {

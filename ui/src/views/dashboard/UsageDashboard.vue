@@ -51,7 +51,11 @@
         </template>
         <a-divider style="margin: 6px 0px; border-width: 0px"/>
         <a-row :gutter="[10, 10]">
+<<<<<<< HEAD
           <a-col :span="12">
+=======
+          <a-col :span="12" v-if="'listVirtualMachines' in $store.getters.apis">
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
             <router-link :to="{ path: '/vm' }">
               <a-statistic
                 :title="$t('label.instances')"
@@ -63,7 +67,11 @@
               </a-statistic>
             </router-link>
           </a-col>
+<<<<<<< HEAD
           <a-col :span="12">
+=======
+          <a-col :span="12" v-if="'listKubernetesClusters' in $store.getters.apis">
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
             <router-link :to="{ path: '/kubernetes' }">
               <a-statistic
                 :title="$t('label.kubernetes.cluster')"
@@ -75,7 +83,11 @@
               </a-statistic>
             </router-link>
           </a-col>
+<<<<<<< HEAD
           <a-col :span="12">
+=======
+          <a-col :span="12" v-if="'listVolumes' in $store.getters.apis">
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
             <router-link :to="{ path: '/volume' }">
               <a-statistic
                 :title="$t('label.volumes')"
@@ -87,7 +99,11 @@
               </a-statistic>
             </router-link>
           </a-col>
+<<<<<<< HEAD
           <a-col :span="12">
+=======
+          <a-col :span="12" v-if="'listSnapshots' in $store.getters.apis">
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
             <router-link :to="{ path: '/snapshot' }">
               <a-statistic
                 :title="$t('label.snapshots')"
@@ -99,7 +115,11 @@
               </a-statistic>
             </router-link>
           </a-col>
+<<<<<<< HEAD
           <a-col :span="12">
+=======
+          <a-col :span="12" v-if="'listNetworks' in $store.getters.apis">
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
             <router-link :to="{ path: '/guestnetwork' }">
               <a-statistic
                 :title="$t('label.guest.networks')"
@@ -111,7 +131,11 @@
               </a-statistic>
             </router-link>
           </a-col>
+<<<<<<< HEAD
           <a-col :span="12">
+=======
+          <a-col :span="12" v-if="'listVPCs' in $store.getters.apis">
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
             <router-link :to="{ path: '/vpc' }">
               <a-statistic
                 :title="$t('label.vpcs')"
@@ -123,7 +147,11 @@
               </a-statistic>
             </router-link>
           </a-col>
+<<<<<<< HEAD
           <a-col :span="12">
+=======
+          <a-col :span="12" v-if="'listPublicIpAddresses' in $store.getters.apis">
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
             <router-link :to="{ path: '/publicip' }">
               <a-statistic
                 :title="$t('label.public.ips')"
@@ -135,7 +163,11 @@
               </a-statistic>
             </router-link>
           </a-col>
+<<<<<<< HEAD
           <a-col :span="12">
+=======
+          <a-col :span="12" v-if="'listTemplates' in $store.getters.apis">
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
             <router-link :to="{ path: '/template', query: { templatefilter: 'self', filter: 'self' } }">
               <a-statistic
                 :title="$t('label.templates')"
@@ -150,7 +182,11 @@
         </a-row>
       </chart-card>
     </a-col>
+<<<<<<< HEAD
     <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }">
+=======
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }" v-if="'listVirtualMachines' in $store.getters.apis">
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
       <chart-card :loading="loading" class="dashboard-card">
         <template #title>
           <div class="center">
@@ -315,7 +351,11 @@
         </a-list>
       </chart-card>
     </a-col>
+<<<<<<< HEAD
     <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }">
+=======
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }" v-if="'listEvents' in $store.getters.apis">
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
       <chart-card :loading="loading" class="dashboard-card dashboard-event">
         <template #title>
           <div class="center">
@@ -482,6 +522,7 @@ export default {
       }
       this.listInstances()
       this.listEvents()
+<<<<<<< HEAD
       this.loading = true
       api('listKubernetesClusters', { listall: true, page: 1, pagesize: 1 }).then(json => {
         this.loading = false
@@ -513,6 +554,62 @@ export default {
       })
     },
     listInstances (zone) {
+=======
+      if ('listKubernetesClusters' in this.$store.getters.apis) {
+        this.loading = true
+        api('listKubernetesClusters', { listall: true, page: 1, pagesize: 1 }).then(json => {
+          this.loading = false
+          this.data.kubernetes = json?.listkubernetesclustersresponse?.count
+        })
+      }
+      if ('listVolumes' in this.$store.getters.apis) {
+        this.loading = true
+        api('listVolumes', { listall: true, page: 1, pagesize: 1 }).then(json => {
+          this.loading = false
+          this.data.volumes = json?.listvolumesresponse?.count
+        })
+      }
+      if ('listSnapshots' in this.$store.getters.apis) {
+        this.loading = true
+        api('listSnapshots', { listall: true, page: 1, pagesize: 1 }).then(json => {
+          this.loading = false
+          this.data.snapshots = json?.listsnapshotsresponse?.count
+        })
+      }
+      if ('listNetworks' in this.$store.getters.apis) {
+        this.loading = true
+        api('listNetworks', { listall: true, page: 1, pagesize: 1 }).then(json => {
+          this.loading = false
+          this.data.networks = json?.listnetworksresponse?.count
+        })
+      }
+      if ('listVPCs' in this.$store.getters.apis) {
+        this.loading = true
+        api('listVPCs', { listall: true, page: 1, pagesize: 1 }).then(json => {
+          this.loading = false
+          this.data.vpcs = json?.listvpcsresponse?.count
+        })
+      }
+      if ('listPublicIpAddresses' in this.$store.getters.apis) {
+        this.loading = true
+        api('listPublicIpAddresses', { listall: true, page: 1, pagesize: 1 }).then(json => {
+          this.loading = false
+          this.data.ips = json?.listpublicipaddressesresponse?.count
+        })
+      }
+      if ('listTemplates' in this.$store.getters.apis) {
+        this.loading = true
+        api('listTemplates', { templatefilter: 'self', listall: true, page: 1, pagesize: 1 }).then(json => {
+          this.loading = false
+          this.data.templates = json?.listtemplatesresponse?.count
+        })
+      }
+    },
+    listInstances () {
+      if (!('listVirtualMachines' in this.$store.getters.apis)) {
+        return
+      }
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
       this.loading = true
       api('listVirtualMachines', { listall: true, details: 'min', page: 1, pagesize: 1 }).then(json => {
         this.loading = false
@@ -528,6 +625,12 @@ export default {
       })
     },
     listEvents () {
+<<<<<<< HEAD
+=======
+      if (!('listEvents' in this.$store.getters.apis)) {
+        return
+      }
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
       const params = {
         page: 1,
         pagesize: 8,

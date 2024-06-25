@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+<<<<<<< HEAD
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;
@@ -23,6 +24,16 @@ import org.apache.cloudstack.api.BaseResponse;
 
 import java.util.HashSet;
 import java.util.Set;
+=======
+import java.util.HashSet;
+import java.util.Set;
+
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseResponse;
+
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
 @SuppressWarnings("unused")
 public class ApiDiscoveryResponse extends BaseResponse {
@@ -64,6 +75,21 @@ public class ApiDiscoveryResponse extends BaseResponse {
         isAsync = false;
     }
 
+<<<<<<< HEAD
+=======
+    public ApiDiscoveryResponse(ApiDiscoveryResponse another) {
+        this.name = another.getName();
+        this.description = another.getDescription();
+        this.since = another.getSince();
+        this.isAsync = another.getAsync();
+        this.related = another.getRelated();
+        this.params = new HashSet<>(another.getParams());
+        this.apiResponse = new HashSet<>(another.getApiResponse());
+        this.type = another.getType();
+        this.setObjectName(another.getObjectName());
+    }
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     public void setName(String name) {
         this.name = name;
     }
@@ -123,4 +149,11 @@ public class ApiDiscoveryResponse extends BaseResponse {
     public Set<ApiResponseResponse> getApiResponse() {
         return apiResponse;
     }
+<<<<<<< HEAD
+=======
+
+    public String getType() {
+        return type;
+    }
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 }

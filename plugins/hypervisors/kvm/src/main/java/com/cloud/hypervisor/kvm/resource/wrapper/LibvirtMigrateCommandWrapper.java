@@ -67,6 +67,10 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.MigrateAnswer;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo;
+<<<<<<< HEAD
+=======
+import com.cloud.agent.api.to.DataTO;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.DpdkTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -90,6 +94,10 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
     private static final String GRAPHICS_ELEM_END = "/graphics>";
     private static final String GRAPHICS_ELEM_START = "<graphics";
     private static final String CONTENTS_WILDCARD = "(?s).*";
+<<<<<<< HEAD
+=======
+    private static final String CDROM_LABEL = "hdc";
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
     protected String createMigrationURI(final String destinationIp, final LibvirtComputingResource libvirtComputingResource) {
         if (StringUtils.isEmpty(destinationIp)) {
@@ -164,6 +172,10 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             String vncPassword = org.apache.commons.lang3.StringUtils.truncate(to.getVncPassword(), 8);
             xmlDesc = replaceIpForVNCInDescFileAndNormalizePassword(xmlDesc, target, vncPassword, vmName);
 
+<<<<<<< HEAD
+=======
+            // Replace Config Drive ISO path
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
             String oldIsoVolumePath = getOldVolumePath(disks, vmName);
             String newIsoVolumePath = getNewVolumePathIfDatastoreHasChanged(libvirtComputingResource, conn, to);
             if (newIsoVolumePath != null && !newIsoVolumePath.equals(oldIsoVolumePath)) {
@@ -173,6 +185,17 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                     logger.debug(String.format("Replaced disk mount point [%s] with [%s] in VM [%s] XML configuration. New XML configuration is [%s].", oldIsoVolumePath, newIsoVolumePath, vmName, xmlDesc));
                 }
             }
+<<<<<<< HEAD
+=======
+
+            // Replace CDROM ISO path
+            String oldCdromIsoPath = getOldVolumePathForCdrom(disks, vmName);
+            String newCdromIsoPath = getNewVolumePathForCdrom(libvirtComputingResource, conn, to);
+            if (newCdromIsoPath != null && !newCdromIsoPath.equals(oldCdromIsoPath)) {
+                xmlDesc = replaceCdromIsoPath(xmlDesc, vmName, oldCdromIsoPath, newCdromIsoPath);
+            }
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
             // delete the metadata of vm snapshots before migration
             vmsnapshots = libvirtComputingResource.cleanVMSnapshotMetadata(dm);
 
@@ -701,6 +724,84 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         return newIsoVolumePath;
     }
 
+<<<<<<< HEAD
+=======
+    private String getOldVolumePathForCdrom(List<DiskDef> disks, String vmName) {
+        String oldIsoVolumePath = null;
+        for (DiskDef disk : disks) {
+            if (DiskDef.DeviceType.CDROM.equals(disk.getDeviceType())
+                    && CDROM_LABEL.equals(disk.getDiskLabel())
+                    && disk.getDiskPath() != null) {
+                oldIsoVolumePath = disk.getDiskPath();
+                break;
+            }
+        }
+        return oldIsoVolumePath;
+    }
+
+    private String getNewVolumePathForCdrom(LibvirtComputingResource libvirtComputingResource, Connect conn, VirtualMachineTO to) throws LibvirtException, URISyntaxException {
+        DiskTO newDisk = null;
+        for (DiskTO disk : to.getDisks()) {
+            DataTO data = disk.getData();
+            if (disk.getDiskSeq() == 3 && data != null && data.getPath() != null) {
+                newDisk = disk;
+                break;
+            }
+        }
+
+        String newIsoVolumePath = null;
+        if (newDisk != null) {
+            newIsoVolumePath = libvirtComputingResource.getVolumePath(conn, newDisk);
+        }
+        return newIsoVolumePath;
+    }
+
+    protected String replaceCdromIsoPath(String xmlDesc, String vmName, String oldIsoVolumePath, String newIsoVolumePath) throws IOException, ParserConfigurationException, TransformerException, SAXException {
+        InputStream in = IOUtils.toInputStream(xmlDesc);
+
+        DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
+        DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+        Document doc = docBuilder.parse(in);
+
+        // Get the root element
+        Node domainNode = doc.getFirstChild();
+
+        NodeList domainChildNodes = domainNode.getChildNodes();
+
+        for (int i = 0; i < domainChildNodes.getLength(); i++) {
+            Node domainChildNode = domainChildNodes.item(i);
+            if ("devices".equals(domainChildNode.getNodeName())) {
+                NodeList devicesChildNodes = domainChildNode.getChildNodes();
+                for (int x = 0; x < devicesChildNodes.getLength(); x++) {
+                    Node deviceChildNode = devicesChildNodes.item(x);
+                    if ("disk".equals(deviceChildNode.getNodeName())) {
+                        Node diskNode = deviceChildNode;
+                        NodeList diskChildNodes = diskNode.getChildNodes();
+                        for (int z = 0; z < diskChildNodes.getLength(); z++) {
+                            Node diskChildNode = diskChildNodes.item(z);
+                            if ("source".equals(diskChildNode.getNodeName())) {
+                                NamedNodeMap sourceNodeAttributes = diskChildNode.getAttributes();
+                                Node sourceNodeAttribute = sourceNodeAttributes.getNamedItem("file");
+                                if (oldIsoVolumePath != null && sourceNodeAttribute != null
+                                        && oldIsoVolumePath.equals(sourceNodeAttribute.getNodeValue())) {
+                                    diskNode.removeChild(diskChildNode);
+                                    Element newChildSourceNode = doc.createElement("source");
+                                    newChildSourceNode.setAttribute("file", newIsoVolumePath);
+                                    diskNode.appendChild(newChildSourceNode);
+                                    logger.debug(String.format("Replaced ISO path [%s] with [%s] in VM [%s] XML configuration.", oldIsoVolumePath, newIsoVolumePath, vmName));
+                                    return getXml(doc);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return getXml(doc);
+    }
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     private String getPathFromSourceText(Set<String> paths, String sourceText) {
         if (paths != null && StringUtils.isNotBlank(sourceText)) {
             for (String path : paths) {

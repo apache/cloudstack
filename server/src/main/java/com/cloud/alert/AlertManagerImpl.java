@@ -800,7 +800,11 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {CPUCapacityThreshold, MemoryCapacityThreshold, StorageAllocatedCapacityThreshold, StorageCapacityThreshold, AlertSmtpEnabledSecurityProtocols,
+<<<<<<< HEAD
             AlertSmtpUseStartTLS, Ipv6SubnetCapacityThreshold};
+=======
+            AlertSmtpUseStartTLS, Ipv6SubnetCapacityThreshold, AlertSmtpUseAuth};
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     }
 
     @Override

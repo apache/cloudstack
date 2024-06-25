@@ -18,6 +18,10 @@
 package org.apache.cloudstack.quota.activationrule.presetvariables;
 
 public class ComputeOffering extends GenericPresetVariable {
+<<<<<<< HEAD
+=======
+    @PresetVariableDefinition(description = "A boolean informing if the compute offering is customized or not.")
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     private boolean customized;
 
     public boolean isCustomized() {

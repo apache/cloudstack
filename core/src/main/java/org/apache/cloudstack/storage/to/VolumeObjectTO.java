@@ -39,6 +39,10 @@ public class VolumeObjectTO extends DownloadableObjectTO implements DataTO {
     private DataStoreTO dataStore;
     private String name;
     private Long size;
+<<<<<<< HEAD
+=======
+    private Long usableSize;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     private String path;
     private Long volumeId;
     private String vmName;
@@ -161,6 +165,13 @@ public class VolumeObjectTO extends DownloadableObjectTO implements DataTO {
         return size;
     }
 
+<<<<<<< HEAD
+=======
+    public Long getUsableSize() {
+        return usableSize;
+    }
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     @Override
     public DataObjectType getObjectType() {
         return DataObjectType.VOLUME;
@@ -178,6 +189,13 @@ public class VolumeObjectTO extends DownloadableObjectTO implements DataTO {
         this.size = size;
     }
 
+<<<<<<< HEAD
+=======
+    public void setUsableSize(Long usableSize) {
+        this.usableSize = usableSize;
+    }
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     public void setPath(String path) {
         this.path = path;
     }

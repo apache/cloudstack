@@ -79,6 +79,10 @@
         <module>event-bus/inmemory</module>
         <module>event-bus/kafka</module>
         <module>event-bus/rabbitmq</module>
+<<<<<<< HEAD
+=======
+        <module>event-bus/webhook</module>
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
         <module>ha-planners/skip-heurestics</module>
 

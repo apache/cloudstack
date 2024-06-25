@@ -41,6 +41,7 @@
           <template v-if="column.key === col">
             <router-link :set="routerlink = routerlinks(record)" :to="{ path: routerlink[col] }" >{{ text }}</router-link>
           </template>
+<<<<<<< HEAD
         </div>
 
         <template v-if="column.key === 'state'">
@@ -56,6 +57,22 @@
         {{ $toLocaleDate(item) }}
       </template>
 
+=======
+
+          <template v-else-if="['state', 'status'].includes(column.key)">
+            <status :text="text ? text : ''" />{{ text }}
+          </template>
+
+          <template v-else-if="column.key === 'created'">
+            {{ $toLocaleDate(text) }}
+          </template>
+
+          <template v-else>
+            {{ text }}
+          </template>
+        </div>
+      </template>
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     </a-table>
 
     <div v-if="!defaultPagination" style="display: block; text-align: right; margin-top: 10px;">

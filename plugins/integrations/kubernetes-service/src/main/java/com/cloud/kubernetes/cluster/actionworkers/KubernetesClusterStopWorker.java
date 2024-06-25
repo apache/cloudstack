@@ -20,6 +20,11 @@ package com.cloud.kubernetes.cluster.actionworkers;
 import java.util.List;
 
 import org.apache.logging.log4j.Level;
+<<<<<<< HEAD
+=======
+import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.context.CallContext;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
@@ -44,11 +49,21 @@ public class KubernetesClusterStopWorker extends KubernetesClusterActionWorker {
             if (vm == null) {
                 logTransitStateAndThrow(Level.ERROR, String.format("Failed to find all VMs in Kubernetes cluster : %s", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
             }
+<<<<<<< HEAD
+=======
+            CallContext vmContext = CallContext.register(CallContext.current(), ApiCommandResourceType.VirtualMachine);
+            vmContext.setEventResourceId(vm.getId());
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
             try {
                 userVmService.stopVirtualMachine(vm.getId(), false);
             } catch (ConcurrentOperationException ex) {
                 logger.warn(String.format("Failed to stop VM : %s in Kubernetes cluster : %s",
                     vm.getDisplayName(), kubernetesCluster.getName()), ex);
+<<<<<<< HEAD
+=======
+            } finally {
+                CallContext.unregister();
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
             }
         }
         for (final UserVm userVm : clusterVMs) {

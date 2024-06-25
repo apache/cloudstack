@@ -29,9 +29,15 @@ import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.ha.HAConfig;
+<<<<<<< HEAD
 import org.apache.cloudstack.storage.object.Bucket;
 import org.apache.cloudstack.storage.object.ObjectStore;
 import org.apache.cloudstack.quota.QuotaTariff;
+=======
+import org.apache.cloudstack.quota.QuotaTariff;
+import org.apache.cloudstack.storage.object.Bucket;
+import org.apache.cloudstack.storage.object.ObjectStore;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.vm.schedule.VMSchedule;
 
@@ -1229,4 +1235,11 @@ public class EventTypes {
     public static boolean isVpcEvent(String eventType) {
         return EventTypes.EVENT_VPC_CREATE.equals(eventType) || EventTypes.EVENT_VPC_DELETE.equals(eventType);
     }
+<<<<<<< HEAD
+=======
+
+    public static void addEntityEventDetail(String event, Class<?> clazz) {
+        entityEventDetails.put(event, clazz);
+    }
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 }

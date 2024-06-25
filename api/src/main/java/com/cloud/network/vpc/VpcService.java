@@ -132,6 +132,11 @@ public interface VpcService {
      */
     boolean startVpc(long vpcId, boolean destroyOnFailure) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
+<<<<<<< HEAD
+=======
+    void startVpc(CreateVPCCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     /**
      * Shuts down the VPC which includes shutting down all VPC provider and rules cleanup on the backend
      *

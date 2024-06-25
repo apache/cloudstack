@@ -148,6 +148,10 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
         return updateParameters;
     }
 
+<<<<<<< HEAD
+=======
+    @Override
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     public String getUserVmType() {
         return userVmType;
     }

@@ -222,6 +222,16 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
         return null;
     }
 
+<<<<<<< HEAD
+=======
+    @Override
+    public Network createGuestNetwork(long networkOfferingId, String name, String displayText, Account owner,
+          PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType) throws InsufficientCapacityException,
+            ConcurrentOperationException, ResourceAllocationException {
+        return null;
+    }
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkService#searchForNetworks(com.cloud.api.commands.ListNetworksCmd)
      */

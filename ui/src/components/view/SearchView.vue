@@ -85,6 +85,12 @@
                           </span>
                           <block-outlined v-else style="margin-right: 5px" />
                         </span>
+<<<<<<< HEAD
+=======
+                        <span v-if="(field.name.startsWith('managementserver'))">
+                          <status :text="opt.state" />
+                        </span>
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
                         {{ $t(opt.path || opt.name) }}
                       </div>
                     </a-select-option>
@@ -154,14 +160,26 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+<<<<<<< HEAD
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
+=======
+import { isAdmin } from '@/role'
+import TooltipButton from '@/components/widgets/TooltipButton'
+import ResourceIcon from '@/components/view/ResourceIcon'
+import Status from '@/components/widgets/Status'
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
 export default {
   name: 'SearchView',
   components: {
     TooltipButton,
+<<<<<<< HEAD
     ResourceIcon
+=======
+    ResourceIcon,
+    Status
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
   },
   props: {
     searchFilters: {
@@ -206,6 +224,7 @@ export default {
       if (to && to.query && 'q' in to.query) {
         this.searchQuery = to.query.q
       }
+<<<<<<< HEAD
       this.isFiltered = false
       this.searchFilters.some(item => {
         if (this.searchParams[item]) {
@@ -213,6 +232,9 @@ export default {
           return true
         }
       })
+=======
+      this.updateIsFiltered()
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     }
   },
   mounted () {
@@ -220,6 +242,10 @@ export default {
     if (this.$route && this.$route.query && 'q' in this.$route.query) {
       this.searchQuery = this.$route.query.q
     }
+<<<<<<< HEAD
+=======
+    this.updateIsFiltered()
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
   },
   computed: {
     styleSearch () {
@@ -285,7 +311,11 @@ export default {
         }
         if (['zoneid', 'domainid', 'imagestoreid', 'storageid', 'state', 'account', 'hypervisor', 'level',
           'clusterid', 'podid', 'groupid', 'entitytype', 'accounttype', 'systemvmtype', 'scope', 'provider',
+<<<<<<< HEAD
           'type'].includes(item)
+=======
+          'type', 'scope', 'managementserverid', 'serviceofferingid', 'diskofferingid'].includes(item)
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         ) {
           type = 'list'
         } else if (item === 'tags') {
@@ -319,6 +349,16 @@ export default {
         }
       }
 
+<<<<<<< HEAD
+=======
+      if (arrayField.includes('scope')) {
+        const scopeIndex = this.fields.findIndex(item => item.name === 'scope')
+        this.fields[scopeIndex].loading = true
+        this.fields[scopeIndex].opts = this.fetchScope()
+        this.fields[scopeIndex].loading = false
+      }
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
       if (arrayField.includes('state')) {
         const stateIndex = this.fields.findIndex(item => item.name === 'state')
         this.fields[stateIndex].loading = true
@@ -397,6 +437,12 @@ export default {
       let podIndex = -1
       let clusterIndex = -1
       let groupIndex = -1
+<<<<<<< HEAD
+=======
+      let managementServerIdIndex = -1
+      let serviceOfferingIndex = -1
+      let diskOfferingIndex = -1
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
       if (arrayField.includes('type')) {
         if (this.$route.path === '/alert') {
@@ -464,6 +510,27 @@ export default {
         promises.push(await this.fetchInstanceGroups(searchKeyword))
       }
 
+<<<<<<< HEAD
+=======
+      if (arrayField.includes('managementserverid')) {
+        managementServerIdIndex = this.fields.findIndex(item => item.name === 'managementserverid')
+        this.fields[managementServerIdIndex].loading = true
+        promises.push(await this.fetchManagementServers(searchKeyword))
+      }
+
+      if (arrayField.includes('serviceofferingid')) {
+        serviceOfferingIndex = this.fields.findIndex(item => item.name === 'serviceofferingid')
+        this.fields[serviceOfferingIndex].loading = true
+        promises.push(await this.fetchServiceOfferings(searchKeyword))
+      }
+
+      if (arrayField.includes('diskofferingid')) {
+        diskOfferingIndex = this.fields.findIndex(item => item.name === 'diskofferingid')
+        this.fields[diskOfferingIndex].loading = true
+        promises.push(await this.fetchDiskOfferings(searchKeyword))
+      }
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
       Promise.all(promises).then(response => {
         if (typeIndex > -1) {
           const types = response.filter(item => item.type === 'type')
@@ -525,6 +592,30 @@ export default {
             this.fields[groupIndex].opts = this.sortArray(groups[0].data)
           }
         }
+<<<<<<< HEAD
+=======
+
+        if (managementServerIdIndex > -1) {
+          const managementServers = response.filter(item => item.type === 'managementserverid')
+          if (managementServers && managementServers.length > 0) {
+            this.fields[managementServerIdIndex].opts = this.sortArray(managementServers[0].data)
+          }
+        }
+
+        if (serviceOfferingIndex > -1) {
+          const serviceOfferings = response.filter(item => item.type === 'serviceofferingid')
+          if (serviceOfferings && serviceOfferings.length > 0) {
+            this.fields[serviceOfferingIndex].opts = this.sortArray(serviceOfferings[0].data)
+          }
+        }
+
+        if (diskOfferingIndex > -1) {
+          const diskOfferings = response.filter(item => item.type === 'diskofferingid')
+          if (diskOfferings && diskOfferings.length > 0) {
+            this.fields[diskOfferingIndex].opts = this.sortArray(diskOfferings[0].data)
+          }
+        }
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
       }).finally(() => {
         if (typeIndex > -1) {
           this.fields[typeIndex].loading = false
@@ -550,6 +641,18 @@ export default {
         if (groupIndex > -1) {
           this.fields[groupIndex].loading = false
         }
+<<<<<<< HEAD
+=======
+        if (managementServerIdIndex > -1) {
+          this.fields[managementServerIdIndex].loading = false
+        }
+        if (serviceOfferingIndex > -1) {
+          this.fields[serviceOfferingIndex].loading = false
+        }
+        if (diskOfferingIndex > -1) {
+          this.fields[diskOfferingIndex].loading = false
+        }
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         this.fillFormFieldValues()
       })
     },
@@ -699,6 +802,35 @@ export default {
         })
       })
     },
+<<<<<<< HEAD
+=======
+    fetchServiceOfferings (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        api('listServiceOfferings', { listAll: true, keyword: searchKeyword }).then(json => {
+          const serviceOfferings = json.listserviceofferingsresponse.serviceoffering
+          resolve({
+            type: 'serviceofferingid',
+            data: serviceOfferings
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
+    fetchDiskOfferings (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        api('listDiskOfferings', { listAll: true, keyword: searchKeyword }).then(json => {
+          const diskOfferings = json.listdiskofferingsresponse.diskoffering
+          resolve({
+            type: 'diskofferingid',
+            data: diskOfferings
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     fetchAlertTypes () {
       if (this.alertTypes.length > 0) {
         return new Promise((resolve, reject) => {
@@ -757,6 +889,22 @@ export default {
         })
       }
     },
+<<<<<<< HEAD
+=======
+    fetchManagementServers (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        api('listManagementServers', { listAll: true, keyword: searchKeyword }).then(json => {
+          const managementservers = json.listmanagementserversresponse.managementserver
+          resolve({
+            type: 'managementserverid',
+            data: managementservers
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     fetchGuestNetworkTypes () {
       const types = []
       if (this.apiName.indexOf('listNetworks') > -1) {
@@ -877,9 +1025,36 @@ export default {
       }
       return types
     },
+<<<<<<< HEAD
     fetchState () {
       if (this.apiName.includes('listVolumes')) {
         return [
+=======
+    fetchScope () {
+      const scope = []
+      if (this.apiName.indexOf('listWebhooks') > -1) {
+        scope.push({
+          id: 'Local',
+          name: 'label.local'
+        })
+        scope.push({
+          id: 'Domain',
+          name: 'label.domain'
+        })
+        if (isAdmin()) {
+          scope.push({
+            id: 'Global',
+            name: 'label.global'
+          })
+        }
+      }
+      return scope
+    },
+    fetchState () {
+      var state = []
+      if (this.apiName.includes('listVolumes')) {
+        state = [
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
           {
             id: 'Allocated',
             name: 'label.allocated'
@@ -906,7 +1081,11 @@ export default {
           }
         ]
       } else if (this.apiName.includes('listKubernetesClusters')) {
+<<<<<<< HEAD
         return [
+=======
+        state = [
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
           {
             id: 'Created',
             name: 'label.created'
@@ -956,8 +1135,24 @@ export default {
             name: 'label.error'
           }
         ]
+<<<<<<< HEAD
       }
       return []
+=======
+      } else if (this.apiName.indexOf('listWebhooks') > -1) {
+        state = [
+          {
+            id: 'Enabled',
+            name: 'label.enabled'
+          },
+          {
+            id: 'Disabled',
+            name: 'label.disabled'
+          }
+        ]
+      }
+      return state
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     },
     fetchEntityType () {
       const entityType = []
@@ -1052,6 +1247,16 @@ export default {
     },
     changeFilter (filter) {
       this.$emit('change-filter', filter)
+<<<<<<< HEAD
+=======
+    },
+    updateIsFiltered () {
+      this.isFiltered = this.searchFilters.some(item => {
+        if (this.searchParams[item]) {
+          return true
+        }
+      })
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     }
   }
 }

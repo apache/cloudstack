@@ -24,6 +24,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+<<<<<<< HEAD
 import com.cloud.server.ManagementService;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.dao.UserVmDao;
@@ -33,6 +34,13 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.EventBus;
+=======
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.events.EventDistributor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
 import com.cloud.configuration.Config;
 import com.cloud.event.EventCategory;
@@ -41,12 +49,24 @@ import com.cloud.event.UsageEventUtils;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
+<<<<<<< HEAD
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.fsm.StateListener;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.NicDao;
+=======
+import com.cloud.server.ManagementService;
+import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.fsm.StateListener;
+import com.cloud.utils.fsm.StateMachine2;
+import com.cloud.vm.VirtualMachine.Event;
+import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.UserVmDao;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
 public class UserVmStateListener implements StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
@@ -57,10 +77,16 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
     @Inject protected UserVmDao _userVmDao;
     @Inject protected UserVmManager _userVmMgr;
     @Inject protected ConfigurationDao _configDao;
+<<<<<<< HEAD
     protected Logger logger = LogManager.getLogger(getClass());
 
     protected static EventBus s_eventBus = null;
 
+=======
+    private EventDistributor eventDistributor;
+    protected Logger logger = LogManager.getLogger(getClass());
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     public UserVmStateListener(UsageEventDao usageEventDao, NetworkDao networkDao, NicDao nicDao, ServiceOfferingDao offeringDao, UserVmDao userVmDao, UserVmManager userVmMgr,
             ConfigurationDao configDao) {
         this._usageEventDao = usageEventDao;
@@ -130,16 +156,26 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
         if(!configValue)
             return;
         try {
+<<<<<<< HEAD
             s_eventBus = ComponentContext.getComponent(EventBus.class);
         } catch (NoSuchBeanDefinitionException nbe) {
             return; // no provider is configured to provide events bus, so just return
+=======
+            eventDistributor = ComponentContext.getComponent(EventDistributor.class);
+        } catch (NoSuchBeanDefinitionException nbe) {
+            return; // no provider is configured to provide events distributor, so just return
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         }
 
         String resourceName = getEntityFromClassName(VirtualMachine.class.getName());
         org.apache.cloudstack.framework.events.Event eventMsg =
             new org.apache.cloudstack.framework.events.Event(ManagementService.Name, EventCategory.RESOURCE_STATE_CHANGE_EVENT.getName(), event, resourceName,
                 vo.getUuid());
+<<<<<<< HEAD
         Map<String, String> eventDescription = new HashMap<String, String>();
+=======
+        Map<String, String> eventDescription = new HashMap<>();
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         eventDescription.put("resource", resourceName);
         eventDescription.put("id", vo.getUuid());
         eventDescription.put("old-state", oldState.name());
@@ -150,12 +186,16 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
         eventDescription.put("eventDateTime", eventDate);
 
         eventMsg.setDescription(eventDescription);
+<<<<<<< HEAD
         try {
             s_eventBus.publish(eventMsg);
         } catch (org.apache.cloudstack.framework.events.EventBusException e) {
             logger.warn("Failed to publish state change event on the event bus.");
         }
 
+=======
+        eventDistributor.publish(eventMsg);
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     }
 
     private String getEntityFromClassName(String entityClassName) {

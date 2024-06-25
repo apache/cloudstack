@@ -288,10 +288,17 @@
     </bean>
 
     <bean id="hypervisorGurusRegistry"
+<<<<<<< HEAD
         class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
         <property name="excludeKey" value="hypervisor.gurus.exclude" />
     </bean>
     
+=======
+          class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
+        <property name="excludeKey" value="hypervisor.gurus.exclude" />
+    </bean>
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     <bean id="vpcProvidersRegistry"
         class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
         <property name="excludeKey" value="vpc.providers.exclude" />
@@ -339,7 +346,11 @@
           class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
     </bean>
 
+<<<<<<< HEAD
     <bean id="kubernetesClusterHelperRegistry"
+=======
+    <bean id="kubernetesServiceHelperRegistry"
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
           class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
     </bean>
 
@@ -358,4 +369,12 @@
             </list>
         </property>
     </bean>
+<<<<<<< HEAD
+=======
+
+    <bean id="eventBusRegistry"
+          class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
+        <property name="excludeKey" value="event.buses.exclude" />
+    </bean>
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 </beans>

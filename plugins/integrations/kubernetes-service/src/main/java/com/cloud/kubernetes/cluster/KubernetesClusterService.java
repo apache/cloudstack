@@ -23,6 +23,10 @@ import org.apache.cloudstack.api.command.user.kubernetes.cluster.GetKubernetesCl
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.ListKubernetesClustersCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.RemoveVirtualMachinesFromKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.ScaleKubernetesClusterCmd;
+<<<<<<< HEAD
+=======
+import org.apache.cloudstack.api.command.user.kubernetes.cluster.StartKubernetesClusterCmd;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.StopKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.UpgradeKubernetesClusterCmd;
 import org.apache.cloudstack.api.response.KubernetesClusterConfigResponse;
@@ -98,7 +102,13 @@ public interface KubernetesClusterService extends PluggableService, Configurable
 
     KubernetesCluster createManagedKubernetesCluster(CreateKubernetesClusterCmd cmd) throws CloudRuntimeException;
 
+<<<<<<< HEAD
     boolean startKubernetesCluster(long kubernetesClusterId, boolean onCreate) throws CloudRuntimeException;
+=======
+    void startKubernetesCluster(CreateKubernetesClusterCmd cmd) throws CloudRuntimeException;
+
+    void startKubernetesCluster(StartKubernetesClusterCmd cmd) throws CloudRuntimeException;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
     boolean stopKubernetesCluster(StopKubernetesClusterCmd cmd) throws CloudRuntimeException;
 

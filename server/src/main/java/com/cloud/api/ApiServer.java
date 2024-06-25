@@ -95,8 +95,12 @@ import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+<<<<<<< HEAD
 import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventBusException;
+=======
+import org.apache.cloudstack.framework.events.EventDistributor;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
@@ -132,10 +136,16 @@ import org.apache.http.protocol.ResponseConnControl;
 import org.apache.http.protocol.ResponseContent;
 import org.apache.http.protocol.ResponseDate;
 import org.apache.http.protocol.ResponseServer;
+<<<<<<< HEAD
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+=======
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.dispatch.DispatchChainFactory;
@@ -197,16 +207,29 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     private static final String CONTROL_CHARACTERS = "[\000-\011\013-\014\016-\037\177]";
 
     @Inject
+<<<<<<< HEAD
     private ApiDispatcher dispatcher;
     @Inject
     private DispatchChainFactory dispatchChainFactory;
     @Inject
     private AccountManager accountMgr;
+=======
+    private AccountManager accountMgr;
+    @Inject
+    private APIAuthenticationManager authManager;
+    @Inject
+    private ApiDispatcher dispatcher;
+    @Inject
+    private AsyncJobManager asyncMgr;
+    @Inject
+    private DispatchChainFactory dispatchChainFactory;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     @Inject
     private DomainManager domainMgr;
     @Inject
     private DomainDao domainDao;
     @Inject
+<<<<<<< HEAD
     private UUIDManager uuidMgr;
     @Inject
     private AsyncJobManager asyncMgr;
@@ -216,6 +239,13 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     private APIAuthenticationManager authManager;
     @Inject
     private ProjectDao projectDao;
+=======
+    private EntityManager entityMgr;
+    @Inject
+    private ProjectDao projectDao;
+    @Inject
+    private UUIDManager uuidMgr;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
     private List<PluggableService> pluggableServices;
 
@@ -224,6 +254,10 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     @Inject
     private ApiAsyncJobDispatcher asyncDispatcher;
 
+<<<<<<< HEAD
+=======
+    private EventDistributor eventDistributor = null;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     private static int s_workerCount = 0;
     private static Map<String, List<Class<?>>> s_apiNameCmdClassMap = new HashMap<String, List<Class<?>>>();
 
@@ -311,6 +345,13 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         return true;
     }
 
+<<<<<<< HEAD
+=======
+    public void setEventDistributor(EventDistributor eventDistributor) {
+        this.eventDistributor = eventDistributor;
+    }
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     @MessageHandler(topic = AsyncJob.Topics.JOB_EVENT_PUBLISH)
     public void handleAsyncJobPublishEvent(String subject, String senderAddress, Object args) {
         assert (args != null);
@@ -322,12 +363,17 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
         if (logger.isTraceEnabled())
             logger.trace("Handle asyjob publish event " + jobEvent);
+<<<<<<< HEAD
 
         EventBus eventBus = null;
         try {
             eventBus = ComponentContext.getComponent(EventBus.class);
         } catch (NoSuchBeanDefinitionException nbe) {
             return; // no provider is configured to provide events bus, so just return
+=======
+        if (eventDistributor == null) {
+            setEventDistributor(ComponentContext.getComponent(EventDistributor.class));
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         }
 
         if (!job.getDispatcher().equalsIgnoreCase("ApiAsyncJobDispatcher")) {
@@ -340,7 +386,11 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         // Get the event type from the cmdInfo json string
         String info = job.getCmdInfo();
         String cmdEventType = "unknown";
+<<<<<<< HEAD
         Map<String, Object> cmdInfoObj = new HashMap<String, Object>();
+=======
+        Map<String, Object> cmdInfoObj = new HashMap<>();
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         if (info != null) {
             Type type = new TypeToken<Map<String, String>>(){}.getType();
             Map<String, String> cmdInfo = ApiGsonHelper.getBuilder().create().fromJson(info, type);
@@ -368,7 +418,11 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         org.apache.cloudstack.framework.events.Event event = new org.apache.cloudstack.framework.events.Event("management-server", EventCategory.ASYNC_JOB_CHANGE_EVENT.getName(),
                 jobEvent, instanceType, instanceUuid);
 
+<<<<<<< HEAD
         Map<String, Object> eventDescription = new HashMap<String, Object>();
+=======
+        Map<String, Object> eventDescription = new HashMap<>();
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         eventDescription.put("command", job.getCmd());
         eventDescription.put("user", userJobOwner.getUuid());
         eventDescription.put("account", jobOwner.getUuid());
@@ -389,6 +443,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             eventDescription.put("domainname", domain.getName());
         }
         event.setDescription(eventDescription);
+<<<<<<< HEAD
 
         try {
             eventBus.publish(event);
@@ -396,6 +451,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             String errMsg = "Failed to publish async job event on the event bus.";
             logger.warn(errMsg, evx);
         }
+=======
+        eventDistributor.publish(event);
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     }
 
     @Override

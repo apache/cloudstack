@@ -20,6 +20,10 @@ import com.cloud.kubernetes.cluster.KubernetesClusterService;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+<<<<<<< HEAD
+=======
+import org.apache.cloudstack.api.ApiCommandResourceType;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -84,6 +88,14 @@ public class RemoveVirtualMachinesFromKubernetesClusterCmd extends BaseListCmd {
     }
 
     @Override
+<<<<<<< HEAD
+=======
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.KubernetesCluster;
+    }
+
+    @Override
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     public void execute() throws ServerApiException {
         try {
             List<RemoveVirtualMachinesFromKubernetesClusterResponse> responseList = kubernetesClusterService.removeVmsFromCluster(this);

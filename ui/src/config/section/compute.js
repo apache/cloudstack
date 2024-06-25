@@ -28,12 +28,22 @@ export default {
       title: 'label.instances',
       icon: 'cloud-server-outlined',
       docHelp: 'adminguide/virtual_machines.html',
+<<<<<<< HEAD
       permission: ['listVirtualMachinesMetrics'],
       resourceType: 'UserVm',
       params: () => {
         var params = { details: 'servoff,tmpl,iso,nics,backoff' }
         if (store.getters.metrics) {
           params = { details: 'servoff,tmpl,iso,nics,backoff,stats' }
+=======
+      permission: ['listVirtualMachines', 'listVirtualMachinesMetrics'],
+      getApiToCall: () => store.getters.metrics ? 'listVirtualMachinesMetrics' : 'listVirtualMachines',
+      resourceType: 'UserVm',
+      params: () => {
+        var params = { details: 'group,nics,secgrp,tmpl,servoff,diskoff,iso,volume,affgrp' }
+        if (store.getters.metrics) {
+          params = { details: 'all,stats' }
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         }
         params.isvnf = false
         return params
@@ -541,10 +551,19 @@ export default {
         return filters
       },
       details: ['name', 'description', 'zonename', 'kubernetesversionname', 'autoscalingenabled', 'minsize', 'maxsize', 'size', 'controlnodes', 'cpunumber', 'memory', 'keypair', 'associatednetworkname', 'account', 'domain', 'zonename', 'clustertype', 'created'],
+<<<<<<< HEAD
       tabs: [{
         name: 'k8s',
         component: shallowRef(defineAsyncComponent(() => import('@/views/compute/KubernetesServiceTab.vue')))
       }],
+=======
+      tabs: [
+        {
+          name: 'k8s',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/KubernetesServiceTab.vue')))
+        }
+      ],
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
       resourceType: 'KubernetesCluster',
       actions: [
         {

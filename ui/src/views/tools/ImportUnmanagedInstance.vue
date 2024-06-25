@@ -297,6 +297,11 @@
                 <multi-network-selection
                   :items="nics"
                   :zoneId="cluster.zoneid"
+<<<<<<< HEAD
+=======
+                  :domainid="form.domainid"
+                  :account="form.account"
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
                   :selectionEnabled="false"
                   :filterUnimplementedNetworks="true"
                   :hypervisor="this.cluster.hypervisortype"
@@ -693,7 +698,13 @@ export default {
       this.form = reactive({
         rootdiskid: 0,
         migrateallowed: this.switches.migrateAllowed,
+<<<<<<< HEAD
         forced: this.switches.forced
+=======
+        forced: this.switches.forced,
+        domainid: null,
+        account: null
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
       })
       this.rules = reactive({
         displayname: [{ required: true, message: this.$t('message.error.input.value') }],

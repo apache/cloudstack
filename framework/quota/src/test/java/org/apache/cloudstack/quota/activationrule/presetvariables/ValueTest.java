@@ -26,6 +26,23 @@ import org.mockito.junit.MockitoJUnitRunner;
 public class ValueTest {
 
     @Test
+<<<<<<< HEAD
+=======
+    public void setIdTestAddFieldIdToCollection() {
+        Value variable = new Value();
+        variable.setId(null);
+        Assert.assertTrue(variable.fieldNamesToIncludeInToString.contains("id"));
+    }
+
+    @Test
+    public void setNameTestAddFieldNameToCollection() {
+        Value variable = new Value();
+        variable.setName(null);
+        Assert.assertTrue(variable.fieldNamesToIncludeInToString.contains("name"));
+    }
+
+    @Test
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     public void setHostTestAddFieldHostToCollection() {
         Value variable = new Value();
         variable.setHost(null);

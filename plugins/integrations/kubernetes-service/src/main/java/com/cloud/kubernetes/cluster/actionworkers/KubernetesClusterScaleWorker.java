@@ -26,7 +26,13 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+<<<<<<< HEAD
 import org.apache.cloudstack.api.InternalIdentity;
+=======
+import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.context.CallContext;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -318,6 +324,12 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
             if (!removeKubernetesClusterNode(publicIpAddress, sshPort, userVM, 3, 30000)) {
                 logTransitStateAndThrow(Level.ERROR, String.format("Scaling failed for Kubernetes cluster : %s, failed to remove Kubernetes node: %s running on VM : %s", kubernetesCluster.getName(), userVM.getHostName(), userVM.getDisplayName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
             }
+<<<<<<< HEAD
+=======
+            CallContext vmContext = CallContext.register(CallContext.current(),
+                    ApiCommandResourceType.VirtualMachine);
+            vmContext.setEventResourceId(userVM.getId());
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
             try {
                 UserVm vm = userVmService.destroyVm(userVM.getId(), true);
                 if (!userVmManager.expunge(userVM)) {
@@ -327,6 +339,11 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
             } catch (ResourceUnavailableException e) {
                 logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster %s failed, unable to remove VM ID: %s",
                     kubernetesCluster.getName() , userVM.getDisplayName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed, e);
+<<<<<<< HEAD
+=======
+            } finally {
+                CallContext.unregister();
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
             }
             kubernetesClusterVmMapDao.expunge(vmMapVO.getId());
             if (System.currentTimeMillis() > scaleTimeoutTime) {
@@ -438,10 +455,17 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         if (existingServiceOffering == null) {
             logAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster : %s failed, service offering for the Kubernetes cluster not found!", kubernetesCluster.getName()));
         }
+<<<<<<< HEAD
         final boolean autscalingChanged = isAutoscalingChanged();
         final boolean serviceOfferingScalingNeeded = serviceOffering != null && serviceOffering.getId() != existingServiceOffering.getId();
 
         if (autscalingChanged) {
+=======
+        final boolean autoscalingChanged = isAutoscalingChanged();
+        final boolean serviceOfferingScalingNeeded = serviceOffering != null && serviceOffering.getId() != existingServiceOffering.getId();
+
+        if (autoscalingChanged) {
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
             boolean autoScaled = autoscaleCluster(this.isAutoscalingEnabled, minSize, maxSize);
             if (autoScaled && serviceOfferingScalingNeeded) {
                 scaleKubernetesClusterOffering();

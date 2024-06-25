@@ -20,6 +20,10 @@ package org.apache.cloudstack.quota.activationrule.presetvariables;
 import org.apache.cloudstack.acl.RoleType;
 
 public class Role extends GenericPresetVariable {
+<<<<<<< HEAD
+=======
+    @PresetVariableDefinition(description = "Role type of the resource's owner.")
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     private RoleType type;
 
     public RoleType getType() {

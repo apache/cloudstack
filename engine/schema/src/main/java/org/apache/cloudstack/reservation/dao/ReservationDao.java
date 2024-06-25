@@ -23,13 +23,26 @@ import org.apache.cloudstack.reservation.ReservationVO;
 import com.cloud.configuration.Resource;
 import com.cloud.utils.db.GenericDao;
 
+<<<<<<< HEAD
+=======
+import java.util.Date;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 import java.util.List;
 
 public interface ReservationDao extends GenericDao<ReservationVO, Long> {
     long getAccountReservation(Long account, Resource.ResourceType resourceType, String tag);
     long getDomainReservation(Long domain, Resource.ResourceType resourceType, String tag);
     void setResourceId(Resource.ResourceType type, Long resourceId);
+<<<<<<< HEAD
     List<Long> getResourceIds(long accountId, Resource.ResourceType type);
     List<ReservationVO> getReservationsForAccount(long accountId, Resource.ResourceType type, String tag);
     void removeByIds(List<Long> reservationIds);
+=======
+    List<ReservationVO> getReservationsForAccount(long accountId, Resource.ResourceType type, String tag);
+    void removeByIds(List<Long> reservationIds);
+
+    int removeByMsId(long managementServerId);
+
+    int removeStaleReservations(Long accountId, Resource.ResourceType resourceType, String tag, Date createdBefore);
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 }

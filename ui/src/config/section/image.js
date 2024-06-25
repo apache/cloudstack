@@ -370,6 +370,21 @@ export default {
       searchFilters: ['zoneid', 'minimumsemanticversion'],
       columns: ['name', 'state', 'semanticversion', 'isostate', 'mincpunumber', 'minmemory', 'zonename'],
       details: ['name', 'semanticversion', 'supportsautoscaling', 'zoneid', 'zonename', 'isoid', 'isoname', 'isostate', 'mincpunumber', 'minmemory', 'supportsha', 'state', 'created'],
+<<<<<<< HEAD
+=======
+      tabs: [
+        {
+          name: 'details',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'events',
+          resourceType: 'KubernetesSupportedVersion',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+          show: () => { return 'listEvents' in store.getters.apis }
+        }
+      ],
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
       actions: [
         {
           api: 'addKubernetesSupportedVersion',

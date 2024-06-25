@@ -1633,7 +1633,11 @@ public class KVMStorageProcessor implements StorageProcessor {
                 }
             } else {
                 vol = primaryPool.createPhysicalDisk(volume.getUuid(), format,
+<<<<<<< HEAD
                         volume.getProvisioningType(), disksize, volume.getPassphrase());
+=======
+                        volume.getProvisioningType(), disksize, volume.getUsableSize(), volume.getPassphrase());
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
             }
 
             final VolumeObjectTO newVol = new VolumeObjectTO();

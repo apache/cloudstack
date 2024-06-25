@@ -29,6 +29,7 @@
         </template>
       </a-alert>
 
+<<<<<<< HEAD
       <div class="form__item">
         <p class="form__label">{{ $t('label.accounttype') }}</p>
         <a-select
@@ -109,6 +110,9 @@
           <span v-if="projectError" class="required">{{ $t('label.required') }}</span>
         </div>
       </template>
+=======
+      <ownership-selection @fetch-owner="fetchOwnerOptions"/>
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
       <div class="form__item">
         <p class="form__label">{{ $t('label.network') }}</p>
@@ -146,6 +150,10 @@
 <script>
 import { api } from '@/api'
 import ResourceIcon from '@/components/view/ResourceIcon'
+<<<<<<< HEAD
+=======
+import OwnershipSelection from '@views/compute/wizard/OwnershipSelection'
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
 export default {
   name: 'AssignInstance',
@@ -156,7 +164,12 @@ export default {
     }
   },
   components: {
+<<<<<<< HEAD
     ResourceIcon
+=======
+    ResourceIcon,
+    OwnershipSelection
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
   },
   inject: ['parentFetchData'],
   data () {
@@ -175,6 +188,7 @@ export default {
       loading: false
     }
   },
+<<<<<<< HEAD
   created () {
     this.fetchData()
   },
@@ -229,6 +243,15 @@ export default {
       }).finally(() => {
         this.loading = false
       })
+=======
+  methods: {
+    fetchOwnerOptions (selectedOptions) {
+      this.selectedAccountType = selectedOptions.selectedAccountType
+      this.selectedAccount = selectedOptions.selectedAccount
+      this.selectedDomain = selectedOptions.selectedDomain
+      this.selectedProject = selectedOptions.selectedProject
+      this.fetchNetworks()
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     },
     fetchNetworks () {
       this.loading = true
@@ -252,6 +275,7 @@ export default {
         this.loading = false
       })
     },
+<<<<<<< HEAD
     changeDomain () {
       this.selectedAccount = null
       this.selectedProject = null
@@ -269,6 +293,8 @@ export default {
       this.selectedNetwork = null
       this.fetchNetworks()
     },
+=======
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     closeAction () {
       this.$emit('close-action')
     },
@@ -356,12 +382,15 @@ export default {
     }
   }
 
+<<<<<<< HEAD
   .required {
     margin-right: 2px;
     color: red;
     font-size: 0.7rem;
   }
 
+=======
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
   .loading {
     position: absolute;
     top: 0;

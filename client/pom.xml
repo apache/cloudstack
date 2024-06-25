@@ -440,6 +440,14 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
+<<<<<<< HEAD
+=======
+            <artifactId>cloud-mom-webhook</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
             <artifactId>cloud-framework-agent-lb</artifactId>
             <version>${project.version}</version>
         </dependency>

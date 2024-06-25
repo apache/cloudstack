@@ -31,6 +31,11 @@ EnvironmentFile=/etc/default/cloudstack-agent
 ExecStart=/usr/bin/java $JAVA_OPTS $JAVA_DEBUG -cp $CLASSPATH $JAVA_CLASS
 Restart=always
 RestartSec=10s
+<<<<<<< HEAD
+=======
+StandardOutput=append:/var/log/cloudstack/agent/agent.out
+StandardError=append:/var/log/cloudstack/agent/agent.err
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
 [Install]
 WantedBy=multi-user.target

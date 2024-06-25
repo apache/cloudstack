@@ -31,6 +31,7 @@ import org.apache.cloudstack.auth.UserOAuth2Authenticator;
 import javax.inject.Inject;
 import java.util.Map;
 
+<<<<<<< HEAD
 public class OAuth2UserAuthenticator extends AdapterBase implements UserAuthenticator {
 
     @Inject
@@ -40,6 +41,19 @@ public class OAuth2UserAuthenticator extends AdapterBase implements UserAuthenti
 
     @Inject
     private OAuth2AuthManager _userOAuth2mgr;
+=======
+import static org.apache.cloudstack.oauth2.OAuth2AuthManager.OAuth2IsPluginEnabled;
+
+public class OAuth2UserAuthenticator extends AdapterBase implements UserAuthenticator {
+
+    @Inject
+    private UserAccountDao userAccountDao;
+    @Inject
+    private UserDao userDao;
+
+    @Inject
+    private OAuth2AuthManager userOAuth2mgr;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
     @Override
     public Pair<Boolean, ActionOnFailedAuthentication> authenticate(String username, String password, Long domainId, Map<String, Object[]> requestParameters) {
@@ -47,12 +61,28 @@ public class OAuth2UserAuthenticator extends AdapterBase implements UserAuthenti
             logger.debug("Trying OAuth2 auth for user: " + username);
         }
 
+<<<<<<< HEAD
         final UserAccount userAccount = _userAccountDao.getUserAccount(username, domainId);
+=======
+        if (!isOAuthPluginEnabled()) {
+            logger.debug("OAuth2 plugin is disabled");
+            return new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
+        } else if (requestParameters == null) {
+            logger.debug("Request parameters are null");
+            return new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
+        }
+
+        final UserAccount userAccount = userAccountDao.getUserAccount(username, domainId);
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         if (userAccount == null) {
             logger.debug("Unable to find user with " + username + " in domain " + domainId + ", or user source is not OAUTH2");
             return new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
         } else {
+<<<<<<< HEAD
             User user = _userDao.getUser(userAccount.getId());
+=======
+            User user = userDao.getUser(userAccount.getId());
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
             final String[] provider = (String[])requestParameters.get(ApiConstants.PROVIDER);
             final String[] emailArray = (String[])requestParameters.get(ApiConstants.EMAIL);
             final String[] secretCodeArray = (String[])requestParameters.get(ApiConstants.SECRET_CODE);
@@ -60,7 +90,11 @@ public class OAuth2UserAuthenticator extends AdapterBase implements UserAuthenti
             String email = ((emailArray == null) ? null : emailArray[0]);
             String secretCode = ((secretCodeArray == null) ? null : secretCodeArray[0]);
 
+<<<<<<< HEAD
             UserOAuth2Authenticator authenticator = _userOAuth2mgr.getUserOAuth2AuthenticationProvider(oauthProvider);
+=======
+            UserOAuth2Authenticator authenticator = userOAuth2mgr.getUserOAuth2AuthenticationProvider(oauthProvider);
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
             if (user != null && authenticator.verifyUser(email, secretCode)) {
                 return new Pair<Boolean, ActionOnFailedAuthentication>(true, null);
             }
@@ -73,4 +107,11 @@ public class OAuth2UserAuthenticator extends AdapterBase implements UserAuthenti
     public String encode(String password) {
         return null;
     }
+<<<<<<< HEAD
+=======
+
+    protected boolean isOAuthPluginEnabled() {
+        return OAuth2IsPluginEnabled.value();
+    }
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 }

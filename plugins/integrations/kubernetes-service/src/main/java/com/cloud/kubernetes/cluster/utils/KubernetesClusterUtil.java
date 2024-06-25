@@ -266,6 +266,7 @@ public class KubernetesClusterUtil {
                 socket.connect(new InetSocketAddress(ipAddress, port), 10000);
                 controlVmRunning = true;
             } catch (IOException e) {
+<<<<<<< HEAD
                 if (LOGGER.isInfoEnabled()) {
                     LOGGER.info(String.format("Waiting for Kubernetes cluster : %s control node VMs to be accessible", kubernetesCluster.getName()));
                 }
@@ -273,6 +274,13 @@ public class KubernetesClusterUtil {
                     Thread.sleep(10000);
                 } catch (InterruptedException ex) {
                     LOGGER.warn(String.format("Error while waiting for Kubernetes cluster : %s control node VMs to be accessible", kubernetesCluster.getName()), ex);
+=======
+                LOGGER.info("Waiting for Kubernetes cluster : {} control node VMs to be accessible", kubernetesCluster.getName());
+                try {
+                    Thread.sleep(10000);
+                } catch (InterruptedException ex) {
+                    LOGGER.warn("Error while waiting for Kubernetes cluster : {} control node VMs to be accessible", kubernetesCluster.getName(), ex);
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
                 }
             }
         }

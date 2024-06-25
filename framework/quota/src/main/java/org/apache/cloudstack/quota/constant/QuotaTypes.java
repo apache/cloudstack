@@ -22,6 +22,10 @@ import java.util.Map;
 
 import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.cloudstack.usage.UsageUnitTypes;
+<<<<<<< HEAD
+=======
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
 public class QuotaTypes extends UsageTypes {
     private final Integer quotaType;
@@ -100,4 +104,16 @@ public class QuotaTypes extends UsageTypes {
         }
         return null;
     }
+<<<<<<< HEAD
+=======
+
+    static public QuotaTypes getQuotaType(int quotaType) {
+        return quotaTypeMap.get(quotaType);
+    }
+
+    @Override
+    public String toString() {
+        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "quotaType", "quotaName");
+    }
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 }

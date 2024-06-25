@@ -112,7 +112,12 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
     /**
      * Gets the Total Primary Storage space allocated for an account
      *
+<<<<<<< HEAD
      * @param list of ids of virtual router VMs under this account
+=======
+     * @param accountId
+     * @param virtualRouters list of ids of virtual router VMs under this account
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
      * @return total Primary Storage space (in bytes) used
      */
     long primaryStorageUsedForAccount(long accountId, List<Long> virtualRouters);

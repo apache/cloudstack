@@ -56,4 +56,30 @@ public class HostMetricsResponseTest {
         Assert.assertEquals(expected, hostResponse.getCpuAllocatedGhz());
     }
 
+<<<<<<< HEAD
+=======
+    @Test
+    public void testSetCpuAllocatedWithNullCpu() {
+        String expected = null;
+        final HostMetricsResponse hostResponse = new HostMetricsResponse();
+        hostResponse.setCpuAllocated(null, 10, 1000L);
+        Assert.assertEquals(expected, hostResponse.getCpuAllocatedGhz());
+    }
+
+    @Test
+    public void testSetCpuAllocatedWithNullCpuNumber() {
+        String expected = null;
+        final HostMetricsResponse hostResponse = new HostMetricsResponse();
+        hostResponse.setCpuAllocated(String.format("50%s25%%", decimalSeparator), null, 1000L);
+        Assert.assertEquals(expected, hostResponse.getCpuAllocatedGhz());
+    }
+
+    @Test
+    public void testSetCpuAllocatedWithNullCpuSpeed() {
+        String expected = null;
+        final HostMetricsResponse hostResponse = new HostMetricsResponse();
+        hostResponse.setCpuAllocated(String.format("50%s25%%", decimalSeparator), 10, null);
+        Assert.assertEquals(expected, hostResponse.getCpuAllocatedGhz());
+    }
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 }

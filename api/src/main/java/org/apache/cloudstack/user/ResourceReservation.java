@@ -22,6 +22,11 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 import com.cloud.configuration.Resource;
 
+<<<<<<< HEAD
+=======
+import java.util.Date;
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 /**
  * an interface defining an {code}AutoClosable{code} reservation object
  */
@@ -39,4 +44,9 @@ ResourceReservation extends InternalIdentity {
     String getTag();
 
     Long getReservedAmount();
+<<<<<<< HEAD
+=======
+
+    Date getCreated();
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 }

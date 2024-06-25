@@ -15,11 +15,20 @@
 # specific language governing permissions and limitations
 # under the License.
 
+<<<<<<< HEAD
 /var/log/cloudstack/agent/security_group.log /var/log/cloudstack/agent/resizevolume.log /var/log/cloudstack/agent/rolling-maintenance.log {
+=======
+/var/log/cloudstack/agent/security_group.log /var/log/cloudstack/agent/resizevolume.log /var/log/cloudstack/agent/rolling-maintenance.log /var/log/cloudstack/agent/agent.out /var/log/cloudstack/agent/agent.err {
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     copytruncate
     daily
     rotate 5
     compress
     missingok
     size 10M
+<<<<<<< HEAD
+=======
+    dateext
+    dateformat -%Y-%m-%d
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 }

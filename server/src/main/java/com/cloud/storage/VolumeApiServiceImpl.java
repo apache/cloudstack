@@ -157,6 +157,10 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
+<<<<<<< HEAD
+=======
+import com.cloud.resource.ResourceManager;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 import com.cloud.resource.ResourceState;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementService;
@@ -256,6 +260,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @Inject
     private ConfigurationManager _configMgr;
     @Inject
+<<<<<<< HEAD
+=======
+    private ResourceManager _resourceMgr;
+    @Inject
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     private VolumeDao _volsDao;
     @Inject
     private VolumeDetailsDao _volsDetailsDao;
@@ -566,7 +575,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(ownerId), ResourceType.secondary_storage);
         }
 
+<<<<<<< HEAD
         sanitizeFormat(format);
+=======
+        checkFormatWithSupportedHypervisorsInZone(format, zoneId);
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
         // Check that the disk offering specified is valid
         if (diskOfferingId != null) {
@@ -582,6 +595,18 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return false;
     }
 
+<<<<<<< HEAD
+=======
+    private void checkFormatWithSupportedHypervisorsInZone(String format, Long zoneId) {
+        ImageFormat imageformat = ImageFormat.valueOf(format);
+        final List<HypervisorType> supportedHypervisorTypesInZone = _resourceMgr.getSupportedHypervisorTypes(zoneId, false, null);
+        final HypervisorType hypervisorTypeFromFormat = ApiDBUtils.getHypervisorTypeFromFormat(zoneId, imageformat);
+        if (!(supportedHypervisorTypesInZone.contains(hypervisorTypeFromFormat))) {
+            throw new InvalidParameterValueException(String.format("The %s hypervisor supported for %s file format, is not found on the zone", hypervisorTypeFromFormat.toString(), format));
+        }
+    }
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     public String getRandomVolumeName() {
         return UUID.randomUUID().toString();
     }

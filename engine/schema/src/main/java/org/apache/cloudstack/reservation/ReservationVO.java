@@ -25,10 +25,20 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+<<<<<<< HEAD
+=======
+import com.cloud.utils.db.GenericDao;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 import org.apache.cloudstack.user.ResourceReservation;
 
 import com.cloud.configuration.Resource;
 import com.cloud.utils.exception.CloudRuntimeException;
+<<<<<<< HEAD
+=======
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
+
+import java.util.Date;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
 @Entity
 @Table(name = "resource_reservation")
@@ -57,6 +67,15 @@ public class ReservationVO implements ResourceReservation {
     @Column(name = "amount")
     long amount;
 
+<<<<<<< HEAD
+=======
+    @Column(name = "mgmt_server_id")
+    Long managementServerId;
+
+    @Column(name = GenericDao.CREATED_COLUMN)
+    private Date created;
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     protected ReservationVO() {
     }
 
@@ -69,6 +88,10 @@ public class ReservationVO implements ResourceReservation {
         this.resourceType = resourceType;
         this.tag = tag;
         this.amount = delta;
+<<<<<<< HEAD
+=======
+        this.managementServerId = ManagementServerNode.getManagementServerId();
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     }
 
     public ReservationVO(Long accountId, Long domainId, Resource.ResourceType resourceType, Long delta) {
@@ -114,4 +137,19 @@ public class ReservationVO implements ResourceReservation {
         this.resourceId = resourceId;
     }
 
+<<<<<<< HEAD
+=======
+    @Override
+    public Date getCreated() {
+        return created;
+    }
+
+    public void setCreated(Date created) {
+        this.created = created;
+    }
+
+    public Long getManagementServerId() {
+        return managementServerId;
+    }
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 }

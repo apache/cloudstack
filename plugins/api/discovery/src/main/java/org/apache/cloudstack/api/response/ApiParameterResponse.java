@@ -16,12 +16,22 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+<<<<<<< HEAD
 import com.google.gson.annotations.SerializedName;
 
+=======
+import java.util.List;
+
+import org.apache.cloudstack.acl.RoleType;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
+<<<<<<< HEAD
+=======
+import com.google.gson.annotations.SerializedName;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
 public class ApiParameterResponse extends BaseResponse {
     @SerializedName(ApiConstants.NAME)
@@ -52,6 +62,11 @@ public class ApiParameterResponse extends BaseResponse {
     @Param(description = "comma separated related apis to get the parameter")
     private String related;
 
+<<<<<<< HEAD
+=======
+    private transient List<RoleType> authorizedRoleTypes = null;
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     public ApiParameterResponse() {
     }
 
@@ -87,4 +102,14 @@ public class ApiParameterResponse extends BaseResponse {
         this.related = related;
     }
 
+<<<<<<< HEAD
+=======
+    public void setAuthorizedRoleTypes(List<RoleType> authorizedRoleTypes) {
+        this.authorizedRoleTypes = authorizedRoleTypes;
+    }
+
+    public List<RoleType> getAuthorizedRoleTypes() {
+        return authorizedRoleTypes;
+    }
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 }

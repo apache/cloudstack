@@ -214,6 +214,10 @@ public class LibvirtConvertInstanceCommandWrapperTest {
 
         LibvirtDomainXMLParser parser = Mockito.mock(LibvirtDomainXMLParser.class);
         Mockito.when(parser.getDisks()).thenReturn(List.of(diskDef));
+<<<<<<< HEAD
+=======
+        Mockito.doReturn(new Pair<String, String>(null, null)).when(convertInstanceCommandWrapper).getNfsStoragePoolHostAndPath(destinationPool);
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
         List<UnmanagedInstanceTO.Disk> unmanagedInstanceDisks = convertInstanceCommandWrapper.getUnmanagedInstanceDisks(disks, parser);
         Assert.assertEquals(1, unmanagedInstanceDisks.size());

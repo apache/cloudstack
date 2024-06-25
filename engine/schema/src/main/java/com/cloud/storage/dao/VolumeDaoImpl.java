@@ -81,7 +81,10 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     @Inject
     ResourceTagDao _tagsDao;
 
+<<<<<<< HEAD
     protected static final String SELECT_VM_SQL = "SELECT DISTINCT instance_id from volumes v where v.host_id = ? and v.mirror_state = ?";
+=======
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     // need to account for zone-wide primary storage where storage_pool has
     // null-value pod and cluster, where hypervisor information is stored in
     // storage_pool

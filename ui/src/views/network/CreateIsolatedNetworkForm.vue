@@ -66,6 +66,7 @@
               </a-select-option>
             </a-select>
           </a-form-item>
+<<<<<<< HEAD
           <a-form-item ref="domainid" name="domainid" v-if="isAdminOrDomainAdmin()">
             <template #label>
               <tooltip-label :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
@@ -104,6 +105,9 @@
               </a-select-option>
             </a-select>
           </a-form-item>
+=======
+          <ownership-selection v-if="isAdminOrDomainAdmin()" @fetch-owner="fetchOwnerOptions"/>
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
           <a-form-item
             ref="networkdomain"
             name="networkdomain"
@@ -299,6 +303,7 @@
               v-model:value="form.sourcenatipaddress"
               :placeholder="apiParams.sourcenatipaddress?.description"/>
           </a-form-item>
+<<<<<<< HEAD
           <a-form-item
             ref="networkdomain"
             name="networkdomain"
@@ -321,6 +326,8 @@
              v-model:value="form.account"
               :placeholder="apiParams.account.description"/>
           </a-form-item>
+=======
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
           <div :span="24" class="action-button">
             <a-button
               :loading="actionLoading"
@@ -349,13 +356,22 @@ import { isAdmin, isAdminOrDomainAdmin } from '@/role'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+<<<<<<< HEAD
+=======
+import OwnershipSelection from '@/views/compute/wizard/OwnershipSelection.vue'
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
 export default {
   name: 'CreateIsolatedNetworkForm',
   mixins: [mixinForm],
   components: {
     TooltipLabel,
+<<<<<<< HEAD
     ResourceIcon
+=======
+    ResourceIcon,
+    OwnershipSelection
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
   },
   props: {
     loading: {
@@ -374,6 +390,7 @@ export default {
   data () {
     return {
       actionLoading: false,
+<<<<<<< HEAD
       domains: [],
       domain: { loading: false },
       selectedDomain: {},
@@ -381,6 +398,11 @@ export default {
       accounts: [],
       accountLoading: false,
       selectedAccount: {},
+=======
+      owner: {},
+      accountVisible: isAdminOrDomainAdmin(),
+      accountLoading: false,
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
       zones: [],
       zoneLoading: false,
       selectedZone: {},
@@ -410,12 +432,15 @@ export default {
     this.apiParams = this.$getApiParams('createNetwork')
   },
   created () {
+<<<<<<< HEAD
     this.domains = [
       {
         id: '-1',
         name: ' '
       }
     ]
+=======
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     this.initForm()
     this.fetchData()
   },
@@ -449,7 +474,10 @@ export default {
       })
     },
     fetchData () {
+<<<<<<< HEAD
       this.fetchDomainData()
+=======
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
       this.fetchZoneData()
       this.allowSettingMTU()
     },
@@ -496,6 +524,7 @@ export default {
       this.publicMtuMax = zone?.routerpublicinterfacemaxmtu || 1500
       this.updateVPCCheckAndFetchNetworkOfferingData()
     },
+<<<<<<< HEAD
     fetchDomainData () {
       if ('listDomains' in this.$store.getters.apis) {
         this.domain.loading = true
@@ -534,6 +563,33 @@ export default {
     handleAccountChange (account) {
       this.selectedAccount = account
     },
+=======
+    fetchOwnerOptions (OwnerOptions) {
+      this.owner = {
+        projectid: null,
+        domainid: this.$store.getters.userInfo.domainid,
+        account: this.$store.getters.userInfo.account
+      }
+      if (OwnerOptions.selectedAccountType === this.$t('label.account')) {
+        if (!OwnerOptions.selectedAccount) {
+          return
+        }
+        this.owner.account = OwnerOptions.selectedAccount
+        this.owner.domainid = OwnerOptions.selectedDomain
+        this.owner.projectid = null
+      } else if (OwnerOptions.selectedAccountType === this.$t('label.project')) {
+        if (!OwnerOptions.selectedProject) {
+          return
+        }
+        this.owner.account = null
+        this.owner.domainid = null
+        this.owner.projectid = OwnerOptions.selectedProject
+      }
+      if (isAdminOrDomainAdmin()) {
+        this.updateVPCCheckAndFetchNetworkOfferingData()
+      }
+    },
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     updateVPCCheckAndFetchNetworkOfferingData () {
       if (this.vpc !== null) { // from VPC section
         this.fetchNetworkOfferingData(true)
@@ -562,8 +618,13 @@ export default {
         guestiptype: 'Isolated',
         state: 'Enabled'
       }
+<<<<<<< HEAD
       if (isAdminOrDomainAdmin() && this.selectedDomain.id !== '-1') { // domain is visible only for admins
         params.domainid = this.selectedDomain.id
+=======
+      if (isAdminOrDomainAdmin() && this.owner.domainid !== '-1') { // domain is visible only for admins
+        params.domainid = this.owner.domainid
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
       }
       if (!isAdmin()) { // normal user is not aware of the VLANs in the system, so normal user is not allowed to create network with network offerings whose specifyvlan = true
         params.specifyvlan = false
@@ -613,6 +674,7 @@ export default {
         }
       })
     },
+<<<<<<< HEAD
     fetchAccounts () {
       this.accountLoading = true
       var params = {}
@@ -638,6 +700,8 @@ export default {
         }
       })
     },
+=======
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     handleSubmit () {
       if (this.actionLoading) return
       this.formRef.value.validate().then(() => {
@@ -666,12 +730,24 @@ export default {
         if ('vpcid' in values) {
           params.vpcid = this.selectedVpc.id
         }
+<<<<<<< HEAD
         if ('domainid' in values && values.domainid > 0) {
           params.domainid = this.selectedDomain.id
           if (this.isValidTextValueForKey(values, 'account') && this.selectedAccount.id !== '-1') {
             params.account = this.selectedAccount.name
           }
         }
+=======
+
+        if (this.owner.account) {
+          params.account = this.owner.account
+          params.domainid = this.owner.domainid
+        } else if (this.owner.projectid) {
+          params.domainid = this.owner.domainid
+          params.projectid = this.owner.projectid
+        }
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         api('createNetwork', params).then(json => {
           this.$notification.success({
             message: 'Network',

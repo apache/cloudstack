@@ -74,6 +74,10 @@ function generateRouterMap (section) {
           icon: child.icon,
           docHelp: vueProps.$applyDocHelpMappings(child.docHelp),
           permission: child.permission,
+<<<<<<< HEAD
+=======
+          getApiToCall: child.getApiToCall,
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
           resourceType: child.resourceType,
           filters: child.filters,
           params: child.params ? child.params : {},

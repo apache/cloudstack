@@ -948,7 +948,11 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 dsMo.moveDatastoreFile(vmwareLayoutFilePair[i], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[i], dcMo.getMor(), true);
             }
 
+<<<<<<< HEAD
             logger.info("detach disks from volume-wrapper VM and destroy" + vmdkName);
+=======
+            logger.info("detach disks from volume-wrapper VM and destroy {}", vmdkName);
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
             vmMo.detachAllDisksAndDestroy();
 
             String srcFile = dsMo.getDatastorePath(vmdkName, true);

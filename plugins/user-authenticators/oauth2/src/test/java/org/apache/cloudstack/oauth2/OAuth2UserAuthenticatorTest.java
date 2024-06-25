@@ -27,21 +27,42 @@ import org.apache.cloudstack.auth.UserOAuth2Authenticator;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+<<<<<<< HEAD
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+=======
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+<<<<<<< HEAD
+=======
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+<<<<<<< HEAD
 
+=======
+import static org.mockito.Mockito.doReturn;
+
+@RunWith(MockitoJUnitRunner.class)
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 public class OAuth2UserAuthenticatorTest {
 
     @Mock
@@ -54,13 +75,22 @@ public class OAuth2UserAuthenticatorTest {
     private OAuth2AuthManager userOAuth2mgr;
 
     @InjectMocks
+<<<<<<< HEAD
     private OAuth2UserAuthenticator authenticator;
 
+=======
+    @Spy
+    private OAuth2UserAuthenticator authenticator;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     private AutoCloseable closeable;
 
     @Before
     public void setUp() {
         closeable = MockitoAnnotations.openMocks(this);
+<<<<<<< HEAD
+=======
+        doReturn(true).when(authenticator).isOAuthPluginEnabled();
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     }
 
     @After
@@ -68,6 +98,10 @@ public class OAuth2UserAuthenticatorTest {
         closeable.close();
     }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     @Test
     public void testAuthenticateWithValidCredentials() {
         String username = "testuser";
@@ -92,13 +126,22 @@ public class OAuth2UserAuthenticatorTest {
 
         Pair<Boolean, OAuth2UserAuthenticator.ActionOnFailedAuthentication> result = authenticator.authenticate(username, null, domainId, requestParameters);
 
+<<<<<<< HEAD
+=======
+        assertTrue(result.first());
+        assertNull(result.second());
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         verify(userAccountDao).getUserAccount(username, domainId);
         verify(userDao).getUser(userAccount.getId());
         verify(userOAuth2mgr).getUserOAuth2AuthenticationProvider(provider[0]);
         verify(userOAuth2Authenticator).verifyUser(email[0], secretCode[0]);
+<<<<<<< HEAD
 
         assertEquals(true, result.first().booleanValue());
         assertEquals(null, result.second());
+=======
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     }
 
     @Test
@@ -114,7 +157,11 @@ public class OAuth2UserAuthenticatorTest {
         UserOAuth2Authenticator userOAuth2Authenticator = mock(UserOAuth2Authenticator.class);
 
         when(userAccountDao.getUserAccount(username, domainId)).thenReturn(userAccount);
+<<<<<<< HEAD
         when(userDao.getUser(userAccount.getId())).thenReturn( user);
+=======
+        when(userDao.getUser(userAccount.getId())).thenReturn(user);
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         when(userOAuth2mgr.getUserOAuth2AuthenticationProvider(provider[0])).thenReturn(userOAuth2Authenticator);
         when(userOAuth2Authenticator.verifyUser(email[0], secretCode[0])).thenReturn(false);
 
@@ -125,13 +172,22 @@ public class OAuth2UserAuthenticatorTest {
 
         Pair<Boolean, OAuth2UserAuthenticator.ActionOnFailedAuthentication> result = authenticator.authenticate(username, null, domainId, requestParameters);
 
+<<<<<<< HEAD
+=======
+        assertFalse(result.first());
+        assertEquals(OAuth2UserAuthenticator.ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT, result.second());
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         verify(userAccountDao).getUserAccount(username, domainId);
         verify(userDao).getUser(userAccount.getId());
         verify(userOAuth2mgr).getUserOAuth2AuthenticationProvider(provider[0]);
         verify(userOAuth2Authenticator).verifyUser(email[0], secretCode[0]);
+<<<<<<< HEAD
 
         assertEquals(false, result.first().booleanValue());
         assertEquals(OAuth2UserAuthenticator.ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT, result.second());
+=======
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     }
 
     @Test
@@ -151,11 +207,20 @@ public class OAuth2UserAuthenticatorTest {
 
         Pair<Boolean, OAuth2UserAuthenticator.ActionOnFailedAuthentication> result = authenticator.authenticate(username, null, domainId, requestParameters);
 
+<<<<<<< HEAD
         verify(userAccountDao).getUserAccount(username, domainId);
         verify(userDao, never()).getUser(anyLong());
         verify(userOAuth2mgr, never()).getUserOAuth2AuthenticationProvider(anyString());
 
         assertEquals(false, result.first().booleanValue());
         assertEquals(null, result.second());
+=======
+        assertFalse(result.first());
+        assertNull(result.second());
+
+        verify(userAccountDao).getUserAccount(username, domainId);
+        verify(userDao, never()).getUser(anyLong());
+        verify(userOAuth2mgr, never()).getUserOAuth2AuthenticationProvider(anyString());
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     }
 }

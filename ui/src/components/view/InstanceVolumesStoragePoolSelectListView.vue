@@ -102,8 +102,18 @@ export default {
           title: this.$t('label.size')
         },
         {
+<<<<<<< HEAD
           key: 'selectedstorage',
           title: this.$t('label.storage')
+=======
+          key: 'storage',
+          title: this.$t('label.current.storage'),
+          dataIndex: 'storage'
+        },
+        {
+          key: 'selectedstorage',
+          title: this.$t('label.selected.storage')
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         },
         {
           key: 'select',

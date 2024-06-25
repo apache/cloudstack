@@ -130,7 +130,11 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
         }
         if (scope.getScopeId() != null) {
             SearchCriteria<ImageStoreVO> scc = createSearchCriteria();
+<<<<<<< HEAD
             scc.addOr("scope", SearchCriteria.Op.EQ, ScopeType.REGION);
+=======
+            scc.addOr("scope", SearchCriteria.Op.EQ, ScopeType.ZONE);
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
             scc.addOr("dcId", SearchCriteria.Op.EQ, scope.getScopeId());
             sc.addAnd("scope", SearchCriteria.Op.SC, scc);
         }

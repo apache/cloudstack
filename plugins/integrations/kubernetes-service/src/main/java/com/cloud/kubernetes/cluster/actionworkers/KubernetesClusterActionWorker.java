@@ -34,9 +34,17 @@ import javax.inject.Inject;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+<<<<<<< HEAD
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
+=======
+import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.ca.CAManager;
+import org.apache.cloudstack.config.ApiServiceConfiguration;
+import org.apache.cloudstack.context.CallContext;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.commons.collections.CollectionUtils;
@@ -92,7 +100,11 @@ import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmService;
 import com.cloud.vm.UserVmVO;
+<<<<<<< HEAD
 import com.cloud.vm.VirtualMachineManager;
+=======
+import com.cloud.vm.VirtualMachine;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
@@ -150,8 +162,11 @@ public class KubernetesClusterActionWorker {
     @Inject
     protected VlanDao vlanDao;
     @Inject
+<<<<<<< HEAD
     protected VirtualMachineManager itMgr;
     @Inject
+=======
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     protected LaunchPermissionDao launchPermissionDao;
     @Inject
     public ProjectService projectService;
@@ -475,6 +490,11 @@ public class KubernetesClusterActionWorker {
         }
 
         for (UserVm vm : clusterVMs) {
+<<<<<<< HEAD
+=======
+            CallContext vmContext  = CallContext.register(CallContext.current(), ApiCommandResourceType.VirtualMachine);
+            vmContext.putContextParameter(VirtualMachine.class, vm.getUuid());
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
             try {
                 templateService.attachIso(iso.getId(), vm.getId(), true);
                 if (logger.isInfoEnabled()) {
@@ -482,6 +502,11 @@ public class KubernetesClusterActionWorker {
                 }
             } catch (CloudRuntimeException ex) {
                 logTransitStateAndThrow(Level.ERROR, String.format("Failed to attach binaries ISO for VM : %s in the Kubernetes cluster name: %s", vm.getDisplayName(), kubernetesCluster.getName()), kubernetesCluster.getId(), failedEvent, ex);
+<<<<<<< HEAD
+=======
+            } finally {
+                CallContext.unregister();
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
             }
         }
     }
@@ -493,10 +518,20 @@ public class KubernetesClusterActionWorker {
     protected void detachIsoKubernetesVMs(List<UserVm> clusterVMs) {
         for (UserVm vm : clusterVMs) {
             boolean result = false;
+<<<<<<< HEAD
+=======
+            CallContext vmContext  = CallContext.register(CallContext.current(), ApiCommandResourceType.VirtualMachine);
+            vmContext.putContextParameter(VirtualMachine.class, vm.getUuid());
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
             try {
                 result = templateService.detachIso(vm.getId(), true);
             } catch (CloudRuntimeException ex) {
                 logger.warn(String.format("Failed to detach binaries ISO from VM : %s in the Kubernetes cluster : %s ", vm.getDisplayName(), kubernetesCluster.getName()), ex);
+<<<<<<< HEAD
+=======
+            } finally {
+                CallContext.unregister();
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
             }
             if (result) {
                 if (logger.isInfoEnabled()) {

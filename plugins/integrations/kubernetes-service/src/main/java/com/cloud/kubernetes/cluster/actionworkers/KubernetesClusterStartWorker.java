@@ -533,7 +533,11 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         }
         attachIsoKubernetesVMs(clusterVMs);
         if (!KubernetesClusterUtil.isKubernetesClusterControlVmRunning(kubernetesCluster, publicIpAddress, publicIpSshPort.second(), startTimeoutTime)) {
+<<<<<<< HEAD
             String msg = String.format("Failed to setup Kubernetes cluster : %s in usable state as unable to access control node VMs of the cluster", kubernetesCluster.getName());
+=======
+            String msg = String.format("Failed to setup Kubernetes cluster : %s is not in usable state as the system is unable to access control node VMs of the cluster", kubernetesCluster.getName());
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
             if (kubernetesCluster.getControlNodeCount() > 1 && Network.GuestType.Shared.equals(network.getGuestType())) {
                 msg = String.format("%s. Make sure external load-balancer has port forwarding rules for SSH access on ports %d-%d and API access on port %d",
                         msg,

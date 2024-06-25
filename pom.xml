@@ -171,7 +171,11 @@
         <cs.nitro.version>10.1</cs.nitro.version>
         <cs.opensaml.version>2.6.6</cs.opensaml.version>
         <cs.rados-java.version>0.6.0</cs.rados-java.version>
+<<<<<<< HEAD
         <cs.java-linstor.version>0.3.0</cs.java-linstor.version>
+=======
+        <cs.java-linstor.version>0.5.1</cs.java-linstor.version>
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         <cs.reflections.version>0.10.2</cs.reflections.version>
         <cs.servicemix.version>3.4.4_1</cs.servicemix.version>
         <cs.servlet.version>4.0.1</cs.servlet.version>

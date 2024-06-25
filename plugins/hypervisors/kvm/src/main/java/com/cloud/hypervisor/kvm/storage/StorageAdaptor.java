@@ -41,6 +41,14 @@ public interface StorageAdaptor {
 
     public boolean deleteStoragePool(String uuid);
 
+<<<<<<< HEAD
+=======
+    public default KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool,
+                                                      PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, Long usableSize, byte[] passphrase) {
+        return createPhysicalDisk(name, pool, format, provisioningType, size, passphrase);
+    }
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     public KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool,
             PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, byte[] passphrase);
 
@@ -52,8 +60,22 @@ public interface StorageAdaptor {
 
     public boolean disconnectPhysicalDisk(Map<String, String> volumeToDisconnect);
 
+<<<<<<< HEAD
     // given local path to file/device (per Libvirt XML), 1) check that device is
     // handled by your adaptor, return false if not. 2) clean up device, return true
+=======
+    /**
+     * Given local path to file/device (per Libvirt XML),
+     * 1) Make sure to check that device is handled by your adaptor, return false if not.
+     * 2) clean up device, return true
+     * 3) if clean up fails, then return false
+     *
+     * If the method wrongly returns true, then there are chances that disconnect will not reach the right storage adapter
+     *
+     * @param localPath path for the file/device from the disk definition per Libvirt XML.
+     * @return true if the operation is successful; false if the operation fails or the adapter fails to handle the path.
+     */
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     public boolean disconnectPhysicalDiskByPath(String localPath);
 
     public boolean deletePhysicalDisk(String uuid, KVMStoragePool pool, Storage.ImageFormat format);

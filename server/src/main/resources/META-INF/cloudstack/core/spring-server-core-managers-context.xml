@@ -107,7 +107,11 @@
     <bean id="configurationServerImpl" class="com.cloud.server.ConfigurationServerImpl" />
 
     <bean id="userVmManagerImpl" class="com.cloud.vm.UserVmManagerImpl">
+<<<<<<< HEAD
         <property name="kubernetesClusterHelpers" value="#{kubernetesClusterHelperRegistry.registered}" />
+=======
+        <property name="kubernetesServiceHelpers" value="#{kubernetesServiceHelperRegistry.registered}" />
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     </bean>
 
     <bean id="consoleProxyManagerImpl" class="com.cloud.consoleproxy.ConsoleProxyManagerImpl">
@@ -145,6 +149,13 @@
         <property name="staticNatElements" value="#{staticNatServiceProvidersRegistry.registered}" />
     </bean>
 
+<<<<<<< HEAD
+=======
+    <bean id="eventDistributor" class="org.apache.cloudstack.framework.events.EventDistributorImpl" >
+        <property name="eventBuses" value="#{eventBusRegistry.registered}" />
+    </bean>
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     <bean id="hypervisorGuruManagerImpl" class="com.cloud.hypervisor.HypervisorGuruManagerImpl" >
         <property name="hvGuruList" value="#{hypervisorGurusRegistry.registered}" />
     </bean>
@@ -318,7 +329,11 @@
     </bean>
 
     <bean id="annotationService" class="org.apache.cloudstack.annotation.AnnotationManagerImpl">
+<<<<<<< HEAD
         <property name="kubernetesClusterHelpers" value="#{kubernetesClusterHelperRegistry.registered}" />
+=======
+        <property name="kubernetesServiceHelpers" value="#{kubernetesServiceHelperRegistry.registered}" />
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     </bean>
 
     <bean id="indirectAgentLBService" class="org.apache.cloudstack.agent.lb.IndirectAgentLBServiceImpl" />

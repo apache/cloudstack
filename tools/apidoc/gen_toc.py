@@ -274,7 +274,13 @@ known_categories = {
     'deleteBucket': 'Object Store',
     'listBuckets': 'Object Store',
     'listVmsForImport': 'Virtual Machine',
+<<<<<<< HEAD
     'importVm': 'Virtual Machine'
+=======
+    'importVm': 'Virtual Machine',
+    'Webhook': 'Webhook',
+    'Webhooks': 'Webhook'
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 }
 
 

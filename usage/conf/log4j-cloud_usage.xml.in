@@ -25,7 +25,11 @@ under the License.
        <!-- ============================== -->
 
        <Console name="CONSOLE" target="SYSTEM_OUT">
+<<<<<<< HEAD
           <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
+=======
+          <ThresholdFilter level="OFF" onMatch="ACCEPT" onMismatch="DENY"/>
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
           <PatternLayout pattern="%d{ABSOLUTE}{GMT} %5p %c{1}:%L - %m%ex%n"/>
        </Console>
 

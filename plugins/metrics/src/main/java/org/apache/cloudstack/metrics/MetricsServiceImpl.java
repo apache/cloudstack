@@ -617,7 +617,10 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
             }
 
             metricsResponse.setHasAnnotation(vmResponse.hasAnnotation());
+<<<<<<< HEAD
             metricsResponse.setIpAddress(vmResponse.getNics());
+=======
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
             metricsResponse.setCpuTotal(vmResponse.getCpuNumber(), vmResponse.getCpuSpeed());
             metricsResponse.setMemTotal(vmResponse.getMemory());
             metricsResponse.setNetworkRead(vmResponse.getNetworkKbsRead());

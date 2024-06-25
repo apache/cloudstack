@@ -25,6 +25,7 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+<<<<<<< HEAD
 import org.apache.commons.collections.MapUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -34,6 +35,16 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.Event;
 import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventBusException;
+=======
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.events.Event;
+import org.apache.cloudstack.framework.events.EventBus;
+import org.apache.cloudstack.framework.events.EventDistributor;
+import org.apache.commons.collections.MapUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -50,6 +61,10 @@ public class UsageEventUtils {
     protected static Logger LOGGER = LogManager.getLogger(UsageEventUtils.class);
     protected static EventBus s_eventBus = null;
     protected static ConfigurationDao s_configDao;
+<<<<<<< HEAD
+=======
+    private static EventDistributor eventDistributor;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
     @Inject
     UsageEventDao usageEventDao;
@@ -207,9 +222,15 @@ public class UsageEventUtils {
         if( !configValue)
             return;
         try {
+<<<<<<< HEAD
             s_eventBus = ComponentContext.getComponent(EventBus.class);
         } catch (NoSuchBeanDefinitionException nbe) {
             return; // no provider is configured to provide events bus, so just return
+=======
+            eventDistributor = ComponentContext.getComponent(EventDistributor.class);
+        } catch (NoSuchBeanDefinitionException nbe) {
+            return; // no provider is configured to provide events distributor, so just return
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         }
 
         Account account = s_accountDao.findById(accountId);
@@ -238,11 +259,15 @@ public class UsageEventUtils {
 
         event.setDescription(eventDescription);
 
+<<<<<<< HEAD
         try {
             s_eventBus.publish(event);
         } catch (EventBusException e) {
             LOGGER.warn("Failed to publish usage event on the event bus.");
         }
+=======
+        eventDistributor.publish(event);
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     }
 
     static final String Name = "management-server";

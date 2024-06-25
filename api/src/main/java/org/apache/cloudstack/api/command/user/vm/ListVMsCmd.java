@@ -16,9 +16,16 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
+<<<<<<< HEAD
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+=======
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -45,6 +52,10 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.commons.lang3.BooleanUtils;
+<<<<<<< HEAD
+=======
+import org.apache.commons.collections.CollectionUtils;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.server.ResourceIcon;
@@ -56,7 +67,10 @@ import com.cloud.vm.VirtualMachine;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements UserCmd {
 
+<<<<<<< HEAD
     private static final String s_name = "listvirtualmachinesresponse";
+=======
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -96,7 +110,12 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
                collectionType = CommandType.STRING,
                description = "comma separated list of vm details requested, "
                    + "value can be a list of [all, group, nics, stats, secgrp, tmpl, servoff, diskoff, backoff, iso, volume, min, affgrp]."
+<<<<<<< HEAD
                    + " If no parameter is passed in, the details will be defaulted to all")
+=======
+                   + " When no parameters are passed, all the details are returned if list.vm.default.details.stats is true (default),"
+                   + " otherwise when list.vm.default.details.stats is false the API response will exclude the stats details.")
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     private List<String> viewDetails;
 
     @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.UUID, entityType = TemplateResponse.class, description = "list vms by template")
@@ -237,6 +256,7 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
         return autoScaleVmGroupId;
     }
 
+<<<<<<< HEAD
     public EnumSet<VMDetails> getDetails() throws InvalidParameterValueException {
         EnumSet<VMDetails> dv;
         if (viewDetails == null || viewDetails.size() <= 0) {
@@ -253,6 +273,34 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
             }
         }
         return dv;
+=======
+    protected boolean isViewDetailsEmpty() {
+        return CollectionUtils.isEmpty(viewDetails);
+    }
+
+    public EnumSet<VMDetails> getDetails() throws InvalidParameterValueException {
+        if (isViewDetailsEmpty()) {
+            if (_queryService.ReturnVmStatsOnVmList.value()) {
+                return EnumSet.of(VMDetails.all);
+            }
+
+            Set<VMDetails> allDetails = new HashSet<>(Set.of(VMDetails.values()));
+            allDetails.remove(VMDetails.stats);
+            allDetails.remove(VMDetails.all);
+            return EnumSet.copyOf(allDetails);
+        }
+
+        try {
+            Set<VMDetails> dc = new HashSet<>();
+            for (String detail : viewDetails) {
+                dc.add(VMDetails.valueOf(detail));
+            }
+
+            return EnumSet.copyOf(dc);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidParameterValueException("The details parameter contains a non permitted value. The allowed values are " + EnumSet.allOf(VMDetails.class));
+        }
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     }
 
     @Override
@@ -275,10 +323,13 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
+<<<<<<< HEAD
     @Override
     public String getCommandName() {
         return s_name;
     }
+=======
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
     @Override
     public ApiCommandResourceType getApiResourceType() {

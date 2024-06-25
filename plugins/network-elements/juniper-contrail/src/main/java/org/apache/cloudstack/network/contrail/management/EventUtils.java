@@ -18,6 +18,7 @@
 package org.apache.cloudstack.network.contrail.management;
 
 import java.lang.reflect.Method;
+<<<<<<< HEAD
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ArrayList;
@@ -33,6 +34,21 @@ import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventBusException;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
+=======
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.aopalliance.intercept.MethodInterceptor;
+import org.aopalliance.intercept.MethodInvocation;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.events.EventDistributor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.stereotype.Component;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
 import com.cloud.event.ActionEvent;
 import com.cloud.event.ActionEvents;
@@ -43,15 +59,30 @@ import com.cloud.server.ManagementService;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ComponentMethodInterceptor;
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 @Component
 public class EventUtils {
     protected static Logger LOGGER = LogManager.getLogger(EventUtils.class);
 
+<<<<<<< HEAD
     protected static  EventBus s_eventBus = null;
+=======
+    private static EventDistributor eventDistributor;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
     public EventUtils() {
     }
 
+<<<<<<< HEAD
+=======
+    public static void setEventDistributor(EventDistributor eventDistributorImpl) {
+        eventDistributor = eventDistributorImpl;
+    }
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     private static void publishOnMessageBus(String eventCategory, String eventType, String details, Event.State state) {
 
         if (state != com.cloud.event.Event.State.Completed) {
@@ -59,7 +90,11 @@ public class EventUtils {
         }
 
         try {
+<<<<<<< HEAD
             s_eventBus = ComponentContext.getComponent(EventBus.class);
+=======
+            setEventDistributor(ComponentContext.getComponent(EventDistributor.class));
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         } catch (NoSuchBeanDefinitionException nbe) {
              return; // no provider is configured to provide events bus, so just return
         }
@@ -67,11 +102,16 @@ public class EventUtils {
         org.apache.cloudstack.framework.events.Event event =
             new org.apache.cloudstack.framework.events.Event(ManagementService.Name, eventCategory, eventType, EventTypes.getEntityForEvent(eventType), null);
 
+<<<<<<< HEAD
         Map<String, String> eventDescription = new HashMap<String, String>();
+=======
+        Map<String, String> eventDescription = new HashMap<>();
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         eventDescription.put("event", eventType);
         eventDescription.put("status", state.toString());
         eventDescription.put("details", details);
         event.setDescription(eventDescription);
+<<<<<<< HEAD
         try {
             s_eventBus.publish(event);
         } catch (EventBusException evx) {
@@ -79,6 +119,9 @@ public class EventUtils {
             LOGGER.warn(errMsg, evx);
         }
 
+=======
+        eventDistributor.publish(event);
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     }
 
     public static class EventInterceptor implements ComponentMethodInterceptor, MethodInterceptor {
@@ -119,7 +162,11 @@ public class EventUtils {
         }
 
         protected List<ActionEvent> getActionEvents(Method m) {
+<<<<<<< HEAD
             List<ActionEvent> result = new ArrayList<ActionEvent>();
+=======
+            List<ActionEvent> result = new ArrayList<>();
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
             ActionEvents events = m.getAnnotation(ActionEvents.class);
 

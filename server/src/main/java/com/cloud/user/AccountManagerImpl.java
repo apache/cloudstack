@@ -77,11 +77,19 @@ import org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleDao;
 import org.apache.cloudstack.resourcedetail.UserDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.UserDetailsDao;
 import org.apache.cloudstack.utils.baremetal.BaremetalUtils;
+<<<<<<< HEAD
+=======
+import org.apache.cloudstack.webhook.WebhookHelper;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+<<<<<<< HEAD
+=======
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.auth.SetupUserTwoFactorAuthenticationCmd;
@@ -168,6 +176,10 @@ import com.cloud.utils.ConstantTimeComparator;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
+<<<<<<< HEAD
+=======
+import com.cloud.utils.component.ComponentContext;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
@@ -330,6 +342,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     private List<SecurityChecker> _securityCheckers;
     private int _cleanupInterval;
+<<<<<<< HEAD
+=======
+    private static final String OAUTH2_PROVIDER_NAME = "oauth2";
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     private List<String> apiNameList;
 
     protected static Map<String, UserTwoFactorAuthenticator> userTwoFactorAuthenticationProvidersMap = new HashMap<>();
@@ -425,6 +441,18 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         _querySelectors = querySelectors;
     }
 
+<<<<<<< HEAD
+=======
+    protected void deleteWebhooksForAccount(long accountId) {
+        try {
+            WebhookHelper webhookService = ComponentContext.getDelegateComponentOfType(WebhookHelper.class);
+            webhookService.deleteWebhooksForAccount(accountId);
+        } catch (NoSuchBeanDefinitionException ignored) {
+            logger.debug("No WebhookHelper bean found");
+        }
+    }
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     @Override
     public List<String> getApiNameList() {
         return apiNameList;
@@ -1104,6 +1132,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             // Delete registered UserData
             userDataDao.removeByAccountId(accountId);
 
+<<<<<<< HEAD
+=======
+            // Delete Webhooks
+            deleteWebhooksForAccount(accountId);
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
             return true;
         } catch (Exception ex) {
             logger.warn("Failed to cleanup account " + account + " due to ", ex);
@@ -2660,7 +2694,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     continue;
                 }
             }
+<<<<<<< HEAD
             if (secretCode != null && !authenticator.getName().equals("oauth2")) {
+=======
+            if ((secretCode != null && !authenticator.getName().equals(OAUTH2_PROVIDER_NAME))
+                    || (secretCode == null && authenticator.getName().equals(OAUTH2_PROVIDER_NAME))) {
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
                 continue;
             }
             Pair<Boolean, ActionOnFailedAuthentication> result = authenticator.authenticate(username, password, domainId, requestParameters);

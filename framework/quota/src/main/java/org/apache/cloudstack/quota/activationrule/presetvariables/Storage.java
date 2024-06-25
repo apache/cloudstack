@@ -22,9 +22,19 @@ import java.util.List;
 import com.cloud.storage.ScopeType;
 
 public class Storage extends GenericPresetVariable {
+<<<<<<< HEAD
     private List<String> tags;
 
     private Boolean isTagARule;
+=======
+    @PresetVariableDefinition(description = "List of string representing the tags of the storage where the volume is (i.e.: [\"a\", \"b\"]).")
+    private List<String> tags;
+
+    @PresetVariableDefinition(description = "Whether the tag is a rule interpreted in JavaScript. Applicable only for primary storages.")
+    private Boolean isTagARule;
+
+    @PresetVariableDefinition(description = "Scope of the storage where the volume is. Values can be: ZONE, CLUSTER or HOST. Applicable only for primary storages.")
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     private ScopeType scope;
 
     public List<String> getTags() {

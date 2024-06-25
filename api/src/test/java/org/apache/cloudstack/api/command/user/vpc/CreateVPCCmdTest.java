@@ -167,17 +167,28 @@ public class CreateVPCCmdTest extends TestCase {
 
     @Test
     public void testExecute() throws ResourceUnavailableException, InsufficientCapacityException {
+<<<<<<< HEAD
         ReflectionTestUtils.setField(cmd, "start", true);
+=======
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         Vpc vpc = Mockito.mock(Vpc.class);
         VpcResponse response = Mockito.mock(VpcResponse.class);
 
         ReflectionTestUtils.setField(cmd, "id", 1L);
         responseGenerator = Mockito.mock(ResponseGenerator.class);
+<<<<<<< HEAD
         Mockito.when(_vpcService.startVpc(1L, true)).thenReturn(true);
+=======
+        Mockito.doNothing().when(_vpcService).startVpc(cmd);
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         Mockito.when(_entityMgr.findById(Mockito.eq(Vpc.class), Mockito.any(Long.class))).thenReturn(vpc);
         cmd._responseGenerator = responseGenerator;
         Mockito.when(responseGenerator.createVpcResponse(ResponseObject.ResponseView.Restricted, vpc)).thenReturn(response);
         cmd.execute();
+<<<<<<< HEAD
         Mockito.verify(_vpcService, Mockito.times(1)).startVpc(Mockito.anyLong(), Mockito.anyBoolean());
+=======
+        Mockito.verify(_vpcService, Mockito.times(1)).startVpc(cmd);
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     }
 }

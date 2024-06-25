@@ -23,8 +23,17 @@ import java.util.Set;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 public class GenericPresetVariable {
+<<<<<<< HEAD
     private String id;
     private String name;
+=======
+    @PresetVariableDefinition(description = "ID of the resource.")
+    private String id;
+
+    @PresetVariableDefinition(description = "Name of the resource.")
+    private String name;
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     protected transient Set<String> fieldNamesToIncludeInToString = new HashSet<>();
 
     public String getId() {

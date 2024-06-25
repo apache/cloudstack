@@ -18,8 +18,13 @@
 //
 package org.apache.cloudstack.reservation.dao;
 
+<<<<<<< HEAD
 import java.util.List;
 import java.util.stream.Collectors;
+=======
+import java.util.Date;
+import java.util.List;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.reservation.ReservationVO;
@@ -42,6 +47,11 @@ public class ReservationDaoImpl extends GenericDaoBase<ReservationVO, Long> impl
     private static final String ACCOUNT_ID = "accountId";
     private static final String DOMAIN_ID = "domainId";
     private static final String IDS = "ids";
+<<<<<<< HEAD
+=======
+    private static final String MS_ID = "managementServerId";
+    private static final String CREATED = "created";
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     private final SearchBuilder<ReservationVO> listResourceByAccountAndTypeSearch;
     private final SearchBuilder<ReservationVO> listAccountAndTypeSearch;
     private final SearchBuilder<ReservationVO> listAccountAndTypeAndNoTagSearch;
@@ -50,6 +60,10 @@ public class ReservationDaoImpl extends GenericDaoBase<ReservationVO, Long> impl
     private final SearchBuilder<ReservationVO> listDomainAndTypeAndNoTagSearch;
     private final SearchBuilder<ReservationVO> listResourceByAccountAndTypeAndNoTagSearch;
     private final SearchBuilder<ReservationVO> listIdsSearch;
+<<<<<<< HEAD
+=======
+    private final SearchBuilder<ReservationVO> listMsIdSearch;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
     public ReservationDaoImpl() {
 
@@ -71,12 +85,20 @@ public class ReservationDaoImpl extends GenericDaoBase<ReservationVO, Long> impl
         listAccountAndTypeSearch.and(ACCOUNT_ID, listAccountAndTypeSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         listAccountAndTypeSearch.and(RESOURCE_TYPE, listAccountAndTypeSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
         listAccountAndTypeSearch.and(RESOURCE_TAG, listAccountAndTypeSearch.entity().getTag(), SearchCriteria.Op.EQ);
+<<<<<<< HEAD
+=======
+        listAccountAndTypeSearch.and(CREATED, listAccountAndTypeSearch.entity().getCreated(), SearchCriteria.Op.LT);
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         listAccountAndTypeSearch.done();
 
         listAccountAndTypeAndNoTagSearch = createSearchBuilder();
         listAccountAndTypeAndNoTagSearch.and(ACCOUNT_ID, listAccountAndTypeAndNoTagSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         listAccountAndTypeAndNoTagSearch.and(RESOURCE_TYPE, listAccountAndTypeAndNoTagSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
         listAccountAndTypeAndNoTagSearch.and(RESOURCE_TAG, listAccountAndTypeAndNoTagSearch.entity().getTag(), SearchCriteria.Op.NULL);
+<<<<<<< HEAD
+=======
+        listAccountAndTypeAndNoTagSearch.and(CREATED, listAccountAndTypeAndNoTagSearch.entity().getCreated(), SearchCriteria.Op.LT);
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         listAccountAndTypeAndNoTagSearch.done();
 
         listDomainAndTypeSearch = createSearchBuilder();
@@ -94,11 +116,19 @@ public class ReservationDaoImpl extends GenericDaoBase<ReservationVO, Long> impl
         listIdsSearch = createSearchBuilder();
         listIdsSearch.and(IDS, listIdsSearch.entity().getId(), SearchCriteria.Op.IN);
         listIdsSearch.done();
+<<<<<<< HEAD
+=======
+
+        listMsIdSearch = createSearchBuilder();
+        listMsIdSearch.and(MS_ID, listMsIdSearch.entity().getManagementServerId(), SearchCriteria.Op.EQ);
+        listMsIdSearch.done();
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     }
 
     @Override
     public long getAccountReservation(Long accountId, Resource.ResourceType resourceType, String tag) {
         long total = 0;
+<<<<<<< HEAD
         SearchCriteria<ReservationVO> sc = tag == null ?
                 listAccountAndTypeAndNoTagSearch.create() : listAccountAndTypeSearch.create();
         sc.setParameters(ACCOUNT_ID, accountId);
@@ -106,6 +136,17 @@ public class ReservationDaoImpl extends GenericDaoBase<ReservationVO, Long> impl
         if (tag != null) {
             sc.setParameters(RESOURCE_TAG, tag);
         }
+=======
+        SearchCriteria<ReservationVO> sc;
+        if (tag == null) {
+            sc = listAccountAndTypeAndNoTagSearch.create();
+        } else {
+            sc = listAccountAndTypeSearch.create();
+            sc.setParameters(RESOURCE_TAG, tag);
+        }
+        sc.setParameters(ACCOUNT_ID, accountId);
+        sc.setParameters(RESOURCE_TYPE, resourceType);
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         List<ReservationVO> reservations = listBy(sc);
         for (ReservationVO reservation : reservations) {
             total += reservation.getReservedAmount();
@@ -116,6 +157,7 @@ public class ReservationDaoImpl extends GenericDaoBase<ReservationVO, Long> impl
     @Override
     public long getDomainReservation(Long domainId, Resource.ResourceType resourceType, String tag) {
         long total = 0;
+<<<<<<< HEAD
         SearchCriteria<ReservationVO> sc = tag == null ?
                 listDomainAndTypeAndNoTagSearch.create() : listDomainAndTypeSearch.create();
         sc.setParameters(DOMAIN_ID, domainId);
@@ -123,6 +165,17 @@ public class ReservationDaoImpl extends GenericDaoBase<ReservationVO, Long> impl
         if (tag != null) {
             sc.setParameters(RESOURCE_TAG, tag);
         }
+=======
+        SearchCriteria<ReservationVO> sc;
+        if (tag == null) {
+            sc = listDomainAndTypeAndNoTagSearch.create();
+        } else {
+            sc = listDomainAndTypeSearch.create();
+            sc.setParameters(RESOURCE_TAG, tag);
+        }
+        sc.setParameters(DOMAIN_ID, domainId);
+        sc.setParameters(RESOURCE_TYPE, resourceType);
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         List<ReservationVO> reservations = listBy(sc);
         for (ReservationVO reservation : reservations) {
             total += reservation.getReservedAmount();
@@ -150,6 +203,7 @@ public class ReservationDaoImpl extends GenericDaoBase<ReservationVO, Long> impl
     }
 
     @Override
+<<<<<<< HEAD
     public List<Long> getResourceIds(long accountId, Resource.ResourceType type) {
         SearchCriteria<ReservationVO> sc = listResourceByAccountAndTypeSearch.create();
         sc.setParameters(ACCOUNT_ID, accountId);
@@ -166,6 +220,18 @@ public class ReservationDaoImpl extends GenericDaoBase<ReservationVO, Long> impl
         if (tag != null) {
             sc.setParameters(RESOURCE_TAG, tag);
         }
+=======
+    public List<ReservationVO> getReservationsForAccount(long accountId, Resource.ResourceType type, String tag) {
+        SearchCriteria<ReservationVO> sc;
+        if (tag == null) {
+            sc = listResourceByAccountAndTypeAndNoTagSearch.create();
+        } else {
+            sc = listResourceByAccountAndTypeSearch.create();
+            sc.setParameters(RESOURCE_TAG, tag);
+        }
+        sc.setParameters(ACCOUNT_ID, accountId);
+        sc.setParameters(RESOURCE_TYPE, type);
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         return listBy(sc);
     }
 
@@ -177,4 +243,31 @@ public class ReservationDaoImpl extends GenericDaoBase<ReservationVO, Long> impl
             remove(sc);
         }
     }
+<<<<<<< HEAD
+=======
+
+    @Override
+    public int removeByMsId(long managementServerId) {
+        SearchCriteria<ReservationVO> sc = listMsIdSearch.create();
+        sc.setParameters(MS_ID, managementServerId);
+        return remove(sc);
+    }
+
+    @Override
+    public int removeStaleReservations(Long accountId, Resource.ResourceType resourceType, String tag,
+            Date createdBefore) {
+        SearchCriteria<ReservationVO> sc;
+        if (tag == null) {
+            sc = listAccountAndTypeAndNoTagSearch.create();
+        } else {
+            sc = listAccountAndTypeSearch.create();
+            sc.setParameters(RESOURCE_TAG, tag);
+        }
+        sc.setParameters(ACCOUNT_ID, accountId);
+        sc.setParameters(RESOURCE_TYPE, resourceType);
+        sc.setParameters(CREATED, createdBefore);
+        return remove(sc);
+    }
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 }

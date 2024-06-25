@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+<<<<<<< HEAD
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.utils.fsm.StateMachine2;
@@ -38,12 +39,24 @@ import org.apache.cloudstack.framework.events.EventBusException;
 
 import com.cloud.configuration.Config;
 import com.cloud.event.EventCategory;
+=======
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.events.EventDistributor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import com.cloud.configuration.Config;
+import com.cloud.event.EventCategory;
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 import com.cloud.server.ManagementService;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Event;
 import com.cloud.storage.Volume.State;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.fsm.StateListener;
+<<<<<<< HEAD
 
 public class VolumeStateListener implements StateListener<State, Event, Volume> {
 
@@ -51,6 +64,19 @@ public class VolumeStateListener implements StateListener<State, Event, Volume> 
     protected ConfigurationDao _configDao;
     protected VMInstanceDao _vmInstanceDao;
 
+=======
+import com.cloud.utils.fsm.StateMachine2;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.VMInstanceDao;
+
+public class VolumeStateListener implements StateListener<State, Event, Volume> {
+
+    protected ConfigurationDao _configDao;
+    protected VMInstanceDao _vmInstanceDao;
+
+    private EventDistributor eventDistributor;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     protected Logger logger = LogManager.getLogger(getClass());
 
     public VolumeStateListener(ConfigurationDao configDao, VMInstanceDao vmInstanceDao) {
@@ -58,6 +84,13 @@ public class VolumeStateListener implements StateListener<State, Event, Volume> 
         this._vmInstanceDao = vmInstanceDao;
     }
 
+<<<<<<< HEAD
+=======
+    public void setEventDistributor(EventDistributor eventDistributor) {
+        this.eventDistributor = eventDistributor;
+    }
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     @Override
     public boolean preStateTransitionEvent(State oldState, Event event, State newState, Volume vo, boolean status, Object opaque) {
         pubishOnEventBus(event.name(), "preStateTransitionEvent", vo, oldState, newState);
@@ -93,23 +126,36 @@ public class VolumeStateListener implements StateListener<State, Event, Volume> 
       return true;
     }
 
+<<<<<<< HEAD
   private void pubishOnEventBus(String event, String status, Volume vo, State oldState, State newState) {
+=======
+    private void pubishOnEventBus(String event, String status, Volume vo, State oldState, State newState) {
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
         String configKey = Config.PublishResourceStateEvent.key();
         String value = _configDao.getValue(configKey);
         boolean configValue = Boolean.parseBoolean(value);
         if(!configValue)
             return;
+<<<<<<< HEAD
         try {
             s_eventBus = ComponentContext.getComponent(EventBus.class);
         } catch (NoSuchBeanDefinitionException nbe) {
             return; // no provider is configured to provide events bus, so just return
+=======
+        if (eventDistributor == null) {
+            setEventDistributor(ComponentContext.getComponent(EventDistributor.class));
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         }
 
         String resourceName = getEntityFromClassName(Volume.class.getName());
         org.apache.cloudstack.framework.events.Event eventMsg =
             new org.apache.cloudstack.framework.events.Event(ManagementService.Name, EventCategory.RESOURCE_STATE_CHANGE_EVENT.getName(), event, resourceName,
+<<<<<<< HEAD
                 vo.getUuid());
+=======
+                    vo.getUuid());
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         Map<String, String> eventDescription = new HashMap<String, String>();
         eventDescription.put("resource", resourceName);
         eventDescription.put("id", vo.getUuid());
@@ -120,11 +166,15 @@ public class VolumeStateListener implements StateListener<State, Event, Volume> 
         eventDescription.put("eventDateTime", eventDate);
 
         eventMsg.setDescription(eventDescription);
+<<<<<<< HEAD
         try {
             s_eventBus.publish(eventMsg);
         } catch (EventBusException e) {
             logger.warn("Failed to state change event on the event bus.");
         }
+=======
+        eventDistributor.publish(eventMsg);
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     }
 
     private String getEntityFromClassName(String entityClassName) {

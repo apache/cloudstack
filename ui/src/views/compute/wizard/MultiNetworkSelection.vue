@@ -99,6 +99,17 @@ export default {
       type: String,
       default: () => ''
     },
+<<<<<<< HEAD
+=======
+    domainid: {
+      type: String,
+      default: ''
+    },
+    account: {
+      type: String,
+      default: ''
+    },
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     selectionEnabled: {
       type: Boolean,
       default: true
@@ -144,7 +155,12 @@ export default {
       ipAddressesEnabled: {},
       ipAddresses: {},
       indexNum: 1,
+<<<<<<< HEAD
       sendValuesTimer: null
+=======
+      sendValuesTimer: null,
+      accountNetworkUpdateTimer: null
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     }
   },
   computed: {
@@ -184,6 +200,17 @@ export default {
     },
     zoneId () {
       this.fetchNetworks()
+<<<<<<< HEAD
+=======
+    },
+    account () {
+      clearTimeout(this.accountNetworkUpdateTimer)
+      this.accountNetworkUpdateTimer = setTimeout(() => {
+        if (this.account) {
+          this.fetchNetworks()
+        }
+      }, 750)
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     }
   },
   created () {
@@ -196,6 +223,7 @@ export default {
         return
       }
       this.loading = true
+<<<<<<< HEAD
       api('listNetworks', {
         zoneid: this.zoneId,
         listall: true
@@ -203,6 +231,22 @@ export default {
         this.networks = response.listnetworksresponse.network || []
         this.orderNetworks()
       }).finally(() => {
+=======
+      var params = {
+        zoneid: this.zoneId,
+        listall: true
+      }
+      if (this.domainid && this.account) {
+        params.domainid = this.domainid
+        params.account = this.account
+      }
+      api('listNetworks', params).then(response => {
+        this.networks = response.listnetworksresponse.network || []
+      }).catch(() => {
+        this.networks = []
+      }).finally(() => {
+        this.orderNetworks()
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         this.loading = false
       })
     },

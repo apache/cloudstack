@@ -73,6 +73,7 @@
               </a-select-option>
             </a-select>
           </a-form-item>
+<<<<<<< HEAD
           <a-form-item v-if="isAdminOrDomainAdmin()" name="domainid" ref="domainid">
             <template #label>
               <tooltip-label :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
@@ -115,6 +116,9 @@
               </a-select-option>
             </a-select>
           </a-form-item>
+=======
+          <ownership-selection v-if="isAdminOrDomainAdmin()" @fetch-owner="fetchOwnerOptions"/>
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
           <a-form-item name="networkofferingid" ref="networkofferingid">
             <template #label>
               <tooltip-label :title="$t('label.networkofferingid')" :tooltip="apiParams.networkofferingid.description"/>
@@ -217,11 +221,19 @@ import { isAdmin, isAdminOrDomainAdmin } from '@/role'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+<<<<<<< HEAD
+=======
+import OwnershipSelection from '@/views/compute/wizard/OwnershipSelection.vue'
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
 export default {
   name: 'CreateL2NetworkForm',
   mixins: [mixinForm],
   components: {
+<<<<<<< HEAD
+=======
+    OwnershipSelection,
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     TooltipLabel,
     ResourceIcon
   },
@@ -242,6 +254,7 @@ export default {
   data () {
     return {
       actionLoading: false,
+<<<<<<< HEAD
       domains: [],
       domainLoading: false,
       selectedDomain: {},
@@ -249,6 +262,10 @@ export default {
       accounts: [],
       accountLoading: false,
       selectedAccount: {},
+=======
+      owner: {},
+      accountVisible: isAdminOrDomainAdmin(),
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
       zones: [],
       zoneLoading: false,
       selectedZone: {},
@@ -271,12 +288,15 @@ export default {
     this.apiParams = this.$getApiParams('createNetwork')
   },
   created () {
+<<<<<<< HEAD
     this.domains = [
       {
         id: '-1',
         name: ' '
       }
     ]
+=======
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     this.initForm()
     this.fetchData()
   },
@@ -294,7 +314,10 @@ export default {
       })
     },
     fetchData () {
+<<<<<<< HEAD
       this.fetchDomainData()
+=======
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
       this.fetchZoneData()
     },
     isAdminOrDomainAdmin () {
@@ -339,6 +362,7 @@ export default {
       this.isNsxEnabled = zone?.isnsxenabled || false
       this.updateVPCCheckAndFetchNetworkOfferingData()
     },
+<<<<<<< HEAD
     fetchDomainData () {
       const params = {}
       params.listAll = true
@@ -365,6 +389,33 @@ export default {
     handleAccountChange (account) {
       this.selectedAccount = account
     },
+=======
+    fetchOwnerOptions (OwnerOptions) {
+      this.owner = {
+        projectid: null,
+        domainid: this.$store.getters.userInfo.domainid,
+        account: this.$store.getters.userInfo.account
+      }
+      if (OwnerOptions.selectedAccountType === this.$t('label.account')) {
+        if (!OwnerOptions.selectedAccount) {
+          return
+        }
+        this.owner.account = OwnerOptions.selectedAccount
+        this.owner.domainid = OwnerOptions.selectedDomain
+        this.owner.projectid = null
+      } else if (OwnerOptions.selectedAccountType === this.$t('label.project')) {
+        if (!OwnerOptions.selectedProject) {
+          return
+        }
+        this.owner.account = null
+        this.owner.domainid = null
+        this.owner.projectid = OwnerOptions.selectedProject
+      }
+      if (isAdminOrDomainAdmin()) {
+        this.updateVPCCheckAndFetchNetworkOfferingData()
+      }
+    },
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     updateVPCCheckAndFetchNetworkOfferingData () {
       if (this.vpc !== null) { // from VPC section
         this.fetchNetworkOfferingData(true)
@@ -393,8 +444,13 @@ export default {
         guestiptype: 'L2',
         state: 'Enabled'
       }
+<<<<<<< HEAD
       if (isAdminOrDomainAdmin() && this.selectedDomain.id !== '-1') { // domain is visible only for admins
         params.domainid = this.selectedDomain.id
+=======
+      if (isAdminOrDomainAdmin() && this.owner.domainid !== '-1') { // domain is visible only for admins
+        params.domainid = this.owner.domainid
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
       }
       if (!isAdmin()) { // normal user is not aware of the VLANs in the system, so normal user is not allowed to create network with network offerings whose specifyvlan = true
         params.specifyvlan = false
@@ -417,6 +473,7 @@ export default {
     handleNetworkOfferingChange (networkOffering) {
       this.selectedNetworkOffering = networkOffering
     },
+<<<<<<< HEAD
     fetchAccounts () {
       this.accountLoading = true
       var params = {}
@@ -442,6 +499,8 @@ export default {
         }
       })
     },
+=======
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     handleSubmit (e) {
       if (this.actionLoading) return
       this.formRef.value.validate().then(() => {
@@ -460,12 +519,24 @@ export default {
         if (this.isValidValueForKey(values, 'bypassvlanoverlapcheck')) {
           params.bypassvlanoverlapcheck = values.bypassvlanoverlapcheck
         }
+<<<<<<< HEAD
         if ('domainid' in values && values.domainid > 0) {
           params.domainid = this.selectedDomain.id
           if (this.isValidTextValueForKey(values, 'account') && this.selectedAccount.id !== '-1') {
             params.account = this.selectedAccount.name
           }
         }
+=======
+
+        if (this.owner.account) {
+          params.account = this.owner.account
+          params.domainid = this.owner.domainid
+        } else if (this.owner.projectid) {
+          params.domainid = this.owner.domainid
+          params.projectid = this.owner.projectid
+        }
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         if (this.isValidValueForKey(values, 'isolatedpvlantype') && values.isolatedpvlantype !== 'none') {
           params.isolatedpvlantype = values.isolatedpvlantype
           if (this.isValidValueForKey(values, 'isolatedpvlan')) {

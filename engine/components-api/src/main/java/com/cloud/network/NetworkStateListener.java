@@ -25,11 +25,17 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+<<<<<<< HEAD
 import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventBusException;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+=======
+import org.apache.cloudstack.framework.events.EventDistributor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
 import com.cloud.event.EventCategory;
 import com.cloud.network.Network.Event;
@@ -43,7 +49,11 @@ public class NetworkStateListener implements StateListener<State, Event, Network
     @Inject
     private ConfigurationDao _configDao;
 
+<<<<<<< HEAD
     private static EventBus s_eventBus = null;
+=======
+    private EventDistributor eventDistributor;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
     protected Logger logger = LogManager.getLogger(getClass());
 
@@ -51,6 +61,13 @@ public class NetworkStateListener implements StateListener<State, Event, Network
         _configDao = configDao;
     }
 
+<<<<<<< HEAD
+=======
+    public void setEventDistributor(EventDistributor eventDistributor) {
+        this.eventDistributor = eventDistributor;
+    }
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     @Override
     public boolean preStateTransitionEvent(State oldState, Event event, State newState, Network vo, boolean status, Object opaque) {
         pubishOnEventBus(event.name(), "preStateTransitionEvent", vo, oldState, newState);
@@ -66,23 +83,37 @@ public class NetworkStateListener implements StateListener<State, Event, Network
       return true;
     }
 
+<<<<<<< HEAD
   private void pubishOnEventBus(String event, String status, Network vo, State oldState, State newState) {
 
+=======
+    private void pubishOnEventBus(String event, String status, Network vo, State oldState, State newState) {
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         String configKey = "publish.resource.state.events";
         String value = _configDao.getValue(configKey);
         boolean configValue = Boolean.parseBoolean(value);
         if(!configValue)
             return;
+<<<<<<< HEAD
         try {
             s_eventBus = ComponentContext.getComponent(EventBus.class);
         } catch (NoSuchBeanDefinitionException nbe) {
             return; // no provider is configured to provide events bus, so just return
+=======
+        if (eventDistributor == null) {
+            setEventDistributor(ComponentContext.getComponent(EventDistributor.class));
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         }
 
         String resourceName = getEntityFromClassName(Network.class.getName());
         org.apache.cloudstack.framework.events.Event eventMsg =
+<<<<<<< HEAD
             new org.apache.cloudstack.framework.events.Event("management-server", EventCategory.RESOURCE_STATE_CHANGE_EVENT.getName(), event, resourceName, vo.getUuid());
         Map<String, String> eventDescription = new HashMap<String, String>();
+=======
+              new org.apache.cloudstack.framework.events.Event("management-server", EventCategory.RESOURCE_STATE_CHANGE_EVENT.getName(), event, resourceName, vo.getUuid());
+        Map<String, String> eventDescription = new HashMap<>();
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         eventDescription.put("resource", resourceName);
         eventDescription.put("id", vo.getUuid());
         eventDescription.put("old-state", oldState.name());
@@ -92,11 +123,16 @@ public class NetworkStateListener implements StateListener<State, Event, Network
         eventDescription.put("eventDateTime", eventDate);
 
         eventMsg.setDescription(eventDescription);
+<<<<<<< HEAD
         try {
             s_eventBus.publish(eventMsg);
         } catch (EventBusException e) {
             logger.warn("Failed to publish state change event on the event bus.");
         }
+=======
+
+        eventDistributor.publish(eventMsg);
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     }
 
     private String getEntityFromClassName(String entityClassName) {

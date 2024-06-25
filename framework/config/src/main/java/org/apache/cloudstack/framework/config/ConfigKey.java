@@ -41,7 +41,11 @@ public class ConfigKey<T> {
     }
 
     public enum Kind {
+<<<<<<< HEAD
         CSV, Order, Select
+=======
+        CSV, Order, Select, WhitespaceSeparatedListWithOptions
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     }
 
     private final String _category;
@@ -136,6 +140,13 @@ public class ConfigKey<T> {
         this(type, name, category, defaultValue, description, isDynamic, Scope.Global, null);
     }
 
+<<<<<<< HEAD
+=======
+    public ConfigKey(String category, Class<T> type, String name, String defaultValue, String description, boolean isDynamic, Kind kind, String options) {
+        this(type, name, category, defaultValue, description, isDynamic, Scope.Global, null, null, null, null, null, kind, options);
+    }
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     public ConfigKey(String category, Class<T> type, String name, String defaultValue, String description, boolean isDynamic, String parent) {
         this(type, name, category, defaultValue, description, isDynamic, Scope.Global, null, null, parent, null, null, null, null);
     }

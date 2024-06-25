@@ -18,8 +18,15 @@ package org.apache.cloudstack.discovery;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+<<<<<<< HEAD
 import java.util.HashMap;
 import java.util.HashSet;
+=======
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -28,21 +35,34 @@ import java.util.Set;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.APIChecker;
+<<<<<<< HEAD
+=======
+import org.apache.cloudstack.acl.Role;
+import org.apache.cloudstack.acl.RoleService;
+import org.apache.cloudstack.acl.RoleType;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.Parameter;
+<<<<<<< HEAD
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.acl.RoleType;
+=======
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 import org.apache.cloudstack.api.command.user.discovery.ListApisCmd;
 import org.apache.cloudstack.api.response.ApiDiscoveryResponse;
 import org.apache.cloudstack.api.response.ApiParameterResponse;
 import org.apache.cloudstack.api.response.ApiResponseResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+<<<<<<< HEAD
+=======
+import org.apache.commons.collections.CollectionUtils;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 import org.apache.commons.lang3.StringUtils;
 import org.reflections.ReflectionUtils;
 import org.springframework.stereotype.Component;
@@ -215,6 +235,12 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
                     paramResponse.setSince(parameterAnnotation.since());
                 }
                 paramResponse.setRelated(parameterAnnotation.entityType()[0].getName());
+<<<<<<< HEAD
+=======
+                if (parameterAnnotation.authorized() != null) {
+                    paramResponse.setAuthorizedRoleTypes(Arrays.asList(parameterAnnotation.authorized()));
+                }
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
                 response.addParam(paramResponse);
             }
         }
@@ -247,6 +273,10 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
 
         if (user == null)
             return null;
+<<<<<<< HEAD
+=======
+        Account account = accountService.getAccount(user.getAccountId());
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
         if (name != null) {
             if (!s_apiNameDiscoveryResponseMap.containsKey(name))
@@ -260,10 +290,16 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
                     return null;
                 }
             }
+<<<<<<< HEAD
             responseList.add(s_apiNameDiscoveryResponseMap.get(name));
 
         } else {
             Account account = accountService.getAccount(user.getAccountId());
+=======
+            responseList.add(getApiDiscoveryResponseWithAccessibleParams(name, account));
+
+        } else {
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
             if (account == null) {
                 throw new PermissionDeniedException(String.format("The account with id [%s] for user [%s] is null.", user.getAccountId(), user));
             }
@@ -284,13 +320,40 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
             }
 
             for (String apiName: apisAllowed) {
+<<<<<<< HEAD
                 responseList.add(s_apiNameDiscoveryResponseMap.get(apiName));
+=======
+                responseList.add(getApiDiscoveryResponseWithAccessibleParams(apiName, account));
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
             }
         }
         response.setResponses(responseList);
         return response;
     }
 
+<<<<<<< HEAD
+=======
+    private static ApiDiscoveryResponse getApiDiscoveryResponseWithAccessibleParams(String name, Account account) {
+        if (Account.Type.ADMIN.equals(account.getType())) {
+            return s_apiNameDiscoveryResponseMap.get(name);
+        }
+        ApiDiscoveryResponse apiDiscoveryResponse =
+                new ApiDiscoveryResponse(s_apiNameDiscoveryResponseMap.get(name));
+        Iterator<ApiParameterResponse> iterator = apiDiscoveryResponse.getParams().iterator();
+        while (iterator.hasNext()) {
+            ApiParameterResponse parameterResponse = iterator.next();
+            List<RoleType> authorizedRoleTypes = parameterResponse.getAuthorizedRoleTypes();
+            RoleType accountRoleType = RoleType.getByAccountType(account.getType());
+            if (CollectionUtils.isNotEmpty(parameterResponse.getAuthorizedRoleTypes()) &&
+                    accountRoleType != null &&
+                    !authorizedRoleTypes.contains(accountRoleType)) {
+                iterator.remove();
+            }
+        }
+        return apiDiscoveryResponse;
+    }
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     @Override
     public List<Class<?>> getCommands() {
         List<Class<?>> cmdList = new ArrayList<Class<?>>();

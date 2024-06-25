@@ -29,6 +29,20 @@
             layout="vertical"
           >
             <a-steps direction="vertical" size="small">
+<<<<<<< HEAD
+=======
+              <a-step
+                v-if="!isNormalUserOrProject"
+                :title="this.$t('label.assign.instance.another')">
+                <template #description>
+                  <div style="margin-top: 15px">
+                    {{ $t('label.assigning.vms') }}
+                    <ownership-selection
+                      @fetch-owner="fetchOwnerOptions"/>
+                  </div>
+                </template>
+              </a-step>
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
               <a-step :title="$t('label.select.deployment.infrastructure')" status="process">
                 <template #description>
                   <div style="margin-top: 15px">
@@ -848,6 +862,10 @@ import { mixin, mixinDevice } from '@/utils/mixin.js'
 import store from '@/store'
 import eventBus from '@/config/eventBus'
 
+<<<<<<< HEAD
+=======
+import OwnershipSelection from '@views/compute/wizard/OwnershipSelection'
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 import InfoCard from '@/components/view/InfoCard'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import ComputeOfferingSelection from '@views/compute/wizard/ComputeOfferingSelection'
@@ -868,6 +886,10 @@ import InstanceNicsNetworkSelectListView from '@/components/view/InstanceNicsNet
 export default {
   name: 'Wizard',
   components: {
+<<<<<<< HEAD
+=======
+    OwnershipSelection,
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     SshKeyPairSelection,
     UserDataSelection,
     NetworkConfiguration,
@@ -965,6 +987,14 @@ export default {
         hosts: false,
         groups: false
       },
+<<<<<<< HEAD
+=======
+      owner: {
+        projectid: store.getters.project?.id,
+        domainid: store.getters.project?.id ? null : store.getters.userInfo.domainid,
+        account: store.getters.project?.id ? null : store.getters.userInfo.account
+      },
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
       instanceConfig: {},
       template: {},
       defaultBootType: '',
@@ -1056,11 +1086,29 @@ export default {
     isNormalAndDomainUser () {
       return ['DomainAdmin', 'User'].includes(this.$store.getters.userInfo.roletype)
     },
+<<<<<<< HEAD
     diskSize () {
       const rootDiskSize = _.get(this.instanceConfig, 'rootdisksize', 0)
       const customDiskSize = _.get(this.instanceConfig, 'size', 0)
       const diskOfferingDiskSize = _.get(this.diskOffering, 'disksize', 0)
       const dataDiskSize = diskOfferingDiskSize > 0 ? diskOfferingDiskSize : customDiskSize
+=======
+    isNormalUserOrProject () {
+      return ['User'].includes(this.$store.getters.userInfo.roletype) || store.getters.project.id
+    },
+    diskSize () {
+      let dataDiskSize
+      let rootDiskSize = _.get(this.instanceConfig, 'rootdisksize', 0)
+      const diskOfferingDiskSize = _.get(this.diskOffering, 'disksize', 0)
+      const customDiskSize = _.get(this.instanceConfig, 'size', 0)
+
+      if (this.vm.isoid != null) {
+        rootDiskSize = diskOfferingDiskSize > 0 ? diskOfferingDiskSize : customDiskSize
+      } else {
+        dataDiskSize = diskOfferingDiskSize > 0 ? diskOfferingDiskSize : customDiskSize
+      }
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
       const size = []
       if (rootDiskSize > 0) {
         size.push(`${rootDiskSize} GB (Root)`)
@@ -1079,6 +1127,12 @@ export default {
           list: 'listServiceOfferings',
           options: {
             zoneid: _.get(this.zone, 'id'),
+<<<<<<< HEAD
+=======
+            projectid: this.owner.projectid,
+            domainid: this.owner.domainid,
+            account: this.owner.account,
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
             issystem: false,
             page: 1,
             pageSize: 10,
@@ -1089,6 +1143,12 @@ export default {
           list: 'listDiskOfferings',
           options: {
             zoneid: _.get(this.zone, 'id'),
+<<<<<<< HEAD
+=======
+            projectid: this.owner.projectid,
+            domainid: this.owner.domainid,
+            account: this.owner.account,
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
             page: 1,
             pageSize: 10,
             keyword: undefined
@@ -1111,6 +1171,12 @@ export default {
           options: {
             page: 1,
             pageSize: 10,
+<<<<<<< HEAD
+=======
+            account: this.owner.account,
+            domainid: this.owner.domainid,
+            projectid: this.owner.projectid,
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
             keyword: undefined,
             listall: false
           }
@@ -1138,9 +1204,15 @@ export default {
           options: {
             zoneid: _.get(this.zone, 'id'),
             canusefordeploy: true,
+<<<<<<< HEAD
             projectid: store.getters.project ? store.getters.project.id : null,
             domainid: store.getters.project && store.getters.project.id ? null : store.getters.userInfo.domainid,
             account: store.getters.project && store.getters.project.id ? null : store.getters.userInfo.account,
+=======
+            projectid: store.getters.project.id || this.owner.projectid,
+            domainid: store.getters.project.id ? null : this.owner.domainid,
+            account: store.getters.project.id ? null : this.owner.account,
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
             page: 1,
             pageSize: 10,
             keyword: undefined,
@@ -1303,7 +1375,11 @@ export default {
       return tabList
     },
     showSecurityGroupSection () {
+<<<<<<< HEAD
       return (this.networks.length > 0 && this.zone.securitygroupsenabled) || (this.zone && this.zone.networktype === 'Basic')
+=======
+      return (this.networks.length > 0 && this.zone?.securitygroupsenabled) || (this.zone?.networktype === 'Basic')
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     },
     isUserAllowedToListSshKeys () {
       return Boolean('listSSHKeyPairs' in this.$store.getters.apis)
@@ -1372,7 +1448,11 @@ export default {
           this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.diskofferingid)
         }
 
+<<<<<<< HEAD
         this.zone = _.find(this.options.zones, (option) => option.id === instanceConfig.zoneid)
+=======
+        this.zone = _.find(this.options.zones, (option) => option.id === this.instanceConfig.zoneid)
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         this.affinityGroups = _.filter(this.options.affinityGroups, (option) => _.includes(instanceConfig.affinitygroupids, option.id))
         this.networks = this.getSelectedNetworksWithExistingConfig(_.filter(this.options.networks, (option) => _.includes(instanceConfig.networkids, option.id)))
 
@@ -1685,8 +1765,13 @@ export default {
     fetchInstaceGroups () {
       this.options.instanceGroups = []
       api('listInstanceGroups', {
+<<<<<<< HEAD
         account: this.$store.getters.userInfo.account,
         domainid: this.$store.getters.userInfo.domainid,
+=======
+        account: this.$store.getters.project?.id ? null : this.$store.getters.userInfo.account,
+        domainid: this.$store.getters.project?.id ? null : this.$store.getters.userInfo.domainid,
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         listall: true
       }).then(response => {
         const groups = response.listinstancegroupsresponse.instancegroup || []
@@ -1830,7 +1915,11 @@ export default {
       this.userDataParams = []
       api('listUserData', { id: id }).then(json => {
         const resp = json?.listuserdataresponse?.userdata || []
+<<<<<<< HEAD
         if (resp) {
+=======
+        if (resp[0]) {
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
           var params = resp[0].params
           if (params) {
             var dataParams = params.split(',')
@@ -2086,6 +2175,17 @@ export default {
           deployVmData.bootintosetup = values.bootintosetup
         }
 
+<<<<<<< HEAD
+=======
+        if (this.owner.account) {
+          deployVmData.account = this.owner.account
+          deployVmData.domainid = this.owner.domainid
+        } else if (this.owner.projectid) {
+          deployVmData.domainid = this.owner.domainid
+          deployVmData.projectid = this.owner.projectid
+        }
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         const title = this.$t('label.launch.vm')
         const description = values.name || ''
         const password = this.$t('label.password')
@@ -2178,6 +2278,32 @@ export default {
         }
       })
     },
+<<<<<<< HEAD
+=======
+    fetchOwnerOptions (OwnerOptions) {
+      this.owner = {
+        projectid: null,
+        domainid: store.getters.userInfo.domainid,
+        account: store.getters.userInfo.account
+      }
+      if (OwnerOptions.selectedAccountType === this.$t('label.account')) {
+        if (!OwnerOptions.selectedAccount) {
+          return
+        }
+        this.owner.account = OwnerOptions.selectedAccount
+        this.owner.domainid = OwnerOptions.selectedDomain
+        this.owner.projectid = null
+      } else if (OwnerOptions.selectedAccountType === this.$t('label.project')) {
+        if (!OwnerOptions.selectedProject) {
+          return
+        }
+        this.owner.account = null
+        this.owner.domainid = null
+        this.owner.projectid = OwnerOptions.selectedProject
+      }
+      this.resetData()
+    },
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     fetchZones (zoneId, listZoneAllow) {
       this.zones = []
       return new Promise((resolve) => {
@@ -2275,6 +2401,12 @@ export default {
         args.pageSize = args.pageSize || 10
       }
       args.zoneid = _.get(this.zone, 'id')
+<<<<<<< HEAD
+=======
+      args.account = store.getters.project?.id ? null : this.owner.account
+      args.domainid = store.getters.project?.id ? null : this.owner.domainid
+      args.projectid = store.getters.project?.id || this.owner.projectid
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
       args.templatefilter = templateFilter
       args.details = 'all'
       args.showicon = 'true'
@@ -2531,6 +2663,10 @@ export default {
       }
     },
     resetFromTemplateConfiguration () {
+<<<<<<< HEAD
+=======
+      this.deleteFrom(this.instanceConfig, ['disksize', 'rootdisksize'])
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
       this.deleteFrom(this.params.serviceOfferings.options, ['templateid', 'cpuspeed', 'cpunumber', 'memory'])
       this.deleteFrom(this.dataPreFill, ['cpuspeed', 'cpunumber', 'memory'])
       this.handleSearchFilter('serviceOfferings', {

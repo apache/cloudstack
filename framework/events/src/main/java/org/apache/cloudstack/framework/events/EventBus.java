@@ -27,6 +27,11 @@ import java.util.UUID;
  */
 public interface EventBus {
 
+<<<<<<< HEAD
+=======
+    String getName();
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     /**
      * publish an event on to the event bus
      *

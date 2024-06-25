@@ -20,6 +20,10 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+<<<<<<< HEAD
+=======
+import org.apache.cloudstack.api.ApiCommandResourceType;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -85,10 +89,19 @@ public class StartKubernetesClusterCmd extends BaseAsyncCmd {
         return CallContext.current().getCallingAccount().getId();
     }
 
+<<<<<<< HEAD
+=======
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.KubernetesCluster;
+    }
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
+<<<<<<< HEAD
     public KubernetesCluster validateRequest() {
         if (getId() == null || getId() < 1L) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid Kubernetes cluster ID provided");
@@ -112,6 +125,13 @@ public class StartKubernetesClusterCmd extends BaseAsyncCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to start Kubernetes cluster ID: %d", getId()));
             }
             final KubernetesClusterResponse response = kubernetesClusterService.createKubernetesClusterResponse(kubernetesCluster.getId());
+=======
+    @Override
+    public void execute() throws ServerApiException, ConcurrentOperationException {
+        try {
+            kubernetesClusterService.startKubernetesCluster(this);
+            final KubernetesClusterResponse response = kubernetesClusterService.createKubernetesClusterResponse(getId());
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } catch (CloudRuntimeException ex) {

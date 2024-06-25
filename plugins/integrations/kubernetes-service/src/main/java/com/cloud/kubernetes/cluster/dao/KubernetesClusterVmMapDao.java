@@ -30,4 +30,9 @@ public interface KubernetesClusterVmMapDao extends GenericDao<KubernetesClusterV
     int removeByClusterIdAndVmIdsIn(long clusterId, List<Long> vmIds);
 
     public int removeByClusterId(long clusterId);
+<<<<<<< HEAD
+=======
+
+    KubernetesClusterVmMapVO findByVmId(long vmId);
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 }

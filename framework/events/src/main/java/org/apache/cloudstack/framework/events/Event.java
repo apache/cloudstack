@@ -20,15 +20,27 @@
 package org.apache.cloudstack.framework.events;
 
 import com.google.gson.Gson;
+<<<<<<< HEAD
 
 public class Event {
 
+=======
+import com.google.gson.annotations.Expose;
+
+public class Event {
+
+    @Expose(serialize = false, deserialize = false)
+    Long eventId;
+    @Expose(serialize = false, deserialize = false)
+    String eventUuid;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     String eventCategory;
     String eventType;
     String eventSource;
     String resourceType;
     String resourceUUID;
     String description;
+<<<<<<< HEAD
 
     public Event(String eventSource, String eventCategory, String eventType, String resourceType, String resourceUUID) {
         this.eventCategory = eventCategory;
@@ -36,6 +48,37 @@ public class Event {
         this.eventSource = eventSource;
         this.resourceType = resourceType;
         this.resourceUUID = resourceUUID;
+=======
+    @Expose(serialize = false, deserialize = false)
+    Long resourceAccountId;
+    @Expose(serialize = false, deserialize = false)
+    String resourceAccountUuid;
+    @Expose(serialize = false, deserialize = false)
+    Long resourceDomainId;
+
+    public Event(String eventSource, String eventCategory, String eventType, String resourceType, String resourceUUID) {
+        setEventCategory(eventCategory);
+        setEventType(eventType);
+        setEventSource(eventSource);
+        setResourceType(resourceType);
+        setResourceUUID(resourceUUID);
+    }
+
+    public Long getEventId() {
+        return eventId;
+    }
+
+    public void setEventId(Long eventId) {
+        this.eventId = eventId;
+    }
+
+    public String getEventUuid() {
+        return eventUuid;
+    }
+
+    public void setEventUuid(String eventUuid) {
+        this.eventUuid = eventUuid;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     }
 
     public String getEventCategory() {
@@ -68,7 +111,11 @@ public class Event {
 
     public void setDescription(Object message) {
         Gson gson = new Gson();
+<<<<<<< HEAD
         this.description = gson.toJson(message).toString();
+=======
+        this.description = gson.toJson(message);
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     }
 
     public void setDescription(String description) {
@@ -90,4 +137,31 @@ public class Event {
     public String getResourceUUID() {
         return resourceUUID;
     }
+<<<<<<< HEAD
+=======
+
+    public Long getResourceAccountId() {
+        return resourceAccountId;
+    }
+
+    public void setResourceAccountId(Long resourceAccountId) {
+        this.resourceAccountId = resourceAccountId;
+    }
+
+    public String getResourceAccountUuid() {
+        return resourceAccountUuid;
+    }
+
+    public void setResourceAccountUuid(String resourceAccountUuid) {
+        this.resourceAccountUuid = resourceAccountUuid;
+    }
+
+    public Long getResourceDomainId() {
+        return resourceDomainId;
+    }
+
+    public void setResourceDomainId(Long resourceDomainId) {
+        this.resourceDomainId = resourceDomainId;
+    }
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 }

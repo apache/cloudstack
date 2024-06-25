@@ -17,7 +17,13 @@
 package org.apache.cloudstack.api;
 
 import java.util.ArrayList;
+<<<<<<< HEAD
 import java.util.List;
+=======
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.commons.collections.CollectionUtils;
@@ -81,15 +87,32 @@ public enum ApiCommandResourceType {
     ManagementServer(org.apache.cloudstack.management.ManagementServerHost.class),
     ObjectStore(org.apache.cloudstack.storage.object.ObjectStore.class),
     Bucket(org.apache.cloudstack.storage.object.Bucket.class),
+<<<<<<< HEAD
     QuotaTariff(org.apache.cloudstack.quota.QuotaTariff.class);
 
     private final Class<?> clazz;
 
+=======
+    QuotaTariff(org.apache.cloudstack.quota.QuotaTariff.class),
+    KubernetesCluster(null),
+    KubernetesSupportedVersion(null);
+
+    private final Class<?> clazz;
+
+    static final Map<ApiCommandResourceType, Class<?>> additionalClassMappings = new HashMap<>();
+
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     private ApiCommandResourceType(Class<?> clazz) {
         this.clazz = clazz;
     }
 
     public Class<?> getAssociatedClass() {
+<<<<<<< HEAD
+=======
+        if (this.clazz == null && additionalClassMappings.containsKey(this)) {
+            return additionalClassMappings.get(this);
+        }
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         return this.clazz;
     }
 
@@ -119,4 +142,11 @@ public enum ApiCommandResourceType {
         }
         return null;
     }
+<<<<<<< HEAD
+=======
+
+    public static void setClassMapping(ApiCommandResourceType type, Class<?> clazz) {
+        additionalClassMappings.put(type, clazz);
+    }
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 }

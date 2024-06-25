@@ -98,7 +98,11 @@ public class BucketResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "Bucket Access Key")
     private String accessKey;
 
+<<<<<<< HEAD
     @SerializedName(ApiConstants.SECRET_KEY)
+=======
+    @SerializedName(ApiConstants.USER_SECRET_KEY)
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     @Param(description = "Bucket Secret Key")
     private String secretKey;
 

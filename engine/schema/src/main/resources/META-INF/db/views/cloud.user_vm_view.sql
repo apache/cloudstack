@@ -196,7 +196,11 @@ FROM
         LEFT JOIN `networks` ON ((`nics`.`network_id` = `networks`.`id`)))
         LEFT JOIN `vpc` ON (((`networks`.`vpc_id` = `vpc`.`id`)
         AND ISNULL(`vpc`.`removed`))))
+<<<<<<< HEAD
         LEFT JOIN `user_ip_address` ON ((`user_ip_address`.`vm_id` = `vm_instance`.`id`)))
+=======
+        LEFT JOIN `user_ip_address` FORCE INDEX(`fk_user_ip_address__vm_id`) ON ((`user_ip_address`.`vm_id` = `vm_instance`.`id`)))
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         LEFT JOIN `user_vm_details` `ssh_details` ON (((`ssh_details`.`vm_id` = `vm_instance`.`id`)
         AND (`ssh_details`.`name` = 'SSH.KeyPairNames'))))
         LEFT JOIN `resource_tags` ON (((`resource_tags`.`resource_id` = `vm_instance`.`id`)

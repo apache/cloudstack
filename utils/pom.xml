@@ -225,6 +225,13 @@
             <artifactId>tink</artifactId>
             <version>${cs.tink.version}</version>
         </dependency>
+<<<<<<< HEAD
+=======
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-collections4</artifactId>
+        </dependency>
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     </dependencies>
     <build>
         <plugins>

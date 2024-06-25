@@ -20,6 +20,10 @@
 package org.apache.cloudstack.quota.activationrule.presetvariables;
 
 public class BackupOffering extends GenericPresetVariable {
+<<<<<<< HEAD
+=======
+    @PresetVariableDefinition(description = "External ID of the backup offering that generated the backup.")
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
     private String externalId;
 
     public String getExternalId() {

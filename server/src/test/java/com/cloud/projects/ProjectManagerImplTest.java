@@ -16,20 +16,40 @@
 // under the License.
 package com.cloud.projects;
 
+<<<<<<< HEAD
 import com.cloud.projects.dao.ProjectDao;
+=======
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.webhook.WebhookHelper;
+import org.apache.commons.collections.CollectionUtils;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+<<<<<<< HEAD
+=======
+import org.mockito.MockedStatic;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
+<<<<<<< HEAD
 
 import java.util.ArrayList;
 import java.util.List;
+=======
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+
+import com.cloud.projects.dao.ProjectDao;
+import com.cloud.utils.component.ComponentContext;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
 
 @RunWith(MockitoJUnitRunner.class)
@@ -94,4 +114,34 @@ public class ProjectManagerImplTest {
     public void testUpdateProjectNameAndDisplayTextUpdateNameDisplayText() {
         runUpdateProjectNameAndDisplayTextTest(true, true);
     }
+<<<<<<< HEAD
+=======
+
+    @Test
+    public void testDeleteWebhooksForAccount() {
+        try (MockedStatic<ComponentContext> mockedComponentContext = Mockito.mockStatic(ComponentContext.class)) {
+            WebhookHelper webhookHelper = Mockito.mock(WebhookHelper.class);
+            List<ControlledEntity> webhooks = List.of(Mockito.mock(ControlledEntity.class),
+                    Mockito.mock(ControlledEntity.class));
+            Mockito.doReturn(webhooks).when(webhookHelper).listWebhooksByAccount(Mockito.anyLong());
+            mockedComponentContext.when(() -> ComponentContext.getDelegateComponentOfType(WebhookHelper.class))
+                    .thenReturn(webhookHelper);
+            Project project = Mockito.mock(Project.class);
+            Mockito.when(project.getProjectAccountId()).thenReturn(1L);
+            List<? extends ControlledEntity> result = projectManager.listWebhooksForProject(project);
+            Assert.assertEquals(2, result.size());
+        }
+    }
+
+    @Test
+    public void testDeleteWebhooksForAccountNoBean() {
+        try (MockedStatic<ComponentContext> mockedComponentContext = Mockito.mockStatic(ComponentContext.class)) {
+            mockedComponentContext.when(() -> ComponentContext.getDelegateComponentOfType(WebhookHelper.class))
+                    .thenThrow(NoSuchBeanDefinitionException.class);
+            List<? extends ControlledEntity> result =
+                    projectManager.listWebhooksForProject(Mockito.mock(Project.class));
+            Assert.assertTrue(CollectionUtils.isEmpty(result));
+        }
+    }
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 }

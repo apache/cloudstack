@@ -20,7 +20,14 @@
 package org.apache.cloudstack.storage.datastore.driver;
 
 import com.cloud.agent.api.Answer;
+<<<<<<< HEAD
 import com.cloud.agent.api.storage.MigrateVolumeAnswer;
+=======
+import com.cloud.agent.api.GetVolumeStatAnswer;
+import com.cloud.agent.api.GetVolumeStatCommand;
+import com.cloud.agent.api.storage.MigrateVolumeAnswer;
+import com.cloud.agent.api.storage.MigrateVolumeCommand;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.configuration.Config;
@@ -205,16 +212,34 @@ public class ScaleIOPrimaryDataStoreDriverTest {
         RemoteHostEndPoint ep = Mockito.mock(RemoteHostEndPoint.class);
         remoteHostEndPointMock.when(() -> RemoteHostEndPoint.getHypervisorHostEndPoint(host)).thenReturn(ep);
 
+<<<<<<< HEAD
         DataTO dataTO = Mockito.mock(DataTO.class);
         CreateObjectAnswer createAnswer = new CreateObjectAnswer(dataTO);
         doReturn(createAnswer).when(scaleIOPrimaryDataStoreDriver).createVolume(destData, 2L, true);
+=======
+        long volumeVirtualSize = 68673077248L;
+        DataTO dataTO = Mockito.mock(DataTO.class);
+        CreateObjectAnswer createAnswer = new CreateObjectAnswer(dataTO);
+        doReturn(createAnswer).when(scaleIOPrimaryDataStoreDriver).createVolume(destData, 2L, true, volumeVirtualSize);
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         when(dataTO.getPath()).thenReturn("bec0ba7700000007:vol-11-6aef-10ee");
         doReturn(true).when(scaleIOPrimaryDataStoreDriver)
                 .grantAccess(any(), any(), any());
 
         when(configDao.getValue(Config.MigrateWait.key())).thenReturn("3600");
+<<<<<<< HEAD
         MigrateVolumeAnswer migrateVolumeAnswer = Mockito.mock(MigrateVolumeAnswer.class);
         when(ep.sendMessage(any())).thenReturn(migrateVolumeAnswer);
+=======
+
+        GetVolumeStatAnswer getVolumeStatAnswer = Mockito.mock(GetVolumeStatAnswer.class);
+        when(ep.sendMessage(any(GetVolumeStatCommand.class))).thenReturn(getVolumeStatAnswer);
+        when(getVolumeStatAnswer.getResult()).thenReturn(true);
+        when(getVolumeStatAnswer.getVirtualSize()).thenReturn(volumeVirtualSize);
+
+        MigrateVolumeAnswer migrateVolumeAnswer = Mockito.mock(MigrateVolumeAnswer.class);
+        when(ep.sendMessage(any(MigrateVolumeCommand.class))).thenReturn(migrateVolumeAnswer);
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
         when(migrateVolumeAnswer.getResult()).thenReturn(true);
 
         Mockito.doNothing().when(scaleIOPrimaryDataStoreDriver)
@@ -251,6 +276,7 @@ public class ScaleIOPrimaryDataStoreDriverTest {
 
         DataTO dataTO = Mockito.mock(DataTO.class);
         CreateObjectAnswer createAnswer = new CreateObjectAnswer(dataTO);
+<<<<<<< HEAD
         doReturn(createAnswer).when(scaleIOPrimaryDataStoreDriver).createVolume(destData, 2L, true);
         when(dataTO.getPath()).thenReturn("bec0ba7700000007:vol-11-6aef-10ee");
         doReturn(true).when(scaleIOPrimaryDataStoreDriver)
@@ -261,6 +287,23 @@ public class ScaleIOPrimaryDataStoreDriverTest {
         when(ep.sendMessage(any())).thenReturn(migrateVolumeAnswer);
         when(migrateVolumeAnswer.getResult()).thenReturn(false);
         Mockito.doNothing().when(scaleIOPrimaryDataStoreDriver)
+=======
+        Mockito.lenient().doReturn(createAnswer).when(scaleIOPrimaryDataStoreDriver).createVolume(destData, 2L, true, null);
+        Mockito.lenient().when(dataTO.getPath()).thenReturn("bec0ba7700000007:vol-11-6aef-10ee");
+        Mockito.lenient().doReturn(true).when(scaleIOPrimaryDataStoreDriver)
+                .grantAccess(any(), any(), any());
+
+        Mockito.lenient().when(configDao.getValue(Config.MigrateWait.key())).thenReturn("3600");
+
+        GetVolumeStatAnswer getVolumeStatAnswer = Mockito.mock(GetVolumeStatAnswer.class);
+        Mockito.lenient().when(ep.sendMessage(any(GetVolumeStatCommand.class))).thenReturn(getVolumeStatAnswer);
+        Mockito.lenient().when(getVolumeStatAnswer.getResult()).thenReturn(false);
+
+        MigrateVolumeAnswer migrateVolumeAnswer = Mockito.mock(MigrateVolumeAnswer.class);
+        when(ep.sendMessage(any())).thenReturn(migrateVolumeAnswer);
+        Mockito.lenient().when(migrateVolumeAnswer.getResult()).thenReturn(false);
+        Mockito.lenient().doNothing().when(scaleIOPrimaryDataStoreDriver)
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
                 .revertBlockCopyVolumeOperations(any(), any(), any(), any());
 
         Answer answer = scaleIOPrimaryDataStoreDriver.liveMigrateVolume(srcData, destData);

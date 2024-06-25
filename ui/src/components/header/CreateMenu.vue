@@ -16,21 +16,35 @@
 // under the License.
 
 <template>
+<<<<<<< HEAD
   <a-dropdown>
     <template #overlay>
       <a-menu>
         <a-menu-item style="width: 100%; padding: 12px" v-if="'deployVirtualMachine' in $store.getters.apis">
           <router-link :to="{ path: '/action/deployVirtualMachine'}">
+=======
+  <a-dropdown v-if="accessibleCreateActions && accessibleCreateActions.length > 0">
+    <template #overlay>
+      <a-menu>
+        <a-menu-item style="width: 100%; padding: 12px" v-for="menuItem in accessibleCreateActions" :key="menuItem.api">
+          <router-link :to="menuItem.route">
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
             <a-row>
               <a-col style="margin-right: 12px">
                 <a-avatar :style="{ backgroundColor: $config.theme['@primary-color'] }">
                   <template #icon>
+<<<<<<< HEAD
                     <cloud-server-outlined/>
+=======
+                    <render-icon v-if="(typeof menuItem.icon === 'string')" :icon="menuItem.icon" />
+                    <font-awesome-icon v-else :icon="menuItem.icon" />
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
                   </template>
                 </a-avatar>
               </a-col>
               <a-col>
                 <h3 style="margin-bottom: 0px;">
+<<<<<<< HEAD
                   {{ $t('label.instance') }}
                 </h3>
                 <small>{{ $t('label.create.instance') }}</small>
@@ -148,6 +162,11 @@
                   {{ $t('label.vnf.appliance') }}
                 </h3>
                 <small>{{ $t('label.vnf.appliance.add') }}</small>
+=======
+                  {{ menuItem.title }}
+                </h3>
+                <small>{{ menuItem.subtitle }}</small>
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
               </a-col>
             </a-row>
           </router-link>
@@ -165,7 +184,63 @@
 
 export default {
   name: 'CreateMenu',
+<<<<<<< HEAD
   components: {
+=======
+  beforeCreate () {
+    const menuItems = [
+      {
+        api: 'deployVirtualMachine',
+        title: this.$t('label.instance'),
+        subtitle: this.$t('label.create.instance'),
+        icon: 'cloud-server-outlined',
+        route: { path: '/action/deployVirtualMachine' }
+      },
+      {
+        api: 'createKubernetesCluster',
+        title: this.$t('label.kubernetes'),
+        subtitle: this.$t('label.kubernetes.cluster.create'),
+        icon: ['fa-solid', 'fa-dharmachakra'],
+        route: { path: '/kubernetes', query: { action: 'createKubernetesCluster' } }
+      },
+      {
+        api: 'createVolume',
+        title: this.$t('label.volume'),
+        subtitle: this.$t('label.action.create.volume'),
+        icon: 'hdd-outlined',
+        route: { path: '/volume', query: { action: 'createVolume' } }
+      },
+      {
+        api: 'createNetwork',
+        title: this.$t('label.network'),
+        subtitle: this.$t('label.add.network'),
+        icon: 'apartment-outlined',
+        route: { path: '/guestnetwork', query: { action: 'createNetwork' } }
+      },
+      {
+        api: 'createVPC',
+        title: this.$t('label.vpc'),
+        subtitle: this.$t('label.add.vpc'),
+        icon: 'deployment-unit-outlined',
+        route: { path: '/vpc', query: { action: 'createVPC' } }
+      },
+      {
+        api: 'registerTemplate',
+        title: this.$t('label.templatename'),
+        subtitle: this.$t('label.action.register.template'),
+        icon: 'picture-outlined',
+        route: { path: '/template', query: { action: 'registerTemplate' } }
+      },
+      {
+        api: 'deployVnfAppliance',
+        title: this.$t('label.vnf.appliance'),
+        subtitle: this.$t('label.vnf.appliance.add'),
+        icon: 'gateway-outlined',
+        route: { path: '/action/deployVnfAppliance' }
+      }
+    ]
+    this.accessibleCreateActions = menuItems.filter(m => m.api in this.$store.getters.apis)
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
   }
 }
 </script>

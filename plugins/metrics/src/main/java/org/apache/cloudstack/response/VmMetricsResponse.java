@@ -17,19 +17,26 @@
 
 package org.apache.cloudstack.response;
 
+<<<<<<< HEAD
 import java.util.Set;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.NicResponse;
+=======
+import org.apache.cloudstack.api.ApiConstants;
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 import org.apache.cloudstack.api.response.UserVmResponse;
 
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class VmMetricsResponse extends UserVmResponse {
+<<<<<<< HEAD
     @SerializedName(ApiConstants.IP_ADDRESS)
     @Param(description = "the VM's primary IP address")
     private String ipAddress;
+=======
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
     @SerializedName("cputotal")
     @Param(description = "the total cpu capacity in Ghz")
@@ -59,11 +66,14 @@ public class VmMetricsResponse extends UserVmResponse {
     @Param(description = "the total disk iops")
     private Long diskIopsTotal;
 
+<<<<<<< HEAD
     public void setIpAddress(final Set<NicResponse> nics) {
         if (nics != null && nics.size() > 0) {
             this.ipAddress = nics.iterator().next().getIpaddress();
         }
     }
+=======
+>>>>>>> 9e53596ba92eaec1289e97bfc9f441cc3c507002
 
     public void setCpuTotal(final Integer cpuNumber, final Integer cpuSpeed) {
         if (cpuNumber != null && cpuSpeed != null) {
