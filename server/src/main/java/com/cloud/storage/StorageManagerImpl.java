@@ -412,6 +412,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     private final Map<String, HypervisorHostListener> hostListeners = new HashMap<String, HypervisorHostListener>();
 
+    private static final String NFS_MOUNT_OPTIONS_INCORRECT = "An incorrect mount option was specified";
+
     public boolean share(VMInstanceVO vm, List<VolumeVO> vols, HostVO host, boolean cancelPreviousShare) throws StorageUnavailableException {
 
         // if pool is in maintenance and it is the ONLY pool available; reject
@@ -840,6 +842,53 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return String.format("%s-%s-%s", StringUtils.trim(host.getName()), "local", storagePoolInformation.getUuid().split("-")[0]);
     }
 
+    protected void checkNfsMountOptions(String nfsMountOpts) throws InvalidParameterValueException {
+        String[] options = nfsMountOpts.replaceAll("\\s", "").split(",");
+        Map<String, String> optionsMap = new HashMap<>();
+        for (String option : options) {
+            String[] keyValue = option.split("=");
+            if (keyValue.length > 2) {
+                throw new InvalidParameterValueException("Invalid value for NFS option " + keyValue[0]);
+            }
+            if (optionsMap.containsKey(keyValue[0])) {
+                throw new InvalidParameterValueException("Duplicate NFS option values found for option " + keyValue[0]);
+            }
+            optionsMap.put(keyValue[0], null);
+        }
+    }
+
+    protected void checkNFSMountOptionsForCreate(Map<String, String> details, HypervisorType hypervisorType, String scheme) throws InvalidParameterValueException {
+        if (!details.containsKey(ApiConstants.NFS_MOUNT_OPTIONS)) {
+            return;
+        }
+        if (!hypervisorType.equals(HypervisorType.KVM) && !hypervisorType.equals(HypervisorType.Simulator)) {
+            throw new InvalidParameterValueException("NFS options can not be set for the hypervisor type " + hypervisorType);
+        }
+        if (!"nfs".equals(scheme)) {
+            throw new InvalidParameterValueException("NFS options can only be set on pool type " + StoragePoolType.NetworkFilesystem);
+        }
+        checkNfsMountOptions(details.get(ApiConstants.NFS_MOUNT_OPTIONS));
+    }
+
+    protected void checkNFSMountOptionsForUpdate(Map<String, String> details, StoragePoolVO pool, Long accountId) throws InvalidParameterValueException {
+        if (!details.containsKey(ApiConstants.NFS_MOUNT_OPTIONS)) {
+            return;
+        }
+        if (!_accountMgr.isRootAdmin(accountId)) {
+            throw new PermissionDeniedException("Only root admin can modify nfs options");
+        }
+        if (!pool.getHypervisor().equals(HypervisorType.KVM) && !pool.getHypervisor().equals((HypervisorType.Simulator))) {
+            throw new InvalidParameterValueException("NFS options can only be set for the hypervisor type " + HypervisorType.KVM);
+        }
+        if (!pool.getPoolType().equals(StoragePoolType.NetworkFilesystem)) {
+            throw new InvalidParameterValueException("NFS options can only be set on pool type " + StoragePoolType.NetworkFilesystem);
+        }
+        if (!pool.isInMaintenance()) {
+            throw new InvalidParameterValueException("The storage pool should be in maintenance mode to edit nfs options");
+        }
+        checkNfsMountOptions(details.get(ApiConstants.NFS_MOUNT_OPTIONS));
+    }
+
     @Override
     public PrimaryDataStoreInfo createPool(CreateStoragePoolCmd cmd) throws ResourceInUseException, IllegalArgumentException, UnknownHostException, ResourceUnavailableException {
         String providerName = cmd.getStorageProviderName();
@@ -904,6 +953,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         Map<String, String> details = extractApiParamAsMap(cmd.getDetails());
+        checkNFSMountOptionsForCreate(details, hypervisorType, uriParams.get("scheme"));
+
         DataCenterVO zone = _dcDao.findById(cmd.getZoneId());
         if (zone == null) {
             throw new InvalidParameterValueException("unable to find zone by id " + zoneId);
@@ -1086,6 +1137,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             throw new IllegalArgumentException("Unable to find storage pool with ID: " + id);
         }
 
+        Map<String, String> inputDetails = extractApiParamAsMap(cmd.getDetails());
+        checkNFSMountOptionsForUpdate(inputDetails, pool, cmd.getEntityOwnerId());
+
         String name = cmd.getName();
         if(StringUtils.isNotBlank(name)) {
             s_logger.debug("Updating Storage Pool name to: " + name);
@@ -1129,12 +1183,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         // retrieve current details and merge/overlay input to capture changes
-        Map<String, String> inputDetails = extractApiParamAsMap(cmd.getDetails());
         Map<String, String> details = null;
-        if (inputDetails == null) {
-            details = _storagePoolDetailsDao.listDetailsKeyPairs(id);
-        } else {
-            details = _storagePoolDetailsDao.listDetailsKeyPairs(id);
+        details = _storagePoolDetailsDao.listDetailsKeyPairs(id);
+        if (inputDetails != null) {
             details.putAll(inputDetails);
             changes = true;
         }
@@ -1231,6 +1282,32 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             }
         }
         return deleteDataStoreInternal(sPool, forced);
+    }
+
+    @Override
+    public Pair<Map<String, String>, Boolean> getStoragePoolNFSMountOpts(StoragePool pool, Map<String, String> details) {
+        boolean details_added = false;
+        if (!pool.getPoolType().equals(Storage.StoragePoolType.NetworkFilesystem)) {
+            return new Pair<>(details, details_added);
+        }
+
+        StoragePoolDetailVO nfsMountOpts = _storagePoolDetailsDao.findDetail(pool.getId(), ApiConstants.NFS_MOUNT_OPTIONS);
+        if (nfsMountOpts != null) {
+            if (details == null) {
+                details = new HashMap<>();
+            }
+            details.put(ApiConstants.NFS_MOUNT_OPTIONS, nfsMountOpts.getValue());
+            details_added = true;
+        }
+        return new Pair<>(details, details_added);
+    }
+
+    public String getStoragePoolMountFailureReason(String reason) {
+        if (reason.toLowerCase().contains(NFS_MOUNT_OPTIONS_INCORRECT.toLowerCase())) {
+            return NFS_MOUNT_OPTIONS_INCORRECT;
+        } else {
+            return null;
+        }
     }
 
     private boolean checkIfDataStoreClusterCanbeDeleted(StoragePoolVO sPool, boolean forced) {

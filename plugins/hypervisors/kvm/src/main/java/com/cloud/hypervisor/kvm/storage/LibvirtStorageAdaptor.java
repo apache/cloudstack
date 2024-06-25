@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.utils.cryptsetup.KeyFile;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
@@ -32,6 +33,7 @@ import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
@@ -282,9 +284,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
     }
 
-    private StoragePool createNetfsStoragePool(PoolType fsType, Connect conn, String uuid, String host, String path) throws LibvirtException {
+    private StoragePool createNetfsStoragePool(PoolType fsType, Connect conn, String uuid, String host, String path, List<String> nfsMountOpts) throws LibvirtException {
         String targetPath = _mountPoint + File.separator + uuid;
-        LibvirtStoragePoolDef spd = new LibvirtStoragePoolDef(fsType, uuid, uuid, host, path, targetPath);
+        LibvirtStoragePoolDef spd = new LibvirtStoragePoolDef(fsType, uuid, uuid, host, path, targetPath, nfsMountOpts);
         _storageLayer.mkdir(targetPath);
         StoragePool sp = null;
         try {
@@ -371,6 +373,42 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             return null;
         }
 
+    }
+
+    private List<String> getNFSMountOptsFromDetails(StoragePoolType type, Map<String, String> details) {
+        List<String> nfsMountOpts = null;
+        if (!type.equals(StoragePoolType.NetworkFilesystem) || details == null) {
+            return nfsMountOpts;
+        }
+        if (details.containsKey(ApiConstants.NFS_MOUNT_OPTIONS)) {
+            nfsMountOpts = Arrays.asList(details.get(ApiConstants.NFS_MOUNT_OPTIONS).replaceAll("\\s", "").split(","));
+        }
+        return nfsMountOpts;
+    }
+
+    private boolean destroyStoragePoolOnNFSMountOptionsChange(StoragePool sp, Connect conn, List<String> nfsMountOpts) {
+        try {
+            LibvirtStoragePoolDef poolDef = getStoragePoolDef(conn, sp);
+            Set poolNfsMountOpts = poolDef.getNfsMountOpts();
+            boolean mountOptsDiffer = false;
+            if (poolNfsMountOpts.size() != nfsMountOpts.size()) {
+                mountOptsDiffer = true;
+            } else {
+                for (String nfsMountOpt : nfsMountOpts) {
+                    if (!poolNfsMountOpts.contains(nfsMountOpt)) {
+                        mountOptsDiffer = true;
+                        break;
+                    }
+                }
+            }
+            if (mountOptsDiffer) {
+                sp.destroy();
+                return true;
+            }
+        } catch (LibvirtException e) {
+            s_logger.error("Failure in destroying the pre-existing storage pool for changing the NFS mount options" + e);
+        }
+        return false;
     }
 
     private StoragePool createRBDStoragePool(Connect conn, String uuid, String host, int port, String userInfo, String path) {
@@ -664,12 +702,21 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             } catch (LibvirtException e) {
                 s_logger.error("Failure in attempting to see if an existing storage pool might be using the path of the pool to be created:" + e);
             }
+        }
+
+        List<String> nfsMountOpts = getNFSMountOptsFromDetails(type, details);
+        if (sp != null && CollectionUtils.isNotEmpty(nfsMountOpts) &&
+            destroyStoragePoolOnNFSMountOptionsChange(sp, conn, nfsMountOpts)) {
+            sp = null;
+        }
+
+        if (sp == null) {
 
             s_logger.debug("Attempting to create storage pool " + name);
 
             if (type == StoragePoolType.NetworkFilesystem) {
                 try {
-                    sp = createNetfsStoragePool(PoolType.NETFS, conn, name, host, path);
+                    sp = createNetfsStoragePool(PoolType.NETFS, conn, name, host, path, nfsMountOpts);
                 } catch (LibvirtException e) {
                     s_logger.error("Failed to create netfs mount: " + host + ":" + path , e);
                     s_logger.error(e.getStackTrace());
@@ -677,7 +724,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 }
             } else if (type == StoragePoolType.Gluster) {
                 try {
-                    sp = createNetfsStoragePool(PoolType.GLUSTERFS, conn, name, host, path);
+                    sp = createNetfsStoragePool(PoolType.GLUSTERFS, conn, name, host, path, null);
                 } catch (LibvirtException e) {
                     s_logger.error("Failed to create glusterfs mount: " + host + ":" + path , e);
                     s_logger.error(e.getStackTrace());
