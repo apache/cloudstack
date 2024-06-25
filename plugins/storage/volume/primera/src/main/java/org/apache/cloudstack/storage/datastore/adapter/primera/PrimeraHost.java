@@ -16,39 +16,41 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.adapter.primera;
 
+import java.util.List;
+
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class PrimeraVolumePromoteRequest {
-    private Integer action = 4; // PROMOTE_VIRTUAL_COPY, https://support.hpe.com/hpesc/public/docDisplay?docId=a00114827en_us&page=v25706371.html
-    private Boolean online = true;
-    private Integer priority = 2; // MEDIUM
-    private Boolean allowRemoteCopyParent = true;
-    public Integer getAction() {
-        return action;
+public class PrimeraHost {
+    private Integer id;
+    private String name;
+    private List<PrimeraPort> fcPaths;
+    private PrimeraHostDescriptor descriptors;
+    public Integer getId() {
+        return id;
     }
-    public void setAction(Integer action) {
-        this.action = action;
+    public void setId(Integer id) {
+        this.id = id;
     }
-    public Boolean getOnline() {
-        return online;
+    public String getName() {
+        return name;
     }
-    public void setOnline(Boolean online) {
-        this.online = online;
+    public void setName(String name) {
+        this.name = name;
     }
-    public Integer getPriority() {
-        return priority;
+    public List<PrimeraPort> getFcPaths() {
+        return fcPaths;
     }
-    public void setPriority(Integer priority) {
-        this.priority = priority;
+    public void setFcPaths(List<PrimeraPort> fcPaths) {
+        this.fcPaths = fcPaths;
     }
-    public Boolean getAllowRemoteCopyParent() {
-        return allowRemoteCopyParent;
+    public PrimeraHostDescriptor getDescriptors() {
+        return descriptors;
     }
-    public void setAllowRemoteCopyParent(Boolean allowRemoteCopyParent) {
-        this.allowRemoteCopyParent = allowRemoteCopyParent;
+    public void setDescriptors(PrimeraHostDescriptor descriptors) {
+        this.descriptors = descriptors;
     }
-
 }

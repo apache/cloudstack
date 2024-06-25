@@ -92,7 +92,9 @@ public class SnapshotHelper {
      */
     public void expungeTemporarySnapshot(boolean kvmSnapshotOnlyInPrimaryStorage, SnapshotInfo snapInfo) {
         if (!kvmSnapshotOnlyInPrimaryStorage) {
-            logger.trace(String.format("Snapshot [%s] is not a temporary backup to create a volume from snapshot. Not expunging it.", snapInfo.getId()));
+            if (snapInfo != null) {
+                logger.trace(String.format("Snapshot [%s] is not a temporary backup to create a volume from snapshot. Not expunging it.", snapInfo.getId()));
+            }
             return;
         }
 

@@ -14,28 +14,27 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 package org.apache.cloudstack.storage.datastore.adapter.primera;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
-import java.util.Map;
-
-import org.apache.cloudstack.storage.datastore.adapter.ProviderAdapter;
-import org.apache.cloudstack.storage.datastore.adapter.ProviderAdapterFactory;
-
-public class PrimeraAdapterFactory implements ProviderAdapterFactory {
-
-    @Override
-    public String getProviderName() {
-        return "Primera";
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class PrimeraHostDescriptor {
+    private String IPAddr = null;
+    private String os = null;
+    public String getIPAddr() {
+        return IPAddr;
     }
-
-    @Override
-    public ProviderAdapter create(String url, Map<String, String> details) {
-        return new PrimeraAdapter(url, details);
+    public void setIPAddr(String iPAddr) {
+        IPAddr = iPAddr;
     }
-
-    @Override
-    public Object canDirectAttachSnapshot() {
-        return true;
+    public String getOs() {
+        return os;
+    }
+    public void setOs(String os) {
+        this.os = os;
     }
 
 }
