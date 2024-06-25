@@ -68,7 +68,7 @@ public class LinkAccountToLdapCmd extends BaseCmd {
             + "domain admin")
     private Integer accountType;
 
-    @Parameter(name = ApiConstants.ROLE_ID, type = CommandType.UUID, entityType = RoleResponse.class, required = false, description = "Creates the account under the specified role.", since="4.20.0")
+    @Parameter(name = ApiConstants.ROLE_ID, type = CommandType.UUID, entityType = RoleResponse.class, required = false, description = "Creates the account under the specified role.", since="4.19.1")
     private Long roleId;
 
     @Inject
