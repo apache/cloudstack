@@ -277,6 +277,10 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
             final ScaleIOGatewayClient client = getScaleIOClient(dataStore.getId());
             client.unmapVolumeFromSdc(ScaleIOUtil.getVolumePath(volumePath), sdcId);
+            if (client.listVolumesMappedToSdc(sdcId).isEmpty()) {
+                sdcManager = ComponentContext.inject(sdcManager);
+                sdcManager.stopSDC(host, dataStore);
+            }
         } catch (Exception e) {
             LOGGER.warn("Failed to revoke access due to: " + e.getMessage(), e);
         }
