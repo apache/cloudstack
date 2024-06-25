@@ -3064,17 +3064,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     @Override
     @DB
     public boolean shutdownNetwork(final long networkId, final ReservationContext context, final boolean cleanupElements) {
-        NetworkVO network = _networksDao.findById(networkId);
-        if (network.getState() == Network.State.Allocated) {
-            logger.debug("Network is already shutdown: {}", network);
-            return true;
-        }
-
-        if (network.getState() != Network.State.Implemented && network.getState() != Network.State.Shutdown) {
-            logger.debug("Network is not implemented: {}", network);
-            return false;
-        }
-
+        NetworkVO network = null;
         try {
             //do global lock for the network
             network = _networksDao.acquireInLockTable(networkId, NetworkLockTimeout.value());

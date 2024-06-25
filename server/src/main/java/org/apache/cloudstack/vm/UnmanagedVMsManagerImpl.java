@@ -796,13 +796,20 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             }
         }
         copyRemoteVolumeCommand.setTempPath(tmpPath);
+        int copyTimeout = UnmanagedVMsManager.RemoteKvmInstanceDisksCopyTimeout.value();
+        if (copyTimeout <= 0) {
+            copyTimeout = Integer.valueOf(UnmanagedVMsManager.RemoteKvmInstanceDisksCopyTimeout.defaultValue());
+        }
+        int copyTimeoutInSecs = copyTimeout * 60;
+        copyRemoteVolumeCommand.setWait(copyTimeoutInSecs);
+        logger.error(String.format("Initiating copy remote volume %s from %s, timeout %d secs", path, remoteUrl, copyTimeoutInSecs));
         Answer answer = agentManager.easySend(dest.getHost().getId(), copyRemoteVolumeCommand);
         if (!(answer instanceof CopyRemoteVolumeAnswer)) {
-            throw new CloudRuntimeException("Error while copying volume");
+            throw new CloudRuntimeException("Error while copying volume of remote instance: " + answer.getDetails());
         }
         CopyRemoteVolumeAnswer copyRemoteVolumeAnswer = (CopyRemoteVolumeAnswer) answer;
         if(!copyRemoteVolumeAnswer.getResult()) {
-            throw new CloudRuntimeException("Error while copying volume");
+            throw new CloudRuntimeException("Unable to copy volume of remote instance");
         }
         diskProfile.setSize(copyRemoteVolumeAnswer.getSize());
         DiskProfile profile = volumeManager.updateImportedVolume(type, diskOffering, vm, template, deviceId,
@@ -815,7 +822,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                                                               Volume.Type type, VirtualMachineTemplate template,
                                                               Long deviceId, Long hostId, String diskPath, DiskProfile diskProfile) {
         List<StoragePoolVO> storagePools = primaryDataStoreDao.findLocalStoragePoolsByHostAndTags(hostId, null);
-
         if(storagePools.size() < 1) {
             throw new CloudRuntimeException("Local Storage not found for host");
         }
@@ -828,7 +834,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return new Pair<>(profile, storagePool);
     }
 
-
     private Pair<DiskProfile, StoragePool> importKVMSharedDisk(VirtualMachine vm, DiskOffering diskOffering,
                                                               Volume.Type type, VirtualMachineTemplate template,
                                                               Long deviceId, Long poolId, String diskPath, DiskProfile diskProfile) {
@@ -839,7 +844,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
         return new Pair<>(profile, storagePool);
     }
-
 
     private Pair<DiskProfile, StoragePool> importDisk(UnmanagedInstanceTO.Disk disk, VirtualMachine vm, Cluster cluster, DiskOffering diskOffering,
                                                       Volume.Type type, String name, Long diskSize, Long minIops, Long maxIops, VirtualMachineTemplate template,
@@ -2368,7 +2372,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Import failed for Vm: %s. Suitable deployment destination not found", userVm.getInstanceName()));
         }
 
-
         Map<Volume, StoragePool> storage = dest.getStorageForDisks();
         Volume volume = volumeDao.findById(diskProfile.getVolumeId());
         StoragePool storagePool = storage.get(volume);
@@ -2387,7 +2390,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new CloudRuntimeException("Disk not found or is invalid");
         }
         diskProfile.setSize(checkVolumeAnswer.getSize());
-
 
         List<Pair<DiskProfile, StoragePool>> diskProfileStoragePoolList = new ArrayList<>();
         try {
@@ -2408,7 +2410,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         publishVMUsageUpdateResourceCount(userVm, dummyOffering, template);
         return userVm;
     }
-
 
     private NetworkVO getDefaultNetwork(DataCenter zone, Account owner, boolean selectAny) throws InsufficientCapacityException, ResourceAllocationException {
         NetworkVO defaultNetwork = null;
@@ -2467,7 +2468,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return defaultNetwork;
     }
 
-    //generate unit test
     public ListResponse<UnmanagedInstanceResponse> listVmsForImport(ListVmsForImportCmd cmd) {
         final Account caller = CallContext.current().getCallingAccount();
         if (caller.getType() != Account.Type.ADMIN) {
@@ -2507,8 +2507,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     private HashMap<String, UnmanagedInstanceTO> getRemoteVmsOnKVMHost(long zoneId, String remoteHostUrl, String username, String password) {
         //ToDo: add option to list one Vm by name
         List<HostVO> hosts = resourceManager.listAllUpAndEnabledHostsInOneZoneByHypervisor(Hypervisor.HypervisorType.KVM, zoneId);
-        if(hosts.size() < 1) {
-            throw new CloudRuntimeException("No hosts available for VM import");
+        if (hosts.size() < 1) {
+            throw new CloudRuntimeException("No hosts available to list VMs on remote host " + remoteHostUrl);
         }
         HostVO host = hosts.get(0);
         GetRemoteVmsCommand getRemoteVmsCommand = new GetRemoteVmsCommand(remoteHostUrl, username, password);
@@ -2536,6 +2536,9 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[]{UnmanageVMPreserveNic};
+        return new ConfigKey<?>[]{
+                UnmanageVMPreserveNic,
+                RemoteKvmInstanceDisksCopyTimeout
+        };
     }
 }
