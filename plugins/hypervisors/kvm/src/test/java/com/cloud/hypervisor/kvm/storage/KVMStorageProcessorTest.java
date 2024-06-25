@@ -265,15 +265,11 @@ public class KVMStorageProcessorTest {
     }
 
     @Test
-    public void convertBaseFileToSnapshotFileInPrimaryStorageDirTestFailToConvertWithQemuImgExceptionReturnErrorMessage() throws QemuImgException {
-        KVMPhysicalDisk baseFile = Mockito.mock(KVMPhysicalDisk.class);
+    public void convertBaseFileToSnapshotFileInPrimaryStorageDirTestFailToConvertWithQemuImgExceptionReturnErrorMessage() {
         String errorMessage = "error";
         KVMStoragePool primaryPoolMock = Mockito.mock(KVMStoragePool.class);
         KVMPhysicalDisk baseFileMock = Mockito.mock(KVMPhysicalDisk.class);
         VolumeObjectTO volumeMock = Mockito.mock(VolumeObjectTO.class);
-        QemuImgFile srcFileMock = Mockito.mock(QemuImgFile.class);
-        QemuImgFile destFileMock = Mockito.mock(QemuImgFile.class);
-        QemuImg qemuImgMock = Mockito.mock(QemuImg.class);
 
         Mockito.when(baseFileMock.getPath()).thenReturn("/path/to/baseFile");
         Mockito.when(primaryPoolMock.createFolder(Mockito.anyString())).thenReturn(true);
@@ -284,16 +280,15 @@ public class KVMStorageProcessorTest {
                      Mockito.lenient().doThrow(new QemuImgException(errorMessage)).when(mock).convert(Mockito.any(QemuImgFile.class), Mockito.any(QemuImgFile.class), Mockito.any(Map.class),
                              Mockito.any(List.class), Mockito.any(QemuImageOptions.class),Mockito.nullable(String.class), Mockito.any(Boolean.class));
              }))) {
-            String test = storageProcessor.convertBaseFileToSnapshotFileInStorageDir(primaryPoolMock, baseFileMock, "/path/to/snapshot", volumeMock, 0);
+            String test = storageProcessor.convertBaseFileToSnapshotFileInStorageDir(primaryPoolMock, baseFileMock, "/path/to/snapshot", TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR, volumeMock, 0);
             Assert.assertNotNull(test);
         }
     }
 
     @Test
-    public void convertBaseFileToSnapshotFileInPrimaryStorageDirTestFailToConvertWithLibvirtExceptionReturnErrorMessage() throws Exception {
+    public void convertBaseFileToSnapshotFileInPrimaryStorageDirTestFailToConvertWithLibvirtExceptionReturnErrorMessage() {
         KVMPhysicalDisk baseFile = Mockito.mock(KVMPhysicalDisk.class);
         String snapshotPath = "snapshotPath";
-        QemuImg qemuImg = Mockito.mock(QemuImg.class);
 
         Mockito.doReturn(true).when(kvmStoragePoolMock).createFolder(Mockito.anyString());
         try (MockedConstruction<QemuImg> ignored = Mockito.mockConstructionWithAnswer(QemuImg.class, invocation -> {

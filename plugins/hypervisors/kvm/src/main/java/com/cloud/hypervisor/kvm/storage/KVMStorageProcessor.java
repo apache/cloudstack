@@ -1843,7 +1843,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                     if (snapshotTO.isKvmIncrementalSnapshot()) {
                         newSnapshot = takeIncrementalVolumeSnapshotOfStoppedVm(snapshotTO, primaryPool, secondaryPool, snapshotName, volume, conn, cmd.getWait());
                     } else {
-                        newSnapshot = takeFullVolumeSnapshotOfStoppedVm(cmd, primaryPool, secondaryPool, snapshotName, diskPath, volume);
+                        newSnapshot = takeFullVolumeSnapshotOfStoppedVm(cmd, primaryPool, secondaryPool, snapshotName, disk, volume);
                     }
                 }
             }
@@ -2223,7 +2223,7 @@ public class KVMStorageProcessor implements StorageProcessor {
     }
 
 
-    private SnapshotObjectTO takeFullVolumeSnapshotOfStoppedVm(CreateObjectCommand cmd, KVMStoragePool primaryPool, KVMStoragePool secondaryPool, String snapshotName, String diskPath, VolumeObjectTO volume) throws IOException {
+    private SnapshotObjectTO takeFullVolumeSnapshotOfStoppedVm(CreateObjectCommand cmd, KVMStoragePool primaryPool, KVMStoragePool secondaryPool, String snapshotName, KVMPhysicalDisk disk, VolumeObjectTO volume) throws IOException {
         logger.debug("Taking full volume snapshot of volume [{}]. Snapshot will be copied to [{}].", volume,
                 ObjectUtils.defaultIfNull(secondaryPool, primaryPool));
         Pair<String, String> fullSnapPathAndDirPath = getFullSnapshotOrCheckpointPathAndDirPathOnCorrectStorage(primaryPool, secondaryPool, snapshotName, volume, false);
@@ -2232,7 +2232,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         String directoryPath = fullSnapPathAndDirPath.second();
         String relativePath = directoryPath + File.separator + snapshotName;
 
-        String convertResult = convertBaseFileToSnapshotFileInStorageDir(ObjectUtils.defaultIfNull(secondaryPool, primaryPool), diskPath, snapshotPath, directoryPath, volume, cmd.getWait());
+        String convertResult = convertBaseFileToSnapshotFileInStorageDir(ObjectUtils.defaultIfNull(secondaryPool, primaryPool), disk, snapshotPath, directoryPath, volume, cmd.getWait());
 
         validateConvertResult(convertResult, snapshotPath);
 
