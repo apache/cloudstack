@@ -2281,6 +2281,7 @@ export default {
       args.showicon = 'true'
       args.id = this.templateId
       args.isvnf = false
+      args.listall = true
 
       return new Promise((resolve, reject) => {
         api('listTemplates', args).then((response) => {
@@ -2303,6 +2304,7 @@ export default {
       args.bootable = true
       args.showicon = 'true'
       args.id = this.isoId
+      args.listall = true
 
       return new Promise((resolve, reject) => {
         api('listIsos', args).then((response) => {
