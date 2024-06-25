@@ -225,13 +225,13 @@ export default {
     styleSearch () {
       if (!this.searchFilters || this.searchFilters.length === 0) {
         return {
-          width: '85%',
+          width: '100%',
           display: 'table-cell'
         }
       }
 
       return {
-        width: '85%',
+        width: '100%',
         display: 'table-cell',
         lineHeight: '31px'
       }
