@@ -39,11 +39,33 @@ import org.apache.cloudstack.api.command.user.network.routing.UpdateRoutingFirew
 import org.apache.cloudstack.api.response.DataCenterIpv4SubnetResponse;
 import org.apache.cloudstack.api.response.Ipv4SubnetForGuestNetworkResponse;
 import org.apache.cloudstack.datacenter.DataCenterIpv4GuestSubnet;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
 import java.util.List;
 
 public interface RoutedIpv4Manager extends PluggableService, Configurable {
+
+    ConfigKey<Integer> RoutedNetworkMaxCidrSize = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Integer.class,
+            "routed.network.max.cidr.size",
+            "30",
+            "The maximum cidr size of routed network.",
+            true,
+            ConfigKey.Scope.Account);
+
+    ConfigKey<Integer> RoutedNetworkMinCidrSize = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Integer.class,
+            "routed.network.min.cidr.size",
+            "24",
+            "The minimum cidr size of routed network.",
+            true,
+            ConfigKey.Scope.Account);
+
+    ConfigKey<Boolean> RoutedNetworkCidrAutoAllocationEnabled = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class,
+            "routed.network.cidr.auto.allocation.enabled",
+            "true",
+            "Indicates whether the auto-allocation of network CIDR for routed network is enabled or not.",
+            true,
+            ConfigKey.Scope.Account);
 
     // Methods for DataCenterIpv4GuestSubnet APIs
     DataCenterIpv4GuestSubnet createDataCenterIpv4GuestSubnet(CreateIpv4GuestSubnetCmd createIpv4GuestSubnetCmd);

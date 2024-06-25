@@ -1415,7 +1415,7 @@ export default {
           label: 'label.delete.ipv4.subnet',
           message: 'message.action.delete.ipv4.subnet',
           dataView: true,
-          disabled: (record, user) => { return (record.account !== user.userInfo.account && !['Admin', 'DomainAdmin'].includes(user.userInfo.roletype)) },
+          disabled: (record) => { return record.networkid },
           groupAction: true,
           popup: true,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }

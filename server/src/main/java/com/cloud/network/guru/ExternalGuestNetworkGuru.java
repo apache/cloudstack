@@ -137,6 +137,8 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
                     final String[] cidrTuple = subnet.getSubnet().split("\\/");
                     config.setGateway(NetUtils.getIpRangeStartIpFromCidr(cidrTuple[0], Long.parseLong(cidrTuple[1])));
                     config.setCidr(subnet.getSubnet());
+                } else {
+                    throw new CloudRuntimeException("Failed to allocate a CIDR with requested size.");
                 }
             }
         }

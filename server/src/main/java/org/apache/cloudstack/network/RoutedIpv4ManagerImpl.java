@@ -19,7 +19,6 @@ package org.apache.cloudstack.network;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.dc.DataCenter;
-import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.Domain;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -79,6 +78,7 @@ import org.apache.commons.lang3.ObjectUtils;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -109,8 +109,6 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     AccountManager accountManager;
     @Inject
     VpcOfferingDao vpcOfferingDao;
-    @Inject
-    DataCenterDao dcDao;
 
     @Override
     public String getConfigComponentName() {
@@ -119,7 +117,9 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey[] {};
+        return new ConfigKey[] {
+                RoutedNetworkMaxCidrSize, RoutedNetworkMinCidrSize, RoutedNetworkCidrAutoAllocationEnabled
+        };
     }
 
     @Override
@@ -549,12 +549,37 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         return createIpv4SubnetForAccount(network.getDomainId(), network.getAccountId(), network.getDataCenterId(), networkCidrSize);
     }
 
-    private Ipv4GuestSubnetNetworkMap getIpv4SubnetForAccount(long domainId, long accountId, long zoneId, Integer networkCidrSize) {
+    private void validateNetworkCidrSize(long accountId, Integer networkCidrSize) {
+        if (networkCidrSize == null) {
+            throw new CloudRuntimeException("networkCidrSize is null");
+        }
+        Boolean isAutoAllocationEnabled = RoutedNetworkCidrAutoAllocationEnabled.valueIn(accountId);
+        if (!Boolean.TRUE.equals(isAutoAllocationEnabled)) {
+            throw new CloudRuntimeException("CIDR auto-allocation is disabled for this account");
+        }
+
+        Integer maxCidrSize = RoutedNetworkMaxCidrSize.valueIn(accountId);
+        if (networkCidrSize > maxCidrSize) {
+            throw new CloudRuntimeException(String.format("networkCidrSize (%s) is greater than the max cidr size (%s)", networkCidrSize, maxCidrSize));
+        }
+        Integer minCidrSize = RoutedNetworkMinCidrSize.valueIn(accountId);
+        if (networkCidrSize < minCidrSize) {
+            throw new CloudRuntimeException(String.format("networkCidrSize (%s) is smaller than the min cidr size (%s)", networkCidrSize, minCidrSize));
+        }
+    }
+
+    private List<DataCenterIpv4GuestSubnetVO> getZoneSubnetsForAccount(long domainId, long accountId, long zoneId) {
         // Get dedicated guest subnets for the account
         List<DataCenterIpv4GuestSubnetVO> subnets = dataCenterIpv4GuestSubnetDao.listByDataCenterIdAndAccountId(zoneId, accountId);
         subnets.addAll(dataCenterIpv4GuestSubnetDao.listByDataCenterIdAndDomainId(zoneId, domainId));
         // Get zone guest subnets for the account
         subnets.addAll(dataCenterIpv4GuestSubnetDao.listByDataCenterId(zoneId));
+        return subnets;
+    }
+
+    private Ipv4GuestSubnetNetworkMap getIpv4SubnetForAccount(long domainId, long accountId, long zoneId, Integer networkCidrSize) {
+        validateNetworkCidrSize(accountId, networkCidrSize);
+        List<DataCenterIpv4GuestSubnetVO> subnets = getZoneSubnetsForAccount(domainId, accountId, zoneId);
         // find an allocated subnet
         for (DataCenterIpv4GuestSubnetVO subnet : subnets) {
             Ipv4GuestSubnetNetworkMap map = ipv4GuestSubnetNetworkMapDao.findFirstAvailable(subnet.getId(), networkCidrSize);
@@ -566,14 +591,11 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     private Ipv4GuestSubnetNetworkMap createIpv4SubnetForAccount(long domainId, long accountId, long zoneId, Integer networkCidrSize) {
-        // Get dedicated guest subnets for the account
-        List<DataCenterIpv4GuestSubnetVO> subnets = dataCenterIpv4GuestSubnetDao.listByDataCenterIdAndAccountId(zoneId, accountId);
-        subnets.addAll(dataCenterIpv4GuestSubnetDao.listByDataCenterIdAndDomainId(zoneId, domainId));
-        // Get zone guest subnets for the account
-        subnets.addAll(dataCenterIpv4GuestSubnetDao.listByDataCenterId(zoneId));
+        validateNetworkCidrSize(accountId, networkCidrSize);
+        List<DataCenterIpv4GuestSubnetVO> subnets = getZoneSubnetsForAccount(domainId, accountId, zoneId);
         for (DataCenterIpv4GuestSubnetVO subnet : subnets) {
             try {
-                createIpv4SubnetFromParentSubnet(subnet, networkCidrSize);
+                return createIpv4SubnetFromParentSubnet(subnet, networkCidrSize);
             } catch (Exception ex) {
                 logger.debug("Failed to create Ipv4 subnet from parent subnet {}: {}", subnet.getSubnet(), ex.getMessage());
             }
@@ -582,10 +604,59 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     private Ipv4GuestSubnetNetworkMap createIpv4SubnetFromParentSubnet(DataCenterIpv4GuestSubnet parent, Integer networkCidrSize) {
-        // TODO
+        DataCenterIpv4GuestSubnetVO subnetVO = dataCenterIpv4GuestSubnetDao.findById(parent.getId());
+        if (subnetVO == null) {
+            throw new InvalidParameterValueException(String.format("Invalid subnet ID: %s", parent.getId()));
+        }
+        // Order subnets by start IP
+        List<Ipv4GuestSubnetNetworkMapVO> existingSubnets = ipv4GuestSubnetNetworkMapDao.listByParent(parent.getId());
+        Collections.sort(existingSubnets, (subnet1, subnet2) -> {
+            Long ip1 = NetUtils.ip2Long(subnet1.getSubnet().split("/")[0]);
+            Long ip2 = NetUtils.ip2Long(subnet2.getSubnet().split("/")[0]);
+            return ip1.compareTo(ip2);
+        });
+        // get all free IP ranges
+        final List<Pair<Long, Long>> freeIpranges = new ArrayList<>();
+        final long[] parentSubnetIpRange = NetUtils.getIpRangeStartIpAndEndIpFromCidr(parent.getSubnet());
+        long startIp = parentSubnetIpRange[0];
+        for (Ipv4GuestSubnetNetworkMapVO subnet : existingSubnets) {
+            long[] subnetIpRange = NetUtils.getIpRangeStartIpAndEndIpFromCidr(subnet.getSubnet());
+            if (startIp < subnetIpRange[0]) {
+                freeIpranges.add(new Pair<>(startIp, subnetIpRange[0] -1));
+            }
+            startIp = subnetIpRange[1] + 1;
+        }
+        if (startIp <= parentSubnetIpRange[1]) {
+            freeIpranges.add(new Pair<>(startIp, parentSubnetIpRange[1]));
+        }
+        // split the IP ranges into list of subnet
+        final List<Pair<Long, Integer>> subnetsInFreeIpRanges = new ArrayList<>();
+        for (Pair<Long, Long> freeIpRange : freeIpranges) {
+            subnetsInFreeIpRanges.addAll(NetUtils.splitIpRangeIntoSubnets(freeIpRange.first(), freeIpRange.second()));
+        }
+
         // Allocate a subnet automatically
+        String networkCidr = getFreeNetworkCidr(subnetsInFreeIpRanges, networkCidrSize);
+        if (networkCidr == null) {
+            throw new CloudRuntimeException("Failed to automatically allocate a subnet with specified cidrsize");
+        }
         // create DB record
-        throw new CloudRuntimeException("Auto-generation of subnet with specified cidrsize is not supported yet");
+        Ipv4GuestSubnetNetworkMapVO subnetMap = new Ipv4GuestSubnetNetworkMapVO(parent.getId(), networkCidr, null, State.Free);
+        return ipv4GuestSubnetNetworkMapDao.persist(subnetMap);
+    }
+
+    private String getFreeNetworkCidr(List<Pair<Long, Integer>> subnetsInFreeIpRanges, int networkCidrSize) {
+        for (int cidrSize = networkCidrSize; cidrSize >= 1; cidrSize--) {
+            for (Pair<Long, Integer> freeSubnet : subnetsInFreeIpRanges) {
+                if (freeSubnet.second().equals(cidrSize)) {
+                    String networkCidr = String.format("%s/%s", NetUtils.long2Ip(freeSubnet.first()), networkCidrSize);
+                    if (ipv4GuestSubnetNetworkMapDao.findBySubnet(networkCidr) == null) {
+                        return networkCidr;
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     private Ipv4GuestSubnetNetworkMap createIpv4SubnetFromParentSubnet(DataCenterIpv4GuestSubnet parent, String networkCidr) {
