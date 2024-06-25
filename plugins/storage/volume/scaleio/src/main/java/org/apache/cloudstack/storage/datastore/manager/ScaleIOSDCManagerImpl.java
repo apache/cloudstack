@@ -79,10 +79,10 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager {
 
             int connectedSdcsCount = getScaleIOClient(storagePoolId).getConnectedSdcsCount();
             if (connectedSdcsCount < connectedClientsLimit) {
-                LOGGER.debug("SDC connections are within the limit, on Powerflex Storage with pool id" + storagePoolId);
+                LOGGER.debug(String.format("SDC connections are within the limit (%d), on Powerflex Storage with pool id: %d", connectedClientsLimit, storagePoolId));
                 return true;
             }
-            LOGGER.debug("SDC connections limit reached on Powerflex Storage with pool id" + storagePoolId);
+            LOGGER.debug(String.format("SDC connections limit (%d) reached on Powerflex Storage with pool id: %d", connectedClientsLimit, storagePoolId));
             return false;
         } catch (Exception e) {
             String errMsg = "Unable to check SDC connections for the Powerflex storage pool with id: " + storagePoolId + " due to " + e.getMessage();

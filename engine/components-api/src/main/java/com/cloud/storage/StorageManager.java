@@ -153,8 +153,8 @@ public interface StorageManager extends StorageService {
             "storage.pool.connected.clients.limit",
             "Storage",
             "-1",
-            "Maximum connected storage pool clients supported for the storage (for managed pools), zero or less than zero for unlimited (default). Currently supported for PowerFlex only.",
-            false,
+            "Maximum connected storage pool clients supported for the storage (for managed pools), <= 0 for unlimited (default: -1). Currently supported for PowerFlex only.",
+            true,
             ConfigKey.Scope.StoragePool,
             null);
 
