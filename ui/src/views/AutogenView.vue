@@ -86,24 +86,33 @@
           <a-col
             :span="device === 'mobile' ? 24 : 12"
             :style="device === 'mobile' ? { float: 'right', 'margin-top': '12px', 'margin-bottom': '-6px', display: 'table' } : { float: 'right', display: 'table', 'margin-top': '6px' }" >
-            <slot name="action" v-if="dataView && $route.path.startsWith('/publicip')"></slot>
-            <action-button
-              v-else
-              :style="dataView ? { float: device === 'mobile' ? 'left' : 'right' } : { 'margin-right': '10px', display: getStyle() }"
-              :loading="loading"
-              :actions="actions"
-              :selectedRowKeys="selectedRowKeys"
-              :selectedItems="selectedItems"
-              :dataView="dataView"
-              :resource="resource"
-              @exec-action="(action) => execAction(action, action.groupAction && !dataView)"/>
-            <search-view
-              v-if="!dataView"
-              :searchFilters="searchFilters"
-              :searchParams="searchParams"
-              :apiName="apiName"
-              @search="onSearch"
-              @change-filter="changeFilter"/>
+            <a-row
+              justify="end">
+              <a-col>
+                <slot name="action" v-if="dataView && $route.path.startsWith('/publicip')"></slot>
+                <action-button
+                  v-else
+                  :style="dataView ? { float: device === 'mobile' ? 'left' : 'right' } : { 'margin-right': '10px', display: getStyle() }"
+                  :loading="loading"
+                  :actions="actions"
+                  :selectedRowKeys="selectedRowKeys"
+                  :selectedItems="selectedItems"
+                  :dataView="dataView"
+                  :resource="resource"
+                  @exec-action="(action) => execAction(action, action.groupAction && !dataView)"/>
+              </a-col>
+              <a-col
+                :span="device === 'mobile' ? 24 : 12"
+                :style="device === 'mobile' ? { float: 'right', display: 'table' } : { float: 'right', display: 'table'}" >
+                <search-view
+                  v-if="!dataView"
+                  :searchFilters="searchFilters"
+                  :searchParams="searchParams"
+                  :apiName="apiName"
+                  @search="onSearch"
+                  @change-filter="changeFilter"/>
+              </a-col>
+            </a-row>
           </a-col>
         </a-row>
       </a-card>
