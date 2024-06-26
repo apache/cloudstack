@@ -2330,8 +2330,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             sb.join("associatedNetworkSearch", associatedNetworkSearch, sb.entity().getId(), associatedNetworkSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
         }
 
-        List<NetworkVO> networksToReturn = new ArrayList<NetworkVO>();
-
         SearchCriteria<NetworkVO> mainSearchCriteria = createNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId,
                 guestIpType, trafficType, physicalNetworkId, networkOfferingId, aclType, restartRequired,
                 specifyIpRanges, vpcId, tags, display, vlanId, associatedNetworkId);
@@ -2399,7 +2397,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
         }
         Pair<List<NetworkVO>, Integer> result = _networksDao.searchAndCount(mainSearchCriteria, searchFilter);
-        networksToReturn = result.first();
+        List<NetworkVO> networksToReturn = result.first();
 
         if (supportedServicesStr != null && !supportedServicesStr.isEmpty() && !networksToReturn.isEmpty()) {
             List<NetworkVO> supportedNetworks = new ArrayList<>();
@@ -2594,7 +2592,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     private SearchCriteria<NetworkVO> getDomainSpecificNetworksByDomainPathSearchCriteria(SearchBuilder<NetworkVO> sb,
             String path, boolean isRecursive) {
 
-        Set<Long> allowedDomains = new HashSet<Long>();
+        Set<Long> allowedDomains = new HashSet<>();
         if (path != null) {
             if (isRecursive) {
                 allowedDomains = _domainMgr.getDomainChildrenIds(path);
@@ -2604,7 +2602,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
         }
 
-        List<Long> networkIds = new ArrayList<Long>();
+        List<Long> networkIds = new ArrayList<>();
 
         List<NetworkDomainVO> maps = _networkDomainDao.listDomainNetworkMapByDomain(allowedDomains.toArray());
 
