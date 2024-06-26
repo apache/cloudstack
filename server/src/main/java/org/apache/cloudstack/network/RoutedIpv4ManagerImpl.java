@@ -267,7 +267,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     private void checkConflicts(List<DataCenterIpv4GuestSubnetVO> existingSubnets, String newSubnet, Long ignoreSubnetId) {
         for (DataCenterIpv4GuestSubnetVO existing : existingSubnets) {
             if ((ignoreSubnetId == null || existing.getId() != ignoreSubnetId) && NetUtils.isNetworksOverlap(existing.getSubnet(), newSubnet)) {
-                throw new InvalidParameterValueException(String.format("Existing subnet %s has overlap with: %s", existing.getSubnet(), newSubnet));
+                throw new InvalidParameterValueException(String.format("Existing zone subnet %s has overlap with: %s", existing.getSubnet(), newSubnet));
             }
         }
     }
@@ -471,30 +471,37 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         response.setState(subnet.getState().name());
         response.setId(subnet.getUuid());
         response.setAllocatedTime(subnet.getAllocated());
+        Long zoneId = null;
         if (subnet.getNetworkId() != null) {
             Network network = ApiDBUtils.findNetworkById(subnet.getNetworkId());
             response.setNetworkId(network.getUuid());
             response.setNetworkName(network.getName());
+            zoneId = network.getDataCenterId();
+        }
+        if (subnet.getVpcId() != null) {
+            Vpc vpc = ApiDBUtils.findVpcById(subnet.getVpcId());
+            response.setVpcId(vpc.getUuid());
+            response.setVpcName(vpc.getName());
+            zoneId = vpc.getZoneId();
         }
         if (subnet.getParentId() != null) {
             DataCenterIpv4GuestSubnet parent = dataCenterIpv4GuestSubnetDao.findById(subnet.getParentId());
             if (parent != null) {
                 response.setParentId(parent.getUuid());
                 response.setParentSubnet(parent.getSubnet());
-                DataCenter zone = ApiDBUtils.findZoneById(parent.getDataCenterId());
-                if (zone != null) {
-                    response.setZoneId(zone.getUuid());
-                    response.setZoneName(zone.getName());
-                }
+                zoneId = parent.getDataCenterId();
             }
         } else if (subnet.getNetworkId() != null) {
             Network network = ApiDBUtils.findNetworkById(subnet.getNetworkId());
             if (network != null) {
-                DataCenter zone = ApiDBUtils.findZoneById(network.getDataCenterId());
-                if (zone != null) {
-                    response.setZoneId(zone.getUuid());
-                    response.setZoneName(zone.getName());
-                }
+                zoneId = network.getDataCenterId();
+            }
+        }
+        if (zoneId != null) {
+            DataCenter zone = ApiDBUtils.findZoneById(zoneId);
+            if (zone != null) {
+                response.setZoneId(zone.getUuid());
+                response.setZoneName(zone.getName());
             }
         }
         return response;
@@ -555,7 +562,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
                 return existing;
             }
             if (NetUtils.isNetworksOverlap(existing.getSubnet(), networkCidr)) {
-                throw new InvalidParameterValueException(String.format("Existing parent subnet %s has overlap with: %s", existing.getSubnet(), networkCidr));
+                throw new InvalidParameterValueException(String.format("Existing zone subnet %s has overlap with: %s", existing.getSubnet(), networkCidr));
             }
         }
         // check conflicts

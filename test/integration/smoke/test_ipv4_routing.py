@@ -22,8 +22,9 @@ import random
 
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import ZoneIpv4Subnet, Domain, Account, ServiceOffering, NetworkOffering, VpcOffering, Network, \
-    Ipv4SubnetForGuestNetwork, VirtualMachine, VPC, NetworkACLList
-from marvin.lib.common import get_domain, get_zone, get_template
+    Ipv4SubnetForGuestNetwork, VirtualMachine, VPC, NetworkACLList, NetworkACL
+from marvin.lib.common import get_domain, get_zone, get_template, list_routers, list_hosts
+from marvin.lib.utils import get_host_credentials, get_process_status
 
 from nose.plugins.attrib import attr
 
@@ -33,6 +34,13 @@ SUBNET_2_PREFIX = SUBNET_PREFIX + str(random.randrange(151, 199))
 
 VPC_CIDR_PREFIX = "172.31"  # .0 to .16
 NETWORK_CIDR_PREFIX = VPC_CIDR_PREFIX + ".100"
+
+test_network = None
+test_network_vm = None
+test_vpc = None
+test_vpc_tier = None
+test_vpc_vm = None
+test_network_acl = None
 
 NETWORK_OFFERING = {
     "name": "Test Network offering - Routing mode",
@@ -86,6 +94,7 @@ class TestIpv4Routing(cloudstackTestCase):
         cls.services = testdata.getParsedTestDataConfig()
         cls.apiclient = testdata.getApiClient()
         cls.dbclient = testdata.getDbConnection()
+        cls.hypervisor = testdata.getHypervisorInfo()
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient)
         cls.template = get_template(cls.apiclient, cls.zone.id)
@@ -154,12 +163,6 @@ class TestIpv4Routing(cloudstackTestCase):
             cls.regular_user_user.username, cls.sub_domain.name
         )
 
-        cls.test_network = None
-        cls.test_network_vm = None
-        cls.test_vpc = None
-        cls.test_vpc_tier = None
-        cls.test_vpc_vm = None
-
     @classmethod
     def tearDownClass(cls):
         super(TestIpv4Routing, cls).tearDownClass()
@@ -174,6 +177,87 @@ class TestIpv4Routing(cloudstackTestCase):
 
     def tearDown(self):
         super(TestIpv4Routing, self).tearDown()
+
+    def get_router(self, networkid=None, vpcid=None):
+        # list router
+        if vpcid:
+            list_router_response = list_routers(
+                self.apiclient,
+                vpcid=vpcid,
+                listall="true"
+            )
+        else:
+            list_router_response = list_routers(
+                self.apiclient,
+                networkid=networkid,
+                listall="true"
+            )
+        self.assertEqual(
+            isinstance(list_router_response, list),
+            True,
+            "list routers response should return a valid list"
+        )
+        router = list_router_response[0]
+        return router
+
+    def run_command_in_router(self, router, command):
+        # get host of router
+        hosts = list_hosts(
+            self.apiclient,
+            zoneid=router.zoneid,
+            type='Routing',
+            state='Up',
+            id=router.hostid
+        )
+        self.assertEqual(
+            isinstance(hosts, list),
+            True,
+            "Check list host returns a valid list"
+        )
+        host = hosts[0]
+
+        # run command
+        result = ''
+        if router.hypervisor.lower() in ('vmware', 'hyperv'):
+            result = get_process_status(
+                self.apiclient.connection.mgtSvr,
+                22,
+                self.apiclient.connection.user,
+                self.apiclient.connection.passwd,
+                router.linklocalip,
+                command,
+                hypervisor=router.hypervisor
+            )
+        else:
+            try:
+                host.user, host.passwd = get_host_credentials(self.config, host.ipaddress)
+                result = get_process_status(
+                    host.ipaddress,
+                    22,
+                    host.user,
+                    host.passwd,
+                    router.linklocalip,
+                    command
+                )
+            except KeyError:
+                self.skipTest("Marvin configuration has no host credentials to check router services")
+        res = str(result)
+        self.message("command (%s) result: (%s)" % (command, res))
+
+    def createNetworkAclRule(self, rule):
+        return NetworkACL.create(self.apiclient,
+                                 services=rule,
+                                 aclid=test_network_acl.id
+                                 )
+
+    def verifyNftablesRulesInRouter(self, nic, rules, router):
+        for rule in rules:
+            acl_chain = nic + ACL_CHAINS_SUFFIX[rule["traffictype"]]
+            routerCmd = "nft list chain ip %s %s" % (ACL_TABLE, acl_chain)
+            res = self.getRouterProcessStatus(router, routerCmd)
+            parsed_rule_new = rule["parsedrule"].replace("{ ", "").replace(" }", "")
+            self.assertTrue(rule["parsedrule"] in res or parsed_rule_new in res,
+                            "Listing firewall rule with nft list chain failure for rule: '%s' is not in '%s'" % (rule["parsedrule"], res))
 
     @attr(tags=['advanced', 'basic', 'sg'], required_hardware=False)
     def test_01_zone_subnet(self):
@@ -463,7 +547,8 @@ class TestIpv4Routing(cloudstackTestCase):
         self.message("Running test_05_isolated_network_with_routed_mode")
 
         # 1. Create Isolated network
-        self.test_network = Network.create(
+        global test_network
+        test_network = Network.create(
             self.regular_user_apiclient,
             self.services["network"],
             networkofferingid=self.network_offering_isolated.id,
@@ -472,19 +557,20 @@ class TestIpv4Routing(cloudstackTestCase):
             accountid=self.regular_user.name,
             cidrsize=26
         )
-        self._cleanup.append(self.test_network)
+        self._cleanup.append(test_network)
 
         # 2. Create VM in the network
-        self.test_network_vm = VirtualMachine.create(
+        global test_network_vm
+        test_network_vm = VirtualMachine.create(
             self.regular_user_apiclient,
             self.services["virtual_machine"],
             zoneid=self.zone.id,
             domainid=self.sub_domain.id,
             accountid=self.regular_user.name,
-            networkids=self.test_network.id,
+            networkids=test_network.id,
             serviceofferingid=self.service_offering.id,
             templateid=self.template.id)
-        self._cleanup.append(self.test_network_vm)
+        self._cleanup.append(test_network_vm)
 
     @attr(tags=['advanced', 'basic', 'sg'], required_hardware=False)
     def test_06_vpc_and_tier_with_routed_mode(self):
@@ -498,64 +584,224 @@ class TestIpv4Routing(cloudstackTestCase):
         self.message("Running test_06_vpc_and_tier_with_routed_mode")
 
         # 1. Create VPC
-        self.services["vpc"]["cidr"] = VPC_CIDR_PREFIX + ".0.0/20"
-        self.test_vpc = VPC.create(self.apiclient,
-                                   self.services["vpc"],
-                                   vpcofferingid=self.vpc_offering.id,
-                                   zoneid=self.zone.id,
-                                   domainid=self.sub_domain.id,
-                                   account=self.regular_user.name,
-                                   start=False
-                                   )
-        self._cleanup.append(self.test_vpc)
+        self.services["vpc"]["cidr"] = VPC_CIDR_PREFIX + ".0.0/22"
+        global test_vpc
+        test_vpc = VPC.create(self.apiclient,
+                              self.services["vpc"],
+                              vpcofferingid=self.vpc_offering.id,
+                              zoneid=self.zone.id,
+                              domainid=self.sub_domain.id,
+                              account=self.regular_user.name,
+                              start=False
+                              )
+        self._cleanup.append(test_vpc)
 
         # 2. Create Network ACL (egress = Deny, ingress = Deny)
-        network_acl = NetworkACLList.create(self.apiclient,
-                                            services={},
-                                            name="test-network-acl",
-                                            description="test-network-acl",
-                                            vpcid=self.test_vpc.id
-                                            )
+        global test_network_acl
+        test_network_acl = NetworkACLList.create(self.apiclient,
+                                                 services={},
+                                                 name="test-network-acl",
+                                                 description="test-network-acl",
+                                                 vpcid=test_vpc.id
+                                                 )
 
         # 3. Create VPC tier with Network ACL in the VPC
-        self.test_vpc_tier = Network.create(self.regular_user_apiclient,
-                                            self.services["network"],
-                                            networkofferingid=self.vpc_network_offering.id,
-                                            zoneid=self.zone.id,
-                                            domainid=self.sub_domain.id,
-                                            accountid=self.regular_user.name,
-                                            vpcid=self.test_vpc.id,
-                                            gateway=VPC_CIDR_PREFIX + ".1.1",
-                                            netmask="255.255.255.0",
-                                            aclid=network_acl.id
-                                            )
-        self._cleanup.append(self.test_vpc_tier)
+        global test_vpc_tier
+        test_vpc_tier = Network.create(self.regular_user_apiclient,
+                                       self.services["network"],
+                                       networkofferingid=self.vpc_network_offering.id,
+                                       zoneid=self.zone.id,
+                                       domainid=self.sub_domain.id,
+                                       accountid=self.regular_user.name,
+                                       vpcid=test_vpc.id,
+                                       gateway=VPC_CIDR_PREFIX + ".1.1",
+                                       netmask="255.255.255.0",
+                                       aclid=test_network_acl.id
+                                       )
+        self._cleanup.append(test_vpc_tier)
 
         # 4. Create VM in the VPC tier
-        self.test_vpc_vm = VirtualMachine.create(
+        global test_vpc_vm
+        test_vpc_vm = VirtualMachine.create(
             self.regular_user_apiclient,
             self.services["virtual_machine"],
             zoneid=self.zone.id,
             domainid=self.sub_domain.id,
             accountid=self.regular_user.name,
-            networkids=self.test_vpc_tier.id,
+            networkids=test_vpc_tier.id,
             serviceofferingid=self.service_offering.id,
             templateid=self.template.id)
-        self._cleanup.append(self.test_vpc_vm)
+        self._cleanup.append(test_vpc_vm)
 
     @attr(tags=['advanced', 'basic', 'sg'], required_hardware=False)
-    def test_07_connectivity_between_network_and_vpc_tier(self):
+    def test_07_vpc_and_tier_failed_cases(self):
+        """ Test for VPC/tier with Routing mode (some failed cases)"""
+        """
+            # 1. create VPC with Routed mode
+            # 2. create network offering with NATTED mode, create vpc tier, it should fail
+            # 3. create vpc tier not in the vpc cidr, it should fail
+        """
+
+        self.message("Running test_07_vpc_and_tier_failed_cases")
+
+        # 1. Create VPC
+        self.services["vpc"]["cidr"] = VPC_CIDR_PREFIX + ".8.0/22"
+        test_vpc_2 = VPC.create(self.apiclient,
+                                self.services["vpc"],
+                                vpcofferingid=self.vpc_offering.id,
+                                zoneid=self.zone.id,
+                                domainid=self.sub_domain.id,
+                                account=self.regular_user.name,
+                                start=False
+                                )
+        self.cleanup.append(test_vpc_2)
+
+        # 2. create network offering with NATTED mode, create vpc tier, it should fail
+        nw_offering_isolated_vpc = NetworkOffering.create(
+            self.apiclient,
+            self.services["nw_offering_isolated_vpc"]
+        )
+        self.cleanup.append(nw_offering_isolated_vpc)
+        nw_offering_isolated_vpc.update(self.apiclient, state='Enabled')
+        try:
+            test_vpc_tier_2 = Network.create(self.regular_user_apiclient,
+                                             self.services["network"],
+                                             networkofferingid=nw_offering_isolated_vpc.id,
+                                             zoneid=self.zone.id,
+                                             domainid=self.sub_domain.id,
+                                             accountid=self.regular_user.name,
+                                             vpcid=test_vpc_2.id,
+                                             gateway=VPC_CIDR_PREFIX + ".1.1",
+                                             netmask="255.255.255.0"
+                                             )
+            self.cleanup.append(test_vpc_tier_2)
+            self.fail("Created vpc network successfully, but expected to fail")
+        except Exception as ex:
+            self.message("Failed to create vpc network due to %s, which is expected behaviour" % ex)
+
+        # 3. create vpc tier not in the vpc cidr, it should fail
+        try:
+            test_vpc_tier_3 = Network.create(self.regular_user_apiclient,
+                                             self.services["network"],
+                                             networkofferingid=self.vpc_network_offering.id,
+                                             zoneid=self.zone.id,
+                                             domainid=self.sub_domain.id,
+                                             accountid=self.regular_user.name,
+                                             vpcid=test_vpc_2.id,
+                                             gateway=VPC_CIDR_PREFIX + ".31.1",
+                                             netmask="255.255.255.0"
+                                             )
+            self.cleanup.append(test_vpc_tier_3)
+            self.fail("Created vpc network successfully, but expected to fail")
+        except Exception as ex:
+            self.message("Failed to create vpc network due to %s, which is expected behaviour" % ex)
+
+    @attr(tags=['advanced', 'basic', 'sg'], required_hardware=False)
+    def test_08_connectivity_between_network_and_vpc_tier(self):
         """ Test for connectivity between VMs in the Isolated Network and VPC/tier"""
         """
+            # 0. Get static routes of Network/VPC
             # 1. Add static routes in VRs manually
-            # 2. Test VM2 in VR1 (ping/ssh should fail)
-            # 3. Test VM1 in VR2 (ping/ssh should fail)
-            # 4. Create IPv4 firewalls for Isolated network
-            # 5. Create Ingress rules in Network ACL for VPC
-            # 6. Create Egress rules in Network ACL for VPC
-            # 7. Test VM2 in VR1 (how-to in VM1 ?)
-            # 8. Test VM1 in VR2 (how-to in VM2 ?)
-            # 9. Delete Network ACL rules for VPC
-            # 10. Delete IPv4 firewall rules for Network
+
+            # 2. Test VM2 in VR1-Network (ping/ssh should fail)
+            # 3. Test VM1 in VR2-VPC (ping/ssh should fail)
+
+            # 4. Create Ingress rules in Network ACL for VPC
+            # 5. Create Egress rules in Network ACL for VPC
+            # 6. Test VM2 in VR1-Network (ping/ssh should succeed)
+            # 7. Test VM1 in VR2-VPC (ping/ssh should fail)
+
+            # 8. Create IPv4 firewalls for Isolated network
+            # 9. Test VM2 in VR1-Network (ping/ssh should succeed)
+            # 10. Test VM1 in VR2-VPC (ping/ssh should succeed)
+
+            # 11. Delete Network ACL rules for VPC
+            # 12. Delete IPv4 firewall rules for Network
+            # 13. Test VM2 in VR1-Network (ping/ssh should fail)
+            # 14. Test VM1 in VR2-VPC (ping/ssh should fail)
+
         """
-        self.message("Running test_07_connectivity_between_network_and_vpc_tier")
+        self.message("Running test_08_connectivity_between_network_and_vpc_tier")
+
+        # 0. Get static routes of Network/VPC
+        network_ip4routes = []
+        if test_network:
+            network_ip4routes = Network.list(
+                self.apiclient,
+                id=test_network.id,
+                listall=True
+            )[0].ip4routes
+        else:
+            self.skipTest("test_network is not created")
+
+        vpc_ip4routes = []
+        if test_vpc:
+            vpc_ip4routes = VPC.list(
+                self.apiclient,
+                id=test_vpc.id,
+                listall=True
+            )[0].ip4routes
+        else:
+            self.skipTest("test_vpc is not created")
+
+        # 1. Add static routes in VRs manually
+        network_router = self.get_router(networkid=test_network.id)
+        vpc_router = self.get_router(vpcid=test_vpc.id)
+        if not network_router or not vpc_router:
+            self.skipTest("network_router (%s) or vpc_router (%s) does not exist" % (network_router, vpc_router))
+        for ip4route in network_ip4routes:
+            self.run_command_in_router(vpc_router, "ip route add %s via %s" % (ip4route.subnet, ip4route.gateway))
+        for ip4route in vpc_ip4routes:
+            self.run_command_in_router(network_router, "ip route add %s via %s" % (ip4route.subnet, ip4route.gateway))
+
+        # 2. Test VM2 in VR1-Network (ping/ssh should fail)
+        # 3. Test VM1 in VR2-VPC (ping/ssh should fail)
+
+        rules = []
+        vpc_acl_rules = []
+        # 4. Create Ingress rules in Network ACL for VPC
+        rule = {}
+        rule["traffictype"] = "Ingress"
+        rule["cidrlist"] = test_network.cidr
+        rule["protocol"] = "icmp"
+        rule["icmptype"] = "-1"
+        rule["icmpcode"] = "-1"
+        # parsedrule = "ip6 daddr %s %sv6 type %s %sv6 code %s accept" % (rule["cidrlist"], rule["protocol"], ICMPV6_TYPE[rule["icmptype"]], rule["protocol"], ICMPV6_CODE_TYPE[rule["icmpcode"]])
+        # rules.append({"traffictype": rule["traffictype"], "parsedrule": parsedrule})
+        vpc_acl_rules.append(self.createNetworkAclRule(rule))
+        # self.verifyNftablesRulesInRouter("eth2", rules, vpc_router)
+
+        rule = {}
+        rule["traffictype"] = "Ingress"
+        rule["cidrlist"] = test_network.cidr
+        rule["protocol"] = "tcp"
+        rule["startport"] = "22"
+        rule["endport"] = "22"
+        # parsedrule = "ip6 daddr %s %sv6 type %s %sv6 code %s accept" % (rule["cidrlist"], rule["protocol"], ICMPV6_TYPE[rule["icmptype"]], rule["protocol"], ICMPV6_CODE_TYPE[rule["icmpcode"]])
+        # rules.append({"traffictype": rule["traffictype"], "parsedrule": parsedrule})
+        vpc_acl_rules.append(self.createNetworkAclRule(rule))
+        # self.verifyNftablesRulesInRouter("eth2", rules, vpc_router)
+
+        # 5. Create Egress rules in Network ACL for VPC
+        rule = {}
+        rule["traffictype"] = "Egress"
+        rule["cidrlist"] = test_network.cidr
+        rule["protocol"] = "icmp"
+        rule["icmptype"] = "-1"
+        rule["icmpcode"] = "-1"
+        # parsedrule = "ip6 daddr %s %sv6 type %s %sv6 code %s accept" % (rule["cidrlist"], rule["protocol"], ICMPV6_TYPE[rule["icmptype"]], rule["protocol"], ICMPV6_CODE_TYPE[rule["icmpcode"]])
+        # rules.append({"traffictype": rule["traffictype"], "parsedrule": parsedrule})
+        vpc_acl_rules.append(self.createNetworkAclRule(rule))
+        # self.verifyNftablesRulesInRouter("eth2", rules, vpc_router)
+
+        # 6. Test VM2 in VR1-Network (ping/ssh should succeed)
+        # 7. Test VM1 in VR2-VPC (ping/ssh should fail)
+
+        # 8. Create IPv4 firewalls for Isolated network
+        # 9. Test VM2 in VR1-Network (ping/ssh should succeed)
+        # 10. Test VM1 in VR2-VPC (ping/ssh should succeed)
+
+        # 11. Delete Network ACL rules for VPC
+        # 12. Delete IPv4 firewall rules for Network
+        # 13. Test VM2 in VR1-Network (ping/ssh should fail)
+        # 14. Test VM1 in VR2-VPC (ping/ssh should fail)

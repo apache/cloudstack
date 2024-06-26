@@ -292,7 +292,7 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     private String internetProtocol;
 
     @SerializedName(ApiConstants.IPV6_ROUTING)
-    @Param(description = "The Ipv6 routing mode of network offering", since = "4.17.0")
+    @Param(description = "The Ipv6 routing type of network offering", since = "4.17.0")
     private String ipv6Routing;
 
     @SerializedName(ApiConstants.IPV6_ROUTES)
@@ -316,7 +316,7 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     private String ipv6Dns2;
 
     @SerializedName(ApiConstants.IPV4_ROUTING)
-    @Param(description = "The IPv4 routing mode of network", since = "4.20.0")
+    @Param(description = "The IPv4 routing type of network", since = "4.20.0")
     private String ipv4Routing;
 
     @SerializedName(ApiConstants.IPV4_ROUTES)

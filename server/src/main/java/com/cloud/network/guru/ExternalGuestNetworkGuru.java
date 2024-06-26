@@ -125,17 +125,12 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             /* In order to revert userSpecified network setup */
             config.setState(State.Allocated);
         }
-        if (NetworkOffering.RoutingMode.ROUTED.name().equals(offering.getRoutingMode())) {
+        if (NetworkOffering.RoutingMode.ROUTED.name().equals(offering.getRoutingMode()) && !offering.isForVpc()) {
             if (userSpecified.getCidr() != null) {
-                if (config.getVpcId() == null) {
-                    routedIpv4Manager.getOrCreateIpv4SubnetForGuestNetwork(config, userSpecified.getCidr());
-                }
+                routedIpv4Manager.getOrCreateIpv4SubnetForGuestNetwork(config, userSpecified.getCidr());
             } else {
                 if (userSpecified.getNetworkCidrSize() == null) {
                     throw new CloudRuntimeException("The network CIDR or CIDR size must be specified.");
-                }
-                if (config.getVpcId() != null) {
-                    throw new CloudRuntimeException("The network CIDR must be specified for VPC networks.");
                 }
                 Ipv4GuestSubnetNetworkMap subnet = routedIpv4Manager.getOrCreateIpv4SubnetForGuestNetwork(config, userSpecified.getNetworkCidrSize());
                 if (subnet != null) {
