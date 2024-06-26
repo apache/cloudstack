@@ -22,6 +22,8 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.command.admin.bgp.ListASNumbersCmd;
 import org.apache.log4j.Logger;
@@ -127,11 +129,32 @@ public class BGPServiceImpl implements BGPService {
         if (asRange == null) {
             throw new CloudRuntimeException(String.format("Could not find a AS range with id: %s", id));
         }
-
+        long startASNumber = asRange.getStartASNumber();
+        long endASNumber = asRange.getEndASNumber();
+        long zoneId = asRange.getDataCenterId();
         List<ASNumberVO> allocatedAsNumbers = asNumberDao.listAllocatedByASRange(asRange.getId());
         if (Objects.nonNull(allocatedAsNumbers) && !allocatedAsNumbers.isEmpty()) {
-            throw new CloudRuntimeException(String.format("AS numbers from range %s are in use", asRange.getId()));
+            throw new CloudRuntimeException(String.format("There are %s AS numbers in use from the range %s-%s, cannot remove the range",
+                    allocatedAsNumbers.size(), startASNumber, endASNumber));
         }
-        return asNumberRangeDao.remove(id);
+        try {
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(TransactionStatus status) {
+                    int removedASNumbers = asNumberDao.removeASRangeNumbers(asRange.getId());
+                    LOGGER.debug(String.format("Removed %s AS numbers from the range %s-%s", removedASNumbers,
+                            startASNumber, endASNumber));
+                    asNumberRangeDao.remove(id);
+                    LOGGER.debug(String.format("Removing the AS Number Range %s-%s for the zone %s", startASNumber,
+                            endASNumber, zoneId));
+                }
+            });
+        } catch (Exception e) {
+            String err = String.format("Error removing AS Number range %s-%s for zone %s: %s",
+                    startASNumber, endASNumber, zoneId, e.getMessage());
+            LOGGER.error(err, e);
+            throw new CloudRuntimeException(err);
+        }
+        return true;
     }
 }

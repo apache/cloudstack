@@ -89,4 +89,11 @@ public class ASNumberDaoImpl extends GenericDaoBase<ASNumberVO, Long> implements
         sc.setParameters("networkId", networkId);
         return findOneBy(sc);
     }
+
+    @Override
+    public int removeASRangeNumbers(long rangeId) {
+        SearchCriteria<ASNumberVO> sc = asNumberSearch.create();
+        sc.setParameters("rangeId", rangeId);
+        return remove(sc);
+    }
 }

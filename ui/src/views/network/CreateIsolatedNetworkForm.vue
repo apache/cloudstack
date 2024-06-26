@@ -452,16 +452,18 @@ export default {
       this.privateMtuMax = zone?.routerprivateinterfacemaxmtu || 1500
       this.publicMtuMax = zone?.routerpublicinterfacemaxmtu || 1500
       this.updateVPCCheckAndFetchNetworkOfferingData()
-      if (this.isAdminOrDomainAdmin()) {
+      if (this.isASNumberRequired()) {
         this.fetchZoneASNumbers()
       }
     },
     fetchZoneASNumbers () {
       const params = {}
+      this.asNumberLoading = true
       params.zoneid = this.selectedZone.id
       params.isallocated = false
       api('listASNumbers', params).then(json => {
         this.asNumbersZone = json.listasnumbersresponse.asnumber
+        this.asNumberLoading = false
       })
     },
     handleASNumberChange (selectedIndex) {
@@ -551,6 +553,9 @@ export default {
       this.selectedNetworkOffering = networkOffering
       if (networkOffering.forvpc) {
         this.fetchVpcData()
+      }
+      if (this.isASNumberRequired()) {
+        this.fetchZoneASNumbers()
       }
     },
     fetchVpcData () {
