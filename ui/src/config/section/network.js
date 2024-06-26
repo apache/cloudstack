@@ -871,7 +871,6 @@ export default {
           label: 'label.action.release.asnumber',
           message: 'message.action.release.asnumber',
           show: (record) => { return record.allocationstate === 'Allocated' },
-          // disabled: (record) => { return record.allocationstate === 'Free' },
           args: ['zoneid', 'asnumber'],
           mapping: {
             zoneid: {
@@ -885,7 +884,7 @@ export default {
           groupAction: true,
           popup: true,
           groupShow: (selectedItems, storegetters) => {
-            return selectedItems.length === 1
+            return selectedItems.length === 1 && selectedItems[0].allocationstate === 'Allocated'
           },
           groupMap: (selectedId, values, records) => {
             const record = records.filter(x => { return x.id === selectedId[0] })
