@@ -599,7 +599,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     /**
      * Get template size
      */
-    private Long getTemplateSize(VirtualMachineMO template, String vmInternalName, Map<VirtualDisk, VolumeVO> disksMapping, Backup backup) throws Exception {
+    private Long getTemplateSize(VirtualMachineMO template) throws Exception {
         List<VirtualDisk> disks = template.getVirtualDisks();
         if (CollectionUtils.isEmpty(disks)) {
             throw new CloudRuntimeException("Couldn't find VM template size");
@@ -651,7 +651,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                     String templatePath = getRootDiskTemplatePath(disk);
                     VirtualMachineMO template = getTemplate(dcMo, templatePath);
                     Long poolId = getTemplatePoolId(template);
-                    Long templateSize = getTemplateSize(template, vmInternalName, disksMapping, backup);
+                    Long templateSize = getTemplateSize(template);
                     long templateId = getTemplateId(templatePath, vmInternalName, guestOsId, accountId);
                     updateTemplateRef(templateId, poolId, templatePath, templateSize);
                     return templateId;
@@ -668,21 +668,12 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
      * If VM exists: update VM
      */
     private VMInstanceVO getVM(String vmInternalName, long templateId, long guestOsId, long serviceOfferingId, long zoneId, long accountId, long userId, long domainId) {
-        s_logger.debug(String.format("Trying to get VM with specs: [vmInternalName: %s, templateId: %s, guestOsId: %s, serviceOfferingId: %s].", vmInternalName,
-                templateId, guestOsId, serviceOfferingId));
-        VMInstanceVO vm = virtualMachineDao.findVMByInstanceNameIncludingRemoved(vmInternalName);
-        if (vm != null) {
-            s_logger.debug(String.format("Found an existing VM [id: %s, removed: %s] with internalName: [%s].", vm.getUuid(), vm.getRemoved() != null ? "yes" : "no", vmInternalName));
-            vm.setState(VirtualMachine.State.Stopped);
-            vm.setPowerState(VirtualMachine.PowerState.PowerOff);
-            virtualMachineDao.update(vm.getId(), vm);
-            if (vm.getRemoved() != null) {
-                virtualMachineDao.unremove(vm.getId());
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_CREATE, accountId, vm.getDataCenterId(), vm.getId(), vm.getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(),
-                        vm.getHypervisorType().toString(), VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplayVm());
-            }
-            return virtualMachineDao.findById(vm.getId());
-        } else {
+        s_logger.debug(String.format("Trying to get VM with specs: [vmInternalName: %s], and in states [%s, %s].", vmInternalName, VirtualMachine.State.Running, VirtualMachine.State.Stopped));
+        VMInstanceVO vm = virtualMachineDao.findVMInStatesAndWithInternalNameIncludingRemoved(vmInternalName, VirtualMachine.State.Running, VirtualMachine.State.Stopped);
+        if (vm == null) {
+            s_logger.debug(String.format("Cannot find any existing VM with internalName [%s] in any of these [%s, %s] states. Assuming VM is destroyed in ACS and recreated in restore process.",
+                    vmInternalName, VirtualMachine.State.Running, VirtualMachine.State.Stopped));
+
             long id = userVmDao.getNextInSequence(Long.class, "id");
             s_logger.debug(String.format("Can't find an existing VM with internalName: [%s]. Creating a new VM with: [id: %s, name: %s, templateId: %s, guestOsId: %s, serviceOfferingId: %s].",
                     vmInternalName, id, vmInternalName, templateId, guestOsId, serviceOfferingId));
@@ -690,8 +681,16 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             UserVmVO vmInstanceVO = new UserVmVO(id, vmInternalName, vmInternalName, templateId, HypervisorType.VMware, guestOsId, false, false, domainId, accountId, userId,
                     serviceOfferingId, null, null, null, vmInternalName);
             vmInstanceVO.setDataCenterId(zoneId);
-            return userVmDao.persist(vmInstanceVO);
+            vm = userVmDao.persist(vmInstanceVO);
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_CREATE, accountId, vm.getDataCenterId(), vm.getId(), vm.getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(),
+                    vm.getHypervisorType().toString(), VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplayVm());
+        } else {
+            s_logger.debug(String.format("Found an existing VM [id: %s, removed: %s] with internalName [%s], and with state [%s].", vm.getUuid(), vm.getRemoved() != null ? "yes" : "no", vmInternalName, vm.getState()));
+            if (vm.getRemoved() != null) {
+                virtualMachineDao.unremove(vm.getId());
+            }
         }
+        return vm;
     }
 
     /**
