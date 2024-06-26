@@ -138,6 +138,12 @@ public class KubernetesClusterVO implements KubernetesCluster {
     @Column(name = "etcd_template_id")
     private Long etcdTemplateId;
 
+    @Column(name = "cni_config_id", nullable = true)
+    private Long cniConfigId = null;
+
+    @Column(name = "cni_config_details", updatable = true, length = 4096)
+    private String cniConfigDetails;
+
     @Override
     public long getId() {
         return id;
@@ -483,4 +489,21 @@ public class KubernetesClusterVO implements KubernetesCluster {
     public void setControlTemplateId(Long controlTemplateId) {
         this.controlTemplateId = controlTemplateId;
     }
+
+    public Long getCniConfigId() {
+        return cniConfigId;
+    }
+
+    public void setCniConfigId(Long cniConfigId) {
+        this.cniConfigId = cniConfigId;
+    }
+
+    public String getCniConfigDetails() {
+        return cniConfigDetails;
+    }
+
+    public void setCniConfigDetails(String cniConfigDetails) {
+        this.cniConfigDetails = cniConfigDetails;
+    }
+
 }

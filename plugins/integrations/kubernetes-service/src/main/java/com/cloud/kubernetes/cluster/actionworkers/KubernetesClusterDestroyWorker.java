@@ -23,6 +23,10 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.dc.ASNumberVO;
+import com.cloud.dc.BGPService;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.dao.ASNumberDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -63,6 +67,10 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
     protected AccountManager accountManager;
     @Inject
     private AnnotationDao annotationDao;
+    @Inject
+    private ASNumberDao asNumberDao;
+    @Inject
+    private BGPService bgpService;
 
     private List<KubernetesClusterVmMapVO> clusterVMs;
 
@@ -130,6 +138,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
             Account owner = accountManager.getAccount(network.getAccountId());
             User callerUser = accountManager.getActiveUser(CallContext.current().getCallingUserId());
             ReservationContext context = new ReservationContextImpl(null, null, callerUser, owner);
+            releaseASNumber(kubernetesCluster.getZoneId(), kubernetesCluster.getNetworkId());
             boolean networkDestroyed = networkMgr.destroyNetwork(kubernetesCluster.getNetworkId(), context, true);
             if (!networkDestroyed) {
                 String msg = String.format("Failed to destroy network : %s as part of Kubernetes cluster : %s cleanup", network.getName(), kubernetesCluster.getName());
@@ -140,6 +149,15 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
                 logger.info(String.format("Destroyed network : %s as part of Kubernetes cluster : %s cleanup",
                     network.getName(), kubernetesCluster.getName()));
             }
+        }
+    }
+
+    private void releaseASNumber(Long zoneId, long networkId) {
+        DataCenter zone = dataCenterDao.findById(zoneId);
+        ASNumberVO asNumber = asNumberDao.findByZoneAndNetworkId(zone.getId(), networkId);
+        if (asNumber != null) {
+            LOGGER.debug(String.format("Releasing AS number %s from network %s", asNumber.getAsNumber(), networkId));
+            bgpService.releaseASNumber(zone.getId(), asNumber.getAsNumber());
         }
     }
 

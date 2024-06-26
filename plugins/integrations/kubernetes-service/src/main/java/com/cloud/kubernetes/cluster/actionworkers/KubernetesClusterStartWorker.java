@@ -36,6 +36,7 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.vpc.NetworkACL;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.user.UserDataVO;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.framework.ca.Certificate;
@@ -140,7 +141,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
 
     private Pair<String, String> getKubernetesControlNodeConfig(final String controlNodeIp, final String serverIp,
                                                   final List<Network.IpAddresses> etcdIps, final String hostName, final boolean haSupported,
-                                                  final boolean ejectIso) throws IOException {
+                                                  final boolean ejectIso, final boolean externalCni) throws IOException {
         String k8sControlNodeConfig = readResourceFile("/conf/k8s-control-node.yml");
         final String apiServerCert = "{{ k8s_control_node.apiserver.crt }}";
         final String apiServerKey = "{{ k8s_control_node.apiserver.key }}";
@@ -157,6 +158,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         final String k8sApiPort = "{{ k8s.api_server_port }}";
         final String certSans = "{{ k8s_control.server_ips }}";
         final String k8sCertificate = "{{ k8s_control.certificate_key }}";
+        final String externalCniPlugin = "{{ k8s.external.cni.plugin }}";
 
         final List<String> addresses = new ArrayList<>();
         addresses.add(controlNodeIp);
@@ -207,6 +209,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         k8sControlNodeConfig = k8sControlNodeConfig.replace(k8sApiPort, String.valueOf(CLUSTER_API_PORT));
         k8sControlNodeConfig = k8sControlNodeConfig.replace(certSans, String.format("- %s", serverIp));
         k8sControlNodeConfig = k8sControlNodeConfig.replace(k8sCertificate, KubernetesClusterUtil.generateClusterHACertificateKey(kubernetesCluster));
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(externalCniPlugin, String.valueOf(externalCni));
 
         k8sControlNodeConfig = updateKubeConfigWithRegistryDetails(k8sControlNodeConfig);
 
@@ -238,34 +241,47 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         String suffix = Long.toHexString(System.currentTimeMillis());
         String hostName = String.format("%s-control-%s", kubernetesClusterNodeNamePrefix, suffix);
         boolean haSupported = isKubernetesVersionSupportsHA();
+        Long userDataId = kubernetesCluster.getCniConfigId();
         Pair<String, String> k8sControlNodeConfigAndControlIp = new Pair<>(null, null);
         try {
-            k8sControlNodeConfigAndControlIp = getKubernetesControlNodeConfig(controlNodeIp, serverIp, etcdIps, hostName, haSupported, Hypervisor.HypervisorType.VMware.equals(clusterTemplate.getHypervisorType()));
+            k8sControlNodeConfigAndControlIp = getKubernetesControlNodeConfig(controlNodeIp, serverIp, etcdIps, hostName, haSupported, Hypervisor.HypervisorType.VMware.equals(clusterTemplate.getHypervisorType()), Objects.nonNull(userDataId));
         } catch (IOException e) {
             logAndThrow(Level.ERROR, "Failed to read Kubernetes control node configuration file", e);
         }
         String k8sControlNodeConfig = k8sControlNodeConfigAndControlIp.first();
         String base64UserData = Base64.encodeBase64String(k8sControlNodeConfig.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
+        if (Objects.nonNull(userDataId)) {
+            logger.info("concatenating userdata");
+            UserDataVO cniConfigVo = userDataDao.findById(userDataId);
+            String cniConfig = new String(Base64.decodeBase64(cniConfigVo.getUserData()));
+            if (Objects.nonNull(asNumber)) {
+                cniConfig = substituteASNumber(cniConfig, asNumber);
+                cniConfig = Base64.encodeBase64String(cniConfig.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
+            }
+            base64UserData = userDataManager.concatenateUserData(base64UserData, cniConfig, null);
+        }
+
         List<String> keypairs = new ArrayList<String>();
         if (StringUtils.isNotBlank(kubernetesCluster.getKeyPair())) {
             keypairs.add(kubernetesCluster.getKeyPair());
         }
 
         Long affinityGroupId = getExplicitAffinityGroup(domainId, accountId);
+        String userDataDetails = kubernetesCluster.getCniConfigDetails();
         if (kubernetesCluster.getSecurityGroupId() != null &&
                 networkModel.checkSecurityGroupSupportForNetwork(owner, zone, networkIds,
                         List.of(kubernetesCluster.getSecurityGroupId()))) {
             List<Long> securityGroupIds = new ArrayList<>();
             securityGroupIds.add(kubernetesCluster.getSecurityGroupId());
             controlVm = userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, controlNodeTemplate, networkIds, securityGroupIds, owner,
-            hostName, hostName, null, null, null, Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST,base64UserData, null, null, keypairs,
+            hostName, hostName, null, null, null, Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST,base64UserData, userDataId, userDataDetails, keypairs,
                     requestedIps, addrs, null, null, Objects.nonNull(affinityGroupId) ?
                             Collections.singletonList(affinityGroupId) : null, customParameterMap, null, null, null,
                     null, true, null, UserVmManager.CKS_NODE);
         } else {
             controlVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, controlNodeTemplate, networkIds, owner,
                     hostName, hostName, null, null, null,
-                    Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, null, null, keypairs,
+                    Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, userDataId, userDataDetails, keypairs,
                     requestedIps, addrs, null, null, Objects.nonNull(affinityGroupId) ?
                             Collections.singletonList(affinityGroupId) : null, customParameterMap, null, null, null, null, true, UserVmManager.CKS_NODE, null);
         }
@@ -273,6 +289,13 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             logger.info(String.format("Created control VM ID: %s, %s in the Kubernetes cluster : %s", controlVm.getUuid(), hostName, kubernetesCluster.getName()));
         }
         return controlVm;
+    }
+
+    private String substituteASNumber(String cniConfig, Long asNumber) {
+        final String asNumberKey = "{{ AS_NUMBER }}";
+        cniConfig = cniConfig.replace(asNumberKey, String.valueOf(asNumber));
+        return cniConfig;
+
     }
 
     private String getKubernetesAdditionalControlNodeConfig(final String joinIp, final boolean ejectIso) throws IOException {

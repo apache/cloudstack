@@ -1,3 +1,4 @@
+## template: jinja
 #cloud-config
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -279,6 +280,7 @@ write_files:
       fi
 
       EXTERNAL_ETCD_NODES={{ etcd.unstacked_etcd }}
+      EXTERNAL_CNI_PLUGIN={{ k8s.external.cni.plugin }}
       MAX_SETUP_CRUCIAL_CMD_ATTEMPTS=3
       crucial_cmd_attempts=1
       while true; do
@@ -320,7 +322,9 @@ write_files:
       if [ -d "$K8S_CONFIG_SCRIPTS_COPY_DIR" ]; then
         ### Network, dashboard configs available offline ###
         echo "Offline configs are available!"
-        /opt/bin/kubectl apply -f ${K8S_CONFIG_SCRIPTS_COPY_DIR}/network.yaml
+        if [[ ${EXTERNAL_CNI_PLUGIN} == false ]]; then
+          /opt/bin/kubectl apply -f ${K8S_CONFIG_SCRIPTS_COPY_DIR}/network.yaml
+        fi
         /opt/bin/kubectl apply -f ${K8S_CONFIG_SCRIPTS_COPY_DIR}/dashboard.yaml
         rm -rf "${K8S_CONFIG_SCRIPTS_COPY_DIR}"
       else
@@ -335,6 +339,7 @@ write_files:
       sudo touch /home/cloud/success
       echo "true" > /home/cloud/success
 
+{% if registry is defined %}
   - path: /opt/bin/setup-containerd
     permissions: '0755'
     owner: root:root
@@ -352,6 +357,7 @@ write_files:
       echo "Restarting containerd service"
       systemctl daemon-reload
       systemctl restart containerd
+{% endif %}
 
   - path: /etc/systemd/system/deploy-kube-system.service
     permissions: '0755'

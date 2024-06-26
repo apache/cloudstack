@@ -16,43 +16,39 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.userdata;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import com.cloud.user.UserData;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserDataResponse;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
 
-import com.cloud.user.UserData;
-import com.cloud.utils.Pair;
-
-@APICommand(name = "listUserData", description = "List registered userdatas", responseObject = UserDataResponse.class, entityType = {UserData.class},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.18",
+@APICommand(name = "registerCniConfiguration",
+        description = "Register a CNI Configuration to be used with CKS cluster",
+        since = "4.19.0",
+        responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false,
+        responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class ListUserDataCmd extends BaseListProjectAndAccountResourcesCmd {
+public class RegisterCniConfigurationCmd extends BaseRegisterUserDataCmd {
+    public static final Logger s_logger = Logger.getLogger(RegisterCniConfigurationCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserDataResponse.class, description = "the ID of the Userdata")
-    private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Userdata name to look for")
-    private String name;
+    @Parameter(name = ApiConstants.CNI_CONFIG, type = CommandType.STRING, description = "CNI Configuration content to be registered as User data", length = 1048576)
+    private String cniConfig;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-    public Long getId() {
-        return id;
-    }
 
-    public String getName() {
-        return name;
+    public String getCniConfig() {
+        return cniConfig;
     }
 
     /////////////////////////////////////////////////////
@@ -61,17 +57,20 @@ public class ListUserDataCmd extends BaseListProjectAndAccountResourcesCmd {
 
     @Override
     public void execute() {
-        Pair<List<? extends UserData>, Integer> resultList = _mgr.listUserDatas(this, false);
-        List<UserDataResponse> responses = new ArrayList<>();
-        for (UserData result : resultList.first()) {
-            UserDataResponse r = _responseGenerator.createUserDataResponse(result);
-            r.setObjectName(ApiConstants.USER_DATA);
-            responses.add(r);
+        UserData result = _mgr.registerUserData(this);
+        UserDataResponse response = _responseGenerator.createUserDataResponse(result);
+        response.setResponseName(getCommandName());
+        response.setObjectName(ApiConstants.CNI_CONFIG);
+        setResponseObject(response);
+    }
+
+    @Override
+    public long getEntityOwnerId() {
+        Long accountId = _accountService.finalyzeAccountId(getAccountName(), getDomainId(), getProjectId(), true);
+        if (accountId == null) {
+            return CallContext.current().getCallingAccount().getId();
         }
 
-        ListResponse<UserDataResponse> response = new ListResponse<>();
-        response.setResponses(responses, resultList.second());
-        response.setResponseName(getCommandName());
-        setResponseObject(response);
+        return accountId;
     }
 }

@@ -51,6 +51,7 @@ import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.RulesService;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.user.SSHKeyPairVO;
+import com.cloud.user.dao.UserDataDao;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.net.Ip;
@@ -69,6 +70,7 @@ import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
@@ -178,6 +180,10 @@ public class KubernetesClusterActionWorker {
     protected UserVmDetailsDao userVmDetailsDao;
     @Inject
     protected UserVmService userVmService;
+    @Inject
+    protected UserDataManager userDataManager;
+    @Inject
+    protected UserDataDao userDataDao;
     @Inject
     protected UserVmManager userVmManager;
     @Inject
@@ -725,20 +731,30 @@ public class KubernetesClusterActionWorker {
             String command = String.format("sudo /opt/bin/kubectl annotate node %s cluster-autoscaler.kubernetes.io/scale-down-disabled=true ; ", name);
             commands.append(command);
         }
-        try {
-            File pkFile = getManagementServerSshPublicKeyFile();
-            Pair<String, Integer> publicIpSshPort = getKubernetesClusterServerIpSshPort(null);
-            publicIpAddress = publicIpSshPort.first();
-            sshPort = publicIpSshPort.second();
+        int retryCounter = 0;
+        while (retryCounter < 3) {
+            retryCounter++;
+            try {
+                File pkFile = getManagementServerSshPublicKeyFile();
+                Pair<String, Integer> publicIpSshPort = getKubernetesClusterServerIpSshPort(null);
+                publicIpAddress = publicIpSshPort.first();
+                sshPort = publicIpSshPort.second();
 
-            Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(),
-            pkFile, null, commands.toString(), 10000, 10000, 60000);
-            return result.first();
-        } catch (Exception e) {
-            String msg = String.format("Failed to taint control nodes on : %s : %s", kubernetesCluster.getName(), e.getMessage());
-            logMessage(Level.ERROR, msg, e);
-            return false;
+                Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(),
+                        pkFile, null, commands.toString(), 10000, 10000, 60000);
+                return result.first();
+            } catch (Exception e) {
+                String msg = String.format("Failed to taint control nodes on : %s : %s", kubernetesCluster.getName(), e.getMessage());
+                logMessage(Level.ERROR, msg, e);
+            }
+            try {
+                Thread.sleep(5 * 1000L);
+            } catch (InterruptedException ie) {
+                LOGGER.error(String.format("Error while attempting to taint nodes on Kubernetes cluster: %s", kubernetesCluster.getName()), ie);
+            }
+            retryCounter++;
         }
+        return false;
     }
 
     protected boolean deployProvider() {

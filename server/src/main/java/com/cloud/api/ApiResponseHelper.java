@@ -5411,9 +5411,13 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setZoneName(zone.getName());
         response.setAsNumber(asn.getAsNumber());
         ASNumberRangeVO range = asNumberRangeDao.findById(asn.getAsNumberRangeId());
-        response.setAsNumberRangeId(range.getUuid());
-        String rangeText = String.format("%s-%s", range.getStartASNumber(), range.getEndASNumber());
-        response.setAsNumberRange(rangeText);
+        if (Objects.nonNull(range)) {
+            response.setAsNumberRangeId(range.getUuid());
+            String rangeText = String.format("%s-%s", range.getStartASNumber(), range.getEndASNumber());
+            response.setAsNumberRange(rangeText);
+        } else {
+            s_logger.info("is null for as number: "+ asn.getAsNumber());
+        }
         response.setAllocated(asn.getAllocatedTime());
         response.setAllocationState(asn.isAllocated() ? "Allocated" : "Free");
         if (asn.getVpcId() != null) {

@@ -329,6 +329,60 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-form-item v-if="form.advancedmode && isASNumberRequired()" name="asnumber" ref="asnumber">
+          <template #label>
+              <tooltip-label :title="$t('label.asnumber')" :tooltip="apiParams.asnumber.description"/>
+            </template>
+            <a-select
+             v-model:value="form.asnumber"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              :loading="asNumberLoading"
+              :placeholder="apiParams.asnumber.description"
+              @change="val => { handleASNumberChange(val) }">
+              <a-select-option v-for="(opt, optIndex) in asNumbersZone" :key="optIndex" :label="opt.asnumber">
+                {{ opt.asnumber }}
+              </a-select-option>
+            </a-select>
+        </a-form-item>
+        <a-form-item  v-if="form.advancedmode" name="cniconfigurationid" ref="cniconfigurationid">
+          <template #label>
+            <tooltip-label :title="$t('label.cniconfiguration')" :tooltip="$t('label.cniconfiguration')"/>
+          </template>
+            <user-data-selection
+              :items="cniConfigurationData"
+              :row-count="cniConfigurationData.length"
+              :zoneId="zoneId"
+              :loading="cniConfigLoading"
+              :preFillContent="dataPreFill"
+              :showSearch="false"
+              @select-user-data-item="($event) => updateCniConfig($event)"
+              @handle-search-filter="($event) => handleSearchFilter('userData', $event)"
+            />
+            <div v-if="cniConfigParams.length > 0">
+              <a-input-group>
+                <a-table
+                  size="small"
+                  style="overflow-y: auto"
+                  :columns="userDataParamCols"
+                  :dataSource="cniConfigParams"
+                  :pagination="false"
+                  :rowKey="record => record.key">
+                  <template #bodyCell="{ column, record }">
+                    <template v-if="column.key === 'value'">
+                      <div v-if="record.key === 'AS_NUMBER'">
+                        <a-input style="width: 100%;text-wrap: wrap;" :disabled="true" value="Value is obtained from the network or is automatically obtained at the time of cluster creation" />
+                      </div>
+                      <a-input v-else v-model:value="cniConfigValues[record.key]" />
+                    </template>
+                  </template>
+                </a-table>
+              </a-input-group>
+            </div>
+        </a-form-item>
 
         <!-- Experimentation Features -->
         <div v-if="$store.getters.features.kubernetesclusterexperimentalfeaturesenabled">
@@ -380,13 +434,15 @@ import { api } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import UserDataSelection from '@views/compute/wizard/UserDataSelection'
 
 export default {
   name: 'CreateKubernetesCluster',
   mixins: [mixinForm],
   components: {
     TooltipLabel,
-    ResourceIcon
+    ResourceIcon,
+    UserDataSelection
   },
   props: {},
   data () {
@@ -407,7 +463,28 @@ export default {
       templates: [],
       templateLoading: false,
       selectedZoneHypervisors: [],
-      hypervisorLoading: false
+      hypervisorLoading: false,
+      configLoading: false,
+      cniConfigurationData: [],
+      cniConfigLoading: false,
+      cniConfigParams: [],
+      cniConfigValues: {},
+      userDataParamCols: [
+        {
+          title: this.$t('label.key'),
+          dataIndex: 'key'
+        },
+        {
+          title: this.$t('label.value'),
+          dataIndex: 'value',
+          key: 'value'
+        }
+      ],
+      cksNetworkOfferingName: null,
+      cksNetworkOffering: null,
+      asNumbersZone: [],
+      asNumberLoading: false,
+      selectedAsNumber: 0
     }
   },
   beforeCreate () {
@@ -474,15 +551,24 @@ export default {
       this.fetchZoneData()
       this.fetchKeyPairData()
       this.fetchCksTemplates()
+      this.fetchCKSNetworkOfferingName()
+      this.fetchCniConfigurations()
     },
     isValidValueForKey (obj, key) {
       return key in obj && obj[key] != null
+    },
+    isASNumberRequired () {
+      return !this.isObjectEmpty(this.cksNetworkOffering) && this.cksNetworkOffering.specifyasnumber && this.cksNetworkOffering.routingmode && this.cksNetworkOffering.routingmode.toLowerCase() === 'dynamic'
     },
     arrayHasItems (array) {
       return array !== null && array !== undefined && Array.isArray(array) && array.length > 0
     },
     isObjectEmpty (obj) {
       return !(obj !== null && obj !== undefined && Object.keys(obj).length > 0 && obj.constructor === Object)
+    },
+    isUserAllowedToListCniConfig () {
+      console.log(Boolean('listCniConfiguration' in this.$store.getters.apis))
+      return Boolean('listCniConfiguration' in this.$store.getters.apis)
     },
     fetchZoneData () {
       const params = {}
@@ -507,6 +593,11 @@ export default {
       this.fetchKubernetesVersionData()
       this.fetchNetworkData()
       this.fetchZoneHypervisors()
+      this.fetchZoneASNumbers()
+    },
+    handleASNumberChange (selectedIndex) {
+      this.selectedAsNumber = this.asNumbersZone[selectedIndex].asnumber
+      this.form.asnumber = this.selectedAsNumber
     },
     fetchKubernetesVersionData () {
       this.kubernetesVersions = []
@@ -640,6 +731,83 @@ export default {
     handleZoneHypervisorChange (index) {
       this.form.hypervisor = index
     },
+    fetchCKSNetworkOfferingName () {
+      const params = {
+        name: 'cloud.kubernetes.cluster.network.offering'
+      }
+      this.configLoading = true
+      api('listConfigurations', params).then(json => {
+        if (json.listconfigurationsresponse.configuration !== null) {
+          const config = json.listconfigurationsresponse.configuration[0]
+          if (config && config.name === params.name) {
+            this.cksNetworkOfferingName = config.value
+          }
+        }
+      }).then(() => {
+        this.fetchCKSNetworkOffering(this.cksNetworkOfferingName)
+      }).finally(() => {
+        this.configLoading = false
+      })
+    },
+    fetchCKSNetworkOffering (offeringName) {
+      return new Promise((resolve, reject) => {
+        const args = {
+          name: offeringName
+        }
+
+        api('listNetworkOfferings', args).then(json => {
+          const listNetworkOfferings = json.listnetworkofferingsresponse.networkoffering || []
+          resolve(listNetworkOfferings)
+          this.cksNetworkOffering = listNetworkOfferings[0] || {}
+        }).catch(error => {
+          resolve(error)
+        })
+      })
+    },
+    fetchZoneASNumbers () {
+      const params = {}
+      params.zoneid = this.selectedZone.id
+      params.isallocated = false
+      api('listASNumbers', params).then(json => {
+        this.asNumbersZone = json.listasnumbersresponse.asnumber
+      })
+    },
+    fetchCniConfigurations () {
+      this.cniConfigLoading = true
+      api('listCniConfiguration', {}).then(
+        response => {
+          const listResponse = response.listcniconfigurationresponse.cniconfig || []
+          if (listResponse) {
+            this.cniConfigurationData = listResponse
+          }
+        }).finally(() => {
+        this.cniConfigLoading = false
+      })
+    },
+    updateCniConfig (id) {
+      if (id === '0') {
+        this.form.cniconfigurationid = undefined
+        return
+      }
+      this.form.cniconfigurationid = id
+      this.cniConfigParams = []
+      api('listCniConfiguration', { id: id }).then(json => {
+        const resp = json?.listcniconfigurationresponse?.cniconfig || []
+        if (resp) {
+          var params = resp[0].params
+          if (params) {
+            var dataParams = params.split(',')
+          }
+          var that = this
+          dataParams.forEach(function (val, index) {
+            that.cniConfigParams.push({
+              id: index,
+              key: val
+            })
+          })
+        }
+      })
+    },
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
@@ -717,6 +885,21 @@ export default {
           params.dockerregistryusername = values.dockerregistryusername
           params.dockerregistrypassword = values.dockerregistrypassword
           params.dockerregistryurl = values.dockerregistryurl
+        }
+
+        if (values.cniconfigurationid) {
+          params.cniconfigurationid = values.cniconfigurationid
+        }
+
+        var idx = 0
+        if (this.cniConfigValues) {
+          for (const [key, value] of Object.entries(this.cniConfigValues)) {
+            params['cniconfigdetails[' + idx + '].' + `${key}`] = value
+            idx++
+          }
+        }
+        if ('asnumber' in values && this.isASNumberRequired()) {
+          params.asnumber = values.asnumber
         }
 
         api('createKubernetesCluster', params).then(json => {

@@ -112,6 +112,9 @@ public class ApiConstants {
     public static final String CN = "cn";
     public static final String COMMAND = "command";
     public static final String CMD_EVENT_TYPE = "cmdeventtype";
+    public static final String CNI_CONFIG = "cniconfig";
+    public static final String CNI_CONFIG_ID = "cniconfigurationid";
+    public static final String CNI_CONFIG_DETAILS = "cniconfigdetails";
     public static final String COMPONENT = "component";
     public static final String CPU_CORE_PER_SOCKET = "cpucorepersocket";
     public static final String CPU_NUMBER = "cpunumber";

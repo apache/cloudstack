@@ -47,13 +47,16 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.ASNumberVO;
 import com.cloud.dc.DedicatedResourceVO;
+import com.cloud.dc.dao.ASNumberDao;
 import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterRemoveWorker;
+import com.cloud.network.NetworkServiceImpl;
 import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.element.NsxProviderVO;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterAddWorker;
@@ -316,6 +319,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     private PortForwardingRulesDao pfRuleDao;
     @Inject
     RoutedIpv4Manager routedIpv4Manager;
+    @Inject
+    private ASNumberDao asNumberDao;
 
     private void logMessage(final Level logLevel, final String message, final Exception e) {
         if (logLevel == Level.WARN) {
@@ -1037,7 +1042,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     private Network getKubernetesClusterNetworkIfMissing(final String clusterName, final DataCenter zone,  final Account owner, final int controlNodesCount,
-                         final int nodesCount, final String externalLoadBalancerIpAddress, final Long networkId) throws CloudRuntimeException {
+                         final int nodesCount, final String externalLoadBalancerIpAddress, final Long networkId, final Long asNumber) throws CloudRuntimeException {
         Network network = null;
         if (networkId != null) {
             network = networkDao.findById(networkId);
@@ -1070,6 +1075,10 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 network = networkService.createGuestNetwork(networkOffering.getId(), clusterName + "-network",
                         owner.getAccountName() + "-network", owner, physicalNetwork, zone.getId(),
                         ControlledEntity.ACLType.Account);
+                ASNumberVO asNumberVO = NetworkServiceImpl.checkAndSelectASNumber(asNumber, zone, networkOffering, asNumberDao);
+                if (Objects.nonNull(asNumber)) {
+                    NetworkServiceImpl.allocateASNumber(asNumberVO, network, asNumberDao);
+                }
             } catch (ConcurrentOperationException | InsufficientCapacityException | ResourceAllocationException e) {
                 logAndThrow(Level.ERROR, String.format("Unable to create network for the Kubernetes cluster: %s", clusterName));
             } finally {
@@ -1433,6 +1442,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         final Account owner = accountService.getActiveAccountById(cmd.getEntityOwnerId());
         final KubernetesSupportedVersion clusterKubernetesVersion = kubernetesSupportedVersionDao.findById(cmd.getKubernetesVersionId());
         final Hypervisor.HypervisorType hypervisor = cmd.getHypervisorType();
+        final Long asNumber = cmd.getAsNumber();
 
         Map<String, Long> serviceOfferingNodeTypeMap = cmd.getServiceOfferingNodeTypeMap();
         Long defaultServiceOfferingId = cmd.getServiceOfferingId();
@@ -1457,7 +1467,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         final VMTemplateVO controlNodeTemplate = getKubernetesServiceTemplate(zone, hypervisorType, templateNodeTypeMap, CONTROL);
         final VMTemplateVO workerNodeTemplate = getKubernetesServiceTemplate(zone, hypervisorType, templateNodeTypeMap, WORKER);
         final VMTemplateVO etcdNodeTemplate = getKubernetesServiceTemplate(zone, hypervisorType, templateNodeTypeMap, ETCD);
-        final Network defaultNetwork = getKubernetesClusterNetworkIfMissing(cmd.getName(), zone, owner, (int)controlNodeCount, (int)clusterSize, cmd.getExternalLoadBalancerIpAddress(), cmd.getNetworkId());
+        final Network defaultNetwork = getKubernetesClusterNetworkIfMissing(cmd.getName(), zone, owner, (int)controlNodeCount, (int)clusterSize, cmd.getExternalLoadBalancerIpAddress(), cmd.getNetworkId(), asNumber);
         final SecurityGroup finalSecurityGroup = securityGroup;
         final KubernetesClusterVO cluster = Transaction.execute(new TransactionCallback<KubernetesClusterVO>() {
             @Override
@@ -1472,6 +1482,12 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                         defaultNetwork.getId(), owner.getDomainId(), owner.getAccountId(), controlNodeCount, clusterSize,
                         KubernetesCluster.State.Created, cmd.getSSHKeyPairName(), cores, memory,
                         cmd.getNodeRootDiskSize(), "", KubernetesCluster.ClusterType.CloudManaged);
+                newCluster.setCniConfigId(cmd.getCniConfigId());
+                String cniConfigDetails = null;
+                if (MapUtils.isNotEmpty(cmd.getCniConfigDetails())) {
+                    cniConfigDetails = cmd.getCniConfigDetails().toString();
+                }
+                newCluster.setCniConfigDetails(cniConfigDetails);
                 if (serviceOfferingNodeTypeMap.containsKey(WORKER.name())) {
                     newCluster.setWorkerServiceOfferingId(serviceOfferingNodeTypeMap.get(WORKER.name()));
                 }
@@ -1635,7 +1651,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
      * @return
      * @throws CloudRuntimeException
      */
-    protected boolean startKubernetesCluster(long kubernetesClusterId, Long domainId, String accountName, Long asNumber, boolean onCreate) throws CloudRuntimeException, ManagementServerException, ResourceUnavailableException, InsufficientCapacityException {
+    @Override
+    public boolean startKubernetesCluster(long kubernetesClusterId, Long domainId, String accountName, Long asNumber, boolean onCreate)
+            throws CloudRuntimeException, ManagementServerException, ResourceUnavailableException, InsufficientCapacityException {
         if (!KubernetesServiceEnabled.value()) {
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
         }

@@ -16,44 +16,23 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.userdata;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import com.cloud.user.UserData;
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
-import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UserDataResponse;
+import org.apache.log4j.Logger;
 
-import com.cloud.user.UserData;
-import com.cloud.utils.Pair;
+import java.util.ArrayList;
+import java.util.List;
 
-@APICommand(name = "listUserData", description = "List registered userdatas", responseObject = UserDataResponse.class, entityType = {UserData.class},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.18",
+@APICommand(name = "listCniConfiguration", description = "List userdata for CNI plugins", responseObject = UserDataResponse.class, entityType = {UserData.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.20",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class ListUserDataCmd extends BaseListProjectAndAccountResourcesCmd {
-
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserDataResponse.class, description = "the ID of the Userdata")
-    private Long id;
-
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Userdata name to look for")
-    private String name;
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
-    public Long getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
+public class ListCniConfigurationCmd extends ListUserDataCmd {
+    public static final Logger s_logger = Logger.getLogger(ListCniConfigurationCmd.class.getName());
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -61,11 +40,11 @@ public class ListUserDataCmd extends BaseListProjectAndAccountResourcesCmd {
 
     @Override
     public void execute() {
-        Pair<List<? extends UserData>, Integer> resultList = _mgr.listUserDatas(this, false);
+        Pair<List<? extends UserData>, Integer> resultList = _mgr.listUserDatas(this, true);
         List<UserDataResponse> responses = new ArrayList<>();
         for (UserData result : resultList.first()) {
             UserDataResponse r = _responseGenerator.createUserDataResponse(result);
-            r.setObjectName(ApiConstants.USER_DATA);
+            r.setObjectName(ApiConstants.CNI_CONFIG);
             responses.add(r);
         }
 
@@ -74,4 +53,6 @@ public class ListUserDataCmd extends BaseListProjectAndAccountResourcesCmd {
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }
+
+
 }

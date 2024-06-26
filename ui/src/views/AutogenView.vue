@@ -918,6 +918,10 @@ export default {
       }
 
       this.loading = true
+      if (this.$route.path.startsWith('/cniconfiguration')) {
+        params.forcks = true
+        console.log('here')
+      }
       if (this.$route.params && this.$route.params.id) {
         params.id = this.$route.params.id
         if (['listSSHKeyPairs'].includes(this.apiName)) {
@@ -950,6 +954,8 @@ export default {
           params.firewallpolicyuuid = this.$route.params.id
         }
       }
+
+      console.log(params)
 
       if (this.$store.getters.listAllProjects && !this.projectView) {
         params.projectid = '-1'

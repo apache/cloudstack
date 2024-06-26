@@ -20,6 +20,7 @@ package com.cloud.kubernetes.cluster.actionworkers;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import com.cloud.kubernetes.cluster.KubernetesClusterVmMapVO;
@@ -67,12 +68,12 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
         String nodeAddress = (index > 0 && sshPort == 22) ? vm.getPrivateIpAddress() : publicIpAddress;
         SshHelper.scpTo(nodeAddress, nodeSshPort, getControlNodeLoginUser(), sshKeyFile, null,
                 "~/", upgradeScriptFile.getAbsolutePath(), "0755");
-        String cmdStr = String.format("sudo ./%s %s %s %s %s",
+        String cmdStr = String.format("sudo ./%s %s %s %s %s %s",
                 upgradeScriptFile.getName(),
                 upgradeVersion.getSemanticVersion(),
                 index == 0 ? "true" : "false",
                 KubernetesVersionManagerImpl.compareSemanticVersions(upgradeVersion.getSemanticVersion(), "1.15.0") < 0 ? "true" : "false",
-                Hypervisor.HypervisorType.VMware.equals(vm.getHypervisorType()));
+                Hypervisor.HypervisorType.VMware.equals(vm.getHypervisorType()), Objects.isNull(kubernetesCluster.getCniConfigId()));
         return SshHelper.sshExecute(nodeAddress, nodeSshPort, getControlNodeLoginUser(), sshKeyFile, null,
                 cmdStr,
                 10000, 10000, 10 * 60 * 1000);

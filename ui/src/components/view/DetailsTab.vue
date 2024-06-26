@@ -44,7 +44,9 @@
     <template #renderItem="{item}">
       <a-list-item v-if="(item in dataResource && !customDisplayItems.includes(item)) || (offeringDetails.includes(item) && dataResource.serviceofferingdetails)">
         <div style="width: 100%">
-          <strong>{{ item === 'service' ? $t('label.supportedservices') : $t(getDetailTitle(item)) }}</strong>
+          <strong>{{ item === 'service' ? $t('label.supportedservices') :
+           $route.meta.name === 'cniconfiguration' && item === 'userdata' ? $t('label.' + String($route.meta.name).toLowerCase()) :
+           $t(getDetailTitle(item)) }}</strong>
           <br/>
           <div v-if="Array.isArray(dataResource[item]) && item === 'service'">
             <div v-for="(service, idx) in dataResource[item]" :key="idx">
@@ -95,6 +97,9 @@
           <div style="white-space: pre-wrap;" v-else-if="$route.meta.name === 'quotatariff' && item === 'description'">{{ dataResource[item] }}</div>
           <div v-else-if="$route.meta.name === 'userdata' && item === 'userdata'">
             <div style="white-space: pre-wrap;"> {{ decodeUserData(dataResource.userdata)}} </div>
+          </div>
+          <div v-else-if="$route.meta.name === 'cniconfiguration' && item === 'userdata'">
+            <div style="white-space: pre-wrap;"> {{ dataResource.userdata}} </div>
           </div>
           <div v-else-if="$route.meta.name === 'guestnetwork' && item === 'egressdefaultpolicy'">
             {{ dataResource[item]? $t('message.egress.rules.allow') : $t('message.egress.rules.deny') }}

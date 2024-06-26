@@ -52,6 +52,7 @@ import org.apache.cloudstack.api.response.KubernetesSupportedVersionResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -192,6 +193,15 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
 
     @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "the hypervisor on which the CKS cluster is to be deployed. This is required if the zone in which the CKS cluster is being deployed has clusters with different hypervisor types.")
     private String hypervisor;
+
+    @Parameter(name = ApiConstants.CNI_CONFIG_ID, type = CommandType.UUID, entityType = UserDataResponse.class, description = "the ID of the Userdata", since = "4.19.0")
+    private Long cniConfigId;
+
+    @Parameter(name = ApiConstants.CNI_CONFIG_DETAILS, type = CommandType.MAP,
+            description = "used to specify the parameters values for the variables in userdata. " +
+                    "Example: cniconfigdetails[0].key=accesskey&cniconfigdetails[0].value=s389ddssaa&" +
+                    "cniconfigdetails[1].key=secretkey&cniconfigdetails[1].value=8dshfsss", since = "4.19.0")
+    private Map cniConfigDetails;
 
     @Parameter(name=ApiConstants.AS_NUMBER, type=CommandType.LONG, description="the AS Number of the network")
     private Long asNumber;
@@ -347,6 +357,14 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
             return asNumberVO.getAsNumber();
         }
         return asNumber;
+    }
+
+    public Map getCniConfigDetails() {
+        return convertDetailsToMap(cniConfigDetails);
+    }
+
+    public Long getCniConfigId() {
+        return cniConfigId;
     }
 
     /////////////////////////////////////////////////////

@@ -59,9 +59,9 @@ import org.apache.cloudstack.api.command.user.ssh.CreateSSHKeyPairCmd;
 import org.apache.cloudstack.api.command.user.ssh.DeleteSSHKeyPairCmd;
 import org.apache.cloudstack.api.command.user.ssh.ListSSHKeyPairsCmd;
 import org.apache.cloudstack.api.command.user.ssh.RegisterSSHKeyPairCmd;
+import org.apache.cloudstack.api.command.user.userdata.BaseRegisterUserDataCmd;
 import org.apache.cloudstack.api.command.user.userdata.DeleteUserDataCmd;
 import org.apache.cloudstack.api.command.user.userdata.ListUserDataCmd;
-import org.apache.cloudstack.api.command.user.userdata.RegisterUserDataCmd;
 import org.apache.cloudstack.api.command.user.vm.GetVMPasswordCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.UpdateVMGroupCmd;
 import org.apache.cloudstack.config.Configuration;
@@ -360,17 +360,16 @@ public interface ManagementService {
      *            The api command class.
      * @return The list of userdatas found.
      */
-    Pair<List<? extends UserData>, Integer> listUserDatas(ListUserDataCmd cmd);
+    Pair<List<? extends UserData>, Integer> listUserDatas(ListUserDataCmd cmd, boolean forCks);
 
     /**
      * Registers a userdata.
      *
-     * @param cmd
-     *            The api command class.
+     * @param cmd    The api command class.
+     * @param forCks
      * @return A VO with the registered userdata.
      */
-    UserData registerUserData(RegisterUserDataCmd cmd);
-
+    UserData registerUserData(BaseRegisterUserDataCmd cmd);
     /**
      * Deletes a userdata.
      *

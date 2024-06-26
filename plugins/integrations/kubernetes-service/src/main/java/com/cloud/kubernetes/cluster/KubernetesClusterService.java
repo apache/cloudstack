@@ -151,6 +151,8 @@ public interface KubernetesClusterService extends PluggableService, Configurable
 
     void startKubernetesCluster(StartKubernetesClusterCmd cmd) throws CloudRuntimeException, ManagementServerException, ResourceUnavailableException, InsufficientCapacityException;
 
+    boolean startKubernetesCluster(long kubernetesClusterId, Long domainId, String accountName, Long asNumber, boolean onCreate) throws CloudRuntimeException, ManagementServerException, ResourceUnavailableException, InsufficientCapacityException;
+
     boolean stopKubernetesCluster(StopKubernetesClusterCmd cmd) throws CloudRuntimeException;
 
     boolean deleteKubernetesCluster(DeleteKubernetesClusterCmd cmd) throws CloudRuntimeException;
