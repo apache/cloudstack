@@ -28,6 +28,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
+
+import org.apache.cloudstack.storage.datastore.api.StorPoolSnapshotDef;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
@@ -123,6 +125,15 @@ public class StorPoolUtil {
     public static final String SP_AUTH_TOKEN = "SP_AUTH_TOKEN";
 
     public static final String SP_VOLUME_ON_CLUSTER = "SP_VOLUME_ON_CLUSTER";
+
+    private static final String DATA = "data";
+
+    private static final String CLUSTERS = "clusters";
+
+    public static final String SP_DELAY_DELETE = "SP_DELAY_DELETE";
+
+    public static final String DELAY_DELETE = "delayDelete";
+
 
     public static enum StorpoolRights {
         RO("ro"), RW("rw"), DETACH("detach");
@@ -416,27 +427,31 @@ public class StorPoolUtil {
     public static JsonArray snapshotsList(SpConnectionDesc conn) {
         SpApiResponse resp = GET("MultiCluster/SnapshotsList", conn);
         JsonObject obj = resp.fullJson.getAsJsonObject();
-        JsonArray data = obj.getAsJsonArray("data");
-        return data;
+        return obj.getAsJsonArray(DATA);
+    }
+
+    public static JsonArray snapshotsListAllClusters(SpConnectionDesc conn) {
+        SpApiResponse resp = GET("MultiCluster/AllClusters/SnapshotsList", conn);
+        JsonObject obj = resp.fullJson.getAsJsonObject();
+        return obj.getAsJsonObject(DATA).getAsJsonArray(CLUSTERS);
     }
 
     public static JsonArray volumesList(SpConnectionDesc conn) {
         SpApiResponse resp = GET("MultiCluster/VolumesList", conn);
         JsonObject obj = resp.fullJson.getAsJsonObject();
-        JsonArray data = obj.getAsJsonArray("data");
-        return data;
+        return obj.getAsJsonArray(DATA);
     }
 
     public static JsonArray volumesSpace(SpConnectionDesc conn) {
         SpApiResponse resp = GET("MultiCluster/AllClusters/VolumesSpace", conn);
         JsonObject obj = resp.fullJson.getAsJsonObject();
-        return obj.getAsJsonObject("data").getAsJsonArray("clusters");
+        return obj.getAsJsonObject(DATA).getAsJsonArray(CLUSTERS);
     }
 
     public static JsonArray templatesStats(SpConnectionDesc conn) {
         SpApiResponse resp = GET("MultiCluster/AllClusters/VolumeTemplatesStatus", conn);
         JsonObject obj = resp.fullJson.getAsJsonObject();
-        return obj.getAsJsonObject("data").getAsJsonArray("clusters");
+        return obj.getAsJsonObject(DATA).getAsJsonArray(CLUSTERS);
     }
 
     private static boolean objectExists(SpApiError err) {
@@ -453,7 +468,7 @@ public class StorPoolUtil {
         if (resp.getError() != null && !objectExists(resp.getError())) {
             return null;
         }
-        JsonObject data = obj.getAsJsonArray("data").get(0).getAsJsonObject();
+        JsonObject data = obj.getAsJsonArray(DATA).get(0).getAsJsonObject();
         return data.getAsJsonPrimitive("size").getAsLong();
     }
 
@@ -461,7 +476,7 @@ public class StorPoolUtil {
         SpApiResponse resp = GET("MultiCluster/Snapshot/" + name, conn);
         JsonObject obj = resp.fullJson.getAsJsonObject();
 
-        JsonObject data = obj.getAsJsonArray("data").get(0).getAsJsonObject();
+        JsonObject data = obj.getAsJsonArray(DATA).get(0).getAsJsonObject();
         JsonPrimitive clusterId = data.getAsJsonPrimitive("clusterId");
         return clusterId != null ? clusterId.getAsString() : null;
     }
@@ -470,7 +485,7 @@ public class StorPoolUtil {
         SpApiResponse resp = GET("MultiCluster/Volume/" + name, conn);
         JsonObject obj = resp.fullJson.getAsJsonObject();
 
-        JsonObject data = obj.getAsJsonArray("data").get(0).getAsJsonObject();
+        JsonObject data = obj.getAsJsonArray(DATA).get(0).getAsJsonObject();
         JsonPrimitive clusterId = data.getAsJsonPrimitive("clusterId");
         return clusterId != null ? clusterId.getAsString() : null;
     }
@@ -579,6 +594,10 @@ public class StorPoolUtil {
         return POST("MultiCluster/VolumeSnapshot/" + volumeName, json, conn);
     }
 
+    public static SpApiResponse volumeSnapshot(StorPoolSnapshotDef snapshot, SpConnectionDesc conn) {
+        return POST("MultiCluster/VolumeSnapshot/" + snapshot.getVolumeName(), snapshot, conn);
+    }
+
     public static SpApiResponse volumesGroupSnapshot(final List<VolumeObjectTO> volumeTOs, final String vmUuid,
             final String snapshotName, String csTag, SpConnectionDesc conn) {
         Map<String, Object> json = new LinkedHashMap<>();
@@ -638,7 +657,7 @@ public class StorPoolUtil {
 
     public static String getSnapshotNameFromResponse(SpApiResponse resp, boolean tildeNeeded, String globalIdOrRemote) {
         JsonObject obj = resp.fullJson.getAsJsonObject();
-        JsonPrimitive data = obj.getAsJsonObject("data").getAsJsonPrimitive(globalIdOrRemote);
+        JsonPrimitive data = obj.getAsJsonObject(DATA).getAsJsonPrimitive(globalIdOrRemote);
         String name = data != null ? data.getAsString() : null;
         name = name != null ? !tildeNeeded ? name : "~" + name : name;
         return name;
@@ -646,7 +665,7 @@ public class StorPoolUtil {
 
     public static String getNameFromResponse(SpApiResponse resp, boolean tildeNeeded) {
         JsonObject obj = resp.fullJson.getAsJsonObject();
-        JsonPrimitive data = obj.getAsJsonObject("data").getAsJsonPrimitive("name");
+        JsonPrimitive data = obj.getAsJsonObject(DATA).getAsJsonPrimitive("name");
         String name = data != null ? data.getAsString() : null;
         name = name != null ? name.startsWith("~") && !tildeNeeded ? name.split("~")[1] : name : name;
         return name;
