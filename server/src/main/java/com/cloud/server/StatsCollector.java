@@ -113,9 +113,6 @@ import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.serializer.GsonHelper;
-import com.cloud.server.StatsCollector.AbstractStatsCollector;
-import com.cloud.server.StatsCollector.AutoScaleMonitor;
-import com.cloud.server.StatsCollector.StorageCollector;
 import com.cloud.storage.ImageStoreDetailsUtil;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
@@ -284,6 +281,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
     protected static ConfigKey<Boolean> vmStatsCollectUserVMOnly = new ConfigKey<>("Advanced", Boolean.class, "vm.stats.user.vm.only", "false",
             "When set to 'false' stats for system VMs will be collected otherwise stats collection will be done only for user VMs", true);
+
+    protected static ConfigKey<Long> vmStatsRemoveBatchSize = new ConfigKey<>("Advanced", Long.class, "vm.stats.remove.batch.size", "0", "Indicates the" +
+            " limit applied to delete vm_stats entries while running the clean-up task. With this, ACS will run the delete query, applying the limit, as many times as necessary" +
+            " to delete all entries older than the value defined in vm.stats.max.retention.time. This is advised when retaining several days of records, which can lead to slowness" +
+            " on the delete query. Zero (0) means that no limit will be applied, therefore, the query will run once and without limit, keeping the default behavior.", true);
 
     protected static ConfigKey<Boolean> vmDiskStatsRetentionEnabled = new ConfigKey<>("Advanced", Boolean.class, "vm.disk.stats.retention.enabled", "false",
             "When set to 'true' stats for VM disks will be stored in the database otherwise disk stats will not be stored", true);
@@ -1670,7 +1672,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 }
 
                 List<DataStore> stores = _dataStoreMgr.listImageStores();
-                ConcurrentHashMap<Long, StorageStats> storageStats = new ConcurrentHashMap<Long, StorageStats>();
+                ConcurrentHashMap<Long, StorageStats> storageStats = new ConcurrentHashMap<>();
                 for (DataStore store : stores) {
                     if (store.getUri() == null) {
                         continue;
@@ -1690,7 +1692,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                         logger.trace("HostId: " + storeId + " Used: " + toHumanReadableSize(((StorageStats)answer).getByteUsed()) + " Total Available: " + toHumanReadableSize(((StorageStats)answer).getCapacityBytes()));
                     }
                 }
-                _storageStats = storageStats;
+                updateStorageStats(storageStats);
                 ConcurrentHashMap<Long, StorageStats> storagePoolStats = new ConcurrentHashMap<Long, StorageStats>();
 
                 List<StoragePoolVO> storagePools = _storagePoolDao.listAll();
@@ -1739,6 +1741,19 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             } catch (Throwable t) {
                 logger.error("Error trying to retrieve storage stats", t);
             }
+        }
+
+        private void updateStorageStats(ConcurrentHashMap<Long, StorageStats> storageStats) {
+            for (Long storeId : storageStats.keySet()) {
+                if (_storageStats.containsKey(storeId)
+                        && (_storageStats.get(storeId).getCapacityBytes() == 0l
+                        || _storageStats.get(storeId).getCapacityBytes() != storageStats.get(storeId).getCapacityBytes())) {
+                        // get add to DB rigorously
+                        _storageManager.updateImageStoreStatus(storeId, null, null, storageStats.get(storeId).getCapacityBytes());
+                }
+            }
+            // if in _storageStats and not in storageStats it gets discarded
+            _storageStats = storageStats;
         }
     }
 
@@ -1950,7 +1965,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         logger.trace("Removing older VM stats records.");
         Date now = new Date();
         Date limit = DateUtils.addMinutes(now, -maxRetentionTime);
-        vmStatsDao.removeAllByTimestampLessThan(limit);
+        vmStatsDao.removeAllByTimestampLessThan(limit, vmStatsRemoveBatchSize.value());
     }
 
     /**
@@ -2124,7 +2139,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {vmDiskStatsInterval, vmDiskStatsIntervalMin, vmNetworkStatsInterval, vmNetworkStatsIntervalMin, StatsTimeout, statsOutputUri,
+        return new ConfigKey<?>[] {vmDiskStatsInterval, vmDiskStatsIntervalMin, vmNetworkStatsInterval, vmNetworkStatsIntervalMin, StatsTimeout, statsOutputUri, vmStatsRemoveBatchSize,
             vmStatsIncrementMetrics, vmStatsMaxRetentionTime, vmStatsCollectUserVMOnly, vmDiskStatsRetentionEnabled, vmDiskStatsMaxRetentionTime,
                 MANAGEMENT_SERVER_STATUS_COLLECTION_INTERVAL,
                 DATABASE_SERVER_STATUS_COLLECTION_INTERVAL,

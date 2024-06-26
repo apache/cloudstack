@@ -1092,4 +1092,9 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             StopRetryInterval, RestartRetryInterval, MigrateRetryInterval, InvestigateRetryInterval,
             HAWorkers, ForceHA, KvmHAFenceHostIfHeartbeatFailsOnStorage};
     }
+
+    @Override
+    public int expungeWorkItemsByVmList(List<Long> vmIds, Long batchSize) {
+        return _haDao.expungeByVmList(vmIds, batchSize);
+    }
 }

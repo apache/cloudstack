@@ -246,6 +246,12 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ENCRYPT_ROOT, type = CommandType.BOOLEAN, description = "VMs using this offering require root volume encryption", since="4.18")
     private Boolean encryptRoot;
 
+    @Parameter(name = ApiConstants.PURGE_RESOURCES, type = CommandType.BOOLEAN,
+            description = "Whether to cleanup instance and its associated resource from database upon expunge of the instance",
+            since="4.20")
+    private Boolean purgeResources;
+
+
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -273,7 +279,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 
     public String getServiceOfferingName() {
         if (StringUtils.isEmpty(serviceOfferingName)) {
-            throw new InvalidParameterValueException("Failed to create service offering because offering name has not been spified.");
+            throw new InvalidParameterValueException("Failed to create service offering because offering name has not been specified.");
         }
         return serviceOfferingName;
     }
@@ -479,6 +485,10 @@ public class CreateServiceOfferingCmd extends BaseCmd {
             return encryptRoot;
         }
         return false;
+    }
+
+    public boolean isPurgeResources() {
+        return Boolean.TRUE.equals(purgeResources);
     }
 
     /////////////////////////////////////////////////////

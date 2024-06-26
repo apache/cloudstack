@@ -3064,17 +3064,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     @Override
     @DB
     public boolean shutdownNetwork(final long networkId, final ReservationContext context, final boolean cleanupElements) {
-        NetworkVO network = _networksDao.findById(networkId);
-        if (network.getState() == Network.State.Allocated) {
-            logger.debug("Network is already shutdown: {}", network);
-            return true;
-        }
-
-        if (network.getState() != Network.State.Implemented && network.getState() != Network.State.Shutdown) {
-            logger.debug("Network is not implemented: {}", network);
-            return false;
-        }
-
+        NetworkVO network = null;
         try {
             //do global lock for the network
             network = _networksDao.acquireInLockTable(networkId, NetworkLockTimeout.value());
@@ -4734,6 +4724,19 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             if (virtualMachine.getState() != VirtualMachine.State.Stopped) {
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, virtualMachine.getAccountId(), virtualMachine.getDataCenterId(), virtualMachine.getId(),
                         Long.toString(nic.getId()), network.getNetworkOfferingId(), null, 0L, virtualMachine.getClass().getName(), virtualMachine.getUuid(), virtualMachine.isDisplay());
+            }
+        }
+    }
+
+    @Override
+    public void expungeLbVmRefs(List<Long> vmIds, Long batchSize) {
+        if (CollectionUtils.isEmpty(networkElements) || CollectionUtils.isEmpty(vmIds)) {
+            return;
+        }
+        for (NetworkElement element : networkElements) {
+            if (element instanceof LoadBalancingServiceProvider) {
+                LoadBalancingServiceProvider lbProvider = (LoadBalancingServiceProvider)element;
+                lbProvider.expungeLbVmRefs(vmIds, batchSize);
             }
         }
     }
