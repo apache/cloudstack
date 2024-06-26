@@ -484,4 +484,3 @@ public class StorageManagerImplTest {
         Assert.assertEquals(failureReason, "An incorrect mount option was specified");
     }
 }
-
