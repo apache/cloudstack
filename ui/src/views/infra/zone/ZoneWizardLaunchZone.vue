@@ -1387,6 +1387,7 @@ export default {
           path = '/' + path
         }
         url = this.nfsURL(server, path)
+        params['details[0].nfsmountopts'] = this.prefillContent.primaryStorageNFSMountOptions
       } else if (protocol === 'SMB') {
         let path = this.prefillContent?.primaryStoragePath || ''
         if (path.substring(0, 1) !== '/') {

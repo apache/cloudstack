@@ -531,8 +531,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
     /**
      * Get the default network for the secondary storage VM, based on the zone it is in. Delegates to
-     * either {@link #getDefaultNetworkForZone(DataCenter)} or {@link #getDefaultNetworkForAdvancedSGZone(DataCenter)},
-     * depending on the zone network type and whether or not security groups are enabled in the zone.
+     * either {@link #getDefaultNetworkForAdvancedZone(DataCenter)} or {@link #getDefaultNetworkForBasicZone(DataCenter)},
+     * depending on the zone network type and whether security groups are enabled in the zone.
      * @param dc - The zone (DataCenter) of the secondary storage VM.
      * @return The default network for use with the secondary storage VM.
      */

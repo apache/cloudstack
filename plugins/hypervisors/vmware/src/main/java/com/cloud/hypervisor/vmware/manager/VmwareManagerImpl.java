@@ -562,7 +562,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     @Override
     public Pair<String, Long> getSecondaryStorageStoreUrlAndId(long dcId) {
-
         String secUrl = null;
         Long secId = null;
         DataStore secStore = _dataStoreMgr.getImageStoreWithFreeCapacity(dcId);
@@ -572,18 +571,17 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
 
         if (secUrl == null) {
-            // we are using non-NFS image store, then use cache storage instead
-            s_logger.info("Secondary storage is not NFS, we need to use staging storage");
+            s_logger.info("Secondary storage is either not having free capacity or not NFS, then use cache/staging storage instead");
             DataStore cacheStore = _dataStoreMgr.getImageCacheStore(dcId);
             if (cacheStore != null) {
                 secUrl = cacheStore.getUri();
                 secId = cacheStore.getId();
             } else {
-                s_logger.warn("No staging storage is found when non-NFS secondary storage is used");
+                s_logger.warn("No cache/staging storage found when NFS secondary storage with free capacity not available or non-NFS secondary storage is used");
             }
         }
 
-        return new Pair<String, Long>(secUrl, secId);
+        return new Pair<>(secUrl, secId);
     }
 
     @Override
@@ -599,13 +597,12 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
 
         if (urlIdList.isEmpty()) {
-            // we are using non-NFS image store, then use cache storage instead
-            s_logger.info("Secondary storage is not NFS, we need to use staging storage");
+            s_logger.info("Secondary storage is either not having free capacity or not NFS, then use cache/staging storage instead");
             DataStore cacheStore = _dataStoreMgr.getImageCacheStore(dcId);
             if (cacheStore != null) {
                 urlIdList.add(new Pair<>(cacheStore.getUri(), cacheStore.getId()));
             } else {
-                s_logger.warn("No staging storage is found when non-NFS secondary storage is used");
+                s_logger.warn("No cache/staging storage found when NFS secondary storage with free capacity not available or non-NFS secondary storage is used");
             }
         }
 

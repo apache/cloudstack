@@ -33,6 +33,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.LinkAccountToLdapResponse;
 import org.apache.cloudstack.api.response.LinkDomainToLdapResponse;
+import org.apache.cloudstack.api.response.RoleResponse;
 import org.apache.cloudstack.ldap.LdapManager;
 import org.apache.cloudstack.ldap.LdapUser;
 import org.apache.cloudstack.ldap.NoLdapUserMatchingQueryException;
@@ -63,9 +64,12 @@ public class LinkAccountToLdapCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ADMIN, type = CommandType.STRING, required = false, description = "domain admin username in LDAP ")
     private String admin;
 
-    @Parameter(name = ApiConstants.ACCOUNT_TYPE, type = CommandType.INTEGER, required = true, description = "Type of the account to auto import. Specify 0 for user and 2 for "
+    @Parameter(name = ApiConstants.ACCOUNT_TYPE, type = CommandType.INTEGER, required = false, description = "Type of the account to auto import. Specify 0 for user and 2 for "
             + "domain admin")
-    private int accountType;
+    private Integer accountType;
+
+    @Parameter(name = ApiConstants.ROLE_ID, type = CommandType.UUID, entityType = RoleResponse.class, required = false, description = "Creates the account under the specified role.", since="4.19.1")
+    private Long roleId;
 
     @Inject
     private LdapManager _ldapManager;
@@ -134,7 +138,14 @@ public class LinkAccountToLdapCmd extends BaseCmd {
     }
 
     public Account.Type getAccountType() {
-        return Account.Type.getFromValue(accountType);
+        if (accountType == null) {
+            return RoleType.getAccountTypeByRole(roleService.findRole(roleId), null);
+        }
+        return RoleType.getAccountTypeByRole(roleService.findRole(roleId), Account.Type.getFromValue(accountType.intValue()));
+    }
+
+    public Long getRoleId() {
+        return RoleType.getRoleByAccountType(roleId, getAccountType());
     }
 
     @Override

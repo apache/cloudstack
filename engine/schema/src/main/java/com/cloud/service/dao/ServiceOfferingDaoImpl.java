@@ -284,10 +284,10 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
     }
 
     @Override
-    public ServiceOfferingVO findServiceOfferingByComputeOnlyDiskOffering(long diskOfferingId) {
+    public ServiceOfferingVO findServiceOfferingByComputeOnlyDiskOffering(long diskOfferingId, boolean includingRemoved) {
         SearchCriteria<ServiceOfferingVO> sc = SearchComputeOfferingByComputeOnlyDiskOffering.create();
         sc.setParameters("disk_offering_id", diskOfferingId);
-        List<ServiceOfferingVO> vos = listBy(sc);
+        List<ServiceOfferingVO> vos = includingRemoved ? listIncludingRemovedBy(sc) : listBy(sc);
         if (vos.size() == 0) {
             return null;
         }

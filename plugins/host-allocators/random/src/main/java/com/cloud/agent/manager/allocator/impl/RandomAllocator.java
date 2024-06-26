@@ -22,7 +22,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.ListUtils;
 import org.apache.log4j.Logger;
@@ -36,7 +35,6 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
-import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.resource.ResourceManager;
@@ -66,18 +64,20 @@ public class RandomAllocator extends AdapterBase implements HostAllocator {
         Long podId = plan.getPodId();
         Long clusterId = plan.getClusterId();
         ServiceOffering offering = vmProfile.getServiceOffering();
-        List<? extends Host> hostsCopy = null;
-        List<Host> suitableHosts = new ArrayList<Host>();
+        List<Host> suitableHosts = new ArrayList<>();
 
         if (type == Host.Type.Storage) {
             return suitableHosts;
         }
+
         String hostTag = offering.getHostTag();
-        if (hostTag != null) {
-            s_logger.debug(String.format("Looking for hosts in dc [%s], pod [%s], cluster [%s] and complying with host tag [%s].", dcId, podId, clusterId, hostTag));
-        } else {
-            s_logger.debug("Looking for hosts in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId);
-        }
+        String hostTagToLog = hostTag != null ? String.format("and complying with host tags [%s]", hostTag) : "";
+        String paramAsStringToLog = String.format("zone [%s], pod [%s], cluster [%s] %s", dcId, podId, clusterId, hostTagToLog);
+
+        s_logger.debug(String.format("Looking for hosts in %s.", paramAsStringToLog));
+
+        List<? extends Host> hostsCopy;
+
         if (hosts != null) {
             // retain all computing hosts, regardless of whether they support routing...it's random after all
             hostsCopy = new ArrayList<Host>(hosts);
@@ -88,7 +88,6 @@ public class RandomAllocator extends AdapterBase implements HostAllocator {
             }
         } else {
             // list all computing hosts, regardless of whether they support routing...it's random after all
-            hostsCopy = new ArrayList<HostVO>();
             if (hostTag != null) {
                 hostsCopy = _hostDao.listByHostTag(type, clusterId, podId, dcId, hostTag);
             } else {
@@ -98,14 +97,15 @@ public class RandomAllocator extends AdapterBase implements HostAllocator {
         hostsCopy = ListUtils.union(hostsCopy, _hostDao.findHostsWithTagRuleThatMatchComputeOferringTags(hostTag));
 
         if (hostsCopy.isEmpty()) {
-            s_logger.error(String.format("No suitable host found for vm [%s] with tags [%s].", vmProfile, hostTag));
-            throw new CloudRuntimeException(String.format("No suitable host found for vm [%s].", vmProfile));
+            s_logger.info(String.format("No suitable host found for VM [%s] in %s.", vmProfile, paramAsStringToLog));
+            return null;
         }
 
         s_logger.debug("Random Allocator found " + hostsCopy.size() + "  hosts");
-        if (hostsCopy.size() == 0) {
+        if (hostsCopy.isEmpty()) {
             return suitableHosts;
         }
+
         Collections.shuffle(hostsCopy);
         for (Host host : hostsCopy) {
             if (suitableHosts.size() == returnUpTo) {
