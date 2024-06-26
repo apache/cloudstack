@@ -52,12 +52,7 @@ class TestLdap(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cleanup_resources(cls.api_client, cls._cleanup)
-
-        except Exception as tde:
-            raise Exception("Warning: Exception during cleanup : %s" % tde)
-        return
+        super(TestLdap, cls).tearDownClass()
 
     def setUp(self):
 

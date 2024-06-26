@@ -451,11 +451,12 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
         Validate.notEmpty(cmd.getLdapDomain(), "ldapDomain cannot be empty, please supply a GROUP or OU name");
         Validate.notNull(cmd.getType(), "type cannot be null. It should either be GROUP or OU");
         Validate.notEmpty(cmd.getLdapDomain(), "GROUP or OU name cannot be empty");
+        Validate.isTrue(cmd.getAccountType() != null || cmd.getRoleId() != null, "Either account type or role ID must be given");
 
         LinkType linkType = LdapManager.LinkType.valueOf(cmd.getType().toUpperCase());
         Account account = accountDao.findActiveAccount(cmd.getAccountName(),cmd.getDomainId());
         if (account == null) {
-            account = new AccountVO(cmd.getAccountName(), cmd.getDomainId(), null, cmd.getAccountType(), UUID.randomUUID().toString());
+            account = new AccountVO(cmd.getAccountName(), cmd.getDomainId(), null, cmd.getAccountType(), cmd.getRoleId(), UUID.randomUUID().toString());
             accountDao.persist((AccountVO)account);
         }
 
