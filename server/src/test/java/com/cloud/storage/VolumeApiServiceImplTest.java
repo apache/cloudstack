@@ -33,7 +33,6 @@ import static org.mockito.Mockito.when;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -632,7 +631,6 @@ public class VolumeApiServiceImplTest {
         when(vm.getState()).thenReturn(State.Running);
         when(vm.getDataCenterId()).thenReturn(34L);
         when(vm.getBackupOfferingId()).thenReturn(null);
-        when(vm.getBackupVolumeList()).thenReturn(Collections.emptyList());
         when(volumeDaoMock.findByInstanceAndType(anyLong(), any(Volume.Type.class))).thenReturn(new ArrayList<>(10));
         when(volumeDataFactoryMock.getVolume(9L)).thenReturn(volumeToAttach);
         when(volumeToAttach.getState()).thenReturn(Volume.State.Uploaded);
@@ -1355,6 +1353,12 @@ public class VolumeApiServiceImplTest {
     @Test
     public void isNotPossibleToResizeTestNoRootDiskSize() {
         prepareAndRunTestOfIsNotPossibleToResize(Type.ROOT, 0l, Storage.ImageFormat.QCOW2, false);
+    }
+
+    public void validateIfVMHaveBackupsTestSucessWhenVMDontHaveBackupOffering() {
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        when(vm.getBackupOfferingId()).thenReturn(null);
+        volumeApiServiceImpl.validateIfVmHasBackups(vm, true);
     }
 
     private void prepareAndRunTestOfIsNotPossibleToResize(Type volumeType, Long rootDisk, Storage.ImageFormat imageFormat, boolean expectedIsNotPossibleToResize) {

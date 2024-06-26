@@ -188,6 +188,9 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
     @Column(name = "backup_volumes")
     private String backupVolumes;
 
+    @Column(name = "backup_name")
+    private String backupName;
+
     @Column(name = "dynamically_scalable")
     protected boolean dynamicallyScalable;
 
@@ -589,5 +592,10 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
     @Override
     public List<Backup.VolumeInfo> getBackupVolumeList() {
         return Arrays.asList(new Gson().fromJson(this.backupVolumes, Backup.VolumeInfo[].class));
+    }
+
+    @Override
+    public String getBackupName() {
+        return backupName;
     }
 }
