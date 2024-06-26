@@ -1028,28 +1028,11 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         });
     }
 
-    private NicVO checkForRaceAndAllocateNic(NicVO vo, Long networkId, final NicProfile profile, int deviceId) {
-        if (profile.getIpv4AllocationRaceCheck()) {
-            vo = persistNicAfterRaceCheck(vo, networkId, profile, deviceId);
-        } else {
-            applyProfileToNic(vo, profile, deviceId);
-            vo = _nicDao.persist(vo);
-        }
-        return vo;
-    }
-
-    @DB
-    @Override
-    public Pair<NicProfile, Integer> allocateNic(final NicProfile requested, final Network network, final Boolean isDefaultNic, int deviceId, final VirtualMachineProfile vm)
-            throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException, ConcurrentOperationException {
-
+    private NicVO checkForRaceAndAllocateNic(final NicProfile requested, final Network network, final Boolean isDefaultNic, int deviceId, final VirtualMachineProfile vm)
+            throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
         final NetworkVO ntwkVO = _networksDao.findById(network.getId());
         s_logger.debug("Allocating nic for vm " + vm.getVirtualMachine() + " in network " + network + " with requested profile " + requested);
         final NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, ntwkVO.getGuruName());
-
-        if (requested != null && requested.getMode() == null) {
-            requested.setMode(network.getMode());
-        }
 
         NicVO vo = null;
         boolean retryIpAllocation;
@@ -1077,7 +1060,13 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 configureNicProfileBasedOnRequestedIp(requested, profile, network);
             }
 
-            vo = checkForRaceAndAllocateNic(vo, network.getId(), profile, deviceId);
+            if (profile.getIpv4AllocationRaceCheck()) {
+                vo = persistNicAfterRaceCheck(vo, network.getId(), profile, deviceId);
+            } else {
+                applyProfileToNic(vo, profile, deviceId);
+                vo = _nicDao.persist(vo);
+            }
+
             if (vo == null) {
                 if (requested.getRequestedIPv4() != null) {
                     throw new InsufficientVirtualNetworkCapacityException("Unable to acquire requested Guest IP address " + requested.getRequestedIPv4() + " for network " + network, DataCenter.class, dcVo.getId());
@@ -1087,6 +1076,20 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 retryIpAllocation = true;
             }
         } while (retryIpAllocation);
+
+        return vo;
+    }
+
+    @DB
+    @Override
+    public Pair<NicProfile, Integer> allocateNic(final NicProfile requested, final Network network, final Boolean isDefaultNic, int deviceId, final VirtualMachineProfile vm)
+            throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException, ConcurrentOperationException {
+
+        if (requested != null && requested.getMode() == null) {
+            requested.setMode(network.getMode());
+        }
+
+        NicVO vo = checkForRaceAndAllocateNic(requested, network, isDefaultNic, deviceId, vm);
 
         final Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
         final NicProfile vmNic = new NicProfile(vo, network, vo.getBroadcastUri(), vo.getIsolationUri(), networkRate, _networkModel.isSecurityGroupSupportedInNetwork(network),
