@@ -256,8 +256,8 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             String cniConfig = new String(Base64.decodeBase64(cniConfigVo.getUserData()));
             if (Objects.nonNull(asNumber)) {
                 cniConfig = substituteASNumber(cniConfig, asNumber);
-                cniConfig = Base64.encodeBase64String(cniConfig.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
             }
+            cniConfig = Base64.encodeBase64String(cniConfig.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
             base64UserData = userDataManager.concatenateUserData(base64UserData, cniConfig, null);
         }
 

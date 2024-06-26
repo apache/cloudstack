@@ -329,7 +329,7 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item v-if="form.advancedmode && isASNumberRequired()" name="asnumber" ref="asnumber">
+        <a-form-item v-if="form.advancedmode && isASNumberRequired() && !form.networkid" name="asnumber" ref="asnumber">
           <template #label>
               <tooltip-label :title="$t('label.asnumber')" :tooltip="apiParams.asnumber.description"/>
             </template>
