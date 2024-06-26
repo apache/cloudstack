@@ -4348,7 +4348,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Account caller = CallContext.current().getCallingAccount();
         Long parentTemplateId = cmd.getParentTemplateId();
 
-        boolean listAll = false;
+        boolean listAll = cmd.listAll();
         if (templateFilter != null && templateFilter == TemplateFilter.all) {
             if (caller.getType() == Account.Type.NORMAL) {
                 throw new InvalidParameterValueException("Filter " + TemplateFilter.all + " can be specified by admin only");
