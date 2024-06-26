@@ -20,6 +20,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -87,33 +88,20 @@ public class StartKubernetesClusterCmd extends BaseAsyncCmd {
         return CallContext.current().getCallingAccount().getId();
     }
 
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.KubernetesCluster;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-    public KubernetesCluster validateRequest() {
-        if (getId() == null || getId() < 1L) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid Kubernetes cluster ID provided");
-        }
-        final KubernetesCluster kubernetesCluster = kubernetesClusterService.findById(getId());
-        if (kubernetesCluster == null) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Given Kubernetes cluster was not found");
-        }
-        if (!kubernetesClusterService.isCommandSupported(kubernetesCluster, getActualCommandName())) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
-                    String.format("Start kubernetes cluster is not supported for an externally managed cluster (%s)", kubernetesCluster.getName()));
-        }
-        return kubernetesCluster;
-    }
-
     @Override
     public void execute() throws ServerApiException, ConcurrentOperationException {
-        final KubernetesCluster kubernetesCluster = validateRequest();
         try {
-            if (!kubernetesClusterService.startKubernetesCluster(kubernetesCluster.getId(), false)) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to start Kubernetes cluster ID: %d", getId()));
-            }
-            final KubernetesClusterResponse response = kubernetesClusterService.createKubernetesClusterResponse(kubernetesCluster.getId());
+            kubernetesClusterService.startKubernetesCluster(this);
+            final KubernetesClusterResponse response = kubernetesClusterService.createKubernetesClusterResponse(getId());
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } catch (CloudRuntimeException ex) {

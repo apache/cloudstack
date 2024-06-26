@@ -3771,14 +3771,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public List<String> getAllVmNames(final Connect conn) {
-        final ArrayList<String> la = new ArrayList<String>();
+        final ArrayList<String> domainNames = new ArrayList<String>();
         try {
             final String names[] = conn.listDefinedDomains();
             for (int i = 0; i < names.length; i++) {
-                la.add(names[i]);
+                domainNames.add(names[i]);
             }
         } catch (final LibvirtException e) {
-            s_logger.warn("Failed to list Defined domains", e);
+            s_logger.warn("Failed to list defined domains", e);
         }
 
         int[] ids = null;
@@ -3786,14 +3786,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             ids = conn.listDomains();
         } catch (final LibvirtException e) {
             s_logger.warn("Failed to list domains", e);
-            return la;
+            return domainNames;
         }
 
         Domain dm = null;
         for (int i = 0; i < ids.length; i++) {
             try {
                 dm = conn.domainLookupByID(ids[i]);
-                la.add(dm.getName());
+                domainNames.add(dm.getName());
             } catch (final LibvirtException e) {
                 s_logger.warn("Unable to get vms", e);
             } finally {
@@ -3807,7 +3807,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
         }
 
-        return la;
+        return domainNames;
     }
 
     private HashMap<String, HostVmStateReportEntry> getHostVmStateReport() {
@@ -5336,20 +5336,31 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     /*
     Scp volume from remote host to local directory
      */
-    public String copyVolume(String srcIp, String username, String password, String localDir, String remoteFile, String tmpPath) {
+    public String copyVolume(String srcIp, String username, String password, String localDir, String remoteFile, String tmpPath, int timeoutInSecs) {
+        String outputFile = UUID.randomUUID().toString();
         try {
-            String outputFile = UUID.randomUUID().toString();
             StringBuilder command = new StringBuilder("qemu-img convert -O qcow2 ");
             command.append(remoteFile);
-            command.append(" "+tmpPath);
+            command.append(" " + tmpPath);
             command.append(outputFile);
-            s_logger.debug("Converting remoteFile: "+remoteFile);
-            SshHelper.sshExecute(srcIp, 22, username, null, password, command.toString());
-            s_logger.debug("Copying remoteFile to: "+localDir);
-            SshHelper.scpFrom(srcIp, 22, username, null, password, localDir, tmpPath+outputFile);
-            s_logger.debug("Successfully copyied remoteFile to: "+localDir+"/"+outputFile);
+            s_logger.debug(String.format("Converting remote disk file: %s, output file: %s%s (timeout: %d secs)", remoteFile, tmpPath, outputFile, timeoutInSecs));
+            SshHelper.sshExecute(srcIp, 22, username, null, password, command.toString(), timeoutInSecs * 1000);
+            s_logger.debug("Copying converted remote disk file " + outputFile + " to: " + localDir);
+            SshHelper.scpFrom(srcIp, 22, username, null, password, localDir, tmpPath + outputFile);
+            s_logger.debug("Successfully copied converted remote disk file to: " + localDir + "/" + outputFile);
             return outputFile;
         } catch (Exception e) {
+            try {
+                String deleteRemoteConvertedFileCmd = String.format("rm -f %s%s", tmpPath, outputFile);
+                SshHelper.sshExecute(srcIp, 22, username, null, password, deleteRemoteConvertedFileCmd);
+            } catch (Exception ignored) {
+            }
+
+            try {
+                FileUtils.deleteQuietly(new File(localDir + "/" + outputFile));
+            } catch (Exception ignored) {
+            }
+
             throw new RuntimeException(e);
         }
     }

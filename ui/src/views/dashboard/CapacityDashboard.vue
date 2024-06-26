@@ -184,7 +184,7 @@
               </div>
               <a-progress
               status="active"
-              :percent="statsMap[ctype]?.capacitytotal > 0 ? parseFloat(100.0 * statsMap[ctype]?.capacityused / statsMap[ctype]?.capacitytotal).toFixed(2) : 0"
+              :percent="statsMap[ctype]?.capacitytotal > 0 ? parseFloat(100.0 * statsMap[ctype]?.capacityused / statsMap[ctype]?.capacitytotal) : 0"
               :format="p => statsMap[ctype]?.capacitytotal > 0 ? parseFloat(100.0 * statsMap[ctype]?.capacityused / statsMap[ctype]?.capacitytotal).toFixed(2) + '%' : '0%'"
               stroke-color="#52c41a"
               size="small"
@@ -214,7 +214,7 @@
               </div>
               <a-progress
               status="active"
-              :percent="statsMap[ctype]?.capacitytotal > 0 ? parseFloat(100.0 * statsMap[ctype]?.capacityused / statsMap[ctype]?.capacitytotal).toFixed(2) : 0"
+              :percent="statsMap[ctype]?.capacitytotal > 0 ? parseFloat(100.0 * statsMap[ctype]?.capacityused / statsMap[ctype]?.capacitytotal) : 0"
               :format="p => statsMap[ctype]?.capacitytotal > 0 ? parseFloat(100.0 * statsMap[ctype]?.capacityused / statsMap[ctype]?.capacitytotal).toFixed(2) + '%' : '0%'"
               stroke-color="#52c41a"
               size="small"
@@ -244,7 +244,7 @@
               </div>
               <a-progress
               status="active"
-              :percent="statsMap[ctype]?.capacitytotal > 0 ? parseFloat(100.0 * statsMap[ctype]?.capacityused / statsMap[ctype]?.capacitytotal).toFixed(2) : 0"
+              :percent="statsMap[ctype]?.capacitytotal > 0 ? parseFloat(100.0 * statsMap[ctype]?.capacityused / statsMap[ctype]?.capacitytotal) : 0"
               :format="p => statsMap[ctype]?.capacitytotal > 0 ? parseFloat(100.0 * statsMap[ctype]?.capacityused / statsMap[ctype]?.capacitytotal).toFixed(2) + '%' : '0%'"
               stroke-color="#52c41a"
               size="small"

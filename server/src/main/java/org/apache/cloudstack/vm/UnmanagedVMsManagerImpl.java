@@ -794,13 +794,20 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             }
         }
         copyRemoteVolumeCommand.setTempPath(tmpPath);
+        int copyTimeout = UnmanagedVMsManager.RemoteKvmInstanceDisksCopyTimeout.value();
+        if (copyTimeout <= 0) {
+            copyTimeout = Integer.valueOf(UnmanagedVMsManager.RemoteKvmInstanceDisksCopyTimeout.defaultValue());
+        }
+        int copyTimeoutInSecs = copyTimeout * 60;
+        copyRemoteVolumeCommand.setWait(copyTimeoutInSecs);
+        LOGGER.error(String.format("Initiating copy remote volume %s from %s, timeout %d secs", path, remoteUrl, copyTimeoutInSecs));
         Answer answer = agentManager.easySend(dest.getHost().getId(), copyRemoteVolumeCommand);
         if (!(answer instanceof CopyRemoteVolumeAnswer)) {
-            throw new CloudRuntimeException("Error while copying volume");
+            throw new CloudRuntimeException("Error while copying volume of remote instance: " + answer.getDetails());
         }
         CopyRemoteVolumeAnswer copyRemoteVolumeAnswer = (CopyRemoteVolumeAnswer) answer;
         if(!copyRemoteVolumeAnswer.getResult()) {
-            throw new CloudRuntimeException("Error while copying volume");
+            throw new CloudRuntimeException("Unable to copy volume of remote instance");
         }
         diskProfile.setSize(copyRemoteVolumeAnswer.getSize());
         DiskProfile profile = volumeManager.updateImportedVolume(type, diskOffering, vm, template, deviceId,
@@ -813,7 +820,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                                                               Volume.Type type, VirtualMachineTemplate template,
                                                               Long deviceId, Long hostId, String diskPath, DiskProfile diskProfile) {
         List<StoragePoolVO> storagePools = primaryDataStoreDao.findLocalStoragePoolsByHostAndTags(hostId, null);
-
         if(storagePools.size() < 1) {
             throw new CloudRuntimeException("Local Storage not found for host");
         }
@@ -826,7 +832,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return new Pair<>(profile, storagePool);
     }
 
-
     private Pair<DiskProfile, StoragePool> importKVMSharedDisk(VirtualMachine vm, DiskOffering diskOffering,
                                                               Volume.Type type, VirtualMachineTemplate template,
                                                               Long deviceId, Long poolId, String diskPath, DiskProfile diskProfile) {
@@ -837,7 +842,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
         return new Pair<>(profile, storagePool);
     }
-
 
     private Pair<DiskProfile, StoragePool> importDisk(UnmanagedInstanceTO.Disk disk, VirtualMachine vm, Cluster cluster, DiskOffering diskOffering,
                                                       Volume.Type type, String name, Long diskSize, Long minIops, Long maxIops, VirtualMachineTemplate template,
@@ -2046,10 +2050,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 throw new InvalidParameterValueException("Username need to be provided.");
             }
 
-            HashMap<String, UnmanagedInstanceTO> instancesMap = getRemoteVms(zoneId, remoteUrl, cmd.getUsername(), cmd.getPassword());
+            HashMap<String, UnmanagedInstanceTO> instancesMap = getRemoteVmsOnKVMHost(zoneId, remoteUrl, cmd.getUsername(), cmd.getPassword());
             unmanagedInstanceTO = instancesMap.get(cmd.getName());
             if (unmanagedInstanceTO == null) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Vm with name: %s not found on remote host", instanceName));
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM with name: %s not found on remote host %s", instanceName, remoteUrl));
             }
         }
 
@@ -2335,7 +2339,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Import failed for Vm: %s. Suitable deployment destination not found", userVm.getInstanceName()));
         }
 
-
         Map<Volume, StoragePool> storage = dest.getStorageForDisks();
         Volume volume = volumeDao.findById(diskProfile.getVolumeId());
         StoragePool storagePool = storage.get(volume);
@@ -2354,7 +2357,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new CloudRuntimeException("Disk not found or is invalid");
         }
         diskProfile.setSize(checkVolumeAnswer.getSize());
-
 
         List<Pair<DiskProfile, StoragePool>> diskProfileStoragePoolList = new ArrayList<>();
         try {
@@ -2375,7 +2377,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         publishVMUsageUpdateResourceCount(userVm, dummyOffering);
         return userVm;
     }
-
 
     private NetworkVO getDefaultNetwork(DataCenter zone, Account owner, boolean selectAny) throws InsufficientCapacityException, ResourceAllocationException {
         NetworkVO defaultNetwork = null;
@@ -2434,7 +2435,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return defaultNetwork;
     }
 
-    //generate unit test
     public ListResponse<UnmanagedInstanceResponse> listVmsForImport(ListVmsForImportCmd cmd) {
         final Account caller = CallContext.current().getCallingAccount();
         if (caller.getType() != Account.Type.ADMIN) {
@@ -2446,11 +2446,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new InvalidParameterValueException("Please specify a valid zone.");
         }
         final String hypervisorType = cmd.getHypervisor();
-        if (Hypervisor.HypervisorType.KVM.toString().equalsIgnoreCase(hypervisorType)) {
-            if (StringUtils.isBlank(cmd.getUsername())) {
-                throw new InvalidParameterValueException("Username need to be provided.");
-            }
-        } else {
+        if (!Hypervisor.HypervisorType.KVM.toString().equalsIgnoreCase(hypervisorType)) {
             throw new InvalidParameterValueException(String.format("VM Import is currently not supported for hypervisor: %s", hypervisorType));
         }
 
@@ -2460,7 +2456,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
 
         List<UnmanagedInstanceResponse> responses = new ArrayList<>();
-        HashMap<String, UnmanagedInstanceTO> vmMap = getRemoteVms(zoneId, cmd.getHost(), cmd.getUsername(), cmd.getPassword());
+        HashMap<String, UnmanagedInstanceTO> vmMap = getRemoteVmsOnKVMHost(zoneId, cmd.getHost(), cmd.getUsername(), cmd.getPassword());
         for (String key : vmMap.keySet()) {
             UnmanagedInstanceTO instance = vmMap.get(key);
             if (StringUtils.isNotEmpty(keyword) &&
@@ -2475,17 +2471,17 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return listResponses;
     }
 
-    private HashMap<String, UnmanagedInstanceTO> getRemoteVms(long zoneId, String remoteUrl, String username, String password) {
+    private HashMap<String, UnmanagedInstanceTO> getRemoteVmsOnKVMHost(long zoneId, String remoteHostUrl, String username, String password) {
         //ToDo: add option to list one Vm by name
         List<HostVO> hosts = resourceManager.listAllUpAndEnabledHostsInOneZoneByHypervisor(Hypervisor.HypervisorType.KVM, zoneId);
-        if(hosts.size() < 1) {
-            throw new CloudRuntimeException("No hosts available for Vm Import");
+        if (hosts.size() < 1) {
+            throw new CloudRuntimeException("No hosts available to list VMs on remote host " + remoteHostUrl);
         }
         HostVO host = hosts.get(0);
-        GetRemoteVmsCommand getRemoteVmsCommand = new GetRemoteVmsCommand(remoteUrl, username, password);
+        GetRemoteVmsCommand getRemoteVmsCommand = new GetRemoteVmsCommand(remoteHostUrl, username, password);
         Answer answer = agentManager.easySend(host.getId(), getRemoteVmsCommand);
         if (!(answer instanceof GetRemoteVmsAnswer)) {
-            throw new CloudRuntimeException("Error while listing remote Vms");
+            throw new CloudRuntimeException("Failed to list VMs, due to: " + answer.getDetails());
         }
         GetRemoteVmsAnswer getRemoteVmsAnswer = (GetRemoteVmsAnswer) answer;
         return getRemoteVmsAnswer.getUnmanagedInstances();
@@ -2507,6 +2503,9 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[]{UnmanageVMPreserveNic};
+        return new ConfigKey<?>[]{
+                UnmanageVMPreserveNic,
+                RemoteKvmInstanceDisksCopyTimeout
+        };
     }
 }

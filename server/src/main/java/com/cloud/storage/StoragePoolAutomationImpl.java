@@ -20,6 +20,7 @@ package com.cloud.storage;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 
@@ -28,6 +29,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -48,6 +50,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.dao.UserDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
@@ -87,6 +90,8 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
     protected StoragePoolWorkDao _storagePoolWorkDao;
     @Inject
     PrimaryDataStoreDao primaryDataStoreDao;
+    @Inject
+    StoragePoolDetailsDao storagePoolDetailsDao;
     @Inject
     DataStoreManager dataStoreMgr;
     @Inject
@@ -318,13 +323,24 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
         if (hosts == null || hosts.size() == 0) {
             return true;
         }
+
+        Pair<Map<String, String>, Boolean> nfsMountOpts = storageManager.getStoragePoolNFSMountOpts(pool, null);
         // add heartbeat
         for (HostVO host : hosts) {
-            ModifyStoragePoolCommand msPoolCmd = new ModifyStoragePoolCommand(true, pool);
+            ModifyStoragePoolCommand msPoolCmd = new ModifyStoragePoolCommand(true, pool, nfsMountOpts.first());
             final Answer answer = agentMgr.easySend(host.getId(), msPoolCmd);
             if (answer == null || !answer.getResult()) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("ModifyStoragePool add failed due to " + ((answer == null) ? "answer null" : answer.getDetails()));
+                }
+                if (answer != null && nfsMountOpts.second()) {
+                    s_logger.error(String.format("Unable to attach storage pool to the host %s due to %s",  host,  answer.getDetails()));
+                    StringBuilder exceptionSB = new StringBuilder("Unable to attach storage pool to the host ").append(host.getName());
+                    String reason = storageManager.getStoragePoolMountFailureReason(answer.getDetails());
+                    if (reason!= null) {
+                        exceptionSB.append(". ").append(reason).append(".");
+                    }
+                    throw new CloudRuntimeException(exceptionSB.toString());
                 }
             } else {
                 if (s_logger.isDebugEnabled()) {
