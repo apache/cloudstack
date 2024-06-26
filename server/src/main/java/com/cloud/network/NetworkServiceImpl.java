@@ -2388,7 +2388,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                     }
                 }
             }
-            mainSearchCriteria.addAnd("id", SearchCriteria.Op.SC, additionalSearchCriteria);
+            if (CollectionUtils.isNotEmpty(additionalSearchCriteria.getValues())) {
+                mainSearchCriteria.addAnd("id", SearchCriteria.Op.SC, additionalSearchCriteria);
+            }
         } else {
             if (skipProjectNetworks) {
                 mainSearchCriteria.setJoinParameters("accountSearch", "typeNEQ", Account.Type.PROJECT);
