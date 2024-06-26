@@ -69,14 +69,14 @@ public interface ProviderAdapter {
      * @param request
      * @return
      */
-    public String attach(ProviderAdapterContext context, ProviderAdapterDataObject request);
+    public String attach(ProviderAdapterContext context, ProviderAdapterDataObject request, String hostname);
 
     /**
      * Detach the host from the storage context
      * @param context
      * @param request
      */
-    public void detach(ProviderAdapterContext context, ProviderAdapterDataObject request);
+    public void detach(ProviderAdapterContext context, ProviderAdapterDataObject request, String hostname);
 
     /**
      * Delete the provided volume/object
@@ -154,4 +154,22 @@ public interface ProviderAdapter {
      * @return
      */
     public boolean canAccessHost(ProviderAdapterContext context, String hostname);
+
+    /**
+     * Returns true if the provider allows direct attach/connection of snapshots to a host
+     * @return
+     */
+    public boolean canDirectAttachSnapshot();
+
+
+    /**
+     * Given a ProviderAdapterDataObject, return a map of connection IDs to connection values.  Generally
+     * this would be used to return a map of hostnames and the VLUN ID for the attachment associated with
+     * that hostname.  If the provider is using a hostgroup/hostset model where the ID is assigned in common
+     * across all hosts in the group, then the map MUST contain a single entry with host key set as a wildcard
+     * character (exactly '*').
+     * @param dataIn
+     * @return
+     */
+    public Map<String, String> getConnectionIdMap(ProviderAdapterDataObject dataIn);
 }

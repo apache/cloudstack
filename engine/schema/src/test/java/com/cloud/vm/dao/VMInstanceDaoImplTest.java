@@ -30,6 +30,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 
 import org.joda.time.DateTime;
@@ -37,10 +39,14 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 
@@ -198,5 +204,30 @@ public class VMInstanceDaoImplTest {
         verify(vm, times(1)).setPowerStateUpdateTime(any(Date.class));
 
         assertTrue(result);
+    }
+
+    @Test
+    public void testSearchRemovedByRemoveDate() {
+        SearchBuilder<VMInstanceVO> sb = Mockito.mock(SearchBuilder.class);
+        SearchCriteria<VMInstanceVO> sc = Mockito.mock(SearchCriteria.class);
+        Mockito.when(sb.create()).thenReturn(sc);
+        Mockito.when(vmInstanceDao.createSearchBuilder()).thenReturn(sb);
+        final VMInstanceVO mockedVO = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(sb.entity()).thenReturn(mockedVO);
+        Mockito.doReturn(new ArrayList<>()).when(vmInstanceDao).searchIncludingRemoved(
+                Mockito.any(SearchCriteria.class), Mockito.any(Filter.class), Mockito.eq(null),
+                Mockito.eq(false));
+        Calendar cal = Calendar.getInstance();
+        Date endDate = new Date();
+        cal.setTime(endDate);
+        cal.add(Calendar.DATE, -1 * 10);
+        Date startDate = cal.getTime();
+        vmInstanceDao.searchRemovedByRemoveDate(startDate, endDate, 50L, new ArrayList<>());
+        Mockito.verify(sc).setParameters("startDate", startDate);
+        Mockito.verify(sc).setParameters("endDate", endDate);
+        Mockito.verify(sc, Mockito.never()).setParameters(Mockito.eq("skippedVmIds"), Mockito.any());
+        Mockito.verify(vmInstanceDao, Mockito.times(1)).searchIncludingRemoved(
+                Mockito.any(SearchCriteria.class), Mockito.any(Filter.class), Mockito.eq(null),
+                Mockito.eq(false));
     }
 }

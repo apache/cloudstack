@@ -36,6 +36,9 @@ public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
     String ALERT_SUBJECT = "proxy-alert";
     String CERTIFICATE_NAME = "CPVMCertificate";
 
+    ConfigKey<Boolean> ConsoleProxySslEnabled = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class, "consoleproxy.sslEnabled", "false",
+            "Enable SSL for console proxy", false);
+
     ConfigKey<Boolean> NoVncConsoleDefault = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class, "novnc.console.default", "true",
         "If true, noVNC console will be default console for virtual machines", true);
 

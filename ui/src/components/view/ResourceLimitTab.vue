@@ -142,6 +142,7 @@ export default {
             subItem.key = subItem.tag ? (subItem.resourcetype + '-' + subItem.tag) : subItem.resourcetype
             form[subItem.key] = subItem.max || -1
           })
+          form[item.resourcetype] = item.max == null ? -1 : item.max
         })
         this.form = form
         this.formRef.value.resetFields()
