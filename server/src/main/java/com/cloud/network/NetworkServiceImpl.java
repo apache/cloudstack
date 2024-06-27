@@ -1765,7 +1765,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     protected ASNumberVO checkAndSelectASNumber(Long asNumber, DataCenter zone, NetworkOffering networkOffering) {
         if (NetworkOffering.RoutingMode.Dynamic != networkOffering.getRoutingMode()) {
             if (asNumber != null) {
-                s_logger.debug(String.format("Ignoring the AS Number provided %s since the Routing Mode on the network " +
+                logger.debug(String.format("Ignoring the AS Number provided %s since the Routing Mode on the network " +
                         "offering is not %s", asNumber, NetworkOffering.RoutingMode.Dynamic));
             }
             return null;

@@ -73,6 +73,10 @@ export default {
     name: 'physical.network',
     component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/PhysicalNetworksTab.vue')))
   }, {
+    name: 'asnumber',
+    component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/AsNumbersTab.vue')))
+  },
+  {
     name: 'system.vms',
     component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/SystemVmsTab.vue'))),
     show: (record) => { return record.isEdge !== true }
@@ -255,30 +259,6 @@ export default {
           value: (record) => { return record.id }
         }
       }
-    },
-    {
-      api: 'createASNRange',
-      icon: 'plus-outlined',
-      label: 'label.create.asnrange',
-      message: 'label.create.asnrange',
-      dataView: true,
-      args: ['startasn', 'endasn', 'zoneid'],
-      mapping: {
-        zoneid: {
-          value: (record) => { return record.id }
-        }
-      },
-      show: (record) => { return record.networktype === 'Advanced' }
-    },
-    {
-      api: 'deleteASNRange',
-      icon: 'minus-outlined',
-      label: 'label.delete.asnrange',
-      message: 'label.delete.asnrange',
-      dataView: true,
-      show: (record) => { return record.networktype === 'Advanced' },
-      popup: true,
-      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/DeleteASNRangeForm.vue')))
     },
     {
       api: 'deleteZone',
