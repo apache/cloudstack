@@ -23,18 +23,19 @@ import com.cloud.agent.api.to.DataTO;
 
 public class CreateEntityDownloadURLCommand extends AbstractDownloadCommand {
 
-    public CreateEntityDownloadURLCommand(String parent, String installPath, String uuid, DataTO data) { // this constructor is for creating template download url
+    public CreateEntityDownloadURLCommand(String parent, String installPath, String fileName, String filePath, DataTO data) { // this constructor is for creating template download url
         super();
         this.parent = parent; // parent is required as not the template can be child of one of many parents
         this.installPath = installPath;
-        this.extractLinkUUID = uuid;
+        this.filenameInExtractURL = fileName;
+        this.filepathInExtractURL = filePath;
         this.data = data;
     }
 
-    public CreateEntityDownloadURLCommand(String installPath, String uuid) {
+    public CreateEntityDownloadURLCommand(String installPath, String filename) {
         super();
         this.installPath = installPath;
-        this.extractLinkUUID = uuid;
+        this.filenameInExtractURL = filename;
     }
 
     public CreateEntityDownloadURLCommand() {
@@ -42,7 +43,8 @@ public class CreateEntityDownloadURLCommand extends AbstractDownloadCommand {
 
     private String installPath;
     private String parent;
-    private String extractLinkUUID;
+    private String filenameInExtractURL;
+    private String filepathInExtractURL;
 
     public DataTO getData() {
         return data;
@@ -75,12 +77,19 @@ public class CreateEntityDownloadURLCommand extends AbstractDownloadCommand {
         this.parent = parent;
     }
 
-    public String getExtractLinkUUID() {
-        return extractLinkUUID;
+    public String getFilenameInExtractURL() {
+        return filenameInExtractURL;
     }
 
-    public void setExtractLinkUUID(String extractLinkUUID) {
-        this.extractLinkUUID = extractLinkUUID;
+    public void setFilenameInExtractURL(String filenameInExtractURL) {
+        this.filenameInExtractURL = filenameInExtractURL;
     }
 
+    public String getFilepathInExtractURL() {
+        return filepathInExtractURL;
+    }
+
+    public void setFilepathInExtractURL(String filepathInExtractURL) {
+        this.filepathInExtractURL = filepathInExtractURL;
+    }
 }

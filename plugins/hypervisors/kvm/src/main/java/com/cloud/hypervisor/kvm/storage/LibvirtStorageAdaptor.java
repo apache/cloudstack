@@ -273,6 +273,16 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
     }
 
+    private void checkNetfsStoragePoolMounted(String uuid) {
+        String targetPath = _mountPoint + File.separator + uuid;
+        int mountpointResult = Script.runSimpleBashScriptForExitValue("mountpoint -q " + targetPath);
+        if (mountpointResult != 0) {
+            String errMsg = String.format("libvirt failed to mount storage pool %s at %s", uuid, targetPath);
+            logger.error(errMsg);
+            throw new CloudRuntimeException(errMsg);
+        }
+    }
+
     private StoragePool createNetfsStoragePool(PoolType fsType, Connect conn, String uuid, String host, String path) throws LibvirtException {
         String targetPath = _mountPoint + File.separator + uuid;
         LibvirtStoragePoolDef spd = new LibvirtStoragePoolDef(fsType, uuid, uuid, host, path, targetPath);
@@ -699,6 +709,10 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 sp.create(0);
             }
 
+            if (type == StoragePoolType.NetworkFilesystem) {
+                checkNetfsStoragePoolMounted(name);
+            }
+
             return getStoragePool(name);
         } catch (LibvirtException e) {
             String error = e.toString();
@@ -762,11 +776,11 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             // handle ebusy error when pool is quickly destroyed
             if (e.toString().contains("exit status 16")) {
                 String targetPath = _mountPoint + File.separator + uuid;
-                logger.error("deleteStoragePool removed pool from libvirt, but libvirt had trouble unmounting the pool. Trying umount location " + targetPath +
-                        "again in a few seconds");
+                    logger.error("deleteStoragePool removed pool from libvirt, but libvirt had trouble unmounting the pool. Trying umount location " + targetPath +
+                        " again in a few seconds");
                 String result = Script.runSimpleBashScript("sleep 5 && umount " + targetPath);
                 if (result == null) {
-                    logger.error("Succeeded in unmounting " + targetPath);
+                    logger.info("Succeeded in unmounting " + targetPath);
                     return true;
                 }
                 logger.error("Failed to unmount " + targetPath);
@@ -848,7 +862,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         destFile.setFormat(format);
         destFile.setSize(size);
         Map<String, String> options = new HashMap<String, String>();
-        if (pool.getType() == StoragePoolType.NetworkFilesystem){
+        if (List.of(StoragePoolType.NetworkFilesystem, StoragePoolType.Filesystem).contains(pool.getType())) {
             options.put("preallocation", QemuImg.PreallocationType.getPreallocationType(provisioningType).toString());
         }
 

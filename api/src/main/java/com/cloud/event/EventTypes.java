@@ -29,9 +29,9 @@ import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.ha.HAConfig;
+import org.apache.cloudstack.quota.QuotaTariff;
 import org.apache.cloudstack.storage.object.Bucket;
 import org.apache.cloudstack.storage.object.ObjectStore;
-import org.apache.cloudstack.quota.QuotaTariff;
 import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.vm.schedule.VMSchedule;
 
@@ -721,6 +721,8 @@ public class EventTypes {
 
     // SystemVM
     public static final String EVENT_LIVE_PATCH_SYSTEMVM = "LIVE.PATCH.SYSTEM.VM";
+    //Purge resources
+    public static final String EVENT_PURGE_EXPUNGED_RESOURCES = "PURGE.EXPUNGED.RESOURCES";
 
     // OBJECT STORE
     public static final String EVENT_OBJECT_STORE_CREATE = "OBJECT.STORE.CREATE";
@@ -1228,5 +1230,9 @@ public class EventTypes {
 
     public static boolean isVpcEvent(String eventType) {
         return EventTypes.EVENT_VPC_CREATE.equals(eventType) || EventTypes.EVENT_VPC_DELETE.equals(eventType);
+    }
+
+    public static void addEntityEventDetail(String event, Class<?> clazz) {
+        entityEventDetails.put(event, clazz);
     }
 }

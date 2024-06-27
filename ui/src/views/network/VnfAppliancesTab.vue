@@ -130,7 +130,7 @@ export default {
         params.networkid = this.resource.id
       }
       this.fetchLoading = true
-      api('listVirtualMachines', params).then(json => {
+      api('listVnfAppliances', params).then(json => {
         this.virtualmachines = json.listvirtualmachinesresponse.virtualmachine || []
         for (const vm of this.virtualmachines) {
           for (const vmnic of vm.nic) {

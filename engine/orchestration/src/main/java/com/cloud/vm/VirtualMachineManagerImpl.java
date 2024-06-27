@@ -90,6 +90,7 @@ import org.apache.cloudstack.framework.messagebus.MessageHandler;
 import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.reservation.dao.ReservationDao;
+import org.apache.cloudstack.resource.ResourceCleanupService;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -402,6 +403,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     private VpcDao vpcDao;
     @Inject
     private DomainDao domainDao;
+    @Inject
+    ResourceCleanupService resourceCleanupService;
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
@@ -691,6 +694,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (logger.isDebugEnabled()) {
             logger.debug("Expunged " + vm);
         }
+        resourceCleanupService.purgeExpungedVmResourcesLaterIfNeeded(vm);
     }
 
     private void handleUnsuccessfulExpungeOperation(List<Command> finalizeExpungeCommands, List<Command> nicExpungeCommands,
@@ -1077,6 +1081,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             return;
         }
         Host lastHost = _hostDao.findById(vm.getLastHostId());
+        if (lastHost == null) {
+            logger.warn("Could not find last host with id [{}], skipping migrate VM [{}] across cluster check." , vm.getLastHostId(), vm.getUuid());
+            return;
+        }
         if (destinationClusterId.equals(lastHost.getClusterId())) {
             return;
         }
@@ -3007,7 +3015,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             executeManagedStorageChecksWhenTargetStoragePoolNotProvided(targetHost, currentPool, volume);
             if (ScopeType.HOST.equals(currentPool.getScope()) || isStorageCrossClusterMigration(plan.getClusterId(), currentPool)) {
                 createVolumeToStoragePoolMappingIfPossible(profile, plan, volumeToPoolObjectMap, volume, currentPool);
-            } else if (shouldMapVolume(profile, volume, currentPool)){
+            } else if (shouldMapVolume(profile, currentPool)){
                 volumeToPoolObjectMap.put(volume, currentPool);
             }
         }
@@ -3019,11 +3027,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
      * Some context: VMware migration workflow requires all volumes to be mapped (even if volume stays on its current pool);
      *  however, this is not necessary/desirable for the KVM flow.
      */
-    protected boolean shouldMapVolume(VirtualMachineProfile profile, Volume volume, StoragePoolVO currentPool) {
+    protected boolean shouldMapVolume(VirtualMachineProfile profile, StoragePoolVO currentPool) {
         boolean isManaged = currentPool.isManaged();
         boolean isNotKvm = HypervisorType.KVM != profile.getHypervisorType();
-        boolean isNotDatadisk = Type.DATADISK != volume.getVolumeType();
-        return isNotKvm || isNotDatadisk || isManaged;
+        return isNotKvm || isManaged;
     }
 
     /**
