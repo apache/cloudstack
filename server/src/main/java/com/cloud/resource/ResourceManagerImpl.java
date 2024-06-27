@@ -2351,6 +2351,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 } else {
                     hostTags = implicitHostTags;
                 }
+            }
             // Update host memory reported by agent
             if (ssCmd.getHypervisorType().equals(HypervisorType.KVM) ||
                     ssCmd.getHypervisorType().equals(HypervisorType.LXC)) {
