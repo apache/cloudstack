@@ -2385,7 +2385,9 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
                 throw new InvalidParameterValueException("endIPv6 is not in ip6cidr indicated network!");
             }
         }
+    }
 
+    public void checkIp6CidrSizeEqualTo64(String ip6Cidr) {
         int cidrSize = NetUtils.getIp6CidrSize(ip6Cidr);
         // we only support cidr == 64
         if (cidrSize != 64) {
