@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.server;
 
-import static com.cloud.configuration.ConfigurationManagerImpl.DELETE_BATCH_QUERY_SIZE;
+import static com.cloud.configuration.ConfigurationManagerImpl.DELETE_QUERY_BATCH_SIZE;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 import java.lang.management.ManagementFactory;
@@ -1963,7 +1963,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         LOGGER.trace("Removing older VM stats records.");
         Date now = new Date();
         Date limit = DateUtils.addMinutes(now, -maxRetentionTime);
-        vmStatsDao.removeAllByTimestampLessThan(limit, DELETE_BATCH_QUERY_SIZE.value());
+        vmStatsDao.removeAllByTimestampLessThan(limit, DELETE_QUERY_BATCH_SIZE.value());
     }
 
     /**
@@ -1982,7 +1982,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         LOGGER.trace("Removing older Volume stats records.");
         Date now = new Date();
         Date limit = DateUtils.addMinutes(now, -maxRetentionTime);
-        volumeStatsDao.removeAllByTimestampLessThan(limit, DELETE_BATCH_QUERY_SIZE.value());
+        volumeStatsDao.removeAllByTimestampLessThan(limit, DELETE_QUERY_BATCH_SIZE.value());
     }
 
     /**
