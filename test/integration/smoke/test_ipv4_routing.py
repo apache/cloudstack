@@ -19,21 +19,28 @@
 import datetime
 import logging
 import random
+import time
 
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import ZoneIpv4Subnet, Domain, Account, ServiceOffering, NetworkOffering, VpcOffering, Network, \
-    Ipv4SubnetForGuestNetwork, VirtualMachine, VPC, NetworkACLList, NetworkACL
+    Ipv4SubnetForGuestNetwork, VirtualMachine, VPC, NetworkACLList, NetworkACL, RoutingFirewallRule
 from marvin.lib.common import get_domain, get_zone, get_template, list_routers, list_hosts
 from marvin.lib.utils import get_host_credentials, get_process_status
 
 from nose.plugins.attrib import attr
 
+ICMPv4_ALL_TYPES = ("{ echo-reply, destination-unreachable, source-quench, redirect, echo-request, "
+                    "router-advertisement, router-solicitation, time-exceeded, parameter-problem, timestamp-request, "
+                    "timestamp-reply, info-request, info-reply, address-mask-request, address-mask-reply }")
 SUBNET_PREFIX = "172.30."
 SUBNET_1_PREFIX = SUBNET_PREFIX + str(random.randrange(100, 150))
 SUBNET_2_PREFIX = SUBNET_PREFIX + str(random.randrange(151, 199))
 
 VPC_CIDR_PREFIX = "172.31"  # .0 to .16
 NETWORK_CIDR_PREFIX = VPC_CIDR_PREFIX + ".100"
+
+MAX_RETRIES = 30
+WAIT_INTERVAL = 5
 
 test_network = None
 test_network_vm = None
@@ -242,22 +249,55 @@ class TestIpv4Routing(cloudstackTestCase):
             except KeyError:
                 self.skipTest("Marvin configuration has no host credentials to check router services")
         res = str(result)
-        self.message("command (%s) result: (%s)" % (command, res))
+        self.message("VR command (%s) result: (%s)" % (command, res))
+        return res
 
     def createNetworkAclRule(self, rule):
         return NetworkACL.create(self.apiclient,
                                  services=rule,
-                                 aclid=test_network_acl.id
-                                 )
+                                 aclid=test_network_acl.id)
 
-    def verifyNftablesRulesInRouter(self, nic, rules, router):
+    def createIpv4RoutingFirewallRule(self, rule):
+        return RoutingFirewallRule.create(self.apiclient,
+                                          services=rule,
+                                          networkid=test_network.id)
+
+    def verifyNftablesRulesInRouter(self, router, rules):
+        if router.vpcid:
+            table = "ip4_acl"
+        else:
+            table = "ip4_firewall"
         for rule in rules:
-            acl_chain = nic + ACL_CHAINS_SUFFIX[rule["traffictype"]]
-            routerCmd = "nft list chain ip %s %s" % (ACL_TABLE, acl_chain)
-            res = self.getRouterProcessStatus(router, routerCmd)
-            parsed_rule_new = rule["parsedrule"].replace("{ ", "").replace(" }", "")
-            self.assertTrue(rule["parsedrule"] in res or parsed_rule_new in res,
-                            "Listing firewall rule with nft list chain failure for rule: '%s' is not in '%s'" % (rule["parsedrule"], res))
+            cmd = "nft list chain ip %s %s" % (table, rule["chain"])
+            res = self.run_command_in_router(router, cmd)
+            if not "exists" in rule or rule["exists"]:
+                exists = True
+            else:
+                exists = False
+            if exists and not rule["rule"] in res:
+                self.fail("The nftables rule (%s) should exist but is not found in the VR" % rule["rule"])
+            if not exists and rule["rule"] in res:
+                self.fail("The nftables rule (%s) should not exist but is found in the VR" % rule["rule"])
+
+    def verifyPingFromRouter(self, router, vm, expected=True, retries=1):
+        while retries > 0:
+            cmd_ping_vm = "ping -c1 -W1 %s" % vm.ipaddress
+            try:
+                result = self.run_command_in_router(router, cmd_ping_vm)
+                if "0 packets received" in result:
+                    retries = retries - 1
+                    self.message("No packets received, remaining retries %s" % retries)
+                    if retries > 0:
+                        time.sleep(WAIT_INTERVAL)
+                else:
+                    self.message("packets received, looks good")
+                    return
+            except Exception as ex:
+                self.fail("Failed to ping vm from router: %s" % ex)
+        if retries == 0 and expected:
+            self.message("Failed to ping vm from router, which is expected to work.")
+        if retries > 0 and not expected:
+            self.message("ping vm from router works, however it is unexpected.")
 
     @attr(tags=['advanced', 'basic', 'sg'], required_hardware=False)
     def test_01_zone_subnet(self):
@@ -549,13 +589,14 @@ class TestIpv4Routing(cloudstackTestCase):
         # 1. Create Isolated network
         global test_network
         test_network = Network.create(
-            self.regular_user_apiclient,
+            self.apiclient,
             self.services["network"],
             networkofferingid=self.network_offering_isolated.id,
             zoneid=self.zone.id,
             domainid=self.sub_domain.id,
             accountid=self.regular_user.name,
-            cidrsize=26
+            gateway=NETWORK_CIDR_PREFIX + ".1",
+            netmask="255.255.255.0"
         )
         self._cleanup.append(test_network)
 
@@ -744,9 +785,15 @@ class TestIpv4Routing(cloudstackTestCase):
         else:
             self.skipTest("test_vpc is not created")
 
-        # 1. Add static routes in VRs manually
         network_router = self.get_router(networkid=test_network.id)
         vpc_router = self.get_router(vpcid=test_vpc.id)
+
+        # Test VM1 in VR1-Network (wait until ping works)
+        self.verifyPingFromRouter(network_router, test_network_vm, retries=MAX_RETRIES)
+        # Test VM2 in VR2-VPC (wait until ping works)
+        self.verifyPingFromRouter(vpc_router, test_vpc_vm, retries=MAX_RETRIES)
+
+        # 1. Add static routes in VRs manually
         if not network_router or not vpc_router:
             self.skipTest("network_router (%s) or vpc_router (%s) does not exist" % (network_router, vpc_router))
         for ip4route in network_ip4routes:
@@ -755,53 +802,114 @@ class TestIpv4Routing(cloudstackTestCase):
             self.run_command_in_router(network_router, "ip route add %s via %s" % (ip4route.subnet, ip4route.gateway))
 
         # 2. Test VM2 in VR1-Network (ping/ssh should fail)
+        self.verifyPingFromRouter(network_router, test_vpc_vm, expected=False)
         # 3. Test VM1 in VR2-VPC (ping/ssh should fail)
+        self.verifyPingFromRouter(vpc_router, test_network_vm, expected=False)
 
-        rules = []
+        vpc_router_rules = [{"chain": "FORWARD",
+                             "rule": "ip daddr %s jump eth2_ingress_policy" % test_vpc_tier.cidr},
+                            {"chain": "FORWARD",
+                             "rule": "ip saddr %s jump eth2_egress_policy" % test_vpc_tier.cidr}]
         vpc_acl_rules = []
         # 4. Create Ingress rules in Network ACL for VPC
         rule = {}
         rule["traffictype"] = "Ingress"
         rule["cidrlist"] = test_network.cidr
         rule["protocol"] = "icmp"
-        rule["icmptype"] = "-1"
-        rule["icmpcode"] = "-1"
-        # parsedrule = "ip6 daddr %s %sv6 type %s %sv6 code %s accept" % (rule["cidrlist"], rule["protocol"], ICMPV6_TYPE[rule["icmptype"]], rule["protocol"], ICMPV6_CODE_TYPE[rule["icmpcode"]])
-        # rules.append({"traffictype": rule["traffictype"], "parsedrule": parsedrule})
+        rule["icmptype"] = -1
+        rule["icmpcode"] = -1
         vpc_acl_rules.append(self.createNetworkAclRule(rule))
-        # self.verifyNftablesRulesInRouter("eth2", rules, vpc_router)
+        vpc_router_rules.append({"chain": "eth2_ingress_policy",
+                                 "rule": "ip saddr %s icmp type %s accept" % (test_network.cidr, ICMPv4_ALL_TYPES)})
+        self.verifyNftablesRulesInRouter(vpc_router, vpc_router_rules)
 
         rule = {}
         rule["traffictype"] = "Ingress"
         rule["cidrlist"] = test_network.cidr
         rule["protocol"] = "tcp"
-        rule["startport"] = "22"
-        rule["endport"] = "22"
-        # parsedrule = "ip6 daddr %s %sv6 type %s %sv6 code %s accept" % (rule["cidrlist"], rule["protocol"], ICMPV6_TYPE[rule["icmptype"]], rule["protocol"], ICMPV6_CODE_TYPE[rule["icmpcode"]])
-        # rules.append({"traffictype": rule["traffictype"], "parsedrule": parsedrule})
+        rule["startport"] = 22
+        rule["endport"] = 22
         vpc_acl_rules.append(self.createNetworkAclRule(rule))
-        # self.verifyNftablesRulesInRouter("eth2", rules, vpc_router)
+        vpc_router_rules.append({"chain": "eth2_ingress_policy",
+                                 "rule": "ip saddr %s tcp dport 22 accept" % test_network.cidr})
+        self.verifyNftablesRulesInRouter(vpc_router, vpc_router_rules)
 
         # 5. Create Egress rules in Network ACL for VPC
         rule = {}
         rule["traffictype"] = "Egress"
         rule["cidrlist"] = test_network.cidr
         rule["protocol"] = "icmp"
-        rule["icmptype"] = "-1"
-        rule["icmpcode"] = "-1"
-        # parsedrule = "ip6 daddr %s %sv6 type %s %sv6 code %s accept" % (rule["cidrlist"], rule["protocol"], ICMPV6_TYPE[rule["icmptype"]], rule["protocol"], ICMPV6_CODE_TYPE[rule["icmpcode"]])
-        # rules.append({"traffictype": rule["traffictype"], "parsedrule": parsedrule})
+        rule["icmptype"] = -1
+        rule["icmpcode"] = -1
         vpc_acl_rules.append(self.createNetworkAclRule(rule))
-        # self.verifyNftablesRulesInRouter("eth2", rules, vpc_router)
+        vpc_router_rules.append({"chain": "eth2_egress_policy",
+                                 "rule": "ip daddr %s icmp type %s accept" % (test_network.cidr, ICMPv4_ALL_TYPES)})
+        self.verifyNftablesRulesInRouter(vpc_router, vpc_router_rules)
 
         # 6. Test VM2 in VR1-Network (ping/ssh should succeed)
+        self.verifyPingFromRouter(network_router, test_vpc_vm, expected=True)
         # 7. Test VM1 in VR2-VPC (ping/ssh should fail)
+        self.verifyPingFromRouter(vpc_router, test_network_vm, expected=False)
 
+        network_router_rules = [{"chain": "FORWARD",
+                                 "rule": "ip daddr %s jump fw_chain_ingress" % test_network.cidr},
+                                {"chain": "FORWARD",
+                                 "rule": "ip saddr %s jump fw_chain_egress" % test_network.cidr}]
+        network_routing_firewall_rules = []
         # 8. Create IPv4 firewalls for Isolated network
+        rule = {}
+        rule["traffictype"] = "Ingress"
+        rule["cidrlist"] = test_vpc.cidr
+        rule["protocol"] = "icmp"
+        rule["icmptype"] = -1
+        rule["icmpcode"] = -1
+        network_routing_firewall_rules.append(self.createIpv4RoutingFirewallRule(rule))
+        network_router_rules.append({"chain": "fw_chain_ingress",
+                                     "rule": "ip saddr %s ip daddr 0.0.0.0/0 icmp type %s accept" % (test_vpc.cidr, ICMPv4_ALL_TYPES)})
+        self.verifyNftablesRulesInRouter(network_router, network_router_rules)
+
+        rule = {}
+        rule["traffictype"] = "Ingress"
+        rule["cidrlist"] = test_vpc.cidr
+        rule["protocol"] = "tcp"
+        rule["startport"] = 22
+        rule["endport"] = 22
+        network_routing_firewall_rules.append(self.createIpv4RoutingFirewallRule(rule))
+        network_router_rules.append({"chain": "fw_chain_ingress",
+                                     "rule": "ip saddr %s ip daddr 0.0.0.0/0 tcp dport 22 accept" % test_vpc.cidr})
+        self.verifyNftablesRulesInRouter(network_router, network_router_rules)
+
         # 9. Test VM2 in VR1-Network (ping/ssh should succeed)
+        self.verifyPingFromRouter(network_router, test_vpc_vm, expected=True)
         # 10. Test VM1 in VR2-VPC (ping/ssh should succeed)
+        self.verifyPingFromRouter(vpc_router, test_network_vm, expected=True)
 
         # 11. Delete Network ACL rules for VPC
+        for rule in vpc_acl_rules:
+            rule.delete(self.apiclient)
+        vpc_router_rules[2] = {"chain": "eth2_ingress_policy",
+                               "rule": "ip saddr %s icmp type %s accept" % (test_network.cidr, ICMPv4_ALL_TYPES),
+                               "exists": False}
+        vpc_router_rules[3] = {"chain": "eth2_ingress_policy",
+                               "rule": "ip saddr %s tcp dport 22 accept" % test_network.cidr,
+                               "exists": False}
+        vpc_router_rules[4] = {"chain": "eth2_egress_policy",
+                               "rule": "ip daddr %s icmp type %s accept" % (test_network.cidr, ICMPv4_ALL_TYPES),
+                               "exists": False}
+        self.verifyNftablesRulesInRouter(vpc_router, vpc_router_rules)
+
         # 12. Delete IPv4 firewall rules for Network
+        for rule in network_routing_firewall_rules:
+            rule.delete(self.apiclient)
+        network_router_rules[2] = {"chain": "fw_chain_ingress",
+                                   "rule": "ip saddr %s ip daddr 0.0.0.0/0 icmp type %s accept" % (test_vpc.cidr, ICMPv4_ALL_TYPES),
+                                   "exists": False}
+        network_router_rules[3] = {"chain": "fw_chain_ingress",
+                                   "rule": "ip saddr %s ip daddr 0.0.0.0/0 tcp dport 22 accept" % test_vpc.cidr,
+                                   "exists": False}
+        self.verifyNftablesRulesInRouter(network_router, network_router_rules)
+
         # 13. Test VM2 in VR1-Network (ping/ssh should fail)
+        self.verifyPingFromRouter(network_router, test_vpc_vm, expected=False)
         # 14. Test VM1 in VR2-VPC (ping/ssh should fail)
+        self.verifyPingFromRouter(vpc_router, test_network_vm, expected=False)

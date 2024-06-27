@@ -7391,12 +7391,41 @@ class RoutingFirewallRule:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, networkid, protocol, **kwargs):
+    def create(cls, apiclient, services, networkid=None, protocol=None):
         """Create IPv4 Routing Firewall rule"""
         cmd = createRoutingFirewallRule.createRoutingFirewallRuleCmd()
-        cmd.networkid = networkid
-        cmd.protocol = protocol
-        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+
+        if "networkid" in services:
+            cmd.networkid = services["networkid"]
+        elif networkid:
+            cmd.networkid = networkid
+
+        if "protocol" in services:
+            cmd.protocol = services["protocol"]
+            if services["protocol"] == 'ICMP':
+                cmd.icmptype = -1
+                cmd.icmpcode = -1
+        elif protocol:
+            cmd.protocol = protocol
+
+        if "icmptype" in services:
+            cmd.icmptype = services["icmptype"]
+        if "icmpcode" in services:
+            cmd.icmpcode = services["icmpcode"]
+
+        if "startport" in services:
+            cmd.startport = services["startport"]
+        if "endport" in services:
+            cmd.endport = services["endport"]
+
+        if "cidrlist" in services:
+            cmd.cidrlist = services["cidrlist"]
+        if "destcidrlist" in services:
+            cmd.destcidrlist = services["destcidrlist"]
+
+        if "traffictype" in services:
+            cmd.traffictype = services["traffictype"]
+
         return RoutingFirewallRule(apiclient.createRoutingFirewallRule(cmd).__dict__)
 
     @classmethod

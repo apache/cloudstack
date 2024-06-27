@@ -236,6 +236,9 @@
           <router-link v-if="$route.path === '/guestvlans'" :to="{ path: '/guestvlans/' + record.id }">{{ text }}</router-link>
         </a>
       </template>
+      <template v-if="column.key === 'networkname'">
+        <router-link :to="{ path: '/guestnetwork/' + record.networkid }">{{ text }}</router-link>
+      </template>
       <template v-if="column.key === 'guestnetworkname'">
         <router-link :to="{ path: '/guestnetwork/' + record.guestnetworkid }">{{ text }}</router-link>
       </template>

@@ -192,7 +192,7 @@ export default {
   },
   computed: {
     customDisplayItems () {
-      var items = ['ip6routes', 'privatemtu', 'publicmtu', 'provider']
+      var items = ['ip4routes', 'ip6routes', 'privatemtu', 'publicmtu', 'provider']
       if (this.$route.meta.name === 'webhookdeliveries') {
         items.push('startdate')
         items.push('enddate')
