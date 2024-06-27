@@ -25,6 +25,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -34,6 +35,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.LongFunction;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -51,6 +53,7 @@ import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
+import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
@@ -81,7 +84,11 @@ import com.cloud.agent.api.UnsupportedAnswer;
 import com.cloud.agent.transport.Request;
 import com.cloud.agent.transport.Response;
 import com.cloud.alert.AlertManager;
+import com.cloud.capacity.Capacity;
+import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.capacity.CapacityVO;
 import com.cloud.configuration.ManagementServiceConfiguration;
+import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -124,6 +131,8 @@ import com.cloud.utils.nio.NioServer;
 import com.cloud.utils.nio.Task;
 import com.cloud.utils.time.InaccurateClock;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.ThreadContext;
+import org.apache.commons.collections.CollectionUtils;
 
 /**
  * Implementation of the Agent Manager. This class controls the connection to the agents.
@@ -172,6 +181,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
     @Inject
     protected IndirectAgentLB indirectAgentLB;
+    @Inject
+    protected CapacityDao capacityDao;
 
     protected int _retry = 2;
 
@@ -1874,6 +1885,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     params.put(Config.RouterAggregationCommandEachTimeout.toString(), _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
                     params.put(Config.MigrateWait.toString(), _configDao.getValue(Config.MigrateWait.toString()));
                     params.put(NetworkOrchestrationService.TUNGSTEN_ENABLED.key(), String.valueOf(NetworkOrchestrationService.TUNGSTEN_ENABLED.valueIn(host.getDataCenterId())));
+                    params.put(ConfigurationManagerImpl.HOST_RESERVED_MEM_MB.key(), String.valueOf(ConfigurationManagerImpl.HOST_RESERVED_MEM_MB.valueIn(host.getClusterId())));
 
                     try {
                         SetHostParamsCommand cmds = new SetHostParamsCommand(params);
@@ -1932,12 +1944,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         return hostsByZone;
     }
 
-    private void sendCommandToAgents(Map<Long, List<Long>> hostsPerZone, Map<String, String> params) {
-        SetHostParamsCommand cmds = new SetHostParamsCommand(params);
-        for (Long zoneId : hostsPerZone.keySet()) {
-            List<Long> hostIds = hostsPerZone.get(zoneId);
+    private void sendCommandToAgents(Map<Long, List<Long>> hostsPerZone, LongFunction<Map<String, String>> paramsGenerator ) {
+        for (List<Long> hostIds : hostsPerZone.values()) {
             for (Long hostId : hostIds) {
-                Answer answer = easySend(hostId, cmds);
+                Answer answer = easySend(hostId, new SetHostParamsCommand(paramsGenerator.apply(hostId)));
                 if (answer == null || !answer.getResult()) {
                     s_logger.error("Error sending parameters to agent " + hostId);
                 }
@@ -1945,12 +1955,76 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
     }
 
+    private long calculateAvailableMemoryOfHost(HostVO host) {
+        long reservedMemory = ByteScaleUtils.mebibytesToBytes(ConfigurationManagerImpl.HOST_RESERVED_MEM_MB.valueIn(host.getClusterId()));
+        return host.getTotalMemory() + host.getDom0MinMemory() - reservedMemory;
+    }
+
+    private void updateMemoriesInDb(HostVO host, long newMemoryValue) {
+        host.setTotalMemory(newMemoryValue);
+
+        // Update "dom0_memory" in host table
+        host.setDom0MinMemory(ByteScaleUtils.mebibytesToBytes(ConfigurationManagerImpl.HOST_RESERVED_MEM_MB.valueIn(host.getClusterId())));
+        _hostDao.update(host.getId(), host);
+
+        // Update the "total_capacity" for all hosts in op_host_capacity
+        CapacityVO memCap = capacityDao.findByHostIdType(host.getId(), Capacity.CAPACITY_TYPE_MEMORY);
+        memCap.setTotalCapacity(host.getTotalMemory());
+        capacityDao.update(memCap.getId(), memCap);
+    }
+
+    private boolean updateHostMemory(HostVO host) {
+        try {
+            // Update the "ram" for all hosts
+            long newMemoryValue = calculateAvailableMemoryOfHost(host);
+            if (newMemoryValue > 0) {
+                updateMemoriesInDb(host, newMemoryValue);
+                return true;
+            }
+        } catch (Exception e) {
+            s_logger.error("Unable to update the reserved memory capacity for host id " + host.getId() + " : " + e.getMessage());
+        }
+        return false;
+    }
+
     @Override
     public void propagateChangeToAgents(Map<String, String> params) {
         if (params != null && ! params.isEmpty()) {
             s_logger.debug("Propagating changes on host parameters to the agents");
             Map<Long, List<Long>> hostsPerZone = getHostsPerZone();
-            sendCommandToAgents(hostsPerZone, params);
+            sendCommandToAgents(hostsPerZone, id -> params);
+        }
+    }
+
+    @Override
+    public void updateCapacityOfHosts() {
+        Map<Long, List<Long>> hostsByZone = new HashMap<>();
+        boolean allHostMemoryValuesAreValid = true;
+
+        List<HostVO> allHosts = _resourceMgr.listAllHostsInAllZonesByType(Host.Type.Routing);
+        if (CollectionUtils.isEmpty(allHosts)) {
+            return;
+        }
+
+        for (HostVO host : allHosts) {
+            boolean updateWasSuccessful = updateHostMemory(host);
+
+            if (!updateWasSuccessful) {
+                allHostMemoryValuesAreValid = false;
+                continue;
+            }
+
+            Long zoneId = host.getDataCenterId();
+            List<Long> hostIds = hostsByZone.getOrDefault(zoneId, new ArrayList<>());
+            hostIds.add(host.getId());
+            hostsByZone.put(zoneId, hostIds);
+        }
+
+        if (allHostMemoryValuesAreValid) {
+            sendCommandToAgents(hostsByZone,
+                    hostId -> Collections.singletonMap(
+                            ConfigurationManagerImpl.HOST_RESERVED_MEM_MB.key(),
+                            ConfigurationManagerImpl.HOST_RESERVED_MEM_MB.valueIn(_hostDao.findById(hostId).getClusterId()).toString()));
         }
     }
 

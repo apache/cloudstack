@@ -66,6 +66,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.ObjectUtils;
@@ -100,6 +101,7 @@ import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
+import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
@@ -2349,6 +2351,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 } else {
                     hostTags = implicitHostTags;
                 }
+            }
+            // Update host memory reported by agent
+            if (ssCmd.getHypervisorType().equals(HypervisorType.KVM) ||
+                    ssCmd.getHypervisorType().equals(HypervisorType.LXC)) {
+                host.setDom0MinMemory(ByteScaleUtils.mebibytesToBytes(ConfigurationManagerImpl.HOST_RESERVED_MEM_MB.valueIn(host.getClusterId())));
             }
         }
 
