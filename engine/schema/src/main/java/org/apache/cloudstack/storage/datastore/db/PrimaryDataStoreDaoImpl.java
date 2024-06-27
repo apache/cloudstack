@@ -660,6 +660,16 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     }
 
     @Override
+    public StoragePoolVO findPoolByZoneAndPath(long zoneId, String datastorePath) {
+        SearchCriteria<StoragePoolVO> sc = AllFieldSearch.create();
+        sc.setParameters("datacenterId", zoneId);
+        if (datastorePath != null) {
+            sc.addAnd("path", Op.LIKE,  "%/" + datastorePath);
+        }
+        return findOneBy(sc);
+    }
+
+    @Override
     public List<StoragePoolVO> listStoragePoolsWithActiveVolumesByOfferingId(long offeringId) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
