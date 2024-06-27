@@ -167,7 +167,7 @@
         <router-link :to="{ path: getVmRouteUsingType(record) + record.virtualmachineid }">{{ text }}</router-link>
       </template>
       <template v-if="column.key === 'volumename'">
-        <router-link v-if="validLinks[record.id]?.volume" :to="{ path: '/volume/' + record.volumeid }">{{ text }}</router-link>
+        <router-link v-if="resourceIdToValidLinksMap[record.id]?.volume" :to="{ path: '/volume/' + record.volumeid }">{{ text }}</router-link>
         <span v-else>{{ text }}</span>
       </template>
       <template v-if="column.key === 'size'">
@@ -579,7 +579,7 @@ export default {
           disable: 'storageallocateddisablethreshold'
         }
       },
-      validLinks: {}
+      resourceIdToValidLinksMap: {}
     }
   },
   watch: {
@@ -588,7 +588,7 @@ export default {
       handler (newData, oldData) {
         if (newData === oldData) return
         this.items.forEach(record => {
-          this.validLinks[record.id] = validateLinks(this.$router, false, record)
+          this.resourceIdToValidLinksMap[record.id] = validateLinks(this.$router, false, record)
         })
       }
     }
