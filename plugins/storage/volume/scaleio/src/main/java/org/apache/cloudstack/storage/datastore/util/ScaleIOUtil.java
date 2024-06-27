@@ -49,6 +49,16 @@ public class ScaleIOUtil {
 
     private static final String RESCAN_CMD = "drv_cfg --rescan";
 
+    private static final String SDC_SERVICE_STATUS_CMD = "systemctl status scini";
+    private static final String SDC_SERVICE_START_CMD = "systemctl start scini";
+    private static final String SDC_SERVICE_STOP_CMD = "systemctl stop scini";
+    private static final String SDC_SERVICE_RESTART_CMD = "systemctl restart scini";
+
+    private static final String SDC_SERVICE_IS_ACTIVE_CMD = "systemctl is-active scini";
+    private static final String SDC_SERVICE_IS_ENABLED_CMD = "systemctl is-enabled scini";
+    private static final String SDC_SERVICE_ENABLE_CMD = "systemctl enable scini";
+
+    public static final String CONNECTED_SDC_COUNT_STAT = "ConnectedSDCCount";
     /**
      * Cmd for querying volumes in SDC
      * Sample output for cmd: drv_cfg --query_vols:
@@ -181,5 +191,40 @@ public class ScaleIOUtil {
         }
 
         return String.format("%s:%s", volumePath, volumeName);
+    }
+
+    public static boolean isSDCServiceInstalled() {
+        int exitValue = Script.runSimpleBashScriptForExitValue(SDC_SERVICE_STATUS_CMD);
+        return exitValue != 4;
+    }
+
+    public static boolean isSDCServiceActive() {
+        int exitValue = Script.runSimpleBashScriptForExitValue(SDC_SERVICE_IS_ACTIVE_CMD);
+        return exitValue == 0;
+    }
+
+    public static boolean isSDCServiceEnabled() {
+        int exitValue = Script.runSimpleBashScriptForExitValue(SDC_SERVICE_IS_ENABLED_CMD);
+        return exitValue == 0;
+    }
+
+    public static boolean enableSDCService() {
+        int exitValue = Script.runSimpleBashScriptForExitValue(SDC_SERVICE_ENABLE_CMD);
+        return exitValue == 0;
+    }
+
+    public static boolean startSDCService() {
+        int exitValue = Script.runSimpleBashScriptForExitValue(SDC_SERVICE_START_CMD);
+        return exitValue == 0;
+    }
+
+    public static boolean stopSDCService() {
+        int exitValue = Script.runSimpleBashScriptForExitValue(SDC_SERVICE_STOP_CMD);
+        return exitValue == 0;
+    }
+
+    public static boolean restartSDCService() {
+        int exitValue = Script.runSimpleBashScriptForExitValue(SDC_SERVICE_RESTART_CMD);
+        return exitValue == 0;
     }
 }

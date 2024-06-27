@@ -69,6 +69,8 @@ public class ListStoragePoolsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.STATUS, type = CommandType.STRING, description = "the status of the storage pool")
     private String status;
 
+    @Parameter(name = ApiConstants.STORAGE_CUSTOM_STATS, type = CommandType.BOOLEAN, description = "If true, lists the custom stats of the storage pool", since = "4.18.1")
+    private Boolean customStats;
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -107,6 +109,10 @@ public class ListStoragePoolsCmd extends BaseListCmd {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public Boolean getCustomStats() {
+        return customStats != null && customStats;
     }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
