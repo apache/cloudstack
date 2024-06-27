@@ -140,6 +140,8 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
 
     List<StoragePoolVO> findPoolsByStorageType(String storageType);
 
+    StoragePoolVO findPoolByZoneAndPath(long zoneId, String datastorePath);
+
     List<StoragePoolVO> listStoragePoolsWithActiveVolumesByOfferingId(long offeringid);
 
     Pair<List<Long>, Integer> searchForIdsAndCount(Long storagePoolId, String storagePoolName, Long zoneId,
