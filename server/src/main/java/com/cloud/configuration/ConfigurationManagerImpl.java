@@ -507,7 +507,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             "false", "Allow domain admins to create offerings with tags.", true, ConfigKey.Scope.Account, null);
 
     public static final ConfigKey<Long> DELETE_BATCH_QUERY_SIZE = new ConfigKey<>("Advanced", Long.class, "delete.batch.query.size", "0",
-            "Indicates the limit applied while deleting entries in bulk. With this, ACS will run the delete query, applying the limit, as many times as necessary" +
+            "Indicates the limit applied while deleting entries in bulk. With this, the delete query will apply the limit as many times as necessary," +
                     " to delete all the entries. This is advised when retaining several days of records, which can lead to slowness. Zero (0) means that no limit will be applied, " +
                     "therefore, the query will run once and without limit, keeping the default behavior. For now, this is used for deletion of vm & volume stats only.", true);
 
