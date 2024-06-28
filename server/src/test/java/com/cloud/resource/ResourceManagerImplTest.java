@@ -167,6 +167,7 @@ public class ResourceManagerImplTest {
         when(host.getDetail("username")).thenReturn(hostUsername);
         when(host.getDetail("password")).thenReturn(hostPassword);
         when(configurationDao.getValue("ssh.privatekey")).thenReturn(hostPrivateKey);
+        when(host.getStatus()).thenReturn(Status.Up);
         when(host.getPrivateIpAddress()).thenReturn(hostPrivateIp);
         when(vm1.getId()).thenReturn(vm1Id);
         when(vm2.getId()).thenReturn(vm2Id);
@@ -349,15 +350,34 @@ public class ResourceManagerImplTest {
 
     @Test
     public void testHandleAgentSSHEnabledNotConnectedAgent() {
+        when(host.getStatus()).thenReturn(Status.Disconnected);
         resourceManager.handleAgentIfNotConnected(host, false);
         verify(resourceManager).getHostCredentials(eq(host));
         verify(resourceManager).connectAndRestartAgentOnHost(eq(host), eq(hostUsername), eq(hostPassword), eq(hostPrivateKey));
     }
 
+    @Test
+    public void testHandleAgentSSHEnabledConnectedAgent() {
+        when(host.getStatus()).thenReturn(Status.Up);
+        resourceManager.handleAgentIfNotConnected(host, false);
+        verify(resourceManager, never()).getHostCredentials(eq(host));
+        verify(resourceManager, never()).connectAndRestartAgentOnHost(eq(host), eq(hostUsername), eq(hostPassword), eq(hostPrivateKey));
+    }
+
     @Test(expected = CloudRuntimeException.class)
     public void testHandleAgentSSHDisabledNotConnectedAgent() {
+        when(host.getStatus()).thenReturn(Status.Disconnected);
         when(configurationDao.getValue(ResourceManager.KvmSshToAgentEnabled.key())).thenReturn("false");
         resourceManager.handleAgentIfNotConnected(host, false);
+    }
+
+    @Test
+    public void testHandleAgentSSHDisabledConnectedAgent() {
+        when(host.getStatus()).thenReturn(Status.Up);
+        when(configurationDao.getValue(ResourceManager.KvmSshToAgentEnabled.key())).thenReturn("false");
+        resourceManager.handleAgentIfNotConnected(host, false);
+        verify(resourceManager, never()).getHostCredentials(eq(host));
+        verify(resourceManager, never()).connectAndRestartAgentOnHost(eq(host), eq(hostUsername), eq(hostPassword), eq(hostPrivateKey));
     }
 
     @Test
