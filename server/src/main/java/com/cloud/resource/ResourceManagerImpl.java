@@ -3424,7 +3424,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
         sc.and(sc.entity().getClusterId(), Op.NEQ, clusterId);
         sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
-        sc.and(sc.entity().getResourceState(), Op.EQ, ResourceState.Enabled);
         return sc.list();
     }
 
@@ -3435,7 +3434,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
         sc.and(sc.entity().getClusterId(), Op.NEQ, clusterId);
         sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
-        sc.and(sc.entity().getResourceState(), Op.EQ, ResourceState.Enabled);
         return sc.list();
     }
 
