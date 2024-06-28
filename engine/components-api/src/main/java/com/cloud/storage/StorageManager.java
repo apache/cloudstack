@@ -18,6 +18,7 @@ package com.cloud.storage;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
@@ -93,14 +94,6 @@ public interface StorageManager extends StorageService {
             "Storage",
             "86400",
             "Timeout in seconds for online (live) storage migration to complete on KVM (migrateVirtualMachineWithVolume)",
-            true,
-            ConfigKey.Scope.Global,
-            null);
-    ConfigKey<Integer> ConvertVmwareInstanceToKvmTimeout = new ConfigKey<>(Integer.class,
-            "convert.vmware.instance.to.kvm.timeout",
-            "Storage",
-            "8",
-            "Timeout (in hours) for the instance conversion process from VMware through the virt-v2v binary on a KVM host",
             true,
             ConfigKey.Scope.Global,
             null);
@@ -347,6 +340,10 @@ public interface StorageManager extends StorageService {
     boolean isStoragePoolCompliantWithStoragePolicy(long diskOfferingId, StoragePool pool) throws StorageUnavailableException;
 
     boolean registerHostListener(String providerUuid, HypervisorHostListener listener);
+
+    Pair<Map<String, String>, Boolean> getStoragePoolNFSMountOpts(StoragePool pool, Map<String, String> details);
+
+    String getStoragePoolMountFailureReason(String error);
 
     boolean connectHostToSharedPool(long hostId, long poolId) throws StorageUnavailableException, StorageConflictException;
 
