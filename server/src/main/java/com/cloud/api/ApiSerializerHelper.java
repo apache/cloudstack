@@ -16,9 +16,11 @@
 // under the License.
 package com.cloud.api;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.log4j.Logger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -30,38 +32,51 @@ import org.apache.cloudstack.api.ResponseObject;
 public class ApiSerializerHelper {
     public static final Logger s_logger = Logger.getLogger(ApiSerializerHelper.class.getName());
     private static String token = "/";
+    private static String[] apiPackages = {"com.cloud.agent.api", "org.apache.cloudstack.api"};
 
-    public static String toSerializedString(Object result) {
-        if (result != null) {
-            Class<?> clz = result.getClass();
+    /**
+     * serialise an object's class to a {@link String}
+     * @param inputObject
+     * @return
+     */
+    public static String toSerializedString(Object inputObject) {
+        if (inputObject != null) {
+            Class<?> clz = inputObject.getClass();
             Gson gson = ApiGsonHelper.getBuilder().create();
 
-            if (result instanceof ResponseObject) {
-                return clz.getName() + token + ((ResponseObject)result).getObjectName() + token + gson.toJson(result);
+            if (inputObject instanceof ResponseObject) {
+                return clz.getName() + token + ((ResponseObject)inputObject).getObjectName() + token + gson.toJson(inputObject);
             } else {
-                return clz.getName() + token + gson.toJson(result);
+                return clz.getName() + token + gson.toJson(inputObject);
             }
         }
         return null;
     }
 
-    public static Object fromSerializedString(String result) {
+    /**
+     * deserialise an {@link Object} from a {@link String}
+     *
+     * @param classString the string representation of the {@link Class} instance to create
+     * @return an {@link Object} of the requested {@link Class} type
+     */
+    public static Object fromSerializedString(String classString) {
         try {
-            if (result != null && !result.isEmpty()) {
-                String[] serializedParts = result.split(token);
+            if (classString != null && !classString.isEmpty()) {
+                String[] serializedParts = classString.split(token);
 
                 if (serializedParts.length < 2) {
                     return null;
                 }
                 String clzName = serializedParts[0];
+                validateClassPath(clzName, apiPackages);
                 String nameField = null;
                 String content = null;
                 if (serializedParts.length == 2) {
                     content = serializedParts[1];
                 } else {
                     nameField = serializedParts[1];
-                    int index = result.indexOf(token + nameField + token);
-                    content = result.substring(index + nameField.length() + 2);
+                    int index = classString.indexOf(token + nameField + token);
+                    content = classString.substring(index + nameField.length() + 2);
                 }
 
                 Class<?> clz;
@@ -80,15 +95,43 @@ public class ApiSerializerHelper {
             }
             return null;
         } catch (RuntimeException e) {
-            s_logger.error("Caught runtime exception when doing GSON deserialization on: " + result);
+            s_logger.error("Caught runtime exception when doing GSON deserialization on: " + classString);
             throw e;
         }
     }
 
-    public static Map<String, Object> fromSerializedStringToMap(String result) {
+    /**
+     * validates that a class is allowed to be deserialised.
+     *
+     * TODO move to a more globally accesible util class
+     * TODO make generic for allow lists
+     * TODO extend to return the desired class
+     *
+     * @param clzName
+     * @param basePaths
+     */
+    private static void validateClassPath(String clzName, String[] basePaths) {
+        if (clzName != null) {
+            for (String basePath : basePaths) {
+                if (clzName.startsWith(basePath)) {
+                    return;
+                }
+            }
+        }
+        String packages = Arrays.toString(basePaths);
+        throw new CloudRuntimeException(String.format("illegal to load \"%s\" forName, only classes in packages \"%s\" are allowed", clzName, packages));
+    }
+
+    /**
+     * deserialise a map
+     *
+     * @param mapRepresentation the {@link String} representation of the {@link Map<>} type
+     * @return the {@link Map<>} object
+     */
+    public static Map<String, Object> fromSerializedStringToMap(String mapRepresentation) {
         Map<String,Object> objParams = null;
         try {
-            Object obj = fromSerializedString(result);
+            Object obj = fromSerializedString(mapRepresentation);
             if (obj != null) {
                 Gson gson = ApiGsonHelper.getBuilder().create();
                 String objJson = gson.toJson(obj);
@@ -101,7 +144,7 @@ public class ApiSerializerHelper {
                 }
             }
         } catch (RuntimeException | JsonProcessingException e) {
-            s_logger.error("Caught runtime exception when doing GSON deserialization to map on: " + result, e);
+            s_logger.error("Caught runtime exception when doing GSON deserialization to map on: " + mapRepresentation, e);
         }
 
         return objParams;
