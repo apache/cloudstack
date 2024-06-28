@@ -35,16 +35,21 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.SnapshotJoinVO;
+import com.cloud.storage.GuestOS;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.Volume.Type;
+import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.vm.VMInstanceVO;
 
 public class SnapshotJoinDaoImpl extends GenericDaoBaseWithTagInformation<SnapshotJoinVO, SnapshotResponse> implements SnapshotJoinDao {
 
@@ -124,6 +129,16 @@ public class SnapshotJoinDaoImpl extends GenericDaoBaseWithTagInformation<Snapsh
             snapshotResponse.setVolumeName(snapshot.getVolumeName());
             snapshotResponse.setVolumeType(snapshot.getVolumeType().name());
             snapshotResponse.setVirtualSize(snapshot.getVolumeSize());
+            VolumeVO volume = ApiDBUtils.findVolumeById(snapshot.getVolumeId());
+            if (volume != null && volume.getVolumeType() == Type.ROOT && volume.getInstanceId() != null) {
+                VMInstanceVO vm = ApiDBUtils.findVMInstanceById(volume.getInstanceId());
+                if (vm != null) {
+                    GuestOS guestOS = ApiDBUtils.findGuestOSById(vm.getGuestOSId());
+                    if (guestOS != null) {
+                        snapshotResponse.setOsTypeId(guestOS.getUuid());
+                    }
+                }
+            }
         }
         snapshotResponse.setZoneId(snapshot.getDataCenterUuid());
         snapshotResponse.setZoneName(snapshot.getDataCenterName());

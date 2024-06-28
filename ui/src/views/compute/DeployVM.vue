@@ -2276,7 +2276,6 @@ export default {
       }
       args.zoneid = _.get(this.zone, 'id')
       args.templatefilter = templateFilter
-      args.projectid = -1
       args.details = 'all'
       args.showicon = 'true'
       args.id = this.templateId
@@ -2299,7 +2298,6 @@ export default {
       }
       args.zoneid = _.get(this.zone, 'id')
       args.isoFilter = isoFilter
-      args.projectid = -1
       args.bootable = true
       args.showicon = 'true'
       args.id = this.isoId
