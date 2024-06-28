@@ -4408,7 +4408,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Account caller = CallContext.current().getCallingAccount();
         Long parentTemplateId = cmd.getParentTemplateId();
 
-        boolean listAll = cmd.listAll();
+        boolean listAll = false;
         if (templateFilter != null && templateFilter == TemplateFilter.all) {
             if (caller.getType() == Account.Type.NORMAL) {
                 throw new InvalidParameterValueException("Filter " + TemplateFilter.all + " can be specified by admin only");
@@ -4858,7 +4858,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         boolean showRemovedISO = cmd.getShowRemoved();
         Account caller = CallContext.current().getCallingAccount();
 
-        boolean listAll = cmd.listAll();
+        boolean listAll = false;
         if (isoFilter != null && isoFilter == TemplateFilter.all) {
             if (caller.getType() == Account.Type.NORMAL) {
                 throw new InvalidParameterValueException("Filter " + TemplateFilter.all + " can be specified by admin only");
