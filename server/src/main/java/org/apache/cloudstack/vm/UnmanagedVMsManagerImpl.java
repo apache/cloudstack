@@ -523,26 +523,24 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return new Pair<>(rootDisk, dataDisks);
     }
 
-    private void checkUnmanagedDiskAndOfferingForImport(UnmanagedInstanceTO.Disk disk, DiskOffering diskOffering, ServiceOffering serviceOffering, final Account owner, final DataCenter zone, final Cluster cluster, final boolean migrateAllowed)
+    private void checkUnmanagedDiskAndOfferingForImport(UnmanagedInstanceTO.Disk disk, DiskOffering diskOffering, final Account owner, final DataCenter zone, final Cluster cluster, final boolean migrateAllowed)
             throws ServerApiException, PermissionDeniedException, ResourceAllocationException {
-        if (serviceOffering == null && diskOffering == null) {
+        if (diskOffering == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Disk offering for disk ID: %s not found during VM import", disk.getDiskId()));
         }
-        if (diskOffering != null) {
-            accountService.checkAccess(owner, diskOffering, zone);
-        }
+        accountService.checkAccess(owner, diskOffering, zone);
         resourceLimitService.checkResourceLimit(owner, Resource.ResourceType.volume);
         if (disk.getCapacity() == null || disk.getCapacity() == 0) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Size of disk(ID: %s) is found invalid during VM import", disk.getDiskId()));
         }
-        if (diskOffering != null && !diskOffering.isCustomized() && diskOffering.getDiskSize() == 0) {
+        if (!diskOffering.isCustomized() && diskOffering.getDiskSize() == 0) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Size of fixed disk offering(ID: %s) is found invalid during VM import", diskOffering.getUuid()));
         }
-        if (diskOffering != null && !diskOffering.isCustomized() && diskOffering.getDiskSize() < disk.getCapacity()) {
+        if (!diskOffering.isCustomized() && diskOffering.getDiskSize() < disk.getCapacity()) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Size of disk offering(ID: %s) %dGB is found less than the size of disk(ID: %s) %dGB during VM import", diskOffering.getUuid(), (diskOffering.getDiskSize() / Resource.ResourceType.bytesToGiB), disk.getDiskId(), (disk.getCapacity() / (Resource.ResourceType.bytesToGiB))));
         }
         StoragePool storagePool = getStoragePool(disk, zone, cluster);
-        if (diskOffering != null && !migrateAllowed && !storagePoolSupportsDiskOffering(storagePool, diskOffering)) {
+        if (!migrateAllowed && !storagePoolSupportsDiskOffering(storagePool, diskOffering)) {
             throw new InvalidParameterValueException(String.format("Disk offering: %s is not compatible with storage pool: %s of unmanaged disk: %s", diskOffering.getUuid(), storagePool.getUuid(), disk.getDiskId()));
         }
     }
@@ -564,7 +562,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                     throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Multiple data disk controllers of different type (%s, %s) are not supported for import. Please make sure that all data disk controllers are of the same type", diskController, disk.getController()));
                 }
             }
-            checkUnmanagedDiskAndOfferingForImport(disk, diskOfferingDao.findById(diskOfferingMap.get(disk.getDiskId())), null, owner, zone, cluster, migrateAllowed);
+            checkUnmanagedDiskAndOfferingForImport(disk, diskOfferingDao.findById(diskOfferingMap.get(disk.getDiskId())), owner, zone, cluster, migrateAllowed);
         }
     }
 
@@ -953,7 +951,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
         allDetails.put(VmDetailConstants.ROOT_DISK_CONTROLLER, rootDisk.getController());
         try {
-            checkUnmanagedDiskAndOfferingForImport(rootDisk, null, validatedServiceOffering, owner, zone, cluster, migrateAllowed);
+            checkUnmanagedDiskAndOfferingForImport(rootDisk, diskOfferingDao.findById(validatedServiceOffering.getDiskOfferingId()), owner, zone, cluster, migrateAllowed);
             if (CollectionUtils.isNotEmpty(dataDisks)) { // Data disk(s) present
                 checkUnmanagedDiskAndOfferingForImport(dataDisks, dataDiskOfferingMap, owner, zone, cluster, migrateAllowed);
                 allDetails.put(VmDetailConstants.DATA_DISK_CONTROLLER, dataDisks.get(0).getController());
