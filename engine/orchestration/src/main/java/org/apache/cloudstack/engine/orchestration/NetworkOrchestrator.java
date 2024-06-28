@@ -4607,10 +4607,16 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         final NicVO vo = Transaction.execute(new TransactionCallback<NicVO>() {
             @Override
             public NicVO doInTransaction(TransactionStatus status) {
-                NicVO existingNic = _nicDao.findByNetworkIdAndMacAddress(network.getId(), macAddress);
-                String macAddressToPersist = macAddress;
+                if (StringUtils.isBlank(macAddress)) {
+                    throw new CloudRuntimeException("Mac address not specified");
+                }
+                String macAddressToPersist = macAddress.trim();
+                if (!NetUtils.isValidMac(macAddressToPersist)) {
+                    throw new CloudRuntimeException("Invalid mac address: " + macAddressToPersist);
+                }
+                NicVO existingNic = _nicDao.findByNetworkIdAndMacAddress(network.getId(), macAddressToPersist);
                 if (existingNic != null) {
-                    macAddressToPersist = generateNewMacAddressIfForced(network, macAddress, forced);
+                    macAddressToPersist = generateNewMacAddressIfForced(network, macAddressToPersist, forced);
                 }
                 NicVO vo = new NicVO(network.getGuruName(), vm.getId(), network.getId(), vm.getType());
                 vo.setMacAddress(macAddressToPersist);
@@ -4655,7 +4661,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         final NicProfile vmNic = new NicProfile(vo, network, vo.getBroadcastUri(), vo.getIsolationUri(), networkRate, _networkModel.isSecurityGroupSupportedInNetwork(network),
                 _networkModel.getNetworkTag(vm.getHypervisorType(), network));
 
-        return new Pair<NicProfile, Integer>(vmNic, Integer.valueOf(deviceId));
+        return new Pair<>(vmNic, Integer.valueOf(deviceId));
     }
 
     protected String getSelectedIpForNicImport(Network network, DataCenter dataCenter, Network.IpAddresses ipAddresses) {
@@ -4699,7 +4705,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     private String generateNewMacAddressIfForced(Network network, String macAddress, boolean forced) {
         if (!forced) {
-            throw new CloudRuntimeException("NIC with MAC address = " + macAddress + " exists on network with ID = " + network.getId() +
+            throw new CloudRuntimeException("NIC with MAC address " + macAddress + " exists on network with ID " + network.getUuid() +
                     " and forced flag is disabled");
         }
         try {
