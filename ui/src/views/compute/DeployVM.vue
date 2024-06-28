@@ -815,13 +815,13 @@
               </a-button>
               <a-dropdown-button style="margin-left: 10px" type="primary" ref="submit" @click="handleSubmit" :loading="loading.deploy">
                 <rocket-outlined />
-                {{ $t('label.launch.vm') }}
+                {{ this.form.startvm ? $t('label.launch.vm') : $t('label.create.vm') }}
                 <template #icon><down-outlined /></template>
                 <template #overlay>
                   <a-menu type="primary" @click="handleSubmitAndStay" theme="dark" class="btn-stay-on-page">
                     <a-menu-item type="primary" key="1">
                       <rocket-outlined />
-                      {{ $t('label.launch.vm.and.stay') }}
+                      {{ this.form.startvm ? $t('label.launch.vm.and.stay') : $t('label.create.vm.and.stay') }}
                     </a-menu-item>
                   </a-menu>
                 </template>

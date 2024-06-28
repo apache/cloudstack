@@ -479,11 +479,12 @@
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.publicip">
-          <div class="resource-detail-item__label">{{ $t('label.publicip') }}</div>
+          <div class="resource-detail-item__label">{{ $t('label.public.ip') }}</div>
           <div class="resource-detail-item__details">
             <gateway-outlined />
             <router-link v-if="resource.publicipid" :to="{ path: '/publicip/' + resource.publicipid }">{{ resource.publicip }} </router-link>
-            <copy-label :label="resource.publicip"/>
+            <copy-label v-if="resource.publicipid" :copyValue="resource.publicip" :showIcon=true />
+            <copy-label v-else :label="resource.publicip" />
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.vpcid">
