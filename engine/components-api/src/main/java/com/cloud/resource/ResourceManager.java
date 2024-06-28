@@ -118,8 +118,6 @@ public interface ResourceManager extends ResourceService, Configurable {
 
     public List<HostVO> listAllUpHosts(Host.Type type, Long clusterId, Long podId, long dcId);
 
-    public List<HostVO> listAllUpHostsNotInMaintenance(Host.Type type, Long clusterId, Long podId, long dcId);
-
     public List<HostVO> listAllHostsInCluster(long clusterId);
 
     public List<HostVO> listHostsInClusterByStatus(long clusterId, Status status);
@@ -127,6 +125,8 @@ public interface ResourceManager extends ResourceService, Configurable {
     public List<HostVO> listAllUpAndEnabledHostsInOneZoneByType(Host.Type type, long dcId);
 
     public List<HostVO> listAllUpAndEnabledHostsInOneZoneByHypervisor(HypervisorType type, long dcId);
+
+    public List<HostVO> listAllUpHostsInOneZoneByHypervisor(HypervisorType type, long dcId);
 
     public List<HostVO> listAllUpAndEnabledHostsInOneZone(long dcId);
 

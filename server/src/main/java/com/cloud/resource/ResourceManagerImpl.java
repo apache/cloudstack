@@ -2757,7 +2757,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             }
         }
 
-        handleAgentConnectAndRestart(host, vms_migrating);
+        handleAgentIfNotConnected(host, vms_migrating);
 
         try {
             resourceStateTransitTo(host, ResourceState.Event.AdminCancelMaintenance, _nodeId);
@@ -2772,16 +2772,16 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     /**
+     * Handle agent (if available) if its not connected before cancelling maintenance.
      * Agent must be connected before cancelling maintenance.
-     * Connect and restart agent (if available) before cancelling maintenance.
      * If the host status is not Up:
      * - If kvm.ssh.to.agent is true, then SSH into the host and restart the agent.
      * - If kvm.shh.to.agent is false, then fail cancelling maintenance
      */
-    protected void handleAgentConnectAndRestart(HostVO host, boolean vmsMigrating) {
+    protected void handleAgentIfNotConnected(HostVO host, boolean vmsMigrating) {
         final boolean isAgentOnHost = host.getHypervisorType() == HypervisorType.KVM ||
                 host.getHypervisorType() == HypervisorType.LXC;
-        if (!isAgentOnHost || vmsMigrating) {
+        if (!isAgentOnHost || vmsMigrating || host.getStatus() == Status.Up) {
             return;
         }
         final boolean sshToAgent = Boolean.parseBoolean(_configDao.getValue(KvmSshToAgentEnabled.key()));
@@ -3074,24 +3074,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
-    public List<HostVO> listAllUpHostsNotInMaintenance(Type type, Long clusterId, Long podId, long dcId) {
-        final QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
-        if (type != null) {
-            sc.and(sc.entity().getType(), Op.EQ, type);
-        }
-        if (clusterId != null) {
-            sc.and(sc.entity().getClusterId(), Op.EQ, clusterId);
-        }
-        if (podId != null) {
-            sc.and(sc.entity().getPodId(), Op.EQ, podId);
-        }
-        sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
-        sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
-        sc.and(sc.entity().getResourceState(), Op.NEQ, ResourceState.Maintenance);
-        return sc.list();
-    }
-
-    @Override
     public List<HostVO> listAllUpAndEnabledNonHAHosts(final Type type, final Long clusterId, final Long podId, final long dcId) {
         final String haTag = _haMgr.getHaTag();
         return _hostDao.listAllUpAndEnabledNonHAHosts(type, clusterId, podId, dcId, haTag);
@@ -3270,6 +3252,15 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
         sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
         sc.and(sc.entity().getResourceState(), Op.EQ, ResourceState.Enabled);
+        return sc.list();
+    }
+
+    @Override
+    public List<HostVO> listAllUpHostsInOneZoneByHypervisor(final HypervisorType type, final long dcId) {
+        final QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getHypervisorType(), Op.EQ, type);
+        sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
+        sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
         return sc.list();
     }
 

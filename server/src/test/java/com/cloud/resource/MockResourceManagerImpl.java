@@ -384,11 +384,6 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
         return null;
     }
 
-    @Override
-    public List<HostVO> listAllUpHostsNotInMaintenance(Type type, Long clusterId, Long podId, long dcId) {
-        return null;
-    }
-
     /* (non-Javadoc)
      * @see com.cloud.resource.ResourceManager#listAllHostsInCluster(long)
      */
@@ -589,6 +584,12 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
 
     @Override
     public List<HostVO> listAllUpAndEnabledHostsInOneZoneByHypervisor(final HypervisorType type, final long dcId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public List<HostVO> listAllUpHostsInOneZoneByHypervisor(final HypervisorType type, final long dcId) {
         // TODO Auto-generated method stub
         return null;
     }

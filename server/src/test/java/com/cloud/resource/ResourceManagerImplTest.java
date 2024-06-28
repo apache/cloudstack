@@ -349,7 +349,7 @@ public class ResourceManagerImplTest {
 
     @Test
     public void testHandleAgentSSHEnabledNotConnectedAgent() {
-        resourceManager.handleAgentConnectAndRestart(host, false);
+        resourceManager.handleAgentIfNotConnected(host, false);
         verify(resourceManager).getHostCredentials(eq(host));
         verify(resourceManager).connectAndRestartAgentOnHost(eq(host), eq(hostUsername), eq(hostPassword), eq(hostPrivateKey));
     }
@@ -357,12 +357,12 @@ public class ResourceManagerImplTest {
     @Test(expected = CloudRuntimeException.class)
     public void testHandleAgentSSHDisabledNotConnectedAgent() {
         when(configurationDao.getValue(ResourceManager.KvmSshToAgentEnabled.key())).thenReturn("false");
-        resourceManager.handleAgentConnectAndRestart(host, false);
+        resourceManager.handleAgentIfNotConnected(host, false);
     }
 
     @Test
     public void testHandleAgentVMsMigrating() {
-        resourceManager.handleAgentConnectAndRestart(host, true);
+        resourceManager.handleAgentIfNotConnected(host, true);
         verify(resourceManager, never()).getHostCredentials(eq(host));
         verify(resourceManager, never()).connectAndRestartAgentOnHost(eq(host), eq(hostUsername), eq(hostPassword), eq(hostPrivateKey));
     }

@@ -421,7 +421,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
         PrimaryDataStoreInfo primarystore = (PrimaryDataStoreInfo)store;
         // Check if there is host up in this cluster
         List<HostVO> allHosts =
-                _resourceMgr.listAllUpHostsNotInMaintenance(Host.Type.Routing, primarystore.getClusterId(), primarystore.getPodId(), primarystore.getDataCenterId());
+                _resourceMgr.listAllUpHosts(Host.Type.Routing, primarystore.getClusterId(), primarystore.getPodId(), primarystore.getDataCenterId());
         if (allHosts.isEmpty()) {
             primaryDataStoreDao.expunge(primarystore.getId());
             throw new CloudRuntimeException("No host up to associate a storage pool with in cluster " + primarystore.getClusterId());
@@ -467,7 +467,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
 
     @Override
     public boolean attachZone(DataStore dataStore, ZoneScope scope, HypervisorType hypervisorType) {
-        List<HostVO> hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(hypervisorType, scope.getScopeId());
+        List<HostVO> hosts = _resourceMgr.listAllUpHostsInOneZoneByHypervisor(hypervisorType, scope.getScopeId());
         s_logger.debug("In createPool. Attaching the pool to each of the hosts.");
         List<HostVO> poolHosts = new ArrayList<HostVO>();
         for (HostVO host : hosts) {
