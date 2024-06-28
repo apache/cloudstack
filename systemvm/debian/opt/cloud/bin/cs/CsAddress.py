@@ -623,6 +623,10 @@ class CsIP:
         if self.get_type() in ["guest"]:
             guestNetworkCidr = self.address['network']
             self.nft_ipv4_fw.append({'type': "", 'chain': 'INPUT',
+                                     'rule': "iifname lo counter accept"})
+            self.nft_ipv4_fw.append({'type': "", 'chain': 'INPUT',
+                                     'rule': "iifname %s ct state related,established counter accept" % self.dev})
+            self.nft_ipv4_fw.append({'type': "", 'chain': 'INPUT',
                                      'rule': "iifname %s udp dport 67 counter accept" % self.dev})
             self.nft_ipv4_fw.append({'type': "", 'chain': 'INPUT',
                                      'rule': "iifname %s ip saddr %s tcp dport 53 counter accept" % (self.dev, guestNetworkCidr)})
@@ -640,6 +644,10 @@ class CsIP:
             return
         if self.get_type() in ["guest"]:
             guestNetworkCidr = self.address['network']
+            self.nft_ipv4_acl.append({'type': "", 'chain': 'INPUT',
+                                      'rule': "iifname lo counter accept"})
+            self.nft_ipv4_acl.append({'type': "", 'chain': 'INPUT',
+                                      'rule': "iifname %s ct state related,established counter accept" % self.dev})
             self.nft_ipv4_acl.append({'type': "", 'chain': 'INPUT',
                                       'rule': "iifname %s udp dport 67 counter accept" % self.dev})
             self.nft_ipv4_acl.append({'type': "", 'chain': 'INPUT',

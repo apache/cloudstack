@@ -275,9 +275,10 @@ class TestIpv4Routing(cloudstackTestCase):
             else:
                 exists = False
             if exists and not rule["rule"] in res:
-                self.fail("The nftables rule (%s) should exist but is not found in the VR" % rule["rule"])
+                self.fail("The nftables rule (%s) should exist but is not found in the VR !!!" % rule["rule"])
             if not exists and rule["rule"] in res:
-                self.fail("The nftables rule (%s) should not exist but is found in the VR" % rule["rule"])
+                self.fail("The nftables rule (%s) should not exist but is found in the VR !!!" % rule["rule"])
+            self.message("The nftables rules look good so far.")
 
     def verifyPingFromRouter(self, router, vm, expected=True, retries=1):
         while retries > 0:
@@ -295,9 +296,9 @@ class TestIpv4Routing(cloudstackTestCase):
             except Exception as ex:
                 self.fail("Failed to ping vm from router: %s" % ex)
         if retries == 0 and expected:
-            self.message("Failed to ping vm from router, which is expected to work.")
+            self.message("Failed to ping vm from router, which is expected to work !!!")
         if retries > 0 and not expected:
-            self.message("ping vm from router works, however it is unexpected.")
+            self.message("ping vm from router works, however it is unexpected !!!")
 
     @attr(tags=['advanced', 'basic', 'sg'], required_hardware=False)
     def test_01_zone_subnet(self):

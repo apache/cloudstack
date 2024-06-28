@@ -251,13 +251,15 @@ class CsNetfilters(object):
         table = 'ip4_firewall'
         default_chains = [
             {"chain": "INPUT", "hook": "input", "action": "drop"},
-            {"chain": "FORWARD", "hook": "forward", "action": "accept"}
+            {"chain": "FORWARD", "hook": "forward", "action": "accept"},
+            {"chain": "OUTPUT", "hook": "output", "action": "accept"}
         ]
         if type == "acl":
             table = 'ip4_acl'
             default_chains = [
                 {"chain": "INPUT", "hook": "input", "action": "drop"},
-                {"chain": "FORWARD", "hook": "forward", "action": "accept"}
+                {"chain": "FORWARD", "hook": "forward", "action": "accept"},
+                {"chain": "OUTPUT", "hook": "output", "action": "accept"}
             ]
         tables = CsHelper.execute("nft list tables %s | grep %s" % (address_family, table))
         if any(table in t for t in tables):
