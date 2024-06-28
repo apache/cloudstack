@@ -206,7 +206,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
             if (ipAddrId != null) {
                 // this for ingress firewall rule, for egress id is null
                 ipAddress = _ipAddressDao.acquireInLockTable(ipAddrId);
-                if (ipAddress == null && type == FirewallRule.FirewallRuleType.User) {
+                if (ipAddress == null) {
                     throw new InvalidParameterValueException("Unable to create firewall rule; " + "couldn't locate IP address by id in the system");
                 }
                 _networkModel.checkIpForService(ipAddress, Service.Firewall, null);
@@ -669,9 +669,19 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     }
 
     @Override
+    @DB
     public boolean applyIngressFirewallRules(long ipId, Account caller) throws ResourceUnavailableException {
-        List<FirewallRuleVO> rules = _firewallDao.listByIpAndPurpose(ipId, Purpose.Firewall);
-        return applyFirewallRules(rules, false, caller);
+        try {
+            IPAddressVO ipAddress = _ipAddressDao.acquireInLockTable(ipId);
+            if (ipAddress == null) {
+                s_logger.error(String.format("Unable to acquire lock for public IP [%s].", ipId));
+                throw new CloudRuntimeException("Unable to acquire lock for public IP.");
+            }
+            List<FirewallRuleVO> rules = _firewallDao.listByIpAndPurpose(ipId, Purpose.Firewall);
+            return applyFirewallRules(rules, false, caller);
+        } finally {
+            _ipAddressDao.releaseFromLockTable(ipId);
+        }
     }
 
     @Override
