@@ -17,13 +17,14 @@
 
 package org.apache.cloudstack.storage.fileshare.lifecycle;
 
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.storage.fileshare.FileShare;
 import org.apache.cloudstack.storage.fileshare.FileShareLifeCycle;
 
 public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
     @Override
-    public Long deployFileShare(FileShare fileShare, Long networkId) {
-        return 0L;
+    public Pair<String, Long> deployFileShare(FileShare fileShare, Long networkId) {
+        return new Pair<>("", 0L);
     }
 
     @Override
@@ -33,6 +34,11 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
 
     @Override
     public boolean deleteFileShare(FileShare fileShare) {
+        return false;
+    }
+
+    @Override
+    public boolean resizeFileShare(FileShare fileShare, Long newSize) {
         return false;
     }
 }
