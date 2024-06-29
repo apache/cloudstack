@@ -378,12 +378,12 @@ public class VeeamClient {
 
             if (session.getResult().equalsIgnoreCase("Failed")) {
                 String sessionUid = session.getUid();
-                LOG.error(String.format("Failed to restore backup [%s] of VM [%s] due to [%s].",
+                logger.error(String.format("Failed to restore backup [%s] of VM [%s] due to [%s].",
                         sessionUid, session.getVmDisplayName(),
                         getRestoreVmErrorDescription(StringUtils.substringAfterLast(sessionUid, ":"))));
                 throw new CloudRuntimeException(String.format("Restore job [%s] failed.", sessionUid));
             }
-            LOG.debug(String.format("Waiting %s seconds, out of a total of %s seconds, for the restore backup process to finish.", j, restoreTimeout));
+            logger.debug(String.format("Waiting %s seconds, out of a total of %s seconds, for the restore backup process to finish.", j, restoreTimeout));
 
             try {
                 Thread.sleep(1000);
@@ -949,7 +949,7 @@ public class VeeamClient {
      * @return the description found in Veeam about the cause of error in the restore process.
      */
     protected String getRestoreVmErrorDescription(String uid) {
-        LOG.debug(String.format("Trying to find the cause of error in the restore process [%s].", uid));
+        logger.debug(String.format("Trying to find the cause of error in the restore process [%s].", uid));
         List<String> cmds = Arrays.asList(
                 String.format("$restoreUid = '%s'", uid),
                 "$restore = Get-VBRRestoreSession -Id $restoreUid",
