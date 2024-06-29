@@ -725,50 +725,59 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     @Override
     @DB
     public boolean disassociatePublicIpAddress(long addrId, long userId, Account caller) {
-
         boolean success = true;
-        IPAddressVO ipToBeDisassociated = _ipAddressDao.findById(addrId);
 
-        PublicIpQuarantine publicIpQuarantine = null;
-        // Cleanup all ip address resources - PF/LB/Static nat rules
-        if (!cleanupIpResources(addrId, userId, caller)) {
-            success = false;
-            s_logger.warn("Failed to release resources for ip address id=" + addrId);
-        }
+        try {
+            IPAddressVO ipToBeDisassociated = _ipAddressDao.acquireInLockTable(addrId);
 
-        IPAddressVO ip = markIpAsUnavailable(addrId);
-        if (ip == null) {
-            return true;
-        }
+            if (ipToBeDisassociated == null) {
+                s_logger.error(String.format("Unable to acquire lock on public IP %s.", addrId));
+                throw new CloudRuntimeException("Unable to acquire lock on public IP.");
+            }
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Releasing ip id=" + addrId + "; sourceNat = " + ip.isSourceNat());
-        }
+            PublicIpQuarantine publicIpQuarantine = null;
+            // Cleanup all ip address resources - PF/LB/Static nat rules
+            if (!cleanupIpResources(addrId, userId, caller)) {
+                success = false;
+                s_logger.warn("Failed to release resources for ip address id=" + addrId);
+            }
 
-        if (ip.getAssociatedWithNetworkId() != null) {
-            Network network = _networksDao.findById(ip.getAssociatedWithNetworkId());
-            try {
-                if (!applyIpAssociations(network, rulesContinueOnErrFlag)) {
-                    s_logger.warn("Unable to apply ip address associations for " + network);
-                    success = false;
+            IPAddressVO ip = markIpAsUnavailable(addrId);
+            if (ip == null) {
+                return true;
+            }
+
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Releasing ip id=" + addrId + "; sourceNat = " + ip.isSourceNat());
+            }
+
+            if (ip.getAssociatedWithNetworkId() != null) {
+                Network network = _networksDao.findById(ip.getAssociatedWithNetworkId());
+                try {
+                    if (!applyIpAssociations(network, rulesContinueOnErrFlag)) {
+                        s_logger.warn("Unable to apply ip address associations for " + network);
+                        success = false;
+                    }
+                } catch (ResourceUnavailableException e) {
+                    throw new CloudRuntimeException("We should never get to here because we used true when applyIpAssociations", e);
                 }
-            } catch (ResourceUnavailableException e) {
-                throw new CloudRuntimeException("We should never get to here because we used true when applyIpAssociations", e);
+            } else if (ip.getState() == State.Releasing) {
+                publicIpQuarantine = addPublicIpAddressToQuarantine(ipToBeDisassociated, caller.getDomainId());
+                _ipAddressDao.unassignIpAddress(ip.getId());
             }
-        } else if (ip.getState() == State.Releasing) {
-            publicIpQuarantine = addPublicIpAddressToQuarantine(ipToBeDisassociated, caller.getDomainId());
-            _ipAddressDao.unassignIpAddress(ip.getId());
-        }
 
-        annotationDao.removeByEntityType(AnnotationService.EntityType.PUBLIC_IP_ADDRESS.name(), ip.getUuid());
+            annotationDao.removeByEntityType(AnnotationService.EntityType.PUBLIC_IP_ADDRESS.name(), ip.getUuid());
 
-        if (success) {
-            if (ip.isPortable()) {
-                releasePortableIpAddress(addrId);
+            if (success) {
+                if (ip.isPortable()) {
+                    releasePortableIpAddress(addrId);
+                }
+                s_logger.debug("Released a public ip id=" + addrId);
+            } else if (publicIpQuarantine != null) {
+                removePublicIpAddressFromQuarantine(publicIpQuarantine.getId(), "Public IP address removed from quarantine as there was an error while disassociating it.");
             }
-            s_logger.debug("Released a public ip id=" + addrId);
-        } else if (publicIpQuarantine != null) {
-            removePublicIpAddressFromQuarantine(publicIpQuarantine.getId(), "Public IP address removed from quarantine as there was an error while disassociating it.");
+        } finally {
+            _ipAddressDao.releaseFromLockTable(addrId);
         }
 
         return success;
