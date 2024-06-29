@@ -135,7 +135,7 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
 
     @Override
     @DB
-    @ActionEvent(eventType = EventTypes.EVENT_FILESHARE_CREATE, eventDescription = "Deploying fileshare", async = true)
+    @ActionEvent(eventType = EventTypes.EVENT_FILESHARE_DEPLOY, eventDescription = "Deploying fileshare", async = true)
     public FileShare deployFileShare(Long fileShareId, Long networkId) {
         FileShareVO fileShare = fileShareDao.findById(fileShareId);
         FileShareProvider provider = getFileShareProvider(fileShare.getFsProviderName());
@@ -151,7 +151,7 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_FILESHARE_CREATE, eventDescription = "Initializing fileshare", async = true)
+    @ActionEvent(eventType = EventTypes.EVENT_FILESHARE_INITIALIZE, eventDescription = "Initializing fileshare", async = true)
     public FileShare initializeFileShare(Long fileShareId) {
         FileShareVO fileShare = fileShareDao.findById(fileShareId);
         FileShareProvider provider = getFileShareProvider(fileShare.getFsProviderName());
