@@ -21,6 +21,8 @@ import com.cloud.utils.fsm.StateObject;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
+import java.util.Date;
+
 public interface FileShare extends StateObject<FileShare.State>, Identity, InternalIdentity {
 
     String FileShareVmNamePrefix = "fs";
@@ -36,8 +38,8 @@ public interface FileShare extends StateObject<FileShare.State>, Identity, Inter
 
     enum State {
         Allocated(false, "The file share is allocated in db but hasn't been created or initialized yet."),
-        Creating(true, "The file share is being created."),
-        Created(false, "The file share is created but not initialized yet."),
+        Deploying(true, "The file share is being created."),
+        Deployed(false, "The file share is created but not initialized yet."),
         Initializing(true, "The file share is being initialzed."),
         Ready(false, "The file share is initialized and ready to use."),
         Stopping(true, "The file share is being stopped"),
@@ -70,15 +72,19 @@ public interface FileShare extends StateObject<FileShare.State>, Identity, Inter
 
         private final static StateMachine2<State, Event, FileShare> s_fsm = new StateMachine2<State, Event, FileShare>();
 
+        public static StateMachine2<FileShare.State, FileShare.Event, FileShare> getStateMachine() {
+            return s_fsm;
+        }
+
         static {
-            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Allocated, Event.CreateRequested, Creating, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Allocated, Event.DeployRequested, Deploying, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Allocated, Event.DestroyRequested, Destroyed, null));
-            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Creating, Event.OperationSucceeded, Destroyed, null));
-            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Creating, Event.OperationFailed, Allocated, null));
-            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Created, Event.InitializationRequested, Initializing, null));
-            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Created, Event.DestroyRequested, Destroyed, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Deploying, Event.OperationSucceeded, Deployed, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Deploying, Event.OperationFailed, Allocated, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Deployed, Event.InitializationRequested, Initializing, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Deployed, Event.DestroyRequested, Destroyed, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Initializing, Event.OperationSucceeded, Ready, null));
-            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Initializing, Event.OperationFailed, Created, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Initializing, Event.OperationFailed, Deployed, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Ready, Event.StopRequested, Stopping, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Stopping, Event.OperationSucceeded, Stopped, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Stopping, Event.OperationFailed, Ready, null));
@@ -93,7 +99,7 @@ public interface FileShare extends StateObject<FileShare.State>, Identity, Inter
     }
 
     enum Event {
-        CreateRequested,
+        DeployRequested,
         InitializationRequested,
         StopRequested,
         StartRequested,
@@ -155,4 +161,10 @@ public interface FileShare extends StateObject<FileShare.State>, Identity, Inter
     Long getDiskOfferingId();
 
     Long getServiceOfferingId();
+
+    Date getUpdated();
+
+    public long getUpdatedCount();
+
+    public void incrUpdatedCount();
 }

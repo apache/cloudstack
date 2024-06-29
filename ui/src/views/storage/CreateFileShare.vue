@@ -334,11 +334,11 @@ export default {
         api('createFileShare', data).then(response => {
           this.$pollJob({
             jobId: response.createfileshareresponse.jobid,
-            title: this.$t('label.create.bucket'),
+            title: this.$t('label.create.fileshare'),
             description: values.name,
-            successMessage: this.$t('message.success.create.bucket'),
-            errorMessage: this.$t('message.create.bucket.failed'),
-            loadingMessage: this.$t('message.create.bucket.processing'),
+            successMessage: this.$t('message.success.create.fileshare'),
+            errorMessage: this.$t('message.create.fileshare.failed'),
+            loadingMessage: this.$t('message.create.fileshare.processing'),
             catchMessage: this.$t('error.fetching.async.job.result')
           })
           this.closeModal()

@@ -21,6 +21,7 @@ import javax.inject.Inject;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
@@ -157,6 +158,15 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
     /////////////////////////////////////////////////////
 
     @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.FileShare;
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return this.getEntityId();
+    }
+    @Override
     public long getEntityOwnerId() {
         return CallContext.current().getCallingAccount().getId();
     }
@@ -168,7 +178,7 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return "Creating fileshare";
+        return "Creating fileshare " + name;
     }
 
     public void create() throws ResourceAllocationException {
@@ -184,14 +194,19 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
     @Override
     public void execute() {
         FileShare fileShare = fileShareService.deployFileShare(this.getEntityId(), this.getNetworkId());
+        if (fileShare == null) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to deploy file share");
+        }
+
+        fileShare = fileShareService.initializeFileShare(this.getEntityId());
         if (fileShare != null) {
             FileShareResponse response = _responseGenerator.createFileShareResponse(fileShare);
             response.setObjectName(FileShare.class.getSimpleName().toLowerCase());
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to deploy file share");
+            //revert changes?
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to initialize file share");
         }
-        //initialize
     }
 }

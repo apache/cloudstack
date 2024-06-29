@@ -27,12 +27,15 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.utils.fsm.StateMachine2;
 import org.apache.cloudstack.api.command.user.storage.fileshare.CreateFileShareCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.ListFileShareProvidersCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.ListFileSharesCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.RemoveFileShareCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.UpdateFileShareCmd;
 import org.apache.cloudstack.storage.fileshare.dao.FileShareDao;
+import org.apache.cloudstack.storage.fileshare.FileShare.Event;
 
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -53,6 +56,12 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
 
     private Map<String, FileShareProvider> fileShareProviderMap = new HashMap<>();
 
+    private final StateMachine2<FileShare.State, FileShare.Event, FileShare> fileShareStateMachine;
+
+    public FileShareServiceImpl() {
+        this.fileShareStateMachine = FileShare.State.getStateMachine();
+    }
+
     @Override
     public boolean start() {
         fileShareProviderMap.clear();
@@ -72,6 +81,15 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         return fileShareProviders;
     }
 
+    public boolean stateTransitTo(FileShare fileShare, FileShare.Event event) {
+        try {
+            return fileShareStateMachine.transitTo(fileShare, event, null, fileShareDao);
+        } catch (NoTransitionException e) {
+            logger.debug(String.format("Failed during event % for File Share %s [%s] due to exception %",
+                    Event.DeployRequested.toString(), fileShare.getName(), fileShare.getId(), e));
+            return false;
+        }
+    }
     @Override
     public void setFileShareProviders(List<FileShareProvider> fileShareProviders) {
         this.fileShareProviders = fileShareProviders;
@@ -117,25 +135,30 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
 
     @Override
     @DB
-    @ActionEvent(eventType = EventTypes.EVENT_FILESHARE_CREATE, eventDescription = "Deploying fileshare", create = true)
+    @ActionEvent(eventType = EventTypes.EVENT_FILESHARE_CREATE, eventDescription = "Deploying fileshare", async = true)
     public FileShare deployFileShare(Long fileShareId, Long networkId) {
         FileShareVO fileShare = fileShareDao.findById(fileShareId);
         FileShareProvider provider = getFileShareProvider(fileShare.getFsProviderName());
         FileShareLifeCycle lifeCycle = provider.getFileShareLifeCycle();
+
+        stateTransitTo(fileShare, Event.DeployRequested);
         Pair<String, Long> endpoint = lifeCycle.deployFileShare(fileShare, networkId);
         fileShare.setEndpointIp(endpoint.first());
         fileShare.setVmId(endpoint.second());
         fileShareDao.update(fileShare.getId(), fileShare);
+        stateTransitTo(fileShare, Event.OperationSucceeded);
         return fileShare;
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_FILESHARE_CREATE, eventDescription = "Deploying fileshare", create = true)
+    @ActionEvent(eventType = EventTypes.EVENT_FILESHARE_CREATE, eventDescription = "Initializing fileshare", async = true)
     public FileShare initializeFileShare(Long fileShareId) {
         FileShareVO fileShare = fileShareDao.findById(fileShareId);
         FileShareProvider provider = getFileShareProvider(fileShare.getFsProviderName());
         FileShareLifeCycle lifeCycle = provider.getFileShareLifeCycle();
+        stateTransitTo(fileShare, Event.InitializationRequested);
         lifeCycle.initializeFileShare(fileShare);
+        stateTransitTo(fileShare, Event.OperationSucceeded);
         return fileShare;
     }
 

@@ -18,19 +18,22 @@
  */
 package org.apache.cloudstack.storage.fileshare;
 
-import javax.persistence.Column;
-import javax.persistence.Enumerated;
-import javax.persistence.EnumType;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Table;
 
 import java.util.Date;
 import java.util.UUID;
 
 import com.cloud.utils.db.GenericDao;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
 @Entity
 @Table(name = "storage_fileshare")
@@ -97,6 +100,16 @@ public class FileShareVO implements FileShare {
 
     @Column(name = "service_offering_id")
     private Long serviceOfferingId;
+
+    @Column(name = "updated")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    Date updated;
+
+    @Column(name = "update_count", updatable = true, nullable = false)
+    protected long updatedCount; // This field should be updated everytime the
+    // state is updated. There's no set method in
+    // the vo object because it is done with in the
+    // dao code.
 
     @Column(name = GenericDao.CREATED_COLUMN)
     protected Date created;
@@ -246,4 +259,20 @@ public class FileShareVO implements FileShare {
     public Long getServiceOfferingId() {
         return serviceOfferingId;
     }
+
+    @Override
+    public Date getUpdated() {
+        return updated;
+    }
+
+    @Override
+    public long getUpdatedCount() {
+        return updatedCount;
+    }
+
+    @Override
+    public void incrUpdatedCount() {
+        updatedCount++;
+    }
+
 }

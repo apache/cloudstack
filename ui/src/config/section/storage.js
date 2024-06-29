@@ -544,7 +544,7 @@ export default {
         },
         {
           name: 'events',
-          resourceType: 'Bucket',
+          resourceType: 'FileShare',
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
           show: () => { return 'listEvents' in store.getters.apis }
         }
