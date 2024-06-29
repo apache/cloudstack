@@ -126,6 +126,8 @@ public interface ResourceManager extends ResourceService, Configurable {
 
     public List<HostVO> listAllUpAndEnabledHostsInOneZoneByHypervisor(HypervisorType type, long dcId);
 
+    public List<HostVO> listAllUpHostsInOneZoneByHypervisor(HypervisorType type, long dcId);
+
     public List<HostVO> listAllUpAndEnabledHostsInOneZone(long dcId);
 
     public List<HostVO> listAllHostsInOneZoneByType(Host.Type type, long dcId);
