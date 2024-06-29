@@ -30,6 +30,7 @@ import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 
+import com.cloud.utils.Pair;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -47,10 +48,18 @@ public class KeystoreManagerImpl extends ManagerBase implements KeystoreManager 
     private KeystoreDao _ksDao;
 
     @Override
-    public boolean validateCertificate(String certificate, String key, String domainSuffix) {
+    public Pair<Boolean, String> validateCertificate(String certificate, String key, String domainSuffix) {
+        String errMsg = null;
         if (StringUtils.isAnyEmpty(certificate, key, domainSuffix)) {
-            s_logger.error("Invalid parameter found in (certificate, key, domainSuffix) tuple for domain: " + domainSuffix);
-            return false;
+            errMsg = String.format("Invalid parameter found in (certificate, key, domainSuffix) tuple for domain: %s", domainSuffix);
+            s_logger.error(errMsg);
+            return new Pair<>(false, errMsg);
+        }
+
+        if (!verifyCertificateHeaders(certificate)) {
+            errMsg = "Certificate delimiters verification failed: Invalid PEM format.";
+            s_logger.error(errMsg);
+            return new Pair<>(false, errMsg);
         }
 
         try {
@@ -58,13 +67,19 @@ public class KeystoreManagerImpl extends ManagerBase implements KeystoreManager 
             byte[] ksBits = CertificateHelper.buildAndSaveKeystore(domainSuffix, certificate, getKeyContent(key), ksPassword);
             KeyStore ks = CertificateHelper.loadKeystore(ksBits, ksPassword);
             if (ks != null)
-                return true;
-
-            s_logger.error("Unabled to construct keystore for domain: " + domainSuffix);
+                return new Pair<>(true, errMsg);
+            errMsg = String.format("Unable to construct keystore for domain: %s", domainSuffix);
+            s_logger.error(errMsg);
         } catch (Exception e) {
-            s_logger.error("Certificate validation failed due to exception for domain: " + domainSuffix, e);
+            errMsg = String.format("Certificate validation failed due to exception for domain: %s", domainSuffix);
+            s_logger.error(errMsg, e);
         }
-        return false;
+        return new Pair<>(false, errMsg);
+    }
+
+    private boolean verifyCertificateHeaders(String certificate) {
+        return certificate.startsWith("-----BEGIN CERTIFICATE-----") &&
+                certificate.endsWith("-----END CERTIFICATE-----");
     }
 
     @Override
