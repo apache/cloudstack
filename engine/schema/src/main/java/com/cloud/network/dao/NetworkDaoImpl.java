@@ -32,6 +32,8 @@ import javax.persistence.TableGenerator;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.engine.cloud.entity.api.db.VMNetworkMapVO;
+import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMNetworkMapDao;
 import org.springframework.stereotype.Component;
 
 import com.cloud.network.Network;
@@ -87,6 +89,8 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
     GenericSearchBuilder<NetworkVO, Long> GarbageCollectedSearch;
     SearchBuilder<NetworkVO> PrivateNetworkSearch;
 
+    SearchBuilder<NetworkVO> GuestNetworkByVmIDSearch;
+
     @Inject
     ResourceTagDao _tagsDao;
     @Inject
@@ -105,6 +109,8 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
     NetworkDetailsDao networkDetailsDao;
     @Inject
     VpcGatewayDao _vpcGatewayDao;
+    @Inject
+    VMNetworkMapDao vmNetworkMapDao;
 
     TableGenerator _tgMacAddress;
 
@@ -282,6 +288,12 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
         join10.and("vpc", join10.entity().getVpcId(), Op.EQ);
         PrivateNetworkSearch.join("vpcgateways", join10, PrivateNetworkSearch.entity().getId(), join10.entity().getNetworkId(), JoinBuilder.JoinType.INNER);
         PrivateNetworkSearch.done();
+
+        GuestNetworkByVmIDSearch = createSearchBuilder();
+        GuestNetworkByVmIDSearch.and("traffic_type", GuestNetworkByVmIDSearch.entity().getTrafficType(), Op.EQ);
+        final SearchBuilder<VMNetworkMapVO> vmNetSearch = vmNetworkMapDao.createSearchBuilder();
+        vmNetSearch.and("vm_id", vmNetSearch.entity().getVmId(), Op.EQ);
+        GuestNetworkByVmIDSearch.join("vmNetSearch", vmNetSearch, vmNetSearch.entity().getNetworkId(), GuestNetworkByVmIDSearch.entity().getId(), JoinBuilder.JoinType.INNER);
     }
 
     @Override
@@ -877,5 +889,13 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
         }
 
         return overlappingNetworks;
+    }
+
+    @Override
+    public List<NetworkVO> listGuestNetworksByVmId(long vmId) {
+        final SearchCriteria<NetworkVO> sc = GuestNetworkByVmIDSearch.create();
+        sc.setParameters("vm_id", vmId);
+        sc.setParameters("traffic_type", TrafficType.Guest);
+        return search(sc, null);
     }
 }

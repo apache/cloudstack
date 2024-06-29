@@ -2464,7 +2464,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         VolumeInfo volumeToAttach = getAndCheckVolumeInfo(volumeId);
 
-        UserVmVO vm = getAndCheckUserVmVO(vmId, volumeToAttach);
+        VMInstanceVO vm = getAndCheckVmVO(vmId, volumeToAttach);
 
         checkDeviceId(deviceId, volumeToAttach, vm);
 
@@ -2563,7 +2563,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
     }
 
-    private void checkRightsToAttach(Account caller, VolumeInfo volumeToAttach, UserVmVO vm) {
+    private void checkRightsToAttach(Account caller, VolumeInfo volumeToAttach, VMInstanceVO vm) {
         _accountMgr.checkAccess(caller, null, true, volumeToAttach, vm);
 
         Account owner = _accountDao.findById(volumeToAttach.getAccountId());
@@ -2578,7 +2578,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
     }
 
-    private void checkForDevicesInCopies(Long vmId, UserVmVO vm) {
+    private void checkForDevicesInCopies(Long vmId, VMInstanceVO vm) {
         // if target VM has associated VM snapshots
         List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
         if (vmSnapshots.size() > 0) {
@@ -2607,7 +2607,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     /**
      * Check that the number of data volumes attached to VM is less than the number that are supported by the hypervisor
      */
-    private void checkNumberOfAttachedVolumes(Long deviceId, UserVmVO vm) {
+    private void checkNumberOfAttachedVolumes(Long deviceId, VMInstanceVO vm) {
         if (deviceId == null || deviceId.longValue() != 0) {
             List<VolumeVO> existingDataVolumes = _volsDao.findByInstanceAndType(vm.getId(), Volume.Type.DATADISK);
             int maxAttachableDataVolumesSupported = getMaxDataVolumesSupported(vm);
@@ -2627,7 +2627,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      * @param volumeToAttach
      * @param vm
      */
-    private void checkDeviceId(Long deviceId, VolumeInfo volumeToAttach, UserVmVO vm) {
+    private void checkDeviceId(Long deviceId, VolumeInfo volumeToAttach, VMInstanceVO vm) {
         if (deviceId != null && deviceId.longValue() == 0) {
             validateRootVolumeDetachAttach(_volsDao.findById(volumeToAttach.getId()), vm);
             if (!_volsDao.findByInstanceAndDeviceId(vm.getId(), 0).isEmpty()) {
@@ -2644,10 +2644,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      *
      * @return the user vm vo object correcponding to the vmId to attach to
      */
-    @NotNull private UserVmVO getAndCheckUserVmVO(Long vmId, VolumeInfo volumeToAttach) {
-        UserVmVO vm = _userVmDao.findById(vmId);
-        if (vm == null || vm.getType() != VirtualMachine.Type.User) {
-            throw new InvalidParameterValueException("Please specify a valid User VM.");
+    private VMInstanceVO getAndCheckVmVO(Long vmId, VolumeInfo volumeToAttach) {
+        VMInstanceVO vm = _vmInstanceDao.findById(vmId);
+        if (vm == null || (vm.getType() != VirtualMachine.Type.User && vm.getType() != VirtualMachine.Type.StorageFsVm)) {
+            throw new InvalidParameterValueException("Please specify a valid VM.");
         }
 
         // Check that the VM is in the correct state
@@ -2958,7 +2958,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
     }
 
-    private void validateRootVolumeDetachAttach(VolumeVO volume, UserVmVO vm) {
+    private void validateRootVolumeDetachAttach(VolumeVO volume, VMInstanceVO vm) {
         if (!(vm.getHypervisorType() == HypervisorType.XenServer || vm.getHypervisorType() == HypervisorType.VMware || vm.getHypervisorType() == HypervisorType.KVM
                 || vm.getHypervisorType() == HypervisorType.Simulator)) {
             throw new InvalidParameterValueException("Root volume detach is not supported for hypervisor type " + vm.getHypervisorType());
@@ -4606,7 +4606,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
     }
 
-    private int getMaxDataVolumesSupported(UserVmVO vm) {
+    private int getMaxDataVolumesSupported(VMInstanceVO vm) {
         Long hostId = vm.getHostId();
         if (hostId == null) {
             hostId = vm.getLastHostId();

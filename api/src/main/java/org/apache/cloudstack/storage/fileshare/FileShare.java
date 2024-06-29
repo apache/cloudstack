@@ -24,6 +24,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 public interface FileShare extends StateObject<FileShare.State>, Identity, InternalIdentity {
 
     String FileShareVmNamePrefix = "fs";
+    String FileSharePathPrefix = "/export/fileshare/";
 
     enum FileSystemType {
         EXT3, EXT4, XFS
@@ -103,6 +104,10 @@ public interface FileShare extends StateObject<FileShare.State>, Identity, Inter
         RecoveryRequested,
     }
 
+    static String getFileSharePathFromNameAndUuid(String name, String uuid) {
+        return FileSharePathPrefix + name + "-" + uuid;
+    }
+
     long getId();
 
     String getName();
@@ -128,10 +133,6 @@ public interface FileShare extends StateObject<FileShare.State>, Identity, Inter
     String getEndpointIp();
 
     void setEndpointIp(String endpointIp);
-
-    String getEndpointPath();
-
-    void setEndpointPath(String endpointPath);
 
     String getFsProviderName();
 

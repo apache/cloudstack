@@ -109,7 +109,8 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         Account owner = accountMgr.getActiveAccountById(ownerId);
         FileShareVO fileShare = new FileShareVO(cmd.getName(), cmd.getDescription(),owner.getDomainId(), ownerId, 0,
                                                 cmd.getZoneId(), cmd.getFileShareProviderName(), cmd.getSize(), null,
-                                                cmd.getMountOptions(), FileShare.FileSystemType.EXT4, cmd.getDiskOfferingId());
+                                                cmd.getMountOptions(), FileShare.FileSystemType.EXT4, cmd.getDiskOfferingId(),
+                                                cmd.getServiceOfferingId());
         fileShareDao.persist(fileShare);
         return fileShare;
     }
@@ -121,8 +122,9 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         FileShareVO fileShare = fileShareDao.findById(fileShareId);
         FileShareProvider provider = getFileShareProvider(fileShare.getFsProviderName());
         FileShareLifeCycle lifeCycle = provider.getFileShareLifeCycle();
-        Long vmId = lifeCycle.deployFileShare(fileShare, networkId);
-        fileShare.setVmId(vmId);
+        Pair<String, Long> endpoint = lifeCycle.deployFileShare(fileShare, networkId);
+        fileShare.setEndpointIp(endpoint.first());
+        fileShare.setVmId(endpoint.second());
         fileShareDao.update(fileShare.getId(), fileShare);
         return fileShare;
     }
@@ -155,9 +157,13 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         if (name != null) {
             fileShare.setName(name);
         }
-        if (name != null) {
+        if (description != null) {
             fileShare.setDescription(description);
         }
+        FileShareProvider provider = getFileShareProvider(fileShare.getFsProviderName());
+        FileShareLifeCycle lifeCycle = provider.getFileShareLifeCycle();
+        boolean result = lifeCycle.resizeFileShare(fileShare, cmd.getSize());
+
         fileShareDao.update(fileShare.getId(), fileShare);
         return fileShare;
     }

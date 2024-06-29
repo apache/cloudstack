@@ -31,6 +31,7 @@ import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.FileShareResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.fileshare.FileShare;
@@ -61,11 +62,12 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
     @Parameter(name = ApiConstants.SIZE,
             type = CommandType.LONG,
             required = true,
-            description = "the size of the file share in bytes")
+            description = "the size of the file share in GiB")
     private Long size;
 
     @Parameter(name = ApiConstants.ZONE_ID,
             type = CommandType.UUID,
+            required = true,
             entityType = ZoneResponse.class,
             description = "the zone id.")
     private Long zoneId;
@@ -75,6 +77,13 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
             entityType = DiskOfferingResponse.class,
             description = "the disk offering to use for the underlying storage.")
     private Long diskOfferingId;
+
+    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID,
+            type = CommandType.UUID,
+            required = true,
+            entityType = ServiceOfferingResponse.class,
+            description = "the disk offering to use for the underlying storage.")
+    private Long serviceOfferingId;
 
     @Parameter(name = ApiConstants.MOUNT_OPTIONS,
             type = CommandType.STRING,
@@ -88,11 +97,13 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.PROVIDER,
             type = CommandType.STRING,
+            required = true,
             description = "the provider to be used for the file share.")
     private String fileShareProviderName;
 
     @Parameter(name = ApiConstants.NETWORK_ID,
             type = CommandType.UUID,
+            required = true,
             entityType = NetworkResponse.class,
             description = "list of network id to attach file share to")
     private Long networkId;
@@ -110,7 +121,7 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
     }
 
     public Long getSize() {
-        return size;
+        return (size * 1024 * 1024 * 1024);
     }
 
     public Long getZoneId() {
@@ -119,6 +130,10 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     public Long getDiskOfferingId() {
         return diskOfferingId;
+    }
+
+    public Long getServiceOfferingId() {
+        return serviceOfferingId;
     }
 
     public String getMountOptions() {

@@ -50,7 +50,6 @@ public class UpdateFileShareCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.NAME,
             type = CommandType.STRING,
-            required = true,
             description = "the name of the file share.")
     private String name;
 
@@ -58,6 +57,11 @@ public class UpdateFileShareCmd extends BaseCmd {
             type = CommandType.STRING,
             description = "the description for the file share.")
     private String description;
+
+    @Parameter(name = ApiConstants.SIZE,
+            type = CommandType.LONG,
+            description = "the size of the file share in GB.")
+    private Long size;
 
     @Parameter(name = ApiConstants.MOUNT_OPTIONS,
             type = CommandType.STRING,
@@ -78,6 +82,10 @@ public class UpdateFileShareCmd extends BaseCmd {
 
     public String getDescription() {
         return description;
+    }
+
+    public Long getSize() {
+        return (size * 1024 * 1024 * 1024);
     }
 
     public String getMountOptions() {

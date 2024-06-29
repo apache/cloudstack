@@ -15,30 +15,34 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.storage.fileshare.lifecycle;
+<template>
+  <a-card :title="$t('label.mount.fileshare')">
+    <div class="title">{{ $t('label.nfs.mount') }}</div>
+    <div class="content">{{ $t('message.ip.address') }} {{ resource.ipaddress }}</div>
+    <div class="content">{{ $t('message.path') }} {{ resource.path }}</div>
+  </a-card>
+</template>
 
-import com.cloud.utils.Pair;
-import org.apache.cloudstack.storage.fileshare.FileShare;
-import org.apache.cloudstack.storage.fileshare.FileShareLifeCycle;
-
-public class SimulatorFileShareLifeCycle implements FileShareLifeCycle {
-    @Override
-    public Pair<String, Long> deployFileShare(FileShare fileShare, Long networkIds) {
-        return new Pair<>("", 0L);
+<script>
+export default {
+  name: 'FileShareAccessTab.vue',
+  props: {
+    resource: {
+      type: Object,
+      required: true
     }
-
-    @Override
-    public boolean initializeFileShare(FileShare fileShare) {
-        return false;
-    }
-
-    @Override
-    public boolean deleteFileShare(FileShare fileShare) {
-        return false;
-    }
-
-    @Override
-    public boolean resizeFileShare(FileShare fileShare, Long newSize) {
-        return false;
-    }
+  }
 }
+</script>
+
+<style lang="css" scoped>
+.title {
+  font-weight: bold;
+  margin-bottom: 14px;
+  font-size: 16px; /* Increased font size */
+}
+
+.content {
+  font-size: 16px; /* Increased font size */
+}
+</style>

@@ -177,6 +177,7 @@ import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmCloneSettingDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDao;
 
 public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrationService, Configurable {
 
@@ -231,6 +232,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     SnapshotService _snapshotSrv;
     @Inject
     protected UserVmDao _userVmDao;
+    @Inject
+    protected VMInstanceDao _vmDao;
     @Inject
     protected AsyncJobManager _jobMgr;
     @Inject
@@ -1240,7 +1243,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     @Override
     @DB
     public void cleanupVolumes(long vmId) throws ConcurrentOperationException {
-        VMInstanceVO vm = _userVmDao.findById(vmId);
+        VMInstanceVO vm = _vmDao.findById(vmId);
 
         logger.debug("Cleaning storage for VM [{}].", vm);
         final List<VolumeVO> volumesForVm = _volsDao.findByInstance(vmId);

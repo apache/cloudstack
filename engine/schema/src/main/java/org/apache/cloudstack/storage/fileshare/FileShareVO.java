@@ -69,9 +69,6 @@ public class FileShareVO implements FileShare {
     @Column(name = "endpoint_ip")
     private String endpointIp;
 
-    @Column(name = "endpoint_path")
-    private String endpointPath;
-
     @Column(name = "fs_provider_name")
     private String fsProviderName;
 
@@ -111,7 +108,8 @@ public class FileShareVO implements FileShare {
     }
 
     public FileShareVO(String name, String description, long domainId, long accountId, long projectId, long dataCenterId,
-                       String fsProviderName, Long size, Protocol protocol, String mountOptions, FileSystemType fsType, Long diskOfferingId) {
+                       String fsProviderName, Long size, Protocol protocol, String mountOptions, FileSystemType fsType, Long diskOfferingId,
+                       Long serviceOfferingId) {
         this.name = name;
         this.description = description;
         this.domainId = domainId;
@@ -125,6 +123,7 @@ public class FileShareVO implements FileShare {
         this.mountOptions = mountOptions;
         this.fsType = fsType;
         this.diskOfferingId = diskOfferingId;
+        this.serviceOfferingId = serviceOfferingId;
         this.uuid = UUID.randomUUID().toString();
     }
 
@@ -191,16 +190,6 @@ public class FileShareVO implements FileShare {
     @Override
     public void setEndpointIp(String endpointIp) {
         this.endpointIp = endpointIp;
-    }
-
-    @Override
-    public String getEndpointPath() {
-        return endpointPath;
-    }
-
-    @Override
-    public void setEndpointPath(String endpointPath) {
-        this.endpointPath = endpointPath;
     }
 
     @Override

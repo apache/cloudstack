@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.storage.fileshare.dao;
 
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
@@ -34,6 +35,9 @@ public class FileShareDaoImpl extends GenericDaoBase<FileShareVO, Long> implemen
 
     @Inject
     VMNetworkMapDao vmNetworkMapDao;
+
+    @Inject
+    NetworkDao networkDao;
 
     public FileShareDaoImpl() {
     }

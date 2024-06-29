@@ -25,6 +25,9 @@ import org.apache.cloudstack.storage.fileshare.FileShare;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 @EntityReference(value = FileShare.class)
 public class FileShareResponse extends BaseResponseWithTagInformation implements ControlledViewEntityResponse {
@@ -36,6 +39,10 @@ public class FileShareResponse extends BaseResponseWithTagInformation implements
     @SerializedName(ApiConstants.NAME)
     @Param(description = "name of the file share")
     private String name;
+
+    @SerializedName(ApiConstants.DESCRIPTION)
+    @Param(description = "description of the file share")
+    private String description;
 
     @SerializedName(ApiConstants.ZONE_ID)
     @Param(description = "ID of the availability zone")
@@ -49,13 +56,57 @@ public class FileShareResponse extends BaseResponseWithTagInformation implements
     @Param(description = "id of the storage fs vm")
     private String virtualMachineId;
 
+    @SerializedName(ApiConstants.VOLUME_NAME)
+    @Param(description = "name of the storage fs data volume")
+    private String volumeName;
+
     @SerializedName(ApiConstants.VOLUME_ID)
     @Param(description = "id of the storage fs data volume")
     private String volumeId;
 
+    @SerializedName(ApiConstants.STORAGE)
+    @Param(description = "name of the storage pool hosting the data volume")
+    private String storagePoolName;
+
+    @SerializedName(ApiConstants.STORAGE_ID)
+    @Param(description = "id of the storage pool hosting the data volume")
+    private String storagePoolId;
+
+    @SerializedName(ApiConstants.SIZE)
+    @Param(description = "size of the file share")
+    private Long size;
+
+    @SerializedName(ApiConstants.SIZEGB)
+    @Param(description = "size of the file share in GiB")
+    private String sizeGB;
+
+    @SerializedName(ApiConstants.NETWORK_ID)
+    @Param(description = "Network ID of the fileshare")
+    private String networkId;
+
+    @SerializedName(ApiConstants.NETWORK_NAME)
+    @Param(description = "Network name of the fileshare")
+    private String networkName;
+
+    @SerializedName(ApiConstants.NIC)
+    @Param(description = "the list of nics associated with vm", responseObject = NicResponse.class)
+    private List<NicResponse> nics;
+
+    @SerializedName(ApiConstants.IP_ADDRESS)
+    @Param(description = "ip address of the fileshare")
+    private String ipAddress;
+
+    @SerializedName(ApiConstants.PATH)
+    @Param(description = "path to mount the fileshare")
+    private String path;
+
     @SerializedName(ApiConstants.STATE)
     @Param(description = "the state of the file share")
     private String state;
+
+    @SerializedName(ApiConstants.PROVIDER)
+    @Param(description = "the file share provider")
+    private String provider;
 
     @SerializedName(ApiConstants.ACCOUNT)
     @Param(description = "the account associated with the file share")
@@ -128,5 +179,62 @@ public class FileShareResponse extends BaseResponseWithTagInformation implements
 
     public void setVolumeId(String volumeId) {
         this.volumeId = volumeId;
+    }
+
+    public void setNetworkId(String networkId) {
+        this.networkId = networkId;
+    }
+
+    public void setNetworkName(String networkName) {
+        this.networkName = networkName;
+    }
+
+    public List<NicResponse> getNics() {
+        return nics;
+    }
+
+    public void addNic(NicResponse nic) {
+        if (this.nics == null) {
+            this.nics = new ArrayList<>();
+        }
+        this.nics.add(nic);
+    }
+
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
+    }
+
+    public void setSize(Long size) {
+        this.size = size;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    public void setVolumeName(String volumeName) {
+        this.volumeName = volumeName;
+    }
+
+    public void setStoragePoolName(String storagePoolName) {
+        this.storagePoolName = storagePoolName;
+    }
+
+    public void setStoragePoolId(String storagePoolId) {
+        this.storagePoolId = storagePoolId;
+    }
+
+    public void setProvider(String provider) {
+        this.provider = provider;
+    }
+
+    public void setSizeGB(Long sizeGB) {
+        if (size != null) {
+            this.sizeGB = String.format("%.2f GiB", size / (1024.0 * 1024.0 * 1024.0));
+        }
     }
 }

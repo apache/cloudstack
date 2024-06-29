@@ -523,6 +523,64 @@ export default {
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         }
       ]
+    },
+    {
+      name: 'fileshare',
+      title: 'label.fileshare',
+      icon: 'file-text-outlined',
+      permission: ['listFileShares'],
+      columns: ['name', 'state', 'sizegb', 'storage', 'provider', 'networkname', 'account'],
+      details: ['id', 'name', 'description', 'state', 'sizegb', 'networkname', 'ipaddress', 'provider', 'protocol', 'account', 'domain', 'created'],
+      tabs: [
+        {
+          name: 'details',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'access',
+          resourceType: 'FileShare',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/FileShareAccessTab.vue')))
+
+        },
+        {
+          name: 'events',
+          resourceType: 'Bucket',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+          show: () => { return 'listEvents' in store.getters.apis }
+        }
+      ],
+      actions: [
+        {
+          api: 'createFileShare',
+          icon: 'plus-outlined',
+          docHelp: 'installguide/configuration.html#create-bucket',
+          label: 'label.create.fileshare',
+          listView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/CreateFileShare.vue')))
+        },
+        {
+          api: 'updateFileShare',
+          icon: 'edit-outlined',
+          docHelp: 'adminguide/object_storage.html#update-bucket',
+          label: 'label.update.fileshare',
+          dataView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/UpdateFileShare.vue'))),
+          show: (record) => { return record.state !== 'Destroyed' }
+        },
+        {
+          api: 'removeFileShare',
+          icon: 'delete-outlined',
+          label: 'label.delete.fileshare',
+          message: 'message.fileshare.delete',
+          dataView: true,
+          show: (record) => { return record.state !== 'Destroyed' },
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+        }
+      ]
     }
   ]
 }
