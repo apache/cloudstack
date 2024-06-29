@@ -1965,9 +1965,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             HostVO instanceHost = _hostDao.findById(vmInstance.getHostId());
             _hostDao.loadHostTags(instanceHost);
 
-            if (!instanceHost.checkHostServiceOfferingAndTemplateTags(newServiceOfferingVO, template)) {
-                logger.error(String.format("Cannot upgrade VM [%s] as the new service offering [%s] does not have the required host tags %s.", vmInstance, newServiceOfferingVO,
-                        instanceHost.getHostTags()));
+            Set<String> strictHostTags = UserVmManager.getStrictHostTags();
+            if (!instanceHost.checkHostServiceOfferingAndTemplateTags(newServiceOfferingVO, template, strictHostTags)) {
+                logger.error("Cannot upgrade VM {} as the new service offering {} does not have the required host tags {}.",
+                        vmInstance, newServiceOfferingVO,
+                        instanceHost.getHostServiceOfferingAndTemplateMissingTags(newServiceOfferingVO, template, strictHostTags));
                 return false;
             }
         }
@@ -2076,6 +2078,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             // Check disable threshold for cluster is not crossed
             HostVO host = _hostDao.findById(vmInstance.getHostId());
+            _hostDao.loadDetails(host);
             if (_capacityMgr.checkIfClusterCrossesThreshold(host.getClusterId(), cpuDiff, memoryDiff)) {
                 throw new CloudRuntimeException(String.format("Unable to scale %s due to insufficient resources.", vmInstance.toString()));
             }
@@ -2088,12 +2091,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     _resourceLimitMgr.updateVmResourceCountForServiceOfferingChange(caller.getAccountId(), vmInstance.isDisplay(),
                             (long) currentCpu, (long) newCpu, (long) currentMemory, (long) newMemory,
                             currentServiceOffering, newServiceOffering, template);
-                    // #1 Check existing host has capacity
+
+                    // #1 Check existing host has capacity & and the correct tags
                     if (!excludes.shouldAvoid(ApiDBUtils.findHostById(vmInstance.getHostId()))) {
                         existingHostHasCapacity = _capacityMgr.checkIfHostHasCpuCapability(vmInstance.getHostId(), newCpu, newSpeed)
                                 && _capacityMgr.checkIfHostHasCapacity(vmInstance.getHostId(), cpuDiff, ByteScaleUtils.mebibytesToBytes(memoryDiff), false,
                                         _capacityMgr.getClusterOverProvisioningFactor(host.getClusterId(), Capacity.CAPACITY_TYPE_CPU),
-                                        _capacityMgr.getClusterOverProvisioningFactor(host.getClusterId(), Capacity.CAPACITY_TYPE_MEMORY), false);
+                                        _capacityMgr.getClusterOverProvisioningFactor(host.getClusterId(), Capacity.CAPACITY_TYPE_MEMORY), false)
+                                && checkEnforceStrictHostTagCheck(vmInstance, host);
                         excludes.addHost(vmInstance.getHostId());
                     }
 
@@ -3259,6 +3264,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @ActionEvent(eventType = EventTypes.EVENT_VM_START, eventDescription = "starting Vm", async = true)
     public void startVirtualMachine(UserVm vm) throws OperationTimedoutException, ResourceUnavailableException, InsufficientCapacityException {
         _itMgr.advanceStart(vm.getUuid(), null, null);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VM_START, eventDescription = "restarting VM for HA", async = true)
+    public void startVirtualMachineForHA(VirtualMachine vm, Map<VirtualMachineProfile.Param, Object> params,
+           DeploymentPlanner planner) throws InsufficientCapacityException, ResourceUnavailableException,
+            ConcurrentOperationException, OperationTimedoutException {
+        _itMgr.advanceStart(vm.getUuid(), params, planner);
     }
 
     @Override
@@ -5450,11 +5463,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         boolean isRootAdmin = _accountService.isRootAdmin(callerAccount.getId());
         Pod destinationPod = getDestinationPod(podId, isRootAdmin);
         Cluster destinationCluster = getDestinationCluster(clusterId, isRootAdmin);
-        Host destinationHost = getDestinationHost(hostId, isRootAdmin, isExplicitHost);
+        HostVO destinationHost = getDestinationHost(hostId, isRootAdmin, isExplicitHost);
         DataCenterDeployment plan = null;
         boolean deployOnGivenHost = false;
         if (destinationHost != null) {
             logger.debug("Destination Host to deploy the VM is specified, specifying a deployment plan to deploy the VM");
+            _hostDao.loadHostTags(destinationHost);
+            validateStrictHostTagCheck(vm, destinationHost);
+
             final ServiceOfferingVO offering = serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
             Pair<Boolean, Boolean> cpuCapabilityAndCapacity = _capacityMgr.checkIfHostHasCpuCapabilityAndCapacity(destinationHost, offering, false);
             if (!cpuCapabilityAndCapacity.first() || !cpuCapabilityAndCapacity.second()) {
@@ -5630,8 +5646,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return destinationCluster;
     }
 
-    private Host getDestinationHost(Long hostId, boolean isRootAdmin, boolean isExplicitHost) {
-        Host destinationHost = null;
+    private HostVO getDestinationHost(Long hostId, boolean isRootAdmin, boolean isExplicitHost) {
+        HostVO destinationHost = null;
         if (hostId != null) {
             if (isExplicitHost && !isRootAdmin) {
                 throw new PermissionDeniedException(
@@ -6502,6 +6518,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     + " hypervisors: [%s].", hypervisorType, HYPERVISORS_THAT_CAN_DO_STORAGE_MIGRATION_ON_NON_USER_VMS));
         }
 
+        List<VolumeVO> vols = _volsDao.findByInstance(vm.getId());
+        if (vols.size() > 1 &&
+            !(HypervisorType.VMware.equals(hypervisorType) || HypervisorType.KVM.equals(hypervisorType))) {
+               throw new InvalidParameterValueException("Data disks attached to the vm, can not migrate. Need to detach data disks first");
+        }
+
         // Check that Vm does not have VM Snapshots
         if (_vmSnapshotDao.findByVm(vmId).size() > 0) {
             throw new InvalidParameterValueException("VM's disk cannot be migrated, please remove all the VM Snapshots for this VM");
@@ -6673,6 +6695,31 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
     }
 
+    protected boolean checkEnforceStrictHostTagCheck(VMInstanceVO vm, HostVO host) {
+        ServiceOffering serviceOffering = serviceOfferingDao.findByIdIncludingRemoved(vm.getServiceOfferingId());
+        VirtualMachineTemplate template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
+        return checkEnforceStrictHostTagCheck(host, serviceOffering, template);
+    }
+
+    private boolean checkEnforceStrictHostTagCheck(HostVO host, ServiceOffering serviceOffering, VirtualMachineTemplate template) {
+        Set<String> strictHostTags = UserVmManager.getStrictHostTags();
+        return host.checkHostServiceOfferingAndTemplateTags(serviceOffering, template, strictHostTags);
+    }
+
+    protected void validateStrictHostTagCheck(VMInstanceVO vm, HostVO host) {
+        ServiceOffering serviceOffering = serviceOfferingDao.findByIdIncludingRemoved(vm.getServiceOfferingId());
+        VirtualMachineTemplate template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
+
+        if (!checkEnforceStrictHostTagCheck(host, serviceOffering, template)) {
+            Set<String> missingTags = host.getHostServiceOfferingAndTemplateMissingTags(serviceOffering, template, UserVmManager.getStrictHostTags());
+            logger.error("Cannot deploy VM: {} to host : {} due to tag mismatch. host tags: {}, " +
+                            "strict host tags: {} serviceOffering tags: {}, template tags: {}, missing tags: {}",
+                    vm, host, host.getHostTags(), UserVmManager.getStrictHostTags(), serviceOffering.getHostTag(), template.getTemplateTag(), missingTags);
+            throw new InvalidParameterValueException(String.format("Cannot deploy VM, destination host: %s " +
+                    "is not compatible for the VM", host.getName()));
+        }
+    }
+
     private DeployDestination checkVmMigrationDestination(VMInstanceVO vm, Host srcHost, Host destinationHost) throws VirtualMachineMigrationException {
         if (destinationHost == null) {
             return null;
@@ -6698,6 +6745,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new CloudRuntimeException("Cannot migrate VM, VM is DPDK enabled VM but destination host is not DPDK enabled");
         }
 
+        HostVO destinationHostVO = _hostDao.findById(destinationHost.getId());
+        _hostDao.loadHostTags(destinationHostVO);
+        validateStrictHostTagCheck(vm, destinationHostVO);
+
         checkHostsDedication(vm, srcHost.getId(), destinationHost.getId());
 
         // call to core process
@@ -6707,7 +6758,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         DeployDestination dest = new DeployDestination(dcVO, pod, cluster, destinationHost);
 
         // check max guest vm limit for the destinationHost
-        HostVO destinationHostVO = _hostDao.findById(destinationHost.getId());
         if (_capacityMgr.checkIfHostReachMaxGuestLimit(destinationHostVO)) {
             if (logger.isDebugEnabled()) {
                 logger.debug("Host name: " + destinationHost.getName() + ", hostId: " + destinationHost.getId()
@@ -7355,10 +7405,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (template == null) {
             throw new InvalidParameterValueException(String.format("Template for VM: %s cannot be found", vm.getUuid()));
         }
-        if (!template.isPublicTemplate()) {
-            Account templateOwner = _accountMgr.getAccount(template.getAccountId());
-            _accountMgr.checkAccess(newAccount, null, true, templateOwner);
-        }
+        _accountMgr.checkAccess(newAccount, AccessType.UseEntry, true, template);
 
         // VV 5: check the new account can create vm in the domain
         DomainVO domain = _domainDao.findById(cmd.getDomainId());
@@ -8389,7 +8436,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {EnableDynamicallyScaleVm, AllowDiskOfferingChangeDuringScaleVm, AllowUserExpungeRecoverVm, VmIpFetchWaitInterval, VmIpFetchTrialMax,
                 VmIpFetchThreadPoolMax, VmIpFetchTaskWorkers, AllowDeployVmIfGivenHostFails, EnableAdditionalVmConfig, DisplayVMOVFProperties,
-                KvmAdditionalConfigAllowList, XenServerAdditionalConfigAllowList, VmwareAdditionalConfigAllowList, DestroyRootVolumeOnVmDestruction};
+                KvmAdditionalConfigAllowList, XenServerAdditionalConfigAllowList, VmwareAdditionalConfigAllowList, DestroyRootVolumeOnVmDestruction,
+                EnforceStrictResourceLimitHostTagCheck, StrictHostTags};
     }
 
     @Override
@@ -8632,10 +8680,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_STOP, vm.getAccountId(), vm.getDataCenterId(),
                     vm.getId(), vm.getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(),
                     vm.getHypervisorType().toString(), VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplayVm());
+
             resourceCountDecrement(vm.getAccountId(), vm.isDisplayVm(), offering, template);
             resourceNotDecremented = false;
         }
-
         // VM destroy usage event
         UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(),
                 vm.getId(), vm.getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(),

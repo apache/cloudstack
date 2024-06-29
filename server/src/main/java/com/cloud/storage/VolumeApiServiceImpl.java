@@ -1055,7 +1055,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             created = false;
             VolumeInfo vol = volFactory.getVolume(cmd.getEntityId());
             vol.stateTransit(Volume.Event.DestroyRequested);
-            throw new CloudRuntimeException("Failed to create volume: " + volume.getId(), e);
+            throw new CloudRuntimeException("Failed to create volume: " + volume.getUuid(), e);
         } finally {
             if (!created) {
                 logger.trace("Decrementing volume resource count for account id=" + volume.getAccountId() + " as volume failed to create on the backend");
@@ -3319,6 +3319,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         DiskOfferingVO newDiskOffering = retrieveAndValidateNewDiskOffering(cmd);
+        // if no new disk offering was provided, and match is required, default to the offering of the
+        // original volume.  otherwise it falls through with no check and the target volume may
+        // not work correctly in some scenarios with the target provider.  Adminstrator
+        // can disable this flag dynamically for certain bulk migration scenarios if required.
+        if (newDiskOffering == null && Boolean.TRUE.equals(MatchStoragePoolTagsWithDiskOffering.value())) {
+            newDiskOffering = diskOffering;
+        }
         validateConditionsToReplaceDiskOfferingOfVolume(vol, newDiskOffering, destPool);
 
         if (vm != null) {
@@ -3404,14 +3411,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         Account caller = CallContext.current().getCallingAccount();
         DataCenter zone = null;
         Volume volume = _volsDao.findById(cmd.getId());
-        if (volume != null) {
-            zone = _dcDao.findById(volume.getDataCenterId());
+        if (volume == null) {
+            throw new InvalidParameterValueException(String.format("Provided volume id is not valid: %s", cmd.getId()));
         }
+        zone = _dcDao.findById(volume.getDataCenterId());
+
         _accountMgr.checkAccess(caller, newDiskOffering, zone);
-        DiskOfferingVO currentDiskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
-        if (VolumeApiServiceImpl.MatchStoragePoolTagsWithDiskOffering.valueIn(zone.getId()) && !doesNewDiskOfferingHasTagsAsOldDiskOffering(currentDiskOffering, newDiskOffering)) {
-            throw new InvalidParameterValueException(String.format("Existing disk offering storage tags of the volume %s does not contain in the new disk offering %s  ", volume.getUuid(), newDiskOffering.getUuid()));
-        }
         return newDiskOffering;
     }
 
@@ -3496,6 +3501,18 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return doesTargetStorageSupportDiskOffering(destPool, targetStoreTags);
     }
 
+    public static boolean doesNewDiskOfferingHasTagsAsOldDiskOffering(DiskOfferingVO oldDO, DiskOfferingVO newDO) {
+        String[] oldDOStorageTags = oldDO.getTagsArray();
+        String[] newDOStorageTags = newDO.getTagsArray();
+        if (oldDOStorageTags.length == 0) {
+            return true;
+        }
+        if (newDOStorageTags.length == 0) {
+            return false;
+        }
+        return CollectionUtils.isSubCollection(Arrays.asList(oldDOStorageTags), Arrays.asList(newDOStorageTags));
+    }
+
     @Override
     public boolean doesTargetStorageSupportDiskOffering(StoragePool destPool, String diskOfferingTags) {
         Pair<List<String>, Boolean> storagePoolTags = getStoragePoolTags(destPool);
@@ -3523,18 +3540,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
         logger.debug(String.format("Destination storage pool [%s] accepts tags [%s]? %s", destPool.getUuid(), diskOfferingTags, result));
         return result;
-    }
-
-    public static boolean doesNewDiskOfferingHasTagsAsOldDiskOffering(DiskOfferingVO oldDO, DiskOfferingVO newDO) {
-        String[] oldDOStorageTags = oldDO.getTagsArray();
-        String[] newDOStorageTags = newDO.getTagsArray();
-        if (oldDOStorageTags.length == 0) {
-            return true;
-        }
-        if (newDOStorageTags.length == 0) {
-            return false;
-        }
-        return CollectionUtils.isSubCollection(Arrays.asList(oldDOStorageTags), Arrays.asList(newDOStorageTags));
     }
 
     /**

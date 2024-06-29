@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.vm.UserVmManager;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -282,7 +283,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         boolean storageMigrationNeededDuringClusterMigration = false;
         for (Volume volume : volumes) {
             StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
-            if (List.of(ScopeType.HOST, ScopeType.CLUSTER).contains(pool.getScope())) {
+            if (pool != null && List.of(ScopeType.HOST, ScopeType.CLUSTER).contains(pool.getScope())) {
                 storageMigrationNeededDuringClusterMigration = true;
                 break;
             }
@@ -777,7 +778,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         VirtualMachineTemplate template = vmProfile.getTemplate();
         if (offering.getHostTag() != null || template.getTemplateTag() != null) {
             _hostDao.loadHostTags(host);
-            if (!host.checkHostServiceOfferingAndTemplateTags(offering, template)) {
+            if (!host.checkHostServiceOfferingAndTemplateTags(offering, template, UserVmManager.getStrictHostTags())) {
                 logger.debug("Service Offering host tag or template tag does not match the last host of this VM");
                 return false;
             }

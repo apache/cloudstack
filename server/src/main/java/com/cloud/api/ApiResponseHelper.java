@@ -5168,7 +5168,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         } else if (instance.getHostName() != null) {
             response.setHostName(instance.getHostName());
         }
-        response.setPowerState(instance.getPowerState().toString());
+        response.setPowerState((instance.getPowerState() != null)? instance.getPowerState().toString() : UnmanagedInstanceTO.PowerState.PowerUnknown.toString());
         response.setCpuCores(instance.getCpuCores());
         response.setCpuSpeed(instance.getCpuSpeed());
         response.setCpuCoresPerSocket(instance.getCpuCoresPerSocket());

@@ -591,6 +591,12 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
     }
 
     @Override
+    public List<HostVO> listAllUpHostsInOneZoneByHypervisor(final HypervisorType type, final long dcId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
     public List<HostVO> listAllUpAndEnabledHostsInOneZone(final long dcId) {
         // TODO Auto-generated method stub
         return null;

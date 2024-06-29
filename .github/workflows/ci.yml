@@ -134,6 +134,7 @@ jobs:
                   smoke/test_usage
                   smoke/test_usage_events
                   smoke/test_vm_deployment_planner
+                  smoke/test_vm_strict_host_tags
                   smoke/test_vm_schedule
                   smoke/test_vm_life_cycle
                   smoke/test_vm_lifecycle_unmanage_import

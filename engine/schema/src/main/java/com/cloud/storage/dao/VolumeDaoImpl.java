@@ -395,6 +395,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         AllFieldsSearch.and("updatedCount", AllFieldsSearch.entity().getUpdatedCount(), Op.EQ);
         AllFieldsSearch.and("name", AllFieldsSearch.entity().getName(), Op.EQ);
         AllFieldsSearch.and("passphraseId", AllFieldsSearch.entity().getPassphraseId(), Op.EQ);
+        AllFieldsSearch.and("iScsiName", AllFieldsSearch.entity().get_iScsiName(), Op.EQ);
         AllFieldsSearch.done();
 
         RootDiskStateSearch = createSearchBuilder();
@@ -909,5 +910,11 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         sc.setParameters("vmIds", vmIds.toArray());
         Filter filter = new Filter(VolumeVO.class, "id", true, 0L, batchSize);
         return searchIncludingRemoved(sc, filter, null, false);
+    }
+
+    public VolumeVO findOneByIScsiName(String iScsiName) {
+        SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
+        sc.setParameters("iScsiName", iScsiName);
+        return findOneIncludingRemovedBy(sc);
     }
 }

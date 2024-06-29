@@ -2989,6 +2989,16 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         return new Pair<>(pools, pools.size());
     }
 
+    private void setPoolResponseNFSMountOptions(StoragePoolResponse poolResponse, Long poolId) {
+        if (Storage.StoragePoolType.NetworkFilesystem.toString().equals(poolResponse.getType()) &&
+                HypervisorType.KVM.toString().equals(poolResponse.getHypervisor())) {
+            StoragePoolDetailVO detail = _storagePoolDetailsDao.findDetail(poolId, ApiConstants.NFS_MOUNT_OPTIONS);
+            if (detail != null) {
+                poolResponse.setNfsMountOpts(detail.getValue());
+            }
+        }
+    }
+
     private ListResponse<StoragePoolResponse> createStoragesPoolResponse(Pair<List<StoragePoolJoinVO>, Integer> storagePools) {
         ListResponse<StoragePoolResponse> response = new ListResponse<>();
 
@@ -3010,6 +3020,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                     poolResponse.setCaps(caps);
                 }
             }
+            setPoolResponseNFSMountOptions(poolResponse, poolUuidToIdMap.get(poolResponse.getId()));
         }
 
         response.setResponses(poolResponses, storagePools.second());
@@ -4818,7 +4829,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         boolean showRemovedISO = cmd.getShowRemoved();
         Account caller = CallContext.current().getCallingAccount();
 
-        boolean listAll = cmd.listAll();
+        boolean listAll = false;
         if (isoFilter != null && isoFilter == TemplateFilter.all) {
             if (caller.getType() == Account.Type.NORMAL) {
                 throw new InvalidParameterValueException("Filter " + TemplateFilter.all + " can be specified by admin only");

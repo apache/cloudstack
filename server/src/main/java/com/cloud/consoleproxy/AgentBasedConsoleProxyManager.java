@@ -22,7 +22,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.consoleproxy.ConsoleAccessManager;
-
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.security.keys.KeysManager;
 import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
@@ -31,6 +30,7 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.StartupProxyCommand;
+import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.info.ConsoleProxyInfo;
@@ -40,7 +40,9 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -116,7 +118,7 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
             _consoleProxyPort = NumbersUtil.parseInt(value, ConsoleProxyManager.DEFAULT_PROXY_VNC_PORT);
         }
 
-        value = configs.get("consoleproxy.sslEnabled");
+        value = configs.get(ConsoleProxySslEnabled.key());
         if (value != null && value.equalsIgnoreCase("true")) {
             _sslEnabled = true;
         }
@@ -178,6 +180,11 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
     @Override
     public ConsoleProxyVO startProxy(long proxyVmId, boolean ignoreRestartSetting) {
         return null;
+    }
+
+    @Override
+    public void startProxyForHA(VirtualMachine vm, Map<VirtualMachineProfile.Param, Object> params,
+            DeploymentPlanner planner) {
     }
 
     @Override

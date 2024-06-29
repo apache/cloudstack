@@ -1524,6 +1524,46 @@ public class UserVmManagerImplTest {
     }
 
     @Test
+    public void testValidateStrictHostTagCheckPass() {
+        ServiceOfferingVO serviceOffering = Mockito.mock(ServiceOfferingVO.class);
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        HostVO destinationHostVO = Mockito.mock(HostVO.class);
+
+        Mockito.when(_serviceOfferingDao.findByIdIncludingRemoved(1L)).thenReturn(serviceOffering);
+        Mockito.when(templateDao.findByIdIncludingRemoved(2L)).thenReturn(template);
+
+        Mockito.when(vm.getServiceOfferingId()).thenReturn(1L);
+        Mockito.when(vm.getTemplateId()).thenReturn(2L);
+
+        Mockito.when(destinationHostVO.checkHostServiceOfferingAndTemplateTags(Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class), Mockito.anySet())).thenReturn(true);
+
+        userVmManagerImpl.validateStrictHostTagCheck(vm, destinationHostVO);
+
+        Mockito.verify(
+                destinationHostVO, Mockito.times(1)
+        ).checkHostServiceOfferingAndTemplateTags(Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class), Mockito.anySet());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateStrictHostTagCheckFail() {
+        ServiceOfferingVO serviceOffering = Mockito.mock(ServiceOfferingVO.class);
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        HostVO destinationHostVO = Mockito.mock(HostVO.class);
+
+        Mockito.when(_serviceOfferingDao.findByIdIncludingRemoved(1L)).thenReturn(serviceOffering);
+        Mockito.when(templateDao.findByIdIncludingRemoved(2L)).thenReturn(template);
+
+        Mockito.when(vm.getServiceOfferingId()).thenReturn(1L);
+        Mockito.when(vm.getTemplateId()).thenReturn(2L);
+
+        Mockito.when(destinationHostVO.checkHostServiceOfferingAndTemplateTags(Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class), Mockito.anySet())).thenReturn(false);
+        userVmManagerImpl.validateStrictHostTagCheck(vm, destinationHostVO);
+    }
+
     public void testGetRootVolumeSizeForVmRestore() {
         VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
         Mockito.when(template.getSize()).thenReturn(10L * GiB_TO_BYTES);

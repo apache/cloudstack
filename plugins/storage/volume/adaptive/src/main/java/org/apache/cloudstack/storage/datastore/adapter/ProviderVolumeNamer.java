@@ -21,7 +21,6 @@ public class ProviderVolumeNamer {
     private static final String SNAPSHOT_PREFIX = "snap";
     private static final String VOLUME_PREFIX = "vol";
     private static final String TEMPLATE_PREFIX = "tpl";
-    /** Simple method to allow sharing storage setup, primarily in lab/testing environment */
     private static final String ENV_PREFIX = System.getProperty("adaptive.storage.provider.envIdentifier");
 
     public static String generateObjectName(ProviderAdapterContext context, ProviderAdapterDataObject obj) {
