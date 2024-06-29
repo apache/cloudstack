@@ -1245,8 +1245,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                 validateIops(newMinIops, newMaxIops, volume.getPoolType());
             } else {
-                newMinIops = newDiskOffering.getMinIops();
-                newMaxIops = newDiskOffering.getMaxIops();
+                newMinIops = newDiskOffering.getMinIops() != null ? newDiskOffering.getMinIops() : newDiskOffering.getIopsReadRate();
+                newMaxIops = newDiskOffering.getMaxIops() != null ? newDiskOffering.getMaxIops() : newDiskOffering.getIopsWriteRate();
             }
 
             // if the hypervisor snapshot reserve value is null, it must remain null (currently only KVM uses null and null is all KVM uses for a value here)
@@ -3588,9 +3588,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         Volume newVol = null;
         try {
             if (liveMigrateVolume) {
-                newVol = liveMigrateVolume(volume, destPool);
+                newVol = liveMigrateVolume(volume, destPool, newDiskOffering);
             } else {
-                newVol = _volumeMgr.migrateVolume(volume, destPool);
+                newVol = _volumeMgr.migrateVolume(volume, destPool, newDiskOffering);
             }
             if (newDiskOffering != null) {
                 _volsDao.updateDiskOffering(newVol.getId(), newDiskOffering.getId());
@@ -3606,9 +3606,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     @DB
-    protected Volume liveMigrateVolume(Volume volume, StoragePool destPool) throws StorageUnavailableException {
+    protected Volume liveMigrateVolume(Volume volume, StoragePool destPool, DiskOfferingVO newDiskOffering) throws StorageUnavailableException {
         VolumeInfo vol = volFactory.getVolume(volume.getId());
-
+        vol.addPayload(newDiskOffering);
         DataStore dataStoreTarget = dataStoreMgr.getDataStore(destPool.getId(), DataStoreRole.Primary);
         AsyncCallFuture<VolumeApiResult> future = volService.migrateVolume(vol, dataStoreTarget);
         try {
