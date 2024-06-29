@@ -27,7 +27,6 @@ import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.offering.DiskOffering.DiskCacheMode;
-import com.cloud.storage.MigrationOptions;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Volume;
 
@@ -65,7 +64,6 @@ public class VolumeObjectTO extends DownloadableObjectTO implements DataTO {
     private Long iopsWriteRateMaxLength;
     private DiskCacheMode cacheMode;
     private Hypervisor.HypervisorType hypervisorType;
-    private MigrationOptions migrationOptions;
     private boolean directDownload;
     private String dataStoreUuid;
     private boolean deployAsIs;
@@ -114,7 +112,6 @@ public class VolumeObjectTO extends DownloadableObjectTO implements DataTO {
         cacheMode = volume.getCacheMode();
         hypervisorType = volume.getHypervisorType();
         setDeviceId(volume.getDeviceId());
-        this.migrationOptions = volume.getMigrationOptions();
         this.directDownload = volume.isDirectDownload();
         this.deployAsIs = volume.isDeployAsIs();
         this.vSphereStoragePolicyId = volume.getvSphereStoragePolicyId();
@@ -339,10 +336,6 @@ public class VolumeObjectTO extends DownloadableObjectTO implements DataTO {
 
     public DiskCacheMode getCacheMode() {
         return cacheMode;
-    }
-
-    public MigrationOptions getMigrationOptions() {
-        return migrationOptions;
     }
 
     public boolean isDirectDownload() {

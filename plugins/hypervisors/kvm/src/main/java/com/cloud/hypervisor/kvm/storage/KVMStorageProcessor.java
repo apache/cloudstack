@@ -48,8 +48,6 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DiscardType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DiskProtocol;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtUtilitiesHelper;
 import com.cloud.storage.JavaStorageLayer;
-import com.cloud.storage.MigrationOptions;
-import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
@@ -1585,32 +1583,6 @@ public class KVMStorageProcessor implements StorageProcessor {
         }
     }
 
-    /**
-     * Create volume with backing file (linked clone)
-     */
-    protected KVMPhysicalDisk createLinkedCloneVolume(MigrationOptions migrationOptions, KVMStoragePool srcPool, KVMStoragePool primaryPool, VolumeObjectTO volume, PhysicalDiskFormat format, int timeout) {
-        String srcBackingFilePath = migrationOptions.getSrcBackingFilePath();
-        boolean copySrcTemplate = migrationOptions.isCopySrcTemplate();
-        KVMPhysicalDisk srcTemplate = srcPool.getPhysicalDisk(srcBackingFilePath);
-        KVMPhysicalDisk destTemplate;
-        if (copySrcTemplate) {
-            KVMPhysicalDisk copiedTemplate = storagePoolMgr.copyPhysicalDisk(srcTemplate, srcTemplate.getName(), primaryPool, 10000 * 1000);
-            destTemplate = primaryPool.getPhysicalDisk(copiedTemplate.getPath());
-        } else {
-            destTemplate = primaryPool.getPhysicalDisk(srcBackingFilePath);
-        }
-        return storagePoolMgr.createDiskWithTemplateBacking(destTemplate, volume.getUuid(), format, volume.getSize(),
-                primaryPool, timeout, volume.getPassphrase());
-    }
-
-    /**
-     * Create full clone volume from VM snapshot
-     */
-    protected KVMPhysicalDisk createFullCloneVolume(MigrationOptions migrationOptions, VolumeObjectTO volume, KVMStoragePool primaryPool, PhysicalDiskFormat format) {
-            s_logger.debug("For VM migration with full-clone volume: Creating empty stub disk for source disk " + migrationOptions.getSrcVolumeUuid() + " and size: " + toHumanReadableSize(volume.getSize()) + " and format: " + format);
-        return primaryPool.createPhysicalDisk(volume.getUuid(), format, volume.getProvisioningType(), volume.getSize(), volume.getPassphrase());
-    }
-
     @Override
     public Answer createVolume(final CreateObjectCommand cmd) {
         final VolumeObjectTO volume = (VolumeObjectTO)cmd.getData();
@@ -1629,20 +1601,8 @@ public class KVMStorageProcessor implements StorageProcessor {
                 format = PhysicalDiskFormat.valueOf(volume.getFormat().toString().toUpperCase());
             }
 
-            MigrationOptions migrationOptions = volume.getMigrationOptions();
-            if (migrationOptions != null) {
-                int timeout = migrationOptions.getTimeout();
-
-                if (migrationOptions.getType() == MigrationOptions.Type.LinkedClone) {
-                    KVMStoragePool srcPool = getTemplateSourcePoolUsingMigrationOptions(primaryPool, migrationOptions);
-                    vol = createLinkedCloneVolume(migrationOptions, srcPool, primaryPool, volume, format, timeout);
-                } else if (migrationOptions.getType() == MigrationOptions.Type.FullClone) {
-                    vol = createFullCloneVolume(migrationOptions, volume, primaryPool, format);
-                }
-            } else {
-                vol = primaryPool.createPhysicalDisk(volume.getUuid(), format,
-                        volume.getProvisioningType(), disksize, volume.getUsableSize(), volume.getPassphrase());
-            }
+            s_logger.debug(String.format("Creating empty stub disk for full clone migration of disk [%s] with size [%s] and format [%s].", volume.getUuid(), toHumanReadableSize(volume.getSize()), toHumanReadableSize(volume.getSize())));
+            vol = primaryPool.createPhysicalDisk(volume.getUuid(), format, volume.getProvisioningType(), disksize, volume.getUsableSize(), volume.getPassphrase());
 
             final VolumeObjectTO newVol = new VolumeObjectTO();
             if(vol != null) {
@@ -2575,24 +2535,5 @@ public class KVMStorageProcessor implements StorageProcessor {
     public Answer syncVolumePath(SyncVolumePathCommand cmd) {
         s_logger.info("SyncVolumePathCommand not currently applicable for KVMStorageProcessor");
         return new Answer(cmd, false, "Not currently applicable for KVMStorageProcessor");
-    }
-
-    /**
-     * Determine if migration is using host-local source pool. If so, return this host's storage as the template source,
-     * rather than remote host's
-     * @param localPool The host-local storage pool being migrated to
-     * @param migrationOptions The migration options provided with a migrating volume
-     * @return
-     */
-    public KVMStoragePool getTemplateSourcePoolUsingMigrationOptions(KVMStoragePool localPool, MigrationOptions migrationOptions) {
-        if (migrationOptions == null) {
-            throw new CloudRuntimeException("Migration options cannot be null when choosing a storage pool for migration");
-        }
-
-        if (migrationOptions.getScopeType().equals(ScopeType.HOST)) {
-            return localPool;
-        }
-
-        return storagePoolMgr.getStoragePool(migrationOptions.getSrcPoolType(), migrationOptions.getSrcPoolUuid());
     }
 }

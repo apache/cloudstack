@@ -25,7 +25,6 @@ import java.util.Set;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
@@ -50,10 +49,6 @@ import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.VMTemplateStoragePoolVO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc;
-import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -198,59 +193,6 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
     @Override
     protected boolean shouldMigrateVolume(StoragePoolVO sourceStoragePool, Host destHost, StoragePoolVO destStoragePool) {
         return supportStoragePoolType(sourceStoragePool.getPoolType());
-    }
-
-    /**
-     * If the template is not on the target primary storage then it copies the template.
-     */
-    @Override
-    protected void copyTemplateToTargetFilesystemStorageIfNeeded(VolumeInfo srcVolumeInfo, StoragePool srcStoragePool, DataStore destDataStore, StoragePool destStoragePool,
-            Host destHost) {
-        if (srcVolumeInfo.getVolumeType() != Volume.Type.ROOT || srcVolumeInfo.getTemplateId() == null) {
-            return;
-        }
-
-        TemplateInfo directDownloadTemplateInfo = templateDataFactory.getReadyBypassedTemplateOnPrimaryStore(srcVolumeInfo.getTemplateId(), destDataStore.getId(), destHost.getId());
-        if (directDownloadTemplateInfo != null) {
-            LOGGER.debug(String.format("Template %s was of direct download type and successfully staged to primary store %s", directDownloadTemplateInfo.getId(), directDownloadTemplateInfo.getDataStore().getId()));
-            return;
-        }
-
-        VMTemplateStoragePoolVO sourceVolumeTemplateStoragePoolVO = vmTemplatePoolDao.findByPoolTemplate(destStoragePool.getId(), srcVolumeInfo.getTemplateId(), null);
-        if (sourceVolumeTemplateStoragePoolVO == null && (isStoragePoolTypeInList(destStoragePool.getPoolType(), StoragePoolType.Filesystem, StoragePoolType.SharedMountPoint))) {
-            DataStore sourceTemplateDataStore = dataStoreManagerImpl.getRandomImageStore(srcVolumeInfo.getDataCenterId());
-            if (sourceTemplateDataStore != null) {
-                TemplateInfo sourceTemplateInfo = templateDataFactory.getTemplate(srcVolumeInfo.getTemplateId(), sourceTemplateDataStore);
-                TemplateObjectTO sourceTemplate = new TemplateObjectTO(sourceTemplateInfo);
-
-                LOGGER.debug(String.format("Could not find template [id=%s, name=%s] on the storage pool [id=%s]; copying the template to the target storage pool.",
-                        srcVolumeInfo.getTemplateId(), sourceTemplateInfo.getName(), destDataStore.getId()));
-
-                TemplateInfo destTemplateInfo = templateDataFactory.getTemplate(srcVolumeInfo.getTemplateId(), destDataStore);
-                final TemplateObjectTO destTemplate = new TemplateObjectTO(destTemplateInfo);
-                Answer copyCommandAnswer = sendCopyCommand(destHost, sourceTemplate, destTemplate, destDataStore);
-
-                if (copyCommandAnswer != null && copyCommandAnswer.getResult()) {
-                    updateTemplateReferenceIfSuccessfulCopy(srcVolumeInfo.getTemplateId(), destTemplateInfo.getUuid(), destDataStore.getId(), destTemplate.getSize());
-                }
-                return;
-            }
-        }
-        LOGGER.debug(String.format("Skipping 'copy template to target filesystem storage before migration' due to the template [%s] already exist on the storage pool [%s].", srcVolumeInfo.getTemplateId(), destStoragePool.getId()));
-    }
-
-    /**
-     *  Update the template reference on table "template_spool_ref" (VMTemplateStoragePoolVO).
-     */
-    protected void updateTemplateReferenceIfSuccessfulCopy(long templateId, String destTemplateInfoUuid, long destDataStoreId, long templateSize) {
-        VMTemplateStoragePoolVO destVolumeTemplateStoragePoolVO = new VMTemplateStoragePoolVO(destDataStoreId, templateId, null);
-        destVolumeTemplateStoragePoolVO.setDownloadPercent(100);
-        destVolumeTemplateStoragePoolVO.setDownloadState(VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
-        destVolumeTemplateStoragePoolVO.setState(ObjectInDataStoreStateMachine.State.Ready);
-        destVolumeTemplateStoragePoolVO.setTemplateSize(templateSize);
-        destVolumeTemplateStoragePoolVO.setLocalDownloadPath(destTemplateInfoUuid);
-        destVolumeTemplateStoragePoolVO.setInstallPath(destTemplateInfoUuid);
-        vmTemplatePoolDao.persist(destVolumeTemplateStoragePoolVO);
     }
 
     /**

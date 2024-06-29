@@ -19,7 +19,6 @@
 package org.apache.cloudstack.storage.motion;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
@@ -66,11 +65,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
-import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.VMTemplateStoragePoolVO;
-import com.cloud.storage.Volume;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -324,80 +319,6 @@ public class KvmNonManagedStorageSystemDataMotionTest {
         verifyInOrder.verify(agentManager).send(Mockito.anyLong(), Mockito.any(CopyCommand.class));
         verifyInOrder.verify(kvmNonManagedStorageDataMotionStrategy).logInCaseOfTemplateCopyFailure(Mockito.any(Answer.class), Mockito.any(TemplateObjectTO.class),
                 Mockito.any(DataStore.class));
-    }
-
-    @Test
-    public void copyTemplateToTargetStorageIfNeededTestTemplateAlreadyOnTargetHost() throws AgentUnavailableException, OperationTimedoutException {
-        Answer copyCommandAnswer = Mockito.mock(Answer.class);
-        Mockito.lenient().when(copyCommandAnswer.getResult()).thenReturn(true);
-        configureAndTestcopyTemplateToTargetStorageIfNeeded(new VMTemplateStoragePoolVO(0l, 0l, null), StoragePoolType.Filesystem, 0);
-    }
-
-    @Test
-    public void migrateTemplateToTargetStorageIfNeededTestTemplateNotOnTargetHost() throws AgentUnavailableException, OperationTimedoutException {
-        configureAndTestcopyTemplateToTargetStorageIfNeeded(null, StoragePoolType.Filesystem, 1);
-    }
-
-    @Test
-    public void migrateTemplateToTargetStorageIfNeededTestNonDesiredStoragePoolType() throws AgentUnavailableException, OperationTimedoutException {
-        StoragePoolType[] storagePoolTypeArray = StoragePoolType.values();
-        for (int i = 0; i < storagePoolTypeArray.length; i++) {
-            if (storagePoolTypeArray[i] == StoragePoolType.Filesystem) {
-                continue;
-            }
-            configureAndTestcopyTemplateToTargetStorageIfNeeded(new VMTemplateStoragePoolVO(0l, 0l, null), storagePoolTypeArray[i], 0);
-        }
-    }
-
-    private void configureAndTestcopyTemplateToTargetStorageIfNeeded(VMTemplateStoragePoolVO vmTemplateStoragePoolVO, StoragePoolType storagePoolType, int times) {
-        DataStore destDataStore = Mockito.mock(DataStore.class);
-        Host destHost = Mockito.mock(Host.class);
-
-        VolumeInfo srcVolumeInfo = Mockito.mock(VolumeInfo.class);
-        Mockito.when(srcVolumeInfo.getTemplateId()).thenReturn(0l);
-        Mockito.when(srcVolumeInfo.getVolumeType()).thenReturn(Volume.Type.ROOT);
-
-        StoragePool srcStoragePool = Mockito.mock(StoragePool.class);
-
-        VolumeInfo destVolumeInfo = Mockito.mock(VolumeInfo.class);
-        Mockito.lenient().when(volumeDataFactory.getVolume(Mockito.anyLong(), Mockito.any(DataStore.class))).thenReturn(destVolumeInfo);
-
-        StoragePool destStoragePool = Mockito.mock(StoragePool.class);
-        Mockito.when(destStoragePool.getId()).thenReturn(0l);
-        Mockito.when(destStoragePool.getPoolType()).thenReturn(storagePoolType);
-
-        DataStore sourceTemplateDataStore = Mockito.mock(DataStore.class);
-        Mockito.lenient().when(sourceTemplateDataStore.getName()).thenReturn("sourceTemplateName");
-
-        TemplateInfo sourceTemplateInfo = Mockito.mock(TemplateInfo.class);
-        Mockito.when(sourceTemplateInfo.getInstallPath()).thenReturn("installPath");
-        Mockito.when(sourceTemplateInfo.getUuid()).thenReturn("uuid");
-        Mockito.when(sourceTemplateInfo.getId()).thenReturn(0l);
-        Mockito.when(sourceTemplateInfo.getUrl()).thenReturn("url");
-        Mockito.when(sourceTemplateInfo.getDisplayText()).thenReturn("display text");
-        Mockito.when(sourceTemplateInfo.getChecksum()).thenReturn("checksum");
-        Mockito.when(sourceTemplateInfo.isRequiresHvm()).thenReturn(true);
-        Mockito.when(sourceTemplateInfo.getAccountId()).thenReturn(0l);
-        Mockito.when(sourceTemplateInfo.getUniqueName()).thenReturn("unique name");
-        Mockito.when(sourceTemplateInfo.getFormat()).thenReturn(ImageFormat.QCOW2);
-        Mockito.when(sourceTemplateInfo.getSize()).thenReturn(0l);
-        Mockito.when(sourceTemplateInfo.getHypervisorType()).thenReturn(HypervisorType.KVM);
-
-        Mockito.when(vmTemplatePoolDao.findByPoolTemplate(Mockito.anyLong(), Mockito.anyLong(), nullable(String.class))).thenReturn(vmTemplateStoragePoolVO);
-        Mockito.when(dataStoreManagerImpl.getRandomImageStore(Mockito.anyLong())).thenReturn(sourceTemplateDataStore);
-        Mockito.when(templateDataFactory.getTemplate(Mockito.anyLong(), Mockito.eq(sourceTemplateDataStore))).thenReturn(sourceTemplateInfo);
-        Mockito.when(templateDataFactory.getTemplate(Mockito.anyLong(), Mockito.eq(destDataStore))).thenReturn(sourceTemplateInfo);
-        kvmNonManagedStorageDataMotionStrategy.copyTemplateToTargetFilesystemStorageIfNeeded(srcVolumeInfo, srcStoragePool, destDataStore, destStoragePool, destHost);
-        Mockito.lenient().doNothing().when(kvmNonManagedStorageDataMotionStrategy).updateTemplateReferenceIfSuccessfulCopy(Mockito.anyLong(), Mockito.anyString(),
-                Mockito.anyLong(), Mockito.anyLong());
-
-        InOrder verifyInOrder = Mockito.inOrder(vmTemplatePoolDao, dataStoreManagerImpl, templateDataFactory, kvmNonManagedStorageDataMotionStrategy);
-        verifyInOrder.verify(vmTemplatePoolDao, Mockito.times(1)).findByPoolTemplate(Mockito.anyLong(), Mockito.anyLong(), nullable(String.class));
-        verifyInOrder.verify(dataStoreManagerImpl, Mockito.times(times)).getRandomImageStore(Mockito.anyLong());
-        verifyInOrder.verify(templateDataFactory, Mockito.times(times)).getTemplate(Mockito.anyLong(), Mockito.eq(sourceTemplateDataStore));
-        verifyInOrder.verify(templateDataFactory, Mockito.times(times)).getTemplate(Mockito.anyLong(), Mockito.eq(destDataStore));
-        verifyInOrder.verify(kvmNonManagedStorageDataMotionStrategy, Mockito.times(times)).sendCopyCommand(Mockito.eq(destHost), Mockito.any(TemplateObjectTO.class),
-                Mockito.any(TemplateObjectTO.class), Mockito.eq(destDataStore));
     }
 
     @Before
