@@ -812,7 +812,7 @@ public class VmwareHelper {
                 ClusterMO clusterMo = new ClusterMO(hyperHost.getContext(), hyperHost.getHyperHostCluster());
                 instance.setClusterName(clusterMo.getName());
             } catch (Exception e) {
-                s_logger.warn("Unable to get unmanaged instance cluster info, due to: " + e.getMessage());
+                LOGGER.warn("Unable to get unmanaged instance cluster info, due to: " + e.getMessage());
             }
 
             instance.setHostName(hyperHost.getHyperHostName());

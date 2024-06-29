@@ -548,18 +548,18 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         StoragePoolVO pool = null;
         try {
             String poolUuid = UuidUtils.normalize(datastoreUuid);
-            s_logger.info("Trying to find pool by UUID: " + poolUuid);
+            logger.info("Trying to find pool by UUID: " + poolUuid);
             pool = _storagePoolDao.findByUuid(poolUuid);
         } catch (CloudRuntimeException ex) {
-            s_logger.warn("Unable to get pool by datastore UUID: " + ex.getMessage());
+            logger.warn("Unable to get pool by datastore UUID: " + ex.getMessage());
         }
         if (pool == null) {
-            s_logger.info("Trying to find pool by path: " + datastoreUuid);
+            logger.info("Trying to find pool by path: " + datastoreUuid);
             pool = _storagePoolDao.findPoolByZoneAndPath(zoneId, datastoreUuid);
         }
         if (pool == null && datastoreUuid.startsWith("-iqn") && datastoreUuid.endsWith("-0")) {
             String iScsiName = "/iqn" + datastoreUuid.substring(4, datastoreUuid.length() - 2) + "/0";
-            s_logger.info("Trying to find volume by iScsi name: " + iScsiName);
+            logger.info("Trying to find volume by iScsi name: " + iScsiName);
             VolumeVO volumeVO = _volumeDao.findOneByIScsiName(iScsiName);
             if (volumeVO != null) {
                 pool = _storagePoolDao.findById(volumeVO.getPoolId());
@@ -1009,11 +1009,11 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 }
                 VMwareDVSPortSetting settings = (VMwareDVSPortSetting) dvPort.getConfig().getSetting();
                 VmwareDistributedVirtualSwitchVlanIdSpec vlanId = (VmwareDistributedVirtualSwitchVlanIdSpec) settings.getVlan();
-                s_logger.debug("Found port " + dvPort.getKey() + " with vlan " + vlanId.getVlanId());
+                logger.debug("Found port " + dvPort.getKey() + " with vlan " + vlanId.getVlanId());
                 return String.valueOf(vlanId.getVlanId());
             }
         } catch (Exception ex) {
-            s_logger.error("Got exception while get vlan from DVS port: " + ex.getMessage());
+            logger.error("Got exception while get vlan from DVS port: " + ex.getMessage());
         }
         return null;
     }
@@ -1026,12 +1026,12 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             String macAddress = pair.first();
             String vlanId = pair.second();
             if (vlanId == null) {
-                s_logger.warn(String.format("vlanId for MAC address [%s] is null", macAddress));
+                logger.warn(String.format("vlanId for MAC address [%s] is null", macAddress));
                 continue;
             }
             NetworkVO networkVO = networksMapping.get(vlanId);
             if (networkVO == null) {
-                s_logger.warn(String.format("Cannot find network for MAC address [%s] and vlanId [%s]", macAddress, vlanId));
+                logger.warn(String.format("Cannot find network for MAC address [%s] and vlanId [%s]", macAddress, vlanId));
                 continue;
             }
             NicVO nicVO = nicDao.findByNetworkIdAndMacAddressIncludingRemoved(networkVO.getId(), macAddress);
@@ -1349,7 +1349,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         List<DatastoreMO> vmDatastores = vmMo.getAllDatastores();
         if (CollectionUtils.isEmpty(vmDatastores)) {
             String err = String.format("Unable to fetch datastores, could not clone VM %s for migration from VMware", vmName);
-            s_logger.error(err);
+            logger.error(err);
             throw new CloudRuntimeException(err);
         }
         DatastoreMO datastoreMO = vmDatastores.get(0); //pick the first datastore
