@@ -168,4 +168,6 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
 
     List<VMInstanceVO> searchRemovedByRemoveDate(final Date startDate, final Date endDate, final Long batchSize,
              List<Long> skippedVmIds);
+
+    Pair<List<VMInstanceVO>, Integer> listByVmsNotInClusterUsingPool(long clusterId, long poolId);
 }

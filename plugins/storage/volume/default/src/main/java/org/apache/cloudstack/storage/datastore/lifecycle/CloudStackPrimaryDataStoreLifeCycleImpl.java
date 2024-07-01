@@ -73,7 +73,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
+public class CloudStackPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     protected Logger logger = LogManager.getLogger(getClass());
     @Inject
     protected ResourceManager _resourceMgr;

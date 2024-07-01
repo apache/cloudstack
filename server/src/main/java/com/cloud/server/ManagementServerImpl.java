@@ -211,6 +211,7 @@ import org.apache.cloudstack.api.command.admin.storage.AddImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.AddImageStoreS3CMD;
 import org.apache.cloudstack.api.command.admin.storage.AddObjectStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.storage.ChangeStoragePoolScopeCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteImageStoreCmd;
@@ -523,6 +524,7 @@ import org.apache.cloudstack.api.command.user.vm.AddIpToVmNicCmd;
 import org.apache.cloudstack.api.command.user.vm.AddNicToVMCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
 import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
+import org.apache.cloudstack.api.command.admin.vm.ListAffectedVmsForStorageScopeChangeCmd;
 import org.apache.cloudstack.api.command.user.vm.GetVMPasswordCmd;
 import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
@@ -3566,6 +3568,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(UpgradeRouterCmd.class);
         cmdList.add(AddSwiftCmd.class);
         cmdList.add(CancelPrimaryStorageMaintenanceCmd.class);
+        cmdList.add(ChangeStoragePoolScopeCmd.class);
         cmdList.add(CreateStoragePoolCmd.class);
         cmdList.add(DeletePoolCmd.class);
         cmdList.add(ListSwiftsCmd.class);
@@ -4003,6 +4006,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(CreateSecondaryStorageSelectorCmd.class);
         cmdList.add(UpdateSecondaryStorageSelectorCmd.class);
         cmdList.add(RemoveSecondaryStorageSelectorCmd.class);
+        cmdList.add(ListAffectedVmsForStorageScopeChangeCmd.class);
 
 
         // Out-of-band management APIs for admins
