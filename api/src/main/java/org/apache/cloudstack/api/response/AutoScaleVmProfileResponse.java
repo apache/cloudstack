@@ -69,7 +69,7 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
     private Map<String, String> counterParams;
 
     @SerializedName(ApiConstants.USER_DATA)
-    @Param(description = "Base 64 encoded VM user data")
+    @Param(description = "Base64 encoded VM user data")
     private String userData;
 
     @SerializedName(ApiConstants.USER_DATA_ID) @Param(description="the id of userdata used for the VM", since = "4.18.1")

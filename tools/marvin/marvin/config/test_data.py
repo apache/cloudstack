@@ -177,9 +177,9 @@ test_data = {
     "service_offering_h2": {
         "name": "Tagged h2 Small Instance",
         "displaytext": "Tagged h2 Small Instance",
-        "cpunumber": 1,
-        "cpuspeed": 100,
-        "memory": 256,
+        "cpunumber": 2,
+        "cpuspeed": 200,
+        "memory": 512,
         "hosttags": "h2"
     },
     "disk_offering": {
@@ -1034,7 +1034,18 @@ test_data = {
             "requireshvm": "True",
             "ispublic": "True",
             "deployasis": "True"
-        }
+        },
+        "simulator": {
+            "name": "tiny-simulator",
+            "displaytext": "tiny simulator",
+            "format": "vhd",
+            "hypervisor": "simulator",
+            "ostype": "Other Linux (64-bit)",
+            "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina.vhd.bz2",
+            "requireshvm": "True",
+            "ispublic": "True",
+            "isextractable": "True"
+        },
     },
     "test_ovf_templates": [
         {
