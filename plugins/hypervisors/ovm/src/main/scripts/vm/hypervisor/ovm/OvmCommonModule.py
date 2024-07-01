@@ -75,7 +75,7 @@ def asciiLoads(jStr):
 
 def exceptionIfNoSuccess(str, errMsg=None):
     if not errMsg: errMsg = str
-    if not "success" in str: raise Exception("%s (%s)"%(errMsg, str))
+    if "success" not in str: raise Exception("%s (%s)"%(errMsg, str))
 
 def successToMap(str, sep=';'):
     if not str.startswith("success"): raise Exception(str)
@@ -135,7 +135,7 @@ def getDomId(vm_name):
     return execute("xm list | grep " + vm_name + " | awk '{print $2}'").strip()
 
 def raiseExceptionIfFail(res):
-    if not "success" in res and not "SUCC" in res: raise Exception(res)
+    if "success" not in res and "SUCC" not in res: raise Exception(res)
 
 def ipToHeartBeatFileName(ip):
     return ip.replace('.', '_') + "_HEARTBEAT"
