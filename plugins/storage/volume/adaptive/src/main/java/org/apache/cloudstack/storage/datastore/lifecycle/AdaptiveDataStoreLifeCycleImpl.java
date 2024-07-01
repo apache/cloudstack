@@ -63,7 +63,7 @@ import org.apache.logging.log4j.Logger;
 /**
  * Manages the lifecycle of a Managed Data Store in CloudStack
  */
-public class AdaptiveDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
+public class AdaptiveDataStoreLifeCycleImpl extends BasePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     @Inject
     private PrimaryDataStoreDao _storagePoolDao;
     protected Logger logger = LogManager.getLogger(getClass());

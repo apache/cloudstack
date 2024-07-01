@@ -100,6 +100,9 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
     @Override
     public TemplateInfo getTemplate(long templateId, DataStore store) {
         VMTemplateVO templ = imageDataDao.findById(templateId);
+        if (templ == null) {
+            return null;
+        }
         if (store == null && !templ.isDirectDownload()) {
             TemplateObject tmpl = TemplateObject.getTemplate(templ, null, null);
             return tmpl;
