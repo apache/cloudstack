@@ -504,10 +504,10 @@ public class VolumeServiceImpl implements VolumeService {
                         if (!supportsStorageSystemSnapshots) {
                             _snapshotStoreDao.remove(snapStoreVo.getId());
                         }
-                    } else if (!HypervisorType.KVM.equals(vo.getHypervisorType())) {
-                        _snapshotStoreDao.remove(snapStoreVo.getId());
-                    } else {
+                    } else if (HypervisorType.KVM.equals(vo.getHypervisorType())) {
                         deleteKvmSnapshotOnPrimary(snapStoreVo);
+                    } else if (!StoragePoolType.StorPool.equals(storagePoolVO.getPoolType())){
+                        _snapshotStoreDao.remove(snapStoreVo.getId());
                     }
                 }
                 snapshotApiService.markVolumeSnapshotsAsDestroyed(vo);
