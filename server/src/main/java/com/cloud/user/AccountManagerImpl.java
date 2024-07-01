@@ -1369,6 +1369,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
     }
 
+    @Override
+    public void checkApiAccess(Account caller, String command) {
+        List<APIChecker> apiCheckers = getEnabledApiCheckers();
+        checkApiAccess(apiCheckers, caller, command);
+    }
+
     @NotNull
     private List<APIChecker> getEnabledApiCheckers() {
         // we are really only interested in the dynamic access checker
