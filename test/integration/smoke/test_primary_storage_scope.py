@@ -35,11 +35,11 @@ class TestPrimaryStorageScope(cloudstackTestCase):
         self._cleanup = []
         self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
         self.pod = get_pod(self.apiclient, self.zone.id)
-        self.debug("here")
         self.debug(self.services)
         self.cluster1 = list_clusters(self.apiclient)[0]
-        self.debug("here1")
         self.debug(self.cluster1)
+        if (self.cluster1.hypervisortype not in ['KVM', 'VMware', 'Simulator']):
+            cloudstackTestCase.skipTest(self, "Supported hypervisors (KVM, VMware, Simulator) not found. Skipping test.")
         self.cluster = {
             'clustername': 'C0_testScope',
             'clustertype': 'CloudManaged'
