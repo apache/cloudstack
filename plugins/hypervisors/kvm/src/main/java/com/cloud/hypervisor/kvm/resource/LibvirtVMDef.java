@@ -1599,6 +1599,7 @@ public class LibvirtVMDef {
             }
             if (_macAddr != null) {
                 netBuilder.append("<mac address='" + _macAddr + "'/>\n");
+                netBuilder.append("<filterref filter='no-mac-spoofing'/>\n");
             }
             if (_model != null) {
                 netBuilder.append("<model type='" + _model + "'/>\n");
