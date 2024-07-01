@@ -78,7 +78,7 @@ class TestPrimaryStorageScope(cloudstackTestCase):
                                           )
         self._cleanup.append(self.storage)
         self.debug("Created storage pool %s in zone scope", self.storage.id)
- 
+
         # Disable storage pool
         cmd = updateStoragePool.updateStoragePoolCmd()
         cmd.id = self.storage.id
