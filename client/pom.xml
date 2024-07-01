@@ -743,7 +743,7 @@
                     <webAppSourceDirectory>${project.build.directory}/classes/META-INF/webapp/</webAppSourceDirectory>
                     <webApp>
                         <contextPath>/client</contextPath>
-                        <extraClasspath>${project.build.directory}/conf/;${project.build.directory}/common;${project.build.directory}/utilities/scripts/db/;${project.build.directory}/utilities/scripts/db/db/;${project.build.directory}/cloud-client-ui-${project.version}.jar</extraClasspath>
+                        <extraClasspath>${project.build.directory}/conf/;${project.build.directory}/common;${project.build.directory}/utilities/scripts/db/;${project.build.directory}/utilities/scripts/db/db/;${project.build.directory}/plugins/*</extraClasspath>
                         <webInfIncludeJarPattern>.*/cloud.*jar$|.*/classes/.*</webInfIncludeJarPattern>
                     </webApp>
                     <systemProperties>
@@ -830,6 +830,7 @@
                                         <exclude name="*.in" />
                                     </fileset>
                                 </copy>
+                                <mkdir dir="${project.build.directory}/plugins" />
                             </target>
                         </configuration>
                     </execution>
