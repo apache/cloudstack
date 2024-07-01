@@ -38,27 +38,14 @@ class TestPrimaryStorageScope(cloudstackTestCase):
         self.debug(self.services)
         self.cluster1 = list_clusters(self.apiclient)[0]
         self.debug(self.cluster1)
+        if (self.cluster1 == None):
+            cloudstackTestCase.skipTest(self, "Cluster not found. Skipping test.")
         if (self.cluster1.hypervisortype not in ['KVM', 'VMware', 'Simulator']):
             cloudstackTestCase.skipTest(self, "Supported hypervisors (KVM, VMware, Simulator) not found. Skipping test.")
         self.cluster = {
             'clustername': 'C0_testScope',
             'clustertype': 'CloudManaged'
         }
-        self.cluster2 = Cluster.create(self.apiclient,
-                                       self.cluster,
-                                       zoneid=self.zone.id,
-                                       podid=self.pod.id,
-                                       hypervisor=self.cluster1.hypervisortype
-                                       )
-        self._cleanup.append(self.cluster2)
-        self.storage = StoragePool.create(self.apiclient,
-                                          self.services["nfs"],
-                                          scope = 'ZONE',
-                                          zoneid=self.zone.id,
-                                          hypervisor=self.cluster1.hypervisortype
-                                          )
-        self._cleanup.append(self.storage)
-        self.debug("Created storage pool %s in zone scope", self.storage.id)
         return
 
     def tearDown(self):
@@ -73,6 +60,25 @@ class TestPrimaryStorageScope(cloudstackTestCase):
         """Test primary storage pool scope change
         """
 
+        # Create cluster
+        self.cluster2 = Cluster.create(self.apiclient,
+                                       self.cluster,
+                                       zoneid=self.zone.id,
+                                       podid=self.pod.id,
+                                       hypervisor=self.cluster1.hypervisortype
+                                       )
+        self._cleanup.append(self.cluster2)
+
+        # Create zone-wide storage pool
+        self.storage = StoragePool.create(self.apiclient,
+                                          self.services["nfs"],
+                                          scope = 'ZONE',
+                                          zoneid=self.zone.id,
+                                          hypervisor=self.cluster1.hypervisortype
+                                          )
+        self._cleanup.append(self.storage)
+        self.debug("Created storage pool %s in zone scope", self.storage.id)
+ 
         # Disable storage pool
         cmd = updateStoragePool.updateStoragePoolCmd()
         cmd.id = self.storage.id
