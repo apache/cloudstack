@@ -408,7 +408,6 @@ public class KvmNonManagedStorageSystemDataMotionTest {
 
         when(volumeInfo1.getPoolId()).thenReturn(POOL_1_ID);
         when(primaryDataStoreDao.findById(POOL_1_ID)).thenReturn(pool1);
-        when(pool1.isManaged()).thenReturn(false);
         when(dataStore2.getId()).thenReturn(POOL_2_ID);
         when(primaryDataStoreDao.findById(POOL_2_ID)).thenReturn(pool2);
         when(pool2.isManaged()).thenReturn(true);
@@ -493,9 +492,6 @@ public class KvmNonManagedStorageSystemDataMotionTest {
 
     @Test(expected = CloudRuntimeException.class)
     public void testVerifyLiveMigrationMapForKVMMixedManagedUnmagedStorage() {
-        when(pool1.isManaged()).thenReturn(true);
-        when(pool1.getId()).thenReturn(POOL_1_ID);
-        when(pool2.getId()).thenReturn(POOL_2_ID);
         lenient().when(pool2.isManaged()).thenReturn(false);
         kvmNonManagedStorageDataMotionStrategy.verifyLiveMigrationForKVM(migrationMap);
     }
