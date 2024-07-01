@@ -339,7 +339,7 @@ public class ServerDaemon implements Daemon {
     }
 
     private void createRotateFile(File logPath) {
-        String rotatefile = "/etc/logrotate/access";
+        String rotatefile = "/etc/logrotate.d/access";
         String fileContents = logPath.getAbsolutePath() + " {\n"
                 + "  copytruncate"
                 + "  daily"
