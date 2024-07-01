@@ -19,7 +19,9 @@
 package org.apache.cloudstack;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileWriter;
+import java.io.InputStream;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.net.URL;
