@@ -87,6 +87,12 @@ export default {
           case 'InProgress':
             state = this.$t('state.inprogress')
             break
+          case 'Down':
+            state = this.$t('state.down')
+            break
+          case 'Up':
+            state = this.$t('state.up')
+            break
         }
         return state.charAt(0).toUpperCase() + state.slice(1)
       }

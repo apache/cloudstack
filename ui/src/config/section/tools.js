@@ -62,6 +62,14 @@ export default {
       ]
     },
     {
+      name: 'usage',
+      title: 'label.usage',
+      icon: 'ContainerOutlined',
+      permission: ['listUsageRecords'],
+      meta: { title: 'label.usage', icon: 'ContainerOutlined' },
+      component: () => import('@/views/infra/UsageRecords.vue')
+    },
+    {
       name: 'manageinstances',
       title: 'label.action.import.export.instances',
       icon: 'interaction-outlined',
