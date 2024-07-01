@@ -20,6 +20,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -36,6 +37,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.quota.activationrule.presetvariables.GenericPresetVariable;
 import org.apache.cloudstack.quota.activationrule.presetvariables.PresetVariableHelper;
 import org.apache.cloudstack.quota.activationrule.presetvariables.PresetVariables;
+import org.apache.cloudstack.quota.activationrule.presetvariables.Tariff;
 import org.apache.cloudstack.quota.constant.QuotaConfig;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
 import org.apache.cloudstack.quota.dao.QuotaAccountDao;
@@ -371,9 +373,22 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         PresetVariables presetVariables = getPresetVariables(hasAnyQuotaTariffWithActivationRule, usageRecord);
         BigDecimal aggregatedQuotaTariffsValue = BigDecimal.ZERO;
 
+        quotaTariffs.sort(Comparator.comparing(QuotaTariffVO::getPosition));
+
+        List<Tariff> lastTariffs = new ArrayList<>();
+
+
         for (QuotaTariffVO quotaTariff : quotaTariffs) {
             if (isQuotaTariffInPeriodToBeApplied(usageRecord, quotaTariff, accountToString)) {
-                aggregatedQuotaTariffsValue = aggregatedQuotaTariffsValue.add(getQuotaTariffValueToBeApplied(quotaTariff, jsInterpreter, presetVariables));
+
+                BigDecimal tariffValue = getQuotaTariffValueToBeApplied(quotaTariff, jsInterpreter, presetVariables, lastTariffs);
+
+                aggregatedQuotaTariffsValue = aggregatedQuotaTariffsValue.add(tariffValue);
+
+                Tariff tariffPresetVariable = new Tariff();
+                tariffPresetVariable.setId(quotaTariff.getUuid());
+                tariffPresetVariable.setValue(tariffValue);
+                lastTariffs.add(tariffPresetVariable);
             }
         }
 
@@ -401,7 +416,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
      *   <li>If the activation rule result in something else, returns {@link BigDecimal#ZERO}.</li>
      * </ul>
      */
-    protected BigDecimal getQuotaTariffValueToBeApplied(QuotaTariffVO quotaTariff, JsInterpreter jsInterpreter, PresetVariables presetVariables) {
+    protected BigDecimal getQuotaTariffValueToBeApplied(QuotaTariffVO quotaTariff, JsInterpreter jsInterpreter, PresetVariables presetVariables, List<Tariff> lastAppliedTariffsList) {
         String activationRule = quotaTariff.getActivationRule();
         BigDecimal quotaTariffValue = quotaTariff.getCurrencyValue();
         String quotaTariffToString = quotaTariff.toString(usageAggregationTimeZone);
@@ -413,6 +428,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         }
 
         injectPresetVariablesIntoJsInterpreter(jsInterpreter, presetVariables);
+        jsInterpreter.injectVariable("lastTariffs", lastAppliedTariffsList.toString());
 
         String scriptResult = jsInterpreter.executeScript(activationRule).toString();
 

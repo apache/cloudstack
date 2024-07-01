@@ -68,6 +68,9 @@ public class QuotaTariffCreateCmd extends BaseCmd {
             ApiConstants.PARAMETER_DESCRIPTION_END_DATE_POSSIBLE_FORMATS)
     private Date endDate;
 
+    @Parameter(name = ApiConstants.POSITION, type = CommandType.INTEGER, description = "Position in the execution sequence for tariffs of the same type", since = "4.20.0.0")
+    private Integer position;
+
     @Override
     public void execute() {
         CallContext.current().setEventDetails(String.format("Tariff: %s, description: %s, value: %s", getName(), getDescription(), getValue()));
@@ -139,4 +142,13 @@ public class QuotaTariffCreateCmd extends BaseCmd {
     public ApiCommandResourceType getApiResourceType() {
         return ApiCommandResourceType.QuotaTariff;
     }
+    public Integer getPosition() {
+        return position;
+    }
+
+    public void setPosition(Integer position) {
+        this.position = position;
+    }
+
+
 }
