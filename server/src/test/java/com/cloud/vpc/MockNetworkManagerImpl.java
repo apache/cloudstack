@@ -548,8 +548,8 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
      * @see com.cloud.network.NetworkService#createPrivateNetwork(java.lang.String, java.lang.String, long, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, long, java.lang.Long)
      */
     @Override
-    public Network createPrivateNetwork(String networkName, String displayText, long physicalNetworkId, String vlan, String startIp, String endIP, String gateway,
-        String netmask, long networkOwnerId, Long vpcId, Boolean sourceNat, Long networkOfferingId, Boolean bypassVlanOverlapCheck, Long associatedNetworkId) throws ResourceAllocationException, ConcurrentOperationException,
+    public Network createPrivateNetwork(String networkName, String displayText, long physicalNetworkId, String vlan, String startIp, String endIP, String gateway, String netmask, String description,
+        long networkOwnerId, Long vpcId, Boolean sourceNat, Long networkOfferingId, Boolean bypassVlanOverlapCheck, Long associatedNetworkId) throws ResourceAllocationException, ConcurrentOperationException,
         InsufficientCapacityException {
         // TODO Auto-generated method stub
         return null;

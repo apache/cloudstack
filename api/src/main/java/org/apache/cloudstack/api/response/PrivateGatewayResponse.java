@@ -41,6 +41,10 @@ public class PrivateGatewayResponse extends BaseResponseWithAssociatedNetwork im
     @Param(description = "the private gateway's netmask")
     private String netmask;
 
+    @SerializedName(ApiConstants.DESCRIPTION)
+    @Param(description = "the private gateway's description")
+    private String description;
+
     @SerializedName(ApiConstants.IP_ADDRESS)
     @Param(description = "the private gateway's ip address")
     private String address;
@@ -120,6 +124,10 @@ public class PrivateGatewayResponse extends BaseResponseWithAssociatedNetwork im
 
     public void setNetmask(String netmask) {
         this.netmask = netmask;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public void setZoneId(String zoneId) {

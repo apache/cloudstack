@@ -2240,6 +2240,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         String ipAddress = command.getIpAddress();
         String gateway = command.getGateway();
         String netmask = command.getNetmask();
+        String description = command.getDescription();
         long gatewayOwnerId = command.getEntityOwnerId();
         Long networkOfferingId = command.getNetworkOfferingId();
         Boolean isSourceNat = command.getIsSourceNat();
@@ -2250,13 +2251,13 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             Long physicalNetworkId = ((CreatePrivateGatewayByAdminCmd)command).getPhysicalNetworkId();
             String broadcastUri = ((CreatePrivateGatewayByAdminCmd)command).getBroadcastUri();
             Boolean bypassVlanOverlapCheck = ((CreatePrivateGatewayByAdminCmd)command).getBypassVlanOverlapCheck();
-            return createVpcPrivateGateway(vpcId, physicalNetworkId, broadcastUri, ipAddress, gateway, netmask, gatewayOwnerId, networkOfferingId, isSourceNat, aclId, bypassVlanOverlapCheck, associatedNetworkId);
+            return createVpcPrivateGateway(vpcId, physicalNetworkId, broadcastUri, ipAddress, gateway, netmask, description, gatewayOwnerId, networkOfferingId, isSourceNat, aclId, bypassVlanOverlapCheck, associatedNetworkId);
         }
-        return createVpcPrivateGateway(vpcId, null, null, ipAddress, gateway, netmask, gatewayOwnerId, networkOfferingId, isSourceNat, aclId, false, associatedNetworkId);
+        return createVpcPrivateGateway(vpcId, null, null, ipAddress, gateway, netmask, description, gatewayOwnerId, networkOfferingId, isSourceNat, aclId, false, associatedNetworkId);
     }
 
     private PrivateGateway createVpcPrivateGateway(final long vpcId, Long physicalNetworkId, final String broadcastUri, final String ipAddress, final String gateway,
-                                                   final String netmask, final long gatewayOwnerId, final Long networkOfferingIdPassed, final Boolean isSourceNat, final Long aclId, final Boolean bypassVlanOverlapCheck, final Long associatedNetworkId) throws ResourceAllocationException,
+                                                   final String netmask, final String description, final long gatewayOwnerId, final Long networkOfferingIdPassed, final Boolean isSourceNat, final Long aclId, final Boolean bypassVlanOverlapCheck, final Long associatedNetworkId) throws ResourceAllocationException,
             ConcurrentOperationException, InsufficientCapacityException {
 
         // Validate parameters
@@ -2297,7 +2298,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 logger.info("creating new network for vpc " + vpc + " using broadcast uri: " + broadcastUri + " and associated network id: " + associatedNetworkId);
                 final String networkName = "vpc-" + vpc.getName() + "-privateNetwork";
                 privateNtwk = _ntwkSvc.createPrivateNetwork(networkName, networkName, physicalNetworkIdFinal, broadcastUri, ipAddress, null, gateway, netmask,
-                        gatewayOwnerId, vpcId, isSourceNat, networkOfferingId, bypassVlanOverlapCheck, associatedNetworkId);
+                        description, gatewayOwnerId, vpcId, isSourceNat, networkOfferingId, bypassVlanOverlapCheck, associatedNetworkId);
             } else { // create the nic/ip as createPrivateNetwork
                 // doesn''t do that work for us now
                 logger.info("found and using existing network for vpc " + vpc + ": " + broadcastUri);
@@ -2339,7 +2340,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
             // 2) create gateway entry
             gatewayVO = new VpcGatewayVO(ipAddress, VpcGateway.Type.Private, vpcId, privateNtwk.getDataCenterId(), privateNtwk.getId(), privateNtwk.getBroadcastUri().toString(),
-                    gateway, netmask, vpc.getAccountId(), vpc.getDomainId(), isSourceNat, networkAclId);
+                    gateway, netmask, vpc.getAccountId(), vpc.getDomainId(), isSourceNat, networkAclId, description);
             _vpcGatewayDao.persist(gatewayVO);
 
             logger.debug("Created vpc gateway entry " + gatewayVO);

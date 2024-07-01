@@ -3476,6 +3476,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         populateDomain(response, result.getDomainId());
         response.setState(result.getState().toString());
         response.setSourceNat(result.getSourceNat());
+        response.setDescription(result.getDescription());
 
         NetworkACL acl =  ApiDBUtils.findByNetworkACLId(result.getNetworkACLId());
         if (acl != null) {

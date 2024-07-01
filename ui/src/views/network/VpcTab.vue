@@ -218,6 +218,12 @@
                   v-model:value="form.gateway"
                 ></a-input>
               </a-form-item>
+              <a-form-item :label="$t('label.description')" ref="description" name="description">
+                <a-input
+                  :placeholder="placeholders.description"
+                  v-model:value="form.description"
+                ></a-input>
+              </a-form-item>
               <a-form-item :label="$t('label.netmask')" ref="netmask" name="netmask">
                 <a-input
                   :placeholder="placeholders.netmask"
@@ -455,6 +461,10 @@ export default {
         {
           title: this.$t('label.netmask'),
           dataIndex: 'netmask'
+        },
+        {
+          title: this.$t('label.description'),
+          dataIndex: 'description'
         },
         {
           title: this.$t('label.vlan'),
@@ -743,6 +753,7 @@ export default {
           ipaddress: data.ipaddress,
           gateway: data.gateway,
           netmask: data.netmask,
+          description: data.description,
           aclid: data.acl
         }
         if (data.bypassvlanoverlapcheck) {
