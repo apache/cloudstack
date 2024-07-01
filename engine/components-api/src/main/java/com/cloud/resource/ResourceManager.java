@@ -61,6 +61,11 @@ public interface ResourceManager extends ResourceService, Configurable {
                     + "To force-stop VMs, choose 'ForceStop' strategy",
             true, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.Select, "Error,Migration,ForceStop");
 
+    ConfigKey<String> SystemVMDefaultHypervisor = new ConfigKey<String>(String.class,
+            "system.vm.default.hypervisor", "Advanced", "Any", "Hypervisor type used to create System VMs. Valid values are: XenServer, KVM, VMware, Hyperv, VirtualBox, " +
+            "Parralels, BareMetal, Ovm, LXC, Any", true, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.Select, "XenServer, KVM, VMware, Hyperv, " +
+            "VirtualBox, Parralels, BareMetal, Ovm, LXC, Any");
+
     /**
      * Register a listener for different types of resource life cycle events.
      * There can only be one type of listener per type of host.
