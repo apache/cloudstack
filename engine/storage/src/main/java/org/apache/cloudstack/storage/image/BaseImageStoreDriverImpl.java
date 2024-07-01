@@ -20,9 +20,6 @@ package org.apache.cloudstack.storage.image;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -87,7 +84,6 @@ import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Proxy;
 import com.cloud.vm.VirtualMachineManager;
@@ -425,8 +421,9 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     private Answer sendToLeastBusyEndpoint(List<EndPoint> eps, CopyCommand cmd) {
         Answer answer = null;
         EndPoint endPoint = null;
-        List<Long> epIds = ssvmWithLeastMigrateJobs();
 
+        logger.debug("Picking SSVM from the pool with least commands running on it.");
+        List<Long> epIds = hostDao.listSsvmHostsWithPendingMigrateJobsOrderedByJobCount();
         if (epIds.isEmpty()) {
             Collections.shuffle(eps);
             endPoint = eps.get(0);
@@ -532,24 +529,5 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
 
     private Integer getCopyCmdsCountToSpecificSSVM(Long ssvmId) {
         return _cmdExecLogDao.getCopyCmdCountForSSVM(ssvmId);
-    }
-
-    private List<Long> ssvmWithLeastMigrateJobs() {
-        logger.debug("Picking ssvm from the pool with least commands running on it");
-        String query = "select host_id, count(*) from cmd_exec_log group by host_id order by 2;";
-        TransactionLegacy txn = TransactionLegacy.currentTxn();
-
-        List<Long> result = new ArrayList<Long>();
-        PreparedStatement pstmt = null;
-        try {
-            pstmt = txn.prepareAutoCloseStatement(query);
-            ResultSet rs = pstmt.executeQuery();
-            while (rs.next()) {
-                result.add((long) rs.getInt(1));
-            }
-        } catch (SQLException e) {
-            logger.debug("SQLException caught", e);
-        }
-        return result;
     }
 }
