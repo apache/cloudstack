@@ -82,6 +82,8 @@ public class ServerDaemon implements Daemon {
     private static final String ACCESS_LOG = "access.log";
     private static final String REQUEST_CONTENT_SIZE_KEY = "request.content.size";
     private static final int DEFAULT_REQUEST_CONTENT_SIZE = 1048576;
+    private static final String THREADS_MIN = "threads.min";
+    private static final String THREADS_MAX = "threads.max";
 
     ////////////////////////////////////////////////////////
     /////////////// Server Configuration ///////////////////
@@ -101,6 +103,8 @@ public class ServerDaemon implements Daemon {
     private String keystoreFile;
     private String keystorePassword;
     private String webAppLocation;
+    private int minThreads = 10;
+    private int maxThreads = 500;
 
     //////////////////////////////////////////////////
     /////////////// Public methods ///////////////////
@@ -141,6 +145,8 @@ public class ServerDaemon implements Daemon {
             setAccessLogFile(properties.getProperty(ACCESS_LOG, "access.log"));
             setSessionTimeout(Integer.valueOf(properties.getProperty(SESSION_TIMEOUT, "30")));
             setMaxFormContentSize(Integer.valueOf(properties.getProperty(REQUEST_CONTENT_SIZE_KEY, String.valueOf(DEFAULT_REQUEST_CONTENT_SIZE))));
+            setMinThreads(Integer.valueOf(properties.getProperty(THREADS_MIN, "10")));
+            setMaxThreads(Integer.valueOf(properties.getProperty(THREADS_MAX, "500")));
         } catch (final IOException e) {
             logger.warn("Failed to read configuration from server.properties file", e);
         } finally {
@@ -158,8 +164,8 @@ public class ServerDaemon implements Daemon {
     public void start() throws Exception {
         // Thread pool
         final QueuedThreadPool threadPool = new QueuedThreadPool();
-        threadPool.setMinThreads(10);
-        threadPool.setMaxThreads(500);
+        threadPool.setMinThreads(minThreads);
+        threadPool.setMaxThreads(maxThreads);
 
         // Jetty Server
         server = new Server(threadPool);
@@ -365,5 +371,13 @@ public class ServerDaemon implements Daemon {
 
     public void setMaxFormContentSize(int maxFormContentSize) {
         this.maxFormContentSize = maxFormContentSize;
+    }
+
+    public void setMinThreads(int minThreads) {
+        this.minThreads = minThreads;
+    }
+
+    public void setMaxThreads(int maxThreads) {
+        this.maxThreads = maxThreads;
     }
 }
