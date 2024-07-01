@@ -61,7 +61,7 @@ import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class StorPoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycle {
+public class StorPoolPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject

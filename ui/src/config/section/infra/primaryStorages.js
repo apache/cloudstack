@@ -136,6 +136,26 @@ export default {
       show: (record) => { return ['Maintenance', 'PrepareForMaintenance', 'ErrorInMaintenance'].includes(record.state) }
     },
     {
+      api: 'changeStoragePoolScope',
+      icon: 'swap-outlined',
+      label: 'label.action.change.primary.storage.scope',
+      dataView: true,
+      popup: true,
+      show: (record) => {
+        return (record.state === 'Disabled' &&
+          (record.scope === 'CLUSTER' ||
+           record.scope === 'ZONE') &&
+          (record.hypervisor === 'KVM' ||
+           record.hypervisor === 'VMware' ||
+           record.hypervisor === 'HyperV' ||
+           record.hypervisor === 'LXC' ||
+           record.hypervisor === 'Any' ||
+           record.hypervisor === 'Simulator')
+        )
+      },
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/ChangeStoragePoolScope.vue')))
+    },
+    {
       api: 'deleteStoragePool',
       icon: 'delete-outlined',
       label: 'label.action.delete.primary.storage',
